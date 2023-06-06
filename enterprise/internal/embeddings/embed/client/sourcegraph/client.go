@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"math"
 	"net/http"
 	"sort"
 	"strconv"
@@ -21,11 +22,20 @@ import (
 
 func NewClient(config *schema.SiteConfiguration) *sourcegraphEmbeddingsClient {
 	return &sourcegraphEmbeddingsClient{
-		model:       config.Embeddings.Model,
+		model:       getModel(config),
 		dimensions:  config.Embeddings.Dimensions,
 		url:         getURL(config.Embeddings),
 		accessToken: getAccessToken(config),
 	}
+}
+
+const defaultAPIURL = "https://cody-gateway.sourcegraph.com/v1/embeddings"
+
+func getModel(config *schema.SiteConfiguration) string {
+	if config.Embeddings == nil || config.Embeddings.Model == "" {
+		return "openai/text-embedding-ada-002"
+	}
+	return config.Embeddings.Model
 }
 
 func getAccessToken(config *schema.SiteConfiguration) string {
@@ -45,7 +55,7 @@ func getURL(config *schema.Embeddings) string {
 	}
 	// If that is also not set, use a sensible default.
 	if url == "" {
-		url = "https://cody-gateway.sourcegraph.com/v1/embeddings"
+		url = defaultAPIURL
 	}
 	return url
 }
@@ -58,33 +68,52 @@ type sourcegraphEmbeddingsClient struct {
 }
 
 func (c *sourcegraphEmbeddingsClient) GetDimensions() (int, error) {
+	if c.dimensions <= 0 && strings.EqualFold(c.model, "openai/text-embedding-ada-002") {
+		return 1536, nil
+	}
+
 	// TODO: Later, we should ideally ask the gateway for the dimensionality of the model
 	// so we don't have to hard-code defaults for all the models and can roll out new models
 	// to older instances, too.
-
-	// Use some good default for the only model we supported so far.
-	if c.dimensions == 0 && strings.EqualFold(c.model, "openai/text-embedding-ada-002") {
-		return 1536, nil
-	}
 	if c.dimensions <= 0 {
 		return 0, errors.New("invalid config for embeddings.dimensions, must be > 0")
 	}
+
 	return c.dimensions, nil
+}
+
+// GetEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.
+// In case of failure, it retries the embedding procedure up to maxRetries. This due to the OpenAI API which
+// often hangs up when downloading large embedding responses.
+func (c *sourcegraphEmbeddingsClient) GetEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error) {
+	embeddings, err := c.getEmbeddings(ctx, texts)
+	if err == nil {
+		return embeddings, nil
+	}
+
+	for i := 0; i < maxRetries; i++ {
+		embeddings, err = c.getEmbeddings(ctx, texts)
+		if err == nil {
+			return embeddings, nil
+		} else {
+			// Exponential delay
+			delay := time.Duration(int(math.Pow(float64(2), float64(i))))
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(delay * time.Second):
+			}
+		}
+	}
+
+	return nil, err
 }
 
 var modelsWithoutNewlines = map[string]struct{}{
 	"openai/text-embedding-ada-002": {},
 }
 
-// GetEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.
-// In case of failure, it retries the embedding procedure up to maxRetries. This due to the OpenAI API which
-// often hangs up when downloading large embedding responses.
-func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
-	dimensions, err := c.GetDimensions()
-	if err != nil {
-		return nil, err
-	}
-	// TODO: This should not be done in the client layer IMO.
+func (c *sourcegraphEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
 	_, replaceNewlines := modelsWithoutNewlines[c.model]
 	augmentedTexts := texts
 	if replaceNewlines {
@@ -137,9 +166,7 @@ func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts [
 				// We don't know how to parse this header, so let's just return a generic error.
 			}
 		}
-		respBody, _ := io.ReadAll(resp.Body)
-		// TODO: Handle 429 errors here. We should select on time.After, ctx.Done in here and wait until we should be doing the next request.
-		// If we apply a context deadline further up, this should ideally not even attempt sleeping (instead, we can reschedule the job or so).
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
 		return nil, errors.Errorf("embeddings: %s %q: failed with status %d: %s", req.Method, req.URL.String(), resp.StatusCode, string(respBody))
 	}
 
@@ -148,14 +175,19 @@ func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts [
 		return nil, err
 	}
 
+	if len(response.Embeddings) == 0 {
+		return nil, nil
+	}
+
 	// Ensure embedding responses are sorted in the original order.
 	sort.Slice(response.Embeddings, func(i, j int) bool {
 		return response.Embeddings[i].Index < response.Embeddings[j].Index
 	})
 
-	embeddings := make([]float32, 0, len(response.Embeddings)*dimensions)
+	embeddings := make([]float32, 0, len(response.Embeddings)*response.ModelDimensions)
 	for _, embedding := range response.Embeddings {
 		embeddings = append(embeddings, embedding.Data...)
 	}
+
 	return embeddings, nil
 }

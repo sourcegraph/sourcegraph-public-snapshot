@@ -177,7 +177,7 @@ func embedFiles(
 			index.Ranks = append(index.Ranks, float32(repoPathRanks.Paths[chunk.FileName]))
 		}
 
-		batchEmbeddings, err := client.GetEmbeddings(ctx, batchChunks)
+		batchEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, batchChunks)
 		if err != nil {
 			return errors.Wrap(err, "error while getting embeddings")
 		}

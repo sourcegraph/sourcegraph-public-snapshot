@@ -55,7 +55,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetec
 }
 
 func getContextDetectionMessagesMeanEmbedding(ctx context.Context, messages []string, client client.EmbeddingsClient) ([]float32, error) {
-	messagesEmbeddings, err := client.GetEmbeddings(ctx, messages)
+	messagesEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, messages)
 	if err != nil {
 		return nil, err
 	}

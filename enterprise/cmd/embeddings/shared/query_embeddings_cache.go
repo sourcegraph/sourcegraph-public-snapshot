@@ -26,7 +26,7 @@ func getCachedQueryEmbeddingFn() (getQueryEmbeddingFn, error) {
 			if err != nil {
 				return nil, err
 			}
-			queryEmbedding, err = client.GetEmbeddings(ctx, []string{query})
+			queryEmbedding, err = client.GetEmbeddingsWithRetries(ctx, []string{query})
 			if err != nil {
 				return nil, err
 			}

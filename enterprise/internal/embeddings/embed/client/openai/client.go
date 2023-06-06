@@ -5,9 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"math"
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -16,10 +18,21 @@ import (
 
 func NewClient(config *schema.Embeddings) *openaiEmbeddingsClient {
 	return &openaiEmbeddingsClient{
-		config: config,
-		url:    getURL(config),
+		dimensions:  config.Dimensions,
+		accessToken: config.AccessToken,
+		model:       getModel(config),
+		url:         getURL(config),
 	}
 }
+
+func getModel(config *schema.Embeddings) string {
+	if config.Model == "" {
+		return "text-embedding-ada-002"
+	}
+	return config.Model
+}
+
+const defaultAPIURL = "https://api.openai.com/v1/embeddings"
 
 func getURL(config *schema.Embeddings) string {
 	url := config.Endpoint
@@ -29,51 +42,52 @@ func getURL(config *schema.Embeddings) string {
 	}
 	// If that is also not set, use a sensible default.
 	if url == "" {
-		url = "https://api.openai.com/v1/embeddings"
+		url = defaultAPIURL
 	}
 	return url
 }
 
 type openaiEmbeddingsClient struct {
-	config *schema.Embeddings
-	url    string
+	model       string
+	dimensions  int
+	url         string
+	accessToken string
 }
 
 func (c *openaiEmbeddingsClient) GetDimensions() (int, error) {
 	// Use some good default for the only model we supported so far.
-	if c.config.Dimensions == 0 && strings.EqualFold(c.config.Model, "text-embedding-ada-002") {
+	if c.dimensions == 0 && strings.EqualFold(c.model, "text-embedding-ada-002") {
 		return 1536, nil
 	}
-	if c.config.Dimensions <= 0 {
+	if c.dimensions <= 0 {
 		return 0, errors.New("invalid config for embeddings.dimensions, must be > 0")
 	}
-	return c.config.Dimensions, nil
+	return c.dimensions, nil
 }
 
 // GetEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.
 // In case of failure, it retries the embedding procedure up to maxRetries. This due to the OpenAI API which
 // often hangs up when downloading large embedding responses.
-func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
-	embeddings, err := c.getEmbeddings(ctx, texts, c.config)
+func (c *openaiEmbeddingsClient) GetEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error) {
+	embeddings, err := c.getEmbeddings(ctx, texts)
 	if err == nil {
 		return embeddings, nil
 	}
 
-	// TODO: Don't we already do retries in the HTTP CLI layer?
-	// for i := 0; i < c.maxRetries; i++ {
-	// 	embeddings, err = c.getEmbeddings(ctx, texts, c.config)
-	// 	if err == nil {
-	// 		return embeddings, nil
-	// 	} else {
-	// 		// Exponential delay
-	// 		delay := time.Duration(int(math.Pow(float64(2), float64(i))))
-	// 		select {
-	// 		case <-ctx.Done():
-	// 			return nil, ctx.Err()
-	// 		case <-time.After(delay * time.Second):
-	// 		}
-	// 	}
-	// }
+	for i := 0; i < maxRetries; i++ {
+		embeddings, err = c.getEmbeddings(ctx, texts)
+		if err == nil {
+			return embeddings, nil
+		} else {
+			// Exponential delay
+			delay := time.Duration(int(math.Pow(float64(2), float64(i))))
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(delay * time.Second):
+			}
+		}
+	}
 
 	return nil, err
 }
@@ -82,9 +96,8 @@ var modelsWithoutNewlines = map[string]struct{}{
 	"text-embedding-ada-002": {},
 }
 
-func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string, config *schema.Embeddings) ([]float32, error) {
-	// TODO: This should not be done in the client layer IMO.
-	_, replaceNewlines := modelsWithoutNewlines[config.Model]
+func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
+	_, replaceNewlines := modelsWithoutNewlines[c.model]
 	augmentedTexts := texts
 	if replaceNewlines {
 		augmentedTexts = make([]string, len(texts))
@@ -94,7 +107,7 @@ func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []stri
 		}
 	}
 
-	request := openaiEmbeddingAPIRequest{Model: config.Model, Input: augmentedTexts}
+	request := openaiEmbeddingAPIRequest{Model: c.model, Input: augmentedTexts}
 
 	bodyBytes, err := json.Marshal(request)
 	if err != nil {
@@ -106,7 +119,7 @@ func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []stri
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+config.AccessToken)
+	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 
 	resp, err := httpcli.ExternalDoer.Do(req)
 	if err != nil {
