@@ -4,7 +4,7 @@ build_number="${BUILDKITE_BUILD_NUMBER:-000000}"
 date_fragment="$(date +%Y-%m-%d)"
 latest_tag="5.0"
 
-# We historicall use 12 chars for short commits.
+# We historically use 12 chars for short commits.
 commit="$(git rev-parse HEAD)"
 commit="${commit:0:12}"
 
