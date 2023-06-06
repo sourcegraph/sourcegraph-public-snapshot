@@ -28,31 +28,29 @@ export const CommitSigningIntegrationNode: React.FunctionComponent<
                     'd-flex justify-content-between align-items-center flex-wrap mb-0'
                 )}
             >
-                <div className="text-nowrap d-flex flex-1 mb-0 align-items-center">
-                    <H3 className="mb-0">
-                        {node.commitSigningConfiguration ? (
-                            <Icon
-                                aria-label="This code host has commit signing enabled with a GitHub App."
-                                className="text-success"
-                                svgPath={mdiCheckCircleOutline}
-                            />
-                        ) : (
-                            <Icon
-                                aria-label="This code host does not have a GitHub App connected for commit signing."
-                                className="text-danger"
-                                svgPath={mdiCheckboxBlankCircleOutline}
-                            />
-                        )}
-
-                        <Icon className="mx-2" aria-hidden={true} as={ExternalServiceIcon} />
-                        {node.externalServiceURL}
-                    </H3>
-                    {readOnly ? (
-                        <ReadOnlyAppDetails config={node.commitSigningConfiguration} />
+                <H3 className="mb-0 mr-2">
+                    {node.commitSigningConfiguration ? (
+                        <Icon
+                            aria-label="This code host has commit signing enabled with a GitHub App."
+                            className="text-success"
+                            svgPath={mdiCheckCircleOutline}
+                        />
                     ) : (
-                        <AppDetailsControls config={node.commitSigningConfiguration} />
+                        <Icon
+                            aria-label="This code host does not have a GitHub App connected for commit signing."
+                            className="text-danger"
+                            svgPath={mdiCheckboxBlankCircleOutline}
+                        />
                     )}
-                </div>
+
+                    <Icon className="mx-2" aria-hidden={true} as={ExternalServiceIcon} />
+                    {node.externalServiceURL}
+                </H3>
+                {readOnly ? (
+                    <ReadOnlyAppDetails config={node.commitSigningConfiguration} />
+                ) : (
+                    <AppDetailsControls config={node.commitSigningConfiguration} />
+                )}
             </div>
         </li>
     )
@@ -65,7 +63,7 @@ interface AppDetailsControlsProps {
 const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ config }) =>
     config ? (
         <>
-            <div className="d-flex align-items-center ml-3">
+            <div className="d-flex align-items-center">
                 <img className={styles.appLogoLarge} src={config.logo} alt="app logo" aria-hidden={true} />
                 <div className={styles.appDetailsColumn}>
                     <Text size="small" className="font-weight-bold mb-0">
@@ -109,14 +107,14 @@ interface ReadOnlyAppDetailsProps {
 
 const ReadOnlyAppDetails: React.FunctionComponent<ReadOnlyAppDetailsProps> = ({ config }) =>
     config ? (
-        <div className={styles.appDetails}>
+        <div className={styles.readonlyAppDetails}>
             <img className={styles.appLogo} src={config.logo} alt="app logo" aria-hidden={true} />
             <Text size="small" className="font-weight-bold m-0">
                 {config.name}
             </Text>
         </div>
     ) : (
-        <div className={styles.appDetails}>
+        <div className={styles.readonlyAppDetails}>
             <Text size="small" className="m-0">
                 No App configured
             </Text>
