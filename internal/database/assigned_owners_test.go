@@ -35,10 +35,6 @@ func TestAssignedOwnersStore_ListAssignedOwnersForRepo(t *testing.T) {
 	err = db.Repos().Create(ctx, &types.Repo{ID: 2, Name: "github.com/sourcegraph/sourcegraph2"})
 	require.NoError(t, err)
 
-	// Creating repo paths.
-	_, err = db.QueryContext(ctx, "INSERT INTO repo_paths (repo_id, absolute_path, parent_id) VALUES (1, '', NULL), (1, 'src', 1), (1, 'src/abc', 2), (1, 'src/def', 2)")
-	require.NoError(t, err)
-
 	// Inserting assigned owners.
 	store := AssignedOwnersStoreWith(db, logger)
 	err = store.Insert(ctx, user1.ID, 1, "src", user2.ID)
@@ -96,10 +92,6 @@ func TestAssignedOwnersStore_Insert(t *testing.T) {
 	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
 	require.NoError(t, err)
 
-	// Creating repo paths.
-	_, err = db.QueryContext(ctx, "INSERT INTO repo_paths (repo_id, absolute_path, parent_id) VALUES (1, '', NULL), (1, 'src', 1)")
-	require.NoError(t, err)
-
 	store := AssignedOwnersStoreWith(db, logger)
 
 	// Inserting assigned owner for non-existing repo, which led to failing to ensure
@@ -135,10 +127,6 @@ func TestAssignedOwnersStore_Delete(t *testing.T) {
 
 	// Creating a repo.
 	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
-	require.NoError(t, err)
-
-	// Creating repo paths.
-	_, err = db.QueryContext(ctx, "INSERT INTO repo_paths (repo_id, absolute_path, parent_id) VALUES (1, '', NULL), (1, 'src', 1), (1, 'src/abc', 2)")
 	require.NoError(t, err)
 
 	store := AssignedOwnersStoreWith(db, logger)

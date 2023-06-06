@@ -5309,6 +5309,9 @@ type MockDB struct {
 	// AssignedOwnersFunc is an instance of a mock function object
 	// controlling the behavior of the method AssignedOwners.
 	AssignedOwnersFunc *DBAssignedOwnersFunc
+	// AssignedTeamsFunc is an instance of a mock function object
+	// controlling the behavior of the method AssignedTeams.
+	AssignedTeamsFunc *DBAssignedTeamsFunc
 	// AuthzFunc is an instance of a mock function object controlling the
 	// behavior of the method Authz.
 	AuthzFunc *DBAuthzFunc
@@ -5491,6 +5494,11 @@ func NewMockDB() *MockDB {
 		},
 		AssignedOwnersFunc: &DBAssignedOwnersFunc{
 			defaultHook: func() (r0 AssignedOwnersStore) {
+				return
+			},
+		},
+		AssignedTeamsFunc: &DBAssignedTeamsFunc{
+			defaultHook: func() (r0 AssignedTeamsStore) {
 				return
 			},
 		},
@@ -5786,6 +5794,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.AssignedOwners")
 			},
 		},
+		AssignedTeamsFunc: &DBAssignedTeamsFunc{
+			defaultHook: func() AssignedTeamsStore {
+				panic("unexpected invocation of MockDB.AssignedTeams")
+			},
+		},
 		AuthzFunc: &DBAuthzFunc{
 			defaultHook: func() AuthzStore {
 				panic("unexpected invocation of MockDB.Authz")
@@ -6071,6 +6084,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		AssignedOwnersFunc: &DBAssignedOwnersFunc{
 			defaultHook: i.AssignedOwners,
+		},
+		AssignedTeamsFunc: &DBAssignedTeamsFunc{
+			defaultHook: i.AssignedTeams,
 		},
 		AuthzFunc: &DBAuthzFunc{
 			defaultHook: i.Authz,
@@ -6530,6 +6546,104 @@ func (c DBAssignedOwnersFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBAssignedOwnersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBAssignedTeamsFunc describes the behavior when the AssignedTeams method
+// of the parent MockDB instance is invoked.
+type DBAssignedTeamsFunc struct {
+	defaultHook func() AssignedTeamsStore
+	hooks       []func() AssignedTeamsStore
+	history     []DBAssignedTeamsFuncCall
+	mutex       sync.Mutex
+}
+
+// AssignedTeams delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) AssignedTeams() AssignedTeamsStore {
+	r0 := m.AssignedTeamsFunc.nextHook()()
+	m.AssignedTeamsFunc.appendCall(DBAssignedTeamsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AssignedTeams method
+// of the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBAssignedTeamsFunc) SetDefaultHook(hook func() AssignedTeamsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AssignedTeams method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBAssignedTeamsFunc) PushHook(hook func() AssignedTeamsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBAssignedTeamsFunc) SetDefaultReturn(r0 AssignedTeamsStore) {
+	f.SetDefaultHook(func() AssignedTeamsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBAssignedTeamsFunc) PushReturn(r0 AssignedTeamsStore) {
+	f.PushHook(func() AssignedTeamsStore {
+		return r0
+	})
+}
+
+func (f *DBAssignedTeamsFunc) nextHook() func() AssignedTeamsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBAssignedTeamsFunc) appendCall(r0 DBAssignedTeamsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBAssignedTeamsFuncCall objects describing
+// the invocations of this function.
+func (f *DBAssignedTeamsFunc) History() []DBAssignedTeamsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBAssignedTeamsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBAssignedTeamsFuncCall is an object that describes an invocation of
+// method AssignedTeams on an instance of MockDB.
+type DBAssignedTeamsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 AssignedTeamsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBAssignedTeamsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBAssignedTeamsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

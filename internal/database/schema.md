@@ -81,6 +81,27 @@ Foreign-key constraints:
 
 Table for ownership assignments, one entry contains an assigned user ID, which repo_path is assigned and the date and user who assigned the owner.
 
+# Table "public.assigned_teams"
+```
+        Column        |            Type             | Collation | Nullable |                  Default                   
+----------------------+-----------------------------+-----------+----------+--------------------------------------------
+ id                   | integer                     |           | not null | nextval('assigned_teams_id_seq'::regclass)
+ owner_team_id        | integer                     |           | not null | 
+ file_path_id         | integer                     |           | not null | 
+ who_assigned_team_id | integer                     |           |          | 
+ assigned_at          | timestamp without time zone |           | not null | now()
+Indexes:
+    "assigned_teams_pkey" PRIMARY KEY, btree (id)
+    "assigned_teams_file_path_owner" UNIQUE, btree (file_path_id, owner_team_id)
+Foreign-key constraints:
+    "assigned_teams_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
+    "assigned_teams_owner_team_id_fkey" FOREIGN KEY (owner_team_id) REFERENCES teams(id) ON DELETE CASCADE DEFERRABLE
+    "assigned_teams_who_assigned_team_id_fkey" FOREIGN KEY (who_assigned_team_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+
+```
+
+Table for team ownership assignments, one entry contains an assigned team ID, which repo_path is assigned and the date and user who assigned the owner team.
+
 # Table "public.batch_changes"
 ```
       Column       |           Type           | Collation | Nullable |                  Default                  
@@ -3466,6 +3487,7 @@ Foreign-key constraints:
     "repo_paths_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
     TABLE "assigned_owners" CONSTRAINT "assigned_owners_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
+    TABLE "assigned_teams" CONSTRAINT "assigned_teams_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
     TABLE "codeowners_individual_stats" CONSTRAINT "codeowners_individual_stats_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
     TABLE "own_aggregate_recent_contribution" CONSTRAINT "own_aggregate_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
     TABLE "own_aggregate_recent_view" CONSTRAINT "own_aggregate_recent_view_viewed_file_path_id_fkey" FOREIGN KEY (viewed_file_path_id) REFERENCES repo_paths(id)
@@ -3826,6 +3848,7 @@ Foreign-key constraints:
     "teams_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
     "teams_parent_team_id_fkey" FOREIGN KEY (parent_team_id) REFERENCES teams(id) ON DELETE CASCADE
 Referenced by:
+    TABLE "assigned_teams" CONSTRAINT "assigned_teams_owner_team_id_fkey" FOREIGN KEY (owner_team_id) REFERENCES teams(id) ON DELETE CASCADE DEFERRABLE
     TABLE "names" CONSTRAINT "names_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "team_members" CONSTRAINT "team_members_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
     TABLE "teams" CONSTRAINT "teams_parent_team_id_fkey" FOREIGN KEY (parent_team_id) REFERENCES teams(id) ON DELETE CASCADE
@@ -4059,6 +4082,7 @@ Referenced by:
     TABLE "aggregated_user_statistics" CONSTRAINT "aggregated_user_statistics_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "assigned_owners" CONSTRAINT "assigned_owners_owner_user_id_fkey" FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "assigned_owners" CONSTRAINT "assigned_owners_who_assigned_user_id_fkey" FOREIGN KEY (who_assigned_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    TABLE "assigned_teams" CONSTRAINT "assigned_teams_who_assigned_team_id_fkey" FOREIGN KEY (who_assigned_team_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_initial_applier_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
