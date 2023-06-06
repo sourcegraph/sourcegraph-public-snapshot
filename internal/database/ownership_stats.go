@@ -67,6 +67,10 @@ type OwnershipStatsStore interface {
 	// To find ownership for the repo root, only specify RepoID in TreeLocationOpts.
 	// To find ownership for specific file tree, specify RepoID and Path in TreeLocationOpts.
 	QueryIndividualCounts(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCodeownersCounts, error)
+
+	// QueryAggregateCounts looks up ownership aggregate data for a file tree.
+	// At this point these include total count of files that are owned via CODEOWNERS.
+	QueryAggregateCounts(context.Context, TreeLocationOpts) ([]TreeAggregateCounts, error)
 }
 
 var _ OwnershipStatsStore = &ownershipStats{}
@@ -193,4 +197,24 @@ func (s *ownershipStats) QueryIndividualCounts(ctx context.Context, opts TreeLoc
 	qs = append(qs, sqlf.Sprintf("GROUP BY 1 ORDER BY 2 DESC, 1 ASC"))
 	qs = append(qs, limitOffset.SQL())
 	return treeCountsScanner(s.Store.Query(ctx, sqlf.Join(qs, "\n")))
+}
+
+var treeAggregateCountsFmtstr = `
+	SELECT SUM(s.tree_codeowned_files_count)
+	FROM ownership_path_stats AS s
+	INNER JOIN repo_paths AS p ON s.file_path_id = p.id
+	WHERE p.absolute_path = %s
+`
+var treeAggregateCountsScanner = basestore.NewSliceScanner(func(s dbutil.Scanner) (TreeAggregateCounts, error) {
+	var cs TreeAggregateCounts
+	err := s.Scan(&cs.CodeownedFileCount)
+	return cs, err
+})
+
+func (s *ownershipStats) QueryAggregateCounts(ctx context.Context, opts TreeLocationOpts) ([]TreeAggregateCounts, error) {
+	qs := []*sqlf.Query{sqlf.Sprintf(treeAggregateCountsFmtstr, opts.Path)}
+	if repoID := opts.RepoID; repoID != 0 {
+		qs = append(qs, sqlf.Sprintf("AND p.repo_id = %s", repoID))
+	}
+	return treeAggregateCountsScanner(s.Store.Query(ctx, sqlf.Join(qs, "\n")))
 }
