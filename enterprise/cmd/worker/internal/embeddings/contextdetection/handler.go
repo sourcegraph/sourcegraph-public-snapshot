@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	contextdetectionbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/contextdetection"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
@@ -25,14 +26,12 @@ type handler struct {
 
 var _ workerutil.Handler[*contextdetectionbg.ContextDetectionEmbeddingJob] = &handler{}
 
-const MAX_EMBEDDINGS_RETRIES = 3
-
 func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetectionbg.ContextDetectionEmbeddingJob) error {
 	if !conf.EmbeddingsEnabled() {
 		return errors.New("embeddings are not configured or disabled")
 	}
 
-	embeddingsClient, err := embed.NewEmbeddingsClient(MAX_EMBEDDINGS_RETRIES)
+	embeddingsClient, err := embed.NewEmbeddingsClient(&conf.Get().SiteConfiguration)
 	if err != nil {
 		return err
 	}
@@ -55,7 +54,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetec
 	return embeddings.UploadIndex(ctx, h.uploadStore, embeddings.CONTEXT_DETECTION_INDEX_NAME, contextDetectionIndex)
 }
 
-func getContextDetectionMessagesMeanEmbedding(ctx context.Context, messages []string, client embed.EmbeddingsClient) ([]float32, error) {
+func getContextDetectionMessagesMeanEmbedding(ctx context.Context, messages []string, client client.EmbeddingsClient) ([]float32, error) {
 	messagesEmbeddings, err := client.GetEmbeddings(ctx, messages)
 	if err != nil {
 		return nil, err
