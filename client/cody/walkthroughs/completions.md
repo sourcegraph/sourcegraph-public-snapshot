@@ -1,12 +1,10 @@
-## Using code completions
+## Code completions
 
-<p align="center">
-  <video autoPlay muted loop playsInline>
-      <source
-          type="video/mp4"
-          src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/cody-completion-may2023.mp4"
-      />
-  </video>
-</p>
+<video autoPlay muted loop playsInline>
+    <source
+        type="video/mp4"
+        src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/cody-completion-may2023.mp4"
+    />
+</video>
 
 Start writing code or write a comment and Cody will suggest the next few lines for you. Choose to accept it, or open the command palette and click "Cody: View Suggestions" to see various code snippets Cody suggests using.
