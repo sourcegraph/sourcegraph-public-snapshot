@@ -6,6 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -16,6 +17,7 @@ type AssignedOwnersStore interface {
 	Insert(ctx context.Context, assignedOwnerID int32, repoID api.RepoID, absolutePath string, whoAssignedUserID int32) error
 	ListAssignedOwnersForRepo(ctx context.Context, repoID api.RepoID) ([]*AssignedOwnerSummary, error)
 	DeleteOwner(ctx context.Context, assignedOwnerID int32, repoID api.RepoID, absolutePath string) error
+	CountAssignedOwners(ctx context.Context) (int32, error)
 }
 
 type AssignedOwnerSummary struct {
@@ -100,6 +102,17 @@ func (s assignedOwnersStore) DeleteOwner(ctx context.Context, assignedOwnerID in
 		return notFoundError{errors.Newf("cannot delete assigned owner with ID=%d for %q path for repo with ID=%d", assignedOwnerID, absolutePath, repoID)}
 	}
 	return err
+}
+
+const countAssignedOwnersFmtstr = `SELECT COUNT(*) FROM assigned_owners`
+
+func (s assignedOwnersStore) CountAssignedOwners(ctx context.Context) (int32, error) {
+	r := s.QueryRow(ctx, sqlf.Sprintf(countAssignedOwnersFmtstr))
+	var count int32
+	if err := r.Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 var scanAssignedOwners = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (*AssignedOwnerSummary, error) {
