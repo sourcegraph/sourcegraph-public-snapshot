@@ -201,7 +201,9 @@ func TestPeriodicGoroutineWithDynamicConcurrency(t *testing.T) {
 	go goroutine.Start()
 
 	for poolSize := 1; poolSize < 3; poolSize++ {
-		// Ensure each of the
+		// Ensure each of the handlers can be called independently.
+		// Adding an additional channel read would block as each of
+		// the monitor routines would be waiting on the clock tick.
 		for i := 0; i < poolSize; i++ {
 			<-called
 		}
