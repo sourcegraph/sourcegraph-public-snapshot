@@ -48,6 +48,9 @@ const BatchChangesSiteConfigSettingsPage = lazyComponent(
     () => import('../batches/settings/BatchChangesSiteConfigSettingsPage'),
     'BatchChangesSiteConfigSettingsPage'
 )
+const BatchChangesCreateGitHubAppPage = lazyComponent(
+    () => import('../batches/settings/BatchChangesCreateGitHubAppPage'),
+    'BatchChangesCreateGitHubAppPage'
 )
 const BatchSpecsPage = lazyComponent<BatchSpecsPageProps, 'BatchSpecsPage'>(
     () => import('../batches/BatchSpecsPage'),
@@ -81,6 +84,13 @@ const CodyConfigurationPage = lazyComponent(
     () => import('../cody/configuration/pages/CodyConfigurationPage'),
     'CodyConfigurationPage'
 )
+
+const DEFAULT_EVENTS: string[] = []
+
+const DEFAULT_PERMISSIONS = {
+    contents: 'write',
+    metadata: 'read',
+}
 
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
     [
@@ -136,6 +146,16 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         {
             path: '/batch-changes',
             render: () => <BatchChangesSiteConfigSettingsPage />,
+            condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+        },
+        {
+            path: '/batch-changes/new-github-app',
+            render: () => (
+                <BatchChangesCreateGitHubAppPage
+                    defaultEvents={DEFAULT_EVENTS}
+                    defaultPermissions={DEFAULT_PERMISSIONS}
+                />
+            ),
             condition: ({ batchChangesEnabled }) => batchChangesEnabled,
         },
         {
