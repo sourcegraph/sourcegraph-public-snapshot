@@ -31,6 +31,24 @@ namespace Longer.Namespace
             private set;
         }
 
+        public struct Coords
+        {
+            public Coords(double x, double y)
+            {
+                X = x;
+                Y = y;
+            }
+
+            public double X { get; }
+            public double Y { get; }
+
+            public override string ToString() => $"({X}, {Y})";
+        }
+
+        delegate int MyDelegate();
+        
+        public event ChangedEventHandler Changed;
+
         int _speed;
         public string PublicImplicitGetterSetter { get; set; }
 
