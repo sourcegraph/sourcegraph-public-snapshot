@@ -50,7 +50,7 @@ interface CommitSigningIntegrationsProps {
 export const CommitSigningIntegrations: React.FunctionComponent<
     React.PropsWithChildren<CommitSigningIntegrationsProps>
 > = ({ connectionResult, readOnly }) => {
-    const { loading, hasNextPage, fetchMore, connection, error } = connectionResult
+    const { loading, hasNextPage, fetchMore, connection, error, refetchAll } = connectionResult
 
     const location = useLocation()
     const success = new URLSearchParams(location.search).get('success')
@@ -80,6 +80,7 @@ export const CommitSigningIntegrations: React.FunctionComponent<
                                 key={node.externalServiceURL}
                                 node={node}
                                 readOnly={readOnly}
+                                refetch={refetchAll}
                             />
                         ) : null
                     )}

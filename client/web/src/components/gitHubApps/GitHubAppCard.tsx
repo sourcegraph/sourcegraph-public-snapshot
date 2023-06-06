@@ -32,7 +32,7 @@ export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, refetch }) =>
     )
 
     const onDelete = useCallback<React.MouseEventHandler>(async () => {
-        if (!window.confirm(`Delete the GitHub App ${app.name}?`)) {
+        if (!window.confirm(`Delete the GitHub App "${app.name}"?`)) {
             return
         }
         try {
