@@ -110,7 +110,10 @@ func (r *productLicense) SiteID() *string {
 }
 
 func (r *productLicense) Version() int32 {
-	return r.v.LicenseVersion
+	if r.v.LicenseVersion == nil {
+		return 0
+	}
+	return *r.v.LicenseVersion
 }
 
 func generateProductLicenseForSubscription(ctx context.Context, db database.DB, subscriptionID string, input *graphqlbackend.ProductLicenseInput) (id string, err error) {

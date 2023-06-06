@@ -34,12 +34,12 @@ func TestProductLicenses_Create(t *testing.T) {
 		require.NoError(t, err)
 
 		// This should not happen in practice but just in case to check it won't blow up
-		pl, err := store.Create(ctx, ps, "k1", 0, license.Info{})
+		id, err := store.Create(ctx, ps, "k1", 0, license.Info{})
 		require.NoError(t, err)
 
-		got, err := store.GetByID(ctx, pl)
+		got, err := store.GetByID(ctx, id)
 		require.NoError(t, err)
-		assert.Zero(t, got.LicenseVersion)
+		assert.Nil(t, got.LicenseVersion)
 		assert.Nil(t, got.LicenseTags)
 		assert.Nil(t, got.LicenseUserCount)
 		assert.Nil(t, got.LicenseExpiresAt)
@@ -78,8 +78,8 @@ func TestProductLicenses_Create(t *testing.T) {
 			assert.Equal(t, pl, got.ID)
 			assert.Equal(t, ps, got.ProductSubscriptionID)
 			assert.Equal(t, key, got.LicenseKey)
-
-			assert.Equal(t, version, got.LicenseVersion)
+			assert.NotNil(t, got.LicenseVersion)
+			assert.Equal(t, version, int(*got.LicenseVersion))
 			require.NotNil(t, got.LicenseTags)
 			assert.Equal(t, info.Tags, got.LicenseTags)
 			require.NotNil(t, got.LicenseUserCount)

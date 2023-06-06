@@ -23,7 +23,7 @@ type dbLicense struct {
 	ProductSubscriptionID    string // UUID
 	LicenseKey               string
 	CreatedAt                time.Time
-	LicenseVersion           int32
+	LicenseVersion           *int32
 	LicenseTags              []string
 	LicenseUserCount         *int
 	LicenseExpiresAt         *time.Time
