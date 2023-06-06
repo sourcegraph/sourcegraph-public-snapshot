@@ -328,7 +328,7 @@ exports_files([
     "CHANGELOG.md",
 ])
 
-stamp_tags(
-    name = "tags",
-    remote_tags = ["""($stamp.STABLE_VERSION // "0.0.0")"""],
-)
+# stamp_tags(
+#     name = "tags",
+#     remote_tags = ["""($stamp.STABLE_VERSION // "0.0.0")"""],
+# )

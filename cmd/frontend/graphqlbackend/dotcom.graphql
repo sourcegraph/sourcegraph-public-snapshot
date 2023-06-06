@@ -210,9 +210,21 @@ type ProductLicense implements Node {
     """
     licenseKey: String!
     """
+    Site ID of the instance that uses the license.
+    """
+    siteID: String
+    """
     The date when this product license was created.
     """
     createdAt: DateTime!
+    """
+    The date when this product license was revoked.
+    """
+    revokedAt: DateTime
+    """
+    The version of the license.
+    """
+    version: Int!
 }
 
 """

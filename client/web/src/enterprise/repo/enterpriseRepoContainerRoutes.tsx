@@ -16,6 +16,7 @@ const RepositoryBatchChangesArea = lazyComponent(
     'RepositoryBatchChangesArea'
 )
 
+const RepositoryOwnEditPage = lazyComponent(() => import('../own/RepositoryOwnEditPage'), 'RepositoryOwnEditPage')
 const RepositoryOwnPage = lazyComponent(() => import('../own/RepositoryOwnPage'), 'RepositoryOwnPage')
 
 export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
@@ -43,8 +44,13 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
         render: context => <RepositoryBatchChangesArea {...context} />,
     },
     {
-        path: '/-/own',
+        path: '/-/own/*',
         condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom,
         render: context => <RepositoryOwnPage {...context} />,
+    },
+    {
+        path: '/-/own/edit',
+        condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom,
+        render: context => <RepositoryOwnEditPage {...context} />,
     },
 ]
