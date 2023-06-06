@@ -20,6 +20,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -475,7 +476,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		EverFindRefs:                  strconv.FormatBool(pr.EverFindRefs),
 		ActiveToday:                   strconv.FormatBool(pr.ActiveToday),
 		Timestamp:                     now.UTC().Format(time.RFC3339),
-		HasCodyEnabled:                strconv.FormatBool(codyFeatureFlag()),
+		HasCodyEnabled:                strconv.FormatBool(conf.CodyEnabled()),
 		CodyUsage:                     codyUsage,
 		RepoMetadataUsage:             pr.RepoMetadataUsage,
 	})
