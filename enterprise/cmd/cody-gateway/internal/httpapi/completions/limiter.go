@@ -35,7 +35,7 @@ func rateLimit(
 			return
 		}
 
-		l, ok := act.CompletionsLimiter(logger, cache, feature, concurrencyLimitConfig)
+		l, ok := act.Limiter(logger, cache, feature, concurrencyLimitConfig)
 		if !ok {
 			response.JSONError(logger, w, http.StatusForbidden, errors.Newf("no access to feature %s", feature))
 			return
@@ -97,7 +97,7 @@ func rateLimit(
 	})
 }
 
-func extractFeature(r *http.Request) (types.CompletionsFeature, error) {
+func extractFeature(r *http.Request) (codygateway.Feature, error) {
 	h := strings.TrimSpace(r.Header.Get(codygateway.FeatureHeaderName))
 	if h == "" {
 		return "", errors.Newf("%s header is required", codygateway.FeatureHeaderName)
@@ -106,5 +106,6 @@ func extractFeature(r *http.Request) (types.CompletionsFeature, error) {
 	if !feature.IsValid() {
 		return "", errors.Newf("invalid value for %s", codygateway.FeatureHeaderName)
 	}
-	return feature, nil
+	// codygateway.Feature and types.CompletionsFeature map 1:1 for completions.
+	return codygateway.Feature(feature), nil
 }

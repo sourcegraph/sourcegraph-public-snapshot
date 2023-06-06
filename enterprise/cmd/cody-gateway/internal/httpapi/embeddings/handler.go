@@ -39,7 +39,11 @@ func NewHandler(
 		// This will never be nil as the rate limiter middleware checks this before.
 		// TODO: Should we read the rate limit from context, and store it in the rate
 		// limiter to make this less dependent on these two logics to remain the same?
-		rateLimit := act.EmbeddingsRateLimit
+		rateLimit, ok := act.RateLimits[codygateway.FeatureEmbeddings]
+		if !ok {
+			response.JSONError(logger, w, http.StatusInternalServerError, errors.Newf("rate limit for %q not found", string(codygateway.FeatureEmbeddings)))
+			return
+		}
 
 		// Parse the request body.
 		var body codygateway.EmbeddingsRequest

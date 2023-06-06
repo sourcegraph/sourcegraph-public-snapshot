@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -46,12 +45,8 @@ type Actor struct {
 	// For example, for product subscriptions it is based on whether the subscription is
 	// archived, if access is enabled, and if any rate limits are set.
 	AccessEnabled bool `json:"accessEnabled"`
-	// CompletionsAccessEnabled holds the rate limits for Cody Gateway access to completions
-	// for this actor.
-	CompletionsRateLimits map[types.CompletionsFeature]RateLimit `json:"completionsRateLimits"`
-	// EmbeddingsRateLimit holds the rate limit for Cody Gateway access to embeddings
-	// for this actor.
-	EmbeddingsRateLimit RateLimit `json:"embeddingsRateLimit"`
+	// RateLimits holds the rate limits for Cody Gateway features for this actor.
+	RateLimits map[codygateway.Feature]RateLimit `json:"rateLimits"`
 	// LastUpdated indicates when this actor's state was last updated.
 	LastUpdated *time.Time `json:"lastUpdated"`
 	// Source is a reference to the source of this actor's state.
@@ -103,17 +98,17 @@ func WithActor(ctx context.Context, a *Actor) context.Context {
 	return context.WithValue(ctx, actorKey, a)
 }
 
-func (a *Actor) CompletionsLimiter(
+func (a *Actor) Limiter(
 	logger log.Logger,
 	redis limiter.RedisStore,
-	feature types.CompletionsFeature,
+	feature codygateway.Feature,
 	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
 ) (limiter.Limiter, bool) {
 	if a == nil {
 		// Not logged in, no limit applicable.
 		return nil, false
 	}
-	limit, ok := a.CompletionsRateLimits[feature]
+	limit, ok := a.RateLimits[feature]
 	if !ok {
 		return nil, false
 	}
@@ -133,6 +128,11 @@ func (a *Actor) CompletionsLimiter(
 	// Just in case a poor choice of percentage results in a concurrency limit less than 1.
 	if concurrencyLimit < 1 {
 		concurrencyLimit = 1
+	}
+	if feature == codygateway.FeatureEmbeddings {
+		// For embeddings, we use a custom, hardcoded limit. Concurrency on the client side
+		// should be 1, so 15 is a very safe default here.
+		concurrencyLimit = 15
 	}
 
 	// The redis store has to use a prefix for the given feature because we need to
@@ -160,7 +160,7 @@ func (a *Actor) CompletionsLimiter(
 type concurrencyLimiter struct {
 	logger         log.Logger
 	actor          *Actor
-	feature        types.CompletionsFeature
+	feature        codygateway.Feature
 	redis          limiter.RedisStore
 	rateLimit      RateLimit
 	featureLimiter limiter.Limiter
@@ -203,7 +203,7 @@ func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func(int) error, e
 }
 
 type ErrConcurrencyLimitExceeded struct {
-	feature    types.CompletionsFeature
+	feature    codygateway.Feature
 	limit      int
 	retryAfter time.Time
 }
@@ -219,42 +219,6 @@ func (e ErrConcurrencyLimitExceeded) WriteResponse(w http.ResponseWriter) {
 	w.Header().Set("x-ratelimit-remaining", "0")
 	w.Header().Set("retry-after", e.retryAfter.Format(time.RFC1123))
 	http.Error(w, e.Error(), http.StatusTooManyRequests)
-}
-
-func (a *Actor) EmbeddingsLimiter(logger log.Logger, redis limiter.RedisStore, concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig) (limiter.Limiter, bool) {
-	if a == nil {
-		// Not logged in, no limit applicable.
-		return nil, false
-	}
-	if !a.EmbeddingsRateLimit.IsValid() {
-		// No valid limit, cannot provide limiter.
-		return nil, false
-	}
-
-	// TODO: Hard coded limit.
-	concurrencyLimit := 10
-
-	// The redis store should use a prefix so the embeddings rate limits are guaranteed
-	// to be unique in the global namespace.
-	featurePrefix := fmt.Sprintf("%s:", "embeddings")
-	concurrencyLimiter := &concurrencyLimiter{
-		logger: logger,
-		actor:  a,
-		// TODO: Feature doesn't work with the embeddings limiter.
-		// feature: feature,
-		redis: limiter.NewPrefixRedisStore(fmt.Sprintf("concurrent:%s", featurePrefix), redis),
-		rateLimit: RateLimit{
-			Limit:    concurrencyLimit,
-			Interval: concurrencyLimitConfig.Interval,
-		},
-		featureLimiter: updateOnFailureLimiter{
-			Redis:     limiter.NewPrefixRedisStore(featurePrefix, redis),
-			RateLimit: a.EmbeddingsRateLimit,
-			Actor:     a,
-		},
-		nowFunc: time.Now,
-	}
-	return concurrencyLimiter, true
 }
 
 type updateOnFailureLimiter struct {

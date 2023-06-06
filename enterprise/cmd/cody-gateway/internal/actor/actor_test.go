@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 )
 
 func TestActor_Limiter_Concurrency(t *testing.T) {
@@ -27,8 +26,8 @@ func TestActor_Limiter_Concurrency(t *testing.T) {
 		{
 			name: "feature limit internal is daily",
 			actor: &Actor{
-				RateLimits: map[types.CompletionsFeature]RateLimit{
-					types.CompletionsFeatureChat: {
+				RateLimits: map[codygateway.Feature]RateLimit{
+					codygateway.FeatureChatCompletions: {
 						Limit:    100,
 						Interval: 24 * time.Hour,
 					},
@@ -39,8 +38,8 @@ func TestActor_Limiter_Concurrency(t *testing.T) {
 		{
 			name: "feature limit internal is more than a day",
 			actor: &Actor{
-				RateLimits: map[types.CompletionsFeature]RateLimit{
-					types.CompletionsFeatureChat: {
+				RateLimits: map[codygateway.Feature]RateLimit{
+					codygateway.FeatureChatCompletions: {
 						Limit:    210,
 						Interval: 7 * 24 * time.Hour,
 					},
@@ -51,8 +50,8 @@ func TestActor_Limiter_Concurrency(t *testing.T) {
 		{
 			name: "feature limit internal is less than a day",
 			actor: &Actor{
-				RateLimits: map[types.CompletionsFeature]RateLimit{
-					types.CompletionsFeatureChat: {
+				RateLimits: map[codygateway.Feature]RateLimit{
+					codygateway.FeatureChatCompletions: {
 						Limit:    10,
 						Interval: time.Hour,
 					},
@@ -63,8 +62,8 @@ func TestActor_Limiter_Concurrency(t *testing.T) {
 		{
 			name: "computed concurrency limit is less than 1",
 			actor: &Actor{
-				RateLimits: map[types.CompletionsFeature]RateLimit{
-					types.CompletionsFeatureChat: {
+				RateLimits: map[codygateway.Feature]RateLimit{
+					codygateway.FeatureChatCompletions: {
 						Limit:    3,
 						Interval: 24 * time.Hour,
 					},
@@ -75,7 +74,7 @@ func TestActor_Limiter_Concurrency(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, ok := test.actor.Limiter(nil, nil, types.CompletionsFeatureChat, concurrencyLimitConfig)
+			got, ok := test.actor.Limiter(nil, nil, codygateway.FeatureChatCompletions, concurrencyLimitConfig)
 			assert.True(t, ok, "should have returned a limiter")
 			require.NotNil(t, got)
 
@@ -184,7 +183,7 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 			name: "rejects request over quota",
 			limiter: &concurrencyLimiter{
 				actor:   &Actor{ID: "foobar"},
-				feature: types.CompletionsFeatureCode,
+				feature: codygateway.FeatureCodeCompletions,
 				redis: limiter.MockRedisStore{
 					"foobar": limiter.MockRedisEntry{Value: 2, TTL: 10},
 				},

@@ -2,6 +2,16 @@ package codygateway
 
 import (
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+)
+
+type Feature string
+
+const (
+	FeatureCodeCompletions Feature = Feature(types.CompletionsFeatureCode)
+	FeatureChatCompletions Feature = Feature(types.CompletionsFeatureChat)
+	FeatureEmbeddings      Feature = "embeddings"
 )
 
 type EmbeddingsRequest struct {

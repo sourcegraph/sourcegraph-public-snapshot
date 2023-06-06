@@ -37,10 +37,11 @@ func NewListHandler() http.Handler {
 		act := actor.FromContext(r.Context())
 
 		modelEnabled := func(model ModelName) bool {
-			if !act.AccessEnabled || !act.EmbeddingsRateLimit.IsValid() {
+			rl, ok := act.RateLimits[codygateway.FeatureEmbeddings]
+			if !act.AccessEnabled || !ok || !rl.IsValid() {
 				return false
 			}
-			return slices.Contains(act.EmbeddingsRateLimit.AllowedModels, string(model))
+			return slices.Contains(rl.AllowedModels, string(model))
 		}
 
 		models := modelsResponse{

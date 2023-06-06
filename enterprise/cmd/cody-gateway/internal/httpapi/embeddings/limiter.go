@@ -22,7 +22,7 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 		act := actor.FromContext(r.Context())
 		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
 
-		l, ok := act.EmbeddingsLimiter(logger, cache, concurrencyLimitConfig)
+		l, ok := act.Limiter(logger, cache, codygateway.FeatureEmbeddings, concurrencyLimitConfig)
 		if !ok {
 			response.JSONError(logger, w, http.StatusForbidden, errors.New("no access to embeddings"))
 			return
