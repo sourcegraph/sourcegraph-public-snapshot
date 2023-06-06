@@ -2,9 +2,11 @@ package productsubscription
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"testing"
 
+	"github.com/gofrs/uuid"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestProductLicenses_Create(t *testing.T) {
@@ -20,18 +23,21 @@ func TestProductLicenses_Create(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
+	subscriptionStore := dbSubscriptions{db: db}
+	store := dbLicenses{db: db}
+
 	u, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
 	require.NoError(t, err)
 
 	t.Run("empty license info", func(t *testing.T) {
-		ps, err := dbSubscriptions{db: db}.Create(ctx, u.ID, u.Username)
+		ps, err := subscriptionStore.Create(ctx, u.ID, u.Username)
 		require.NoError(t, err)
 
 		// This should not happen in practice but just in case to check it won't blow up
-		pl, err := dbLicenses{db: db}.Create(ctx, ps, "k1", 0, license.Info{})
+		pl, err := store.Create(ctx, ps, "k1", 0, license.Info{})
 		require.NoError(t, err)
 
-		got, err := dbLicenses{db: db}.GetByID(ctx, pl)
+		got, err := store.GetByID(ctx, pl)
 		require.NoError(t, err)
 		assert.Nil(t, got.LicenseVersion)
 		assert.Nil(t, got.LicenseTags)
@@ -39,7 +45,7 @@ func TestProductLicenses_Create(t *testing.T) {
 		assert.Nil(t, got.LicenseExpiresAt)
 	})
 
-	ps, err := dbSubscriptions{db: db}.Create(ctx, u.ID, "")
+	ps, err := subscriptionStore.Create(ctx, u.ID, "")
 	require.NoError(t, err)
 
 	now := timeutil.Now()
@@ -64,10 +70,10 @@ func TestProductLicenses_Create(t *testing.T) {
 		t.Run(fmt.Sprintf("Test v%d", v+1), func(t *testing.T) {
 			version := v + 1
 			key := fmt.Sprintf("key%d", version)
-			pl, err := dbLicenses{db: db}.Create(ctx, ps, key, version, info)
+			pl, err := store.Create(ctx, ps, key, version, info)
 			require.NoError(t, err)
 
-			got, err := dbLicenses{db: db}.GetByID(ctx, pl)
+			got, err := store.GetByID(ctx, pl)
 			require.NoError(t, err)
 			assert.Equal(t, pl, got.ID)
 			assert.Equal(t, ps, got.ProductSubscriptionID)
@@ -82,17 +88,111 @@ func TestProductLicenses_Create(t *testing.T) {
 			require.NotNil(t, got.LicenseExpiresAt)
 			assert.Equal(t, info.ExpiresAt, *got.LicenseExpiresAt)
 
-			ts, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps})
+			ts, err := store.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps})
 			require.NoError(t, err)
 			assert.Len(t, ts, version)
 
 			// Invalid subscription ID.
-			ts, err = dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: "69da12d5-323c-4e42-9d44-cc7951639bca"})
+			ts, err = store.List(ctx, dbLicensesListOptions{ProductSubscriptionID: "69da12d5-323c-4e42-9d44-cc7951639bca"})
 			require.NoError(t, err)
 			assert.Len(t, ts, 0)
 		})
 	}
+}
 
+func TestGetByToken(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	store := dbLicenses{db: db}
+
+	u, err := db.Users().Create(ctx, database.NewUser{Username: "user"})
+	require.NoError(t, err)
+
+	license := insertLicense(t, ctx, db, u, "key")
+	require.NotNil(t, license.LicenseCheckToken)
+
+	tests := []struct {
+		name      string
+		token     string
+		want      *string
+		wantError error
+	}{
+		{
+			name:  "ok",
+			token: hex.EncodeToString(*license.LicenseCheckToken),
+			want:  &license.ID,
+		},
+		{
+			name:      "invalid non-hex token",
+			token:     "invalid",
+			wantError: errTokenInvalid,
+		},
+		{
+			name:      "no match found",
+			token:     hex.EncodeToString([]byte("key")),
+			wantError: errTokenInvalid,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := store.GetByToken(ctx, tt.token)
+			if tt.wantError != nil {
+				require.Equal(t, tt.wantError, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, *tt.want, got.ID)
+			}
+		})
+	}
+}
+
+func TestAssignSiteID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	store := dbLicenses{db: db}
+
+	u, err := db.Users().Create(ctx, database.NewUser{Username: "user"})
+	require.NoError(t, err)
+
+	license := insertLicense(t, ctx, db, u, "key")
+
+	siteID, err := uuid.NewV4()
+	require.NoError(t, err)
+	err = store.AssignSiteID(ctx, license.ID, siteID.String())
+	require.NoError(t, err)
+
+	license, err = store.GetByID(ctx, license.ID)
+	require.NoError(t, err)
+
+	require.NotNil(t, license.SiteID)
+	require.Equal(t, siteID.String(), *license.SiteID)
+}
+
+func insertLicense(t *testing.T, ctx context.Context, db database.DB, user *types.User, licenseKey string) *dbLicense {
+	subscriptionStore := dbSubscriptions{db: db}
+	store := dbLicenses{db: db}
+
+	ps, err := subscriptionStore.Create(ctx, user.ID, "")
+	require.NoError(t, err)
+
+	sfSubID := "sf_sub_id"
+	sfOpID := "sf_op_id"
+	id, err := store.Create(ctx, ps, licenseKey, 2, license.Info{
+		SalesforceSubscriptionID: &sfSubID,
+		SalesforceOpportunityID:  &sfOpID,
+	})
+	require.NoError(t, err)
+
+	license, err := store.GetByID(ctx, id)
+	require.NoError(t, err)
+	return license
 }
 
 func TestProductLicenses_List(t *testing.T) {
@@ -102,67 +202,43 @@ func TestProductLicenses_List(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
+	subscriptionStore := dbSubscriptions{db: db}
+	store := dbLicenses{db: db}
 
 	u1, err := db.Users().Create(ctx, database.NewUser{Username: "u1"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	ps0, err := dbSubscriptions{db: db}.Create(ctx, u1.ID, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	ps1, err := dbSubscriptions{db: db}.Create(ctx, u1.ID, "")
-	if err != nil {
-		t.Fatal(err)
-	}
+	ps0, err := subscriptionStore.Create(ctx, u1.ID, "")
+	require.NoError(t, err)
+	ps1, err := subscriptionStore.Create(ctx, u1.ID, "")
+	require.NoError(t, err)
 
-	_, err = dbLicenses{db: db}.Create(ctx, ps0, "k1", 1, license.Info{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = dbLicenses{db: db}.Create(ctx, ps0, "n1", 1, license.Info{})
-	if err != nil {
-		t.Fatal(err)
-	}
+	_, err = store.Create(ctx, ps0, "k1", 1, license.Info{})
+	require.NoError(t, err)
+	_, err = store.Create(ctx, ps0, "n1", 1, license.Info{})
+	require.NoError(t, err)
 
 	{
 		// List all product licenses.
-		ts, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := 2; len(ts) != want {
-			t.Errorf("got %d product licenses, want %d", len(ts), want)
-		}
-		count, err := dbLicenses{db: db}.Count(ctx, dbLicensesListOptions{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := 2; count != want {
-			t.Errorf("got %d, want %d", count, want)
-		}
+		ts, err := store.List(ctx, dbLicensesListOptions{})
+		require.NoError(t, err)
+		assert.Equalf(t, 2, len(ts), "got %d product licenses, want 2", len(ts))
+		count, err := store.Count(ctx, dbLicensesListOptions{})
+		require.NoError(t, err)
+		assert.Equal(t, 2, count)
 	}
 
 	{
 		// List ps0's product licenses.
-		ts, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps0})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := 2; len(ts) != want {
-			t.Errorf("got %d product licenses, want %d", len(ts), want)
-		}
+		ts, err := store.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps0})
+		require.NoError(t, err)
+		assert.Equalf(t, 2, len(ts), "got %d product licenses, want 2", len(ts))
 	}
 
 	{
 		// List ps1's product licenses.
-		ts, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps1})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := 0; len(ts) != want {
-			t.Errorf("got %d product licenses, want %d", len(ts), want)
-		}
+		ts, err := store.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps1})
+		require.NoError(t, err)
+		assert.Equalf(t, 0, len(ts), "got %d product licenses, want 0", len(ts))
 	}
 }

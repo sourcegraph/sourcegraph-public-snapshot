@@ -124,7 +124,7 @@ export class VSCodeEditor implements Editor {
     public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
         const activeEditor = this.getActiveTextEditorInstance()
         if (this.controllers.inline.isInProgress) {
-            await this.controllers.inline.replaceSelection(replacement)
+            await this.controllers.inline.replace(fileName, replacement, selectedText)
             return
         }
         if (!activeEditor || vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath) !== fileName) {

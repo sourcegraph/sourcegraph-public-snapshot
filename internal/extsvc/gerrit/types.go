@@ -61,15 +61,17 @@ func (c *Change) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	created, err := time.Parse("2006-01-02 15:04:05.000000000", aux.Created)
-	if err != nil {
-		return err
+	var created, updated time.Time
+
+	createdParsed, err := time.Parse("2006-01-02 15:04:05.000000000", aux.Created)
+	if err == nil {
+		created = createdParsed
 	}
 	c.Created = created
 
-	updated, err := time.Parse("2006-01-02 15:04:05.000000000", aux.Updated)
-	if err != nil {
-		return err
+	updatedParsed, err := time.Parse("2006-01-02 15:04:05.000000000", aux.Updated)
+	if err == nil {
+		updated = updatedParsed
 	}
 	c.Updated = updated
 
@@ -97,6 +99,26 @@ type ChangeReviewComment struct {
 	NotifyDetails *NotifyDetails    `json:"notify_details,omitempty"`
 	OnBehalfOf    string            `json:"on_behalf_of,omitempty"`
 	Comments      map[string]string `json:"comments,omitempty"`
+}
+
+// Approvals
+// Score represents the status of a review on Gerrit. Here are possible values for Vote:
+//
+//	+2 : approved, can be merged
+//	+1 : approved, but needs additional reviews
+//	 0 : no score
+//	-1 : needs changes
+//	-2 : rejected
+type Approvals struct {
+	CodeReview string `json:"Code-Review"`
+}
+
+type Reviewer struct {
+	Approvals Approvals `json:"approvals"`
+	AccountID int       `json:"_account_id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Username  string    `json:"username,omitempty"`
 }
 
 type NotifyDetails struct {

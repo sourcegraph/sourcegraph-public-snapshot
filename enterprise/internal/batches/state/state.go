@@ -571,19 +571,19 @@ func computeSingleChangesetExternalState(c *btypes.Changeset) (s btypes.Changese
 			return "", errors.Errorf("unknown Azure DevOps pull request state: %s", m.Status)
 		}
 	case *gerritbatches.AnnotatedChange:
-		switch m.Status {
+		switch m.Change.Status {
 		case gerrit.ChangeStatusAbandoned:
 			s = btypes.ChangesetExternalStateClosed
 		case gerrit.ChangeStatusMerged:
 			s = btypes.ChangesetExternalStateMerged
 		case gerrit.ChangeStatusNew:
-			if m.WorkInProgress {
+			if m.Change.WorkInProgress {
 				s = btypes.ChangesetExternalStateDraft
 			} else {
 				s = btypes.ChangesetExternalStateOpen
 			}
 		default:
-			return "", errors.Errorf("unknown Gerrit Change state: %s", m.Status)
+			return "", errors.Errorf("unknown Gerrit Change state: %s", m.Change.Status)
 		}
 	default:
 		return "", errors.New("unknown changeset type")
@@ -671,9 +671,31 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 				states[btypes.ChangesetReviewStatePending] = true
 			}
 		}
-	case gerritbatches.AnnotatedChange:
-		// TODO: @varsanojidan tackling reviews in a separate PR
-		states[btypes.ChangesetReviewStatePending] = true
+	case *gerritbatches.AnnotatedChange:
+		if m.Reviewers == nil {
+			states[btypes.ChangesetReviewStatePending] = true
+			break
+		}
+		for _, reviewer := range m.Reviewers {
+			// Score represents the status of a review on Gerrit. Here are possible values for Vote:
+			//
+			//  +2 : approved, can be merged
+			//  +1 : approved, but needs additional reviews
+			//   0 : no score
+			//  -1 : needs changes
+			//  -2 : rejected
+			switch reviewer.Approvals.CodeReview {
+			case "+2", "+1":
+				states[btypes.ChangesetReviewStateApproved] = true
+			case " 0": // This isn't a typo, there is actually a space in the string.
+				states[btypes.ChangesetReviewStatePending] = true
+			case "-1", "-2":
+				states[btypes.ChangesetReviewStateChangesRequested] = true
+			default:
+				states[btypes.ChangesetReviewStatePending] = true
+			}
+		}
+
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -704,6 +726,10 @@ func selectReviewState(states map[btypes.ChangesetReviewState]bool) btypes.Chang
 // computeDiffStat computes the up to date diffstat for the changeset, based on
 // the values in c.SyncState.
 func computeDiffStat(ctx context.Context, client gitserver.Client, c *btypes.Changeset, repo api.RepoName) (*diff.Stat, error) {
+	//Code hosts that don't push to branches (like Gerrit), can just skip this.
+	if c.SyncState.BaseRefOid == c.SyncState.HeadRefOid {
+		return c.DiffStat(), nil
+	}
 	iter, err := client.Diff(ctx, authz.DefaultSubRepoPermsChecker, gitserver.DiffOptions{
 		Repo: repo,
 		Base: c.SyncState.BaseRefOid,

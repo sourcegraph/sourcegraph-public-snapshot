@@ -125,6 +125,7 @@ def _custom_eslint_impl(ctx):
         command = command,
         arguments = [args],
         mnemonic = "ESLint",
+        tools = ctx.attr.binary[DefaultInfo].default_runfiles.files,
     )
 
     return [
@@ -191,6 +192,7 @@ def eslint_test_with_types(name, **kwargs):
         srcs = ["//dev:eslint-report-test.sh"],
         args = ["$(location %s)" % lint_target_name],
         data = [lint_target_name],
+        timeout = "short",
     )
 
 # This function provides the path to the client package, assuming
