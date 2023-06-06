@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -28,7 +29,7 @@ func newCompletionsHandler(rl RateLimiter, traceFamily string, getModel func(typ
 		ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
 		defer cancel()
 
-		completionsConfig := client.GetCompletionsConfig()
+		completionsConfig := client.GetCompletionsConfig(conf.Get().SiteConfig())
 		if completionsConfig == nil || !completionsConfig.Enabled {
 			http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
 			return

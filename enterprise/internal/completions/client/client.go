@@ -29,8 +29,9 @@ func Get(endpoint, provider, accessToken string) (types.CompletionsClient, error
 	}
 }
 
-func GetCompletionsConfig() *schema.Completions {
-	siteConfig := conf.Get()
+// GetCompletionsConfig evaluates a complete completions configuration based on
+// site configuration. The configuration may be nil if completions is disabled.
+func GetCompletionsConfig(siteConfig schema.SiteConfiguration) *schema.Completions {
 	completionsConfig := siteConfig.Completions
 
 	// When the Completions is present always use it
