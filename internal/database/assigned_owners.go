@@ -107,12 +107,11 @@ func (s assignedOwnersStore) DeleteOwner(ctx context.Context, assignedOwnerID in
 const countAssignedOwnersFmtstr = `SELECT COUNT(*) FROM assigned_owners`
 
 func (s assignedOwnersStore) CountAssignedOwners(ctx context.Context) (int32, error) {
-	r := s.QueryRow(ctx, sqlf.Sprintf(countAssignedOwnersFmtstr))
-	var count int32
-	if err := r.Scan(&count); err != nil {
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(countAssignedOwnersFmtstr)))
+	if err != nil {
 		return 0, err
 	}
-	return count, nil
+	return int32(count), err
 }
 
 var scanAssignedOwners = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (*AssignedOwnerSummary, error) {
