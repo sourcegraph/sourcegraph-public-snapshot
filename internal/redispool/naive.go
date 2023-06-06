@@ -206,6 +206,11 @@ func (kv *naiveKeyValue) HSet(key, field string, fieldValue any) error {
 	}).err
 }
 
+func (kv *naiveKeyValue) HDel(key, field string) Value {
+	//TODO implement me
+	panic("implement me")
+}
+
 func hsetValueIndex(li []any, field string) (int, bool, error) {
 	for i := 1; i < len(li); i += 2 {
 		if kk, err := redis.String(li[i-1], nil); err != nil {
