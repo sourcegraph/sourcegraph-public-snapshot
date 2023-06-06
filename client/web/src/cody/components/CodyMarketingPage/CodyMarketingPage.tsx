@@ -120,7 +120,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                             iconClassName={styles.buttonIcon}
                         />
                     </div>
-                    <Link to="https://sourcegraph.com/sign-in?returnTo=/search">Or, continue with email</Link>
+                    <Link to="https://sourcegraph.com/sign-up?showEmail=true">Or, continue with email</Link>
                     <Text className="mt-3 mb-0">
                         By registering, you agree to our{' '}
                         <Link
