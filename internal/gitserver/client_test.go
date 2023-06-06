@@ -619,6 +619,8 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := newMockDB()
+	ctx := context.Background()
+
 	s := server.Server{
 		Logger:   logger,
 		ReposDir: filepath.Join(root, "repos"),
@@ -629,7 +631,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 			return &server.GitRepoSyncer{}, nil
 		},
 		DB:       db,
-		Perforce: perforce.NewService(logger, db, list.New()),
+		Perforce: perforce.NewService(ctx, logger, db, list.New()),
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
@@ -646,7 +648,6 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 	cli := gitserver.NewTestClient(&http.Client{}, source)
 
-	ctx := context.Background()
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
 			_, err := cli.RequestRepoUpdate(ctx, api.RepoName(remote), 0)
