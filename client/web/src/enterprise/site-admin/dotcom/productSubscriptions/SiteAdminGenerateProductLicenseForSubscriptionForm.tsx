@@ -37,7 +37,7 @@ interface License extends Omit<ProductLicenseFields, 'subscription' | 'info'> {
 interface Props {
     subscriptionID: Scalars['ID']
     subscriptionAccount: string
-    latestLicense: License
+    latestLicense: License | undefined
     onGenerate: () => void
     onCancel: () => void
 }
@@ -53,11 +53,11 @@ interface FormData {
     expiresAt: Date
 }
 
-const getEmptyFormData = (account: string, latestLicense: License): FormData => ({
+const getEmptyFormData = (account: string, latestLicense: License | undefined): FormData => ({
     tags: '',
     customer: account,
-    salesforceSubscriptionID: latestLicense.info?.salesforceSubscriptionID ?? '',
-    salesforceOpportunityID: latestLicense.info?.salesforceOpportunityID ?? '',
+    salesforceSubscriptionID: latestLicense?.info?.salesforceSubscriptionID ?? '',
+    salesforceOpportunityID: latestLicense?.info?.salesforceOpportunityID ?? '',
     plan: 'enterprise-1',
     userCount: 1,
     expiresAt: endOfDay(addDays(Date.now(), 366)),
