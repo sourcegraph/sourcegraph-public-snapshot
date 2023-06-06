@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
-	"github.com/opentracing/opentracing-go" //nolint:staticcheck // Drop once we get rid of OpenTracing
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
@@ -16,7 +15,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot" //nolint:staticcheck // Drop once we get rid of OpenTracing
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -188,11 +186,9 @@ type ZoektParameters struct {
 
 // ToSearchOptions converts the parameters to options for the Zoekt search API.
 func (o *ZoektParameters) ToSearchOptions(ctx context.Context, logger log.Logger) *zoekt.SearchOptions {
-	shouldTrace, spanContext := getSpanContext(ctx, logger)
 	defaultTimeout := 20 * time.Second
 	searchOpts := &zoekt.SearchOptions{
-		Trace:             shouldTrace,
-		SpanContext:       spanContext,
+		Trace:             policy.ShouldTrace(ctx),
 		MaxWallTime:       defaultTimeout,
 		ChunkMatches:      true,
 		UseKeywordScoring: o.KeywordScoring,
@@ -237,21 +233,6 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context, logger log.Logger
 	}
 
 	return searchOpts
-}
-
-func getSpanContext(ctx context.Context, logger log.Logger) (shouldTrace bool, spanContext map[string]string) {
-	if !policy.ShouldTrace(ctx) {
-		return false, nil
-	}
-
-	spanContext = make(map[string]string)
-	if span := opentracing.SpanFromContext(ctx); span != nil {
-		if err := ot.GetTracer(ctx).Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil { //nolint:staticcheck // Drop once we get rid of OpenTracing
-			logger.Warn("Error injecting span context into map", log.Error(err))
-			return true, nil
-		}
-	}
-	return true, spanContext
 }
 
 // SearcherParameters the inputs for a search fulfilled by the Searcher service
