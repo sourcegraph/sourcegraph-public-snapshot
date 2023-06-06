@@ -29,7 +29,7 @@ memory.
 
 ## Local Development
 
-You can use `sg` to run Executors with either `batches` or `codeintel`.
+You can use `sg` to run Executors with either `batches`, or `codeintel`, or both (`batches,codeintel`).
 
 ```bash
 sg start batches-kubernetes
@@ -37,6 +37,10 @@ sg start batches-kubernetes
 
 ```bash
 sg start codeintel-kubernetes
+```
+
+```bash
+sg start multiqueue-executor-kubernetes
 ```
 
 Any changes to Executor code will cause `sg` to rebuild the Executor image and restart the Executor pod.
@@ -73,7 +77,7 @@ kubectl create secret generic executor-frontend-password --from-literal=EXECUTOR
 
 ## Deploy
 
-Run the following command in either the `batches` or `codeintel` directory to deploy the executor.
+Run the following command in either the `batches`, or `codeintel`, or `multiqueue` directory to deploy the executor.
 
 ```bash
 kubectl apply -f .
