@@ -29,6 +29,9 @@ func NewClient(cli httpcli.Doer, endpoint, accessToken string) (types.Completion
 	if err != nil {
 		return nil, err
 	}
+	if accessToken == "" {
+		return nil, errors.New("no access token is configured - make sure `licenseKey` is set, or provide an access token in `completions.accessToken`")
+	}
 	return &codyGatewayClient{
 		upstream:    cli,
 		gatewayURL:  gatewayURL,
