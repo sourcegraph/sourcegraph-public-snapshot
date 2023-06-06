@@ -113,13 +113,13 @@ func (a *Actor) Limiter(
 
 	// The actual type of time.Duration is int64, so we can use it to compute the
 	// ratio of the rate limit interval to a day (24 hours).
-	ratioToDay := float32(limit.Interval / (24 * time.Hour))
+	ratioToDay := float32(limit.Interval) / float32(24*time.Hour)
 	// Then use the ratio to compute the rate limit for a day.
 	dailyLimit := float32(limit.Limit) / ratioToDay
 	// Finally, compute the concurrency limit with the given percentage of the daily limit.
 	concurrencyLimit := int(dailyLimit * concurrencyLimitConfig.Percentage)
-	// Just in case a poor choice of percentage results in a concurrency limit of 0.
-	if concurrencyLimit <= 0 {
+	// Just in case a poor choice of percentage results in a concurrency limit less than 1.
+	if concurrencyLimit < 1 {
 		concurrencyLimit = 1
 	}
 
@@ -163,7 +163,7 @@ func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func() error, erro
 		Limit:      l.rateLimit.Limit,
 		Interval:   l.rateLimit.Interval,
 		// Only update rate limit TTL if the actor has been updated recently.
-		UpdateRateLimitTTL: l.actor.LastUpdated != nil && time.Since(*l.actor.LastUpdated) < 5*time.Minute,
+		UpdateRateLimitTTL: l.actor.LastUpdated != nil && l.nowFunc().Sub(*l.actor.LastUpdated) < 5*time.Minute,
 	}).TryAcquire(ctx)
 	if err != nil {
 		if errors.As(err, &limiter.NoAccessError{}) || errors.As(err, &limiter.RateLimitExceededError{}) {
