@@ -104,6 +104,10 @@ func BuildChangeset(opts TestChangesetOpts) *btypes.Changeset {
 		NumResets:       opts.NumResets,
 
 		Metadata: opts.Metadata,
+		SyncState: btypes.ChangesetSyncState{
+			HeadRefOid: generateFakeCommitID(),
+			BaseRefOid: generateFakeCommitID(),
+		},
 	}
 
 	if opts.SyncErrorMessage != "" {
