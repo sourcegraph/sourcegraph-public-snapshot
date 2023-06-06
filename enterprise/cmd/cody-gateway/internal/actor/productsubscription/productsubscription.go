@@ -201,19 +201,19 @@ func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 		Source:        source,
 	}
 
-	if s.CodyGatewayAccess.ChatCompletionsRateLimit != nil {
+	if chatCompletions := s.CodyGatewayAccess.ChatCompletionsRateLimit; chatCompletions != nil {
 		a.RateLimits[types.CompletionsFeatureChat] = actor.RateLimit{
-			AllowedModels: s.CodyGatewayAccess.ChatCompletionsRateLimit.AllowedModels,
-			Limit:         s.CodyGatewayAccess.ChatCompletionsRateLimit.Limit,
-			Interval:      time.Duration(s.CodyGatewayAccess.ChatCompletionsRateLimit.IntervalSeconds) * time.Second,
+			AllowedModels: chatCompletions.AllowedModels,
+			Limit:         chatCompletions.Limit,
+			Interval:      time.Duration(chatCompletions.IntervalSeconds) * time.Second,
 		}
 	}
 
-	if s.CodyGatewayAccess.CodeCompletionsRateLimit != nil {
+	if codeCompletions := s.CodyGatewayAccess.CodeCompletionsRateLimit; codeCompletions != nil {
 		a.RateLimits[types.CompletionsFeatureCode] = actor.RateLimit{
-			AllowedModels: s.CodyGatewayAccess.CodeCompletionsRateLimit.AllowedModels,
-			Limit:         s.CodyGatewayAccess.CodeCompletionsRateLimit.Limit,
-			Interval:      time.Duration(s.CodyGatewayAccess.CodeCompletionsRateLimit.IntervalSeconds) * time.Second,
+			AllowedModels: codeCompletions.AllowedModels,
+			Limit:         codeCompletions.Limit,
+			Interval:      time.Duration(codeCompletions.IntervalSeconds) * time.Second,
 		}
 	}
 

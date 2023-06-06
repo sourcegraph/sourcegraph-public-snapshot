@@ -20,7 +20,7 @@ func TestNewCodyGatewayChatRateLimit(t *testing.T) {
 			userCount:   intPtr(50),
 			licenseTags: []string{GPTLLMAccessTag},
 			want: CodyGatewayRateLimit{
-				AllowedModels:   []string{"gpt-4", "gpt-3.5-turbo"},
+				AllowedModels:   []string{"openai/gpt-4", "openai/gpt-3.5-turbo"},
 				Limit:           2500,
 				IntervalSeconds: 60 * 60 * 24,
 			},
@@ -30,7 +30,7 @@ func TestNewCodyGatewayChatRateLimit(t *testing.T) {
 			plan:      PlanEnterprise1,
 			userCount: intPtr(50),
 			want: CodyGatewayRateLimit{
-				AllowedModels:   []string{"claude-v1", "claude-instant-v1"},
+				AllowedModels:   []string{"anthropic/claude-v1", "anthropic/claude-instant-v1"},
 				Limit:           2500,
 				IntervalSeconds: 60 * 60 * 24,
 			},
@@ -39,7 +39,7 @@ func TestNewCodyGatewayChatRateLimit(t *testing.T) {
 			name: "Enterprise plan with no user count",
 			plan: PlanEnterprise1,
 			want: CodyGatewayRateLimit{
-				AllowedModels:   []string{"claude-v1", "claude-instant-v1"},
+				AllowedModels:   []string{"anthropic/claude-v1", "anthropic/claude-instant-v1"},
 				Limit:           50,
 				IntervalSeconds: 60 * 60 * 24,
 			},
@@ -48,7 +48,7 @@ func TestNewCodyGatewayChatRateLimit(t *testing.T) {
 			name: "Non-enterprise plan with no GPT tag and no user count",
 			plan: "unknown",
 			want: CodyGatewayRateLimit{
-				AllowedModels:   []string{"claude-v1", "claude-instant-v1"},
+				AllowedModels:   []string{"anthropic/claude-v1", "anthropic/claude-instant-v1"},
 				Limit:           10,
 				IntervalSeconds: 60 * 60 * 24,
 			},
@@ -78,7 +78,7 @@ func TestCodyGatewayCodeRateLimit(t *testing.T) {
 			userCount:   intPtr(50),
 			licenseTags: []string{GPTLLMAccessTag},
 			want: CodyGatewayRateLimit{
-				AllowedModels:   []string{"gpt-3.5-turbo"},
+				AllowedModels:   []string{"openai/gpt-3.5-turbo"},
 				Limit:           25000,
 				IntervalSeconds: 60 * 60 * 24,
 			},
@@ -88,7 +88,7 @@ func TestCodyGatewayCodeRateLimit(t *testing.T) {
 			plan:      PlanEnterprise1,
 			userCount: intPtr(50),
 			want: CodyGatewayRateLimit{
-				AllowedModels:   []string{"claude-instant-v1"},
+				AllowedModels:   []string{"anthropic/claude-instant-v1"},
 				Limit:           25000,
 				IntervalSeconds: 60 * 60 * 24,
 			},
@@ -97,7 +97,7 @@ func TestCodyGatewayCodeRateLimit(t *testing.T) {
 			name: "Enterprise plan with no user count",
 			plan: PlanEnterprise1,
 			want: CodyGatewayRateLimit{
-				AllowedModels:   []string{"claude-instant-v1"},
+				AllowedModels:   []string{"anthropic/claude-instant-v1"},
 				Limit:           500,
 				IntervalSeconds: 60 * 60 * 24,
 			},
@@ -106,7 +106,7 @@ func TestCodyGatewayCodeRateLimit(t *testing.T) {
 			name: "Non-enterprise plan with no GPT tag and no user count",
 			plan: "unknown",
 			want: CodyGatewayRateLimit{
-				AllowedModels:   []string{"claude-instant-v1"},
+				AllowedModels:   []string{"anthropic/claude-instant-v1"},
 				Limit:           100,
 				IntervalSeconds: 60 * 60 * 24,
 			},

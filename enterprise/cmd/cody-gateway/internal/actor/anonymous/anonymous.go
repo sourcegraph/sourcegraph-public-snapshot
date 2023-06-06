@@ -32,12 +32,12 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 		// Some basic defaults for chat and code completions.
 		RateLimits: map[types.CompletionsFeature]actor.RateLimit{
 			types.CompletionsFeatureChat: {
-				AllowedModels: []string{"claude-v1"},
+				AllowedModels: []string{"anthropic/claude-v1"},
 				Limit:         50,
 				Interval:      24 * time.Hour,
 			},
 			types.CompletionsFeatureCode: {
-				AllowedModels: []string{"claude-instant-v1"},
+				AllowedModels: []string{"anthropic/claude-instant-v1"},
 				Limit:         500,
 				Interval:      24 * time.Hour,
 			},

@@ -755,7 +755,16 @@ type RateLimitFields struct {
 	// The models that are allowed for this rate limit bucket.
 	// Usually, customers will have two separate rate limits, one
 	// for chat completions and one for code completions. A usual
-	// config could include [{claude-v1, claude-v1.3},{claude-instant-v1}].
+	// config could include:
+	//
+	// chatCompletionsRateLimit: {
+	// allowedModels: [anthropic/claude-v1, anthropic/claude-v1.3]
+	// },
+	// codeCompletionsRateLimit: {
+	// allowedModels: [anthropic/claude-instant-v1]
+	// }
+	//
+	// In general, the model names are of the format "$PROVIDER/$MODEL_NAME".
 	AllowedModels []string `json:"allowedModels"`
 	// The source of the rate limit configuration.
 	Source CodyGatewayRateLimitSource `json:"source"`

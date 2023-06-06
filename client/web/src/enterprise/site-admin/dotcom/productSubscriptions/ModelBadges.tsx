@@ -17,17 +17,17 @@ function modelBadgeVariant(model: string): 'secondary' | 'danger' {
         // See here: https://console.anthropic.com/docs/api/reference
         // for currently available Anthropic models. Note that we also need to
         // allow list the models on the Cody Gateway side.
-        case 'claude-v1':
-        case 'claude-v1.0':
-        case 'claude-v1.2':
-        case 'claude-v1.3':
-        case 'claude-instant-v1':
-        case 'claude-instant-v1.0':
+        case 'anthropic/claude-v1':
+        case 'anthropic/claude-v1.0':
+        case 'anthropic/claude-v1.2':
+        case 'anthropic/claude-v1.3':
+        case 'anthropic/claude-instant-v1':
+        case 'anthropic/claude-instant-v1.0':
         // See here: https://platform.openai.com/docs/models/model-endpoint-compatibility
         // for currently available Anthropic models. Note that we also need to
         // allow list the models on the Cody Gateway side.
-        case 'gpt-4':
-        case 'gpt-3.5-turbo':
+        case 'openai/gpt-4':
+        case 'openai/gpt-3.5-turbo':
             return 'secondary'
         default:
             return 'danger'

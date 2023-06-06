@@ -20,7 +20,7 @@ func newAnthropicHandler(logger log.Logger, eventLogger events.Logger, rs limite
 		logger,
 		eventLogger,
 		rs,
-		"Anthropic",
+		anthropic.ProviderName,
 		anthropicAPIURL,
 		allowedModels,
 		upstreamHandlerMethods[anthropicRequest]{
