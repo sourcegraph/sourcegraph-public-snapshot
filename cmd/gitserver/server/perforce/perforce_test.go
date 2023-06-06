@@ -78,7 +78,7 @@ func TestGetCommitsToInsert(t *testing.T) {
 	repoCommitsStore := database.NewMockRepoCommitsChangelistsStore()
 	db.RepoCommitsChangelistsFunc.SetDefaultReturn(repoCommitsStore)
 
-	s := &Service{
+	s := &service{
 		Logger: logger,
 		DB:     db,
 	}
