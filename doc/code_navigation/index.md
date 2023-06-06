@@ -74,12 +74,12 @@ Precise code navigation requires language-specific indexers to be generated and 
       <tr>
         <td>Go</td>
         <td><a href="https://sourcegraph.com/github.com/sourcegraph/lsif-go">lsif-go</a></td>
-        <td>🟢 GA</td>
+        <td>🟢 Generally available</td>
       </tr>
       <tr>
-        <td>TypeScript/JavaScript</td>
+        <td>TypeScript, JavaScript</td>
         <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-typescript">scip-typescript</a></td>
-        <td>🟢 GA</td>
+        <td>🟢 Generally available</td>
       </tr>
       <tr>
         <td>C/C++</td>
@@ -87,37 +87,27 @@ Precise code navigation requires language-specific indexers to be generated and 
         <td>🟡 Partially available</td>
       </tr>
       <tr>
-         <td>Java</td>
+         <td>Java, Kotlin, Scala</td>
         <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-java">scip-java</a></td>
-        <td>🟢 GA</td>
-      </tr>
-      <tr>
-        <td>Scala</td>
-        <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-java">scip-java</a></td>
-        <td>🟢 GA</td>
-      </tr>
-      <tr>
-        <td>Kotlin</td>
-        <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-java">scip-java</a></td>
-        <td>🟢 GA</td>
+        <td>🟢 Generally available</td>
       </tr>
       <tr>
         <td>Rust</td>
         <td><a href="https://sourcegraph.com/github.com/rust-lang/rust-analyzer">rust-analyzer</a></td>
-        <td>🟢 GA</td>
+        <td>🟢 Generally available</td>
       </tr>
      <tr>
         <td>Python</td>
         <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-python">scip-python</a></td>
-        <td>🟢 GA</td>
+        <td>🟢 Generally available</td>
       </tr>
      <tr>
         <td>Ruby</td>
         <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-ruby">scip-ruby</a></td>
-        <td>🟢 GA</td>
+        <td>🟢 Generally available</td>
       </tr>
       <tr>
-        <td>C#</td>
+        <td>C#, Visual Basic</td>
         <td><a href="https://github.com/sourcegraph/scip-dotnet">scip-dotnet</a></td>
         <td>🟡 Partially available</td>
       </tr>
