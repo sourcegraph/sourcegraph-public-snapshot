@@ -83,16 +83,22 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
                     </small>
                 </AnchorLink>
                 {/* TODO: Hook up delete button */}
-                <Tooltip content="Delete GitHub App">
-                    <Button aria-label="Delete" onClick={noop} disabled={false} variant="danger" size="sm">
-                        <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete
+                <Tooltip content="Remove GitHub App">
+                    <Button aria-label="Remove" onClick={noop} disabled={false} variant="danger" size="sm">
+                        <Icon aria-hidden={true} svgPath={mdiDelete} /> Remove
                     </Button>
                 </Tooltip>
             </div>
         </>
     ) : (
         // TODO: Hook up create button
-        <ButtonLink to="/batch-changes/new-github-app" className="ml-auto text-nowrap" variant="success" as={Link}>
+        <ButtonLink
+            to="/batch-changes/new-github-app"
+            className="ml-auto text-nowrap"
+            variant="success"
+            as={Link}
+            size="sm"
+        >
             Create GitHub App
         </ButtonLink>
     )
