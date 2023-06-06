@@ -1086,7 +1086,7 @@ func TestLocalGitCommand(t *testing.T) {
 		"echo -n infile1 > file1",
 		"touch --date=2006-01-02T15:04:05Z file1 || touch -t 200601021704.05 file1",
 		"git add file1",
-		"git commit -m commit1",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_AUTHOR_DATE=2006-01-02T15:04:05Z GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	} {
 		c := exec.Command("bash", "-c", `GIT_CONFIG_GLOBAL="" GIT_CONFIG_SYSTEM="" `+cmd)
 		c.Dir = root
