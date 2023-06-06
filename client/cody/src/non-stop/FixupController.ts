@@ -108,6 +108,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         const filePaths: string[] = []
         for (const task of this.tasks.values()) {
             if (task.state === CodyTaskState.done) {
+                task.stop()
                 // TODO: Handle unnamed files; grep this controller for other instances of fsPath
                 filePaths.push(task.fixupFile.uri.fsPath)
             }
@@ -218,7 +219,6 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             // TODO: Update this when we re-spin tasks with conflicts so that
             // we store the new text but can also display something reasonably
             // stable in the editor
-            task.state = CodyTaskState.error
             return Promise.resolve()
         }
 
@@ -229,7 +229,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             case 'complete':
                 task.inProgressReplacement = undefined
                 task.replacement = text
-                task.state = CodyTaskState.done
+                task.stop()
                 break
         }
 
@@ -260,7 +260,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         const deadlineMsec = Date.now() + 500
 
         while (this.needsDiffUpdate_.size && Date.now() < deadlineMsec) {
-            const task = this.needsDiffUpdate_.keys().next().value
+            const task = this.needsDiffUpdate_.keys().next().value as FixupTask
             this.needsDiffUpdate_.delete(task)
             const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
             if (!editor) {
@@ -284,6 +284,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             // TODO: Cache the diff output on the fixup so it can be applied;
             // have the decorator reapply decorations to visible editors
             this.decorator.decorate(editor, diff)
+            task.stop()
             if (!diff.clean) {
                 // TODO: If this isn't an in-progress diff, then schedule
                 // a re-spin or notify failure

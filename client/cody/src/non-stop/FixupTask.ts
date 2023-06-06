@@ -4,6 +4,7 @@ import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 
 import { debug } from '../log'
 
+import { FixupCodeLens } from './FixupCodeLens'
 import { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
 
@@ -24,6 +25,7 @@ export class FixupTask {
     public inProgressReplacement: string | undefined
     // The text of the last completed turn of the LLM, if any
     public replacement: string | undefined
+    private readonly codelens: FixupCodeLens = new FixupCodeLens()
 
     constructor(
         public readonly fixupFile: FixupFile,
@@ -40,6 +42,7 @@ export class FixupTask {
      * Set latest state for task and then update icon accordingly
      */
     private setState(state: CodyTaskState): void {
+        this.codelens.updateState(state, this.selectionRange.start.line)
         if (this.state !== CodyTaskState.error) {
             this.state = state
         }
