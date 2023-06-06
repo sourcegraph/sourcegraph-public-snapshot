@@ -7,7 +7,6 @@
 package server
 
 import (
-	"context"
 	"sync"
 
 	perforce "github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
@@ -22,10 +21,6 @@ type MockPerforceService struct {
 	// object controlling the behavior of the method
 	// EnqueueChangelistMappingJob.
 	EnqueueChangelistMappingJobFunc *PerforceServiceEnqueueChangelistMappingJobFunc
-	// StartPerforceChangelistMappingPipelineFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// StartPerforceChangelistMappingPipeline.
-	StartPerforceChangelistMappingPipelineFunc *PerforceServiceStartPerforceChangelistMappingPipelineFunc
 }
 
 // NewMockPerforceService creates a new mock of the PerforceService
@@ -35,11 +30,6 @@ func NewMockPerforceService() *MockPerforceService {
 	return &MockPerforceService{
 		EnqueueChangelistMappingJobFunc: &PerforceServiceEnqueueChangelistMappingJobFunc{
 			defaultHook: func(*perforce.ChangelistMappingJob) {
-				return
-			},
-		},
-		StartPerforceChangelistMappingPipelineFunc: &PerforceServiceStartPerforceChangelistMappingPipelineFunc{
-			defaultHook: func(context.Context) {
 				return
 			},
 		},
@@ -55,11 +45,6 @@ func NewStrictMockPerforceService() *MockPerforceService {
 				panic("unexpected invocation of MockPerforceService.EnqueueChangelistMappingJob")
 			},
 		},
-		StartPerforceChangelistMappingPipelineFunc: &PerforceServiceStartPerforceChangelistMappingPipelineFunc{
-			defaultHook: func(context.Context) {
-				panic("unexpected invocation of MockPerforceService.StartPerforceChangelistMappingPipeline")
-			},
-		},
 	}
 }
 
@@ -70,9 +55,6 @@ func NewMockPerforceServiceFrom(i perforce.PerforceService) *MockPerforceService
 	return &MockPerforceService{
 		EnqueueChangelistMappingJobFunc: &PerforceServiceEnqueueChangelistMappingJobFunc{
 			defaultHook: i.EnqueueChangelistMappingJob,
-		},
-		StartPerforceChangelistMappingPipelineFunc: &PerforceServiceStartPerforceChangelistMappingPipelineFunc{
-			defaultHook: i.StartPerforceChangelistMappingPipeline,
 		},
 	}
 }
@@ -177,110 +159,5 @@ func (c PerforceServiceEnqueueChangelistMappingJobFuncCall) Args() []interface{}
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c PerforceServiceEnqueueChangelistMappingJobFuncCall) Results() []interface{} {
-	return []interface{}{}
-}
-
-// PerforceServiceStartPerforceChangelistMappingPipelineFunc describes the
-// behavior when the StartPerforceChangelistMappingPipeline method of the
-// parent MockPerforceService instance is invoked.
-type PerforceServiceStartPerforceChangelistMappingPipelineFunc struct {
-	defaultHook func(context.Context)
-	hooks       []func(context.Context)
-	history     []PerforceServiceStartPerforceChangelistMappingPipelineFuncCall
-	mutex       sync.Mutex
-}
-
-// StartPerforceChangelistMappingPipeline delegates to the next hook
-// function in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockPerforceService) StartPerforceChangelistMappingPipeline(v0 context.Context) {
-	m.StartPerforceChangelistMappingPipelineFunc.nextHook()(v0)
-	m.StartPerforceChangelistMappingPipelineFunc.appendCall(PerforceServiceStartPerforceChangelistMappingPipelineFuncCall{v0})
-	return
-}
-
-// SetDefaultHook sets function that is called when the
-// StartPerforceChangelistMappingPipeline method of the parent
-// MockPerforceService instance is invoked and the hook queue is empty.
-func (f *PerforceServiceStartPerforceChangelistMappingPipelineFunc) SetDefaultHook(hook func(context.Context)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// StartPerforceChangelistMappingPipeline method of the parent
-// MockPerforceService instance invokes the hook at the front of the queue
-// and discards it. After the queue is empty, the default hook function is
-// invoked for any future action.
-func (f *PerforceServiceStartPerforceChangelistMappingPipelineFunc) PushHook(hook func(context.Context)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *PerforceServiceStartPerforceChangelistMappingPipelineFunc) SetDefaultReturn() {
-	f.SetDefaultHook(func(context.Context) {
-		return
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *PerforceServiceStartPerforceChangelistMappingPipelineFunc) PushReturn() {
-	f.PushHook(func(context.Context) {
-		return
-	})
-}
-
-func (f *PerforceServiceStartPerforceChangelistMappingPipelineFunc) nextHook() func(context.Context) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *PerforceServiceStartPerforceChangelistMappingPipelineFunc) appendCall(r0 PerforceServiceStartPerforceChangelistMappingPipelineFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// PerforceServiceStartPerforceChangelistMappingPipelineFuncCall objects
-// describing the invocations of this function.
-func (f *PerforceServiceStartPerforceChangelistMappingPipelineFunc) History() []PerforceServiceStartPerforceChangelistMappingPipelineFuncCall {
-	f.mutex.Lock()
-	history := make([]PerforceServiceStartPerforceChangelistMappingPipelineFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// PerforceServiceStartPerforceChangelistMappingPipelineFuncCall is an
-// object that describes an invocation of method
-// StartPerforceChangelistMappingPipeline on an instance of
-// MockPerforceService.
-type PerforceServiceStartPerforceChangelistMappingPipelineFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c PerforceServiceStartPerforceChangelistMappingPipelineFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c PerforceServiceStartPerforceChangelistMappingPipelineFuncCall) Results() []interface{} {
 	return []interface{}{}
 }
