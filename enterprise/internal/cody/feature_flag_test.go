@@ -49,6 +49,7 @@ func TestIsCodyEnabled(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				CodyEnabled: &truePtr,
+				Completions: &schema.Completions{},
 			},
 		})
 		t.Cleanup(func() {
@@ -60,10 +61,28 @@ func TestIsCodyEnabled(t *testing.T) {
 			t.Error("Expected IsCodyEnabled to return true for authenticated actor")
 		}
 	})
+
+	t.Run("Enabled cody, but not completions", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				CodyEnabled: &truePtr,
+			},
+		})
+		t.Cleanup(func() {
+			conf.Mock(nil)
+		})
+		ctx := context.Background()
+		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+		if IsCodyEnabled(ctx) {
+			t.Error("Expected IsCodyEnabled to return false without completions")
+		}
+	})
+
 	t.Run("Disabled cody", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				CodyEnabled: &falsePtr,
+				Completions: &schema.Completions{},
 			},
 		})
 		t.Cleanup(func() {
@@ -95,6 +114,7 @@ func TestIsCodyEnabled(t *testing.T) {
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					CodyEnabled:                  &truePtr,
+					Completions:                  &schema.Completions{},
 					CodyRestrictUsersFeatureFlag: &truePtr,
 				},
 			})
@@ -117,6 +137,7 @@ func TestIsCodyEnabled(t *testing.T) {
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					CodyEnabled:                  &truePtr,
+					Completions:                  &schema.Completions{},
 					CodyRestrictUsersFeatureFlag: &truePtr,
 				},
 			})
@@ -143,6 +164,7 @@ func TestIsCodyEnabled(t *testing.T) {
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					CodyEnabled: &truePtr,
+					Completions: &schema.Completions{},
 				},
 			})
 			t.Cleanup(func() {
