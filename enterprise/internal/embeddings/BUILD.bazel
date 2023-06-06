@@ -64,6 +64,10 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":embeddings"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/embeddings/background/repo",
         "//internal/api",
