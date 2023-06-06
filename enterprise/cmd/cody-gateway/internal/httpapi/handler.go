@@ -42,22 +42,21 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 				completions.NewOpenAIHandler(logger, eventLogger, rs, config.OpenAIAccessToken, config.OpenAIOrgID, config.OpenAIAllowedModels),
 			),
 		)
+
+		v1router.Path("/embeddings/models").Methods(http.MethodGet).Handler(
+			authr.Middleware(
+				embeddings.NewListHandler(),
+			),
+		)
+
+		v1router.Path("/embeddings").Methods(http.MethodPost).Handler(
+			authr.Middleware(
+				embeddings.NewHandler(logger, eventLogger, rs, embeddings.ModelFactoryMap{
+					"openai/text-embedding-ada-002": embeddings.NewOpenAIClient(config.OpenAIAccessToken),
+				}, config.EmbeddingsAllowedModels),
+			),
+		)
 	}
-
-	v1router.Path("/embeddings/models").Methods(http.MethodGet).Handler(
-		authr.Middleware(
-			embeddings.NewListHandler(),
-		),
-	)
-
-	v1router.Path("/embeddings").Methods(http.MethodPost).Handler(
-		authr.Middleware(
-			embeddings.NewHandler(logger, eventLogger, rs, embeddings.ModelFactoryMap{
-				// TODO: Access token could be empty.
-				"openai/text-embedding-ada-002": embeddings.NewOpenAIClient(config.OpenAIAccessToken),
-			}, config.EmbeddingsAllowedModels),
-		),
-	)
 
 	return r
 }

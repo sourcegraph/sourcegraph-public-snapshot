@@ -60,8 +60,7 @@ func NewHandler(
 
 		upstreamStarted := time.Now()
 		var (
-			// TODO: This is never set, the client layer doesn't leak this.
-			upstreamStatusCode int = -1
+			upstreamFinished time.Duration
 			// resolvedStatusCode is the status code that we returned to the
 			// client - in most case it is the same as upstreamStatusCode,
 			// but sometimes we write something different.
@@ -78,8 +77,7 @@ func NewHandler(
 					Metadata: map[string]any{
 						"model": body.Model,
 						codygateway.CompletionsEventFeatureMetadataField: codygateway.CompletionsEventFeatureEmbeddings,
-						"upstream_request_duration_ms":                   time.Since(upstreamStarted).Milliseconds(),
-						"upstream_status_code":                           upstreamStatusCode,
+						"upstream_request_duration_ms":                   upstreamFinished.Milliseconds(),
 						"resolved_status_code":                           resolvedStatusCode,
 						codygateway.EmbeddingsTokenUsageMetadataField:    usedTokens,
 					},
@@ -92,11 +90,11 @@ func NewHandler(
 
 		resp, ut, err := c.GenerateEmbeddings(r.Context(), body)
 		usedTokens = ut
+		upstreamFinished = time.Since(upstreamStarted)
 		if err != nil {
 			logger.Error(
 				"error from upstream",
 				log.String("client", fmt.Sprintf("%T", c)),
-				log.Int("status_code", upstreamStatusCode),
 			)
 			var statusCodeErr response.HTTPStatusCodeError
 			if errors.As(err, &statusCodeErr) {
@@ -104,6 +102,7 @@ func NewHandler(
 				response.JSONError(logger, w, statusCodeErr.HTTPStatusCode(), statusCodeErr)
 				return
 			}
+			resolvedStatusCode = http.StatusInternalServerError
 			response.JSONError(logger, w, http.StatusInternalServerError, err)
 			return
 		}
@@ -112,6 +111,7 @@ func NewHandler(
 
 		data, err := json.Marshal(resp)
 		if err != nil {
+			resolvedStatusCode = http.StatusInternalServerError
 			response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrap(err, "failed to marshal response"))
 			return
 		}
