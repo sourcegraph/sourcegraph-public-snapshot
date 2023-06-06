@@ -49,7 +49,7 @@ export const CommitSigningIntegrationNode: React.FunctionComponent<
                 {readOnly ? (
                     <ReadOnlyAppDetails config={node.commitSigningConfiguration} />
                 ) : (
-                    <AppDetailsControls config={node.commitSigningConfiguration} />
+                    <AppDetailsControls baseURL={node.externalServiceURL} config={node.commitSigningConfiguration} />
                 )}
             </div>
         </li>
@@ -57,11 +57,13 @@ export const CommitSigningIntegrationNode: React.FunctionComponent<
 }
 
 interface AppDetailsControlsProps {
+    baseURL: string
     config: BatchChangesCodeHostFields['commitSigningConfiguration']
 }
 
-const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ config }) =>
-    config ? (
+const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ baseURL, config }) => {
+    const createURL = `/site-admin/batch-changes/new-github-app?baseURL=${encodeURIComponent(baseURL)}`
+    return config ? (
         <>
             <div className="d-flex align-items-center">
                 <img className={styles.appLogoLarge} src={config.logo} alt="app logo" aria-hidden={true} />
@@ -90,16 +92,11 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
         </>
     ) : (
         // TODO: Hook up create button
-        <ButtonLink
-            to="/batch-changes/new-github-app"
-            className="ml-auto text-nowrap"
-            variant="success"
-            as={Link}
-            size="sm"
-        >
+        <ButtonLink to={createURL} className="ml-auto text-nowrap" variant="success" as={Link} size="sm">
             Create GitHub App
         </ButtonLink>
     )
+}
 
 interface ReadOnlyAppDetailsProps {
     config: BatchChangesCodeHostFields['commitSigningConfiguration']
