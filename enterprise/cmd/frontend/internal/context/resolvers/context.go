@@ -2,16 +2,16 @@ package resolvers
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	"github.com/sourcegraph/conc/iter"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	codycontext "github.com/sourcegraph/sourcegraph/enterprise/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient *codycontext.CodyContextClient) graphqlbackend.CodyContextResolver {

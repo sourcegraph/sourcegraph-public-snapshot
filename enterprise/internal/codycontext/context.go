@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -168,6 +170,8 @@ var textFileFilter = func() string {
 	return `file:(` + strings.Join(extensions, "|") + `)$`
 }()
 
+var wordRegex = lazyregexp.New(`[a-zA-Z0-9]+`)
+
 // getKeywordContext uses keyword search to find relevant bits of context for Cody
 func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
 	if len(args.Repos) == 0 {
@@ -190,8 +194,8 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		regexEscapedRepoNames[i] = regexp.QuoteMeta(string(repo.Name))
 	}
 
-	textQuery := "repo:^" + query.UnionRegExps(regexEscapedRepoNames) + "$ " + textFileFilter + " " + args.Query
-	codeQuery := "repo:^" + query.UnionRegExps(regexEscapedRepoNames) + "$ -" + textFileFilter + " " + args.Query
+	textQuery := "repo:^" + query.UnionRegExps(regexEscapedRepoNames) + "$ " + textFileFilter + ` content:"` + strconv.Quote(args.Query) + `"`
+	codeQuery := "repo:^" + query.UnionRegExps(regexEscapedRepoNames) + "$ -" + textFileFilter + ` content:"` + strconv.Quote(args.Query) + `"`
 
 	doSearch := func(ctx context.Context, query string, limit int) ([]FileChunkContext, error) {
 		if limit == 0 {
