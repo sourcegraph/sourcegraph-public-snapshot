@@ -3,6 +3,8 @@ package usage
 import (
 	"testing"
 
+	"github.com/sourcegraph/src-cli/internal/scout"
+	"github.com/sourcegraph/src-cli/internal/scout/kube"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -55,7 +57,7 @@ func TestGetPercentage(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			got := getPercentage(tc.x, tc.y)
+			got := scout.GetPercentage(tc.x, tc.y)
 
 			if got != tc.want {
 				t.Errorf("got %.2f want %.2f", tc.want, got)
@@ -103,7 +105,7 @@ func TestGetRawUsage(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			resourceList := resourceListHelper(tc.cpu, tc.mem)
-			got, err := getRawUsage(resourceList, tc.targetKey)
+			got, err := kube.GetRawUsage(resourceList, tc.targetKey)
 			if !tc.shouldError && err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
@@ -146,38 +148,9 @@ func TestContains(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			got := contains(tc.s, tc.val)
+			got := scout.Contains(tc.s, tc.val)
 			if got != tc.want {
 				t.Errorf("got %v, want %v", got, tc.want)
-			}
-		})
-	}
-}
-
-func TestAcceptedFileSystem(t *testing.T) {
-	cases := []struct {
-		name       string
-		filesystem string
-		want       bool
-	}{
-		{
-			name:       "should return true if filesystem matches 'matched' regular expression",
-			filesystem: "/dev/sda",
-			want:       true,
-		},
-		{
-			name:       "should return false if filesystem doesn't match 'matched' regular expression",
-			filesystem: "/dev/sda1",
-			want:       false,
-		},
-	}
-
-	for _, tc := range cases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			got := acceptedFileSystem(tc.filesystem)
-			if got != tc.want {
-				t.Errorf("got %v want %v", got, tc.want)
 			}
 		})
 	}

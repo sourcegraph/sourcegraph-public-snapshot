@@ -11,24 +11,25 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/src-cli/internal/scout"
 	"github.com/sourcegraph/src-cli/internal/scout/style"
 )
 
 func Docker(ctx context.Context, client client.Client, opts ...Option) error {
-	cfg := &Config{
-		namespace:    "default",
-		docker:       true,
-		pod:          "",
-		container:    "",
-		spy:          false,
-		dockerClient: &client,
+	cfg := &scout.Config{
+		Namespace:    "default",
+		Docker:       true,
+		Pod:          "",
+		Container:    "",
+		Spy:          false,
+		DockerClient: &client,
 	}
 
 	for _, opt := range opts {
 		opt(cfg)
 	}
 
-	containers, err := cfg.dockerClient.ContainerList(ctx, types.ContainerListOptions{})
+	containers, err := cfg.DockerClient.ContainerList(ctx, types.ContainerListOptions{})
 	if err != nil {
 		return errors.Wrap(err, "could not get list of containers")
 	}
@@ -37,7 +38,7 @@ func Docker(ctx context.Context, client client.Client, opts ...Option) error {
 }
 
 // renderDockerUsageTable renders a table displaying CPU and memory usage for Docker containers.
-func renderDockerUsageTable(ctx context.Context, cfg *Config, containers []types.Container) error {
+func renderDockerUsageTable(ctx context.Context, cfg *scout.Config, containers []types.Container) error {
 	columns := []table.Column{
 		{Title: "Container", Width: 20},
 		{Title: "Cores", Width: 10},
@@ -48,13 +49,13 @@ func renderDockerUsageTable(ctx context.Context, cfg *Config, containers []types
 	rows := []table.Row{}
 
 	for _, container := range containers {
-		containerInfo, err := cfg.dockerClient.ContainerInspect(ctx, container.ID)
+		containerInfo, err := cfg.DockerClient.ContainerInspect(ctx, container.ID)
 		if err != nil {
 			return errors.Wrap(err, "failed to get container info")
 		}
 
-		if cfg.container != "" {
-			if containerInfo.Name == cfg.container {
+		if cfg.Container != "" {
+			if containerInfo.Name == cfg.Container {
 				row := makeDockerUsageRow(ctx, cfg, containerInfo)
 				rows = append(rows, row)
 				break
@@ -69,12 +70,12 @@ func renderDockerUsageTable(ctx context.Context, cfg *Config, containers []types
 
 	if len(rows) == 0 {
 		msg := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFA500"))
-		if cfg.container == "" {
+		if cfg.Container == "" {
 			fmt.Println(msg.Render(`No docker containers are running.`))
 			os.Exit(1)
 		}
 		fmt.Println(msg.Render(
-			fmt.Sprintf(`No container with name '%s' running.`, cfg.container),
+			fmt.Sprintf(`No container with name '%s' running.`, cfg.Container),
 		))
 		os.Exit(1)
 	}
@@ -84,8 +85,8 @@ func renderDockerUsageTable(ctx context.Context, cfg *Config, containers []types
 }
 
 // makeDockerUsageRow generates a table row displaying CPU and memory usage for a Docker container.
-func makeDockerUsageRow(ctx context.Context, cfg *Config, container types.ContainerJSON) table.Row {
-	stats, err := cfg.dockerClient.ContainerStats(ctx, container.ID, false)
+func makeDockerUsageRow(ctx context.Context, cfg *scout.Config, container types.ContainerJSON) table.Row {
+	stats, err := cfg.DockerClient.ContainerStats(ctx, container.ID, false)
 	if err != nil {
 		errors.Wrap(err, "could not get container stats")
 		os.Exit(1)
@@ -106,8 +107,8 @@ func makeDockerUsageRow(ctx context.Context, cfg *Config, container types.Contai
 	return table.Row{
 		container.Name,
 		fmt.Sprintf("%.2f", cpuCores/1_000_000_000),
-		fmt.Sprintf("%.2f%%", getPercentage(cpuUsage, cpuCores)),
+		fmt.Sprintf("%.2f%%", scout.GetPercentage(cpuUsage, cpuCores)),
 		fmt.Sprintf("%.2fG", memory/1_000_000_000),
-		fmt.Sprintf("%.2f%%", getPercentage(memoryUsage, memory)),
+		fmt.Sprintf("%.2f%%", scout.GetPercentage(memoryUsage, memory)),
 	}
 }

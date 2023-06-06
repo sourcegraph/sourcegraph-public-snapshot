@@ -10,35 +10,33 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/src-cli/internal/scout"
+	kube "github.com/sourcegraph/src-cli/internal/scout/kube"
 	"github.com/sourcegraph/src-cli/internal/scout/style"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
-type Option = func(config *Config)
-
-type Config struct {
-	namespace    string
-	docker       bool
-	k8sClient    *kubernetes.Clientset
-	dockerClient *client.Client
-}
+type Option = func(config *scout.Config)
 
 func WithNamespace(namespace string) Option {
-	return func(config *Config) {
-		config.namespace = namespace
+	return func(config *scout.Config) {
+		config.Namespace = namespace
 	}
 }
 
 // K8s prints the CPU and memory resource limits and requests for all pods in the given namespace.
 func K8s(ctx context.Context, clientSet *kubernetes.Clientset, restConfig *rest.Config, opts ...Option) error {
-	cfg := &Config{
-		namespace:    "default",
-		docker:       false,
-		k8sClient:    clientSet,
-		dockerClient: nil,
+	cfg := &scout.Config{
+		Namespace:     "default",
+		Docker:        false,
+		Pod:           "",
+		Container:     "",
+		Spy:           false,
+		RestConfig:    restConfig,
+		K8sClient:     clientSet,
+		DockerClient:  nil,
+		MetricsClient: nil,
 	}
 
 	for _, opt := range opts {
@@ -48,11 +46,10 @@ func K8s(ctx context.Context, clientSet *kubernetes.Clientset, restConfig *rest.
 	return listPodResources(ctx, cfg)
 }
 
-func listPodResources(ctx context.Context, cfg *Config) error {
-	podInterface := cfg.k8sClient.CoreV1().Pods(cfg.namespace)
-	podList, err := podInterface.List(ctx, metav1.ListOptions{})
+func listPodResources(ctx context.Context, cfg *scout.Config) error {
+	pods, err := kube.GetPods(ctx, cfg)
 	if err != nil {
-		return errors.Wrap(err, "error listing pods: ")
+		return errors.Wrap(err, "could not get pods")
 	}
 
 	columns := []table.Column{
@@ -64,7 +61,7 @@ func listPodResources(ctx context.Context, cfg *Config) error {
 		{Title: "CAPACITY", Width: 8},
 	}
 
-	if len(podList.Items) == 0 {
+	if len(pods) == 0 {
 		msg := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFA500"))
 		fmt.Println(msg.Render(`
         No pods exist in this namespace. 
@@ -79,21 +76,17 @@ func listPodResources(ctx context.Context, cfg *Config) error {
 	}
 
 	var rows []table.Row
-	for _, pod := range podList.Items {
-		if pod.GetNamespace() == cfg.namespace {
+	for _, pod := range pods {
+		if pod.GetNamespace() == cfg.Namespace {
 			for _, container := range pod.Spec.Containers {
 				cpuLimits := container.Resources.Limits.Cpu()
 				cpuRequests := container.Resources.Requests.Cpu()
 				memLimits := container.Resources.Limits.Memory()
 				memRequests := container.Resources.Requests.Memory()
 
-				capacity, err := getPVCCapacity(ctx, cfg, container, pod)
+				capacity, err := kube.GetPvcCapacity(ctx, cfg, container, &pod)
 				if err != nil {
 					return err
-				}
-
-				if capacity == "" {
-					capacity = "N/A"
 				}
 
 				row := table.Row{
@@ -102,7 +95,7 @@ func listPodResources(ctx context.Context, cfg *Config) error {
 					cpuRequests.String(),
 					memLimits.String(),
 					memRequests.String(),
-					capacity,
+					capacity.String(),
 				}
 				rows = append(rows, row)
 			}
@@ -111,25 +104,6 @@ func listPodResources(ctx context.Context, cfg *Config) error {
 
 	style.ResourceTable(columns, rows)
 	return nil
-}
-
-func getPVCCapacity(ctx context.Context, cfg *Config, container v1.Container, pod v1.Pod) (string, error) {
-	for _, volumeMount := range container.VolumeMounts {
-		for _, volume := range pod.Spec.Volumes {
-			if volume.Name == volumeMount.Name && volume.PersistentVolumeClaim != nil {
-				pvc, err := cfg.k8sClient.CoreV1().PersistentVolumeClaims(cfg.namespace).Get(
-					ctx,
-					volume.PersistentVolumeClaim.ClaimName,
-					metav1.GetOptions{},
-				)
-				if err != nil {
-					return "", errors.Wrapf(err, "error getting PVC %s", volume.PersistentVolumeClaim.ClaimName)
-				}
-				return pvc.Status.Capacity.Storage().String(), nil
-			}
-		}
-	}
-	return "", nil
 }
 
 // Docker prints the CPU and memory resource limits and requests for running Docker containers.
