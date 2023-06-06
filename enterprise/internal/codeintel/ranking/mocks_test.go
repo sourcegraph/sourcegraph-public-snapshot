@@ -30,6 +30,9 @@ type MockStore struct {
 	// CoordinateFunc is an instance of a mock function object controlling
 	// the behavior of the method Coordinate.
 	CoordinateFunc *StoreCoordinateFunc
+	// DeleteRankingProgressFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteRankingProgress.
+	DeleteRankingProgressFunc *StoreDeleteRankingProgressFunc
 	// DerivativeGraphKeyFunc is an instance of a mock function object
 	// controlling the behavior of the method DerivativeGraphKey.
 	DerivativeGraphKeyFunc *StoreDerivativeGraphKeyFunc
@@ -109,8 +112,13 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
+		DeleteRankingProgressFunc: &StoreDeleteRankingProgressFunc{
+			defaultHook: func(context.Context, string) (r0 error) {
+				return
+			},
+		},
 		DerivativeGraphKeyFunc: &StoreDerivativeGraphKeyFunc{
-			defaultHook: func(context.Context) (r0 string, r1 bool, r2 error) {
+			defaultHook: func(context.Context) (r0 string, r1 time.Time, r2 bool, r3 error) {
 				return
 			},
 		},
@@ -221,8 +229,13 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.Coordinate")
 			},
 		},
+		DeleteRankingProgressFunc: &StoreDeleteRankingProgressFunc{
+			defaultHook: func(context.Context, string) error {
+				panic("unexpected invocation of MockStore.DeleteRankingProgress")
+			},
+		},
 		DerivativeGraphKeyFunc: &StoreDerivativeGraphKeyFunc{
-			defaultHook: func(context.Context) (string, bool, error) {
+			defaultHook: func(context.Context) (string, time.Time, bool, error) {
 				panic("unexpected invocation of MockStore.DerivativeGraphKey")
 			},
 		},
@@ -328,6 +341,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		CoordinateFunc: &StoreCoordinateFunc{
 			defaultHook: i.Coordinate,
+		},
+		DeleteRankingProgressFunc: &StoreDeleteRankingProgressFunc{
+			defaultHook: i.DeleteRankingProgress,
 		},
 		DerivativeGraphKeyFunc: &StoreDerivativeGraphKeyFunc{
 			defaultHook: i.DerivativeGraphKey,
@@ -596,35 +612,35 @@ func (c StoreCoordinateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// StoreDerivativeGraphKeyFunc describes the behavior when the
-// DerivativeGraphKey method of the parent MockStore instance is invoked.
-type StoreDerivativeGraphKeyFunc struct {
-	defaultHook func(context.Context) (string, bool, error)
-	hooks       []func(context.Context) (string, bool, error)
-	history     []StoreDerivativeGraphKeyFuncCall
+// StoreDeleteRankingProgressFunc describes the behavior when the
+// DeleteRankingProgress method of the parent MockStore instance is invoked.
+type StoreDeleteRankingProgressFunc struct {
+	defaultHook func(context.Context, string) error
+	hooks       []func(context.Context, string) error
+	history     []StoreDeleteRankingProgressFuncCall
 	mutex       sync.Mutex
 }
 
-// DerivativeGraphKey delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockStore) DerivativeGraphKey(v0 context.Context) (string, bool, error) {
-	r0, r1, r2 := m.DerivativeGraphKeyFunc.nextHook()(v0)
-	m.DerivativeGraphKeyFunc.appendCall(StoreDerivativeGraphKeyFuncCall{v0, r0, r1, r2})
-	return r0, r1, r2
+// DeleteRankingProgress delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockStore) DeleteRankingProgress(v0 context.Context, v1 string) error {
+	r0 := m.DeleteRankingProgressFunc.nextHook()(v0, v1)
+	m.DeleteRankingProgressFunc.appendCall(StoreDeleteRankingProgressFuncCall{v0, v1, r0})
+	return r0
 }
 
-// SetDefaultHook sets function that is called when the DerivativeGraphKey
-// method of the parent MockStore instance is invoked and the hook queue is
-// empty.
-func (f *StoreDerivativeGraphKeyFunc) SetDefaultHook(hook func(context.Context) (string, bool, error)) {
+// SetDefaultHook sets function that is called when the
+// DeleteRankingProgress method of the parent MockStore instance is invoked
+// and the hook queue is empty.
+func (f *StoreDeleteRankingProgressFunc) SetDefaultHook(hook func(context.Context, string) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// DerivativeGraphKey method of the parent MockStore instance invokes the
+// DeleteRankingProgress method of the parent MockStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *StoreDerivativeGraphKeyFunc) PushHook(hook func(context.Context) (string, bool, error)) {
+func (f *StoreDeleteRankingProgressFunc) PushHook(hook func(context.Context, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -632,20 +648,125 @@ func (f *StoreDerivativeGraphKeyFunc) PushHook(hook func(context.Context) (strin
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreDerivativeGraphKeyFunc) SetDefaultReturn(r0 string, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context) (string, bool, error) {
-		return r0, r1, r2
+func (f *StoreDeleteRankingProgressFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string) error {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreDerivativeGraphKeyFunc) PushReturn(r0 string, r1 bool, r2 error) {
-	f.PushHook(func(context.Context) (string, bool, error) {
-		return r0, r1, r2
+func (f *StoreDeleteRankingProgressFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string) error {
+		return r0
 	})
 }
 
-func (f *StoreDerivativeGraphKeyFunc) nextHook() func(context.Context) (string, bool, error) {
+func (f *StoreDeleteRankingProgressFunc) nextHook() func(context.Context, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreDeleteRankingProgressFunc) appendCall(r0 StoreDeleteRankingProgressFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreDeleteRankingProgressFuncCall objects
+// describing the invocations of this function.
+func (f *StoreDeleteRankingProgressFunc) History() []StoreDeleteRankingProgressFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreDeleteRankingProgressFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreDeleteRankingProgressFuncCall is an object that describes an
+// invocation of method DeleteRankingProgress on an instance of MockStore.
+type StoreDeleteRankingProgressFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreDeleteRankingProgressFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreDeleteRankingProgressFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// StoreDerivativeGraphKeyFunc describes the behavior when the
+// DerivativeGraphKey method of the parent MockStore instance is invoked.
+type StoreDerivativeGraphKeyFunc struct {
+	defaultHook func(context.Context) (string, time.Time, bool, error)
+	hooks       []func(context.Context) (string, time.Time, bool, error)
+	history     []StoreDerivativeGraphKeyFuncCall
+	mutex       sync.Mutex
+}
+
+// DerivativeGraphKey delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) DerivativeGraphKey(v0 context.Context) (string, time.Time, bool, error) {
+	r0, r1, r2, r3 := m.DerivativeGraphKeyFunc.nextHook()(v0)
+	m.DerivativeGraphKeyFunc.appendCall(StoreDerivativeGraphKeyFuncCall{v0, r0, r1, r2, r3})
+	return r0, r1, r2, r3
+}
+
+// SetDefaultHook sets function that is called when the DerivativeGraphKey
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreDerivativeGraphKeyFunc) SetDefaultHook(hook func(context.Context) (string, time.Time, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DerivativeGraphKey method of the parent MockStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StoreDerivativeGraphKeyFunc) PushHook(hook func(context.Context) (string, time.Time, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreDerivativeGraphKeyFunc) SetDefaultReturn(r0 string, r1 time.Time, r2 bool, r3 error) {
+	f.SetDefaultHook(func(context.Context) (string, time.Time, bool, error) {
+		return r0, r1, r2, r3
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreDerivativeGraphKeyFunc) PushReturn(r0 string, r1 time.Time, r2 bool, r3 error) {
+	f.PushHook(func(context.Context) (string, time.Time, bool, error) {
+		return r0, r1, r2, r3
+	})
+}
+
+func (f *StoreDerivativeGraphKeyFunc) nextHook() func(context.Context) (string, time.Time, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -686,10 +807,13 @@ type StoreDerivativeGraphKeyFuncCall struct {
 	Result0 string
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 bool
+	Result1 time.Time
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
-	Result2 error
+	Result2 bool
+	// Result3 is the value of the 4th result returned from this method
+	// invocation.
+	Result3 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -701,7 +825,7 @@ func (c StoreDerivativeGraphKeyFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreDerivativeGraphKeyFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
+	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
 }
 
 // StoreGetDocumentRanksFunc describes the behavior when the

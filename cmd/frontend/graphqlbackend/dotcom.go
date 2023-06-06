@@ -93,14 +93,19 @@ type ProductLicense interface {
 	Subscription(context.Context) (ProductSubscription, error)
 	Info() (*ProductLicenseInfo, error)
 	LicenseKey() string
+	SiteID() *string
 	CreatedAt() gqlutil.DateTime
+	RevokedAt() *gqlutil.DateTime
+	Version() int32
 }
 
 // ProductLicenseInput implements the GraphQL type ProductLicenseInput.
 type ProductLicenseInput struct {
-	Tags      []string
-	UserCount int32
-	ExpiresAt int32
+	Tags                     []string
+	UserCount                int32
+	ExpiresAt                int32
+	SalesforceSubscriptionID *string
+	SalesforceOpportunityID  *string
 }
 
 type ProductLicensesArgs struct {

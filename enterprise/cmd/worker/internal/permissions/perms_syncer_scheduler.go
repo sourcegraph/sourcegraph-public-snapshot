@@ -76,11 +76,8 @@ func (p *permissionSyncJobScheduler) Routines(_ context.Context, observationCtx 
 	})
 
 	return []goroutine.BackgroundRoutine{
-		goroutine.NewPeriodicGoroutineWithMetricsAndDynamicInterval(
+		goroutine.NewPeriodicGoroutine(
 			context.Background(),
-			"auth.permission_sync_job_scheduler",
-			p.Description(),
-			func() time.Duration { return scheduleInterval },
 			goroutine.HandlerFunc(
 				func(ctx context.Context) error {
 					if authz.PermissionSyncingDisabled() {
@@ -94,7 +91,10 @@ func (p *permissionSyncJobScheduler) Routines(_ context.Context, observationCtx 
 					return err
 				},
 			),
-			operation,
+			goroutine.WithName("auth.permission_sync_job_scheduler"),
+			goroutine.WithDescription(p.Description()),
+			goroutine.WithIntervalFunc(func() time.Duration { return scheduleInterval }),
+			goroutine.WithOperation(operation),
 		),
 	}, nil
 }

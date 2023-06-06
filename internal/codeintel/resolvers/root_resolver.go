@@ -217,10 +217,14 @@ func (r *Resolver) FindMostRelevantSCIPSymbols(ctx context.Context, args *FindMo
 	return r.contextRootResolver.FindMostRelevantSCIPSymbols(ctx, args)
 }
 
-func (r *Resolver) RankingSummary(ctx context.Context) (_ []RankingSummaryResolver, err error) {
+func (r *Resolver) RankingSummary(ctx context.Context) (_ GlobalRankingSummaryResolver, err error) {
 	return r.rankingServiceResolver.RankingSummary(ctx)
 }
 
 func (r *Resolver) BumpDerivativeGraphKey(ctx context.Context) (_ *EmptyResponse, err error) {
 	return r.rankingServiceResolver.BumpDerivativeGraphKey(ctx)
+}
+
+func (r *Resolver) DeleteRankingProgress(ctx context.Context, args *DeleteRankingProgressArgs) (_ *EmptyResponse, err error) {
+	return r.rankingServiceResolver.DeleteRankingProgress(ctx, args)
 }

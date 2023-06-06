@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "saml",
@@ -63,5 +64,7 @@ go_test(
         "@com_github_crewjam_saml_samlidp//:samlidp",
         "@com_github_russellhaering_gosaml2//:gosaml2",
         "@com_github_russellhaering_goxmldsig//:goxmldsig",
+        "@com_github_stretchr_testify//require",
+        "@tools_gotest//assert",
     ],
 )

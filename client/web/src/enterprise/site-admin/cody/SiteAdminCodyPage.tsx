@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect } from 'react'
+import { FC, useCallback, useEffect, useState } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -13,11 +13,13 @@ import {
     Validator,
     ErrorAlert,
     Form,
+    useDebounce,
 } from '@sourcegraph/wildcard'
 
 import {
     ConnectionContainer,
     ConnectionError,
+    ConnectionForm,
     ConnectionList,
     ConnectionLoading,
     ConnectionSummary,
@@ -28,6 +30,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { RepositoriesField } from '../../insights/components'
 
 import {
+    useCancelRepoEmbeddingJob,
     useRepoEmbeddingJobsConnection,
     useScheduleContextDetectionEmbeddingJob,
     useScheduleRepoEmbeddingJobs,
@@ -56,7 +59,10 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
         telemetryService.logPageView('SiteAdminCodyPage')
     }, [telemetryService])
 
-    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useRepoEmbeddingJobsConnection()
+    const [searchValue, setSearchValue] = useState('')
+    const query = useDebounce(searchValue, 200)
+
+    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useRepoEmbeddingJobsConnection(query)
 
     const [scheduleRepoEmbeddingJobs, { loading: repoEmbeddingJobsLoading, error: repoEmbeddingJobsError }] =
         useScheduleRepoEmbeddingJobs()
@@ -89,6 +95,16 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
         validators: { sync: repositoriesValidator },
     })
 
+    const [cancelRepoEmbeddingJob, { error: cancelRepoEmbeddingJobError }] = useCancelRepoEmbeddingJob()
+
+    const onCancel = useCallback(
+        async (id: string) => {
+            await cancelRepoEmbeddingJob({ variables: { id } })
+            refetchAll()
+        },
+        [cancelRepoEmbeddingJob, refetchAll]
+    )
+
     return (
         <>
             <PageTitle title="Cody" />
@@ -103,7 +119,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                         <RepositoriesField
                             id="repositories-id"
                             description="Schedule repositories for embedding at latest revision on the default branch."
-                            placeholder="Search repositories..."
+                            placeholder="Add repositories to schedule..."
                             className="flex-1 mr-2"
                             {...getDefaultInputProps(repositories)}
                         />
@@ -116,26 +132,37 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                             >
                                 {repoEmbeddingJobsLoading || contextDetectionEmbeddingJobLoading
                                     ? 'Scheduling...'
-                                    : 'Schedule'}
+                                    : 'Schedule Embedding'}
                             </Button>
                         </div>
                     </div>
                 </Form>
-                {(repoEmbeddingJobsError || contextDetectionEmbeddingJobError) && (
+                {(repoEmbeddingJobsError || contextDetectionEmbeddingJobError || cancelRepoEmbeddingJobError) && (
                     <div className="mt-1">
                         <ErrorAlert
                             prefix="Error scheduling embedding jobs"
-                            error={repoEmbeddingJobsError || contextDetectionEmbeddingJobError}
+                            error={
+                                repoEmbeddingJobsError ||
+                                contextDetectionEmbeddingJobError ||
+                                cancelRepoEmbeddingJobError
+                            }
                         />
                     </div>
                 )}
+            </Container>
+            <Container>
                 <H3 className="mt-3">Repository embedding jobs</H3>
                 <ConnectionContainer>
+                    <ConnectionForm
+                        inputValue={searchValue}
+                        onInputChange={event => setSearchValue(event.target.value)}
+                        inputPlaceholder="Filter embedding jobs..."
+                    />
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
                     <ConnectionList as="ul" className="list-group" aria-label="Repository embedding jobs">
                         {connection?.nodes?.map(node => (
-                            <RepoEmbeddingJobNode key={node.id} {...node} />
+                            <RepoEmbeddingJobNode key={node.id} {...node} onCancel={onCancel} />
                         ))}
                     </ConnectionList>
                     {connection && (
@@ -145,6 +172,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                                 first={connection.totalCount ?? 0}
                                 centered={true}
                                 connection={connection}
+                                connectionQuery={query}
                                 noun="repository embedding job"
                                 pluralNoun="repository embedding jobs"
                                 hasNextPage={hasNextPage}

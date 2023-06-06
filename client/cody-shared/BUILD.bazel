@@ -1,13 +1,13 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "npm_package", "ts_project")
-load("//dev:eslint.bzl", "eslint_config")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 # gazelle:js_resolve vscode //:node_modules/@vscode
 
 npm_link_all_packages(name = "node_modules")
 
-eslint_config()
+eslint_config_and_lint_root()
 
 ts_config(
     name = "tsconfig",
@@ -34,10 +34,11 @@ ts_project(
         "src/chat/recipes/context-search.ts",
         "src/chat/recipes/explain-code-detailed.ts",
         "src/chat/recipes/explain-code-high-level.ts",
-        "src/chat/recipes/file-flow.ts",
+        "src/chat/recipes/file-touch.ts",
         "src/chat/recipes/find-code-smells.ts",
         "src/chat/recipes/fixup.ts",
         "src/chat/recipes/generate-docstring.ts",
+        "src/chat/recipes/generate-pr-description.ts",
         "src/chat/recipes/generate-release-notes.ts",
         "src/chat/recipes/generate-test.ts",
         "src/chat/recipes/git-log.ts",

@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+
 	owntypes "github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	rbactypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
@@ -55,6 +56,7 @@ func userCtx(userID int32) context.Context {
 type fakeOwnService struct {
 	Ruleset        *codeowners.Ruleset
 	AssignedOwners own.AssignedOwners
+	Teams          own.AssignedTeams
 }
 
 func (s fakeOwnService) RulesetForRepo(context.Context, api.RepoName, api.RepoID, api.CommitID) (*codeowners.Ruleset, error) {
@@ -77,6 +79,10 @@ func (s fakeOwnService) ResolveOwnersWithType(_ context.Context, owners []*codeo
 
 func (s fakeOwnService) AssignedOwnership(context.Context, api.RepoID, api.CommitID) (own.AssignedOwners, error) {
 	return s.AssignedOwners, nil
+}
+
+func (s fakeOwnService) AssignedTeams(context.Context, api.RepoID, api.CommitID) (own.AssignedTeams, error) {
+	return s.Teams, nil
 }
 
 // fakeGitServer is a limited gitserver.Client that returns a file for every Stat call.
@@ -430,6 +436,92 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 								{
 									"owner": {
 										"displayName": "The Fake Team"
+									}
+								}
+							]
+						}
+					}
+				}
+			}
+		}`,
+		Variables: map[string]any{
+			"repo":        string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+			"revision":    parameterRevision,
+			"currentPath": "foo/bar.js",
+		},
+	})
+}
+
+func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
+	logger := logtest.Scoped(t)
+	repo := &types.Repo{Name: "repo-name", ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}, ID: 42}
+	const ghTeamName = "sourcegraph/own"
+	var parameterRevision = "revision-parameter"
+	var resolvedRevision api.CommitID = "revision-resolved"
+	git := fakeGitserver{
+		files: repoFiles{
+			{repo.Name, resolvedRevision, "CODEOWNERS"}: fmt.Sprintf("*.js @%s", ghTeamName),
+		},
+	}
+	fakeDB := fakedb.New()
+	db := enterprisedb.NewMockEnterpriseDB()
+	db.UsersFunc.SetDefaultReturn(fakeDB.UserStore)
+	db.TeamsFunc.SetDefaultReturn(fakeDB.TeamStore)
+	db.CodeownersFunc.SetDefaultReturn(enterprisedb.NewMockCodeownersStore())
+	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
+	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
+	db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
+	db.OwnSignalConfigurationsFunc.SetDefaultReturn(database.NewMockSignalConfigurationStore())
+	own := own.NewService(git, db)
+	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
+	repos := database.NewMockRepoStore()
+	db.ReposFunc.SetDefaultReturn(repos)
+	repos.GetFunc.SetDefaultReturn(repo, nil)
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		if rev != parameterRevision {
+			return "", errors.Newf("ResolveRev, got %q want %q", rev, parameterRevision)
+		}
+		return resolvedRevision, nil
+	}
+	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Schema:  schema,
+		Context: ctx,
+		Query: `
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+				node(id: $repo) {
+					... on Repository {
+						commit(rev: $revision) {
+							blob(path: $currentPath) {
+								ownership {
+									nodes {
+										owner {
+											... on Team {
+												name
+												displayName
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}`,
+		ExpectedResult: `{
+			"node": {
+				"commit": {
+					"blob": {
+						"ownership": {
+							"nodes": [
+								{
+									"owner": {
+										"name": "sourcegraph/own",
+										"displayName": "sourcegraph/own"
 									}
 								}
 							]
@@ -1399,6 +1491,79 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 			"currentPath": "foo/bar.js",
 		},
 	})
+
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Schema:  schema,
+		Context: ctx,
+		Query: `
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+				node(id: $repo) {
+					... on Repository {
+						commit(rev: $revision) {
+							blob(path: $currentPath) {
+								ownership {
+									totalOwners
+									totalCount
+									nodes {
+										owner {
+											...on Person {
+												displayName
+												email
+											}
+										}
+										reasons {
+											...on RecentContributorOwnershipSignal {
+											  title
+											  description
+											}
+											... on RecentViewOwnershipSignal {
+											  title
+											  description
+											}
+											... on AssignedOwner {
+											  title
+											  description
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}`,
+		ExpectedResult: `{
+			"node": {
+				"commit": {
+					"blob": {
+						"ownership": {
+							"totalOwners": 1,
+							"totalCount": 1,
+							"nodes": [
+								{
+									"owner": {
+										"displayName": "I am an assigned owner #2",
+										"email": "assigned@owner2.com"
+									},
+									"reasons": [
+										{
+											"title": "assigned owner",
+											"description": "Owner is manually assigned."
+										}
+									]
+								}
+							]
+						}
+					}
+				}
+			}
+		}`,
+		Variables: map[string]any{
+			"repo":        string(graphqlbackend.MarshalRepositoryID(repoID)),
+			"revision":    "revision",
+			"currentPath": "foo",
+		},
+	})
 }
 
 func TestAssignOwner(t *testing.T) {
@@ -1663,4 +1828,12 @@ func TestDeleteAssignedOwner(t *testing.T) {
 		graphqlbackend.RunTest(t, baseTest)
 		assertNoAssignedOwners(t)
 	})
+}
+
+func Test(t *testing.T) {
+	fmt.Println(string(graphqlbackend.MarshalUserID(1)))
+	fmt.Println(string(graphqlbackend.MarshalUserID(62)))
+	fmt.Println(string(graphqlbackend.MarshalUserID(69)))
+	fmt.Println(string(graphqlbackend.MarshalUserID(70)))
+	fmt.Println(string(graphqlbackend.MarshalRepositoryID(7)))
 }
