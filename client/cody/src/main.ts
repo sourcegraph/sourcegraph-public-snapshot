@@ -184,7 +184,9 @@ const register = async (
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings', () => chatProvider.setWebviewView('settings')),
         vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
-        vscode.commands.registerCommand('cody.walkthrough.showLogin', () => chatProvider.setWebviewView('login')),
+        vscode.commands.registerCommand('cody.walkthrough.showLogin', () =>
+            vscode.commands.executeCommand('workbench.view.extension.cody')
+        ),
         vscode.commands.registerCommand('cody.walkthrough.showChat', () => chatProvider.setWebviewView('chat')),
         vscode.commands.registerCommand('cody.walkthrough.showFixup', () => chatProvider.setWebviewView('recipes')),
         vscode.commands.registerCommand('cody.walkthrough.showExplain', () => chatProvider.setWebviewView('recipes')),
