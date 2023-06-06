@@ -1321,7 +1321,7 @@ func Test_SignalConfigurations(t *testing.T) {
 	})
 }
 
-func TestOwnership_WithAssignedOwners(t *testing.T) {
+func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
 	db := fakeOwnDb()
@@ -1345,6 +1345,8 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 	repoID := api.RepoID(1)
 	assignedOwnerID1 := fakeDB.AddUser(types.User{Username: "assigned owner 1", DisplayName: "I am an assigned owner #1"})
 	assignedOwnerID2 := fakeDB.AddUser(types.User{Username: "assigned owner 2", DisplayName: "I am an assigned owner #2"})
+	assignedTeamID1 := fakeDB.AddTeam(&types.Team{Name: "assigned team 1"})
+	assignedTeamID2 := fakeDB.AddTeam(&types.Team{Name: "assigned team 2"})
 	own := fakeOwnService{
 		Ruleset: codeowners.NewRuleset(
 			codeowners.IngestedRulesetSource{ID: int32(repoID)},
@@ -1363,6 +1365,10 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 		AssignedOwners: own.AssignedOwners{
 			"foo/bar.js": []database.AssignedOwnerSummary{{OwnerUserID: assignedOwnerID1, FilePath: "foo/bar.js", RepoID: repoID}},
 			"foo":        []database.AssignedOwnerSummary{{OwnerUserID: assignedOwnerID2, FilePath: "foo", RepoID: repoID}},
+		},
+		Teams: own.AssignedTeams{
+			"foo/bar.js": []database.AssignedTeamSummary{{OwnerTeamID: assignedTeamID1, FilePath: "foo/bar.js", RepoID: repoID}},
+			"foo":        []database.AssignedTeamSummary{{OwnerTeamID: assignedTeamID2, FilePath: "foo", RepoID: repoID}},
 		},
 	}
 	ctx := userCtx(fakeDB.AddUser(types.User{Username: santaName, DisplayName: santaName, SiteAdmin: true}))
@@ -1407,6 +1413,9 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 												displayName
 												email
 											}
+											...on Team {
+												name
+											}
 										}
 										reasons {
 											...CodeownersFileEntryFields
@@ -1419,6 +1428,10 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 											  description
 											}
 											... on AssignedOwner {
+											  title
+											  description
+											}
+											... on AssignedTeam {
 											  title
 											  description
 											}
@@ -1435,8 +1448,8 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 				"commit": {
 					"blob": {
 						"ownership": {
-							"totalOwners": 3,
-							"totalCount": 3,
+							"totalOwners": 5,
+							"totalCount": 5,
 							"nodes": [
 								{
 									"owner": {
@@ -1478,6 +1491,28 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 											"ruleLineMatch": 1
 										}
 									]
+								},
+								{
+									"owner": {
+										"name": "assigned team 1"
+									},
+									"reasons": [
+										{
+											"title": "assigned team",
+											"description": "Team is manually assigned."
+										}
+									]
+								},
+								{
+									"owner": {
+										"name": "assigned team 2"
+									},
+									"reasons": [
+										{
+											"title": "assigned team",
+											"description": "Team is manually assigned."
+										}
+									]
 								}
 							]
 						}
@@ -1510,6 +1545,9 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 												displayName
 												email
 											}
+											...on Team {
+												name
+											}
 										}
 										reasons {
 											...on RecentContributorOwnershipSignal {
@@ -1521,6 +1559,10 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 											  description
 											}
 											... on AssignedOwner {
+											  title
+											  description
+											}
+											... on AssignedTeam {
 											  title
 											  description
 											}
@@ -1537,8 +1579,8 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 				"commit": {
 					"blob": {
 						"ownership": {
-							"totalOwners": 1,
-							"totalCount": 1,
+							"totalOwners": 2,
+							"totalCount": 2,
 							"nodes": [
 								{
 									"owner": {
@@ -1549,6 +1591,17 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 										{
 											"title": "assigned owner",
 											"description": "Owner is manually assigned."
+										}
+									]
+								},
+								{
+									"owner": {
+										"name": "assigned team 2"
+									},
+									"reasons": [
+										{
+											"title": "assigned team",
+											"description": "Team is manually assigned."
 										}
 									]
 								}

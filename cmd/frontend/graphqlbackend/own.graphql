@@ -141,6 +141,8 @@ The only way we can recognize ownership at this point is through CODEOWNERS file
 """
 enum OwnershipReasonType {
     CODEOWNERS_FILE_ENTRY
+    ASSIGNED_OWNER
+    ASSIGNED_TEAM
     RECENT_CONTRIBUTOR_OWNERSHIP_SIGNAL
     RECENT_VIEW_OWNERSHIP_SIGNAL
 }
@@ -153,6 +155,7 @@ union OwnershipReason =
     | RecentContributorOwnershipSignal
     | RecentViewOwnershipSignal
     | AssignedOwner
+    | AssignedTeam
 
 """
 A signal derived from recent code contributors.
@@ -185,9 +188,24 @@ type RecentViewOwnershipSignal {
 }
 
 """
-The entity is an owner because they were mentioned on a codeowners file.
+Manually assigned owner.
 """
 type AssignedOwner {
+    """
+    Descriptive title to display in the UI for the determination.
+    """
+    title: String!
+
+    """
+    More detailed description to display in the UI for the determination.
+    """
+    description: String!
+}
+
+"""
+Manually assigned owner team.
+"""
+type AssignedTeam {
     """
     Descriptive title to display in the UI for the determination.
     """
