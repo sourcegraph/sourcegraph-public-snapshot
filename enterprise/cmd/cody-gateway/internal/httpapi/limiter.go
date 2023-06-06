@@ -16,7 +16,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.RedisStore, next http.Handler) http.Handler {
+func rateLimit(
+	baseLogger log.Logger,
+	eventLogger events.Logger,
+	cache limiter.RedisStore,
+	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
+	next http.Handler,
+) http.Handler {
 	baseLogger = baseLogger.Scoped("rateLimit", "rate limit handler")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +35,7 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 			return
 		}
 
-		l, ok := act.Limiter(cache, feature)
+		l, ok := act.Limiter(baseLogger, cache, feature, concurrencyLimitConfig)
 		if !ok {
 			response.JSONError(logger, w, http.StatusForbidden, errors.Newf("no access to feature %s", feature))
 			return
@@ -37,6 +43,12 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 
 		commit, err := l.TryAcquire(r.Context())
 		if err != nil {
+			limitedCause := "quota"
+			var concurrencyLimitExceeded actor.ErrConcurrencyLimitExceeded
+			if errors.As(err, &concurrencyLimitExceeded) {
+				limitedCause = "concurrency"
+			}
+
 			if loggerErr := eventLogger.LogEvent(
 				r.Context(),
 				events.Event{
@@ -46,6 +58,7 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 					Metadata: map[string]any{
 						"error": err.Error(),
 						codygateway.CompletionsEventFeatureMetadataField: feature,
+						"cause": limitedCause,
 					},
 				},
 			); loggerErr != nil {
@@ -60,6 +73,11 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 
 			if errors.Is(err, limiter.NoAccessError{}) {
 				response.JSONError(logger, w, http.StatusForbidden, err)
+				return
+			}
+
+			if limitedCause == "concurrency" {
+				concurrencyLimitExceeded.WriteResponse(w)
 				return
 			}
 

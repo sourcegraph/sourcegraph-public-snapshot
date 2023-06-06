@@ -56,6 +56,7 @@ func userCtx(userID int32) context.Context {
 type fakeOwnService struct {
 	Ruleset        *codeowners.Ruleset
 	AssignedOwners own.AssignedOwners
+	Teams          own.AssignedTeams
 }
 
 func (s fakeOwnService) RulesetForRepo(context.Context, api.RepoName, api.RepoID, api.CommitID) (*codeowners.Ruleset, error) {
@@ -78,6 +79,10 @@ func (s fakeOwnService) ResolveOwnersWithType(_ context.Context, owners []*codeo
 
 func (s fakeOwnService) AssignedOwnership(context.Context, api.RepoID, api.CommitID) (own.AssignedOwners, error) {
 	return s.AssignedOwners, nil
+}
+
+func (s fakeOwnService) AssignedTeams(context.Context, api.RepoID, api.CommitID) (own.AssignedTeams, error) {
+	return s.Teams, nil
 }
 
 // fakeGitServer is a limited gitserver.Client that returns a file for every Stat call.
