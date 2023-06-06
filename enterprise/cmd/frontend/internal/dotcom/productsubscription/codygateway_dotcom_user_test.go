@@ -2,6 +2,8 @@ package productsubscription_test
 
 import (
 	"context"
+	"encoding/hex"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -16,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -103,13 +106,15 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 			// Create an admin context to use for the request
 			adminContext := actor.WithActor(context.Background(), actor.FromActualUser(adminUser))
 
-			// Generate a token for the test user
-			_, token, err := db.AccessTokens().Create(context.Background(), test.user.ID, []string{authz.ScopeUserAll}, test.name, test.user.ID)
+			// Generate a dotcom api Token for the test user
+			_, dotcomToken, err := db.AccessTokens().Create(context.Background(), test.user.ID, []string{authz.ScopeUserAll}, test.name, test.user.ID)
 			require.NoError(t, err)
+			// convert token into a gateway token
+			gatewayToken := makeGatewayToken(dotcomToken)
 
 			// Make request from the admin checking the test user's token
 			r := productsubscription.CodyGatewayDotcomUserResolver{DB: db}
-			userResolver, err := r.DotcomCodyGatewayUserByToken(adminContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: token})
+			userResolver, err := r.DotcomCodyGatewayUserByToken(adminContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: gatewayToken})
 			require.NoError(t, err)
 
 			chat, err := userResolver.CodyGatewayAccess().ChatCompletionsRateLimit(adminContext)
@@ -149,7 +154,8 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	coydUser, err := db.Users().Create(ctx, database.NewUser{Username: "cody", EmailIsVerified: true, Email: "cody@test.com"})
 	require.NoError(t, err)
 	// Generate a token for the cody user
-	_, codyUserToken, err := db.AccessTokens().Create(context.Background(), coydUser.ID, []string{authz.ScopeUserAll}, "cody", coydUser.ID)
+	_, codyUserApiToken, err := db.AccessTokens().Create(context.Background(), coydUser.ID, []string{authz.ScopeUserAll}, "cody", coydUser.ID)
+	codyUserGatewayToken := makeGatewayToken(codyUserApiToken)
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -177,7 +183,7 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 
 			// Make request from the test user
 			r := productsubscription.CodyGatewayDotcomUserResolver{DB: db}
-			_, err := r.DotcomCodyGatewayUserByToken(requestContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: codyUserToken})
+			_, err := r.DotcomCodyGatewayUserByToken(requestContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: codyUserGatewayToken})
 
 			require.ErrorIs(t, err, test.wantErr)
 
@@ -187,4 +193,9 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 
 func iPtr(i int) *int {
 	return &i
+}
+
+func makeGatewayToken(apiToken string) string {
+	tokenBytes, _ := hex.DecodeString(strings.TrimPrefix(apiToken, "sgp_"))
+	return "sgd_" + hex.EncodeToString(hashutil.ToSHA256Bytes(hashutil.ToSHA256Bytes(tokenBytes)))
 }

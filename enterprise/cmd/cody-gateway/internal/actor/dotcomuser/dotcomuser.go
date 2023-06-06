@@ -2,7 +2,6 @@ package dotcomuser
 
 import (
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"strings"
 	"time"
@@ -15,13 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// user tokens are always a prefix of 4 characters (sgp_)
-// followed by a 40-character hex-encoded SHA256 hash
-const tokenLength = 4 + 40
+// dotcom user gateway tokens are always a prefix of 4 characters (sgd_)
+// followed by a 64-character hex-encoded SHA256 hash
+const tokenLength = 4 + 64
 
 var (
 	defaultUpdateInterval = 24 * time.Hour
@@ -46,20 +44,18 @@ func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Cl
 func (s *Source) Name() string { return string(codygateway.ActorSourceDotcomUser) }
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
-	// "sgp_" is sourcegraph user token
-	if token == "" || !strings.HasPrefix(token, "sgp_") {
+	// "sgd_" is dotcomUserGatewayAccessTokenPrefix
+	if token == "" || !strings.HasPrefix(token, "sgd_") {
 		return nil, actor.ErrNotFromSource{}
 	}
 
 	if len(token) != tokenLength {
 		return nil, errors.New("invalid token format")
 	}
-	hash := hashutil.ToSHA256Bytes([]byte(token))
-	digest := hex.EncodeToString(hash)
 
-	data, hit := s.cache.Get(digest)
+	data, hit := s.cache.Get(token)
 	if !hit {
-		return s.fetchAndCache(ctx, token, digest)
+		return s.fetchAndCache(ctx, token)
 	}
 
 	var act *actor.Actor
@@ -69,26 +65,26 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 		// Delete the corrupted record.
 		s.cache.Delete(token)
 
-		return s.fetchAndCache(ctx, token, digest)
+		return s.fetchAndCache(ctx, token)
 	}
 
 	if act.LastUpdated != nil && time.Since(*act.LastUpdated) > defaultUpdateInterval {
-		return s.fetchAndCache(ctx, token, digest)
+		return s.fetchAndCache(ctx, token)
 	}
 
 	act.Source = s
 	return act, nil
 }
 
-// fetchAndCache fetches the dotcom user data for the given user token and caches it using the cacheKey
-func (s *Source) fetchAndCache(ctx context.Context, token, cacheKey string) (*actor.Actor, error) {
+// fetchAndCache fetches the dotcom user data for the given user token and caches it
+func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor, error) {
 	var act *actor.Actor
 	resp, checkErr := dotcom.CheckDotcomUserAccessToken(ctx, s.dotcom, token)
 	if checkErr != nil {
 		// Generate a stateless actor so that we aren't constantly hitting the dotcom API
-		act = NewActor(s, cacheKey, dotcom.DotcomUserState{})
+		act = NewActor(s, token, dotcom.DotcomUserState{})
 	} else {
-		act = NewActor(s, cacheKey,
+		act = NewActor(s, token,
 			resp.Dotcom.DotcomCodyGatewayUserByToken.DotcomUserState)
 	}
 

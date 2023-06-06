@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
@@ -24,13 +23,13 @@ func (r CodyGatewayDotcomUserResolver) DotcomCodyGatewayUserByToken(ctx context.
 	if err := serviceAccountOrSiteAdmin(ctx, r.DB, true); err != nil {
 		return nil, err
 	}
-
-	userID, err := r.DB.AccessTokens().Lookup(ctx, args.Token, authz.ScopeUserAll)
+	dbTokens := newDBTokens(r.DB)
+	userID, err := dbTokens.LookupDotcomUserIDByAccessToken(ctx, args.Token)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := r.DB.Users().GetByID(ctx, userID)
+	user, err := r.DB.Users().GetByID(ctx, int32(userID))
 	if err != nil {
 		return nil, err
 	}
