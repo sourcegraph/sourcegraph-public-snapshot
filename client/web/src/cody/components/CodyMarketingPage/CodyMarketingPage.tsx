@@ -90,7 +90,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
             {/* Page content */}
             <div className={styles.headerSection}>
                 <div>
-                    <H1>Sign up to get Cody, our AI assistant, free</H1>
+                    <H1>Meet Cody, your AI assistant</H1>
                     <div className="ml-3">
                         <Text className={styles.codyConversation}>Auto-generate unit tests</Text>
                         <Text className={styles.codyConversation}>Explain code</Text>
