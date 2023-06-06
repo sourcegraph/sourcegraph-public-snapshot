@@ -8429,7 +8429,7 @@
         {
           "Name": "path_cursor_deleted_export_at",
           "Index": 23,
-          "TypeName": "timestamp without time zone",
+          "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -8481,7 +8481,7 @@
         {
           "Name": "reference_cursor_export_deleted_at",
           "Index": 21,
-          "TypeName": "timestamp without time zone",
+          "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
