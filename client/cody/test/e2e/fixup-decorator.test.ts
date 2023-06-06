@@ -19,7 +19,7 @@ test('decorations from un-applied Cody changes appear', async ({ page, sidebar }
     // TODO: When communication from the background process to the test runner
     // is possible, extract the FixupDecorator's decoration fields' keys and
     // select these exactly.
-    let decorations = page.locator(DECORATION_SELECTOR)
+    const decorations = page.locator(DECORATION_SELECTOR)
     expect(await decorations.count()).toBe(0)
 
     // Find the text hello cody, and then highlight the text
@@ -45,12 +45,12 @@ test('decorations from un-applied Cody changes appear', async ({ page, sidebar }
     // Extract the key of the decoration
     const decorationClassName = (await decorations.first().getAttribute('class'))
         ?.split(' ')
-        .find(className => /TextEditorDecorationType/.test(className))
+        .find(className => className.includes('TextEditorDecorationType'))
     expect(decorationClassName).toBeDefined()
 
     // Edit where Cody planned to type
     await page.keyboard.type('who needs titles?')
 
     // The decorations should change to conflict markers.
-    page.waitForSelector(`${DECORATION_SELECTOR}:not([class*="${decorationClassName}"])`)
+    await page.waitForSelector(`${DECORATION_SELECTOR}:not([class*="${decorationClassName}"])`)
 })

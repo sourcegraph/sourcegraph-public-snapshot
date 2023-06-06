@@ -4,7 +4,7 @@ import { Diff } from './diff'
 import { FixupFile } from './FixupFile'
 import { FixupTask } from './FixupTask'
 
-type TaskDecorations = {
+interface TaskDecorations {
     edits: vscode.Range[]
     conflicts: vscode.Range[]
 }
@@ -115,7 +115,7 @@ export class FixupDecorator implements vscode.Disposable {
         this.applyDecorations(editors, this.decorations_.get(file)?.values() || [].values())
     }
 
-    private applyDecorations(editors: vscode.TextEditor[], decorations: IterableIterator<TaskDecorations>) {
+    private applyDecorations(editors: vscode.TextEditor[], decorations: IterableIterator<TaskDecorations>): void {
         const incoming: vscode.Range[] = []
         const conflicted: vscode.Range[] = []
         const conflicts: vscode.Range[] = []

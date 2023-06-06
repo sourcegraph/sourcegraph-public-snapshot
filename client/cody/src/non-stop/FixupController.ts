@@ -42,10 +42,10 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         this._disposables.push(vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)))
         // Observe file renaming and deletion
         this.files = new FixupFileObserver()
-        this._disposables.push(vscode.workspace.onDidRenameFiles(this.files.didRenameFiles, this.files))
-        this._disposables.push(vscode.workspace.onDidDeleteFiles(this.files.didDeleteFiles, this.files))
+        this._disposables.push(vscode.workspace.onDidRenameFiles(this.files.didRenameFiles.bind(this.files)))
+        this._disposables.push(vscode.workspace.onDidDeleteFiles(this.files.didDeleteFiles.bind(this.files)))
         // Observe editor focus
-        this._disposables.push(vscode.window.onDidChangeVisibleTextEditors(this.didChangeVisibleTextEditors, this))
+        this._disposables.push(vscode.window.onDidChangeVisibleTextEditors(this.didChangeVisibleTextEditors.bind(this)))
         // Start the fixup tree view provider
         this.taskViewProvider = new TaskViewProvider()
         // Observe file edits
