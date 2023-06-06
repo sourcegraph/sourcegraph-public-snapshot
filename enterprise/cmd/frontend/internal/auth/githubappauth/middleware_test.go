@@ -58,7 +58,7 @@ func TestGenerateRedirectURL(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			url, err := generateRedirectURL(tc.domain, tc.installationID, tc.appID)
+			url, err := generateRedirectURL(tc.domain, tc.installationID, tc.appID, "my-cool-app")
 			if tc.expectedError != nil {
 				require.EqualError(t, err, tc.expectedError.Error())
 			} else {
@@ -238,7 +238,7 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 		baseURL := "/githubapp/redirect"
 		code := "2644896245sasdsf6dsd"
 		state := uuid.New()
-		domain := types.BatchesDomain
+		domain := types.BatchesGitHubAppDomain
 
 		t.Run("normal user", func(t *testing.T) {
 			req := httptest.NewRequest("GET", baseURL, nil)
@@ -312,7 +312,7 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 		baseURL := "/githubapp/setup"
 		state := uuid.New()
 		installationID := 232034243
-		domain := types.BatchesDomain
+		domain := types.BatchesGitHubAppDomain
 
 		t.Run("normal user", func(t *testing.T) {
 			req := httptest.NewRequest("GET", baseURL, nil)
