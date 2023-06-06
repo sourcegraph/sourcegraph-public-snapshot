@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
@@ -53,7 +54,9 @@ func NewService(ctx context.Context, logger log.Logger, db database.DB, jobs *li
 }
 
 func (s *service) EnqueueChangelistMappingJob(job *ChangelistMappingJob) {
-	s.changelistMappingQueue.Push(job)
+	if conf.Get().ExperimentalFeatures.PerforceChangelistMapping == "enabled" {
+		s.changelistMappingQueue.Push(job)
+	}
 }
 
 func (s *service) startPerforceChangelistMappingPipeline(ctx context.Context) {
