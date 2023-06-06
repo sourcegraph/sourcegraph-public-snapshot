@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { Alert, Button, H3, H4, Icon, Link, Text } from '@sourcegraph/wildcard'
+import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
 import { SearchPatternType, OwnerFields, OwnershipConnectionFields } from '../../../graphql-operations'
