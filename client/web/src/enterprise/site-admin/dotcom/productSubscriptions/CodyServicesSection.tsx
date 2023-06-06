@@ -313,7 +313,8 @@ const RateLimitRow: React.FunctionComponent<RateLimitRowProps> = ({
                             <CodyGatewayRateLimitSourceBadge source={rateLimit.source} />
                         </td>
                         <td>
-                            {rateLimit.limit} requests / {prettyInterval(rateLimit.intervalSeconds)}
+                            {rateLimit.limit} {mode === 'embeddings' ? 'tokens' : 'requests'} /{' '}
+                            {prettyInterval(rateLimit.intervalSeconds)}
                         </td>
                         <td>
                             <ModelBadges
