@@ -99,7 +99,7 @@ type store struct {
 	Logger log.Logger
 	// Metrics are sent to Prometheus by default.
 	Metrics StoreMetrics
-	// Used for tracing calls to store methods. Uses opentracing.GlobalTracer() by default.
+	// Used for tracing calls to store methods. Uses otel.GetTracerProvider() by default.
 	Tracer trace.Tracer
 
 	txtrace *trace.Trace

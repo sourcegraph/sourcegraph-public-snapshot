@@ -50,7 +50,6 @@ func ID(ctx context.Context) string {
 // Context retrieves the full trace context, if any, from context - this includes
 // both TraceID and SpanID.
 func Context(ctx context.Context) log.TraceContext {
-	// get the OpenTelemetry span, which is always present via the OpenTracing bridge
 	if otelSpan := oteltrace.SpanContextFromContext(ctx); otelSpan.IsValid() {
 		return log.TraceContext{
 			TraceID: otelSpan.TraceID().String(),

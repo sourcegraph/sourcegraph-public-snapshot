@@ -58,9 +58,9 @@ func newOperations(observationCtx *observation.Context) *operations {
 		})
 	}
 
-	// suboperations do not have their own metrics but do have their
-	// own opentracing spans. This allows us to more granularly track
-	// the latency for parts of a request without noising up Prometheus.
+	// suboperations do not have their own metrics but do have their own spans.
+	// This allows us to more granularly track the latency for parts of a
+	// request without noising up Prometheus.
 	subOp := func(name string) *observation.Operation {
 		return observationCtx.Operation(observation.Op{
 			Name: fmt.Sprintf("gitserver.client.%s", name),

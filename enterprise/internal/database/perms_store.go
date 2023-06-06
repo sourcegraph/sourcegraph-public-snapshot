@@ -238,7 +238,7 @@ func (s *permsStore) LoadUserPermissions(ctx context.Context, userID int32) (p [
 	defer func() {
 		tracingFields := []attribute.KeyValue{}
 		for _, perm := range p {
-			tracingFields = append(tracingFields, perm.TracingFields()...)
+			tracingFields = append(tracingFields, perm.Attrs()...)
 		}
 		save(&err, tracingFields...)
 	}()
@@ -270,7 +270,7 @@ func (s *permsStore) LoadRepoPermissions(ctx context.Context, repoID int32) (p [
 	defer func() {
 		tracingFields := []attribute.KeyValue{}
 		for _, perm := range p {
-			tracingFields = append(tracingFields, perm.TracingFields()...)
+			tracingFields = append(tracingFields, perm.Attrs()...)
 		}
 		save(&err, tracingFields...)
 	}()
@@ -371,7 +371,7 @@ func (s *permsStore) setUserRepoPermissions(ctx context.Context, p []authz.Permi
 	defer func() {
 		f := []attribute.KeyValue{}
 		for _, permission := range p {
-			f = append(f, permission.TracingFields()...)
+			f = append(f, permission.Attrs()...)
 		}
 		save(&err, f...)
 	}()
@@ -702,7 +702,7 @@ DO UPDATE SET
 
 func (s *permsStore) LoadUserPendingPermissions(ctx context.Context, p *authz.UserPendingPermissions) (err error) {
 	ctx, save := s.observe(ctx, "LoadUserPendingPermissions", "")
-	defer func() { save(&err, p.TracingFields()...) }()
+	defer func() { save(&err, p.Attrs()...) }()
 
 	id, ids, updatedAt, err := s.loadUserPendingPermissions(ctx, p, "")
 	if err != nil {
@@ -717,7 +717,7 @@ func (s *permsStore) LoadUserPendingPermissions(ctx context.Context, p *authz.Us
 
 func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *extsvc.Accounts, p *authz.RepoPermissions) (err error) {
 	ctx, save := s.observe(ctx, "SetRepoPendingPermissions", "")
-	defer func() { save(&err, append(p.TracingFields(), accounts.TracingFields()...)...) }()
+	defer func() { save(&err, append(p.Attrs(), accounts.TracingFields()...)...) }()
 
 	var txs *permsStore
 	if s.InTransaction() {
@@ -961,7 +961,7 @@ AND object_type = %s
 
 func (s *permsStore) GrantPendingPermissions(ctx context.Context, p *authz.UserGrantPermissions) (err error) {
 	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
-	defer func() { save(&err, p.TracingFields()...) }()
+	defer func() { save(&err, p.Attrs()...) }()
 
 	var txs *permsStore
 	if s.InTransaction() {

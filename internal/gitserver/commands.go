@@ -21,7 +21,6 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/golang/groupcache/lru"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
@@ -273,22 +272,6 @@ type CommitGraphOptions struct {
 func stableTimeRepr(t time.Time) string {
 	s, _ := t.MarshalText()
 	return string(s)
-}
-
-func (opts *CommitGraphOptions) LogFields() []log.Field {
-	var since string
-	if opts.Since != nil {
-		since = stableTimeRepr(*opts.Since)
-	} else {
-		since = stableTimeRepr(time.Unix(0, 0))
-	}
-
-	return []log.Field{
-		log.String("commit", opts.Commit),
-		log.Int("limit", opts.Limit),
-		log.Bool("allrefs", opts.AllRefs),
-		log.String("since", since),
-	}
 }
 
 // CommitGraph returns the commit graph for the given repository as a mapping

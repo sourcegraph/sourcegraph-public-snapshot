@@ -83,7 +83,7 @@ type Operation struct {
 }
 
 // TraceLogger is returned from With and can be used to add timestamped key and
-// value pairs into a related opentracing span. It has an embedded Logger that can be used
+// value pairs into a related span. It has an embedded Logger that can be used
 // directly to log messages in the context of a trace.
 type TraceLogger interface {
 	// AddEvent logs an event with name and fields on the trace.

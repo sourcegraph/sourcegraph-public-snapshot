@@ -115,7 +115,7 @@ func NewUploadProcessorHandler(
 func (h *handler) Handle(ctx context.Context, logger log.Logger, upload uploadsshared.Upload) (err error) {
 	var requeued bool
 
-	ctx, otLogger, endObservation := h.handleOp.With(ctx, &err, observation.Args{})
+	ctx, tr, endObservation := h.handleOp.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{Attrs: append(
 			createLogFields(upload),
@@ -123,7 +123,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, upload uploadss
 		)})
 	}()
 
-	requeued, err = h.HandleRawUpload(ctx, logger, upload, h.uploadStore, otLogger)
+	requeued, err = h.HandleRawUpload(ctx, logger, upload, h.uploadStore, tr)
 
 	return err
 }

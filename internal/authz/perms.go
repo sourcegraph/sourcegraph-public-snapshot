@@ -97,8 +97,7 @@ const (
 	SourceAPI      PermsSource = "api"
 )
 
-// TracingFields returns tracing fields for the opentracing log.
-func (p *Permission) TracingFields() []attribute.KeyValue {
+func (p *Permission) Attrs() []attribute.KeyValue {
 	return []attribute.KeyValue{
 		attribute.Int("SrcPermissions.UserID", int(p.UserID)),
 		attribute.Int("SrcPermissions.RepoID", int(p.RepoID)),
@@ -120,8 +119,7 @@ type RepoPermissions struct {
 	Unrestricted   bool                   // Anyone can see the repo, overrides all other permissions
 }
 
-// TracingFields returns tracing fields for the opentracing log.
-func (p *RepoPermissions) TracingFields() []attribute.KeyValue {
+func (p *RepoPermissions) Attrs() []attribute.KeyValue {
 	attrs := []attribute.KeyValue{
 		attribute.Int("RepoPermissions.RepoID", int(p.RepoID)),
 		attribute.Stringer("RepoPermissions.Perm", p.Perm),
@@ -154,8 +152,7 @@ type UserGrantPermissions struct {
 	AccountID string
 }
 
-// TracingFields returns tracing fields for the opentracing log.
-func (p *UserGrantPermissions) TracingFields() []attribute.KeyValue {
+func (p *UserGrantPermissions) Attrs() []attribute.KeyValue {
 	attrs := []attribute.KeyValue{
 		attribute.Int("UserGrantPermissions.UserID", int(p.UserID)),
 		attribute.Int("UserGrantPermissions.UserExternalAccountID", int(p.UserExternalAccountID)),
@@ -202,8 +199,7 @@ func (p *UserPendingPermissions) GenerateSortedIDsSlice() []int32 {
 	return p.IDs.Sorted(collections.NaturalCompare[int32])
 }
 
-// TracingFields returns tracing fields for the opentracing log.
-func (p *UserPendingPermissions) TracingFields() []attribute.KeyValue {
+func (p *UserPendingPermissions) Attrs() []attribute.KeyValue {
 	attrs := []attribute.KeyValue{
 		attribute.Int64("UserPendingPermissions.ID", p.ID),
 		attribute.String("UserPendingPermissions.ServiceType", p.ServiceType),

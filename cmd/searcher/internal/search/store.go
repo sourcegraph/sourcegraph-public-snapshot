@@ -13,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
@@ -192,7 +191,7 @@ func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit a
 		// TODO: consider adding a cache method that doesn't actually bother opening the file,
 		// since we're just going to close it again immediately.
 		cacheHit := true
-		bgctx := opentracing.ContextWithSpan(context.Background(), opentracing.SpanFromContext(ctx))
+		bgctx := trace.CopyContext(context.Background(), ctx)
 		f, err := s.cache.Open(bgctx, []string{key}, func(ctx context.Context) (io.ReadCloser, error) {
 			cacheHit = false
 			return s.fetch(ctx, repo, commit, filter, paths)

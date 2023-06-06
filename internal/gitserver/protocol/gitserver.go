@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -297,13 +296,6 @@ func (bl *BatchLogRequest) FromProto(p *proto.BatchLogRequest) {
 	}
 	bl.RepoCommits = repoCommits
 	bl.Format = p.GetFormat()
-}
-
-func (req BatchLogRequest) LogFields() []log.Field {
-	return []log.Field{
-		log.Int("numRepoCommits", len(req.RepoCommits)),
-		log.String("format", req.Format),
-	}
 }
 
 func (req BatchLogRequest) SpanAttributes() []attribute.KeyValue {

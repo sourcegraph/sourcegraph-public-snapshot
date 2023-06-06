@@ -168,8 +168,7 @@ require (
 	github.com/moby/buildkit v0.11.3
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opentracing-contrib/go-stdlib v1.0.0
-	github.com/opentracing/opentracing-go v1.2.0
+	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/peterbourgon/ff v1.7.1
 	github.com/peterbourgon/ff/v3 v3.3.0
 	github.com/peterhellberg/link v1.1.0
@@ -226,7 +225,7 @@ require (
 	go.opentelemetry.io/contrib/propagators/jaeger v1.14.0
 	go.opentelemetry.io/contrib/propagators/ot v1.14.0
 	go.opentelemetry.io/otel v1.13.0
-	go.opentelemetry.io/otel/bridge/opentracing v1.13.0
+	go.opentelemetry.io/otel/bridge/opentracing v1.13.0 // indirect
 	go.opentelemetry.io/otel/exporters/jaeger v1.13.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.13.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.13.0
