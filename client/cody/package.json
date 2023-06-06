@@ -566,13 +566,13 @@
           "group": "navigation@2"
         },
         {
-          "command": "cody.settings",
-          "when": "view == cody.chat && cody.activated",
+          "command": "cody.feedback",
+          "when": "view == cody.chat",
           "group": "navigation@3"
         },
         {
-          "command": "cody.feedback",
-          "when": "view == cody.chat",
+          "command": "cody.settings",
+          "when": "view == cody.chat && cody.activated",
           "group": "navigation@4"
         },
         {
