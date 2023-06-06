@@ -31,6 +31,7 @@ go_library(
         "//internal/conf",
         "//internal/database",
         "//internal/extsvc",
+        "//internal/goroutine",
         "//internal/perforce",
         "//internal/types",
         "//lib/errors",
