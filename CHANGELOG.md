@@ -49,9 +49,10 @@ All notable changes to Sourcegraph are documented in this file.
 - Update minimum supported Redis version to 6.2 [#52248](https://github.com/sourcegraph/sourcegraph/pull/52248)
 - The batch spec properties [`transformChanges`](https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#transformchanges) and [`workspaces`](https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#workspaces) are now generally available.
 - Cody feature flags have been simplified [#52919](https://github.com/sourcegraph/sourcegraph/pull/52919)
-  - `cody.enabled` in site-config now controls whether Cody is on/off, default false
-  - `cody.restrictUsersFeatureFlag` replaces `experimentalFeatures.CodyRestrictUsersFeatureFlag` in site-config, default false
-  - `completions.enabled` has been removed, replaced by `cody.enabled`
+  - `cody.enabled` in site-config now controls whether Cody is on/off, default `false`.
+  - `cody.restrictUsersFeatureFlag` replaces `experimentalFeatures.CodyRestrictUsersFeatureFlag` in site-config, default `false`.
+  - `completions.enabled` has been removed, replaced by `cody.enabled`.
+  - Enabling Cody now requires `cody.enabled` set to `true` and `completions` to be set.
 
 ### Fixed
 
