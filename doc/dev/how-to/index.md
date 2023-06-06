@@ -66,6 +66,10 @@
 - [How to add and update Wolfi packages](wolfi/add_update_packages.md)
 - [How to add and update Wolfi base images](wolfi/add_update_images.md)
 
+## Cody Gateway
+
+- [How to set up Cody Gateway locally](cody_gateway.md)
+
 ## Windows support
 
 Running Sourcegraph on Windows is not actively tested, but should be possible within the Windows Subsystem for Linux (WSL).
