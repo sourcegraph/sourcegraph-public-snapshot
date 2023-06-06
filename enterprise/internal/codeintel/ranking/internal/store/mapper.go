@@ -148,6 +148,22 @@ locked_refs AS (
 	ON CONFLICT DO NOTHING
 	RETURNING codeintel_ranking_reference_id
 ),
+referenced_upload_keys AS (
+	SELECT DISTINCT r.upload_key
+	FROM locked_refs lr
+	JOIN refs r ON r.id = lr.codeintel_ranking_reference_id
+),
+processed_upload_keys AS (
+	SELECT cre2.upload_key, cre2.upload_id
+	FROM codeintel_ranking_exports cre2
+	JOIN codeintel_ranking_references rr2 ON rr2.exported_upload_id = cre2.id
+	JOIN codeintel_ranking_references_processed rrp2 ON rrp2.codeintel_ranking_reference_id = rr2.id
+	WHERE
+		cre2.graph_key = %s AND
+		rr2.graph_key = %s AND
+		rrp2.graph_key = %s AND
+		cre2.upload_key IN (SELECT upload_key FROM referenced_upload_keys)
+),
 processable_symbols AS (
 	SELECT r.symbol_names
 	FROM locked_refs lr
@@ -158,15 +174,10 @@ processable_symbols AS (
 		-- "work", but we'll simply no-op the counts for this input.
 		NOT EXISTS (
 			SELECT 1
-			FROM codeintel_ranking_exports cre2
-			JOIN codeintel_ranking_references rr2 ON rr2.exported_upload_id = cre2.id
-			JOIN codeintel_ranking_references_processed rrp2 ON rrp2.codeintel_ranking_reference_id = rr2.id
+			FROM processed_upload_keys puk
 			WHERE
-				cre2.upload_id != r.upload_id AND
-				cre2.upload_key = r.upload_key AND
-				cre2.graph_key = %s AND
-				rr2.graph_key = %s AND
-				rrp2.graph_key = %s
+				puk.upload_key = r.upload_key AND
+				puk.upload_id != r.upload_id
 		) AND
 
 		-- For multiple references for the same repository/root/indexer in THIS batch, we want to
