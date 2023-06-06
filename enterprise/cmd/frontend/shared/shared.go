@@ -26,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/embeddings"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights"
-	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
+	licensinginit "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/notebooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/own"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rbac"
@@ -37,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	ecody "github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/scim"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -60,7 +61,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"context":        internalcontext.Init,
 	"githubapp":      githubapp.Init,
 	"insights":       insights.Init,
-	"licensing":      licensing.Init,
+	"licensing":      licensinginit.Init,
 	"notebooks":      notebooks.Init,
 	"own":            own.Init,
 	"rbac":           rbac.Init,
@@ -76,9 +77,11 @@ func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		logger.Debug("enterprise edition")
 	}
 
+	ctx := context.Background()
+	licensing.InitLicenseValidationCheck(ctx, db)
+
 	auth.Init(logger, db)
 
-	ctx := context.Background()
 	enterpriseServices := enterprise.DefaultServices()
 
 	observationCtx := observation.NewContext(logger)

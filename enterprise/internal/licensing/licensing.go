@@ -1,6 +1,7 @@
 package licensing
 
 import (
+	"context"
 	"log"
 	"sync"
 	"time"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -91,6 +93,23 @@ var (
 
 var MockGetConfiguredProductLicenseInfo func() (*license.Info, string, error)
 
+// isLicenseValid is a stub implementation. Services requiring license checks need to provide an
+// implementation that has access to the database.
+var isLicenseValid = func() bool {
+	panic("IsLicenseValid has not been initialised")
+}
+
+func InitLicenseValidationCheck(ctx context.Context, db database.DB) {
+	isLicenseValid = func() bool {
+		gs, err := db.GlobalState().Get(ctx)
+		if err != nil {
+			return false
+		}
+
+		return gs.IsLicenseValid == nil || *gs.IsLicenseValid
+	}
+}
+
 // GetConfiguredProductLicenseInfo returns information about the current product license key
 // specified in site configuration.
 func GetConfiguredProductLicenseInfo() (*Info, error) {
@@ -125,6 +144,10 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 
 			if err = info.hasUnknownPlan(); err != nil {
 				return nil, "", err
+			}
+
+			if !isLicenseValid() {
+				return nil, "", errors.New("license is not valid")
 			}
 
 			lastKeyText = keyText

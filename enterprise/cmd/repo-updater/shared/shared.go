@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	ghaauth "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -42,6 +43,8 @@ func EnterpriseInit(
 	// NOTE: Internal actor is required to have full visibility of the repo table
 	// 	(i.e. bypass repository authorization).
 	ctx := actor.WithInternalActor(context.Background())
+
+	licensing.InitLicenseValidationCheck(ctx, db)
 
 	// No Batch Changes on dotcom, so we don't need to spawn the
 	// background jobs for this feature.

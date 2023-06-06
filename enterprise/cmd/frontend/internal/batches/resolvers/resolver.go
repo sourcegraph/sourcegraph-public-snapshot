@@ -477,7 +477,6 @@ func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublication
 				errs = errors.Append(errs, err)
 			}
 		}
-
 	}
 
 	return errs
@@ -1592,7 +1591,6 @@ func (r *Resolver) CreateEmptyBatchChange(ctx context.Context, args *graphqlback
 		NamespaceOrgID:  oid,
 		Name:            args.Name,
 	})
-
 	if err != nil {
 		// Render pretty error.
 		if err == store.ErrInvalidBatchChangeName {
@@ -1627,7 +1625,6 @@ func (r *Resolver) UpsertEmptyBatchChange(ctx context.Context, args *graphqlback
 		NamespaceOrgID:  oid,
 		Name:            args.Name,
 	})
-
 	if err != nil {
 		return nil, err
 	}
