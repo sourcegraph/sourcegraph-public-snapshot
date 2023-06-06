@@ -159,14 +159,13 @@ bazel test //enterprise/cmd/worker:image_test --config darwin-docker
 
 Finally, _if and only if_ we want our image to be released on registries, we need to add the `oci_push` rule. It will take care of definining which registry to push on, as well as tagging the image, through a process referred as `stamping` that we will cover a bit further. 
 
-Apart from the `image` attribute which refers to the above `oci_rule`, `remote_tags` refers to a target living at the root of the repository, whose purpose is to handle all the conventional tags we release our images with. As a service owner, you don't have to think about this, as long as you specify it exactly like the example below. Example: 
+Apart from the `image` attribute which refers to the above `oci_rule`, `repository` refers to the internal (development) registry. Example:
 
 
 ```
 oci_push(
     name = "candidate_push",
     image = ":image",
-    remote_tags = "//:tags",
     repository = image_repository("worker"),
 )
 ```
