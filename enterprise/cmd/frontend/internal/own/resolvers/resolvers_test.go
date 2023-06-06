@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+
 	owntypes "github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	rbactypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
@@ -1483,6 +1484,79 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 			"repo":        string(graphqlbackend.MarshalRepositoryID(repoID)),
 			"revision":    "revision",
 			"currentPath": "foo/bar.js",
+		},
+	})
+
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Schema:  schema,
+		Context: ctx,
+		Query: `
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+				node(id: $repo) {
+					... on Repository {
+						commit(rev: $revision) {
+							blob(path: $currentPath) {
+								ownership {
+									totalOwners
+									totalCount
+									nodes {
+										owner {
+											...on Person {
+												displayName
+												email
+											}
+										}
+										reasons {
+											...on RecentContributorOwnershipSignal {
+											  title
+											  description
+											}
+											... on RecentViewOwnershipSignal {
+											  title
+											  description
+											}
+											... on AssignedOwner {
+											  title
+											  description
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}`,
+		ExpectedResult: `{
+			"node": {
+				"commit": {
+					"blob": {
+						"ownership": {
+							"totalOwners": 1,
+							"totalCount": 1,
+							"nodes": [
+								{
+									"owner": {
+										"displayName": "I am an assigned owner #2",
+										"email": "assigned@owner2.com"
+									},
+									"reasons": [
+										{
+											"title": "assigned owner",
+											"description": "Owner is manually assigned."
+										}
+									]
+								}
+							]
+						}
+					}
+				}
+			}
+		}`,
+		Variables: map[string]any{
+			"repo":        string(graphqlbackend.MarshalRepositoryID(repoID)),
+			"revision":    "revision",
+			"currentPath": "foo",
 		},
 	})
 }
