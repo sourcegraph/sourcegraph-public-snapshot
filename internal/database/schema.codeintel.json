@@ -1061,22 +1061,22 @@
       ],
       "Indexes": [
         {
-          "Name": "codeintel_scip_symbols_lookup_unique_fuzzy",
-          "IsPrimaryKey": false,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_symbols_lookup_unique_fuzzy ON codeintel_scip_symbols_lookup USING btree (upload_id, scip_name_type, name)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
           "Name": "codeintel_scip_symbols_lookup_unique_precise",
           "IsPrimaryKey": false,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_symbols_lookup_unique_precise ON codeintel_scip_symbols_lookup USING btree (upload_id, id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "codeintel_scip_symbols_lookup_unique_fuzzy",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_scip_symbols_lookup_unique_fuzzy ON codeintel_scip_symbols_lookup USING btree (upload_id, scip_name_type, name)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }

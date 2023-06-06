@@ -24,24 +24,16 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/binary"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var Client *gosyntect.Client
+var client *gosyntect.Client
 
-func init() {
-	syntectServer := env.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) address")
-	clientOnce.Do(func() {
-		Client = gosyntect.New(syntectServer)
-	})
-}
-
-func LoadConfig() *gosyntect.Client {
-	return Client
+func LoadConfig() {
+	client = gosyntect.GetSyntectClient()
 }
 
 var (
@@ -470,7 +462,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		}, false, nil
 	}
 
-	resp, err := Client.Highlight(ctx, query, p.Format)
+	resp, err := client.Highlight(ctx, query, p.Format)
 
 	if ctx.Err() == context.DeadlineExceeded {
 		log15.Warn(

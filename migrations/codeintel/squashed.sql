@@ -430,7 +430,7 @@ CREATE INDEX codeintel_scip_symbols_document_lookup_id ON codeintel_scip_symbols
 
 CREATE INDEX codeintel_scip_symbols_fuzzy_selector ON codeintel_scip_symbols USING btree (upload_id, descriptor_no_suffix_id);
 
-CREATE UNIQUE INDEX codeintel_scip_symbols_lookup_unique_fuzzy ON codeintel_scip_symbols_lookup USING btree (upload_id, scip_name_type, name);
+CREATE INDEX codeintel_scip_symbols_lookup_unique_fuzzy ON codeintel_scip_symbols_lookup USING btree (upload_id, scip_name_type, name);
 
 CREATE UNIQUE INDEX codeintel_scip_symbols_lookup_unique_precise ON codeintel_scip_symbols_lookup USING btree (upload_id, id);
 

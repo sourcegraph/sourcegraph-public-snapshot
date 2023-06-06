@@ -7,14 +7,40 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var (
+	client *Client
+	once   sync.Once
+)
+
+func init() {
+	syntectServer := env.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) address")
+	once.Do(func() {
+		client = New(syntectServer)
+	})
+}
+
+func GetSyntectClient() *Client {
+	return client
+}
+
+// New returns a client connection to a syntect_server.
+func New(syntectServer string) *Client {
+	return &Client{
+		syntectServer: strings.TrimSuffix(syntectServer, "/"),
+		httpClient:    httpcli.InternalClient,
+	}
+}
 
 const (
 	SyntaxEngineSyntect    = "syntect"
@@ -156,9 +182,6 @@ type SymbolsQuery struct {
 
 	// Content is the content of the file to get symbols for.
 	Content string `json:"content"`
-
-	// // Which highlighting engine to use
-	// Engine string `json:"engine"`
 }
 
 // Client represents a client connection to a syntect_server.
@@ -320,12 +343,4 @@ func (c *Client) Symbols(ctx context.Context, q *SymbolsQuery) (*SymbolsResponse
 	}, nil
 
 	// return response, nil
-}
-
-// New returns a client connection to a syntect_server.
-func New(syntectServer string) *Client {
-	return &Client{
-		syntectServer: strings.TrimSuffix(syntectServer, "/"),
-		httpClient:    httpcli.InternalClient,
-	}
 }

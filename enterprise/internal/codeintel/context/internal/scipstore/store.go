@@ -14,6 +14,8 @@ import (
 type ScipStore interface {
 	GetSCIPDocumentsByFuzzySelector(ctx context.Context, selector, scipNameType string) (documents []*scip.Document, err error)
 	GetSCIPDocumentsByPreciseSelector(ctx context.Context, uploadID int, schemeID, packageManagerID, packageManagerName, packageVersionID, descriptorID int) (documents []*scip.Document, err error)
+
+	// GetSCIPDocumentsBySymbolNames(ctx context.Context, uploadID int, symbolNames []string) (documents []*scip.Document, err error)
 }
 
 type store struct {

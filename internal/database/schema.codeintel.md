@@ -244,8 +244,8 @@ A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40s
  name           | text    |           | not null | 
  scip_name_type | text    |           | not null | 
 Indexes:
-    "codeintel_scip_symbols_lookup_unique_fuzzy" UNIQUE, btree (upload_id, scip_name_type, name)
     "codeintel_scip_symbols_lookup_unique_precise" UNIQUE, btree (upload_id, id)
+    "codeintel_scip_symbols_lookup_unique_fuzzy" btree (upload_id, scip_name_type, name)
 
 ```
 

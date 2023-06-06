@@ -3,18 +3,21 @@ package context
 import (
 	scipstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context/internal/scipstore"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func NewService(
 	observationCtx *observation.Context,
 	codeIntelDB codeintelshared.CodeIntelDB,
+	syntectClient *gosyntect.Client,
+	codenavSvc CodeNavService,
 ) *Service {
-	scipStore := scipstore.New(scopedContext("store", observationCtx), codeIntelDB)
-
 	return newService(
 		observationCtx,
-		scipStore,
+		scipstore.New(scopedContext("store", observationCtx), codeIntelDB),
+		syntectClient,
+		codenavSvc,
 	)
 }
 

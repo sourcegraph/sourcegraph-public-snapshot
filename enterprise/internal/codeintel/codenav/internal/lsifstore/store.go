@@ -33,6 +33,9 @@ type LsifStore interface {
 	GetHover(ctx context.Context, bundleID int, path string, line, character int) (string, shared.Range, bool, error)
 	GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) ([]shared.Diagnostic, int, error)
 	SCIPDocument(ctx context.Context, id int, path string) (_ *scip.Document, err error)
+
+	// Fetch document by symbol name
+	GetSCIPDocumentsBySymbolNames(ctx context.Context, uploadID int, symbolNames []string) (documents []*scip.Document, err error)
 }
 
 type store struct {

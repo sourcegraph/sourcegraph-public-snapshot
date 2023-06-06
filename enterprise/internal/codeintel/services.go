@@ -1,8 +1,6 @@
 package codeintel
 
 import (
-	"fmt"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
@@ -15,7 +13,7 @@ import (
 	ossdependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -40,10 +38,7 @@ type ServiceDependencies struct {
 func NewServices(deps ServiceDependencies) (Services, error) {
 	db, codeIntelDB := deps.DB, deps.CodeIntelDB
 	gitserverClient := gitserver.NewClient()
-
-	syntectClient := highlight.LoadConfig()
-
-	fmt.Println("syntectClient: ", syntectClient)
+	syntectClient := gosyntect.GetSyntectClient()
 
 	uploadsSvc := uploads.NewService(deps.ObservationCtx, db, codeIntelDB, gitserverClient)
 	dependenciesSvc := dependencies.NewService(deps.ObservationCtx, db)
@@ -52,7 +47,7 @@ func NewServices(deps ServiceDependencies) (Services, error) {
 	codenavSvc := codenav.NewService(deps.ObservationCtx, db, codeIntelDB, uploadsSvc, gitserverClient)
 	rankingSvc := ranking.NewService(deps.ObservationCtx, db, codeIntelDB)
 	sentinelService := sentinel.NewService(deps.ObservationCtx, db)
-	contextService := context.NewService(deps.ObservationCtx, codeIntelDB)
+	contextService := context.NewService(deps.ObservationCtx, codeIntelDB, syntectClient, codenavSvc)
 
 	return Services{
 		AutoIndexingService: autoIndexingSvc,

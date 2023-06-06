@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/sourcegraph/log"
@@ -1470,4 +1471,201 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 	}
 
 	return
+}
+
+func (s *Service) GetSCIPDocumentsBySymbolNames(
+	ctx context.Context,
+	uploads []uploadsshared.Dump,
+	symbolNames []string,
+	repoName api.RepoName,
+	repoID api.RepoID,
+	commitID api.CommitID,
+	path string,
+) (content []string, err error) {
+	type docsAndPath struct {
+		docs []*scip.Document
+		root string
+	}
+	var allDocs []docsAndPath
+	for _, upload := range uploads {
+		// TODO: pass in a list of uploadIDs instead of looping thru
+		docs, err := s.lsifstore.GetSCIPDocumentsBySymbolNames(ctx, upload.ID, symbolNames)
+		if err != nil {
+			return nil, err
+		}
+		root := "/"
+		if upload.Root != "" {
+			root = upload.Root
+		}
+		d := docsAndPath{
+			docs: docs,
+
+			root: root,
+		}
+		allDocs = append(allDocs, d)
+	}
+
+	// TODO: loop thru doc to get relative path
+	// TODO: add upload .root to doc.RelativePath for the gitserver.ReadFile
+	var allContent []string
+	for _, docs := range allDocs {
+		for _, doc := range docs.docs {
+			fmt.Println("doc.RelativePath", doc.RelativePath)
+			pathWithRoot := filepath.Join(docs.root, doc.RelativePath)
+			fmt.Println("pathWithRoot >>>>", pathWithRoot)
+
+			file, err := s.gitserver.ReadFile(
+				ctx,
+				authz.DefaultSubRepoPermsChecker,
+				repoName,
+				commitID,
+				pathWithRoot,
+			)
+			if err != nil {
+				return nil, err
+			}
+			c := strings.Split(string(file), "\n")
+			for _, occ := range doc.Occurrences {
+				defs := extractOccurrenceData(doc, occ)
+				for _, def := range defs {
+					fmt.Println("defs start line >>>>", def.Start.Line)
+					fmt.Println("defs end line >>>>", def.End.Line)
+					content := pageContent(c, &def.Start.Line, &def.End.Line, def.Start.Character, def.End.Character)
+					// content := pageContentToo(c, def.Start.Line, def.End.Line, def.Start.Character, def.End.Character)
+					// content := extractStrings(c, def.Start.Line, def.End.Line, def.Start.Character, def.End.Character)
+					// _ = content
+					fmt.Println("content >>>>", content)
+					if content != "" {
+						allContent = append(allContent, content)
+					}
+				}
+			}
+		}
+	}
+	fmt.Println("allContent >>>>", allContent)
+	return allContent, nil
+}
+
+func extractStrings(lines []string, startLine, endLine, startChar, endChar int32) string {
+	if startLine > endLine || startLine < 0 || endLine >= int32(len(lines)) {
+		return ""
+	}
+
+	result := make([]string, 0)
+
+	for i := startLine; i <= endLine; i++ {
+		line := lines[i]
+		if i == startLine {
+			if startChar < 0 || startChar >= int32(len(line)) {
+				return ""
+			}
+
+			if i == endLine {
+				if endChar < startChar || endChar >= int32(len(line)) {
+					return ""
+				}
+				result = append(result, line[startChar:endChar+1])
+			} else {
+				result = append(result, line[startChar:])
+			}
+		} else if i == endLine {
+			if endChar < 0 || endChar >= int32(len(line)) {
+				return ""
+			}
+			result = append(result, line[:endChar+1])
+		} else {
+			result = append(result, line)
+		}
+	}
+
+	return strings.Join(result, "\n")
+}
+
+func pageContent(content []string, startLine, endLine *int32, startChar, endChar int32) string {
+	totalContentLength := len(content)
+	startCursor := 0
+	endCursor := totalContentLength
+
+	// Any nil or illegal value for startLine or endLine gets set to either the start or
+	// end of the file respectively.
+
+	// If startLine is set and is a legit value, set the cursor to point to it.
+	if startLine != nil && *startLine > 0 {
+		// The left index is inclusive, so we have to shift it back by 1
+		startCursor = int(*startLine) - 1
+	}
+	if startCursor >= totalContentLength {
+		startCursor = totalContentLength
+	}
+
+	// If endLine is set and is a legit value, set the cursor to point to it.
+	if endLine != nil && *endLine >= 0 {
+		endCursor = int(*endLine)
+	}
+	if endCursor > totalContentLength {
+		endCursor = totalContentLength
+	}
+
+	// Final failsafe in case someone is really messing around with this API.
+	if endCursor < startCursor {
+		return strings.Join(content[0:totalContentLength], "\n")
+	}
+
+	c := content[startCursor:endCursor]
+
+	return strings.Join(c[startChar:endChar-1], "\n")
+}
+
+func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
+	// hoverText               []string
+	definitionSymbol := occurrence.Symbol // referencesBySymbol      = map[string]struct{}{}
+	// implementationsBySymbol = map[string]struct{}{}
+	// prototypeBySymbol       = map[string]struct{}{}
+
+	// Extract hover text and relationship data from the symbol information that
+	// matches the given occurrence. This will give us additional symbol names that
+	// we should include in reference and implementation searches.
+
+	if symbol := scip.FindSymbol(document, occurrence.Symbol); symbol != nil {
+		// hoverText = symbol.Documentation
+		for _, rel := range symbol.Relationships {
+			if rel.IsDefinition {
+				definitionSymbol = rel.Symbol
+			}
+		}
+	}
+
+	// for _, sym := range document.Symbols {
+	// 	for _, rel := range sym.Relationships {
+	// 		if rel.IsImplementation {
+	// 			if rel.Symbol == occurrence.Symbol {
+	// 				implementationsBySymbol[occurrence.Symbol] = struct{}{}
+	// 			}
+	// 		}
+	// 	}
+	// }
+
+	definitions := []*scip.Range{}
+
+	// Include original symbol names for reference search below
+	// referencesBySymbol[occurrence.Symbol] = struct{}{}
+
+	// For each occurrence that references one of the definition, reference, or
+	// implementation symbol names, extract and aggregate their source positions.
+
+	for _, occ := range document.Occurrences {
+		isDefinition := scip.SymbolRole_Definition.Matches(occ)
+
+		// This occurrence defines this symbol
+		if definitionSymbol == occ.Symbol && isDefinition {
+			definitions = append(definitions, scip.NewRange(occ.EnclosingRange))
+		}
+	}
+
+	// Override symbol documentation with occurrence documentation, if it exists
+	// if len(occurrence.OverrideDocumentation) != 0 {
+	// 	hoverText = occurrence.OverrideDocumentation
+	// }
+
+	return definitions
 }
