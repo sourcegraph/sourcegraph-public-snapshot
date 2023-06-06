@@ -81,6 +81,27 @@ Foreign-key constraints:
 
 Table for ownership assignments, one entry contains an assigned user ID, which repo_path is assigned and the date and user who assigned the owner.
 
+# Table "public.assigned_teams"
+```
+        Column        |            Type             | Collation | Nullable |                  Default                   
+----------------------+-----------------------------+-----------+----------+--------------------------------------------
+ id                   | integer                     |           | not null | nextval('assigned_teams_id_seq'::regclass)
+ owner_team_id        | integer                     |           | not null | 
+ file_path_id         | integer                     |           | not null | 
+ who_assigned_team_id | integer                     |           |          | 
+ assigned_at          | timestamp without time zone |           | not null | now()
+Indexes:
+    "assigned_teams_pkey" PRIMARY KEY, btree (id)
+    "assigned_teams_file_path_owner" UNIQUE, btree (file_path_id, owner_team_id)
+Foreign-key constraints:
+    "assigned_teams_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
+    "assigned_teams_owner_team_id_fkey" FOREIGN KEY (owner_team_id) REFERENCES teams(id) ON DELETE CASCADE DEFERRABLE
+    "assigned_teams_who_assigned_team_id_fkey" FOREIGN KEY (who_assigned_team_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+
+```
+
+Table for team ownership assignments, one entry contains an assigned team ID, which repo_path is assigned and the date and user who assigned the owner team.
+
 # Table "public.batch_changes"
 ```
       Column       |           Type           | Collation | Nullable |                  Default                  
@@ -1084,6 +1105,51 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.codeowners_individual_stats"
+```
+         Column         |            Type             | Collation | Nullable | Default 
+------------------------+-----------------------------+-----------+----------+---------
+ file_path_id           | integer                     |           | not null | 
+ owner_id               | integer                     |           | not null | 
+ tree_owned_files_count | integer                     |           | not null | 
+ updated_at             | timestamp without time zone |           | not null | 
+Indexes:
+    "codeowners_individual_stats_pkey" PRIMARY KEY, btree (file_path_id, owner_id)
+Foreign-key constraints:
+    "codeowners_individual_stats_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
+    "codeowners_individual_stats_owner_id_fkey" FOREIGN KEY (owner_id) REFERENCES codeowners_owners(id)
+
+```
+
+Data on how many files in given tree are owned by given owner.
+
+As opposed to ownership-general `ownership_path_stats` table, the individual &lt;path x owner&gt; stats
+are stored in CODEOWNERS-specific table `codeowners_individual_stats`. The reason for that is that
+we are also indexing on owner_id which is CODEOWNERS-specific.
+
+**tree_owned_files_count**: Total owned file count by given owner at given file tree.
+
+**updated_at**: When the last background job updating counts run.
+
+# Table "public.codeowners_owners"
+```
+  Column   |  Type   | Collation | Nullable |                    Default                    
+-----------+---------+-----------+----------+-----------------------------------------------
+ id        | integer |           | not null | nextval('codeowners_owners_id_seq'::regclass)
+ reference | text    |           | not null | 
+Indexes:
+    "codeowners_owners_pkey" PRIMARY KEY, btree (id)
+    "codeowners_owners_reference" btree (reference)
+Referenced by:
+    TABLE "codeowners_individual_stats" CONSTRAINT "codeowners_individual_stats_owner_id_fkey" FOREIGN KEY (owner_id) REFERENCES codeowners_owners(id)
+
+```
+
+Text reference in CODEOWNERS entry to use in codeowners_individual_stats. Reference is either email or handle without @ in front.
+
+**reference**: We just keep the reference as opposed to splitting it to handle or email
+since the distinction is not relevant for query, and this makes indexing way easier.
+
 # Table "public.commit_authors"
 ```
  Column |  Type   | Collation | Nullable |                  Default                   
@@ -1349,7 +1415,7 @@ Contains state for own jobs that scrape events if enabled.
 ------------------+--------------------------+-----------+----------+-------------------------------------------------
  id               | integer                  |           | not null | nextval('executor_heartbeats_id_seq'::regclass)
  hostname         | text                     |           | not null | 
- queue_name       | text                     |           | not null | 
+ queue_name       | text                     |           |          | 
  os               | text                     |           | not null | 
  architecture     | text                     |           | not null | 
  docker_version   | text                     |           | not null | 
@@ -1359,9 +1425,12 @@ Contains state for own jobs that scrape events if enabled.
  src_cli_version  | text                     |           | not null | 
  first_seen_at    | timestamp with time zone |           | not null | now()
  last_seen_at     | timestamp with time zone |           | not null | now()
+ queue_names      | text[]                   |           |          | 
 Indexes:
     "executor_heartbeats_pkey" PRIMARY KEY, btree (id)
     "executor_heartbeats_hostname_key" UNIQUE CONSTRAINT, btree (hostname)
+Check constraints:
+    "one_of_queue_name_queue_names" CHECK (queue_name IS NOT NULL AND queue_names IS NULL OR queue_names IS NOT NULL AND queue_name IS NULL)
 
 ```
 
@@ -1386,6 +1455,8 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 **os**: The operating system running the executor.
 
 **queue_name**: The queue name that the executor polls for work.
+
+**queue_names**: The list of queue names that the executor polls for work.
 
 **src_cli_version**: The version of src-cli used by the executor.
 
@@ -2980,6 +3051,29 @@ Triggers:
 
 One entry per file changed in every commit that classifies as a contribution signal.
 
+# Table "public.ownership_path_stats"
+```
+           Column           |            Type             | Collation | Nullable | Default 
+----------------------------+-----------------------------+-----------+----------+---------
+ file_path_id               | integer                     |           | not null | 
+ tree_codeowned_files_count | integer                     |           |          | 
+ last_updated_at            | timestamp without time zone |           | not null | 
+Indexes:
+    "ownership_path_stats_pkey" PRIMARY KEY, btree (file_path_id)
+Foreign-key constraints:
+    "ownership_path_stats_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
+
+```
+
+Data on how many files in given tree are owned by anyone.
+
+We choose to have a table for `ownership_path_stats` - more general than for CODEOWNERS,
+with a specific tree_codeowned_files_count CODEOWNERS column. The reason for that
+is that we aim at expanding path stats by including total owned files (via CODEOWNERS
+or assigned ownership), and perhaps files count by assigned ownership only.
+
+**last_updated_at**: When the last background job updating counts run.
+
 # Table "public.package_repo_filters"
 ```
    Column   |           Type           | Collation | Nullable |                     Default                      
@@ -3386,12 +3480,14 @@ Foreign-key constraints:
 
 # Table "public.repo_paths"
 ```
-    Column     |  Type   | Collation | Nullable |                Default                 
----------------+---------+-----------+----------+----------------------------------------
- id            | integer |           | not null | nextval('repo_paths_id_seq'::regclass)
- repo_id       | integer |           | not null | 
- absolute_path | text    |           | not null | 
- parent_id     | integer |           |          | 
+            Column            |            Type             | Collation | Nullable |                Default                 
+------------------------------+-----------------------------+-----------+----------+----------------------------------------
+ id                           | integer                     |           | not null | nextval('repo_paths_id_seq'::regclass)
+ repo_id                      | integer                     |           | not null | 
+ absolute_path                | text                        |           | not null | 
+ parent_id                    | integer                     |           |          | 
+ tree_files_count             | integer                     |           |          | 
+ tree_files_counts_updated_at | timestamp without time zone |           |          | 
 Indexes:
     "repo_paths_pkey" PRIMARY KEY, btree (id)
     "repo_paths_index_absolute_path" UNIQUE, btree (repo_id, absolute_path)
@@ -3400,14 +3496,21 @@ Foreign-key constraints:
     "repo_paths_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
     TABLE "assigned_owners" CONSTRAINT "assigned_owners_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
+    TABLE "assigned_teams" CONSTRAINT "assigned_teams_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
+    TABLE "codeowners_individual_stats" CONSTRAINT "codeowners_individual_stats_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
     TABLE "own_aggregate_recent_contribution" CONSTRAINT "own_aggregate_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
     TABLE "own_aggregate_recent_view" CONSTRAINT "own_aggregate_recent_view_viewed_file_path_id_fkey" FOREIGN KEY (viewed_file_path_id) REFERENCES repo_paths(id)
     TABLE "own_signal_recent_contribution" CONSTRAINT "own_signal_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
+    TABLE "ownership_path_stats" CONSTRAINT "ownership_path_stats_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
     TABLE "repo_paths" CONSTRAINT "repo_paths_parent_id_fkey" FOREIGN KEY (parent_id) REFERENCES repo_paths(id)
 
 ```
 
 **absolute_path**: Absolute path does not start or end with forward slash. Example: &#34;a/b/c&#34;. Root directory is empty path &#34;&#34;.
+
+**tree_files_count**: Total count of files in the file tree rooted at the path. 1 for files.
+
+**tree_files_counts_updated_at**: Timestamp of the job that updated the file counts
 
 # Table "public.repo_pending_permissions"
 ```
@@ -3754,6 +3857,7 @@ Foreign-key constraints:
     "teams_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
     "teams_parent_team_id_fkey" FOREIGN KEY (parent_team_id) REFERENCES teams(id) ON DELETE CASCADE
 Referenced by:
+    TABLE "assigned_teams" CONSTRAINT "assigned_teams_owner_team_id_fkey" FOREIGN KEY (owner_team_id) REFERENCES teams(id) ON DELETE CASCADE DEFERRABLE
     TABLE "names" CONSTRAINT "names_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "team_members" CONSTRAINT "team_members_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
     TABLE "teams" CONSTRAINT "teams_parent_team_id_fkey" FOREIGN KEY (parent_team_id) REFERENCES teams(id) ON DELETE CASCADE
@@ -3987,6 +4091,7 @@ Referenced by:
     TABLE "aggregated_user_statistics" CONSTRAINT "aggregated_user_statistics_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "assigned_owners" CONSTRAINT "assigned_owners_owner_user_id_fkey" FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "assigned_owners" CONSTRAINT "assigned_owners_who_assigned_user_id_fkey" FOREIGN KEY (who_assigned_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    TABLE "assigned_teams" CONSTRAINT "assigned_teams_who_assigned_team_id_fkey" FOREIGN KEY (who_assigned_team_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_initial_applier_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE

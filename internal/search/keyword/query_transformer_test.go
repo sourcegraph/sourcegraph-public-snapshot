@@ -66,6 +66,15 @@ func TestQueryStringToKeywordQuery(t *testing.T) {
 			wantQuery:    autogold.Expect("count:99999999 type:file (cluster OR python)"),
 			wantPatterns: autogold.Expect([]string{"cluster", "python"}),
 		},
+		{
+			query:     `outer content:"inner {with} (special) ^characters$ and keywords like file or repo"`,
+			wantQuery: autogold.Expect("count:99999999 type:file (special OR ^characters$ OR keyword OR file OR repo OR outer)"),
+			wantPatterns: autogold.Expect([]string{
+				"special", "^characters$", "keyword", "file",
+				"repo",
+				"outer",
+			}),
+		},
 	}
 
 	for _, tt := range tests {

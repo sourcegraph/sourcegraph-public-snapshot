@@ -71,7 +71,12 @@ func newRepoEmbeddingScheduler(
 				repoNames = append(repoNames, r.Name)
 			}
 
-			return embeddings.ScheduleRepositoriesForEmbedding(ctx, repoNames, db, repoEmbeddingJobsStore, gitserverClient)
+			return embeddings.ScheduleRepositoriesForEmbedding(ctx,
+				repoNames,
+				false, // Automatically scheduled jobs never force a full reindex
+				db,
+				repoEmbeddingJobsStore,
+				gitserverClient)
 		})
 	return goroutine.NewPeriodicGoroutine(
 		ctx,

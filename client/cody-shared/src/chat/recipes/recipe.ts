@@ -29,6 +29,7 @@ export type RecipeID =
     | 'next-questions'
     | 'non-stop'
     | 'optimize-code'
+    | 'pr-description'
     | 'release-notes'
     | 'translate-to-language'
 

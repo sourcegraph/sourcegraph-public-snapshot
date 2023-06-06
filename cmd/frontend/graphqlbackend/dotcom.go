@@ -93,7 +93,10 @@ type ProductLicense interface {
 	Subscription(context.Context) (ProductSubscription, error)
 	Info() (*ProductLicenseInfo, error)
 	LicenseKey() string
+	SiteID() *string
 	CreatedAt() gqlutil.DateTime
+	RevokedAt() *gqlutil.DateTime
+	Version() int32
 }
 
 // ProductLicenseInput implements the GraphQL type ProductLicenseInput.

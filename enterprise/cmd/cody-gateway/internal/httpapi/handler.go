@@ -12,9 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/completions"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 )
 
 type Config struct {
+	ConcurrencyLimit        codygateway.ActorConcurrencyLimitConfig
 	AnthropicAccessToken    string
 	AnthropicAllowedModels  []string
 	OpenAIAccessToken       string
@@ -32,14 +34,14 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 	if config.AnthropicAccessToken != "" {
 		v1router.Path("/completions/anthropic").Methods(http.MethodPost).Handler(
 			authr.Middleware(
-				completions.NewAnthropicHandler(logger, eventLogger, rs, config.AnthropicAccessToken, config.AnthropicAllowedModels),
+				completions.NewAnthropicHandler(logger, eventLogger, rs, config.ConcurrencyLimit, config.AnthropicAccessToken, config.AnthropicAllowedModels),
 			),
 		)
 	}
 	if config.OpenAIAccessToken != "" {
 		v1router.Path("/completions/openai").Methods(http.MethodPost).Handler(
 			authr.Middleware(
-				completions.NewOpenAIHandler(logger, eventLogger, rs, config.OpenAIAccessToken, config.OpenAIOrgID, config.OpenAIAllowedModels),
+				completions.NewOpenAIHandler(logger, eventLogger, rs, config.ConcurrencyLimit, config.OpenAIAccessToken, config.OpenAIOrgID, config.OpenAIAllowedModels),
 			),
 		)
 
@@ -49,6 +51,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 			),
 		)
 
+		// TODO: Concurrencylimiter.
 		v1router.Path("/embeddings").Methods(http.MethodPost).Handler(
 			authr.Middleware(
 				embeddings.NewHandler(logger, eventLogger, rs, embeddings.ModelFactoryMap{
