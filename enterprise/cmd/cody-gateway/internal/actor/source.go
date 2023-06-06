@@ -36,6 +36,11 @@ func (e ErrNotFromSource) Error() string {
 
 func IsErrNotFromSource(err error) bool { return errors.As(err, &ErrNotFromSource{}) }
 
+func (e ErrNotFromSource) Is(err error) bool {
+	_, ok := err.(ErrNotFromSource)
+	return ok
+}
+
 // Source is the interface for actor sources.
 type Source interface {
 	Name() string
