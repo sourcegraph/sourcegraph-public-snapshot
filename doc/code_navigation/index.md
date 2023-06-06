@@ -82,8 +82,8 @@ Precise code navigation requires language-specific indexers to be generated and 
         <td>🟢 Generally available</td>
       </tr>
       <tr>
-        <td>C/C++</td>
-        <td><a href="https://sourcegraph.com/github.com/sourcegraph/lsif-clang">lsif-clang</a></td>
+        <td>C, C++</td>
+        <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-clang">scip-clang</a></td>
         <td>🟡 Partially available</td>
       </tr>
       <tr>
