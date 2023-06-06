@@ -1301,16 +1301,45 @@ commandsets:
       - grafana
       - prometheus
 
-  codeintel: &codeintel_set
+  codeintel:
     requiresDevPrivate: true
     checks:
       - docker
       - redis
       - postgres
       - git
+    commands:
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - symbols
+      - caddy
+      - docsite
+      - syntax-highlighter
+      - github-proxy
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
+      - codeintel-worker
+      - codeintel-executor
+      # - otel-collector
+      - jaeger
+      - grafana
+      - prometheus
 
   codeintel-kubernetes:
-    <<: *codeintel_set
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
     commands:
       - frontend
       - worker
@@ -1337,7 +1366,12 @@ commandsets:
       - prometheus
 
   enterprise-codeintel:
-    <<: *codeintel_set
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
     commands:
       - frontend
       - worker
@@ -1363,7 +1397,12 @@ commandsets:
       - grafana
       - prometheus
   enterprise-codeintel-multi-queue-executor:
-    <<: *codeintel_set
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
     commands:
       - frontend
       - worker
