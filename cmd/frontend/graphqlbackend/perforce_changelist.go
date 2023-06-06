@@ -16,6 +16,14 @@ type PerforceChangelistResolver struct {
 	canonicalURL string
 }
 
+func newPerforceChangelistResolver(ctx context.Context, changelistID, repoPath string) *PerforceChangelistResolver {
+	canonicalURL := repoPath + "/-/changelist/" + changelistID
+	return &PerforceChangelistResolver{
+		cid:          changelistID,
+		canonicalURL: canonicalURL,
+	}
+}
+
 func toPerforceChangelistResolver(ctx context.Context, r *RepositoryResolver, commitBody string) (*PerforceChangelistResolver, error) {
 	if source, err := r.SourceType(ctx); err != nil {
 		return nil, err
