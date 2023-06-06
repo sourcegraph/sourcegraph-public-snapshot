@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -50,6 +51,8 @@ type Config struct {
 	}
 
 	Trace TraceConfig
+
+	ActorConcurrencyLimit codygateway.ActorConcurrencyLimitConfig
 }
 
 type TraceConfig struct {
@@ -96,6 +99,9 @@ func (c *Config) Load() {
 
 	c.Trace.Policy = policy.TracePolicy(c.Get("CODY_GATEWAY_TRACE_POLICY", "all", "Trace policy, one of 'all', 'selective', 'none'."))
 	c.Trace.GCPProjectID = c.Get("CODY_GATEWAY_TRACE_GCP_PROJECT_ID", os.Getenv("GOOGLE_CLOUD_PROJECT"), "Google Cloud Traces project ID.")
+
+	c.ActorConcurrencyLimit.Percentage = float32(c.GetPercent("CODY_GATEWAY_ACTOR_CONCURRENCY_LIMIT_PERCENTAGE", "50", "The percentage of daily rate limit to be allowed as concurrent requests limit from an actor.")) / 100
+	c.ActorConcurrencyLimit.Interval = c.GetInterval("CODY_GATEWAY_ACTOR_CONCURRENCY_LIMIT_INTERVAL", "10s", "The interval at which to check the concurrent requests limit from an actor.")
 }
 
 func (c *Config) Validate() error {

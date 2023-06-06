@@ -26,11 +26,20 @@ type StaticLimiter struct {
 	Interval time.Duration
 
 	// UpdateRateLimitTTL, if true, indicates that the TTL of the rate limit count should
-	// updated if there is a significant deviance from the desired interval.
+	// be updated if there is a significant deviance from the desired interval.
 	UpdateRateLimitTTL bool
 
-	// Optional stub for current time. Used for testing.
-	nowFunc func() time.Time
+	NowFunc func() time.Time
+}
+
+// RetryAfterWithTTL consults the current TTL using the given identifier and
+// returns the time should be retried.
+func RetryAfterWithTTL(redis RedisStore, nowFunc func() time.Time, identifier string) (time.Time, error) {
+	ttl, err := redis.TTL(identifier)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return nowFunc().Add(time.Duration(ttl) * time.Second), nil
 }
 
 func (l StaticLimiter) TryAcquire(ctx context.Context) (func() error, error) {
@@ -50,16 +59,9 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (func() error, error) {
 	// the error is of type RateLimitExceededError and extract additional information
 	// like the limit and the time by when they should retry.
 	if currentUsage >= l.Limit {
-		// Read TTL to compute the RetryAfter time.
-		ttl, err := l.Redis.TTL(l.Identifier)
+		retryAfter, err := RetryAfterWithTTL(l.Redis, l.NowFunc, l.Identifier)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get TTL for rate limit counter")
-		}
-		var now time.Time
-		if l.nowFunc != nil {
-			now = l.nowFunc()
-		} else {
-			now = time.Now()
 		}
 		return nil, RateLimitExceededError{
 			Limit: l.Limit,
@@ -67,7 +69,7 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (func() error, error) {
 			// confusing values when the limit was exceeded. This method increases
 			// on every check, even if the limit was reached.
 			Used:       min(currentUsage, l.Limit),
-			RetryAfter: now.Add(time.Duration(ttl) * time.Second),
+			RetryAfter: retryAfter,
 		}
 	}
 
