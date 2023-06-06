@@ -16,7 +16,7 @@ import (
 func TestIsCodyEnabled(t *testing.T) {
 	oldMock := licensing.MockCheckFeature
 	licensing.MockCheckFeature = func(feature licensing.Feature) error {
-		// App doesn't have license to return a error always for this check
+		// App doesn't have a proper license so always return an error when checking
 		if deploy.IsApp() {
 			return errors.New("Mock check feature error")
 		}
