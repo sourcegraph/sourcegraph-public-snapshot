@@ -690,6 +690,7 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 
 		repos := database.NewMockRepoStore()
 		repos.GetFunc.SetDefaultReturn(repo, nil)
+		repos.GetByNameFunc.SetDefaultReturn(repo, nil)
 		db.ReposFunc.SetDefaultReturn(repos)
 
 		repos.GetFunc.SetDefaultReturn(
@@ -718,15 +719,11 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 			Query: `
 				{
 				  repository(name: "github.com/gorilla/mux") {
-						name
-						isFork
-						sourceType
 						commit(rev: "aabbc12345") {
 							ancestors(first: 10) {
 								nodes {
 									id
 									oid
-									canonicalURL
 									perforceChangelist {
 										cid
                                         canonicalURL
@@ -743,18 +740,16 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 							"ancestors": {
 								"nodes": [
 									{
-										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiYWFiYmMxMjM0NSJ9",
+										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3kiLCJjIjoiYWFiYmMxMjM0NSJ9",
 										"oid": "aabbc12345",
-										"canonicalURL": "abcd",
 										"perforceChangelist": {
 											"cid": "87654",
 											"canonicalURL": "/github.com/gorilla/mux/-/changelist/87654"
 										}
 									},
 									{
-										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiY2NkZGUxMjM0NSJ9",
+										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3kiLCJjIjoiY2NkZGUxMjM0NSJ9",
 										"oid": "ccdde12345",
-										"canonicalURL": "abcd",
 										"perforceChangelist": {
 											"cid": "87655",
 											"canonicalURL": "/github.com/gorilla/mux/-/changelist/87655"
