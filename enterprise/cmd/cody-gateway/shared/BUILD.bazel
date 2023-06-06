@@ -19,6 +19,7 @@ go_library(
         "//enterprise/cmd/cody-gateway/internal/events",
         "//enterprise/cmd/cody-gateway/internal/httpapi",
         "//enterprise/cmd/cody-gateway/internal/limiter",
+        "//enterprise/internal/codygateway",
         "//internal/debugserver",
         "//internal/env",
         "//internal/goroutine",

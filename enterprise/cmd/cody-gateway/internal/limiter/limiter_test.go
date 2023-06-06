@@ -27,7 +27,7 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 			name:      "no limits set",
 			noCommit:  true, // error scenario
 			wantErr:   autogold.Expect("completions access has not been granted"),
-			wantStore: autogold.Expect(mockStore{}),
+			wantStore: autogold.Expect(MockRedisStore{}),
 		},
 		{
 			name: "new entry",
@@ -37,37 +37,37 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 				Interval:   24 * time.Hour,
 			},
 			wantErr: nil,
-			wantStore: autogold.Expect(mockStore{"foobar": mockRedisEntry{
-				value: 1,
+			wantStore: autogold.Expect(MockRedisStore{"foobar": MockRedisEntry{
+				Value: 1,
 			}}),
 		},
 		{
 			name: "increments existing entry",
 			limiter: StaticLimiter{
 				Identifier: "foobar",
-				Redis: mockStore{
-					"foobar": mockRedisEntry{
-						value: 9,
-						ttl:   60,
+				Redis: MockRedisStore{
+					"foobar": MockRedisEntry{
+						Value: 9,
+						TTL:   60,
 					},
 				},
 				Limit:    10,
 				Interval: 24 * time.Hour,
 			},
 			wantErr: nil,
-			wantStore: autogold.Expect(mockStore{"foobar": mockRedisEntry{
-				value: 10,
-				ttl:   60,
+			wantStore: autogold.Expect(MockRedisStore{"foobar": MockRedisEntry{
+				Value: 10,
+				TTL:   60,
 			}}),
 		},
 		{
 			name: "no increment without commit",
 			limiter: StaticLimiter{
 				Identifier: "foobar",
-				Redis: mockStore{
-					"foobar": mockRedisEntry{
-						value: 5,
-						ttl:   60,
+				Redis: MockRedisStore{
+					"foobar": MockRedisEntry{
+						Value: 5,
+						TTL:   60,
 					},
 				},
 				Limit:    10,
@@ -75,19 +75,19 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 			},
 			noCommit: true, // value should be the same
 			wantErr:  nil,
-			wantStore: autogold.Expect(mockStore{"foobar": mockRedisEntry{
-				value: 5,
-				ttl:   60,
+			wantStore: autogold.Expect(MockRedisStore{"foobar": MockRedisEntry{
+				Value: 5,
+				TTL:   60,
 			}}),
 		},
 		{
 			name: "existing limit's TTL is longer than desired interval but UpdateRateLimitTTL=false",
 			limiter: StaticLimiter{
 				Identifier: "foobar",
-				Redis: mockStore{
-					"foobar": mockRedisEntry{
-						value: 1,
-						ttl:   999,
+				Redis: MockRedisStore{
+					"foobar": MockRedisEntry{
+						Value: 1,
+						TTL:   999,
 					},
 				},
 				Limit:              10,
@@ -95,19 +95,19 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 				UpdateRateLimitTTL: false,
 			},
 			wantErr: nil,
-			wantStore: autogold.Expect(mockStore{"foobar": mockRedisEntry{
-				value: 2,
-				ttl:   999,
+			wantStore: autogold.Expect(MockRedisStore{"foobar": MockRedisEntry{
+				Value: 2,
+				TTL:   999,
 			}}),
 		},
 		{
 			name: "existing limit's TTL is longer than desired interval",
 			limiter: StaticLimiter{
 				Identifier: "foobar",
-				Redis: mockStore{
-					"foobar": mockRedisEntry{
-						value: 1,
-						ttl:   999,
+				Redis: MockRedisStore{
+					"foobar": MockRedisEntry{
+						Value: 1,
+						TTL:   999,
 					},
 				},
 				Limit:              10,
@@ -115,19 +115,19 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 				UpdateRateLimitTTL: true,
 			},
 			wantErr: nil,
-			wantStore: autogold.Expect(mockStore{"foobar": mockRedisEntry{
-				value: 2,
-				ttl:   600,
+			wantStore: autogold.Expect(MockRedisStore{"foobar": MockRedisEntry{
+				Value: 2,
+				TTL:   600,
 			}}),
 		},
 		{
 			name: "rejects request over quota",
 			limiter: StaticLimiter{
 				Identifier: "foobar",
-				Redis: mockStore{
-					"foobar": mockRedisEntry{
-						value: 10,
-						ttl:   60,
+				Redis: MockRedisStore{
+					"foobar": MockRedisEntry{
+						Value: 10,
+						TTL:   60,
 					},
 				},
 				Limit:    10,
@@ -135,17 +135,17 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 			},
 			noCommit: true, // error scenario
 			wantErr:  autogold.Expect("you exceeded the rate limit for completions. Current usage: 10 out of 10 requests. Retry after 2000-01-01 00:01:00 +0000 UTC"),
-			wantStore: autogold.Expect(mockStore{"foobar": mockRedisEntry{
-				value: 10,
-				ttl:   60,
+			wantStore: autogold.Expect(MockRedisStore{"foobar": MockRedisEntry{
+				Value: 10,
+				TTL:   60,
 			}}),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.limiter.Redis == nil {
-				tc.limiter.Redis = mockStore{}
+				tc.limiter.Redis = MockRedisStore{}
 			}
-			tc.limiter.nowFunc = func() time.Time { return now }
+			tc.limiter.NowFunc = func() time.Time { return now }
 			commit, err := tc.limiter.TryAcquire(context.Background())
 			if tc.wantErr != nil {
 				require.Error(t, err)
