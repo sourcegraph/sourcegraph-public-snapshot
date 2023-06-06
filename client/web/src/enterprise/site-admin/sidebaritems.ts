@@ -156,7 +156,7 @@ export const codyGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/embeddings/configuration',
         },
     ],
-    condition: () => window.context?.embeddingsEnabled && window.context?.codyEnabled,
+    condition: () => window.context?.embeddingsEnabled,
 }
 
 const usersGroup: SiteAdminSideBarGroup = {
