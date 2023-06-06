@@ -13,9 +13,12 @@ import (
 )
 
 type RateLimit struct {
-	AllowedModels []string      `json:"allowedModels"`
-	Limit         int           `json:"limit"`
-	Interval      time.Duration `json:"interval"`
+	// AllowedModels is a set of models in Cody Gateway's model configuration
+	// format, "$PROVIDER/$MODEL_NAME".
+	AllowedModels []string `json:"allowedModels"`
+
+	Limit    int           `json:"limit"`
+	Interval time.Duration `json:"interval"`
 }
 
 func (r *RateLimit) IsValid() bool {
