@@ -61,6 +61,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code intelligence background jobs did not correctly use an internal context, causing SCIP data to sometimes be prematurely deleted. [#51591](https://github.com/sourcegraph/sourcegraph/pull/51591)
 - Slow request logs now have the correct trace and span IDs attached if a trace is present on the request. [#51826](https://github.com/sourcegraph/sourcegraph/pull/51826)
 - SAML assertions to get user display name are now compared case insensitively and we do not always return an error. [#52992](https://github.com/sourcegraph/sourcegraph/pull/52992)
+- The braindot menu on the blob view no longer fetches data eagerly to prevent performance issues for larger monorepo users. [#53039](https://github.com/sourcegraph/sourcegraph/pull/53039)
 
 ### Removed
 
