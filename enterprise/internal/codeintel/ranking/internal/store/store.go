@@ -48,6 +48,8 @@ type Store interface {
 	// Mapper behavior + cleanup
 	InsertPathCountInputs(ctx context.Context, derivativeGraphKey string, batchSize int) (numReferenceRecordsProcessed int, numInputsInserted int, err error)
 	InsertInitialPathCounts(ctx context.Context, derivativeGraphKey string, batchSize int) (numInitialPathsProcessed int, numInitialPathRanksInserted int, err error)
+	VacuumStaleProcessedReferences(ctx context.Context, derivativeGraphKey string, batchSize int) (processedReferencesDeleted int, _ error)
+	VacuumStaleProcessedPaths(ctx context.Context, derivativeGraphKey string, batchSize int) (processedPathsDeleted int, _ error)
 	VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string, batchSize int) (inputRecordsDeleted int, _ error)
 
 	// Reducer behavior + cleanup

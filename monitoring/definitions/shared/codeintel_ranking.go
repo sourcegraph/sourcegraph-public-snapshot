@@ -140,6 +140,8 @@ func (codeIntelligence) NewRankingJanitorTaskGroups(containerName string) []moni
 		"Uploads > Janitor task",
 		containerName,
 		[]string{
+			"codeintel_ranking_processed_references_janitor",
+			"codeintel_ranking_processed_paths_janitor",
 			"codeintel_ranking_exported_uploads_janitor",
 			"codeintel_ranking_deleted_exported_uploads_janitor",
 			"codeintel_ranking_abandoned_exported_uploads_janitor",
