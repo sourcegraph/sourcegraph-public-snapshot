@@ -24,12 +24,6 @@ func concatNodeToPatterns(concat query.Operator) []string {
 	return patterns
 }
 
-func removeStringAtIndex(s []string, index int) []string {
-	ret := make([]string, 0, len(s)-1)
-	ret = append(ret, s[:index]...)
-	return append(ret, s[index+1:]...)
-}
-
 func nodeToPatternsAndParameters(rootNode query.Node) ([]string, []query.Parameter) {
 	operator, ok := rootNode.(query.Operator)
 	if !ok {
@@ -53,7 +47,10 @@ func nodeToPatternsAndParameters(rootNode query.Node) ([]string, []query.Paramet
 					patterns = append(patterns, concatNodeToPatterns(op)...)
 				}
 			case query.Parameter:
-				if op.Field != query.FieldCount && op.Field != query.FieldCase && op.Field != query.FieldType {
+				if op.Field == query.FieldContent {
+					// Split any content field on white space into a set of patterns
+					patterns = append(patterns, strings.Fields(op.Value)...)
+				} else if op.Field != query.FieldCount && op.Field != query.FieldCase && op.Field != query.FieldType {
 					parameters = append(parameters, op)
 				}
 			case query.Pattern:

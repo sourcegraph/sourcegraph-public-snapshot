@@ -4,12 +4,14 @@ import (
 	"context"
 
 	"github.com/sourcegraph/conc/iter"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	codycontext "github.com/sourcegraph/sourcegraph/enterprise/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient *codycontext.CodyContextClient) graphqlbackend.CodyContextResolver {
@@ -39,7 +41,13 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 
 	repoNameIDs := make([]types.RepoIDName, len(repoIDs))
 	for i, repoID := range repoIDs {
-		repoNameIDs[i] = types.RepoIDName{ID: repoID, Name: repos[repoID].Name}
+		repo, ok := repos[repoID]
+		if !ok {
+			// GetReposSetByIDs does not error if a repo could not be found.
+			return nil, errors.Newf("could not find repo with id %d", int32(repoID))
+		}
+
+		repoNameIDs[i] = types.RepoIDName{ID: repoID, Name: repo.Name}
 	}
 
 	fileChunks, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
