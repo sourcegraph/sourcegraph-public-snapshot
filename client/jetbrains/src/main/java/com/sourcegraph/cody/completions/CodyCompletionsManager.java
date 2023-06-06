@@ -155,7 +155,7 @@ public class CodyCompletionsManager {
     return isSupported;
   }
 
-  private boolean isEditorInstanceSupported(Editor editor) {
+  public static boolean isEditorInstanceSupported(Editor editor) {
     return !editor.isViewer()
         && !editor.isOneLineMode()
         && !(editor instanceof EditorWindow)
