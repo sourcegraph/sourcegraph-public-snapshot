@@ -119,7 +119,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                         <RepositoriesField
                             id="repositories-id"
                             description="Schedule repositories for embedding at latest revision on the default branch."
-                            placeholder="Search repositories..."
+                            placeholder="Add repositories to schedule..."
                             className="flex-1 mr-2"
                             {...getDefaultInputProps(repositories)}
                         />
@@ -132,7 +132,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                             >
                                 {repoEmbeddingJobsLoading || contextDetectionEmbeddingJobLoading
                                     ? 'Scheduling...'
-                                    : 'Schedule'}
+                                    : 'Schedule Embedding'}
                             </Button>
                         </div>
                     </div>

@@ -81,6 +81,54 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
                     />
                   </div>
                 </label>
+                <label
+                  class="label label"
+                >
+                  <div
+                    class="mb-2"
+                  >
+                    Salesforce Subscription ID
+                  </div>
+                  <small
+                    class="text-muted form-text font-weight-normal descriptionBlock ml-0 mb-2 mt-n1"
+                  >
+                    Subscription ID from Salesforce.
+                  </small>
+                  <div
+                    class="container loader-input loaderInput"
+                  >
+                    <input
+                      class="form-control with-invalid-icon"
+                      id="site-admin-create-product-subscription-page__salesforce_sub_id_input"
+                      type="text"
+                      value=""
+                    />
+                  </div>
+                </label>
+                <label
+                  class="label label"
+                >
+                  <div
+                    class="mb-2"
+                  >
+                    Salesforce Opportunity ID
+                  </div>
+                  <small
+                    class="text-muted form-text font-weight-normal descriptionBlock ml-0 mb-2 mt-n1"
+                  >
+                    Opportunity ID from Salesforce.
+                  </small>
+                  <div
+                    class="container loader-input loaderInput"
+                  >
+                    <input
+                      class="form-control with-invalid-icon"
+                      id="site-admin-create-product-subscription-page__salesforce_op_id_input"
+                      type="text"
+                      value=""
+                    />
+                  </div>
+                </label>
                 <div
                   class="form-group mb-2"
                 >
