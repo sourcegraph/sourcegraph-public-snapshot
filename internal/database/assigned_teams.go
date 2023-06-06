@@ -48,9 +48,9 @@ const insertAssignedTeamFmtstr = `
 	ON CONFLICT DO NOTHING
 `
 
-// Insert not only inserts a new assigned owner with provided user ID, repo ID
+// Insert not only inserts a new assigned team with provided team ID, repo ID
 // and path, but it ensures that such a path exists in the first place, after
-// which the user is inserted.
+// which the assigned team is inserted.
 func (s assignedTeamsStore) Insert(ctx context.Context, assignedTeamID int32, repoID api.RepoID, absolutePath string, whoAssignedUserID int32) error {
 	_, err := ensureRepoPaths(ctx, s.Store, []string{absolutePath}, repoID)
 	if err != nil {
