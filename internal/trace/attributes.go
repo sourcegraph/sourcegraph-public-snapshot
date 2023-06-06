@@ -3,6 +3,7 @@ package trace
 import (
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -53,8 +54,32 @@ func Stringers[T fmt.Stringer](key string, values []T) attribute.KeyValue {
 }
 
 func Error(err error) attribute.KeyValue {
+	err = truncateError(err, defaultErrorRuneLimit)
 	if err != nil {
 		return attribute.String("error", err.Error())
 	}
 	return attribute.String("error", "<nil>")
+}
+
+const defaultErrorRuneLimit = 512
+
+func truncateError(err error, maxRunes int) error {
+	if err == nil {
+		return nil
+	}
+	return truncatedError{err, maxRunes}
+}
+
+type truncatedError struct {
+	err      error
+	maxRunes int
+}
+
+func (e truncatedError) Error() string {
+	errString := e.err.Error()
+	if utf8.RuneCountInString(errString) > e.maxRunes {
+		runes := []rune(errString)
+		errString = string(runes[:e.maxRunes/2]) + " ...truncated... " + string(runes[len(runes)-e.maxRunes/2:])
+	}
+	return errString
 }

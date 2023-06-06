@@ -4,14 +4,28 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestIsCodyEnabled(t *testing.T) {
+	oldMock := licensing.MockCheckFeature
+	licensing.MockCheckFeature = func(feature licensing.Feature) error {
+		// App doesn't have a proper license so always return an error when checking
+		if deploy.IsApp() {
+			return errors.New("Mock check feature error")
+		}
+		return nil
+	}
+	t.Cleanup(func() {
+		licensing.MockCheckFeature = oldMock
+	})
+
 	t.Run("Unauthenticated user", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
@@ -132,7 +146,6 @@ func TestIsCodyEnabled(t *testing.T) {
 				t.Error("Expected IsCodyEnabled to return true when cody-experimental feature flag is enabled")
 			}
 		})
-
 	})
 
 	t.Run("CodyEnabledInApp", func(t *testing.T) {
@@ -236,6 +249,5 @@ func TestIsCodyEnabled(t *testing.T) {
 				t.Error("Expected IsCodyEnabled to return false in App when no dotcom token is present")
 			}
 		})
-
 	})
 }

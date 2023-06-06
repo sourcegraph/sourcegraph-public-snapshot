@@ -64,6 +64,5 @@ container_structure_test(
 oci_push(
     name = "candidate_push",
     image = ":image",
-    remote_tags = "//:tags",
     repository = image_repository("searcher"),
 )
