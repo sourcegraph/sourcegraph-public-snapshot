@@ -221,7 +221,7 @@ func (e ErrConcurrencyLimitExceeded) WriteResponse(w http.ResponseWriter) {
 	http.Error(w, e.Error(), http.StatusTooManyRequests)
 }
 
-func (a *Actor) EmbeddingsLimiter(redis limiter.RedisStore) (limiter.Limiter, bool) {
+func (a *Actor) EmbeddingsLimiter(logger log.Logger, redis limiter.RedisStore, concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig) (limiter.Limiter, bool) {
 	if a == nil {
 		// Not logged in, no limit applicable.
 		return nil, false
@@ -230,14 +230,31 @@ func (a *Actor) EmbeddingsLimiter(redis limiter.RedisStore) (limiter.Limiter, bo
 		// No valid limit, cannot provide limiter.
 		return nil, false
 	}
+
+	// TODO: Hard coded limit.
+	concurrencyLimit := 10
+
 	// The redis store should use a prefix so the embeddings rate limits are guaranteed
 	// to be unique in the global namespace.
-	rs := limiter.NewPrefixRedisStore(fmt.Sprintf("%s:", "embeddings"), redis)
-	return updateOnFailureLimiter{
-		Redis:     rs,
-		Actor:     a,
-		RateLimit: a.EmbeddingsRateLimit,
-	}, true
+	featurePrefix := fmt.Sprintf("%s:", "embeddings")
+	concurrencyLimiter := &concurrencyLimiter{
+		logger: logger,
+		actor:  a,
+		// TODO: Feature doesn't work with the embeddings limiter.
+		// feature: feature,
+		redis: limiter.NewPrefixRedisStore(fmt.Sprintf("concurrent:%s", featurePrefix), redis),
+		rateLimit: RateLimit{
+			Limit:    concurrencyLimit,
+			Interval: concurrencyLimitConfig.Interval,
+		},
+		featureLimiter: updateOnFailureLimiter{
+			Redis:     limiter.NewPrefixRedisStore(featurePrefix, redis),
+			RateLimit: a.EmbeddingsRateLimit,
+			Actor:     a,
+		},
+		nowFunc: time.Now,
+	}
+	return concurrencyLimiter, true
 }
 
 type updateOnFailureLimiter struct {

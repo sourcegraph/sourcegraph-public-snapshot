@@ -51,12 +51,18 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 			),
 		)
 
-		// TODO: Concurrencylimiter.
 		v1router.Path("/embeddings").Methods(http.MethodPost).Handler(
 			authr.Middleware(
-				embeddings.NewHandler(logger, eventLogger, rs, embeddings.ModelFactoryMap{
-					embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(config.OpenAIAccessToken),
-				}, config.EmbeddingsAllowedModels),
+				embeddings.NewHandler(
+					logger,
+					eventLogger,
+					rs,
+					config.ConcurrencyLimit,
+					embeddings.ModelFactoryMap{
+						embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(config.OpenAIAccessToken),
+					},
+					config.EmbeddingsAllowedModels,
+				),
 			),
 		)
 	}
