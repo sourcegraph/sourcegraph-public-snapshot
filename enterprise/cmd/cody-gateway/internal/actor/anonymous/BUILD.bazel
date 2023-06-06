@@ -8,6 +8,6 @@ go_library(
     deps = [
         "//enterprise/cmd/cody-gateway/internal/actor",
         "//enterprise/cmd/cody-gateway/internal/httpapi/embeddings",
-        "//enterprise/internal/completions/types",
+        "//enterprise/internal/codygateway",
     ],
 )
