@@ -12,7 +12,7 @@ const getRepoId = async (client: SourcegraphGraphQLAPIClient, codebase: string) 
 export async function createCodebaseContext(
     client: SourcegraphGraphQLAPIClient,
     codebase: string,
-    contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
+    contextType: 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified',
     serverEndpoint: string
 ) {
     const repoId = await getRepoId(client, codebase)

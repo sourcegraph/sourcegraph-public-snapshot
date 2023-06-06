@@ -49,3 +49,29 @@ export function getPreamble(codebase: string | undefined): Message[] {
         },
     ]
 }
+
+export function getMultiRepoPreamble(codebases: string[]): Message[] {
+    const preamble = [actions, rules]
+    const preambleResponse = [answer]
+
+    if (codebases.length) {
+        const codebase = codebases.join(', ') + (codebases.length > 1 ? ' repositories' : ' repository')
+        const codebasePreamble =
+            `You have access to the \`${codebase}\`. You are able to answer questions about the \`${codebase}\`. ` +
+            `I will provide the relevant code snippets from the \`${codebase}\` when necessary to answer my questions.`
+
+        preamble.push(codebasePreamble)
+        preambleResponse.push(`I have access to the \`${codebase}\` and can answer questions about its files.`)
+    }
+
+    return [
+        {
+            speaker: 'human',
+            text: preamble.join('\n\n'),
+        },
+        {
+            speaker: 'assistant',
+            text: preambleResponse.join('\n'),
+        },
+    ]
+}
