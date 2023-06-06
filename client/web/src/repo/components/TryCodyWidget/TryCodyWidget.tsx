@@ -86,6 +86,7 @@ function useTryCodyWidget(telemetryService: TelemetryProps['telemetryService']):
     isDismissed: boolean | undefined
     onDismiss: () => void
 } {
+    // `isDismissed = true` maintain the initial concealment of the CTA when loading the settings
     const [isDismissed = true, setIsDismissed] = useTemporarySetting('cody.blobPageCta.dismissed', false)
 
     const onDismiss = useCallback(() => {
@@ -108,11 +109,12 @@ function useTryCodyWidget(telemetryService: TelemetryProps['telemetryService']):
     return { isDismissed, onDismiss }
 }
 
-export const TryCodyWidget: React.FC<TelemetryProps & { className?: string; type: 'blob' | 'repo' }> = ({
-    className,
-    telemetryService,
-    type,
-}) => {
+interface TryCodyWidgetProps extends TelemetryProps {
+    className?: string
+    type: 'blob' | 'repo'
+}
+
+export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({ className, telemetryService, type }) => {
     const isLightTheme = useIsLightTheme()
     const { isDismissed, onDismiss } = useTryCodyWidget(telemetryService)
     useEffect(() => {
@@ -172,7 +174,7 @@ export const TryCodyWidget: React.FC<TelemetryProps & { className?: string; type
                 </div>
             </div>
             <div className={classNames('d-flex justify-content-center', styles.cardImages)}>
-                <img src={image} alt="Cody" />
+                <img src={image} alt="Cody" className={styles.cardImage} />
             </div>
             <Button className={classNames(styles.closeButton, 'position-absolute mt-2')} onClick={onDismiss}>
                 <Icon svgPath={mdiClose} aria-label="Close try Cody widget" />
