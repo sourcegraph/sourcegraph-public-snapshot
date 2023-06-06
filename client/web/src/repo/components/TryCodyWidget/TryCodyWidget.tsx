@@ -26,16 +26,12 @@ const AUTO_DISMISS_ON_EVENTS = new Set([
     EventName.CODY_SIDEBAR_SUBMIT,
 ])
 
-interface AuthWidgetContentProps extends TelemetryProps {
+interface WidgetContentProps extends TelemetryProps {
     type: 'blob' | 'repo'
     theme?: 'light' | 'dark'
-    assetsRoot?: string
 }
 
-interface NonAuthWidgetContentProps extends TelemetryProps {
-    type: 'blob' | 'repo'
-    theme?: 'light' | 'dark'
-    assetsRoot?: string
+interface NoAuhWidgetContentProps extends WidgetContentProps {
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
@@ -43,6 +39,7 @@ function useTryCodyWidget(telemetryService: TelemetryProps['telemetryService']):
     isDismissed: boolean | undefined
     onDismiss: () => void
 } {
+    // `isDismissed = true` maintain the initial concealment of the CTA when loading the settings
     const [isDismissed = true, setIsDismissed] = useTemporarySetting('cody.blobPageCta.dismissed', false)
 
     const onDismiss = useCallback(() => {
@@ -65,7 +62,7 @@ function useTryCodyWidget(telemetryService: TelemetryProps['telemetryService']):
     return { isDismissed, onDismiss }
 }
 
-const NoAuthWidgetContent: React.FC<NonAuthWidgetContentProps> = ({ type, telemetryService, context }) => {
+const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetryService, context }) => {
     const logEvent = (provider: AuthProvider['serviceType']): void => {
         const eventType = provider === 'builtin' ? 'form' : provider
         const eventPage = type === 'blob' ? 'Blobview' : 'RepositoryPage'
@@ -132,7 +129,7 @@ const NoAuthWidgetContent: React.FC<NonAuthWidgetContentProps> = ({ type, teleme
     )
 }
 
-const AuthUserWidgetContent: React.FC<AuthWidgetContentProps> = ({ type, theme }) => {
+const AuthUserWidgetContent: React.FC<WidgetContentProps> = ({ type, theme }) => {
     const { title, useCases, image } =
         type === 'blob'
             ? {
@@ -165,20 +162,26 @@ const AuthUserWidgetContent: React.FC<AuthWidgetContentProps> = ({ type, theme }
                 </div>
             </div>
             <div className={classNames('d-flex justify-content-center', styles.cardImages)}>
-                <img src={image} alt="Cody" />
+                <img src={image} alt="Cody" className={styles.cardImage} />
             </div>
         </>
     )
 }
 
-export const TryCodyWidget: React.FC<
-    TelemetryProps & {
-        className?: string
-        type: 'blob' | 'repo'
-        authenticatedUser: AuthenticatedUser | null
-        context: Pick<SourcegraphContext, 'authProviders'>
-    }
-> = ({ className = 'mb-4', telemetryService, type, authenticatedUser, context }) => {
+interface TryCodyWidgetProps extends TelemetryProps {
+    className?: string
+    type: 'blob' | 'repo'
+    authenticatedUser: AuthenticatedUser | null
+    context: Pick<SourcegraphContext, 'authProviders'>
+}
+
+export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
+    className = 'mb-4',
+    telemetryService,
+    type,
+    authenticatedUser,
+    context,
+}) => {
     const isLightTheme = useIsLightTheme()
     const { isDismissed, onDismiss } = useTryCodyWidget(telemetryService)
     useEffect(() => {

@@ -61,11 +61,11 @@
     @media (--md-breakpoint-down) {
         width: unset;
     }
+}
 
-    > img {
-        max-width: 35.688rem;
-        max-height: 7.438rem;
-    }
+.card-image {
+    max-width: 35.688rem;
+    max-height: 7.438rem;
 }
 
 .no-auth-card {
