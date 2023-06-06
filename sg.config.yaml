@@ -719,6 +719,11 @@ commands:
       EXECUTOR_QUEUE_NAMES: "codeintel,batches"
       EXECUTOR_MAXIMUM_NUM_JOBS: 8
 
+  multiqueue-executor-kubernetes:
+    <<: *executor_kubernetes_template
+    env:
+      MANIFEST_PATH: ./enterprise/cmd/executor/kubernetes/multiqueue
+
   blobstore:
     cmd: .bin/blobstore
     install: |
@@ -1362,7 +1367,7 @@ commandsets:
       - jaeger
       - grafana
       - prometheus
-  enterprise-codeintel-multi-queue-executor:
+  multiqueue-executor:
     <<: *codeintel_set
     commands:
       - frontend
@@ -1384,6 +1389,34 @@ commandsets:
       - blobstore
       - codeintel-worker
       - multiqueue-executor
+      - batcheshelper-builder
+      # - otel-collector
+      - jaeger
+      - grafana
+      - prometheus
+  multiqueue-executor-kubernetes:
+    <<: *codeintel_set
+    commands:
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - symbols
+      - caddy
+      - docsite
+      - syntax-highlighter
+      - github-proxy
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
+      - codeintel-worker
+      - multiqueue-executor-kubernetes
+      - batcheshelper-builder
       # - otel-collector
       - jaeger
       - grafana
