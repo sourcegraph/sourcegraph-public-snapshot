@@ -2395,7 +2395,7 @@
     "completions": {
       "description": "Configuration for the completions service.",
       "type": "object",
-      "required": ["enabled", "model", "accessToken", "provider"],
+      "required": ["enabled"],
       "properties": {
         "enabled": {
           "description": "Toggles whether completions are enabled.",
@@ -2407,20 +2407,20 @@
           "type": "string"
         },
         "chatModel": {
-          "description": "The model used for chat completions.",
+          "description": "The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.",
           "type": "string"
         },
         "completionModel": {
-          "description": "The model used for code completion.",
+          "description": "The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.",
           "type": "string"
         },
         "accessToken": {
-          "description": "The access token used to authenticate with the external completions provider.",
+          "description": "The access token used to authenticate with the external completions provider. If using the default provider 'sourcegraph', and if 'licenseKey' is set, a default access token is generated.",
           "type": "string"
         },
         "provider": {
           "type": "string",
-          "description": "The external completions provider.",
+          "description": "The external completions provider. Defaults to 'sourcegraph'.",
           "default": "anthropic",
           "enum": ["anthropic", "openai", "sourcegraph"]
         },

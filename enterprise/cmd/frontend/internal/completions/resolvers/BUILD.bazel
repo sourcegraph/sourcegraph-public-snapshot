@@ -11,6 +11,7 @@ go_library(
         "//enterprise/internal/completions/client",
         "//enterprise/internal/completions/httpapi",
         "//enterprise/internal/completions/types",
+        "//internal/conf",
         "//internal/database",
         "//internal/redispool",
         "//lib/errors",

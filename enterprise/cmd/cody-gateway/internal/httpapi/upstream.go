@@ -27,21 +27,53 @@ type requestTransformer func(*http.Request)
 type requestMetadataRetriever[T any] func(T) (promptCharacterCount int, model string, additionalMetadata map[string]any)
 type responseParser[T any] func(T, io.Reader) (completionCharacterCount int)
 
+// upstreamHandlerMethods declares a set of methods that are used throughout the
+// lifecycle of a request to an upstream API. All methods are required.
+type upstreamHandlerMethods[ReqT any] struct {
+	// transformBody can be used to modify the request body before it is sent
+	// upstream. To manipulate the HTTP request, use transformRequest.
+	transformBody bodyTransformer[ReqT]
+	// transformRequest can be used to modify the HTTP request before it is sent
+	// upstream. To manipulate the body, use transformBody.
+	transformRequest requestTransformer
+	// getRequestMetadata should extract details about the request we are sending
+	// upstream for validation and tracking purposes.
+	getRequestMetadata requestMetadataRetriever[ReqT]
+	// parseResponse should extract details from the response we get back from
+	// upstream for tracking purposes.
+	parseResponse responseParser[ReqT]
+}
+
 func makeUpstreamHandler[ReqT any](
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
 
-	upstreamName, upstreamAPIURL string,
+	// upstreamName is the name of the upstream provider. It MUST match the
+	// provider names defined clientside, i.e. "anthropic" or "openai".
+	upstreamName string,
+
+	upstreamAPIURL string,
 	allowedModels []string,
 
-	transformBody bodyTransformer[ReqT],
-	getRequestMetadata requestMetadataRetriever[ReqT],
-	transformRequest requestTransformer,
-	parseResponse responseParser[ReqT],
+	methods upstreamHandlerMethods[ReqT],
 ) http.Handler {
-	baseLogger = baseLogger.Scoped(strings.ToLower(upstreamName), fmt.Sprintf("%s upstream handler", upstreamName)).
+	baseLogger = baseLogger.Scoped(upstreamName, fmt.Sprintf("%s upstream handler", upstreamName)).
 		With(log.String("upstream.url", upstreamAPIURL))
+
+	var (
+		transformBody      = methods.transformBody
+		transformRequest   = methods.transformRequest
+		getRequestMetadata = methods.getRequestMetadata
+		parseResponse      = methods.parseResponse
+	)
+
+	// Convert allowedModels to the Cody Gateway configuration format with the
+	// provider as a prefix. This aligns with the models returned when we query
+	// for rate limits from actor sources.
+	for i := range allowedModels {
+		allowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, allowedModels[i])
+	}
 
 	return rateLimit(baseLogger, eventLogger, limiter.NewPrefixRedisStore("rate_limit:", rs), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
@@ -92,8 +124,16 @@ func makeUpstreamHandler[ReqT any](
 		// Retrieve metadata from the initial request.
 		promptCharacterCount, model, am := getRequestMetadata(body)
 
-		if !isAllowedModel(intersection(allowedModels, rateLimit.AllowedModels), model) {
-			response.JSONError(logger, w, http.StatusBadRequest, errors.Newf("model %q is not allowed", model))
+		// Match the model against the allowlist of models, which are configured
+		// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models
+		// are sent as if they were against the upstream API, so they don't have
+		// the prefix yet when extracted - we need to add it back here. This
+		// full gatewayModel is also used in events tracking.
+		gatewayModel := fmt.Sprintf("%s/%s", upstreamName, model)
+		if allowed := intersection(allowedModels, rateLimit.AllowedModels); !isAllowedModel(allowed, gatewayModel) {
+			response.JSONError(logger, w, http.StatusBadRequest,
+				errors.Newf("model %q is not allowed, allowed: [%s]",
+					gatewayModel, strings.Join(allowed, ", ")))
 			return
 		}
 
@@ -103,7 +143,8 @@ func makeUpstreamHandler[ReqT any](
 				metadata[k] = v
 			}
 			metadata["prompt_character_count"] = promptCharacterCount
-			metadata["model"] = model
+			metadata["model"] = gatewayModel
+			metadata["provider"] = upstreamName
 			metadata[codygateway.CompletionsEventFeatureMetadataField] = feature
 			err = eventLogger.LogEvent(
 				r.Context(),

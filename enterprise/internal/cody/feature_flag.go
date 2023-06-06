@@ -21,10 +21,6 @@ import (
 // If it is an unauthenticated request, cody is disabled.
 // If authenticated it checks if cody is enabled for the deployment type
 func IsCodyEnabled(ctx context.Context) bool {
-	if err := licensing.Check(licensing.FeatureCody); err != nil {
-		return false
-	}
-
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() {
 		return false
@@ -39,12 +35,16 @@ func IsCodyEnabled(ctx context.Context) bool {
 
 // isCodyEnabled determines if cody is enabled for the actor in the given context
 // for all deployment types except "app".
+// If the license does not have the Cody feature, cody is disabled.
 // If Completions aren't configured, cody is disabled.
 // If Completions are not enabled, cody is disabled
 // If CodyRestrictUsersFeatureFlag is set, the cody-experimental featureflag
 // will determine access.
 // Otherwise, all authenticated users are granted access.
 func isCodyEnabled(ctx context.Context) bool {
+	if err := licensing.Check(licensing.FeatureCody); err != nil {
+		return false
+	}
 	completionsConfig := conf.Get().Completions
 	if completionsConfig == nil {
 		return false
