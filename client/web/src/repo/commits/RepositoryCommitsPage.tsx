@@ -231,7 +231,7 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
                     <Heading as="h2" styleAs="h1">
                         {filePath ? (
                             <>
-                                View commits inside <Code>{basename(filePath)}</Code>
+                                View {pluralize(getRefType(sourceType), 0)} inside <Code>{basename(filePath)}</Code>
                             </>
                         ) : (
                             <>

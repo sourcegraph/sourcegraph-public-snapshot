@@ -354,6 +354,19 @@ export const GitCommitsStory: Story<RepositoryCommitsPageProps> = () => (
 
 GitCommitsStory.storyName = 'Git commits'
 
+export const GitCommitsInPathStory: Story<RepositoryCommitsPageProps> = () => (
+    <MockedTestProvider>
+        <WebStory
+            initialEntries={['/github.com/sourcegraph/sourcegraph/-/commits/somePath']}
+            mocks={[mockRepositoryGitCommitsQuery]}
+        >
+            {props => <RepositoryCommitsPage revision="" repo={gitRepo} {...props} />}
+        </WebStory>
+    </MockedTestProvider>
+)
+
+GitCommitsInPathStory.storyName = 'Git commits in a path'
+
 const perforceRepo: RepositoryFields = {
     id: 'repo-id',
     name: 'github.com/sourcegraph/sourcegraph',
@@ -375,7 +388,7 @@ const perforceRepo: RepositoryFields = {
 export const PerforceChangelistsStory: Story<RepositoryCommitsPageProps> = () => (
     <MockedTestProvider>
         <WebStory
-            initialEntries={['/perforce.sgdev.org/go/-/commits']}
+            initialEntries={['/perforce.sgdev.org/go/-/changelists']}
             mocks={[mockRepositoryPerforceChangelistsQuery]}
         >
             {props => <RepositoryCommitsPage revision="" repo={perforceRepo} {...props} />}
@@ -384,3 +397,16 @@ export const PerforceChangelistsStory: Story<RepositoryCommitsPageProps> = () =>
 )
 
 PerforceChangelistsStory.storyName = 'Perforce changelists'
+
+export const PerforceChangelistsInPathStory: Story<RepositoryCommitsPageProps> = () => (
+    <MockedTestProvider>
+        <WebStory
+            initialEntries={['/perforce.sgdev.org/go/-/changelists/somePath']}
+            mocks={[mockRepositoryPerforceChangelistsQuery]}
+        >
+            {props => <RepositoryCommitsPage revision="" repo={perforceRepo} {...props} />}
+        </WebStory>
+    </MockedTestProvider>
+)
+
+PerforceChangelistsInPathStory.storyName = 'Perforce changelists in a path'
