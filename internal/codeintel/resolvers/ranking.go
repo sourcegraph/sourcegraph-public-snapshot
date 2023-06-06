@@ -7,8 +7,18 @@ import (
 )
 
 type RankingServiceResolver interface {
-	RankingSummary(ctx context.Context) ([]RankingSummaryResolver, error)
+	RankingSummary(ctx context.Context) (GlobalRankingSummaryResolver, error)
 	BumpDerivativeGraphKey(ctx context.Context) (*EmptyResponse, error)
+	DeleteRankingProgress(ctx context.Context, args *DeleteRankingProgressArgs) (*EmptyResponse, error)
+}
+
+type DeleteRankingProgressArgs struct {
+	GraphKey string
+}
+
+type GlobalRankingSummaryResolver interface {
+	RankingSummary() []RankingSummaryResolver
+	NextJobStartsAt() *gqlutil.DateTime
 }
 
 type RankingSummaryResolver interface {

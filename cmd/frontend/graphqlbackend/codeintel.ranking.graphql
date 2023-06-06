@@ -2,7 +2,7 @@ extend type Query {
     """
     Gets the progress of the current and historic precise ranking jobs.
     """
-    rankingSummary: [RankingSummary!]!
+    rankingSummary: GlobalRankingSummary!
 }
 
 extend type Mutation {
@@ -10,6 +10,26 @@ extend type Mutation {
     Effectively begins a new ranking map/reduce job.
     """
     bumpDerivativeGraphKey: EmptyResponse!
+
+    """
+    Deletes the ranking progress object associated with a particular graph key.
+    """
+    deleteRankingProgress(graphKey: String!): EmptyResponse
+}
+
+"""
+THe progress of current and historic precise ranking jobs.
+"""
+type GlobalRankingSummary {
+    """
+    Precise ranking job summaries ordered reverse-chronologically.
+    """
+    rankingSummary: [RankingSummary!]!
+
+    """
+    The time that the next ranking job is configured to begin.
+    """
+    nextJobStartsAt: DateTime
 }
 
 """

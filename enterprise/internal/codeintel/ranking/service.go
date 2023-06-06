@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -127,6 +128,27 @@ func (s *Service) BumpDerivativeGraphKey(ctx context.Context) error {
 	return s.store.BumpDerivativeGraphKey(ctx)
 }
 
+func (s *Service) DeleteRankingProgress(ctx context.Context, graphKey string) error {
+	return s.store.DeleteRankingProgress(ctx, graphKey)
+}
+
 func (s *Service) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
 	return s.store.LastUpdatedAt(ctx, repoIDs)
+}
+
+func (s *Service) NextJobStartsAt(ctx context.Context) (time.Time, bool, error) {
+	expr, err := conf.CodeIntelRankingDocumentReferenceCountsCronExpression()
+	if err != nil {
+		return time.Time{}, false, err
+	}
+
+	_, previous, ok, err := s.store.DerivativeGraphKey(ctx)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	if !ok {
+		return time.Time{}, false, nil
+	}
+
+	return expr.Next(previous), true, nil
 }

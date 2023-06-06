@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
@@ -30,7 +31,7 @@ func NewRootResolver(
 }
 
 // 🚨 SECURITY: Only site admins may view ranking job summaries.
-func (r *rootResolver) RankingSummary(ctx context.Context) (_ []resolverstubs.RankingSummaryResolver, err error) {
+func (r *rootResolver) RankingSummary(ctx context.Context) (_ resolverstubs.GlobalRankingSummaryResolver, err error) {
 	ctx, _, endObservation := r.operations.rankingSummary.With(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -50,12 +51,22 @@ func (r *rootResolver) RankingSummary(ctx context.Context) (_ []resolverstubs.Ra
 		})
 	}
 
-	return resolvers, nil
+	var nextJobStartsAt *time.Time
+	if t, ok, err := r.rankingSvc.NextJobStartsAt(ctx); err != nil {
+		return nil, err
+	} else if ok {
+		nextJobStartsAt = &t
+	}
+
+	return &globalRankingSummaryResolver{
+		resolvers:       resolvers,
+		nextJobStartsAt: nextJobStartsAt,
+	}, nil
 }
 
 // 🚨 SECURITY: Only site admins may modify ranking graph keys.
 func (r *rootResolver) BumpDerivativeGraphKey(ctx context.Context) (_ *resolverstubs.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.rankingSummary.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := r.operations.bumpDerivativeGraphKey.With(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -63,6 +74,31 @@ func (r *rootResolver) BumpDerivativeGraphKey(ctx context.Context) (_ *resolvers
 	}
 
 	return resolverstubs.Empty, r.rankingSvc.BumpDerivativeGraphKey(ctx)
+}
+
+// 🚨 SECURITY: Only site admins may modify ranking progress records.
+func (r *rootResolver) DeleteRankingProgress(ctx context.Context, args *resolverstubs.DeleteRankingProgressArgs) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.deleteRankingProgress.With(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	return resolverstubs.Empty, r.rankingSvc.DeleteRankingProgress(ctx, args.GraphKey)
+}
+
+type globalRankingSummaryResolver struct {
+	resolvers       []resolverstubs.RankingSummaryResolver
+	nextJobStartsAt *time.Time
+}
+
+func (r *globalRankingSummaryResolver) RankingSummary() []resolverstubs.RankingSummaryResolver {
+	return r.resolvers
+}
+
+func (r *globalRankingSummaryResolver) NextJobStartsAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.nextJobStartsAt)
 }
 
 type rankingSummaryResolver struct {

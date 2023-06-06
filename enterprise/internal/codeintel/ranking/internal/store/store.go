@@ -40,6 +40,7 @@ type Store interface {
 	// Graph keys
 	DerivativeGraphKey(ctx context.Context) (string, time.Time, bool, error)
 	BumpDerivativeGraphKey(ctx context.Context) error
+	DeleteRankingProgress(ctx context.Context, graphKey string) error
 
 	// Coordinates mapper+reducer phases
 	Coordinate(ctx context.Context, derivativeGraphKey string) error
