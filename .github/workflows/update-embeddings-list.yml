@@ -25,7 +25,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Compile Javascript
-        run: cd dev/update-embeddings-list && tsc src/index.ts --outDir build
+        run: cd dev/update-embeddings-list && pnpm build
       - name: check output
         run: ls
       - name: run script
