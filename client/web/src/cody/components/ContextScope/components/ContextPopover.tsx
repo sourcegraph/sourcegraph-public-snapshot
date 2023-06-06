@@ -8,6 +8,11 @@ import {
     mdiMinusCircleOutline,
     mdiGithub,
     mdiCloseCircle,
+    mdiCheckOutline,
+    mdiDatabaseCheck,
+    mdiDatabaseCheckOutline,
+    mdiDatabaseSyncOutline,
+    mdiDatabaseRemoveOutline,
 } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -190,33 +195,47 @@ const ContextItem: React.FC<{
     contextType: ContextType
     handleAddItem: () => void
     handleRemoveItem: () => void
-}> = ({ item, icon, searchText, contextType, handleAddItem, handleRemoveItem }) => (
-    <div className={classNames('d-flex justify-content-between flex-row p-1 rounded-lg', styles.item)}>
-        <div>
-            <Icon aria-hidden={true} svgPath={icon} />{' '}
-            <span
-                dangerouslySetInnerHTML={{
-                    __html: getTintedText(contextType === SELECTED.FILES ? getFileName(item) : item, searchText),
-                }}
-            />
+}> = ({ item, icon, searchText, contextType, handleAddItem, handleRemoveItem }) => {
+    const getRandomIcon = () => {
+        const icons = [mdiDatabaseCheckOutline, mdiDatabaseSyncOutline, mdiDatabaseRemoveOutline]
+        return icons[Math.floor(Math.random() * icons.length)]
+    }
+
+    const randomIcon = getRandomIcon()
+
+    return (
+        <div className={classNames('d-flex justify-content-between flex-row p-1 rounded-lg', styles.item)}>
+            <div>
+                <Icon
+                    style={{ color: randomIcon === mdiDatabaseRemoveOutline ? '#E09200' : 'inherit' }}
+                    aria-hidden={true}
+                    svgPath={randomIcon}
+                />{' '}
+                <Icon aria-hidden={true} svgPath={icon} />{' '}
+                <span
+                    dangerouslySetInnerHTML={{
+                        __html: getTintedText(contextType === SELECTED.FILES ? getFileName(item) : item, searchText),
+                    }}
+                />
+            </div>
+            <div className={classNames('d-flex align-items-center', styles.itemRight)}>
+                {contextType === SELECTED.FILES && (
+                    <>
+                        <Icon aria-hidden={true} svgPath={mdiGithub} />{' '}
+                        <Text size="small" className="m-0">
+                            <span dangerouslySetInnerHTML={{ __html: getTintedText(getPath(item), searchText) }} />
+                        </Text>
+                    </>
+                )}
+                <ItemAction
+                    isSearching={searchText.length > 0}
+                    handleAddItem={handleAddItem}
+                    handleRemoveItem={handleRemoveItem}
+                />
+            </div>
         </div>
-        <div className={classNames('d-flex align-items-center', styles.itemRight)}>
-            {contextType === SELECTED.FILES && (
-                <>
-                    <Icon aria-hidden={true} svgPath={mdiGithub} />{' '}
-                    <Text size="small" className="m-0">
-                        <span dangerouslySetInnerHTML={{ __html: getTintedText(getPath(item), searchText) }} />
-                    </Text>
-                </>
-            )}
-            <ItemAction
-                isSearching={searchText.length > 0}
-                handleAddItem={handleAddItem}
-                handleRemoveItem={handleRemoveItem}
-            />
-        </div>
-    </div>
-)
+    )
+}
 
 const ItemAction: React.FC<{
     isSearching: boolean
