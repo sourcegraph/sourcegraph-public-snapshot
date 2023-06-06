@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # In Wolfi, unix_socket_directories defaults to /tmp. In previous Alpine images, this defaulted to /var/run/postgres.
 # /tmp may not be writable, so any existing postgresql.conf configs that predate the Wolfi migration should be patched to update this setting.
