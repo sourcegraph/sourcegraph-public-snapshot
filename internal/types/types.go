@@ -1840,7 +1840,7 @@ type OwnershipUsageStatistics struct {
 	// AssignedOwnersCount is the sum total of assigned owners. For instance
 	// if an owner is assigned to a single file - that counts as one,
 	// for the whole repo - also counts as one.
-	AssignedOwnersCount *int `json:"assigned_owners_count"`
+	AssignedOwnersCount *int32 `json:"assigned_owners_count"`
 }
 
 type OwnershipUsageReposCounts struct {
