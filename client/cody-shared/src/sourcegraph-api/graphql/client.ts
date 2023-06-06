@@ -17,7 +17,7 @@ import {
     CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
     CURRENT_SITE_VERSION_QUERY,
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
-    SITE_GRAPHQL_FIELDS_QUERY,
+    CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
 } from './queries'
 
 interface APIResponse<T> {
@@ -136,12 +136,11 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getSiteHasIsCodyEnabledField(): Promise<boolean | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<SiteGraphqlFieldsResponse>>(SITE_GRAPHQL_FIELDS_QUERY, {}).then(
-            response =>
-                extractDataOrError(
-                    response,
-                    data => !!data.__type?.fields?.find(field => field.name === 'isCodyEnabled')
-                )
+        return this.fetchSourcegraphAPI<APIResponse<SiteGraphqlFieldsResponse>>(
+            CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data => !!data.__type?.fields?.find(field => field.name === 'isCodyEnabled'))
         )
     }
 
@@ -166,7 +165,7 @@ export class SourcegraphGraphQLAPIClient {
             {}
         ).then(response =>
             extractDataOrError(response, data =>
-                data.currentUser ? { ...data.currentUser } : new Error('current user not found')
+                data.currentUser ? { ...data.currentUser } : new Error('current user not found with verified email')
             )
         )
     }
@@ -212,8 +211,11 @@ export class SourcegraphGraphQLAPIClient {
             return { enabled: false, version: 'unknown' }
         }
         const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
+        if (insiderBuild) {
+            return { enabled: true, version: siteVersion }
+        }
         // NOTE: Cody does not work on versions older than 5.0
-        const versionBeforeCody = !insiderBuild && siteVersion < '5.0.0'
+        const versionBeforeCody = siteVersion < '5.0.0'
         if (versionBeforeCody) {
             return { enabled: false, version: siteVersion }
         }
@@ -221,7 +223,7 @@ export class SourcegraphGraphQLAPIClient {
         const betaVersion = siteVersion >= '5.0.0' && siteVersion < '5.1.0'
         const hasIsCodyEnabledField = await this.getSiteHasIsCodyEnabledField()
         // The isCodyEnabled field does not exist before version 5.1.0
-        if (!insiderBuild && !betaVersion && !isError(hasIsCodyEnabledField) && hasIsCodyEnabledField) {
+        if (!betaVersion && !isError(hasIsCodyEnabledField) && hasIsCodyEnabledField) {
             const siteHasCodyEnabled = await this.getSiteHasCodyEnabled()
             return { enabled: !isError(siteHasCodyEnabled) && siteHasCodyEnabled, version: siteVersion }
         }

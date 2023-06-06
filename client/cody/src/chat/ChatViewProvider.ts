@@ -196,6 +196,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     accessToken: message.accessToken,
                     customHeaders: this.config.customHeaders,
                 })
+
                 await updateConfiguration('serverEndpoint', message.serverEndpoint)
                 await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
                 await this.sendLogin(authStatus)
@@ -296,7 +297,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 void this.multiplexer.notifyTurnComplete()
             },
             onError: (err, statusCode) => {
-                const hasCompletionsClient = err !== 'no route'
                 // Display error message as assistant response
                 this.transcript.addErrorAsAssistantResponse(err)
                 // Log users out on unauth error
@@ -308,7 +308,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     } else {
                         authStatus.showInvalidAccessTokenError = true
                     }
-                    authStatus.siteHasCodyEnabled = hasCompletionsClient
+                    debug('ChatViewProvider:onError:unauth', err, { verbose: { authStatus } })
                     void this.sendLogin(authStatus)
                     void this.clearAndRestartSession()
                 }
@@ -555,14 +555,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Save Login state to webview
      */
     public async sendLogin(authStatus: AuthStatus): Promise<void> {
-        const isAuthed = isLoggedIn(authStatus)
-        this.sendEvent('token', 'Set')
         // activate extension when user has valid login
-        await vscode.commands.executeCommand('setContext', 'cody.activated', isAuthed)
-        if (isAuthed) {
-            this.sendEvent('auth', 'login')
-        }
-        void this.webview?.postMessage({ type: 'login', authStatus })
+        await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
+        await this.webview?.postMessage({ type: 'login', authStatus })
+        this.sendEvent('auth', 'login')
     }
 
     /**

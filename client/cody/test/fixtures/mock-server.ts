@@ -40,6 +40,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     app.post('/.api/graphql', (req, res) => {
         if (req.headers.authorization !== `token ${VALID_TOKEN}`) {
             res.sendStatus(401)
+            console.error('Invalid token in header:', req.headers.authorization)
             return
         }
 
@@ -55,7 +56,10 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
                 res.send(JSON.stringify({ data: { site: { productVersion: 'dev' } } }))
                 break
             case 'SiteGraphQLFields':
-                res.send(JSON.stringify({ data: { __type: { fields: { name: 'isCodyEnabled' } } } }))
+                res.send(JSON.stringify({ data: { __type: { fields: [{ name: 'id' }, { name: 'isCodyEnabled' }] } } }))
+                break
+            case 'SiteHasCodyEnabled':
+                res.send(JSON.stringify({ data: { site: { isCodyEnabled: true } } }))
                 break
             default:
                 res.sendStatus(400)

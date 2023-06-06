@@ -115,11 +115,15 @@ const ErrorContainer: React.FunctionComponent<{ authStatus: AuthStatus }> = ({ a
         hasVerifiedEmail,
         siteVersion,
     } = authStatus
-    // Assumes Cody is enabled for all insider builds
+    // Version is compatible if this is an insider build or version is 5.1.0 or above
+    // Right now we assumes all insider builds have Cody enabled
+    // NOTE: Insider build includes App builds but we should seperate them in the future
+    if (!authenticated && !showInvalidAccessTokenError) {
+        return null
+    }
     const isInsiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
-    // Version is compatible if version is 5.1.0 or above
-    const isVersionCompatible = !isInsiderBuild && siteVersion >= '5.1.0'
-    const isVersionBeforeCody = !isInsiderBuild && siteVersion < '5.0.0'
+    const isVersionCompatible = isInsiderBuild || siteVersion >= '5.1.0'
+    const isVersionBeforeCody = !isVersionCompatible && siteVersion < '5.0.0'
     // When doesn't have a valid token
     if (showInvalidAccessTokenError) {
         return <p className={styles.error}>{ERROR_MESSAGES.INVALID}</p>

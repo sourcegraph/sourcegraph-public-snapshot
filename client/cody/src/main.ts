@@ -119,9 +119,6 @@ const register = async (
         })
     )
 
-    const authStatus = await getAuthStatus(initialConfig)
-    await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
-
     const executeRecipe = async (recipe: RecipeID, showTab = true): Promise<void> => {
         if (showTab) {
             await vscode.commands.executeCommand('cody.chat.focus')
@@ -279,6 +276,11 @@ const register = async (
             })
         )
         await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
+    }
+
+    if (initialConfig.serverEndpoint && initialConfig.accessToken) {
+        const authStatus = await getAuthStatus(initialConfig)
+        await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
     }
 
     return {

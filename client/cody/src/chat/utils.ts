@@ -95,35 +95,25 @@ let configWithToken: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'acce
 export async function getAuthStatus(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
 ): Promise<AuthStatus> {
+    if (!config.accessToken || !config.serverEndpoint) {
+        return { ...defaultAuthStatus }
+    }
     // Cache the config and the GraphQL client
     if (config !== configWithToken) {
         configWithToken = config
         client = new SourcegraphGraphQLAPIClient(config)
     }
-    // Early return if no access token
-    if (!config.accessToken) {
-        return { ...unauthenticatedStatus }
-    }
     // Version is for frontend to check if Cody is not enabled due to unsupported version when siteHasCodyEnabled is false
     const { enabled, version } = await client.isCodyEnabled()
-    // Use early returns to avoid nested if-else
     const isDotComOrApp = client.isDotCom() || isLocalApp(config.serverEndpoint)
-    if (isDotComOrApp) {
-        const userInfo = await client.getCurrentUserIdAndVerifiedEmail()
-        if (!userInfo || isError(userInfo)) {
-            return { ...unauthenticatedStatus }
-        }
-        if (userInfo.id.length > 0) {
-            return newAuthStatus(isDotComOrApp, userInfo.id, userInfo.hasVerifiedEmail, true, version)
-        }
-        return { ...unauthenticatedStatus }
+    if (!isDotComOrApp) {
+        const currentUserID = await client.getCurrentUserId()
+        return newAuthStatus(isDotComOrApp, !isError(currentUserID), false, enabled, version)
     }
-    const userId = await client.getCurrentUserId()
-    if (!userId || isError(userId)) {
-        return { ...unauthenticatedStatus }
-    }
-
-    return newAuthStatus(isDotComOrApp, userId, false, enabled, version)
+    const userInfo = await client.getCurrentUserIdAndVerifiedEmail()
+    return isError(userInfo)
+        ? { ...unauthenticatedStatus }
+        : newAuthStatus(isDotComOrApp, !!userInfo.id, userInfo.hasVerifiedEmail, true, version)
 }
 
 /**
@@ -138,18 +128,18 @@ export async function getAuthStatus(
  */
 export function newAuthStatus(
     isDotComOrApp: boolean,
-    userId: string,
+    user: boolean,
     isEmailVerified: boolean,
     isCodyEnabled: boolean,
     version: string
 ): AuthStatus {
-    if (!userId) {
+    if (!user) {
         return { ...unauthenticatedStatus }
     }
     const newAuthStatus = { ...defaultAuthStatus }
     // Set values and return early
-    newAuthStatus.authenticated = !!userId
-    newAuthStatus.showInvalidAccessTokenError = !userId
+    newAuthStatus.authenticated = user
+    newAuthStatus.showInvalidAccessTokenError = !user
     newAuthStatus.requiresVerifiedEmail = isDotComOrApp
     newAuthStatus.hasVerifiedEmail = isDotComOrApp && isEmailVerified
     newAuthStatus.siteHasCodyEnabled = isCodyEnabled
