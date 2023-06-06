@@ -14,8 +14,7 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -498,10 +497,9 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 
 	// Determine trace URL and log the error.
 	var traceURL string
-	if span := opentracing.SpanFromContext(r.Context()); span != nil {
-		ext.Error.Set(span, true)
-		span.SetTag("err", err)
-		span.SetTag("error-id", errorID)
+	if tr := trace.TraceFromContext(r.Context()); tr != nil {
+		tr.SetError(err)
+		tr.SetAttributes(attribute.String("error-id", errorID))
 		traceURL = trace.URL(trace.ID(r.Context()), conf.DefaultClient())
 	}
 	log15.Error("ui HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", statusCode, "error", err, "error_id", errorID, "trace", traceURL)
