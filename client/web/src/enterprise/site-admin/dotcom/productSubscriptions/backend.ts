@@ -122,9 +122,14 @@ export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
                             tags
                             userCount
                             expiresAt
+                            salesforceSubscriptionID
+                            salesforceOpportunityID
                         }
                         licenseKey
                         createdAt
+                        revokedAt
+                        siteID
+                        version
                     }
                     totalCount
                     pageInfo {
@@ -211,10 +216,13 @@ const siteAdminProductLicenseFragment = gql`
             urlForSiteAdmin
         }
         licenseKey
+        siteID
         info {
             ...ProductLicenseInfoFields
         }
         createdAt
+        revokedAt
+        version
     }
 
     fragment ProductLicenseInfoFields on ProductLicenseInfo {
@@ -222,6 +230,8 @@ const siteAdminProductLicenseFragment = gql`
         tags
         userCount
         expiresAt
+        salesforceSubscriptionID
+        salesforceOpportunityID
     }
 
     fragment ProductLicenseSubscriptionAccount on User {

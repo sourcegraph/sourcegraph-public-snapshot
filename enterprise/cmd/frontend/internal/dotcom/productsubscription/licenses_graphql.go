@@ -87,9 +87,11 @@ func (r *productLicense) Info() (*graphqlbackend.ProductLicenseInfo, error) {
 		return nil, err
 	}
 	return &graphqlbackend.ProductLicenseInfo{
-		TagsValue:      info.Tags,
-		UserCountValue: info.UserCount,
-		ExpiresAtValue: info.ExpiresAt,
+		TagsValue:                     info.Tags,
+		UserCountValue:                info.UserCount,
+		ExpiresAtValue:                info.ExpiresAt,
+		SalesforceSubscriptionIDValue: info.SalesforceSubscriptionID,
+		SalesforceOpportunityIDValue:  info.SalesforceOpportunityID,
 	}, nil
 }
 
@@ -97,6 +99,21 @@ func (r *productLicense) LicenseKey() string { return r.v.LicenseKey }
 
 func (r *productLicense) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.v.CreatedAt}
+}
+
+func (r *productLicense) RevokedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.v.RevokedAt)
+}
+
+func (r *productLicense) SiteID() *string {
+	return r.v.SiteID
+}
+
+func (r *productLicense) Version() int32 {
+	if r.v.LicenseVersion == nil {
+		return 0
+	}
+	return *r.v.LicenseVersion
 }
 
 func generateProductLicenseForSubscription(ctx context.Context, db database.DB, subscriptionID string, input *graphqlbackend.ProductLicenseInput) (id string, err error) {

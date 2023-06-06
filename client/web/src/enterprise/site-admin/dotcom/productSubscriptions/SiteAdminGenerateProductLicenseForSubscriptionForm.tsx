@@ -23,15 +23,21 @@ import { LoaderButton } from '../../../../components/LoaderButton'
 import {
     GenerateProductLicenseForSubscriptionResult,
     GenerateProductLicenseForSubscriptionVariables,
+    ProductLicenseFields,
+    ProductLicenseInfoFields,
 } from '../../../../graphql-operations'
 import { ExpirationDate } from '../../../productSubscription/ExpirationDate'
 import { hasUnknownTags, ProductLicenseTags, UnknownTagWarning } from '../../../productSubscription/ProductLicenseTags'
 
 import { GENERATE_PRODUCT_LICENSE } from './backend'
 
+interface License extends Omit<ProductLicenseFields, 'subscription' | 'info'> {
+    info: Omit<ProductLicenseInfoFields, 'productNameWithBrand'> | null
+}
 interface Props {
     subscriptionID: Scalars['ID']
     subscriptionAccount: string
+    latestLicense: License
     onGenerate: () => void
     onCancel: () => void
 }
@@ -40,14 +46,18 @@ interface FormData {
     /** Comma-separated license tags. */
     tags: string
     customer: string
+    salesforceSubscriptionID: string
+    salesforceOpportunityID: string
     plan: string
     userCount: number
     expiresAt: Date
 }
 
-const getEmptyFormData = (account: string): FormData => ({
+const getEmptyFormData = (account: string, latestLicense: License): FormData => ({
     tags: '',
     customer: account,
+    salesforceSubscriptionID: latestLicense.info?.salesforceSubscriptionID ?? '',
+    salesforceOpportunityID: latestLicense.info?.salesforceOpportunityID ?? '',
     plan: 'enterprise-1',
     userCount: 1,
     expiresAt: endOfDay(addDays(Date.now(), 366)),
@@ -80,20 +90,24 @@ const getTagsFromFormData = (formData: FormData): string[] => [
  */
 export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionComponent<
     React.PropsWithChildren<Props>
-> = ({ subscriptionID, subscriptionAccount, onGenerate, onCancel }) => {
+> = ({ latestLicense, subscriptionID, subscriptionAccount, onGenerate, onCancel }) => {
     const labelId = 'generateLicense'
 
-    const [formData, setFormData] = useState<FormData>(getEmptyFormData(subscriptionAccount))
+    const [formData, setFormData] = useState<FormData>(getEmptyFormData(subscriptionAccount, latestLicense))
 
     const onPlanChange = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(
         event => setFormData(formData => ({ ...formData, plan: event.target.value })),
         []
     )
 
-    const onCustomerChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        event => setFormData(formData => ({ ...formData, customer: event.target.value })),
-        []
-    )
+    const useOnChange = (key: string): React.ChangeEventHandler<HTMLInputElement> =>
+        useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+            event => setFormData(formData => ({ ...formData, [key]: event.target.value })),
+            [key]
+        )
+    const onCustomerChange = useOnChange('customer')
+    const onSFSubscriptionIDChange = useOnChange('salesforceSubscriptionID')
+    const onSFOpportunityIDChange = useOnChange('salesforceOpportunityID')
 
     const onTagsChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         event => setFormData(formData => ({ ...formData, tags: event.target.value || '' })),
@@ -115,9 +129,11 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
         event =>
             setFormData(formData => ({
                 ...formData,
-                expiresAt: endOfDay(event.target.valueAsDate || getEmptyFormData(subscriptionAccount).expiresAt),
+                expiresAt: endOfDay(
+                    event.target.valueAsDate || getEmptyFormData(subscriptionAccount, latestLicense).expiresAt
+                ),
             })),
-        [subscriptionAccount]
+        [subscriptionAccount, latestLicense]
     )
 
     const [generateLicense, { loading, error }] = useMutation<
@@ -130,6 +146,14 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                 tags: getTagsFromFormData(formData),
                 userCount: formData.userCount,
                 expiresAt: Math.floor(formData.expiresAt.getTime() / 1000),
+                salesforceSubscriptionID:
+                    formData.salesforceSubscriptionID.trim().length > 0
+                        ? formData.salesforceSubscriptionID.trim()
+                        : undefined,
+                salesforceOpportunityID:
+                    formData.salesforceOpportunityID.trim().length > 0
+                        ? formData.salesforceOpportunityID.trim()
+                        : undefined,
             },
         },
         onCompleted: onGenerate,
@@ -175,6 +199,26 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                         onChange={onCustomerChange}
                     />
 
+                    <Input
+                        id="site-admin-create-product-subscription-page__salesforce_sub_id_input"
+                        label="Salesforce Subscription ID"
+                        description="Subscription ID from Salesforce."
+                        type="text"
+                        disabled={loading}
+                        value={formData.salesforceSubscriptionID}
+                        onChange={onSFSubscriptionIDChange}
+                    />
+
+                    <Input
+                        id="site-admin-create-product-subscription-page__salesforce_op_id_input"
+                        label="Salesforce Opportunity ID"
+                        description="Opportunity ID from Salesforce."
+                        type="text"
+                        disabled={loading}
+                        value={formData.salesforceOpportunityID}
+                        onChange={onSFOpportunityIDChange}
+                    />
+
                     <Select
                         id="site-admin-create-product-subscription-page__plan_select"
                         label="Plan"
@@ -190,7 +234,6 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                             </option>
                         ))}
                     </Select>
-
                     <Input
                         type="text"
                         label="Tags"
@@ -216,7 +259,6 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                             </option>
                         ))}
                     </datalist>
-
                     <Input
                         type="number"
                         label="Users"
@@ -227,7 +269,6 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                         onChange={onUserCountChange}
                         description="The maximum number of users permitted on this license."
                     />
-
                     <Input
                         type="date"
                         label="Expires At"
@@ -263,7 +304,6 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                             </>
                         }
                     />
-
                     <div className="d-flex justify-content-end">
                         <Button
                             disabled={loading}

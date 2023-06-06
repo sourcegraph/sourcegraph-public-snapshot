@@ -1,9 +1,7 @@
 import React from 'react'
 
-import { mdiShieldOff } from '@mdi/js'
-
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Tooltip, Text, LinkOrSpan, Icon, H4 } from '@sourcegraph/wildcard'
+import { Text, LinkOrSpan, Label } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../../components/CopyableText'
 import { ProductLicenseFields } from '../../../../graphql-operations'
@@ -23,7 +21,7 @@ export interface SiteAdminProductLicenseNodeProps {
 export const SiteAdminProductLicenseNode: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminProductLicenseNodeProps>
 > = ({ node, showSubscription }) => (
-    <li className="list-group-item py-2">
+    <li className="list-group-item py-3">
         {showSubscription && (
             <div className="mr-3 text-truncate">
                 <strong>
@@ -44,26 +42,33 @@ export const SiteAdminProductLicenseNode: React.FunctionComponent<
                     Created <Timestamp date={node.createdAt} />
                 </small>
             </Text>
+            <Text className="ml-auto mb-0">
+                <small>Version {node.version}</small>
+            </Text>
         </div>
-        {node.info && node.subscription.activeLicense && node.subscription.activeLicense.id === node.id ? (
-            <ProductLicenseValidity licenseInfo={node.info} className="mb-2" />
-        ) : (
-            <Tooltip content="A newer license was generated for this subscription. This license should no longer be used.">
-                <Text className="mb-2">
-                    <Icon svgPath={mdiShieldOff} aria-hidden={true} className="text-warning mr-1" />
-                    <strong>Inactive</strong>
-                </Text>
-            </Tooltip>
+        <ProductLicenseValidity license={node} className="mb-2" />
+        {node.version > 1 && (
+            <>
+                <Label className="mb-2">
+                    <Text className="mb-0">Site ID</Text>
+                </Label>
+                <Text className="mb-3 w-100">{node.siteID ?? <span className="text-muted">Unused</span>}</Text>
+            </>
         )}
         {node.info && node.info.tags.length > 0 && (
             <>
                 {hasUnknownTags(node.info.tags) && <UnknownTagWarning className="mb-2" />}
-                <H4>Tags</H4>
-                <Text className="mb-2">
-                    <ProductLicenseTags tags={node.info.tags} />
-                </Text>
+                <Label className="w-100">
+                    <Text className="mb-2">Tags</Text>
+                    <Text className="mb-2">
+                        <ProductLicenseTags tags={node.info.tags} />
+                    </Text>
+                </Label>
             </>
         )}
-        <CopyableText flex={true} text={node.licenseKey} />
+        <Label className="w-100">
+            <Text className="mb-2">License Key</Text>
+            <CopyableText flex={true} text={node.licenseKey} />
+        </Label>
     </li>
 )

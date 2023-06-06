@@ -8220,6 +8220,14 @@ type ProductLicenseInfo {
     The date when this license expires.
     """
     expiresAt: DateTime!
+    """
+    The Salesforce subscription ID associated with this license.
+    """
+    salesforceSubscriptionID: String
+    """
+    The Salesforce opportunity ID associated with this license.
+    """
+    salesforceOpportunityID: String
 }
 
 """
