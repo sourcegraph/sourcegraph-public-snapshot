@@ -18,6 +18,7 @@ export const recipesList = {
     fixup: 'Fixup code from inline instructions',
     'context-search': 'Codebase context search',
     'release-notes': 'Generate release notes',
+    'pr-description': 'Generate pull request description',
     'optimize-code': 'Optimize code',
 }
 

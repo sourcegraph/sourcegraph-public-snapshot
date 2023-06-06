@@ -51,6 +51,11 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/analytics/extensions',
         },
         {
+            label: 'Own',
+            to: '/site-admin/analytics/own',
+            condition: context => context.ownAnalyticsEnabled,
+        },
+        {
             label: 'Feedback survey',
             to: '/site-admin/surveys',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,

@@ -2,10 +2,7 @@ package com.sourcegraph.cody.completions;
 
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.command.WriteCommandAction;
-import com.intellij.openapi.editor.Caret;
-import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.Inlay;
-import com.intellij.openapi.editor.ScrollType;
+import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.actionSystem.EditorAction;
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler;
 import java.util.List;
@@ -29,7 +26,8 @@ public class AcceptCodyCompletionAction extends EditorAction {
     protected boolean isEnabledForCaret(
         @NotNull Editor editor, @NotNull Caret caret, DataContext dataContext) {
       // Returns false to fall back to normal TAB character if there is no suggestion at the caret.
-      return getCodyCompletionAtCaret(editor, caret) != null;
+      return CodyCompletionsManager.isEditorInstanceSupported(editor)
+          && getCodyCompletionAtCaret(editor, caret) != null;
     }
 
     private @Nullable CodyCompletionElementRenderer getCodyCompletionAtCaret(
@@ -37,11 +35,17 @@ public class AcceptCodyCompletionAction extends EditorAction {
       if (caret == null) {
         return null;
       }
-      Inlay<?> inlay = editor.getInlayModel().getInlineElementAt(caret.getVisualPosition());
-      if (inlay != null && inlay.getRenderer() instanceof CodyCompletionElementRenderer) {
-        return (CodyCompletionElementRenderer) inlay.getRenderer();
-      }
-      return null;
+      // can't use editor.getInlayModel().getInlineElementAt(caret.getVisualPosition()) here, as it
+      // requires a write EDT thread;
+      // we work around it by just looking at a range containing a single point
+      List<Inlay<?>> inlays =
+          editor.getInlayModel().getInlineElementsInRange(caret.getOffset(), caret.getOffset());
+      return (CodyCompletionElementRenderer)
+          inlays.stream()
+              .filter(i -> i.getRenderer() instanceof CodyCompletionElementRenderer)
+              .map(Inlay::getRenderer)
+              .findFirst()
+              .orElse(null);
     }
 
     @Override

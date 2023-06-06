@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/inconshreveable/log15"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -386,6 +387,10 @@ func (s BitbucketServerSource) GetFork(ctx context.Context, targetRepo *types.Re
 	}
 
 	return s.checkAndCopy(targetRepo, fork, namespace)
+}
+
+func (s BitbucketServerSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	return BuildCommitOptsCommon(repo, spec, pushOpts)
 }
 
 func (s BitbucketServerSource) checkAndCopy(targetRepo *types.Repo, fork *bitbucketserver.Repo, forkNamespace string) (*types.Repo, error) {
