@@ -25,3 +25,11 @@ type GitHubApp struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
+
+// GitHubAppInstallation represents an installation of a GitHub App.
+type GitHubAppInstallation struct {
+	ID             int
+	AppID          int
+	InstallationID int
+	CreatedAt      time.Time
+}
