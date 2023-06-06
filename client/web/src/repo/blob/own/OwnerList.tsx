@@ -8,11 +8,18 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
-import { SearchPatternType, OwnerFields, OwnershipConnectionFields } from '../../../graphql-operations'
+import {
+    SearchPatternType,
+    OwnerFields,
+    OwnershipConnectionFields,
+    RemoveAssignedOwnerResult, RemoveAssignedOwnerVariables
+} from '../../../graphql-operations'
 
 import { FileOwnershipEntry } from './FileOwnershipEntry'
 
 import styles from './OwnerList.module.scss'
+import {useMutation} from "@sourcegraph/http-client/out/src";
+import {REMOVE_ASSIGNED_OWNER} from "./grapqlQueries";
 
 interface OwnExplanationProps {
     owners?: OwnerFields[]
@@ -89,6 +96,9 @@ interface OwnerListProps {
     isDirectory?: boolean
     makeOwnerButton?: (userId: string | undefined) => JSX.Element
     makeOwnerError?: Error
+    repoID: string
+    filePath: string
+
 }
 
 export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
@@ -96,6 +106,9 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
     isDirectory = false,
     makeOwnerButton,
     makeOwnerError,
+    repoID,
+    filePath,
+    refetch
 }) => {
     if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
@@ -135,14 +148,21 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                         reason.__typename === 'AssignedOwner'
                                 )
                             )
-                            .map((ownership, index) => (
+                            .map((ownership, index) => {
+                                const userId =
+                                    ownership.owner.__typename === 'Person' &&
+                                    ownership.owner.user?.__typename === 'User'
+                                        ? ownership.owner.user.id
+                                        : undefined
                                 // This list is not expected to change, so it's safe to use the index as a key.
                                 // eslint-disable-next-line react/no-array-index-key
-                                <React.Fragment key={index}>
-                                    {index > 0 && <tr className={styles.bordered} />}
-                                    <FileOwnershipEntry owner={ownership.owner} reasons={ownership.reasons} />
+                                return (
+                                    <React.Fragment key={index}>
+                                        {index > 0 && <tr className={styles.bordered}/>}
+                                    <FileOwnershipEntry refetch={refetch} owner={ownership.owner} userID={userId} repoID={repoID} filePath={filePath} reasons={ownership.reasons}/>
                                 </React.Fragment>
-                            ))}
+                                )
+                            })}
                         {
                             /* Visually separate two sets with a horizontal rule (like subsequent owners are)
                              * if there is data in both owners and signals.
@@ -183,6 +203,10 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                             owner={ownership.owner}
                                             reasons={ownership.reasons}
                                             makeOwnerButton={makeOwnerButton?.(userId)}
+                                            userID={userId}
+                                            repoID={repoID}
+                                            filePath={filePath}
+                                            refetch={refetch}
                                         />
                                     </React.Fragment>
                                 )
@@ -206,3 +230,5 @@ const NoOwnershipAlert: React.FunctionComponent<{ isDirectory?: boolean }> = ({ 
         {isDirectory ? 'No ownership data for this path.' : 'No ownership data for this file.'}
     </Alert>
 )
+
+

@@ -84,6 +84,9 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
                 data={data?.node?.commit?.tree?.ownership}
                 isDirectory={true}
                 makeOwnerButton={makeOwnerButton}
+                repoID={repoID}
+                filePath={filePath}
+                refetch={refetch}
             />
         )
     }

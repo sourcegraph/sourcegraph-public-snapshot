@@ -132,6 +132,7 @@ type RecentViewOwnershipSignalResolver interface {
 type AssignedOwnerResolver interface {
 	Title() (string, error)
 	Description() (string, error)
+	IsDirectMatch() bool
 }
 
 type CodeownersFileArgs struct {

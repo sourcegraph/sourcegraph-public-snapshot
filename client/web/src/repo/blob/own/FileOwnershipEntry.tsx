@@ -1,28 +1,34 @@
-import React from 'react'
+import React, {useState} from 'react'
 
-import { mdiEmail } from '@mdi/js'
+import {mdiEmail, mdiLoading, mdiPlus, mdiDelete} from '@mdi/js'
 
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { Button, ButtonLink, Icon, LinkOrSpan, Tooltip } from '@sourcegraph/wildcard'
 
 import {
-    AssignedOwnerFields,
+    AssignedOwnerFields, AssignOwnerResult, AssignOwnerVariables,
     CodeownersFileEntryFields,
     OwnerFields,
     RecentContributorOwnershipSignalFields,
-    RecentViewOwnershipSignalFields,
+    RecentViewOwnershipSignalFields, RemoveAssignedOwnerResult, RemoveAssignedOwnerVariables,
 } from '../../../graphql-operations'
 import { PersonLink } from '../../../person/PersonLink'
 
 import { OwnershipBadge } from './OwnershipBadge'
 
 import containerStyles from './OwnerList.module.scss'
+import {useMutation} from "@sourcegraph/http-client";
+import {REMOVE_ASSIGNED_OWNER} from "./grapqlQueries";
+import {RemoveOwnerButton} from "./RemoveOwnerButton";
 
 interface Props {
     owner: OwnerFields
     reasons: OwnershipReason[]
     makeOwnerButton?: React.ReactElement
+    repoID: string
+    filePath: string
+    userID?: string
 }
 
 type OwnershipReason =
@@ -31,7 +37,7 @@ type OwnershipReason =
     | RecentViewOwnershipSignalFields
     | AssignedOwnerFields
 
-export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons, makeOwnerButton }) => {
+export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons, makeOwnerButton, repoID, filePath, userID, refetch }) => {
     const findEmail = (): string | undefined => {
         if (owner.__typename !== 'Person') {
             return undefined
@@ -89,7 +95,12 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                     <OwnershipBadge key={reason.title} reason={reason} />
                 ))}
             </td>
-            <td className={containerStyles.fitting}>{makeOwnerButton}</td>
+            <td className={containerStyles.fitting}>
+                <span style={{display:'flex', justifyContent:'right' }}>
+                       {makeOwnerButton || <RemoveOwnerButton onSuccess={refetch} onError={() => {}} repoId={repoID} path={filePath} userId={userID} reasons={reasons}/>}
+                </span>
+            </td>
         </tr>
     )
 }
+
