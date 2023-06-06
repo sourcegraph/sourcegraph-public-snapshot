@@ -81,7 +81,7 @@ const CodyConfigurationPage = lazyComponent(
     'CodyConfigurationPage'
 )
 
-const codyIsEnabled = () => Boolean(window.context?.codyEnabled && window.context?.embeddingsEnabled)
+const codyIsEnabled = (): boolean => Boolean(window.context?.codyEnabled && window.context?.embeddingsEnabled)
 
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
     [
