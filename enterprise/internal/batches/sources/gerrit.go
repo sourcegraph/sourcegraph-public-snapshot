@@ -220,6 +220,9 @@ func (s GerritSource) BuildCommitOpts(repo *types.Repo, changeset *btypes.Change
 	if changeID == "" {
 		changeID = GenerateGerritChangeID(*changeset)
 	}
+	// We append the "title" as the first line of the commit message because Gerrit doesn't have a concept of title.
+	opts.CommitInfo.Messages = append([]string{spec.Title}, opts.CommitInfo.Messages...)
+	// We attach the Change ID to the bottom of the commit message because this is how Gerrit creates it's Changes.
 	opts.CommitInfo.Messages = append(opts.CommitInfo.Messages, "Change-Id: "+changeID)
 	return opts
 }

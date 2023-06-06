@@ -22,6 +22,7 @@ type operations struct {
 	insertInitialPathRanks         *observation.Operation
 	derivativeGraphKey             *observation.Operation
 	bumpDerivativeGraphKey         *observation.Operation
+	deleteRankingProgress          *observation.Operation
 	coordinate                     *observation.Operation
 	insertPathCountInputs          *observation.Operation
 	insertInitialPathCounts        *observation.Operation
@@ -66,6 +67,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		coordinate:                     op("Coordinate"),
 		derivativeGraphKey:             op("DerivativeGraphKey"),
 		bumpDerivativeGraphKey:         op("BumpDerivativeGraphKey"),
+		deleteRankingProgress:          op("DeleteRankingProgress"),
 		insertPathCountInputs:          op("InsertPathCountInputs"),
 		insertInitialPathCounts:        op("InsertInitialPathCounts"),
 		vacuumStaleGraphs:              op("VacuumStaleGraphs"),

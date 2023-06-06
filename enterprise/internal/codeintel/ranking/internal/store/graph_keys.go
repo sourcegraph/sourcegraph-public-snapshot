@@ -89,3 +89,14 @@ DELETE FROM codeintel_ranking_graph_keys WHERE id IN (
 	OFFSET %s
 )
 `
+
+func (s *store) DeleteRankingProgress(ctx context.Context, graphKey string) (err error) {
+	ctx, _, endObservation := s.operations.deleteRankingProgress.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.db.Exec(ctx, sqlf.Sprintf(deleteRankingProgress, graphKey))
+}
+
+const deleteRankingProgress = `
+DELETE FROM codeintel_ranking_progress WHERE graph_key = %s
+`
