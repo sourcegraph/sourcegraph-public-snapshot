@@ -204,7 +204,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                 <SiteAdminGenerateProductLicenseForSubscriptionForm
                     subscriptionID={productSubscription.id}
                     subscriptionAccount={productSubscription.account?.username || ''}
-                    latestLicense={productSubscription.productLicenses?.nodes[0]}
+                    latestLicense={productSubscription.productLicenses?.nodes[0] ?? undefined}
                     onGenerate={onLicenseUpdate}
                     onCancel={() => setShowGenerate(false)}
                 />
