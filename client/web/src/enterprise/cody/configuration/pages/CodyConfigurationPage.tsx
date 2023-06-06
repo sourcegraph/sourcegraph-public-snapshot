@@ -84,8 +84,8 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
             <PageTitle
                 title={
                     repo
-                        ? 'Embeddings data configuration policies for repository'
-                        : 'Global embeddings data configuration policies'
+                        ? 'Embeddings configuration policies for repository'
+                        : 'Global embeddings configuration policies'
                 }
             />
             <PageHeader
@@ -94,10 +94,10 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
                     {
                         text: repo ? (
                             <>
-                                Embeddings data configuration for <RepoLink repoName={repo.name} to={null} />
+                                Embeddings configuration for <RepoLink repoName={repo.name} to={null} />
                             </>
                         ) : (
-                            'Global embeddings data configuration'
+                            'Global embeddings configuration'
                         ),
                     },
                 ]}
@@ -133,7 +133,7 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
                     noun="configuration policy"
                     pluralNoun="configuration policies"
                     nodeComponent={PoliciesNode}
-                    nodeComponentProps={{ isDeleting, onDelete, domain: 'embeddings' }}
+                    nodeComponentProps={{ isDeleting, onDelete, urlSegment: 'embeddings' }}
                     queryConnection={queryPoliciesCallback}
                     cursorPaging={true}
                     inputClassName="ml-2 flex-1"
