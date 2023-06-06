@@ -1021,7 +1021,7 @@ Indexes:
  definition_id | bigint  |           |          | 
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
-    "codeintel_ranking_path_counts_inputs_graph_key_definition_id" btree (graph_key, definition_id, id) WHERE NOT processed
+    "codeintel_ranking_path_counts_inputs_graph_key_unique_definitio" UNIQUE, btree (graph_key, definition_id) WHERE NOT processed
     "codeintel_ranking_path_counts_inputs_graph_key_id" btree (graph_key, id)
 
 ```
