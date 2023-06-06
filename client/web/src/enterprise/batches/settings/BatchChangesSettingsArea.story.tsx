@@ -68,6 +68,7 @@ export const Overview: Story = () => (
                                     supportsCommitSigning: true,
                                     commitSigningConfiguration: {
                                         __typename: 'GitHubAppConfiguration',
+                                        id: '123',
                                         appID: 123,
                                         name: 'Sourcegraph Commit Signing',
                                         appURL: 'https://github.com/apps/sourcegraph-commit-signing',
@@ -152,6 +153,7 @@ export const ConfigAdded: Story = () => (
                                     supportsCommitSigning: true,
                                     commitSigningConfiguration: {
                                         __typename: 'GitHubAppConfiguration',
+                                        id: '123',
                                         appID: 123,
                                         name: 'Sourcegraph Commit Signing',
                                         appURL: 'https://github.com/apps/sourcegraph-commit-signing',
@@ -229,6 +231,7 @@ export const RolloutWindowsConfigurationStory: Story = () => (
                                     supportsCommitSigning: true,
                                     commitSigningConfiguration: {
                                         __typename: 'GitHubAppConfiguration',
+                                        id: '123',
                                         appID: 123,
                                         name: 'Sourcegraph Commit Signing',
                                         appURL: 'https://github.com/apps/sourcegraph-commit-signing',
