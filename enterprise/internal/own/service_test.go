@@ -28,6 +28,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const (
+	repoOwnerID          = 71
+	srcMainOwnerID       = 72
+	srcMainSecondOwnerID = 73
+	srcMainJavaOwnerID   = 74
+	assignerID           = 76
+	repoID               = 41
+)
+
 type repoPath struct {
 	Repo     api.RepoName
 	CommitID api.CommitID
@@ -591,15 +600,6 @@ func TestAssignedOwners(t *testing.T) {
 }
 
 func TestAssignedOwnersMatch(t *testing.T) {
-	const (
-		repoOwnerID          = 71
-		srcMainOwnerID       = 72
-		srcMainSecondOwnerID = 73
-		srcMainJavaOwnerID   = 74
-		srcTestOwnerID       = 74 // same as src/main/java owner
-		assignerID           = 76
-		repoID               = 41
-	)
 	var (
 		repoOwner = database.AssignedOwnerSummary{
 			OwnerUserID:       repoOwnerID,
@@ -706,4 +706,189 @@ func TestAssignedOwnersMatch(t *testing.T) {
 			t.Errorf("path: %q, unexpected owners (-want+got): %s", testCase.path, diff)
 		}
 	}
+}
+
+func TestAssignedTeams(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Creating a user and 2 teams.
+	user1, err := db.Users().Create(ctx, database.NewUser{Username: "user1"})
+	require.NoError(t, err)
+	team1 := createTeam(t, ctx, db, "team-a")
+	team2 := createTeam(t, ctx, db, "team-a2")
+
+	// Create repo
+	var repoID api.RepoID = 1
+	require.NoError(t, db.Repos().Create(ctx, &itypes.Repo{
+		ID:   repoID,
+		Name: "github.com/sourcegraph/sourcegraph",
+	}))
+
+	store := db.AssignedTeams()
+	require.NoError(t, store.Insert(ctx, team1.ID, repoID, "src/test", user1.ID))
+	require.NoError(t, store.Insert(ctx, team2.ID, repoID, "src/test", user1.ID))
+	require.NoError(t, store.Insert(ctx, team2.ID, repoID, "src/main", user1.ID))
+
+	s := NewService(nil, db)
+	var exampleCommitID api.CommitID = "sha"
+	got, err := s.AssignedTeams(ctx, repoID, exampleCommitID)
+	// Erase the time for comparison
+	for _, summaries := range got {
+		for i := range summaries {
+			summaries[i].AssignedAt = time.Time{}
+		}
+	}
+	require.NoError(t, err)
+	want := AssignedTeams{
+		"src/test": []database.AssignedTeamSummary{
+			{
+				OwnerTeamID:       team1.ID,
+				FilePath:          "src/test",
+				RepoID:            repoID,
+				WhoAssignedUserID: user1.ID,
+			},
+			{
+				OwnerTeamID:       team2.ID,
+				FilePath:          "src/test",
+				RepoID:            repoID,
+				WhoAssignedUserID: user1.ID,
+			},
+		},
+		"src/main": []database.AssignedTeamSummary{
+			{
+				OwnerTeamID:       team2.ID,
+				FilePath:          "src/main",
+				RepoID:            repoID,
+				WhoAssignedUserID: user1.ID,
+			},
+		},
+	}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatalf("AssignedTeams -want+got: %s", diff)
+	}
+}
+
+func TestAssignedTeamsMatch(t *testing.T) {
+	var (
+		repoOwner = database.AssignedTeamSummary{
+			OwnerTeamID:       repoOwnerID,
+			FilePath:          "",
+			RepoID:            repoID,
+			WhoAssignedUserID: assignerID,
+		}
+		srcMainOwner = database.AssignedTeamSummary{
+			OwnerTeamID:       srcMainOwnerID,
+			FilePath:          "src/main",
+			RepoID:            repoID,
+			WhoAssignedUserID: assignerID,
+		}
+		srcMainSecondOwner = database.AssignedTeamSummary{
+			OwnerTeamID:       srcMainSecondOwnerID,
+			FilePath:          "src/main",
+			RepoID:            repoID,
+			WhoAssignedUserID: assignerID,
+		}
+		srcMainJavaOwner = database.AssignedTeamSummary{
+			OwnerTeamID:       srcMainJavaOwnerID,
+			FilePath:          "src/main/java",
+			RepoID:            repoID,
+			WhoAssignedUserID: assignerID,
+		}
+		srcTestOwner = database.AssignedTeamSummary{
+			OwnerTeamID:       srcMainJavaOwnerID,
+			FilePath:          "src/test",
+			RepoID:            repoID,
+			WhoAssignedUserID: assignerID,
+		}
+	)
+	owners := AssignedTeams{
+		"": []database.AssignedTeamSummary{
+			repoOwner,
+		},
+		"src/main": []database.AssignedTeamSummary{
+			srcMainOwner,
+			srcMainSecondOwner,
+		},
+		"src/main/java": []database.AssignedTeamSummary{
+			srcMainJavaOwner,
+		},
+		"src/test": []database.AssignedTeamSummary{
+			srcTestOwner,
+		},
+	}
+	order := func(os []database.AssignedTeamSummary) {
+		sort.Slice(os, func(i, j int) bool {
+			if os[i].OwnerTeamID < os[j].OwnerTeamID {
+				return true
+			}
+			if os[i].FilePath < os[j].FilePath {
+				return true
+			}
+			return false
+		})
+	}
+	for _, testCase := range []struct {
+		path string
+		want []database.AssignedTeamSummary
+	}{
+		{
+			path: "",
+			want: []database.AssignedTeamSummary{
+				repoOwner,
+			},
+		},
+		{
+			path: "resources/pom.xml",
+			want: []database.AssignedTeamSummary{
+				repoOwner,
+			},
+		},
+		{
+			path: "src/main",
+			want: []database.AssignedTeamSummary{
+				repoOwner,
+				srcMainOwner,
+				srcMainSecondOwner,
+			},
+		},
+		{
+			path: "src/main/java/com/sourcegraph/GitServer.java",
+			want: []database.AssignedTeamSummary{
+				repoOwner,
+				srcMainOwner,
+				srcMainSecondOwner,
+				srcMainJavaOwner,
+			},
+		},
+		{
+			path: "src/test/java/com/sourcegraph/GitServerTest.java",
+			want: []database.AssignedTeamSummary{
+				repoOwner,
+				srcTestOwner,
+			},
+		},
+	} {
+		got := owners.Match(testCase.path)
+		order(got)
+		order(testCase.want)
+		if diff := cmp.Diff(testCase.want, got); diff != "" {
+			t.Errorf("path: %q, unexpected owners (-want+got): %s", testCase.path, diff)
+		}
+	}
+}
+
+func createTeam(t *testing.T, ctx context.Context, db database.DB, teamName string) *itypes.Team {
+	t.Helper()
+	err := db.Teams().CreateTeam(ctx, &itypes.Team{Name: teamName})
+	require.NoError(t, err)
+	team, err := db.Teams().GetTeamByName(ctx, teamName)
+	require.NoError(t, err)
+	return team
 }
