@@ -36,16 +36,9 @@ import { GITHUB_APP_BY_ID_QUERY, DELETE_GITHUB_APP_BY_ID_QUERY } from './backend
 
 import styles from './GitHubAppCard.module.scss'
 
-interface Props extends TelemetryProps {
-    externalServicesFromFile: boolean
-    allowEditExternalServicesWithFile: boolean
-}
+interface Props extends TelemetryProps {}
 
-export const GitHubAppPage: FC<Props> = ({
-    telemetryService,
-    externalServicesFromFile,
-    allowEditExternalServicesWithFile,
-}) => {
+export const GitHubAppPage: FC<Props> = ({ telemetryService }) => {
     const { appID } = useParams()
     const navigate = useNavigate()
 
