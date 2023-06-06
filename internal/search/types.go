@@ -188,11 +188,9 @@ type ZoektParameters struct {
 
 // ToSearchOptions converts the parameters to options for the Zoekt search API.
 func (o *ZoektParameters) ToSearchOptions(ctx context.Context, logger log.Logger) *zoekt.SearchOptions {
-	shouldTrace, spanContext := getSpanContext(ctx, logger)
 	defaultTimeout := 20 * time.Second
 	searchOpts := &zoekt.SearchOptions{
-		Trace:             shouldTrace,
-		SpanContext:       spanContext,
+		Trace:             policy.ShouldTrace(ctx),
 		MaxWallTime:       defaultTimeout,
 		ChunkMatches:      true,
 		UseKeywordScoring: o.KeywordScoring,
