@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script is called by test.sh to install an up-to-date
 # version of src-cli as required by the codeintel-qa pipeline. The target binary

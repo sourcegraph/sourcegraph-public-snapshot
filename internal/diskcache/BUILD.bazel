@@ -16,7 +16,6 @@ go_library(
         "//internal/observation",
         "//internal/trace",
         "//lib/errors",
-        "@com_github_opentracing_opentracing_go//ext",
         "@io_opentelemetry_go_otel//attribute",
     ],
 )
