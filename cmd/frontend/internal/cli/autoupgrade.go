@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/multiversion"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
@@ -35,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var buffer strings.Builder // :)
@@ -52,7 +55,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db databa
 		return nil
 	}
 
-	stopFunc, err := serveConfigurationServer(ctx, obsvCtx)
+	stopFunc, err := serveConfigurationServer(obsvCtx)
 	if err != nil {
 		return err
 	}
@@ -107,7 +110,9 @@ func performAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db da
 			defer func() {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 				defer cancel()
-				upgradestore.SetUpgradeStatus(ctx, success)
+				if err := upgradestore.SetUpgradeStatus(ctx, success); err != nil {
+					fmt.Println("whoopsy", err)
+				}
 			}()
 			break
 		}
@@ -121,12 +126,19 @@ func performAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db da
 		return err
 	}
 
-	if err := upgradestore.SetServiceVersion(ctx, toVersion.GitTag()); err != nil {
-		return errors.Wrap(err, "autoupgradstore.SetServiceVersion")
-	}
-
 	if err := upgradestore.SetAutoUpgrade(ctx, false); err != nil {
 		return errors.Wrap(err, "autoupgradestore.SetAutoUpgrade")
+	}
+
+	schemas := []string{"frontend", "codeintel", "codeinsights"}
+	for i, fn := range []func(_ *observation.Context, dsn string, appName string) (*sql.DB, error){
+		connections.MigrateNewFrontendDB, connections.MigrateNewCodeIntelDB, connections.MigrateNewCodeInsightsDB,
+	} {
+		sqlDB, err := fn(obsvCtx, "", "frontend")
+		if err != nil {
+			return errors.Wrapf(err, "failed to perform last-mile migration for %s schema", schemas[i])
+		}
+		sqlDB.Close()
 	}
 
 	success = true
@@ -147,8 +159,6 @@ func runMigration(ctx context.Context,
 	if err != nil {
 		return err
 	}
-
-	fmt.Printf("RANGE %+v %+v %+v\n", from, to, versionRange)
 
 	interrupts, err := oobmigration.ScheduleMigrationInterrupts(from, to)
 	if err != nil {
@@ -194,7 +204,7 @@ func runMigration(ctx context.Context,
 	)
 }
 
-func serveConfigurationServer(ctx context.Context, obsvCtx *observation.Context) (context.CancelFunc, error) {
+func serveConfigurationServer(obsvCtx *observation.Context) (context.CancelFunc, error) {
 	middleware := httpapi.JsonMiddleware(&httpapi.ErrorHandler{
 		Logger:       obsvCtx.Logger,
 		WriteErrBody: true,
@@ -207,6 +217,7 @@ func serveConfigurationServer(ctx context.Context, obsvCtx *observation.Context)
 	internalRouter.Path("/configuration").Methods("POST").Name(apirouter.Configuration)
 	internalRouter.Get(apirouter.Configuration).Handler(middleware(func(w http.ResponseWriter, r *http.Request) error {
 		configuration := conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{},
 			ServiceConnectionConfig: conftypes.ServiceConnections{
 				PostgresDSN:          "lol",
 				CodeIntelPostgresDSN: "lol",
@@ -240,7 +251,7 @@ func serveConfigurationServer(ctx context.Context, obsvCtx *observation.Context)
 	return confServer.Stop, nil
 }
 
-func serveUpgradeUI(ctx context.Context, logger log.Logger) (context.CancelFunc, error) {
+func serveUpgradeUI(logger log.Logger) (context.CancelFunc, error) {
 	serveMux := http.NewServeMux()
 	router := mux.NewRouter().PathPrefix("/.internal").Subrouter()
 	middleware := httpapi.JsonMiddleware(&httpapi.ErrorHandler{
