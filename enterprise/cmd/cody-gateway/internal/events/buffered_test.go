@@ -16,10 +16,6 @@ import (
 )
 
 func TestBufferedLogger(t *testing.T) {
-	// Disabled because of race condition, see https://sourcegraph.slack.com/archives/C05497E9MDW/p1685955562994269
-	// Skipping because it enables to re-enable the race condition detector and allow the team to fix this in a different PR.
-	t.Skip()
-
 	t.Parallel()
 	ctx := context.Background()
 
