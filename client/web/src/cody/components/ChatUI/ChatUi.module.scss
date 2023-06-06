@@ -125,10 +125,14 @@
     color: var(--danger);
     background-color: var(--danger-4);
     padding: 0.5rem;
+
+    display: flex;
+    margin: 0.5rem 0;
 }
 
-:global(.cody-chat-error) > span {
+:global(.cody-chat-error-title) {
     font-weight: bold;
+    margin-right: 0.5rem;
 }
 
 .feedback-buttons-wrapper {

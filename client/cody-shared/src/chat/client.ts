@@ -139,7 +139,7 @@ export async function createClient({
             onError(error) {
                 // Display error message as assistant response
                 transcript.addErrorAsAssistantResponse(
-                    `<div class="cody-chat-error"><span>Request failed: </span>${error}</div>`
+                    `<div class="cody-chat-error"><p class="cody-chat-error-title">⚠️</p><p class="cody-chat-error-body">${error}</p></div>`
                 )
                 isMessageInProgress = false
                 sendTranscript()

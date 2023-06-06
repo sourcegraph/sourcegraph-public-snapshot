@@ -20,6 +20,9 @@
 
 html,
 body {
+    font-size: var(--vscode-editor-font-size);
+    font-family: var(--vscode-font-family);
+    font-weight: var(--vscode-font-weight);
     height: 100%;
     margin: 0;
     padding: 0;
@@ -39,12 +42,26 @@ a:hover {
     width: 100%;
 }
 
+/* Make sure any tags inside cody-chat-error like h1 h2 use the same style */
 .cody-chat-error {
     color: var(--vscode-input-foreground);
     background-color: var(--vscode-inputValidation-errorBackground);
     padding: 0.5rem;
+
+    display: block;
+    margin: 0.5rem 0;
+
+    font-size: var(--vscode-editor-font-size) !important;
+    font-family: var(--vscode-font-family) !important;
+    font-weight: var(--vscode-font-weight) !important;
 }
 
-.cody-chat-error > span {
-    font-weight: bold;
+.cody-chat-error-title {
+    font-weight: bold !important;
+    margin-right: 0.5rem;
+}
+
+.cody-chat-error-body {
+    font-weight: var(--vscode-font-weight) !important;
+    display: flex-inline;
 }

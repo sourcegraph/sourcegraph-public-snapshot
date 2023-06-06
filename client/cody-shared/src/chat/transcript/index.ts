@@ -117,7 +117,8 @@ export class Transcript {
             speaker: 'assistant',
             text: 'Failed to generate a response due to server error.',
             displayText:
-                lastAssistantMessage + `<div class="cody-chat-error"><span>Request failed: </span>${errorText}</div>`,
+                lastAssistantMessage +
+                `<div class="cody-chat-error"><span class="cody-chat-error-title">⚠️</span>${errorText}</div>`,
         })
     }
 
