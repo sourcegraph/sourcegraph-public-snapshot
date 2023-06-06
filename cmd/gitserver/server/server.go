@@ -43,7 +43,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -1091,7 +1090,10 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 		if updateErr != nil {
 			resp.Error = updateErr.Error()
 		} else {
-			s.maybeEnqueuePerforceChangelistMappingJob(ctx, logger, req.Repo, dir)
+			s.Perforce.EnqueueChangelistMappingJob(&perforce.ChangelistMappingJob{
+				RepoName: req.Repo,
+				RepoDir:  dir,
+			})
 		}
 	}
 
@@ -2374,7 +2376,10 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	repoClonedCounter.Inc()
 
 	if err == nil {
-		s.maybeEnqueuePerforceChangelistMappingJob(ctx, logger, repo, dir)
+		s.Perforce.EnqueueChangelistMappingJob(&perforce.ChangelistMappingJob{
+			RepoName: repo,
+			RepoDir:  dir,
+		})
 	}
 
 	return nil
@@ -2989,17 +2994,6 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 		s.Logger.Warn("failed to perform background repo update", log.Error(err), log.String("repo", string(repo)), log.String("rev", rev))
 	}
 	return true
-}
-
-func (s *Server) maybeEnqueuePerforceChangelistMappingJob(ctx context.Context, logger log.Logger, repoName api.RepoName, dir common.GitDir) {
-	if r, err := s.DB.Repos().GetByName(ctx, repoName); err != nil {
-		logger.Warn("failed to retrieve repo from DB (this could be a data inconsistency)", log.Error(err))
-	} else if r.ExternalRepo.ServiceType == extsvc.TypePerforce {
-		s.Perforce.EnqueueChangelistMappingJob(&perforce.ChangelistMappingJob{
-			RepoName: repoName,
-			RepoDir:  dir,
-		})
-	}
 }
 
 const headFileRefPrefix = "ref: "
