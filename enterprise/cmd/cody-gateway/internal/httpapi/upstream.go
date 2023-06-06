@@ -27,6 +27,23 @@ type requestTransformer func(*http.Request)
 type requestMetadataRetriever[T any] func(T) (promptCharacterCount int, model string, additionalMetadata map[string]any)
 type responseParser[T any] func(T, io.Reader) (completionCharacterCount int)
 
+// upstreamHandlerMethods declares a set of methods that are used throughout the
+// lifecycle of a request to an upstream API. All methods are required.
+type upstreamHandlerMethods[ReqT any] struct {
+	// transformBody can be used to modify the request body before it is sent
+	// upstream. To manipulate the HTTP request, use transformRequest.
+	transformBody bodyTransformer[ReqT]
+	// transformRequest can be used to modify the HTTP request before it is sent
+	// upstream. To manipulate the body, use transformBody.
+	transformRequest requestTransformer
+	// getRequestMetadata should extract details about the request we are sending
+	// upstream for validation and tracking purposes.
+	getRequestMetadata requestMetadataRetriever[ReqT]
+	// parseResponse should extract details from the response we get back from
+	// upstream for tracking purposes.
+	parseResponse responseParser[ReqT]
+}
+
 func makeUpstreamHandler[ReqT any](
 	baseLogger log.Logger,
 	eventLogger events.Logger,
@@ -35,13 +52,17 @@ func makeUpstreamHandler[ReqT any](
 	upstreamName, upstreamAPIURL string,
 	allowedModels []string,
 
-	transformBody bodyTransformer[ReqT],
-	getRequestMetadata requestMetadataRetriever[ReqT],
-	transformRequest requestTransformer,
-	parseResponse responseParser[ReqT],
+	methods upstreamHandlerMethods[ReqT],
 ) http.Handler {
 	baseLogger = baseLogger.Scoped(strings.ToLower(upstreamName), fmt.Sprintf("%s upstream handler", upstreamName)).
 		With(log.String("upstream.url", upstreamAPIURL))
+
+	var (
+		transformBody      = methods.transformBody
+		transformRequest   = methods.transformRequest
+		getRequestMetadata = methods.getRequestMetadata
+		parseResponse      = methods.parseResponse
+	)
 
 	return rateLimit(baseLogger, eventLogger, limiter.NewPrefixRedisStore("rate_limit:", rs), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
