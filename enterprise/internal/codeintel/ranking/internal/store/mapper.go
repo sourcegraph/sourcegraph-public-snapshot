@@ -93,16 +93,20 @@ exported_uploads AS (
 		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at) AND
 
 		-- Perf improvement: filter out any uploads that have already been completely
-		-- processed. We order uploads by their deletion timestamp and ID as we scan
-		-- for candidates. We track the last values we see in each batch so that we
-		-- can efficiently discard candidates we don't need to filter out below.
-		(
-			COALESCE(p.reference_cursor_export_deleted_at, 'infinity'::timestamptz) >
-				COALESCE(cre.deleted_at, '-infinity'::timestamptz) OR
-			(
-				p.reference_cursor_export_deleted_at IS NOT DISTINCT FROM cre.deleted_at AND
-				p.reference_cursor_export_id <= cre.id
-			)
+		-- processed. We order uploads by (deleted_at DESC NULLS FIRST, id) as we scan
+		-- for candidates. We track the last values we see in each batch so that we can
+		-- efficiently discard candidates we don't need to filter out below.
+
+		-- We've already processed all non-deleted exports
+		NOT (p.reference_cursor_export_deleted_at IS NOT NULL AND cre.deleted_at IS NULL) AND
+		-- We've already processed exports deleted after this point
+		NOT (p.reference_cursor_export_deleted_at IS NOT NULL AND cre.deleted_at IS NOT NULL AND p.reference_cursor_export_deleted_at < cre.deleted_at) AND
+		NOT (
+			p.reference_cursor_export_id IS NOT NULL AND
+			-- For records with this deleted_at timestamp (also captures NULL <> NULL match)
+			p.reference_cursor_export_deleted_at IS NOT DISTINCT FROM cre.deleted_at AND
+			-- Already processed this exported upload
+			cre.id < p.reference_cursor_export_id
 		)
 	ORDER BY cre.graph_key, cre.deleted_at DESC NULLS FIRST, cre.id
 ),
@@ -323,16 +327,20 @@ exported_uploads AS (
 		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at) AND
 
 		-- Perf improvement: filter out any uploads that have already been completely
-		-- processed. We order uploads by their deletion timestamp and ID as we scan
-		-- for candidates. We track the last values we see in each batch so that we
-		-- can efficiently discard candidates we don't need to filter out below.
-		(
-			COALESCE(p.path_cursor_deleted_export_at, 'infinity'::timestamptz) >
-				COALESCE(cre.deleted_at, '-infinity'::timestamptz) OR
-			(
-				p.path_cursor_deleted_export_at IS NOT DISTINCT FROM cre.deleted_at AND
-				p.path_cursor_export_id <= cre.id
-			)
+		-- processed. We order uploads by (deleted_at DESC NULLS FIRST, id) as we scan
+		-- for candidates. We track the last values we see in each batch so that we can
+		-- efficiently discard candidates we don't need to filter out below.
+
+		-- We've already processed all non-deleted exports
+		NOT (p.path_cursor_deleted_export_at IS NOT NULL AND cre.deleted_at IS NULL) AND
+		-- We've already processed exports deleted after this point
+		NOT (p.path_cursor_deleted_export_at IS NOT NULL AND cre.deleted_at IS NOT NULL AND p.path_cursor_deleted_export_at < cre.deleted_at) AND
+		NOT (
+			p.path_cursor_export_id IS NOT NULL AND
+			-- For records with this deleted_at timestamp (also captures NULL <> NULL match)
+			p.path_cursor_deleted_export_at IS NOT DISTINCT FROM cre.deleted_at AND
+			-- Already processed this exported upload
+			cre.id < p.path_cursor_export_id
 		)
 	ORDER BY cre.graph_key, cre.deleted_at DESC NULLS FIRST, cre.id
 ),
