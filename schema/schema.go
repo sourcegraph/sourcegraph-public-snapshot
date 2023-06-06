@@ -819,6 +819,8 @@ type ExperimentalFeatures struct {
 	PasswordPolicy *PasswordPolicy `json:"passwordPolicy,omitempty"`
 	// Perforce description: Allow adding Perforce code host connections
 	Perforce string `json:"perforce,omitempty"`
+	// PerforceChangelistMapping description: Allow mapping of Perforce changelists to their commit SHAs in the DB
+	PerforceChangelistMapping string `json:"perforceChangelistMapping,omitempty"`
 	// PythonPackages description: Allow adding Python package code host connections
 	PythonPackages string `json:"pythonPackages,omitempty"`
 	// Ranking description: Experimental search result ranking options.
@@ -893,6 +895,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "pagure")
 	delete(m, "passwordPolicy")
 	delete(m, "perforce")
+	delete(m, "perforceChangelistMapping")
 	delete(m, "pythonPackages")
 	delete(m, "ranking")
 	delete(m, "rateLimitAnonymous")
