@@ -14,7 +14,8 @@ public class SourcegraphProjectService
     implements PersistentStateComponent<SourcegraphProjectService>, SourcegraphService {
   @Nullable public String instanceType;
   @Nullable public String url;
-  @Nullable public String accessToken;
+  @Nullable public String dotComAccessToken;
+  @Nullable public String enterpriseAccessToken;
   @Nullable public String customRequestHeaders;
   @Nullable public String defaultBranch;
   @Nullable public String remoteUrlReplacements;
@@ -37,11 +38,11 @@ public class SourcegraphProjectService
 
   @Override
   @Nullable
-  public String getAccessToken() {
-    if (accessToken == null) {
+  public String getDotComAccessToken() {
+    if (dotComAccessToken == null) {
       return System.getenv("SRC_ACCESS_TOKEN");
     }
-    return accessToken;
+    return dotComAccessToken;
   }
 
   @Override
@@ -83,7 +84,8 @@ public class SourcegraphProjectService
   public void loadState(@NotNull SourcegraphProjectService settings) {
     this.instanceType = settings.instanceType;
     this.url = settings.url;
-    this.accessToken = settings.accessToken;
+    this.dotComAccessToken = settings.dotComAccessToken;
+    this.enterpriseAccessToken = settings.enterpriseAccessToken;
     this.customRequestHeaders = settings.customRequestHeaders;
     this.defaultBranch = settings.defaultBranch;
     this.remoteUrlReplacements = settings.remoteUrlReplacements;
@@ -97,7 +99,9 @@ public class SourcegraphProjectService
 
   @Override
   public String getEnterpriseAccessToken() {
-    return getAccessToken();
+    return enterpriseAccessToken == null
+        ? System.getenv("SRC_ACCESS_TOKEN")
+        : enterpriseAccessToken;
   }
 
   @Override

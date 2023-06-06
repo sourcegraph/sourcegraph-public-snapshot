@@ -15,7 +15,8 @@ public class SourcegraphApplicationService
     implements PersistentStateComponent<SourcegraphApplicationService>, SourcegraphService {
   @Nullable public String instanceType;
   @Nullable public String url;
-  @Nullable public String accessToken;
+  @Nullable public String dotComAccessToken;
+  @Nullable public String enterpriseAccessToken;
   @Nullable public String customRequestHeaders;
   @Nullable public String defaultBranch;
   @Nullable public String remoteUrlReplacements;
@@ -47,8 +48,8 @@ public class SourcegraphApplicationService
   }
 
   @Nullable
-  public String getAccessToken() {
-    return accessToken;
+  public String getDotComAccessToken() {
+    return dotComAccessToken;
   }
 
   @Nullable
@@ -75,9 +76,9 @@ public class SourcegraphApplicationService
   }
 
   @Override
+  @Nullable
   public String getEnterpriseAccessToken() {
-    // TODO
-    return null;
+    return enterpriseAccessToken;
   }
 
   @Override
@@ -128,7 +129,8 @@ public class SourcegraphApplicationService
   public void loadState(@NotNull SourcegraphApplicationService settings) {
     this.instanceType = settings.instanceType;
     this.url = settings.url;
-    this.accessToken = settings.accessToken;
+    this.dotComAccessToken = settings.dotComAccessToken;
+    this.enterpriseAccessToken = settings.enterpriseAccessToken;
     this.customRequestHeaders = settings.customRequestHeaders;
     this.defaultBranch = settings.defaultBranch;
     this.remoteUrlReplacements = settings.remoteUrlReplacements;
