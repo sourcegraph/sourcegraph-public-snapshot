@@ -62,7 +62,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     }, [telemetryService])
 
     const location = useLocation()
-    var searchParams = new URLSearchParams(location.search)
+    const searchParams = new URLSearchParams(location.search)
     const queryParam = searchParams.get('query')
 
     const [searchValue, setSearchValue] = useState(queryParam || '')
@@ -101,7 +101,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
         validators: { sync: repositoriesValidator },
     })
 
-    const updateQueryParams = (newQueryValue: string) => {
+    const updateQueryParams = (newQueryValue: string): void => {
         if (newQueryValue === '') {
             searchParams.delete('query')
         } else {
