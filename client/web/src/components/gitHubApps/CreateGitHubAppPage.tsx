@@ -18,6 +18,7 @@ export interface CreateGitHubAppPageProps {
     defaultPermissions: Record<string, string>
     pageTitle?: string
     headerDescription?: React.ReactNode
+    appDomain: GitHubAppDomain
     defaultAppName?: string
     /*
      * If omitted, the user will be asked to specify a URL from the form. If provided, it
@@ -34,6 +35,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     defaultPermissions,
     pageTitle = 'Create GitHub App',
     headerDescription,
+    appDomain,
     defaultAppName = 'Sourcegraph',
     baseURL,
 }) => {
@@ -98,7 +100,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
         setError(undefined)
         try {
             const response = await fetch(
-                `/.auth/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=repos`
+                `/.auth/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=${appDomain}`
             )
             const state: stateResponse = await response.json()
             const webhookURL = new URL(`/.api/webhooks/${state.webhookUUID}`, originURL).href
@@ -112,7 +114,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                 setError('Unknown error occurred.')
             }
         }
-    }, [submitForm, name, url, originURL])
+    }, [submitForm, name, appDomain, url, originURL])
 
     const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         setName(event.target.value)

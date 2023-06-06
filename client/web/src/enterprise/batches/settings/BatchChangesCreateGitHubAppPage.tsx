@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { Link } from '@sourcegraph/wildcard'
 
 import { CreateGitHubAppPage } from '../../../components/gitHubApps/CreateGitHubAppPage'
+import { GitHubAppDomain } from '../../../graphql-operations'
 
 interface Props {
     defaultEvents: string[]
@@ -15,7 +16,6 @@ export const BatchChangesCreateGitHubAppPage: React.FunctionComponent<Props> = (
 }) => {
     const location = useLocation()
     const baseURL = new URLSearchParams(location.search).get('baseURL')
-    console.log({ baseURL })
     return (
         <CreateGitHubAppPage
             defaultEvents={defaultEvents}
@@ -31,6 +31,7 @@ export const BatchChangesCreateGitHubAppPage: React.FunctionComponent<Props> = (
                     </Link>
                 </>
             }
+            appDomain={GitHubAppDomain.BATCHES}
             defaultAppName="Sourcegraph Commit Signing"
             baseURL={baseURL?.length ? baseURL : undefined}
         />
