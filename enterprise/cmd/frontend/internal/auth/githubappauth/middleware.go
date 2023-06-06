@@ -363,7 +363,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 				return
 			}
 
-			redirectURL, err := generateRedirectURL(&stateDeets.Domain, installationID, app.ID)
+			redirectURL, err := generateRedirectURL(&stateDeets.Domain, installationID, app.ID, app.Name)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("unexpected error while generating redirect URL: %s", err.Error()), http.StatusInternalServerError)
 				return
@@ -380,7 +380,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 	return r
 }
 
-func generateRedirectURL(domain *string, installationID, appID int) (string, error) {
+func generateRedirectURL(domain *string, installationID, appID int, appName string) (string, error) {
 	parsedDomain, err := parseDomain(domain)
 	if err != nil {
 		return "", errors.Errorf("invalid domain: %s", *domain)
@@ -390,7 +390,7 @@ func generateRedirectURL(domain *string, installationID, appID int) (string, err
 	case types.ReposGitHubAppDomain:
 		return fmt.Sprintf("/site-admin/github-apps/%s?installation_id=%d", MarshalGitHubAppID(int64(appID)), installationID), nil
 	case types.BatchesGitHubAppDomain:
-		return "/site-admin/batch-changes", nil
+		return fmt.Sprintf("/site-admin/batch-changes?success=true&appName=%s", appName), nil
 	default:
 		return "", errors.Errorf("unsupported github apps domain: %v", parsedDomain)
 	}

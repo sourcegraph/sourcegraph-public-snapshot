@@ -1,7 +1,10 @@
 import React from 'react'
 
+import { useLocation } from 'react-router-dom'
+
 import { Container, H3, Link, Text } from '@sourcegraph/wildcard'
 
+import { DismissibleAlert } from '../../../components/DismissibleAlert'
 import { UseShowMorePaginationResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
@@ -48,6 +51,10 @@ export const CommitSigningIntegrations: React.FunctionComponent<
     React.PropsWithChildren<CommitSigningIntegrationsProps>
 > = ({ connectionResult, readOnly }) => {
     const { loading, hasNextPage, fetchMore, connection, error } = connectionResult
+
+    const location = useLocation()
+    const success = new URLSearchParams(location.search).get('success')
+    const appName = new URLSearchParams(location.search).get('appName')
     return (
         <Container>
             <H3>Commit signing integrations</H3>
@@ -61,6 +68,11 @@ export const CommitSigningIntegrations: React.FunctionComponent<
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}
                 {loading && !connection && <ConnectionLoading />}
+                {success && appName && !readOnly && (
+                    <DismissibleAlert className="mb-3" variant="success">
+                        GitHub App "{appName}" successfully connected.
+                    </DismissibleAlert>
+                )}
                 <ConnectionList as="ul" className="list-group" aria-label="commit signing integrations">
                     {connection?.nodes?.map(node =>
                         node.supportsCommitSigning ? (
