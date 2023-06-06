@@ -30,6 +30,7 @@ public class SettingsComponent {
   private ButtonGroup instanceTypeButtonGroup;
   private JBTextField urlTextField;
   private JBTextField accessTokenTextField;
+  private JBTextField dotComAccessTokenTextField;
   private JBLabel userDocsLinkComment;
   private JBLabel accessTokenLinkComment;
   private JBTextField customRequestHeadersTextField;
@@ -108,6 +109,23 @@ public class SettingsComponent {
                 ? new ValidationInfo("Invalid access token", accessTokenTextField)
                 : null);
 
+    // Create access token field
+    JBLabel dotComAccessTokenComment =
+        new JBLabel(
+                "(optional) To use Cody, you will need an access token to sign in.",
+                UIUtil.ComponentStyle.SMALL,
+                UIUtil.FontColor.BRIGHTER)
+            .withBorder(JBUI.Borders.emptyLeft(10));
+    JBLabel dotComAccessTokenLabel = new JBLabel("Access token:");
+    dotComAccessTokenTextField = new JBTextField();
+    dotComAccessTokenTextField.getEmptyText().setText("Paste your access token here");
+    addValidation(
+        dotComAccessTokenTextField,
+        () ->
+            !isValidAccessToken(dotComAccessTokenTextField.getText())
+                ? new ValidationInfo("Invalid access token", dotComAccessTokenTextField)
+                : null);
+
     // Create comments
     userDocsLinkComment =
         new JBLabel(
@@ -143,12 +161,17 @@ public class SettingsComponent {
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
     dotComComment.setBorder(JBUI.Borders.emptyLeft(20));
+    JPanel dotComPanelContent =
+        FormBuilder.createFormBuilder()
+            .addLabeledComponent(dotComAccessTokenLabel, dotComAccessTokenTextField, 1)
+            .addComponentToRightColumn(dotComAccessTokenComment, 1)
+            .getPanel();
+    dotComPanelContent.setBorder(IdeBorderFactory.createEmptyBorder(JBUI.insets(1, 30, 0, 0)));
     JPanel dotComPanel =
         FormBuilder.createFormBuilder()
             .addComponent(sourcegraphDotComRadioButton, 1)
-            .addComponentToRightColumn(dotComComment, 2)
-            // TODO: add setting for access token dotcom, it can only be configured via
-            // SRC_ACCESS_TOKEN at the moment.
+            .addComponent(dotComComment, 2)
+            .addComponent(dotComPanelContent, 1)
             .getPanel();
     JPanel enterprisePanelContent =
         FormBuilder.createFormBuilder()
@@ -222,11 +245,17 @@ public class SettingsComponent {
 
   @NotNull
   public String getAccessToken() {
-    return accessTokenTextField.getText();
+    return getInstanceType() == InstanceType.DOTCOM
+        ? dotComAccessTokenTextField.getText()
+        : accessTokenTextField.getText();
   }
 
   public void setAccessToken(@NotNull String value) {
-    accessTokenTextField.setText(value);
+    if (getInstanceType() == InstanceType.DOTCOM) {
+      dotComAccessTokenTextField.setText(value);
+    } else {
+      accessTokenTextField.setText(value);
+    }
   }
 
   @NotNull
@@ -271,6 +300,9 @@ public class SettingsComponent {
     userDocsLinkComment.setCopyable(enable);
     accessTokenLinkComment.setEnabled(enable);
     accessTokenLinkComment.setCopyable(enable);
+
+    // dotCom stuff
+    dotComAccessTokenTextField.setEnabled(!enable);
   }
 
   public enum InstanceType {
@@ -313,6 +345,14 @@ public class SettingsComponent {
     String baseUrl = urlTextField.getText();
     String settingsUrl = (baseUrl.endsWith("/") ? baseUrl : baseUrl + "/") + "settings";
     accessTokenLinkComment.setText(
+        isUrlValid(baseUrl)
+            ? "<html><body>or go to <a href=\""
+                + settingsUrl
+                + "\">"
+                + settingsUrl
+                + "</a> | \"Access tokens\" to create one.</body></html>"
+            : "");
+    dotComAccessTokenTextField.setText(
         isUrlValid(baseUrl)
             ? "<html><body>or go to <a href=\""
                 + settingsUrl
