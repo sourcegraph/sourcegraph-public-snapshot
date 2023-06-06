@@ -16,7 +16,7 @@ import {
 } from '../../graphql-operations'
 
 import { GET_INGESTED_CODEOWNERS_QUERY } from './graphqlQueries'
-import { RepositoryOwnPage } from './RepositoryOwnPage'
+import { RepositoryOwnPage } from './RepositoryOwnEditPage'
 
 const config: Meta = {
     title: 'web/enterprise/own/RepositoryOwnPage',
