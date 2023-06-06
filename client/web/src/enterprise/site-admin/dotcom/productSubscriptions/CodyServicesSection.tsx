@@ -166,7 +166,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                                 </table>
                                 <RateLimitUsage mode="completions" productSubscriptionUUID={productSubscriptionUUID} />
 
-                                <hr />
+                                <hr className="my-3" />
 
                                 <H4>Embeddings</H4>
                                 <Label className="mb-2">Rate limits</Label>
