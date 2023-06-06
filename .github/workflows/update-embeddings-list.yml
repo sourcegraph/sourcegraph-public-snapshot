@@ -23,9 +23,9 @@ jobs:
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%dT%H:%M:%S')"
       - name: Install dependencies
-        run: pnpm install 
+        run: pnpm install
       - name: Compile Javascript
-        run: tsc src/index.ts --outDir build
+        run: cd dev/update-embeddings-list && pnpm build
       - name: check output
         run: ls
       - name: run script
