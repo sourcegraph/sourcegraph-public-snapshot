@@ -18,7 +18,6 @@ go_library(
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/conf/deploy",
-        "//internal/env",
         "//internal/gosyntect",
         "//internal/honey",
         "//internal/observation",

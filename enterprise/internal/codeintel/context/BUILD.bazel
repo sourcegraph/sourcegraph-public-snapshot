@@ -15,7 +15,9 @@ go_library(
     deps = [
         "//enterprise/internal/codeintel/context/internal/scipstore",
         "//enterprise/internal/codeintel/shared",
+        "//enterprise/internal/codeintel/uploads/shared",
         "//enterprise/internal/embeddings",
+        "//internal/api",
         "//internal/codeintel/resolvers",
         "//internal/gosyntect",
         "//internal/metrics",
