@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/compute"
+	internalcontext "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/context"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/embeddings"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
@@ -35,7 +36,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
+	ecody "github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/scim"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -54,6 +57,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"compute":        compute.Init,
 	"dotcom":         dotcom.Init,
 	"embeddings":     embeddings.Init,
+	"context":        internalcontext.Init,
 	"githubapp":      githubapp.Init,
 	"insights":       insights.Init,
 	"licensing":      licensing.Init,
@@ -87,6 +91,9 @@ func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 	if err != nil {
 		logger.Fatal("failed to initialize code intelligence", log.Error(err))
 	}
+
+	// Set the IsCodyEnabled function, as it's only enabled in enterprise.
+	cody.IsCodyEnabled = ecody.IsCodyEnabled
 
 	// Initialize search first, as we require enterprise search jobs to exist already
 	// when other initializers are called.

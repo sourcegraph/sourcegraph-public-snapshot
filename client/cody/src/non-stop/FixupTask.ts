@@ -4,6 +4,7 @@ import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 
 import { debug } from '../log'
 
+import { Diff } from './diff'
 import { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
 
@@ -24,6 +25,9 @@ export class FixupTask {
     public inProgressReplacement: string | undefined
     // The text of the last completed turn of the LLM, if any
     public replacement: string | undefined
+    // If text has been received from the LLM and a diff has been computed, it
+    // is cached here. Diffs are recomputed lazily and may be stale.
+    public diff: Diff | undefined
 
     constructor(
         public readonly fixupFile: FixupFile,
@@ -40,9 +44,10 @@ export class FixupTask {
      * Set latest state for task and then update icon accordingly
      */
     private setState(state: CodyTaskState): void {
-        if (this.state !== CodyTaskState.error) {
-            this.state = state
+        if (this.state === CodyTaskState.error) {
+            throw new Error('invalid transition out of error sink state')
         }
+        this.state = state
     }
 
     public start(): void {
