@@ -7,7 +7,7 @@ import { format, formatDistance, parseISO } from 'date-fns'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Container, ErrorAlert, H4, Icon, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
+import { Button, Code, Container, ErrorAlert, H4, Icon, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
 import {
@@ -68,7 +68,7 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                 await refetch()
             }
         },
-        [deleteProgressEntry]
+        [deleteProgressEntry, refetch]
     )
 
     if (loading) {
@@ -97,7 +97,7 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                 }
             />
 
-            {data && data.rankingSummary && (
+            {data?.rankingSummary && (
                 <>
                     {data.rankingSummary.nextJobStartsAt && (
                         <Text size="small" className="text-right">
@@ -152,7 +152,7 @@ const Summary: FunctionComponent<SummaryProps> = ({ summary, onDelete, expanded 
         <Collapsible
             title={
                 <>
-                    <code>{summary.graphKey}</code>
+                    <Code>{summary.graphKey}</Code>
                 </>
             }
             titleAtStart={true}
