@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
