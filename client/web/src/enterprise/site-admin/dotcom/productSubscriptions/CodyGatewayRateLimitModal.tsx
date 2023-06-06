@@ -76,9 +76,9 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
 
                             ...(mode === 'embeddings'
                                 ? {
-                                      embeddingsCompletionsRateLimit: limit,
-                                      embeddingsCompletionsRateLimitIntervalSeconds: limitInterval,
-                                      embeddingsCompletionsAllowedModels: splitModels(allowedModels),
+                                      embeddingsRateLimit: limit,
+                                      embeddingsRateLimitIntervalSeconds: limitInterval,
+                                      embeddingsAllowedModels: splitModels(allowedModels),
                                   }
                                 : {}),
                         },
