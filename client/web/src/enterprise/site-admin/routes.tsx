@@ -44,9 +44,10 @@ const SiteAdminExternalAccountsPage = lazyComponent(
     () => import('./SiteAdminExternalAccountsPage'),
     'SiteAdminExternalAccountsPage'
 )
-const BatchChangesSiteConfigSettingsArea = lazyComponent(
-    () => import('../batches/settings/BatchChangesSiteConfigSettingsArea'),
-    'BatchChangesSiteConfigSettingsArea'
+const BatchChangesSiteConfigSettingsPage = lazyComponent(
+    () => import('../batches/settings/BatchChangesSiteConfigSettingsPage'),
+    'BatchChangesSiteConfigSettingsPage'
+)
 )
 const BatchSpecsPage = lazyComponent<BatchSpecsPageProps, 'BatchSpecsPage'>(
     () => import('../batches/BatchSpecsPage'),
@@ -134,7 +135,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
         {
             path: '/batch-changes',
-            render: () => <BatchChangesSiteConfigSettingsArea />,
+            render: () => <BatchChangesSiteConfigSettingsPage />,
             condition: ({ batchChangesEnabled }) => batchChangesEnabled,
         },
         {
