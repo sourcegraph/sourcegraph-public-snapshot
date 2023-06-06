@@ -51,10 +51,12 @@ export const CommitSigningIntegrations: React.FunctionComponent<
     return (
         <Container>
             <H3>Commit signing integrations</H3>
-            {/* TODO: Link to docs if it's admin viewing (readOnly = false) */}
+            {/* TODO: Link to docs */}
             <Text>
-                Connect GitHub Apps to enable Batch Changes to sign commits for your changesets. Contact your site admin
-                to manage connections.
+                Connect GitHub Apps to enable Batch Changes to sign commits for your changesets.{' '}
+                {readOnly
+                    ? 'Contact your site admin to manage connections.'
+                    : 'See how Batch Changes GitHub App configuration works.'}
             </Text>
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}
