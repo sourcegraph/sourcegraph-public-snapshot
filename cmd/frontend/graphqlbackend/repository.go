@@ -280,7 +280,7 @@ func (r *RepositoryResolver) Changelist(ctx context.Context, args *RepositoryCha
 		return nil, err
 	}
 
-	return newPerforceChangelistResolver(ctx, fmt.Sprintf("%d", rc.PerforceChangelistID), r.url().Path), nil
+	return newPerforceChangelistResolver(fmt.Sprintf("%d", rc.PerforceChangelistID), r.url().Path), nil
 }
 
 func (r *RepositoryResolver) FirstEverCommit(ctx context.Context) (_ *GitCommitResolver, err error) {
