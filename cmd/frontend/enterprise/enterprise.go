@@ -179,10 +179,6 @@ func BatchChangesEnabledForUser(ctx context.Context, db database.DB) error {
 	return nil
 }
 
-var IsCodyEnabled = func(ctx context.Context) bool {
-	return false
-}
-
 type stubRankingService struct{}
 
 func (s stubRankingService) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {

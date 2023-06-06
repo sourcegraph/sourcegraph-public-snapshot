@@ -22,6 +22,7 @@ import (
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -363,7 +364,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
-		CodyEnabled:               enterprise.IsCodyEnabled(ctx),
+		CodyEnabled:               cody.IsCodyEnabled(ctx),
 		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
 
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
