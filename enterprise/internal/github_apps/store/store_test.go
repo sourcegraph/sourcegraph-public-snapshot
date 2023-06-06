@@ -400,10 +400,11 @@ func TestGetByDomain(t *testing.T) {
 
 	// does not exist
 	fetched, err = store.GetByDomain(ctx, &domain, "https://myCompany.github.com/")
-	_, ok := err.(ErrNoGitHubAppFound)
 	require.Nil(t, fetched)
 	require.Error(t, err)
+	notFoundErr, ok := err.(ErrNoGitHubAppFound)
 	require.Equal(t, ok, true)
+	require.Equal(t, notFoundErr.Error(), "no app exists matching criteria: 'domain = repos AND base_url = https://myCompany.github.com/'")
 
 	domain = types.BatchesGitHubAppDomain
 	fetched, err = store.GetByDomain(ctx, &domain, "https://github.com/")

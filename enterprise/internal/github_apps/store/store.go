@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -22,7 +23,7 @@ type ErrNoGitHubAppFound struct {
 }
 
 func (e ErrNoGitHubAppFound) Error() string {
-	return fmt.Sprintf("no app exists matching criteria: {%s}", e.Criteria)
+	return fmt.Sprintf("no app exists matching criteria: '%s'", e.Criteria)
 }
 
 // GitHubAppsStore handles storing and retrieving GitHub Apps from the database.
@@ -257,8 +258,11 @@ func (s *gitHubAppsStore) get(ctx context.Context, where *sqlf.Query) (*ghtypes.
 		return nil, err
 	}
 	if !ok {
-		strWhere := where.Query(sqlf.PostgresBindVar)
-		return nil, ErrNoGitHubAppFound{Criteria: strWhere}
+		swhere := where.Query(sqlf.PostgresBindVar)
+		for i, arg := range where.Args() {
+			swhere = strings.Replace(swhere, fmt.Sprintf("$%d", i+1), fmt.Sprintf("%v", arg), 1)
+		}
+		return nil, ErrNoGitHubAppFound{Criteria: swhere}
 	}
 
 	apps, err := s.decrypt(ctx, app)
