@@ -23,7 +23,6 @@ import (
 
 type PerforceService interface {
 	EnqueueChangelistMappingJob(*ChangelistMappingJob)
-	StartPerforceChangelistMappingPipeline(context.Context)
 }
 
 type ChangelistMappingJob struct {
@@ -31,28 +30,33 @@ type ChangelistMappingJob struct {
 	RepoDir  common.GitDir
 }
 
-type Service struct {
+type service struct {
 	Logger                 log.Logger
 	DB                     database.DB
 	changelistMappingQueue *common.Queue[ChangelistMappingJob]
 }
 
-// NewCloneQueue initializes a new cloneQueue.
-func NewService(logger log.Logger, db database.DB, jobs *list.List) PerforceService {
+// NewService initializes a new service with a queue and starts a producer-consumer pipeline that
+// will read jobs from the queue and "produce" them for "consumption".
+func NewService(ctx context.Context, logger log.Logger, db database.DB, jobs *list.List) PerforceService {
 	queue := common.NewQueue[ChangelistMappingJob](jobs)
 
-	return &Service{
+	s := &service{
 		Logger:                 logger,
 		DB:                     db,
 		changelistMappingQueue: queue,
 	}
+
+	s.startPerforceChangelistMappingPipeline(ctx)
+
+	return s
 }
 
-func (s *Service) EnqueueChangelistMappingJob(job *ChangelistMappingJob) {
+func (s *service) EnqueueChangelistMappingJob(job *ChangelistMappingJob) {
 	s.changelistMappingQueue.Push(job)
 }
 
-func (s *Service) StartPerforceChangelistMappingPipeline(ctx context.Context) {
+func (s *service) startPerforceChangelistMappingPipeline(ctx context.Context) {
 	jobs := make(chan *ChangelistMappingJob)
 	go s.changelistMappingConsumer(ctx, jobs)
 	go s.changelistMappingProducer(ctx, jobs)
@@ -60,7 +64,7 @@ func (s *Service) StartPerforceChangelistMappingPipeline(ctx context.Context) {
 
 // changelistMappingProducer "pops" jobs from the FIFO queue of the "Service" and produce them
 // for "consumption".
-func (s *Service) changelistMappingProducer(ctx context.Context, jobs chan<- *ChangelistMappingJob) {
+func (s *service) changelistMappingProducer(ctx context.Context, jobs chan<- *ChangelistMappingJob) {
 	defer close(jobs)
 
 	for {
@@ -88,7 +92,7 @@ func (s *Service) changelistMappingProducer(ctx context.Context, jobs chan<- *Ch
 }
 
 // changelistMappingConsumer "consumes" jobs "produced" by the producer.
-func (s *Service) changelistMappingConsumer(ctx context.Context, jobs <-chan *ChangelistMappingJob) {
+func (s *service) changelistMappingConsumer(ctx context.Context, jobs <-chan *ChangelistMappingJob) {
 	logger := s.Logger.Scoped("changelistMappingConsumer", "process perforce changelist mapping jobs")
 
 	// Process only one job at a time for a simpler pipeline at the moment.
@@ -110,7 +114,7 @@ func (s *Service) changelistMappingConsumer(ctx context.Context, jobs <-chan *Ch
 }
 
 // doChangelistMapping performs the commits -> changelist ID mapping for a new or existing repo.
-func (s *Service) doChangelistMapping(ctx context.Context, job *ChangelistMappingJob) error {
+func (s *service) doChangelistMapping(ctx context.Context, job *ChangelistMappingJob) error {
 	logger := s.Logger.Scoped("doChangelistMapping", "").With(
 		log.String("repo", string(job.RepoName)),
 	)
@@ -152,7 +156,7 @@ func (s *Service) doChangelistMapping(ctx context.Context, job *ChangelistMappin
 // will only return the commits yet to be mapped in the DB.
 //
 // It returns an error if any.
-func (s *Service) getCommitsToInsert(ctx context.Context, logger log.Logger, repoID api.RepoID, dir common.GitDir) (commitsMap []types.PerforceChangelist, err error) {
+func (s *service) getCommitsToInsert(ctx context.Context, logger log.Logger, repoID api.RepoID, dir common.GitDir) (commitsMap []types.PerforceChangelist, err error) {
 	latestRowCommit, err := s.DB.RepoCommitsChangelists().GetLatestForRepo(ctx, repoID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

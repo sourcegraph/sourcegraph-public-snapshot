@@ -149,7 +149,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		DB:                      db,
 		CloneQueue:              server.NewCloneQueue(list.New()),
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
-		Perforce:                perforce.NewService(logger, db, list.New()),
+		Perforce:                perforce.NewService(ctx, logger, db, list.New()),
 	}
 
 	configurationWatcher := conf.DefaultClient()
@@ -211,10 +211,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpdatePerSecond)
 
 	gitserver.StartClonePipeline(ctx)
-
-	if conf.ExperimentalFeatures().Perforce == "enabled" {
-		gitserver.Perforce.StartPerforceChangelistMappingPipeline(ctx)
-	}
 
 	addr := getAddr()
 	srv := &http.Server{
