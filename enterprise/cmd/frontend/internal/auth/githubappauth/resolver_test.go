@@ -48,7 +48,7 @@ func TestResolver_DeleteGitHubApp(t *testing.T) {
 	gitHubAppsStore := store.NewStrictMockGitHubAppsStore()
 	gitHubAppsStore.DeleteFunc.SetDefaultHook(func(ctx context.Context, app int) error {
 		if app != id {
-			return errors.New(fmt.Sprintf("app with id %d does not exist", id))
+			return fmt.Errorf("app with id %d does not exist", id)
 		}
 		return nil
 	})
