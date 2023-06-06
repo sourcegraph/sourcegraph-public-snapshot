@@ -13,9 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type fakeIndividualStatsIterator map[string][]TreeCodeownersCounts
+type fakeCodeownersStats map[string][]PathCodeownersCounts
 
-func (w fakeIndividualStatsIterator) Iterate(f func(string, TreeCodeownersCounts) error) error {
+func (w fakeCodeownersStats) Iterate(f func(string, PathCodeownersCounts) error) error {
 	for path, owners := range w {
 		for _, o := range owners {
 			if err := f(path, o); err != nil {
@@ -37,7 +37,7 @@ func TestUpdateIndividualCountsSuccess(t *testing.T) {
 	// 1. Setup repo and paths:
 	repo := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
 	// 2. Insert countsg:
-	iter := fakeIndividualStatsIterator{
+	iter := fakeCodeownersStats{
 		"": {
 			{CodeownersReference: "ownerA", CodeownedFileCount: 2},
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
@@ -71,7 +71,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 	repo2 := mustCreate(ctx, t, d, &types.Repo{Name: "a/c"})
 	// 2. Insert counts:
 	timestamp := time.Now()
-	iter1 := fakeIndividualStatsIterator{
+	iter1 := fakeCodeownersStats{
 		"": {
 			{CodeownersReference: "ownerA", CodeownedFileCount: 2},
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
@@ -86,7 +86,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 	}
 	_, err := d.OwnershipStats().UpdateIndividualCounts(ctx, repo1.ID, iter1, timestamp)
 	require.NoError(t, err)
-	iter2 := fakeIndividualStatsIterator{
+	iter2 := fakeCodeownersStats{
 		"": {
 			{CodeownersReference: "ownerA", CodeownedFileCount: 20},
 			{CodeownersReference: "ownerC", CodeownedFileCount: 10},
@@ -110,7 +110,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 		var limitOffset *LimitOffset
 		got, err := d.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
 		require.NoError(t, err)
-		want := []TreeCodeownersCounts{
+		want := []PathCodeownersCounts{
 			{CodeownersReference: "ownerA", CodeownedFileCount: 1},
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
 		}
@@ -123,7 +123,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 		var limitOffset *LimitOffset
 		got, err := d.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
 		require.NoError(t, err)
-		want := []TreeCodeownersCounts{
+		want := []PathCodeownersCounts{
 			{CodeownersReference: "ownerA", CodeownedFileCount: 2},
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
 		}
@@ -134,7 +134,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 		var limitOffset *LimitOffset
 		got, err := d.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
 		require.NoError(t, err)
-		want := []TreeCodeownersCounts{
+		want := []PathCodeownersCounts{
 			{CodeownersReference: "ownerA", CodeownedFileCount: 22}, // from both repos
 			{CodeownersReference: "ownerC", CodeownedFileCount: 10}, // only repo2
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},  // only repo1
@@ -144,9 +144,9 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 }
 
 // fakeAggregateStatsIterator contains aggregate counts by file path.
-type fakeAggregateStatsIterator map[string]TreeAggregateCounts
+type fakeAggregateStatsIterator map[string]PathAggregateCounts
 
-func (w fakeAggregateStatsIterator) Iterate(f func(string, TreeAggregateCounts) error) error {
+func (w fakeAggregateStatsIterator) Iterate(f func(string, PathAggregateCounts) error) error {
 	for path, counts := range w {
 		if err := f(path, counts); err != nil {
 			return err
@@ -213,7 +213,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 		}
 		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
-		want := []TreeAggregateCounts{
+		want := []PathAggregateCounts{
 			{CodeownedFileCount: 1},
 		}
 		assert.DeepEqual(t, want, got)
@@ -226,7 +226,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 		}
 		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
-		want := []TreeAggregateCounts{
+		want := []PathAggregateCounts{
 			{CodeownedFileCount: 2},
 		}
 		assert.DeepEqual(t, want, got)
@@ -238,7 +238,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 		}
 		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
-		want := []TreeAggregateCounts{
+		want := []PathAggregateCounts{
 			{CodeownedFileCount: 3},
 		}
 		assert.DeepEqual(t, want, got)
@@ -248,7 +248,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 		opts := TreeLocationOpts{}
 		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
-		want := []TreeAggregateCounts{
+		want := []PathAggregateCounts{
 			{CodeownedFileCount: 13},
 		}
 		assert.DeepEqual(t, want, got)
