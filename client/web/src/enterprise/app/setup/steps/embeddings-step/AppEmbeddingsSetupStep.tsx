@@ -3,65 +3,35 @@ import { FC, useContext, ChangeEvent, useState } from 'react'
 import { mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { Button, H1, ScrollBox, Text, Icon, LoadingSpinner, Tooltip, Link } from '@sourcegraph/wildcard'
+import { Button, H1, ScrollBox, Text, Icon, LoadingSpinner, Tooltip, Link, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { useShowMorePagination } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
-import { SetupRepositoriesListResult } from '../../../../../graphql-operations'
+import { LocalRepository } from '../../../../../graphql-operations'
 import { EnterprisePageRoutes } from '../../../../../routes.constants'
-import { SetupStepsContext, StepComponentProps } from '../../../../../setup-wizard/components'
+import {
+    SetupStepsContext,
+    StepComponentProps,
+    useLocalRepositories,
+    useNewLocalRepositoriesPaths,
+} from '../../../../../setup-wizard/components'
 import { useScheduleRepoEmbeddingJobs } from '../../../../site-admin/cody/backend'
 import { AppNoItemsState } from '../../../components'
 
 import styles from './AppEmbeddingsSetupStep.module.scss'
 
-// Due to lack of splitting generate query TypeScript type into separate types
-// we have to extract nested types from the generated root query type
-type SetupRepository = SetupRepositoriesListResult['repositories']['nodes'][number]
-
-const REPOSITORIES_QUERY = gql`
-    query SetupRepositoriesList($first: Int, $after: String) {
-        repositories(first: $first, after: $after) {
-            __typename
-            nodes {
-                __typename
-                id
-                name
-                uri
-            }
-            totalCount
-            pageInfo {
-                __typename
-                hasNextPage
-                endCursor
-            }
-        }
-    }
-`
-
 export const AppEmbeddingsSetupStep: FC<StepComponentProps> = ({ className }) => {
     const { onNextStep } = useContext(SetupStepsContext)
 
     const [scheduleRepoEmbeddingJobs] = useScheduleRepoEmbeddingJobs()
-    const [selectedRepository, setSelectedRepository] = useState<SetupRepository | null>(null)
+    const [selectedRepository, setSelectedRepository] = useState<LocalRepository | null>(null)
 
-    const { data, connection, loading, hasNextPage, fetchMore } = useShowMorePagination<
-        SetupRepositoriesListResult,
-        {},
-        SetupRepository
-    >({
-        variables: { first: 50 },
-        query: REPOSITORIES_QUERY,
-        getConnection: result => {
-            const data = dataOrThrowErrors(result)
+    const { paths, loading: pathsLoading, loaded: pathLoaded, error: pathsError } = useNewLocalRepositoriesPaths()
 
-            if (!data) {
-                throw new Error('No repositories were found')
-            }
-
-            return data.repositories
-        },
-    })
+    const {
+        repositories,
+        loading: repositoriesLoading,
+        loaded: repositoriesLoaded,
+        error: repositoriesError,
+    } = useLocalRepositories({ paths, skip: paths.length === 0 })
 
     const handleNext = () => {
         if (!selectedRepository) {
@@ -71,6 +41,10 @@ export const AppEmbeddingsSetupStep: FC<StepComponentProps> = ({ className }) =>
         scheduleRepoEmbeddingJobs({ variables: { repoNames: [selectedRepository.name] } })
         onNextStep()
     }
+
+    const anyLoading = pathsLoading || repositoriesLoading
+    const anyError = pathsError || repositoriesError
+    const allLoaded = pathLoaded && repositoriesLoaded
 
     return (
         <div className={classNames(className, styles.root)}>
@@ -109,26 +83,10 @@ export const AppEmbeddingsSetupStep: FC<StepComponentProps> = ({ className }) =>
                 </Tooltip>
             </div>
             <ScrollBox className={styles.repositories} wrapperClassName={styles.repositoriesWrapper}>
-                {!data && loading && <LoadingSpinner />}
+                {anyError && <ErrorAlert error={anyError} />}
 
-                {connection?.nodes.map(node => (
-                    <RepositoryItem
-                        key={node.id}
-                        checked={selectedRepository?.id === node.id}
-                        name={node.name}
-                        path={getRepositoryFullPath(node.uri)}
-                        onChange={event => setSelectedRepository(node)}
-                    />
-                ))}
-
-                {hasNextPage && (
-                    <Button variant="secondary" outline={true} onClick={() => fetchMore()}>
-                        Load more repositories
-                        {loading && <LoadingSpinner />}
-                    </Button>
-                )}
-
-                {connection?.nodes.length === 0 && (
+                {!anyError && anyLoading && !allLoaded && <LoadingSpinner />}
+                {!anyError && allLoaded && repositories.length === 0 && (
                     <AppNoItemsState
                         title="No repositories were found"
                         subTitle={
@@ -139,6 +97,17 @@ export const AppEmbeddingsSetupStep: FC<StepComponentProps> = ({ className }) =>
                         }
                     />
                 )}
+                {!anyError &&
+                    allLoaded &&
+                    repositories.map(repository => (
+                        <RepositoryItem
+                            key={repository.name}
+                            checked={selectedRepository?.name === repository.name}
+                            name={repository.name}
+                            path={repository.path}
+                            onChange={event => setSelectedRepository(repository)}
+                        />
+                    ))}
             </ScrollBox>
         </div>
     )
@@ -177,12 +146,4 @@ const RepositoryItem: FC<RepositoryItemProps> = props => {
             </label>
         </li>
     )
-}
-
-function getRepositoryFullPath(uri: string): string {
-    if (uri.startsWith('/repos')) {
-        return uri.slice(6)
-    }
-
-    return uri
 }
