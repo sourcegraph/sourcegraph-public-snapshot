@@ -1,6 +1,6 @@
 (program
     (package_declaration
-        (scoped_identifier)
+        (_)
         @descriptor.namespace
     )
 ) @scope
