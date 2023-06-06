@@ -13,9 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type fakeCodeownersWalk map[string][]TreeCounts
+type fakeCodeownersWalk map[string][]TreeCodeownersCounts
 
-func (w fakeCodeownersWalk) Iterate(f func(string, TreeCounts) error) error {
+func (w fakeCodeownersWalk) Iterate(f func(string, TreeCodeownersCounts) error) error {
 	for path, owners := range w {
 		for _, o := range owners {
 			if err := f(path, o); err != nil {
@@ -110,7 +110,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 		var limitOffset *LimitOffset
 		got, err := d.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
 		require.NoError(t, err)
-		want := []TreeCounts{
+		want := []TreeCodeownersCounts{
 			{CodeownersReference: "ownerA", CodeownedFileCount: 1},
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
 		}
@@ -123,7 +123,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 		var limitOffset *LimitOffset
 		got, err := d.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
 		require.NoError(t, err)
-		want := []TreeCounts{
+		want := []TreeCodeownersCounts{
 			{CodeownersReference: "ownerA", CodeownedFileCount: 2},
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
 		}
@@ -134,7 +134,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 		var limitOffset *LimitOffset
 		got, err := d.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
 		require.NoError(t, err)
-		want := []TreeCounts{
+		want := []TreeCodeownersCounts{
 			{CodeownersReference: "ownerA", CodeownedFileCount: 22}, // from both repos
 			{CodeownersReference: "ownerC", CodeownedFileCount: 10}, // only repo2
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},  // only repo1
