@@ -32,16 +32,12 @@ func TestAssignedTeamsStore_ListAssignedTeamsForRepo(t *testing.T) {
 	user1, err := db.Users().Create(ctx, NewUser{Username: "user1"})
 	require.NoError(t, err)
 	team1 := createTeam(t, ctx, db, teamName)
-	team2 := createTeam(t, ctx, db, teamName)
+	team2 := createTeam(t, ctx, db, teamName2)
 
 	// Creating 2 repos.
 	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
 	require.NoError(t, err)
 	err = db.Repos().Create(ctx, &types.Repo{ID: 2, Name: "github.com/sourcegraph/sourcegraph2"})
-	require.NoError(t, err)
-
-	// Creating repo paths.
-	_, err = db.QueryContext(ctx, "INSERT INTO repo_paths (repo_id, absolute_path, parent_id) VALUES (1, '', NULL), (1, 'src', 1), (1, 'src/abc', 2), (1, 'src/def', 2)")
 	require.NoError(t, err)
 
 	// Inserting assigned teams.
@@ -102,10 +98,6 @@ func TestAssignedTeamsStore_Insert(t *testing.T) {
 	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
 	require.NoError(t, err)
 
-	// Creating repo paths.
-	_, err = db.QueryContext(ctx, "INSERT INTO repo_paths (repo_id, absolute_path, parent_id) VALUES (1, '', NULL), (1, 'src', 1)")
-	require.NoError(t, err)
-
 	store := AssignedTeamsStoreWith(db, logger)
 
 	// Inserting assigned team for non-existing repo, which led to failing to ensure
@@ -141,10 +133,6 @@ func TestAssignedTeamsStore_Delete(t *testing.T) {
 
 	// Creating a repo.
 	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
-	require.NoError(t, err)
-
-	// Creating repo paths.
-	_, err = db.QueryContext(ctx, "INSERT INTO repo_paths (repo_id, absolute_path, parent_id) VALUES (1, '', NULL), (1, 'src', 1), (1, 'src/abc', 2)")
 	require.NoError(t, err)
 
 	store := AssignedTeamsStoreWith(db, logger)
