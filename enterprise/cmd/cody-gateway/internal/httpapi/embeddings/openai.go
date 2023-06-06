@@ -83,13 +83,11 @@ func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway
 	embeddings := make([]codygateway.Embedding, len(response.Data))
 	for i, d := range response.Data {
 		embeddings[i] = codygateway.Embedding{
-			// TODO: Is OpenAI zero or 1 indexed?
 			Index: d.Index,
 			Data:  d.Embedding,
 		}
 	}
 
-	// TODO: Are there any headers or such that we need to forward?
 	return &codygateway.EmbeddingsResponse{
 		Embeddings:      embeddings,
 		Model:           response.Model,
@@ -98,8 +96,7 @@ func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway
 }
 
 type openaiEmbeddingsRequest struct {
-	Model string `json:"model"`
-	// TODO: Can also be string - do we want to support that?
+	Model string   `json:"model"`
 	Input []string `json:"input"`
 	User  string   `json:"user"`
 }
