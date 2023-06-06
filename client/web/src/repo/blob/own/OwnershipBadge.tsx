@@ -4,6 +4,7 @@ import { Badge, BadgeProps, BadgeVariantType, Link } from '@sourcegraph/wildcard
 
 import {
     AssignedOwnerFields,
+    AssignedTeamFields,
     CodeownersFileEntryFields,
     RecentContributorOwnershipSignalFields,
     RecentViewOwnershipSignalFields,
@@ -17,6 +18,7 @@ interface Props {
         | RecentContributorOwnershipSignalFields
         | RecentViewOwnershipSignalFields
         | AssignedOwnerFields
+        | AssignedTeamFields
 }
 
 const BADGE_VARIANT_BY_REASON: Partial<Record<NonNullable<Props['reason']['__typename']>, BadgeVariantType>> = {
@@ -24,6 +26,7 @@ const BADGE_VARIANT_BY_REASON: Partial<Record<NonNullable<Props['reason']['__typ
     CodeownersFileEntry: 'warning',
     // Purple badge for assigned owners and teams.
     AssignedOwner: 'merged',
+    AssignedTeam: 'merged',
 }
 
 // OwnershipBadge displays a badge like CODEOWNERS or RECENT CONTRIBUTOR

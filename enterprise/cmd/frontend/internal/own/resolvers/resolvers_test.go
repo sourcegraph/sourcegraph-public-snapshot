@@ -1433,6 +1433,10 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 											  title
 											  description
 											}
+											... on AssignedTeam {
+											  title
+											  description
+											}
 										}
 									}
 								}
@@ -1511,6 +1515,28 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 											"ruleLineMatch": 1
 										}
 									]
+								},
+								{
+									"owner": {
+										"name": "assigned team 1"
+									},
+									"reasons": [
+										{
+											"title": "assigned team",
+											"description": "Team is manually assigned."
+										}
+									]
+								},
+								{
+									"owner": {
+										"name": "assigned team 2"
+									},
+									"reasons": [
+										{
+											"title": "assigned team",
+											"description": "Team is manually assigned."
+										}
+									]
 								}
 							]
 						}
@@ -1560,6 +1586,10 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 											  title
 											  description
 											}
+											... on AssignedTeam {
+											  title
+											  description
+											}
 										}
 									}
 								}
@@ -1596,6 +1626,17 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 										{
 											"title": "assigned owner",
 											"description": "Owner is manually assigned."
+										}
+									]
+								},
+								{
+									"owner": {
+										"name": "assigned team 2"
+									},
+									"reasons": [
+										{
+											"title": "assigned team",
+											"description": "Team is manually assigned."
 										}
 									]
 								}
