@@ -105,7 +105,15 @@ func InitGitRepository(t *testing.T, cmds ...string) string {
 func CreateGitCommand(dir, name string, args ...string) *exec.Cmd {
 	c := exec.Command(name, args...)
 	c.Dir = dir
-	c.Env = []string{"GIT_CONFIG=" + path.Join(dir, ".git", "config")}
+	c.Env = []string{
+		"GIT_CONFIG=" + path.Join(dir, ".git", "config"),
+		"GIT_COMMITTER_NAME=a",
+		"GIT_COMMITTER_EMAIL=a@a.com",
+		"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z",
+		"GIT_AUTHOR_NAME=a",
+		"GIT_AUTHOR_EMAIL=a@a.com",
+		"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z",
+	}
 	if systemPath, ok := os.LookupEnv("PATH"); ok {
 		c.Env = append(c.Env, "PATH="+systemPath)
 	}
