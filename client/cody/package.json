@@ -274,6 +274,11 @@
         "enablement": "cody.nonstop.fixups.enabled && editorHasSelection"
       },
       {
+        "command": "cody.non-stop.fixup-diagnostics",
+        "title": "Cody: Fixup Diagnostics",
+        "enablement": "cody.nonstop.fixups.enabled"
+      },
+      {
         "command": "cody.fixup.open",
         "title": "Cody: Go to Fixup",
         "enablement": "cody.nonstop.fixups.enabled",

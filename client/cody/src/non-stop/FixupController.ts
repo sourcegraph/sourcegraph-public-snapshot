@@ -4,6 +4,7 @@ import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 
 import { computeDiff } from './diff'
 import { FixupDecorator } from './FixupDecorator'
+import { FixupDiagnostics } from './FixupDiagnostics'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
@@ -52,6 +53,26 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         this.editObserver = new FixupDocumentEditObserver(this)
         this._disposables.push(
             vscode.workspace.onDidChangeTextDocument(this.editObserver.textDocumentChanged.bind(this.editObserver))
+        )
+        // Provide code actions to fix diagnostics
+        const fixupDiagnostics = new FixupDiagnostics()
+        this._disposables.push(
+            vscode.languages.registerCodeActionsProvider(
+                {
+                    // TODO: Do not require files need to be saved once task creation
+                    // no longer depends on recipes.
+                    scheme: 'file',
+                },
+                fixupDiagnostics,
+                FixupDiagnostics.metadata
+            )
+        )
+        this._disposables.push(
+            vscode.commands.registerCommand(
+                'cody.non-stop.fixup-diagnostics',
+                fixupDiagnostics.command,
+                fixupDiagnostics
+            )
         )
     }
 

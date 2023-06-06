@@ -271,8 +271,8 @@ const register = async (
     if (initialConfig.experimentalNonStop || process.env.CODY_TESTING === 'true') {
         disposables.push(vscode.window.registerTreeDataProvider('cody.fixup.tree.view', fixup.getTaskView()))
         disposables.push(
-            vscode.commands.registerCommand('cody.recipe.non-stop', async () => {
-                await chatProvider.executeRecipe('non-stop', '', false)
+            vscode.commands.registerCommand('cody.recipe.non-stop', async instruction => {
+                await chatProvider.executeRecipe('non-stop', instruction || '', false)
             })
         )
         await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
