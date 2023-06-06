@@ -16,7 +16,7 @@ type PerforceChangelistResolver struct {
 	canonicalURL string
 }
 
-func newPerforceChangelistResolver(ctx context.Context, changelistID, repoPath string) *PerforceChangelistResolver {
+func newPerforceChangelistResolver(changelistID, repoPath string) *PerforceChangelistResolver {
 	canonicalURL := repoPath + "/-/changelist/" + changelistID
 	return &PerforceChangelistResolver{
 		cid:          changelistID,
