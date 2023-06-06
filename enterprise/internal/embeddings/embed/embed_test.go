@@ -10,6 +10,7 @@ import (
 
 	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -259,7 +260,7 @@ func TestEmbedRepo(t *testing.T) {
 	})
 }
 
-func NewMockEmbeddingsClient() EmbeddingsClient {
+func NewMockEmbeddingsClient() client.EmbeddingsClient {
 	return &mockEmbeddingsClient{}
 }
 
