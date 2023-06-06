@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strings"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -17,6 +16,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type ErrNoGitHubAppFound struct {
+	Criteria string
+}
+
+func (e ErrNoGitHubAppFound) Error() string {
+	return fmt.Sprintf("no app exists matching criteria: {%s}", e.Criteria)
+}
 
 // GitHubAppsStore handles storing and retrieving GitHub Apps from the database.
 type GitHubAppsStore interface {
@@ -113,7 +120,7 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 		existingGHApp, err := s.GetByDomain(ctx, &domain, baseURL.String())
 		// An error is expected if no existing app was found, but we double check that
 		// we didn't get a different, unrelated error
-		if err != nil && !strings.Contains(err.Error(), "no app exists matching criteria") {
+		if _, ok := err.(ErrNoGitHubAppFound); !ok {
 			return -1, errors.Wrap(err, "checking for existing batches app")
 		}
 		if existingGHApp != nil {
@@ -250,7 +257,8 @@ func (s *gitHubAppsStore) get(ctx context.Context, where *sqlf.Query) (*ghtypes.
 		return nil, err
 	}
 	if !ok {
-		return nil, errors.Newf("no app exists matching criteria: %v", *where)
+		strWhere := where.Query(sqlf.PostgresBindVar)
+		return nil, ErrNoGitHubAppFound{Criteria: strWhere}
 	}
 
 	apps, err := s.decrypt(ctx, app)
