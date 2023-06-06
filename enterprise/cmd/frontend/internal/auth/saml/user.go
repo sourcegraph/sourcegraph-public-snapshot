@@ -170,8 +170,11 @@ func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (val 
 			return nil, err
 		}
 	}
+	if val == nil {
+		return nil, errors.New("could not find data for the external account")
+	}
 
-	return val, errors.New("could not find data for the external account")
+	return val, nil
 }
 
 func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.AccountData) (*extsvc.PublicAccountData, error) {
@@ -185,18 +188,28 @@ func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.Accou
 		return nil, errors.New("could not find data values for external account")
 	}
 
+	// convert keys to lower case for case insensitive matching of candidates
+	lowerCaseValues := make(map[string]SAMLAttribute, len(values))
+	for k, v := range values {
+		lowerCaseValues[strings.ToLower(k)] = v
+	}
+
 	var displayName string
+	// all candidates are lower case
 	candidates := []string{
 		"nickname",
 		"login",
 		"username",
+		"name",
+		"http://schemas.xmlsoap.org/claims/name",
 		"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
+		"email",
 		"emailaddress",
-		"http://schemas.xmlsoap.org/claims/EmailAddress",
+		"http://schemas.xmlsoap.org/claims/emailaddress",
 		"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
 	}
 	for _, key := range candidates {
-		candidate, ok := values[key]
+		candidate, ok := lowerCaseValues[key]
 		if ok && len(candidate.Values) > 0 && candidate.Values[0].Value != "" {
 			displayName = candidate.Values[0].Value
 			break
