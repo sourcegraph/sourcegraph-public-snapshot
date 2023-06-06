@@ -139,7 +139,7 @@ func makeUpstreamHandler[ReqT any](
 			transformRequest(req)
 
 			// Retrieve metadata from the initial request.
-			promptCharacterCount, model, am := getRequestMetadata(body)
+			promptCharacterCount, model, requestMetadata := getRequestMetadata(body)
 
 			// Match the model against the allowlist of models, which are configured
 			// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models
@@ -152,29 +152,6 @@ func makeUpstreamHandler[ReqT any](
 					errors.Newf("model %q is not allowed, allowed: [%s]",
 						gatewayModel, strings.Join(allowed, ", ")))
 				return
-			}
-
-			{
-				metadata := map[string]any{}
-				for k, v := range am {
-					metadata[k] = v
-				}
-				metadata["prompt_character_count"] = promptCharacterCount
-				metadata["model"] = gatewayModel
-				metadata["provider"] = upstreamName
-				metadata[codygateway.CompletionsEventFeatureMetadataField] = feature
-				err = eventLogger.LogEvent(
-					r.Context(),
-					events.Event{
-						Name:       codygateway.EventNameCompletionsStarted,
-						Source:     act.Source.Name(),
-						Identifier: act.ID,
-						Metadata:   metadata,
-					},
-				)
-				if err != nil {
-					logger.Error("failed to log event", log.Error(err))
-				}
 			}
 
 			var (
@@ -194,13 +171,20 @@ func makeUpstreamHandler[ReqT any](
 						Name:       codygateway.EventNameCompletionsFinished,
 						Source:     act.Source.Name(),
 						Identifier: act.ID,
-						Metadata: map[string]any{
+						Metadata: mergeMaps(requestMetadata, map[string]any{
 							codygateway.CompletionsEventFeatureMetadataField: feature,
-							"upstream_request_duration_ms":                   time.Since(upstreamStarted).Milliseconds(),
-							"upstream_status_code":                           upstreamStatusCode,
-							"resolved_status_code":                           resolvedStatusCode,
-							"completion_character_count":                     completionCharacterCount,
-						},
+							"model":    gatewayModel,
+							"provider": upstreamName,
+
+							// Request details
+							"upstream_request_duration_ms": time.Since(upstreamStarted).Milliseconds(),
+							"upstream_status_code":         upstreamStatusCode,
+							"resolved_status_code":         resolvedStatusCode,
+
+							// Usage details
+							"prompt_character_count":     promptCharacterCount,
+							"completion_character_count": completionCharacterCount,
+						}),
 					},
 				)
 				if err != nil {
@@ -275,4 +259,11 @@ func intersection(a, b []string) (c []string) {
 		}
 	}
 	return c
+}
+
+func mergeMaps(dst, src map[string]any) map[string]any {
+	for k, v := range src {
+		dst[k] = v
+	}
+	return dst
 }

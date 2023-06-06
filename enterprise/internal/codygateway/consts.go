@@ -10,7 +10,6 @@ const (
 	EventNameUnauthorized        EventName = "Unauthorized"
 	EventNameAccessDenied        EventName = "AccessDenied"
 	EventNameRateLimited         EventName = "RateLimited"
-	EventNameCompletionsStarted  EventName = "CompletionsStarted"
 	EventNameCompletionsFinished EventName = "CompletionsFinished"
 )
 
