@@ -23,6 +23,7 @@ import (
 )
 
 type PerforceService interface {
+	// EnqueueChangelistMappingJob will push the ChangelistMappingJob onto the queue iff the experimental config for PerforceChangelistMapping is enabled and if the repo belongs to a code host of type PERFORCE.
 	EnqueueChangelistMappingJob(*ChangelistMappingJob)
 }
 
@@ -32,8 +33,10 @@ type ChangelistMappingJob struct {
 }
 
 type service struct {
-	Logger                 log.Logger
-	DB                     database.DB
+	Logger log.Logger
+	DB     database.DB
+
+	ctx                    context.Context
 	changelistMappingQueue *common.Queue[ChangelistMappingJob]
 }
 
@@ -43,8 +46,10 @@ func NewService(ctx context.Context, logger log.Logger, db database.DB, jobs *li
 	queue := common.NewQueue[ChangelistMappingJob](jobs)
 
 	s := &service{
-		Logger:                 logger,
-		DB:                     db,
+		Logger: logger,
+		DB:     db,
+
+		ctx:                    ctx,
 		changelistMappingQueue: queue,
 	}
 
@@ -54,7 +59,13 @@ func NewService(ctx context.Context, logger log.Logger, db database.DB, jobs *li
 }
 
 func (s *service) EnqueueChangelistMappingJob(job *ChangelistMappingJob) {
-	if conf.Get().ExperimentalFeatures.PerforceChangelistMapping == "enabled" {
+	if conf.Get().ExperimentalFeatures.PerforceChangelistMapping != "enabled" {
+		return
+	}
+
+	if r, err := s.DB.Repos().GetByName(s.ctx, job.RepoName); err != nil {
+		s.Logger.Warn("failed to retrieve repo from DB (this could be a data inconsistency)", log.Error(err))
+	} else if r.ExternalRepo.ServiceType == extsvc.VariantPerforce.AsType() {
 		s.changelistMappingQueue.Push(job)
 	}
 }

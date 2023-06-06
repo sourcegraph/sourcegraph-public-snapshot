@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -182,33 +183,71 @@ func TestParseGitLogLine(t *testing.T) {
 }
 
 func TestServicePipeline(t *testing.T) {
-	db := &database.MockDB{}
 	ctx := context.Background()
-	svc := NewService(ctx, logtest.NoOp(t), db, list.New())
 
+	// Ensure that goroutines exit cleanly when the test ends.
 	t.Cleanup(func() { ctx.Done() })
 
-	t.Run("feature flag disabled", func(t *testing.T) {
-		conf.Mock(nil)
+	repo := &types.Repo{
+		Name: api.RepoName("foo"),
+		ExternalRepo: api.ExternalRepoSpec{
+			ServiceType: extsvc.VariantPerforce.AsType(),
+		},
+	}
 
-		svc.EnqueueChangelistMappingJob(&ChangelistMappingJob{})
+	repos := database.NewMockRepoStore()
+	repos.GetByNameFunc.SetDefaultReturn(repo, nil)
 
-		s, _ := svc.(*service)
-		require.True(t, s.changelistMappingQueue.Empty())
-	})
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
 
-	t.Run("feature flag enabled", func(t *testing.T) {
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					PerforceChangelistMapping: "enabled",
+	svc := NewService(ctx, logtest.NoOp(t), db, list.New())
+
+	job := &ChangelistMappingJob{RepoName: repo.Name}
+
+	testCases := []struct {
+		name          string
+		config        string
+		serviceType   string
+		expectedEmpty bool
+	}{
+		{
+			name:          "feature flag disabled",
+			config:        "disabled",
+			serviceType:   extsvc.VariantPerforce.AsType(),
+			expectedEmpty: true,
+		},
+		{
+			name:          "feature flag enabled, non-perforce repo",
+			config:        "enabled",
+			serviceType:   extsvc.VariantGitHub.AsType(),
+			expectedEmpty: true,
+		},
+		{
+			name:          "feature flag enabled, perforce depot",
+			config:        "enabled",
+			serviceType:   extsvc.VariantPerforce.AsType(),
+			expectedEmpty: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					ExperimentalFeatures: &schema.ExperimentalFeatures{
+						PerforceChangelistMapping: tc.config,
+					},
 				},
-			},
+			})
+
+			repo.ExternalRepo.ServiceType = tc.serviceType
+			svc.EnqueueChangelistMappingJob(job)
+
+			s, _ := svc.(*service)
+			if got := s.changelistMappingQueue.Empty(); got != tc.expectedEmpty {
+				t.Errorf("expected empty state of queue: %v, but got: %v", tc.expectedEmpty, got)
+			}
 		})
-
-		svc.EnqueueChangelistMappingJob(&ChangelistMappingJob{})
-
-		s, _ := svc.(*service)
-		require.False(t, s.changelistMappingQueue.Empty())
-	})
+	}
 }
