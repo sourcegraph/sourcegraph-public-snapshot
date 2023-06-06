@@ -25,6 +25,25 @@ interface Props extends TelemetryProps, PlatformContextProps {
     batchChangesEnabled: boolean
 }
 
+const DEFAULT_EVENTS = [
+    'repository',
+    'public',
+    'member',
+    'membership',
+    'organization',
+    'team',
+    'team_add',
+    'meta',
+    'push',
+]
+
+const DEFAULT_PERMISSIONS = {
+    contents: 'read',
+    emails: 'read',
+    members: 'read',
+    metadata: 'read',
+}
+
 export const SiteAdminGitHubAppsArea: FC<Props> = props => {
     const { data, error, loading } = useQuery<SiteExternalServiceConfigResult, SiteExternalServiceConfigVariables>(
         SITE_EXTERNAL_SERVICE_CONFIG,
@@ -47,7 +66,16 @@ export const SiteAdminGitHubAppsArea: FC<Props> = props => {
         <Routes>
             <Route index={true} element={<GitHubAppsPage batchChangesEnabled={props.batchChangesEnabled} />} />
 
-            <Route path="new" element={<CreateGitHubAppPage {...props} />} />
+            <Route
+                path="new"
+                element={
+                    <CreateGitHubAppPage
+                        defaultEvents={DEFAULT_EVENTS}
+                        defaultPermissions={DEFAULT_PERMISSIONS}
+                        {...props}
+                    />
+                }
+            />
             <Route path=":appID" element={<GitHubAppPage {...props} />} />
         </Routes>
     )

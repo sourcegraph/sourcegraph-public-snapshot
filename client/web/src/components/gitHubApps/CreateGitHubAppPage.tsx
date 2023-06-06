@@ -2,23 +2,25 @@ import { FC, useState, useCallback, useRef, useEffect } from 'react'
 
 import { Link } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Container, Button, Input, Label, Text, PageHeader, ButtonLink } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { PageTitle } from '../PageTitle'
-
-export interface AddGitHubPageProps extends TelemetryProps {}
 
 interface stateResponse {
     state: string
     webhookUUID: string
 }
 
+export interface CreateGitHubAppPageProps {
+    defaultEvents: string[]
+    defaultPermissions: Record<string, string>
+}
+
 /**
- * Page for choosing a service kind and variant to add, among the available options.
+ * Page for creating and connecting a new GitHub App.
  */
-export const CreateGitHubAppPage: FC<AddGitHubPageProps> = () => {
+export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({ defaultEvents, defaultPermissions }) => {
     const ref = useRef<HTMLFormElement>(null)
     const formInput = useRef<HTMLInputElement>(null)
     const [name, setName] = useState<string>('')
@@ -26,9 +28,7 @@ export const CreateGitHubAppPage: FC<AddGitHubPageProps> = () => {
     const [org, setOrg] = useState<string>('')
     const [error, setError] = useState<any>(null)
 
-    useEffect(() => {
-        eventLogger.logPageView('SiteAdminCreateGiHubApp')
-    }, [])
+    useEffect(() => eventLogger.logPageView('SiteAdminCreateGiHubApp'), [])
 
     const baseUrl = window.location.origin
     const getManifest = useCallback(
@@ -44,25 +44,10 @@ export const CreateGitHubAppPage: FC<AddGitHubPageProps> = () => {
                 callback_urls: [new URL('/.auth/github/callback', baseUrl).href],
                 setup_on_update: true,
                 public: false,
-                default_permissions: {
-                    contents: 'read',
-                    emails: 'read',
-                    members: 'read',
-                    metadata: 'read',
-                },
-                default_events: [
-                    'repository',
-                    'public',
-                    'member',
-                    'membership',
-                    'organization',
-                    'team',
-                    'team_add',
-                    'meta',
-                    'push',
-                ],
+                default_permissions: defaultPermissions,
+                default_events: defaultEvents,
             }),
-        [baseUrl]
+        [baseUrl, defaultEvents, defaultPermissions]
     )
 
     const createActionUrl = useCallback(
