@@ -31,6 +31,7 @@ go_library(
         "//enterprise/internal/batches/search",
         "//enterprise/internal/batches/sources/azuredevops",
         "//enterprise/internal/batches/sources/bitbucketcloud",
+        "//enterprise/internal/batches/sources/gerrit",
         "//enterprise/internal/batches/store/author",
         "//enterprise/internal/batches/types",
         "//internal/actor",
