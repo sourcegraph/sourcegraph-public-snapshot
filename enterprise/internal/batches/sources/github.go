@@ -118,18 +118,18 @@ func (s GitHubSource) ValidateAuthenticator(ctx context.Context) error {
 // to sign commits with the GitHub App authenticating on behalf of the user, rather than
 // authenticating as the installation. See here for more details:
 // https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/about-authentication-with-a-github-app
-func (s GitHubSource) DuplicateCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest, repo *types.Repo, rev string) error {
+func (s GitHubSource) DuplicateCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest, repo *types.Repo, rev string) (*github.RestCommit, error) {
 	message := strings.Join(opts.CommitInfo.Messages, "\n")
 	repoMetadata := repo.Metadata.(*github.Repository)
 	owner, repoName, err := github.SplitRepositoryNameWithOwner(repoMetadata.NameWithOwner)
 	if err != nil {
-		return errors.Wrap(err, "getting owner and repo name to duplicate commit")
+		return nil, errors.Wrap(err, "getting owner and repo name to duplicate commit")
 	}
 
 	// Get the original, unsigned commit.
 	commit, err := s.client.GetRef(ctx, owner, repoName, rev)
 	if err != nil {
-		return errors.Wrap(err, "getting commit to duplicate")
+		return nil, errors.Wrap(err, "getting commit to duplicate")
 	}
 
 	// Our new signed commit should have the same parents as the original commit.
@@ -142,7 +142,7 @@ func (s GitHubSource) DuplicateCommit(ctx context.Context, opts protocol.CreateC
 	// installation, so we just omit them.
 	newCommit, err := s.client.CreateCommit(ctx, owner, repoName, message, commit.Commit.Tree.SHA, parents, nil, nil)
 	if err != nil {
-		return errors.Wrap(err, "creating new commit")
+		return nil, errors.Wrap(err, "creating new commit")
 	}
 
 	// Update the branch ref to point to the new commit, orphaning the original. There's
@@ -150,15 +150,10 @@ func (s GitHubSource) DuplicateCommit(ctx context.Context, opts protocol.CreateC
 	// collected automatically by GitHub so it's okay to leave it.
 	_, err = s.client.UpdateRef(ctx, owner, repoName, rev, newCommit.SHA)
 	if err != nil {
-		return errors.Wrap(err, "updating ref to point to new commit")
+		return nil, errors.Wrap(err, "updating ref to point to new commit")
 	}
 
-	// TODO: Return the new commit, or just the verification obj
-	// Then in the caller, update the changeset_specs.[commit_verification] from it's store with the newCommit.Vericiation
-	// Only store if verification is true, otherwise nil
-
-	//Unknown - how to hook up changeset_specs store here
-	return nil
+	return newCommit, nil
 }
 
 // CreateChangeset creates the given changeset on the code host.

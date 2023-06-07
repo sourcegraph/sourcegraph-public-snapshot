@@ -877,7 +877,7 @@ func TestV3Client_UpdateRef(t *testing.T) {
 		// currently at its HEAD, and update the branch to point to the new commit. Then
 		// we'll put it back to the original commit so this test can easily be run again.
 
-		originalCommit := &restCommit{
+		originalCommit := &RestCommit{
 			URL: "https://api.github.com/repos/sourcegraph/automation-testing/commits/c2f0a019668a800df480f07dba5d9dcaa0f64350",
 			SHA: "c2f0a019668a800df480f07dba5d9dcaa0f64350",
 			Tree: restCommitTree{

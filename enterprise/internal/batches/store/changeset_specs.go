@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -169,6 +170,27 @@ func (s *Store) UpdateChangesetSpecBatchSpecID(ctx context.Context, cs []int64, 
 	defer endObservation(1, observation.Args{})
 
 	q := s.updateChangesetSpecQuery(cs, batchSpec)
+
+	return s.Exec(ctx, q)
+}
+
+// UpdateChangesetSpecCommitVerification updates the given ChangesetSpecs CommitVerification if commit signing is applied and successful.
+func (s *Store) UpdateChangesetSpecCommitVerification(ctx context.Context, batchSpec int64, commit *github.RestCommit) (err error) {
+	ctx, _, endObservation := s.operations.updateChangesetSpecCommitVerification.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		// TODO: add commit verification status
+		// attribute.Int("Count", len(cs)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	// TODO: json marshal commit verification?
+
+	q := sqlf.Sprintf(`
+		UPDATE changeset_specs
+		SET commit_verification = %s
+		WHERE batch_spec_id = %s`,
+		commit,
+		batchSpec,
+	)
 
 	return s.Exec(ctx, q)
 }

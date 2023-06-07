@@ -663,10 +663,13 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 			// We use the existing commit as the basis for the new commit, duplicating it
 			// over the REST API in order to produce a signed version of it to replace the
 			// original one with.
-			err = gcss.DuplicateCommit(ctx, opts, remoteRepo, rev)
-			// TODO: Add a method like e.tx.UpdateChangesetSpecBatchSpecID(e.ch.ChangesetSpecID, rev) - to update new field (Verification)
+			newCommit, err := gcss.DuplicateCommit(ctx, opts, remoteRepo, rev)
 			if err != nil {
 				return errors.Wrap(err, "failed to duplicate commit")
+			}
+			if newCommit.Verification.Verified == true {
+				// https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#create-a-commit
+				e.tx.UpdateChangesetSpecCommitVerification(ctx, e.spec.ID, newCommit)
 			}
 		}
 	}

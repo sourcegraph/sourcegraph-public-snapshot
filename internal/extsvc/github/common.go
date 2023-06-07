@@ -158,7 +158,7 @@ type restCommitRef struct {
 }
 
 // A single Commit in a Repository, from the REST API.
-type restCommit struct {
+type RestCommit struct {
 	URL          string              `json:"url"`
 	SHA          string              `json:"sha"`
 	NodeID       string              `json:"node_id"`
