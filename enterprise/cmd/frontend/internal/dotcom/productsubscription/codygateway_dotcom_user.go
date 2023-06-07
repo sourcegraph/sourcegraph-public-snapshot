@@ -19,7 +19,7 @@ type CodyGatewayDotcomUserResolver struct {
 	DB database.DB
 }
 
-func (r CodyGatewayDotcomUserResolver) DotcomCodyGatewayUserByToken(ctx context.Context, args *graphqlbackend.CodyGatewayUsersByAccessTokenArgs) (graphqlbackend.CodyGatewayUser, error) {
+func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.Context, args *graphqlbackend.CodyGatewayUsersByAccessTokenArgs) (graphqlbackend.CodyGatewayUser, error) {
 	// 🚨 SECURITY: Only site admins or the service accounts may check users.
 	if err := serviceAccountOrSiteAdmin(ctx, r.DB, true); err != nil {
 		return nil, err

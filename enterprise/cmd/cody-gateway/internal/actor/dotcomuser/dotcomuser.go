@@ -84,7 +84,7 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 		act = NewActor(s, token, dotcom.DotcomUserState{})
 	} else {
 		act = NewActor(s, token,
-			resp.Dotcom.DotcomCodyGatewayUserByToken.DotcomUserState)
+			resp.Dotcom.CodyGatewayDotcomUserByToken.DotcomUserState)
 	}
 
 	if data, err := json.Marshal(act); err != nil {

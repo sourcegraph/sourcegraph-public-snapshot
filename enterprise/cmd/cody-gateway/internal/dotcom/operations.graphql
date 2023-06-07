@@ -62,7 +62,7 @@ query ListProductSubscriptions {
     }
 }
 
-fragment DotcomUserState on DotcomCodyGatewayUser {
+fragment DotcomUserState on CodyGatewayDotcomUser {
     username
     codyGatewayAccess {
         ...CodyGatewayAccessFields
@@ -73,7 +73,7 @@ fragment DotcomUserState on DotcomCodyGatewayUser {
 # the given access token.
 query CheckDotcomUserAccessToken($token: String!) {
     dotcom {
-        dotcomCodyGatewayUserByToken(token: $token) {
+        codyGatewayDotcomUserByToken(token: $token) {
             ...DotcomUserState
         }
     }
