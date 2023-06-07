@@ -41,7 +41,7 @@
 .item-delete {
     position: absolute;
     right: 0.25rem;
-    top: 0.25rem;
+    top: 0.5rem;
     visibility: hidden;
 }
 

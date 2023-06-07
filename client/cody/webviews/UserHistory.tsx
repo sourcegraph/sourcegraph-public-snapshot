@@ -27,8 +27,9 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
     setView,
     vscodeAPI,
 }) => {
-    const onDeleteHistoryClick = useCallback(
-        (chatID: string): void => {
+    const onDeleteHistoryItemClick = useCallback(
+        (event: React.MouseEvent<HTMLElement, MouseEvent>, chatID: string) => {
+            event.stopPropagation()
             if (userHistory) {
                 delete userHistory[chatID]
                 setUserHistory({ ...userHistory })
@@ -61,7 +62,7 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                             className={styles.clearButton}
                             type="button"
                             onClick={onRemoveHistoryClick}
-                            disabled={userHistory === null}
+                            disabled={!userHistory || !Object.keys(userHistory).length}
                         >
                             Clear History
                         </VSCodeButton>
@@ -94,8 +95,7 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                                                     appearance="icon"
                                                     type="button"
                                                     onClick={event => {
-                                                        onDeleteHistoryClick(chat[0])
-                                                        event.stopPropagation()
+                                                        onDeleteHistoryItemClick(event, chat[0])
                                                     }}
                                                 >
                                                     <i className="codicon codicon-trash" />
