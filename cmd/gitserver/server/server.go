@@ -1097,15 +1097,6 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 		}
 	}
 
-	if r, err := s.DB.Repos().GetByName(ctx, req.Repo); err != nil {
-		logger.Warn("failed to retrieve repo from DB (this could be a data inconsistency)", log.Error(err))
-	} else if r.ExternalRepo.ServiceType == extsvc.TypePerforce {
-		s.Perforce.EnqueueChangelistMappingJob(&perforce.ChangelistMappingJob{
-			RepoName: req.Repo,
-			RepoDir:  s.dir(req.Repo),
-		})
-	}
-
 	return resp
 }
 
