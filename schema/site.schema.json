@@ -2328,7 +2328,7 @@
     "embeddings": {
       "description": "Configuration for embeddings service.",
       "type": "object",
-      "required": ["enabled", "dimensions", "model", "accessToken", "url"],
+      "required": ["enabled"],
       "properties": {
         "enabled": {
           "description": "Toggles whether embedding service is enabled.",
@@ -2336,20 +2336,30 @@
           "default": false
         },
         "dimensions": {
-          "description": "The dimensionality of the embedding vectors.",
+          "description": "The dimensionality of the embedding vectors. Required field if not using the sourcegraph provider.",
           "type": "integer",
           "minimum": 0
         },
         "model": {
-          "description": "The model used for embedding.",
+          "description": "The model used for embedding. A default model will be used for each provider, if not set.",
           "type": "string"
         },
         "accessToken": {
-          "description": "The access token used to authenticate with the external embedding API service.",
+          "description": "The access token used to authenticate with the external embedding API service. For provider sourcegraph, this is optional.",
           "type": "string"
         },
+        "provider": {
+          "type": "string",
+          "description": "The provider to use for generating embeddings. Defaults to sourcegraph.",
+          "enum": ["openai", "sourcegraph"]
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "The endpoint under which to reach the provider. Sensible default will be used for each provider.",
+          "format": "uri"
+        },
         "url": {
-          "description": "The url to the external embedding API service.",
+          "description": "The url to the external embedding API service. Deprecated, use endpoint instead.",
           "type": "string",
           "format": "uri"
         },

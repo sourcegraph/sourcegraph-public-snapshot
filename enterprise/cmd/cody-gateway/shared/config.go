@@ -38,6 +38,8 @@ type Config struct {
 		OrgID         string
 	}
 
+	AllowedEmbeddingsModels []string
+
 	AllowAnonymous bool
 
 	SourcesSyncInterval time.Duration
@@ -87,13 +89,16 @@ func (c *Config) Load() {
 	c.OpenAI.OrgID = c.GetOptional("CODY_GATEWAY_OPENAI_ORG_ID", "The OpenAI organization to count billing towards. Setting this ensures we always use the correct negotiated terms.")
 	c.OpenAI.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_OPENAI_ALLOWED_MODELS",
 		strings.Join([]string{"gpt-4", "gpt-3.5-turbo"}, ","),
-		"OpenAI models that can to be used."))
+		"OpenAI models that can to be used."),
+	)
+
+	c.AllowedEmbeddingsModels = splitMaybe(c.Get("CODY_GATEWAY_ALLOWED_EMBEDDINGS_MODELS", strings.Join([]string{"openai/text-embedding-ada-002"}, ","), "The models allowed for embeddings generation."))
 
 	c.AllowAnonymous = c.GetBool("CODY_GATEWAY_ALLOW_ANONYMOUS", "false", "Allow anonymous access to Cody Gateway.")
 	c.SourcesSyncInterval = c.GetInterval("CODY_GATEWAY_SOURCES_SYNC_INTERVAL", "2m", "The interval at which to sync actor sources.")
 
 	c.BigQuery.ProjectID = c.Get("CODY_GATEWAY_BIGQUERY_PROJECT_ID", os.Getenv("GOOGLE_CLOUD_PROJECT"), "The project ID for the BigQuery events.")
-	c.BigQuery.Dataset = c.Get("CODY_GATEWAY_BIGQUERY_DATASET", "CODY_GATEWAY", "The dataset for the BigQuery events.")
+	c.BigQuery.Dataset = c.Get("CODY_GATEWAY_BIGQUERY_DATASET", "cody_gateway", "The dataset for the BigQuery events.")
 	c.BigQuery.Table = c.Get("CODY_GATEWAY_BIGQUERY_TABLE", "events", "The table for the BigQuery events.")
 	c.BigQuery.EventBufferSize = c.GetInt("CODY_GATEWAY_BIGQUERY_EVENT_BUFFER_SIZE", "100", "The number of events allowed to buffer when submitting BigQuery events - set to 0 to disable.")
 
@@ -116,6 +121,10 @@ func (c *Config) Validate() error {
 
 	if c.OpenAI.AccessToken != "" && len(c.OpenAI.AllowedModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for OpenAI"))
+	}
+
+	if len(c.AllowedEmbeddingsModels) == 0 {
+		c.AddError(errors.New("must provide allowed models for embeddings generation"))
 	}
 
 	return nil

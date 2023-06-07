@@ -21394,7 +21394,7 @@
         },
         {
           "Name": "cody_gateway_chat_rate_limit_allowed_models",
-          "Index": 11,
+          "Index": 14,
           "TypeName": "text[]",
           "IsNullable": true,
           "Default": "",
@@ -21407,7 +21407,7 @@
         },
         {
           "Name": "cody_gateway_code_rate_interval_seconds",
-          "Index": 13,
+          "Index": 16,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -21420,7 +21420,7 @@
         },
         {
           "Name": "cody_gateway_code_rate_limit",
-          "Index": 12,
+          "Index": 15,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -21433,7 +21433,7 @@
         },
         {
           "Name": "cody_gateway_code_rate_limit_allowed_models",
-          "Index": 14,
+          "Index": 17,
           "TypeName": "text[]",
           "IsNullable": true,
           "Default": "",
@@ -21443,6 +21443,45 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "cody_gateway_embeddings_api_allowed_models",
+          "Index": 13,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Custom override for the set of models allowed for embedding"
+        },
+        {
+          "Name": "cody_gateway_embeddings_api_rate_interval_seconds",
+          "Index": 12,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Custom time interval over which the embeddings rate limit is applied"
+        },
+        {
+          "Name": "cody_gateway_embeddings_api_rate_limit",
+          "Index": 11,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Custom requests per time interval allowed for embeddings"
         },
         {
           "Name": "cody_gateway_enabled",

@@ -3999,11 +3999,20 @@ CREATE TABLE product_subscriptions (
     cody_gateway_enabled boolean DEFAULT false NOT NULL,
     cody_gateway_chat_rate_limit integer,
     cody_gateway_chat_rate_interval_seconds integer,
+    cody_gateway_embeddings_api_rate_limit integer,
+    cody_gateway_embeddings_api_rate_interval_seconds integer,
+    cody_gateway_embeddings_api_allowed_models text[],
     cody_gateway_chat_rate_limit_allowed_models text[],
     cody_gateway_code_rate_limit integer,
     cody_gateway_code_rate_interval_seconds integer,
     cody_gateway_code_rate_limit_allowed_models text[]
 );
+
+COMMENT ON COLUMN product_subscriptions.cody_gateway_embeddings_api_rate_limit IS 'Custom requests per time interval allowed for embeddings';
+
+COMMENT ON COLUMN product_subscriptions.cody_gateway_embeddings_api_rate_interval_seconds IS 'Custom time interval over which the embeddings rate limit is applied';
+
+COMMENT ON COLUMN product_subscriptions.cody_gateway_embeddings_api_allowed_models IS 'Custom override for the set of models allowed for embedding';
 
 CREATE TABLE query_runner_state (
     query text,

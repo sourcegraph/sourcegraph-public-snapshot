@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/productsubscription"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -196,24 +195,32 @@ func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 		Key:           token,
 		ID:            s.Uuid,
 		AccessEnabled: !disallowedLicense && !s.IsArchived && s.CodyGatewayAccess.Enabled,
-		RateLimits:    map[types.CompletionsFeature]actor.RateLimit{},
+		RateLimits:    map[codygateway.Feature]actor.RateLimit{},
 		LastUpdated:   &now,
 		Source:        source,
 	}
 
-	if chatCompletions := s.CodyGatewayAccess.ChatCompletionsRateLimit; chatCompletions != nil {
-		a.RateLimits[types.CompletionsFeatureChat] = actor.RateLimit{
-			AllowedModels: chatCompletions.AllowedModels,
-			Limit:         chatCompletions.Limit,
-			Interval:      time.Duration(chatCompletions.IntervalSeconds) * time.Second,
+	if rl := s.CodyGatewayAccess.ChatCompletionsRateLimit; rl != nil {
+		a.RateLimits[codygateway.FeatureChatCompletions] = actor.RateLimit{
+			AllowedModels: rl.AllowedModels,
+			Limit:         rl.Limit,
+			Interval:      time.Duration(rl.IntervalSeconds) * time.Second,
 		}
 	}
 
-	if codeCompletions := s.CodyGatewayAccess.CodeCompletionsRateLimit; codeCompletions != nil {
-		a.RateLimits[types.CompletionsFeatureCode] = actor.RateLimit{
-			AllowedModels: codeCompletions.AllowedModels,
-			Limit:         codeCompletions.Limit,
-			Interval:      time.Duration(codeCompletions.IntervalSeconds) * time.Second,
+	if rl := s.CodyGatewayAccess.CodeCompletionsRateLimit; rl != nil {
+		a.RateLimits[codygateway.FeatureCodeCompletions] = actor.RateLimit{
+			AllowedModels: rl.AllowedModels,
+			Limit:         rl.Limit,
+			Interval:      time.Duration(rl.IntervalSeconds) * time.Second,
+		}
+	}
+
+	if rl := s.CodyGatewayAccess.EmbeddingsRateLimit; rl != nil {
+		a.RateLimits[codygateway.FeatureEmbeddings] = actor.RateLimit{
+			AllowedModels: rl.AllowedModels,
+			Limit:         rl.Limit,
+			Interval:      time.Duration(rl.IntervalSeconds) * time.Second,
 		}
 	}
 
