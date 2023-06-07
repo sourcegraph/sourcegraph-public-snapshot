@@ -50,9 +50,20 @@ func runCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error)
 	return exitStatus, err
 }
 
-// runWith runs the command after applying the remote options. If progress is not
-// nil, all output is written to it in a separate goroutine.
-func runWith(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
+// runCommandCombinedOutput runs the command with runCommand and returns its
+// combined standard output and standard error.
+func runCommandCombinedOutput(ctx context.Context, cmd wrexec.Cmder) ([]byte, error) {
+	var buf bytes.Buffer
+	cmd.Unwrap().Stdout = &buf
+	cmd.Unwrap().Stderr = &buf
+	_, err := runCommand(ctx, cmd)
+	cmd.CombinedOutput()
+	return buf.Bytes(), err
+}
+
+// runRemoteGitCommand runs the command after applying the remote options. If
+// progress is not nil, all output is written to it in a separate goroutine.
+func runRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
 	if configRemoteOpts {
 		// Inherit process environment. This allows admins to configure
 		// variables like http_proxy/etc.
@@ -88,7 +99,8 @@ func runWith(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progr
 		b = &buf
 	}
 
-	_, err := runCommand(ctx, cmd) // TODO
+	// We don't care about exitStatus, we just rely on error.
+	_, err := runCommand(ctx, cmd)
 
 	return b.Bytes(), err
 }
