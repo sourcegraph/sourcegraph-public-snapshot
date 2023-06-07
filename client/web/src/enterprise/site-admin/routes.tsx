@@ -85,13 +85,6 @@ const CodyConfigurationPage = lazyComponent(
     'CodyConfigurationPage'
 )
 
-const DEFAULT_EVENTS: string[] = []
-
-const DEFAULT_PERMISSIONS = {
-    contents: 'write',
-    metadata: 'read',
-}
-
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
     [
         ...otherSiteAdminRoutes,
@@ -150,12 +143,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
         {
             path: '/batch-changes/new-github-app',
-            render: () => (
-                <BatchChangesCreateGitHubAppPage
-                    defaultEvents={DEFAULT_EVENTS}
-                    defaultPermissions={DEFAULT_PERMISSIONS}
-                />
-            ),
+            render: () => <BatchChangesCreateGitHubAppPage />,
             condition: ({ batchChangesEnabled }) => batchChangesEnabled,
         },
         {

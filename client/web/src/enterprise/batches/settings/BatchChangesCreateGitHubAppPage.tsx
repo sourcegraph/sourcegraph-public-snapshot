@@ -9,15 +9,14 @@ import { GitHubAppDomain } from '../../../graphql-operations'
 
 import { useGlobalBatchChangesCodeHostConnection } from './backend'
 
-interface Props {
-    defaultEvents: string[]
-    defaultPermissions: Record<string, string>
+const DEFAULT_EVENTS: string[] = []
+
+const DEFAULT_PERMISSIONS = {
+    contents: 'write',
+    metadata: 'read',
 }
 
-export const BatchChangesCreateGitHubAppPage: React.FunctionComponent<Props> = ({
-    defaultEvents,
-    defaultPermissions,
-}) => {
+export const BatchChangesCreateGitHubAppPage: React.FunctionComponent = () => {
     const location = useLocation()
     const baseURL = new URLSearchParams(location.search).get('baseURL')
 
@@ -48,8 +47,8 @@ export const BatchChangesCreateGitHubAppPage: React.FunctionComponent<Props> = (
     )
     return (
         <CreateGitHubAppPage
-            defaultEvents={defaultEvents}
-            defaultPermissions={defaultPermissions}
+            defaultEvents={DEFAULT_EVENTS}
+            defaultPermissions={DEFAULT_PERMISSIONS}
             pageTitle="Create GitHub App for commit signing"
             headerDescription={
                 <>
