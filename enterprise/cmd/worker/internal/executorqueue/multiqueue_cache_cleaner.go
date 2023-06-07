@@ -46,8 +46,13 @@ func (m *multiqueueCacheCleaner) Handle(ctx context.Context) error {
 		t := time.Unix(0, timestampMillis*int64(time.Millisecond))
 		if t.Before(time.Now().Add(-m.windowSize)) {
 			// expired cache entry, delete
-			// TODO: need to add a HDEL function to rcache
-			m.cache.Delete(key)
+			deletedItems, err := m.cache.DeleteHashItem(m.queueName, key)
+			if err != nil {
+				return err
+			}
+			if deletedItems == 0 {
+				return errors.Newf("failed to delete hash item %s for key %s: expected successful delete but redis deleted nothing", key, m.queueName)
+			}
 		}
 	}
 	return nil
