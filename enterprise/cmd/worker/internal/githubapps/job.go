@@ -23,7 +23,7 @@ func NewGitHubApsInstallationJob() job.Job {
 }
 
 func (gh *githupAppsInstallationJob) Description() string {
-	return "Queue used by Sourcegraph to validate GitHub app installations"
+	return "Job to validate and backfill github app installations"
 }
 
 func (gh *githupAppsInstallationJob) Config() []env.Config {
