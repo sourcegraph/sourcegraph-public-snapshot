@@ -38688,6 +38688,9 @@ func (c OutboundWebhookStoreWithFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
 // testing.
 type MockOwnershipStatsStore struct {
+	// QueryAggregateCountsFunc is an instance of a mock function object
+	// controlling the behavior of the method QueryAggregateCounts.
+	QueryAggregateCountsFunc *OwnershipStatsStoreQueryAggregateCountsFunc
 	// QueryIndividualCountsFunc is an instance of a mock function object
 	// controlling the behavior of the method QueryIndividualCounts.
 	QueryIndividualCountsFunc *OwnershipStatsStoreQueryIndividualCountsFunc
@@ -38704,18 +38707,23 @@ type MockOwnershipStatsStore struct {
 // overwritten.
 func NewMockOwnershipStatsStore() *MockOwnershipStatsStore {
 	return &MockOwnershipStatsStore{
+		QueryAggregateCountsFunc: &OwnershipStatsStoreQueryAggregateCountsFunc{
+			defaultHook: func(context.Context, TreeLocationOpts) (r0 []PathAggregateCounts, r1 error) {
+				return
+			},
+		},
 		QueryIndividualCountsFunc: &OwnershipStatsStoreQueryIndividualCountsFunc{
-			defaultHook: func(context.Context, TreeLocationOpts, *LimitOffset) (r0 []TreeCodeownersCounts, r1 error) {
+			defaultHook: func(context.Context, TreeLocationOpts, *LimitOffset) (r0 []PathCodeownersCounts, r1 error) {
 				return
 			},
 		},
 		UpdateAggregateCountsFunc: &OwnershipStatsStoreUpdateAggregateCountsFunc{
-			defaultHook: func(context.Context, api.RepoID, TreeAggregateOwnership, time.Time) (r0 int, r1 error) {
+			defaultHook: func(context.Context, api.RepoID, TreeAggregateStats, time.Time) (r0 int, r1 error) {
 				return
 			},
 		},
 		UpdateIndividualCountsFunc: &OwnershipStatsStoreUpdateIndividualCountsFunc{
-			defaultHook: func(context.Context, api.RepoID, FileOwnershipAggregate, time.Time) (r0 int, r1 error) {
+			defaultHook: func(context.Context, api.RepoID, TreeCodeownersStats, time.Time) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -38727,18 +38735,23 @@ func NewMockOwnershipStatsStore() *MockOwnershipStatsStore {
 // overwritten.
 func NewStrictMockOwnershipStatsStore() *MockOwnershipStatsStore {
 	return &MockOwnershipStatsStore{
+		QueryAggregateCountsFunc: &OwnershipStatsStoreQueryAggregateCountsFunc{
+			defaultHook: func(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error) {
+				panic("unexpected invocation of MockOwnershipStatsStore.QueryAggregateCounts")
+			},
+		},
 		QueryIndividualCountsFunc: &OwnershipStatsStoreQueryIndividualCountsFunc{
-			defaultHook: func(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCodeownersCounts, error) {
+			defaultHook: func(context.Context, TreeLocationOpts, *LimitOffset) ([]PathCodeownersCounts, error) {
 				panic("unexpected invocation of MockOwnershipStatsStore.QueryIndividualCounts")
 			},
 		},
 		UpdateAggregateCountsFunc: &OwnershipStatsStoreUpdateAggregateCountsFunc{
-			defaultHook: func(context.Context, api.RepoID, TreeAggregateOwnership, time.Time) (int, error) {
+			defaultHook: func(context.Context, api.RepoID, TreeAggregateStats, time.Time) (int, error) {
 				panic("unexpected invocation of MockOwnershipStatsStore.UpdateAggregateCounts")
 			},
 		},
 		UpdateIndividualCountsFunc: &OwnershipStatsStoreUpdateIndividualCountsFunc{
-			defaultHook: func(context.Context, api.RepoID, FileOwnershipAggregate, time.Time) (int, error) {
+			defaultHook: func(context.Context, api.RepoID, TreeCodeownersStats, time.Time) (int, error) {
 				panic("unexpected invocation of MockOwnershipStatsStore.UpdateIndividualCounts")
 			},
 		},
@@ -38750,6 +38763,9 @@ func NewStrictMockOwnershipStatsStore() *MockOwnershipStatsStore {
 // implementation, unless overwritten.
 func NewMockOwnershipStatsStoreFrom(i OwnershipStatsStore) *MockOwnershipStatsStore {
 	return &MockOwnershipStatsStore{
+		QueryAggregateCountsFunc: &OwnershipStatsStoreQueryAggregateCountsFunc{
+			defaultHook: i.QueryAggregateCounts,
+		},
 		QueryIndividualCountsFunc: &OwnershipStatsStoreQueryIndividualCountsFunc{
 			defaultHook: i.QueryIndividualCounts,
 		},
@@ -38762,19 +38778,131 @@ func NewMockOwnershipStatsStoreFrom(i OwnershipStatsStore) *MockOwnershipStatsSt
 	}
 }
 
+// OwnershipStatsStoreQueryAggregateCountsFunc describes the behavior when
+// the QueryAggregateCounts method of the parent MockOwnershipStatsStore
+// instance is invoked.
+type OwnershipStatsStoreQueryAggregateCountsFunc struct {
+	defaultHook func(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error)
+	hooks       []func(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error)
+	history     []OwnershipStatsStoreQueryAggregateCountsFuncCall
+	mutex       sync.Mutex
+}
+
+// QueryAggregateCounts delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockOwnershipStatsStore) QueryAggregateCounts(v0 context.Context, v1 TreeLocationOpts) ([]PathAggregateCounts, error) {
+	r0, r1 := m.QueryAggregateCountsFunc.nextHook()(v0, v1)
+	m.QueryAggregateCountsFunc.appendCall(OwnershipStatsStoreQueryAggregateCountsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the QueryAggregateCounts
+// method of the parent MockOwnershipStatsStore instance is invoked and the
+// hook queue is empty.
+func (f *OwnershipStatsStoreQueryAggregateCountsFunc) SetDefaultHook(hook func(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// QueryAggregateCounts method of the parent MockOwnershipStatsStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *OwnershipStatsStoreQueryAggregateCountsFunc) PushHook(hook func(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *OwnershipStatsStoreQueryAggregateCountsFunc) SetDefaultReturn(r0 []PathAggregateCounts, r1 error) {
+	f.SetDefaultHook(func(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *OwnershipStatsStoreQueryAggregateCountsFunc) PushReturn(r0 []PathAggregateCounts, r1 error) {
+	f.PushHook(func(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error) {
+		return r0, r1
+	})
+}
+
+func (f *OwnershipStatsStoreQueryAggregateCountsFunc) nextHook() func(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *OwnershipStatsStoreQueryAggregateCountsFunc) appendCall(r0 OwnershipStatsStoreQueryAggregateCountsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// OwnershipStatsStoreQueryAggregateCountsFuncCall objects describing the
+// invocations of this function.
+func (f *OwnershipStatsStoreQueryAggregateCountsFunc) History() []OwnershipStatsStoreQueryAggregateCountsFuncCall {
+	f.mutex.Lock()
+	history := make([]OwnershipStatsStoreQueryAggregateCountsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// OwnershipStatsStoreQueryAggregateCountsFuncCall is an object that
+// describes an invocation of method QueryAggregateCounts on an instance of
+// MockOwnershipStatsStore.
+type OwnershipStatsStoreQueryAggregateCountsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 TreeLocationOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []PathAggregateCounts
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c OwnershipStatsStoreQueryAggregateCountsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c OwnershipStatsStoreQueryAggregateCountsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // OwnershipStatsStoreQueryIndividualCountsFunc describes the behavior when
 // the QueryIndividualCounts method of the parent MockOwnershipStatsStore
 // instance is invoked.
 type OwnershipStatsStoreQueryIndividualCountsFunc struct {
-	defaultHook func(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCodeownersCounts, error)
-	hooks       []func(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCodeownersCounts, error)
+	defaultHook func(context.Context, TreeLocationOpts, *LimitOffset) ([]PathCodeownersCounts, error)
+	hooks       []func(context.Context, TreeLocationOpts, *LimitOffset) ([]PathCodeownersCounts, error)
 	history     []OwnershipStatsStoreQueryIndividualCountsFuncCall
 	mutex       sync.Mutex
 }
 
 // QueryIndividualCounts delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockOwnershipStatsStore) QueryIndividualCounts(v0 context.Context, v1 TreeLocationOpts, v2 *LimitOffset) ([]TreeCodeownersCounts, error) {
+func (m *MockOwnershipStatsStore) QueryIndividualCounts(v0 context.Context, v1 TreeLocationOpts, v2 *LimitOffset) ([]PathCodeownersCounts, error) {
 	r0, r1 := m.QueryIndividualCountsFunc.nextHook()(v0, v1, v2)
 	m.QueryIndividualCountsFunc.appendCall(OwnershipStatsStoreQueryIndividualCountsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -38783,7 +38911,7 @@ func (m *MockOwnershipStatsStore) QueryIndividualCounts(v0 context.Context, v1 T
 // SetDefaultHook sets function that is called when the
 // QueryIndividualCounts method of the parent MockOwnershipStatsStore
 // instance is invoked and the hook queue is empty.
-func (f *OwnershipStatsStoreQueryIndividualCountsFunc) SetDefaultHook(hook func(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCodeownersCounts, error)) {
+func (f *OwnershipStatsStoreQueryIndividualCountsFunc) SetDefaultHook(hook func(context.Context, TreeLocationOpts, *LimitOffset) ([]PathCodeownersCounts, error)) {
 	f.defaultHook = hook
 }
 
@@ -38792,7 +38920,7 @@ func (f *OwnershipStatsStoreQueryIndividualCountsFunc) SetDefaultHook(hook func(
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *OwnershipStatsStoreQueryIndividualCountsFunc) PushHook(hook func(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCodeownersCounts, error)) {
+func (f *OwnershipStatsStoreQueryIndividualCountsFunc) PushHook(hook func(context.Context, TreeLocationOpts, *LimitOffset) ([]PathCodeownersCounts, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -38800,20 +38928,20 @@ func (f *OwnershipStatsStoreQueryIndividualCountsFunc) PushHook(hook func(contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *OwnershipStatsStoreQueryIndividualCountsFunc) SetDefaultReturn(r0 []TreeCodeownersCounts, r1 error) {
-	f.SetDefaultHook(func(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCodeownersCounts, error) {
+func (f *OwnershipStatsStoreQueryIndividualCountsFunc) SetDefaultReturn(r0 []PathCodeownersCounts, r1 error) {
+	f.SetDefaultHook(func(context.Context, TreeLocationOpts, *LimitOffset) ([]PathCodeownersCounts, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *OwnershipStatsStoreQueryIndividualCountsFunc) PushReturn(r0 []TreeCodeownersCounts, r1 error) {
-	f.PushHook(func(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCodeownersCounts, error) {
+func (f *OwnershipStatsStoreQueryIndividualCountsFunc) PushReturn(r0 []PathCodeownersCounts, r1 error) {
+	f.PushHook(func(context.Context, TreeLocationOpts, *LimitOffset) ([]PathCodeownersCounts, error) {
 		return r0, r1
 	})
 }
 
-func (f *OwnershipStatsStoreQueryIndividualCountsFunc) nextHook() func(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCodeownersCounts, error) {
+func (f *OwnershipStatsStoreQueryIndividualCountsFunc) nextHook() func(context.Context, TreeLocationOpts, *LimitOffset) ([]PathCodeownersCounts, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -38859,7 +38987,7 @@ type OwnershipStatsStoreQueryIndividualCountsFuncCall struct {
 	Arg2 *LimitOffset
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []TreeCodeownersCounts
+	Result0 []PathCodeownersCounts
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -38881,15 +39009,15 @@ func (c OwnershipStatsStoreQueryIndividualCountsFuncCall) Results() []interface{
 // the UpdateAggregateCounts method of the parent MockOwnershipStatsStore
 // instance is invoked.
 type OwnershipStatsStoreUpdateAggregateCountsFunc struct {
-	defaultHook func(context.Context, api.RepoID, TreeAggregateOwnership, time.Time) (int, error)
-	hooks       []func(context.Context, api.RepoID, TreeAggregateOwnership, time.Time) (int, error)
+	defaultHook func(context.Context, api.RepoID, TreeAggregateStats, time.Time) (int, error)
+	hooks       []func(context.Context, api.RepoID, TreeAggregateStats, time.Time) (int, error)
 	history     []OwnershipStatsStoreUpdateAggregateCountsFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateAggregateCounts delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockOwnershipStatsStore) UpdateAggregateCounts(v0 context.Context, v1 api.RepoID, v2 TreeAggregateOwnership, v3 time.Time) (int, error) {
+func (m *MockOwnershipStatsStore) UpdateAggregateCounts(v0 context.Context, v1 api.RepoID, v2 TreeAggregateStats, v3 time.Time) (int, error) {
 	r0, r1 := m.UpdateAggregateCountsFunc.nextHook()(v0, v1, v2, v3)
 	m.UpdateAggregateCountsFunc.appendCall(OwnershipStatsStoreUpdateAggregateCountsFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -38898,7 +39026,7 @@ func (m *MockOwnershipStatsStore) UpdateAggregateCounts(v0 context.Context, v1 a
 // SetDefaultHook sets function that is called when the
 // UpdateAggregateCounts method of the parent MockOwnershipStatsStore
 // instance is invoked and the hook queue is empty.
-func (f *OwnershipStatsStoreUpdateAggregateCountsFunc) SetDefaultHook(hook func(context.Context, api.RepoID, TreeAggregateOwnership, time.Time) (int, error)) {
+func (f *OwnershipStatsStoreUpdateAggregateCountsFunc) SetDefaultHook(hook func(context.Context, api.RepoID, TreeAggregateStats, time.Time) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -38907,7 +39035,7 @@ func (f *OwnershipStatsStoreUpdateAggregateCountsFunc) SetDefaultHook(hook func(
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *OwnershipStatsStoreUpdateAggregateCountsFunc) PushHook(hook func(context.Context, api.RepoID, TreeAggregateOwnership, time.Time) (int, error)) {
+func (f *OwnershipStatsStoreUpdateAggregateCountsFunc) PushHook(hook func(context.Context, api.RepoID, TreeAggregateStats, time.Time) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -38916,19 +39044,19 @@ func (f *OwnershipStatsStoreUpdateAggregateCountsFunc) PushHook(hook func(contex
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *OwnershipStatsStoreUpdateAggregateCountsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoID, TreeAggregateOwnership, time.Time) (int, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID, TreeAggregateStats, time.Time) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *OwnershipStatsStoreUpdateAggregateCountsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, api.RepoID, TreeAggregateOwnership, time.Time) (int, error) {
+	f.PushHook(func(context.Context, api.RepoID, TreeAggregateStats, time.Time) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *OwnershipStatsStoreUpdateAggregateCountsFunc) nextHook() func(context.Context, api.RepoID, TreeAggregateOwnership, time.Time) (int, error) {
+func (f *OwnershipStatsStoreUpdateAggregateCountsFunc) nextHook() func(context.Context, api.RepoID, TreeAggregateStats, time.Time) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -38971,7 +39099,7 @@ type OwnershipStatsStoreUpdateAggregateCountsFuncCall struct {
 	Arg1 api.RepoID
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 TreeAggregateOwnership
+	Arg2 TreeAggregateStats
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 time.Time
@@ -38999,15 +39127,15 @@ func (c OwnershipStatsStoreUpdateAggregateCountsFuncCall) Results() []interface{
 // the UpdateIndividualCounts method of the parent MockOwnershipStatsStore
 // instance is invoked.
 type OwnershipStatsStoreUpdateIndividualCountsFunc struct {
-	defaultHook func(context.Context, api.RepoID, FileOwnershipAggregate, time.Time) (int, error)
-	hooks       []func(context.Context, api.RepoID, FileOwnershipAggregate, time.Time) (int, error)
+	defaultHook func(context.Context, api.RepoID, TreeCodeownersStats, time.Time) (int, error)
+	hooks       []func(context.Context, api.RepoID, TreeCodeownersStats, time.Time) (int, error)
 	history     []OwnershipStatsStoreUpdateIndividualCountsFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateIndividualCounts delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockOwnershipStatsStore) UpdateIndividualCounts(v0 context.Context, v1 api.RepoID, v2 FileOwnershipAggregate, v3 time.Time) (int, error) {
+func (m *MockOwnershipStatsStore) UpdateIndividualCounts(v0 context.Context, v1 api.RepoID, v2 TreeCodeownersStats, v3 time.Time) (int, error) {
 	r0, r1 := m.UpdateIndividualCountsFunc.nextHook()(v0, v1, v2, v3)
 	m.UpdateIndividualCountsFunc.appendCall(OwnershipStatsStoreUpdateIndividualCountsFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -39016,7 +39144,7 @@ func (m *MockOwnershipStatsStore) UpdateIndividualCounts(v0 context.Context, v1 
 // SetDefaultHook sets function that is called when the
 // UpdateIndividualCounts method of the parent MockOwnershipStatsStore
 // instance is invoked and the hook queue is empty.
-func (f *OwnershipStatsStoreUpdateIndividualCountsFunc) SetDefaultHook(hook func(context.Context, api.RepoID, FileOwnershipAggregate, time.Time) (int, error)) {
+func (f *OwnershipStatsStoreUpdateIndividualCountsFunc) SetDefaultHook(hook func(context.Context, api.RepoID, TreeCodeownersStats, time.Time) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -39025,7 +39153,7 @@ func (f *OwnershipStatsStoreUpdateIndividualCountsFunc) SetDefaultHook(hook func
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *OwnershipStatsStoreUpdateIndividualCountsFunc) PushHook(hook func(context.Context, api.RepoID, FileOwnershipAggregate, time.Time) (int, error)) {
+func (f *OwnershipStatsStoreUpdateIndividualCountsFunc) PushHook(hook func(context.Context, api.RepoID, TreeCodeownersStats, time.Time) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -39034,19 +39162,19 @@ func (f *OwnershipStatsStoreUpdateIndividualCountsFunc) PushHook(hook func(conte
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *OwnershipStatsStoreUpdateIndividualCountsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoID, FileOwnershipAggregate, time.Time) (int, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID, TreeCodeownersStats, time.Time) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *OwnershipStatsStoreUpdateIndividualCountsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, api.RepoID, FileOwnershipAggregate, time.Time) (int, error) {
+	f.PushHook(func(context.Context, api.RepoID, TreeCodeownersStats, time.Time) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *OwnershipStatsStoreUpdateIndividualCountsFunc) nextHook() func(context.Context, api.RepoID, FileOwnershipAggregate, time.Time) (int, error) {
+func (f *OwnershipStatsStoreUpdateIndividualCountsFunc) nextHook() func(context.Context, api.RepoID, TreeCodeownersStats, time.Time) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -39089,7 +39217,7 @@ type OwnershipStatsStoreUpdateIndividualCountsFuncCall struct {
 	Arg1 api.RepoID
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 FileOwnershipAggregate
+	Arg2 TreeCodeownersStats
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 time.Time
