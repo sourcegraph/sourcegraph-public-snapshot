@@ -390,7 +390,7 @@ func generateRedirectURL(domain *string, installationID, appID int, appName stri
 	case types.ReposGitHubAppDomain:
 		return fmt.Sprintf("/site-admin/github-apps/%s?installation_id=%d", MarshalGitHubAppID(int64(appID)), installationID), nil
 	case types.BatchesGitHubAppDomain:
-		return fmt.Sprintf("/site-admin/batch-changes?success=true&appName=%s", appName), nil
+		return fmt.Sprintf("/site-admin/batch-changes?success=true&app_name=%s", appName), nil
 	default:
 		return "", errors.Errorf("unsupported github apps domain: %v", parsedDomain)
 	}

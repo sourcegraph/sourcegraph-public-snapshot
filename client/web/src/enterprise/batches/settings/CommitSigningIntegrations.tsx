@@ -54,7 +54,7 @@ export const CommitSigningIntegrations: React.FunctionComponent<
 
     const location = useLocation()
     const success = new URLSearchParams(location.search).get('success')
-    const appName = new URLSearchParams(location.search).get('appName')
+    const appName = new URLSearchParams(location.search).get('app_name')
     return (
         <Container>
             <H3>Commit signing integrations</H3>
