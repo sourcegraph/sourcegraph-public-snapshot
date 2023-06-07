@@ -142,13 +142,11 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     })
 
     const updateQueryParams = (key: string, value: string): void => {
-        console.log('STEFAN BEFORE', searchParams.toString())
         if (value === '') {
             searchParams.delete(key)
         } else {
             searchParams.set(key, value)
         }
-        console.log('STEFAN AFTER', searchParams.toString())
 
         const queryString = searchParams.toString()
         const newUrl = queryString === '' ? window.location.pathname : `${window.location.pathname}?${queryString}`
