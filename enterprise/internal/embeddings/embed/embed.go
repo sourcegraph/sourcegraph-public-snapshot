@@ -94,12 +94,14 @@ func EmbedRepo(
 		}
 	}
 
-	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks)
+	reportProgress := func(embeddings.EmbedFilesStats) {}
+
+	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks, reportProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks)
+	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks, reportProgress)
 	if err != nil {
 		return nil, nil, nil, err
 
@@ -148,6 +150,7 @@ func embedFiles(
 	reader FileReader,
 	maxEmbeddingVectors int,
 	repoPathRanks types.RepoPathRanks,
+	reportProgress func(embeddings.EmbedFilesStats),
 ) (embeddings.EmbeddingIndex, embeddings.EmbedFilesStats, error) {
 	start := time.Now()
 
@@ -201,6 +204,15 @@ func embedFiles(
 	}
 
 	stats := embeddings.NewEmbedFilesStats(len(files))
+	lastProgressReport := time.Now()
+	progressReportInterval := 10 * time.Second
+	maybeReportProgress := func() {
+		if time.Since(lastProgressReport) < progressReportInterval {
+			return
+		}
+		reportProgress(stats)
+		lastProgressReport = time.Now()
+	}
 
 	for _, file := range files {
 		if ctx.Err() != nil {
@@ -245,6 +257,8 @@ func embedFiles(
 			stats.AddChunk(len(chunk.Content))
 		}
 		stats.AddFile()
+		stats.Duration = time.Since(start)
+		maybeReportProgress()
 	}
 
 	// Always do a final flush
