@@ -198,6 +198,12 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "perforceChangelistMapping": {
+          "description": "Allow mapping of Perforce changelists to their commit SHAs in the DB",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
         "goPackages": {
           "description": "Allow adding Go package host connections",
           "type": "string",

@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -547,10 +548,19 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		mDB := database.NewMockDB()
 		mDB.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
 		mDB.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
+
+		repoStore := database.NewMockRepoStore()
+		repoStore.GetByNameFunc.SetDefaultReturn(nil, &database.RepoNotFoundErr{})
+
+		mDB.ReposFunc.SetDefaultReturn(repoStore)
+
 		db = mDB
 	}
+
+	logger := logtest.Scoped(t)
+
 	s := &Server{
-		Logger:           logtest.Scoped(t),
+		Logger:           logger,
 		ObservationCtx:   observation.TestContextTB(t),
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
@@ -565,6 +575,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		cloneableLimiter:        limiter.NewMutable(1),
 		rpsLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		recordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
+		Perforce:                perforce.NewService(ctx, logger, db, list.New()),
 	}
 
 	s.StartClonePipeline(ctx)

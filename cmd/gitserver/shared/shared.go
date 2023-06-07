@@ -21,6 +21,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -148,6 +149,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		DB:                      db,
 		CloneQueue:              server.NewCloneQueue(list.New()),
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
+		Perforce:                perforce.NewService(ctx, logger, db, list.New()),
 	}
 
 	configurationWatcher := conf.DefaultClient()

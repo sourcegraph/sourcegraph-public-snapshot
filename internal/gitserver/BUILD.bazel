@@ -75,6 +75,7 @@ go_test(
     env = {"COURSIER_CACHE_DIR": "/tmp"},
     deps = [
         "//cmd/gitserver/server",
+        "//cmd/gitserver/server/perforce",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
@@ -82,6 +83,7 @@ go_test(
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/errcode",
+        "//internal/extsvc",
         "//internal/gitserver/gitdomain",
         "//internal/gitserver/protocol",
         "//internal/gitserver/v1:gitserver",

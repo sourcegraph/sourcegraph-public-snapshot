@@ -18,12 +18,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var root string
@@ -55,6 +57,17 @@ func InitGitserver() {
 	db := database.NewMockDB()
 	db.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
 	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
+
+	r := database.NewMockRepoStore()
+	r.GetByNameFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName) (*types.Repo, error) {
+		return &types.Repo{
+			Name: repoName,
+			ExternalRepo: api.ExternalRepoSpec{
+				ServiceType: extsvc.TypeGitHub,
+			},
+		}, nil
+	})
+	db.ReposFunc.SetDefaultReturn(r)
 
 	s := server.Server{
 		Logger:         sglog.Scoped("server", "the gitserver service"),
