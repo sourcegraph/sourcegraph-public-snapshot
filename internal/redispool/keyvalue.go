@@ -26,6 +26,7 @@ type KeyValue interface {
 	Set(key string, value any) error
 	SetEx(key string, ttlSeconds int, value any) error
 	Incr(key string) (int, error)
+	Incrby(key string, value int) (int, error)
 	Del(key string) error
 
 	TTL(key string) (int, error)
@@ -34,6 +35,7 @@ type KeyValue interface {
 	HGet(key, field string) Value
 	HGetAll(key string) Values
 	HSet(key, field string, value any) error
+	HDel(key, field string) Value
 
 	LPush(key string, value any) error
 	LTrim(key string, start, stop int) error
@@ -184,6 +186,10 @@ func (r *redisKeyValue) Incr(key string) (int, error) {
 	return r.do("INCR", r.prefix+key).Int()
 }
 
+func (r *redisKeyValue) Incrby(key string, value int) (int, error) {
+	return r.do("INCRBY", r.prefix+key, value).Int()
+}
+
 func (r *redisKeyValue) Del(key string) error {
 	return r.do("DEL", r.prefix+key).err
 }
@@ -206,6 +212,10 @@ func (r *redisKeyValue) HGetAll(key string) Values {
 
 func (r *redisKeyValue) HSet(key, field string, val any) error {
 	return r.do("HSET", r.prefix+key, field, val).err
+}
+
+func (r *redisKeyValue) HDel(key, field string) Value {
+	return r.do("HDEL", r.prefix+key, field)
 }
 
 func (r *redisKeyValue) LPush(key string, value any) error {

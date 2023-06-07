@@ -53,14 +53,23 @@ func (s *store) InsertPathRanks(
 const insertPathRanksQuery = `
 WITH
 progress AS (
-	SELECT
-		crp.id,
-		crp.mappers_started_at as started_at
+	SELECT crp.id
 	FROM codeintel_ranking_progress crp
 	WHERE
 		crp.graph_key = %s and
 		crp.reducer_started_at IS NOT NULL AND
 		crp.reducer_completed_at IS NULL
+),
+rank_ids AS (
+	SELECT pci.id
+	FROM codeintel_ranking_path_counts_inputs pci
+	JOIN progress p ON TRUE
+	WHERE
+		pci.graph_key = %s AND
+		NOT pci.processed
+	ORDER BY pci.graph_key, pci.definition_id, pci.id
+	LIMIT %s
+	FOR UPDATE SKIP LOCKED
 ),
 input_ranks AS (
 	SELECT
@@ -75,13 +84,9 @@ input_ranks AS (
 	JOIN repo r ON r.id = u.repository_id
 	JOIN progress p ON TRUE
 	WHERE
-		pci.graph_key = %s AND
-		NOT pci.processed AND
+		pci.id IN (SELECT id FROM rank_ids) AND
 		r.deleted_at IS NULL AND
 		r.blocked IS NULL
-	ORDER BY pci.graph_key, pci.definition_id, pci.id
-	LIMIT %s
-	FOR UPDATE SKIP LOCKED
 ),
 processed AS (
 	UPDATE codeintel_ranking_path_counts_inputs
