@@ -14,12 +14,15 @@ import (
 	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration"
@@ -40,11 +43,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+const appName = "frontend-autoupgrader"
+
 var buffer strings.Builder // :)
 
 var shouldAutoUpgade = env.MustGetBool("SRC_AUTOUPGRADE", false, "If you forgot to set intent to autoupgrade before shutting down the instance, set this env var.")
 
-func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db database.DB, hook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) (err error) {
+func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, hook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) (err error) {
+	sqlDB, err := connections.RawNewFrontendDB(obsvCtx, "", appName)
+	if err != nil {
+		return errors.Errorf("failed to connect to frontend database: %s", err)
+	}
+	defer sqlDB.Close()
+
+	db := database.NewDB(obsvCtx.Logger, sqlDB)
 	upgradestore := upgradestore.New(db)
 
 	_, doAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
@@ -67,21 +79,25 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db databa
 	}
 	defer stopFunc()
 
-	toVersion, ok := oobmigration.NewVersionFromString(version.Version())
-	if !ok {
-		return nil
+	if err := blockForDisconnects(ctx, obsvCtx.Logger, db); err != nil {
+		return err
 	}
 
-	return performAutoUpgrade(ctx, obsvCtx, db, toVersion, hook)
+	return performAutoUpgrade(ctx, obsvCtx, db, hook)
 }
 
-func performAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db database.DB, toVersion oobmigration.Version, hook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
+func performAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db database.DB, hook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
 	upgradestore := upgradestore.New(db)
 
 	var (
 		currentVersion oobmigration.Version
 		success        bool
 	)
+
+	toVersion, ok := oobmigration.NewVersionFromString(version.Version())
+	if !ok {
+		return nil
+	}
 
 	if err := upgradestore.EnsureUpgradeTable(ctx); err != nil {
 		return errors.Wrap(err, "autoupgradestore.EnsureUpgradeTable")
@@ -151,7 +167,7 @@ func performAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db da
 
 	obsvCtx.Logger.Info("MIGRATION SUCCESSFUL")
 
-	return nil // errors.New("MIGRATION SUCCEEDED, RESTARTING")
+	return nil
 }
 
 func runMigration(ctx context.Context,
@@ -188,7 +204,7 @@ func runMigration(ctx context.Context,
 		return migration.NewRunnerWithSchemas(
 			obsvCtx,
 			out,
-			"frontend-autoupgrader", schemaNames, schemas,
+			appName, schemaNames, schemas,
 		)
 	}
 
@@ -289,4 +305,26 @@ func serveUpgradeUI() (context.CancelFunc, error) {
 	})
 
 	return confServer.Stop, nil
+}
+
+// we want to block until all named connections (which we make use of) besides 'frontend-autoupgrader' are no longer connected,
+// so that:
+// 1) we know old frontends are retired and not coming back (due to new frontends running health/ready server)
+// 2) dependent services have picked up the magic DSN and restarted
+func blockForDisconnects(ctx context.Context, logger log.Logger, db database.DB) error {
+	for {
+		rows, err := db.QueryContext(ctx, `SELECT DISTINCT(application_name) FROM pg_stat_activity WHERE application_name <> '' AND application_name <> %s`, appName)
+		applications, err := basestore.ScanStrings(rows, err)
+		if err != nil {
+			return err
+		}
+
+		if len(applications) == 0 {
+			return nil
+		}
+
+		logger.Warn("named postgres connections found, waiting for them to shutdown, manually shutdown any unexpected ones", log.Strings("applications", applications))
+
+		time.Sleep(time.Second * 10)
+	}
 }
