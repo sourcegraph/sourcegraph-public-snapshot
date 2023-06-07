@@ -200,30 +200,26 @@ func embedFiles(
 		return nil
 	}
 
-	var (
-		statsEmbeddedByteCount  int
-		statsEmbeddedFileCount  int
-		statsEmbeddedChunkCount int
-		statsSkipped            SkipStats
-	)
+	stats := embeddings.NewEmbedFilesStats(len(files))
+
 	for _, file := range files {
 		if ctx.Err() != nil {
 			return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, ctx.Err()
 		}
 
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
-		if statsEmbeddedChunkCount >= maxEmbeddingVectors {
-			statsSkipped.Add(SkipReasonMaxEmbeddings, int(file.Size))
+		if stats.ChunksEmbedded >= maxEmbeddingVectors {
+			stats.Skip(SkipReasonMaxEmbeddings, int(file.Size))
 			continue
 		}
 
 		if file.Size > maxFileSize {
-			statsSkipped.Add(SkipReasonLarge, int(file.Size))
+			stats.Skip(SkipReasonLarge, int(file.Size))
 			continue
 		}
 
 		if isExcludedFilePath(file.Name, excludePatterns) {
-			statsSkipped.Add(SkipReasonExcluded, int(file.Size))
+			stats.Skip(SkipReasonExcluded, int(file.Size))
 			continue
 		}
 
@@ -233,7 +229,7 @@ func embedFiles(
 		}
 
 		if embeddable, skipReason := isEmbeddableFileContent(contentBytes); !embeddable {
-			statsSkipped.Add(skipReason, len(contentBytes))
+			stats.Skip(skipReason, len(contentBytes))
 			continue
 		}
 
@@ -246,10 +242,9 @@ func embedFiles(
 			if err := addToBatch(chunk); err != nil {
 				return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, err
 			}
-			statsEmbeddedByteCount += len(chunk.Content)
-			statsEmbeddedChunkCount += 1
+			stats.AddChunk(len(chunk.Content))
 		}
-		statsEmbeddedFileCount += 1
+		stats.AddFile()
 	}
 
 	// Always do a final flush
@@ -257,16 +252,7 @@ func embedFiles(
 		return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, err
 	}
 
-	stats := embeddings.EmbedFilesStats{
-		Duration:       time.Since(start),
-		FilesTotal:     len(files),
-		BytesEmbedded:  statsEmbeddedByteCount,
-		FilesEmbedded:  statsEmbeddedFileCount,
-		ChunksEmbedded: statsEmbeddedChunkCount,
-		FilesSkipped:   statsSkipped.Counts(),
-		BytesSkipped:   statsSkipped.ByteCounts(),
-	}
-
+	stats.Duration = time.Since(start)
 	return index, stats, nil
 }
 

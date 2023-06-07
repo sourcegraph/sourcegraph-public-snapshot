@@ -183,6 +183,18 @@ func (e *EmbedRepoStats) ToFields() []log.Field {
 	}
 }
 
+func NewEmbedFilesStats(filesTotal int) EmbedFilesStats {
+	return EmbedFilesStats{
+		Duration:       0,
+		FilesTotal:     filesTotal,
+		FilesEmbedded:  0,
+		FilesSkipped:   map[string]int{},
+		ChunksEmbedded: 0,
+		BytesEmbedded:  0,
+		BytesSkipped:   map[string]int{},
+	}
+}
+
 type EmbedFilesStats struct {
 	// The time it took to generate these embeddings
 	Duration time.Duration
@@ -206,6 +218,20 @@ type EmbedFilesStats struct {
 
 	// Summed byte counts for each of the reasons files were skipped
 	BytesSkipped map[string]int
+}
+
+func (e *EmbedFilesStats) Skip(reason string, size int) {
+	e.FilesSkipped[reason] += 1
+	e.BytesSkipped[reason] += size
+}
+
+func (e *EmbedFilesStats) AddChunk(size int) {
+	e.ChunksEmbedded += 1
+	e.BytesEmbedded += size
+}
+
+func (e *EmbedFilesStats) AddFile() {
+	e.FilesEmbedded += 1
 }
 
 func (e *EmbedFilesStats) ToFields() []log.Field {
