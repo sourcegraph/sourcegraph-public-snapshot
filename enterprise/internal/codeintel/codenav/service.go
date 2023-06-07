@@ -1477,6 +1477,7 @@ func (s *Service) GetSCIPDocumentsBySymbolNames(
 	ctx context.Context,
 	uploads []uploadsshared.Dump,
 	symbolNames []string,
+	rangeMap map[string][]int32,
 	repoName api.RepoName,
 	repoID api.RepoID,
 	commitID api.CommitID,
@@ -1499,20 +1500,17 @@ func (s *Service) GetSCIPDocumentsBySymbolNames(
 		}
 		d := docsAndPath{
 			docs: docs,
-
 			root: root,
 		}
 		allDocs = append(allDocs, d)
 	}
 
-	// TODO: loop thru doc to get relative path
+	// -TODO: loop thru doc to get relative path-
 	// TODO: add upload .root to doc.RelativePath for the gitserver.ReadFile
-	var allContent []string
+	contentMap := map[string]struct{}{}
 	for _, docs := range allDocs {
 		for _, doc := range docs.docs {
-			fmt.Println("doc.RelativePath", doc.RelativePath)
 			pathWithRoot := filepath.Join(docs.root, doc.RelativePath)
-			fmt.Println("pathWithRoot >>>>", pathWithRoot)
 
 			file, err := s.gitserver.ReadFile(
 				ctx,
@@ -1526,59 +1524,38 @@ func (s *Service) GetSCIPDocumentsBySymbolNames(
 			}
 			c := strings.Split(string(file), "\n")
 			for _, occ := range doc.Occurrences {
-				defs := extractOccurrenceData(doc, occ)
+				defs := extactDefinitions(doc, occ)
 				for _, def := range defs {
-					fmt.Println("defs start line >>>>", def.Start.Line)
-					fmt.Println("defs end line >>>>", def.End.Line)
-					content := pageContent(c, &def.Start.Line, &def.End.Line, def.Start.Character, def.End.Character)
-					// content := pageContentToo(c, def.Start.Line, def.End.Line, def.Start.Character, def.End.Character)
-					// content := extractStrings(c, def.Start.Line, def.End.Line, def.Start.Character, def.End.Character)
-					// _ = content
-					fmt.Println("content >>>>", content)
-					if content != "" {
-						allContent = append(allContent, content)
+					e := strings.Split(def.Symbol, "/")
+					key := e[len(e)-1]
+					if _, ok := rangeMap[key]; ok {
+						r := rangeMap[key]
+						scipRange := scip.NewRange(r)
+						fmt.Println("defs start line >>>>", scipRange.Start.Line)
+						fmt.Println("defs end line >>>>", scipRange.End.Line)
+						fmt.Println("defs start char >>>>", scipRange.Start.Character)
+						fmt.Println("defs end char >>>>", scipRange.End.Character)
+
+						// TODO: redo the insides of pageContent. it contains lots of unnecessary checks
+						content := pageContent(c, &scipRange.Start.Line, &scipRange.End.Line, scipRange.Start.Character, scipRange.End.Character)
+
+						fmt.Println("content >>>>", content)
+						if _, ok := contentMap[content]; !ok {
+							contentMap[content] = struct{}{}
+						}
 					}
 				}
 			}
 		}
 	}
-	fmt.Println("allContent >>>>", allContent)
+	var allContent []string
+	for k := range contentMap {
+		allContent = append(allContent, k)
+	}
+
+	// TODO: send back the scipDocuments and do the extractDefinitions in context service
+	// that way you can reuse the treesitter parser to get the encoded ranges
 	return allContent, nil
-}
-
-func extractStrings(lines []string, startLine, endLine, startChar, endChar int32) string {
-	if startLine > endLine || startLine < 0 || endLine >= int32(len(lines)) {
-		return ""
-	}
-
-	result := make([]string, 0)
-
-	for i := startLine; i <= endLine; i++ {
-		line := lines[i]
-		if i == startLine {
-			if startChar < 0 || startChar >= int32(len(line)) {
-				return ""
-			}
-
-			if i == endLine {
-				if endChar < startChar || endChar >= int32(len(line)) {
-					return ""
-				}
-				result = append(result, line[startChar:endChar+1])
-			} else {
-				result = append(result, line[startChar:])
-			}
-		} else if i == endLine {
-			if endChar < 0 || endChar >= int32(len(line)) {
-				return ""
-			}
-			result = append(result, line[:endChar+1])
-		} else {
-			result = append(result, line)
-		}
-	}
-
-	return strings.Join(result, "\n")
 }
 
 func pageContent(content []string, startLine, endLine *int32, startChar, endChar int32) string {
@@ -1616,7 +1593,7 @@ func pageContent(content []string, startLine, endLine *int32, startChar, endChar
 	return strings.Join(c[startChar:endChar-1], "\n")
 }
 
-func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
+func extactDefinitions(document *scip.Document, occurrence *scip.Occurrence) []*scip.Occurrence {
 	// hoverText               []string
 	definitionSymbol := occurrence.Symbol // referencesBySymbol      = map[string]struct{}{}
 	// implementationsBySymbol = map[string]struct{}{}
@@ -1645,7 +1622,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	// 	}
 	// }
 
-	definitions := []*scip.Range{}
+	definitions := []*scip.Occurrence{}
 
 	// Include original symbol names for reference search below
 	// referencesBySymbol[occurrence.Symbol] = struct{}{}
@@ -1658,7 +1635,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 
 		// This occurrence defines this symbol
 		if definitionSymbol == occ.Symbol && isDefinition {
-			definitions = append(definitions, scip.NewRange(occ.EnclosingRange))
+			definitions = append(definitions, occ)
 		}
 	}
 

@@ -26,5 +26,5 @@ func (r *rootResolver) FindMostRelevantSCIPSymbols(ctx context.Context, args *re
 		return "", err
 	}
 	_ = symbols
-	return "foo", nil
+	return symbols, nil
 }

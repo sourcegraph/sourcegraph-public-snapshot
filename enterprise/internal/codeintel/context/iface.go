@@ -13,6 +13,7 @@ type CodeNavService interface {
 		ctx context.Context,
 		uploads []uploadsshared.Dump,
 		symbolNames []string,
+		rangeMap map[string][]int32,
 		repoName api.RepoName,
 		repoID api.RepoID,
 		commitID api.CommitID,
