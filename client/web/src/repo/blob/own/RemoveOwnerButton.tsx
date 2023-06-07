@@ -29,8 +29,6 @@ export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({ onSuccess,
     const [removeAssignedOwner, { loading }] = useMutation<RemoveAssignedOwnerResult, RemoveAssignedOwnerVariables>(REMOVE_ASSIGNED_OWNER, {})
 
     const removeOwner: () => Promise<void> = async () => {
-        console.log("yooo")
-        console.log(userId)
         if (userId) {
             await removeAssignedOwner({
                 variables: {
@@ -52,8 +50,9 @@ export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({ onSuccess,
 
     return (
         <Tooltip content={tooltipContent}>
-            <Button variant="icon" className="ml-2" aria-label="Remove this ownership" onClick={removeOwner}  outline={false} size="sm" disabled={!isDirectAssigned}>
-                <Icon aria-hidden={true} svgPath={loading ? mdiLoading : mdiDelete} />
+            <Button variant="danger" className="ml-2" aria-label="Remove this ownership" onClick={removeOwner}  outline={false} size="sm" disabled={!isDirectAssigned}>
+                <Icon color="white" aria-hidden={true} svgPath={loading ? mdiLoading : mdiDelete} />
+                Remove owner
             </Button>
         </Tooltip>
     )
