@@ -313,7 +313,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                         }
                         return fastFilesExist(this.rgPath, rootPath, filePaths)
                     }
-                    let { text: highlightedDisplayText } = await highlightTokens(displayText || '', fileExistFunc)
+                    let { text: highlightedDisplayText } = await highlightTokens(
+                        displayText || '',
+                        fileExistFunc,
+                        this.currentWorkspaceRoot
+                    )
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
                     highlightedDisplayText = await this.guardrailsAnnotateAttributions(highlightedDisplayText)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)

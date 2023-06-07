@@ -49,6 +49,7 @@ type DB interface {
 	Repos() RepoStore
 	RepoCommitsChangelists() RepoCommitsChangelistsStore
 	RepoKVPs() RepoKVPStore
+	RepoPaths() RepoPathStore
 	RolePermissions() RolePermissionStore
 	Roles() RoleStore
 	SavedSearches() SavedSearchStore
@@ -241,6 +242,10 @@ func (d *db) RepoCommitsChangelists() RepoCommitsChangelistsStore {
 
 func (d *db) RepoKVPs() RepoKVPStore {
 	return &repoKVPStore{d.Store}
+}
+
+func (d *db) RepoPaths() RepoPathStore {
+	return &repoPathStore{d.Store}
 }
 
 func (d *db) RolePermissions() RolePermissionStore {
