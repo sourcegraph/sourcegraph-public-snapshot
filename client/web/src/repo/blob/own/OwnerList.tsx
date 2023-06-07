@@ -110,7 +110,6 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
     filePath,
     refetch,
 }) => {
-
     const [removeOwnerError, setRemoveOwnerError] = React.useState<Error | undefined>(undefined)
 
     if (data?.nodes && data.nodes.length) {

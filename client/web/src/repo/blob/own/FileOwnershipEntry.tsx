@@ -50,7 +50,7 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
     filePath,
     userID,
     refetch,
-    setRemoveOwnerError
+    setRemoveOwnerError,
 }) => {
     const findEmail = (): string | undefined => {
         if (owner.__typename !== 'Person') {
