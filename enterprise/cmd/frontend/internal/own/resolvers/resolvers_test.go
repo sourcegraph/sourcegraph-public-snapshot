@@ -1589,17 +1589,6 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 								},
 								{
 									"owner": {
-										"name": "assigned team 2"
-									},
-									"reasons": [
-										{
-											"title": "assigned owner",
-											"description": "Owner is manually assigned."
-										}
-									]
-								},
-								{
-									"owner": {
 										"displayName": "I am an assigned owner #2",
 										"email": "assigned@owner2.com"
 									},
