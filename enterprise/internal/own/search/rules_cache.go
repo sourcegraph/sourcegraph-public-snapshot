@@ -36,9 +36,10 @@ type RulesCache struct {
 
 func NewRulesCache(gs gitserver.Client, db database.DB) RulesCache {
 	return RulesCache{
-		rules:      make(map[RulesKey]*codeowners.Ruleset),
-		assigned:   make(map[AssignedKey]own.AssignedOwners),
-		ownService: own.NewService(gs, db),
+		rules:         make(map[RulesKey]*codeowners.Ruleset),
+		assigned:      make(map[AssignedKey]own.AssignedOwners),
+		assignedTeams: make(map[AssignedKey]own.AssignedTeams),
+		ownService:    own.NewService(gs, db),
 	}
 }
 
