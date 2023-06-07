@@ -125,8 +125,8 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
 
     return (
         <>
-            <PageTitle title="Cody" />
-            <PageHeader path={[{ text: 'Cody' }]} className="mb-3" headingElement="h2" />
+            <PageTitle title="Cody Embedding Jobs" />
+            <PageHeader path={[{ text: 'Cody Embedding Jobs' }]} className="mb-3" headingElement="h2" />
             <Container className="mb-3">
                 <H3>Schedule repositories for embedding</H3>
                 <Form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit}>

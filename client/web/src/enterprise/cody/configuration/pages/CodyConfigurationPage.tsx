@@ -84,8 +84,8 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
             <PageTitle
                 title={
                     repo
-                        ? 'Embeddings data configuration policies for repository'
-                        : 'Global embeddings data configuration policies'
+                        ? 'Embedding job policies for repository'
+                        : 'Global embedding job policies'
                 }
             />
             <PageHeader
@@ -97,11 +97,11 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
                                 Embeddings data configuration for <RepoLink repoName={repo.name} to={null} />
                             </>
                         ) : (
-                            'Global embeddings data configuration'
+                            'Global embedding job policies'
                         ),
                     },
                 ]}
-                description={<>Rules that control embeddings re-indexing.</>}
+                description={<>Rules that control keeping embeddings up-to-date.</>}
                 actions={
                     authenticatedUser?.siteAdmin && (
                         <Button to="./new?type=head" variant="primary" as={Link}>
