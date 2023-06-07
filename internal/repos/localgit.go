@@ -56,7 +56,7 @@ func (s *LocalGitSource) ListRepos(ctx context.Context, results chan SourceResul
 	urn := s.svc.URN()
 	repoPaths := getRepoPaths(s.config, s.logger)
 	for _, r := range repoPaths {
-		uri := "file:///" + r.Path
+		uri := "file://" + r.Path
 		s.logger.Info("found repo ", log.String("uri", uri))
 		results <- SourceResult{
 			Source: s,

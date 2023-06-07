@@ -19,18 +19,39 @@ import (
 func TestLocalGitSource_ListRepos(t *testing.T) {
 	configs := []struct {
 		pattern string
+		group string
 		repos   []string
+		folders []string
 	}{
 		{
 			pattern: "projects/*",
 			repos:   []string{"projects/a", "projects/b", "projects/c.bare"},
+			folders: []string{"not-a-repo"},
+		},
+		{
+			pattern: "work/*",
+			group: "work",
+			repos:   []string{"work/a", "work/b", "work/c.bare"},
+		},
+		{
+			pattern: "work*",
+			repos:   []string{"work-project", "work-project2", "not-a-work-project"},
+		},
+		{
+			pattern: "nested/*/*",
+			repos:   []string{"nested/work/project", "nested/other-work/other-project"},
+			folders:   []string{"nested/work/not-a-project"},
 		},
 		{
 			pattern: "single-repo",
 			repos:   []string{"single-repo"},
 		},
 		{
-			pattern: "empty-projects/*",
+			pattern: "with space",
+			repos:   []string{"with space"},
+		},
+		{
+			pattern: "no-match/*",
 			repos:   []string{"single-repo"},
 		},
 	}
@@ -39,7 +60,12 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 
 	for _, config := range configs {
 		root := gitInitRepos(t, config.repos...)
-		repoPatterns = append(repoPatterns, &schema.LocalGitRepoPattern{Pattern: root + "/" + config.pattern})
+		repoPatterns = append(repoPatterns, &schema.LocalGitRepoPattern{Pattern: filepath.Join(root, config.pattern), Group: config.group})
+		for _,folder := range config.folders {
+			if err := os.MkdirAll(filepath.Join(root, folder), 0755); err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
 
 	ctx := context.Background()
