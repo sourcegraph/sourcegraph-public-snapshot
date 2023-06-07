@@ -258,12 +258,12 @@ func embedFiles(
 	}
 
 	stats := embeddings.EmbedFilesStats{
-		Duration:           time.Since(start),
-		EmbeddedBytes:      statsEmbeddedByteCount,
-		EmbeddedFileCount:  statsEmbeddedFileCount,
-		EmbeddedChunkCount: statsEmbeddedChunkCount,
-		SkippedCounts:      statsSkipped.Counts(),
-		SkippedByteCounts:  statsSkipped.ByteCounts(),
+		Duration:       time.Since(start),
+		BytesEmbedded:  statsEmbeddedByteCount,
+		FilesEmbedded:  statsEmbeddedFileCount,
+		ChunksEmbedded: statsEmbeddedChunkCount,
+		FilesSkipped:   statsSkipped.Counts(),
+		BytesSkipped:   statsSkipped.ByteCounts(),
 	}
 
 	return index, stats, nil

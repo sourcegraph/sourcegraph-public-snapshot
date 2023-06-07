@@ -188,38 +188,38 @@ type EmbedFilesStats struct {
 	Duration time.Duration
 
 	// The number of files embedded
-	EmbeddedFileCount int
+	FilesEmbedded int
 
-	// The number of chunks we generated embeddings for.
+	// The number of files skipped for each reason
+	FilesSkipped map[string]int
+
+	// The number of chunks we split embedded files for.
 	// Equivalent to the number of embeddings generated.
-	EmbeddedChunkCount int
+	ChunksEmbedded int
 
 	// The sum of the size of the contents of successful embeddings
-	EmbeddedBytes int
+	BytesEmbedded int
 
 	// Summed byte counts for each of the reasons files were skipped
-	SkippedByteCounts map[string]int
-
-	// Counts of reasons files were skipped
-	SkippedCounts map[string]int
+	BytesSkipped map[string]int
 }
 
 func (e *EmbedFilesStats) ToFields() []log.Field {
 	var skippedByteCounts []log.Field
-	for reason, count := range e.SkippedByteCounts {
+	for reason, count := range e.BytesSkipped {
 		skippedByteCounts = append(skippedByteCounts, log.Int(reason, count))
 	}
 
 	var skippedCounts []log.Field
-	for reason, count := range e.SkippedCounts {
+	for reason, count := range e.FilesSkipped {
 		skippedCounts = append(skippedCounts, log.Int(reason, count))
 	}
 	return []log.Field{
 		log.Duration("duration", e.Duration),
-		log.Int("embeddedFileCount", e.EmbeddedFileCount),
-		log.Int("embeddedChunkCount", e.EmbeddedChunkCount),
-		log.Int("embeddedBytes", e.EmbeddedBytes),
-		log.Object("skippedCounts", skippedCounts...),
-		log.Object("skippedByteCounts", skippedByteCounts...),
+		log.Int("filesEmbedded", e.FilesEmbedded),
+		log.Int("chunksEmbedded", e.ChunksEmbedded),
+		log.Int("bytesEmbedded", e.BytesEmbedded),
+		log.Object("filesSkipped", skippedCounts...),
+		log.Object("bytesSkipped", skippedByteCounts...),
 	}
 }
