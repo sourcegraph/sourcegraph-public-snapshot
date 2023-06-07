@@ -17,6 +17,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/pointer"
 
+	k8swatch "k8s.io/apimachinery/pkg/watch"
+
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -175,12 +177,34 @@ func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, namespace s
 	defer watch.Stop()
 	// No need to add a timer. If the job exceeds the deadline, it will fail.
 	for event := range watch.ResultChan() {
+		// Will be *corev1.Pod in all cases except for an error, which is *metav1.Status.
+		if event.Type == k8swatch.Error {
+			if status, ok := event.Object.(*metav1.Status); ok {
+				c.Logger.Error("Watch error",
+					log.String("status", status.Status),
+					log.String("message", status.Message),
+					log.String("reason", string(status.Reason)),
+					log.Int32("code", status.Code),
+				)
+			} else {
+				c.Logger.Error("Unexpected watch error object", log.String("object", fmt.Sprintf("%T", event.Object)))
+			}
+			// If we get an event for something other than a pod, log it for now and try again. We don't have enough
+			// information to know if this is a problem or not. We have seen this happen in the wild, but hard to
+			// replicate.
+			continue
+		}
+		// We _should_ have a pod here, but just in case, ensure the cast succeeds.
 		pod, ok := event.Object.(*corev1.Pod)
 		if !ok {
 			// If we get an event for something other than a pod, log it for now and try again. We don't have enough
 			// information to know if this is a problem or not. We have seen this happen in the wild, but hard to
 			// replicate.
-			c.Logger.Warn("Unexpected object type", log.String("type", fmt.Sprintf("%T", event.Object)))
+			c.Logger.Error(
+				"Unexpected watch object",
+				log.String("type", string(event.Type)),
+				log.String("object", fmt.Sprintf("%T", event.Object)),
+			)
 			continue
 		}
 		c.Logger.Debug(

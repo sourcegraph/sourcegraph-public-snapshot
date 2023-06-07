@@ -7,10 +7,11 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -39,7 +40,7 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", err
 	}
 
-	completionsConfig := client.GetCompletionsConfig()
+	completionsConfig := client.GetCompletionsConfig(conf.Get().SiteConfig())
 	if completionsConfig == nil || !completionsConfig.Enabled {
 		return "", errors.New("completions are not configured or disabled")
 	}

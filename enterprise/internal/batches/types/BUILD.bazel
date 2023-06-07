@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "types",
@@ -39,6 +40,7 @@ go_library(
         "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
+        "//internal/extsvc/gerrit",
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",
         "//internal/extsvc/gitlab/webhooks",

@@ -557,54 +557,59 @@ const Ownership: React.FC<OwnershipProps> = ({ repo, filePath }) => {
         node?.commit?.path?.ownership?.__typename === 'OwnershipConnection'
             ? node.commit.path.ownership
             : null
-
     return (
-        <ConnectionContainer>
-            {error && <ConnectionError errors={[error.message]} />}
-            {connection && connection.nodes.length > 0 && (
-                <ConnectionList
-                    className={classNames('test-filtered-contributors-connection', styles.table)}
-                    as="table"
-                >
-                    <tbody>
-                        {connection.nodes.map((node: TreePageOwnershipNodeFields) => (
-                            <OwnerNode
-                                key={
-                                    node.owner.__typename === 'Person'
-                                        ? node.owner.email
-                                        : node.owner.__typename === 'Team'
-                                        ? node.owner.name
-                                        : null
-                                }
-                                node={node}
-                            />
-                        ))}
-                    </tbody>
-                </ConnectionList>
-            )}
-            {loading && (
-                <div className={contributorsStyles.filteredConnectionLoading}>
-                    <ConnectionLoading />
-                </div>
-            )}
-            <SummaryContainer className={styles.tableSummary}>
-                {connection && (
-                    <>
-                        <ConnectionSummary
-                            compact={true}
-                            connection={connection}
-                            first={COUNT}
-                            noun="owner"
-                            pluralNoun="owners"
-                            hasNextPage={connection.pageInfo.hasNextPage}
-                        />
-                        {/* TODO(#51792): Show more button should lead
-                         * to the ownership tab with detailed view for each owner.
-                         */}
-                    </>
+        <div>
+            <ConnectionContainer>
+                {error && <ConnectionError errors={[error.message]} />}
+                {connection && connection.nodes.length > 0 && (
+                    <ConnectionList
+                        className={classNames('test-filtered-contributors-connection', styles.table)}
+                        as="table"
+                    >
+                        <tbody>
+                            {connection.nodes.map((node: TreePageOwnershipNodeFields) => (
+                                <OwnerNode
+                                    key={
+                                        node.owner.__typename === 'Person'
+                                            ? node.owner.email
+                                            : node.owner.__typename === 'Team'
+                                            ? node.owner.name
+                                            : null
+                                    }
+                                    node={node}
+                                />
+                            ))}
+                        </tbody>
+                    </ConnectionList>
                 )}
-            </SummaryContainer>
-        </ConnectionContainer>
+                {loading && (
+                    <div className={contributorsStyles.filteredConnectionLoading}>
+                        <ConnectionLoading />
+                    </div>
+                )}
+                <SummaryContainer className={styles.tableSummary}>
+                    {connection && (
+                        <>
+                            <ConnectionSummary
+                                compact={true}
+                                connection={connection}
+                                first={COUNT}
+                                noun="owner"
+                                pluralNoun="owners"
+                                hasNextPage={connection.pageInfo.hasNextPage}
+                            />
+                            <small>
+                                <Link
+                                    to={`${repo.url}/-/own?${filePath ? 'path=' + encodeURIComponent(filePath) : ''}`}
+                                >
+                                    Show more
+                                </Link>
+                            </small>
+                        </>
+                    )}
+                </SummaryContainer>
+            </ConnectionContainer>
+        </div>
     )
 }
 

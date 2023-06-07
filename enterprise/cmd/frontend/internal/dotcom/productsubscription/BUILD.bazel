@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "productsubscription",
@@ -7,6 +8,7 @@ go_library(
         "codygateway_service.go",
         "doc.go",
         "graphql.go",
+        "license_check_handler.go",
         "license_expiration.go",
         "licenses_db.go",
         "licenses_graphql.go",
@@ -28,6 +30,7 @@ go_library(
         "//enterprise/internal/licensing",
         "//enterprise/internal/productsubscription",
         "//internal/auth",
+        "//internal/authz",
         "//internal/conf",
         "//internal/database",
         "//internal/database/basestore",
@@ -36,7 +39,6 @@ go_library(
         "//internal/errcode",
         "//internal/featureflag",
         "//internal/gqlutil",
-        "//internal/hashutil",
         "//internal/redispool",
         "//internal/slack",
         "//lib/errors",
@@ -58,6 +60,7 @@ go_test(
     name = "productsubscription_test",
     srcs = [
         "codygateway_graphql_test.go",
+        "license_check_handler_test.go",
         "license_expiration_test.go",
         "licenses_db_test.go",
         "service_account_test.go",
@@ -85,6 +88,7 @@ go_test(
         "//internal/slack",
         "//internal/timeutil",
         "//internal/types",
+        "//lib/errors",
         "//schema",
         "@com_github_derision_test_glock//:glock",
         "@com_github_gofrs_uuid//:uuid",

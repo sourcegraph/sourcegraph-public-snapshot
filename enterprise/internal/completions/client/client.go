@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -28,11 +29,42 @@ func Get(endpoint, provider, accessToken string) (types.CompletionsClient, error
 	}
 }
 
-func GetCompletionsConfig() *schema.Completions {
-	completionsConfig := conf.Get().Completions
+// GetCompletionsConfig evaluates a complete completions configuration based on
+// site configuration. The configuration may be nil if completions is disabled.
+func GetCompletionsConfig(siteConfig schema.SiteConfiguration) *schema.Completions {
+	completionsConfig := siteConfig.Completions
 
 	// When the Completions is present always use it
 	if completionsConfig != nil {
+		// If a provider is not set, or if the provider is Cody Gateway, set up
+		// magic defaults. Note that we do NOT enable completions for the user -
+		// that still needs to be explicitly configured.
+		if completionsConfig.Provider == "" || completionsConfig.Provider == codygateway.ProviderName {
+			// Set provider to Cody Gateway in case it's empty.
+			completionsConfig.Provider = codygateway.ProviderName
+
+			// Configure accessToken. We don't validate the license here because
+			// Cody Gateway will check and reject the request.
+			if completionsConfig.AccessToken == "" && siteConfig.LicenseKey != "" {
+				completionsConfig.AccessToken = licensing.GenerateLicenseKeyBasedAccessToken(siteConfig.LicenseKey)
+			}
+
+			// Configure endpoint
+			if completionsConfig.Endpoint == "" {
+				completionsConfig.Endpoint = codygateway.DefaultEndpoint
+			}
+			// Configure chatModel
+			if completionsConfig.ChatModel == "" {
+				completionsConfig.CompletionModel = "anthropic/claude-v1"
+			}
+			// Configure completionModel
+			if completionsConfig.CompletionModel == "" {
+				completionsConfig.CompletionModel = "anthropic/claude-instant-v1"
+			}
+
+			return completionsConfig
+		}
+
 		if completionsConfig.ChatModel == "" {
 			// If no model for chat is configured, nothing we can do.
 			if completionsConfig.Model == "" {
@@ -43,15 +75,7 @@ func GetCompletionsConfig() *schema.Completions {
 
 		// TODO: Temporary workaround to fix instances where no completion model is set.
 		if completionsConfig.CompletionModel == "" {
-			if completionsConfig.Provider == codygateway.ProviderName {
-				completionsConfig.CompletionModel = "anthropic/claude-instant-v1"
-			}
 			completionsConfig.CompletionModel = "claude-instant-v1"
-		}
-
-		// Set a default for the Cody Gateway provider, so users don't have to specify it.
-		if completionsConfig.Provider == codygateway.ProviderName && completionsConfig.Endpoint == "" {
-			completionsConfig.Endpoint = codygateway.DefaultEndpoint
 		}
 
 		return completionsConfig

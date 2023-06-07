@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "licensing",
@@ -12,6 +13,7 @@ go_library(
         "licensing.go",
         "plans.go",
         "tags.go",
+        "types.go",
         "user_count.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/licensing",

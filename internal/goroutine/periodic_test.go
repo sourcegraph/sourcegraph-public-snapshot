@@ -52,7 +52,7 @@ func TestPeriodicGoroutineReinvoke(t *testing.T) {
 	})
 
 	witnessHandler := func() {
-		for i := 0; i < MaxConsecutiveReinvocations; i++ {
+		for i := 0; i < maxConsecutiveReinvocations; i++ {
 			<-called
 		}
 	}
@@ -74,8 +74,8 @@ func TestPeriodicGoroutineReinvoke(t *testing.T) {
 	witnessHandler()
 	goroutine.Stop()
 
-	if calls := len(handler.HandleFunc.History()); calls != 4*MaxConsecutiveReinvocations {
-		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 4*MaxConsecutiveReinvocations, calls)
+	if calls := len(handler.HandleFunc.History()); calls != 4*maxConsecutiveReinvocations {
+		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 4*maxConsecutiveReinvocations, calls)
 	}
 }
 
@@ -117,6 +117,108 @@ func TestPeriodicGoroutineWithDynamicInterval(t *testing.T) {
 	if calls := len(handler.HandleFunc.History()); calls != 4 {
 		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 4, calls)
 	}
+}
+
+func TestPeriodicGoroutineConcurrency(t *testing.T) {
+	clock := glock.NewMockClock()
+	handler := NewMockHandler()
+	called := make(chan struct{})
+	concurrency := 4
+
+	handler.HandleFunc.SetDefaultHook(func(ctx context.Context) error {
+		called <- struct{}{}
+		return nil
+	})
+
+	goroutine := NewPeriodicGoroutine(
+		context.Background(),
+		handler,
+		WithName(t.Name()),
+		WithConcurrency(concurrency),
+		withClock(clock),
+	)
+	go goroutine.Start()
+
+	for i := 0; i < concurrency; i++ {
+		<-called
+		clock.BlockingAdvance(time.Second)
+	}
+
+	for i := 0; i < concurrency; i++ {
+		<-called
+		clock.BlockingAdvance(time.Second)
+	}
+
+	for i := 0; i < concurrency; i++ {
+		<-called
+	}
+
+	goroutine.Stop()
+
+	if calls := len(handler.HandleFunc.History()); calls != 3*concurrency {
+		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 3*concurrency, calls)
+	}
+}
+
+func TestPeriodicGoroutineWithDynamicConcurrency(t *testing.T) {
+	clock := glock.NewMockClock()
+	concurrencyClock := glock.NewMockClock()
+	handler := NewMockHandler()
+	called := make(chan struct{})
+	exit := make(chan struct{})
+
+	handler.HandleFunc.SetDefaultHook(func(ctx context.Context) error {
+		select {
+		case called <- struct{}{}:
+			return nil
+
+		case <-ctx.Done():
+			select {
+			case exit <- struct{}{}:
+			default:
+			}
+
+			return ctx.Err()
+		}
+	})
+
+	concurrency := 0
+
+	// concurrency: 1 -> 2 -> 3 ...
+	getConcurrency := func() int {
+		concurrency += 1
+		return concurrency
+	}
+
+	goroutine := NewPeriodicGoroutine(
+		context.Background(),
+		handler,
+		WithName(t.Name()),
+		WithConcurrencyFunc(getConcurrency),
+		withClock(clock),
+		withConcurrencyClock(concurrencyClock),
+	)
+	go goroutine.Start()
+
+	for poolSize := 1; poolSize < 3; poolSize++ {
+		// Ensure each of the handlers can be called independently.
+		// Adding an additional channel read would block as each of
+		// the monitor routines would be waiting on the clock tick.
+		for i := 0; i < poolSize; i++ {
+			<-called
+		}
+
+		// Resize the pool
+		clock.BlockingAdvance(time.Second)                           // invoke but block one handler
+		concurrencyClock.BlockingAdvance(concurrencyRecheckInterval) // trigger drain of the old pool
+		<-exit                                                       // wait for blocked handler to exit
+	}
+
+	goroutine.Stop()
+
+	// N.B.: no need for assertions here as getting through the test at all to this
+	// point without some permanent blockage shows that each of the pool sizes behave
+	// as expected.
 }
 
 func TestPeriodicGoroutineError(t *testing.T) {

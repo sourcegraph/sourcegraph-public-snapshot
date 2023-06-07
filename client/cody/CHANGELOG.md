@@ -8,6 +8,8 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Added
 
+- New recipe: `Generate PR description`. Generate the PR description using the PR template guidelines for the changes made in the current branch. [pull/51721](https://github.com/sourcegraph/sourcegraph/pull/51721)
+- Open context search results links as workspace file [pull/52856](https://github.com/sourcegraph/sourcegraph/pull/52856)
 - Cody Inline Assist: Decorations for `/fix` errors [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
 - Add delete button for removing individual history [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
 - Load the recent ongoing chat on reload of window [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
@@ -15,20 +17,26 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 ### Fixed
 
 - Cody Inline Assist: Decorations for `/fix` on light theme [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
-- Cody Inline Assist: Fixs cody processing indefinitely isse [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
+- Cody Inline Assist: Fixes cody processing indefinitely issue [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
 - Cody Inline Assist: Use more than 1 context file for `/touch` [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
 - Fix the loading of files and scroll chat to the end while restoring the history [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
 
 ### Changed
 
 - Save the current ongoing conversation to the chat history [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
+- Cody completions: Various fixes for completion analytics. [pull/52935](https://github.com/sourcegraph/sourcegraph/pull/52935)
+
+### Changed
+
+- Cody completions: Improved the number of completions presented and reduced the latency [pull/52935](https://github.com/sourcegraph/sourcegraph/pull/52935)
+- Cody completions: Various improvements to the context [pull/53043](https://github.com/sourcegraph/sourcegraph/pull/53043)
 
 ## [0.2.1]
 
 ### Fixed
 
 - Escape Windows path separator in fast file finder path pattern [pull/52754](https://github.com/sourcegraph/sourcegraph/pull/52754)
-- Only display errors from the embeddings clients for users connnected to an indexed codebase [pull/52780](https://github.com/sourcegraph/sourcegraph/pull/52780)
+- Only display errors from the embeddings clients for users connected to an indexed codebase [pull/52780](https://github.com/sourcegraph/sourcegraph/pull/52780)
 
 ### Changed
 
