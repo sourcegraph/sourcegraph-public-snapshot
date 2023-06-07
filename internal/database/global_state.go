@@ -27,6 +27,8 @@ type GlobalStateStore interface {
 	// accidentally deleting all user accounts and opening up their site to any attacker becoming a site
 	// admin and (2) a bug in user account creation code letting attackers create site admin accounts.
 	EnsureInitialized(context.Context) (bool, error)
+
+	Update(ctx context.Context, isValidLicense bool) error
 }
 
 func GlobalStateWith(other basestore.ShareableStore) GlobalStateStore {
@@ -34,12 +36,13 @@ func GlobalStateWith(other basestore.ShareableStore) GlobalStateStore {
 }
 
 type GlobalState struct {
-	SiteID      string
-	Initialized bool // whether the initial site admin account has been created
+	SiteID         string
+	Initialized    bool  // whether the initial site admin account has been created
+	IsLicenseValid *bool // whether the license is valid
 }
 
 func scanGlobalState(s dbutil.Scanner) (value GlobalState, err error) {
-	err = s.Scan(&value.SiteID, &value.Initialized)
+	err = s.Scan(&value.SiteID, &value.Initialized, &value.IsLicenseValid)
 	return
 }
 
@@ -74,6 +77,25 @@ func (g *globalStateStore) Get(ctx context.Context) (GlobalState, error) {
 	return state, nil
 }
 
+var globalStateUpdateIsLicenseValidQuery = `
+UPDATE global_state SET is_license_valid = %s
+`
+
+func (g *globalStateStore) Update(ctx context.Context, isLicenseValid bool) error {
+	if err := g.initializeDBState(ctx); err != nil {
+		return err
+	}
+
+	tx, err := g.Transact(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() { err = tx.Done(err) }()
+
+	return tx.Exec(ctx, sqlf.Sprintf(globalStateUpdateIsLicenseValidQuery, isLicenseValid))
+}
+
 var globalStateSiteIDFragment = `
 SELECT site_id FROM global_state ORDER BY ctid LIMIT 1
 `
@@ -82,11 +104,16 @@ var globalStateInitializedFragment = `
 SELECT coalesce(bool_or(gs.initialized), false) FROM global_state gs
 `
 
+var globalStateIsLicenseValidFragment = `
+SELECT is_license_valid FROM global_state ORDER BY ctid LIMIT 1
+`
+
 var globalStateGetQuery = fmt.Sprintf(`
-SELECT (%s) AS site_id, (%s) AS initialized
+SELECT (%s) AS site_id, (%s) AS initialized, (%s) AS license_valid
 `,
 	globalStateSiteIDFragment,
 	globalStateInitializedFragment,
+	globalStateIsLicenseValidFragment,
 )
 
 func (g *globalStateStore) SiteInitialized(ctx context.Context) (bool, error) {

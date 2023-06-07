@@ -162,9 +162,14 @@ func Init(
 			db: db,
 		})
 	})
+
 	if envvar.SourcegraphDotComMode() {
 		goroutine.Go(func() {
 			productsubscription.StartCheckForUpcomingLicenseExpirations(logger, db)
+		})
+	} else {
+		goroutine.Go(func() {
+			licensing.StartLicenseCheck(logger, db.GlobalState())
 		})
 	}
 
