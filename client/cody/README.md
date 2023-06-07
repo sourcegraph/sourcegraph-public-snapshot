@@ -10,7 +10,7 @@ For example, you can ask Cody:
 - Add helpful debug log statements
 - Make this work _(seriously, it often works—try it!)_
 
-  **Cody AI is in beta, and we’d love your [feedback](https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback)**!
+  **Cody AI is in beta, and we’d love your [feedback](https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode)**!
 
 ## Usage
 

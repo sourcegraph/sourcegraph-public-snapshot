@@ -25,7 +25,7 @@ import {
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
 
-const CODY_FEEDBACK_URL = 'https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback'
+const CODY_FEEDBACK_URL = 'https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
