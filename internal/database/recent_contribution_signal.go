@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"path"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
