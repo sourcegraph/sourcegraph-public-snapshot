@@ -501,7 +501,7 @@ type DotcomCodyGatewayUser {
     """
     The user name of the user
     """
-    userName: String!
+    username: String!
     """
     Cody Gateway access granted to this user. Properties may be inferred from dotcom site config, or be defined in overrides on the user.
     """
