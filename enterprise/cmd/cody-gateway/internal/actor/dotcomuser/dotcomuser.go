@@ -59,7 +59,7 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 
 	var act *actor.Actor
 	if err := json.Unmarshal(data, &act); err != nil || act == nil {
-		s.log.Error("failed to unmarshal subscription", log.Error(err))
+		s.log.Error("failed to unmarshal actor", log.Error(err))
 
 		// Delete the corrupted record.
 		s.cache.Delete(token)
