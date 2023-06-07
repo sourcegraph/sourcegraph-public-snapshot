@@ -18,34 +18,19 @@ For example, you can ask Cody:
 
 Cody understands your entire codebase — not just your open files. Ask questions, insert code, and use the built-in recipes such as "Summarize recent code changes" and "Improve variable names".
 
-<video autoPlay muted loop playsInline width="800">
-    <source
-        type="video/mp4"
-        src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/cody-chat-may2023.mp4"
-    />
-</video>
+<img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023.gif" width="800">
 
 ### ✨ Tools for fixing and explaining code
 
 Cody can perform complex inline fixups, or answer questions inline. Interact with Cody within your code through Inline Assist, or use the "Fixup code from inline instructions" recipe for more involved fixups.
 
-<video autoPlay muted loop playsInline width="800">
-    <source
-        type="video/mp4"
-        src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/cody-inline-assist-june2023.mp4"
-    />
-</video>
+<img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-fixup-may2023.gif" width="800">
 
 ### 🔨 Let Cody write code for you
 
 Cody can provide real-time code completions as you're typing. As you start coding, or after you type a comment, Cody will look at the context around your open files and file history to predict what you're trying to implement and provide completions.
 
-<video autoPlay muted loop playsInline>
-    <source
-        type="video/mp4"
-        src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/cody-completion-may2023.mp4"
-    />
-</video>
+<img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-completion-may2023.gif" width="800">
 
 ## 🍿 See it in action
 
