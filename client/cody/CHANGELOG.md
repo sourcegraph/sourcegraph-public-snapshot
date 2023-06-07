@@ -19,6 +19,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Cody Inline Assist: Fixes cody processing indefinitely issue [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
 - Cody Inline Assist: Use more than 1 context file for `/touch` [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
 - Cody completions: Various fixes for completion analytics. [pull/52935](https://github.com/sourcegraph/sourcegraph/pull/52935)
+- Cody Inline Assist: Indentation on `/fix` [pull/53068](https://github.com/sourcegraph/sourcegraph/pull/53068)
 
 ### Changed
 
