@@ -171,7 +171,7 @@ func (s *ownershipStats) UpdateAggregateCounts(ctx context.Context, repoID api.R
 		}
 		rows, err := res.RowsAffected()
 		if err != nil {
-			return errors.Wrapf(err, "updating counts at repoID=%d path=%s failed", repoID, path)
+			return errors.Wrapf(err, "getting result of updating counts at repoID=%d path=%s failed", repoID, path)
 		}
 		totalUpdates += int(rows)
 		return nil
