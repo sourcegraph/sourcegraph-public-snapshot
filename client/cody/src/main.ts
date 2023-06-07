@@ -25,6 +25,9 @@ import {
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
 
+const CODY_FEEDBACK_URL =
+    'https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode'
+
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
  */
@@ -173,9 +176,37 @@ const register = async (
             await chatProvider.logout()
         }),
         // Commands
+        vscode.commands.registerCommand('cody.welcome', () =>
+            vscode.commands.executeCommand('workbench.action.openWalkthrough', 'sourcegraph.cody-ai#welcome', false)
+        ),
+        vscode.commands.registerCommand('cody.feedback', () =>
+            vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(CODY_FEEDBACK_URL))
+        ),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings', () => chatProvider.setWebviewView('settings')),
         vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
+        vscode.commands.registerCommand('cody.walkthrough.showLogin', () =>
+            vscode.commands.executeCommand('workbench.view.extension.cody')
+        ),
+        vscode.commands.registerCommand('cody.walkthrough.showChat', () => chatProvider.setWebviewView('chat')),
+        vscode.commands.registerCommand('cody.walkthrough.showFixup', () => chatProvider.setWebviewView('recipes')),
+        vscode.commands.registerCommand('cody.walkthrough.showExplain', () => chatProvider.setWebviewView('recipes')),
+        vscode.commands.registerCommand('cody.walkthrough.enableInlineAssist', async () => {
+            await workspaceConfig.update('cody.experimental.inline', true, vscode.ConfigurationTarget.Global)
+            // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
+            return vscode.commands.executeCommand('workbench.action.openSettings', {
+                query: 'cody.experimental.inline',
+                openToSide: true,
+            })
+        }),
+        vscode.commands.registerCommand('cody.walkthrough.enableCodeCompletions', async () => {
+            await workspaceConfig.update('cody.experimental.suggestions', true, vscode.ConfigurationTarget.Global)
+            // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
+            return vscode.commands.executeCommand('workbench.action.openSettings', {
+                query: 'cody.experimental.suggestions',
+                openToSide: true,
+            })
+        }),
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await chatProvider.clearAndRestartSession()
             chatProvider.setWebviewView('chat')
