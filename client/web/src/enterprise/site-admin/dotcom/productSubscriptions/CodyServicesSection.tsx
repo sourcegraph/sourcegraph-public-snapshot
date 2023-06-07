@@ -133,6 +133,8 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
 
                         {codyGatewayAccess.enabled && (
                             <>
+                                <hr className="my-3" />
+
                                 <H4>Completions</H4>
                                 <Label className="mb-2">Rate limits</Label>
                                 <table className={styles.limitsTable}>
