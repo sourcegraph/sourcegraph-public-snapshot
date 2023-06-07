@@ -86,7 +86,7 @@ func ensureRepoPaths(ctx context.Context, db *basestore.Store, files []string, r
 		} else if p != "" {
 			return nil, errors.Newf("cannot find parent id of %q: this is a bug", p)
 		}
-		r := db.QueryRow(ctx, sqlf.Sprintf(pathInsertFmtstr, repoID, p, repoID, p, parentID))
+		r := db.QueryRow(ctx, sqlf.Sprintf(pathInsertFmtstr, repoID, p, repoID, p, parentID, repoID, p))
 		var id int
 		if err := r.Scan(&id); err != nil {
 			return nil, errors.Wrapf(err, "failed to insert or retrieve %q", p)
