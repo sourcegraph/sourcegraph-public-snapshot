@@ -14,6 +14,8 @@
           pkgs' = import nixpkgs { inherit system; overlays = builtins.attrValues self.overlays; };
         in
         {
+          # We set legacyPackages to our custom static binaries so command
+          # like "nix build .#p4-fusion" work.
           legacyPackages = pkgs';
 
           packages = {
@@ -26,7 +28,10 @@
             p4-fusion = pkgs.callPackage ./dev/nix/p4-fusion.nix { };
           };
 
-          devShells.default = pkgs'.callPackage ./shell.nix { };
+          # We use pkgs (not pkgs') intentionally to avoid doing extra work of
+          # building static comby/universal-ctags in our development
+          # environments.
+          devShells.default = pkgs.callPackage ./shell.nix { };
 
           formatter = pkgs.nixpkgs-fmt;
         }) // {
