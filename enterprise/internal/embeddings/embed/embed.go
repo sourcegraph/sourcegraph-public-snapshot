@@ -25,9 +25,12 @@ func NewEmbeddingsClient(siteConfig *schema.SiteConfiguration) (client.Embedding
 	}
 
 	switch c.Provider {
-	case "sourcegraph", "":
+	case "sourcegraph":
+		// TODO(eseliger): Readd empty string defaulting to sourcegraph.
+		// For a transition period until we have configured S2 and dotcom with the
+		// new config, this will have to be in here.
 		return sourcegraph.NewClient(siteConfig), nil
-	case "openai":
+	case "openai", "":
 		return openai.NewClient(c), nil
 	default:
 		return nil, errors.Newf("invalid provider %q", c.Provider)
