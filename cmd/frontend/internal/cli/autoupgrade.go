@@ -309,7 +309,7 @@ func serveUpgradeUI(db database.DB) (context.CancelFunc, error) {
 // 2) dependent services have picked up the magic DSN and restarted
 func blockForDisconnects(ctx context.Context, logger log.Logger, db database.DB) error {
 	for {
-		rows, err := db.QueryContext(ctx, `SELECT DISTINCT(application_name) FROM pg_stat_activity WHERE application_name <> '' AND application_name <> %s`, appName)
+		rows, err := db.QueryContext(ctx, `SELECT DISTINCT(application_name) FROM pg_stat_activity WHERE application_name <> '' AND application_name <> $1`, appName)
 		applications, err := basestore.ScanStrings(rows, err)
 		if err != nil {
 			return err
