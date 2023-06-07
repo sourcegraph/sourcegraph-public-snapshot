@@ -78,7 +78,6 @@ func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 	}
 
 	ctx := context.Background()
-	licensing.InitLicenseValidationCheck(ctx, db)
 
 	auth.Init(logger, db)
 

@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -23,12 +21,6 @@ func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 }
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {
-	db, err := workerdb.InitDB(observationCtx)
-	if err != nil {
-		return err
-	}
-	licensing.InitLicenseValidationCheck(ctx, db)
-
 	go setAuthzProviders(ctx, observationCtx)
 
 	// internal/auth/providers.{GetProviderByConfigID,GetProviderbyServiceType} are potentially in the call-graph in worker,
