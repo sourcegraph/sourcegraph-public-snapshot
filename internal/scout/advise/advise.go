@@ -28,3 +28,9 @@ func WithContainer(containerName string) Option {
 		config.Container = containerName
 	}
 }
+
+func WithOutput(pathToFile string) Option {
+	return func(config *scout.Config) {
+		config.Output = pathToFile
+	}
+}

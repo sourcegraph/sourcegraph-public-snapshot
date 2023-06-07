@@ -7,12 +7,13 @@ import (
 	"path/filepath"
 
 	"github.com/docker/docker/client"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/src-cli/internal/scout/advise"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	metricsv "k8s.io/metrics/pkg/client/clientset/versioned"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func init() {
@@ -23,17 +24,14 @@ func init() {
         Make recommendations for all pods in a kubernetes deployment of Sourcegraph.
         $ src scout advise
         
-        Make recommendations for all containers in a Docker deployment of Sourcegraph.
-        $ src scout advise
-        
         Make recommendations for specific pod:
         $ src scout advise --pod <podname>
 
-        Make recommendations for specific container:
-        $ src scout advise --container <containername>
-
         Add namespace if using namespace in a Kubernetes cluster
         $ src scout advise --namespace <namespace>
+
+        Output advice to file
+        $ src scout advise --o path/to/file
     `
 
 	flagSet := flag.NewFlagSet("advise", flag.ExitOnError)
@@ -48,6 +46,7 @@ func init() {
 		namespace  = flagSet.String("namespace", "", "(optional) specify the kubernetes namespace to use")
 		pod        = flagSet.String("pod", "", "(optional) specify a single pod")
 		container  = flagSet.String("container", "", "(optional) specify a single container")
+		output     = flagSet.String("o", "", "(optional) output advice to file")
 		docker     = flagSet.Bool("docker", false, "(optional) using docker deployment")
 	)
 
@@ -88,6 +87,9 @@ func init() {
 		}
 		if *pod != "" {
 			options = append(options, advise.WithPod(*pod))
+		}
+		if *output != "" {
+			options = append(options, advise.WithOutput(*output))
 		}
 		if *container != "" || *docker {
 			if *container != "" {

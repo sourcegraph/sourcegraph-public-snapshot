@@ -12,6 +12,7 @@ type Config struct {
 	Namespace     string
 	Pod           string
 	Container     string
+	Output        string
 	Spy           bool
 	Docker        bool
 	RestConfig    *rest.Config

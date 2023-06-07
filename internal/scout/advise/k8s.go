@@ -3,6 +3,8 @@ package advise
 import (
 	"context"
 	"fmt"
+	"os"
+
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/src-cli/internal/scout"
@@ -24,6 +26,7 @@ func K8s(
 		Namespace:     "default",
 		Pod:           "",
 		Container:     "",
+		Output:        "",
 		Spy:           false,
 		Docker:        false,
 		RestConfig:    restConfig,
@@ -64,6 +67,11 @@ func K8s(
 	return nil
 }
 
+// Advise generates resource allocation advice for a Kubernetes pod.
+// The function fetches usage metrics for each container in the pod. It then
+// checks the usage percentages against thresholds to determine if more or less
+// of a resource is needed. Advice is generated and either printed to the console
+// or output to a file depending on the cfg.Output field.
 func Advise(ctx context.Context, cfg *scout.Config, pod v1.Pod) error {
 	var advice []string
 	usageMetrics, err := getUsageMetrics(ctx, cfg, pod)
@@ -83,15 +91,39 @@ func Advise(ctx context.Context, cfg *scout.Config, pod v1.Pod) error {
 			advice = append(advice, storageAdvice)
 		}
 
-		fmt.Println(scout.EmojiFingerPointRight, pod.Name)
-		for _, msg := range advice {
-			fmt.Println(msg)
+		if cfg.Output != "" {
+			outputToFile(ctx, cfg, pod, advice)
+		} else {
+		  for _, msg := range advice {
+				fmt.Println(msg)
+			}
 		}
 	}
 
 	return nil
 }
 
+// outputToFile writes resource allocation advice for a Kubernetes pod to a file.
+func outputToFile(ctx context.Context, cfg *scout.Config, pod v1.Pod, advice []string) error {
+	file, err := os.OpenFile(cfg.Output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return errors.Wrap(err, "failed to open file")
+	}
+	defer file.Close()
+
+	if _, err := fmt.Fprintf(file, "- %s\n", pod.Name); err != nil {
+		return errors.Wrap(err, "failed to write pod name to file")
+	}
+
+	for _, msg := range advice {
+		if _, err := fmt.Fprintf(file, "%s\n", msg); err != nil {
+			return errors.Wrap(err, "failed to write container advice to file")
+		}
+	}
+	return nil
+}
+
+// getUsageMetrics generates resource usage statistics for containers in a Kubernetes pod.
 func getUsageMetrics(ctx context.Context, cfg *scout.Config, pod v1.Pod) ([]scout.UsageStats, error) {
 	var usages []scout.UsageStats
 	var usage scout.UsageStats
