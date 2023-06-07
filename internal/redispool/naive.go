@@ -233,7 +233,7 @@ func (kv *naiveKeyValue) HDel(key, field string) Value {
 			return li, readOnly, err
 		}
 		removed = 1
-		li = append(li[:idx], li[idx+1:]...)
+		li = append(li[:idx-1], li[idx+1:]...)
 		return li, write, nil
 	}).err
 	return Value{reply: removed, err: err}
