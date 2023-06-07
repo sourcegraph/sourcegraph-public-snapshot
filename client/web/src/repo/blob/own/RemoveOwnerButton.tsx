@@ -1,4 +1,6 @@
-import {mdiDelete, mdiLoading} from '@mdi/js'
+import React from 'react'
+
+import { mdiDelete, mdiLoading } from '@mdi/js'
 
 import { ErrorLike, asError } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
@@ -7,7 +9,6 @@ import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 import { RemoveAssignedOwnerResult, RemoveAssignedOwnerVariables } from '../../../graphql-operations'
 
 import { REMOVE_ASSIGNED_OWNER } from './grapqlQueries'
-import React from 'react';
 
 export interface RemoveOwnerButtonProps {
     onSuccess: () => Promise<any>
@@ -18,15 +19,24 @@ export interface RemoveOwnerButtonProps {
     reasons: OwnershipReason[]
 }
 
-export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({ onSuccess, onError, repoId, path, userId, reasons }) => {
+export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({
+    onSuccess,
+    onError,
+    repoId,
+    path,
+    userId,
+    reasons,
+}) => {
     const isDirectAssigned = reasons.some(value => value.__typename === 'AssignedOwner' && value.isDirectMatch)
 
-    const tooltipContent =
-        !isDirectAssigned
-            ? 'Ownership can only be modified at the same direct path as it was assigned.'
-            : 'Remove ownership'
+    const tooltipContent = !isDirectAssigned
+        ? 'Ownership can only be modified at the same direct path as it was assigned.'
+        : 'Remove ownership'
 
-    const [removeAssignedOwner, { loading }] = useMutation<RemoveAssignedOwnerResult, RemoveAssignedOwnerVariables>(REMOVE_ASSIGNED_OWNER, {})
+    const [removeAssignedOwner, { loading }] = useMutation<RemoveAssignedOwnerResult, RemoveAssignedOwnerVariables>(
+        REMOVE_ASSIGNED_OWNER,
+        {}
+    )
 
     const removeOwner: () => Promise<void> = async () => {
         if (userId) {
@@ -50,7 +60,15 @@ export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({ onSuccess,
 
     return (
         <Tooltip content={tooltipContent}>
-            <Button variant="danger" className="ml-2" aria-label="Remove this ownership" onClick={removeOwner}  outline={false} size="sm" disabled={!isDirectAssigned}>
+            <Button
+                variant="danger"
+                className="ml-2"
+                aria-label="Remove this ownership"
+                onClick={removeOwner}
+                outline={false}
+                size="sm"
+                disabled={!isDirectAssigned}
+            >
                 <Icon color="white" aria-hidden={true} svgPath={loading ? mdiLoading : mdiDelete} />
                 Remove owner
             </Button>

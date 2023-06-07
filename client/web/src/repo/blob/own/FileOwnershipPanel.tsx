@@ -77,6 +77,9 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
                 isDirectory={false}
                 makeOwnerButton={makeOwnerButton}
                 makeOwnerError={makeOwnerError}
+                repoID={repoID}
+                filePath={filePath}
+                refetch={refetch}
             />
         )
     }

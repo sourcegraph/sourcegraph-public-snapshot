@@ -4,6 +4,7 @@ import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
+import { useMutation } from '@sourcegraph/http-client/out/src'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, Text } from '@sourcegraph/wildcard'
 
@@ -12,14 +13,14 @@ import {
     SearchPatternType,
     OwnerFields,
     OwnershipConnectionFields,
-    RemoveAssignedOwnerResult, RemoveAssignedOwnerVariables
+    RemoveAssignedOwnerResult,
+    RemoveAssignedOwnerVariables,
 } from '../../../graphql-operations'
 
 import { FileOwnershipEntry } from './FileOwnershipEntry'
+import { REMOVE_ASSIGNED_OWNER } from './grapqlQueries'
 
 import styles from './OwnerList.module.scss'
-import {useMutation} from "@sourcegraph/http-client/out/src";
-import {REMOVE_ASSIGNED_OWNER} from "./grapqlQueries";
 
 interface OwnExplanationProps {
     owners?: OwnerFields[]
@@ -98,7 +99,6 @@ interface OwnerListProps {
     makeOwnerError?: Error
     repoID: string
     filePath: string
-
 }
 
 export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
@@ -108,8 +108,11 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
     makeOwnerError,
     repoID,
     filePath,
-    refetch
+    refetch,
 }) => {
+
+    const [removeOwnerError, setRemoveOwnerError] = React.useState<Error | undefined>(undefined)
+
     if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
@@ -119,6 +122,11 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                 {makeOwnerError && (
                     <div className={styles.contents}>
                         <ErrorAlert error={makeOwnerError} prefix="Error promoting an owner" className="mt-2" />
+                    </div>
+                )}
+                {removeOwnerError && (
+                    <div className={styles.contents}>
+                        <ErrorAlert error={removeOwnerError} prefix="Error promoting an owner" className="mt-2" />
                     </div>
                 )}
                 <table className={styles.table}>
@@ -158,9 +166,17 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                 // eslint-disable-next-line react/no-array-index-key
                                 return (
                                     <React.Fragment key={index}>
-                                        {index > 0 && <tr className={styles.bordered}/>}
-                                    <FileOwnershipEntry refetch={refetch} owner={ownership.owner} userID={userId} repoID={repoID} filePath={filePath} reasons={ownership.reasons}/>
-                                </React.Fragment>
+                                        {index > 0 && <tr className={styles.bordered} />}
+                                        <FileOwnershipEntry
+                                            refetch={refetch}
+                                            owner={ownership.owner}
+                                            userID={userId}
+                                            repoID={repoID}
+                                            filePath={filePath}
+                                            reasons={ownership.reasons}
+                                            setRemoveOwnerError={setRemoveOwnerError}
+                                        />
+                                    </React.Fragment>
                                 )
                             })}
                         {
@@ -207,6 +223,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                             repoID={repoID}
                                             filePath={filePath}
                                             refetch={refetch}
+                                            removeOwnerError={removeOwnerError}
                                         />
                                     </React.Fragment>
                                 )
@@ -230,5 +247,3 @@ const NoOwnershipAlert: React.FunctionComponent<{ isDirectory?: boolean }> = ({ 
         {isDirectory ? 'No ownership data for this path.' : 'No ownership data for this file.'}
     </Alert>
 )
-
-
