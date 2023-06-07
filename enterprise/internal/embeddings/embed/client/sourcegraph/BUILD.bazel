@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "sourcegraph",
+    srcs = ["client.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/sourcegraph",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/codygateway",
+        "//enterprise/internal/embeddings/embed/client",
+        "//enterprise/internal/licensing",
+        "//internal/httpcli",
+        "//lib/errors",
+        "//schema",
+    ],
+)

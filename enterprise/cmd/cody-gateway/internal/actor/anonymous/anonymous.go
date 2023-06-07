@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/embeddings"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 )
 
 type Source struct {
@@ -30,15 +31,20 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 		Key:           token,
 		AccessEnabled: s.allowAnonymous,
 		// Some basic defaults for chat and code completions.
-		RateLimits: map[types.CompletionsFeature]actor.RateLimit{
-			types.CompletionsFeatureChat: {
+		RateLimits: map[codygateway.Feature]actor.RateLimit{
+			codygateway.FeatureChatCompletions: {
 				AllowedModels: []string{"anthropic/claude-v1"},
 				Limit:         50,
 				Interval:      24 * time.Hour,
 			},
-			types.CompletionsFeatureCode: {
+			codygateway.FeatureCodeCompletions: {
 				AllowedModels: []string{"anthropic/claude-instant-v1"},
 				Limit:         500,
+				Interval:      24 * time.Hour,
+			},
+			codygateway.FeatureEmbeddings: {
+				AllowedModels: []string{string(embeddings.ModelNameOpenAIAda)},
+				Limit:         100_000,
 				Interval:      24 * time.Hour,
 			},
 		},

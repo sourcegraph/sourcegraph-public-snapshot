@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -46,8 +45,8 @@ type Actor struct {
 	// For example, for product subscriptions it is based on whether the subscription is
 	// archived, if access is enabled, and if any rate limits are set.
 	AccessEnabled bool `json:"accessEnabled"`
-	// RateLimits holds the rate limits for Cody Gateway access for this actor.
-	RateLimits map[types.CompletionsFeature]RateLimit `json:"rateLimits"`
+	// RateLimits holds the rate limits for Cody Gateway features for this actor.
+	RateLimits map[codygateway.Feature]RateLimit `json:"rateLimits"`
 	// LastUpdated indicates when this actor's state was last updated.
 	LastUpdated *time.Time `json:"lastUpdated"`
 	// Source is a reference to the source of this actor's state.
@@ -102,7 +101,7 @@ func WithActor(ctx context.Context, a *Actor) context.Context {
 func (a *Actor) Limiter(
 	logger log.Logger,
 	redis limiter.RedisStore,
-	feature types.CompletionsFeature,
+	feature codygateway.Feature,
 	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
 ) (limiter.Limiter, bool) {
 	if a == nil {
@@ -114,16 +113,28 @@ func (a *Actor) Limiter(
 		return nil, false
 	}
 
-	// The actual type of time.Duration is int64, so we can use it to compute the
-	// ratio of the rate limit interval to a day (24 hours).
-	ratioToDay := float32(limit.Interval) / float32(24*time.Hour)
-	// Then use the ratio to compute the rate limit for a day.
-	dailyLimit := float32(limit.Limit) / ratioToDay
-	// Finally, compute the concurrency limit with the given percentage of the daily limit.
-	concurrencyLimit := int(dailyLimit * concurrencyLimitConfig.Percentage)
-	// Just in case a poor choice of percentage results in a concurrency limit less than 1.
-	if concurrencyLimit < 1 {
-		concurrencyLimit = 1
+	if !limit.IsValid() {
+		// No valid limit, cannot provide limiter.
+		return nil, false
+	}
+
+	var concurrencyLimit int
+	if feature == codygateway.FeatureEmbeddings {
+		// For embeddings, we use a custom, hardcoded limit. Concurrency on the client side
+		// should be 1, so 15 is a very safe default here.
+		concurrencyLimit = 15
+	} else {
+		// The actual type of time.Duration is int64, so we can use it to compute the
+		// ratio of the rate limit interval to a day (24 hours).
+		ratioToDay := float32(limit.Interval) / float32(24*time.Hour)
+		// Then use the ratio to compute the rate limit for a day.
+		dailyLimit := float32(limit.Limit) / ratioToDay
+		// Finally, compute the concurrency limit with the given percentage of the daily limit.
+		concurrencyLimit = int(dailyLimit * concurrencyLimitConfig.Percentage)
+		// Just in case a poor choice of percentage results in a concurrency limit less than 1.
+		if concurrencyLimit < 1 {
+			concurrencyLimit = 1
+		}
 	}
 
 	// The redis store has to use a prefix for the given feature because we need to
@@ -151,14 +162,14 @@ func (a *Actor) Limiter(
 type concurrencyLimiter struct {
 	logger         log.Logger
 	actor          *Actor
-	feature        types.CompletionsFeature
+	feature        codygateway.Feature
 	redis          limiter.RedisStore
 	rateLimit      RateLimit
 	featureLimiter limiter.Limiter
 	nowFunc        func() time.Time
 }
 
-func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func() error, error) {
+func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func(int) error, error) {
 	commit, err := (limiter.StaticLimiter{
 		Identifier: l.actor.ID,
 		Redis:      l.redis,
@@ -182,7 +193,7 @@ func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func() error, erro
 		}
 		return nil, errors.Wrap(err, "check concurrent limit")
 	}
-	if err = commit(); err != nil {
+	if err = commit(1); err != nil {
 		l.logger.Error("failed to commit concurrency limit consumption", log.Error(err))
 	}
 
@@ -194,7 +205,7 @@ func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func() error, erro
 }
 
 type ErrConcurrencyLimitExceeded struct {
-	feature    types.CompletionsFeature
+	feature    codygateway.Feature
 	limit      int
 	retryAfter time.Time
 }
@@ -218,7 +229,7 @@ type updateOnFailureLimiter struct {
 	*Actor
 }
 
-func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func() error, error) {
+func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func(int) error, error) {
 	commit, err := (limiter.StaticLimiter{
 		Identifier: u.ID,
 		Redis:      u.Redis,

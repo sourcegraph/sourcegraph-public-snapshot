@@ -24,9 +24,10 @@ type dbRateLimit struct {
 }
 
 type dbCodyGatewayAccess struct {
-	Enabled       bool
-	ChatRateLimit dbRateLimit
-	CodeRateLimit dbRateLimit
+	Enabled             bool
+	ChatRateLimit       dbRateLimit
+	CodeRateLimit       dbRateLimit
+	EmbeddingsRateLimit dbRateLimit
 }
 
 // dbSubscription describes an product subscription row in the product_subscriptions DB
@@ -146,10 +147,13 @@ SELECT
 	product_subscriptions.cody_gateway_enabled,
 	product_subscriptions.cody_gateway_chat_rate_limit,
 	product_subscriptions.cody_gateway_chat_rate_interval_seconds,
-	cody_gateway_chat_rate_limit_allowed_models,
+	product_subscriptions.cody_gateway_chat_rate_limit_allowed_models,
 	product_subscriptions.cody_gateway_code_rate_limit,
 	product_subscriptions.cody_gateway_code_rate_interval_seconds,
-	cody_gateway_code_rate_limit_allowed_models
+	product_subscriptions.cody_gateway_code_rate_limit_allowed_models,
+	product_subscriptions.cody_gateway_embeddings_api_rate_limit,
+	product_subscriptions.cody_gateway_embeddings_api_rate_interval_seconds,
+	product_subscriptions.cody_gateway_embeddings_api_allowed_models
 FROM product_subscriptions
 LEFT OUTER JOIN users ON product_subscriptions.user_id = users.id
 LEFT OUTER JOIN primary_emails ON users.id = primary_emails.user_id
@@ -184,6 +188,9 @@ ORDER BY archived_at DESC NULLS FIRST, created_at DESC
 			&v.CodyGatewayAccess.CodeRateLimit.RateLimit,
 			&v.CodyGatewayAccess.CodeRateLimit.RateIntervalSeconds,
 			pq.Array(&v.CodyGatewayAccess.CodeRateLimit.AllowedModels),
+			&v.CodyGatewayAccess.EmbeddingsRateLimit.RateLimit,
+			&v.CodyGatewayAccess.EmbeddingsRateLimit.RateIntervalSeconds,
+			pq.Array(&v.CodyGatewayAccess.EmbeddingsRateLimit.AllowedModels),
 		); err != nil {
 			return nil, err
 		}
@@ -245,6 +252,15 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 		}
 		if v := access.CodeCompletionsAllowedModels; v != nil {
 			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_code_rate_limit_allowed_models=%s", nullStringSlice(*v)))
+		}
+		if v := access.EmbeddingsRateLimit; v != nil {
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_embeddings_api_rate_limit=%s", dbutil.NewNullInt32(*v)))
+		}
+		if v := access.EmbeddingsRateLimitIntervalSeconds; v != nil {
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_embeddings_api_rate_interval_seconds=%s", dbutil.NewNullInt32(*v)))
+		}
+		if v := access.EmbeddingsAllowedModels; v != nil {
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_embeddings_api_allowed_models=%s", nullStringSlice(*v)))
 		}
 	}
 

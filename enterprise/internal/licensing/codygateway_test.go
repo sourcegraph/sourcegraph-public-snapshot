@@ -122,4 +122,51 @@ func TestCodyGatewayCodeRateLimit(t *testing.T) {
 	}
 }
 
+func TestCodyGatewayEmbeddingsRateLimit(t *testing.T) {
+	tests := []struct {
+		name        string
+		plan        Plan
+		userCount   *int
+		licenseTags []string
+		want        CodyGatewayRateLimit
+	}{
+		{
+			name:      "Enterprise plan",
+			plan:      PlanEnterprise1,
+			userCount: intPtr(50),
+			want: CodyGatewayRateLimit{
+				AllowedModels:   []string{"openai/text-embedding-ada-002"},
+				Limit:           20 * 50 * 2_500_000 / 30,
+				IntervalSeconds: 60 * 60 * 24,
+			},
+		},
+		{
+			name: "Enterprise plan with no user count",
+			plan: PlanEnterprise1,
+			want: CodyGatewayRateLimit{
+				AllowedModels:   []string{"openai/text-embedding-ada-002"},
+				Limit:           1 * 20 * 2_500_000 / 30,
+				IntervalSeconds: 60 * 60 * 24,
+			},
+		},
+		{
+			name: "Non-enterprise plan with no user count",
+			plan: "unknown",
+			want: CodyGatewayRateLimit{
+				AllowedModels:   []string{"openai/text-embedding-ada-002"},
+				Limit:           1 * 10 * 2_500_000 / 30,
+				IntervalSeconds: 60 * 60 * 24,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := NewCodyGatewayEmbeddingsRateLimit(tt.plan, tt.userCount, tt.licenseTags)
+			if diff := cmp.Diff(got, tt.want); diff != "" {
+				t.Fatalf("incorrect rate limit computed: %s", diff)
+			}
+		})
+	}
+}
+
 func intPtr(i int) *int { return &i }

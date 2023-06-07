@@ -58,6 +58,9 @@ export const CODY_GATEWAY_ACCESS_FIELDS_FRAGMENT = gql`
         chatCompletionsRateLimit {
             ...CodyGatewayRateLimitFields
         }
+        embeddingsRateLimit {
+            ...CodyGatewayRateLimitFields
+        }
     }
 
     fragment CodyGatewayRateLimitFields on CodyGatewayRateLimit {
@@ -68,16 +71,7 @@ export const CODY_GATEWAY_ACCESS_FIELDS_FRAGMENT = gql`
     }
 `
 
-export const CODY_GATEWAY_ACCESS_USAGE_FIELDS_FRAGMENT = gql`
-    fragment CodyGatewayAccessUsageFields on CodyGatewayAccess {
-        codeCompletionsRateLimit {
-            ...CodyGatewayRateLimitUsageFields
-        }
-        chatCompletionsRateLimit {
-            ...CodyGatewayRateLimitUsageFields
-        }
-    }
-
+const CODY_GATEWAY_RATE_LIMIT_USAGE_FIELDS = gql`
     fragment CodyGatewayRateLimitUsageFields on CodyGatewayRateLimit {
         usage {
             ...CodyGatewayRateLimitUsageDatapoint
@@ -91,19 +85,57 @@ export const CODY_GATEWAY_ACCESS_USAGE_FIELDS_FRAGMENT = gql`
     }
 `
 
-export const DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_USAGE = gql`
-    query DotComProductSubscriptionCodyGatewayUsage($uuid: String!) {
+export const CODY_GATEWAY_ACCESS_COMPLETIONS_USAGE_FIELDS_FRAGMENT = gql`
+    fragment CodyGatewayAccessCompletionsUsageFields on CodyGatewayAccess {
+        codeCompletionsRateLimit {
+            ...CodyGatewayRateLimitUsageFields
+        }
+        chatCompletionsRateLimit {
+            ...CodyGatewayRateLimitUsageFields
+        }
+    }
+
+    ${CODY_GATEWAY_RATE_LIMIT_USAGE_FIELDS}
+`
+
+export const DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_COMPLETIONS_USAGE = gql`
+    query DotComProductSubscriptionCodyGatewayCompletionsUsage($uuid: String!) {
         dotcom {
             productSubscription(uuid: $uuid) {
                 id
                 codyGatewayAccess {
-                    ...CodyGatewayAccessUsageFields
+                    ...CodyGatewayAccessCompletionsUsageFields
                 }
             }
         }
     }
 
-    ${CODY_GATEWAY_ACCESS_USAGE_FIELDS_FRAGMENT}
+    ${CODY_GATEWAY_ACCESS_COMPLETIONS_USAGE_FIELDS_FRAGMENT}
+`
+
+export const CODY_GATEWAY_ACCESS_EMBEDDINGS_USAGE_FIELDS_FRAGMENT = gql`
+    fragment CodyGatewayAccessEmbeddingsUsageFields on CodyGatewayAccess {
+        embeddingsRateLimit {
+            ...CodyGatewayRateLimitUsageFields
+        }
+    }
+
+    ${CODY_GATEWAY_RATE_LIMIT_USAGE_FIELDS}
+`
+
+export const DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_EMBEDDINGS_USAGE = gql`
+    query DotComProductSubscriptionCodyGatewayEmbeddingsUsage($uuid: String!) {
+        dotcom {
+            productSubscription(uuid: $uuid) {
+                id
+                codyGatewayAccess {
+                    ...CodyGatewayAccessEmbeddingsUsageFields
+                }
+            }
+        }
+    }
+
+    ${CODY_GATEWAY_ACCESS_EMBEDDINGS_USAGE_FIELDS_FRAGMENT}
 `
 
 export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`

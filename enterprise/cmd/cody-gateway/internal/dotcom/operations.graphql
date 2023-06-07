@@ -13,6 +13,9 @@ fragment CodyGatewayAccessFields on CodyGatewayAccess {
     codeCompletionsRateLimit {
         ...RateLimitFields
     }
+    embeddingsRateLimit {
+        ...RateLimitFields
+    }
 }
 
 fragment ProductSubscriptionState on ProductSubscription {

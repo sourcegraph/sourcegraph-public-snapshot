@@ -1,4 +1,4 @@
-package httpapi
+package completions
 
 import (
 	"bytes"
@@ -96,7 +96,7 @@ func makeUpstreamHandler[ReqT any](
 			// limiter to make this less dependent on these two logics to remain the same?
 			rateLimit, ok := act.RateLimits[feature]
 			if !ok {
-				response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrapf(err, "rate limit for %q not found", string(feature)))
+				response.JSONError(logger, w, http.StatusInternalServerError, errors.Newf("rate limit for %q not found", string(feature)))
 				return
 			}
 

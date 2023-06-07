@@ -26,6 +26,7 @@ type KeyValue interface {
 	Set(key string, value any) error
 	SetEx(key string, ttlSeconds int, value any) error
 	Incr(key string) (int, error)
+	Incrby(key string, value int) (int, error)
 	Del(key string) error
 
 	TTL(key string) (int, error)
@@ -182,6 +183,10 @@ func (r *redisKeyValue) SetEx(key string, ttlSeconds int, val any) error {
 
 func (r *redisKeyValue) Incr(key string) (int, error) {
 	return r.do("INCR", r.prefix+key).Int()
+}
+
+func (r *redisKeyValue) Incrby(key string, value int) (int, error) {
+	return r.do("INCRBY", r.prefix+key, value).Int()
 }
 
 func (r *redisKeyValue) Del(key string) error {

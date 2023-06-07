@@ -70,7 +70,10 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		lastSuccessfulJobRevision, previousEmbeddingsIndex = h.getPreviousEmbeddingIndex(ctx, logger, repo)
 	}
 
-	embeddingsClient := embed.NewEmbeddingsClient()
+	embeddingsClient, err := embed.NewEmbeddingsClient(&conf.Get().SiteConfiguration)
+	if err != nil {
+		return err
+	}
 	fetcher := &revisionFetcher{
 		repo:      repo.Name,
 		revision:  record.Revision,

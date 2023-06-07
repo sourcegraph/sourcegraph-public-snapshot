@@ -8,4 +8,5 @@ go_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway",
     visibility = ["//enterprise:__subpackages__"],
+    deps = ["//enterprise/internal/completions/types"],
 )

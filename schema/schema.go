@@ -618,12 +618,14 @@ type EmailTemplates struct {
 
 // Embeddings description: Configuration for embeddings service.
 type Embeddings struct {
-	// AccessToken description: The access token used to authenticate with the external embedding API service.
-	AccessToken string `json:"accessToken"`
-	// Dimensions description: The dimensionality of the embedding vectors.
-	Dimensions int `json:"dimensions"`
+	// AccessToken description: The access token used to authenticate with the external embedding API service. For provider sourcegraph, this is optional.
+	AccessToken string `json:"accessToken,omitempty"`
+	// Dimensions description: The dimensionality of the embedding vectors. Required field if not using the sourcegraph provider.
+	Dimensions int `json:"dimensions,omitempty"`
 	// Enabled description: Toggles whether embedding service is enabled.
 	Enabled bool `json:"enabled"`
+	// Endpoint description: The endpoint under which to reach the provider. Sensible default will be used for each provider.
+	Endpoint string `json:"endpoint,omitempty"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
 	// Incremental description: Experimental: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.
@@ -634,10 +636,12 @@ type Embeddings struct {
 	MaxTextEmbeddingsPerRepo int `json:"maxTextEmbeddingsPerRepo,omitempty"`
 	// MinimumInterval description: The time to wait between runs. Valid time units are "s", "m", "h". Example values: "30s", "5m", "1h".
 	MinimumInterval string `json:"minimumInterval,omitempty"`
-	// Model description: The model used for embedding.
-	Model string `json:"model"`
-	// Url description: The url to the external embedding API service.
-	Url string `json:"url"`
+	// Model description: The model used for embedding. A default model will be used for each provider, if not set.
+	Model string `json:"model,omitempty"`
+	// Provider description: The provider to use for generating embeddings. Defaults to sourcegraph.
+	Provider string `json:"provider,omitempty"`
+	// Url description: The url to the external embedding API service. Deprecated, use endpoint instead.
+	Url string `json:"url,omitempty"`
 }
 
 // EncryptionKey description: Config for a key

@@ -21,7 +21,7 @@ export interface CodyGatewayRateLimitModalProps {
     afterSave: () => void
     productSubscriptionID: Scalars['ID']
     current: CodyGatewayRateLimitFields | null
-    mode: 'chat' | 'code'
+    mode: 'chat' | 'code' | 'embeddings'
 }
 
 export const CodyGatewayRateLimitModal: React.FunctionComponent<
@@ -58,13 +58,29 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                     variables: {
                         productSubscriptionID,
                         access: {
-                            chatCompletionsRateLimit: mode === 'chat' ? limit : undefined,
-                            chatCompletionsRateLimitIntervalSeconds: mode === 'chat' ? limitInterval : undefined,
-                            chatCompletionsAllowedModels: mode === 'chat' ? splitModels(allowedModels) : undefined,
+                            ...(mode === 'chat'
+                                ? {
+                                      chatCompletionsRateLimit: limit,
+                                      chatCompletionsRateLimitIntervalSeconds: limitInterval,
+                                      chatCompletionsAllowedModels: splitModels(allowedModels),
+                                  }
+                                : {}),
 
-                            codeCompletionsRateLimit: mode === 'code' ? limit : undefined,
-                            codeCompletionsRateLimitIntervalSeconds: mode === 'code' ? limitInterval : undefined,
-                            codeCompletionsAllowedModels: mode === 'code' ? splitModels(allowedModels) : undefined,
+                            ...(mode === 'code'
+                                ? {
+                                      codeCompletionsRateLimit: limit,
+                                      codeCompletionsRateLimitIntervalSeconds: limitInterval,
+                                      codeCompletionsAllowedModels: splitModels(allowedModels),
+                                  }
+                                : {}),
+
+                            ...(mode === 'embeddings'
+                                ? {
+                                      embeddingsRateLimit: limit,
+                                      embeddingsRateLimitIntervalSeconds: limitInterval,
+                                      embeddingsAllowedModels: splitModels(allowedModels),
+                                  }
+                                : {}),
                         },
                     },
                 })
@@ -81,11 +97,17 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
             <H3 id={labelId}>
-                Configure {mode === 'chat' ? 'chat request' : 'code completion request'} rate limit for Cody Gateway
+                Configure{' '}
+                {mode === 'chat'
+                    ? 'chat request'
+                    : mode === 'code'
+                    ? 'code completion request'
+                    : 'embeddings generation'}{' '}
+                rate limit for Cody Gateway
             </H3>
             <Text>
                 Cody Gateway is a Sourcegraph managed service that allows customer instances to talk to upstream LLMs
-                under our negotiated terms in a safe manner.
+                and generate embeddings under our negotiated terms with third party providers in a safe manner.
             </Text>
 
             {error && <ErrorAlert error={error} />}
@@ -105,7 +127,7 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                         min={1}
                         value={limit}
                         onChange={onChangeLimit}
-                        label="Number of requests"
+                        label={mode === 'embeddings' ? 'Number of tokens embedded' : 'Number of requests'}
                     />
                 </div>
                 <div className="form-group">
@@ -124,7 +146,8 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                         onChange={onChangeLimitInterval}
                         message={
                             <>
-                                {limit} requests per {prettyInterval(limitInterval!)}
+                                {limit} {mode === 'embeddings' ? 'tokens' : 'requests'} per{' '}
+                                {prettyInterval(limitInterval!)}
                             </>
                         }
                     />
@@ -143,7 +166,12 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                         description="Comma separated list of the models the subscription can use. This normally doesn't need to be changed."
                         value={allowedModels}
                         onChange={onChangeAllowedModels}
-                        message={<ModelBadges models={splitModels(allowedModels)} />}
+                        message={
+                            <ModelBadges
+                                models={splitModels(allowedModels)}
+                                mode={mode === 'embeddings' ? 'embeddings' : 'completions'}
+                            />
+                        }
                     />
                 </div>
                 <div className="d-flex justify-content-end">

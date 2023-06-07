@@ -162,6 +162,13 @@ func TestProductSubscriptions_Update(t *testing.T) {
 					Enabled:                                 pointify(true),
 					ChatCompletionsRateLimit:                pointify(int32(12)),
 					ChatCompletionsRateLimitIntervalSeconds: pointify(int32(time.Hour.Seconds())),
+					ChatCompletionsAllowedModels:            pointify([]string{"claude-v1"}),
+					CodeCompletionsRateLimit:                pointify(int32(13)),
+					CodeCompletionsRateLimitIntervalSeconds: pointify(int32(2 * time.Hour.Seconds())),
+					CodeCompletionsAllowedModels:            pointify([]string{"claude-v2"}),
+					EmbeddingsRateLimit:                     pointify(int32(14)),
+					EmbeddingsRateLimitIntervalSeconds:      pointify(int32(3 * time.Hour.Seconds())),
+					EmbeddingsAllowedModels:                 pointify([]string{"claude-v3"}),
 				},
 			})
 			require.NoError(t, err)
@@ -172,6 +179,17 @@ func TestProductSubscriptions_Update(t *testing.T) {
 				ChatRateLimit: dbRateLimit{
 					RateLimit:           valast.Addr(int32(12)).(*int32),
 					RateIntervalSeconds: valast.Addr(int32(3600)).(*int32),
+					AllowedModels:       []string{"claude-v1"},
+				},
+				CodeRateLimit: dbRateLimit{
+					RateLimit:           valast.Addr(int32(13)).(*int32),
+					RateIntervalSeconds: valast.Addr(int32(2 * 3600)).(*int32),
+					AllowedModels:       []string{"claude-v2"},
+				},
+				EmbeddingsRateLimit: dbRateLimit{
+					RateLimit:           valast.Addr(int32(14)).(*int32),
+					RateIntervalSeconds: valast.Addr(int32(3 * 3600)).(*int32),
+					AllowedModels:       []string{"claude-v3"},
 				},
 			}).Equal(t, got.CodyGatewayAccess)
 		})
@@ -182,6 +200,13 @@ func TestProductSubscriptions_Update(t *testing.T) {
 					Enabled:                                 pointify(false),
 					ChatCompletionsRateLimit:                pointify(int32(0)),
 					ChatCompletionsRateLimitIntervalSeconds: pointify(int32(0)),
+					ChatCompletionsAllowedModels:            pointify([]string{}),
+					CodeCompletionsRateLimit:                pointify(int32(0)),
+					CodeCompletionsRateLimitIntervalSeconds: pointify(int32(0)),
+					CodeCompletionsAllowedModels:            pointify([]string{}),
+					EmbeddingsRateLimit:                     pointify(int32(0)),
+					EmbeddingsRateLimitIntervalSeconds:      pointify(int32(0)),
+					EmbeddingsAllowedModels:                 pointify([]string{}),
 				},
 			})
 			require.NoError(t, err)

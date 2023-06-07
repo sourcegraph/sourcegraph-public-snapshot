@@ -10,7 +10,6 @@ go_library(
         "//enterprise/cmd/cody-gateway/internal/actor",
         "//enterprise/cmd/cody-gateway/internal/dotcom",
         "//enterprise/internal/codygateway",
-        "//enterprise/internal/completions/types",
         "//enterprise/internal/licensing",
         "//enterprise/internal/productsubscription",
         "//internal/trace",

@@ -6,6 +6,7 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,7 +23,10 @@ func getCachedQueryEmbeddingFn() (getQueryEmbeddingFn, error) {
 		if cachedQueryEmbedding, ok := cache.Get(query); ok {
 			queryEmbedding = cachedQueryEmbedding
 		} else {
-			client := embed.NewEmbeddingsClient()
+			client, err := embed.NewEmbeddingsClient(&conf.Get().SiteConfiguration)
+			if err != nil {
+				return nil, err
+			}
 			queryEmbedding, err = client.GetEmbeddingsWithRetries(ctx, []string{query}, QUERY_EMBEDDING_RETRIES)
 			if err != nil {
 				return nil, err

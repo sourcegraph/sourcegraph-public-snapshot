@@ -81,3 +81,38 @@ func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string
 		}
 	}
 }
+
+// tokensPerDollar is the number of tokens that will cost us roughly $1. It's used
+// below for some better illustration of math.
+const tokensPerDollar = int(1 / (0.0004 / 1_000))
+
+// NewCodyGatewayEmbeddingsRateLimit applies default Cody Gateway access based on the plan.
+func NewCodyGatewayEmbeddingsRateLimit(plan Plan, userCount *int, licenseTags []string) CodyGatewayRateLimit {
+	uc := 0
+	if userCount != nil {
+		uc = *userCount
+	}
+	if uc < 1 {
+		uc = 1
+	}
+
+	models := []string{"openai/text-embedding-ada-002"}
+	switch plan {
+	// TODO: This is just an example for now.
+	case PlanEnterprise1,
+		PlanEnterprise0:
+		return CodyGatewayRateLimit{
+			AllowedModels:   models,
+			Limit:           int32(20 * uc * tokensPerDollar / 30),
+			IntervalSeconds: 60 * 60 * 24, // day
+		}
+
+	// TODO: Defaults for other plans
+	default:
+		return CodyGatewayRateLimit{
+			AllowedModels:   models,
+			Limit:           int32(10 * uc * tokensPerDollar / 30),
+			IntervalSeconds: 60 * 60 * 24, // day
+		}
+	}
+}

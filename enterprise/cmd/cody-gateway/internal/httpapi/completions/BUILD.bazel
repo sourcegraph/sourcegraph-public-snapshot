@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "completions",
+    srcs = [
+        "anthropic.go",
+        "limiter.go",
+        "openai.go",
+        "upstream.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/completions",
+    visibility = ["//enterprise/cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//enterprise/cmd/cody-gateway/internal/actor",
+        "//enterprise/cmd/cody-gateway/internal/events",
+        "//enterprise/cmd/cody-gateway/internal/limiter",
+        "//enterprise/cmd/cody-gateway/internal/response",
+        "//enterprise/internal/codygateway",
+        "//enterprise/internal/completions/client/anthropic",
+        "//enterprise/internal/completions/client/openai",
+        "//enterprise/internal/completions/types",
+        "//internal/httpcli",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_exp//slices",
+    ],
+)

@@ -62,6 +62,15 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.Works(err)
 		require.Equal(kv.Get("incr-set"), 6)
 		require.Equal(kv.Get("incr-unset"), 1)
+
+		// Incrby
+		require.Works(kv.Set("incrby-set", 5))
+		_, err = kv.Incrby("incrby-set", 2)
+		require.Works(err)
+		_, err = kv.Incrby("incrby-unset", 2)
+		require.Works(err)
+		require.Equal(kv.Get("incrby-set"), 7)
+		require.Equal(kv.Get("incrby-unset"), 2)
 	})
 
 	t.Run("hash", func(t *testing.T) {

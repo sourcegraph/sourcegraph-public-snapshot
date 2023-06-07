@@ -10,6 +10,7 @@ import (
 
 	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -259,7 +260,7 @@ func TestEmbedRepo(t *testing.T) {
 	})
 }
 
-func NewMockEmbeddingsClient() EmbeddingsClient {
+func NewMockEmbeddingsClient() client.EmbeddingsClient {
 	return &mockEmbeddingsClient{}
 }
 
@@ -269,7 +270,7 @@ func (c *mockEmbeddingsClient) GetDimensions() (int, error) {
 	return 3, nil
 }
 
-func (c *mockEmbeddingsClient) GetEmbeddingsWithRetries(_ context.Context, texts []string, maxRetries int) ([]float32, error) {
+func (c *mockEmbeddingsClient) GetEmbeddingsWithRetries(_ context.Context, texts []string, _ int) ([]float32, error) {
 	dimensions, err := c.GetDimensions()
 	if err != nil {
 		return nil, err

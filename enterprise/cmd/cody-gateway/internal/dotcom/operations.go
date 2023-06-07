@@ -142,6 +142,8 @@ type CodyGatewayAccessFields struct {
 	ChatCompletionsRateLimit *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit `json:"chatCompletionsRateLimit"`
 	// Rate limit for code completions access, or null if not enabled.
 	CodeCompletionsRateLimit *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit `json:"codeCompletionsRateLimit"`
+	// Rate limit for embedding text chunks, or null if not enabled.
+	EmbeddingsRateLimit *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit `json:"embeddingsRateLimit"`
 }
 
 // GetEnabled returns CodyGatewayAccessFields.Enabled, and is useful for accessing the field via an interface.
@@ -155,6 +157,11 @@ func (v *CodyGatewayAccessFields) GetChatCompletionsRateLimit() *CodyGatewayAcce
 // GetCodeCompletionsRateLimit returns CodyGatewayAccessFields.CodeCompletionsRateLimit, and is useful for accessing the field via an interface.
 func (v *CodyGatewayAccessFields) GetCodeCompletionsRateLimit() *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit {
 	return v.CodeCompletionsRateLimit
+}
+
+// GetEmbeddingsRateLimit returns CodyGatewayAccessFields.EmbeddingsRateLimit, and is useful for accessing the field via an interface.
+func (v *CodyGatewayAccessFields) GetEmbeddingsRateLimit() *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit {
+	return v.EmbeddingsRateLimit
 }
 
 // CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit includes the requested fields of the GraphQL type CodyGatewayRateLimit.
@@ -313,6 +320,88 @@ func (v *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit) Ma
 
 func (v *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit) __premarshalJSON() (*__premarshalCodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit, error) {
 	var retval __premarshalCodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit
+
+	retval.AllowedModels = v.RateLimitFields.AllowedModels
+	retval.Source = v.RateLimitFields.Source
+	retval.Limit = v.RateLimitFields.Limit
+	retval.IntervalSeconds = v.RateLimitFields.IntervalSeconds
+	return &retval, nil
+}
+
+// CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit includes the requested fields of the GraphQL type CodyGatewayRateLimit.
+// The GraphQL type's documentation follows.
+//
+// Cody Gateway access rate limits for a subscription.
+// FOR INTERNAL USE ONLY.
+type CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit struct {
+	RateLimitFields `json:"-"`
+}
+
+// GetAllowedModels returns CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit.AllowedModels, and is useful for accessing the field via an interface.
+func (v *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit) GetAllowedModels() []string {
+	return v.RateLimitFields.AllowedModels
+}
+
+// GetSource returns CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit.Source, and is useful for accessing the field via an interface.
+func (v *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit) GetSource() CodyGatewayRateLimitSource {
+	return v.RateLimitFields.Source
+}
+
+// GetLimit returns CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit.Limit, and is useful for accessing the field via an interface.
+func (v *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit) GetLimit() int {
+	return v.RateLimitFields.Limit
+}
+
+// GetIntervalSeconds returns CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit.IntervalSeconds, and is useful for accessing the field via an interface.
+func (v *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit) GetIntervalSeconds() int {
+	return v.RateLimitFields.IntervalSeconds
+}
+
+func (v *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.RateLimitFields)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalCodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit struct {
+	AllowedModels []string `json:"allowedModels"`
+
+	Source CodyGatewayRateLimitSource `json:"source"`
+
+	Limit int `json:"limit"`
+
+	IntervalSeconds int `json:"intervalSeconds"`
+}
+
+func (v *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit) __premarshalJSON() (*__premarshalCodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit, error) {
+	var retval __premarshalCodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit
 
 	retval.AllowedModels = v.RateLimitFields.AllowedModels
 	retval.Source = v.RateLimitFields.Source
@@ -696,6 +785,11 @@ func (v *ProductSubscriptionStateCodyGatewayAccess) GetCodeCompletionsRateLimit(
 	return v.CodyGatewayAccessFields.CodeCompletionsRateLimit
 }
 
+// GetEmbeddingsRateLimit returns ProductSubscriptionStateCodyGatewayAccess.EmbeddingsRateLimit, and is useful for accessing the field via an interface.
+func (v *ProductSubscriptionStateCodyGatewayAccess) GetEmbeddingsRateLimit() *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit {
+	return v.CodyGatewayAccessFields.EmbeddingsRateLimit
+}
+
 func (v *ProductSubscriptionStateCodyGatewayAccess) UnmarshalJSON(b []byte) error {
 
 	if string(b) == "null" {
@@ -727,6 +821,8 @@ type __premarshalProductSubscriptionStateCodyGatewayAccess struct {
 	ChatCompletionsRateLimit *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit `json:"chatCompletionsRateLimit"`
 
 	CodeCompletionsRateLimit *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit `json:"codeCompletionsRateLimit"`
+
+	EmbeddingsRateLimit *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit `json:"embeddingsRateLimit"`
 }
 
 func (v *ProductSubscriptionStateCodyGatewayAccess) MarshalJSON() ([]byte, error) {
@@ -743,6 +839,7 @@ func (v *ProductSubscriptionStateCodyGatewayAccess) __premarshalJSON() (*__prema
 	retval.Enabled = v.CodyGatewayAccessFields.Enabled
 	retval.ChatCompletionsRateLimit = v.CodyGatewayAccessFields.ChatCompletionsRateLimit
 	retval.CodeCompletionsRateLimit = v.CodyGatewayAccessFields.CodeCompletionsRateLimit
+	retval.EmbeddingsRateLimit = v.CodyGatewayAccessFields.EmbeddingsRateLimit
 	return &retval, nil
 }
 
@@ -769,6 +866,7 @@ type RateLimitFields struct {
 	// The source of the rate limit configuration.
 	Source CodyGatewayRateLimitSource `json:"source"`
 	// Requests per time interval.
+	// TODO: This needs to become BigInt, the limits for embeddings can exceed int32.
 	Limit int `json:"limit"`
 	// Interval for rate limiting.
 	IntervalSeconds int `json:"intervalSeconds"`
@@ -830,6 +928,9 @@ fragment CodyGatewayAccessFields on CodyGatewayAccess {
 		... RateLimitFields
 	}
 	codeCompletionsRateLimit {
+		... RateLimitFields
+	}
+	embeddingsRateLimit {
 		... RateLimitFields
 	}
 }
@@ -902,6 +1003,9 @@ fragment CodyGatewayAccessFields on CodyGatewayAccess {
 		... RateLimitFields
 	}
 	codeCompletionsRateLimit {
+		... RateLimitFields
+	}
+	embeddingsRateLimit {
 		... RateLimitFields
 	}
 }

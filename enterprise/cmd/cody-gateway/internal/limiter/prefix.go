@@ -12,8 +12,8 @@ type prefixRedisStore struct {
 	store  RedisStore
 }
 
-func (s *prefixRedisStore) Incr(key string) (int, error) {
-	return s.store.Incr(s.prefix + key)
+func (s *prefixRedisStore) Incrby(key string, val int) (int, error) {
+	return s.store.Incrby(s.prefix+key, val)
 }
 
 func (s *prefixRedisStore) GetInt(key string) (int, error) {

@@ -33,12 +33,18 @@ import {
     UpdateCodyGatewayConfigVariables,
     CodyGatewayRateLimitUsageDatapoint,
     CodyGatewayRateLimitFields,
-    DotComProductSubscriptionCodyGatewayUsageResult,
-    DotComProductSubscriptionCodyGatewayUsageVariables,
+    DotComProductSubscriptionCodyGatewayCompletionsUsageResult,
+    DotComProductSubscriptionCodyGatewayCompletionsUsageVariables,
+    DotComProductSubscriptionCodyGatewayEmbeddingsUsageVariables,
+    DotComProductSubscriptionCodyGatewayEmbeddingsUsageResult,
 } from '../../../../graphql-operations'
 import { ChartContainer } from '../../../../site-admin/analytics/components/ChartContainer'
 
-import { DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_USAGE, UPDATE_CODY_GATEWAY_CONFIG } from './backend'
+import {
+    DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_COMPLETIONS_USAGE,
+    DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_EMBEDDINGS_USAGE,
+    UPDATE_CODY_GATEWAY_CONFIG,
+} from './backend'
 import { CodyGatewayRateLimitModal } from './CodyGatewayRateLimitModal'
 import { ModelBadges } from './ModelBadges'
 import { prettyInterval } from './utils'
@@ -105,8 +111,6 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
 
                 {currentSourcegraphAccessToken && (
                     <>
-                        <H4>Completions</H4>
-
                         <div className="form-group mb-2">
                             {updateCodyGatewayConfigError && <ErrorAlert error={updateCodyGatewayConfigError} />}
                             <Label className="mb-0">
@@ -129,6 +133,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
 
                         {codyGatewayAccess.enabled && (
                             <>
+                                <H4>Completions</H4>
                                 <Label className="mb-2">Rate limits</Label>
                                 <table className={styles.limitsTable}>
                                     <thead>
@@ -146,7 +151,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                                             productSubscriptionID={productSubscriptionID}
                                             rateLimit={codyGatewayAccess.chatCompletionsRateLimit}
                                             refetchSubscription={refetchSubscription}
-                                            title="Chat rate limit"
+                                            title="Chat and recipes"
                                             viewerCanAdminister={viewerCanAdminister}
                                         />
                                         <RateLimitRow
@@ -154,12 +159,42 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                                             productSubscriptionID={productSubscriptionID}
                                             rateLimit={codyGatewayAccess.codeCompletionsRateLimit}
                                             refetchSubscription={refetchSubscription}
-                                            title="Code completions rate limit"
+                                            title="Code completions"
                                             viewerCanAdminister={viewerCanAdminister}
                                         />
                                     </tbody>
                                 </table>
-                                <RateLimitUsage productSubscriptionUUID={productSubscriptionUUID} />
+                                <RateLimitUsage mode="completions" productSubscriptionUUID={productSubscriptionUUID} />
+
+                                <hr className="my-3" />
+
+                                <H4>Embeddings</H4>
+                                <Label className="mb-2">Rate limits</Label>
+                                <table className={styles.limitsTable}>
+                                    <thead>
+                                        <tr>
+                                            <th>Feature</th>
+                                            <th>Source</th>
+                                            <th>Rate limit</th>
+                                            <th>Allowed models</th>
+                                            {viewerCanAdminister && <th>Actions</th>}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <RateLimitRow
+                                            mode="embeddings"
+                                            productSubscriptionID={productSubscriptionID}
+                                            rateLimit={codyGatewayAccess.embeddingsRateLimit}
+                                            refetchSubscription={refetchSubscription}
+                                            title="Embeddings tokens"
+                                            viewerCanAdminister={viewerCanAdminister}
+                                        />
+                                    </tbody>
+                                </table>
+                                <EmbeddingsRateLimitUsage
+                                    mode="embeddings"
+                                    productSubscriptionUUID={productSubscriptionUUID}
+                                />
                             </>
                         )}
                     </>
@@ -209,7 +244,7 @@ interface RateLimitRowProps {
     title: string
     viewerCanAdminister: boolean
     refetchSubscription: () => Promise<any>
-    mode: 'chat' | 'code'
+    mode: 'chat' | 'code' | 'embeddings'
     rateLimit: CodyGatewayRateLimitFields | null
 }
 
@@ -238,10 +273,16 @@ const RateLimitRow: React.FunctionComponent<RateLimitRowProps> = ({
                                   chatCompletionsRateLimitIntervalSeconds: 0,
                                   chatCompletionsAllowedModels: [],
                               }
-                            : {
+                            : mode === 'code'
+                            ? {
                                   codeCompletionsRateLimit: 0,
                                   codeCompletionsRateLimitIntervalSeconds: 0,
                                   codeCompletionsAllowedModels: [],
+                              }
+                            : {
+                                  embeddingsRateLimit: 0,
+                                  embeddingsRateLimitIntervalSeconds: 0,
+                                  embeddingsAllowedModels: [],
                               },
                 },
             })
@@ -272,10 +313,14 @@ const RateLimitRow: React.FunctionComponent<RateLimitRowProps> = ({
                             <CodyGatewayRateLimitSourceBadge source={rateLimit.source} />
                         </td>
                         <td>
-                            {rateLimit.limit} requests / {prettyInterval(rateLimit.intervalSeconds)}
+                            {rateLimit.limit} {mode === 'embeddings' ? 'tokens' : 'requests'} /{' '}
+                            {prettyInterval(rateLimit.intervalSeconds)}
                         </td>
                         <td>
-                            <ModelBadges models={rateLimit.allowedModels} />
+                            <ModelBadges
+                                models={rateLimit.allowedModels}
+                                mode={mode === 'embeddings' ? 'embeddings' : 'completions'}
+                            />
                         </td>
                         {viewerCanAdminister && (
                             <td>
@@ -323,13 +368,14 @@ const RateLimitRow: React.FunctionComponent<RateLimitRowProps> = ({
 
 interface RateLimitUsageProps {
     productSubscriptionUUID: string
+    mode: 'completions' | 'embeddings'
 }
 
 const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productSubscriptionUUID }) => {
     const { data, loading, error } = useQuery<
-        DotComProductSubscriptionCodyGatewayUsageResult,
-        DotComProductSubscriptionCodyGatewayUsageVariables
-    >(DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_USAGE, { variables: { uuid: productSubscriptionUUID } })
+        DotComProductSubscriptionCodyGatewayCompletionsUsageResult,
+        DotComProductSubscriptionCodyGatewayCompletionsUsageVariables
+    >(DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_COMPLETIONS_USAGE, { variables: { uuid: productSubscriptionUUID } })
 
     if (loading && !data) {
         return (
@@ -386,6 +432,63 @@ const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productS
                                     id: 'code-completions-usage',
                                     name: 'Cody Gateway code completions usage',
                                     color: 'var(--orange)',
+                                })
+                            ),
+                        ]}
+                    />
+                )}
+            </ChartContainer>
+        </>
+    )
+}
+
+const EmbeddingsRateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productSubscriptionUUID }) => {
+    const { data, loading, error } = useQuery<
+        DotComProductSubscriptionCodyGatewayEmbeddingsUsageResult,
+        DotComProductSubscriptionCodyGatewayEmbeddingsUsageVariables
+    >(DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_EMBEDDINGS_USAGE, { variables: { uuid: productSubscriptionUUID } })
+
+    if (loading && !data) {
+        return (
+            <>
+                <H5 className="mb-2">Usage</H5>
+                <LoadingSpinner />
+            </>
+        )
+    }
+
+    if (error) {
+        return (
+            <>
+                <H5 className="mb-2">Usage</H5>
+                <ErrorAlert error={error} />
+            </>
+        )
+    }
+
+    const { codyGatewayAccess } = data!.dotcom.productSubscription
+
+    return (
+        <>
+            <H5 className="mb-2">Usage</H5>
+            <ChartContainer labelX="Date" labelY="Daily usage">
+                {width => (
+                    <LineChart
+                        width={width}
+                        height={200}
+                        series={[
+                            ...generateSeries(codyGatewayAccess.embeddingsRateLimit?.usage ?? []).map(
+                                (data): Series<CodyGatewayRateLimitUsageDatapoint> => ({
+                                    data,
+                                    getXValue(datum) {
+                                        return parseISO(datum.date)
+                                    },
+                                    getYValue(datum) {
+                                        return datum.count
+                                    },
+                                    id: 'chat-usage',
+                                    name: 'Cody Gateway embeddings usage',
+                                    color: 'var(--purple)',
                                 })
                             ),
                         ]}
