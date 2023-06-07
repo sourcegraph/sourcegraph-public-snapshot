@@ -1021,29 +1021,33 @@ Indexes:
  definition_id | bigint  |           |          | 
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
-    "codeintel_ranking_path_counts_inputs_graph_key_definition_id" btree (graph_key, definition_id, id) WHERE NOT processed
+    "codeintel_ranking_path_counts_inputs_graph_key_unique_definitio" UNIQUE, btree (graph_key, definition_id) WHERE NOT processed
     "codeintel_ranking_path_counts_inputs_graph_key_id" btree (graph_key, id)
 
 ```
 
 # Table "public.codeintel_ranking_progress"
 ```
-             Column              |           Type           | Collation | Nullable |                        Default                         
----------------------------------+--------------------------+-----------+----------+--------------------------------------------------------
- id                              | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
- graph_key                       | text                     |           | not null | 
- mappers_started_at              | timestamp with time zone |           | not null | 
- mapper_completed_at             | timestamp with time zone |           |          | 
- seed_mapper_completed_at        | timestamp with time zone |           |          | 
- reducer_started_at              | timestamp with time zone |           |          | 
- reducer_completed_at            | timestamp with time zone |           |          | 
- num_path_records_total          | integer                  |           |          | 
- num_reference_records_total     | integer                  |           |          | 
- num_count_records_total         | integer                  |           |          | 
- num_path_records_processed      | integer                  |           |          | 
- num_reference_records_processed | integer                  |           |          | 
- num_count_records_processed     | integer                  |           |          | 
- max_export_id                   | bigint                   |           | not null | 
+               Column               |           Type           | Collation | Nullable |                        Default                         
+------------------------------------+--------------------------+-----------+----------+--------------------------------------------------------
+ id                                 | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
+ graph_key                          | text                     |           | not null | 
+ mappers_started_at                 | timestamp with time zone |           | not null | 
+ mapper_completed_at                | timestamp with time zone |           |          | 
+ seed_mapper_completed_at           | timestamp with time zone |           |          | 
+ reducer_started_at                 | timestamp with time zone |           |          | 
+ reducer_completed_at               | timestamp with time zone |           |          | 
+ num_path_records_total             | integer                  |           |          | 
+ num_reference_records_total        | integer                  |           |          | 
+ num_count_records_total            | integer                  |           |          | 
+ num_path_records_processed         | integer                  |           |          | 
+ num_reference_records_processed    | integer                  |           |          | 
+ num_count_records_processed        | integer                  |           |          | 
+ max_export_id                      | bigint                   |           | not null | 
+ reference_cursor_export_deleted_at | timestamp with time zone |           |          | 
+ reference_cursor_export_id         | integer                  |           |          | 
+ path_cursor_deleted_export_at      | timestamp with time zone |           |          | 
+ path_cursor_export_id              | integer                  |           |          | 
 Indexes:
     "codeintel_ranking_progress_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_progress_graph_key_key" UNIQUE CONSTRAINT, btree (graph_key)

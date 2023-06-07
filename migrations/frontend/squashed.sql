@@ -1932,7 +1932,11 @@ CREATE TABLE codeintel_ranking_progress (
     num_path_records_processed integer,
     num_reference_records_processed integer,
     num_count_records_processed integer,
-    max_export_id bigint NOT NULL
+    max_export_id bigint NOT NULL,
+    reference_cursor_export_deleted_at timestamp with time zone,
+    reference_cursor_export_id integer,
+    path_cursor_deleted_export_at timestamp with time zone,
+    path_cursor_export_id integer
 );
 
 CREATE SEQUENCE codeintel_ranking_progress_id_seq
@@ -5715,9 +5719,9 @@ CREATE INDEX codeintel_ranking_exports_graph_key_last_scanned_at ON codeintel_ra
 
 CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id);
 
-CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_definition_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, definition_id, id) WHERE (NOT processed);
-
 CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, id);
+
+CREATE UNIQUE INDEX codeintel_ranking_path_counts_inputs_graph_key_unique_definitio ON codeintel_ranking_path_counts_inputs USING btree (graph_key, definition_id) WHERE (NOT processed);
 
 CREATE INDEX codeintel_ranking_references_exported_upload_id ON codeintel_ranking_references USING btree (exported_upload_id);
 

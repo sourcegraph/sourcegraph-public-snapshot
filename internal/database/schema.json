@@ -8246,6 +8246,16 @@
       ],
       "Indexes": [
         {
+          "Name": "codeintel_ranking_path_counts_inputs_graph_key_unique_definitio",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_path_counts_inputs_graph_key_unique_definitio ON codeintel_ranking_path_counts_inputs USING btree (graph_key, definition_id) WHERE NOT processed",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "codeintel_ranking_path_counts_inputs_pkey",
           "IsPrimaryKey": true,
           "IsUnique": true,
@@ -8254,16 +8264,6 @@
           "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_path_counts_inputs_pkey ON codeintel_ranking_path_counts_inputs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
-        },
-        {
-          "Name": "codeintel_ranking_path_counts_inputs_graph_key_definition_id",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_definition_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, definition_id, id) WHERE NOT processed",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         },
         {
           "Name": "codeintel_ranking_path_counts_inputs_graph_key_id",
@@ -8427,6 +8427,32 @@
           "Comment": ""
         },
         {
+          "Name": "path_cursor_deleted_export_at",
+          "Index": 23,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "path_cursor_export_id",
+          "Index": 24,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "reducer_completed_at",
           "Index": 10,
           "TypeName": "timestamp with time zone",
@@ -8443,6 +8469,32 @@
           "Name": "reducer_started_at",
           "Index": 9,
           "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "reference_cursor_export_deleted_at",
+          "Index": 21,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "reference_cursor_export_id",
+          "Index": 22,
+          "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
