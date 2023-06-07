@@ -64,12 +64,14 @@ const repositoriesValidator: Validator<string[]> = value => {
 const enumToFilterValues = <T extends string>(enumeration: { [key in T]: T }): FilteredConnectionFilterValue[] => {
     const values: FilteredConnectionFilterValue[] = []
     for (const key in enumeration) {
-        values.push({
-            value: key.toLowerCase(),
-            label: key.toLowerCase(),
-            args: {},
-            tooltip: `Show ${key.toLowerCase()} jobs`,
-        })
+        if (enumeration.hasOwnProperty(key)) {
+            values.push({
+                value: key.toLowerCase(),
+                label: key.toLowerCase(),
+                args: {},
+                tooltip: `Show ${key.toLowerCase()} jobs`,
+            })
+        }
     }
     return values
 }
