@@ -119,12 +119,13 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 	r.Path(prefix + "/state").Methods("GET").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		// 🚨 SECURITY: only site admins can create github apps
 		if err := checkSiteAdmin(db, w, req); err != nil {
+			http.Error(w, "User must be site admin", http.StatusForbidden)
 			return
 		}
 
 		s, err := randomState(128)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Unexpected error when creating redirect URL: %s", err.Error()), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Unexpected error when generating state parameter: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
 
@@ -135,7 +136,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			// to always conform to the same structure.
 			stateDeets, err := json.Marshal(stateDetails)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
+				http.Error(w, fmt.Sprintf("Unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
 				return
 			}
 			cache.Set(s, stateDeets)
@@ -155,7 +156,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		}
 		stateDeets, err := json.Marshal(stateDetails)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
 
@@ -167,6 +168,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 	r.Path(prefix + "/new-app-state").Methods("GET").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		// 🚨 SECURITY: only site admins can create github apps
 		if err := checkSiteAdmin(db, w, req); err != nil {
+			http.Error(w, "User must be site admin", http.StatusForbidden)
 			return
 		}
 
@@ -178,7 +180,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			ws := backend.NewWebhookService(db, keyring.Default())
 			hook, err := ws.CreateWebhook(req.Context(), appName, extsvc.KindGitHub, webhookURN, nil)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("Unexpected error while setting up webhook endpiont: %s", err.Error()), http.StatusInternalServerError)
+				http.Error(w, fmt.Sprintf("Unexpected error while setting up webhook endpoint: %s", err.Error()), http.StatusInternalServerError)
 				return
 			}
 			webhookUUID = hook.UUID.String()
@@ -186,7 +188,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 
 		s, err := randomState(128)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Unexpected error when creating redirectURL: %s", err.Error()), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Unexpected error when generating state parameter: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
 
@@ -196,7 +198,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		}
 		stateDeets, err := json.Marshal(stateDetails)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
 
@@ -218,6 +220,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 	r.Path(prefix + "/redirect").Methods("GET").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		// 🚨 SECURITY: only site admins can setup github apps
 		if err := checkSiteAdmin(db, w, req); err != nil {
+			http.Error(w, "User must be site admin", http.StatusForbidden)
 			return
 		}
 
@@ -251,13 +254,13 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 
 		u, err := getAPIUrl(req, code)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Unexpected error when creating github API url: %v", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Unexpected error when creating github API URL: %v", err), http.StatusInternalServerError)
 			return
 		}
 
 		domain, err := parseDomain(&stateDeets.Domain)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("unable to parse domain: %v", err), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Unable to parse domain: %v", err), http.StatusBadRequest)
 			return
 		}
 
@@ -314,6 +317,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 	r.HandleFunc(prefix+"/setup", func(w http.ResponseWriter, req *http.Request) {
 		// 🚨 SECURITY: only site admins can setup github apps
 		if err := checkSiteAdmin(db, w, req); err != nil {
+			http.Error(w, "User must be site admin", http.StatusForbidden)
 			return
 		}
 
@@ -330,7 +334,8 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 
 		setupInfo, ok := cache.Get(state)
 		if !ok {
-			http.Error(w, "Bad request, state query param does not match", http.StatusBadRequest)
+			redirectURL := generateRedirectURL(nil, nil, nil, nil, errors.New("Bad request, state query param does not match"))
+			http.Redirect(w, req, redirectURL, http.StatusFound)
 			return
 		}
 		cache.Delete(state)
@@ -338,13 +343,15 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		var stateDeets gitHubAppStateDetails
 		err := json.Unmarshal(setupInfo, &stateDeets)
 		if err != nil {
-			http.Error(w, "Bad request, invalid state", http.StatusBadRequest)
+			redirectURL := generateRedirectURL(nil, nil, nil, nil, errors.New("Bad request, invalid state"))
+			http.Redirect(w, req, redirectURL, http.StatusFound)
 			return
 		}
 
 		installationID, err := strconv.Atoi(instID)
 		if err != nil {
-			http.Error(w, "Bad request, cannot parse installation_id", http.StatusBadRequest)
+			redirectURL := generateRedirectURL(&stateDeets.Domain, nil, &stateDeets.AppID, nil, errors.New("Bad request, could not parse installation ID"))
+			http.Redirect(w, req, redirectURL, http.StatusFound)
 			return
 		}
 
@@ -353,22 +360,19 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			ctx := req.Context()
 			app, err := db.GitHubApps().GetByID(ctx, stateDeets.AppID)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("Unexpected error while fetching github app data: %s", err.Error()), http.StatusInternalServerError)
+				redirectURL := generateRedirectURL(&stateDeets.Domain, &installationID, &stateDeets.AppID, nil, errors.Newf("Unexpected error while fetching GitHub App from DB: %s", err.Error()))
+				http.Redirect(w, req, redirectURL, http.StatusFound)
 				return
 			}
 
 			err = db.GitHubApps().Install(ctx, app.ID, installationID)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("Unexpected error while installing github app: %s", err.Error()), http.StatusInternalServerError)
+				redirectURL := generateRedirectURL(&stateDeets.Domain, &installationID, &stateDeets.AppID, &app.Name, errors.Newf("Unexpected error while creating GitHub App installation: %s", err.Error()))
+				http.Redirect(w, req, redirectURL, http.StatusFound)
 				return
 			}
 
-			redirectURL, err := generateRedirectURL(&stateDeets.Domain, installationID, app.ID, app.Name)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("unexpected error while generating redirect URL: %s", err.Error()), http.StatusInternalServerError)
-				return
-			}
-
+			redirectURL := generateRedirectURL(&stateDeets.Domain, &installationID, &app.ID, &app.Name, nil)
 			http.Redirect(w, req, redirectURL, http.StatusFound)
 			return
 		} else {
@@ -380,19 +384,42 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 	return r
 }
 
-func generateRedirectURL(domain *string, installationID, appID int, appName string) (string, error) {
+func generateRedirectURL(domain *string, installationID, appID *int, appName *string, creationErr error) string {
+	// If we got an error but didn't even get far enough to parse a domain for the new
+	// GitHub App, we still want to route the user back to somewhere useful, so we send
+	// them back to the main site admin GitHub Apps page.
+	if domain == nil && creationErr != nil {
+		return fmt.Sprintf("/site-admin/github-apps?success=false&error=%s", url.QueryEscape(creationErr.Error()))
+	}
+
 	parsedDomain, err := parseDomain(domain)
 	if err != nil {
-		return "", errors.Errorf("invalid domain: %s", *domain)
+		return fmt.Sprintf("/site-admin/github-apps?success=false&error=%s", url.QueryEscape(fmt.Sprintf("invalid domain: %s", *domain)))
 	}
 
 	switch *parsedDomain {
 	case types.ReposGitHubAppDomain:
-		return fmt.Sprintf("/site-admin/github-apps/%s?installation_id=%d", MarshalGitHubAppID(int64(appID)), installationID), nil
+		if creationErr != nil {
+			return fmt.Sprintf("/site-admin/github-apps?success=false&error=%s", url.QueryEscape(creationErr.Error()))
+		}
+		if installationID == nil || appID == nil {
+			return fmt.Sprintf("/site-admin/github-apps?success=false&error=%s", url.QueryEscape("missing installation ID or app ID"))
+		}
+
+		return fmt.Sprintf("/site-admin/github-apps/%s?installation_id=%d", MarshalGitHubAppID(int64(*appID)), *installationID)
 	case types.BatchesGitHubAppDomain:
-		return fmt.Sprintf("/site-admin/batch-changes?success=true&app_name=%s", appName), nil
+		if creationErr != nil {
+			return fmt.Sprintf("/site-admin/batch-changes?success=false&error=%s", url.QueryEscape(creationErr.Error()))
+		}
+
+		// This shouldn't really happen unless we also had an error, but we handle it just
+		// in case
+		if appName == nil {
+			return "/site-admin/batch-changes?success=true"
+		}
+		return fmt.Sprintf("/site-admin/batch-changes?success=true&app_name=%s", *appName)
 	default:
-		return "", errors.Errorf("unsupported github apps domain: %v", parsedDomain)
+		return fmt.Sprintf("/site-admin/github-apps?success=false&error=%s", url.QueryEscape(fmt.Sprintf("unsupported github apps domain: %v", parsedDomain)))
 	}
 }
 

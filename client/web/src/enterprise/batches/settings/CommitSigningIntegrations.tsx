@@ -15,6 +15,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
+import { GitHubAppFailureAlert } from '../../../components/gitHubApps/GitHubAppFailureAlert'
 import {
     BatchChangesCodeHostFields,
     GlobalBatchChangesCodeHostsResult,
@@ -53,8 +54,9 @@ export const CommitSigningIntegrations: React.FunctionComponent<
     const { loading, hasNextPage, fetchMore, connection, error, refetchAll } = connectionResult
 
     const location = useLocation()
-    const success = new URLSearchParams(location.search).get('success')
+    const success = new URLSearchParams(location.search).get('success') === 'true'
     const appName = new URLSearchParams(location.search).get('app_name')
+    const setupError = new URLSearchParams(location.search).get('error')
     return (
         <Container>
             <H3>Commit signing integrations</H3>
@@ -68,11 +70,12 @@ export const CommitSigningIntegrations: React.FunctionComponent<
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}
                 {loading && !connection && <ConnectionLoading />}
-                {success && appName && !readOnly && (
+                {success && !readOnly && (
                     <DismissibleAlert className="mb-3" variant="success">
-                        GitHub App "{appName}" successfully connected.
+                        GitHub App {appName?.length ? `"${appName}" ` : ''}successfully connected.
                     </DismissibleAlert>
                 )}
+                {!success && setupError && !readOnly && <GitHubAppFailureAlert error={setupError} />}
                 <ConnectionList as="ul" className="list-group" aria-label="commit signing integrations">
                     {connection?.nodes?.map(node =>
                         node.supportsCommitSigning ? (
