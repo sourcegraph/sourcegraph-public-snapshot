@@ -5,6 +5,7 @@ go_library(
     name = "cli",
     srcs = [
         "autoupgrade.go",
+        "autoupgrade_progress.go",
         "config.go",
         "doc.go",
         "http.go",
