@@ -37,7 +37,7 @@ func (e ErrNotFromSource) Error() string {
 func IsErrNotFromSource(err error) bool { return errors.As(err, &ErrNotFromSource{}) }
 
 func (e ErrNotFromSource) Is(err error) bool {
-	_, ok := err.(ErrNotFromSource)
+	_, ok := errors.Cause(err).(ErrNotFromSource)
 	return ok
 }
 
