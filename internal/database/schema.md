@@ -1021,29 +1021,33 @@ Indexes:
  definition_id | bigint  |           |          | 
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
-    "codeintel_ranking_path_counts_inputs_graph_key_definition_id" btree (graph_key, definition_id, id) WHERE NOT processed
+    "codeintel_ranking_path_counts_inputs_graph_key_unique_definitio" UNIQUE, btree (graph_key, definition_id) WHERE NOT processed
     "codeintel_ranking_path_counts_inputs_graph_key_id" btree (graph_key, id)
 
 ```
 
 # Table "public.codeintel_ranking_progress"
 ```
-             Column              |           Type           | Collation | Nullable |                        Default                         
----------------------------------+--------------------------+-----------+----------+--------------------------------------------------------
- id                              | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
- graph_key                       | text                     |           | not null | 
- mappers_started_at              | timestamp with time zone |           | not null | 
- mapper_completed_at             | timestamp with time zone |           |          | 
- seed_mapper_completed_at        | timestamp with time zone |           |          | 
- reducer_started_at              | timestamp with time zone |           |          | 
- reducer_completed_at            | timestamp with time zone |           |          | 
- num_path_records_total          | integer                  |           |          | 
- num_reference_records_total     | integer                  |           |          | 
- num_count_records_total         | integer                  |           |          | 
- num_path_records_processed      | integer                  |           |          | 
- num_reference_records_processed | integer                  |           |          | 
- num_count_records_processed     | integer                  |           |          | 
- max_export_id                   | bigint                   |           | not null | 
+               Column               |           Type           | Collation | Nullable |                        Default                         
+------------------------------------+--------------------------+-----------+----------+--------------------------------------------------------
+ id                                 | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
+ graph_key                          | text                     |           | not null | 
+ mappers_started_at                 | timestamp with time zone |           | not null | 
+ mapper_completed_at                | timestamp with time zone |           |          | 
+ seed_mapper_completed_at           | timestamp with time zone |           |          | 
+ reducer_started_at                 | timestamp with time zone |           |          | 
+ reducer_completed_at               | timestamp with time zone |           |          | 
+ num_path_records_total             | integer                  |           |          | 
+ num_reference_records_total        | integer                  |           |          | 
+ num_count_records_total            | integer                  |           |          | 
+ num_path_records_processed         | integer                  |           |          | 
+ num_reference_records_processed    | integer                  |           |          | 
+ num_count_records_processed        | integer                  |           |          | 
+ max_export_id                      | bigint                   |           | not null | 
+ reference_cursor_export_deleted_at | timestamp with time zone |           |          | 
+ reference_cursor_export_id         | integer                  |           |          | 
+ path_cursor_deleted_export_at      | timestamp with time zone |           |          | 
+ path_cursor_export_id              | integer                  |           |          | 
 Indexes:
     "codeintel_ranking_progress_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_progress_graph_key_key" UNIQUE CONSTRAINT, btree (graph_key)
@@ -3235,22 +3239,25 @@ Foreign-key constraints:
 
 # Table "public.product_subscriptions"
 ```
-                   Column                    |           Type           | Collation | Nullable | Default 
----------------------------------------------+--------------------------+-----------+----------+---------
- id                                          | uuid                     |           | not null | 
- user_id                                     | integer                  |           | not null | 
- billing_subscription_id                     | text                     |           |          | 
- created_at                                  | timestamp with time zone |           | not null | now()
- updated_at                                  | timestamp with time zone |           | not null | now()
- archived_at                                 | timestamp with time zone |           |          | 
- account_number                              | text                     |           |          | 
- cody_gateway_enabled                        | boolean                  |           | not null | false
- cody_gateway_chat_rate_limit                | integer                  |           |          | 
- cody_gateway_chat_rate_interval_seconds     | integer                  |           |          | 
- cody_gateway_chat_rate_limit_allowed_models | text[]                   |           |          | 
- cody_gateway_code_rate_limit                | integer                  |           |          | 
- cody_gateway_code_rate_interval_seconds     | integer                  |           |          | 
- cody_gateway_code_rate_limit_allowed_models | text[]                   |           |          | 
+                      Column                       |           Type           | Collation | Nullable | Default 
+---------------------------------------------------+--------------------------+-----------+----------+---------
+ id                                                | uuid                     |           | not null | 
+ user_id                                           | integer                  |           | not null | 
+ billing_subscription_id                           | text                     |           |          | 
+ created_at                                        | timestamp with time zone |           | not null | now()
+ updated_at                                        | timestamp with time zone |           | not null | now()
+ archived_at                                       | timestamp with time zone |           |          | 
+ account_number                                    | text                     |           |          | 
+ cody_gateway_enabled                              | boolean                  |           | not null | false
+ cody_gateway_chat_rate_limit                      | integer                  |           |          | 
+ cody_gateway_chat_rate_interval_seconds           | integer                  |           |          | 
+ cody_gateway_embeddings_api_rate_limit            | integer                  |           |          | 
+ cody_gateway_embeddings_api_rate_interval_seconds | integer                  |           |          | 
+ cody_gateway_embeddings_api_allowed_models        | text[]                   |           |          | 
+ cody_gateway_chat_rate_limit_allowed_models       | text[]                   |           |          | 
+ cody_gateway_code_rate_limit                      | integer                  |           |          | 
+ cody_gateway_code_rate_interval_seconds           | integer                  |           |          | 
+ cody_gateway_code_rate_limit_allowed_models       | text[]                   |           |          | 
 Indexes:
     "product_subscriptions_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -3259,6 +3266,12 @@ Referenced by:
     TABLE "product_licenses" CONSTRAINT "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
 
 ```
+
+**cody_gateway_embeddings_api_allowed_models**: Custom override for the set of models allowed for embedding
+
+**cody_gateway_embeddings_api_rate_interval_seconds**: Custom time interval over which the embeddings rate limit is applied
+
+**cody_gateway_embeddings_api_rate_limit**: Custom requests per time interval allowed for embeddings
 
 # Table "public.query_runner_state"
 ```

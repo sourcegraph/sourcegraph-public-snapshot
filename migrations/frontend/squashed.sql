@@ -1932,7 +1932,11 @@ CREATE TABLE codeintel_ranking_progress (
     num_path_records_processed integer,
     num_reference_records_processed integer,
     num_count_records_processed integer,
-    max_export_id bigint NOT NULL
+    max_export_id bigint NOT NULL,
+    reference_cursor_export_deleted_at timestamp with time zone,
+    reference_cursor_export_id integer,
+    path_cursor_deleted_export_at timestamp with time zone,
+    path_cursor_export_id integer
 );
 
 CREATE SEQUENCE codeintel_ranking_progress_id_seq
@@ -3995,11 +3999,20 @@ CREATE TABLE product_subscriptions (
     cody_gateway_enabled boolean DEFAULT false NOT NULL,
     cody_gateway_chat_rate_limit integer,
     cody_gateway_chat_rate_interval_seconds integer,
+    cody_gateway_embeddings_api_rate_limit integer,
+    cody_gateway_embeddings_api_rate_interval_seconds integer,
+    cody_gateway_embeddings_api_allowed_models text[],
     cody_gateway_chat_rate_limit_allowed_models text[],
     cody_gateway_code_rate_limit integer,
     cody_gateway_code_rate_interval_seconds integer,
     cody_gateway_code_rate_limit_allowed_models text[]
 );
+
+COMMENT ON COLUMN product_subscriptions.cody_gateway_embeddings_api_rate_limit IS 'Custom requests per time interval allowed for embeddings';
+
+COMMENT ON COLUMN product_subscriptions.cody_gateway_embeddings_api_rate_interval_seconds IS 'Custom time interval over which the embeddings rate limit is applied';
+
+COMMENT ON COLUMN product_subscriptions.cody_gateway_embeddings_api_allowed_models IS 'Custom override for the set of models allowed for embedding';
 
 CREATE TABLE query_runner_state (
     query text,
@@ -5706,9 +5719,9 @@ CREATE INDEX codeintel_ranking_exports_graph_key_last_scanned_at ON codeintel_ra
 
 CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id);
 
-CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_definition_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, definition_id, id) WHERE (NOT processed);
-
 CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, id);
+
+CREATE UNIQUE INDEX codeintel_ranking_path_counts_inputs_graph_key_unique_definitio ON codeintel_ranking_path_counts_inputs USING btree (graph_key, definition_id) WHERE (NOT processed);
 
 CREATE INDEX codeintel_ranking_references_exported_upload_id ON codeintel_ranking_references USING btree (exported_upload_id);
 

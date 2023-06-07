@@ -12,6 +12,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Open context search results links as workspace file [pull/52856](https://github.com/sourcegraph/sourcegraph/pull/52856)
 - Cody Inline Assist: Decorations for `/fix` errors [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
 - Open file paths from Cody's responses in workspace. []()
+- Help & Getting Started: Walkthrough to help users get setup with Cody and discover new features. [pull/52560](https://github.com/sourcegraph/sourcegraph/pull/52560)
 
 ### Fixed
 
@@ -23,6 +24,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 ### Changed
 
 - Cody completions: Improved the number of completions presented and reduced the latency [pull/52935](https://github.com/sourcegraph/sourcegraph/pull/52935)
+- Cody completions: Various improvements to the context [pull/53043](https://github.com/sourcegraph/sourcegraph/pull/53043)
 
 ## [0.2.1]
 
