@@ -160,7 +160,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         if (!task) {
             return
         }
-        this.codelenses.set(task.id, CodyTaskState.applying, task.selectionRange)
+        this.codelenses.set(task.id, CodyTaskState.applying, task.getSelectionRange())
         await task.apply()
         this.tasks.set(task.id, task)
         if (task.state === CodyTaskState.fixed) {
@@ -206,7 +206,6 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         return task?.selection.selectedText || ''
     }
 
-    // TODO: Add support for showing diff by task id
     private async diff(id: taskID): Promise<void> {
         const task = this.tasks.get(id)
         // show quick diff view between the current document and replacement
@@ -219,7 +218,8 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         const tempDocUri = vscode.Uri.parse('untitled:' + task.fixupFile.uri.fsPath)
         // Add replacement content to the temp document
         const edit = new vscode.WorkspaceEdit()
-        edit.replace(tempDocUri, task.selectionRange, replacement)
+        const range = task.getSelectionRange()
+        edit.replace(tempDocUri, range, replacement)
         await vscode.workspace.applyEdit(edit)
         // Show diff between current document and replacement content
         await vscode.commands.executeCommand(
@@ -229,7 +229,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             'Fixup: ' + task.fixupFile.uri.fsPath,
             {
                 preview: true,
-                selection: task.selectionRange,
+                selection: range,
                 label: 'Fixup: ' + task.fixupFile.uri.fsPath,
                 description: 'Fixup: ' + task.fixupFile.uri.fsPath,
             }

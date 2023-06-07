@@ -8,8 +8,6 @@ import { editDocByUri } from '../services/InlineAssist'
 import { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
 
-// TODO(bee): Create CodeLens for each task
-// TODO(bee): Create decorator for each task
 export class FixupTask {
     public id: string
     private outputChannel = debug

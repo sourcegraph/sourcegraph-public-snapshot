@@ -56,7 +56,7 @@ ts_project(
         "src/local-app-detector.ts",
         "src/log.ts",
         "src/main.ts",
-        "src/non-stop/FixupCodeLens.ts",
+        "src/non-stop/FixupCodeLenses.ts",
         "src/non-stop/FixupController.ts",
         "src/non-stop/FixupDecorator.ts",
         "src/non-stop/FixupDocumentEditObserver.ts",

@@ -13,11 +13,13 @@ export class FixupCodeLenses implements vscode.CodeLensProvider {
     private _disposables: vscode.Disposable[] = []
     private _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>()
     public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event
-
+    /**
+     * Create a code lens provider
+     */
     constructor() {
-        // create a code lens and provider
         this.provideCodeLenses = this.provideCodeLenses.bind(this)
         this._disposables.push(vscode.languages.registerCodeLensProvider('*', this))
+        // TODO (bea) update ranges on change
     }
     /**
      * Getter
@@ -65,6 +67,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider {
     }
 }
 
+// Create Lenses based on state
 function getLensesByState(codeLensRange: vscode.Range, state: CodyTaskState, id: string): vscode.CodeLens[] {
     switch (state) {
         case CodyTaskState.error: {
