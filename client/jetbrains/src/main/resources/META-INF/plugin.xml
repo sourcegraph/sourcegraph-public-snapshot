@@ -50,6 +50,7 @@
         <applicationService serviceImplementation="com.sourcegraph.cody.completions.CodyCompletionsManager"/>
         <editorFactoryListener implementation="com.sourcegraph.cody.completions.CodyEditorFactoryListener"/>
 
+        <projectService serviceImplementation="com.sourcegraph.cody.UpdatableChatHolderService"/>
     </extensions>
 
     <actions>
@@ -113,6 +114,15 @@
             <keyboard-shortcut first-keystroke="TAB" keymap="$default"/>
             <override-text place="MainMenu" text="Accept Completion"/>
         </action>
+
+        <action id="cody.resetCurrentConversation" icon="AllIcons.Actions.Refresh"
+                text="Reset the Current Conversation with Cody"
+                class="com.sourcegraph.cody.chat.ResetCurrentConversationAction">
+        </action>
+
+        <group id="CodyChatActionsGroup">
+            <reference ref="cody.resetCurrentConversation"/>
+        </group>
 
         <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.svg" popup="true" text="Sourcegraph"
                searchable="false">

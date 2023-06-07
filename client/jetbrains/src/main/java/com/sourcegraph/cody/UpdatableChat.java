@@ -9,4 +9,6 @@ public interface UpdatableChat {
   void updateLastMessage(@NotNull ChatMessage message);
 
   void finishMessageProcessing();
+
+  void resetConversation();
 }
