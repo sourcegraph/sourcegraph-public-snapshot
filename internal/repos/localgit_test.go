@@ -57,9 +57,11 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 	}
 
 	repoPatterns := []*schema.LocalGitRepoPattern{}
+	roots := []string{}
 
 	for _, config := range configs {
 		root := gitInitRepos(t, config.repos...)
+		roots = append(roots, root)
 		repoPatterns = append(repoPatterns, &schema.LocalGitRepoPattern{Pattern: filepath.Join(root, config.pattern), Group: config.group})
 		for _, folder := range config.folders {
 			if err := os.MkdirAll(filepath.Join(root, folder), 0755); err != nil {
@@ -91,7 +93,23 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 		return repos[i].Name < repos[j].Name
 	})
 
-	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), update(t.Name()), repos)
+	// We need to replace the temporary folder, which changes between runs, with something static
+	root_placeholder := "~root~"
+	for _,repo := range repos {
+		for _,root := range roots {
+			if strings.Contains(repo.URI, root) {
+				repo.URI = strings.Replace(repo.URI, root, root_placeholder, 1)
+				repo.ExternalRepo.ID = strings.Replace(repo.ExternalRepo.ID, root, root_placeholder, 1)
+				repo.ExternalRepo.ServiceID = strings.Replace(repo.ExternalRepo.ServiceID, root, root_placeholder, 1)
+				for k := range repo.Sources {
+					repo.Sources[k].CloneURL = strings.Replace(repo.Sources[k].CloneURL, root, root_placeholder, 1)
+				}
+				break
+			}
+		}
+	}
+
+	testutil.AssertGolden(t, filepath.Join("testdata", "sources", t.Name()), update(t.Name()), repos)
 }
 
 func gitInitBare(t *testing.T, path string) {

@@ -2,7 +2,7 @@
   {
    "ID": 0,
    "Name": "a",
-   "URI": "file:///tmp/TestLocalGitSource_ListRepos2675787656/001/repos-root/projects/a",
+   "URI": "file://~root~/projects/a",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -11,14 +11,14 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/001/repos-root/projects/a",
+    "ID": "file://~root~/projects/a",
     "ServiceType": "localgit",
-    "ServiceID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/001/repos-root/projects/a"
+    "ServiceID": "file://~root~/projects/a"
    },
    "Sources": {
     "extsvc:localgit:0": {
      "ID": "extsvc:localgit:0",
-     "CloneURL": "file:///tmp/TestLocalGitSource_ListRepos2675787656/001/repos-root/projects/a"
+     "CloneURL": "file://~root~/projects/a"
     }
    },
    "Metadata": {}
@@ -26,7 +26,7 @@
   {
    "ID": 0,
    "Name": "b",
-   "URI": "file:///tmp/TestLocalGitSource_ListRepos2675787656/001/repos-root/projects/b",
+   "URI": "file://~root~/projects/b",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -35,14 +35,14 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/001/repos-root/projects/b",
+    "ID": "file://~root~/projects/b",
     "ServiceType": "localgit",
-    "ServiceID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/001/repos-root/projects/b"
+    "ServiceID": "file://~root~/projects/b"
    },
    "Sources": {
     "extsvc:localgit:0": {
      "ID": "extsvc:localgit:0",
-     "CloneURL": "file:///tmp/TestLocalGitSource_ListRepos2675787656/001/repos-root/projects/b"
+     "CloneURL": "file://~root~/projects/b"
     }
    },
    "Metadata": {}
@@ -50,7 +50,7 @@
   {
    "ID": 0,
    "Name": "c.bare",
-   "URI": "file:///tmp/TestLocalGitSource_ListRepos2675787656/001/repos-root/projects/c.bare",
+   "URI": "file://~root~/projects/c.bare",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -59,14 +59,14 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/001/repos-root/projects/c.bare",
+    "ID": "file://~root~/projects/c.bare",
     "ServiceType": "localgit",
-    "ServiceID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/001/repos-root/projects/c.bare"
+    "ServiceID": "file://~root~/projects/c.bare"
    },
    "Sources": {
     "extsvc:localgit:0": {
      "ID": "extsvc:localgit:0",
-     "CloneURL": "file:///tmp/TestLocalGitSource_ListRepos2675787656/001/repos-root/projects/c.bare"
+     "CloneURL": "file://~root~/projects/c.bare"
     }
    },
    "Metadata": {}
@@ -74,7 +74,7 @@
   {
    "ID": 0,
    "Name": "other-project",
-   "URI": "file:///tmp/TestLocalGitSource_ListRepos2675787656/004/repos-root/nested/other-work/other-project",
+   "URI": "file://~root~/nested/other-work/other-project",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -83,14 +83,14 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/004/repos-root/nested/other-work/other-project",
+    "ID": "file://~root~/nested/other-work/other-project",
     "ServiceType": "localgit",
-    "ServiceID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/004/repos-root/nested/other-work/other-project"
+    "ServiceID": "file://~root~/nested/other-work/other-project"
    },
    "Sources": {
     "extsvc:localgit:0": {
      "ID": "extsvc:localgit:0",
-     "CloneURL": "file:///tmp/TestLocalGitSource_ListRepos2675787656/004/repos-root/nested/other-work/other-project"
+     "CloneURL": "file://~root~/nested/other-work/other-project"
     }
    },
    "Metadata": {}
@@ -98,7 +98,7 @@
   {
    "ID": 0,
    "Name": "project",
-   "URI": "file:///tmp/TestLocalGitSource_ListRepos2675787656/004/repos-root/nested/work/project",
+   "URI": "file://~root~/nested/work/project",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -107,14 +107,14 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/004/repos-root/nested/work/project",
+    "ID": "file://~root~/nested/work/project",
     "ServiceType": "localgit",
-    "ServiceID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/004/repos-root/nested/work/project"
+    "ServiceID": "file://~root~/nested/work/project"
    },
    "Sources": {
     "extsvc:localgit:0": {
      "ID": "extsvc:localgit:0",
-     "CloneURL": "file:///tmp/TestLocalGitSource_ListRepos2675787656/004/repos-root/nested/work/project"
+     "CloneURL": "file://~root~/nested/work/project"
     }
    },
    "Metadata": {}
@@ -122,7 +122,7 @@
   {
    "ID": 0,
    "Name": "single-repo",
-   "URI": "file:///tmp/TestLocalGitSource_ListRepos2675787656/005/repos-root/single-repo",
+   "URI": "file://~root~/single-repo",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -131,14 +131,14 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/005/repos-root/single-repo",
+    "ID": "file://~root~/single-repo",
     "ServiceType": "localgit",
-    "ServiceID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/005/repos-root/single-repo"
+    "ServiceID": "file://~root~/single-repo"
    },
    "Sources": {
     "extsvc:localgit:0": {
      "ID": "extsvc:localgit:0",
-     "CloneURL": "file:///tmp/TestLocalGitSource_ListRepos2675787656/005/repos-root/single-repo"
+     "CloneURL": "file://~root~/single-repo"
     }
    },
    "Metadata": {}
@@ -146,7 +146,7 @@
   {
    "ID": 0,
    "Name": "with space",
-   "URI": "file:///tmp/TestLocalGitSource_ListRepos2675787656/006/repos-root/with space",
+   "URI": "file://~root~/with space",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -155,14 +155,14 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/006/repos-root/with space",
+    "ID": "file://~root~/with space",
     "ServiceType": "localgit",
-    "ServiceID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/006/repos-root/with space"
+    "ServiceID": "file://~root~/with space"
    },
    "Sources": {
     "extsvc:localgit:0": {
      "ID": "extsvc:localgit:0",
-     "CloneURL": "file:///tmp/TestLocalGitSource_ListRepos2675787656/006/repos-root/with space"
+     "CloneURL": "file://~root~/with space"
     }
    },
    "Metadata": {}
@@ -170,7 +170,7 @@
   {
    "ID": 0,
    "Name": "work-project",
-   "URI": "file:///tmp/TestLocalGitSource_ListRepos2675787656/003/repos-root/work-project",
+   "URI": "file://~root~/work-project",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -179,14 +179,14 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/003/repos-root/work-project",
+    "ID": "file://~root~/work-project",
     "ServiceType": "localgit",
-    "ServiceID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/003/repos-root/work-project"
+    "ServiceID": "file://~root~/work-project"
    },
    "Sources": {
     "extsvc:localgit:0": {
      "ID": "extsvc:localgit:0",
-     "CloneURL": "file:///tmp/TestLocalGitSource_ListRepos2675787656/003/repos-root/work-project"
+     "CloneURL": "file://~root~/work-project"
     }
    },
    "Metadata": {}
@@ -194,7 +194,7 @@
   {
    "ID": 0,
    "Name": "work-project2",
-   "URI": "file:///tmp/TestLocalGitSource_ListRepos2675787656/003/repos-root/work-project2",
+   "URI": "file://~root~/work-project2",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -203,14 +203,14 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/003/repos-root/work-project2",
+    "ID": "file://~root~/work-project2",
     "ServiceType": "localgit",
-    "ServiceID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/003/repos-root/work-project2"
+    "ServiceID": "file://~root~/work-project2"
    },
    "Sources": {
     "extsvc:localgit:0": {
      "ID": "extsvc:localgit:0",
-     "CloneURL": "file:///tmp/TestLocalGitSource_ListRepos2675787656/003/repos-root/work-project2"
+     "CloneURL": "file://~root~/work-project2"
     }
    },
    "Metadata": {}
@@ -218,7 +218,7 @@
   {
    "ID": 0,
    "Name": "work/a",
-   "URI": "file:///tmp/TestLocalGitSource_ListRepos2675787656/002/repos-root/work/a",
+   "URI": "file://~root~/work/a",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -227,14 +227,14 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/002/repos-root/work/a",
+    "ID": "file://~root~/work/a",
     "ServiceType": "localgit",
-    "ServiceID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/002/repos-root/work/a"
+    "ServiceID": "file://~root~/work/a"
    },
    "Sources": {
     "extsvc:localgit:0": {
      "ID": "extsvc:localgit:0",
-     "CloneURL": "file:///tmp/TestLocalGitSource_ListRepos2675787656/002/repos-root/work/a"
+     "CloneURL": "file://~root~/work/a"
     }
    },
    "Metadata": {}
@@ -242,7 +242,7 @@
   {
    "ID": 0,
    "Name": "work/b",
-   "URI": "file:///tmp/TestLocalGitSource_ListRepos2675787656/002/repos-root/work/b",
+   "URI": "file://~root~/work/b",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -251,14 +251,14 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/002/repos-root/work/b",
+    "ID": "file://~root~/work/b",
     "ServiceType": "localgit",
-    "ServiceID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/002/repos-root/work/b"
+    "ServiceID": "file://~root~/work/b"
    },
    "Sources": {
     "extsvc:localgit:0": {
      "ID": "extsvc:localgit:0",
-     "CloneURL": "file:///tmp/TestLocalGitSource_ListRepos2675787656/002/repos-root/work/b"
+     "CloneURL": "file://~root~/work/b"
     }
    },
    "Metadata": {}
@@ -266,7 +266,7 @@
   {
    "ID": 0,
    "Name": "work/c.bare",
-   "URI": "file:///tmp/TestLocalGitSource_ListRepos2675787656/002/repos-root/work/c.bare",
+   "URI": "file://~root~/work/c.bare",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -275,14 +275,14 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/002/repos-root/work/c.bare",
+    "ID": "file://~root~/work/c.bare",
     "ServiceType": "localgit",
-    "ServiceID": "file:///tmp/TestLocalGitSource_ListRepos2675787656/002/repos-root/work/c.bare"
+    "ServiceID": "file://~root~/work/c.bare"
    },
    "Sources": {
     "extsvc:localgit:0": {
      "ID": "extsvc:localgit:0",
-     "CloneURL": "file:///tmp/TestLocalGitSource_ListRepos2675787656/002/repos-root/work/c.bare"
+     "CloneURL": "file://~root~/work/c.bare"
     }
    },
    "Metadata": {}
