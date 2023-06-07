@@ -36,6 +36,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Batch Changes now supports per-batch-change control for pushing to a fork of the upstream repository when the property `changesetTemplate.fork` is specified in the batch spec. [#51572](https://github.com/sourcegraph/sourcegraph/pull/51572)
 - Executors can now be configured to process multiple queues. [#52016](https://github.com/sourcegraph/sourcegraph/pull/52016)
 - Added `isCodyEnabled` as a new GraphQL field to `Site`. [#52941](https://github.com/sourcegraph/sourcegraph/pull/52941)
+- Enabled improved search ranking by default. This feature can be disabled through the `search-ranking` feature flag.[#53031](https://github.com/sourcegraph/sourcegraph/pull/53031)
 
 ### Changed
 
@@ -61,6 +62,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code intelligence background jobs did not correctly use an internal context, causing SCIP data to sometimes be prematurely deleted. [#51591](https://github.com/sourcegraph/sourcegraph/pull/51591)
 - Slow request logs now have the correct trace and span IDs attached if a trace is present on the request. [#51826](https://github.com/sourcegraph/sourcegraph/pull/51826)
 - SAML assertions to get user display name are now compared case insensitively and we do not always return an error. [#52992](https://github.com/sourcegraph/sourcegraph/pull/52992)
+- The braindot menu on the blob view no longer fetches data eagerly to prevent performance issues for larger monorepo users. [#53039](https://github.com/sourcegraph/sourcegraph/pull/53039)
 
 ### Removed
 

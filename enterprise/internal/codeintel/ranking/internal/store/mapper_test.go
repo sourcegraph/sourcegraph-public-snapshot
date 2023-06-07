@@ -442,7 +442,7 @@ func TestVacuumStaleGraphs(t *testing.T) {
 		}
 		if _, err := db.ExecContext(ctx, `
 			INSERT INTO codeintel_ranking_path_counts_inputs (definition_id, count, graph_key)
-			SELECT 0, 100, $1 FROM generate_series(1, 30)
+			SELECT v, 100, $1 FROM generate_series(1, 30) AS v
 		`, graphKey); err != nil {
 			t.Fatalf("failed to insert ranking path count inputs: %s", err)
 		}

@@ -158,6 +158,13 @@ func (r *ownResolver) GitBlobOwnership(
 	}
 	ownerships = append(ownerships, assignedOwners...)
 
+	// Retrieve assigned teams.
+	assignedTeams, err := r.computeAssignedTeams(ctx, r.db, blob, repoID)
+	if err != nil {
+		return nil, err
+	}
+	ownerships = append(ownerships, assignedTeams...)
+
 	return r.ownershipConnection(args, ownerships)
 }
 
@@ -227,6 +234,13 @@ func (r *ownResolver) GitTreeOwnership(
 		return nil, err
 	}
 	ownerships = append(ownerships, assignedOwners...)
+
+	// Retrieve assigned teams.
+	assignedTeams, err := r.computeAssignedTeams(ctx, r.db, tree, repoID)
+	if err != nil {
+		return nil, err
+	}
+	ownerships = append(ownerships, assignedTeams...)
 
 	return r.ownershipConnection(args, ownerships)
 }
@@ -466,7 +480,7 @@ func (r *ownershipResolver) order() int {
 		}
 	}
 	// Smaller numbers are ordered in front, so take negative score.
-	return -10*codeownersCount + reasonsCount
+	return -10*codeownersCount - reasonsCount
 }
 
 // isOwner is true if this assigns an actual owner (for instance through CODEOWNERS file)
@@ -757,6 +771,44 @@ func (r *ownResolver) computeAssignedOwners(ctx context.Context, logger log.Logg
 	return results, nil
 }
 
+func (r *ownResolver) computeAssignedTeams(ctx context.Context, db edb.EnterpriseDB, blob *graphqlbackend.GitTreeEntryResolver, repoID api.RepoID) (results []*ownershipResolver, err error) {
+	assignedTeams, err := r.ownService().AssignedTeams(ctx, repoID, api.CommitID(blob.Commit().OID()))
+	if err != nil {
+		return nil, errors.Wrap(err, "computing assigned ownership")
+	}
+	assignedTeamSummaries := assignedTeams.Match(blob.Path())
+
+	fetchedTeams := make(map[int32]*types.Team)
+
+	for _, summary := range assignedTeamSummaries {
+		var team *types.Team
+		teamID := summary.OwnerTeamID
+		if fetchedUser, found := fetchedTeams[teamID]; found {
+			team = fetchedUser
+		} else {
+			teamFromDB, err := db.Teams().GetTeamByID(ctx, teamID)
+			if err != nil {
+				return nil, errors.Wrap(err, "getting team")
+			}
+			team = teamFromDB
+			fetchedTeams[teamID] = teamFromDB
+		}
+		res := ownershipResolver{
+			db: db,
+			resolvedOwner: &codeowners.Team{
+				Team: team,
+			},
+			reasons: []*ownershipReasonResolver{
+				{
+					&assignedOwner{},
+				},
+			},
+		}
+		results = append(results, &res)
+	}
+	return results, nil
+}
+
 func (r *ownResolver) OwnSignalConfigurations(ctx context.Context) ([]graphqlbackend.SignalConfigurationResolver, error) {
 	err := auth.CheckCurrentActorIsSiteAdmin(actor.FromContext(ctx), r.db)
 	if err != nil {
@@ -837,7 +889,7 @@ func userifyPatterns(patterns []string) (results []string) {
 	return results
 }
 
-func (r *ownResolver) AssignOwner(ctx context.Context, args *graphqlbackend.AssignOwnerArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *ownResolver) AssignOwner(ctx context.Context, args *graphqlbackend.AssignOwnerOrTeamArgs) (*graphqlbackend.EmptyResponse, error) {
 	// Internal actor is a no-op, only a user can assign an owner.
 	if actor.FromContext(ctx).IsInternal() {
 		return nil, nil
@@ -846,14 +898,75 @@ func (r *ownResolver) AssignOwner(ctx context.Context, args *graphqlbackend.Assi
 	if err != nil {
 		return nil, err
 	}
-	u, err := unmarshalAssignOwnerArgs(args.Input)
+	u, err := unmarshalAssignOwnerArgs(args.Input, userUnmarshalMode)
 	if err != nil {
 		return nil, err
 	}
 	whoAssignedUserID := user.ID
-	err = r.db.AssignedOwners().Insert(ctx, u.AssignedOwnerID, u.RepoID, u.AbsolutePath, whoAssignedUserID)
+	err = r.db.AssignedOwners().Insert(ctx, u.AssignedOwnerOrTeamID, u.RepoID, u.AbsolutePath, whoAssignedUserID)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating assigned owner")
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *ownResolver) RemoveAssignedOwner(ctx context.Context, args *graphqlbackend.AssignOwnerOrTeamArgs) (*graphqlbackend.EmptyResponse, error) {
+	// Internal actor is a no-op, only a user can remove an assigned owner.
+	if actor.FromContext(ctx).IsInternal() {
+		return nil, nil
+	}
+	_, err := r.checkAssignedOwnershipPermission(ctx)
+	if err != nil {
+		return nil, err
+	}
+	u, err := unmarshalAssignOwnerArgs(args.Input, userUnmarshalMode)
+	if err != nil {
+		return nil, err
+	}
+	err = r.db.AssignedOwners().DeleteOwner(ctx, u.AssignedOwnerOrTeamID, u.RepoID, u.AbsolutePath)
+	if err != nil {
+		return nil, errors.Wrap(err, "deleting assigned owner")
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *ownResolver) AssignTeam(ctx context.Context, args *graphqlbackend.AssignOwnerOrTeamArgs) (*graphqlbackend.EmptyResponse, error) {
+	// Internal actor is a no-op, only a user can assign an owner.
+	if actor.FromContext(ctx).IsInternal() {
+		return nil, nil
+	}
+	user, err := r.checkAssignedOwnershipPermission(ctx)
+	if err != nil {
+		return nil, err
+	}
+	t, err := unmarshalAssignOwnerArgs(args.Input, teamUnmarshalMode)
+	if err != nil {
+		return nil, err
+	}
+	whoAssignedUserID := user.ID
+	err = r.db.AssignedTeams().Insert(ctx, t.AssignedOwnerOrTeamID, t.RepoID, t.AbsolutePath, whoAssignedUserID)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating assigned team")
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *ownResolver) RemoveAssignedTeam(ctx context.Context, args *graphqlbackend.AssignOwnerOrTeamArgs) (*graphqlbackend.EmptyResponse, error) {
+	// Internal actor is a no-op, only a user can remove an assigned owner.
+	if actor.FromContext(ctx).IsInternal() {
+		return nil, nil
+	}
+	_, err := r.checkAssignedOwnershipPermission(ctx)
+	if err != nil {
+		return nil, err
+	}
+	t, err := unmarshalAssignOwnerArgs(args.Input, teamUnmarshalMode)
+	if err != nil {
+		return nil, err
+	}
+	err = r.db.AssignedTeams().DeleteOwnerTeam(ctx, t.AssignedOwnerOrTeamID, t.RepoID, t.AbsolutePath)
+	if err != nil {
+		return nil, errors.Wrap(err, "deleting assigned team")
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
 }
@@ -877,39 +990,34 @@ func (r *ownResolver) checkAssignedOwnershipPermission(ctx context.Context) (*ty
 	return user, nil
 }
 
-func (r *ownResolver) RemoveAssignedOwner(ctx context.Context, args *graphqlbackend.AssignOwnerArgs) (*graphqlbackend.EmptyResponse, error) {
-	// Internal actor is a no-op, only a user can remove an assigned owner.
-	if actor.FromContext(ctx).IsInternal() {
-		return nil, nil
-	}
-	_, err := r.checkAssignedOwnershipPermission(ctx)
-	if err != nil {
-		return nil, err
-	}
-	u, err := unmarshalAssignOwnerArgs(args.Input)
-	if err != nil {
-		return nil, err
-	}
-	err = r.db.AssignedOwners().DeleteOwner(ctx, u.AssignedOwnerID, u.RepoID, u.AbsolutePath)
-	if err != nil {
-		return nil, errors.Wrap(err, "deleting assigned owner")
-	}
-	return &graphqlbackend.EmptyResponse{}, nil
-}
-
 type UnmarshalledAssignOwnerArgs struct {
-	AssignedOwnerID int32
-	RepoID          api.RepoID
-	AbsolutePath    string
+	AssignedOwnerOrTeamID int32
+	RepoID                api.RepoID
+	AbsolutePath          string
 }
 
-func unmarshalAssignOwnerArgs(args graphqlbackend.AssignOwnerInput) (*UnmarshalledAssignOwnerArgs, error) {
-	userID, err := graphqlbackend.UnmarshalUserID(args.AssignedOwnerID)
-	if err != nil {
-		return nil, err
+type UnmarshalMode string
+
+const (
+	userUnmarshalMode UnmarshalMode = "user"
+	teamUnmarshalMode UnmarshalMode = "team"
+)
+
+func unmarshalAssignOwnerArgs(args graphqlbackend.AssignOwnerOrTeamInput, unmarshalMode UnmarshalMode) (*UnmarshalledAssignOwnerArgs, error) {
+	var userOrTeamID int32
+	var unmarshalError error
+	if unmarshalMode == userUnmarshalMode {
+		userOrTeamID, unmarshalError = graphqlbackend.UnmarshalUserID(args.AssignedOwnerID)
+	} else if unmarshalMode == teamUnmarshalMode {
+		userOrTeamID, unmarshalError = graphqlbackend.UnmarshalTeamID(args.AssignedOwnerID)
+	} else {
+		return nil, errors.New("only user or team can be assigned ownership")
 	}
-	if userID == 0 {
-		return nil, errors.New("assigned user ID should not be 0")
+	if unmarshalError != nil {
+		return nil, unmarshalError
+	}
+	if userOrTeamID == 0 {
+		return nil, errors.New(fmt.Sprintf("assigned %s ID should not be 0", unmarshalMode))
 	}
 	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.RepoID)
 	if err != nil {
@@ -919,8 +1027,8 @@ func unmarshalAssignOwnerArgs(args graphqlbackend.AssignOwnerInput) (*Unmarshall
 		return nil, errors.New("repo ID should not be 0")
 	}
 	return &UnmarshalledAssignOwnerArgs{
-		AssignedOwnerID: userID,
-		RepoID:          repoID,
-		AbsolutePath:    args.AbsolutePath,
+		AssignedOwnerOrTeamID: userOrTeamID,
+		RepoID:                repoID,
+		AbsolutePath:          args.AbsolutePath,
 	}, nil
 }

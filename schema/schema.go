@@ -618,12 +618,14 @@ type EmailTemplates struct {
 
 // Embeddings description: Configuration for embeddings service.
 type Embeddings struct {
-	// AccessToken description: The access token used to authenticate with the external embedding API service.
-	AccessToken string `json:"accessToken"`
-	// Dimensions description: The dimensionality of the embedding vectors.
-	Dimensions int `json:"dimensions"`
+	// AccessToken description: The access token used to authenticate with the external embedding API service. For provider sourcegraph, this is optional.
+	AccessToken string `json:"accessToken,omitempty"`
+	// Dimensions description: The dimensionality of the embedding vectors. Required field if not using the sourcegraph provider.
+	Dimensions int `json:"dimensions,omitempty"`
 	// Enabled description: Toggles whether embedding service is enabled.
 	Enabled bool `json:"enabled"`
+	// Endpoint description: The endpoint under which to reach the provider. Sensible default will be used for each provider.
+	Endpoint string `json:"endpoint,omitempty"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
 	// Incremental description: Experimental: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.
@@ -634,10 +636,12 @@ type Embeddings struct {
 	MaxTextEmbeddingsPerRepo int `json:"maxTextEmbeddingsPerRepo,omitempty"`
 	// MinimumInterval description: The time to wait between runs. Valid time units are "s", "m", "h". Example values: "30s", "5m", "1h".
 	MinimumInterval string `json:"minimumInterval,omitempty"`
-	// Model description: The model used for embedding.
-	Model string `json:"model"`
-	// Url description: The url to the external embedding API service.
-	Url string `json:"url"`
+	// Model description: The model used for embedding. A default model will be used for each provider, if not set.
+	Model string `json:"model,omitempty"`
+	// Provider description: The provider to use for generating embeddings. Defaults to sourcegraph.
+	Provider string `json:"provider,omitempty"`
+	// Url description: The url to the external embedding API service. Deprecated, use endpoint instead.
+	Url string `json:"url,omitempty"`
 }
 
 // EncryptionKey description: Config for a key
@@ -815,6 +819,8 @@ type ExperimentalFeatures struct {
 	PasswordPolicy *PasswordPolicy `json:"passwordPolicy,omitempty"`
 	// Perforce description: Allow adding Perforce code host connections
 	Perforce string `json:"perforce,omitempty"`
+	// PerforceChangelistMapping description: Allow mapping of Perforce changelists to their commit SHAs in the DB
+	PerforceChangelistMapping string `json:"perforceChangelistMapping,omitempty"`
 	// PythonPackages description: Allow adding Python package code host connections
 	PythonPackages string `json:"pythonPackages,omitempty"`
 	// Ranking description: Experimental search result ranking options.
@@ -889,6 +895,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "pagure")
 	delete(m, "passwordPolicy")
 	delete(m, "perforce")
+	delete(m, "perforceChangelistMapping")
 	delete(m, "pythonPackages")
 	delete(m, "ranking")
 	delete(m, "rateLimitAnonymous")
@@ -1364,6 +1371,15 @@ type JVMPackagesConnection struct {
 	Maven Maven `json:"maven"`
 }
 
+// LocalGitExternalService description: Configuration for integration local Git repositories.
+type LocalGitExternalService struct {
+	Repos []*LocalGitRepoPattern `json:"repos,omitempty"`
+}
+type LocalGitRepoPattern struct {
+	Group   string `json:"group,omitempty"`
+	Pattern string `json:"pattern,omitempty"`
+}
+
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
 	// AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
@@ -1806,9 +1822,9 @@ type QuickLink struct {
 
 // Ranking description: Experimental search result ranking options.
 type Ranking struct {
-	// DocumentRanksWeight description: Controls the impact of document ranks on the final ranking when the 'search-ranking' feature is enabled. This is intended for internal testing purposes only, it's not recommended for users to change this.
+	// DocumentRanksWeight description: Controls the impact of document ranks on the final ranking. This is intended for internal testing purposes only, it's not recommended for users to change this.
 	DocumentRanksWeight *float64 `json:"documentRanksWeight,omitempty"`
-	// FlushWallTimeMS description: Controls the amount of time that Zoekt shards collect and rank results when the 'search-ranking' feature is enabled. Larger values give a more stable ranking, but searches can take longer to return an initial result.
+	// FlushWallTimeMS description: Controls the amount of time that Zoekt shards collect and rank results. Larger values give a more stable ranking, but searches can take longer to return an initial result.
 	FlushWallTimeMS int `json:"flushWallTimeMS,omitempty"`
 	// MaxQueueMatchCount description: The maximum number of matches that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs for queries with extremely high count of matches per repository.
 	MaxQueueMatchCount *int `json:"maxQueueMatchCount,omitempty"`
