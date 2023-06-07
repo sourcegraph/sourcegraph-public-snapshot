@@ -3230,6 +3230,425 @@ func (c AssignedOwnersStoreListAssignedOwnersForRepoFuncCall) Results() []interf
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// MockAssignedTeamsStore is a mock implementation of the AssignedTeamsStore
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/database) used for unit
+// testing.
+type MockAssignedTeamsStore struct {
+	// DeleteOwnerTeamFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteOwnerTeam.
+	DeleteOwnerTeamFunc *AssignedTeamsStoreDeleteOwnerTeamFunc
+	// InsertFunc is an instance of a mock function object controlling the
+	// behavior of the method Insert.
+	InsertFunc *AssignedTeamsStoreInsertFunc
+	// ListAssignedTeamsForRepoFunc is an instance of a mock function object
+	// controlling the behavior of the method ListAssignedTeamsForRepo.
+	ListAssignedTeamsForRepoFunc *AssignedTeamsStoreListAssignedTeamsForRepoFunc
+}
+
+// NewMockAssignedTeamsStore creates a new mock of the AssignedTeamsStore
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockAssignedTeamsStore() *MockAssignedTeamsStore {
+	return &MockAssignedTeamsStore{
+		DeleteOwnerTeamFunc: &AssignedTeamsStoreDeleteOwnerTeamFunc{
+			defaultHook: func(context.Context, int32, api.RepoID, string) (r0 error) {
+				return
+			},
+		},
+		InsertFunc: &AssignedTeamsStoreInsertFunc{
+			defaultHook: func(context.Context, int32, api.RepoID, string, int32) (r0 error) {
+				return
+			},
+		},
+		ListAssignedTeamsForRepoFunc: &AssignedTeamsStoreListAssignedTeamsForRepoFunc{
+			defaultHook: func(context.Context, api.RepoID) (r0 []*AssignedTeamSummary, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockAssignedTeamsStore creates a new mock of the
+// AssignedTeamsStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockAssignedTeamsStore() *MockAssignedTeamsStore {
+	return &MockAssignedTeamsStore{
+		DeleteOwnerTeamFunc: &AssignedTeamsStoreDeleteOwnerTeamFunc{
+			defaultHook: func(context.Context, int32, api.RepoID, string) error {
+				panic("unexpected invocation of MockAssignedTeamsStore.DeleteOwnerTeam")
+			},
+		},
+		InsertFunc: &AssignedTeamsStoreInsertFunc{
+			defaultHook: func(context.Context, int32, api.RepoID, string, int32) error {
+				panic("unexpected invocation of MockAssignedTeamsStore.Insert")
+			},
+		},
+		ListAssignedTeamsForRepoFunc: &AssignedTeamsStoreListAssignedTeamsForRepoFunc{
+			defaultHook: func(context.Context, api.RepoID) ([]*AssignedTeamSummary, error) {
+				panic("unexpected invocation of MockAssignedTeamsStore.ListAssignedTeamsForRepo")
+			},
+		},
+	}
+}
+
+// NewMockAssignedTeamsStoreFrom creates a new mock of the
+// MockAssignedTeamsStore interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockAssignedTeamsStoreFrom(i AssignedTeamsStore) *MockAssignedTeamsStore {
+	return &MockAssignedTeamsStore{
+		DeleteOwnerTeamFunc: &AssignedTeamsStoreDeleteOwnerTeamFunc{
+			defaultHook: i.DeleteOwnerTeam,
+		},
+		InsertFunc: &AssignedTeamsStoreInsertFunc{
+			defaultHook: i.Insert,
+		},
+		ListAssignedTeamsForRepoFunc: &AssignedTeamsStoreListAssignedTeamsForRepoFunc{
+			defaultHook: i.ListAssignedTeamsForRepo,
+		},
+	}
+}
+
+// AssignedTeamsStoreDeleteOwnerTeamFunc describes the behavior when the
+// DeleteOwnerTeam method of the parent MockAssignedTeamsStore instance is
+// invoked.
+type AssignedTeamsStoreDeleteOwnerTeamFunc struct {
+	defaultHook func(context.Context, int32, api.RepoID, string) error
+	hooks       []func(context.Context, int32, api.RepoID, string) error
+	history     []AssignedTeamsStoreDeleteOwnerTeamFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteOwnerTeam delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAssignedTeamsStore) DeleteOwnerTeam(v0 context.Context, v1 int32, v2 api.RepoID, v3 string) error {
+	r0 := m.DeleteOwnerTeamFunc.nextHook()(v0, v1, v2, v3)
+	m.DeleteOwnerTeamFunc.appendCall(AssignedTeamsStoreDeleteOwnerTeamFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteOwnerTeam
+// method of the parent MockAssignedTeamsStore instance is invoked and the
+// hook queue is empty.
+func (f *AssignedTeamsStoreDeleteOwnerTeamFunc) SetDefaultHook(hook func(context.Context, int32, api.RepoID, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteOwnerTeam method of the parent MockAssignedTeamsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AssignedTeamsStoreDeleteOwnerTeamFunc) PushHook(hook func(context.Context, int32, api.RepoID, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AssignedTeamsStoreDeleteOwnerTeamFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, api.RepoID, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AssignedTeamsStoreDeleteOwnerTeamFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, api.RepoID, string) error {
+		return r0
+	})
+}
+
+func (f *AssignedTeamsStoreDeleteOwnerTeamFunc) nextHook() func(context.Context, int32, api.RepoID, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AssignedTeamsStoreDeleteOwnerTeamFunc) appendCall(r0 AssignedTeamsStoreDeleteOwnerTeamFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AssignedTeamsStoreDeleteOwnerTeamFuncCall
+// objects describing the invocations of this function.
+func (f *AssignedTeamsStoreDeleteOwnerTeamFunc) History() []AssignedTeamsStoreDeleteOwnerTeamFuncCall {
+	f.mutex.Lock()
+	history := make([]AssignedTeamsStoreDeleteOwnerTeamFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AssignedTeamsStoreDeleteOwnerTeamFuncCall is an object that describes an
+// invocation of method DeleteOwnerTeam on an instance of
+// MockAssignedTeamsStore.
+type AssignedTeamsStoreDeleteOwnerTeamFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.RepoID
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AssignedTeamsStoreDeleteOwnerTeamFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AssignedTeamsStoreDeleteOwnerTeamFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// AssignedTeamsStoreInsertFunc describes the behavior when the Insert
+// method of the parent MockAssignedTeamsStore instance is invoked.
+type AssignedTeamsStoreInsertFunc struct {
+	defaultHook func(context.Context, int32, api.RepoID, string, int32) error
+	hooks       []func(context.Context, int32, api.RepoID, string, int32) error
+	history     []AssignedTeamsStoreInsertFuncCall
+	mutex       sync.Mutex
+}
+
+// Insert delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockAssignedTeamsStore) Insert(v0 context.Context, v1 int32, v2 api.RepoID, v3 string, v4 int32) error {
+	r0 := m.InsertFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.InsertFunc.appendCall(AssignedTeamsStoreInsertFuncCall{v0, v1, v2, v3, v4, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Insert method of the
+// parent MockAssignedTeamsStore instance is invoked and the hook queue is
+// empty.
+func (f *AssignedTeamsStoreInsertFunc) SetDefaultHook(hook func(context.Context, int32, api.RepoID, string, int32) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Insert method of the parent MockAssignedTeamsStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *AssignedTeamsStoreInsertFunc) PushHook(hook func(context.Context, int32, api.RepoID, string, int32) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AssignedTeamsStoreInsertFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, api.RepoID, string, int32) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AssignedTeamsStoreInsertFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, api.RepoID, string, int32) error {
+		return r0
+	})
+}
+
+func (f *AssignedTeamsStoreInsertFunc) nextHook() func(context.Context, int32, api.RepoID, string, int32) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AssignedTeamsStoreInsertFunc) appendCall(r0 AssignedTeamsStoreInsertFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AssignedTeamsStoreInsertFuncCall objects
+// describing the invocations of this function.
+func (f *AssignedTeamsStoreInsertFunc) History() []AssignedTeamsStoreInsertFuncCall {
+	f.mutex.Lock()
+	history := make([]AssignedTeamsStoreInsertFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AssignedTeamsStoreInsertFuncCall is an object that describes an
+// invocation of method Insert on an instance of MockAssignedTeamsStore.
+type AssignedTeamsStoreInsertFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.RepoID
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AssignedTeamsStoreInsertFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AssignedTeamsStoreInsertFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// AssignedTeamsStoreListAssignedTeamsForRepoFunc describes the behavior
+// when the ListAssignedTeamsForRepo method of the parent
+// MockAssignedTeamsStore instance is invoked.
+type AssignedTeamsStoreListAssignedTeamsForRepoFunc struct {
+	defaultHook func(context.Context, api.RepoID) ([]*AssignedTeamSummary, error)
+	hooks       []func(context.Context, api.RepoID) ([]*AssignedTeamSummary, error)
+	history     []AssignedTeamsStoreListAssignedTeamsForRepoFuncCall
+	mutex       sync.Mutex
+}
+
+// ListAssignedTeamsForRepo delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockAssignedTeamsStore) ListAssignedTeamsForRepo(v0 context.Context, v1 api.RepoID) ([]*AssignedTeamSummary, error) {
+	r0, r1 := m.ListAssignedTeamsForRepoFunc.nextHook()(v0, v1)
+	m.ListAssignedTeamsForRepoFunc.appendCall(AssignedTeamsStoreListAssignedTeamsForRepoFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// ListAssignedTeamsForRepo method of the parent MockAssignedTeamsStore
+// instance is invoked and the hook queue is empty.
+func (f *AssignedTeamsStoreListAssignedTeamsForRepoFunc) SetDefaultHook(hook func(context.Context, api.RepoID) ([]*AssignedTeamSummary, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListAssignedTeamsForRepo method of the parent MockAssignedTeamsStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *AssignedTeamsStoreListAssignedTeamsForRepoFunc) PushHook(hook func(context.Context, api.RepoID) ([]*AssignedTeamSummary, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AssignedTeamsStoreListAssignedTeamsForRepoFunc) SetDefaultReturn(r0 []*AssignedTeamSummary, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID) ([]*AssignedTeamSummary, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AssignedTeamsStoreListAssignedTeamsForRepoFunc) PushReturn(r0 []*AssignedTeamSummary, r1 error) {
+	f.PushHook(func(context.Context, api.RepoID) ([]*AssignedTeamSummary, error) {
+		return r0, r1
+	})
+}
+
+func (f *AssignedTeamsStoreListAssignedTeamsForRepoFunc) nextHook() func(context.Context, api.RepoID) ([]*AssignedTeamSummary, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AssignedTeamsStoreListAssignedTeamsForRepoFunc) appendCall(r0 AssignedTeamsStoreListAssignedTeamsForRepoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AssignedTeamsStoreListAssignedTeamsForRepoFuncCall objects describing the
+// invocations of this function.
+func (f *AssignedTeamsStoreListAssignedTeamsForRepoFunc) History() []AssignedTeamsStoreListAssignedTeamsForRepoFuncCall {
+	f.mutex.Lock()
+	history := make([]AssignedTeamsStoreListAssignedTeamsForRepoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AssignedTeamsStoreListAssignedTeamsForRepoFuncCall is an object that
+// describes an invocation of method ListAssignedTeamsForRepo on an instance
+// of MockAssignedTeamsStore.
+type AssignedTeamsStoreListAssignedTeamsForRepoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*AssignedTeamSummary
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AssignedTeamsStoreListAssignedTeamsForRepoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AssignedTeamsStoreListAssignedTeamsForRepoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // MockAuthzStore is a mock implementation of the AuthzStore interface (from
 // the package github.com/sourcegraph/sourcegraph/internal/database) used
 // for unit testing.
@@ -5419,6 +5838,9 @@ type MockDB struct {
 	// RepoKVPsFunc is an instance of a mock function object controlling the
 	// behavior of the method RepoKVPs.
 	RepoKVPsFunc *DBRepoKVPsFunc
+	// RepoPathsFunc is an instance of a mock function object controlling
+	// the behavior of the method RepoPaths.
+	RepoPathsFunc *DBRepoPathsFunc
 	// RepoStatisticsFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoStatistics.
 	RepoStatisticsFunc *DBRepoStatisticsFunc
@@ -5674,6 +6096,11 @@ func NewMockDB() *MockDB {
 		},
 		RepoKVPsFunc: &DBRepoKVPsFunc{
 			defaultHook: func() (r0 RepoKVPStore) {
+				return
+			},
+		},
+		RepoPathsFunc: &DBRepoPathsFunc{
+			defaultHook: func() (r0 RepoPathStore) {
 				return
 			},
 		},
@@ -5974,6 +6401,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.RepoKVPs")
 			},
 		},
+		RepoPathsFunc: &DBRepoPathsFunc{
+			defaultHook: func() RepoPathStore {
+				panic("unexpected invocation of MockDB.RepoPaths")
+			},
+		},
 		RepoStatisticsFunc: &DBRepoStatisticsFunc{
 			defaultHook: func() RepoStatisticsStore {
 				panic("unexpected invocation of MockDB.RepoStatistics")
@@ -6192,6 +6624,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		RepoKVPsFunc: &DBRepoKVPsFunc{
 			defaultHook: i.RepoKVPs,
+		},
+		RepoPathsFunc: &DBRepoPathsFunc{
+			defaultHook: i.RepoPaths,
 		},
 		RepoStatisticsFunc: &DBRepoStatisticsFunc{
 			defaultHook: i.RepoStatistics,
@@ -10162,6 +10597,104 @@ func (c DBRepoKVPsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBRepoKVPsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBRepoPathsFunc describes the behavior when the RepoPaths method of the
+// parent MockDB instance is invoked.
+type DBRepoPathsFunc struct {
+	defaultHook func() RepoPathStore
+	hooks       []func() RepoPathStore
+	history     []DBRepoPathsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoPaths delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) RepoPaths() RepoPathStore {
+	r0 := m.RepoPathsFunc.nextHook()()
+	m.RepoPathsFunc.appendCall(DBRepoPathsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RepoPaths method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBRepoPathsFunc) SetDefaultHook(hook func() RepoPathStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoPaths method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBRepoPathsFunc) PushHook(hook func() RepoPathStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBRepoPathsFunc) SetDefaultReturn(r0 RepoPathStore) {
+	f.SetDefaultHook(func() RepoPathStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBRepoPathsFunc) PushReturn(r0 RepoPathStore) {
+	f.PushHook(func() RepoPathStore {
+		return r0
+	})
+}
+
+func (f *DBRepoPathsFunc) nextHook() func() RepoPathStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBRepoPathsFunc) appendCall(r0 DBRepoPathsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBRepoPathsFuncCall objects describing the
+// invocations of this function.
+func (f *DBRepoPathsFunc) History() []DBRepoPathsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBRepoPathsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBRepoPathsFuncCall is an object that describes an invocation of method
+// RepoPaths on an instance of MockDB.
+type DBRepoPathsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 RepoPathStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBRepoPathsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBRepoPathsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
