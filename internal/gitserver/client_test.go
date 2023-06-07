@@ -326,7 +326,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 		},
 	}
 
-	runArchiveReaderTestfunc := func(t *testing.T, mkClient func(t *testing.T, addrs []string) gitserver.Client, name api.RepoName, test test, called *bool) {
+	runArchiveReaderTestfunc := func(t *testing.T, mkClient func(t *testing.T, addrs []string) gitserver.Client, name api.RepoName, test test) {
 		t.Run(string(name), func(t *testing.T) {
 			// Setup: Prepare the test Gitserver server + register the gRPC server
 			s := &server.Server{
@@ -444,16 +444,17 @@ func TestClient_ArchiveReader(t *testing.T) {
 							base := proto.NewGitserverServiceClient(cc)
 							return base.RepoUpdate(ctx, in, opts...)
 						}
-						return &mockClient{mockArchive: mockArchive,
-							mockRepoUpdate: mockRepoUpdate}
-
+						return &mockClient{
+							mockArchive:    mockArchive,
+							mockRepoUpdate: mockRepoUpdate,
+						}
 					}
 				})
 
 				return gitserver.NewTestClient(&http.Client{}, source)
 			}
 
-			runArchiveReaderTestfunc(t, mkClient, repoName, test, &called)
+			runArchiveReaderTestfunc(t, mkClient, repoName, test)
 			if !called {
 				t.Error("archiveReader: GitserverServiceClient should have been called")
 			}
@@ -491,7 +492,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 				return gitserver.NewTestClient(&http.Client{}, source)
 			}
 
-			runArchiveReaderTestfunc(t, mkClient, repoName, test, &called)
+			runArchiveReaderTestfunc(t, mkClient, repoName, test)
 			if called {
 				t.Error("archiveReader: GitserverServiceClient should have been called")
 			}
