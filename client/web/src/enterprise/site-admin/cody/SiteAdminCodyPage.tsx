@@ -1,5 +1,7 @@
 import { FC, useCallback, useEffect, useState } from 'react'
 
+import { useLocation } from 'react-router-dom'
+
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -59,7 +61,11 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
         telemetryService.logPageView('SiteAdminCodyPage')
     }, [telemetryService])
 
-    const [searchValue, setSearchValue] = useState('')
+    const location = useLocation()
+    const searchParams = new URLSearchParams(location.search)
+    const queryParam = searchParams.get('query')
+
+    const [searchValue, setSearchValue] = useState(queryParam || '')
     const query = useDebounce(searchValue, 200)
 
     const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useRepoEmbeddingJobsConnection(query)
@@ -94,6 +100,18 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
         formApi: form.formAPI,
         validators: { sync: repositoriesValidator },
     })
+
+    const updateQueryParams = (newQueryValue: string): void => {
+        if (newQueryValue === '') {
+            searchParams.delete('query')
+        } else {
+            searchParams.set('query', newQueryValue)
+        }
+
+        const queryString = searchParams.toString()
+        const newUrl = queryString === '' ? window.location.pathname : `${window.location.pathname}?${queryString}`
+        window.history.replaceState(null, '', newUrl)
+    }
 
     const [cancelRepoEmbeddingJob, { error: cancelRepoEmbeddingJobError }] = useCancelRepoEmbeddingJob()
 
@@ -155,7 +173,10 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                 <ConnectionContainer>
                     <ConnectionForm
                         inputValue={searchValue}
-                        onInputChange={event => setSearchValue(event.target.value)}
+                        onInputChange={event => {
+                            setSearchValue(event.target.value)
+                            updateQueryParams(event.target.value)
+                        }}
                         inputPlaceholder="Filter embedding jobs..."
                     />
                     {error && <ConnectionError errors={[error.message]} />}
