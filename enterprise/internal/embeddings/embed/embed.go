@@ -108,7 +108,7 @@ func EmbedRepo(
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	reportCodeProgress(codeIndexStats)
+	stats.CodeIndexStats = codeIndexStats
 
 	reportTextProgress := func(textIndexStats embeddings.EmbedFilesStats) {
 		stats.TextIndexStats = textIndexStats
@@ -119,7 +119,7 @@ func EmbedRepo(
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	reportTextProgress(textIndexStats)
+	stats.TextIndexStats = textIndexStats
 
 	index := &embeddings.RepoEmbeddingIndex{
 		RepoName:  opts.RepoName,
