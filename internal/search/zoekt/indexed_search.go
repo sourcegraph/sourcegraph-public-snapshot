@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -600,6 +601,8 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 
 	// Set trace context so we still get spans propagated
 	cNew = trace.CopyContext(cNew, cOld)
+
+	cNew = featureflag.CopyContext(cNew, cOld)
 
 	// Copy actor from cOld to cNew.
 	cNew = actor.WithActor(cNew, actor.FromContext(cOld))
