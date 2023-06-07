@@ -268,7 +268,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                     />
                 </Label>
                 <div className="mt-3">
-                    <Button variant="primary" onClick={createState}>
+                    <Button variant="primary" onClick={createState} disabled={!!nameError || !!urlError}>
                         Create Github App
                     </Button>
                     <ButtonLink className="ml-3" to="/site-admin/github-apps" variant="secondary">
