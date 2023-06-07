@@ -104,6 +104,8 @@ func (e *ExternalService) RedactedConfig(ctx context.Context) (string, error) {
 		if err != nil {
 			return "", err
 		}
+	case *schema.LocalGitExternalService:
+		// Nothing to redact
 	default:
 		// return an error; it's safer to fail than to incorrectly return unsafe data.
 		return "", errors.Errorf("Unrecognized ExternalServiceConfig for redaction: kind %+v not implemented", reflect.TypeOf(cfg))

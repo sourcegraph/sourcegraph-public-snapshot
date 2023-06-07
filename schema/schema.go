@@ -1371,6 +1371,15 @@ type JVMPackagesConnection struct {
 	Maven Maven `json:"maven"`
 }
 
+// LocalGitExternalService description: Configuration for integration local Git repositories.
+type LocalGitExternalService struct {
+	Repos []*LocalGitRepoPattern `json:"repos,omitempty"`
+}
+type LocalGitRepoPattern struct {
+	Group   string `json:"group,omitempty"`
+	Pattern string `json:"pattern,omitempty"`
+}
+
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
 	// AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
