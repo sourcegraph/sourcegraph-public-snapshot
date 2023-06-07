@@ -33,9 +33,11 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -44,6 +46,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -52,6 +55,18 @@ func newMockDB() database.DB {
 	db := database.NewMockDB()
 	db.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
 	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
+
+	r := database.NewMockRepoStore()
+	r.GetByNameFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName) (*types.Repo, error) {
+		return &types.Repo{
+			Name: repoName,
+			ExternalRepo: api.ExternalRepoSpec{
+				ServiceType: extsvc.TypeGitHub,
+			},
+		}, nil
+	})
+	db.ReposFunc.SetDefaultReturn(r)
+
 	return db
 }
 
@@ -856,9 +871,12 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		err:   &gitdomain.RevisionNotFoundError{Repo: api.RepoName(remote), Spec: "test-fake-ref"},
 	}}
 
+	logger := logtest.Scoped(t)
 	db := newMockDB()
+	ctx := context.Background()
+
 	s := server.Server{
-		Logger:   logtest.Scoped(t),
+		Logger:   logger,
 		ReposDir: filepath.Join(root, "repos"),
 		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
 			return remote, nil
@@ -866,7 +884,8 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
 			return &server.GitRepoSyncer{}, nil
 		},
-		DB: db,
+		DB:       db,
+		Perforce: perforce.NewService(ctx, logger, db, list.New()),
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
@@ -883,7 +902,6 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 	cli := gitserver.NewTestClient(&http.Client{}, source)
 
-	ctx := context.Background()
 	for _, test := range tests {
 		t.Run("", func(t *testing.T) {
 			_, err := cli.RequestRepoUpdate(ctx, api.RepoName(remote), 0)

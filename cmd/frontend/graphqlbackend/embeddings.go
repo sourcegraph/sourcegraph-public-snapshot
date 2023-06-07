@@ -22,6 +22,7 @@ type EmbeddingsResolver interface {
 
 type ScheduleRepositoriesForEmbeddingArgs struct {
 	RepoNames []string
+	Force     *bool
 }
 
 type IsContextRequiredForChatQueryInputArgs struct {
@@ -58,6 +59,7 @@ type EmbeddingsSearchResultResolver interface {
 
 type ListRepoEmbeddingJobsArgs struct {
 	graphqlutil.ConnectionResolverArgs
+	Query *string
 }
 
 type CancelRepoEmbeddingJobArgs struct {

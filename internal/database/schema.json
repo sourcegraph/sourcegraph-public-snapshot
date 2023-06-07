@@ -232,6 +232,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "assigned_teams_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "batch_changes_id_seq",
       "TypeName": "bigint",
       "StartValue": 1,
@@ -1848,6 +1857,123 @@
           "RefTableName": "users",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (who_assigned_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "assigned_teams",
+      "Comment": "Table for team ownership assignments, one entry contains an assigned team ID, which repo_path is assigned and the date and user who assigned the owner team.",
+      "Columns": [
+        {
+          "Name": "assigned_at",
+          "Index": 5,
+          "TypeName": "timestamp without time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "file_path_id",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('assigned_teams_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "owner_team_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "who_assigned_team_id",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "assigned_teams_file_path_owner",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX assigned_teams_file_path_owner ON assigned_teams USING btree (file_path_id, owner_team_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "assigned_teams_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX assigned_teams_pkey ON assigned_teams USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "assigned_teams_file_path_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo_paths",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)"
+        },
+        {
+          "Name": "assigned_teams_owner_team_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "teams",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (owner_team_id) REFERENCES teams(id) ON DELETE CASCADE DEFERRABLE"
+        },
+        {
+          "Name": "assigned_teams_who_assigned_team_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (who_assigned_team_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE"
         }
       ],
       "Triggers": []
@@ -8120,6 +8246,16 @@
       ],
       "Indexes": [
         {
+          "Name": "codeintel_ranking_path_counts_inputs_graph_key_unique_definitio",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_path_counts_inputs_graph_key_unique_definitio ON codeintel_ranking_path_counts_inputs USING btree (graph_key, definition_id) WHERE NOT processed",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "codeintel_ranking_path_counts_inputs_pkey",
           "IsPrimaryKey": true,
           "IsUnique": true,
@@ -8128,16 +8264,6 @@
           "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_path_counts_inputs_pkey ON codeintel_ranking_path_counts_inputs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
-        },
-        {
-          "Name": "codeintel_ranking_path_counts_inputs_graph_key_definition_id",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_definition_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, definition_id, id) WHERE NOT processed",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         },
         {
           "Name": "codeintel_ranking_path_counts_inputs_graph_key_id",
@@ -8301,6 +8427,32 @@
           "Comment": ""
         },
         {
+          "Name": "path_cursor_deleted_export_at",
+          "Index": 23,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "path_cursor_export_id",
+          "Index": 24,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "reducer_completed_at",
           "Index": 10,
           "TypeName": "timestamp with time zone",
@@ -8317,6 +8469,32 @@
           "Name": "reducer_started_at",
           "Index": 9,
           "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "reference_cursor_export_deleted_at",
+          "Index": 21,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "reference_cursor_export_id",
+          "Index": 22,
+          "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -21216,7 +21394,7 @@
         },
         {
           "Name": "cody_gateway_chat_rate_limit_allowed_models",
-          "Index": 11,
+          "Index": 14,
           "TypeName": "text[]",
           "IsNullable": true,
           "Default": "",
@@ -21229,7 +21407,7 @@
         },
         {
           "Name": "cody_gateway_code_rate_interval_seconds",
-          "Index": 13,
+          "Index": 16,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -21242,7 +21420,7 @@
         },
         {
           "Name": "cody_gateway_code_rate_limit",
-          "Index": 12,
+          "Index": 15,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -21255,7 +21433,7 @@
         },
         {
           "Name": "cody_gateway_code_rate_limit_allowed_models",
-          "Index": 14,
+          "Index": 17,
           "TypeName": "text[]",
           "IsNullable": true,
           "Default": "",
@@ -21265,6 +21443,45 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "cody_gateway_embeddings_api_allowed_models",
+          "Index": 13,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Custom override for the set of models allowed for embedding"
+        },
+        {
+          "Name": "cody_gateway_embeddings_api_rate_interval_seconds",
+          "Index": 12,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Custom time interval over which the embeddings rate limit is applied"
+        },
+        {
+          "Name": "cody_gateway_embeddings_api_rate_limit",
+          "Index": 11,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Custom requests per time interval allowed for embeddings"
         },
         {
           "Name": "cody_gateway_enabled",

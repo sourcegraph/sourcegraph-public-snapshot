@@ -49,6 +49,7 @@ type DB interface {
 	Repos() RepoStore
 	RepoCommitsChangelists() RepoCommitsChangelistsStore
 	RepoKVPs() RepoKVPStore
+	RepoPaths() RepoPathStore
 	RolePermissions() RolePermissionStore
 	Roles() RoleStore
 	SavedSearches() SavedSearchStore
@@ -71,6 +72,7 @@ type DB interface {
 	EventLogsScrapeState() EventLogsScrapeStateStore
 	RecentViewSignal() RecentViewSignalStore
 	AssignedOwners() AssignedOwnersStore
+	AssignedTeams() AssignedTeamsStore
 	OwnSignalConfigurations() SignalConfigurationStore
 
 	WithTransact(context.Context, func(tx DB) error) error
@@ -242,6 +244,10 @@ func (d *db) RepoKVPs() RepoKVPStore {
 	return &repoKVPStore{d.Store}
 }
 
+func (d *db) RepoPaths() RepoPathStore {
+	return &repoPathStore{d.Store}
+}
+
 func (d *db) RolePermissions() RolePermissionStore {
 	return RolePermissionsWith(d.Store)
 }
@@ -328,6 +334,10 @@ func (d *db) RecentViewSignal() RecentViewSignalStore {
 
 func (d *db) AssignedOwners() AssignedOwnersStore {
 	return AssignedOwnersStoreWith(d.Store, d.logger)
+}
+
+func (d *db) AssignedTeams() AssignedTeamsStore {
+	return AssignedTeamsStoreWith(d.Store, d.logger)
 }
 
 func (d *db) OwnSignalConfigurations() SignalConfigurationStore {

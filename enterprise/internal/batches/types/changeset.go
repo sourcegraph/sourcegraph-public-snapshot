@@ -492,6 +492,8 @@ func (c *Changeset) Title() (string, error) {
 		return m.Title, nil
 	case *gerritbatches.AnnotatedChange:
 		title, _, _ := strings.Cut(m.Change.Subject, "\n")
+		// Remove extra quotes added by the commit message
+		title = strings.TrimPrefix(strings.TrimSuffix(title, "\""), "\"")
 		return title, nil
 	default:
 		return "", errors.New("title unknown changeset type")

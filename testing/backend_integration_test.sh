@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -eu
 source ./testing/tools/integration_runner.sh || exit 1
