@@ -123,6 +123,10 @@ class CodyToolWindowContent implements UpdatableChat {
     contentPanel.add(controlsPanel, BorderLayout.SOUTH);
 
     // Add welcome message
+    addWelcomeMessage();
+  }
+
+  private void addWelcomeMessage() {
     var welcomeText =
         "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.";
     addMessage(ChatMessage.createAssistantMessage(welcomeText));
@@ -209,6 +213,18 @@ class CodyToolWindowContent implements UpdatableChat {
   @Override
   public void finishMessageProcessing() {
     ApplicationManager.getApplication().invokeLater(() -> sendButton.setEnabled(true));
+  }
+
+  @Override
+  public void resetConversation() {
+    ApplicationManager.getApplication()
+        .invokeLater(
+            () -> {
+              messagesPanel.removeAll();
+              addWelcomeMessage();
+              messagesPanel.revalidate();
+              messagesPanel.repaint();
+            });
   }
 
   private void sendMessage(@NotNull Project project) {
