@@ -1,4 +1,4 @@
-package httpapi
+package completions
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ import (
 
 const anthropicAPIURL = "https://api.anthropic.com/v1/complete"
 
-func newAnthropicHandler(
+func NewAnthropicHandler(
 	logger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,

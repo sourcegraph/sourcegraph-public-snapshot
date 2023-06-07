@@ -3,6 +3,9 @@ package codygateway
 const ProductSubscriptionActorSourceName = "dotcom-product-subscriptions"
 
 const CompletionsEventFeatureMetadataField = "feature"
+const EmbeddingsTokenUsageMetadataField = "tokens_used"
+
+const CompletionsEventFeatureEmbeddings = "embeddings"
 
 type EventName string
 
@@ -11,6 +14,7 @@ const (
 	EventNameAccessDenied        EventName = "AccessDenied"
 	EventNameRateLimited         EventName = "RateLimited"
 	EventNameCompletionsFinished EventName = "CompletionsFinished"
+	EventNameEmbeddingsFinished  EventName = "EmbeddingsFinished"
 )
 
 const FeatureHeaderName = "X-Sourcegraph-Feature"
