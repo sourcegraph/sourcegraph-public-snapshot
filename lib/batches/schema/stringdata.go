@@ -6,7 +6,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -26,7 +25,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	data, err := ioutil.ReadFile(*inputFile)
+	data, err := os.ReadFile(*inputFile)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
