@@ -1,5 +1,4 @@
 import { marked } from 'marked'
-import * as vscode from 'vscode'
 
 import { parseMarkdown } from '../chat/markdown'
 
@@ -95,8 +94,8 @@ function getHighlightedTokenHTML(token: HighlightedToken, workspaceRootPath?: st
     let filePath = token.outerValue.trim()
     // Create workspace relative links for existing files (excluding directories)
     if (!token.isHallucinated && workspaceRootPath && filePath.includes('.')) {
-        const fileUri = vscode.Uri.file(`${workspaceRootPath}/${filePath}`)
-        const uri = vscode.Uri.parse(`vscode://file${fileUri.path}`).toString()
+        const fileUri = `file://${workspaceRootPath}/${filePath}`
+        const uri = new URL(fileUri).href
         filePath = `<a href="${uri}">${filePath}</a>`
     }
     const isHallucinatedClassName = token.isHallucinated ? 'hallucinated' : 'not-hallucinated'
