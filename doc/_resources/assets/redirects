@@ -297,7 +297,7 @@
 /code_intelligence/how-to/configure_auto_indexing /code_navigation/how-to/configure_auto_indexing 308
 /code_intelligence/how-to/configure_data_retention /code_navigation/how-to/configure_data_retention 308
 /code_intelligence/how-to/enable_auto_indexing /code_navigation/how-to/enable_auto_indexing 308
-/code_intelligence/how-to/index_a_cpp_repository /code_navigation/how-to/index_a_cpp_repository 308
+/code_intelligence/how-to/index_a_cpp_repository https://sourcegraph.com/github.com/sourcegraph/scip-clang/-/blob/README.md#usage 308
 /code_intelligence/how-to/index_a_go_repository /code_navigation/how-to/index_a_go_repository 308
 /code_intelligence/how-to/index_a_typescript_and_javascript_repository /code_navigation/how-to/index_a_typescript_and_javascript_repository 308
 /code_intelligence/how-to/index_other_languages /code_navigation/how-to/index_other_languages 308

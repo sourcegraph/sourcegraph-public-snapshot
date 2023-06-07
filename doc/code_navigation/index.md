@@ -82,8 +82,8 @@ Precise code navigation requires language-specific indexers to be generated and 
         <td>🟢 Generally available</td>
       </tr>
       <tr>
-        <td>C/C++</td>
-        <td><a href="https://sourcegraph.com/github.com/sourcegraph/lsif-clang">lsif-clang</a></td>
+        <td>C, C++</td>
+        <td><a href="https://sourcegraph.com/github.com/sourcegraph/scip-clang">scip-clang</a></td>
         <td>🟡 Partially available</td>
       </tr>
       <tr>
@@ -129,7 +129,6 @@ Here's how you go from search-based code navigation to **automatically updating,
     - [Index a Java, Scala, or Kotlin repository](https://sourcegraph.github.io/scip-java/docs/getting-started.html)
     - [Index a Python repository](https://sourcegraph.com/github.com/sourcegraph/scip-python)
     - [Index a Ruby repository](https://sourcegraph.com/github.com/sourcegraph/scip-ruby)
-    - [Index a C++ repository](how-to/index_a_cpp_repository.md)
 
 
 1. Optionally automate index uploading by [adding indexing and uploading to your CI setup](how-to/adding_lsif_to_workflows.md).
@@ -168,7 +167,6 @@ Once set up, you can use code navigation with popular development tools:
 - Language-specific guides
   - [Index a Go repository](how-to/index_a_go_repository.md)
   - [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md)
-  - [Index a C++ repository](how-to/index_a_cpp_repository.md)
   - [Index a Java, Scala, or Kotlin repository](https://sourcegraph.github.io/scip-java/docs/getting-started.html)
 - Automate uploading code graph data
   - [Add code graph data to many repositories](how-to/adding_lsif_to_many_repos.md)
