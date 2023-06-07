@@ -30178,7 +30178,7 @@ Query: `rate(src_embeddings_cache_hit_count[30m]) / (rate(src_embeddings_cache_h
 
 <p class="subtitle">Bytes fetched due to a cache miss</p>
 
-A high volume of missses indicates that the many searches are not hitting the cache. Consider increasing the cache size.
+A high volume of misses indicates that the many searches are not hitting the cache. Consider increasing the cache size.
 
 This panel has no related alerts.
 
