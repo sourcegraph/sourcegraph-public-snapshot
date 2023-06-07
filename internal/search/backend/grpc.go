@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/zoekt"
 	v1 "github.com/sourcegraph/zoekt/grpc/v1"
@@ -11,6 +12,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+func IsZoektGRPCEnabled(ctx context.Context) bool {
+	return grpc.IsGRPCEnabled(ctx) && featureflag.FromContext(ctx).GetBoolOr("grpc-zoekt", false)
+}
 
 // switchableZoektGRPCClient is a zoekt.Streamer that can switch between
 // gRPC and HTTP backends.
@@ -20,7 +25,7 @@ type switchableZoektGRPCClient struct {
 }
 
 func (c *switchableZoektGRPCClient) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, sender zoekt.Sender) error {
-	if grpc.IsGRPCEnabled(ctx) {
+	if IsZoektGRPCEnabled(ctx) {
 		return c.grpcClient.StreamSearch(ctx, q, opts, sender)
 	} else {
 		return c.httpClient.StreamSearch(ctx, q, opts, sender)
@@ -28,7 +33,7 @@ func (c *switchableZoektGRPCClient) StreamSearch(ctx context.Context, q query.Q,
 }
 
 func (c *switchableZoektGRPCClient) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-	if grpc.IsGRPCEnabled(ctx) {
+	if IsZoektGRPCEnabled(ctx) {
 		return c.grpcClient.Search(ctx, q, opts)
 	} else {
 		return c.httpClient.Search(ctx, q, opts)
@@ -36,7 +41,7 @@ func (c *switchableZoektGRPCClient) Search(ctx context.Context, q query.Q, opts 
 }
 
 func (c *switchableZoektGRPCClient) List(ctx context.Context, q query.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
-	if grpc.IsGRPCEnabled(ctx) {
+	if IsZoektGRPCEnabled(ctx) {
 		return c.grpcClient.List(ctx, q, opts)
 	} else {
 		return c.httpClient.List(ctx, q, opts)

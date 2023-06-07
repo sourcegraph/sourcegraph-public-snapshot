@@ -19,7 +19,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -140,7 +139,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	// GobCache exists so we only pay the cost of marshalling a query once
 	// when we aggregate it out over all the replicas. Zoekt's RPC layers
 	// unwrap this before passing it on to the Zoekt evaluation layers.
-	if !grpc.IsGRPCEnabled(ctx) {
+	if !IsZoektGRPCEnabled(ctx) {
 		q = &query.GobCache{Q: q}
 	}
 
@@ -224,7 +223,7 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 	// GobCache exists, so we only pay the cost of marshalling a query once
 	// when we aggregate it out over all the replicas. Zoekt's RPC layers
 	// unwrap this before passing it on to the Zoekt evaluation layers.
-	if !grpc.IsGRPCEnabled(ctx) {
+	if !IsZoektGRPCEnabled(ctx) {
 		q = &query.GobCache{Q: q}
 	}
 
