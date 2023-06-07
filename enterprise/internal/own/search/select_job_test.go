@@ -49,6 +49,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		db := edb.NewMockEnterpriseDB()
 		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
 		db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
+		db.AssignedTeamsFunc.SetDefaultReturn(database.NewMockAssignedTeamsStore())
 		return db
 	}
 
@@ -117,6 +118,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		db.UserEmailsFunc.SetDefaultReturn(mockEmailStore)
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
 		db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
+		db.AssignedTeamsFunc.SetDefaultReturn(database.NewMockAssignedTeamsStore())
 		db.UserExternalAccountsFunc.SetDefaultReturn(database.NewMockUserExternalAccountsStore())
 
 		personOwnerByHandle := newTestUser("testUserHandle")

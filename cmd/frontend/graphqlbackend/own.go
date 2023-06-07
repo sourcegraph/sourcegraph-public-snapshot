@@ -20,6 +20,7 @@ type OwnershipReasonType string
 
 const (
 	CodeownersFileEntry              OwnershipReasonType = "CODEOWNERS_FILE_ENTRY"
+	AssignedOwner                    OwnershipReasonType = "ASSIGNED_OWNER"
 	RecentContributorOwnershipSignal OwnershipReasonType = "RECENT_CONTRIBUTOR_OWNERSHIP_SIGNAL"
 	RecentViewOwnershipSignal        OwnershipReasonType = "RECENT_VIEW_OWNERSHIP_SIGNAL"
 )
@@ -130,6 +131,11 @@ type RecentViewOwnershipSignalResolver interface {
 }
 
 type AssignedOwnerResolver interface {
+	Title() (string, error)
+	Description() (string, error)
+}
+
+type AssignedTeamResolver interface {
 	Title() (string, error)
 	Description() (string, error)
 }
