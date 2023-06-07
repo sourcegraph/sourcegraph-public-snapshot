@@ -26,6 +26,6 @@ public class ResetCurrentConversationAction extends DumbAwareAction {
   private static void displayUnableToResetConversationError() {
     ErrorNotification.show(
         null,
-        "Unable to reset the current conversation with cody. Please try again. If you are seeing this error again and again, please reach out to support@sourcegraph.com.");
+        "Unable to reset the current conversation with Cody. Please try again or reach out to us at support@sourcegraph.com.");
   }
 }
