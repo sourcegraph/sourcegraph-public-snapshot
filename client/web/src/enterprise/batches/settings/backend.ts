@@ -94,6 +94,7 @@ const CODE_HOST_FIELDS_FRAGMENT = gql`
                 appID
                 name
                 appURL
+                baseURL
                 logo
             }
         }

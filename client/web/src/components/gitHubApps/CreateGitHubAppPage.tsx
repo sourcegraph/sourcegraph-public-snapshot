@@ -33,6 +33,11 @@ export interface CreateGitHubAppPageProps {
      * will be left off the form.
      */
     baseURL?: string
+    /**
+     * A customer validation function for the URL input. Returns true if the URL is valid,
+     * or a string with an error message reason if not.
+     */
+    validateURL?: (url: string) => true | string
 }
 
 /**
@@ -46,12 +51,14 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     appDomain,
     defaultAppName = 'Sourcegraph',
     baseURL,
+    validateURL,
 }) => {
     const ref = useRef<HTMLFormElement>(null)
     const formInput = useRef<HTMLInputElement>(null)
     const [name, setName] = useState<string>(defaultAppName)
     const [nameError, setNameError] = useState<string>()
     const [url, setUrl] = useState<string>(baseURL || 'https://github.com')
+    const [urlError, setUrlError] = useState<string>()
     const [org, setOrg] = useState<string>('')
     const [error, setError] = useState<string>()
 
@@ -139,8 +146,23 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     }, [])
 
     const handleUrlChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>) => setUrl(event.target.value.trim()),
-        []
+        (event: React.ChangeEvent<HTMLInputElement>) => {
+            const trimmedURL = event.target.value.trim()
+            setUrl(trimmedURL)
+            try {
+                new URL(trimmedURL)
+            } catch {
+                return setUrlError('URL is not valid.')
+            }
+            if (validateURL) {
+                const error = validateURL(event.target.value)
+                if (error !== true) {
+                    return setUrlError(error)
+                }
+            }
+            setUrlError(undefined)
+        },
+        [validateURL]
     )
 
     const handleOrgChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setOrg(event.target.value), [])
@@ -193,6 +215,8 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                             type="text"
                             onChange={handleUrlChange}
                             value={url}
+                            error={urlError}
+                            status={urlError ? 'error' : undefined}
                             placeholder="https://github.com"
                             message="The base URL of the GitHub instance, e.g., https://github.com, https://github.company.com."
                         />

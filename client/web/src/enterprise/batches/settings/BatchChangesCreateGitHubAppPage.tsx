@@ -1,9 +1,13 @@
+import { useCallback } from 'react'
+
 import { useLocation } from 'react-router-dom'
 
 import { Link } from '@sourcegraph/wildcard'
 
 import { CreateGitHubAppPage } from '../../../components/gitHubApps/CreateGitHubAppPage'
 import { GitHubAppDomain } from '../../../graphql-operations'
+
+import { useGlobalBatchChangesCodeHostConnection } from './backend'
 
 interface Props {
     defaultEvents: string[]
@@ -16,6 +20,32 @@ export const BatchChangesCreateGitHubAppPage: React.FunctionComponent<Props> = (
 }) => {
     const location = useLocation()
     const baseURL = new URLSearchParams(location.search).get('baseURL')
+
+    const { connection } = useGlobalBatchChangesCodeHostConnection()
+    // validateURL compares a provided URL against the URLs of existing commit signing
+    // integrations for code hosts, to ensure the new GH App is for a unique code host.
+    const validateURL = useCallback(
+        (url: string): true | string => {
+            if (!connection) {
+                // We don't have a connection yet, so we can't validate that the URL is
+                // unique, but we shouldn't block on that.
+                return true
+            }
+            // The default validator already checks that the URL is a valid URL, so we
+            // assume this call will succeed.
+            const asURL = new URL(url)
+            const isDuplicate = connection.nodes.some(node => {
+                const existingURL = node.commitSigningConfiguration?.baseURL
+                if (!existingURL) {
+                    return false
+                }
+
+                return new URL(existingURL).hostname === asURL.hostname
+            })
+            return isDuplicate ? 'A commit signing integration for the code host at this URL already exists.' : true
+        },
+        [connection]
+    )
     return (
         <CreateGitHubAppPage
             defaultEvents={defaultEvents}
@@ -34,6 +64,7 @@ export const BatchChangesCreateGitHubAppPage: React.FunctionComponent<Props> = (
             appDomain={GitHubAppDomain.BATCHES}
             defaultAppName="Sourcegraph Commit Signing"
             baseURL={baseURL?.length ? baseURL : undefined}
+            validateURL={validateURL}
         />
     )
 }
