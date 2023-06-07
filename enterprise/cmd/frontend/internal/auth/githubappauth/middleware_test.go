@@ -3,6 +3,7 @@ package githubapp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -19,21 +20,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestGenerateRedirectURL(t *testing.T) {
 	reposDomain := "repos"
 	batchesDomain := "batches"
 	invalidDomain := "invalid"
+	appName := "my-cool-app"
+	creationErr := errors.New("uh oh!")
 
 	testCases := []struct {
 		name           string
 		domain         *string
 		installationID int
 		appID          int
+		creationErr    error
 		expectedURL    string
-		expectedError  error
 	}{
 		{
 			name:           "repos domain",
@@ -50,21 +52,28 @@ func TestGenerateRedirectURL(t *testing.T) {
 			expectedURL:    "/site-admin/batch-changes?success=true&app_name=my-cool-app",
 		},
 		{
-			name:          "invalid domain",
-			domain:        &invalidDomain,
-			expectedError: errors.Errorf("invalid domain: %s", invalidDomain),
+			name:        "invalid domain",
+			domain:      &invalidDomain,
+			expectedURL: "/site-admin/github-apps?success=false&error=invalid+domain%3A+invalid",
+		},
+		{
+			name:        "repos creation error",
+			domain:      &reposDomain,
+			creationErr: creationErr,
+			expectedURL: "/site-admin/github-apps?success=false&error=uh+oh%21",
+		},
+		{
+			name:        "batches creation error",
+			domain:      &batchesDomain,
+			creationErr: creationErr,
+			expectedURL: "/site-admin/batch-changes?success=false&error=uh+oh%21",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			url, err := generateRedirectURL(tc.domain, tc.installationID, tc.appID, "my-cool-app")
-			if tc.expectedError != nil {
-				require.EqualError(t, err, tc.expectedError.Error())
-			} else {
-				require.NoError(t, err)
-				require.Equal(t, tc.expectedURL, url)
-			}
+			url := generateRedirectURL(tc.domain, &tc.installationID, &tc.appID, &appName, tc.creationErr)
+			require.Equal(t, tc.expectedURL, url)
 		})
 	}
 }
