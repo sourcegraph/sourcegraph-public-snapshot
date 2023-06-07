@@ -147,8 +147,8 @@ func TestGitHubInstallationWorker(t *testing.T) {
 		t.Errorf("expected 2 calls to BulkInstall, got %d", len(ghStore.BulkInstallFunc.History()))
 	}
 
-	// We bulk remove two installations:
+	// We bulk remove on3 installation for GitHub app with ID 3
 	if len(ghStore.BulkRemoveFunc.History()) != 1 {
-		t.Errorf("expected 1 call to BulkRevoke, got %d", len(ghStore.BulkRemoveFunc.History()))
+		t.Errorf("expected 1 call to BulkRemove, got %d", len(ghStore.BulkRemoveFunc.History()))
 	}
 }
