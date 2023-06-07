@@ -402,9 +402,8 @@ func SearchDocumentRanksWeight() float64 {
 	}
 }
 
-// SearchFlushWallTime controls the amount of time that Zoekt shards collect and rank results when
-// the 'search-ranking' feature is enabled. We plan to eventually remove this, once we experiment
-// on real data to find a good default.
+// SearchFlushWallTime controls the amount of time that Zoekt shards collect and rank results. For
+// larger codebases, it can be helpful to increase this to improve the ranking stability and quality.
 func SearchFlushWallTime() time.Duration {
 	ranking := ExperimentalFeatures().Ranking
 	if ranking != nil && ranking.FlushWallTimeMS > 0 {

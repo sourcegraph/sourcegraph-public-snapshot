@@ -455,7 +455,7 @@
               "group": "Search"
             },
             "documentRanksWeight": {
-              "description": "Controls the impact of document ranks on the final ranking when the 'search-ranking' feature is enabled. This is intended for internal testing purposes only, it's not recommended for users to change this.",
+              "description": "Controls the impact of document ranks on the final ranking. This is intended for internal testing purposes only, it's not recommended for users to change this.",
               "type": "number",
               "default": 4500,
               "group": "Search",
@@ -464,7 +464,7 @@
               }
             },
             "flushWallTimeMS": {
-              "description": "Controls the amount of time that Zoekt shards collect and rank results when the 'search-ranking' feature is enabled. Larger values give a more stable ranking, but searches can take longer to return an initial result.",
+              "description": "Controls the amount of time that Zoekt shards collect and rank results. Larger values give a more stable ranking, but searches can take longer to return an initial result.",
               "type": "integer",
               "default": 500,
               "group": "Search"
