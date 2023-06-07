@@ -17,7 +17,8 @@ interface HighlightTokensResult {
 
 export async function highlightTokens(
     text: string,
-    filesExist: (filePaths: string[]) => Promise<{ [filePath: string]: boolean }>
+    filesExist: (filePaths: string[]) => Promise<{ [filePath: string]: boolean }>,
+    workspaceRootPath?: string
 ): Promise<HighlightTokensResult> {
     const markdownTokens = parseMarkdown(text)
     const tokens = await detectTokens(markdownTokens, filesExist)
@@ -29,7 +30,7 @@ export async function highlightTokens(
                 case 'codespan':
                     return token.raw
                 default:
-                    return highlightLine(token.raw, tokens)
+                    return highlightLine(token.raw, tokens, workspaceRootPath)
             }
         })
         .join('')
@@ -78,17 +79,27 @@ async function detectTokens(
     return highlightedTokens
 }
 
-function highlightLine(line: string, tokens: HighlightedToken[]): string {
+function highlightLine(line: string, tokens: HighlightedToken[], workspaceRootPath?: string): string {
     let highlightedLine = line
     for (const token of tokens) {
-        highlightedLine = highlightedLine.replaceAll(token.outerValue, getHighlightedTokenHTML(token))
+        highlightedLine = highlightedLine.replaceAll(
+            token.outerValue,
+            getHighlightedTokenHTML(token, workspaceRootPath)
+        )
     }
     return highlightedLine
 }
 
-function getHighlightedTokenHTML(token: HighlightedToken): string {
+function getHighlightedTokenHTML(token: HighlightedToken, workspaceRootPath?: string): string {
+    let filePath = token.outerValue.trim()
+    // Create workspace relative links for existing files (excluding directories)
+    if (!token.isHallucinated && workspaceRootPath && filePath.includes('.')) {
+        const fileUri = `file://${workspaceRootPath}/${filePath}`
+        const uri = new URL(fileUri).href
+        filePath = `<a href="${uri}">${filePath}</a>`
+    }
     const isHallucinatedClassName = token.isHallucinated ? 'hallucinated' : 'not-hallucinated'
-    return ` <span class="token-${token.type} token-${isHallucinatedClassName}">${token.outerValue.trim()}</span> `
+    return ` <span class="token-${token.type} token-${isHallucinatedClassName}">${filePath}</span> `
 }
 
 export function findFilePaths(line: string): { fullMatch: string; pathMatch: string }[] {
