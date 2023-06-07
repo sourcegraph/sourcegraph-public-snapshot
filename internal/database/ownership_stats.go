@@ -32,7 +32,7 @@ type PathCodeownersCounts struct {
 
 // TreeAggregateStats allows iterating through the file tree of a repository
 // providing ownership data that is aggregated by file path only (as opposed
-// to )
+// to TreeCodeownersStats)
 type TreeAggregateStats interface {
 	Iterate(func(path string, counts PathAggregateCounts) error) error
 }
