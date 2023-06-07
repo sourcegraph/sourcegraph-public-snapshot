@@ -5106,6 +5106,14 @@ def go_dependencies():
         version = "v0.0.0-20190623134757-126b35219450",
     )
     go_repository(
+        name = "com_github_mroth_weightedrand_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/mroth/weightedrand/v2",
+        sum = "h1:zrEVDIaau/E4QLOKu02kpg8T8myweFlMGikIgbIdrRA=",
+        version = "v2.0.1",
+    )
+
+    go_repository(
         name = "com_github_mrunalp_fileutils",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/mrunalp/fileutils",
@@ -5428,13 +5436,6 @@ def go_dependencies():
         version = "v1.10.2",
     )
 
-    go_repository(
-        name = "com_github_opentracing_contrib_go_stdlib",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/opentracing-contrib/go-stdlib",
-        sum = "h1:TBS7YuVotp8myLon4Pv7BtCBzOTo1DeZCld0Z63mW2w=",
-        version = "v1.0.0",
-    )
     go_repository(
         name = "com_github_opentracing_opentracing_go",
         build_file_proto_mode = "disable_global",
