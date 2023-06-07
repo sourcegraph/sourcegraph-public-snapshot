@@ -61,6 +61,7 @@ go_library(
 go_test(
     name = "productsubscription_test",
     srcs = [
+        "codygateway_dotcom_user_test.go",
         "codygateway_graphql_test.go",
         "license_check_handler_test.go",
         "license_expiration_test.go",
@@ -82,11 +83,14 @@ go_test(
         "//enterprise/internal/licensing",
         "//enterprise/internal/productsubscription",
         "//internal/actor",
+        "//internal/auth",
+        "//internal/authz",
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/errcode",
         "//internal/featureflag",
+        "//internal/hashutil",
         "//internal/slack",
         "//internal/timeutil",
         "//internal/types",

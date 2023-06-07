@@ -73,7 +73,7 @@ type codyUserGatewayAccessResolver struct {
 func (r codyUserGatewayAccessResolver) Enabled() bool { return r.user.SiteAdmin || r.verifiedEmail }
 
 func (r codyUserGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Context) (graphqlbackend.CodyGatewayRateLimit, error) {
-	// If the user isn't enabled return a rate limit with 0 requests available
+	// If the user isn't enabled return no rate limit
 	if !r.Enabled() {
 		return nil, nil
 	}
@@ -92,7 +92,7 @@ func (r codyUserGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Cont
 }
 
 func (r codyUserGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Context) (graphqlbackend.CodyGatewayRateLimit, error) {
-	// If the user isn't enabled return a rate limit with 0 requests available
+	// If the user isn't enabled return no rate limit
 	if !r.Enabled() {
 		return nil, nil
 	}
@@ -114,7 +114,7 @@ func (r codyUserGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Cont
 const tokensPerDollar = int(1 / (0.0004 / 1_000))
 
 func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) (graphqlbackend.CodyGatewayRateLimit, error) {
-	// If the user isn't enabled so they don't get the rate limit
+	// If the user isn't enabled return no rate limit
 	if !r.Enabled() {
 		return nil, nil
 	}
