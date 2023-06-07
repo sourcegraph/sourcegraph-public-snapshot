@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	p4batches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/perforce"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -158,6 +159,10 @@ func (s PerforceSource) GetFork(ctx context.Context, targetRepo *types.Repo, ns,
 	// TODO: implement function
 	// no-op for Perforce?
 	return nil, nil
+}
+
+func (s PerforceSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	return BuildCommitOptsCommon(repo, spec, pushOpts)
 }
 
 func copyPerforceRepoAsFork(repo *types.Repo, fork *perforce.Repository, forkNamespace, forkName string) (*types.Repo, error) {
