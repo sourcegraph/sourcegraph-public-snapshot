@@ -9,14 +9,19 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 ### Added
 
 - Cody Inline Assist: Decorations for `/fix` errors [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
+- Add delete button for removing individual history [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
+- Load the recent ongoing chat on reload of window [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
 
 ### Fixed
 
 - Cody Inline Assist: Decorations for `/fix` on light theme [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
 - Cody Inline Assist: Fixs cody processing indefinitely isse [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
 - Cody Inline Assist: Use more than 1 context file for `/touch` [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
+- Fix the loading of files and scroll chat to the end while restoring the history [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
 
 ### Changed
+
+- Save the current ongoing conversation to the chat history [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
 
 ## [0.2.1]
 
