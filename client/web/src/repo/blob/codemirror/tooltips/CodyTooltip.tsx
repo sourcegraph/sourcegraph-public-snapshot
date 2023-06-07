@@ -2,6 +2,7 @@ import { EditorState, Extension, StateEffect, StateField } from '@codemirror/sta
 import { EditorView, PluginValue, Tooltip, ViewPlugin, showTooltip } from '@codemirror/view'
 import ReactDOM from 'react-dom/client'
 
+import { CodeMirrorEditor } from '../../../../cody/components/CodeMirrorEditor'
 import { CodyRecipesWidget } from '../../../../cody/widgets/CodyRecipesWidget'
 
 export const codyTooltip = StateField.define<Tooltip | null>({
@@ -31,31 +32,32 @@ const setCodyTooltip = StateEffect.define<Tooltip | null>()
  * Add a extension to CodeMirror extensions to display the Cody widget
  * when some code is selected in the editor.
  */
-export function codyWidgetExtension(): Extension {
-    return [codyTooltip, selectionChangedPlugin]
+export function codyWidgetExtension(editor?: CodeMirrorEditor): Extension {
+    return [codyTooltip, selectionChangedPlugin(editor)]
 }
 
 // We use this custom plugin over EditorView.domEventHandlers() because mouse selections can start
 // inside CodeMirror but the mouseup event can handle _outside_ of the CodeMirror element. These
 // events still change the selection inside CodeMirror but won't be fired when using the built-in
 // dom handler.
-const selectionChangedPlugin = ViewPlugin.fromClass(
-    class implements PluginValue {
-        constructor(public view: EditorView) {
-            document.body.addEventListener('mouseup', this.onPotentialSelectionChanged)
-            document.body.addEventListener('keyup', this.onPotentialSelectionChanged)
+const selectionChangedPlugin = (editor?: CodeMirrorEditor): Extension =>
+    ViewPlugin.fromClass(
+        class implements PluginValue {
+            constructor(public view: EditorView) {
+                document.body.addEventListener('mouseup', this.onPotentialSelectionChanged)
+                document.body.addEventListener('keyup', this.onPotentialSelectionChanged)
+            }
+            public destroy(): void {
+                document.body.removeEventListener('mouseup', this.onPotentialSelectionChanged)
+                document.body.removeEventListener('keyup', this.onPotentialSelectionChanged)
+            }
+            public onPotentialSelectionChanged = (): void => {
+                this.view.dispatch({ effects: [setCodyTooltip.of(computeCodyWidget(this.view.state, editor))] })
+            }
         }
-        public destroy(): void {
-            document.body.removeEventListener('mouseup', this.onPotentialSelectionChanged)
-            document.body.removeEventListener('keyup', this.onPotentialSelectionChanged)
-        }
-        public onPotentialSelectionChanged = (): void => {
-            this.view.dispatch({ effects: [setCodyTooltip.of(computeCodyWidget(this.view.state))] })
-        }
-    }
-)
+    )
 
-function computeCodyWidget(state: EditorState): Tooltip | null {
+function computeCodyWidget(state: EditorState, editor?: CodeMirrorEditor): Tooltip | null {
     const { selection } = state
 
     if (selection.main.empty) {
@@ -79,7 +81,7 @@ function computeCodyWidget(state: EditorState): Tooltip | null {
         create: () => {
             const dom = document.createElement('div')
             dom.style.background = 'transparent'
-            ReactDOM.createRoot(dom).render(<CodyRecipesWidget />)
+            ReactDOM.createRoot(dom).render(<CodyRecipesWidget editor={editor} />)
             return { dom }
         },
     }
