@@ -423,6 +423,14 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 		return "", errors.New("gitserver: no files in base commit")
 	}
 
+	// format a description for the client spec and the changelist
+	// from the commit message(s)
+	// be sure to indent lines so that it fits the Perforce form format
+	desc := "batch change"
+	if len(req.CommitInfo.Messages) > 0 {
+		desc = strings.ReplaceAll(strings.Join(req.CommitInfo.Messages, "\n"), "\n", "\n\t")
+	}
+
 	// create a Perforce client spec to use for creating the changelist
 	clientSpec := fmt.Sprintf(
 		`Client:	%s
@@ -437,7 +445,7 @@ View:	%s... //%s/...
 `,
 		p4client,
 		req.Push.RemoteURL,
-		req.CommitInfo.Message,
+		desc,
 		tmpClientDir,
 		req.Repo,
 		p4client,
@@ -559,9 +567,7 @@ View:	%s... //%s/...
 		return "", errors.Wrap(err, "gitserver: p4 change")
 	}
 	// add the commit message to the change form
-	// make sure that if the message is multiline, each line starts with a tab
-	// because that's the format the change form requires
-	changeForm := strings.Replace(strings.ReplaceAll(string(out), "\n", "\n\t"), "<enter description here>", req.CommitInfo.Message, 1)
+	changeForm := strings.Replace(string(out), "<enter description here>", desc, 1)
 
 	// feed the changelist form into `p4 shelve`
 	// capture the output to parse for a changelist id
