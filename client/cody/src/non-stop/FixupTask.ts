@@ -3,8 +3,8 @@ import * as vscode from 'vscode'
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 
 import { debug } from '../log'
+import { editDocByUri } from '../services/InlineAssist'
 
-import { FixupCodeLens } from './FixupCodeLens'
 import { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
 
@@ -18,14 +18,13 @@ export class FixupTask {
     // because people write instructions like "replace the keys in this hash"
     // and the LLM needs to know where the cursor is.
     public selectionRange: vscode.Range
-    public state = CodyTaskState.idle
+    public state: CodyTaskState = CodyTaskState.idle
     // The original text that we're working on updating
     public readonly original: string
     // The text of the streaming turn of the LLM, if any
     public inProgressReplacement: string | undefined
     // The text of the last completed turn of the LLM, if any
     public replacement: string | undefined
-    private readonly codelens: FixupCodeLens = new FixupCodeLens()
 
     constructor(
         public readonly fixupFile: FixupFile,
@@ -42,7 +41,6 @@ export class FixupTask {
      * Set latest state for task and then update icon accordingly
      */
     private setState(state: CodyTaskState): void {
-        this.codelens.updateState(state, this.selectionRange.start.line)
         if (this.state !== CodyTaskState.error) {
             this.state = state
         }
@@ -55,7 +53,7 @@ export class FixupTask {
 
     public stop(): void {
         this.setState(CodyTaskState.done)
-        this.output(`Task #${this.id} has been completed...`)
+        this.output(`Task #${this.id} is ready for fixup...`)
     }
 
     public error(text: string = ''): void {
@@ -63,14 +61,20 @@ export class FixupTask {
         this.output(`Error for Task #${this.id} - ` + text)
     }
 
-    public apply(): void {
+    public async apply(): Promise<void> {
         this.setState(CodyTaskState.applying)
         this.output(`Task #${this.id} is being applied...`)
+        await this.replaceSelection()
     }
 
-    private queue(): void {
+    public queue(): void {
         this.setState(CodyTaskState.queued)
         this.output(`Task #${this.id} has been added to the queue successfully...`)
+    }
+
+    private fixed(): void {
+        this.setState(CodyTaskState.fixed)
+        this.output(`Task #${this.id} is fixed and completed.`)
     }
     /**
      * Print output to the VS Code Output Channel under Cody AI by Sourcegraph
@@ -89,5 +93,20 @@ export class FixupTask {
      */
     public getSelectionRange(): vscode.Range | vscode.Selection {
         return this.selectionRange
+    }
+
+    private async replaceSelection(): Promise<void> {
+        const { editor, selectionRange, replacement } = this
+        if (!editor || !replacement) {
+            this.error()
+            return
+        }
+        const newRange = await editDocByUri(
+            editor.document.uri,
+            { start: selectionRange.start.line, end: selectionRange.end.line + 1 },
+            replacement.trimStart()
+        )
+        this.selectionRange = newRange
+        this.fixed()
     }
 }

@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 
 import { computeDiff } from './diff'
+import { FixupCodeLenses } from './FixupCodeLenses'
 import { FixupDecorator } from './FixupDecorator'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import { FixupFile } from './FixupFile'
@@ -24,22 +25,24 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
     // TODO: Make the fixup scheduler use a cooldown timer with a longer delay
     private readonly scheduler: FixupScheduler = new FixupScheduler(10)
     private readonly decorator: FixupDecorator = new FixupDecorator()
+    private readonly codelenses: FixupCodeLenses = new FixupCodeLenses()
 
     private _disposables: vscode.Disposable[] = []
 
     constructor() {
         // Register commands
-        this._disposables.push(vscode.commands.registerCommand('cody.fixup.open', id => this.showThisFixup(id)))
         this._disposables.push(
-            vscode.commands.registerCommand('cody.fixup.apply', treeItem => this.applyFixup(treeItem))
+            vscode.commands.registerCommand('cody.fixup.open', id => this.showThisFixup(id)),
+            vscode.commands.registerCommand('cody.fixup.apply', treeItem => this.applyFixup(treeItem)),
+            vscode.commands.registerCommand('cody.fixup.apply-by-file', treeItem => this.applyDirFixups(treeItem)),
+            vscode.commands.registerCommand('cody.fixup.apply-all', () => this.applyAllFixups()),
+            vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)),
+            vscode.commands.registerCommand('cody.fixup.codelens.apply', id => this.apply(id)),
+            vscode.commands.registerCommand('cody.fixup.codelens.diff', id => this.diff(id)),
+            vscode.commands.registerCommand('cody.fixup.codelens.discard', id => this.discard(id)),
+            vscode.commands.registerCommand('cody.fixup.codelens.edit', id => this.edit(id)),
+            vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => this.cancel(id))
         )
-        this._disposables.push(
-            vscode.commands.registerCommand('cody.fixup.apply-by-file', treeItem => this.applyDirFixups(treeItem))
-        )
-        this._disposables.push(
-            vscode.commands.registerCommand('cody.fixup.apply-all', treeItem => this.applyAllFixups(treeItem))
-        )
-        this._disposables.push(vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)))
         // Observe file renaming and deletion
         this.files = new FixupFileObserver()
         this._disposables.push(vscode.workspace.onDidRenameFiles(this.files.didRenameFiles.bind(this.files)))
@@ -81,7 +84,9 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         // Create a task and then mark it as started
         const fixupFile = this.files.forUri(editor.document.uri)
         const task = new FixupTask(fixupFile, input, selection, editor)
+        this.codelenses.set(task.id, CodyTaskState.queued, task.selectionRange)
         task.start()
+        this.codelenses.set(task.id, CodyTaskState.pending, task.selectionRange)
         void vscode.commands.executeCommand('setContext', 'cody.fixup.running', true)
         // Save states of the task
         this.tasks.set(task.id, task)
@@ -97,6 +102,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             return
         }
         task.stop()
+        this.codelenses.set(task.id, task.state, task.selectionRange)
         // Save states of the task
         this.tasks.set(task.id, task)
         this.taskViewProvider.setTreeItem(task)
@@ -107,11 +113,17 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
     private getFilesWithApplicableFixups(): string[] {
         const filePaths: string[] = []
         for (const task of this.tasks.values()) {
+            // Remove fixed tasks
+            if (task.state === CodyTaskState.fixed) {
+                this.discard(task.id)
+                continue
+            }
             if (task.state === CodyTaskState.done) {
-                task.stop()
                 // TODO: Handle unnamed files; grep this controller for other instances of fsPath
                 filePaths.push(task.fixupFile.uri.fsPath)
             }
+            // Update CodeLenses
+            this.codelenses.set(task.id, task.state, task.selectionRange)
         }
         void vscode.commands.executeCommand('setContext', 'cody.fixup.filesWithApplicableFixups', filePaths.length > 0)
         return filePaths
@@ -128,48 +140,57 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         void vscode.window.showTextDocument(task.fixupFile.uri, { selection: task.selectionRange })
     }
 
-    // TODO: Add support for applying fixup
-    // Placeholder function for applying fixup
-    private applyFixup(treeItem?: FixupTaskTreeItem): void {
-        void vscode.window.showInformationMessage(`Applying fixup for task #${treeItem?.id} is not implemented yet...`)
+    // Apply single fixup from task ID
+    private async apply(id: taskID): Promise<void> {
+        await this.applyFixupById(id)
+        this.getFilesWithApplicableFixups()
+    }
 
-        if (treeItem?.contextValue === 'task' && treeItem?.id) {
-            const task = this.tasks.get(treeItem.id)
-            task?.apply()
+    // Applying single fixup from tree item
+    private async applyFixup(treeItem?: FixupTaskTreeItem): Promise<void> {
+        if (treeItem?.contextValue !== 'task' || !treeItem?.id) {
             return
+        }
+        await this.applyFixupById(treeItem.id)
+    }
+
+    // Apply fixup to a task by id
+    private async applyFixupById(id: taskID): Promise<void> {
+        const task = this.tasks.get(id)
+        if (!task) {
+            return
+        }
+        this.codelenses.set(task.id, CodyTaskState.applying, task.selectionRange)
+        await task.apply()
+        this.tasks.set(task.id, task)
+        if (task.state === CodyTaskState.fixed) {
+            this.discard(task.id)
         }
     }
 
-    // TODO: Add support for applying fixup to all tasks in a directory
     // Placeholder function for applying fixup to all tasks in a directory
-    private applyDirFixups(treeItem: FixupTaskTreeItem): void {
-        void vscode.window.showInformationMessage('Applying fixups to a directory is not implemented yet...')
-
+    private async applyDirFixups(treeItem: FixupTaskTreeItem): Promise<void> {
         if (treeItem?.contextValue === 'fsPath') {
             for (const task of this.tasks.values()) {
                 if (task.fixupFile.uri.fsPath === treeItem.fsPath && task.state === CodyTaskState.done) {
-                    task.apply()
+                    await this.applyFixupById(task.id)
                 }
+            }
+            this.getFilesWithApplicableFixups()
+        }
+    }
+
+    // Placeholder function for applying fixup
+    private async applyAllFixups(): Promise<void> {
+        void vscode.window.showInformationMessage('Applying fixup for all tasks is not implemented yet...')
+        // Apply all fixups
+        for (const task of this.tasks.values()) {
+            if (task.state === CodyTaskState.done) {
+                await this.applyFixupById(task.id)
             }
         }
 
         this.getFilesWithApplicableFixups()
-    }
-
-    // TODO: Add support for applying all fixup
-    // Placeholder function for applying fixup
-    private applyAllFixups(treeItem?: FixupTaskTreeItem): void {
-        void vscode.window.showInformationMessage('Applying fixup for all tasks is not implemented yet...')
-
-        // Apply all fixups
-        for (const task of this.tasks.values()) {
-            if (task.state === CodyTaskState.done) {
-                task.apply()
-            }
-        }
-        // Clear task view after applying fixups
-        // TODO Catch errors
-        this.reset()
     }
 
     // TODO: Add support for showing diff
@@ -183,6 +204,56 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         // TODO: Implement diff view
         void vscode.window.showInformationMessage(`Diff view for task #${task?.id} is not implemented yet...`)
         return task?.selection.selectedText || ''
+    }
+
+    // TODO: Add support for showing diff by task id
+    private async diff(id: taskID): Promise<void> {
+        const task = this.tasks.get(id)
+        // show quick diff view between the current document and replacement
+        const origin = task?.selection.selectedText
+        const replacement = task?.replacement
+        if (!origin || !replacement) {
+            return
+        }
+        // show diff between current document and replacement content
+        const tempDocUri = vscode.Uri.parse('untitled:' + task.fixupFile.uri.fsPath)
+        // Add replacement content to the temp document
+        const edit = new vscode.WorkspaceEdit()
+        edit.replace(tempDocUri, task.selectionRange, replacement)
+        await vscode.workspace.applyEdit(edit)
+        // Show diff between current document and replacement content
+        await vscode.commands.executeCommand(
+            'vscode.diff',
+            tempDocUri,
+            task.fixupFile.uri,
+            'Fixup: ' + task.fixupFile.uri.fsPath,
+            {
+                preview: true,
+                selection: task.selectionRange,
+                label: 'Fixup: ' + task.fixupFile.uri.fsPath,
+                description: 'Fixup: ' + task.fixupFile.uri.fsPath,
+            }
+        )
+    }
+
+    // TODO: Add support for editing a fixup task
+    // Placeholder function for editing a fixup task
+    private edit(id: taskID): void {
+        void vscode.window.showInformationMessage('Editing a task is not implemented yet...' + id)
+        return
+    }
+
+    // TODO: Add support for cancelling a fixup task
+    // Placeholder function for cancelling a fixup task
+    private cancel(id: taskID): void {
+        void vscode.window.showInformationMessage('Cancelling a task is not implemented yet...' + id)
+        return
+    }
+
+    private discard(id: taskID): void {
+        this.tasks.delete(id)
+        this.taskViewProvider.removeTreeItemByID(id)
+        this.codelenses.remove(id)
     }
 
     public getTaskView(): TaskViewProvider {
@@ -202,6 +273,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
      * Dispose the disposables
      */
     public dispose(): void {
+        this.reset()
         this.decorator.dispose()
         this.taskViewProvider.dispose()
         for (const disposable of this._disposables) {
@@ -230,6 +302,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
                 task.inProgressReplacement = undefined
                 task.replacement = text
                 task.stop()
+                this.codelenses.set(task.id, task.state, task.selectionRange)
                 break
         }
 
@@ -240,6 +313,9 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
     // Handles changes to the source document in the fixup selection, or the
     // replacement text generated by Cody.
     public textDidChange(task: FixupTask): void {
+        if (task.state === CodyTaskState.fixed) {
+            this.needsDiffUpdate_.delete(task)
+        }
         if (this.needsDiffUpdate_.size === 0) {
             void this.scheduler.scheduleIdle(() => this.updateDiffs())
         }
@@ -284,7 +360,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             // TODO: Cache the diff output on the fixup so it can be applied;
             // have the decorator reapply decorations to visible editors
             this.decorator.decorate(editor, diff)
-            task.stop()
+            this.codelenses.set(task.id, task.state, task.selectionRange)
             if (!diff.clean) {
                 // TODO: If this isn't an in-progress diff, then schedule
                 // a re-spin or notify failure

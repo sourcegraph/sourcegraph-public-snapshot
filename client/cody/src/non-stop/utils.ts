@@ -11,6 +11,7 @@ export enum CodyTaskState {
     'done' = 3,
     'applying' = 4,
     'error' = 5,
+    'fixed' = 6,
 }
 
 export type CodyTaskIcon = {
@@ -25,7 +26,7 @@ export type CodyTaskIcon = {
 export const fixupTaskIcon: CodyTaskIcon = {
     [CodyTaskState.idle]: {
         id: 'idle',
-        icon: 'smiley',
+        icon: 'clock',
     },
     [CodyTaskState.pending]: {
         id: 'pending',
@@ -33,7 +34,11 @@ export const fixupTaskIcon: CodyTaskIcon = {
     },
     [CodyTaskState.done]: {
         id: 'done',
-        icon: 'issue-closed',
+        icon: 'smiley',
+    },
+    [CodyTaskState.fixed]: {
+        id: 'fixed',
+        icon: 'pass-filled',
     },
     [CodyTaskState.error]: {
         id: 'error',
@@ -41,7 +46,7 @@ export const fixupTaskIcon: CodyTaskIcon = {
     },
     [CodyTaskState.queued]: {
         id: 'queue',
-        icon: 'clock',
+        icon: 'debug-pause',
     },
     [CodyTaskState.applying]: {
         id: 'applying',
