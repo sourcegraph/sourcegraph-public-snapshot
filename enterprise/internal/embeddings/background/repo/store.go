@@ -47,8 +47,24 @@ var repoEmbeddingJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("repo_embedding_jobs.execution_logs"),
 	sqlf.Sprintf("repo_embedding_jobs.worker_hostname"),
 	sqlf.Sprintf("repo_embedding_jobs.cancel"),
+
 	sqlf.Sprintf("repo_embedding_jobs.repo_id"),
 	sqlf.Sprintf("repo_embedding_jobs.revision"),
+
+	sqlf.Sprintf("repo_embedding_jobs.stat_has_ranks"),
+	sqlf.Sprintf("repo_embedding_jobs.stat_is_incremental"),
+	sqlf.Sprintf("repo_embedding_jobs.stat_code_files_total"),
+	sqlf.Sprintf("repo_embedding_jobs.stat_code_files_embedded"),
+	sqlf.Sprintf("repo_embedding_jobs.stat_code_chunks_embedded"),
+	sqlf.Sprintf("repo_embedding_jobs.stat_code_files_skipped"),
+	sqlf.Sprintf("repo_embedding_jobs.stat_code_bytes_skipped"),
+	sqlf.Sprintf("repo_embedding_jobs.stat_code_bytes_embedded"),
+	sqlf.Sprintf("repo_embedding_jobs.stat_text_files_total"),
+	sqlf.Sprintf("repo_embedding_jobs.stat_text_files_embedded"),
+	sqlf.Sprintf("repo_embedding_jobs.stat_text_chunks_embedded"),
+	sqlf.Sprintf("repo_embedding_jobs.stat_text_files_skipped"),
+	sqlf.Sprintf("repo_embedding_jobs.stat_text_bytes_skipped"),
+	sqlf.Sprintf("repo_embedding_jobs.stat_text_bytes_embedded"),
 }
 
 func scanRepoEmbeddingJob(s dbutil.Scanner) (*RepoEmbeddingJob, error) {
@@ -71,6 +87,20 @@ func scanRepoEmbeddingJob(s dbutil.Scanner) (*RepoEmbeddingJob, error) {
 		&job.Cancel,
 		&job.RepoID,
 		&job.Revision,
+		&job.Stats.HasRanks,
+		&job.Stats.IsIncremental,
+		&job.Stats.CodeIndexStats.FilesTotal,
+		&job.Stats.CodeIndexStats.FilesEmbedded,
+		&job.Stats.CodeIndexStats.ChunksEmbedded,
+		&job.Stats.CodeIndexStats.FilesSkipped,
+		&job.Stats.CodeIndexStats.BytesSkipped,
+		&job.Stats.CodeIndexStats.BytesEmbedded,
+		&job.Stats.TextIndexStats.FilesTotal,
+		&job.Stats.TextIndexStats.FilesEmbedded,
+		&job.Stats.TextIndexStats.ChunksEmbedded,
+		&job.Stats.TextIndexStats.FilesSkipped,
+		&job.Stats.TextIndexStats.BytesSkipped,
+		&job.Stats.TextIndexStats.BytesEmbedded,
 	); err != nil {
 		return nil, err
 	}
