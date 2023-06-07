@@ -45,32 +45,33 @@ class CodyToolWindowContent implements UpdatableChat {
     // Tabs
     @NotNull JPanel contentPanel = new JPanel();
     tabbedPane.insertTab("Chat", null, contentPanel, null, 0);
-    @NotNull JPanel recipesPanel = new JPanel();
+    @NotNull JPanel recipesPanel = new JPanel(new GridLayout(0, 1));
+    recipesPanel.setLayout(new BoxLayout(recipesPanel, BoxLayout.Y_AXIS));
     tabbedPane.insertTab("Recipes", null, recipesPanel, null, 1);
 
     // Recipes panel
     RecipeRunner recipeRunner = new RecipeRunner(project, this);
-    JButton explainCodeDetailedButton = new JButton("Explain selected code (detailed)");
+    JButton explainCodeDetailedButton = createWideButton("Explain selected code (detailed)");
     explainCodeDetailedButton.addActionListener(e -> recipeRunner.runExplainCodeDetailed());
-    JButton explainCodeHighLevelButton = new JButton("Explain selected code (high level)");
+    JButton explainCodeHighLevelButton = createWideButton("Explain selected code (high level)");
     explainCodeHighLevelButton.addActionListener(e -> recipeRunner.runExplainCodeHighLevel());
-    JButton generateUnitTestButton = new JButton("Generate a unit test");
+    JButton generateUnitTestButton = createWideButton("Generate a unit test");
     generateUnitTestButton.addActionListener(e -> recipeRunner.runGenerateUnitTest());
-    JButton generateDocstringButton = new JButton("Generate a docstring");
+    JButton generateDocstringButton = createWideButton("Generate a docstring");
     generateDocstringButton.addActionListener(e -> recipeRunner.runGenerateDocstring());
-    JButton improveVariableNamesButton = new JButton("Improve variable names");
+    JButton improveVariableNamesButton = createWideButton("Improve variable names");
     improveVariableNamesButton.addActionListener(e -> recipeRunner.runImproveVariableNames());
-    JButton translateToLanguageButton = new JButton("Translate to different language");
+    JButton translateToLanguageButton = createWideButton("Translate to different language");
     translateToLanguageButton.addActionListener(e -> recipeRunner.runTranslateToLanguage());
-    JButton gitHistoryButton = new JButton("Summarize recent code changes");
+    JButton gitHistoryButton = createWideButton("Summarize recent code changes");
     gitHistoryButton.addActionListener(e -> recipeRunner.runGitHistory());
-    JButton findCodeSmellsButton = new JButton("Smell code");
+    JButton findCodeSmellsButton = createWideButton("Smell code");
     findCodeSmellsButton.addActionListener(e -> recipeRunner.runFindCodeSmells());
-    JButton fixupButton = new JButton("Fixup code from inline instructions");
+    JButton fixupButton = createWideButton("Fixup code from inline instructions");
     fixupButton.addActionListener(e -> recipeRunner.runFixup());
-    JButton contextSearchButton = new JButton("Codebase context search");
+    JButton contextSearchButton = createWideButton("Codebase context search");
     contextSearchButton.addActionListener(e -> recipeRunner.runContextSearch());
-    JButton releaseNotesButton = new JButton("Generate release notes");
+    JButton releaseNotesButton = createWideButton("Generate release notes");
     releaseNotesButton.addActionListener(e -> recipeRunner.runReleaseNotes());
     recipesPanel.add(explainCodeDetailedButton);
     recipesPanel.add(explainCodeHighLevelButton);
@@ -124,6 +125,16 @@ class CodyToolWindowContent implements UpdatableChat {
 
     // Add welcome message
     addWelcomeMessage();
+  }
+
+  @NotNull
+  private static JButton createWideButton(@NotNull String text) {
+    JButton button = new JButton(text);
+    button.setAlignmentX(Component.CENTER_ALIGNMENT);
+    button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getPreferredSize().height));
+    ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(button);
+    button.setUI(buttonUI);
+    return button;
   }
 
   private void addWelcomeMessage() {
