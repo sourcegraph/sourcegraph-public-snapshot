@@ -1,4 +1,4 @@
-package executorqueue
+package handler
 
 import (
 	"context"
@@ -18,7 +18,10 @@ type multiqueueCacheCleaner struct {
 
 var _ goroutine.Handler = &multiqueueCacheCleaner{}
 
-func NewMultiqueueCacheCleaner(queueNames []string, cache *rcache.Cache, windowSize time.Duration) goroutine.BackgroundRoutine {
+// NewMultiqueueCacheCleaner returns a PeriodicGoroutine that will check the cache for entries that are older than the configured
+// window size. A cache key is represented by a queue name; the value is a hash containing timestamps as the field key and the
+// job ID as the field value (which is not used for anything currently).
+func NewMultiqueueCacheCleaner(queueNames []string, cache *rcache.Cache, windowSize time.Duration, cleanupInterval time.Duration) goroutine.BackgroundRoutine {
 	ctx := context.Background()
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
@@ -29,10 +32,11 @@ func NewMultiqueueCacheCleaner(queueNames []string, cache *rcache.Cache, windowS
 		},
 		goroutine.WithName("executors.multiqueue-cache-cleaner"),
 		goroutine.WithDescription("deletes entries from the dequeue cache older than the configured window"),
-		goroutine.WithInterval(5*time.Second),
+		goroutine.WithInterval(cleanupInterval),
 	)
 }
 
+// Handle loops over the configured queue names and deletes stale entries.
 func (m *multiqueueCacheCleaner) Handle(ctx context.Context) error {
 	for _, queueName := range m.queueNames {
 		all, err := m.cache.GetHashAll(queueName)

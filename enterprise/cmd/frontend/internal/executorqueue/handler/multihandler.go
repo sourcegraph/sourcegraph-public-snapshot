@@ -68,16 +68,19 @@ func NewMultiHandler(
 	codeIntelQueueHandler QueueHandler[uploadsshared.Index],
 	batchesQueueHandler QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob],
 ) MultiHandler {
-	return MultiHandler{
+	dequeueCache := rcache.New("executor_multihandler_dequeues")
+	multiHandler := MultiHandler{
 		executorStore:         executorStore,
 		jobTokenStore:         jobTokenStore,
 		metricsStore:          metricsStore,
 		CodeIntelQueueHandler: codeIntelQueueHandler,
 		BatchesQueueHandler:   batchesQueueHandler,
-		dequeueCache:          rcache.New("executor_multihandler_dequeues"),
+		dequeueCache:          dequeueCache,
 		validQueues:           []string{codeIntelQueueHandler.Name, batchesQueueHandler.Name},
 		logger:                log.Scoped("executor-multi-queue-handler", "The route handler for all executor queues"),
 	}
+	cacheCleaner := NewMultiqueueCacheCleaner(multiHandler.validQueues, dequeueCache, dequeueTtl, 5*time.Second)
+	return multiHandler
 }
 
 // HandleDequeue is the equivalent of ExecutorHandler.HandleDequeue for multiple queues.
@@ -257,7 +260,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	job.Token = token
 
 	// increment dequeue counter
-	err = m.dequeueCache.SetHashItem(selectedQueue, job.Token, fmt.Sprint(time.Now().Unix()))
+	err = m.dequeueCache.SetHashItem(selectedQueue, fmt.Sprint(time.Now().Unix()), job.Token)
 	if err != nil {
 		return executortypes.Job{}, false, errors.Wrapf(err, "failed to increment dequeue count for queue '%s'", selectedQueue)
 	}
