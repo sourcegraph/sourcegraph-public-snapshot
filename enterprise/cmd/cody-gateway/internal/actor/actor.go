@@ -118,21 +118,23 @@ func (a *Actor) Limiter(
 		return nil, false
 	}
 
-	// The actual type of time.Duration is int64, so we can use it to compute the
-	// ratio of the rate limit interval to a day (24 hours).
-	ratioToDay := float32(limit.Interval) / float32(24*time.Hour)
-	// Then use the ratio to compute the rate limit for a day.
-	dailyLimit := float32(limit.Limit) / ratioToDay
-	// Finally, compute the concurrency limit with the given percentage of the daily limit.
-	concurrencyLimit := int(dailyLimit * concurrencyLimitConfig.Percentage)
-	// Just in case a poor choice of percentage results in a concurrency limit less than 1.
-	if concurrencyLimit < 1 {
-		concurrencyLimit = 1
-	}
+	var concurrencyLimit int
 	if feature == codygateway.FeatureEmbeddings {
 		// For embeddings, we use a custom, hardcoded limit. Concurrency on the client side
 		// should be 1, so 15 is a very safe default here.
 		concurrencyLimit = 15
+	} else {
+		// The actual type of time.Duration is int64, so we can use it to compute the
+		// ratio of the rate limit interval to a day (24 hours).
+		ratioToDay := float32(limit.Interval) / float32(24*time.Hour)
+		// Then use the ratio to compute the rate limit for a day.
+		dailyLimit := float32(limit.Limit) / ratioToDay
+		// Finally, compute the concurrency limit with the given percentage of the daily limit.
+		concurrencyLimit = int(dailyLimit * concurrencyLimitConfig.Percentage)
+		// Just in case a poor choice of percentage results in a concurrency limit less than 1.
+		if concurrencyLimit < 1 {
+			concurrencyLimit = 1
+		}
 	}
 
 	// The redis store has to use a prefix for the given feature because we need to

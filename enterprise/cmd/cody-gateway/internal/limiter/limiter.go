@@ -14,6 +14,9 @@ type Limiter interface {
 	// actually consume a request. This allows us to easily avoid deducting from
 	// the rate limit if the request to upstream fails, at the cost of slight
 	// over-allowance.
+	//
+	// The commit callback accepts a parameter that dictates how much rate
+	// limit to consume for this request.
 	TryAcquire(ctx context.Context) (commit func(int) error, err error)
 }
 

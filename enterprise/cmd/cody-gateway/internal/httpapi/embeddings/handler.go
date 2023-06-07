@@ -63,6 +63,9 @@ func NewHandler(
 			return
 		}
 
+		// Add the client type to the logger fields.
+		logger = logger.With(log.String("client", fmt.Sprintf("%T", c)))
+
 		upstreamStarted := time.Now()
 		var (
 			upstreamFinished time.Duration
@@ -97,10 +100,7 @@ func NewHandler(
 		usedTokens = ut
 		upstreamFinished = time.Since(upstreamStarted)
 		if err != nil {
-			logger.Error(
-				"error from upstream",
-				log.String("client", fmt.Sprintf("%T", c)),
-			)
+			logger.Error("error from upstream", log.Error(err))
 			var statusCodeErr response.HTTPStatusCodeError
 			if errors.As(err, &statusCodeErr) {
 				resolvedStatusCode = statusCodeErr.HTTPStatusCode()

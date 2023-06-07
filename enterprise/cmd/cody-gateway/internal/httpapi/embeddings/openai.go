@@ -64,7 +64,8 @@ func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway
 			return nil, 0, response.NewHTTPStatusCodeError(http.StatusServiceUnavailable, errors.Newf("we're facing too much load at the moment, please retry"))
 		}
 		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		return nil, 0, response.NewHTTPStatusCodeError(resp.StatusCode, errors.Errorf("embeddings: %s %q: failed with status %d: %s", req.Method, req.URL.String(), resp.StatusCode, string(respBody)))
+		// We don't forward the status code here, everything but 429 should turn into a 500 error.
+		return nil, 0, errors.Errorf("embeddings: %s %q: failed with status %d: %s", req.Method, req.URL.String(), resp.StatusCode, string(respBody))
 	}
 
 	var response openaiEmbeddingsResponse
