@@ -9,6 +9,7 @@ go_library(
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/envvar",
+        "//enterprise/internal/licensing",
         "//internal/actor",
         "//internal/auth",
         "//internal/conf",
