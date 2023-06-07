@@ -73,6 +73,7 @@ const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.AWSCODECOMMIT]: <span>Unsupported</span>,
     [ExternalServiceKind.PAGURE]: <span>Unsupported</span>,
     [ExternalServiceKind.OTHER]: <span>Unsupported</span>,
+    [ExternalServiceKind.LOCALGIT]: <span>Unsupported</span>,
 }
 
 type Step = 'add-token' | 'get-ssh-key'

@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "localgit.schema.json#",
+  "title": "LocalGitExternalService",
+  "description": "Configuration for integration local Git repositories.",
+  "allowComments": true,
+  "type": "object",
+  "additionalProperties": false,
+  "required": [],
+  "properties": {
+    "repos": {
+      "title": "List of paths/patterns to Git repos.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "title": "LocalGitRepoPattern",
+        "additionalProperties": false,
+        "description:": "Glob pattern.",
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "examples": ["path/to/my/repo", "path/to/my/repo.git/"]
+          },
+          "group": {
+            "type": "string",
+            "description:": "The group all repsitories matching the pattern should be associated with."
+          }
+        }
+      }
+    }
+  }
+}

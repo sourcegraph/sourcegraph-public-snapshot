@@ -209,6 +209,9 @@ const (
 
 	// VariantOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	VariantOther
+
+	// VariantLocalGit is the (api.ExternalRepoSpec).ServiceType for local git repositories
+	VariantLocalGit
 )
 
 type variantValues struct {
@@ -239,6 +242,7 @@ var variantValuesMap = map[Variant]variantValues{
 	VariantRubyPackages:    {AsKind: "RUBYPACKAGES", AsType: "rubyPackages", ConfigPrototype: func() any { return &schema.RubyPackagesConnection{} }},
 	VariantRustPackages:    {AsKind: "RUSTPACKAGES", AsType: "rustPackages", ConfigPrototype: func() any { return &schema.RustPackagesConnection{} }},
 	VariantSCIM:            {AsKind: "SCIM", AsType: "scim"},
+	VariantLocalGit:        {AsKind: "LOCALGIT", AsType: "localgit", ConfigPrototype: func() any { return &schema.LocalGitExternalService{} }},
 }
 
 func (v Variant) AsKind() string {
@@ -825,6 +829,8 @@ func uniqueCodeHostIdentifier(kind string, cfg any) (string, error) {
 		return VariantRubyPackages.AsKind(), nil
 	case *schema.PagureConnection:
 		rawURL = c.Url
+	case *schema.LocalGitExternalService:
+		return VariantLocalGit.AsKind(), nil
 	default:
 		return "", errors.Errorf("unknown external service kind: %s", kind)
 	}
