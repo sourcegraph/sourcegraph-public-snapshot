@@ -11,6 +11,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - New recipe: `Generate PR description`. Generate the PR description using the PR template guidelines for the changes made in the current branch. [pull/51721](https://github.com/sourcegraph/sourcegraph/pull/51721)
 - Open context search results links as workspace file [pull/52856](https://github.com/sourcegraph/sourcegraph/pull/52856)
 - Cody Inline Assist: Decorations for `/fix` errors [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
+- Help & Getting Started: Walkthrough to help users get setup with Cody and discover new features. [pull/52560](https://github.com/sourcegraph/sourcegraph/pull/52560)
 
 ### Fixed
 
@@ -18,6 +19,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 - Cody Inline Assist: Fixes cody processing indefinitely issue [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
 - Cody Inline Assist: Use more than 1 context file for `/touch` [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
 - Cody completions: Various fixes for completion analytics. [pull/52935](https://github.com/sourcegraph/sourcegraph/pull/52935)
+- Cody Inline Assist: Indentation on `/fix` [pull/53068](https://github.com/sourcegraph/sourcegraph/pull/53068)
 - Ensure the Cody for VS Code login instance URL is in sync with user settings [pull/53081](https://github.com/sourcegraph/sourcegraph/pull/53081)
 
 ### Changed
