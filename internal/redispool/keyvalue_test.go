@@ -97,6 +97,16 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 			"horse":  "graph",
 		})
 
+		// hdel and ensure it no longer exists
+		require.Equal(kv.HDel("hash", "horse"), 1)
+		require.Equal(kv.HGet("hash", "horse"), redis.ErrNil)
+		// Nonexistent key returns 0
+		require.Equal(kv.HGet("doesnotexist", "neitherdoesthis"), redis.ErrNil)
+		require.Equal(kv.HDel("doesnotexist", "neitherdoesthis"), 0)
+		// Existing key but nonexistent field returns 0
+		require.Equal(kv.HGet("hash", "doesnotexist"), redis.ErrNil)
+		require.Equal(kv.HDel("hash", "doesnotexist"), 0)
+
 		// Redis returns nil on unset fields
 		require.Equal(kv.HGet("hash", "hi"), redis.ErrNil)
 

@@ -35,6 +35,7 @@ type KeyValue interface {
 	HGet(key, field string) Value
 	HGetAll(key string) Values
 	HSet(key, field string, value any) error
+	HDel(key, field string) Value
 
 	LPush(key string, value any) error
 	LTrim(key string, start, stop int) error
@@ -211,6 +212,10 @@ func (r *redisKeyValue) HGetAll(key string) Values {
 
 func (r *redisKeyValue) HSet(key, field string, val any) error {
 	return r.do("HSET", r.prefix+key, field, val).err
+}
+
+func (r *redisKeyValue) HDel(key, field string) Value {
+	return r.do("HDEL", r.prefix+key, field)
 }
 
 func (r *redisKeyValue) LPush(key string, value any) error {

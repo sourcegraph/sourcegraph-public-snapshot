@@ -225,6 +225,20 @@ func (kv *naiveKeyValue) HSet(key, field string, fieldValue any) error {
 	}).err
 }
 
+func (kv *naiveKeyValue) HDel(key, field string) Value {
+	var removed int64
+	err := kv.maybeUpdateValues(redisGroupHash, key, func(li []any) ([]any, updaterOp, error) {
+		idx, ok, err := hsetValueIndex(li, field)
+		if err != nil || !ok {
+			return li, readOnly, err
+		}
+		removed = 1
+		li = append(li[:idx-1], li[idx+1:]...)
+		return li, write, nil
+	}).err
+	return Value{reply: removed, err: err}
+}
+
 func hsetValueIndex(li []any, field string) (int, bool, error) {
 	for i := 1; i < len(li); i += 2 {
 		if kk, err := redis.String(li[i-1], nil); err != nil {
