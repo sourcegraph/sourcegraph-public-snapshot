@@ -52,6 +52,7 @@ go_library(
         "redis_key_value.go",
         "repo_commits_changelists.go",
         "repo_kvps.go",
+        "repo_paths.go",
         "repo_statistics.go",
         "repos.go",
         "repos_perm.go",
