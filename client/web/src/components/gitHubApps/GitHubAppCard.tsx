@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { DeleteGitHubAppResult, DeleteGitHubAppVariables } from 'src/graphql-operations'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { Button, Icon, Tooltip, Container, AnchorLink, ButtonLink } from '@sourcegraph/wildcard'
+import { Button, Icon, Container, AnchorLink, ButtonLink } from '@sourcegraph/wildcard'
 
 import { DELETE_GITHUB_APP_BY_ID_QUERY } from './backend'
 
@@ -62,11 +62,9 @@ export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, refetch }) =>
                 <ButtonLink className="mr-2" aria-label="Edit" to={app.id} variant="secondary" size="sm">
                     <Icon aria-hidden={true} svgPath={mdiCogOutline} /> Edit
                 </ButtonLink>
-                <Tooltip content="Delete GitHub App">
-                    <Button aria-label="Delete" onClick={onDelete} disabled={loading} variant="danger" size="sm">
-                        <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete
-                    </Button>
-                </Tooltip>
+                <Button aria-label="Remove GitHub App" onClick={onDelete} disabled={loading} variant="danger" size="sm">
+                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Remove
+                </Button>
             </div>
         </Container>
     )

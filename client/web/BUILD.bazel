@@ -547,6 +547,8 @@ ts_project(
         "src/enterprise/batches/settings/CodeHostConnectionNode.tsx",
         "src/enterprise/batches/settings/CodeHostConnections.tsx",
         "src/enterprise/batches/settings/CodeHostSshPublicKey.tsx",
+        "src/enterprise/batches/settings/CommitSigningIntegrationNode.tsx",
+        "src/enterprise/batches/settings/CommitSigningIntegrations.tsx",
         "src/enterprise/batches/settings/ModalHeader.tsx",
         "src/enterprise/batches/settings/RemoveCredentialModal.tsx",
         "src/enterprise/batches/settings/RolloutWindowsConfiguration.tsx",

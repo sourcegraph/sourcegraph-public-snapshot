@@ -1,15 +1,11 @@
-import { MockedResponse } from '@apollo/client/testing'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { MATCH_ANY_PARAMETERS, WildcardMockedResponse, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import {
-    BatchChangesCodeHostFields,
-    ExternalServiceKind,
-    GlobalBatchChangesCodeHostsResult,
-} from '../../../graphql-operations'
+import { BatchChangesCodeHostFields, ExternalServiceKind } from '../../../graphql-operations'
 import { BATCH_CHANGES_SITE_CONFIGURATION } from '../backend'
 import { rolloutWindowConfigMockResult } from '../mocks'
 
@@ -30,15 +26,13 @@ const ROLLOUT_WINDOWS_CONFIGURATION_MOCK = {
         query: getDocumentNode(BATCH_CHANGES_SITE_CONFIGURATION),
     },
     result: rolloutWindowConfigMockResult,
+    nMatches: Number.POSITIVE_INFINITY,
 }
 
-const createMock = (...hosts: BatchChangesCodeHostFields[]): MockedResponse<GlobalBatchChangesCodeHostsResult> => ({
+const createMock = (...hosts: BatchChangesCodeHostFields[]): WildcardMockedResponse => ({
     request: {
         query: getDocumentNode(GLOBAL_CODE_HOSTS),
-        variables: {
-            after: null,
-            first: 15,
-        },
+        variables: MATCH_ANY_PARAMETERS,
     },
     result: {
         data: {
@@ -49,45 +43,71 @@ const createMock = (...hosts: BatchChangesCodeHostFields[]): MockedResponse<Glob
             },
         },
     },
+    nMatches: Number.POSITIVE_INFINITY,
 })
 
 export const Overview: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider
-                mocks={[
-                    ROLLOUT_WINDOWS_CONFIGURATION_MOCK,
-                    createMock(
-                        {
-                            credential: null,
-                            externalServiceKind: ExternalServiceKind.GITHUB,
-                            externalServiceURL: 'https://github.com/',
-                            requiresSSH: false,
-                            requiresUsername: false,
-                        },
-                        {
-                            credential: null,
-                            externalServiceKind: ExternalServiceKind.GITLAB,
-                            externalServiceURL: 'https://gitlab.com/',
-                            requiresSSH: false,
-                            requiresUsername: false,
-                        },
-                        {
-                            credential: null,
-                            externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
-                            externalServiceURL: 'https://bitbucket.sgdev.org/',
-                            requiresSSH: true,
-                            requiresUsername: false,
-                        },
-                        {
-                            credential: null,
-                            externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
-                            externalServiceURL: 'https://bitbucket.org/',
-                            requiresSSH: false,
-                            requiresUsername: true,
-                        }
-                    ),
-                ]}
+                link={
+                    new WildcardMockLink([
+                        ROLLOUT_WINDOWS_CONFIGURATION_MOCK,
+                        createMock(
+                            {
+                                credential: null,
+                                externalServiceKind: ExternalServiceKind.GITHUB,
+                                externalServiceURL: 'https://github.com/',
+                                requiresSSH: false,
+                                requiresUsername: false,
+                                supportsCommitSigning: true,
+                                commitSigningConfiguration: {
+                                    __typename: 'GitHubAppConfiguration',
+                                    appID: 123,
+                                    name: 'Sourcegraph Commit Signing',
+                                    appURL: 'https://github.com/apps/sourcegraph-commit-signing',
+                                    logo: 'https://github.com/identicons/app/app/commit-testing-local',
+                                },
+                            },
+                            {
+                                credential: null,
+                                externalServiceKind: ExternalServiceKind.GITHUB,
+                                externalServiceURL: 'https://github.mycompany.com/',
+                                requiresSSH: false,
+                                requiresUsername: false,
+                                supportsCommitSigning: true,
+                                commitSigningConfiguration: null,
+                            },
+                            {
+                                credential: null,
+                                externalServiceKind: ExternalServiceKind.GITLAB,
+                                externalServiceURL: 'https://gitlab.com/',
+                                requiresSSH: false,
+                                requiresUsername: false,
+                                supportsCommitSigning: false,
+                                commitSigningConfiguration: null,
+                            },
+                            {
+                                credential: null,
+                                externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
+                                externalServiceURL: 'https://bitbucket.sgdev.org/',
+                                requiresSSH: true,
+                                requiresUsername: false,
+                                supportsCommitSigning: false,
+                                commitSigningConfiguration: null,
+                            },
+                            {
+                                credential: null,
+                                externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
+                                externalServiceURL: 'https://bitbucket.org/',
+                                requiresSSH: false,
+                                requiresUsername: true,
+                                supportsCommitSigning: false,
+                                commitSigningConfiguration: null,
+                            }
+                        ),
+                    ])
+                }
             >
                 <BatchChangesSiteConfigSettingsArea {...props} />
             </MockedTestProvider>
@@ -99,59 +119,75 @@ export const ConfigAdded: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider
-                mocks={[
-                    ROLLOUT_WINDOWS_CONFIGURATION_MOCK,
-                    createMock(
-                        {
-                            credential: {
-                                id: '123',
-                                isSiteCredential: true,
-                                sshPublicKey:
-                                    'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                link={
+                    new WildcardMockLink([
+                        ROLLOUT_WINDOWS_CONFIGURATION_MOCK,
+                        createMock(
+                            {
+                                credential: {
+                                    id: '123',
+                                    isSiteCredential: true,
+                                    sshPublicKey:
+                                        'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                                },
+                                externalServiceKind: ExternalServiceKind.GITHUB,
+                                externalServiceURL: 'https://github.com/',
+                                requiresSSH: false,
+                                requiresUsername: false,
+                                supportsCommitSigning: true,
+                                commitSigningConfiguration: {
+                                    __typename: 'GitHubAppConfiguration',
+                                    appID: 123,
+                                    name: 'Sourcegraph Commit Signing',
+                                    appURL: 'https://github.com/apps/sourcegraph-commit-signing',
+                                    logo: 'https://github.com/identicons/app/app/commit-testing-local',
+                                },
                             },
-                            externalServiceKind: ExternalServiceKind.GITHUB,
-                            externalServiceURL: 'https://github.com/',
-                            requiresSSH: false,
-                            requiresUsername: false,
-                        },
-                        {
-                            credential: {
-                                id: '123',
-                                isSiteCredential: true,
-                                sshPublicKey:
-                                    'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                            {
+                                credential: {
+                                    id: '123',
+                                    isSiteCredential: true,
+                                    sshPublicKey:
+                                        'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                                },
+                                externalServiceKind: ExternalServiceKind.GITLAB,
+                                externalServiceURL: 'https://gitlab.com/',
+                                requiresSSH: false,
+                                requiresUsername: false,
+                                supportsCommitSigning: false,
+                                commitSigningConfiguration: null,
                             },
-                            externalServiceKind: ExternalServiceKind.GITLAB,
-                            externalServiceURL: 'https://gitlab.com/',
-                            requiresSSH: false,
-                            requiresUsername: false,
-                        },
-                        {
-                            credential: {
-                                id: '123',
-                                isSiteCredential: true,
-                                sshPublicKey:
-                                    'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                            {
+                                credential: {
+                                    id: '123',
+                                    isSiteCredential: true,
+                                    sshPublicKey:
+                                        'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                                },
+                                externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
+                                externalServiceURL: 'https://bitbucket.sgdev.org/',
+                                requiresSSH: true,
+                                requiresUsername: false,
+                                supportsCommitSigning: false,
+                                commitSigningConfiguration: null,
                             },
-                            externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
-                            externalServiceURL: 'https://bitbucket.sgdev.org/',
-                            requiresSSH: true,
-                            requiresUsername: false,
-                        },
-                        {
-                            credential: {
-                                id: '123',
-                                isSiteCredential: true,
-                                sshPublicKey:
-                                    'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
-                            },
-                            externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
-                            externalServiceURL: 'https://bitbucket.org/',
-                            requiresSSH: false,
-                            requiresUsername: true,
-                        }
-                    ),
-                ]}
+                            {
+                                credential: {
+                                    id: '123',
+                                    isSiteCredential: true,
+                                    sshPublicKey:
+                                        'rsa-ssh randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
+                                },
+                                externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
+                                externalServiceURL: 'https://bitbucket.org/',
+                                requiresSSH: false,
+                                requiresUsername: true,
+                                supportsCommitSigning: false,
+                                commitSigningConfiguration: null,
+                            }
+                        ),
+                    ])
+                }
             >
                 <BatchChangesSiteConfigSettingsArea {...props} />
             </MockedTestProvider>

@@ -48,16 +48,7 @@ export const SiteAdminGitHubAppsArea: FC<Props> = props => {
             <Route index={true} element={<GitHubAppsPage batchChangesEnabled={props.batchChangesEnabled} />} />
 
             <Route path="new" element={<CreateGitHubAppPage {...props} />} />
-            <Route
-                path=":appID"
-                element={
-                    <GitHubAppPage
-                        {...props}
-                        externalServicesFromFile={data?.site?.externalServicesFromFile}
-                        allowEditExternalServicesWithFile={data?.site?.allowEditExternalServicesWithFile}
-                    />
-                }
-            />
+            <Route path=":appID" element={<GitHubAppPage {...props} />} />
         </Routes>
     )
 }

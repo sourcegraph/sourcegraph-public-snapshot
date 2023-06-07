@@ -84,8 +84,17 @@ const CODE_HOST_FIELDS_FRAGMENT = gql`
         externalServiceURL
         requiresSSH
         requiresUsername
+        supportsCommitSigning
         credential {
             ...BatchChangesCredentialFields
+        }
+        commitSigningConfiguration {
+            ... on GitHubAppConfiguration {
+                appID
+                name
+                appURL
+                logo
+            }
         }
     }
 
@@ -160,7 +169,7 @@ export const useGlobalBatchChangesCodeHostConnection = (): UseShowMorePagination
         query: GLOBAL_CODE_HOSTS,
         variables: {
             after: null,
-            first: 15,
+            first: 30,
         },
         options: {
             useURL: true,
