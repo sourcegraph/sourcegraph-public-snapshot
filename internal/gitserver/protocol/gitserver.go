@@ -569,6 +569,14 @@ type RepoCloneProgress struct {
 	Cloned          bool   // whether the repository has been cloned successfully
 }
 
+func (r *RepoCloneProgress) ToProto() *proto.RepoCloneProgress {
+	return &proto.RepoCloneProgress{
+		CloneInProgress: r.CloneInProgress,
+		CloneProgress:   r.CloneProgress,
+		Cloned:          r.Cloned,
+	}
+}
+
 func (r *RepoCloneProgress) FromProto(p *proto.RepoCloneProgress) {
 	*r = RepoCloneProgress{
 		CloneInProgress: p.GetCloneInProgress(),

@@ -291,7 +291,22 @@ func TestClient_BatchLog_ProtoRoundTrip(t *testing.T) {
 		return true
 	}
 
-	if err := quick.Check(res, nil); err != nil {
+	if err := quick.Check(res, &quick.Config{
+		Values: func(args []reflect.Value, rand *rand.Rand) {
+			args[0] = reflect.ValueOf(protocol.BatchLogResponse{
+				Results: []protocol.BatchLogResult{
+					{
+						RepoCommit: api.RepoCommit{
+							Repo:     api.RepoName(fmt.Sprintf("repo-%d", rand.Int())),
+							CommitID: api.CommitID(randstring.NewLen(40)),
+						},
+						CommandOutput: randstring.NewLen(10),
+						CommandError:  randstring.NewLen(10),
+					},
+				},
+			})
+		},
+	}); err != nil {
 		t.Errorf("BatchChangesLogResponse proto roundtrip failed (-want +got):\n%s", diff)
 	}
 
@@ -300,8 +315,8 @@ func TestClient_BatchLog_ProtoRoundTrip(t *testing.T) {
 func TestClient_RepoCloneProgress_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
-	res := func(original protocol.RepoCloneProgressResponse) bool {
-		var converted protocol.RepoCloneProgressResponse
+	req := func(original protocol.RepoCloneProgress) bool {
+		var converted protocol.RepoCloneProgress
 		converted.FromProto(original.ToProto())
 
 		if diff = cmp.Diff(original, converted); diff != "" {
@@ -311,8 +326,8 @@ func TestClient_RepoCloneProgress_ProtoRoundTrip(t *testing.T) {
 		return true
 	}
 
-	if err := quick.Check(res, nil); err != nil {
-		t.Errorf("RepoCloneInProgressResponse proto roundtrip failed (-want +got):\n%s", diff)
+	if err := quick.Check(req, nil); err != nil {
+		t.Errorf("RepoCloneProgress proto roundtrip failed (-want +got):\n%s", diff)
 	}
 }
 
