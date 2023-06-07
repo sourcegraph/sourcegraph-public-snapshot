@@ -95,8 +95,8 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 
 	// We need to replace the temporary folder, which changes between runs, with something static
 	root_placeholder := "~root~"
-	for _,repo := range repos {
-		for _,root := range roots {
+	for _, repo := range repos {
+		for _, root := range roots {
 			if strings.Contains(repo.URI, root) {
 				repo.URI = strings.Replace(repo.URI, root, root_placeholder, 1)
 				repo.ExternalRepo.ID = strings.Replace(repo.ExternalRepo.ID, root, root_placeholder, 1)
