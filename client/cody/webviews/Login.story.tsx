@@ -1,6 +1,6 @@
 import { ComponentMeta, ComponentStoryObj } from '@storybook/react'
 
-import { AuthStatus } from '../src/chat/protocol'
+import { AuthStatus, defaultAuthStatus, unauthenticatedStatus } from '../src/chat/protocol'
 
 import { Login } from './Login'
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
@@ -24,24 +24,22 @@ const vscodeAPI: VSCodeWrapper = {
 }
 
 const validAuthStatus: AuthStatus = {
+    ...defaultAuthStatus,
     authenticated: true,
-    showInvalidAccessTokenError: false,
-    hasVerifiedEmail: false,
+    hasVerifiedEmail: true,
     requiresVerifiedEmail: false,
+    siteHasCodyEnabled: true,
+    siteVersion: '5.1.0',
 }
 
-const invalidAccessTokenAuthStatus: AuthStatus = {
-    authenticated: false,
-    showInvalidAccessTokenError: true,
-    hasVerifiedEmail: false,
-    requiresVerifiedEmail: false,
-}
+const invalidAccessTokenAuthStatus: AuthStatus = { ...unauthenticatedStatus }
 
 const requiresVerifiedEmailAuthStatus: AuthStatus = {
+    ...defaultAuthStatus,
     authenticated: true,
-    showInvalidAccessTokenError: false,
-    hasVerifiedEmail: false,
     requiresVerifiedEmail: true,
+    siteHasCodyEnabled: true,
+    siteVersion: '5.1.0',
 }
 
 export default meta

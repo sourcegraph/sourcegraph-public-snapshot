@@ -43,18 +43,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 
     return (
         <div className={styles.container}>
-            {authStatus?.showInvalidAccessTokenError && (
-                <p className={styles.error}>
-                    Invalid credentials. Please check the Sourcegraph instance URL and access token.
-                </p>
-            )}
-            {authStatus?.authenticated === true &&
-                authStatus?.requiresVerifiedEmail &&
-                authStatus?.hasVerifiedEmail === false && (
-                    <p className={styles.error}>
-                        Email not verified. Please add a verified email to your Sourcegraph.com account.
-                    </p>
-                )}
+            {authStatus && <ErrorContainer authStatus={authStatus} />}
             <section className={styles.section}>
                 <h2 className={styles.sectionHeader}>Enterprise User</h2>
                 <form className={styles.wrapper} onSubmit={onSubmit}>
@@ -63,17 +52,18 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                         value={endpoint || ''}
                         className={styles.input}
                         placeholder="https://example.sourcegraph.com"
-                        onInput={(e: any) => setEndpoint(e.target.value)}
+                        onChange={e => setEndpoint((e.target as HTMLInputElement).value)}
+                        onInput={e => setEndpoint((e.target as HTMLInputElement).value)}
                     >
                         Sourcegraph Instance URL
                     </VSCodeTextField>
                     <VSCodeTextField
                         id="accessToken"
                         value={token}
-                        placeholder=""
                         className={styles.input}
                         type={TextFieldType.password}
-                        onInput={(e: any) => setToken(e.target.value)}
+                        onChange={e => setToken((e.target as HTMLInputElement).value)}
+                        onInput={e => setToken((e.target as HTMLInputElement).value)}
                     >
                         Access Token (
                         <a href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token">docs</a>)
@@ -106,4 +96,49 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             />
         </div>
     )
+}
+
+const ERROR_MESSAGES = {
+    DISABLED: 'Cody is not enabled on your instance. To enable Cody, please contact your site admin.',
+    VERSION:
+        'Cody is not supported by your Sourcegraph instance version (version: $SITEVERSION). To use Cody, please contact your site admin to upgrade to version 5.1.0 or above.',
+    INVALID: 'Invalid credentials. Please check the Sourcegraph instance URL and access token.',
+    EMAIL_NOT_VERIFIED: 'Email not verified. Please add a verified email to your Sourcegraph.com account.',
+}
+
+const ErrorContainer: React.FunctionComponent<{ authStatus: AuthStatus }> = ({ authStatus }) => {
+    const {
+        authenticated,
+        siteHasCodyEnabled,
+        showInvalidAccessTokenError,
+        requiresVerifiedEmail,
+        hasVerifiedEmail,
+        siteVersion,
+    } = authStatus
+    // Version is compatible if this is an insider build or version is 5.1.0 or above
+    // Right now we assumes all insider builds have Cody enabled
+    // NOTE: Insider build includes App builds but we should seperate them in the future
+    if (!authenticated && !showInvalidAccessTokenError) {
+        return null
+    }
+    const isInsiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
+    const isVersionCompatible = isInsiderBuild || siteVersion >= '5.1.0'
+    const isVersionBeforeCody = !isVersionCompatible && siteVersion < '5.0.0'
+    // When doesn't have a valid token
+    if (showInvalidAccessTokenError) {
+        return <p className={styles.error}>{ERROR_MESSAGES.INVALID}</p>
+    }
+    // When authenticated but doesn't have a verified email
+    if (authenticated && requiresVerifiedEmail && !hasVerifiedEmail) {
+        return <p className={styles.error}>{ERROR_MESSAGES.EMAIL_NOT_VERIFIED}</p>
+    }
+    // When version is lower than 5.0.0
+    if (isVersionBeforeCody) {
+        return <p className={styles.error}>{ERROR_MESSAGES.VERSION.replace('$SITEVERSION', siteVersion)}</p>
+    }
+    // When version is compatible but Cody is not enabled
+    if (isVersionCompatible && !siteHasCodyEnabled) {
+        return <p className={styles.error}>{ERROR_MESSAGES.DISABLED}</p>
+    }
+    return null
 }
