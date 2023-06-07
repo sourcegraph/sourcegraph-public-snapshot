@@ -124,7 +124,7 @@ type DotcomQuery {
 
     """
     A user for purposes of connecting to the Cody Gateway.
-    Only Sourcegraph.com site admins may perform this query.
+    Only Sourcegraph.com site admins or service accounts may perform this query.
     FOR INTERNAL USE ONLY.
     """
     dotcomCodyGatewayUserByToken(token: String!): DotcomCodyGatewayUser
