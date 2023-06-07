@@ -16,6 +16,7 @@ import { detectMultilineMode } from './multiline'
 import { CompletionProvider, InlineCompletionProvider, ManualCompletionProvider } from './provider'
 
 const LOG_MANUAL = { type: 'manual' }
+const WINDOW_SIZE = 50
 
 function lastNLines(text: string, n: number): string {
     const lines = text.split('\n')
@@ -152,12 +153,11 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const contextChars = this.tokToChar(this.promptTokens) - emptyPromptLength
 
-        const windowSize = 20
         const similarCode = await getContext(
             currentEditor,
             this.history,
-            lastNLines(prefix, windowSize),
-            windowSize,
+            lastNLines(prefix, WINDOW_SIZE),
+            WINDOW_SIZE,
             contextChars
         )
 
@@ -334,12 +334,11 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const contextChars = this.tokToChar(this.promptTokens) - emptyPromptLength
 
-        const windowSize = 20
         const similarCode = await getContext(
             currentEditor,
             this.history,
-            lastNLines(prefix, windowSize),
-            windowSize,
+            lastNLines(prefix, WINDOW_SIZE),
+            WINDOW_SIZE,
             contextChars
         )
 
