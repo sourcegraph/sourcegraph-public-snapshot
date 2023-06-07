@@ -123,7 +123,6 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
                                 repoId={repoID}
                                 path={filePath}
                                 userId={userID}
-                                reasons={reasons}
                                 isDirectAssigned={isDirectAssigned}
                             />
                         ))}

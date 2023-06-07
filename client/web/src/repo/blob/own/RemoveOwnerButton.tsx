@@ -26,11 +26,7 @@ export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({
     path,
     userId,
     isDirectAssigned,
-    reasons,
 }) => {
-    // const directAssignedReasons = reasons.filter(value => value.__typename === 'AssignedOwner')
-    // const isDirectAssigned = directAssignedReasons.some(value => value.isDirectMatch)
-
     const tooltipContent = !isDirectAssigned
         ? 'Ownership can only be modified at the same direct path as it was assigned.'
         : 'Remove ownership'
