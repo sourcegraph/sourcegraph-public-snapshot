@@ -73,7 +73,7 @@ commands:
       CODY_GATEWAY_BIGQUERY_PROJECT_ID: cody-gateway-dev
 ```
 
-Then to view events statistics on the product subscription page, add the following section in the site configuration:
+Then to view events statistics on the product subscription page, add the following section in the site configuration, and run the `sg start dotcom` stack:
 
 ```json
 {
