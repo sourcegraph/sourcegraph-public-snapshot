@@ -158,6 +158,13 @@ func (r *ownResolver) GitBlobOwnership(
 	}
 	ownerships = append(ownerships, assignedOwners...)
 
+	// Retrieve assigned teams.
+	assignedTeams, err := r.computeAssignedTeams(ctx, r.db, blob, repoID)
+	if err != nil {
+		return nil, err
+	}
+	ownerships = append(ownerships, assignedTeams...)
+
 	return r.ownershipConnection(args, ownerships)
 }
 
@@ -227,6 +234,13 @@ func (r *ownResolver) GitTreeOwnership(
 		return nil, err
 	}
 	ownerships = append(ownerships, assignedOwners...)
+
+	// Retrieve assigned teams.
+	assignedTeams, err := r.computeAssignedTeams(ctx, r.db, tree, repoID)
+	if err != nil {
+		return nil, err
+	}
+	ownerships = append(ownerships, assignedTeams...)
 
 	return r.ownershipConnection(args, ownerships)
 }
@@ -466,7 +480,7 @@ func (r *ownershipResolver) order() int {
 		}
 	}
 	// Smaller numbers are ordered in front, so take negative score.
-	return -10*codeownersCount + reasonsCount
+	return -10*codeownersCount - reasonsCount
 }
 
 // isOwner is true if this assigns an actual owner (for instance through CODEOWNERS file)
@@ -745,6 +759,44 @@ func (r *ownResolver) computeAssignedOwners(ctx context.Context, logger log.Logg
 				User:         user,
 				PrimaryEmail: &email,
 				Handle:       user.Username,
+			},
+			reasons: []*ownershipReasonResolver{
+				{
+					&assignedOwner{},
+				},
+			},
+		}
+		results = append(results, &res)
+	}
+	return results, nil
+}
+
+func (r *ownResolver) computeAssignedTeams(ctx context.Context, db edb.EnterpriseDB, blob *graphqlbackend.GitTreeEntryResolver, repoID api.RepoID) (results []*ownershipResolver, err error) {
+	assignedTeams, err := r.ownService().AssignedTeams(ctx, repoID, api.CommitID(blob.Commit().OID()))
+	if err != nil {
+		return nil, errors.Wrap(err, "computing assigned ownership")
+	}
+	assignedTeamSummaries := assignedTeams.Match(blob.Path())
+
+	fetchedTeams := make(map[int32]*types.Team)
+
+	for _, summary := range assignedTeamSummaries {
+		var team *types.Team
+		teamID := summary.OwnerTeamID
+		if fetchedUser, found := fetchedTeams[teamID]; found {
+			team = fetchedUser
+		} else {
+			teamFromDB, err := db.Teams().GetTeamByID(ctx, teamID)
+			if err != nil {
+				return nil, errors.Wrap(err, "getting team")
+			}
+			team = teamFromDB
+			fetchedTeams[teamID] = teamFromDB
+		}
+		res := ownershipResolver{
+			db: db,
+			resolvedOwner: &codeowners.Team{
+				Team: team,
 			},
 			reasons: []*ownershipReasonResolver{
 				{

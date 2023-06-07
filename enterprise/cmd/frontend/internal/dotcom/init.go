@@ -2,6 +2,7 @@ package dotcom
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/graph-gophers/graphql-go"
 
@@ -51,6 +52,9 @@ func Init(
 			ProductSubscriptionLicensingResolver: productsubscription.ProductSubscriptionLicensingResolver{
 				DB: db,
 			},
+		}
+		enterpriseServices.NewDotcomLicenseCheckHandler = func() http.Handler {
+			return productsubscription.NewLicenseCheckHandler(db)
 		}
 	}
 	return nil

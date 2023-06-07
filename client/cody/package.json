@@ -76,6 +76,74 @@
     "onStartupFinished"
   ],
   "contributes": {
+    "walkthroughs": [
+      {
+        "id": "welcome",
+        "title": "Getting Started with Cody",
+        "description": "Discover how Cody can help you write and understand code faster.",
+        "steps": [
+          {
+            "id": "setup",
+            "title": "Setup Cody",
+            "description": "Get started by logging into Sourcegraph and setting up Cody.\n[Setup Cody](command:cody.walkthrough.showLogin)",
+            "media": {
+              "markdown": "walkthroughs/setup.md"
+            },
+            "completionEvents": [
+              "onContext:cody.activated"
+            ]
+          },
+          {
+            "id": "chat",
+            "title": "Ask Cody a Question",
+            "description": "Cody writes code and answers questions using your own code graph as context.\n[Open Chat](command:cody.walkthrough.showChat)",
+            "media": {
+              "markdown": "walkthroughs/chat.md"
+            }
+          },
+          {
+            "id": "explain",
+            "title": "Explain Code",
+            "description": "Ask Cody to explain some code. Select some lines and use the \"Explain selected code\" recipe.\n[Open Recipes](command:cody.walkthrough.showExplain)",
+            "media": {
+              "markdown": "walkthroughs/explain.md"
+            }
+          },
+          {
+            "id": "fixup",
+            "title": "Fixup Code",
+            "description": "Instruct Cody to edit and improve code with the \"Fixup code from inline instructions\" recipe.\n[Open Recipes](command:cody.walkthrough.showFixup)",
+            "media": {
+              "markdown": "walkthroughs/fixup.md"
+            }
+          },
+          {
+            "id": "inline-assist",
+            "title": "Inline Assist (Experimental)",
+            "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Assist.\n[Enable in Settings](command:cody.walkthrough.enableInlineAssist)",
+            "media": {
+              "markdown": "walkthroughs/inline-assist.md"
+            }
+          },
+          {
+            "id": "completions",
+            "title": "Code Completions (Experimental)",
+            "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.\n[Enable in Settings](command:cody.walkthrough.enableCodeCompletions)",
+            "media": {
+              "markdown": "walkthroughs/completions.md"
+            }
+          },
+          {
+            "id": "learn-more",
+            "title": "Learn More",
+            "description": "📖 Dive deeper into Cody by reading our [full documentation](https://docs.sourcegraph.com/cody).\n🎨 Discover more features by searching for \"Cody\" in the [Command Palette](command:workbench.action.showCommands).\n🗒️ Find out how Cody is improving by taking a look at the [Changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/cody/CHANGELOG.md).",
+            "media": {
+              "markdown": "walkthroughs/learn-more.md"
+            }
+          }
+        ]
+      }
+    ],
     "colors": [
       {
         "id": "cody.fixup.conflictBackground",
@@ -161,6 +229,18 @@
     ],
     "commands": [
       {
+        "command": "cody.welcome",
+        "title": "Cody: Help & Getting Started",
+        "group": "Cody",
+        "icon": "$(book)"
+      },
+      {
+        "command": "cody.feedback",
+        "title": "Cody: Feedback",
+        "group": "Cody",
+        "icon": "$(feedback)"
+      },
+      {
         "command": "cody.recipe.optimize-code",
         "title": "Ask Cody: Optimize Code"
       },
@@ -233,6 +313,30 @@
         "title": "Cody: Chat History",
         "group": "Cody",
         "icon": "$(list-unordered)"
+      },
+      {
+        "command": "cody.walkthrough.showLogin",
+        "title": "Cody Walkthrough: Show Login"
+      },
+      {
+        "command": "cody.walkthrough.showChat",
+        "title": "Cody Walkthrough: Show Chat"
+      },
+      {
+        "command": "cody.walkthrough.showFixup",
+        "title": "Cody Walkthrough: Show Fixup"
+      },
+      {
+        "command": "cody.walkthrough.showExplain",
+        "title": "Cody Walkthrough: Show Explain"
+      },
+      {
+        "command": "cody.walkthrough.enableInlineAssist",
+        "title": "Cody Walkthrough: Show Inline Assist"
+      },
+      {
+        "command": "cody.walkthrough.enableCodeCompletions",
+        "title": "Cody Walkthrough: Enable Code Completions"
       },
       {
         "command": "cody.comment.add",
@@ -423,7 +527,31 @@
         {
           "command": "cody.inline.insert",
           "when": "false"
-	}
+	      },
+        {
+          "command": "cody.walkthrough.showLogin",
+          "when": "false"
+        },
+        {
+          "command": "cody.walkthrough.showChat",
+          "when": "false"
+        },
+        {
+          "command": "cody.walkthrough.showFixup",
+          "when": "false"
+        },
+        {
+          "command": "cody.walkthrough.showExplain",
+          "when": "false"
+        },
+        {
+          "command": "cody.walkthrough.enableCodeCompletions",
+          "when": "false"
+        },
+        {
+          "command": "cody.walkthrough.enableInlineAssist",
+          "when": "false"
+        }
       ],
       "editor/context": [
         {
@@ -484,14 +612,24 @@
           "group": "navigation@1"
         },
         {
-          "command": "cody.settings",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@3"
-        },
-        {
           "command": "cody.history",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation@2"
+        },
+        {
+          "command": "cody.feedback",
+          "when": "view == cody.chat",
+          "group": "navigation@3"
+        },
+        {
+          "command": "cody.settings",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation@4"
+        },
+        {
+          "command": "cody.welcome",
+          "when": "view == cody.chat",
+          "group": "navigation@5"
         },
         {
           "command": "cody.fixup.apply-all",

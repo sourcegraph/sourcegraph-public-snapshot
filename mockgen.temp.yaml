@@ -39,6 +39,7 @@
     - AccessRequestStore
     - AccessTokenStore
     - AssignedOwnersStore
+    - AssignedTeamsStore
     - AuthzStore
     - BitbucketProjectPermissionsStore
     - ConfStore
