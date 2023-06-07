@@ -198,6 +198,7 @@ go_test(
         "redis_key_value_test.go",
         "repo_commits_changelists_test.go",
         "repo_kvps_test.go",
+        "repo_paths_test.go",
         "repo_statistics_test.go",
         "repos_perm_test.go",
         "repos_test.go",
