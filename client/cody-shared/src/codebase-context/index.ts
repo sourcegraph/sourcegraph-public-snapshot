@@ -48,7 +48,7 @@ export class CodebaseContext {
     }
 
     public getEmbeddingSearchErrors(): string {
-        return this.embeddingResultsError
+        return this.embeddingResultsError.trim()
     }
 
     public async getSearchResults(
