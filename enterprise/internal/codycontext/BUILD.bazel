@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "context",
+    srcs = ["context.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codycontext",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//enterprise/internal/database",
+        "//enterprise/internal/embeddings",
+        "//enterprise/internal/embeddings/embed",
+        "//internal/api",
+        "//internal/search",
+        "//internal/search/client",
+        "//internal/search/query",
+        "//internal/search/result",
+        "//internal/search/streaming",
+        "//internal/settings",
+        "//internal/types",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

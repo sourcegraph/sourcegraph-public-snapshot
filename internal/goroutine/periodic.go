@@ -2,6 +2,7 @@ package goroutine
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/derision-test/glock"
@@ -23,20 +24,21 @@ type getConcurrencyFunc func() int
 // for more information and a step-by-step guide on how to implement a
 // PeriodicBackgroundRoutine.
 type PeriodicGoroutine struct {
-	name             string
-	description      string
-	jobName          string
-	recorder         *recorder.Recorder
-	getInterval      getIntervalFunc
-	getConcurrency   getConcurrencyFunc
-	handler          unifiedHandler
-	operation        *observation.Operation
-	clock            glock.Clock
-	concurrencyClock glock.Clock
-	ctx              context.Context    // root context passed to the handler
-	cancel           context.CancelFunc // cancels the root context
-	finished         chan struct{}      // signals that Start has finished
-	reinvocations    int
+	name              string
+	description       string
+	jobName           string
+	recorder          *recorder.Recorder
+	getInterval       getIntervalFunc
+	getConcurrency    getConcurrencyFunc
+	handler           unifiedHandler
+	operation         *observation.Operation
+	clock             glock.Clock
+	concurrencyClock  glock.Clock
+	ctx               context.Context    // root context passed to the handler
+	cancel            context.CancelFunc // cancels the root context
+	finished          chan struct{}      // signals that Start has finished
+	reinvocationsLock sync.Mutex
+	reinvocations     int
 }
 
 var _ recorder.Recordable = &PeriodicGoroutine{}
@@ -275,8 +277,20 @@ func (r *PeriodicGoroutine) startPool(concurrency int) func() {
 }
 
 func (r *PeriodicGoroutine) runHandlerPeriodically(monitorCtx context.Context) {
+	// Create a ctx based on r.ctx that gets canceled when monitorCtx is canceled
+	// This ensures that we don't block inside of runHandlerAndDetermineBackoff
+	// below when one of the exit conditions are met.
+
+	handlerCtx, cancel := context.WithCancel(r.ctx)
+	defer cancel()
+
+	go func() {
+		<-monitorCtx.Done()
+		cancel()
+	}()
+
 	for {
-		interval, ok := r.runHandlerAndDetermineBackoff()
+		interval, ok := r.runHandlerAndDetermineBackoff(handlerCtx)
 		if !ok {
 			// Goroutine is shutting down
 			// (the handler returned the context's error)
@@ -302,15 +316,15 @@ func (r *PeriodicGoroutine) runHandlerPeriodically(monitorCtx context.Context) {
 
 const maxConsecutiveReinvocations = 100
 
-func (r *PeriodicGoroutine) runHandlerAndDetermineBackoff() (time.Duration, bool) {
-	handlerErr := r.runHandler(r.ctx)
+func (r *PeriodicGoroutine) runHandlerAndDetermineBackoff(ctx context.Context) (time.Duration, bool) {
+	handlerErr := r.runHandler(ctx)
 	if handlerErr != nil {
-		if isShutdownError(r.ctx, handlerErr) {
+		if isShutdownError(ctx, handlerErr) {
 			// Caller is exiting
 			return 0, false
 		}
 
-		if filteredErr := errorFilter(r.ctx, handlerErr); filteredErr != nil {
+		if filteredErr := errorFilter(ctx, handlerErr); filteredErr != nil {
 			// It's a real error, see if we need to handle it
 			if h, ok := r.handler.(ErrorHandler); ok {
 				h.HandleError(filteredErr)
@@ -322,6 +336,9 @@ func (r *PeriodicGoroutine) runHandlerAndDetermineBackoff() (time.Duration, bool
 }
 
 func (r *PeriodicGoroutine) getNextInterval(tryReinvoke bool) time.Duration {
+	r.reinvocationsLock.Lock()
+	defer r.reinvocationsLock.Unlock()
+
 	if tryReinvoke {
 		r.reinvocations++
 

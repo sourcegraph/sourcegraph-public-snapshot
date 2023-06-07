@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "productsubscription",
@@ -9,7 +10,6 @@ go_library(
         "//enterprise/cmd/cody-gateway/internal/actor",
         "//enterprise/cmd/cody-gateway/internal/dotcom",
         "//enterprise/internal/codygateway",
-        "//enterprise/internal/completions/types",
         "//enterprise/internal/licensing",
         "//enterprise/internal/productsubscription",
         "//internal/trace",

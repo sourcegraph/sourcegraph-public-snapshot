@@ -7,6 +7,7 @@ go_library(
     visibility = ["//enterprise/cmd/cody-gateway:__subpackages__"],
     deps = [
         "//enterprise/cmd/cody-gateway/internal/actor",
-        "//enterprise/internal/completions/types",
+        "//enterprise/cmd/cody-gateway/internal/httpapi/embeddings",
+        "//enterprise/internal/codygateway",
     ],
 )

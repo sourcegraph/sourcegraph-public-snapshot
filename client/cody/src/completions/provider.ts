@@ -12,6 +12,13 @@ import { ReferenceSnippet } from './context'
 import { truncateMultilineCompletion } from './multiline'
 import { messagesToText } from './prompts'
 
+const COMPLETIONS_PREAMBLE = `You are Cody, a code completion AI developed by Sourcegraph.
+You only respond in a single Markdown code blocks to all questions.
+All answers must be valid {lang} programs.
+DO NOT respond with anything other than code.`
+
+const BAD_COMPLETION_START = /^(\p{Emoji_Presentation}|\u{200B}|\+ |- |. )+(\s)+/u
+
 export abstract class CompletionProvider {
     constructor(
         protected completionsClient: SourcegraphNodeCompletionsClient,
@@ -62,7 +69,7 @@ export abstract class CompletionProvider {
                     },
                     {
                         speaker: 'assistant',
-                        text: 'Okay, I have added it to my knowledge base.',
+                        text: '```\n// Ok```',
                     },
                 ]
 
@@ -244,6 +251,14 @@ export class InlineCompletionProvider extends CompletionProvider {
             prefixMessages = [
                 {
                     speaker: 'human',
+                    text: COMPLETIONS_PREAMBLE.replace('{lang}', this.languageId),
+                },
+                {
+                    speaker: 'assistant',
+                    text: '```\n// Ok```',
+                },
+                {
+                    speaker: 'human',
                     text:
                         'Complete the following file:\n' +
                         '```' +
@@ -252,10 +267,7 @@ export class InlineCompletionProvider extends CompletionProvider {
                 },
                 {
                     speaker: 'assistant',
-                    text:
-                        'Here is the completion of the file:\n' +
-                        '```' +
-                        `\n${prefixLines.slice(endLine).join('\n')}${this.injectPrefix}`,
+                    text: `\`\`\`\n${prefixLines.slice(endLine).join('\n')}${this.injectPrefix}`,
                 },
             ]
         } else {
@@ -295,6 +307,15 @@ export class InlineCompletionProvider extends CompletionProvider {
             completion = completion.slice(1)
             hasOddIndentation = true
         }
+
+        // Experimental: Trim start of the completion to remove all trailing whitespace nonsense
+        completion = completion.trimStart()
+
+        // Detect bad completion start
+        if (BAD_COMPLETION_START.test(completion)) {
+            completion = completion.replace(BAD_COMPLETION_START, '')
+        }
+
         // Insert the injected prefix back in
         if (this.injectPrefix.length > 0) {
             completion = this.injectPrefix + completion
@@ -333,14 +354,6 @@ export class InlineCompletionProvider extends CompletionProvider {
         })
         if (matchedLineIndex !== -1) {
             completion = lines.slice(0, matchedLineIndex).join('\n')
-        }
-
-        // Ignore completions that start with a whitespace. These are handled oddly in VS Code
-        // since you can't accept them via tab.
-        //
-        // TODO: Should we trim the response instead?
-        if (completion.trimStart().length !== completion.length) {
-            return null
         }
 
         return completion.trimEnd()

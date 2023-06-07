@@ -2,7 +2,9 @@ package testing
 
 import (
 	"context"
+	"encoding/hex"
 	"io"
+	"math/rand"
 	"strings"
 
 	"github.com/sourcegraph/go-diff/diff"
@@ -65,11 +67,25 @@ index 884601b..c4886d5 100644
 		return gitserver.NewDiffFileIterator(io.NopCloser(strings.NewReader(testGitHubDiff))), nil
 	})
 	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		return "mockcommitid", nil
+		return api.CommitID(generateFakeCommitID()), nil
 	})
 
 	state.MockClient = gitserverClient
 	return state
+}
+
+func generateFakeCommitID() string {
+	// Generate a random byte slice with 20 bytes (160 bits)
+	commitBytes := make([]byte, 20)
+	_, err := rand.Read(commitBytes)
+	if err != nil {
+		panic(err)
+	}
+
+	// Convert the byte slice to a hexadecimal string
+	commitID := hex.EncodeToString(commitBytes)
+
+	return commitID
 }
 
 // Unmock resets the mocks set up by MockGitHubChangesetSync.
