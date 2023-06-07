@@ -60,7 +60,9 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                 <form className={styles.wrapper} onSubmit={onSubmit}>
                     <VSCodeTextField
                         id="endpoint"
-                        value={endpoint || ''}
+                        value={serverEndpoint || endpoint || ''}
+                        disabled={serverEndpoint ? true : undefined}
+                        title={serverEndpoint ? 'Inherited from cody.serverEndpoint user setting' : undefined}
                         className={styles.input}
                         placeholder="https://example.sourcegraph.com"
                         onInput={(e: any) => setEndpoint(e.target.value)}
