@@ -158,7 +158,7 @@ ORDER BY
 		},
 		{
 			Name:  "eventName",
-			Value: codygateway.EventNameCompletionsStarted,
+			Value: codygateway.EventNameCompletionsFinished,
 		},
 		{
 			Name:  codygateway.CompletionsEventFeatureMetadataField,
