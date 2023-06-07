@@ -23,7 +23,7 @@ func TestNewActor(t *testing.T) {
 			name: "enabled with rate limits",
 			args: args{
 				dotcom.DotcomUserState{
-					UserName: "user",
+					Username: "user",
 					CodyGatewayAccess: dotcom.DotcomUserStateCodyGatewayAccess{
 						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
 							Enabled: true,
@@ -51,7 +51,7 @@ func TestNewActor(t *testing.T) {
 			name: "disabled with rate limits",
 			args: args{
 				dotcom.DotcomUserState{
-					UserName: "user",
+					Username: "user",
 					CodyGatewayAccess: dotcom.DotcomUserStateCodyGatewayAccess{
 						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
 							Enabled: false,
@@ -79,7 +79,7 @@ func TestNewActor(t *testing.T) {
 			name: "enabled no limits",
 			args: args{
 				dotcom.DotcomUserState{
-					UserName: "user",
+					Username: "user",
 					CodyGatewayAccess: dotcom.DotcomUserStateCodyGatewayAccess{
 						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
 							Enabled: true,
