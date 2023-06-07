@@ -81,6 +81,27 @@ Foreign-key constraints:
 
 Table for ownership assignments, one entry contains an assigned user ID, which repo_path is assigned and the date and user who assigned the owner.
 
+# Table "public.assigned_teams"
+```
+        Column        |            Type             | Collation | Nullable |                  Default                   
+----------------------+-----------------------------+-----------+----------+--------------------------------------------
+ id                   | integer                     |           | not null | nextval('assigned_teams_id_seq'::regclass)
+ owner_team_id        | integer                     |           | not null | 
+ file_path_id         | integer                     |           | not null | 
+ who_assigned_team_id | integer                     |           |          | 
+ assigned_at          | timestamp without time zone |           | not null | now()
+Indexes:
+    "assigned_teams_pkey" PRIMARY KEY, btree (id)
+    "assigned_teams_file_path_owner" UNIQUE, btree (file_path_id, owner_team_id)
+Foreign-key constraints:
+    "assigned_teams_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
+    "assigned_teams_owner_team_id_fkey" FOREIGN KEY (owner_team_id) REFERENCES teams(id) ON DELETE CASCADE DEFERRABLE
+    "assigned_teams_who_assigned_team_id_fkey" FOREIGN KEY (who_assigned_team_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+
+```
+
+Table for team ownership assignments, one entry contains an assigned team ID, which repo_path is assigned and the date and user who assigned the owner team.
+
 # Table "public.batch_changes"
 ```
       Column       |           Type           | Collation | Nullable |                  Default                  
@@ -1000,29 +1021,33 @@ Indexes:
  definition_id | bigint  |           |          | 
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
-    "codeintel_ranking_path_counts_inputs_graph_key_definition_id" btree (graph_key, definition_id, id) WHERE NOT processed
+    "codeintel_ranking_path_counts_inputs_graph_key_unique_definitio" UNIQUE, btree (graph_key, definition_id) WHERE NOT processed
     "codeintel_ranking_path_counts_inputs_graph_key_id" btree (graph_key, id)
 
 ```
 
 # Table "public.codeintel_ranking_progress"
 ```
-             Column              |           Type           | Collation | Nullable |                        Default                         
----------------------------------+--------------------------+-----------+----------+--------------------------------------------------------
- id                              | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
- graph_key                       | text                     |           | not null | 
- mappers_started_at              | timestamp with time zone |           | not null | 
- mapper_completed_at             | timestamp with time zone |           |          | 
- seed_mapper_completed_at        | timestamp with time zone |           |          | 
- reducer_started_at              | timestamp with time zone |           |          | 
- reducer_completed_at            | timestamp with time zone |           |          | 
- num_path_records_total          | integer                  |           |          | 
- num_reference_records_total     | integer                  |           |          | 
- num_count_records_total         | integer                  |           |          | 
- num_path_records_processed      | integer                  |           |          | 
- num_reference_records_processed | integer                  |           |          | 
- num_count_records_processed     | integer                  |           |          | 
- max_export_id                   | bigint                   |           | not null | 
+               Column               |           Type           | Collation | Nullable |                        Default                         
+------------------------------------+--------------------------+-----------+----------+--------------------------------------------------------
+ id                                 | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
+ graph_key                          | text                     |           | not null | 
+ mappers_started_at                 | timestamp with time zone |           | not null | 
+ mapper_completed_at                | timestamp with time zone |           |          | 
+ seed_mapper_completed_at           | timestamp with time zone |           |          | 
+ reducer_started_at                 | timestamp with time zone |           |          | 
+ reducer_completed_at               | timestamp with time zone |           |          | 
+ num_path_records_total             | integer                  |           |          | 
+ num_reference_records_total        | integer                  |           |          | 
+ num_count_records_total            | integer                  |           |          | 
+ num_path_records_processed         | integer                  |           |          | 
+ num_reference_records_processed    | integer                  |           |          | 
+ num_count_records_processed        | integer                  |           |          | 
+ max_export_id                      | bigint                   |           | not null | 
+ reference_cursor_export_deleted_at | timestamp with time zone |           |          | 
+ reference_cursor_export_id         | integer                  |           |          | 
+ path_cursor_deleted_export_at      | timestamp with time zone |           |          | 
+ path_cursor_export_id              | integer                  |           |          | 
 Indexes:
     "codeintel_ranking_progress_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_progress_graph_key_key" UNIQUE CONSTRAINT, btree (graph_key)
@@ -3234,22 +3259,25 @@ Foreign-key constraints:
 
 # Table "public.product_subscriptions"
 ```
-                   Column                    |           Type           | Collation | Nullable | Default 
----------------------------------------------+--------------------------+-----------+----------+---------
- id                                          | uuid                     |           | not null | 
- user_id                                     | integer                  |           | not null | 
- billing_subscription_id                     | text                     |           |          | 
- created_at                                  | timestamp with time zone |           | not null | now()
- updated_at                                  | timestamp with time zone |           | not null | now()
- archived_at                                 | timestamp with time zone |           |          | 
- account_number                              | text                     |           |          | 
- cody_gateway_enabled                        | boolean                  |           | not null | false
- cody_gateway_chat_rate_limit                | integer                  |           |          | 
- cody_gateway_chat_rate_interval_seconds     | integer                  |           |          | 
- cody_gateway_chat_rate_limit_allowed_models | text[]                   |           |          | 
- cody_gateway_code_rate_limit                | integer                  |           |          | 
- cody_gateway_code_rate_interval_seconds     | integer                  |           |          | 
- cody_gateway_code_rate_limit_allowed_models | text[]                   |           |          | 
+                      Column                       |           Type           | Collation | Nullable | Default 
+---------------------------------------------------+--------------------------+-----------+----------+---------
+ id                                                | uuid                     |           | not null | 
+ user_id                                           | integer                  |           | not null | 
+ billing_subscription_id                           | text                     |           |          | 
+ created_at                                        | timestamp with time zone |           | not null | now()
+ updated_at                                        | timestamp with time zone |           | not null | now()
+ archived_at                                       | timestamp with time zone |           |          | 
+ account_number                                    | text                     |           |          | 
+ cody_gateway_enabled                              | boolean                  |           | not null | false
+ cody_gateway_chat_rate_limit                      | integer                  |           |          | 
+ cody_gateway_chat_rate_interval_seconds           | integer                  |           |          | 
+ cody_gateway_embeddings_api_rate_limit            | integer                  |           |          | 
+ cody_gateway_embeddings_api_rate_interval_seconds | integer                  |           |          | 
+ cody_gateway_embeddings_api_allowed_models        | text[]                   |           |          | 
+ cody_gateway_chat_rate_limit_allowed_models       | text[]                   |           |          | 
+ cody_gateway_code_rate_limit                      | integer                  |           |          | 
+ cody_gateway_code_rate_interval_seconds           | integer                  |           |          | 
+ cody_gateway_code_rate_limit_allowed_models       | text[]                   |           |          | 
 Indexes:
     "product_subscriptions_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -3258,6 +3286,12 @@ Referenced by:
     TABLE "product_licenses" CONSTRAINT "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
 
 ```
+
+**cody_gateway_embeddings_api_allowed_models**: Custom override for the set of models allowed for embedding
+
+**cody_gateway_embeddings_api_rate_interval_seconds**: Custom time interval over which the embeddings rate limit is applied
+
+**cody_gateway_embeddings_api_rate_limit**: Custom requests per time interval allowed for embeddings
 
 # Table "public.query_runner_state"
 ```
@@ -3486,6 +3520,7 @@ Foreign-key constraints:
     "repo_paths_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
     TABLE "assigned_owners" CONSTRAINT "assigned_owners_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
+    TABLE "assigned_teams" CONSTRAINT "assigned_teams_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
     TABLE "codeowners_individual_stats" CONSTRAINT "codeowners_individual_stats_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
     TABLE "own_aggregate_recent_contribution" CONSTRAINT "own_aggregate_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
     TABLE "own_aggregate_recent_view" CONSTRAINT "own_aggregate_recent_view_viewed_file_path_id_fkey" FOREIGN KEY (viewed_file_path_id) REFERENCES repo_paths(id)
@@ -3846,6 +3881,7 @@ Foreign-key constraints:
     "teams_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
     "teams_parent_team_id_fkey" FOREIGN KEY (parent_team_id) REFERENCES teams(id) ON DELETE CASCADE
 Referenced by:
+    TABLE "assigned_teams" CONSTRAINT "assigned_teams_owner_team_id_fkey" FOREIGN KEY (owner_team_id) REFERENCES teams(id) ON DELETE CASCADE DEFERRABLE
     TABLE "names" CONSTRAINT "names_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "team_members" CONSTRAINT "team_members_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
     TABLE "teams" CONSTRAINT "teams_parent_team_id_fkey" FOREIGN KEY (parent_team_id) REFERENCES teams(id) ON DELETE CASCADE
@@ -4079,6 +4115,7 @@ Referenced by:
     TABLE "aggregated_user_statistics" CONSTRAINT "aggregated_user_statistics_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "assigned_owners" CONSTRAINT "assigned_owners_owner_user_id_fkey" FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "assigned_owners" CONSTRAINT "assigned_owners_who_assigned_user_id_fkey" FOREIGN KEY (who_assigned_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    TABLE "assigned_teams" CONSTRAINT "assigned_teams_who_assigned_team_id_fkey" FOREIGN KEY (who_assigned_team_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_initial_applier_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE

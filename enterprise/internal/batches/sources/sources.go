@@ -312,7 +312,12 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 		return nil, errors.Wrap(err, "invalid configuration type")
 	}
 
-	app, err := tx.GitHubAppsStore().GetByDomain(ctx, types.BatchesGitHubAppDomain, config.Url)
+	baseURL, err := url.Parse(config.Url)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing GitHub connection URL")
+	}
+	baseURL = extsvc.NormalizeBaseURL(baseURL)
+	app, err := tx.GitHubAppsStore().GetByDomain(ctx, types.BatchesGitHubAppDomain, baseURL.String())
 	if err != nil {
 		return nil, ErrNoGitHubAppConfigured
 	}
@@ -326,7 +331,7 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 		return nil, errors.Wrap(err, "creating GitHub App authenticator")
 	}
 
-	baseURL, err := url.Parse(app.BaseURL)
+	baseURL, err = url.Parse(app.BaseURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing GitHub App base URL")
 	}

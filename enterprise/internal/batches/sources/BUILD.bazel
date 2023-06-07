@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "sources",
@@ -23,6 +24,7 @@ go_library(
         "//enterprise/internal/batches/types",
         "//enterprise/internal/github_apps/auth",
         "//enterprise/internal/github_apps/store",
+        "//internal/api",
         "//internal/conf",
         "//internal/database",
         "//internal/encryption/keyring",
