@@ -73,7 +73,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, hook stor
 	}
 	defer stopFunc()
 
-	stopFunc, err = serveUpgradeUI()
+	stopFunc, err = serveUpgradeUI(db)
 	if err != nil {
 		return err
 	}
@@ -277,15 +277,11 @@ func serveConfigurationServer(obsvCtx *observation.Context) (context.CancelFunc,
 	return confServer.Stop, nil
 }
 
-func serveUpgradeUI() (context.CancelFunc, error) {
+func serveUpgradeUI(db database.DB) (context.CancelFunc, error) {
 	serveMux := http.NewServeMux()
 
 	serveMux.Handle("/.assets/", http.StripPrefix("/.assets", secureHeadersMiddleware(assetsutil.NewAssetHandler(serveMux), crossOriginPolicyAssets)))
-	serveMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `<body>
-			<h1>MIGRATION IN PROGRESS</h1>
-		</body>`)
-	})
+	serveMux.HandleFunc("/", makeUpgradeProgressHandler(db))
 	h := gcontext.ClearHandler(serveMux)
 	h = healthCheckMiddleware(h)
 
