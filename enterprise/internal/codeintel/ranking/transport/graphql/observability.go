@@ -8,7 +8,9 @@ import (
 )
 
 type operations struct {
-	rankingSummary *observation.Operation
+	rankingSummary         *observation.Operation
+	bumpDerivativeGraphKey *observation.Operation
+	deleteRankingProgress  *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -28,6 +30,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		rankingSummary: op("RankingSummary"),
+		rankingSummary:         op("RankingSummary"),
+		bumpDerivativeGraphKey: op("BumpDerivativeGraphKey"),
+		deleteRankingProgress:  op("DeleteRankingProgress"),
 	}
 }

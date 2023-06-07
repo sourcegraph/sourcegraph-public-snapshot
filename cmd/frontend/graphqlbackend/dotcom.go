@@ -93,7 +93,10 @@ type ProductLicense interface {
 	Subscription(context.Context) (ProductSubscription, error)
 	Info() (*ProductLicenseInfo, error)
 	LicenseKey() string
+	SiteID() *string
 	CreatedAt() gqlutil.DateTime
+	RevokedAt() *gqlutil.DateTime
+	Version() int32
 }
 
 // ProductLicenseInput implements the GraphQL type ProductLicenseInput.
@@ -139,12 +142,16 @@ type UpdateCodyGatewayAccessInput struct {
 	CodeCompletionsRateLimit                *int32
 	CodeCompletionsRateLimitIntervalSeconds *int32
 	CodeCompletionsAllowedModels            *[]string
+	EmbeddingsRateLimit                     *int32
+	EmbeddingsRateLimitIntervalSeconds      *int32
+	EmbeddingsAllowedModels                 *[]string
 }
 
 type CodyGatewayAccess interface {
 	Enabled() bool
 	ChatCompletionsRateLimit(context.Context) (CodyGatewayRateLimit, error)
 	CodeCompletionsRateLimit(context.Context) (CodyGatewayRateLimit, error)
+	EmbeddingsRateLimit(context.Context) (CodyGatewayRateLimit, error)
 }
 
 type CodyGatewayUsageDatapoint interface {

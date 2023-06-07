@@ -2,8 +2,10 @@ package context
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -118,6 +120,11 @@ func (c *CodyContextClient) partitionRepos(ctx context.Context, input []types.Re
 }
 
 func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
+	if len(args.Repos) == 0 || (args.CodeResultsCount == 0 && args.TextResultsCount == 0) {
+		// Don't bother doing an API request if we can't actually have any results.
+		return nil, nil
+	}
+
 	repoNames := make([]api.RepoName, len(args.Repos))
 	repoIDs := make([]api.RepoID, len(args.Repos))
 	for i, repo := range args.Repos {
@@ -165,6 +172,13 @@ var textFileFilter = func() string {
 
 // getKeywordContext uses keyword search to find relevant bits of context for Cody
 func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
+	if len(args.Repos) == 0 {
+		// TODO(camdencheek): for some reason the search query `repo:^$`
+		// returns all repos, not zero repos, causing searches over zero repos
+		// to break in unexpected ways.
+		return nil, nil
+	}
+
 	settings, err := settings.CurrentUserFinal(ctx, c.db)
 	if err != nil {
 		return nil, err
@@ -178,10 +192,15 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		regexEscapedRepoNames[i] = regexp.QuoteMeta(string(repo.Name))
 	}
 
-	textQuery := "repo:^" + query.UnionRegExps(regexEscapedRepoNames) + "$ " + textFileFilter + " " + args.Query
-	codeQuery := "repo:^" + query.UnionRegExps(regexEscapedRepoNames) + "$ -" + textFileFilter + " " + args.Query
+	textQuery := fmt.Sprintf(`repo:^%s$ %s content:%s`, query.UnionRegExps(regexEscapedRepoNames), textFileFilter, strconv.Quote(args.Query))
+	codeQuery := fmt.Sprintf(`repo:^%s$ -%s content:%s`, query.UnionRegExps(regexEscapedRepoNames), textFileFilter, strconv.Quote(args.Query))
 
 	doSearch := func(ctx context.Context, query string, limit int) ([]FileChunkContext, error) {
+		if limit == 0 {
+			// Skip a search entirely if the limit is zero.
+			return nil, nil
+		}
+
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 

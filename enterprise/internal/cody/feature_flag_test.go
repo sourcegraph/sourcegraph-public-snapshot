@@ -9,12 +9,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestIsCodyEnabled(t *testing.T) {
 	oldMock := licensing.MockCheckFeature
 	licensing.MockCheckFeature = func(feature licensing.Feature) error {
+		// App doesn't have a proper license so always return an error when checking
+		if deploy.IsApp() {
+			return errors.New("Mock check feature error")
+		}
 		return nil
 	}
 	t.Cleanup(func() {
