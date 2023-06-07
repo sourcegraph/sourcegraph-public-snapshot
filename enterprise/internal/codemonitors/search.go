@@ -27,7 +27,7 @@ import (
 )
 
 func Search(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
-	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), search.SearcherGRPCConnectionCache(), enterpriseJobs)
+	searchClient := client.New(logger, db, enterpriseJobs)
 	inputs, err := searchClient.Plan(
 		ctx,
 		"V3",
@@ -80,7 +80,7 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, enterpriseJo
 // On subsequent runs, this allows us to treat all new repos or sets of args as something new that should
 // be searched from the beginning.
 func Snapshot(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, query string, monitorID int64, settings *schema.Settings) error {
-	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), search.SearcherGRPCConnectionCache(), enterpriseJobs)
+	searchClient := client.New(logger, db, enterpriseJobs)
 	inputs, err := searchClient.Plan(
 		ctx,
 		"V3",

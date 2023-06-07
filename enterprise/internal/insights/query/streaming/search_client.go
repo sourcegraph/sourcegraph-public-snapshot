@@ -22,7 +22,7 @@ func NewInsightsSearchClient(db database.DB, enterpriseJobs jobutil.EnterpriseJo
 	logger := log.Scoped("insightsSearchClient", "")
 	return &insightsSearchClient{
 		db:           db,
-		searchClient: client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), search.SearcherGRPCConnectionCache(), enterpriseJobs),
+		searchClient: client.New(logger, db, enterpriseJobs),
 	}
 }
 

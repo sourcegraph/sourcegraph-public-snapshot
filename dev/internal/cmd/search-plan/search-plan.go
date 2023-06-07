@@ -45,7 +45,7 @@ func run(w io.Writer, args []string) error {
 	conf.Mock(&conf.Unified{})
 	logger := log.Scoped("search-plan", "")
 
-	cli := client.NewSearchClient(logger, nil, nil, nil, nil, nil)
+	cli := client.MockedZoekt(logger, nil, nil)
 
 	inputs, err := cli.Plan(
 		context.Background(),
