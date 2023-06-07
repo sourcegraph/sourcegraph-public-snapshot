@@ -57,6 +57,10 @@ func (w kubernetesWorkspace) Path() string {
 	return w.workspaceDir
 }
 
+func (w kubernetesWorkspace) WorkingDirectory() string {
+	return w.workspaceDir
+}
+
 func (w kubernetesWorkspace) ScriptFilenames() []string {
 	return w.scriptFilenames
 }
