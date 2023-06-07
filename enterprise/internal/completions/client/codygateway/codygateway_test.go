@@ -19,8 +19,8 @@ func TestGetProviderFromGatewayModel(t *testing.T) {
 			expectProvider: "openai", expectModel: "gpt4"},
 
 		// Edge cases
-		{gatewayModel: "openai/",
-			expectProvider: "openai", expectModel: ""},
+		{gatewayModel: "claude-v1",
+			expectProvider: "", expectModel: "claude-v1"},
 		{gatewayModel: "openai/unexpectednamewith/slash",
 			expectProvider: "openai", expectModel: "unexpectednamewith/slash"},
 	} {

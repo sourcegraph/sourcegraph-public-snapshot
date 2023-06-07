@@ -353,6 +353,10 @@ type CodyGatewayAccess {
     Rate limit for code completions access, or null if not enabled.
     """
     codeCompletionsRateLimit: CodyGatewayRateLimit
+    """
+    Rate limit for embedding text chunks, or null if not enabled.
+    """
+    embeddingsRateLimit: CodyGatewayRateLimit
 }
 
 """
@@ -398,6 +402,7 @@ type CodyGatewayRateLimit {
     allowedModels: [String!]!
     """
     Requests per time interval.
+    TODO: This needs to become BigInt, the limits for embeddings can exceed int32.
     """
     limit: Int!
     """
@@ -462,4 +467,20 @@ input UpdateCodyGatewayAccessInput {
     for this subscription.
     """
     codeCompletionsAllowedModels: [String!]
+    """
+    Override default requests per time interval for embeddings generation.
+
+    Set to 0 to remove the override.
+    """
+    embeddingsRateLimit: Int
+    """
+    Override default interval for rate limiting for embeddings generation.
+
+    Set to 0 to remove the override.
+    """
+    embeddingsRateLimitIntervalSeconds: Int
+    """
+    Override the set of allowed models for embeddings generation for this subscription.
+    """
+    embeddingsAllowedModels: [String!]
 }

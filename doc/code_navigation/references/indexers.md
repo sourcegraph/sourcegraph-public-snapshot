@@ -56,15 +56,15 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
       </tr>
       <tr>
         <td>C/C++</td>
-        <td><a href="https://github.com/sourcegraph/lsif-clang">lsif-clang</a></td>
+        <td><a href="https://github.com/sourcegraph/scip-clang">scip-clang</a></td>
         <td><a href="#status-definitions" class="indexer-status">🟡</a></td>
         <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
-        <td class="indexer-implemented-n">✗</td> <!-- Cross-repository -->
+        <td class="indexer-implemented-n">✓</td> <!-- Cross-repository -->
         <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
-        <td><a href="https://github.com/sourcegraph/lsif-clang/blob/main/docs/compatibility.md">See notes</a></td> <!-- Build tooling -->
+        <td><a href="https://github.com/sourcegraph/scip-clang#supported-platforms">See notes</a></td> <!-- Build tooling -->
       </tr>
       <tr>
          <td>Java</td>
@@ -173,7 +173,7 @@ The next milestone provides support for cross-repository definitions and referen
 
 The indexer can emit a valid index including import monikers for each symbol defined non-locally, and export monikers for each symbol importable by another repository. This index should be consumed without error by the latest Sourcegraph instance and Go to Definition and Find References should work on cross-repository symbols _given that both repositories are indexed at the exact commit imported_.
 
-At this point, the indexer may be generally considered **ready**. Some languages and ecosystems may require some of the additional following milestones to be considered ready due to a bad out-of-the-box developer experience or absence of a critical language features. For example, scip-java is nearly useless without built-in support for build systems such as gradle, and some customers may reject lsif-clang if it has no support for a language feature introduced in C++ 14.
+At this point, the indexer may be generally considered **ready**. Some languages and ecosystems may require some of the additional following milestones to be considered ready due to a bad out-of-the-box developer experience or absence of a critical language features. For example, scip-java is nearly useless without built-in support for build systems such as gradle.
 
 ### Common build tool integration
 

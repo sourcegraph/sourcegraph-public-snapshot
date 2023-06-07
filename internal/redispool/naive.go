@@ -114,6 +114,25 @@ func (kv *naiveKeyValue) Incr(key string) (int, error) {
 	}).Int()
 }
 
+func (kv *naiveKeyValue) Incrby(key string, val int) (int, error) {
+	return kv.maybeUpdateGroup(redisGroupString, key, func(value redisValue, found bool) (redisValue, updaterOp, error) {
+		if !found {
+			return redisValue{
+				Group: redisGroupString,
+				Reply: int64(val),
+			}, write, nil
+		}
+
+		num, err := redis.Int(value.Reply, nil)
+		if err != nil {
+			return value, readOnly, err
+		}
+
+		value.Reply = int64(num + val)
+		return value, write, nil
+	}).Int()
+}
+
 func (kv *naiveKeyValue) Del(key string) error {
 	return kv.store(kv.ctx, key, func(_ NaiveValue, _ bool) (NaiveValue, bool) {
 		return "", true
