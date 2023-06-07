@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -114,7 +113,7 @@ func NewActor(source *Source, cacheKey string, user dotcom.DotcomUserState) *act
 	}
 
 	if user.CodyGatewayAccess.ChatCompletionsRateLimit != nil {
-		a.RateLimits[types.CompletionsFeatureChat] = actor.RateLimit{
+		a.RateLimits[codygateway.FeatureChatCompletions] = actor.RateLimit{
 			AllowedModels: user.CodyGatewayAccess.ChatCompletionsRateLimit.AllowedModels,
 			Limit:         user.CodyGatewayAccess.ChatCompletionsRateLimit.Limit,
 			Interval:      time.Duration(user.CodyGatewayAccess.ChatCompletionsRateLimit.IntervalSeconds) * time.Second,
@@ -122,19 +121,28 @@ func NewActor(source *Source, cacheKey string, user dotcom.DotcomUserState) *act
 	}
 
 	if user.CodyGatewayAccess.CodeCompletionsRateLimit != nil {
-		a.RateLimits[types.CompletionsFeatureCode] = actor.RateLimit{
+		a.RateLimits[codygateway.FeatureCodeCompletions] = actor.RateLimit{
 			AllowedModels: user.CodyGatewayAccess.CodeCompletionsRateLimit.AllowedModels,
 			Limit:         user.CodyGatewayAccess.CodeCompletionsRateLimit.Limit,
 			Interval:      time.Duration(user.CodyGatewayAccess.CodeCompletionsRateLimit.IntervalSeconds) * time.Second,
 		}
 	}
 
+	if user.CodyGatewayAccess.EmbeddingsRateLimit != nil {
+		a.RateLimits[codygateway.FeatureEmbeddings] = actor.RateLimit{
+			AllowedModels: user.CodyGatewayAccess.EmbeddingsRateLimit.AllowedModels,
+			Limit:         user.CodyGatewayAccess.EmbeddingsRateLimit.Limit,
+			Interval:      time.Duration(user.CodyGatewayAccess.EmbeddingsRateLimit.IntervalSeconds) * time.Second,
+		}
+	}
+
 	return a
 }
 
-func zeroRequestsAllowed() map[types.CompletionsFeature]actor.RateLimit {
-	return map[types.CompletionsFeature]actor.RateLimit{
-		types.CompletionsFeatureChat: {},
-		types.CompletionsFeatureCode: {},
+func zeroRequestsAllowed() map[codygateway.Feature]actor.RateLimit {
+	return map[codygateway.Feature]actor.RateLimit{
+		codygateway.FeatureChatCompletions: {},
+		codygateway.FeatureCodeCompletions: {},
+		codygateway.FeatureEmbeddings:      {},
 	}
 }
