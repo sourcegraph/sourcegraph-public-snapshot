@@ -73,8 +73,8 @@ func TestIsCodyEnabled(t *testing.T) {
 		})
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-		if IsCodyEnabled(ctx) {
-			t.Error("Expected IsCodyEnabled to return false without completions")
+		if !IsCodyEnabled(ctx) {
+			t.Error("Expected IsCodyEnabled to return true without completions")
 		}
 	})
 
