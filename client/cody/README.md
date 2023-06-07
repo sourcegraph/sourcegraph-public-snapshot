@@ -10,7 +10,13 @@ For example, you can ask Cody:
 - Add helpful debug log statements
 - Make this work _(seriously, it often works—try it!)_
 
-  **Cody AI is in beta, and we’d love your [feedback](#feedback)**!
+  **Cody AI is in beta, and we’d love your [feedback](https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback)**!
+
+## Usage
+
+1. Install the [Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai).
+1. Open Cody (from the activity bar or by pressing <kbd>Alt+/</kbd>/<kbd>Opt+/</kbd>) and sign in.
+1. Start using it! Read on to learn about the chatbot, fixups, and recipes.
 
 ## Features
 
@@ -44,6 +50,8 @@ Examples of the kinds of fixup instructions Cody can handle:
 - "Make this work" (seriously, it often works--try it!)
 
 ## 🍳 Built-in recipes
+
+Select the recipes tab or right-click on a selection of code and choose one of the `Ask Cody > ...` recipes, such as:
 
 - Explain code
 - Generate unit test
