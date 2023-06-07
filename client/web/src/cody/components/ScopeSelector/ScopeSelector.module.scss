@@ -58,14 +58,15 @@
 
 .repository-selector-content {
     width: 20rem;
-    height: 24rem;
+    height: 100%;
     max-width: 20rem;
-    max-height: 24rem;
+    min-height: 24rem;
+    max-height: 29rem;
     overflow: hidden;
 }
 
 .context-items-container {
-    max-height: 19rem;
+    max-height: 23rem;
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -86,6 +87,15 @@
     svg {
         min-width: 1rem;
         min-height: 1rem;
+    }
+
+    .remove-repo-icon {
+        visibility: hidden;
+    }
+    &:hover {
+        .remove-repo-icon {
+            visibility: visible;
+        }
     }
 }
 

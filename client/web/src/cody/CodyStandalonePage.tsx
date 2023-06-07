@@ -95,7 +95,7 @@ const CodyStandalonePageContext: React.FC<{ repos: GetReposForCodyResult['reposi
         }
 
         setScopeInitialized(true)
-    }, [scope, setScope, repos, scopeInitialized, setScopeInitialized])
+    }, [setScope, repos, scopeInitialized, setScopeInitialized, scope])
 
     return enabled ? (
         <div className="d-flex flex-column w-100">

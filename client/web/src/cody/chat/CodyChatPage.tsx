@@ -278,7 +278,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
                         ))}
                 </div>
 
-                <div className={classNames('d-flex flex-colmn col-sm-9 h-100', styles.chatMainWrapper)}>
+                <div className={classNames('d-flex flex-column col-sm-9 h-100', styles.chatMainWrapper)}>
                     <ChatUI codyChatStore={codyChatStore} />
                 </div>
             </div>

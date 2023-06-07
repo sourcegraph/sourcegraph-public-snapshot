@@ -55,13 +55,16 @@ export function getMultiRepoPreamble(codebases: string[]): Message[] {
     const preambleResponse = [answer]
 
     if (codebases.length) {
-        const codebase = codebases.join(', ') + (codebases.length > 1 ? ' repositories' : ' repository')
+        const codebase =
+            codebases.map(name => `\`${name}\``).join(', ') + (codebases.length > 1 ? ' repositories' : ' repository')
         const codebasePreamble =
-            `You have access to the \`${codebase}\`. You are able to answer questions about the \`${codebase}\`. ` +
-            `I will provide the relevant code snippets from the \`${codebase}\` when necessary to answer my questions.`
+            `You have access to the ${codebase}. You are able to answer questions about all the mentioned repositories. ` +
+            'I will provide the relevant code snippets from the mentioned repositories when necessary to answer my questions.'
 
         preamble.push(codebasePreamble)
-        preambleResponse.push(`I have access to the \`${codebase}\` and can answer questions about its files.`)
+        preambleResponse.push(
+            `I have access to ${codebase} and can answer questions about files present in the mentioned repositories.`
+        )
     }
 
     return [

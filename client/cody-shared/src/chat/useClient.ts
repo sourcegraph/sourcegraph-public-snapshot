@@ -200,6 +200,11 @@ export const useClient = ({
             const editor = options?.scope?.editor || (scope.includeInferredFile ? scope.editor : new NoopEditor())
             const activeEditor = editor.getActiveTextEditor()
             if (activeEditor?.repoName && !repoNames.includes(activeEditor.repoName)) {
+                // NOTE(naman): We allow users to disable automatic inferrence of current file & repo
+                // using `includeInferredFile` and `includeInferredRepository` options. But for editor recipes
+                // like "Explain code at high level", we need to pass the current repo & file context.
+                // Here we are passing the current repo & file context based on `options.scope.editor`
+                // if present.
                 const additionalRepoId = await graphqlClient.getRepoId(activeEditor.repoName)
                 if (isError(additionalRepoId)) {
                     console.error(

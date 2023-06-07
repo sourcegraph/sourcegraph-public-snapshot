@@ -77,7 +77,7 @@ export const RepositoriesSelectorPopover: React.FC<{
 
     const onSearch = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
-            setSearchText(event.target.value)
+            setSearchText(event.target.value.trim())
         },
         [setSearchText]
     )
@@ -372,7 +372,11 @@ const AdditionalRepositoriesListItem: React.FC<{
             onClick={onClick}
         >
             <div className="d-flex align-items-center text-truncate">
-                <Icon aria-hidden={true} className="mr-2 text-muted" svgPath={mdiMinusCircleOutline} />
+                <Icon
+                    aria-hidden={true}
+                    className={classNames('mr-2 text-muted', styles.removeRepoIcon)}
+                    svgPath={mdiMinusCircleOutline}
+                />
                 <ExternalRepositoryIcon externalRepo={repository.externalRepository} className="text-muted" />
                 <span>{getRepoName(repository.name)}</span>
             </div>
@@ -434,11 +438,7 @@ const SearchResultsListItem: React.FC<{
                     svgPath={mdiCheck}
                 />
                 <ExternalRepositoryIcon externalRepo={repository.externalRepository} className="text-muted" />
-                <span
-                    dangerouslySetInnerHTML={{
-                        __html: getTintedText(getRepoName(repository.name), searchText),
-                    }}
-                />
+                {getTintedText(getRepoName(repository.name), searchText)}
             </div>
             <Icon
                 aria-hidden={true}
@@ -452,10 +452,30 @@ const SearchResultsListItem: React.FC<{
     )
 })
 
-export const getTintedText = (item: string, searchText: string): string => {
+const getTintedText = (item: string, searchText: string): React.ReactNode => {
     const searchRegex = new RegExp(`(${searchText})`, 'gi')
-    return item.replace(searchRegex, match => `<span class="${styles.tintedSearch}">${match}</span>`)
+
+    const matches = item.match(searchRegex)
+    return (
+        <span>
+            {item
+                .replace(searchRegex, '$')
+                .split('$')
+                .reduce((spans, unmatched, index) => {
+                    spans.push(<span key={`unmatched-${index}`}>{unmatched}</span>)
+                    if (matches?.[index]) {
+                        spans.push(
+                            <span key={`matched-${index}`} className={styles.tintedSearch}>
+                                {matches[index]}
+                            </span>
+                        )
+                    }
+                    return spans
+                }, [] as React.ReactElement[])}
+        </span>
+    )
 }
+
 export const getFileName = (path: string): string => {
     const parts = path.split('/')
     return parts[parts.length - 1]
