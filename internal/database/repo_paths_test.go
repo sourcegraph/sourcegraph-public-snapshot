@@ -44,7 +44,6 @@ func TestUpdateFileCounts(t *testing.T) {
 
 	// Update existing path
 	counts = fakeRepoTreeCounts{"new_path": 20}
-	timestamp = time.Now()
 	updatedRows, err = d.RepoPaths().UpdateFileCounts(ctx, repo.ID, counts, timestamp)
 	require.NoError(t, err)
 	assert.Equal(t, updatedRows, 1)

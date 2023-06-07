@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // RepoTreeCounts allows iterating over file paths and yield total counts
@@ -38,11 +39,14 @@ var updateFileCountsFmtstr = `
 func (s *repoPathStore) UpdateFileCounts(ctx context.Context, repoID api.RepoID, counts RepoTreeCounts, timestamp time.Time) (int, error) {
 	var rowsUpdated int
 	err := counts.Iterate(func(path string, totalFiles int) error {
-		pathID, err := ensureRepoPaths(ctx, s.Store, []string{path}, repoID)
+		pathIDs, err := ensureRepoPaths(ctx, s.Store, []string{path}, repoID)
 		if err != nil {
 			return err
 		}
-		res, err := s.ExecResult(ctx, sqlf.Sprintf(updateFileCountsFmtstr, totalFiles, timestamp, pathID))
+		if got, want := len(pathIDs), 1; got != want {
+			return errors.Newf("want exactly 1 repo path, got %d", got)
+		}
+		res, err := s.ExecResult(ctx, sqlf.Sprintf(updateFileCountsFmtstr, totalFiles, timestamp, pathIDs[0]))
 		if err != nil {
 			return err
 		}
