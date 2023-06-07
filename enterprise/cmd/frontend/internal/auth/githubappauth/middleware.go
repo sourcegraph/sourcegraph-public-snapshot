@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -276,6 +277,10 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		}
 		cache.Set(state, []byte(strconv.Itoa(id)))
 
+		// The installations page often takes a few seconds to become available after the
+		// app is first created, so we sleep for a bit to give it time to load. The exact
+		// length of time to sleep was determined empirically.
+		time.Sleep(3 * time.Second)
 		redirectURL, err := url.JoinPath(app.AppURL, "installations/new")
 		if err != nil {
 			// if there is an error, try to redirect to app url, which should show Install button as well
