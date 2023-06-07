@@ -152,6 +152,7 @@ func TestEmbedRepo(t *testing.T) {
 		expectedStats := &embeddings.EmbedRepoStats{
 			HasRanks: true,
 			CodeIndexStats: embeddings.EmbedFilesStats{
+				FilesTotal:     1,
 				FilesEmbedded:  1,
 				ChunksEmbedded: 2,
 				BytesEmbedded:  65,
@@ -185,6 +186,7 @@ func TestEmbedRepo(t *testing.T) {
 				FilesSkipped: map[string]int{},
 			},
 			TextIndexStats: embeddings.EmbedFilesStats{
+				FilesTotal:     1,
 				FilesEmbedded:  1,
 				ChunksEmbedded: 2,
 				BytesEmbedded:  70,
@@ -213,6 +215,7 @@ func TestEmbedRepo(t *testing.T) {
 		expectedStats := &embeddings.EmbedRepoStats{
 			HasRanks: true,
 			CodeIndexStats: embeddings.EmbedFilesStats{
+				FilesTotal:     6,
 				FilesEmbedded:  2,
 				ChunksEmbedded: 5,
 				BytesEmbedded:  163,
@@ -230,6 +233,7 @@ func TestEmbedRepo(t *testing.T) {
 				},
 			},
 			TextIndexStats: embeddings.EmbedFilesStats{
+				FilesTotal:     1,
 				FilesEmbedded:  1,
 				ChunksEmbedded: 2,
 				BytesEmbedded:  70,

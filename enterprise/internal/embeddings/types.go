@@ -187,6 +187,10 @@ type EmbedFilesStats struct {
 	// The time it took to generate these embeddings
 	Duration time.Duration
 
+	// The total number of files scheduled for embedding. For a complete job,
+	// should be the sum of FilesEmbedded and all the FilesSkipoped reasons.
+	FilesTotal int
+
 	// The number of files embedded
 	FilesEmbedded int
 
@@ -216,6 +220,7 @@ func (e *EmbedFilesStats) ToFields() []log.Field {
 	}
 	return []log.Field{
 		log.Duration("duration", e.Duration),
+		log.Int("filesTotal", e.FilesTotal),
 		log.Int("filesEmbedded", e.FilesEmbedded),
 		log.Int("chunksEmbedded", e.ChunksEmbedded),
 		log.Int("bytesEmbedded", e.BytesEmbedded),

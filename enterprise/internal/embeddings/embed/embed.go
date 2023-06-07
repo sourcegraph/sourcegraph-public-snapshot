@@ -259,6 +259,7 @@ func embedFiles(
 
 	stats := embeddings.EmbedFilesStats{
 		Duration:       time.Since(start),
+		FilesTotal:     len(files),
 		BytesEmbedded:  statsEmbeddedByteCount,
 		FilesEmbedded:  statsEmbeddedFileCount,
 		ChunksEmbedded: statsEmbeddedChunkCount,
