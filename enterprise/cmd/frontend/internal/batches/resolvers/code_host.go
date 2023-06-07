@@ -108,6 +108,10 @@ func (r *gitHubAppConfigResolver) Name() string {
 	return r.ghapp.Name
 }
 
+func (r *gitHubAppConfigResolver) BaseURL() string {
+	return r.ghapp.BaseURL
+}
+
 func (r *gitHubAppConfigResolver) AppURL() string {
 	return r.ghapp.AppURL
 }

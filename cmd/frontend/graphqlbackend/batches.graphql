@@ -3501,6 +3501,10 @@ type GitHubAppConfiguration {
     """
     appURL: String!
     """
+    The base URL of the GitHub App
+    """
+    baseURL: String!
+    """
     The logo URL of the GitHub App
     """
     logo: String!
