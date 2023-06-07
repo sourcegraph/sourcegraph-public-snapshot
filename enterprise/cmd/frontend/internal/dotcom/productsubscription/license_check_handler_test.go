@@ -78,7 +78,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			name:       "no access token",
 			body:       `{"siteID": "some-site-id"}`,
 			headers:    nil,
-			want:       licensing.LicenseCheckResponse{Error: strPtr("invalid access token")},
+			want:       licensing.LicenseCheckResponse{Error: "invalid access token"},
 			wantStatus: http.StatusUnauthorized,
 		},
 		{
@@ -87,7 +87,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			headers: http.Header{
 				"Authorization": {"Bearer invalid-token"},
 			},
-			want:       licensing.LicenseCheckResponse{Error: strPtr("invalid access token")},
+			want:       licensing.LicenseCheckResponse{Error: "invalid access token"},
 			wantStatus: http.StatusUnauthorized,
 		},
 		{
@@ -96,7 +96,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(*expiredLicense.LicenseCheckToken)},
 			},
-			want:       licensing.LicenseCheckResponse{Error: strPtr("license expired")},
+			want:       licensing.LicenseCheckResponse{Error: "license expired"},
 			wantStatus: http.StatusForbidden,
 		},
 		{
@@ -105,7 +105,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(*revokedLicense.LicenseCheckToken)},
 			},
-			want:       licensing.LicenseCheckResponse{Error: strPtr("license revoked")},
+			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: false, Reason: "license revoked"}},
 			wantStatus: http.StatusForbidden,
 		},
 		{
@@ -114,7 +114,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(*validLicense.LicenseCheckToken)},
 			},
-			want:       licensing.LicenseCheckResponse{Error: strPtr("invalid request body")},
+			want:       licensing.LicenseCheckResponse{Error: "invalid request body"},
 			wantStatus: http.StatusBadRequest,
 		},
 		{
@@ -123,7 +123,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 				"Authorization": {"Bearer " + hex.EncodeToString(*assignedLicense.LicenseCheckToken)},
 			},
 			body:       `{"siteID": "some-site-id"}`,
-			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: false, Reason: strPtr("license is already in use")}},
+			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: false, Reason: "license is already in use"}},
 			wantStatus: http.StatusOK,
 		},
 		{

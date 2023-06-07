@@ -5,11 +5,11 @@ type LicenseCheckRequestParams struct {
 }
 
 type LicenseCheckResponseData struct {
-	IsValid bool    `json:"is_valid"`
-	Reason  *string `json:"reason"`
+	IsValid bool   `json:"is_valid,omitempty"`
+	Reason  string `json:"reason,omitempty"`
 }
 
 type LicenseCheckResponse struct {
-	Error *string                   `json:"error"`
+	Error string                    `json:"error,omitempty"`
 	Data  *LicenseCheckResponseData `json:"data"`
 }
