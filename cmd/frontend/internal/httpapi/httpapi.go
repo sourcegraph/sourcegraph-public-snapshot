@@ -73,6 +73,9 @@ type Handlers struct {
 	// Code Insights
 	CodeInsightsDataExportHandler http.Handler
 
+	// Dotcom license check
+	NewDotcomLicenseCheckHandler enterprise.NewDotcomLicenseCheckHandler
+
 	// Completions stream
 	NewChatCompletionsStreamHandler enterprise.NewChatCompletionsStreamHandler
 	NewCodeCompletionsHandler       enterprise.NewCodeCompletionsHandler
@@ -159,6 +162,7 @@ func NewHandler(
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/app/check/update").Name(updatecheck.RouteAppUpdateCheck).Handler(trace.Route(updatecheck.AppUpdateHandler(logger)))
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.HandlerWithLog(logger))))
+		m.Path("/license/check").Methods("POST").Name("dotcom.license.check").Handler(trace.Route(handlers.NewDotcomLicenseCheckHandler()))
 	}
 
 	m.Get(apirouter.SCIM).Handler(trace.Route(handlers.SCIMHandler))

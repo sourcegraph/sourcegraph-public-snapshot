@@ -2,7 +2,6 @@ package productsubscription
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/hex"
 	"time"
 
@@ -11,9 +10,9 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -64,8 +63,6 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		return "", errors.Wrap(err, "new UUID")
 	}
 
-	keyHash := sha256.Sum256([]byte(licenseKey))
-
 	var expiresAt *time.Time
 	if !info.ExpiresAt.IsZero() {
 		expiresAt = &info.ExpiresAt
@@ -78,7 +75,7 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		pq.Array(info.Tags),
 		dbutil.NewNullInt64(int64(info.UserCount)),
 		dbutil.NullTime{Time: expiresAt},
-		hashutil.ToSHA256Bytes(keyHash[:]),
+		licensing.GenerateHashedLicenseKeyAccessToken(licenseKey),
 		info.SalesforceSubscriptionID,
 		info.SalesforceOpportunityID,
 	).Scan(&id); err != nil {
@@ -109,11 +106,13 @@ func (s dbLicenses) GetByID(ctx context.Context, id string) (*dbLicense, error) 
 //
 // 🚨 SECURITY: The caller must ensure that errTokenInvalid error is handled appropriately
 func (s dbLicenses) GetByToken(ctx context.Context, tokenHexEncoded string) (*dbLicense, error) {
+	if mocks.licenses.GetByToken != nil {
+		return mocks.licenses.GetByToken(tokenHexEncoded)
+	}
 	token, err := hex.DecodeString(tokenHexEncoded)
 	if err != nil {
 		return nil, errTokenInvalid
 	}
-
 	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("license_check_token=%s", token)}, nil)
 	if err != nil {
 		return nil, err
@@ -267,5 +266,6 @@ type mockLicenses struct {
 	Create          func(subscriptionID, licenseKey string) (id string, err error)
 	GetByID         func(id string) (*dbLicense, error)
 	GetByLicenseKey func(licenseKey string) (*dbLicense, error)
+	GetByToken      func(tokenHexEncoded string) (*dbLicense, error)
 	List            func(ctx context.Context, opt dbLicensesListOptions) ([]*dbLicense, error)
 }

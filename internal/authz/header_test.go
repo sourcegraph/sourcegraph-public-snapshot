@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 )
@@ -91,6 +92,32 @@ func TestParseHTTPCredentials(t *testing.T) {
 			if !reflect.DeepEqual(params, test.params) {
 				t.Errorf("got params %+v, want %+v", params, test.params)
 			}
+		})
+	}
+}
+
+func TestParseBearerHeader(t *testing.T) {
+	tests := map[string]struct {
+		token string
+		err   bool
+	}{
+		"Bearer tok":     {token: "tok", err: false},
+		"bearer tok":     {token: "tok", err: false},
+		"BeARER token":   {token: "token", err: false},
+		"Bearer tok tok": {token: "tok tok", err: false},
+		"Bearer ":        {token: "", err: false},
+		"Bearer":         {token: "", err: true},
+		"tok":            {token: "", err: true},
+	}
+	for input, test := range tests {
+		t.Run(input, func(t *testing.T) {
+			token, err := ParseBearerHeader(input)
+			if test.err {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, test.token, token)
 		})
 	}
 }
