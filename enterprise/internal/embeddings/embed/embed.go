@@ -2,7 +2,6 @@ package embed
 
 import (
 	"context"
-	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -56,8 +55,6 @@ func EmbedRepo(
 	logger log.Logger,
 	reportProgress func(*embeddings.EmbedRepoStats),
 ) (*embeddings.RepoEmbeddingIndex, []string, *embeddings.EmbedRepoStats, error) {
-	start := time.Now()
-
 	var toIndex []FileEntry
 	var toRemove []string
 	var err error
@@ -96,7 +93,6 @@ func EmbedRepo(
 	}
 
 	stats := &embeddings.EmbedRepoStats{
-		Duration:       time.Duration(0),
 		HasRanks:       len(ranks.Paths) > 0,
 		CodeIndexStats: embeddings.NewEmbedFilesStats(len(codeFileNames)),
 		TextIndexStats: embeddings.NewEmbedFilesStats(len(textFileNames)),
@@ -105,7 +101,6 @@ func EmbedRepo(
 
 	reportCodeProgress := func(codeIndexStats embeddings.EmbedFilesStats) {
 		stats.CodeIndexStats = codeIndexStats
-		stats.Duration = time.Since(start)
 		reportProgress(stats)
 	}
 
@@ -117,7 +112,6 @@ func EmbedRepo(
 
 	reportTextProgress := func(textIndexStats embeddings.EmbedFilesStats) {
 		stats.TextIndexStats = textIndexStats
-		stats.Duration = time.Since(start)
 		reportProgress(stats)
 	}
 
@@ -164,8 +158,6 @@ func embedFiles(
 	repoPathRanks types.RepoPathRanks,
 	reportProgress func(embeddings.EmbedFilesStats),
 ) (embeddings.EmbeddingIndex, embeddings.EmbedFilesStats, error) {
-	start := time.Now()
-
 	dimensions, err := client.GetDimensions()
 	if err != nil {
 		return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, err
@@ -260,7 +252,6 @@ func embedFiles(
 			stats.AddChunk(len(chunk.Content))
 		}
 		stats.AddFile()
-		stats.Duration = time.Since(start)
 		reportProgress(stats)
 	}
 
@@ -269,7 +260,6 @@ func embedFiles(
 		return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, err
 	}
 
-	stats.Duration = time.Since(start)
 	return index, stats, nil
 }
 

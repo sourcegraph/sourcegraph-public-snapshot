@@ -3,7 +3,6 @@ package embeddings
 import (
 	"fmt"
 	"sort"
-	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -164,7 +163,6 @@ func (o *OldEmbeddingIndex) ToNewIndex() EmbeddingIndex {
 }
 
 type EmbedRepoStats struct {
-	Duration       time.Duration
 	HasRanks       bool
 	CodeIndexStats EmbedFilesStats
 	TextIndexStats EmbedFilesStats
@@ -175,7 +173,6 @@ type EmbedRepoStats struct {
 
 func (e *EmbedRepoStats) ToFields() []log.Field {
 	return []log.Field{
-		log.Duration("duration", e.Duration),
 		log.Bool("hasRanks", e.HasRanks),
 		log.Object("codeIndex", e.CodeIndexStats.ToFields()...),
 		log.Object("textIndex", e.TextIndexStats.ToFields()...),
@@ -185,7 +182,6 @@ func (e *EmbedRepoStats) ToFields() []log.Field {
 
 func NewEmbedFilesStats(filesTotal int) EmbedFilesStats {
 	return EmbedFilesStats{
-		Duration:       0,
 		FilesTotal:     filesTotal,
 		FilesEmbedded:  0,
 		FilesSkipped:   map[string]int{},
@@ -196,9 +192,6 @@ func NewEmbedFilesStats(filesTotal int) EmbedFilesStats {
 }
 
 type EmbedFilesStats struct {
-	// The time it took to generate these embeddings
-	Duration time.Duration
-
 	// The total number of files scheduled for embedding. For a complete job,
 	// should be the sum of FilesEmbedded and all the FilesSkipoped reasons.
 	FilesTotal int
@@ -245,7 +238,6 @@ func (e *EmbedFilesStats) ToFields() []log.Field {
 		skippedCounts = append(skippedCounts, log.Int(reason, count))
 	}
 	return []log.Field{
-		log.Duration("duration", e.Duration),
 		log.Int("filesTotal", e.FilesTotal),
 		log.Int("filesEmbedded", e.FilesEmbedded),
 		log.Int("chunksEmbedded", e.ChunksEmbedded),
