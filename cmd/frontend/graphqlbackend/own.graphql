@@ -141,6 +141,7 @@ The only way we can recognize ownership at this point is through CODEOWNERS file
 """
 enum OwnershipReasonType {
     CODEOWNERS_FILE_ENTRY
+    ASSIGNED_OWNER
     RECENT_CONTRIBUTOR_OWNERSHIP_SIGNAL
     RECENT_VIEW_OWNERSHIP_SIGNAL
 }
@@ -185,7 +186,7 @@ type RecentViewOwnershipSignal {
 }
 
 """
-The entity is an owner because they were mentioned on a codeowners file.
+Manually assigned owner.
 """
 type AssignedOwner {
     """
@@ -268,11 +269,19 @@ extend type Mutation {
     """
     assignOwner creates a new assigned owner.
     """
-    assignOwner(input: AssignOwnerInput!): EmptyResponse
+    assignOwner(input: AssignOwnerOrTeamInput!): EmptyResponse
     """
     removeAssignedOwner removes an assigned owner.
     """
-    removeAssignedOwner(input: AssignOwnerInput!): EmptyResponse
+    removeAssignedOwner(input: AssignOwnerOrTeamInput!): EmptyResponse
+    """
+    assignTeam creates a new assigned team.
+    """
+    assignTeam(input: AssignOwnerOrTeamInput!): EmptyResponse
+    """
+    removeAssignedTeam removes an assigned owner.
+    """
+    removeAssignedTeam(input: AssignOwnerOrTeamInput!): EmptyResponse
 }
 
 """
@@ -376,11 +385,11 @@ input UpdateSignalConfigurationsInput {
 }
 
 """
-AssignOwnerInput represents the input for assigning or deleting an owner.
+AssignOwnerOrTeamInput represents the input for assigning or deleting an owner team or person.
 """
-input AssignOwnerInput {
+input AssignOwnerOrTeamInput {
     """
-    ID of an assigned owner.
+    ID of an assigned owner or team.
     """
     assignedOwnerID: ID!
     """

@@ -1,4 +1,4 @@
-package httpapi
+package completions
 
 import (
 	"net/http"
@@ -16,7 +16,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.RedisStore, next http.Handler) http.Handler {
+func rateLimit(
+	baseLogger log.Logger,
+	eventLogger events.Logger,
+	cache limiter.RedisStore,
+	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
+	next http.Handler,
+) http.Handler {
 	baseLogger = baseLogger.Scoped("rateLimit", "rate limit handler")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +35,7 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 			return
 		}
 
-		l, ok := act.Limiter(cache, feature)
+		l, ok := act.Limiter(logger, cache, feature, concurrencyLimitConfig)
 		if !ok {
 			response.JSONError(logger, w, http.StatusForbidden, errors.Newf("no access to feature %s", feature))
 			return
@@ -37,6 +43,12 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 
 		commit, err := l.TryAcquire(r.Context())
 		if err != nil {
+			limitedCause := "quota"
+			var concurrencyLimitExceeded actor.ErrConcurrencyLimitExceeded
+			if errors.As(err, &concurrencyLimitExceeded) {
+				limitedCause = "concurrency"
+			}
+
 			if loggerErr := eventLogger.LogEvent(
 				r.Context(),
 				events.Event{
@@ -46,6 +58,7 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 					Metadata: map[string]any{
 						"error": err.Error(),
 						codygateway.CompletionsEventFeatureMetadataField: feature,
+						"cause": limitedCause,
 					},
 				},
 			); loggerErr != nil {
@@ -63,6 +76,11 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 				return
 			}
 
+			if limitedCause == "concurrency" {
+				concurrencyLimitExceeded.WriteResponse(w)
+				return
+			}
+
 			response.JSONError(logger, w, http.StatusInternalServerError, err)
 			return
 		}
@@ -71,15 +89,15 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 		next.ServeHTTP(responseRecorder, r)
 
 		// If response is healthy, consume the rate limit
-		if responseRecorder.StatusCode >= 200 || responseRecorder.StatusCode < 300 {
-			if err := commit(); err != nil {
+		if responseRecorder.StatusCode >= 200 && responseRecorder.StatusCode < 300 {
+			if err := commit(1); err != nil {
 				logger.Error("failed to commit rate limit consumption", log.Error(err))
 			}
 		}
 	})
 }
 
-func extractFeature(r *http.Request) (types.CompletionsFeature, error) {
+func extractFeature(r *http.Request) (codygateway.Feature, error) {
 	h := strings.TrimSpace(r.Header.Get(codygateway.FeatureHeaderName))
 	if h == "" {
 		return "", errors.Newf("%s header is required", codygateway.FeatureHeaderName)
@@ -88,5 +106,6 @@ func extractFeature(r *http.Request) (types.CompletionsFeature, error) {
 	if !feature.IsValid() {
 		return "", errors.Newf("invalid value for %s", codygateway.FeatureHeaderName)
 	}
-	return feature, nil
+	// codygateway.Feature and types.CompletionsFeature map 1:1 for completions.
+	return codygateway.Feature(feature), nil
 }
