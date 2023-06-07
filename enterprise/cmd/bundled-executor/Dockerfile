@@ -43,16 +43,8 @@ RUN set -ex && \
 RUN apk add --no-cache \
     xmlstarlet \
     python3 py3-pip \
-    openjdk11
-
-# Download and install Maven 3.6.3
-RUN wget -q https://downloads.apache.org/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz && \
-    tar -xf apache-maven-3.6.3-bin.tar.gz -C /opt && \
-    rm apache-maven-3.6.3-bin.tar.gz
-
-# Set the Maven environment variables
-ENV MAVEN_HOME /opt/apache-maven-3.6.3
-ENV PATH $MAVEN_HOME/bin:$PATH
+    openjdk11 \
+    maven
 
 # Install batcheshelper.
 COPY batcheshelper /usr/local/bin/
