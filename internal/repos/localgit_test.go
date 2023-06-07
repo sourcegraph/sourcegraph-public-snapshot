@@ -19,7 +19,7 @@ import (
 func TestLocalGitSource_ListRepos(t *testing.T) {
 	configs := []struct {
 		pattern string
-		group string
+		group   string
 		repos   []string
 		folders []string
 	}{
@@ -30,7 +30,7 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 		},
 		{
 			pattern: "work/*",
-			group: "work",
+			group:   "work",
 			repos:   []string{"work/a", "work/b", "work/c.bare"},
 		},
 		{
@@ -40,7 +40,7 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 		{
 			pattern: "nested/*/*",
 			repos:   []string{"nested/work/project", "nested/other-work/other-project"},
-			folders:   []string{"nested/work/not-a-project"},
+			folders: []string{"nested/work/not-a-project"},
 		},
 		{
 			pattern: "single-repo",
@@ -61,7 +61,7 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 	for _, config := range configs {
 		root := gitInitRepos(t, config.repos...)
 		repoPatterns = append(repoPatterns, &schema.LocalGitRepoPattern{Pattern: filepath.Join(root, config.pattern), Group: config.group})
-		for _,folder := range config.folders {
+		for _, folder := range config.folders {
 			if err := os.MkdirAll(filepath.Join(root, folder), 0755); err != nil {
 				t.Fatal(err)
 			}

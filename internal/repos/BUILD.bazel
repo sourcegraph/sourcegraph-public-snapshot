@@ -134,6 +134,7 @@ go_test(
         "gitlab_test.go",
         "gitolite_test.go",
         "go_packages_test.go",
+        "localgit_test.go",
         "main_test.go",
         "npm_packages_test.go",
         "other_test.go",
