@@ -92,8 +92,15 @@ var (
 
 var MockGetConfiguredProductLicenseInfo func() (*license.Info, string, error)
 
-var isLicenseValid = func() bool {
-	if val, err := redispool.Store.Get("is_license_valid").Bool(); err != nil {
+// isLicenseValid checks the redis store for whether or not the license has passed
+// the ping check. If the value is unset, the license is treated is valid.
+func isLicenseValid() bool {
+	val := redispool.Store.Get("is_license_valid")
+	if val.IsNil() {
+		return true
+	}
+
+	if val, err := val.Bool(); err != nil {
 		return val
 	}
 	return true
