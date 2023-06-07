@@ -846,6 +846,7 @@ func (c *V3Client) CreateCommit(ctx context.Context, owner, repo, message, tree 
 	if _, err := c.post(ctx, "repos/"+owner+"/"+repo+"/git/commits", payload, &commit); err != nil {
 		return nil, err
 	}
+	fmt.Printf("commit here >>>>>> %+v\n", commit)
 	return &commit, nil
 }
 

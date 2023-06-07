@@ -48,8 +48,9 @@ type executor struct {
 	sourcer           sources.Sourcer
 	noSleepBeforeSync bool
 	tx                *store.Store
-	ch                *btypes.Changeset
-	spec              *btypes.ChangesetSpec
+	//TODO: use tx store to create an instance of the changeset_spec store
+	ch   *btypes.Changeset
+	spec *btypes.ChangesetSpec
 
 	// targetRepo represents the repo where the changeset should be opened.
 	targetRepo *types.Repo
@@ -663,6 +664,7 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 			// over the REST API in order to produce a signed version of it to replace the
 			// original one with.
 			err = gcss.DuplicateCommit(ctx, opts, remoteRepo, rev)
+			// TODO: Add a method like e.tx.UpdateChangesetSpecBatchSpecID(e.ch.ChangesetSpecID, rev) - to update new field (Verification)
 			if err != nil {
 				return errors.Wrap(err, "failed to duplicate commit")
 			}

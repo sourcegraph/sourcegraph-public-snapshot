@@ -152,6 +152,12 @@ func (s GitHubSource) DuplicateCommit(ctx context.Context, opts protocol.CreateC
 	if err != nil {
 		return errors.Wrap(err, "updating ref to point to new commit")
 	}
+
+	// TODO: Return the new commit, or just the verification obj
+	// Then in the caller, update the changeset_specs.[commit_verification] from it's store with the newCommit.Vericiation
+	// Only store if verification is true, otherwise nil
+
+	//Unknown - how to hook up changeset_specs store here
 	return nil
 }
 
