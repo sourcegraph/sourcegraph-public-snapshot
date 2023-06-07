@@ -5838,6 +5838,9 @@ type MockDB struct {
 	// RepoKVPsFunc is an instance of a mock function object controlling the
 	// behavior of the method RepoKVPs.
 	RepoKVPsFunc *DBRepoKVPsFunc
+	// RepoPathsFunc is an instance of a mock function object controlling
+	// the behavior of the method RepoPaths.
+	RepoPathsFunc *DBRepoPathsFunc
 	// RepoStatisticsFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoStatistics.
 	RepoStatisticsFunc *DBRepoStatisticsFunc
@@ -6093,6 +6096,11 @@ func NewMockDB() *MockDB {
 		},
 		RepoKVPsFunc: &DBRepoKVPsFunc{
 			defaultHook: func() (r0 RepoKVPStore) {
+				return
+			},
+		},
+		RepoPathsFunc: &DBRepoPathsFunc{
+			defaultHook: func() (r0 RepoPathStore) {
 				return
 			},
 		},
@@ -6393,6 +6401,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.RepoKVPs")
 			},
 		},
+		RepoPathsFunc: &DBRepoPathsFunc{
+			defaultHook: func() RepoPathStore {
+				panic("unexpected invocation of MockDB.RepoPaths")
+			},
+		},
 		RepoStatisticsFunc: &DBRepoStatisticsFunc{
 			defaultHook: func() RepoStatisticsStore {
 				panic("unexpected invocation of MockDB.RepoStatistics")
@@ -6611,6 +6624,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		RepoKVPsFunc: &DBRepoKVPsFunc{
 			defaultHook: i.RepoKVPs,
+		},
+		RepoPathsFunc: &DBRepoPathsFunc{
+			defaultHook: i.RepoPaths,
 		},
 		RepoStatisticsFunc: &DBRepoStatisticsFunc{
 			defaultHook: i.RepoStatistics,
@@ -10581,6 +10597,104 @@ func (c DBRepoKVPsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBRepoKVPsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBRepoPathsFunc describes the behavior when the RepoPaths method of the
+// parent MockDB instance is invoked.
+type DBRepoPathsFunc struct {
+	defaultHook func() RepoPathStore
+	hooks       []func() RepoPathStore
+	history     []DBRepoPathsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoPaths delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) RepoPaths() RepoPathStore {
+	r0 := m.RepoPathsFunc.nextHook()()
+	m.RepoPathsFunc.appendCall(DBRepoPathsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RepoPaths method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBRepoPathsFunc) SetDefaultHook(hook func() RepoPathStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoPaths method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBRepoPathsFunc) PushHook(hook func() RepoPathStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBRepoPathsFunc) SetDefaultReturn(r0 RepoPathStore) {
+	f.SetDefaultHook(func() RepoPathStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBRepoPathsFunc) PushReturn(r0 RepoPathStore) {
+	f.PushHook(func() RepoPathStore {
+		return r0
+	})
+}
+
+func (f *DBRepoPathsFunc) nextHook() func() RepoPathStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBRepoPathsFunc) appendCall(r0 DBRepoPathsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBRepoPathsFuncCall objects describing the
+// invocations of this function.
+func (f *DBRepoPathsFunc) History() []DBRepoPathsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBRepoPathsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBRepoPathsFuncCall is an object that describes an invocation of method
+// RepoPaths on an instance of MockDB.
+type DBRepoPathsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 RepoPathStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBRepoPathsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBRepoPathsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
