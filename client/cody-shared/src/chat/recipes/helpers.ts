@@ -65,6 +65,7 @@ export function contentSanitizer(text: string): string {
     let output = text + '\n'
     const tagsIndex = text.indexOf('tags:')
     if (tagsIndex !== -1) {
+        // NOTE: 6 is the length of `tags:` + 1 space
         output = output.slice(tagsIndex + 6)
     }
     return output.replace(/^\s*\n/, '')
