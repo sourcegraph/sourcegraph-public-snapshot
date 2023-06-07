@@ -20,7 +20,12 @@ type RepoTreeCounts interface {
 type RepoPathStore interface {
 	// UpdateFileCounts inserts file counts for every iterated path at given repository.
 	// If any of the iterated paths does not exist, it's created. Returns the number of updated paths.
-	UpdateFileCounts(ctx context.Context, repoID api.RepoID, counts RepoTreeCounts, timestamp time.Time) (int, error)
+	UpdateFileCounts(context.Context, api.RepoID, RepoTreeCounts, time.Time) (int, error)
+	// AggregateFileCount returns the file count aggregated for given TreeLocationOps.
+	// For instance, TreeLocationOpts with RepoID and Path returns counts for tree at given path,
+	// setting only RepoID gives counts for repo root, while setting none gives counts for the whole
+	// instance. Lack of data counts as 0.
+	AggregateFileCount(context.Context, TreeLocationOpts) (int32, error)
 }
 
 var _ RepoPathStore = &repoPathStore{}
@@ -58,4 +63,23 @@ func (s *repoPathStore) UpdateFileCounts(ctx context.Context, repoID api.RepoID,
 		return nil
 	})
 	return rowsUpdated, err
+}
+
+var aggregateFileCountFmtstr = `
+    SELECT SUM(COALESCE(p.tree_files_count, 0))
+    FROM repo_paths AS p
+    WHERE p.absolute_path = %s
+`
+
+func (s *repoPathStore) AggregateFileCount(ctx context.Context, opts TreeLocationOpts) (int32, error) {
+	var qs []*sqlf.Query
+	qs = append(qs, sqlf.Sprintf(aggregateFileCountFmtstr, opts.Path))
+	if repoID := opts.RepoID; repoID != 0 {
+		qs = append(qs, sqlf.Sprintf("AND p.repo_id = %s", repoID))
+	}
+	var count int32
+	if err := s.Store.QueryRow(ctx, sqlf.Join(qs, "\n")).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
 }
