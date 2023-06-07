@@ -7,6 +7,7 @@ import (
 
 	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
+	bgrepo "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/openai"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/sourcegraph"
@@ -53,8 +54,8 @@ func EmbedRepo(
 	ranks types.RepoPathRanks,
 	opts EmbedRepoOpts,
 	logger log.Logger,
-	reportProgress func(*embeddings.EmbedRepoStats),
-) (*embeddings.RepoEmbeddingIndex, []string, *embeddings.EmbedRepoStats, error) {
+	reportProgress func(*bgrepo.EmbedRepoStats),
+) (*embeddings.RepoEmbeddingIndex, []string, *bgrepo.EmbedRepoStats, error) {
 	var toIndex []FileEntry
 	var toRemove []string
 	var err error
@@ -92,14 +93,14 @@ func EmbedRepo(
 		}
 	}
 
-	stats := &embeddings.EmbedRepoStats{
+	stats := &bgrepo.EmbedRepoStats{
 		HasRanks:       len(ranks.Paths) > 0,
-		CodeIndexStats: embeddings.NewEmbedFilesStats(len(codeFileNames)),
-		TextIndexStats: embeddings.NewEmbedFilesStats(len(textFileNames)),
+		CodeIndexStats: bgrepo.NewEmbedFilesStats(len(codeFileNames)),
+		TextIndexStats: bgrepo.NewEmbedFilesStats(len(textFileNames)),
 		IsIncremental:  isIncremental,
 	}
 
-	reportCodeProgress := func(codeIndexStats embeddings.EmbedFilesStats) {
+	reportCodeProgress := func(codeIndexStats bgrepo.EmbedFilesStats) {
 		stats.CodeIndexStats = codeIndexStats
 		reportProgress(stats)
 	}
@@ -110,7 +111,7 @@ func EmbedRepo(
 	}
 	stats.CodeIndexStats = codeIndexStats
 
-	reportTextProgress := func(textIndexStats embeddings.EmbedFilesStats) {
+	reportTextProgress := func(textIndexStats bgrepo.EmbedFilesStats) {
 		stats.TextIndexStats = textIndexStats
 		reportProgress(stats)
 	}
@@ -156,11 +157,11 @@ func embedFiles(
 	reader FileReader,
 	maxEmbeddingVectors int,
 	repoPathRanks types.RepoPathRanks,
-	reportProgress func(embeddings.EmbedFilesStats),
-) (embeddings.EmbeddingIndex, embeddings.EmbedFilesStats, error) {
+	reportProgress func(bgrepo.EmbedFilesStats),
+) (embeddings.EmbeddingIndex, bgrepo.EmbedFilesStats, error) {
 	dimensions, err := client.GetDimensions()
 	if err != nil {
-		return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, err
+		return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, err
 	}
 
 	index := embeddings.EmbeddingIndex{
@@ -207,11 +208,11 @@ func embedFiles(
 		return nil
 	}
 
-	stats := embeddings.NewEmbedFilesStats(len(files))
+	stats := bgrepo.NewEmbedFilesStats(len(files))
 
 	for _, file := range files {
 		if ctx.Err() != nil {
-			return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, ctx.Err()
+			return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, ctx.Err()
 		}
 
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
@@ -232,7 +233,7 @@ func embedFiles(
 
 		contentBytes, err := reader.Read(ctx, file.Name)
 		if err != nil {
-			return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, errors.Wrap(err, "error while reading a file")
+			return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, errors.Wrap(err, "error while reading a file")
 		}
 
 		if embeddable, skipReason := isEmbeddableFileContent(contentBytes); !embeddable {
@@ -243,11 +244,11 @@ func embedFiles(
 		// At this point, we have determined that we want to embed this file.
 		chunks, err := contextService.SplitIntoEmbeddableChunks(ctx, string(contentBytes), file.Name, splitOptions)
 		if err != nil {
-			return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, errors.Wrap(err, "error while splitting file")
+			return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, errors.Wrap(err, "error while splitting file")
 		}
 		for _, chunk := range chunks {
 			if err := addToBatch(chunk); err != nil {
-				return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, err
+				return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, err
 			}
 			stats.AddChunk(len(chunk.Content))
 		}
@@ -257,7 +258,7 @@ func embedFiles(
 
 	// Always do a final flush
 	if err := flush(); err != nil {
-		return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, err
+		return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, err
 	}
 
 	return index, stats, nil

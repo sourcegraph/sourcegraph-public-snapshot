@@ -9,7 +9,7 @@ import (
 	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	repoembeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
+	bgrepo "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -27,10 +27,10 @@ type handler struct {
 	uploadStore            uploadstore.Store
 	gitserverClient        gitserver.Client
 	contextService         embed.ContextService
-	repoEmbeddingJobsStore repoembeddingsbg.RepoEmbeddingJobsStore
+	repoEmbeddingJobsStore bgrepo.RepoEmbeddingJobsStore
 }
 
-var _ workerutil.Handler[*repoembeddingsbg.RepoEmbeddingJob] = &handler{}
+var _ workerutil.Handler[*bgrepo.RepoEmbeddingJob] = &handler{}
 
 // The threshold to embed the entire file is slightly larger than the chunk threshold to
 // avoid splitting small files unnecessarily.
@@ -49,7 +49,7 @@ var splitOptions = codeintelContext.SplitOptions{
 	ChunkEarlySplitTokensThreshold: embeddingChunkEarlySplitTokensThreshold,
 }
 
-func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoembeddingsbg.RepoEmbeddingJob) error {
+func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.RepoEmbeddingJob) error {
 	if !conf.EmbeddingsEnabled() {
 		return errors.New("embeddings are not configured or disabled")
 	}
@@ -99,7 +99,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		return err
 	}
 
-	noopReport := func(*embeddings.EmbedRepoStats) {}
+	noopReport := func(*bgrepo.EmbedRepoStats) {}
 
 	repoEmbeddingIndex, toRemove, stats, err := embed.EmbedRepo(
 		ctx,

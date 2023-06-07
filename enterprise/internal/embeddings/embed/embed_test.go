@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
+	bgrepo "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
@@ -116,7 +116,7 @@ func TestEmbedRepo(t *testing.T) {
 	}
 
 	logger := log.NoOp()
-	noopReport := func(*embeddings.EmbedRepoStats) {}
+	noopReport := func(*bgrepo.EmbedRepoStats) {}
 
 	t.Run("no files", func(t *testing.T) {
 		index, _, stats, err := EmbedRepo(ctx, client, contextService, newReadLister(), mockRepoPathRanks, opts, logger, noopReport)
@@ -124,13 +124,13 @@ func TestEmbedRepo(t *testing.T) {
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 0)
 
-		expectedStats := &embeddings.EmbedRepoStats{
+		expectedStats := &bgrepo.EmbedRepoStats{
 			HasRanks: true,
-			CodeIndexStats: embeddings.EmbedFilesStats{
+			CodeIndexStats: bgrepo.EmbedFilesStats{
 				BytesSkipped: map[string]int{},
 				FilesSkipped: map[string]int{},
 			},
-			TextIndexStats: embeddings.EmbedFilesStats{
+			TextIndexStats: bgrepo.EmbedFilesStats{
 				BytesSkipped: map[string]int{},
 				FilesSkipped: map[string]int{},
 			},
@@ -146,9 +146,9 @@ func TestEmbedRepo(t *testing.T) {
 		require.Len(t, index.CodeIndex.RowMetadata, 2)
 		require.Len(t, index.CodeIndex.Ranks, 2)
 
-		expectedStats := &embeddings.EmbedRepoStats{
+		expectedStats := &bgrepo.EmbedRepoStats{
 			HasRanks: true,
-			CodeIndexStats: embeddings.EmbedFilesStats{
+			CodeIndexStats: bgrepo.EmbedFilesStats{
 				FilesTotal:     1,
 				FilesEmbedded:  1,
 				ChunksEmbedded: 2,
@@ -156,7 +156,7 @@ func TestEmbedRepo(t *testing.T) {
 				BytesSkipped:   map[string]int{},
 				FilesSkipped:   map[string]int{},
 			},
-			TextIndexStats: embeddings.EmbedFilesStats{
+			TextIndexStats: bgrepo.EmbedFilesStats{
 				BytesSkipped: map[string]int{},
 				FilesSkipped: map[string]int{},
 			},
@@ -173,13 +173,13 @@ func TestEmbedRepo(t *testing.T) {
 		require.Len(t, index.TextIndex.RowMetadata, 2)
 		require.Len(t, index.TextIndex.Ranks, 2)
 
-		expectedStats := &embeddings.EmbedRepoStats{
+		expectedStats := &bgrepo.EmbedRepoStats{
 			HasRanks: true,
-			CodeIndexStats: embeddings.EmbedFilesStats{
+			CodeIndexStats: bgrepo.EmbedFilesStats{
 				BytesSkipped: map[string]int{},
 				FilesSkipped: map[string]int{},
 			},
-			TextIndexStats: embeddings.EmbedFilesStats{
+			TextIndexStats: bgrepo.EmbedFilesStats{
 				FilesTotal:     1,
 				FilesEmbedded:  1,
 				ChunksEmbedded: 2,
@@ -203,9 +203,9 @@ func TestEmbedRepo(t *testing.T) {
 		require.Len(t, index.TextIndex.RowMetadata, 2)
 		require.Len(t, index.TextIndex.Ranks, 2)
 
-		expectedStats := &embeddings.EmbedRepoStats{
+		expectedStats := &bgrepo.EmbedRepoStats{
 			HasRanks: true,
-			CodeIndexStats: embeddings.EmbedFilesStats{
+			CodeIndexStats: bgrepo.EmbedFilesStats{
 				FilesTotal:     6,
 				FilesEmbedded:  2,
 				ChunksEmbedded: 5,
@@ -223,7 +223,7 @@ func TestEmbedRepo(t *testing.T) {
 					"small":         1,
 				},
 			},
-			TextIndexStats: embeddings.EmbedFilesStats{
+			TextIndexStats: bgrepo.EmbedFilesStats{
 				FilesTotal:     1,
 				FilesEmbedded:  1,
 				ChunksEmbedded: 2,

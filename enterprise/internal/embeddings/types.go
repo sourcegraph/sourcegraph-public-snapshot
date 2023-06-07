@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 )
@@ -159,90 +157,5 @@ func (o *OldEmbeddingIndex) ToNewIndex() EmbeddingIndex {
 		ColumnDimension: o.ColumnDimension,
 		RowMetadata:     o.RowMetadata,
 		Ranks:           o.Ranks,
-	}
-}
-
-type EmbedRepoStats struct {
-	HasRanks       bool
-	CodeIndexStats EmbedFilesStats
-	TextIndexStats EmbedFilesStats
-
-	// IsIncremental indicates whether the embedding job should reindex changed files
-	IsIncremental bool
-}
-
-func (e *EmbedRepoStats) ToFields() []log.Field {
-	return []log.Field{
-		log.Bool("hasRanks", e.HasRanks),
-		log.Object("codeIndex", e.CodeIndexStats.ToFields()...),
-		log.Object("textIndex", e.TextIndexStats.ToFields()...),
-		log.Bool("isIncremental", e.IsIncremental),
-	}
-}
-
-func NewEmbedFilesStats(filesTotal int) EmbedFilesStats {
-	return EmbedFilesStats{
-		FilesTotal:     filesTotal,
-		FilesEmbedded:  0,
-		FilesSkipped:   map[string]int{},
-		ChunksEmbedded: 0,
-		BytesEmbedded:  0,
-		BytesSkipped:   map[string]int{},
-	}
-}
-
-type EmbedFilesStats struct {
-	// The total number of files scheduled for embedding. For a complete job,
-	// should be the sum of FilesEmbedded and all the FilesSkipoped reasons.
-	FilesTotal int
-
-	// The number of files embedded
-	FilesEmbedded int
-
-	// The number of files skipped for each reason
-	FilesSkipped map[string]int
-
-	// The number of chunks we split embedded files for.
-	// Equivalent to the number of embeddings generated.
-	ChunksEmbedded int
-
-	// The sum of the size of the contents of successful embeddings
-	BytesEmbedded int
-
-	// Summed byte counts for each of the reasons files were skipped
-	BytesSkipped map[string]int
-}
-
-func (e *EmbedFilesStats) Skip(reason string, size int) {
-	e.FilesSkipped[reason] += 1
-	e.BytesSkipped[reason] += size
-}
-
-func (e *EmbedFilesStats) AddChunk(size int) {
-	e.ChunksEmbedded += 1
-	e.BytesEmbedded += size
-}
-
-func (e *EmbedFilesStats) AddFile() {
-	e.FilesEmbedded += 1
-}
-
-func (e *EmbedFilesStats) ToFields() []log.Field {
-	var skippedByteCounts []log.Field
-	for reason, count := range e.BytesSkipped {
-		skippedByteCounts = append(skippedByteCounts, log.Int(reason, count))
-	}
-
-	var skippedCounts []log.Field
-	for reason, count := range e.FilesSkipped {
-		skippedCounts = append(skippedCounts, log.Int(reason, count))
-	}
-	return []log.Field{
-		log.Int("filesTotal", e.FilesTotal),
-		log.Int("filesEmbedded", e.FilesEmbedded),
-		log.Int("chunksEmbedded", e.ChunksEmbedded),
-		log.Int("bytesEmbedded", e.BytesEmbedded),
-		log.Object("filesSkipped", skippedCounts...),
-		log.Object("bytesSkipped", skippedByteCounts...),
 	}
 }
