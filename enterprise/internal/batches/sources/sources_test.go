@@ -338,7 +338,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 		ID:          1,
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub.com",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repos": ["sourcegraph/sourcegraph"], "token": "secret"}`),
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com/", "repos": ["sourcegraph/sourcegraph"], "token": "secret"}`),
 	}
 	cfg, err := es.Configuration(ctx)
 	if err != nil {

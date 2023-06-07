@@ -834,7 +834,7 @@ func TestGithubSource_DuplicateCommit(t *testing.T) {
 
 	opts := protocol.CreateCommitFromPatchRequest{
 		CommitInfo: protocol.PatchCommitInfo{
-			Message: "Test commit from VCR tests",
+			Messages: []string{"Test commit from VCR tests"},
 		},
 	}
 
