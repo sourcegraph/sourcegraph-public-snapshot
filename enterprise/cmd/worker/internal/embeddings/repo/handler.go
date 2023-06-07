@@ -99,6 +99,8 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		return err
 	}
 
+	noopReport := func(*embeddings.EmbedRepoStats) {}
+
 	repoEmbeddingIndex, toRemove, stats, err := embed.EmbedRepo(
 		ctx,
 		embeddingsClient,
@@ -107,6 +109,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		ranks,
 		opts,
 		logger,
+		noopReport,
 	)
 	if err != nil {
 		return err

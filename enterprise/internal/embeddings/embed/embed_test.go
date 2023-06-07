@@ -116,9 +116,10 @@ func TestEmbedRepo(t *testing.T) {
 	}
 
 	logger := log.NoOp()
+	noopReport := func(*embeddings.EmbedRepoStats) {}
 
 	t.Run("no files", func(t *testing.T) {
-		index, _, stats, err := EmbedRepo(ctx, client, contextService, newReadLister(), mockRepoPathRanks, opts, logger)
+		index, _, stats, err := EmbedRepo(ctx, client, contextService, newReadLister(), mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 0)

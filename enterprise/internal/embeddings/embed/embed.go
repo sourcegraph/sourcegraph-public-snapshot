@@ -54,6 +54,7 @@ func EmbedRepo(
 	ranks types.RepoPathRanks,
 	opts EmbedRepoOpts,
 	logger log.Logger,
+	reportProgress func(*embeddings.EmbedRepoStats),
 ) (*embeddings.RepoEmbeddingIndex, []string, *embeddings.EmbedRepoStats, error) {
 	start := time.Now()
 
@@ -94,32 +95,43 @@ func EmbedRepo(
 		}
 	}
 
-	reportProgress := func(embeddings.EmbedFilesStats) {}
+	stats := &embeddings.EmbedRepoStats{
+		Duration:       time.Duration(0),
+		HasRanks:       len(ranks.Paths) > 0,
+		CodeIndexStats: embeddings.NewEmbedFilesStats(len(codeFileNames)),
+		TextIndexStats: embeddings.NewEmbedFilesStats(len(textFileNames)),
+		IsIncremental:  isIncremental,
+	}
 
-	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks, reportProgress)
+	reportCodeProgress := func(codeIndexStats embeddings.EmbedFilesStats) {
+		stats.CodeIndexStats = codeIndexStats
+		stats.Duration = time.Since(start)
+		reportProgress(stats)
+	}
+
+	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks, reportCodeProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	reportCodeProgress(codeIndexStats)
 
-	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks, reportProgress)
+	reportTextProgress := func(textIndexStats embeddings.EmbedFilesStats) {
+		stats.TextIndexStats = textIndexStats
+		stats.Duration = time.Since(start)
+		reportProgress(stats)
+	}
+
+	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks, reportTextProgress)
 	if err != nil {
 		return nil, nil, nil, err
-
 	}
+	reportTextProgress(textIndexStats)
 
 	index := &embeddings.RepoEmbeddingIndex{
 		RepoName:  opts.RepoName,
 		Revision:  opts.Revision,
 		CodeIndex: codeIndex,
 		TextIndex: textIndex,
-	}
-
-	stats := &embeddings.EmbedRepoStats{
-		Duration:       time.Since(start),
-		HasRanks:       len(ranks.Paths) > 0,
-		CodeIndexStats: codeIndexStats,
-		TextIndexStats: textIndexStats,
-		IsIncremental:  isIncremental,
 	}
 
 	return index, toRemove, stats, nil
@@ -204,15 +216,6 @@ func embedFiles(
 	}
 
 	stats := embeddings.NewEmbedFilesStats(len(files))
-	lastProgressReport := time.Now()
-	progressReportInterval := 10 * time.Second
-	maybeReportProgress := func() {
-		if time.Since(lastProgressReport) < progressReportInterval {
-			return
-		}
-		reportProgress(stats)
-		lastProgressReport = time.Now()
-	}
 
 	for _, file := range files {
 		if ctx.Err() != nil {
@@ -258,7 +261,7 @@ func embedFiles(
 		}
 		stats.AddFile()
 		stats.Duration = time.Since(start)
-		maybeReportProgress()
+		reportProgress(stats)
 	}
 
 	// Always do a final flush
