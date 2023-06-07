@@ -84,6 +84,7 @@ go_test(
         "//internal/database",
         "//internal/errcode",
         "//internal/extsvc",
+        "//internal/extsvc/gitolite",
         "//internal/gitserver/gitdomain",
         "//internal/gitserver/protocol",
         "//internal/gitserver/v1:gitserver",
