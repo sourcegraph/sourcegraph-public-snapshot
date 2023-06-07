@@ -10,7 +10,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { PageTitle } from '../PageTitle'
 
 interface StateResponse {
-    state: string
+    state?: string
     webhookUUID?: string
     appID?: string
 }
@@ -22,11 +22,23 @@ interface FormOptions {
 }
 
 export interface CreateGitHubAppPageProps {
+    /** The events that the new GitHub App should subscribe to by default. */
     defaultEvents: string[]
+    /** The permissions that the new GitHub App will request by default. */
     defaultPermissions: Record<string, string>
+    /**
+     * The title to show at the top of the page, defaults to "Create GitHub App".
+     */
     pageTitle?: string
+    /**
+     * The main description to show at the top of the page underneat the header. If
+     * omitted, a generic introduction to GitHub Apps with a link to the docs will be
+     * shown.
+     */
     headerDescription?: React.ReactNode
+    /** The domain the new GitHub App is meant to be used for in Sourcegraph. */
     appDomain: GitHubAppDomain
+    /** The name to use for the new GitHub App. Defaults to "Sourcegraph". */
     defaultAppName?: string
     /*
      * If omitted, the user will be asked to specify a URL from the form. If provided, it
@@ -115,10 +127,19 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
             const response = await fetch(
                 `/.auth/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=${appDomain}`
             )
-            const state: StateResponse = await response.json()
+            if (!response.ok) {
+                if (response.body instanceof ReadableStream) {
+                    const error = await response.text()
+                    throw new Error(error)
+                }
+            }
+            const state = (await response.json()) as StateResponse
             let webhookURL: string | undefined
             if (state.webhookUUID?.length) {
                 webhookURL = new URL(`/.api/webhooks/${state.webhookUUID}`, originURL).href
+            }
+            if (!state.state?.length) {
+                throw new Error('Response from server missing state parameter')
             }
             submitForm({ state: state.state, webhookURL, name })
         } catch (error_) {
@@ -184,7 +205,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                 }
             />
             <Container className="mt-3">
-                {error && <Alert variant="danger">Error creating github app: {error}</Alert>}
+                {error && <Alert variant="danger">Error creating GitHub App: {error}</Alert>}
                 <Text>
                     Provide the details for a new GitHub App with the form below. Once you click "Create GitHub App",
                     you will be routed to {baseURL || 'GitHub'} to create the App and choose which repositories to grant
