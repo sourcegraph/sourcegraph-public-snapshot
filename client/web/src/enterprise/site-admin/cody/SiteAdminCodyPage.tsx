@@ -63,15 +63,14 @@ const repositoriesValidator: Validator<string[]> = value => {
 // Helper function to convert an enum to a list of FilteredConnectionFilterValue
 const enumToFilterValues = <T extends string>(enumeration: { [key in T]: T }): FilteredConnectionFilterValue[] => {
     const values: FilteredConnectionFilterValue[] = []
-    const keys = Object.keys(enumeration)
-    keys.forEach(key => {
+    for (const key of Object.keys(enumeration)) {
         values.push({
             value: key.toLowerCase(),
             label: key.toLowerCase(),
             args: {},
             tooltip: `Show ${key.toLowerCase()} jobs`,
         })
-    })
+    }
     return values
 }
 
