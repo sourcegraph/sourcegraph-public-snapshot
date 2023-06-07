@@ -150,13 +150,12 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService }) => {
                     </div>
                 </>
             )}
-            {app && app.domain !== GitHubAppDomain.REPOS && (
+            {!app ? null : app.domain !== GitHubAppDomain.REPOS ? (
                 <Alert variant="danger" className="mt-3">
                     Editing this GitHub App from Sourcegraph is not supported. To make changes, please delete it and
                     create a new one.
                 </Alert>
-            )}
-            {app && app.domain === GitHubAppDomain.REPOS && (
+            ) : (
                 <Container className="mt-3 mb-3">
                     <Grid columnCount={2} templateColumns="auto 1fr" spacing={[0.6, 2]}>
                         <span className="font-weight-bold">GitHub App Name</span>
