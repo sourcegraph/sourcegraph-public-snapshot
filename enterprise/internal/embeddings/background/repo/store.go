@@ -92,14 +92,14 @@ func scanRepoEmbeddingJob(s dbutil.Scanner) (*RepoEmbeddingJob, error) {
 		&job.Stats.CodeIndexStats.FilesTotal,
 		&job.Stats.CodeIndexStats.FilesEmbedded,
 		&job.Stats.CodeIndexStats.ChunksEmbedded,
-		&job.Stats.CodeIndexStats.FilesSkipped,
-		&job.Stats.CodeIndexStats.BytesSkipped,
+		dbutil.JSONMessage(&job.Stats.CodeIndexStats.FilesSkipped),
+		dbutil.JSONMessage(&job.Stats.CodeIndexStats.BytesSkipped),
 		&job.Stats.CodeIndexStats.BytesEmbedded,
 		&job.Stats.TextIndexStats.FilesTotal,
 		&job.Stats.TextIndexStats.FilesEmbedded,
 		&job.Stats.TextIndexStats.ChunksEmbedded,
-		&job.Stats.TextIndexStats.FilesSkipped,
-		&job.Stats.TextIndexStats.BytesSkipped,
+		dbutil.JSONMessage(&job.Stats.TextIndexStats.FilesSkipped),
+		dbutil.JSONMessage(&job.Stats.TextIndexStats.BytesSkipped),
 		&job.Stats.TextIndexStats.BytesEmbedded,
 	); err != nil {
 		return nil, err
@@ -129,6 +129,7 @@ type RepoEmbeddingJobsStore interface {
 	Done(err error) error
 
 	CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID) (int, error)
+	UpdateRepoEmbeddingJobStats(ctx context.Context, jobID int, stats *EmbedRepoStats) error
 	GetLastCompletedRepoEmbeddingJob(ctx context.Context, repoID api.RepoID) (*RepoEmbeddingJob, error)
 	GetLastRepoEmbeddingJobForRevision(ctx context.Context, repoID api.RepoID, revision api.CommitID) (*RepoEmbeddingJob, error)
 	ListRepoEmbeddingJobs(ctx context.Context, args ListOpts) ([]*RepoEmbeddingJob, error)
@@ -281,6 +282,49 @@ func (s *repoEmbeddingJobsStore) CreateRepoEmbeddingJob(ctx context.Context, rep
 	q := sqlf.Sprintf(createRepoEmbeddingJobFmtStr, repoID, revision)
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return id, err
+}
+
+func (s *repoEmbeddingJobsStore) UpdateRepoEmbeddingJobStats(ctx context.Context, jobID int, stats *EmbedRepoStats) error {
+	const updateRepoEmbeddingJobStats = `
+	UPDATE repo_embedding_jobs
+	SET
+		stat_has_ranks = %s,
+		stat_is_incremental = %s,
+		stat_code_files_total = %s,
+		stat_code_files_embedded = %s,
+		stat_code_chunks_embedded = %s,
+		stat_code_files_skipped = %s,
+		stat_code_bytes_skipped = %s,
+		stat_code_bytes_embedded = %s,
+		stat_text_files_total = %s,
+		stat_text_files_embedded = %s,
+		stat_text_chunks_embedded = %s,
+		stat_text_files_skipped = %s,
+		stat_text_bytes_skipped = %s,
+		stat_text_bytes_embedded = %s
+	WHERE id = %s
+	`
+
+	q := sqlf.Sprintf(
+		updateRepoEmbeddingJobStats,
+		stats.HasRanks,
+		stats.IsIncremental,
+		stats.CodeIndexStats.FilesTotal,
+		stats.CodeIndexStats.FilesEmbedded,
+		stats.CodeIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&stats.CodeIndexStats.FilesSkipped),
+		dbutil.JSONMessage(&stats.CodeIndexStats.BytesSkipped),
+		stats.CodeIndexStats.BytesEmbedded,
+		stats.TextIndexStats.FilesTotal,
+		stats.TextIndexStats.FilesEmbedded,
+		stats.TextIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
+		dbutil.JSONMessage(&stats.TextIndexStats.BytesSkipped),
+		stats.TextIndexStats.BytesEmbedded,
+		jobID,
+	)
+
+	return s.Exec(ctx, q)
 }
 
 const getLastFinishedRepoEmbeddingJob = `

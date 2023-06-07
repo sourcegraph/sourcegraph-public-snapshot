@@ -93,7 +93,7 @@ func EmbedRepo(
 		}
 	}
 
-	stats := &bgrepo.EmbedRepoStats{
+	stats := bgrepo.EmbedRepoStats{
 		HasRanks:       len(ranks.Paths) > 0,
 		CodeIndexStats: bgrepo.NewEmbedFilesStats(len(codeFileNames)),
 		TextIndexStats: bgrepo.NewEmbedFilesStats(len(textFileNames)),
@@ -102,7 +102,7 @@ func EmbedRepo(
 
 	reportCodeProgress := func(codeIndexStats bgrepo.EmbedFilesStats) {
 		stats.CodeIndexStats = codeIndexStats
-		reportProgress(stats)
+		reportProgress(&stats)
 	}
 
 	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks, reportCodeProgress)
@@ -113,7 +113,7 @@ func EmbedRepo(
 
 	reportTextProgress := func(textIndexStats bgrepo.EmbedFilesStats) {
 		stats.TextIndexStats = textIndexStats
-		reportProgress(stats)
+		reportProgress(&stats)
 	}
 
 	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks, reportTextProgress)
@@ -129,7 +129,7 @@ func EmbedRepo(
 		TextIndex: textIndex,
 	}
 
-	return index, toRemove, stats, nil
+	return index, toRemove, &stats, nil
 }
 
 type EmbedRepoOpts struct {

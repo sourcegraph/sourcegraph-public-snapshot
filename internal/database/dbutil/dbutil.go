@@ -317,6 +317,35 @@ func (n *NullJSONRawMessage) Value() (driver.Value, error) {
 	return n.Raw, nil
 }
 
+func JSONMessage[T any](val *T) jsonMessage[T] {
+	return jsonMessage[T]{val}
+}
+
+type jsonMessage[T any] struct {
+	inner *T
+}
+
+func (m jsonMessage[T]) Scan(value any) error {
+	switch value := value.(type) {
+	case nil:
+	case []byte:
+		return json.Unmarshal(value, m.inner)
+	default:
+		return errors.Errorf("value is not []byte: %T", value)
+	}
+
+	return nil
+}
+
+// Value implements the driver Valuer interface.
+func (m *jsonMessage[T]) Value() (driver.Value, error) {
+	b, err := json.Marshal(m.inner)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
 // CommitBytea represents a hex-encoded string that is efficiently encoded in Postgres and should
 // be used in place of a text or varchar type when the table is large (e.g. a record per commit).
 type CommitBytea string

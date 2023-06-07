@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -99,7 +100,16 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		return err
 	}
 
-	noopReport := func(*bgrepo.EmbedRepoStats) {}
+	lastReportedStats := time.Now()
+	reportStats := func(stats *bgrepo.EmbedRepoStats) {
+		if time.Since(lastReportedStats) < 5*time.Second {
+			return
+		}
+		lastReportedStats = time.Now()
+		if err := h.repoEmbeddingJobsStore.UpdateRepoEmbeddingJobStats(ctx, record.ID, stats); err != nil {
+			logger.Error("failed to update embedding stats", log.Error(err))
+		}
+	}
 
 	repoEmbeddingIndex, toRemove, stats, err := embed.EmbedRepo(
 		ctx,
@@ -109,7 +119,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		ranks,
 		opts,
 		logger,
-		noopReport,
+		reportStats,
 	)
 	if err != nil {
 		return err
