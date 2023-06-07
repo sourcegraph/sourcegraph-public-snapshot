@@ -18,6 +18,7 @@ import (
 	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -68,6 +69,7 @@ func NewMultiHandler(
 	codeIntelQueueHandler QueueHandler[uploadsshared.Index],
 	batchesQueueHandler QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob],
 ) MultiHandler {
+	ctx := context.Background()
 	dequeueCache := rcache.New("executor_multihandler_dequeues")
 	multiHandler := MultiHandler{
 		executorStore:         executorStore,
@@ -80,6 +82,8 @@ func NewMultiHandler(
 		logger:                log.Scoped("executor-multi-queue-handler", "The route handler for all executor queues"),
 	}
 	cacheCleaner := NewMultiqueueCacheCleaner(multiHandler.validQueues, dequeueCache, dequeueTtl, 5*time.Second)
+	// TODO: is this even OK to do?
+	go goroutine.MonitorBackgroundRoutines(ctx, cacheCleaner)
 	return multiHandler
 }
 
