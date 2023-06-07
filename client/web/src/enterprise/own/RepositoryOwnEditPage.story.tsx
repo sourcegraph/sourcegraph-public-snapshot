@@ -16,7 +16,7 @@ import {
 } from '../../graphql-operations'
 
 import { GET_INGESTED_CODEOWNERS_QUERY } from './graphqlQueries'
-import { RepositoryOwnPage } from './RepositoryOwnEditPage'
+import { RepositoryOwnEditPage } from './RepositoryOwnEditPage'
 
 const config: Meta = {
     title: 'web/enterprise/own/RepositoryOwnPage',
@@ -69,7 +69,7 @@ const searchOwnershipFlagMock = createFlagMock('search-ownership', true)
 export const EmptyNonAdmin: Story = () => (
     <WebStory mocks={[empyResponse, searchOwnershipFlagMock]}>
         {({ useBreadcrumb }) => (
-            <RepositoryOwnPage
+            <RepositoryOwnEditPage
                 repo={repo}
                 authenticatedUser={{ siteAdmin: false }}
                 useBreadcrumb={useBreadcrumb}
@@ -83,7 +83,7 @@ EmptyNonAdmin.storyName = 'Empty (non-admin)'
 export const EmptyAdmin: Story = () => (
     <WebStory mocks={[empyResponse, searchOwnershipFlagMock]}>
         {({ useBreadcrumb }) => (
-            <RepositoryOwnPage
+            <RepositoryOwnEditPage
                 repo={repo}
                 authenticatedUser={{ siteAdmin: true }}
                 useBreadcrumb={useBreadcrumb}
@@ -119,7 +119,7 @@ const populatedResponse: MockedResponse<GetIngestedCodeownersResult, GetIngested
 export const PopulatedNonAdmin: Story = () => (
     <WebStory mocks={[populatedResponse, searchOwnershipFlagMock]}>
         {({ useBreadcrumb }) => (
-            <RepositoryOwnPage
+            <RepositoryOwnEditPage
                 repo={repo}
                 authenticatedUser={{ siteAdmin: false }}
                 useBreadcrumb={useBreadcrumb}
@@ -133,7 +133,7 @@ PopulatedNonAdmin.storyName = 'Populated (non-admin)'
 export const PopulatedAdmin: Story = () => (
     <WebStory mocks={[populatedResponse, searchOwnershipFlagMock]}>
         {({ useBreadcrumb }) => (
-            <RepositoryOwnPage
+            <RepositoryOwnEditPage
                 repo={repo}
                 authenticatedUser={{ siteAdmin: true }}
                 useBreadcrumb={useBreadcrumb}
