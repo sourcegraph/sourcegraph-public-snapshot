@@ -20,7 +20,7 @@ const pathInsertFmtstr = `
 	),
 	need_to_insert (id) AS (
 		INSERT INTO repo_paths (repo_id, absolute_path, parent_id)
-		SELECT (%s, %s, %s)
+		SELECT %s, %s, %s
 		WHERE NOT EXISTS (
 			SELECT
 			FROM repo_paths
