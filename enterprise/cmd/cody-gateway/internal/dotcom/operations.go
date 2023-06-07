@@ -137,7 +137,7 @@ func (v *CheckAccessTokenResponse) GetDotcom() CheckAccessTokenDotcomDotcomQuery
 // FOR INTERNAL USE ONLY.
 type CheckDotcomUserAccessTokenDotcomDotcomQuery struct {
 	// A user for purposes of connecting to the Cody Gateway.
-	// Only Sourcegraph.com site admins may perform this query.
+	// Only Sourcegraph.com site admins or service accounts may perform this query.
 	// FOR INTERNAL USE ONLY.
 	DotcomCodyGatewayUserByToken *CheckDotcomUserAccessTokenDotcomDotcomQueryDotcomCodyGatewayUserByTokenDotcomCodyGatewayUser `json:"dotcomCodyGatewayUserByToken"`
 }
@@ -148,6 +148,10 @@ func (v *CheckDotcomUserAccessTokenDotcomDotcomQuery) GetDotcomCodyGatewayUserBy
 }
 
 // CheckDotcomUserAccessTokenDotcomDotcomQueryDotcomCodyGatewayUserByTokenDotcomCodyGatewayUser includes the requested fields of the GraphQL type DotcomCodyGatewayUser.
+// The GraphQL type's documentation follows.
+//
+// A dotcom user allowed to access the Cody Gateway
+// FOR INTERNAL USE ONLY.
 type CheckDotcomUserAccessTokenDotcomDotcomQueryDotcomCodyGatewayUserByTokenDotcomCodyGatewayUser struct {
 	DotcomUserState `json:"-"`
 }
@@ -514,8 +518,14 @@ const (
 )
 
 // DotcomUserState includes the GraphQL fields of DotcomCodyGatewayUser requested by the fragment DotcomUserState.
+// The GraphQL type's documentation follows.
+//
+// A dotcom user allowed to access the Cody Gateway
+// FOR INTERNAL USE ONLY.
 type DotcomUserState struct {
-	UserName          string                           `json:"userName"`
+	// The user name of the user
+	UserName string `json:"userName"`
+	// Cody Gateway access granted to this user. Properties may be inferred from dotcom site config, or be defined in overrides on the user.
 	CodyGatewayAccess DotcomUserStateCodyGatewayAccess `json:"codyGatewayAccess"`
 }
 
@@ -551,6 +561,11 @@ func (v *DotcomUserStateCodyGatewayAccess) GetCodeCompletionsRateLimit() *CodyGa
 	return v.CodyGatewayAccessFields.CodeCompletionsRateLimit
 }
 
+// GetEmbeddingsRateLimit returns DotcomUserStateCodyGatewayAccess.EmbeddingsRateLimit, and is useful for accessing the field via an interface.
+func (v *DotcomUserStateCodyGatewayAccess) GetEmbeddingsRateLimit() *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit {
+	return v.CodyGatewayAccessFields.EmbeddingsRateLimit
+}
+
 func (v *DotcomUserStateCodyGatewayAccess) UnmarshalJSON(b []byte) error {
 
 	if string(b) == "null" {
@@ -582,6 +597,8 @@ type __premarshalDotcomUserStateCodyGatewayAccess struct {
 	ChatCompletionsRateLimit *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit `json:"chatCompletionsRateLimit"`
 
 	CodeCompletionsRateLimit *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit `json:"codeCompletionsRateLimit"`
+
+	EmbeddingsRateLimit *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit `json:"embeddingsRateLimit"`
 }
 
 func (v *DotcomUserStateCodyGatewayAccess) MarshalJSON() ([]byte, error) {
@@ -598,6 +615,7 @@ func (v *DotcomUserStateCodyGatewayAccess) __premarshalJSON() (*__premarshalDotc
 	retval.Enabled = v.CodyGatewayAccessFields.Enabled
 	retval.ChatCompletionsRateLimit = v.CodyGatewayAccessFields.ChatCompletionsRateLimit
 	retval.CodeCompletionsRateLimit = v.CodyGatewayAccessFields.CodeCompletionsRateLimit
+	retval.EmbeddingsRateLimit = v.CodyGatewayAccessFields.EmbeddingsRateLimit
 	return &retval, nil
 }
 
@@ -1176,6 +1194,9 @@ fragment CodyGatewayAccessFields on CodyGatewayAccess {
 		... RateLimitFields
 	}
 	codeCompletionsRateLimit {
+		... RateLimitFields
+	}
+	embeddingsRateLimit {
 		... RateLimitFields
 	}
 }
