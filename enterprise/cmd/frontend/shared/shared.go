@@ -26,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/embeddings"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights"
-	licensinginit "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
+	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/notebooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/own"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rbac"
@@ -61,7 +61,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"context":        internalcontext.Init,
 	"githubapp":      githubapp.Init,
 	"insights":       insights.Init,
-	"licensing":      licensinginit.Init,
+	"licensing":      licensing.Init,
 	"notebooks":      notebooks.Init,
 	"own":            own.Init,
 	"rbac":           rbac.Init,
@@ -77,10 +77,9 @@ func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		logger.Debug("enterprise edition")
 	}
 
-	ctx := context.Background()
-
 	auth.Init(logger, db)
 
+	ctx := context.Background()
 	enterpriseServices := enterprise.DefaultServices()
 
 	observationCtx := observation.NewContext(logger)
