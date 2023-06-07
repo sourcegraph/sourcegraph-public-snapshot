@@ -12,21 +12,34 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// FileOwnershipAggregate allows iterating through the file tree
+// TreeCodeownersStats allows iterating through the file tree
 // of a repository, providing ownership counts for every owner
 // and every directory.
-type FileOwnershipAggregate interface {
-	Iterate(func(path string, counts TreeCounts) error) error
+type TreeCodeownersStats interface {
+	Iterate(func(path string, counts PathCodeownersCounts) error) error
 }
 
-// TreeCounts describes ownership magnitude by file count for given owner.
+// PathCodeownersCounts describes ownership magnitude by file count for given owner.
 // The scope of ownership is contextual, and can range from a file tree
-// in case of FileOwnershipAggregate to whole instance when querying
+// in case of TreeCodeownersStats to whole instance when querying
 // without restrictions through QueryIndividualCounts.
-type TreeCounts struct {
+type PathCodeownersCounts struct {
 	// CodeownersReference is the text found in CODEOWNERS files that matched the counted files in this file tree.
 	CodeownersReference string
 	// CodeownedFileCount is the number of files that matched given owner in this file tree.
+	CodeownedFileCount int
+}
+
+// TreeAggregateStats allows iterating through the file tree of a repository
+// providing ownership data that is aggregated by file path only (as opposed
+// to TreeCodeownersStats)
+type TreeAggregateStats interface {
+	Iterate(func(path string, counts PathAggregateCounts) error) error
+}
+
+type PathAggregateCounts struct {
+	// CodeownedFileCount is the total number of files nested within given tree root
+	// that are owned via CODEOWNERS.
 	CodeownedFileCount int
 }
 
@@ -43,16 +56,24 @@ type TreeLocationOpts struct {
 }
 
 type OwnershipStatsStore interface {
-	// UpdateIndividualCounts walks a representation of a repo file tree
-	// that yields ownership information for each file and directory, and persists
-	// that in the database. All the counts are marked by given update timestamp.
-	UpdateIndividualCounts(context.Context, api.RepoID, FileOwnershipAggregate, time.Time) (int, error)
+	// UpdateIndividualCounts iterates given data about individual CODEOWNERS ownership
+	// and persists it in the database. All the counts are marked by given update timestamp.
+	UpdateIndividualCounts(context.Context, api.RepoID, TreeCodeownersStats, time.Time) (int, error)
+
+	// UpdateAggregateCounts iterates given data about aggregate ownership over
+	// a given file tree, and persists it in the database. All the counts are marked
+	// by given update timestamp.
+	UpdateAggregateCounts(context.Context, api.RepoID, TreeAggregateStats, time.Time) (int, error)
 
 	// QueryIndividualCounts looks up and aggregates data for individual stats of located file trees.
 	// To find ownership for the whole instance, use empty TreeLocationOpts.
 	// To find ownership for the repo root, only specify RepoID in TreeLocationOpts.
 	// To find ownership for specific file tree, specify RepoID and Path in TreeLocationOpts.
-	QueryIndividualCounts(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCounts, error)
+	QueryIndividualCounts(context.Context, TreeLocationOpts, *LimitOffset) ([]PathCodeownersCounts, error)
+
+	// QueryAggregateCounts looks up ownership aggregate data for a file tree.
+	// At this point these include total count of files that are owned via CODEOWNERS.
+	QueryAggregateCounts(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error)
 }
 
 var _ OwnershipStatsStore = &ownershipStats{}
@@ -86,10 +107,10 @@ var codeownerUpsertCountsFmtstr = `
 		updated_at = EXCLUDED.updated_at
 `
 
-func (s *ownershipStats) UpdateIndividualCounts(ctx context.Context, repoID api.RepoID, data FileOwnershipAggregate, timestamp time.Time) (int, error) {
+func (s *ownershipStats) UpdateIndividualCounts(ctx context.Context, repoID api.RepoID, data TreeCodeownersStats, timestamp time.Time) (int, error) {
 	codeownersCache := map[string]int{} // Cache codeowner ID by reference
 	var totalRows int
-	err := data.Iterate(func(path string, counts TreeCounts) error {
+	err := data.Iterate(func(path string, counts PathCodeownersCounts) error {
 		ownerID := codeownersCache[counts.CodeownersReference]
 		if ownerID == 0 {
 			q := sqlf.Sprintf(codeownerQueryFmtstr, counts.CodeownersReference, counts.CodeownersReference)
@@ -125,6 +146,39 @@ func (s *ownershipStats) UpdateIndividualCounts(ctx context.Context, repoID api.
 	return totalRows, nil
 }
 
+var aggregateCountsUpdateFmtstr = `
+	INSERT INTO ownership_path_stats (file_path_id, tree_codeowned_files_count, last_updated_at)
+	VALUES (%s, %s, %s)
+	ON CONFLICT (file_path_id)
+	DO UPDATE SET
+	tree_codeowned_files_count = EXCLUDED.tree_codeowned_files_count,
+	last_updated_at = EXCLUDED.last_updated_at
+`
+
+func (s *ownershipStats) UpdateAggregateCounts(ctx context.Context, repoID api.RepoID, data TreeAggregateStats, timestamp time.Time) (int, error) {
+	var totalUpdates int
+	err := data.Iterate(func(path string, counts PathAggregateCounts) error {
+		pathIDs, err := ensureRepoPaths(ctx, s.Store, []string{path}, repoID)
+		if err != nil {
+			return err
+		}
+		if got, want := len(pathIDs), 1; got != want {
+			return errors.Newf("want exactly 1 repo path, got %d", got)
+		}
+		res, err := s.ExecResult(ctx, sqlf.Sprintf(aggregateCountsUpdateFmtstr, pathIDs[0], counts.CodeownedFileCount, timestamp))
+		if err != nil {
+			return errors.Wrapf(err, "updating counts at repoID=%d path=%s failed", repoID, path)
+		}
+		rows, err := res.RowsAffected()
+		if err != nil {
+			return errors.Wrapf(err, "getting result of updating counts at repoID=%d path=%s failed", repoID, path)
+		}
+		totalUpdates += int(rows)
+		return nil
+	})
+	return totalUpdates, err
+}
+
 var aggregateOwnershipFmtstr = `
 	SELECT o.reference, SUM(s.tree_owned_files_count)
 	FROM codeowners_individual_stats AS s
@@ -132,13 +186,13 @@ var aggregateOwnershipFmtstr = `
 	INNER JOIN codeowners_owners AS o ON o.id = s.owner_id
 	WHERE p.absolute_path = %s
 `
-var treeCountsScanner = basestore.NewSliceScanner(func(s dbutil.Scanner) (TreeCounts, error) {
-	var cs TreeCounts
+var treeCountsScanner = basestore.NewSliceScanner(func(s dbutil.Scanner) (PathCodeownersCounts, error) {
+	var cs PathCodeownersCounts
 	err := s.Scan(&cs.CodeownersReference, &cs.CodeownedFileCount)
 	return cs, err
 })
 
-func (s *ownershipStats) QueryIndividualCounts(ctx context.Context, opts TreeLocationOpts, limitOffset *LimitOffset) ([]TreeCounts, error) {
+func (s *ownershipStats) QueryIndividualCounts(ctx context.Context, opts TreeLocationOpts, limitOffset *LimitOffset) ([]PathCodeownersCounts, error) {
 	qs := []*sqlf.Query{sqlf.Sprintf(aggregateOwnershipFmtstr, opts.Path)}
 	if repoID := opts.RepoID; repoID != 0 {
 		qs = append(qs, sqlf.Sprintf("AND p.repo_id = %s", repoID))
@@ -146,4 +200,24 @@ func (s *ownershipStats) QueryIndividualCounts(ctx context.Context, opts TreeLoc
 	qs = append(qs, sqlf.Sprintf("GROUP BY 1 ORDER BY 2 DESC, 1 ASC"))
 	qs = append(qs, limitOffset.SQL())
 	return treeCountsScanner(s.Store.Query(ctx, sqlf.Join(qs, "\n")))
+}
+
+var treeAggregateCountsFmtstr = `
+	SELECT SUM(s.tree_codeowned_files_count)
+	FROM ownership_path_stats AS s
+	INNER JOIN repo_paths AS p ON s.file_path_id = p.id
+	WHERE p.absolute_path = %s
+`
+var treeAggregateCountsScanner = basestore.NewSliceScanner(func(s dbutil.Scanner) (PathAggregateCounts, error) {
+	var cs PathAggregateCounts
+	err := s.Scan(&cs.CodeownedFileCount)
+	return cs, err
+})
+
+func (s *ownershipStats) QueryAggregateCounts(ctx context.Context, opts TreeLocationOpts) ([]PathAggregateCounts, error) {
+	qs := []*sqlf.Query{sqlf.Sprintf(treeAggregateCountsFmtstr, opts.Path)}
+	if repoID := opts.RepoID; repoID != 0 {
+		qs = append(qs, sqlf.Sprintf("AND p.repo_id = %s", repoID))
+	}
+	return treeAggregateCountsScanner(s.Store.Query(ctx, sqlf.Join(qs, "\n")))
 }
