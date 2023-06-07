@@ -83,6 +83,9 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 	}
 
 	repos, err := listAll(ctx, src)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	sort.SliceStable(repos, func(i, j int) bool {
 		return repos[i].Name < repos[j].Name
