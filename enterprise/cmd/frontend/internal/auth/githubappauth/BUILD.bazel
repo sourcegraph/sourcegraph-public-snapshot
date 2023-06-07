@@ -61,7 +61,6 @@ go_test(
         "//internal/gitserver",
         "//internal/rcache",
         "//internal/types",
-        "//lib/errors",
         "@com_github_google_uuid//:uuid",
         "@com_github_graph_gophers_graphql_go//errors",
         "@com_github_sourcegraph_log//logtest",
