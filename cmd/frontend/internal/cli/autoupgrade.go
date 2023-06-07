@@ -13,7 +13,6 @@ import (
 
 	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
@@ -56,6 +55,12 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db databa
 	}
 
 	stopFunc, err := serveConfigurationServer(obsvCtx)
+	if err != nil {
+		return err
+	}
+	defer stopFunc()
+
+	stopFunc, err = serveUpgradeUI()
 	if err != nil {
 		return err
 	}
@@ -251,31 +256,24 @@ func serveConfigurationServer(obsvCtx *observation.Context) (context.CancelFunc,
 	return confServer.Stop, nil
 }
 
-func serveUpgradeUI(logger log.Logger) (context.CancelFunc, error) {
+func serveUpgradeUI() (context.CancelFunc, error) {
 	serveMux := http.NewServeMux()
-	router := mux.NewRouter().PathPrefix("/.internal").Subrouter()
-	middleware := httpapi.JsonMiddleware(&httpapi.ErrorHandler{
-		Logger:       logger,
-		WriteErrBody: true,
+
+	serveMux.Handle("/.assets/", http.StripPrefix("/.assets", secureHeadersMiddleware(assetsutil.NewAssetHandler(serveMux), crossOriginPolicyAssets)))
+	serveMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `<body>
+			<h1>MIGRATION IN PROGRESS</h1>
+		</body>`)
 	})
-	router.Get(apirouter.Configuration).Handler(middleware(func(w http.ResponseWriter, r *http.Request) error {
-		configuration := conf.Unified{
-			ServiceConnectionConfig: conftypes.ServiceConnections{
-				PostgresDSN:          "lol",
-				CodeIntelPostgresDSN: "lol",
-				CodeInsightsDSN:      "lol",
-			},
-		}
-		return json.NewEncoder(w).Encode(configuration)
-	}))
-	serveMux.Handle("/.internal/", router)
-	h := http.Handler(serveMux)
+	h := gcontext.ClearHandler(serveMux)
+	h = healthCheckMiddleware(h)
+
 	server := &http.Server{
 		Handler:      h,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
-	listener, err := httpserver.NewListener(httpAddrInternal)
+	listener, err := httpserver.NewListener(httpAddr)
 	if err != nil {
 		return nil, err
 	}
