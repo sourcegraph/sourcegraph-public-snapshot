@@ -30,7 +30,7 @@ const MigrationInProgressSentinelDSN = "!migrationinprogress!"
 func ConnectInternal(logger log.Logger, dsn, appName, dbName string) (_ *sql.DB, err error) {
 	if dsn == MigrationInProgressSentinelDSN {
 		logger.Warn(
-			fmt.Sprintf("%s detected in-progress migration sentinel connection string, waiting for 10s then restarting...", output.EmojiWarningSign),
+			fmt.Sprintf("%s detected migration connection string sentinel, waiting for 10s then restarting...", output.EmojiWarningSign),
 		)
 		time.Sleep(time.Second * 10)
 		os.Exit(0)

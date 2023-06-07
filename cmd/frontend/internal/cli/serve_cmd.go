@@ -73,17 +73,10 @@ var (
 
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
-func InitDB(logger sglog.Logger, updateVersion bool) (sqlDB *sql.DB, err error) {
-	if !updateVersion {
-		sqlDB, err = connections.RawNewFrontendDB(observation.ContextWithLogger(logger, &observation.TestContext), "", "frontend")
-		if err != nil {
-			return nil, errors.Errorf("failed to connect to frontend database: %s", err)
-		}
-	} else {
-		sqlDB, err = connections.EnsureNewFrontendDB(observation.ContextWithLogger(logger, &observation.TestContext), "", "frontend")
-		if err != nil {
-			return nil, errors.Errorf("failed to connect to frontend database: %s", err)
-		}
+func InitDB(logger sglog.Logger) (sqlDB *sql.DB, err error) {
+	sqlDB, err = connections.EnsureNewFrontendDB(observation.ContextWithLogger(logger, &observation.TestContext), "", "frontend")
+	if err != nil {
+		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
 	if err := upgradestore.New(database.NewDB(logger, sqlDB)).UpdateServiceVersion(context.Background(), version.Version()); err != nil {
@@ -99,27 +92,14 @@ type SetupFunc func(database.DB, conftypes.UnifiedWatchable) enterprise.Services
 func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, enterpriseSetupHook SetupFunc, enterpriseMigratorHook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
 	logger := observationCtx.Logger
 
-	if err := func() error {
-		sqlDB, err := InitDB(logger, false)
-		if err != nil {
-			return err
-		}
-		defer sqlDB.Close()
-		db := database.NewDB(logger, sqlDB)
-
-		if err := tryAutoUpgrade(ctx, observationCtx, db, enterpriseMigratorHook); err != nil {
-			return errors.Wrap(err, "frontend.tryAutoUpgrade")
-		}
-
-		go conf.NewLogsSinksSource(conf.DefaultClient())
-		tracer.Init(sglog.Scoped("tracer", "internal tracer package"), tracer.ConfConfigurationSource{WatchableSiteConfig: conf.DefaultClient()})
-
-		return nil
-	}(); err != nil {
-		return err
+	if err := tryAutoUpgrade(ctx, observationCtx, enterpriseMigratorHook); err != nil {
+		return errors.Wrap(err, "frontend.tryAutoUpgrade")
 	}
 
-	sqlDB, err := InitDB(logger, true)
+	go conf.NewLogsSinksSource(conf.DefaultClient())
+	tracer.Init(sglog.Scoped("tracer", "internal tracer package"), tracer.ConfConfigurationSource{WatchableSiteConfig: conf.DefaultClient()})
+
+	sqlDB, err := InitDB(logger)
 	if err != nil {
 		return err
 	}
