@@ -114,7 +114,7 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 
 			// Make request from the admin checking the test user's token
 			r := productsubscription.CodyGatewayDotcomUserResolver{DB: db}
-			userResolver, err := r.DotcomCodyGatewayUserByToken(adminContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: gatewayToken})
+			userResolver, err := r.CodyGatewayDotcomUserByToken(adminContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: gatewayToken})
 			require.NoError(t, err)
 
 			chat, err := userResolver.CodyGatewayAccess().ChatCompletionsRateLimit(adminContext)
@@ -183,7 +183,7 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 
 			// Make request from the test user
 			r := productsubscription.CodyGatewayDotcomUserResolver{DB: db}
-			_, err := r.DotcomCodyGatewayUserByToken(requestContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: codyUserGatewayToken})
+			_, err := r.CodyGatewayDotcomUserByToken(requestContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: codyUserGatewayToken})
 
 			require.ErrorIs(t, err, test.wantErr)
 
