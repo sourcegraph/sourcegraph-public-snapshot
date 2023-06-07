@@ -16,10 +16,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var licenseCheckStarted = false
+var (
+	licenseCheckStarted     = false
+	store                   = redispool.Store
+	delay                   = 12 * time.Hour
+	lastCalledAtStoreKey    = "licensing:last_called_at"
+	licenseValidityStoreKey = "licensing:is_license_valid"
+)
 
 func StartLicenseCheck(logger log.Logger, globalStateStore database.GlobalStateStore) {
 	if licenseCheckStarted {
@@ -27,25 +34,34 @@ func StartLicenseCheck(logger log.Logger, globalStateStore database.GlobalStateS
 	}
 	licenseCheckStarted = true
 
-	ctx := context.Background()
-	const delay = 12 * time.Hour
-	checker := &licenseChecker{doer: httpcli.ExternalClient}
+	// initial sleep on server restarts
+	var durationToWait time.Duration = 0
+	lastCalledStr, err := store.Get(lastCalledAtStoreKey).String()
+	if err != nil {
+		logger.Error("error getting last-called-at from cache", log.Error(err))
+	}
+	if lastCalledAt, err := time.Parse(time.RFC3339, lastCalledStr); err == nil {
+		durationToWait = maxDelayOrZero(lastCalledAt, time.Now(), delay)
+	}
+	time.Sleep(durationToWait)
 
+	ctx := context.Background()
 	for {
 		info, err := GetConfiguredProductLicenseInfo()
 		if err != nil {
 			logger.Error("error getting configured license info", log.Error(err))
-		} else if checker.shouldSkip(info) {
+		} else if info.HasTag(AllowAirGappedTag) { // todo: discuss what will happen with existing air-gapped v1 license instances
 			logger.Info("skipping license check")
 		} else if globalState, err := globalStateStore.Get(ctx); err != nil {
 			ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
-			valid, err := checker.check(ctx, globalState, info, conf.Get().LicenseKey)
-			if err != nil {
-				logger.Error("error license validity", log.Error(err))
-			} else {
-				globalStateStore.Update(ctx, valid)
-			}
+			valid, err := checkLicenseValidity(ctx, httpcli.ExternalClient, globalState.SiteID, conf.Get().LicenseKey)
 			cancel()
+			if err != nil {
+				logger.Error("error while checking license validity", log.Error(err))
+			} else {
+				store.Set(licenseValidityStoreKey, valid)
+			}
+			store.Set(lastCalledAtStoreKey, time.Now().Format(time.RFC3339))
 		} else {
 			logger.Error("error getting global state", log.Error(err))
 		}
@@ -53,18 +69,24 @@ func StartLicenseCheck(logger log.Logger, globalStateStore database.GlobalStateS
 	}
 }
 
-type licenseChecker struct {
-	doer httpcli.Doer
+func maxDelayOrZero(before time.Time, after time.Time, maxDelay time.Duration) time.Duration {
+	if before.IsZero() || after.IsZero() || before.After(after) {
+		return 0
+	}
+
+	timePassed := time.Since(before)
+
+	if timePassed < delay {
+		return delay - timePassed
+	}
+
+	return 0
 }
 
-func (l *licenseChecker) shouldSkip(info *Info) bool {
-	return info.Version() < 2 || info.HasTag(AirGappedTag)
-}
-
-func (l *licenseChecker) check(ctx context.Context, globalState database.GlobalState, info *Info, licenseKey string) (value bool, err error) {
+func checkLicenseValidity(ctx context.Context, doer httpcli.Doer, siteID, licenseKey string) (bool, error) {
 	payload, err := json.Marshal(struct {
 		ClientSiteID string `json:"siteID"`
-	}{ClientSiteID: globalState.SiteID})
+	}{ClientSiteID: siteID})
 
 	if err != nil {
 		return false, err
@@ -78,7 +100,7 @@ func (l *licenseChecker) check(ctx context.Context, globalState database.GlobalS
 	req.Header.Set("Authorization", "Bearer "+hex.EncodeToString(GenerateHashedLicenseKeyAccessToken(licenseKey)))
 	req.Header.Set("Content-Type", "application/json")
 
-	res, err := l.doer.Do(req)
+	res, err := doer.Do(req)
 	if err != nil {
 		return false, err
 	}
@@ -95,8 +117,8 @@ func (l *licenseChecker) check(ctx context.Context, globalState database.GlobalS
 
 	json.Unmarshal([]byte(resBody), &body)
 
-	if body.Error != nil {
-		return false, errors.New(*body.Error)
+	if body.Error != "" {
+		return false, errors.New(body.Error)
 	}
 
 	if body.Data == nil {

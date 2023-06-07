@@ -4,125 +4,150 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"io"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func Test_checkerShouldSkip(t *testing.T) {
-	tests := []struct {
-		name string
-		info *Info
-		want bool
+func Test_maxDelayOrZero(t *testing.T) {
+	now := time.Now()
+
+	tests := map[string]struct {
+		before time.Time
+		after  time.Time
+		delay  time.Duration
+		want   time.Duration
 	}{
-		{
-			name: "skips for older license version",
-			info: createTestLicenseInfo(false, nil),
-			want: true,
+		"returns 0 if before is zero": {
+			before: time.Time{},
+			after:  now,
+			delay:  12 * time.Hour,
+			want:   0,
 		},
-		{
-			name: "skips for air-gapped instances",
-			info: createTestLicenseInfo(true, []string{AirGappedTag}),
-			want: true,
+		"returns 0 if after is zero": {
+			before: now.Add(-1 * time.Hour),
+			after:  time.Time{},
+			delay:  12 * time.Hour,
+			want:   0,
 		},
-		{
-			name: "does not skip for newer license version",
-			info: createTestLicenseInfo(true, nil),
-			want: false,
+		"returns 0 if before is in the future": {
+			before: now.Add(1 * time.Hour),
+			after:  now,
+			delay:  12 * time.Hour,
+			want:   0,
+		},
+		"returns 0 if before is in the past but more than 12 hours ago": {
+			before: now.Add(-13 * time.Hour),
+			after:  now,
+			delay:  12 * time.Hour,
+			want:   0,
+		},
+		"returns 0 hours if before is 12 hours ago": {
+			before: now.Add(-12 * time.Hour),
+			after:  now,
+			delay:  12 * time.Hour,
+			want:   0,
+		},
+		"returns 10h if before is 2 hours ago": {
+			before: now.Add(-2 * time.Hour),
+			after:  now,
+			delay:  12 * time.Hour,
+			want:   10 * time.Hour,
 		},
 	}
-	checker := &licenseChecker{}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := checker.shouldSkip(test.info)
-			require.Equal(t, test.want, got)
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := maxDelayOrZero(test.before, now, 12*time.Hour)
+			require.Equal(t, test.want, got.Round(time.Hour))
 		})
 	}
 }
 
-func Test_checkIsLicenseValid(t *testing.T) {
-	tests := []struct {
-		name           string
-		licenseInfo    *Info
-		licenseKey     string
-		responseStatus int
-		responseBody   []byte
-		want           bool
-		wantErr        bool
+func Test_checkLicenseValidity(t *testing.T) {
+	tests := map[string]struct {
+		response []byte
+		status   int
+		want     bool
+		err      bool
 	}{
-		{
-			name:           "returns error if unable to make a request to license server",
-			licenseInfo:    createTestLicenseInfo(true, nil),
-			licenseKey:     "test",
-			responseStatus: http.StatusInternalServerError,
-			responseBody:   []byte(""),
-			want:           false,
-			wantErr:        true,
+		"returns error if unable to make a request to license server": {
+			response: []byte(`{"error": "some error"}`),
+			status:   http.StatusInternalServerError,
+			want:     false,
+			err:      true,
 		},
-		{
-			name:           "returns correct result",
-			licenseInfo:    createTestLicenseInfo(true, nil),
-			licenseKey:     "test",
-			responseStatus: http.StatusOK,
-			responseBody:   []byte(`{"license":{"expiresAt":"2020-01-01T00:00:00Z"}}`),
-			want:           true,
-			wantErr:        false,
+		"returns error if got error": {
+			response: []byte(`{"error": "some error"}`),
+			status:   http.StatusOK,
+			want:     false,
+			err:      true,
+		},
+		`returns correct result for "true"`: {
+			response: []byte(`{"data": {"is_valid": true}}`),
+			status:   http.StatusOK,
+			want:     true,
+		},
+		`returns correct result for "false"`: {
+			response: []byte(`{"data": {"is_valid": false, "reason": "some reason"}}`),
+			status:   http.StatusOK,
+			want:     false,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	siteID := "some-site-id"
+	licenseKey := "test-license-key"
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
 			doer := &mockDoer{
-				statusCode: test.responseStatus,
-				response:   test.responseBody,
+				status:   test.status,
+				response: test.response,
 			}
-			checker := &licenseChecker{
-				doer: doer,
-			}
-			got, err := checker.check(context.Background(), database.GlobalState{}, test.licenseInfo, test.licenseKey)
-			if test.wantErr {
+			got, err := checkLicenseValidity(context.Background(), doer, siteID, licenseKey)
+			if test.err {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 			}
-			require.Equal(t, test.want, got)
+
+			// check doer called
 			require.True(t, doer.DoCalled)
+
+			// check called with correct method, url and content type
 			require.Equal(t, "https://sourcegraph.com/.api/license/check", doer.Request.URL.String())
+			require.Equal(t, "POST", doer.Request.Method)
 			require.Equal(t, "application/json", doer.Request.Header.Get("Content-Type"))
 
-			tokenHexEncoded := hex.EncodeToString(GenerateHashedLicenseKeyAccessToken(test.licenseKey))
+			// check called with correct authorization header
+			tokenHexEncoded := hex.EncodeToString(GenerateHashedLicenseKeyAccessToken(licenseKey))
 			require.Equal(t, "Bearer "+tokenHexEncoded, doer.Request.Header.Get("Authorization"))
+
+			// check called with correct request body
+			var body struct {
+				SiteID string `json:"siteID"`
+			}
+			resBody, err := io.ReadAll(doer.Request.Body)
+			require.NoError(t, err)
+			json.Unmarshal([]byte(resBody), &body)
+			require.Equal(t, siteID, body.SiteID)
+
+			// check result
+			require.Equal(t, test.want, got)
 		})
 	}
 }
 
 var strPtr = func(s string) *string { return &s }
 
-func createTestLicenseInfo(newer bool, tags []string) *Info {
-	var salesforceSubscriptionID *string
-	if newer {
-		salesforceSubscriptionID = strPtr("123")
-	}
-
-	return &Info{
-		license.Info{
-			SalesforceSubscriptionID: salesforceSubscriptionID,
-			Tags:                     tags,
-		},
-	}
-}
-
 type mockDoer struct {
 	DoCalled bool
 	Request  *http.Request
 
-	statusCode int
-	response   []byte
+	status   int
+	response []byte
 }
 
 func (d *mockDoer) Do(req *http.Request) (*http.Response, error) {
@@ -130,7 +155,7 @@ func (d *mockDoer) Do(req *http.Request) (*http.Response, error) {
 	d.Request = req
 
 	return &http.Response{
-		StatusCode: d.statusCode,
+		StatusCode: d.status,
 		Body:       io.NopCloser(bytes.NewReader(d.response)),
 	}, nil
 }

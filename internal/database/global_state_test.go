@@ -6,7 +6,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -17,19 +16,31 @@ func TestGlobalState_Get(t *testing.T) {
 
 	// Test pre-initialization
 	config1, err := store.Get(ctx)
-	require.NoError(t, err)
-	require.NotEmpty(t, config1.SiteID)
-	require.False(t, config1.Initialized)
-	require.Nil(t, config1.IsLicenseValid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if config1.SiteID == "" {
+		t.Fatal("expected site_id to be set")
+	}
+	if config1.Initialized {
+		t.Fatal("site expected to be uninitialized")
+	}
 
 	// Test post-initialization
-	_, err = store.EnsureInitialized(ctx)
-	require.NoError(t, err)
+	if _, err := store.EnsureInitialized(ctx); err != nil {
+		t.Fatal(err)
+	}
 
 	config2, err := store.Get(ctx)
-	require.NoError(t, err)
-	require.Equal(t, config1.SiteID, config2.SiteID)
-	require.True(t, config2.Initialized)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if config2.SiteID != config1.SiteID {
+		t.Fatalf("unexpected site id. want=%s have=%s", config1.SiteID, config2.SiteID)
+	}
+	if !config2.Initialized {
+		t.Fatal("site expected to be initialized")
+	}
 }
 
 func TestGlobalState_SiteInitialized(t *testing.T) {
@@ -38,40 +49,31 @@ func TestGlobalState_SiteInitialized(t *testing.T) {
 
 	// Test pre-initialization
 	siteInitialized, err := store.SiteInitialized(ctx)
-	require.NoError(t, err)
-	require.False(t, siteInitialized)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if siteInitialized {
+		t.Fatal("site expected to be uninitialized")
+	}
 
 	// Test post-initialization
-	_, err = store.EnsureInitialized(ctx)
-	require.NoError(t, err)
+	if _, err := store.EnsureInitialized(ctx); err != nil {
+		t.Fatal(err)
+	}
 	siteInitialized, err = store.SiteInitialized(ctx)
-	require.NoError(t, err)
-	require.True(t, siteInitialized)
-}
-
-func TestGlobalState_Update(t *testing.T) {
-	ctx := context.Background()
-	store := testGlobalStateStore(t)
-
-	err := store.Update(ctx, true)
-	require.NoError(t, err)
-
-	state, err := store.Get(ctx)
-	require.NoError(t, err)
-	require.True(t, *state.IsLicenseValid)
-
-	err = store.Update(ctx, false)
-	require.NoError(t, err)
-	state, err = store.Get(ctx)
-	require.NoError(t, err)
-	require.False(t, *state.IsLicenseValid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !siteInitialized {
+		t.Fatal("site expected to be initialized")
+	}
 }
 
 func TestGlobalState_PrunesValues(t *testing.T) {
 	ctx := context.Background()
 	store := testGlobalStateStore(t)
 
-	err := store.(*globalStateStore).Exec(ctx, sqlf.Sprintf(`
+	if err := store.(*globalStateStore).Exec(ctx, sqlf.Sprintf(`
 		INSERT INTO global_state(
 			site_id,
 			initialized
@@ -90,15 +92,21 @@ func TestGlobalState_PrunesValues(t *testing.T) {
 			('00000000-0000-0000-0000-001000000000', false),
 			('00000000-0000-0000-0000-010000000000', false),
 			('00000000-0000-0000-0000-100000000000', false)
-	`))
-	require.NoError(t, err)
+	`)); err != nil {
+		t.Fatal(err)
+	}
 
 	config, err := store.Get(ctx)
-	require.NoError(t, err)
-
+	if err != nil {
+		t.Fatal(err)
+	}
 	expectedSiteID := "00000000-0000-0000-0000-000000000000"
-	require.Equal(t, expectedSiteID, config.SiteID)
-	require.True(t, config.Initialized)
+	if config.SiteID != expectedSiteID {
+		t.Fatalf("unexpected site-id. want=%s have=%s", expectedSiteID, config.SiteID)
+	}
+	if !config.Initialized {
+		t.Fatal("expected site to be initialized")
+	}
 }
 
 func testGlobalStateStore(t *testing.T) GlobalStateStore {
