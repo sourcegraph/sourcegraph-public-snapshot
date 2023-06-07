@@ -11,30 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func init() {
-	conf.ContributeValidator(codyConfigValidator)
-}
-
-// codyConfigValidator ensures that IsCodyEnabled and conf.CodyEnabled have the
-// right data in the site-config:
-// if `cody.enabled` is true, we also need `completions` to be configured.
-func codyConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
-	siteConfig := q.SiteConfig()
-	codyEnabled := siteConfig.CodyEnabled
-
-	if codyEnabled != nil && *codyEnabled && siteConfig.Completions == nil {
-		return conf.NewSiteProblems("Cody is enabled through the \"cody.enabled\" setting, but \"completions\" is not configured.")
-	}
-
-	return nil
-}
 
 // IsCodyEnabled determines if cody is enabled for the actor in the given context.
 // If it is an unauthenticated request, cody is disabled.

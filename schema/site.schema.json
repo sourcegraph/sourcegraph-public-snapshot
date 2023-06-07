@@ -2418,8 +2418,12 @@
     "completions": {
       "description": "Configuration for the completions service.",
       "type": "object",
-      "required": ["enabled"],
       "properties": {
+        "enabled": {
+          "description": "DEPRECATED. Use cody.enabled instead to turn Cody on/off.",
+          "type": "boolean",
+          "default": false
+        },
         "model": {
           "description": "DEPRECATED. Use chatModel instead.",
           "type": "string"
