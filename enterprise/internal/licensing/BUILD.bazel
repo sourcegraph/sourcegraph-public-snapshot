@@ -13,6 +13,7 @@ go_library(
         "licensing.go",
         "plans.go",
         "tags.go",
+        "types.go",
         "user_count.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/licensing",

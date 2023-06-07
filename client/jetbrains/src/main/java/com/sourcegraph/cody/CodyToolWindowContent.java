@@ -1,35 +1,51 @@
 package com.sourcegraph.cody;
 
+import static com.intellij.openapi.util.SystemInfoRt.isMac;
+import static java.awt.event.InputEvent.CTRL_DOWN_MASK;
+import static java.awt.event.InputEvent.META_DOWN_MASK;
+import static java.awt.event.KeyEvent.VK_ENTER;
+import static javax.swing.KeyStroke.getKeyStroke;
+
+import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI;
+import com.intellij.ide.ui.laf.darcula.ui.DarculaTextAreaUI;
+import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
+import com.intellij.ui.components.JBTextArea;
+import com.intellij.util.ui.JBUI;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.editor.EditorContextGetter;
 import com.sourcegraph.cody.recipes.RecipeRunner;
+import com.sourcegraph.cody.ui.RoundedJBTextArea;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
 import java.awt.*;
 import java.awt.event.AdjustmentListener;
 import java.util.ArrayList;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.plaf.ButtonUI;
+import javax.swing.plaf.basic.BasicTextAreaUI;
 import org.jetbrains.annotations.NotNull;
 
 class CodyToolWindowContent implements UpdatableChat {
   private final @NotNull JBTabbedPane tabbedPane = new JBTabbedPane();
-
-  private final @NotNull JPanel contentPanel = new JPanel();
-  private final @NotNull JPanel recipesPanel = new JPanel();
   private final @NotNull JPanel messagesPanel = new JPanel();
-  private final @NotNull JTextField messageField;
+  private final @NotNull JBTextArea promptInput;
+  private final @NotNull JButton sendButton;
   private boolean needScrollingDown = true;
 
   public CodyToolWindowContent(@NotNull Project project) {
     // Tabs
+    @NotNull JPanel contentPanel = new JPanel();
     tabbedPane.insertTab("Chat", null, contentPanel, null, 0);
+    @NotNull JPanel recipesPanel = new JPanel();
     tabbedPane.insertTab("Recipes", null, recipesPanel, null, 1);
 
     // Recipes panel
@@ -88,17 +104,20 @@ class CodyToolWindowContent implements UpdatableChat {
 
     // Controls panel
     JPanel controlsPanel = new JPanel();
-    controlsPanel.setLayout(new BoxLayout(controlsPanel, BoxLayout.X_AXIS));
-    messageField = new JTextField();
-    controlsPanel.add(messageField);
-    messageField.addActionListener(
-        e -> sendMessage(project)); // TODO: Disable the button while sending, then re-enable it
-    JButton sendButton = new JButton("Send");
-    sendButton.addActionListener(e -> sendMessage(project));
-    controlsPanel.add(sendButton);
+    controlsPanel.setLayout(new BorderLayout());
+    controlsPanel.setBorder(new EmptyBorder(JBUI.insets(14)));
+    sendButton = createSendButton(project);
+    promptInput = createPromptInput(project);
+
+    JPanel messagePanel = new JPanel(new BorderLayout());
+    messagePanel.add(promptInput, BorderLayout.CENTER);
+    messagePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+
+    controlsPanel.add(messagePanel, BorderLayout.NORTH);
+    controlsPanel.add(sendButton, BorderLayout.EAST);
 
     // Main content panel
-    contentPanel.setLayout(new BorderLayout(0, 20));
+    contentPanel.setLayout(new BorderLayout(0, 0));
     contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
     contentPanel.add(chatPanel, BorderLayout.CENTER);
     contentPanel.add(controlsPanel, BorderLayout.SOUTH);
@@ -107,6 +126,39 @@ class CodyToolWindowContent implements UpdatableChat {
     var welcomeText =
         "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.";
     addMessage(ChatMessage.createAssistantMessage(welcomeText));
+  }
+
+  @NotNull
+  private JButton createSendButton(@NotNull Project project) {
+    JButton sendButton = new JButton("Send");
+    sendButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
+    ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(sendButton);
+    sendButton.setUI(buttonUI);
+    sendButton.addActionListener(e -> sendMessage(project));
+    return sendButton;
+  }
+
+  @NotNull
+  private JBTextArea createPromptInput(@NotNull Project project) {
+    JBTextArea promptInput = new RoundedJBTextArea(4, 0, 10);
+    BasicTextAreaUI textUI = (BasicTextAreaUI) DarculaTextAreaUI.createUI(promptInput);
+    promptInput.setUI(textUI);
+    promptInput.setLineWrap(true);
+    KeyboardShortcut CTRL_ENTER =
+        new KeyboardShortcut(getKeyStroke(VK_ENTER, CTRL_DOWN_MASK), null);
+    KeyboardShortcut META_ENTER =
+        new KeyboardShortcut(getKeyStroke(VK_ENTER, META_DOWN_MASK), null);
+    ShortcutSet DEFAULT_SUBMIT_ACTION_SHORTCUT =
+        isMac ? new CustomShortcutSet(CTRL_ENTER, META_ENTER) : new CustomShortcutSet(CTRL_ENTER);
+    AnAction sendMessageAction =
+        new DumbAwareAction() {
+          @Override
+          public void actionPerformed(@NotNull AnActionEvent e) {
+            sendMessage(project);
+          }
+        };
+    sendMessageAction.registerCustomShortcutSet(DEFAULT_SUBMIT_ACTION_SHORTCUT, promptInput);
+    return promptInput;
   }
 
   public synchronized void addMessage(@NotNull ChatMessage message) {
@@ -150,7 +202,18 @@ class CodyToolWindowContent implements UpdatableChat {
             });
   }
 
+  private void startMessageProcessing() {
+    ApplicationManager.getApplication().invokeLater(() -> sendButton.setEnabled(false));
+  }
+
+  @Override
+  public void finishMessageProcessing() {
+    ApplicationManager.getApplication().invokeLater(() -> sendButton.setEnabled(true));
+  }
+
   private void sendMessage(@NotNull Project project) {
+    if (!sendButton.isEnabled()) return;
+    startMessageProcessing();
     // Build message
     boolean isEnterprise =
         ConfigUtil.getInstanceType(project).equals(SettingsComponent.InstanceType.ENTERPRISE);
@@ -165,7 +228,7 @@ class CodyToolWindowContent implements UpdatableChat {
     var chat = new Chat("", instanceUrl, accessToken != null ? accessToken : "");
     ArrayList<String> contextFiles =
         EditorContextGetter.getEditorContext(project).getCurrentFileContentAsArrayList();
-    ChatMessage humanMessage = ChatMessage.createHumanMessage(messageField.getText(), contextFiles);
+    ChatMessage humanMessage = ChatMessage.createHumanMessage(promptInput.getText(), contextFiles);
     addMessage(humanMessage);
 
     // Get assistant message

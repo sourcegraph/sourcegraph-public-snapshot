@@ -50,3 +50,19 @@ func (r *StatusHeaderRecorder) WriteHeader(statusCode int) {
 	r.StatusCode = statusCode
 	r.ResponseWriter.WriteHeader(statusCode)
 }
+
+func NewHTTPStatusCodeError(statusCode int, innerErr error) error {
+	return HTTPStatusCodeError{
+		status: statusCode,
+		inner:  innerErr,
+	}
+}
+
+type HTTPStatusCodeError struct {
+	status int
+	inner  error
+}
+
+func (e HTTPStatusCodeError) Error() string { return e.inner.Error() }
+
+func (e HTTPStatusCodeError) HTTPStatusCode() int { return e.status }

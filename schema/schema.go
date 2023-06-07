@@ -554,24 +554,24 @@ type CodyGateway struct {
 
 // Completions description: Configuration for the completions service.
 type Completions struct {
-	// AccessToken description: The access token used to authenticate with the external completions provider.
-	AccessToken string `json:"accessToken"`
-	// ChatModel description: The model used for chat completions.
+	// AccessToken description: The access token used to authenticate with the external completions provider. If using the default provider 'sourcegraph', and if 'licenseKey' is set, a default access token is generated.
+	AccessToken string `json:"accessToken,omitempty"`
+	// ChatModel description: The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.
 	ChatModel string `json:"chatModel,omitempty"`
-	// CompletionModel description: The model used for code completion.
+	// CompletionModel description: The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.
 	CompletionModel string `json:"completionModel,omitempty"`
 	// Enabled description: Toggles whether completions are enabled.
 	Enabled bool `json:"enabled"`
 	// Endpoint description: The endpoint under which to reach the provider. Currently only used for provider types "sourcegraph", "openai" and "anthropic". The default values are "https://cody-gateway.sourcegraph.com", "https://api.openai.com/v1/chat/completions", and "https://api.anthropic.com/v1/complete" for Sourcegraph, OpenAI, and Anthropic, respectively.
 	Endpoint string `json:"endpoint,omitempty"`
 	// Model description: DEPRECATED. Use chatModel instead.
-	Model string `json:"model"`
+	Model string `json:"model,omitempty"`
 	// PerUserCodeCompletionsDailyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
 	PerUserCodeCompletionsDailyLimit int `json:"perUserCodeCompletionsDailyLimit,omitempty"`
 	// PerUserDailyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
 	PerUserDailyLimit int `json:"perUserDailyLimit,omitempty"`
-	// Provider description: The external completions provider.
-	Provider string `json:"provider"`
+	// Provider description: The external completions provider. Defaults to 'sourcegraph'.
+	Provider string `json:"provider,omitempty"`
 }
 
 // CustomGitFetchMapping description: Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command.
@@ -618,12 +618,14 @@ type EmailTemplates struct {
 
 // Embeddings description: Configuration for embeddings service.
 type Embeddings struct {
-	// AccessToken description: The access token used to authenticate with the external embedding API service.
-	AccessToken string `json:"accessToken"`
-	// Dimensions description: The dimensionality of the embedding vectors.
-	Dimensions int `json:"dimensions"`
+	// AccessToken description: The access token used to authenticate with the external embedding API service. For provider sourcegraph, this is optional.
+	AccessToken string `json:"accessToken,omitempty"`
+	// Dimensions description: The dimensionality of the embedding vectors. Required field if not using the sourcegraph provider.
+	Dimensions int `json:"dimensions,omitempty"`
 	// Enabled description: Toggles whether embedding service is enabled.
 	Enabled bool `json:"enabled"`
+	// Endpoint description: The endpoint under which to reach the provider. Sensible default will be used for each provider.
+	Endpoint string `json:"endpoint,omitempty"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
 	// Incremental description: Experimental: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.
@@ -634,10 +636,12 @@ type Embeddings struct {
 	MaxTextEmbeddingsPerRepo int `json:"maxTextEmbeddingsPerRepo,omitempty"`
 	// MinimumInterval description: The time to wait between runs. Valid time units are "s", "m", "h". Example values: "30s", "5m", "1h".
 	MinimumInterval string `json:"minimumInterval,omitempty"`
-	// Model description: The model used for embedding.
-	Model string `json:"model"`
-	// Url description: The url to the external embedding API service.
-	Url string `json:"url"`
+	// Model description: The model used for embedding. A default model will be used for each provider, if not set.
+	Model string `json:"model,omitempty"`
+	// Provider description: The provider to use for generating embeddings. Defaults to sourcegraph.
+	Provider string `json:"provider,omitempty"`
+	// Url description: The url to the external embedding API service. Deprecated, use endpoint instead.
+	Url string `json:"url,omitempty"`
 }
 
 // EncryptionKey description: Config for a key
