@@ -42,6 +42,25 @@ import {
 import { getRecipe } from './recipes'
 import { getCodebaseContext } from './utils'
 
+export function isNetworkError(error: string): boolean {
+    return (
+        error.includes('ENOTFOUND') ||
+        error.includes('ECONNREFUSED') ||
+        error.includes('ECONNRESET') ||
+        error.includes('EHOSTUNREACH')
+    )
+}
+
+export function authStatusOnNetworkError(): AuthStatus {
+    return {
+        showInvalidAccessTokenError: false,
+        showNetworkError: true,
+        authenticated: false,
+        hasVerifiedEmail: false,
+        requiresVerifiedEmail: false,
+    }
+}
+
 export async function getAuthStatus(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
 ): Promise<AuthStatus> {
@@ -57,6 +76,14 @@ export async function getAuthStatus(
     const client = new SourcegraphGraphQLAPIClient(config)
     if (client.isDotCom() || isLocalApp(config.serverEndpoint)) {
         const data = await client.getCurrentUserIdAndVerifiedEmail()
+
+        // check first if the error is due to network related issues
+        if (isError(data)) {
+            if (isNetworkError(data.message)) {
+                const authStatus = authStatusOnNetworkError()
+                return authStatus
+            }
+        }
         return {
             showInvalidAccessTokenError: isError(data),
             authenticated: !isError(data),
@@ -67,6 +94,12 @@ export async function getAuthStatus(
     }
 
     const currentUserID = await client.getCurrentUserId()
+    if (isError(currentUserID)) {
+        if (isNetworkError(currentUserID.message)) {
+            const authStatus = authStatusOnNetworkError()
+            return authStatus
+        }
+    }
     return {
         showInvalidAccessTokenError: isError(currentUserID),
         authenticated: !isError(currentUserID),
@@ -226,17 +259,24 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await this.executeRecipe(message.recipe)
                 break
             case 'settings': {
+                const endpoint = message.serverEndpoint.length > 0 ? message.serverEndpoint : this.config.serverEndpoint
+                const token = message.accessToken.length > 0 ? message.accessToken : this.config.accessToken
                 const authStatus = await getAuthStatus({
-                    serverEndpoint: message.serverEndpoint,
-                    accessToken: message.accessToken,
+                    serverEndpoint: endpoint,
+                    accessToken: token,
                     customHeaders: this.config.customHeaders,
                 })
                 // activate when user has valid login
                 await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
                 if (isLoggedIn(authStatus)) {
-                    await updateConfiguration('serverEndpoint', message.serverEndpoint)
-                    await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
+                    await updateConfiguration('serverEndpoint', endpoint)
+                    if (token) {
+                        await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, token)
+                    }
                     this.sendEvent('auth', 'login')
+
+                    // clear chat view to handle server disconnection settings
+                    await this.clearAndRestartSession()
                 }
                 void this.webview?.postMessage({ type: 'login', authStatus })
                 break

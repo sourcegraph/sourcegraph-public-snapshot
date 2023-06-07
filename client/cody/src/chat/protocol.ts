@@ -57,6 +57,7 @@ export interface AuthStatus {
     authenticated: boolean
     hasVerifiedEmail: boolean
     requiresVerifiedEmail: boolean
+    showNetworkError?: boolean
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {
