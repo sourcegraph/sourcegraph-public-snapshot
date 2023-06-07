@@ -384,6 +384,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
+	db.AssignedTeamsFunc.SetDefaultReturn(database.NewMockAssignedTeamsStore())
 	db.OwnSignalConfigurationsFunc.SetDefaultReturn(database.NewMockSignalConfigurationStore())
 	own := own.NewService(git, db)
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
@@ -471,6 +472,7 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
+	db.AssignedTeamsFunc.SetDefaultReturn(database.NewMockAssignedTeamsStore())
 	db.OwnSignalConfigurationsFunc.SetDefaultReturn(database.NewMockSignalConfigurationStore())
 	own := own.NewService(git, db)
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
@@ -1431,10 +1433,6 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 											  title
 											  description
 											}
-											... on AssignedTeam {
-											  title
-											  description
-											}
 										}
 									}
 								}
@@ -1451,6 +1449,28 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 							"totalOwners": 5,
 							"totalCount": 5,
 							"nodes": [
+								{
+									"owner": {
+										"name": "assigned team 1"
+									},
+									"reasons": [
+										{
+											"title": "assigned owner",
+											"description": "Owner is manually assigned."
+										}
+									]
+								},
+								{
+									"owner": {
+										"name": "assigned team 2"
+									},
+									"reasons": [
+										{
+											"title": "assigned owner",
+											"description": "Owner is manually assigned."
+										}
+									]
+								},
 								{
 									"owner": {
 										"displayName": "I am an assigned owner #1",
@@ -1489,28 +1509,6 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 												"url": "/github.com/sourcegraph/own/-/own"
 											},
 											"ruleLineMatch": 1
-										}
-									]
-								},
-								{
-									"owner": {
-										"name": "assigned team 1"
-									},
-									"reasons": [
-										{
-											"title": "assigned team",
-											"description": "Team is manually assigned."
-										}
-									]
-								},
-								{
-									"owner": {
-										"name": "assigned team 2"
-									},
-									"reasons": [
-										{
-											"title": "assigned team",
-											"description": "Team is manually assigned."
 										}
 									]
 								}
@@ -1562,10 +1560,6 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 											  title
 											  description
 											}
-											... on AssignedTeam {
-											  title
-											  description
-											}
 										}
 									}
 								}
@@ -1584,8 +1578,7 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 							"nodes": [
 								{
 									"owner": {
-										"displayName": "I am an assigned owner #2",
-										"email": "assigned@owner2.com"
+										"name": "assigned team 2"
 									},
 									"reasons": [
 										{
@@ -1596,12 +1589,13 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 								},
 								{
 									"owner": {
-										"name": "assigned team 2"
+										"displayName": "I am an assigned owner #2",
+										"email": "assigned@owner2.com"
 									},
 									"reasons": [
 										{
-											"title": "assigned team",
-											"description": "Team is manually assigned."
+											"title": "assigned owner",
+											"description": "Owner is manually assigned."
 										}
 									]
 								}
