@@ -259,6 +259,7 @@ SELECT COALESCE((
 	SELECT claimed FROM claim_attempt
 ), false)`
 
+// TODO(efritz) - probably want to pass a claim id here as well instead of just hitting the max from upgrade logs
 func (s *store) SetUpgradeStatus(ctx context.Context, success bool) error {
 	return s.db.Exec(ctx, sqlf.Sprintf(setUpgradeStatusQuery, time.Now(), success))
 }
