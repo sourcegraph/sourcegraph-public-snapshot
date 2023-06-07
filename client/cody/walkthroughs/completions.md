@@ -1,4 +1,4 @@
-## Code completions (Experimental)
+## Code Completions (Experimental)
 
 <video autoPlay muted loop playsInline>
     <source

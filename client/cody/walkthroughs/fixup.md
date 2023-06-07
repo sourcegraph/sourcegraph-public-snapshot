@@ -1,4 +1,4 @@
-## Fixup code from inline instructions
+## Fixup Code from Inline Instructions
 
 <video autoPlay muted loop playsInline>
     <source
