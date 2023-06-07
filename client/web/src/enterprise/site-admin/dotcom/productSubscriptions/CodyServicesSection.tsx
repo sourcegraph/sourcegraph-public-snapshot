@@ -230,7 +230,7 @@ export const CodyGatewayRateLimitSourceBadge: React.FunctionComponent<{
     }
 }
 
-function generateSeries(data: CodyGatewayRateLimitUsageDatapoint[]): CodyGatewayRateLimitUsageDatapoint[][] {
+function generateSeries(data: CodyGatewayRateLimitUsageDatapoint[]): [string, CodyGatewayRateLimitUsageDatapoint[]][] {
     const series: Record<string, CodyGatewayRateLimitUsageDatapoint[]> = {}
     for (const entry of data) {
         if (!series[entry.model]) {
@@ -238,7 +238,7 @@ function generateSeries(data: CodyGatewayRateLimitUsageDatapoint[]): CodyGateway
         }
         series[entry.model].push(entry)
     }
-    return Object.values(series)
+    return Object.entries(series).map(entry => [entry[0], entry[1]])
 }
 
 interface RateLimitRowProps {
@@ -409,7 +409,7 @@ const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productS
                         height={200}
                         series={[
                             ...generateSeries(codyGatewayAccess.chatCompletionsRateLimit?.usage ?? []).map(
-                                (data): Series<CodyGatewayRateLimitUsageDatapoint> => ({
+                                ([model, data]): Series<CodyGatewayRateLimitUsageDatapoint> => ({
                                     data,
                                     getXValue(datum) {
                                         return parseISO(datum.date)
@@ -418,12 +418,12 @@ const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productS
                                         return datum.count
                                     },
                                     id: 'chat-usage',
-                                    name: 'Cody Gateway chat completions usage',
+                                    name: 'Chat completions: ' + model,
                                     color: 'var(--purple)',
                                 })
                             ),
                             ...generateSeries(codyGatewayAccess.codeCompletionsRateLimit?.usage ?? []).map(
-                                (data): Series<CodyGatewayRateLimitUsageDatapoint> => ({
+                                ([model, data]): Series<CodyGatewayRateLimitUsageDatapoint> => ({
                                     data,
                                     getXValue(datum) {
                                         return parseISO(datum.date)
@@ -432,7 +432,7 @@ const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productS
                                         return datum.count
                                     },
                                     id: 'code-completions-usage',
-                                    name: 'Cody Gateway code completions usage',
+                                    name: 'Code completions: ' + model,
                                     color: 'var(--orange)',
                                 })
                             ),
@@ -480,7 +480,7 @@ const EmbeddingsRateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = (
                         height={200}
                         series={[
                             ...generateSeries(codyGatewayAccess.embeddingsRateLimit?.usage ?? []).map(
-                                (data): Series<CodyGatewayRateLimitUsageDatapoint> => ({
+                                ([model, data]): Series<CodyGatewayRateLimitUsageDatapoint> => ({
                                     data,
                                     getXValue(datum) {
                                         return parseISO(datum.date)
@@ -489,7 +489,7 @@ const EmbeddingsRateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = (
                                         return datum.count
                                     },
                                     id: 'chat-usage',
-                                    name: 'Cody Gateway embeddings usage',
+                                    name: 'Embedded tokens: ' + model,
                                     color: 'var(--purple)',
                                 })
                             ),
