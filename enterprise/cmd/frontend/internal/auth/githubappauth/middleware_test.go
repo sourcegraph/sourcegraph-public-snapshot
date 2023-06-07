@@ -125,7 +125,7 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 	db.GitHubAppsFunc.SetDefaultReturn(mockGitHubAppsStore)
 
 	rcache.SetupForTest(t)
-	cache := rcache.NewWithTTL("test_cache", 5)
+	cache := rcache.NewWithTTL("test_cache", 200)
 
 	mux := newServeMux(db, "/githubapp", cache)
 
