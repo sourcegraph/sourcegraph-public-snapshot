@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/githubapps/worker"
@@ -14,31 +16,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type githupAppsValidityJob struct{}
+type githupAppsInstallationJob struct{}
 
-func NewGitHubApsValidityJob() job.Job {
-	return &githupAppsValidityJob{}
+func NewGitHubApsInstallationJob() job.Job {
+	return &githupAppsInstallationJob{}
 }
 
-func (gh *githupAppsValidityJob) Description() string {
+func (gh *githupAppsInstallationJob) Description() string {
 	return "Queue used by Sourcegraph to validate GitHub app installations"
 }
 
-func (gh *githupAppsValidityJob) Config() []env.Config {
+func (gh *githupAppsInstallationJob) Config() []env.Config {
 	return nil
 }
 
-func (gh *githupAppsValidityJob) Routines(ctx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (gh *githupAppsInstallationJob) Routines(ctx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "init DB")
 	}
 
 	edb := database.NewEnterpriseDB(db)
+	logger := log.Scoped("github_apps_installation", "")
 	return []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(
 			context.Background(),
-			worker.NewGitHubInstallationHandler(edb),
+			worker.NewGitHubInstallationWorker(edb, logger),
 			goroutine.WithName("github_apps.installation_backfill"),
 			goroutine.WithDescription("backfills github apps installation ids and removes deleted github app installations"),
 			goroutine.WithInterval(24*time.Hour),

@@ -75,7 +75,7 @@ var additionalJobs = map[string]job.Job{
 
 	"own-repo-indexing-queue": own.NewOwnRepoIndexingQueue(),
 
-	"github-apps-installation-validation-job": githubapps.NewGitHubApsValidityJob(),
+	"github-apps-installation-validation-job": githubapps.NewGitHubApsInstallationJob(),
 }
 
 // SetAuthzProviders waits for the database to be initialized, then periodically refreshes the
