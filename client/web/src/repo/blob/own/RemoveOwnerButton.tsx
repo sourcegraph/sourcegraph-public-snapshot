@@ -16,7 +16,7 @@ export interface RemoveOwnerButtonProps {
     repoId: string
     path: string
     userId?: string
-    reasons: OwnershipReason[]
+    isDirectAssigned: boolean
 }
 
 export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({
@@ -25,9 +25,11 @@ export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({
     repoId,
     path,
     userId,
+    isDirectAssigned,
     reasons,
 }) => {
-    const isDirectAssigned = reasons.some(value => value.__typename === 'AssignedOwner' && value.isDirectMatch)
+    // const directAssignedReasons = reasons.filter(value => value.__typename === 'AssignedOwner')
+    // const isDirectAssigned = directAssignedReasons.some(value => value.isDirectMatch)
 
     const tooltipContent = !isDirectAssigned
         ? 'Ownership can only be modified at the same direct path as it was assigned.'

@@ -64,6 +64,10 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
 
     const email = findEmail()
 
+    const assignedOwnerReasons = reasons.filter(value => value.__typename === 'AssignedOwner')
+    const isDirectAssigned = assignedOwnerReasons.some(value => value.isDirectMatch)
+    const hasAssigned = assignedOwnerReasons.length > 0
+
     return (
         <tr>
             <td className={containerStyles.fitting}>
@@ -110,17 +114,19 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
                 ))}
             </td>
             <td className={containerStyles.fitting}>
-                <span style={{ display: 'flex', justifyContent: 'right' }}>
-                    {makeOwnerButton || (
-                        <RemoveOwnerButton
-                            onSuccess={refetch}
-                            onError={setRemoveOwnerError}
-                            repoId={repoID}
-                            path={filePath}
-                            userId={userID}
-                            reasons={reasons}
-                        />
-                    )}
+                <span className={containerStyles.editButton}>
+                    {makeOwnerButton ||
+                        (hasAssigned && (
+                            <RemoveOwnerButton
+                                onSuccess={refetch}
+                                onError={setRemoveOwnerError}
+                                repoId={repoID}
+                                path={filePath}
+                                userId={userID}
+                                reasons={reasons}
+                                isDirectAssigned={isDirectAssigned}
+                            />
+                        ))}
                 </span>
             </td>
         </tr>
