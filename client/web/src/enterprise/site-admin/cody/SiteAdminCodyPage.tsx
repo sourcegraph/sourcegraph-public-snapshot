@@ -1,7 +1,9 @@
 import { FC, useCallback, useEffect, useState } from 'react'
 
+import { mdiMapSearch } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
 
+import { RepoEmbeddingJobState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -16,8 +18,14 @@ import {
     ErrorAlert,
     Form,
     useDebounce,
+    Icon,
 } from '@sourcegraph/wildcard'
 
+import {
+    FilterControl,
+    FilteredConnectionFilter,
+    FilteredConnectionFilterValue,
+} from '../../../components/FilteredConnection'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -28,6 +36,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
+import { getFilterFromURL } from '../../../components/FilteredConnection/utils'
 import { PageTitle } from '../../../components/PageTitle'
 import { RepositoriesField } from '../../insights/components'
 
@@ -51,6 +60,20 @@ const repositoriesValidator: Validator<string[]> = value => {
     return
 }
 
+// Helper function to convert an enum to a list of FilteredConnectionFilterValue
+const enumToFilterValues = <T extends string>(enumeration: { [key in T]: T }): FilteredConnectionFilterValue[] => {
+    const values: FilteredConnectionFilterValue[] = []
+    for (const key in enumeration) {
+        values.push({
+            value: key.toLowerCase(),
+            label: key.toLowerCase(),
+            args: {},
+            tooltip: `Show ${key.toLowerCase()} jobs`,
+        })
+    }
+    return values
+}
+
 export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService }) => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminCodyPage')
@@ -63,7 +86,37 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     const [searchValue, setSearchValue] = useState(queryParam || '')
     const query = useDebounce(searchValue, 200)
 
-    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useRepoEmbeddingJobsConnection(query)
+    const defaultStateFilterValue = 'all'
+    const filters: FilteredConnectionFilter[] = [
+        {
+            id: 'status',
+            label: 'Job Status',
+            type: 'select',
+            values: [
+                {
+                    label: 'All',
+                    value: defaultStateFilterValue,
+                    tooltip: 'Show all jobs',
+                    args: {},
+                },
+                ...enumToFilterValues(RepoEmbeddingJobState),
+            ],
+        },
+    ]
+
+    const [filterValues, setFilterValues] = useState<Map<string, FilteredConnectionFilterValue>>(() =>
+        getFilterFromURL(searchParams, filters)
+    )
+
+    const getStateFilterValue = (filterValues: Map<string, FilteredConnectionFilterValue>): string | null => {
+        const val = filterValues.get('status')?.value || defaultStateFilterValue
+        return val === defaultStateFilterValue ? null : val
+    }
+
+    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useRepoEmbeddingJobsConnection(
+        query,
+        getStateFilterValue(filterValues)
+    )
 
     const [scheduleRepoEmbeddingJobs, { loading: repoEmbeddingJobsLoading, error: repoEmbeddingJobsError }] =
         useScheduleRepoEmbeddingJobs()
@@ -152,14 +205,29 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
             <Container>
                 <H3 className="mt-3">Repository embeddings jobs</H3>
                 <ConnectionContainer>
-                    <ConnectionForm
-                        inputValue={searchValue}
-                        onInputChange={event => {
-                            setSearchValue(event.target.value)
-                            updateQueryParams(event.target.value)
-                        }}
-                        inputPlaceholder="Filter embeddings jobs..."
-                    />
+                    <div className="mb-2 d-flex flex-sm-row flex-column-reverse justify-content-center">
+                        <FilterControl
+                            filters={filters}
+                            values={filterValues}
+                            onValueSelect={(filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) =>
+                                setFilterValues(values => {
+                                    const newValues = new Map(values)
+                                    newValues.set(filter.id, value)
+                                    return newValues
+                                })
+                            }
+                        />
+
+                        <ConnectionForm
+                            formClassName="mb-0 ml-2 flex-1"
+                            inputValue={searchValue}
+                            onInputChange={event => {
+                                setSearchValue(event.target.value)
+                                updateQueryParams(event.target.value)
+                            }}
+                            inputPlaceholder="Filter embeddings jobs..."
+                        />
+                    </div>
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
                     <ConnectionList as="ul" className="list-group" aria-label="Repository embeddings jobs">
@@ -191,6 +259,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
 
 const EmptyList: FC<{}> = () => (
     <div className="text-muted text-center mb-3 w-100">
-        <div className="pt-2">No repository embeddings jobs have been created so far.</div>
+        <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
+        <div className="pt-2">No repository embeddings jobs found.</div>
     </div>
 )
