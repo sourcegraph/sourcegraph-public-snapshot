@@ -1,12 +1,10 @@
 import { expect } from '@playwright/test'
 
-import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
+import { VALID_TOKEN } from '../fixtures/mock-server'
 
 import { test } from './helpers'
 
 test('checks for the chat history and new session', async ({ page, sidebar }) => {
-    await sidebar.getByRole('textbox', { name: 'Sourcegraph Instance URL' }).fill(SERVER_URL)
-
     await sidebar.getByRole('textbox', { name: 'Access Token (docs)' }).fill(VALID_TOKEN)
     await sidebar.getByRole('button', { name: 'Sign In' }).click()
 
