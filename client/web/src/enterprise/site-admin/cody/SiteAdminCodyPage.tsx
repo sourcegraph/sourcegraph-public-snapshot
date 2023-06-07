@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useState } from 'react'
+import { FC, useCallback, useEffect, useState, useMemo } from 'react'
 
 import { mdiMapSearch } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
@@ -80,7 +80,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     }, [telemetryService])
 
     const location = useLocation()
-    const searchParams = new URLSearchParams(location.search)
+    const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search])
     const queryParam = searchParams.get('query')
 
     const [searchValue, setSearchValue] = useState(queryParam || '')
@@ -89,7 +89,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     const defaultStateFilterValue = 'all'
     const filters: FilteredConnectionFilter[] = [
         {
-            id: 'status',
+            id: 'state',
             label: 'Job Status',
             type: 'select',
             values: [
@@ -109,7 +109,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     )
 
     const getStateFilterValue = (filterValues: Map<string, FilteredConnectionFilterValue>): string | null => {
-        const val = filterValues.get('status')?.value || defaultStateFilterValue
+        const val = filterValues.get('state')?.value || defaultStateFilterValue
         return val === defaultStateFilterValue ? null : val
     }
 
@@ -141,12 +141,14 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
         validators: { sync: repositoriesValidator },
     })
 
-    const updateQueryParams = (newQueryValue: string): void => {
-        if (newQueryValue === '') {
-            searchParams.delete('query')
+    const updateQueryParams = (key: string, value: string): void => {
+        console.log('STEFAN BEFORE', searchParams.toString())
+        if (value === '') {
+            searchParams.delete(key)
         } else {
-            searchParams.set('query', newQueryValue)
+            searchParams.set(key, value)
         }
+        console.log('STEFAN AFTER', searchParams.toString())
 
         const queryString = searchParams.toString()
         const newUrl = queryString === '' ? window.location.pathname : `${window.location.pathname}?${queryString}`
@@ -209,20 +211,21 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                         <FilterControl
                             filters={filters}
                             values={filterValues}
-                            onValueSelect={(filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) =>
+                            onValueSelect={(filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => {
                                 setFilterValues(values => {
                                     const newValues = new Map(values)
                                     newValues.set(filter.id, value)
                                     return newValues
                                 })
-                            }
+                                updateQueryParams(filter.id, value.value)
+                            }}
                         />
                         <ConnectionForm
                             formClassName="mb-0 ml-2 flex-1"
                             inputValue={searchValue}
                             onInputChange={event => {
                                 setSearchValue(event.target.value)
-                                updateQueryParams(event.target.value)
+                                updateQueryParams('query', event.target.value)
                             }}
                             inputPlaceholder="Filter embeddings jobs..."
                         />
