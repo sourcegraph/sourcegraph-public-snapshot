@@ -184,7 +184,7 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
 `
 
 export const ASSIGN_OWNER = gql`
-    mutation AssignOwner($input: AssignOwnerInput!) {
+    mutation AssignOwner($input: AssignOwnerOrTeamInput!) {
         assignOwner(input: $input) {
             alwaysNil
         }
