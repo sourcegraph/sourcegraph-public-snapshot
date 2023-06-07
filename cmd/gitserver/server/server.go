@@ -2270,10 +2270,9 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	if !repoCloned(dir) {
 		s.setCloneStatusNonFatal(ctx, repo, types.CloneStatusCloning)
 	}
-	bgCtx := featureflag.WithFlags(context.Background(), s.DB.FeatureFlags())
 	defer func() {
 		// Use a background context to ensure we still update the DB even if we time out
-		s.setCloneStatusNonFatal(bgCtx, repo, cloneStatus(repoCloned(dir), false))
+		s.setCloneStatusNonFatal(context.Background(), repo, cloneStatus(repoCloned(dir), false))
 	}()
 
 	cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)
@@ -2291,7 +2290,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	pr, pw := io.Pipe()
 	defer pw.Close()
 
-	go readCloneProgress(bgCtx, s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
+	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
 	if output, err := runWith(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw); err != nil {
 		return errors.Wrapf(err, "clone failed. Output: %s", string(output))
@@ -2361,7 +2360,11 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(ctx context.Context, db database.DB, logger log.Logger, redactor *urlRedactor, lock *RepositoryLock, pr io.Reader, repo api.RepoName) {
+func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor, lock *RepositoryLock, pr io.Reader, repo api.RepoName) {
+	// Use a background context to ensure we still update the DB even if we
+	// time out. IE we intentionally don't take an input ctx.
+	ctx := featureflag.WithFlags(context.Background(), db.FeatureFlags())
+
 	var logFile *os.File
 	var err error
 
