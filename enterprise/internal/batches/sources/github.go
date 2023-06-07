@@ -119,7 +119,7 @@ func (s GitHubSource) ValidateAuthenticator(ctx context.Context) error {
 // authenticating as the installation. See here for more details:
 // https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/about-authentication-with-a-github-app
 func (s GitHubSource) DuplicateCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest, repo *types.Repo, rev string) error {
-	message := opts.CommitInfo.Message
+	message := strings.Join(opts.CommitInfo.Messages, "\n")
 	repoMetadata := repo.Metadata.(*github.Repository)
 	owner, repoName, err := github.SplitRepositoryNameWithOwner(repoMetadata.NameWithOwner)
 	if err != nil {
