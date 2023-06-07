@@ -433,12 +433,20 @@ func TestClient_ArchiveReader(t *testing.T) {
 
 				source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
 					o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+						base := proto.NewGitserverServiceClient(cc)
+
 						mockArchive := func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error) {
 							called = true
-							base := proto.NewGitserverServiceClient(cc)
 							return base.Archive(ctx, in, opts...)
 						}
-						return &mockClient{mockArchive: mockArchive}
+						mockRepoUpdate := func(ctx context.Context, in *proto.RepoUpdateRequest, opts ...grpc.CallOption) (*proto.RepoUpdateResponse, error) {
+							called = true
+							base := proto.NewGitserverServiceClient(cc)
+							return base.RepoUpdate(ctx, in, opts...)
+						}
+						return &mockClient{mockArchive: mockArchive,
+							mockRepoUpdate: mockRepoUpdate}
+
 					}
 				})
 
