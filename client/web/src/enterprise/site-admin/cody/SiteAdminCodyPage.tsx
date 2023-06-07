@@ -217,7 +217,6 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                                 })
                             }
                         />
-
                         <ConnectionForm
                             formClassName="mb-0 ml-2 flex-1"
                             inputValue={searchValue}
