@@ -128,7 +128,7 @@ class CodyToolWindowContent implements UpdatableChat {
   }
 
   @NotNull
-  private static JButton createWideButton(String text) {
+  private static JButton createWideButton(@NotNull String text) {
     JButton button = new JButton(text);
     button.setAlignmentX(Component.CENTER_ALIGNMENT);
     button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getPreferredSize().height));
