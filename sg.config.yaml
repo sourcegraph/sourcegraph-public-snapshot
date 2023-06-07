@@ -1229,6 +1229,7 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - blobstore
+      - embeddings
 
   enterprise-e2e:
     <<: *enterprise_set
@@ -1264,6 +1265,7 @@ commandsets:
       - zoekt-web-1
       - blobstore
       - cody-gateway
+      - embeddings
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
@@ -1537,33 +1539,6 @@ commandsets:
       - blobstore
       - batches-executor-kubernetes
       - batcheshelper-builder
-
-  embeddings:
-    requiresDevPrivate: true
-    checks:
-      - docker
-      - redis
-      - postgres
-      - git
-    commands:
-      - embeddings
-      - frontend
-      - worker
-      - repo-updater
-      - web
-      - gitserver-0
-      - gitserver-1
-      - searcher
-      - symbols
-      - caddy
-      - docsite
-      - syntax-highlighter
-      - github-proxy
-      - zoekt-index-0
-      - zoekt-index-1
-      - zoekt-web-0
-      - zoekt-web-1
-      - blobstore
 
   iam:
     requiresDevPrivate: true
