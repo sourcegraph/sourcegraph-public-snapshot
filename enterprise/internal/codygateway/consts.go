@@ -1,6 +1,11 @@
 package codygateway
 
-const ProductSubscriptionActorSourceName = "dotcom-product-subscriptions"
+type ActorSource string
+
+const (
+	ActorSourceProductSubscription ActorSource = "dotcom-product-subscriptions"
+	ActorSourceDotcomUser          ActorSource = "dotcom-user"
+)
 
 const CompletionsEventFeatureMetadataField = "feature"
 const EmbeddingsTokenUsageMetadataField = "tokens_used"

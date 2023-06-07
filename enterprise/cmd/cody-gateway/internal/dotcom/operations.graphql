@@ -61,3 +61,20 @@ query ListProductSubscriptions {
         }
     }
 }
+
+fragment DotcomUserState on CodyGatewayDotcomUser {
+    username
+    codyGatewayAccess {
+        ...CodyGatewayAccessFields
+    }
+}
+
+# CheckDotcomUserAccessToken returns traits of the product subscription associated with
+# the given access token.
+query CheckDotcomUserAccessToken($token: String!) {
+    dotcom {
+        codyGatewayDotcomUserByToken(token: $token) {
+            ...DotcomUserState
+        }
+    }
+}

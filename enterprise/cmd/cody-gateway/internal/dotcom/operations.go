@@ -130,6 +130,103 @@ type CheckAccessTokenResponse struct {
 // GetDotcom returns CheckAccessTokenResponse.Dotcom, and is useful for accessing the field via an interface.
 func (v *CheckAccessTokenResponse) GetDotcom() CheckAccessTokenDotcomDotcomQuery { return v.Dotcom }
 
+// CheckDotcomUserAccessTokenDotcomDotcomQuery includes the requested fields of the GraphQL type DotcomQuery.
+// The GraphQL type's documentation follows.
+//
+// Mutations that are only used on Sourcegraph.com.
+// FOR INTERNAL USE ONLY.
+type CheckDotcomUserAccessTokenDotcomDotcomQuery struct {
+	// A dotcom user for purposes of connecting to the Cody Gateway.
+	// Only Sourcegraph.com site admins or service accounts may perform this query.
+	// Token is a Cody Gateway token, not a Sourcegraph instance access token.
+	// FOR INTERNAL USE ONLY.
+	CodyGatewayDotcomUserByToken *CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser `json:"codyGatewayDotcomUserByToken"`
+}
+
+// GetCodyGatewayDotcomUserByToken returns CheckDotcomUserAccessTokenDotcomDotcomQuery.CodyGatewayDotcomUserByToken, and is useful for accessing the field via an interface.
+func (v *CheckDotcomUserAccessTokenDotcomDotcomQuery) GetCodyGatewayDotcomUserByToken() *CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser {
+	return v.CodyGatewayDotcomUserByToken
+}
+
+// CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser includes the requested fields of the GraphQL type CodyGatewayDotcomUser.
+// The GraphQL type's documentation follows.
+//
+// A dotcom user allowed to access the Cody Gateway
+// FOR INTERNAL USE ONLY.
+type CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser struct {
+	DotcomUserState `json:"-"`
+}
+
+// GetUsername returns CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser.Username, and is useful for accessing the field via an interface.
+func (v *CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser) GetUsername() string {
+	return v.DotcomUserState.Username
+}
+
+// GetCodyGatewayAccess returns CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser.CodyGatewayAccess, and is useful for accessing the field via an interface.
+func (v *CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser) GetCodyGatewayAccess() DotcomUserStateCodyGatewayAccess {
+	return v.DotcomUserState.CodyGatewayAccess
+}
+
+func (v *CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.DotcomUserState)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalCheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser struct {
+	Username string `json:"username"`
+
+	CodyGatewayAccess DotcomUserStateCodyGatewayAccess `json:"codyGatewayAccess"`
+}
+
+func (v *CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser) __premarshalJSON() (*__premarshalCheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser, error) {
+	var retval __premarshalCheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser
+
+	retval.Username = v.DotcomUserState.Username
+	retval.CodyGatewayAccess = v.DotcomUserState.CodyGatewayAccess
+	return &retval, nil
+}
+
+// CheckDotcomUserAccessTokenResponse is returned by CheckDotcomUserAccessToken on success.
+type CheckDotcomUserAccessTokenResponse struct {
+	// Queries that are only used on Sourcegraph.com.
+	//
+	// FOR INTERNAL USE ONLY.
+	Dotcom CheckDotcomUserAccessTokenDotcomDotcomQuery `json:"dotcom"`
+}
+
+// GetDotcom returns CheckDotcomUserAccessTokenResponse.Dotcom, and is useful for accessing the field via an interface.
+func (v *CheckDotcomUserAccessTokenResponse) GetDotcom() CheckDotcomUserAccessTokenDotcomDotcomQuery {
+	return v.Dotcom
+}
+
 // CodyGatewayAccessFields includes the GraphQL fields of CodyGatewayAccess requested by the fragment CodyGatewayAccessFields.
 // The GraphQL type's documentation follows.
 //
@@ -420,6 +517,108 @@ const (
 	// Indicates that the rate limit is inferred by the subscriptions active plan.
 	CodyGatewayRateLimitSourcePlan CodyGatewayRateLimitSource = "PLAN"
 )
+
+// DotcomUserState includes the GraphQL fields of CodyGatewayDotcomUser requested by the fragment DotcomUserState.
+// The GraphQL type's documentation follows.
+//
+// A dotcom user allowed to access the Cody Gateway
+// FOR INTERNAL USE ONLY.
+type DotcomUserState struct {
+	// The user name of the user
+	Username string `json:"username"`
+	// Cody Gateway access granted to this user. Properties may be inferred from dotcom site config, or be defined in overrides on the user.
+	CodyGatewayAccess DotcomUserStateCodyGatewayAccess `json:"codyGatewayAccess"`
+}
+
+// GetUsername returns DotcomUserState.Username, and is useful for accessing the field via an interface.
+func (v *DotcomUserState) GetUsername() string { return v.Username }
+
+// GetCodyGatewayAccess returns DotcomUserState.CodyGatewayAccess, and is useful for accessing the field via an interface.
+func (v *DotcomUserState) GetCodyGatewayAccess() DotcomUserStateCodyGatewayAccess {
+	return v.CodyGatewayAccess
+}
+
+// DotcomUserStateCodyGatewayAccess includes the requested fields of the GraphQL type CodyGatewayAccess.
+// The GraphQL type's documentation follows.
+//
+// Cody Gateway access granted to a subscription.
+// FOR INTERNAL USE ONLY.
+type DotcomUserStateCodyGatewayAccess struct {
+	CodyGatewayAccessFields `json:"-"`
+}
+
+// GetEnabled returns DotcomUserStateCodyGatewayAccess.Enabled, and is useful for accessing the field via an interface.
+func (v *DotcomUserStateCodyGatewayAccess) GetEnabled() bool {
+	return v.CodyGatewayAccessFields.Enabled
+}
+
+// GetChatCompletionsRateLimit returns DotcomUserStateCodyGatewayAccess.ChatCompletionsRateLimit, and is useful for accessing the field via an interface.
+func (v *DotcomUserStateCodyGatewayAccess) GetChatCompletionsRateLimit() *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit {
+	return v.CodyGatewayAccessFields.ChatCompletionsRateLimit
+}
+
+// GetCodeCompletionsRateLimit returns DotcomUserStateCodyGatewayAccess.CodeCompletionsRateLimit, and is useful for accessing the field via an interface.
+func (v *DotcomUserStateCodyGatewayAccess) GetCodeCompletionsRateLimit() *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit {
+	return v.CodyGatewayAccessFields.CodeCompletionsRateLimit
+}
+
+// GetEmbeddingsRateLimit returns DotcomUserStateCodyGatewayAccess.EmbeddingsRateLimit, and is useful for accessing the field via an interface.
+func (v *DotcomUserStateCodyGatewayAccess) GetEmbeddingsRateLimit() *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit {
+	return v.CodyGatewayAccessFields.EmbeddingsRateLimit
+}
+
+func (v *DotcomUserStateCodyGatewayAccess) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*DotcomUserStateCodyGatewayAccess
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.DotcomUserStateCodyGatewayAccess = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.CodyGatewayAccessFields)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalDotcomUserStateCodyGatewayAccess struct {
+	Enabled bool `json:"enabled"`
+
+	ChatCompletionsRateLimit *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit `json:"chatCompletionsRateLimit"`
+
+	CodeCompletionsRateLimit *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit `json:"codeCompletionsRateLimit"`
+
+	EmbeddingsRateLimit *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit `json:"embeddingsRateLimit"`
+}
+
+func (v *DotcomUserStateCodyGatewayAccess) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *DotcomUserStateCodyGatewayAccess) __premarshalJSON() (*__premarshalDotcomUserStateCodyGatewayAccess, error) {
+	var retval __premarshalDotcomUserStateCodyGatewayAccess
+
+	retval.Enabled = v.CodyGatewayAccessFields.Enabled
+	retval.ChatCompletionsRateLimit = v.CodyGatewayAccessFields.ChatCompletionsRateLimit
+	retval.CodeCompletionsRateLimit = v.CodyGatewayAccessFields.CodeCompletionsRateLimit
+	retval.EmbeddingsRateLimit = v.CodyGatewayAccessFields.EmbeddingsRateLimit
+	return &retval, nil
+}
 
 // ListProductSubscriptionFields includes the GraphQL fields of ProductSubscription requested by the fragment ListProductSubscriptionFields.
 // The GraphQL type's documentation follows.
@@ -892,6 +1091,14 @@ type __CheckAccessTokenInput struct {
 // GetToken returns __CheckAccessTokenInput.Token, and is useful for accessing the field via an interface.
 func (v *__CheckAccessTokenInput) GetToken() string { return v.Token }
 
+// __CheckDotcomUserAccessTokenInput is used internally by genqlient
+type __CheckDotcomUserAccessTokenInput struct {
+	Token string `json:"token"`
+}
+
+// GetToken returns __CheckDotcomUserAccessTokenInput.Token, and is useful for accessing the field via an interface.
+func (v *__CheckDotcomUserAccessTokenInput) GetToken() string { return v.Token }
+
 // CheckAccessToken returns traits of the product subscription associated with
 // the given access token.
 func CheckAccessToken(
@@ -948,6 +1155,66 @@ fragment RateLimitFields on CodyGatewayRateLimit {
 	var err error
 
 	var data CheckAccessTokenResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+// CheckDotcomUserAccessToken returns traits of the product subscription associated with
+// the given access token.
+func CheckDotcomUserAccessToken(
+	ctx context.Context,
+	client graphql.Client,
+	token string,
+) (*CheckDotcomUserAccessTokenResponse, error) {
+	req := &graphql.Request{
+		OpName: "CheckDotcomUserAccessToken",
+		Query: `
+query CheckDotcomUserAccessToken ($token: String!) {
+	dotcom {
+		codyGatewayDotcomUserByToken(token: $token) {
+			... DotcomUserState
+		}
+	}
+}
+fragment DotcomUserState on CodyGatewayDotcomUser {
+	username
+	codyGatewayAccess {
+		... CodyGatewayAccessFields
+	}
+}
+fragment CodyGatewayAccessFields on CodyGatewayAccess {
+	enabled
+	chatCompletionsRateLimit {
+		... RateLimitFields
+	}
+	codeCompletionsRateLimit {
+		... RateLimitFields
+	}
+	embeddingsRateLimit {
+		... RateLimitFields
+	}
+}
+fragment RateLimitFields on CodyGatewayRateLimit {
+	allowedModels
+	source
+	limit
+	intervalSeconds
+}
+`,
+		Variables: &__CheckDotcomUserAccessTokenInput{
+			Token: token,
+		},
+	}
+	var err error
+
+	var data CheckDotcomUserAccessTokenResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(

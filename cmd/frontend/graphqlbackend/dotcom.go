@@ -30,6 +30,7 @@ type DotcomResolver interface {
 	ProductLicenses(context.Context, *ProductLicensesArgs) (ProductLicenseConnection, error)
 	ProductLicenseByID(ctx context.Context, id graphql.ID) (ProductLicense, error)
 	ProductSubscriptionByID(ctx context.Context, id graphql.ID) (ProductSubscription, error)
+	CodyGatewayDotcomUserByToken(context.Context, *CodyGatewayUsersByAccessTokenArgs) (CodyGatewayUser, error)
 }
 
 // ProductSubscription is the interface for the GraphQL type ProductSubscription.
@@ -145,6 +146,15 @@ type UpdateCodyGatewayAccessInput struct {
 	EmbeddingsRateLimit                     *int32
 	EmbeddingsRateLimitIntervalSeconds      *int32
 	EmbeddingsAllowedModels                 *[]string
+}
+
+type CodyGatewayUsersByAccessTokenArgs struct {
+	Token string
+}
+
+type CodyGatewayUser interface {
+	Username() string
+	CodyGatewayAccess() CodyGatewayAccess
 }
 
 type CodyGatewayAccess interface {

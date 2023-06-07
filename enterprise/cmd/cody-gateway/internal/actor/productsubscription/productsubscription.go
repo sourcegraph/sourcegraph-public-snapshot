@@ -55,7 +55,7 @@ func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Cl
 	}
 }
 
-func (s *Source) Name() string { return codygateway.ProductSubscriptionActorSourceName }
+func (s *Source) Name() string { return string(codygateway.ActorSourceProductSubscription) }
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	if token == "" {

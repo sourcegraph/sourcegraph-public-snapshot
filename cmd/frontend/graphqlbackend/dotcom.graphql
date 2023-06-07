@@ -121,6 +121,14 @@ type DotcomQuery {
         """
         productSubscriptionID: ID
     ): ProductLicenseConnection!
+
+    """
+    A dotcom user for purposes of connecting to the Cody Gateway.
+    Only Sourcegraph.com site admins or service accounts may perform this query.
+    Token is a Cody Gateway token, not a Sourcegraph instance access token.
+    FOR INTERNAL USE ONLY.
+    """
+    codyGatewayDotcomUserByToken(token: String!): CodyGatewayDotcomUser
 }
 
 extend type Mutation {
@@ -483,4 +491,19 @@ input UpdateCodyGatewayAccessInput {
     Override the set of allowed models for embeddings generation for this subscription.
     """
     embeddingsAllowedModels: [String!]
+}
+
+"""
+A dotcom user allowed to access the Cody Gateway
+FOR INTERNAL USE ONLY.
+"""
+type CodyGatewayDotcomUser {
+    """
+    The user name of the user
+    """
+    username: String!
+    """
+    Cody Gateway access granted to this user. Properties may be inferred from dotcom site config, or be defined in overrides on the user.
+    """
+    codyGatewayAccess: CodyGatewayAccess!
 }
