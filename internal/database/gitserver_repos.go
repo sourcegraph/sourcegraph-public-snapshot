@@ -45,7 +45,7 @@ type GitserverRepoStore interface {
 	// a matching row does not yet exist a new one will be created.
 	// If the error value hasn't changed, the row will not be updated.
 	SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error
-	// SetLastOutput will attempt to create/update the output of a GitServerRepo clone job.
+	// SetLastOutput will attempt to create/update the output of the last repository clone/fetch.
 	// If a matching row does not exist, a new one will be created.
 	// Only one record will be maintained, so this records only the most recent output.
 	SetLastOutput(ctx context.Context, name api.RepoName, output string) error
