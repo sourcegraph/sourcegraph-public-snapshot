@@ -13,6 +13,7 @@ import (
 
 	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
 
@@ -30,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
+	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -152,11 +154,15 @@ func performAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db da
 		return errors.Wrap(err, "autoupgradestore.SetAutoUpgrade")
 	}
 
+	dsns, err := postgresdsn.DSNsBySchema(schemas.SchemaNames)
+	if err != nil {
+		return err
+	}
 	schemas := []string{"frontend", "codeintel", "codeinsights"}
 	for i, fn := range []func(_ *observation.Context, dsn string, appName string) (*sql.DB, error){
 		connections.MigrateNewFrontendDB, connections.MigrateNewCodeIntelDB, connections.MigrateNewCodeInsightsDB,
 	} {
-		sqlDB, err := fn(obsvCtx, "", "frontend")
+		sqlDB, err := fn(obsvCtx, dsns[schemas[i]], "frontend")
 		if err != nil {
 			return errors.Wrapf(err, "failed to perform last-mile migration for %s schema", schemas[i])
 		}
@@ -309,8 +315,9 @@ func serveUpgradeUI(db database.DB) (context.CancelFunc, error) {
 // 2) dependent services have picked up the magic DSN and restarted
 func blockForDisconnects(ctx context.Context, logger log.Logger, db database.DB) error {
 	for {
-		rows, err := db.QueryContext(ctx, `SELECT DISTINCT(application_name) FROM pg_stat_activity WHERE application_name <> '' AND application_name <> $1`, appName)
-		applications, err := basestore.ScanStrings(rows, err)
+		query := sqlf.Sprintf(`SELECT DISTINCT(application_name) FROM pg_stat_activity WHERE application_name <> '' AND application_name <> %s`, appName)
+		store := basestore.NewWithHandle(db.Handle())
+		applications, err := basestore.ScanStrings(store.Query(ctx, query))
 		if err != nil {
 			return err
 		}
