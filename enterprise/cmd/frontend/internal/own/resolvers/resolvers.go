@@ -730,8 +730,6 @@ func (r *ownResolver) computeAssignedOwners(ctx context.Context, logger log.Logg
 	}
 	assignedOwnerSummaries := assignedOwnership.Match(blob.Path())
 
-	fmt.Printf("%v\n", assignedOwnerSummaries)
-
 	fetchedUsers := make(map[int32]*types.User)
 	userEmails := make(map[int32]string)
 

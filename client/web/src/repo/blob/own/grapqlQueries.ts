@@ -193,7 +193,7 @@ export const ASSIGN_OWNER = gql`
 `
 
 export const REMOVE_ASSIGNED_OWNER = gql`
-    mutation RemoveAssignedOwner($input: AssignOwnerInput!) {
+    mutation RemoveAssignedOwner($input: AssignOwnerOrTeamInput!) {
         removeAssignedOwner(input: $input) {
             alwaysNil
         }
