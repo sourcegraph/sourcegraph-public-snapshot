@@ -38,7 +38,7 @@ func Embeddings() *monitoring.Dashboard {
 						Owner:          monitoring.ObservableOwner{},
 						Query:          "rate(src_embeddings_cache_miss_bytes[10m])",
 						NoAlert:        true,
-						Interpretation: "A high volume of missses indicates that the many searches are not hitting the cache. Consider increasing the cache size.",
+						Interpretation: "A high volume of misses indicates that the many searches are not hitting the cache. Consider increasing the cache size.",
 						Panel:          monitoring.Panel().Unit(monitoring.Bytes),
 					},
 				}},
