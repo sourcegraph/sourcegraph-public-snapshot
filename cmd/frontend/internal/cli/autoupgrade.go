@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/multiversion"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
@@ -224,16 +225,20 @@ func serveConfigurationServer(obsvCtx *observation.Context) (context.CancelFunc,
 		configuration := conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{},
 			ServiceConnectionConfig: conftypes.ServiceConnections{
-				PostgresDSN:          "lol",
-				CodeIntelPostgresDSN: "lol",
-				CodeInsightsDSN:      "lol",
+				PostgresDSN:          dbconn.MigrationInProgressSentinelDSN,
+				CodeIntelPostgresDSN: dbconn.MigrationInProgressSentinelDSN,
+				CodeInsightsDSN:      dbconn.MigrationInProgressSentinelDSN,
 			},
 		}
-		return json.NewEncoder(w).Encode(configuration)
+		b, _ := json.Marshal(configuration.SiteConfiguration)
+		raw := conftypes.RawUnified{
+			Site:               string(b),
+			ServiceConnections: configuration.ServiceConnections(),
+		}
+		return json.NewEncoder(w).Encode(raw)
 	}))
 
 	serveMux.Handle("/.internal/", internalRouter)
-	serveMux.Handle("/.assets/", http.StripPrefix("/.assets", secureHeadersMiddleware(assetsutil.NewAssetHandler(serveMux), crossOriginPolicyAssets)))
 
 	h := gcontext.ClearHandler(serveMux)
 	h = healthCheckMiddleware(h)
