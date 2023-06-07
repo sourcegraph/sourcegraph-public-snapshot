@@ -16,10 +16,9 @@ export const SCROLL_THRESHOLD = 100
 
 interface CodySidebarProps {
     onClose?: () => void
-    titleContent?: JSX.Element
 }
 
-export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, titleContent }) => {
+export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
     const codySidebarStore = useCodySidebar()
     const {
         initializeNewChat,
@@ -116,15 +115,13 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, titleContent 
                         )}
                     </div>
                     <div className="col-8 d-flex justify-content-center">
-                        {titleContent || (
-                            <div className="d-flex flex-shrink-0 align-items-center">
-                                <CodyLogo />
-                                {showHistory ? 'Chats' : 'Ask Cody'}
-                                <div className="ml-2">
-                                    <Badge variant="info">Beta</Badge>
-                                </div>
+                        <div className="d-flex flex-shrink-0 align-items-center">
+                            <CodyLogo />
+                            {showHistory ? 'Chats' : 'Ask Cody'}
+                            <div className="ml-2">
+                                <Badge variant="info">Beta</Badge>
                             </div>
-                        )}
+                        </div>
                     </div>
                     <div className="col-2 d-flex justify-content-end p-0">
                         {onClose && (

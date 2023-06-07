@@ -1,0 +1,117 @@
+.wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 0.875rem;
+}
+
+.separator {
+    background-color: var(--border-color-2);
+    height: 100%;
+    min-width: 0.0625rem;
+    width: 0.0625rem;
+}
+
+.footer {
+    padding: 0.625rem;
+    border-top: 1px solid var(--border-color-2);
+    margin-top: auto;
+}
+
+.repository-names-text {
+    display: flex;
+    min-width: 0;
+    flex-grow: 1;
+    max-width: 20rem;
+    font-size: 0.8rem;
+    font-weight: 400;
+}
+
+.filepath-text {
+    font-size: 0.8rem;
+}
+
+.tinted-search {
+    background-color: var(--mark-bg);
+}
+
+.input-container {
+    position: relative;
+
+    input {
+        padding-right: 2rem;
+    }
+}
+
+.clear-button {
+    position: absolute;
+    top: 1.25rem;
+    right: 0.75rem;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    color: var(--input-focus-border-color);
+}
+
+.repository-selector-content {
+    width: 20rem;
+    height: 100%;
+    max-width: 20rem;
+    min-height: 24rem;
+    max-height: 29rem;
+    overflow: hidden;
+}
+
+.context-items-container {
+    max-height: 23rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.visibility-hidden {
+    visibility: hidden;
+}
+
+.header {
+    font-size: 0.625rem;
+    line-height: 1rem;
+}
+
+.repository-list-item {
+    font-size: 0.8rem;
+    line-height: 1rem;
+
+    svg {
+        min-width: 1rem;
+        min-height: 1rem;
+    }
+
+    .remove-repo-icon {
+        visibility: hidden;
+    }
+    &:hover {
+        .remove-repo-icon {
+            visibility: visible;
+        }
+    }
+}
+
+.sub-header {
+    font-size: 0.8rem;
+    line-height: 1rem;
+}
+
+.disabled-search-result {
+    opacity: 50%;
+}
+
+.not-included-in-context {
+    opacity: 50%;
+}
+
+.not-included-in-context:hover {
+    opacity: 100%;
+}

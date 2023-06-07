@@ -1,4 +1,4 @@
-export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended'
+export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'
 
 export interface Configuration {
     serverEndpoint: string

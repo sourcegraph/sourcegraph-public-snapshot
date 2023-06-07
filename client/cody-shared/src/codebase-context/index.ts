@@ -4,6 +4,7 @@ import { KeywordContextFetcher, KeywordContextFetcherResult } from '../keyword-c
 import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
 import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
+import { UnifiedContextFetcher } from '../unified-context'
 import { isError } from '../utils'
 
 import { ContextMessage, ContextFile, getContextMessageWithResponse } from './messages'
@@ -19,7 +20,8 @@ export class CodebaseContext {
         private config: Pick<Configuration, 'useContext' | 'serverEndpoint'>,
         private codebase: string | undefined,
         private embeddings: EmbeddingsSearch | null,
-        private keywords: KeywordContextFetcher | null
+        private keywords: KeywordContextFetcher | null,
+        private unifiedContextFetcher?: UnifiedContextFetcher | null
     ) {}
 
     public getCodebase(): string | undefined {
@@ -32,6 +34,8 @@ export class CodebaseContext {
 
     public async getContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
         switch (this.config.useContext) {
+            case 'unified':
+                return this.getUnifiedContextMessages(query, options)
             case 'keyword':
                 return this.getKeywordContextMessages(query, options)
             case 'none':
@@ -113,6 +117,28 @@ export class CodebaseContext {
         return groupedResults.results.flatMap<Message>(text =>
             getContextMessageWithResponse(contextTemplateFn(text, groupedResults.file.fileName), groupedResults.file)
         )
+    }
+
+    private async getUnifiedContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
+        if (!this.unifiedContextFetcher) {
+            return []
+        }
+
+        const results = await this.unifiedContextFetcher.getContext(
+            query,
+            options.numCodeResults,
+            options.numTextResults
+        )
+
+        if (isError(results)) {
+            console.error('Error retrieving context:', results)
+            return []
+        }
+
+        return results.flatMap(({ content, filePath, repoName, revision }) => {
+            const messageText = populateCodeContextTemplate(content, filePath)
+            return getContextMessageWithResponse(messageText, { fileName: filePath, repoName, revision })
+        })
     }
 
     private async getKeywordContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {

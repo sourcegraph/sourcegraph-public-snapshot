@@ -24,6 +24,8 @@ interface ChatProps extends ChatClassNames {
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
     onSubmit: (text: string, submitType: 'user' | 'suggestion') => void
+    contextStatusComponent?: React.FunctionComponent<any>
+    contextStatusComponentProps?: any
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
@@ -124,6 +126,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     setSuggestions,
     needsEmailVerification = false,
     needsEmailVerificationNotice: NeedsEmailVerificationNotice,
+    contextStatusComponent: ContextStatusComponent,
+    contextStatusComponentProps = {},
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -284,8 +288,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         disabled={!!messageInProgress || needsEmailVerification}
                     />
                 </div>
-                {contextStatus && (
-                    <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
+                {ContextStatusComponent ? (
+                    <ContextStatusComponent {...contextStatusComponentProps} />
+                ) : (
+                    contextStatus && (
+                        <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
+                    )
                 )}
             </form>
         </div>

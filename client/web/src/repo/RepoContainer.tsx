@@ -32,6 +32,7 @@ import { Button, Icon, Link, Panel, useObservable } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
+import { RepoContainerEditor } from '../cody/components/RepoContainerEditor'
 import { CodySidebar } from '../cody/sidebar'
 import { useCodySidebar } from '../cody/sidebar/Provider'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
@@ -159,16 +160,17 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         isSidebarOpen: isCodySidebarOpen,
         setIsSidebarOpen: setIsCodySidebarOpen,
         setSidebarSize: setCodySidebarSize,
-        loaded: codyLoaded,
         scope,
-        setScope,
+        setEditorScope,
     } = useCodySidebar()
 
     useEffect(() => {
-        if (codyLoaded && scope.type === 'Automatic' && !scope.repositories.find((name: string) => name === repoName)) {
-            setScope({ ...scope, repositories: [...scope.repositories, repoName] })
+        const activeEditor = scope.editor.getActiveTextEditor()
+
+        if (activeEditor?.repoName !== repoName) {
+            setEditorScope(new RepoContainerEditor(repoName))
         }
-    }, [scope, repoName, setScope, codyLoaded])
+    }, [scope.editor, repoName, setEditorScope])
 
     const resolvedRevisionOrError = useObservable(
         useMemo(
