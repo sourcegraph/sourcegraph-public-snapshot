@@ -172,7 +172,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	return licensing.CodyGatewayRateLimit{
 		AllowedModels:   allowedModels(scope),
 		Limit:           int32(*limit),
-		IntervalSeconds: 86400, // Daily limit
+		IntervalSeconds: 86400, // Daily limit TODO(davejrt)
 	}, source, nil
 }
 
