@@ -41,7 +41,8 @@ export function getLensesByState(id: string, state: CodyTaskState, range: vscode
 }
 
 // List of lenses
-// code lens requires a command so we will use 'cody.focus' as a placeholder
+// NOTE: code lens requires a command so we will use 'cody.focus' as a placeholder
+// TODO (bea) send error messages to the chat UI so that they can see the task progress in the chat and chat history
 function getErrorLens(codeLensRange: vscode.Range): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
@@ -141,7 +142,7 @@ function getFollowLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: 'Follow',
-        command: 'cody.focus',
+        command: 'cody.fixup.open',
         arguments: [id],
     }
     return lens

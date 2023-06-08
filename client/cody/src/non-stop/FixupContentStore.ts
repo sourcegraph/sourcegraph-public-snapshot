@@ -22,12 +22,13 @@ export class ContentProvider implements vscode.TextDocumentContentProvider, vsco
     }
     // Get content from the content store
     public provideTextDocumentContent(uri: vscode.Uri): string | null {
-        return this.contentStore.get(uri.fsPath) || null
+        const id = uri.fragment
+        return this.contentStore.get(id) || null
     }
     // Add to store - store origin content by fixup task id
     public async set(id: string, docUri: vscode.Uri): Promise<void> {
         const doc = await vscode.workspace.openTextDocument(docUri)
-        this.contentStore.set(`/${id}${docUri.fsPath}`, doc.getText())
+        this.contentStore.set(id, doc.getText())
         this.tasksByFilePath.set(docUri.fsPath, [...(this.tasksByFilePath.get(docUri.fsPath) || []), id])
     }
 
