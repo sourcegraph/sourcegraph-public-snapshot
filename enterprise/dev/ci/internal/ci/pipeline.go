@@ -217,7 +217,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is the Cody VS Code extension release branch, run the Cody tests and release
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			addCodyExtensionTests,
+			addCodyUnitIntegrationTests,
+			addCodyE2ETests,
 			wait,
 			addCodyReleaseSteps("stable"))
 
@@ -225,7 +226,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a Cody VS Code extension nightly build, run the Cody tests and release
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			addCodyExtensionTests,
+			addCodyUnitIntegrationTests,
+			addCodyE2ETests,
 			wait,
 			addCodyReleaseSteps("nightly"))
 
