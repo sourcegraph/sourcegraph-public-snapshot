@@ -93,6 +93,9 @@ var App = conftypes.RawUnified{
 	"experimentalFeatures": {		
 		"structuralSearch": "disabled"
 	},
+	"embeddings": {	
+		"incremental": true
+	},
 }`,
 }
 
