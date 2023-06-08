@@ -12,7 +12,6 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
@@ -25,79 +24,81 @@ func Test_licenseChecker(t *testing.T) {
 
 	siteID := "some-site-id"
 	token := "test-token"
-	tests1 := map[string]*Info{
-		"skips check if license is air-gapped": {
-			license.Info{Tags: []string{AllowAirGappedTag}},
-		},
-	}
-	for name, info := range tests1 {
-		t.Run(name, func(t *testing.T) {
-			store.Del(licenseValidityStoreKey)
-			store.Del(lastCalledAtStoreKey)
 
-			doer := &mockDoer{
-				status:   '1',
-				response: []byte(``),
-			}
-			handler := licenseChecker{
-				siteID: siteID,
-				token:  token,
-				doer:   doer,
-				info:   info,
-			}
+	t.Run("skips check if license is air-gapped", func(t *testing.T) {
+		var featureChecked Feature
+		defaultMock := MockCheckFeature
+		MockCheckFeature = func(feature Feature) error {
+			featureChecked = feature
+			return nil
+		}
 
-			err := handler.Handle(context.Background())
-			require.NoError(t, err)
-
-			// check doer NOT called
-			require.False(t, doer.DoCalled)
-
-			// check result was set to true
-			valid, err := store.Get(licenseValidityStoreKey).Bool()
-			require.NoError(t, err)
-			require.True(t, valid)
-
-			// check last called at was set
-			lastCalledAt, err := store.Get(lastCalledAtStoreKey).String()
-			require.NoError(t, err)
-			require.NotEmpty(t, lastCalledAt)
+		t.Cleanup(func() {
+			MockCheckFeature = defaultMock
 		})
-	}
 
-	tests2 := map[string]struct {
-		info     *Info
+		store.Del(licenseValidityStoreKey)
+		store.Del(lastCalledAtStoreKey)
+
+		doer := &mockDoer{
+			status:   '1',
+			response: []byte(``),
+		}
+		handler := licenseChecker{
+			siteID: siteID,
+			token:  token,
+			doer:   doer,
+		}
+
+		err := handler.Handle(context.Background())
+		require.NoError(t, err)
+
+		// check feature was checked
+		require.Equal(t, FeatureAllowAirGapped, featureChecked)
+
+		// check doer NOT called
+		require.False(t, doer.DoCalled)
+
+		// check result was set to true
+		valid, err := store.Get(licenseValidityStoreKey).Bool()
+		require.NoError(t, err)
+		require.True(t, valid)
+
+		// check last called at was set
+		lastCalledAt, err := store.Get(lastCalledAtStoreKey).String()
+		require.NoError(t, err)
+		require.NotEmpty(t, lastCalledAt)
+	})
+
+	tests := map[string]struct {
 		response []byte
 		status   int
 		want     bool
 		err      bool
 	}{
 		"returns error if unable to make a request to license server": {
-			info:     &Info{},
 			response: []byte(`{"error": "some error"}`),
 			status:   http.StatusInternalServerError,
 			err:      true,
 		},
 		"returns error if got error": {
-			info:     &Info{},
 			response: []byte(`{"error": "some error"}`),
 			status:   http.StatusOK,
 			err:      true,
 		},
 		`returns correct result for "true"`: {
-			info:     &Info{},
 			response: []byte(`{"data": {"is_valid": true}}`),
 			status:   http.StatusOK,
 			want:     true,
 		},
 		`returns correct result for "false"`: {
-			info:     &Info{},
 			response: []byte(`{"data": {"is_valid": false, "reason": "some reason"}}`),
 			status:   http.StatusOK,
 			want:     false,
 		},
 	}
 
-	for name, test := range tests2 {
+	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			store.Del(licenseValidityStoreKey)
 			store.Del(lastCalledAtStoreKey)
@@ -110,7 +111,6 @@ func Test_licenseChecker(t *testing.T) {
 				siteID: siteID,
 				token:  token,
 				doer:   doer,
-				info:   test.info,
 			}
 
 			err := checker.Handle(context.Background())

@@ -36,14 +36,14 @@ const (
 type licenseChecker struct {
 	siteID string
 	token  string
-	info   *Info
 	doer   httpcli.Doer
 }
 
 func (l *licenseChecker) Handle(ctx context.Context) error {
 	store.Set(lastCalledAtStoreKey, time.Now().Format(time.RFC3339))
 
-	if l.info.HasTag(AllowAirGappedTag) {
+	// skip if has explicitly allowed air-gapped feature
+	if err := Check(FeatureAllowAirGapped); err == nil {
 		store.Set(licenseValidityStoreKey, true)
 		return nil
 	}
@@ -116,14 +116,9 @@ func StartLicenseCheck(ctx context.Context, logger log.Logger, siteID string) {
 		// continue running with new license key
 		store.Set(prevLicenseTokenKey, licenseToken)
 
-		info, err := GetConfiguredProductLicenseInfo()
-		if err != nil {
-			logger.Error("error getting configured license info", log.Error(err))
-			return
-		}
 		routine := goroutine.NewPeriodicGoroutine(
 			context.Background(),
-			&licenseChecker{siteID: siteID, token: licenseToken, info: info, doer: httpcli.ExternalDoer},
+			&licenseChecker{siteID: siteID, token: licenseToken, doer: httpcli.ExternalDoer},
 			goroutine.WithName("licensing.check-license-validity"),
 			goroutine.WithDescription("check if license is valid from sourcegraph.com"),
 			goroutine.WithInterval(licenseCheckInterval),
