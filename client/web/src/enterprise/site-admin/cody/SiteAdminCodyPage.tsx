@@ -205,29 +205,26 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
             <Container>
                 <H3 className="mt-3">Repository embeddings jobs</H3>
                 <ConnectionContainer>
-                    <div className="mb-2 d-flex flex-sm-row flex-column-reverse justify-content-center">
-                        <FilterControl
-                            filters={filters}
-                            values={filterValues}
-                            onValueSelect={(filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => {
-                                setFilterValues(values => {
-                                    const newValues = new Map(values)
-                                    newValues.set(filter.id, value)
-                                    return newValues
-                                })
-                                updateQueryParams(filter.id, value.value)
-                            }}
-                        />
-                        <ConnectionForm
-                            formClassName="mb-0 ml-2 flex-1"
-                            inputValue={searchValue}
-                            onInputChange={event => {
-                                setSearchValue(event.target.value)
-                                updateQueryParams('query', event.target.value)
-                            }}
-                            inputPlaceholder="Filter embeddings jobs..."
-                        />
-                    </div>
+                    <ConnectionForm
+                        formClassName="mb-2"
+                        inputClassName="flex-1 ml-2"
+                        inputValue={searchValue}
+                        onInputChange={event => {
+                            setSearchValue(event.target.value)
+                            updateQueryParams('query', event.target.value)
+                        }}
+                        inputPlaceholder="Filter embeddings jobs..."
+                        filters={filters}
+                        filterValues={filterValues}
+                        onFilterSelect={(filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => {
+                            setFilterValues(values => {
+                                const newValues = new Map(values)
+                                newValues.set(filter.id, value)
+                                return newValues
+                            })
+                            updateQueryParams(filter.id, value.value)
+                        }}
+                    />
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
                     <ConnectionList as="ul" className="list-group" aria-label="Repository embeddings jobs">
