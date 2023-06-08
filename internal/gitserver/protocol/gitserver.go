@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"encoding/json"
-	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -646,6 +645,7 @@ func (c *CreateCommitFromPatchRequest) ToProto() *proto.CreateCommitFromPatchBin
 		CommitInfo:   c.CommitInfo.ToProto(),
 		Push:         c.Push.ToProto(),
 		GitApplyArgs: c.GitApplyArgs,
+		PushRef:      c.PushRef,
 	}
 }
 
@@ -659,6 +659,7 @@ func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchB
 		CommitInfo:   PatchCommitInfoFromProto(p.GetCommitInfo()),
 		Push:         PushConfigFromProto(p.GetPush()),
 		GitApplyArgs: p.GetGitApplyArgs(),
+		PushRef:      p.PushRef,
 	}
 }
 
@@ -674,7 +675,7 @@ type PatchCommitInfo struct {
 
 func (p *PatchCommitInfo) ToProto() *proto.PatchCommitInfo {
 	return &proto.PatchCommitInfo{
-		Message:        strings.Join(p.Messages, "\n"),
+		Messages:       p.Messages,
 		AuthorName:     p.AuthorName,
 		AuthorEmail:    p.AuthorEmail,
 		CommitterName:  p.CommitterName,
@@ -685,7 +686,7 @@ func (p *PatchCommitInfo) ToProto() *proto.PatchCommitInfo {
 
 func PatchCommitInfoFromProto(p *proto.PatchCommitInfo) PatchCommitInfo {
 	return PatchCommitInfo{
-		Messages:       []string{p.GetMessage()}, //TODO: @varsanojidan fix this
+		Messages:       p.GetMessages(),
 		AuthorName:     p.GetAuthorName(),
 		AuthorEmail:    p.GetAuthorEmail(),
 		CommitterName:  p.GetCommitterName(),
