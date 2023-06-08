@@ -64,15 +64,31 @@ return recognizer.new_path_recognizer {
         },
 
         generate = function(_, _)
-          if roots[project_root] == nil then
+          local is_nested_root = project_root ~= ''
+          local is_toplevel_root = project_root == ''
+          local top_level_root_is_already_registerd =
+              roots[''] ~= nil
+
+          local this_root_already_registered = roots[project_root] ~= nil
+
+          local job = {
+            steps = {},
+            root = project_root,
+            outfile = "index.scip",
+            indexer = java_indexer,
+            indexer_args = { "scip-java", "index", "--build-tool=auto" },
+          }
+          -- top level root should be registered anyways if it has build files and source files
+          if is_toplevel_root and (not this_root_already_registered) then
             roots[project_root] = true
-            return {
-              steps = {},
-              root = project_root,
-              outfile = "index.scip",
-              indexer = java_indexer,
-              indexer_args = { "scip-java", "index", "--build-tool=auto" },
-            }
+            return job
+            -- nested roots are only registered if the top level root WASN'T
+            -- this is to account for multi-module builds like ones present in Maven, where
+            -- nested roots might have build files but cannot be built independently
+            -- in the future these situations should be handled with the auto-indexer itself
+          elseif is_nested_root and (not this_root_already_registered) and (not top_level_root_is_already_registerd) then
+            roots[project_root] = true
+            return job
           else
             return {}
           end
