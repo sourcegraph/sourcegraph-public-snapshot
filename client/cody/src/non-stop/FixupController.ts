@@ -134,6 +134,9 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         // applying fixup to all tasks
         if (!treeItem) {
             for (const task of this.tasks.values()) {
+                if (task.state !== CodyTaskState.ready) {
+                    return
+                }
                 void vscode.window.showInformationMessage(
                     'Applying all fixups is not implemented yet...',
                     String(this.tasks.size)
