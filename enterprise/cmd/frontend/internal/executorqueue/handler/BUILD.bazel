@@ -6,12 +6,12 @@ go_library(
     srcs = [
         "handler.go",
         "multihandler.go",
-        "multiqueue_cache_cleaner.go",
         "routes.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
+        "//enterprise/cmd/worker/internal/executorqueue",
         "//enterprise/internal/batches/types",
         "//enterprise/internal/codeintel/uploads/shared",
         "//enterprise/internal/executor/store",
