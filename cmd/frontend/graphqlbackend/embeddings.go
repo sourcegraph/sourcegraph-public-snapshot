@@ -81,4 +81,7 @@ type RepoEmbeddingJobResolver interface {
 	Cancel() bool
 	Repo(ctx context.Context) (*RepositoryResolver, error)
 	Revision(ctx context.Context) (*GitCommitResolver, error)
+	FilesScheduled() int32
+	FilesEmbedded() int32
+	FilesSkipped() int32
 }

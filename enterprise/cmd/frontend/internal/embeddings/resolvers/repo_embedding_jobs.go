@@ -150,6 +150,25 @@ func (r *repoEmbeddingJobResolver) Cancel() bool {
 	return r.job.Cancel
 }
 
+func (r *repoEmbeddingJobResolver) FilesScheduled() int32 {
+	return int32(r.job.Stats.CodeIndexStats.FilesTotal + r.job.Stats.TextIndexStats.FilesTotal)
+}
+
+func (r *repoEmbeddingJobResolver) FilesEmbedded() int32 {
+	return int32(r.job.Stats.CodeIndexStats.FilesEmbedded + r.job.Stats.TextIndexStats.FilesEmbedded)
+}
+
+func (r *repoEmbeddingJobResolver) FilesSkipped() int32 {
+	skipped := 0
+	for _, count := range r.job.Stats.CodeIndexStats.FilesSkipped {
+		skipped += count
+	}
+	for _, count := range r.job.Stats.TextIndexStats.FilesSkipped {
+		skipped += count
+	}
+	return int32(skipped)
+}
+
 func (r *repoEmbeddingJobResolver) compute(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	r.once.Do(func() {
 		repo, err := r.db.Repos().Get(ctx, r.job.RepoID)
