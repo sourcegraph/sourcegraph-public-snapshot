@@ -23,7 +23,6 @@ go_library(
         "//enterprise/internal/license",
         "//internal/conf",
         "//internal/conf/conftypes",
-        "//internal/database",
         "//internal/env",
         "//internal/errcode",
         "//internal/goroutine",
