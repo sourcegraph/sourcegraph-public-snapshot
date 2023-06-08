@@ -5,7 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hashicorp/golang-lru/v2"
+	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/sync/singleflight"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -22,6 +24,25 @@ type repoEmbeddingIndexCacheEntry struct {
 	index      *embeddings.RepoEmbeddingIndex
 	finishedAt time.Time
 }
+
+var (
+	embeddingsCacheHitCount = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Name:      "embeddings_cache_hit_count",
+	})
+	embeddingsCacheMissCount = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Name:      "embeddings_cache_miss_count",
+	})
+	embeddingsCacheMissBytes = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Name:      "embeddings_cache_miss_bytes",
+	})
+	embeddingsCacheEvictedCount = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Name:      "embeddings_cache_evicted_count",
+	})
+)
 
 // embeddingsIndexCache is a thin wrapper around an LRU cache that is
 // memory-bounded, which is useful for embeddings indexes because they can have
@@ -55,11 +76,18 @@ func newEmbeddingsIndexCache(maxSizeBytes int64) (_ *embeddingsIndexCache, err e
 }
 
 func (c *embeddingsIndexCache) Get(repo embeddings.RepoEmbeddingIndexName) (repoEmbeddingIndexCacheEntry, bool) {
-	return c.cache.Get(repo)
+	v, ok := c.cache.Get(repo)
+	if ok {
+		embeddingsCacheHitCount.Inc()
+	} else {
+		embeddingsCacheMissCount.Inc()
+	}
+	return v, ok
 }
 
 func (c *embeddingsIndexCache) Add(repo embeddings.RepoEmbeddingIndexName, value repoEmbeddingIndexCacheEntry) {
 	size := value.index.EstimateSize()
+	embeddingsCacheMissBytes.Add(float64(size))
 	if size > c.maxSizeBytes {
 		// Return early if the index could never fit in the cache.
 		// We don't want to dump the cache just to not be able to fit it.
@@ -88,6 +116,7 @@ func (c *embeddingsIndexCache) Add(repo embeddings.RepoEmbeddingIndexName, value
 // onEvict must only be called while the index mutex is held
 func (c *embeddingsIndexCache) onEvict(_ embeddings.RepoEmbeddingIndexName, value repoEmbeddingIndexCacheEntry) {
 	c.remainingSizeBytes += value.index.EstimateSize()
+	embeddingsCacheEvictedCount.Inc()
 }
 
 func NewCachedEmbeddingIndexGetter(

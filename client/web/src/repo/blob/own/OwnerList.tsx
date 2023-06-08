@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { Alert, Button, H3, H4, Icon, Link, Text } from '@sourcegraph/wildcard'
+import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
 import { SearchPatternType, OwnerFields, OwnershipConnectionFields } from '../../../graphql-operations'
@@ -88,15 +88,26 @@ interface OwnerListProps {
     data?: OwnershipConnectionFields
     isDirectory?: boolean
     makeOwnerButton?: (userId: string | undefined) => JSX.Element
+    makeOwnerError?: Error
 }
 
-export const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, isDirectory = false, makeOwnerButton }) => {
+export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
+    data,
+    isDirectory = false,
+    makeOwnerButton,
+    makeOwnerError,
+}) => {
     if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
         return (
             <div className={styles.contents}>
                 <OwnExplanation owners={nodes.map(ownership => ownership.owner)} />
+                {makeOwnerError && (
+                    <div className={styles.contents}>
+                        <ErrorAlert error={makeOwnerError} prefix="Error promoting an owner" className="mt-2" />
+                    </div>
+                )}
                 <table className={styles.table}>
                     <thead>
                         <tr className="sr-only">

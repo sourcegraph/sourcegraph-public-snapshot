@@ -5,7 +5,6 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import {
-    LastSyncedIcon,
     SymbolSearchResultStyles as styles,
     SearchResultStyles as searchResultStyles,
     CodeExcerpt,
@@ -66,7 +65,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                         ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className={classNames(searchResultStyles.titleInner, searchResultStyles.mutedRepoFileLink)}
+                className={classNames(searchResultStyles.titleInner)}
             />
             <CopyPathAction
                 filePath={result.path}
@@ -134,9 +133,9 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
             repoStars={result.repoStars}
             className={classNames(searchResultStyles.copyButtonContainer, containerClassName)}
             resultClassName={styles.symbolsOverride}
+            repoLastFetched={result.repoLastFetched}
         >
             <div className={styles.symbols}>
-                {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                 {result.symbols.map(symbol => (
                     <div
                         key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}

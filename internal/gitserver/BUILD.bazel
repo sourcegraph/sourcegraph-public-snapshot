@@ -43,7 +43,6 @@ go_library(
         "//lib/errors",
         "@com_github_go_git_go_git_v5//plumbing/format/config",
         "@com_github_golang_groupcache//lru",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_conc//pool",
@@ -76,6 +75,7 @@ go_test(
     env = {"COURSIER_CACHE_DIR": "/tmp"},
     deps = [
         "//cmd/gitserver/server",
+        "//cmd/gitserver/server/perforce",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
@@ -83,6 +83,7 @@ go_test(
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/errcode",
+        "//internal/extsvc",
         "//internal/gitserver/gitdomain",
         "//internal/gitserver/protocol",
         "//internal/gitserver/v1:gitserver",

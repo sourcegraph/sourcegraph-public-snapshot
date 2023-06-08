@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -53,10 +54,11 @@ func (r codyGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Context)
 	}
 
 	return &codyGatewayRateLimitResolver{
-		feature: types.CompletionsFeatureChat,
-		subUUID: r.sub.UUID(),
-		v:       rateLimit,
-		source:  source,
+		feature:     types.CompletionsFeatureChat,
+		actorID:     r.sub.UUID(),
+		actorSource: codygateway.ActorSourceProductSubscription,
+		v:           rateLimit,
+		source:      source,
 	}, nil
 }
 
@@ -96,18 +98,63 @@ func (r codyGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Context)
 	}
 
 	return &codyGatewayRateLimitResolver{
-		feature: types.CompletionsFeatureCode,
-		subUUID: r.sub.UUID(),
-		v:       rateLimit,
-		source:  source,
+		feature:     types.CompletionsFeatureCode,
+		actorID:     r.sub.UUID(),
+		actorSource: codygateway.ActorSourceProductSubscription,
+		v:           rateLimit,
+		source:      source,
+	}, nil
+}
+
+func (r codyGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) (graphqlbackend.CodyGatewayRateLimit, error) {
+	if !r.Enabled() {
+		return nil, nil
+	}
+
+	var rateLimit licensing.CodyGatewayRateLimit
+
+	// Get default access from active license. Call hydrate and access field directly to
+	// avoid parsing license key which is done in (*productLicense).Info(), instead just
+	// relying on what we know in DB.
+	activeLicense, err := r.sub.computeActiveLicense(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get active license")
+	}
+	var source graphqlbackend.CodyGatewayRateLimitSource
+	if activeLicense != nil {
+		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
+		rateLimit = licensing.NewCodyGatewayEmbeddingsRateLimit(licensing.PlanFromTags(activeLicense.LicenseTags), activeLicense.LicenseUserCount, activeLicense.LicenseTags)
+	}
+
+	// Apply overrides
+	rateLimitOverrides := r.sub.v.CodyGatewayAccess
+	if rateLimitOverrides.EmbeddingsRateLimit.RateLimit != nil {
+		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
+		rateLimit.Limit = *rateLimitOverrides.EmbeddingsRateLimit.RateLimit
+	}
+	if rateLimitOverrides.EmbeddingsRateLimit.RateIntervalSeconds != nil {
+		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
+		rateLimit.IntervalSeconds = *rateLimitOverrides.EmbeddingsRateLimit.RateIntervalSeconds
+	}
+	if rateLimitOverrides.EmbeddingsRateLimit.AllowedModels != nil {
+		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
+		rateLimit.AllowedModels = rateLimitOverrides.EmbeddingsRateLimit.AllowedModels
+	}
+
+	return &codyGatewayRateLimitResolver{
+		actorID:     r.sub.UUID(),
+		actorSource: codygateway.ActorSourceProductSubscription,
+		v:           rateLimit,
+		source:      source,
 	}, nil
 }
 
 type codyGatewayRateLimitResolver struct {
-	subUUID string
-	feature types.CompletionsFeature
-	source  graphqlbackend.CodyGatewayRateLimitSource
-	v       licensing.CodyGatewayRateLimit
+	actorID     string
+	actorSource codygateway.ActorSource
+	feature     types.CompletionsFeature
+	source      graphqlbackend.CodyGatewayRateLimitSource
+	v           licensing.CodyGatewayRateLimit
 }
 
 func (r *codyGatewayRateLimitResolver) Source() graphqlbackend.CodyGatewayRateLimitSource {
@@ -121,9 +168,20 @@ func (r *codyGatewayRateLimitResolver) Limit() int32 { return r.v.Limit }
 func (r *codyGatewayRateLimitResolver) IntervalSeconds() int32 { return r.v.IntervalSeconds }
 
 func (r codyGatewayRateLimitResolver) Usage(ctx context.Context) ([]graphqlbackend.CodyGatewayUsageDatapoint, error) {
-	usage, err := NewCodyGatewayService().UsageForSubscription(ctx, r.feature, r.subUUID)
-	if err != nil {
-		return nil, err
+	var (
+		usage []SubscriptionUsage
+		err   error
+	)
+	if r.feature != "" {
+		usage, err = NewCodyGatewayService().CompletionsUsageForActor(ctx, r.feature, r.actorSource, r.actorID)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		usage, err = NewCodyGatewayService().EmbeddingsUsageForActor(ctx, r.actorSource, r.actorID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	resolvers := make([]graphqlbackend.CodyGatewayUsageDatapoint, 0, len(usage))

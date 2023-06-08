@@ -1,5 +1,4 @@
 import * as React from 'react'
-import { useEffect } from 'react'
 
 import classNames from 'classnames'
 
@@ -25,7 +24,7 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
     filePath,
     telemetryService,
 }) => {
-    useEffect(() => {
+    React.useEffect(() => {
         telemetryService.log('OwnershipPanelOpened')
     }, [telemetryService])
 
@@ -36,6 +35,7 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
             currentPath: filePath,
         },
     })
+    const [makeOwnerError, setMakeOwnerError] = React.useState<Error | undefined>(undefined)
     const [ownPromotionEnabled] = useFeatureFlag('own-promote')
 
     if (loading) {
@@ -53,7 +53,7 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
             ? (userId: string | undefined) => (
                   <MakeOwnerButton
                       onSuccess={refetch}
-                      onError={() => {}} // TODO(#52911)
+                      onError={setMakeOwnerError}
                       repoId={repoID}
                       path={filePath}
                       userId={userId}
@@ -76,6 +76,7 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
                 data={data?.node?.commit?.blob?.ownership}
                 isDirectory={false}
                 makeOwnerButton={makeOwnerButton}
+                makeOwnerError={makeOwnerError}
             />
         )
     }

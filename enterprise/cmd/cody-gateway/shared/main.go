@@ -28,6 +28,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor/anonymous"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor/productsubscription"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi"
@@ -68,14 +69,20 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		}
 	}
 
+	dotcomClient := dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
+
 	// Supported actor/auth sources
 	sources := actor.Sources{
 		anonymous.NewSource(config.AllowAnonymous),
 		productsubscription.NewSource(
 			obctx.Logger,
 			rcache.New("product-subscriptions"),
-			dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken),
+			dotcomClient,
 			config.Dotcom.InternalMode),
+		dotcomuser.NewSource(obctx.Logger,
+			rcache.New("dotcom-users"),
+			dotcomClient,
+		),
 	}
 
 	authr := &auth.Authenticator{
@@ -86,14 +93,20 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	rs := newRedisStore(redispool.Cache)
 
+	obctx.Logger.Debug("concurrency limit",
+		log.Float32("percentage", config.ActorConcurrencyLimit.Percentage),
+		log.String("internal", config.ActorConcurrencyLimit.Interval.String()),
+	)
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
 	handler := httpapi.NewHandler(obctx.Logger, eventLogger, rs, authr, &httpapi.Config{
-		AnthropicAccessToken:   config.Anthropic.AccessToken,
-		AnthropicAllowedModels: config.Anthropic.AllowedModels,
-		OpenAIAccessToken:      config.OpenAI.AccessToken,
-		OpenAIOrgID:            config.OpenAI.OrgID,
-		OpenAIAllowedModels:    config.OpenAI.AllowedModels,
+		ConcurrencyLimit:        config.ActorConcurrencyLimit,
+		AnthropicAccessToken:    config.Anthropic.AccessToken,
+		AnthropicAllowedModels:  config.Anthropic.AllowedModels,
+		OpenAIAccessToken:       config.OpenAI.AccessToken,
+		OpenAIOrgID:             config.OpenAI.OrgID,
+		OpenAIAllowedModels:     config.OpenAI.AllowedModels,
+		EmbeddingsAllowedModels: config.AllowedEmbeddingsModels,
 	})
 
 	// Diagnostic layers
@@ -180,8 +193,8 @@ type redisStore struct {
 	store redispool.KeyValue
 }
 
-func (s *redisStore) Incr(key string) (int, error) {
-	return s.store.Incr(key)
+func (s *redisStore) Incrby(key string, val int) (int, error) {
+	return s.store.Incrby(key, val)
 }
 
 func (s *redisStore) GetInt(key string) (int, error) {

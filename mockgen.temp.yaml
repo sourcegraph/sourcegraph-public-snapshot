@@ -39,6 +39,7 @@
     - AccessRequestStore
     - AccessTokenStore
     - AssignedOwnersStore
+    - AssignedTeamsStore
     - AuthzStore
     - BitbucketProjectPermissionsStore
     - ConfStore
@@ -59,6 +60,7 @@
     - OwnershipStatsStore
     - PhabricatorStore
     - RepoCommitsChangelistsStore
+    - RepoPathStore
     - RepoStore
     - SavedSearchStore
     - SearchContextsStore
