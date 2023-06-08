@@ -21238,6 +21238,19 @@
           "Comment": ""
         },
         {
+          "Name": "revoke_reason",
+          "Index": 15,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "revoked_at",
           "Index": 12,
           "TypeName": "timestamp with time zone",

@@ -30,6 +30,7 @@ type dbLicense struct {
 	SiteID                   *string // UUID
 	LicenseCheckToken        *[]byte
 	RevokedAt                *time.Time
+	RevokeReason             *string
 	SalesforceSubscriptionID *string
 	SalesforceOpportunityID  *string
 }
@@ -210,6 +211,7 @@ SELECT
 	site_id,
 	license_check_token,
 	revoked_at,
+	revoke_reason,
 	salesforce_sub_id,
 	salesforce_opp_id
 FROM product_licenses
@@ -242,6 +244,7 @@ ORDER BY created_at DESC
 			&v.SiteID,
 			&v.LicenseCheckToken,
 			&v.RevokedAt,
+			&v.RevokeReason,
 			&v.SalesforceSubscriptionID,
 			&v.SalesforceOpportunityID,
 		); err != nil {
@@ -262,10 +265,21 @@ func (s dbLicenses) Count(ctx context.Context, opt dbLicensesListOptions) (int, 
 	return count, nil
 }
 
+func (s dbLicenses) Revoke(ctx context.Context, id, reason string) error {
+	q := sqlf.Sprintf(
+		"UPDATE product_licenses SET revoked_at = now(), revoke_reason = %s WHERE id = %s",
+		reason,
+		id,
+	)
+	_, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return err
+}
+
 type mockLicenses struct {
 	Create          func(subscriptionID, licenseKey string) (id string, err error)
 	GetByID         func(id string) (*dbLicense, error)
 	GetByLicenseKey func(licenseKey string) (*dbLicense, error)
 	GetByToken      func(tokenHexEncoded string) (*dbLicense, error)
 	List            func(ctx context.Context, opt dbLicensesListOptions) ([]*dbLicense, error)
+	Revoke          func(ctx context.Context, id uuid.UUID, reason string) error
 }

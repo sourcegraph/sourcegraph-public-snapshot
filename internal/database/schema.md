@@ -3227,6 +3227,7 @@ Indexes:
  revoked_at              | timestamp with time zone |           |          | 
  salesforce_sub_id       | text                     |           |          | 
  salesforce_opp_id       | text                     |           |          | 
+ revoke_reason           | text                     |           |          | 
 Indexes:
     "product_licenses_pkey" PRIMARY KEY, btree (id)
     "product_licenses_license_check_token_idx" UNIQUE, btree (license_check_token)

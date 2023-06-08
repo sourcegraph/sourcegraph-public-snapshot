@@ -32,6 +32,19 @@ type DotcomMutation {
         license: ProductLicenseInput!
     ): ProductLicense!
     """
+    Revokes an existing product license, rendering it invalid.
+    """
+    revokeLicense(
+        """
+        The UUID of the license to revoke
+        """
+        id: String!
+        """
+        Reason for revoking of the license
+        """
+        reason: String!
+    ): EmptyResponse!
+    """
     Applies a partial update to a product subscription.
 
     Only Sourcegraph.com site admins may perform this mutation.
@@ -229,6 +242,10 @@ type ProductLicense implements Node {
     The date when this product license was revoked.
     """
     revokedAt: DateTime
+    """
+    The reason for revoking product license.
+    """
+    revokeReason: String
     """
     The version of the license.
     """
