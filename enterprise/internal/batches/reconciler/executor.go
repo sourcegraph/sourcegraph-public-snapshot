@@ -181,6 +181,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 	// Create a commit and push it
 	// Figure out which authenticator we should use to modify the changeset.
 	css, err := e.changesetSource(ctx)
+
 	if err != nil {
 		return afterDone, err
 	}
@@ -200,7 +201,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 		return afterDone, err
 	}
 	opts := css.BuildCommitOpts(e.targetRepo, e.ch, e.spec, pushConf)
-	_, err = e.pushCommit(ctx, opts)
+	resp, err := e.pushCommit(ctx, opts)
 	var pce pushCommitError
 	if errors.As(err, &pce) {
 		if acss, ok := css.(sources.ArchivableChangesetSource); ok {
@@ -213,6 +214,11 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 		}
 	}
 
+	// update the changeset's external_id column if a changelist id is returned
+	// because that's going to make it back to the UI so that the user can see the changelist id and take action on it
+	if resp != nil && resp.ChangelistId != "" {
+		e.ch.ExternalID = resp.ChangelistId
+	}
 	if triggerUpdateWebhook && err == nil {
 		afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdate) }
 	}

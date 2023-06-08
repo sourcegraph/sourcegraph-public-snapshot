@@ -590,7 +590,7 @@ View:	%s... //%s/...
 		return "", errors.Wrap(err, "invalid changelist id:"+cid)
 	}
 
-	// return it as a string - it'll be returned as a string to the front end in lieu of an int pointer
+	// return it as a string - it'll be returned as a string to the caller in lieu of an int pointer
 	// because protobuf doesn't do scalar pointers
 	return cid, nil
 }
