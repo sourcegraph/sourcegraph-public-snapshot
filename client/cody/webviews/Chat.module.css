@@ -82,7 +82,7 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 }
 
 :global(.token-not-hallucinated) {
-    text-decoration: 1px dashed underline var(--vscode-testing-iconPassed);
+    text-decoration: 1px underline var(--vscode-textLink-foreground);
 }
 
 :global(.token-hallucinated)::before {
