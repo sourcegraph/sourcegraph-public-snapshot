@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { FixupTask } from './FixupTask'
-import { CodyTaskState, fixupTaskIcon, getFileNameAfterLastDash } from './utils'
+import { CodyTaskState, fixupTaskList, getFileNameAfterLastDash } from './utils'
 
 type taskID = string
 type fileName = string
@@ -35,7 +35,12 @@ export class TaskViewProvider implements vscode.TreeDataProvider<FixupTaskTreeIt
      */
     public getChildren(element?: FixupTaskTreeItem): FixupTaskTreeItem[] {
         if (element && element.contextValue === 'fsPath') {
-            return [...this.treeItems.values()].filter(item => item.fsPath === element.fsPath)
+            const tasksByFsPath = [...this.treeItems.values()].filter(item => item.fsPath === element.fsPath)
+            if (tasksByFsPath.length === 0) {
+                this.treeNodes.delete(element.fsPath)
+                return []
+            }
+            return tasksByFsPath
         }
 
         return [...this.treeNodes.values()]
@@ -69,14 +74,24 @@ export class TaskViewProvider implements vscode.TreeDataProvider<FixupTaskTreeIt
             return
         }
         this.treeItems.delete(taskID)
+        const treeNode = this.treeNodes.get(task.fsPath)
+        treeNode?.removeChild(taskID)
+        if (treeNode && treeNode.tasks.size === 0) {
+            this.treeNodes.delete(task.fsPath)
+        }
+        this.refresh()
     }
 
     public removeTreeItemsByFileName(fileName: fileName): void {
-        const task = this.treeNodes.get(fileName)
-        if (!task) {
+        const tasks = this.treeNodes.get(fileName)
+        if (!tasks) {
             return
         }
+        for (const task of tasks.tasks) {
+            this.treeItems.delete(task)
+        }
         this.treeNodes.delete(fileName)
+        this.refresh()
     }
 
     /**
@@ -106,7 +121,7 @@ export class FixupTaskTreeItem extends vscode.TreeItem {
 
     // state for parent node
     private failed = new Set<string>()
-    private tasks = new Set<string>()
+    public tasks = new Set<string>()
 
     constructor(label: string, task?: FixupTask) {
         super(label)
@@ -135,11 +150,15 @@ export class FixupTaskTreeItem extends vscode.TreeItem {
 
     // For parent node to track children states
     public addChildren(taskID: string, state: CodyTaskState): void {
-        if (this.contextValue !== 'fsPath') {
+        if (this.contextValue !== 'fsPath' || state === CodyTaskState.fixed) {
             return
         }
         this.tasks.add(taskID)
         this.description = this.makeNodeDescription(state)
+    }
+
+    public removeChild(taskID: string): void {
+        this.tasks.delete(taskID)
     }
 
     private makeNodeDescription(state: CodyTaskState): string {
@@ -149,12 +168,15 @@ export class FixupTaskTreeItem extends vscode.TreeItem {
         let ready = tasksSize - failedSize
 
         switch (state) {
-            case CodyTaskState.pending:
+            case CodyTaskState.asking:
                 text += ', 1 running'
                 ready--
                 break
             case CodyTaskState.applying:
                 text += ', 1 applying'
+                ready--
+                break
+            case CodyTaskState.fixed:
                 ready--
                 break
         }
@@ -164,12 +186,13 @@ export class FixupTaskTreeItem extends vscode.TreeItem {
         if (ready > 0) {
             text += `, ${ready} ready`
         }
+        void vscode.commands.executeCommand('setContext', 'cody.fixup.filesWithApplicableFixups', ready < 1)
         return text
     }
 
     private updateIconPath(): void {
-        const icon = fixupTaskIcon[this.state].icon
-        const mode = fixupTaskIcon[this.state].id
+        const icon = fixupTaskList[this.state].icon
+        const mode = fixupTaskList[this.state].id
         this.iconPath = new vscode.ThemeIcon(icon, new vscode.ThemeColor(mode))
     }
 }

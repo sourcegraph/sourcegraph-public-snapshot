@@ -162,8 +162,8 @@ export class InlineController {
             return
         }
         const lens = await this.makeCodeLenses(comment.id, thread.uri, this.extensionPath)
-        lens.updateState(CodyTaskState.pending, thread.range)
-        lens.decorator.setState(CodyTaskState.pending, thread.range)
+        lens.updateState(CodyTaskState.asking, thread.range)
+        lens.decorator.setState(CodyTaskState.asking, thread.range)
         await lens.decorator.decorate(thread.range)
         this.codeLenses.set(comment.id, lens)
         this.currentTaskId = comment.id
@@ -179,7 +179,7 @@ export class InlineController {
             return
         }
         const range = newRange || this.selectionRange
-        const status = error ? CodyTaskState.error : CodyTaskState.done
+        const status = error ? CodyTaskState.error : CodyTaskState.ready
         const lens = this.codeLenses.get(this.currentTaskId)
         lens?.updateState(status, range)
         lens?.decorator.setState(status, range)
