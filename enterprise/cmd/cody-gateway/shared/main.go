@@ -296,13 +296,11 @@ func newRateLimitAlerter(
 ) func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32) {
 	// Ignore the error because it's already validated in the config.
 	dotcomURL, _ := url.Parse(dotcomAPIURL)
-	dotcomURL.Path = "/site-admin/dotcom/product/subscriptions/"
+	dotcomURL.Path = ""
 
 	logger = logger.Scoped("usageRateLimitAlert", "alerts for usage rate limit approaching threshold")
 	return func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32) {
-		// We only want informational alerts for product subscriptions (i.e. customers).
-		if codygateway.ActorSource(actor.Source.Name()) != codygateway.ActorSourceProductSubscription ||
-			usagePercentage < config.Threshold {
+		if usagePercentage < config.Threshold {
 			return
 		}
 
@@ -346,8 +344,18 @@ func newRateLimitAlerter(
 			return
 		}
 
-		text := fmt.Sprintf("The actor <%[1]s%[2]s|%[2]s> from %q has exceeded *%d%%* of its rate limit quota for `%s`.",
-			dotcomURL.String(), actor.ID, actor.Source.Name(), int(usagePercentage*100), feature)
+		var text string
+		switch codygateway.ActorSource(actor.Source.Name()) {
+		case codygateway.ActorSourceProductSubscription:
+			text = fmt.Sprintf("The actor <%[1]s/site-admin/dotcom/product/subscriptions/%[2]s|%[2]s> from %q has exceeded *%d%%* of its rate limit quota for `%s`.",
+				dotcomURL.String(), actor.ID, actor.Source.Name(), int(usagePercentage*100), feature)
+		case codygateway.ActorSourceDotcomUser:
+			text = fmt.Sprintf("The actor <%[1]s/users/%[2]s|%[2]s> from %q has exceeded *%d%%* of its rate limit quota for `%s`.",
+				dotcomURL.String(), actor.ID, actor.Source.Name(), int(usagePercentage*100), feature)
+		default:
+			text = fmt.Sprintf("The actor `%s` from %q has exceeded *%d%%* of its rate limit quota for `%s`.",
+				actor.ID, actor.Source.Name(), int(usagePercentage*100), feature)
+		}
 
 		// NOTE: The context timeout must below the lock timeout we set above (30 seconds
 		// ) to make sure the lock doesn't expire when we release it, i.e. avoid
