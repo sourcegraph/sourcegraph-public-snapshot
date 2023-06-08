@@ -224,6 +224,7 @@ export const apiConsoleGroup: SiteAdminSideBarGroup = {
             to: '/api/console',
         },
     ],
+    hidden: ({ isSourcegraphApp }) => isSourcegraphApp,
 }
 
 export const siteAdminSidebarGroups: SiteAdminSideBarGroups = [

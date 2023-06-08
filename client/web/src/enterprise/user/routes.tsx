@@ -1,6 +1,7 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { RedirectRoute } from '../../components/RedirectRoute'
+import { SiteAdminArea } from '../../site-admin/SiteAdminArea'
 import { userAreaRoutes } from '../../user/area/routes'
 import { UserAreaRoute } from '../../user/area/UserArea'
 import { EditBatchSpecPageProps } from '../batches/batch-spec/edit/EditBatchSpecPage'
