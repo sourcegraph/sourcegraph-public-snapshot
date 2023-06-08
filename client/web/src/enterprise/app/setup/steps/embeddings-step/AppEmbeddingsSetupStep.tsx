@@ -3,7 +3,18 @@ import { FC, useContext, ChangeEvent, useState } from 'react'
 import { mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, H1, ScrollBox, Text, Icon, LoadingSpinner, Tooltip, Link, ErrorAlert } from '@sourcegraph/wildcard'
+import {
+    Button,
+    H1,
+    ScrollBox,
+    Text,
+    Icon,
+    LoadingSpinner,
+    Tooltip,
+    Link,
+    ErrorAlert,
+    Label,
+} from '@sourcegraph/wildcard'
 
 import { LocalRepository } from '../../../../../graphql-operations'
 import { EnterprisePageRoutes } from '../../../../../routes.constants'
@@ -33,12 +44,12 @@ export const AppEmbeddingsSetupStep: FC<StepComponentProps> = ({ className }) =>
         error: repositoriesError,
     } = useLocalRepositories({ paths, skip: paths.length === 0 })
 
-    const handleNext = () => {
+    const handleNext = (): void => {
         if (!selectedRepository) {
             return
         }
 
-        scheduleRepoEmbeddingJobs({ variables: { repoNames: [selectedRepository.name] } })
+        scheduleRepoEmbeddingJobs({ variables: { repoNames: [selectedRepository.name] } }).catch(() => {})
         onNextStep()
     }
 
@@ -124,7 +135,7 @@ const RepositoryItem: FC<RepositoryItemProps> = props => {
 
     return (
         <li className={classNames(styles.item, { [styles.itemChecked]: checked })}>
-            <label className={styles.itemContent}>
+            <Label className={styles.itemContent}>
                 <div className={styles.itemDescription}>
                     <Icon inline={false} svgPath={mdiGit} aria-hidden={true} className={styles.itemIcon} />
                     <span className={styles.itemDescrtiptionText}>
@@ -140,9 +151,10 @@ const RepositoryItem: FC<RepositoryItemProps> = props => {
                             Improved context
                         </Text>
                     )}
+                    {/* eslint-disable-next-line react/forbid-elements */}
                     <input type="radio" name="repository" value={name} onChange={onChange} />
                 </div>
-            </label>
+            </Label>
         </li>
     )
 }
