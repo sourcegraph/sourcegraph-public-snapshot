@@ -46,7 +46,8 @@ func TestGetCompletionsConfig(t *testing.T) {
 				LicenseKey: "",
 			},
 			want: autogold.Expect(&schema.Completions{
-				CompletionModel: "anthropic/claude-v1",
+				ChatModel:       "anthropic/claude-v1",
+				CompletionModel: "anthropic/claude-instant-v1",
 				Enabled:         true,
 				Endpoint:        "https://cody-gateway.sourcegraph.com",
 				Provider:        "sourcegraph",
@@ -62,7 +63,8 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 			want: autogold.Expect(&schema.Completions{
 				AccessToken:     "slk_c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2",
-				CompletionModel: "anthropic/claude-v1",
+				ChatModel:       "anthropic/claude-v1",
+				CompletionModel: "anthropic/claude-instant-v1",
 				Enabled:         true,
 				Endpoint:        "https://cody-gateway.sourcegraph.com",
 				Provider:        "sourcegraph",
