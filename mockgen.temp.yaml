@@ -60,6 +60,7 @@
     - OwnershipStatsStore
     - PhabricatorStore
     - RepoCommitsChangelistsStore
+    - RepoPathStore
     - RepoStore
     - SavedSearchStore
     - SearchContextsStore
