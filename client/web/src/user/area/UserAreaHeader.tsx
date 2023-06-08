@@ -65,7 +65,10 @@ export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Pro
     return (
         <div className={className}>
             <div className="container">
-                <PageHeader className="mb-3" actions={<Link to="/site-admin/configuration">Advanced settings</Link>}>
+                <PageHeader
+                    className="mb-3"
+                    actions={props.isSourcegraphApp && <Link to="/site-admin/configuration">Advanced settings</Link>}
+                >
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <PageHeader.Breadcrumb icon={path.icon}>{path.text}</PageHeader.Breadcrumb>
                     </PageHeader.Heading>
