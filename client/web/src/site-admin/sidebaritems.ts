@@ -218,13 +218,13 @@ export const apiConsoleGroup: SiteAdminSideBarGroup = {
         label: 'API Console',
         icon: ConsoleIcon,
     },
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
         {
             label: 'API Console',
             to: '/api/console',
         },
     ],
-    hidden: ({ isSourcegraphApp }) => isSourcegraphApp,
 }
 
 export const siteAdminSidebarGroups: SiteAdminSideBarGroups = [

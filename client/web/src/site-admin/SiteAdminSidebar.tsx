@@ -17,9 +17,7 @@ export interface SiteAdminSideBarGroupContext extends BatchChangesProps {
     ownAnalyticsEnabled: boolean
 }
 
-export interface SiteAdminSideBarGroup extends NavGroupDescriptor<SiteAdminSideBarGroupContext> {
-    hidden?: (context: SiteAdminSideBarGroupContext) => boolean
-}
+export interface SiteAdminSideBarGroup extends NavGroupDescriptor<SiteAdminSideBarGroupContext> {}
 
 export type SiteAdminSideBarGroups = readonly SiteAdminSideBarGroup[]
 
@@ -52,33 +50,23 @@ export const SiteAdminSidebar: React.FunctionComponent<React.PropsWithChildren<S
             <SidebarGroup className={classNames(className, 'd-sm-block', !isMobileExpanded && 'd-none')}>
                 <ul className="list-group">
                     {groups.map(
-                        ({ header, items, condition = () => true, hidden = () => false }, index) =>
+                        ({ header, items, condition = () => true }, index) =>
                             condition(props) &&
                             (items.length > 1 ? (
-                                <li
-                                    className={classNames('p-0 list-group-item', hidden(props) && 'd-none')}
-                                    key={index}
-                                >
+                                <li className="p-0 list-group-item" key={index}>
                                     <SidebarCollapseItems
                                         icon={header?.icon}
                                         label={header?.label}
                                         openByDefault={true}
                                     >
                                         {items.map(
-                                            ({
-                                                label,
-                                                to,
-                                                source = 'client',
-                                                exact,
-
-                                                condition = () => true,
-                                            }) =>
+                                            ({ label, to, source = 'client', exact, condition = () => true }) =>
                                                 condition(props) && (
                                                     <SidebarNavItem
                                                         to={to}
                                                         key={label}
                                                         source={source}
-                                                        className={classNames(styles.navItem)}
+                                                        className={styles.navItem}
                                                         onClick={collapseMobileSidebar}
                                                         exact={exact}
                                                     >
@@ -89,10 +77,7 @@ export const SiteAdminSidebar: React.FunctionComponent<React.PropsWithChildren<S
                                     </SidebarCollapseItems>
                                 </li>
                             ) : (
-                                <li
-                                    className={classNames('p-0 list-group-item', hidden(props) && 'd-none')}
-                                    key={items[0].label}
-                                >
+                                <li className="p-0 list-group-item" key={items[0].label}>
                                     <Link
                                         to={items[0].to}
                                         className="bg-2 border-0 d-flex list-group-item-action p-2 w-100"
