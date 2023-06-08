@@ -252,6 +252,33 @@ func TestCache_Hashes(t *testing.T) {
 	all, err := c.GetHashAll("key")
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]string{"hashKey1": "value1", "hashKey2": "value2"}, all)
+
+	// Test DeleteHashItem
+	// Bit redundant, but double check that the key still exists
+	val1, err = c.GetHashItem("key", "hashKey1")
+	assert.NoError(t, err)
+	assert.Equal(t, "value1", val1)
+	del1, err := c.DeleteHashItem("key", "hashKey1")
+	assert.NoError(t, err)
+	assert.Equal(t, 1, del1)
+	// Verify that it no longer exists
+	val1, err = c.GetHashItem("key", "hashKey1")
+	assert.Error(t, err)
+	assert.Equal(t, "", val1)
+	// Delete nonexistent field: should return 0 (represents deleted items)
+	val3, err = c.GetHashItem("key", "hashKey3")
+	assert.Error(t, err)
+	assert.Equal(t, "", val3)
+	del3, err := c.DeleteHashItem("key", "hashKey3")
+	assert.NoError(t, err)
+	assert.Equal(t, 0, del3)
+	// Delete nonexistent key: should return 0 (represents deleted items)
+	val4, err := c.GetHashItem("nonexistentkey", "nonexistenthashkey")
+	assert.Error(t, err)
+	assert.Equal(t, "", val4)
+	del4, err := c.DeleteHashItem("nonexistentkey", "nonexistenthashkey")
+	assert.NoError(t, err)
+	assert.Equal(t, 0, del4)
 }
 
 func bytes(s ...string) [][]byte {

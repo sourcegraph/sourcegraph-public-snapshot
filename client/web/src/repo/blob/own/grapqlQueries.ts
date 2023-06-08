@@ -132,11 +132,18 @@ export const FETCH_TREE_OWNERS = gql`
         node(id: $repo) {
             ... on Repository {
                 commit(rev: $revision) {
-                    blob(path: $currentPath) {
+                    tree(path: $currentPath) {
                         ownership {
                             ...OwnershipConnectionFields
                         }
                     }
+                }
+            }
+        }
+        currentUser {
+            permissions {
+                nodes {
+                    displayName
                 }
             }
         }
@@ -172,6 +179,14 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
                     }
                 }
             }
+        }
+    }
+`
+
+export const ASSIGN_OWNER = gql`
+    mutation AssignOwner($input: AssignOwnerOrTeamInput!) {
+        assignOwner(input: $input) {
+            alwaysNil
         }
     }
 `

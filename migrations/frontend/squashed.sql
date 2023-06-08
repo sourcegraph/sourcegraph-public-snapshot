@@ -944,6 +944,26 @@ CREATE SEQUENCE assigned_owners_id_seq
 
 ALTER SEQUENCE assigned_owners_id_seq OWNED BY assigned_owners.id;
 
+CREATE TABLE assigned_teams (
+    id integer NOT NULL,
+    owner_team_id integer NOT NULL,
+    file_path_id integer NOT NULL,
+    who_assigned_team_id integer,
+    assigned_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE assigned_teams IS 'Table for team ownership assignments, one entry contains an assigned team ID, which repo_path is assigned and the date and user who assigned the owner team.';
+
+CREATE SEQUENCE assigned_teams_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE assigned_teams_id_seq OWNED BY assigned_teams.id;
+
 CREATE TABLE batch_changes (
     id bigint NOT NULL,
     name text NOT NULL,
@@ -1912,7 +1932,11 @@ CREATE TABLE codeintel_ranking_progress (
     num_path_records_processed integer,
     num_reference_records_processed integer,
     num_count_records_processed integer,
-    max_export_id bigint NOT NULL
+    max_export_id bigint NOT NULL,
+    reference_cursor_export_deleted_at timestamp with time zone,
+    reference_cursor_export_id integer,
+    path_cursor_deleted_export_at timestamp with time zone,
+    path_cursor_export_id integer
 );
 
 CREATE SEQUENCE codeintel_ranking_progress_id_seq
@@ -3975,11 +3999,20 @@ CREATE TABLE product_subscriptions (
     cody_gateway_enabled boolean DEFAULT false NOT NULL,
     cody_gateway_chat_rate_limit integer,
     cody_gateway_chat_rate_interval_seconds integer,
+    cody_gateway_embeddings_api_rate_limit integer,
+    cody_gateway_embeddings_api_rate_interval_seconds integer,
+    cody_gateway_embeddings_api_allowed_models text[],
     cody_gateway_chat_rate_limit_allowed_models text[],
     cody_gateway_code_rate_limit integer,
     cody_gateway_code_rate_interval_seconds integer,
     cody_gateway_code_rate_limit_allowed_models text[]
 );
+
+COMMENT ON COLUMN product_subscriptions.cody_gateway_embeddings_api_rate_limit IS 'Custom requests per time interval allowed for embeddings';
+
+COMMENT ON COLUMN product_subscriptions.cody_gateway_embeddings_api_rate_interval_seconds IS 'Custom time interval over which the embeddings rate limit is applied';
+
+COMMENT ON COLUMN product_subscriptions.cody_gateway_embeddings_api_allowed_models IS 'Custom override for the set of models allowed for embedding';
 
 CREATE TABLE query_runner_state (
     query text,
@@ -4801,6 +4834,8 @@ ALTER TABLE ONLY access_tokens ALTER COLUMN id SET DEFAULT nextval('access_token
 
 ALTER TABLE ONLY assigned_owners ALTER COLUMN id SET DEFAULT nextval('assigned_owners_id_seq'::regclass);
 
+ALTER TABLE ONLY assigned_teams ALTER COLUMN id SET DEFAULT nextval('assigned_teams_id_seq'::regclass);
+
 ALTER TABLE ONLY batch_changes ALTER COLUMN id SET DEFAULT nextval('batch_changes_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_changes_site_credentials ALTER COLUMN id SET DEFAULT nextval('batch_changes_site_credentials_id_seq'::regclass);
@@ -5050,6 +5085,9 @@ ALTER TABLE ONLY aggregated_user_statistics
 
 ALTER TABLE ONLY assigned_owners
     ADD CONSTRAINT assigned_owners_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY assigned_teams
+    ADD CONSTRAINT assigned_teams_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY batch_changes
     ADD CONSTRAINT batch_changes_pkey PRIMARY KEY (id);
@@ -5569,6 +5607,8 @@ CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHE
 
 CREATE UNIQUE INDEX assigned_owners_file_path_owner ON assigned_owners USING btree (file_path_id, owner_user_id);
 
+CREATE UNIQUE INDEX assigned_teams_file_path_owner ON assigned_teams USING btree (file_path_id, owner_team_id);
+
 CREATE INDEX batch_changes_namespace_org_id ON batch_changes USING btree (namespace_org_id);
 
 CREATE INDEX batch_changes_namespace_user_id ON batch_changes USING btree (namespace_user_id);
@@ -5679,9 +5719,9 @@ CREATE INDEX codeintel_ranking_exports_graph_key_last_scanned_at ON codeintel_ra
 
 CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id);
 
-CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_definition_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, definition_id, id) WHERE (NOT processed);
-
 CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, id);
+
+CREATE UNIQUE INDEX codeintel_ranking_path_counts_inputs_graph_key_unique_definitio ON codeintel_ranking_path_counts_inputs USING btree (graph_key, definition_id) WHERE (NOT processed);
 
 CREATE INDEX codeintel_ranking_references_exported_upload_id ON codeintel_ranking_references USING btree (exported_upload_id);
 
@@ -6135,6 +6175,15 @@ ALTER TABLE ONLY assigned_owners
 
 ALTER TABLE ONLY assigned_owners
     ADD CONSTRAINT assigned_owners_who_assigned_user_id_fkey FOREIGN KEY (who_assigned_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
+
+ALTER TABLE ONLY assigned_teams
+    ADD CONSTRAINT assigned_teams_file_path_id_fkey FOREIGN KEY (file_path_id) REFERENCES repo_paths(id);
+
+ALTER TABLE ONLY assigned_teams
+    ADD CONSTRAINT assigned_teams_owner_team_id_fkey FOREIGN KEY (owner_team_id) REFERENCES teams(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY assigned_teams
+    ADD CONSTRAINT assigned_teams_who_assigned_team_id_fkey FOREIGN KEY (who_assigned_team_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
 
 ALTER TABLE ONLY batch_changes
     ADD CONSTRAINT batch_changes_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE;

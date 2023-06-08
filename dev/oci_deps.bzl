@@ -114,7 +114,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_bundled_executor_base",
-        digest = "sha256:4a0f645941b054012c04f46efb3c0f04410594b065129d747b1986c557f5e25e",
+        digest = "sha256:a1229fd8a3511c6931293f3a7b22974741f8def858b54836590a488064cf8240",
         image = "us.gcr.io/sourcegraph-dev/wolfi-bundled-executor-base",
     )
 

@@ -4,7 +4,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminGenerateProductLicenseForSubscriptionForm'
-import { mockLicenseContext } from './testUtils'
+import { mockLicenseContext, mockLicense } from './testUtils'
 
 describe('SiteAdminGenerateProductLicenseForSubscriptionForm', () => {
     const origContext = window.context
@@ -21,6 +21,7 @@ describe('SiteAdminGenerateProductLicenseForSubscriptionForm', () => {
                 <MockedTestProvider mocks={[]}>
                     <SiteAdminGenerateProductLicenseForSubscriptionForm
                         subscriptionID="s"
+                        latestLicense={mockLicense}
                         onCancel={noop}
                         subscriptionAccount="foo"
                         onGenerate={noop}

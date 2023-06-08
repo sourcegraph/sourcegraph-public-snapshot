@@ -1,8 +1,7 @@
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { Button, Link, Select, Text, useLocalStorage } from '@sourcegraph/wildcard'
+import { Button, Link, Text, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { tauriInvoke } from '../app/tauriIcpUtils'
 import { HeroPage } from '../components/HeroPage'
@@ -11,8 +10,6 @@ import { GetReposForCodyResult, GetReposForCodyVariables } from '../graphql-oper
 import { CodyLogo } from './components/CodyLogo'
 import { CodySidebar } from './sidebar'
 import { useCodySidebar, CodySidebarStoreProvider } from './sidebar/Provider'
-
-import styles from './CodyStandalonePage.module.scss'
 
 const REPOS_QUERY = gql`
     query GetReposForCody {
@@ -82,9 +79,8 @@ const CodyDisabledNotice: React.FunctionComponent<{ reason: CodyDisabledReason }
 const CodyStandalonePageContext: React.FC<{ repos: GetReposForCodyResult['repositories']['nodes'] }> = ({ repos }) => {
     // eslint-disable-next-line no-restricted-syntax
     const [appSetupFinished] = useLocalStorage('app.setup.finished', false)
-    const [selectedRepo, setSelectedRepo] = useTemporarySetting('app.codyStandalonePage.selectedRepo', '')
-
-    const { scope, setScope, loaded, isCodyEnabled } = useCodySidebar()
+    const { scope, setScope, isCodyEnabled } = useCodySidebar()
+    const [scopeInitialized, setScopeInitialized] = useState(false)
 
     const enabled = appSetupFinished && isCodyEnabled.chat && !isCodyEnabled.needsEmailVerification
     const disabledReason: CodyDisabledReason = !appSetupFinished
@@ -94,37 +90,16 @@ const CodyStandalonePageContext: React.FC<{ repos: GetReposForCodyResult['reposi
         : 'emailNotVerified'
 
     useEffect(() => {
-        if (loaded && scope.type === 'Automatic' && !scope.repositories.find(name => name === selectedRepo)) {
-            setScope({ ...scope, repositories: selectedRepo ? [selectedRepo] : [] })
+        if (!scope.repositories.length && !scopeInitialized && repos.length) {
+            setScope({ ...scope, repositories: [repos[0].name] })
         }
-    }, [loaded, scope, selectedRepo, setScope])
 
-    const repoSelector = (
-        <Select
-            isCustomStyle={true}
-            className={styles.repoSelect}
-            selectSize="sm"
-            label="Repo:"
-            id="repo-select"
-            value={selectedRepo || 'none'}
-            onChange={(event: React.ChangeEvent<HTMLSelectElement>): void => {
-                setSelectedRepo(event.target.value)
-            }}
-        >
-            <option value="" disabled={true}>
-                Select a repo
-            </option>
-            {repos.map(({ name }: { name: string }) => (
-                <option key={name} value={name}>
-                    {name}
-                </option>
-            ))}
-        </Select>
-    )
+        setScopeInitialized(true)
+    }, [setScope, repos, scopeInitialized, setScopeInitialized, scope])
 
     return enabled ? (
         <div className="d-flex flex-column w-100">
-            <CodySidebar titleContent={repoSelector} />
+            <CodySidebar />
         </div>
     ) : (
         <CodyDisabledNotice reason={disabledReason} />
@@ -136,7 +111,7 @@ export const CodyStandalonePage: React.FunctionComponent<{}> = () => {
 
     return (
         <CodySidebarStoreProvider>
-            <CodyStandalonePageContext repos={data?.repositories?.nodes || []} />
+            {data ? <CodyStandalonePageContext repos={data.repositories.nodes} /> : null}
         </CodySidebarStoreProvider>
     )
 }

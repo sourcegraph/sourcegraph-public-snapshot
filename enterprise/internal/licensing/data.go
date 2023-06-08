@@ -85,6 +85,9 @@ const (
 
 	// FeatureSCIM is whether SCIM User Management has been purchased on this instance.
 	FeatureSCIM BasicFeature = "SCIM"
+
+	// FeatureCody is whether or not Cody and embeddings has been purchased on this instance.
+	FeatureCody BasicFeature = "cody"
 )
 
 var AllFeatures = []Feature{
@@ -135,6 +138,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureBackupAndRestore,
 			FeatureCodeInsights,
 			FeatureSCIM,
+			FeatureCody,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
@@ -162,6 +166,7 @@ var planDetails = map[Plan]PlanDetails{
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureSCIM,
+			FeatureCody,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
@@ -178,6 +183,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureCodeInsights,
 			FeatureSSO,
 			FeatureSCIM,
+			FeatureCody,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
@@ -194,6 +200,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureExplicitPermissionsAPI,
 			FeatureSSO,
 			FeatureSCIM,
+			FeatureCody,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
@@ -210,6 +217,7 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureExplicitPermissionsAPI,
 			FeatureSSO,
 			FeatureSCIM,
+			FeatureCody,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,

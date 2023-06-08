@@ -13,6 +13,7 @@ import (
 func ScheduleRepositoriesForEmbedding(
 	ctx context.Context,
 	repoNames []api.RepoName,
+	forceReschedule bool,
 	db database.DB,
 	repoEmbeddingJobsStore repo.RepoEmbeddingJobsStore,
 	gitserverClient gitserver.Client,
@@ -40,11 +41,13 @@ func ScheduleRepositoriesForEmbedding(
 				return errors.Newf("could not get latest commit for repo %s", r.Name)
 			}
 
-			job, _ := tx.GetLastRepoEmbeddingJobForRevision(ctx, r.ID, latestRevision)
 			// Skip creating a repo embedding job for a repo at revision, if there already exists
 			// an identical job that has been completed, or is scheduled to run (processing or queued).
-			if job.IsRepoEmbeddingJobScheduledOrCompleted() {
-				return nil
+			if !forceReschedule {
+				job, _ := tx.GetLastRepoEmbeddingJobForRevision(ctx, r.ID, latestRevision)
+				if job.IsRepoEmbeddingJobScheduledOrCompleted() {
+					return nil
+				}
 			}
 
 			_, err = tx.CreateRepoEmbeddingJob(ctx, r.ID, latestRevision)
