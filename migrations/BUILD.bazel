@@ -1045,7 +1045,7 @@ go_library(
         "frontend/1686208766_add_revoke_reason_to_product_licenses_table/down.sql",
         "frontend/1686208766_add_revoke_reason_to_product_licenses_table/metadata.yaml",
         "frontend/1686208766_add_revoke_reason_to_product_licenses_table/up.sql",
-	"frontend/squashed.sql",
+        "frontend/squashed.sql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/migrations",
     visibility = ["//visibility:public"],
