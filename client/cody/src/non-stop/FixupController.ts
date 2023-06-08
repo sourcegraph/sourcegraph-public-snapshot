@@ -24,7 +24,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
     // TODO: Make the fixup scheduler use a cooldown timer with a longer delay
     private readonly scheduler = new FixupScheduler(10)
     private readonly decorator = new FixupDecorator()
-    private readonly codelenses = new FixupCodeLenses()
+    private readonly codelenses = new FixupCodeLenses(this)
     private readonly contentStore = new ContentProvider()
 
     private _disposables: vscode.Disposable[] = []
@@ -177,12 +177,15 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
     }
 
     private discard(id: taskID): void {
-        console.log('discard task')
-        this.codelenses.remove(id)
+        const task = this.tasks.get(id)
+        if (!task) {
+            return
+        }
+        this.codelenses.didDeleteTask(task)
         this.contentStore.delete(id)
+        this.decorator.didCompleteTask(task)
         this.tasks.delete(id)
         this.taskViewProvider.removeTreeItemByID(id)
-        console.log('task has been discarded')
     }
 
     public getTaskView(): TaskViewProvider {
@@ -234,6 +237,14 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         if (!this.needsDiffUpdate_.has(task)) {
             this.needsDiffUpdate_.add(task)
         }
+    }
+
+    // Handles when the range associated with a fixup task changes.
+    public rangeDidChange(task: FixupTask): void {
+        this.codelenses.didUpdateTask(task)
+        // We don't notify the decorator about this range change; vscode
+        // updates any text decorations and we can recompute them, lazily,
+        // if the diff is dirtied.
     }
 
     // Tasks where the text of the buffer, or the text provided by Cody, has
@@ -406,7 +417,9 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             return null
         }
         // Save states of the task
-        this.codelenses.set(task.id, task.state, task.selectionRange)
+        this.codelenses.didUpdateTask(task)
+        // TODO: Tasks should not change IDs, so just store them once on
+        // creation.
         this.tasks.set(task.id, task)
         this.taskViewProvider.setTreeItem(task)
         return task
@@ -419,6 +432,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
 
     public dispose(): void {
         this.reset()
+        this.codelenses.dispose()
         this.decorator.dispose()
         this.taskViewProvider.dispose()
         for (const disposable of this._disposables) {

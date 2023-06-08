@@ -15,5 +15,5 @@ type Config struct {
 
 func (c *Config) Load() {
 	c.Interval = c.GetInterval("CODEINTEL_RANKING_REDUCER_INTERVAL", "1s", "How frequently to run the ranking reducer.")
-	c.BatchSize = c.GetInt("CODEINTEL_RANKING_REDUCER_BATCH_SIZE", "100", "How many path counts to reduce at once.")
+	c.BatchSize = c.GetInt("CODEINTEL_RANKING_REDUCER_BATCH_SIZE", "1000", "How many path counts to reduce at once.")
 }
