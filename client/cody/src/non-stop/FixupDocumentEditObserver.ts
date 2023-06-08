@@ -19,7 +19,7 @@ export class FixupDocumentEditObserver {
             return
         }
         const tasks = this.provider_.tasksForFile(file)
-        // Notify which tasks have changed text
+        // Notify which tasks have changed text or the range edits apply to
         for (const task of tasks) {
             for (const edit of event.contentChanges) {
                 if (
@@ -37,8 +37,7 @@ export class FixupDocumentEditObserver {
             )
             if (!updatedRange.isEqual(task.selectionRange)) {
                 task.selectionRange = updatedRange
-                // We don't notify about this range change. vscode will update
-                // any text decorations.
+                this.provider_.rangeDidChange(task)
             }
         }
     }
