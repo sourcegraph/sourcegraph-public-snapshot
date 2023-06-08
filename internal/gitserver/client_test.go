@@ -440,7 +440,6 @@ func TestClient_ArchiveReader(t *testing.T) {
 							return base.Archive(ctx, in, opts...)
 						}
 						mockRepoUpdate := func(ctx context.Context, in *proto.RepoUpdateRequest, opts ...grpc.CallOption) (*proto.RepoUpdateResponse, error) {
-							called = true
 							base := proto.NewGitserverServiceClient(cc)
 							return base.RepoUpdate(ctx, in, opts...)
 						}
