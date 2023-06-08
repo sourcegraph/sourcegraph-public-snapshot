@@ -69,8 +69,6 @@ message PatchCommitInfo {
   string committer_email = 5;
   // author_date is the date of the author to be used for the commit
   google.protobuf.Timestamp date = 6;
-  // push_ref is the optional override for the ref that is pushed to
-  optional string push_ref = 7;
 }
 
 message PushConfig {
@@ -105,6 +103,8 @@ message CreateCommitFromPatchBinaryRequest {
   // push_config is the configuration to be used for pushing the commit
   PushConfig push = 7;
   repeated string git_apply_args = 8;
+  // push_ref is the optional override for the ref that is pushed to
+  optional string push_ref = 9;
 }
 
 message CreateCommitFromPatchError {
