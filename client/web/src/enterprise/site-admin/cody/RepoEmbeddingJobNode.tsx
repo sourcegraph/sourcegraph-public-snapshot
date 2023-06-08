@@ -36,6 +36,9 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
     queuedAt,
     startedAt,
     failureMessage,
+    filesScheduled,
+    filesEmbedded,
+    filesSkipped,
     onCancel,
 }) => (
     <li className="list-group-item p-2">
@@ -60,6 +63,9 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
                             queuedAt={queuedAt}
                             startedAt={startedAt}
                             failureMessage={failureMessage}
+                            filesScheduled={filesScheduled}
+                            filesEmbedded={filesEmbedded}
+                            filesSkipped={filesSkipped}
                         />
                     </div>
                 </div>
@@ -84,7 +90,7 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
 )
 
 const RepoEmbeddingJobExecutionInfo: FC<
-    Pick<RepoEmbeddingJobFields, 'state' | 'cancel' | 'finishedAt' | 'failureMessage' | 'queuedAt' | 'startedAt'>
+    Pick<RepoEmbeddingJobFields, 'state' | 'cancel' | 'finishedAt' | 'failureMessage' | 'queuedAt' | 'startedAt', 'filesScheduled', 'filesEmbedded', 'filesSkipped'>
 > = ({ state, cancel, finishedAt, queuedAt, startedAt, failureMessage }) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     return (

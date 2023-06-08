@@ -35,6 +35,9 @@ const REPO_EMBEDDING_JOB_FRAGMENT = gql`
             oid
             abbreviatedOID
         }
+        filesScheduled
+        filesEmbedded
+        filesSkipped
     }
 `
 

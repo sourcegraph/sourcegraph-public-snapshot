@@ -41,7 +41,7 @@ import { RepoEmbeddingJobNode } from './RepoEmbeddingJobNode'
 
 import styles from './SiteAdminCodyPage.module.scss'
 
-export interface SiteAdminCodyPageProps extends TelemetryProps {}
+export interface SiteAdminCodyPageProps extends TelemetryProps { }
 
 interface RepoEmbeddingJobsFormValues {
     repositories: string[]
