@@ -701,6 +701,18 @@ type P4Credentials struct {
 	P4Passwd string
 }
 
+func (p *P4Credentials) ToProto() *proto.P4Credentials {
+	return &proto.P4Credentials{
+		P4User:   p.P4User,
+		P4Passwd: p.P4Passwd,
+	}
+}
+
+func (p *P4Credentials) FromProto(pr *proto.P4Credentials) {
+	p.P4User = pr.P4User
+	p.P4Passwd = pr.P4Passwd
+}
+
 // PushConfig provides the configuration required to push one or more commits to
 // a code host.
 type PushConfig struct {
@@ -724,9 +736,10 @@ type PushConfig struct {
 
 func (p *PushConfig) ToProto() *proto.PushConfig {
 	return &proto.PushConfig{
-		RemoteUrl:  p.RemoteURL,
-		PrivateKey: p.PrivateKey,
-		Passphrase: p.Passphrase,
+		RemoteUrl:     p.RemoteURL,
+		PrivateKey:    p.PrivateKey,
+		Passphrase:    p.Passphrase,
+		P4Credentials: p.P4Credentials.ToProto(),
 	}
 }
 
@@ -734,10 +747,18 @@ func PushConfigFromProto(p *proto.PushConfig) *PushConfig {
 	if p == nil {
 		return nil
 	}
+	var p4c *P4Credentials
+	if p.GetP4Credentials() != nil {
+		p4c = &P4Credentials{
+			P4User:   p.GetP4Credentials().P4User,
+			P4Passwd: p.GetP4Credentials().P4Passwd,
+		}
+	}
 	return &PushConfig{
-		RemoteURL:  p.GetRemoteUrl(),
-		PrivateKey: p.GetPrivateKey(),
-		Passphrase: p.GetPassphrase(),
+		RemoteURL:     p.GetRemoteUrl(),
+		PrivateKey:    p.GetPrivateKey(),
+		Passphrase:    p.GetPassphrase(),
+		P4Credentials: p4c,
 	}
 }
 
