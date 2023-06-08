@@ -72,6 +72,9 @@ type HeartbeatRequest struct {
 // Job IDs are ints instead of strings to support backwards compatibility.
 // TODO: Remove this in Sourcegraph 5.2
 type HeartbeatRequestV1 struct {
+	// TODO: This field is set to become unnecessary in Sourcegraph 5.2.
+	Version ExecutorAPIVersion `json:"version"`
+
 	ExecutorName string `json:"executorName"`
 	JobIDs       []int  `json:"jobIds"`
 
@@ -88,6 +91,9 @@ type HeartbeatRequestV1 struct {
 }
 
 type heartbeatRequestUnmarshaller struct {
+	// TODO: This field is set to become unnecessary in Sourcegraph 5.2.
+	Version ExecutorAPIVersion `json:"version"`
+
 	ExecutorName  string        `json:"executorName"`
 	JobIDs        []any         `json:"jobIds"`
 	JobIDsByQueue []QueueJobIDs `json:"jobIdsByQueue"`
@@ -104,6 +110,13 @@ type heartbeatRequestUnmarshaller struct {
 
 	PrometheusMetrics string `json:"prometheusMetrics"`
 }
+
+// TODO: This field is set to become unnecessary in Sourcegraph 5.2.
+type ExecutorAPIVersion string
+
+const (
+	ExecutorAPIVersion2 ExecutorAPIVersion = "V2"
+)
 
 // UnmarshalJSON is a custom unmarshaler for HeartbeatRequest that allows for backwards compatibility when job IDs are
 // ints instead of strings.
