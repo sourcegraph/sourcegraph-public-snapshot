@@ -77,12 +77,7 @@ export const ResultContainer: ForwardReferenceExoticComponent<
                     {/* Add a result type to be read out to screen readers only, so that screen reader users can
                     easily scan the search results list (for example, by navigating by landmarks). */}
                     <span className="sr-only">{resultType ? accessibleResultType[resultType] : 'search'} result,</span>
-                    {repoName && (
-                        <CodeHostIcon
-                            repoName={['gitlab.com', 'github.com', 'bitbucket.org'][index % 3]}
-                            className="flex-shrink-0 mr-1"
-                        />
-                    )}
+                    {repoName && <CodeHostIcon repoName={repoName} className="flex-shrink-0 mr-1" />}
                     <div
                         className={classNames(styles.headerTitle, titleClassName)}
                         data-testid="result-container-header"
