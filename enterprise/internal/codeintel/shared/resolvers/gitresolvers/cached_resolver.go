@@ -66,7 +66,7 @@ func newCachedLocationResolver(
 			return nil, err
 		}
 
-		commitResolver := NewGitCommitResolver(repositoryResolver, commitID, commit)
+		commitResolver := NewGitCommitResolver(gitserverClient, repositoryResolver, commitID, commit)
 		return commitResolver, nil
 	}
 
