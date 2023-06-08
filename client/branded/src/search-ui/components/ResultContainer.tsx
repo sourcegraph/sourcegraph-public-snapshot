@@ -1,10 +1,9 @@
 import React from 'react'
 
-import { mdiArchive, mdiLock, mdiSourceFork } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
-import { ForwardReferenceExoticComponent, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
 
 import { formatRepositoryStarCount } from '../util/stars'
 
@@ -26,9 +25,6 @@ export interface ResultContainerProps {
     className?: string
     rankingDebug?: string
     onResultClicked?: () => void
-    isFork?: boolean
-    isArchived?: boolean
-    isPrivate?: boolean
 }
 
 const accessibleResultType: Record<SearchMatch['type'], string> = {
@@ -62,9 +58,6 @@ export const ResultContainer: ForwardReferenceExoticComponent<
         as: Component = 'div',
         onResultClicked,
         repoLastFetched,
-        isFork,
-        isArchived,
-        isPrivate,
     } = props
 
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -84,7 +77,12 @@ export const ResultContainer: ForwardReferenceExoticComponent<
                     {/* Add a result type to be read out to screen readers only, so that screen reader users can
                     easily scan the search results list (for example, by navigating by landmarks). */}
                     <span className="sr-only">{resultType ? accessibleResultType[resultType] : 'search'} result,</span>
-                    {repoName && <CodeHostIcon repoName={repoName} className="flex-shrink-0 mr-1" />}
+                    {repoName && (
+                        <CodeHostIcon
+                            repoName={['gitlab.com', 'github.com', 'bitbucket.org'][index % 3]}
+                            className="flex-shrink-0 mr-1"
+                        />
+                    )}
                     <div
                         className={classNames(styles.headerTitle, titleClassName)}
                         data-testid="result-container-header"
@@ -96,33 +94,6 @@ export const ResultContainer: ForwardReferenceExoticComponent<
                             <SearchResultStar aria-label={`${repoStars} stars`} />
                             <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
                         </span>
-                    )}
-                    {isFork && (
-                        <Tooltip content="Forked repository">
-                            <Icon
-                                aria-label="Forked repository"
-                                className="flex-shrink-0 text-muted ml-2"
-                                svgPath={mdiSourceFork}
-                            />
-                        </Tooltip>
-                    )}
-                    {isArchived && (
-                        <Tooltip content="Archived repository">
-                            <Icon
-                                aria-label="Archived repository"
-                                className="flex-shrink-0 text-muted ml-2"
-                                svgPath={mdiArchive}
-                            />
-                        </Tooltip>
-                    )}
-                    {isPrivate && (
-                        <Tooltip content="Private repository">
-                            <Icon
-                                aria-label="Private repository"
-                                className="flex-shrink-0 text-muted ml-2"
-                                svgPath={mdiLock}
-                            />
-                        </Tooltip>
                     )}
                     {repoLastFetched && <LastSyncedIcon lastSyncedTime={repoLastFetched} className="ml-2" />}
                 </div>

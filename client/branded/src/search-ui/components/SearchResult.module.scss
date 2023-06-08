@@ -118,3 +118,13 @@
 .gap-1 {
     gap: 0.5rem;
 }
+
+.divider-between {
+    > *:not(:last-child)::after {
+        content: ' ';
+        height: 1rem;
+        margin: 0 0.75rem;
+        border-right: 1px solid var(--border-color-2);
+        display: block;
+    }
+}

@@ -1,12 +1,13 @@
 import React, { useEffect, useRef } from 'react'
 
+import { mdiArchive, mdiLock, mdiSourceFork } from '@mdi/js'
 import classNames from 'classnames'
 
 import { highlightNode } from '@sourcegraph/common'
 import { codeHostSubstrLength, displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { BuildSearchQueryURLParameters, QueryState } from '@sourcegraph/shared/src/search'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { Link, Text } from '@sourcegraph/wildcard'
+import { Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { RepoMetadata } from './RepoMetadata'
 import { ResultContainer } from './ResultContainer'
@@ -73,6 +74,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     }, [result, repositoryMatches, repoNameElement, description, descriptionMatches, repoDescriptionElement, repoName])
 
     const showRepoMetadata = enableRepositoryMetadata && !!metadata
+    const showExtraInfo = result.archived || result.fork || result.private
 
     return (
         <ResultContainer
@@ -84,16 +86,47 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             repoStars={result.repoStars}
             className={containerClassName}
             repoLastFetched={result.repoLastFetched}
-            isFork={result.fork}
-            isArchived={result.archived}
-            isPrivate={result.private}
             as={as}
         >
-            {(description || showRepoMetadata) && (
+            {(showExtraInfo || description || showRepoMetadata) && (
                 <div
                     data-testid="search-repo-result"
                     className={classNames(styles.searchResultMatch, styles.gap1, 'p-2 flex-column')}
                 >
+                    {showExtraInfo && (
+                        <div className={classNames('d-flex', styles.dividerBetween)}>
+                            {result.fork && (
+                                <div className="d-flex align-items-center">
+                                    <Icon
+                                        aria-label="Forked repository"
+                                        className={classNames('flex-shrink-0 text-muted mr-1', styles.icon)}
+                                        svgPath={mdiSourceFork}
+                                    />
+                                    <small>Fork</small>
+                                </div>
+                            )}
+                            {result.archived && (
+                                <div className="d-flex align-items-center">
+                                    <Icon
+                                        aria-label="Archived repository"
+                                        className={classNames('flex-shrink-0 text-muted mr-1', styles.icon)}
+                                        svgPath={mdiArchive}
+                                    />
+                                    <small>Archived</small>
+                                </div>
+                            )}
+                            {result.private && (
+                                <div className="d-flex align-items-center">
+                                    <Icon
+                                        aria-label="Private repository"
+                                        className={classNames('flex-shrink-0 text-muted mr-1', styles.icon)}
+                                        svgPath={mdiLock}
+                                    />
+                                    <small>Private</small>
+                                </div>
+                            )}
+                        </div>
+                    )}
                     {description && (
                         <Text as="em" ref={repoDescriptionElement}>
                             {description.length > REPO_DESCRIPTION_CHAR_LIMIT
