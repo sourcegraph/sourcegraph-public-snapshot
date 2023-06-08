@@ -36,7 +36,6 @@ go_library(
         "//enterprise/internal/codeintel",
         "//enterprise/internal/codeintel/shared",
         "//enterprise/internal/cody",
-        "//enterprise/internal/licensing",
         "//enterprise/internal/scim",
         "//internal/cody",
         "//internal/conf",
