@@ -77,11 +77,16 @@ func (c *Config) Load() {
 	c.Anthropic.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_ANTHROPIC_ALLOWED_MODELS",
 		strings.Join([]string{
 			"claude-v1",
+			"claude-v1-100k",
 			"claude-v1.0",
 			"claude-v1.2",
 			"claude-v1.3",
+			"claude-v1.3-100k",
 			"claude-instant-v1",
+			"claude-instant-v1-100k",
 			"claude-instant-v1.0",
+			"claude-instant-v1.1",
+			"claude-instant-v1.1-100k",
 		}, ","),
 		"Anthropic models that can be used."))
 
