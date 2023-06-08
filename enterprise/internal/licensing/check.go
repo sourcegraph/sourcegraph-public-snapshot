@@ -15,115 +15,130 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
-	licenseCheckStarted     = false
-	store                   = redispool.Store
-	delay                   = 12 * time.Hour
+	licenseCheckStarted = false
+	store               = redispool.Store
+
 	lastCalledAtStoreKey    = "licensing:last_called_at"
 	licenseValidityStoreKey = "licensing:is_license_valid"
+	prevLicenseTokenKey     = "licensing:prev_license_hash"
+
+	routine *goroutine.PeriodicGoroutine
 )
 
-func StartLicenseCheck(logger log.Logger, globalStateStore database.GlobalStateStore) {
-	if licenseCheckStarted {
-		panic("already started")
-	}
-	licenseCheckStarted = true
-
-	// initial sleep on server restarts
-	var durationToWait time.Duration = 0
-	lastCalledStr, err := store.Get(lastCalledAtStoreKey).String()
-	if err != nil {
-		logger.Error("error getting last-called-at from cache", log.Error(err))
-	}
-	if lastCalledAt, err := time.Parse(time.RFC3339, lastCalledStr); err == nil {
-		durationToWait = maxDelayOrZero(lastCalledAt, time.Now(), delay)
-	}
-	time.Sleep(durationToWait)
-
-	ctx := context.Background()
-	for {
-		info, err := GetConfiguredProductLicenseInfo()
-		if err != nil {
-			logger.Error("error getting configured license info", log.Error(err))
-		} else if info.HasTag(AllowAirGappedTag) { // todo: discuss what will happen with existing air-gapped v1 license instances
-			logger.Info("skipping license check")
-		} else if globalState, err := globalStateStore.Get(ctx); err != nil {
-			ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
-			valid, err := checkLicenseValidity(ctx, httpcli.ExternalClient, globalState.SiteID, conf.Get().LicenseKey)
-			cancel()
-			if err != nil {
-				logger.Error("error while checking license validity", log.Error(err))
-			} else {
-				store.Set(licenseValidityStoreKey, valid)
-			}
-			store.Set(lastCalledAtStoreKey, time.Now().Format(time.RFC3339))
-		} else {
-			logger.Error("error getting global state", log.Error(err))
-		}
-		time.Sleep(delay)
-	}
+type licenseChecker struct {
+	siteID string
+	token  string
+	info   *Info
+	doer   httpcli.Doer
 }
 
-func maxDelayOrZero(before time.Time, after time.Time, maxDelay time.Duration) time.Duration {
-	if before.IsZero() || after.IsZero() || before.After(after) {
-		return 0
+func (l *licenseChecker) Handle(ctx context.Context) error {
+	store.Set(lastCalledAtStoreKey, time.Now().Format(time.RFC3339))
+
+	if l.info.HasTag(AllowAirGappedTag) || l.info.SalesforceSubscriptionID != nil {
+		store.Set(licenseValidityStoreKey, true)
+		return nil
 	}
 
-	timePassed := time.Since(before)
-
-	if timePassed < delay {
-		return delay - timePassed
-	}
-
-	return 0
-}
-
-func checkLicenseValidity(ctx context.Context, doer httpcli.Doer, siteID, licenseKey string) (bool, error) {
 	payload, err := json.Marshal(struct {
 		ClientSiteID string `json:"siteID"`
-	}{ClientSiteID: siteID})
+	}{ClientSiteID: l.siteID})
 
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	req, err := http.NewRequest(http.MethodPost, "https://sourcegraph.com/.api/license/check", bytes.NewBuffer(payload))
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+hex.EncodeToString(GenerateHashedLicenseKeyAccessToken(licenseKey)))
+	req.Header.Set("Authorization", "Bearer "+l.token)
 	req.Header.Set("Content-Type", "application/json")
 
-	res, err := doer.Do(req)
+	res, err := l.doer.Do(req)
 	if err != nil {
-		return false, err
+		return err
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return false, errors.Newf("Failed to check license, status code: %d", res.StatusCode)
+		return errors.Newf("Failed to check license, status code: %d", res.StatusCode)
 	}
 
 	var body LicenseCheckResponse
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	json.Unmarshal([]byte(resBody), &body)
 
 	if body.Error != "" {
-		return false, errors.New(body.Error)
+		return errors.New(body.Error)
 	}
 
 	if body.Data == nil {
-		return false, errors.New("No data returned from license check")
+		return errors.New("No data returned from license check")
 	}
 
-	return body.Data.IsValid, nil
+	store.Set(licenseValidityStoreKey, body.Data.IsValid)
+	return nil
+}
+
+func StartLicenseCheck(ctx context.Context, interval time.Duration, logger log.Logger, globalStateStore database.GlobalStateStore) {
+	if licenseCheckStarted {
+		logger.Info("license check already started")
+		return
+	}
+	licenseCheckStarted = true
+
+	// The entire logic is dependent on config so we will
+	// wait for initial config to be loaded as well as
+	// watch for any config changes
+	conf.Watch(func() {
+		prevLicenseToken, err := store.Get(prevLicenseTokenKey).String()
+		if err != nil {
+			logger.Error("error getting previous license hash", log.Error(err))
+			return
+		}
+		licenseToken := hex.EncodeToString(GenerateHashedLicenseKeyAccessToken(conf.Get().LicenseKey))
+		// skip if license key hasn't changed and already running
+		if prevLicenseToken == licenseToken && routine != nil {
+			return
+		}
+
+		// stop previously running routine
+		if routine != nil {
+			routine.Stop()
+		}
+
+		// continue running with new license key
+		store.Set(prevLicenseTokenKey, licenseToken)
+
+		globalState, err := globalStateStore.Get(ctx)
+		if err != nil {
+			logger.Error("error getting global state", log.Error(err))
+			return
+		}
+		info, err := GetConfiguredProductLicenseInfo()
+		if err != nil {
+			logger.Error("error getting configured license info", log.Error(err))
+			return
+		}
+		routine := goroutine.NewPeriodicGoroutine(
+			context.Background(),
+			&licenseChecker{siteID: globalState.SiteID, token: licenseToken, info: info, doer: httpcli.ExternalDoer},
+			goroutine.WithName("licensing.check-license-validity"),
+			goroutine.WithDescription("check if license is valid from sourcegraph.com"),
+			goroutine.WithInterval(interval),
+		)
+		go goroutine.MonitorBackgroundRoutines(ctx, routine)
+	})
 }

@@ -3,129 +3,145 @@ package licensing
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"io"
 	"net/http"
 	"testing"
 	"time"
 
+	"github.com/gomodule/redigo/redis"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
-func Test_maxDelayOrZero(t *testing.T) {
-	now := time.Now()
+func Test_licenseChecker(t *testing.T) {
+	// Connect to local redis for testing, this is the same URL used in rcache.SetupForTest
+	store = redispool.NewKeyValue("127.0.0.1:6379", &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 5 * time.Second,
+	})
 
-	tests := map[string]struct {
-		before time.Time
-		after  time.Time
-		delay  time.Duration
-		want   time.Duration
-	}{
-		"returns 0 if before is zero": {
-			before: time.Time{},
-			after:  now,
-			delay:  12 * time.Hour,
-			want:   0,
+	siteID := "some-site-id"
+	token := "test-token"
+	tests1 := map[string]*Info{
+		"skips check if license is air-gapped": {
+			license.Info{Tags: []string{AllowAirGappedTag}},
 		},
-		"returns 0 if after is zero": {
-			before: now.Add(-1 * time.Hour),
-			after:  time.Time{},
-			delay:  12 * time.Hour,
-			want:   0,
-		},
-		"returns 0 if before is in the future": {
-			before: now.Add(1 * time.Hour),
-			after:  now,
-			delay:  12 * time.Hour,
-			want:   0,
-		},
-		"returns 0 if before is in the past but more than 12 hours ago": {
-			before: now.Add(-13 * time.Hour),
-			after:  now,
-			delay:  12 * time.Hour,
-			want:   0,
-		},
-		"returns 0 hours if before is 12 hours ago": {
-			before: now.Add(-12 * time.Hour),
-			after:  now,
-			delay:  12 * time.Hour,
-			want:   0,
-		},
-		"returns 10h if before is 2 hours ago": {
-			before: now.Add(-2 * time.Hour),
-			after:  now,
-			delay:  12 * time.Hour,
-			want:   10 * time.Hour,
+		"skips check if license is old version": {
+			license.Info{SalesforceSubscriptionID: strPtr("some-sub-id")},
 		},
 	}
-	for name, test := range tests {
+	for name, info := range tests1 {
 		t.Run(name, func(t *testing.T) {
-			got := maxDelayOrZero(test.before, now, 12*time.Hour)
-			require.Equal(t, test.want, got.Round(time.Hour))
+			store.Del(licenseValidityStoreKey)
+			store.Del(lastCalledAtStoreKey)
+
+			doer := &mockDoer{
+				status:   '1',
+				response: []byte(``),
+			}
+			handler := licenseChecker{
+				siteID: siteID,
+				token:  token,
+				doer:   doer,
+				info:   info,
+			}
+
+			err := handler.Handle(context.Background())
+			require.NoError(t, err)
+
+			// check doer NOT called
+			require.False(t, doer.DoCalled)
+
+			// check result was set to true
+			valid, err := store.Get(licenseValidityStoreKey).Bool()
+			require.NoError(t, err)
+			require.True(t, valid)
+
+			// check last called at was set
+			lastCalledAt, err := store.Get(lastCalledAtStoreKey).String()
+			require.NoError(t, err)
+			require.NotEmpty(t, lastCalledAt)
 		})
 	}
-}
 
-func Test_checkLicenseValidity(t *testing.T) {
-	tests := map[string]struct {
+	tests2 := map[string]struct {
+		info     *Info
 		response []byte
 		status   int
 		want     bool
 		err      bool
 	}{
 		"returns error if unable to make a request to license server": {
+			info:     &Info{},
 			response: []byte(`{"error": "some error"}`),
 			status:   http.StatusInternalServerError,
-			want:     false,
 			err:      true,
 		},
 		"returns error if got error": {
+			info:     &Info{},
 			response: []byte(`{"error": "some error"}`),
 			status:   http.StatusOK,
-			want:     false,
 			err:      true,
 		},
 		`returns correct result for "true"`: {
+			info:     &Info{},
 			response: []byte(`{"data": {"is_valid": true}}`),
 			status:   http.StatusOK,
 			want:     true,
 		},
 		`returns correct result for "false"`: {
+			info:     &Info{},
 			response: []byte(`{"data": {"is_valid": false, "reason": "some reason"}}`),
 			status:   http.StatusOK,
 			want:     false,
 		},
 	}
 
-	siteID := "some-site-id"
-	licenseKey := "test-license-key"
-	for name, test := range tests {
+	for name, test := range tests2 {
 		t.Run(name, func(t *testing.T) {
+			store.Del(licenseValidityStoreKey)
+			store.Del(lastCalledAtStoreKey)
+
 			doer := &mockDoer{
 				status:   test.status,
 				response: test.response,
 			}
-			got, err := checkLicenseValidity(context.Background(), doer, siteID, licenseKey)
-			if test.err {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
+			checker := licenseChecker{
+				siteID: siteID,
+				token:  token,
+				doer:   doer,
+				info:   test.info,
 			}
 
-			// check doer called
+			err := checker.Handle(context.Background())
+			if test.err {
+				require.Error(t, err)
+
+				// check result was NOT set
+				require.True(t, store.Get(licenseValidityStoreKey).IsNil())
+			} else {
+				require.NoError(t, err)
+
+				// check result was set
+				got, err := store.Get(licenseValidityStoreKey).Bool()
+				require.NoError(t, err)
+				require.Equal(t, test.want, got)
+			}
+
+			// check last called at was set
+			lastCalledAt, err := store.Get(lastCalledAtStoreKey).String()
+			require.NoError(t, err)
+			require.NotEmpty(t, lastCalledAt)
+
+			// check doer with proper parameters
 			require.True(t, doer.DoCalled)
-
-			// check called with correct method, url and content type
-			require.Equal(t, "https://sourcegraph.com/.api/license/check", doer.Request.URL.String())
 			require.Equal(t, "POST", doer.Request.Method)
+			require.Equal(t, "https://sourcegraph.com/.api/license/check", doer.Request.URL.String())
 			require.Equal(t, "application/json", doer.Request.Header.Get("Content-Type"))
-
-			// check called with correct authorization header
-			tokenHexEncoded := hex.EncodeToString(GenerateHashedLicenseKeyAccessToken(licenseKey))
-			require.Equal(t, "Bearer "+tokenHexEncoded, doer.Request.Header.Get("Authorization"))
-
-			// check called with correct request body
+			require.Equal(t, "Bearer "+token, doer.Request.Header.Get("Authorization"))
 			var body struct {
 				SiteID string `json:"siteID"`
 			}
@@ -133,9 +149,6 @@ func Test_checkLicenseValidity(t *testing.T) {
 			require.NoError(t, err)
 			json.Unmarshal([]byte(resBody), &body)
 			require.Equal(t, siteID, body.SiteID)
-
-			// check result
-			require.Equal(t, test.want, got)
 		})
 	}
 }
