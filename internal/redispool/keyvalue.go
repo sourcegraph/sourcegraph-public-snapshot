@@ -189,7 +189,11 @@ func (r *redisKeyValue) SetEx(key string, ttlSeconds int, val any) error {
 }
 
 func (r *redisKeyValue) SetNx(key string, val any) (bool, error) {
-	return r.do("SETNX", r.prefix+key, val).Bool()
+	_, err := r.do("SET", r.prefix+key, val, "NX").String()
+	if err == redis.ErrNil {
+		return false, nil
+	}
+	return true, err
 }
 
 func (r *redisKeyValue) Incr(key string) (int, error) {

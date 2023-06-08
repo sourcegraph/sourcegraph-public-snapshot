@@ -44,9 +44,10 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		set, err := kv.SetNx("setnx", "2")
 		require.Works(err)
 		assert.True(t, set)
-		set, err = kv.SetNx("setnx", "2")
+		set, err = kv.SetNx("setnx", "3")
 		require.Works(err)
 		assert.False(t, set)
+		require.Equal(kv.Get("setnx"), "2")
 
 		// GetSet on existing value
 		require.Equal(kv.GetSet("simple", "2"), "1")
