@@ -2,14 +2,10 @@ package messagesize
 
 import (
 	"fmt"
-	"math"
-	"sync"
-
 	"google.golang.org/grpc"
+	"math"
 
 	"github.com/dustin/go-humanize"
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
@@ -17,33 +13,25 @@ var (
 	smallestAllowedMaxMessageSize = uint64(4 * 1024 * 1024) // 4 MB: There isn't a scenario where we'd want to dip below the default of 4MB.
 	largestAllowedMaxMessageSize  = uint64(math.MaxInt)     // This is the largest allowed value for the type accepted by the grpc.MaxSize[...] options.
 
-	logClientWarningOnce sync.Once // Ensures that we only log the warning once, since we might call ClientMessageSizeFromEnv multiple times.
 	envClientMessageSize = env.Get("SRC_GRPC_CLIENT_MAX_MESSAGE_SIZE", messageSizeDisabled, fmt.Sprintf("set the maximum message size for gRPC clients (ex: %q)", "40MB"))
-
-	logServerWarningOnce sync.Once // Ensures that we only log the warning once, since we might call ServerMessageSizeFromEnv multiple times.
 	envServerMessageSize = env.Get("SRC_GRPC_SERVER_MAX_MESSAGE_SIZE", messageSizeDisabled, fmt.Sprintf("set the maximum message size for gRPC servers (ex: %q)", "40MB"))
 
 	messageSizeDisabled = "message_size_disabled" // sentinel value for when the message size env var isn't set
 )
 
-// ClientMessageSizeFromEnv returns a slice of grpc.DialOptions that set the maximum message size for gRPC clients if
+// MustGetClientMessageSizeFromEnv returns a slice of grpc.DialOptions that set the maximum message size for gRPC clients if
 // the "SRC_GRPC_CLIENT_MAX_MESSAGE_SIZE" environment variable is set to a valid size value (ex: "40 MB").
 //
-// If the environment variable is not set or if the size value is invalid (too small, not parsable, etc.), it returns nil.
-func ClientMessageSizeFromEnv(l log.Logger) []grpc.DialOption {
+// If the environment variable isn't set, it returns nil.
+// If the size value in the environment variable is invalid (too small, not parsable, etc.), it panics.
+func MustGetClientMessageSizeFromEnv() []grpc.DialOption {
 	if envClientMessageSize == messageSizeDisabled {
 		return nil
 	}
 
 	messageSize, err := getMessageSizeBytesFromString(envClientMessageSize, smallestAllowedMaxMessageSize, largestAllowedMaxMessageSize)
 	if err != nil {
-		logClientWarningOnce.Do(func() {
-			l.Warn("failed to get gRPC client message size, setting to default value",
-				log.Error(err),
-				log.String("default", humanize.IBytes(smallestAllowedMaxMessageSize)),
-			)
-		})
-		return nil
+		panic(fmt.Sprintf("failed to get gRPC client message size: %s", err))
 	}
 
 	return []grpc.DialOption{
@@ -54,25 +42,19 @@ func ClientMessageSizeFromEnv(l log.Logger) []grpc.DialOption {
 	}
 }
 
-// ServerMessageSizeFromEnv returns a slice of grpc.ServerOption that set the maximum message size for gRPC servers if
+// MustGetServerMessageSizeFromEnv returns a slice of grpc.ServerOption that set the maximum message size for gRPC servers if
 // the "SRC_GRPC_SERVER_MAX_MESSAGE_SIZE" environment variable is set to a valid size value (ex: "40 MB").
 //
-// If the environment variable is not set or if the size value is invalid (too small, not parsable, etc.), it returns nil.
-func ServerMessageSizeFromEnv(l log.Logger) []grpc.ServerOption {
+// If the environment variable isn't set, it returns nil.
+// If the size value in the environment variable is invalid (too small, not parsable, etc.), it panics.
+func MustGetServerMessageSizeFromEnv() []grpc.ServerOption {
 	if envServerMessageSize == messageSizeDisabled {
 		return nil
 	}
 
 	messageSize, err := getMessageSizeBytesFromString(envServerMessageSize, smallestAllowedMaxMessageSize, largestAllowedMaxMessageSize)
 	if err != nil {
-		logServerWarningOnce.Do(func() {
-			l.Warn("failed to get gRPC server message size, using default value",
-				log.Error(err),
-				log.String("default", humanize.IBytes(smallestAllowedMaxMessageSize)),
-			)
-		})
-
-		return nil
+		panic(fmt.Sprintf("failed to get gRPC server message size: %s", err))
 	}
 
 	return []grpc.ServerOption{

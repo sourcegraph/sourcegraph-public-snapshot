@@ -78,7 +78,7 @@ func DialOptions(logger log.Logger, additionalOptions ...grpc.DialOption) []grpc
 	//
 	// The message size options are only provided if the environment variable is set. These options serve as an escape hatch, so they
 	// take precedence over everything else with a uniform size setting that's easy to reason about.
-	out = append(out, messagesize.ClientMessageSizeFromEnv(logger)...)
+	out = append(out, messagesize.MustGetClientMessageSizeFromEnv()...)
 
 	return out
 }
@@ -134,7 +134,7 @@ func ServerOptions(logger log.Logger, additionalOptions ...grpc.ServerOption) []
 	//
 	// The message size options are only provided if the environment variable is set. These options serve as an escape hatch, so they
 	// take precedence over everything else with a uniform size setting that's easy to reason about.
-	out = append(out, messagesize.ServerMessageSizeFromEnv(logger)...)
+	out = append(out, messagesize.MustGetServerMessageSizeFromEnv()...)
 
 	return out
 }

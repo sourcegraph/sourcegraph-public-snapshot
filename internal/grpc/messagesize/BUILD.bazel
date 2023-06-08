@@ -8,7 +8,6 @@ go_library(
     deps = [
         "//internal/env",
         "@com_github_dustin_go_humanize//:go-humanize",
-        "@com_github_sourcegraph_log//:log",
         "@org_golang_google_grpc//:go_default_library",
     ],
 )
