@@ -59,7 +59,6 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             console.error(error)
         })
         return () => {
-            console.log('aborted')
             abort.abort()
         }
     }
