@@ -1,18 +1,95 @@
+use std::collections::HashMap;
+
 use once_cell::sync::OnceCell;
+use regex::Regex;
+use scip::types::Descriptor;
 use scip_macros::include_scip_query;
 use scip_treesitter_languages::parsers::BundledParser;
 use tree_sitter::{Language, Parser, Query};
 
+pub struct Transform {
+    pattern: Regex,
+    replace: String,
+}
+
 pub struct TagConfiguration {
     language: Language,
     pub query: Query,
+
+    // Handles #transform! predicates in queries
+    transforms: HashMap<usize, Vec<Transform>>,
 }
 
 impl TagConfiguration {
+    fn new(language: Language, query: Query) -> Self {
+        let mut transforms = HashMap::new();
+
+        for index in 0..query.pattern_count() {
+            let predicate = query.general_predicates(index);
+
+            if !predicate.is_empty() {
+                let pattern_transforms = predicate
+                    .iter()
+                    .filter_map(|pred| match pred.operator.as_ref() {
+                        "transform!" => {
+                            let args = &pred.args;
+                            if args.len() != 2 {
+                                panic!("bad transform!??!");
+                            }
+
+                            let pattern = {
+                                let replace_str = match &args[0] {
+                                    tree_sitter::QueryPredicateArg::String(str) => str,
+                                    _ => panic!("pattern for #transform! should be a string"),
+                                };
+
+                                Regex::new(replace_str)
+                                    .expect("pattern for #transform! should be a valid regex")
+                            };
+
+                            let replace = match &args[1] {
+                                tree_sitter::QueryPredicateArg::String(str) => str.to_string(),
+                                _ => panic!("replace to #transform! should be a string"),
+                            };
+
+                            Some(Transform { pattern, replace })
+                        }
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>();
+
+                transforms.insert(index, pattern_transforms);
+            }
+        }
+
+        Self {
+            language,
+            query,
+            transforms,
+        }
+    }
+
     pub fn get_parser(&self) -> Parser {
         let mut parser = Parser::new();
         parser.set_language(self.language).expect("to get a parser");
         parser
+    }
+
+    pub fn transform(&self, index: usize, captured: &Descriptor) -> Option<Vec<Descriptor>> {
+        self.transforms.get(&index).map(|transforms| {
+            transforms
+                .iter()
+                .map(|t| Descriptor {
+                    name: t
+                        .pattern
+                        .replace_all(&captured.name, &t.replace)
+                        .to_string(),
+                    suffix: captured.suffix,
+                    disambiguator: captured.disambiguator.clone(),
+                    ..Default::default()
+                })
+                .collect::<Vec<_>>()
+        })
     }
 }
 
@@ -40,11 +117,9 @@ mod tags {
                 INSTANCE.get_or_init(|| {
                     let language = $parser.get_language();
                     let query = include_scip_query!($file, "scip-tags");
+                    let query = Query::new(language, query).expect("to parse query");
 
-                    TagConfiguration {
-                        language,
-                        query: Query::new(language, query).unwrap(),
-                    }
+                    TagConfiguration::new(language, query)
                 })
             }
         };

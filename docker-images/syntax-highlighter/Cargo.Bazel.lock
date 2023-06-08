@@ -1,5 +1,5 @@
 {
-  "checksum": "4bfa765a044fc92f413e344aa867440354868963378db633f56c473e0d6ce36b",
+  "checksum": "aa9977a216df54628f8e2e08d8ce18b639876645c135de306b91f807e5518e53",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -9535,7 +9535,7 @@
         "Git": {
           "remote": "https://github.com/sourcegraph/scip",
           "commitish": {
-            "Rev": "6b5114f74b063baf7bde5ede67dba79690f28fc0"
+            "Rev": "1bf111e1cf175569970e95566b379fb2a548d70a"
           },
           "strip_prefix": "bindings/rust"
         }
@@ -9657,6 +9657,10 @@
             {
               "id": "protobuf 3.2.0",
               "target": "protobuf"
+            },
+            {
+              "id": "regex 1.5.5",
+              "target": "regex"
             },
             {
               "id": "rustc-hash 1.1.0",
