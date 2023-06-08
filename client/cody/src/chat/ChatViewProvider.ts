@@ -22,6 +22,7 @@ import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent } from '../event-logger'
 import { LocalAppDetector } from '../local-app-detector'
 import { debug } from '../log'
+import { FixupIdleScheduler } from '../non-stop/FixupIdleScheduler'
 import { FixupTask } from '../non-stop/FixupTask'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../services/SecretStorageProvider'
@@ -79,6 +80,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private localAppDetector: LocalAppDetector
 
+    private fixupScheduler = new FixupIdleScheduler(15000)
+
     constructor(
         private extensionPath: string,
         private config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
@@ -126,6 +129,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             },
         })
         this.disposables.push(this.localAppDetector)
+
+        // Schedule fixup tasks
+        this.disposables.push(this.fixupScheduler)
     }
 
     public onConfigurationChange(newConfig: Config): void {
@@ -775,11 +781,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         return this.transcript.toChat()
     }
 
-    public fixupTasksScheduler(callback: () => void): void {
-        const idleTime = 15000
-        const scheduler = new FixupIdleScheduler(idleTime)
-        scheduler.registerCallback(callback)
-        this.disposables.push(scheduler)
+    /**
+     * Fixup Tasks
+     */
+
+    public async scheduleFixupCallbacks(callback: () => void): Promise<void> {
+        await this.fixupScheduler.registerCallback(callback)
     }
 
     public fixupTasksForTesting(testing: TestSupport): FixupTask[] {
