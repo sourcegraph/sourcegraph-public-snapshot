@@ -48,8 +48,11 @@ test('decorations from un-applied Cody changes appear', async ({ page, sidebar }
         .find(className => className.includes('TextEditorDecorationType'))
     expect(decorationClassName).toBeDefined()
 
-    // Edit where Cody planned to type
-    await page.keyboard.type('who needs titles?')
+    // Spray edits over where Cody planned to type to cause conflicts
+    for (const ch of 'who needs titles?') {
+        await page.keyboard.type(ch)
+        await page.keyboard.press('ArrowRight')
+    }
 
     // The decorations should change to conflict markers.
     await page.waitForSelector(`${DECORATION_SELECTOR}:not([class*="${decorationClassName}"])`)

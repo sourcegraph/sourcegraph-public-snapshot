@@ -1,65 +1,73 @@
 import * as vscode from 'vscode'
 
 import { getLensesByState } from './codelenses'
-import { taskID } from './FixupTask'
+import { FixupTask } from './FixupTask'
+import { FixupFileCollection } from './roles'
 import { CodyTaskState } from './utils'
 
-const initState = new Map<taskID, vscode.CodeLens[]>()
-
 export class FixupCodeLenses implements vscode.CodeLensProvider {
-    private static provider: FixupCodeLenses
-    private lenses = initState
+    private taskLenses = new Map<FixupTask, vscode.CodeLens[]>()
 
     private _disposables: vscode.Disposable[] = []
     private _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>()
     public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event
+
     /**
      * Create a code lens provider
      */
-    constructor() {
+    constructor(private readonly files: FixupFileCollection) {
         this.provideCodeLenses = this.provideCodeLenses.bind(this)
         this._disposables.push(vscode.languages.registerCodeLensProvider('*', this))
     }
+
     /**
-     * Getter
-     * TODO (bea) Refactor this to make it not global
+     * Gets the code lenses for the specified document.
      */
-    public static get instance(): FixupCodeLenses {
-        return (this.provider ??= new this())
-    }
-    /**
-     * This method is called by vscode to get the code lenses on every refresh
-     * To update a lens, use the set method to replace the exisiting one with a new lens by the same id
-     */
-    public provideCodeLenses(): vscode.CodeLens[] | Thenable<vscode.CodeLens[]> {
-        // return all lenses from this.lenses map, expect state with fixed
-        const lenses = this.lenses.values()
-        return lenses ? Array.from(lenses).flat() : []
+    public provideCodeLenses(
+        document: vscode.TextDocument,
+        token: vscode.CancellationToken
+    ): vscode.CodeLens[] | Thenable<vscode.CodeLens[]> {
+        const file = this.files.maybeFileForUri(document.uri)
+        if (!file) {
+            return []
+        }
+        const lenses = []
+        for (const task of this.files.tasksForFile(file)) {
+            lenses.push(...(this.taskLenses.get(task) || []))
+        }
+        console.log(`lenses for: ${document.uri} (${lenses.length})`)
+        return lenses
     }
 
-    public set(id: string, state: CodyTaskState, range: vscode.Range): void {
-        if (state === CodyTaskState.fixed) {
-            this.remove(id)
+    public didUpdateTask(task: FixupTask): void {
+        if (task.state === CodyTaskState.fixed || task.state === CodyTaskState.error) {
+            this.removeLensesFor(task)
             return
         }
-        const lens = getLensesByState(id, state, range)
-        this.lenses.set(id, lens)
-        this.refresh()
+        this.taskLenses.set(task, getLensesByState(task.id, task.state, task.selectionRange))
+        this.notifyCodeLensesChanged()
     }
 
-    public remove(id: string): void {
-        this.lenses.delete(id)
-        this.refresh()
+    public didDeleteTask(task: FixupTask): void {
+        this.removeLensesFor(task)
     }
 
-    public refresh(): void {
+    private removeLensesFor(task: FixupTask): void {
+        if (this.taskLenses.delete(task)) {
+            // TODO: Clean up the fixup file when there are no remaining code lenses
+            this.notifyCodeLensesChanged()
+        }
+    }
+
+    private notifyCodeLensesChanged(): void {
         this._onDidChangeCodeLenses.fire()
     }
+
     /**
      * Dispose the disposables
      */
     public dispose(): void {
-        this.lenses = initState
+        this.taskLenses.clear()
         for (const disposable of this._disposables) {
             disposable.dispose()
         }
