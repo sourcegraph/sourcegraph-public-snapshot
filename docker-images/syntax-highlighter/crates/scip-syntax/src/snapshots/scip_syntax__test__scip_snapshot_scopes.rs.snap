@@ -1,6 +1,5 @@
 ---
-source: crates/scip-syntax/src/globals.rs
-assertion_line: 318
+source: crates/scip-syntax/src/lib.rs
 expression: dumped
 ---
   pub trait Tag {

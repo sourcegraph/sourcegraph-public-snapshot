@@ -1,0 +1,38 @@
+---
+source: crates/scip-syntax/src/lib.rs
+expression: dumped
+---
+  # TODO: Deal with duplicates (bruh = 10; bruh = 10;) being marked as definitions
+  
+  bruh = 10
+//^^^^ definition scip-ctags bruh.
+  
+  class Bruh(object):
+//      ^^^^ definition scip-ctags Bruh#
+      a: int
+//    ^ definition scip-ctags Bruh#a.
+  
+      def __init__(self) -> None:
+//        ^^^^^^^^ definition scip-ctags Bruh#__init__().
+          pass
+  
+      def dab():
+//        ^^^ definition scip-ctags Bruh#dab().
+          print("yay!")
+          def more():
+              print("a function in a function!!")
+              pass
+          more()
+  
+  if 1 == 1:
+      notHere = False
+  
+  while False:
+      notHereEither = False
+  
+  for i in range(0, 0):
+      definitelyNotInHere = False
+  
+  with 1:
+      what = "is this even allowed in Python anymore?"
+
