@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { NavLink } from 'react-router-dom'
 
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { Icon, PageHeader } from '@sourcegraph/wildcard'
+import { Icon, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
@@ -60,36 +60,37 @@ export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Pro
         [props.user, props.isSourcegraphApp]
     )
 
+    const filteredNavItems = navItems.filter(({ condition = () => true }) => condition(props))
+
     return (
         <div className={className}>
             <div className="container">
-                <PageHeader className="mb-3">
+                <PageHeader
+                    className="mb-3"
+                    actions={props.isSourcegraphApp && <Link to="/site-admin/configuration">Advanced settings</Link>}
+                >
                     <PageHeader.Heading as="h2" styleAs="h1">
                         <PageHeader.Breadcrumb icon={path.icon}>{path.text}</PageHeader.Breadcrumb>
                     </PageHeader.Heading>
                 </PageHeader>
-                <nav className="d-flex align-items-end justify-content-between" aria-label="User">
-                    <ul className={classNames('nav nav-tabs w-100', styles.navigation)}>
-                        {navItems.map(
-                            ({ to, label, exact, icon: ItemIcon, condition = () => true }) =>
-                                condition(props) && (
-                                    <li key={label} className="nav-item">
-                                        <NavLink
-                                            to={url + to}
-                                            className={classNames('nav-link', styles.navigationLink)}
-                                        >
-                                            <span>
-                                                {ItemIcon && <Icon as={ItemIcon} aria-hidden={true} />}{' '}
-                                                <span className="text-content" data-tab-content={label}>
-                                                    {label}
-                                                </span>
+                {filteredNavItems.length > 0 && (
+                    <nav className="d-flex align-items-end justify-content-between" aria-label="User">
+                        <ul className={classNames('nav nav-tabs w-100', styles.navigation)}>
+                            {filteredNavItems.map(({ to, label, icon: ItemIcon }) => (
+                                <li key={label} className="nav-item">
+                                    <NavLink to={url + to} className={classNames('nav-link', styles.navigationLink)}>
+                                        <span>
+                                            {ItemIcon && <Icon as={ItemIcon} aria-hidden={true} />}{' '}
+                                            <span className="text-content" data-tab-content={label}>
+                                                {label}
                                             </span>
-                                        </NavLink>
-                                    </li>
-                                )
-                        )}
-                    </ul>
-                </nav>
+                                        </span>
+                                    </NavLink>
+                                </li>
+                            ))}
+                        </ul>
+                    </nav>
+                )}
             </div>
         </div>
     )
