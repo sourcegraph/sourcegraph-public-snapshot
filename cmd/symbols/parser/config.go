@@ -49,6 +49,7 @@ func init() {
 				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid Symbols.Engine: `%s`.", engine)))
 			}
 
+			language = languages.NormalizeLanguage(language)
 			if !ctags_config.LanguageSupportsParserType(language, parser_engine) {
 				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid Symbols.Engine for language: %s `%s`.", language, engine)))
 			}
