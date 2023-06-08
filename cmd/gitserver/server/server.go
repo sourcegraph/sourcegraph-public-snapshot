@@ -2318,6 +2318,10 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
 	output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw)
+
+	// best-effort update the output of the clone
+	go s.setLastOutput(context.Background(), repo, redactor.redact(string(output)))
+
 	if err != nil {
 		return errors.Wrapf(err, "clone failed. Output: %s", redactor.redact(string(output)))
 	}
@@ -2377,9 +2381,6 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	if err := s.setRepoSize(ctx, repo); err != nil {
 		logger.Warn("failed setting repo size", log.Error(err))
 	}
-
-	// best-effort update the output of the clone
-	go s.setLastOutput(context.Background(), repo, redactor.redact(string(output)))
 
 	logger.Info("repo cloned")
 	repoClonedCounter.Inc()
@@ -2713,6 +2714,10 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	redactor := newURLRedactor(remoteURL)
 
 	output, err := syncer.Fetch(ctx, remoteURL, dir, revspec)
+
+	// best-effort update the output of the fetch
+	go s.setLastOutput(context.Background(), repo, redactor.redact(string(output)))
+
 	if err != nil {
 		if output != nil {
 			return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, redactor.redact(string(output)))
@@ -2746,9 +2751,6 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	if err := s.setRepoSize(ctx, repo); err != nil {
 		logger.Warn("failed to set repo size", log.Error(err))
 	}
-
-	// best-effort update the output of the fetch
-	go s.setLastOutput(context.Background(), repo, redactor.redact(string(output)))
 
 	return nil
 }
