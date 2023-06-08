@@ -63,16 +63,10 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) *schema.Completio
 				completionsConfig.CompletionModel = "anthropic/claude-instant-v1"
 			}
 
-			// Back-compat: use model for both chat and completion if anything
-			// isn't set. Remove when Model is removed.
-			if completionsConfig.Model != "" {
-				if completionsConfig.ChatModel == "" {
-					completionsConfig.ChatModel = completionsConfig.Model
-				}
-				if completionsConfig.CompletionModel == "" {
-					completionsConfig.CompletionModel = completionsConfig.Model
-				}
-			}
+			// NOTE: We explicitly aren't adding back-compat for completions.model
+			// because Cody Gateway disallows the use of most chat models for
+			// code completions, so in most cases the back-compat wouldn't work
+			// anyway.
 
 			return completionsConfig
 		}

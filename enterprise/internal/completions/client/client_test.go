@@ -54,23 +54,6 @@ func TestGetCompletionsConfig(t *testing.T) {
 			}),
 		},
 		{
-			name: "zero-config cody gateway completions using back-compat with model",
-			config: schema.SiteConfiguration{
-				Completions: &schema.Completions{
-					Enabled: true,
-					Model:   "anthropic/foobar",
-				},
-				LicenseKey: "",
-			},
-			want: autogold.Expect(&schema.Completions{
-				ChatModel: "anthropic/foobar", CompletionModel: "anthropic/foobar",
-				Enabled:  true,
-				Endpoint: "https://cody-gateway.sourcegraph.com",
-				Model:    "anthropic/foobar",
-				Provider: "sourcegraph",
-			}),
-		},
-		{
 			name: "zero-config cody gateway completions with license key",
 			config: schema.SiteConfiguration{
 				Completions: &schema.Completions{
