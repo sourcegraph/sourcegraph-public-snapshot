@@ -37,6 +37,10 @@ go_test(
     name = "bg_test",
     srcs = ["update_permissions_test.go"],
     embed = [":bg"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",
