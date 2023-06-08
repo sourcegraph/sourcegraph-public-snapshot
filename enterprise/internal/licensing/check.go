@@ -101,11 +101,7 @@ func StartLicenseCheck(ctx context.Context, logger log.Logger, siteID string) {
 	// wait for initial config to be loaded as well as
 	// watch for any config changes
 	conf.Watch(func() {
-		prevLicenseToken, err := store.Get(prevLicenseTokenKey).String()
-		if err != nil {
-			logger.Error("error getting previous license hash", log.Error(err))
-			return
-		}
+		prevLicenseToken, _ := store.Get(prevLicenseTokenKey).String()
 		licenseToken := hex.EncodeToString(GenerateHashedLicenseKeyAccessToken(conf.Get().LicenseKey))
 		// skip if license key hasn't changed and already running
 		if prevLicenseToken == licenseToken && routine != nil {
