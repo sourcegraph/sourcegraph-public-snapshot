@@ -4,7 +4,7 @@ import { mdiCheckCircle, mdiCloseCircle, mdiShieldRemove } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Icon, Text } from '@sourcegraph/wildcard'
+import { Icon, Label, Text } from '@sourcegraph/wildcard'
 
 import { ProductLicenseFields } from '../../../graphql-operations'
 import { isProductLicenseExpired } from '../../../productSubscription/helpers'
@@ -37,7 +37,7 @@ export const ProductLicenseValidity: React.FunctionComponent<
         license: ProductLicenseFields
         className?: string
     }>
-> = ({ license: { info, revokedAt }, className = '' }) => {
+> = ({ license: { info, revokedAt, revokeReason }, className = '' }) => {
     const expiresAt = info?.expiresAt ?? 0
     const isExpired = isProductLicenseExpired(expiresAt)
     const isRevoked = !!revokedAt
@@ -56,6 +56,12 @@ export const ProductLicenseValidity: React.FunctionComponent<
             />
             <strong>{getText(isExpired, isRevoked)}</strong> (
             <Timestamp date={timestamp} noAbout={true} noAgo={true} /> {timestampSuffix})
+            {!isExpired && isRevoked && revokeReason && (
+                <div className="mt-1">
+                    <Label className="mb-2">Reason to revoke</Label>
+                    <div className="mb-3">{revokeReason}</div>
+                </div>
+            )}
         </Text>
     )
 }

@@ -1,8 +1,7 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Subject } from 'rxjs'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { logger } from '@sourcegraph/common'
@@ -88,12 +87,15 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
 
     const toggleShowGenerate = useCallback((): void => setShowGenerate(previousValue => !previousValue), [])
 
-    const licenseUpdates = useMemo(() => new Subject<void>(), [])
+    const [licensesRefetch, setLicensesRefetch] = useState<() => void>()
+
     const onLicenseUpdate = useCallback(async () => {
-        licenseUpdates.next()
         await refetch()
+        if (licensesRefetch) {
+            licensesRefetch()
+        }
         setShowGenerate(false)
-    }, [refetch, licenseUpdates])
+    }, [refetch, licensesRefetch])
 
     // Feature flag only used as this is under development - will be enabled by default
     const [codyGatewayMananagementUI] = useFeatureFlag('cody-gateway-management-ui')
@@ -195,7 +197,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                 <Container className="mb-2">
                     <ProductSubscriptionLicensesConnection
                         subscriptionUUID={subscriptionUUID}
-                        licenseUpdates={licenseUpdates}
+                        onRefetch={setLicensesRefetch}
                     />
                 </Container>
             </div>
@@ -215,17 +217,16 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
 
 const ProductSubscriptionLicensesConnection: React.FunctionComponent<{
     subscriptionUUID: string
-    licenseUpdates: Subject<void>
-}> = ({ subscriptionUUID, licenseUpdates }) => {
+    onRefetch: (refetch: () => void) => void
+}> = ({ subscriptionUUID, onRefetch }) => {
     const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useProductSubscriptionLicensesConnection(
         subscriptionUUID,
         20
     )
 
     useEffect(() => {
-        const subscription = licenseUpdates.subscribe(() => refetchAll())
-        return () => subscription.unsubscribe()
-    }, [refetchAll, licenseUpdates])
+        onRefetch(refetchAll)
+    }, [onRefetch, refetchAll])
 
     return (
         <ConnectionContainer>
@@ -233,7 +234,12 @@ const ProductSubscriptionLicensesConnection: React.FunctionComponent<{
             {loading && !connection && <ConnectionLoading />}
             <ConnectionList as="ul" className="list-group list-group-flush mb-0" aria-label="Subscription licenses">
                 {connection?.nodes?.map(node => (
-                    <SiteAdminProductLicenseNode key={node.id} node={node} showSubscription={false} />
+                    <SiteAdminProductLicenseNode
+                        key={node.id}
+                        node={node}
+                        showSubscription={false}
+                        onRevokeCompleted={refetchAll}
+                    />
                 ))}
             </ConnectionList>
             {connection && (
