@@ -45,3 +45,11 @@ export const DELETE_INGESTED_CODEOWNERS_MUTATION = gql`
         }
     }
 `
+
+export const ASSIGN_OWNER = gql`
+    mutation AssignOwner($input: AssignOwnerOrTeamInput!) {
+        assignOwner(input: $input) {
+            alwaysNil
+        }
+    }
+`
