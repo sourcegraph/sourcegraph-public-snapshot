@@ -28,6 +28,7 @@ interface Props {
     filePath: string
     userID?: string
     setRemoveOwnerError: any
+    refetch: any
 }
 
 type OwnershipReason =

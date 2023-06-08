@@ -215,7 +215,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                             repoID={repoID}
                                             filePath={filePath}
                                             refetch={refetch}
-                                            removeOwnerError={removeOwnerError}
+                                            setRemoveOwnerError={setRemoveOwnerError}
                                         />
                                     </React.Fragment>
                                 )
