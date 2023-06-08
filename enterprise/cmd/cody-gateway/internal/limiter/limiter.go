@@ -17,7 +17,7 @@ type Limiter interface {
 	//
 	// The commit callback accepts a parameter that dictates how much rate
 	// limit to consume for this request.
-	TryAcquire(ctx context.Context) (commit func(int) error, usagePercentage float32, err error)
+	TryAcquire(ctx context.Context) (commit func(int) error, err error)
 }
 
 type StaticLimiter struct {
@@ -32,7 +32,8 @@ type StaticLimiter struct {
 	// be updated if there is a significant deviance from the desired interval.
 	UpdateRateLimitTTL bool
 
-	NowFunc func() time.Time
+	NowFunc          func() time.Time
+	RateLimitAlerter func(usagePercentage float32)
 }
 
 // RetryAfterWithTTL consults the current TTL using the given identifier and
@@ -45,17 +46,21 @@ func RetryAfterWithTTL(redis RedisStore, nowFunc func() time.Time, identifier st
 	return nowFunc().Add(time.Duration(ttl) * time.Second), nil
 }
 
-func (l StaticLimiter) TryAcquire(ctx context.Context) (commit func(int) error, usagePercentage float32, _ error) {
+func (l StaticLimiter) TryAcquire(ctx context.Context) (commit func(int) error, _ error) {
 	// Zero values implies no access - this is a fallback check, callers should
 	// be checking independently if access is granted.
 	if l.Identifier == "" || l.Limit <= 0 || l.Interval <= 0 {
-		return nil, 1, NoAccessError{}
+		return nil, NoAccessError{}
 	}
 
 	// Check the current usage. If no record exists, redis will return 0.
 	currentUsage, err := l.Redis.GetInt(l.Identifier)
 	if err != nil {
-		return nil, 0, errors.Wrap(err, "failed to read rate limit counter")
+		return nil, errors.Wrap(err, "failed to read rate limit counter")
+	}
+
+	if l.RateLimitAlerter != nil {
+		go l.RateLimitAlerter(float32(currentUsage) / float32(l.Limit))
 	}
 
 	// If the usage exceeds the maximum, we return an error. Consumers can check if
@@ -64,9 +69,9 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (commit func(int) error, 
 	if currentUsage >= l.Limit {
 		retryAfter, err := RetryAfterWithTTL(l.Redis, l.NowFunc, l.Identifier)
 		if err != nil {
-			return nil, 0, errors.Wrap(err, "failed to get TTL for rate limit counter")
+			return nil, errors.Wrap(err, "failed to get TTL for rate limit counter")
 		}
-		return nil, 1, RateLimitExceededError{
+		return nil, RateLimitExceededError{
 			Limit: l.Limit,
 			// Return the minimum value of currentUsage and limit to not return
 			// confusing values when the limit was exceeded. This method increases
@@ -94,29 +99,27 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (commit func(int) error, 
 	// just one token. This seems fine. Note: this isn't an issue on subsequent requests in the
 	// same time block since the TTL would have been set.
 	return func(usage int) error {
-			if _, err := l.Redis.Incrby(l.Identifier, usage); err != nil {
-				return errors.Wrap(err, "failed to increment rate limit counter")
-			}
+		if _, err := l.Redis.Incrby(l.Identifier, usage); err != nil {
+			return errors.Wrap(err, "failed to increment rate limit counter")
+		}
 
-			// Set expiry on the key. If the key didn't exist prior to the previous INCR,
-			// it will set the expiry of the key to one day.
-			// If it did exist before, it should have an expiry set already, so the TTL >= 0
-			// makes sure that we don't overwrite it and restart the 1h bucket.
-			ttl, err := l.Redis.TTL(l.Identifier)
-			if err != nil {
-				return errors.Wrap(err, "failed to get TTL for rate limit counter")
+		// Set expiry on the key. If the key didn't exist prior to the previous INCR,
+		// it will set the expiry of the key to one day.
+		// If it did exist before, it should have an expiry set already, so the TTL >= 0
+		// makes sure that we don't overwrite it and restart the 1h bucket.
+		ttl, err := l.Redis.TTL(l.Identifier)
+		if err != nil {
+			return errors.Wrap(err, "failed to get TTL for rate limit counter")
+		}
+		intervalSeconds := int(l.Interval / time.Second)
+		if ttl < 0 || (l.UpdateRateLimitTTL && ttl > intervalSeconds) {
+			if err := l.Redis.Expire(l.Identifier, intervalSeconds); err != nil {
+				return errors.Wrap(err, "failed to set expiry for rate limit counter")
 			}
-			intervalSeconds := int(l.Interval / time.Second)
-			if ttl < 0 || (l.UpdateRateLimitTTL && ttl > intervalSeconds) {
-				if err := l.Redis.Expire(l.Identifier, intervalSeconds); err != nil {
-					return errors.Wrap(err, "failed to set expiry for rate limit counter")
-				}
-			}
+		}
 
-			return nil
-		},
-		float32(currentUsage) / float32(l.Limit),
-		nil
+		return nil
+	}, nil
 }
 
 func min(a, b int) int {

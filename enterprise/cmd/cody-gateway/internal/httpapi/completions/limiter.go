@@ -35,14 +35,13 @@ func rateLimit(
 			return
 		}
 
-		l, ok := act.Limiter(logger, cache, feature)
+		l, ok := act.Limiter(logger, cache, feature, rateLimitAlerter)
 		if !ok {
 			response.JSONError(logger, w, http.StatusForbidden, errors.Newf("no access to feature %s", feature))
 			return
 		}
 
-		commit, usagePercentage, err := l.TryAcquire(r.Context())
-		go rateLimitAlerter(act, feature, usagePercentage)
+		commit, err := l.TryAcquire(r.Context())
 		if err != nil {
 			limitedCause := "quota"
 			var concurrencyLimitExceeded actor.ErrConcurrencyLimitExceeded

@@ -28,14 +28,13 @@ func rateLimit(
 		act := actor.FromContext(r.Context())
 		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
 
-		l, ok := act.Limiter(logger, cache, codygateway.FeatureEmbeddings)
+		l, ok := act.Limiter(logger, cache, codygateway.FeatureEmbeddings, rateLimitAlerter)
 		if !ok {
 			response.JSONError(logger, w, http.StatusForbidden, errors.New("no access to embeddings"))
 			return
 		}
 
-		commit, usagePercentage, err := l.TryAcquire(r.Context())
-		go rateLimitAlerter(act, codygateway.FeatureEmbeddings, usagePercentage)
+		commit, err := l.TryAcquire(r.Context())
 		if err != nil {
 			if loggerErr := eventLogger.LogEvent(
 				r.Context(),
