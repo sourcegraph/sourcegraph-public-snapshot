@@ -335,7 +335,7 @@ func newRateLimitAlerter(
 		}()
 
 		if config.SlackWebhookURL == "" {
-			logger.Debug("new alert",
+			logger.Debug("new usage alert",
 				log.Object("actor",
 					log.String("id", actor.ID),
 					log.String("source", actor.Source.Name()),
