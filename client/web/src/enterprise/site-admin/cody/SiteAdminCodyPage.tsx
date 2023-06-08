@@ -21,11 +21,7 @@ import {
     Icon,
 } from '@sourcegraph/wildcard'
 
-import {
-    FilterControl,
-    FilteredConnectionFilter,
-    FilteredConnectionFilterValue,
-} from '../../../components/FilteredConnection'
+import { FilteredConnectionFilter, FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
 import {
     ConnectionContainer,
     ConnectionError,
