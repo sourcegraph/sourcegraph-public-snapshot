@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//enterprise/cmd/cody-gateway/internal/actor",
         "//enterprise/cmd/cody-gateway/internal/actor/anonymous",
+        "//enterprise/cmd/cody-gateway/internal/actor/dotcomuser",
         "//enterprise/cmd/cody-gateway/internal/actor/productsubscription",
         "//enterprise/cmd/cody-gateway/internal/auth",
         "//enterprise/cmd/cody-gateway/internal/dotcom",

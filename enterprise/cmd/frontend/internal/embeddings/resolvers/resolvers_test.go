@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/contextdetection"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -63,7 +62,6 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	}, nil)
 
 	repoEmbeddingJobsStore := repo.NewMockRepoEmbeddingJobsStore()
-	contextDetectionJobsStore := contextdetection.NewMockContextDetectionEmbeddingJobsStore()
 
 	resolver := NewResolver(
 		mockDB,
@@ -71,7 +69,6 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 		mockGitserver,
 		mockEmbeddingsClient,
 		repoEmbeddingJobsStore,
-		contextDetectionJobsStore,
 	)
 
 	conf.Mock(&conf.Unified{

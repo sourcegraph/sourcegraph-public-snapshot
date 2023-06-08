@@ -441,18 +441,27 @@ func TestClient_ArchiveReader(t *testing.T) {
 		})
 		for _, test := range tests {
 			repoName := api.RepoName(test.name)
-
-			spy := &spyGitserverServiceClient{}
+			called := false
 
 			mkClient := func(t *testing.T, addrs []string) gitserver.Client {
-
 				t.Helper()
 
 				source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
 					o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
-						spy.base = proto.NewGitserverServiceClient(cc)
+						base := proto.NewGitserverServiceClient(cc)
 
-						return spy
+						mockArchive := func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error) {
+							called = true
+							return base.Archive(ctx, in, opts...)
+						}
+						mockRepoUpdate := func(ctx context.Context, in *proto.RepoUpdateRequest, opts ...grpc.CallOption) (*proto.RepoUpdateResponse, error) {
+							base := proto.NewGitserverServiceClient(cc)
+							return base.RepoUpdate(ctx, in, opts...)
+						}
+						return &mockClient{
+							mockArchive:    mockArchive,
+							mockRepoUpdate: mockRepoUpdate,
+						}
 					}
 				})
 
@@ -460,7 +469,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 			}
 
 			runArchiveReaderTestfunc(t, mkClient, repoName, test)
-			if !spy.archiveCalled {
+			if !called {
 				t.Error("archiveReader: GitserverServiceClient should have been called")
 			}
 
@@ -478,18 +487,19 @@ func TestClient_ArchiveReader(t *testing.T) {
 
 		for _, test := range tests {
 			repoName := api.RepoName(test.name)
+			called := false
 
-			var spyGitserverService *spyGitserverServiceClient
 			mkClient := func(t *testing.T, addrs []string) gitserver.Client {
 				t.Helper()
 
-				spy := &spyGitserverServiceClient{}
-
 				source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
 					o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
-						spy.base = proto.NewGitserverServiceClient(cc)
-
-						return spy
+						mockArchive := func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error) {
+							called = true
+							base := proto.NewGitserverServiceClient(cc)
+							return base.Archive(ctx, in, opts...)
+						}
+						return &mockClient{mockArchive: mockArchive}
 					}
 				})
 
@@ -497,9 +507,10 @@ func TestClient_ArchiveReader(t *testing.T) {
 			}
 
 			runArchiveReaderTestfunc(t, mkClient, repoName, test)
-			if spyGitserverService != nil {
-				t.Error("archiveReader: GitserverServiceClient should have not been initialized")
+			if called {
+				t.Error("archiveReader: GitserverServiceClient should have been called")
 			}
+
 		}
 
 	})
@@ -1426,102 +1437,6 @@ func TestGitserverClient_RepoClone(t *testing.T) {
 		t.Fatal("RepoClone: grpc client not called")
 	}
 }
-
-type spyGitserverServiceClient struct {
-	batchlogCalled                    bool
-	createCommitFromPatchBinaryCalled bool
-	execCalled                        bool
-	getObjectCalled                   bool
-	isRepoCloneable                   bool
-	searchCalled                      bool
-	archiveCalled                     bool
-	listGitoliteCalled                bool
-	repoClone                         bool
-	repoCloneProgress                 bool
-	repoDelete                        bool
-	repoUpdate                        bool
-	reposStatsCalled                  bool
-	p4ExecCalled                      bool
-	base                              proto.GitserverServiceClient
-}
-
-// BatchLog implements v1.GitserverServiceClient.
-func (s *spyGitserverServiceClient) BatchLog(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
-	return s.base.BatchLog(ctx, in, opts...)
-}
-
-// GetObject implements v1.GitserverServiceClient.
-func (s *spyGitserverServiceClient) GetObject(ctx context.Context, in *proto.GetObjectRequest, opts ...grpc.CallOption) (*proto.GetObjectResponse, error) {
-	s.getObjectCalled = true
-	return s.base.GetObject(ctx, in, opts...)
-}
-
-// ListGitolite implements v1.GitserverServiceClient.
-func (s *spyGitserverServiceClient) ListGitolite(ctx context.Context, in *proto.ListGitoliteRequest, opts ...grpc.CallOption) (*proto.ListGitoliteResponse, error) {
-	s.listGitoliteCalled = true
-	return s.base.ListGitolite(ctx, in, opts...)
-}
-
-// P4Exec implements v1.GitserverServiceClient.
-func (s *spyGitserverServiceClient) P4Exec(ctx context.Context, in *proto.P4ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_P4ExecClient, error) {
-	s.p4ExecCalled = true
-	return s.base.P4Exec(ctx, in, opts...)
-}
-
-// CreateCommitFromPatchBinary implements v1.GitserverServiceClient.
-func (s *spyGitserverServiceClient) CreateCommitFromPatchBinary(ctx context.Context, in *proto.CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*proto.CreateCommitFromPatchBinaryResponse, error) {
-	s.createCommitFromPatchBinaryCalled = true
-	return s.base.CreateCommitFromPatchBinary(ctx, in, opts...)
-}
-
-// RepoUpdate implements v1.GitserverServiceClient
-func (s *spyGitserverServiceClient) RepoUpdate(ctx context.Context, in *proto.RepoUpdateRequest, opts ...grpc.CallOption) (*proto.RepoUpdateResponse, error) {
-	s.repoUpdate = true
-	return s.base.RepoUpdate(ctx, in, opts...)
-}
-
-// RepoDelete implements v1.GitserverServiceClient
-func (s *spyGitserverServiceClient) RepoDelete(ctx context.Context, in *proto.RepoDeleteRequest, opts ...grpc.CallOption) (*proto.RepoDeleteResponse, error) {
-	return s.base.RepoDelete(ctx, in, opts...)
-}
-
-// RepoCloneProgress implements v1.GitserverServiceClient
-func (s *spyGitserverServiceClient) RepoCloneProgress(ctx context.Context, in *proto.RepoCloneProgressRequest, opts ...grpc.CallOption) (*proto.RepoCloneProgressResponse, error) {
-	s.repoCloneProgress = true
-	return s.base.RepoCloneProgress(ctx, in, opts...)
-}
-
-func (s *spyGitserverServiceClient) Exec(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error) {
-	s.execCalled = true
-	return s.base.Exec(ctx, in, opts...)
-}
-
-func (s *spyGitserverServiceClient) RepoClone(ctx context.Context, in *proto.RepoCloneRequest, opts ...grpc.CallOption) (*proto.RepoCloneResponse, error) {
-	s.repoClone = true
-	return s.base.RepoClone(ctx, in, opts...)
-}
-
-func (s *spyGitserverServiceClient) IsRepoCloneable(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error) {
-	s.isRepoCloneable = true
-	return s.base.IsRepoCloneable(ctx, in, opts...)
-}
-
-func (s *spyGitserverServiceClient) Search(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error) {
-	s.searchCalled = true
-	return s.base.Search(ctx, in, opts...)
-}
-
-func (s *spyGitserverServiceClient) Archive(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error) {
-	s.archiveCalled = true
-	return s.base.Archive(ctx, in, opts...)
-}
-
-func (s *spyGitserverServiceClient) ReposStats(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error) {
-	s.reposStatsCalled = true
-	return s.base.ReposStats(ctx, in, opts...)
-}
-
-var _ proto.GitserverServiceClient = &spyGitserverServiceClient{}
 
 type mockClient struct {
 	mockBatchLog                    func(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error)

@@ -14,6 +14,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func NewRateLimitWithPercentageConcurrency(limit int, interval time.Duration, allowedModels []string, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) RateLimit {
+	// The actual type of time.Duration is int64, so we can use it to compute the
+	// ratio of the rate limit interval to a day (24 hours).
+	ratioToDay := float32(interval) / float32(24*time.Hour)
+	// Then use the ratio to compute the rate limit for a day.
+	dailyLimit := float32(limit) / ratioToDay
+	// Finally, compute the concurrency limit with the given percentage of the daily limit.
+	concurrencyLimit := int(dailyLimit * concurrencyConfig.Percentage)
+	// Just in case a poor choice of percentage results in a concurrency limit less than 1.
+	if concurrencyLimit < 1 {
+		concurrencyLimit = 1
+	}
+
+	return RateLimit{
+		AllowedModels:              allowedModels,
+		Limit:                      limit,
+		Interval:                   interval,
+		ConcurrentRequests:         concurrencyLimit,
+		ConcurrentRequestsInterval: concurrencyConfig.Interval,
+	}
+}
+
 type RateLimit struct {
 	// AllowedModels is a set of models in Cody Gateway's model configuration
 	// format, "$PROVIDER/$MODEL_NAME".
@@ -21,6 +43,9 @@ type RateLimit struct {
 
 	Limit    int           `json:"limit"`
 	Interval time.Duration `json:"interval"`
+
+	ConcurrentRequests         int           `json:"concurrentRequests"`
+	ConcurrentRequestsInterval time.Duration `json:"concurrentRequestsInterval"`
 }
 
 func (r *RateLimit) IsValid() bool {
@@ -102,7 +127,6 @@ func (a *Actor) Limiter(
 	logger log.Logger,
 	redis limiter.RedisStore,
 	feature codygateway.Feature,
-	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
 ) (limiter.Limiter, bool) {
 	if a == nil {
 		// Not logged in, no limit applicable.
@@ -118,25 +142,6 @@ func (a *Actor) Limiter(
 		return nil, false
 	}
 
-	var concurrencyLimit int
-	if feature == codygateway.FeatureEmbeddings {
-		// For embeddings, we use a custom, hardcoded limit. Concurrency on the client side
-		// should be 1, so 15 is a very safe default here.
-		concurrencyLimit = 15
-	} else {
-		// The actual type of time.Duration is int64, so we can use it to compute the
-		// ratio of the rate limit interval to a day (24 hours).
-		ratioToDay := float32(limit.Interval) / float32(24*time.Hour)
-		// Then use the ratio to compute the rate limit for a day.
-		dailyLimit := float32(limit.Limit) / ratioToDay
-		// Finally, compute the concurrency limit with the given percentage of the daily limit.
-		concurrencyLimit = int(dailyLimit * concurrencyLimitConfig.Percentage)
-		// Just in case a poor choice of percentage results in a concurrency limit less than 1.
-		if concurrencyLimit < 1 {
-			concurrencyLimit = 1
-		}
-	}
-
 	// The redis store has to use a prefix for the given feature because we need to
 	// rate limit by feature.
 	featurePrefix := fmt.Sprintf("%s:", feature)
@@ -146,8 +151,8 @@ func (a *Actor) Limiter(
 		feature: feature,
 		redis:   limiter.NewPrefixRedisStore(fmt.Sprintf("concurrent:%s", featurePrefix), redis),
 		rateLimit: RateLimit{
-			Limit:    concurrencyLimit,
-			Interval: concurrencyLimitConfig.Interval,
+			Limit:    limit.ConcurrentRequests,
+			Interval: limit.ConcurrentRequestsInterval,
 		},
 		featureLimiter: updateOnFailureLimiter{
 			Redis:     limiter.NewPrefixRedisStore(featurePrefix, redis),

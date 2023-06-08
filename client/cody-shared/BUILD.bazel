@@ -84,6 +84,8 @@ ts_project(
         "src/sourcegraph-api/index.ts",
         "src/sourcegraph-api/utils.ts",
         "src/telemetry/EventLogger.ts",
+        "src/unified-context/client.ts",
+        "src/unified-context/index.ts",
         "src/utils.ts",
     ],
     tsconfig = ":tsconfig",

@@ -31,12 +31,7 @@ import {
 import { PageTitle } from '../../../components/PageTitle'
 import { RepositoriesField } from '../../insights/components'
 
-import {
-    useCancelRepoEmbeddingJob,
-    useRepoEmbeddingJobsConnection,
-    useScheduleContextDetectionEmbeddingJob,
-    useScheduleRepoEmbeddingJobs,
-} from './backend'
+import { useCancelRepoEmbeddingJob, useRepoEmbeddingJobsConnection, useScheduleRepoEmbeddingJobs } from './backend'
 import { RepoEmbeddingJobNode } from './RepoEmbeddingJobNode'
 
 import styles from './SiteAdminCodyPage.module.scss'
@@ -73,20 +68,12 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     const [scheduleRepoEmbeddingJobs, { loading: repoEmbeddingJobsLoading, error: repoEmbeddingJobsError }] =
         useScheduleRepoEmbeddingJobs()
 
-    const [
-        scheduleContextDetectionEmbeddingJob,
-        { loading: contextDetectionEmbeddingJobLoading, error: contextDetectionEmbeddingJobError },
-    ] = useScheduleContextDetectionEmbeddingJob()
-
     const onSubmit = useCallback(
         async (repoNames: string[]) => {
-            await Promise.all([
-                scheduleContextDetectionEmbeddingJob(),
-                scheduleRepoEmbeddingJobs({ variables: { repoNames } }),
-            ])
+            await scheduleRepoEmbeddingJobs({ variables: { repoNames } })
             refetchAll()
         },
-        [refetchAll, scheduleContextDetectionEmbeddingJob, scheduleRepoEmbeddingJobs]
+        [refetchAll, scheduleRepoEmbeddingJobs]
     )
 
     const form = useForm<RepoEmbeddingJobsFormValues>({
@@ -146,24 +133,18 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                                 type="submit"
                                 variant="secondary"
                                 className={styles.scheduleButton}
-                                disabled={repoEmbeddingJobsLoading || contextDetectionEmbeddingJobLoading}
+                                disabled={repoEmbeddingJobsLoading}
                             >
-                                {repoEmbeddingJobsLoading || contextDetectionEmbeddingJobLoading
-                                    ? 'Scheduling...'
-                                    : 'Schedule Embedding'}
+                                {repoEmbeddingJobsLoading ? 'Scheduling...' : 'Schedule Embedding'}
                             </Button>
                         </div>
                     </div>
                 </Form>
-                {(repoEmbeddingJobsError || contextDetectionEmbeddingJobError || cancelRepoEmbeddingJobError) && (
+                {(repoEmbeddingJobsError || cancelRepoEmbeddingJobError) && (
                     <div className="mt-1">
                         <ErrorAlert
                             prefix="Error scheduling embedding jobs"
-                            error={
-                                repoEmbeddingJobsError ||
-                                contextDetectionEmbeddingJobError ||
-                                cancelRepoEmbeddingJobError
-                            }
+                            error={repoEmbeddingJobsError || cancelRepoEmbeddingJobError}
                         />
                     </div>
                 )}
