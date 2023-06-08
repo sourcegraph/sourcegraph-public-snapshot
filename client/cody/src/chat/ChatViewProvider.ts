@@ -15,8 +15,6 @@ import { Guardrails, annotateAttribution } from '@sourcegraph/cody-shared/src/gu
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../webviews/NavBar'
 import { getFullConfig, updateConfiguration } from '../configuration'
@@ -36,44 +34,11 @@ import {
     DOTCOM_URL,
     ExtensionMessage,
     WebviewMessage,
-    isLocalApp,
+    defaultAuthStatus,
     isLoggedIn,
 } from './protocol'
 import { getRecipe } from './recipes'
-import { getCodebaseContext } from './utils'
-
-export async function getAuthStatus(
-    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
-): Promise<AuthStatus> {
-    if (!config.accessToken) {
-        return {
-            showInvalidAccessTokenError: false,
-            authenticated: false,
-            hasVerifiedEmail: false,
-            requiresVerifiedEmail: false,
-        }
-    }
-
-    const client = new SourcegraphGraphQLAPIClient(config)
-    if (client.isDotCom() || isLocalApp(config.serverEndpoint)) {
-        const data = await client.getCurrentUserIdAndVerifiedEmail()
-        return {
-            showInvalidAccessTokenError: isError(data),
-            authenticated: !isError(data),
-            hasVerifiedEmail: !isError(data) && data?.hasVerifiedEmail,
-            // on sourcegraph.com this is always true
-            requiresVerifiedEmail: true,
-        }
-    }
-
-    const currentUserID = await client.getCurrentUserId()
-    return {
-        showInvalidAccessTokenError: isError(currentUserID),
-        authenticated: !isError(currentUserID),
-        hasVerifiedEmail: false,
-        requiresVerifiedEmail: false,
-    }
-}
+import { getAuthStatus, getCodebaseContext } from './utils'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -231,14 +196,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     accessToken: message.accessToken,
                     customHeaders: this.config.customHeaders,
                 })
-                // activate when user has valid login
-                await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
-                if (isLoggedIn(authStatus)) {
-                    await updateConfiguration('serverEndpoint', message.serverEndpoint)
-                    await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
-                    this.sendEvent('auth', 'login')
-                }
-                void this.webview?.postMessage({ type: 'login', authStatus })
+
+                await updateConfiguration('serverEndpoint', message.serverEndpoint)
+                await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
+                await this.sendLogin(authStatus)
                 break
             }
             case 'insert':
@@ -344,21 +305,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.transcript.addErrorAsAssistantResponse(err)
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
+                    const authStatus = { ...defaultAuthStatus }
                     if (statusCode === 403) {
-                        void this.sendLogin({
-                            showInvalidAccessTokenError: false,
-                            authenticated: true,
-                            hasVerifiedEmail: false,
-                            requiresVerifiedEmail: true,
-                        })
+                        authStatus.authenticated = true
+                        authStatus.requiresVerifiedEmail = true
                     } else {
-                        void this.sendLogin({
-                            showInvalidAccessTokenError: true,
-                            authenticated: false,
-                            hasVerifiedEmail: false,
-                            requiresVerifiedEmail: false,
-                        })
+                        authStatus.showInvalidAccessTokenError = true
                     }
+                    debug('ChatViewProvider:onError:unauth', err, { verbose: { authStatus } })
+                    void this.sendLogin(authStatus)
                     void this.clearAndRestartSession()
                 }
                 this.onCompletionEnd()
@@ -604,15 +559,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Save Login state to webview
      */
     public async sendLogin(authStatus: AuthStatus): Promise<void> {
-        this.sendEvent('token', 'Set')
+        // activate extension when user has valid login
         await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
-        if (isLoggedIn(authStatus)) {
-            this.sendEvent('auth', 'login')
-        }
-        void this.webview?.postMessage({
-            type: 'login',
-            authStatus,
-        })
+        await this.webview?.postMessage({ type: 'login', authStatus })
+        this.sendEvent('auth', 'login')
     }
 
     /**

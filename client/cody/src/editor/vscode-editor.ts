@@ -21,6 +21,10 @@ export class VSCodeEditor implements Editor {
         }
     ) {}
 
+    public get fileName(): string {
+        return vscode.window.activeTextEditor?.document.fileName ?? ''
+    }
+
     public getWorkspaceRootPath(): string | null {
         const uri = vscode.window.activeTextEditor?.document?.uri
         if (uri) {

@@ -3,8 +3,9 @@ import * as vscode from 'vscode'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
-import { ChatViewProvider, getAuthStatus } from './chat/ChatViewProvider'
+import { ChatViewProvider } from './chat/ChatViewProvider'
 import { DOTCOM_URL, LOCAL_APP_URL, isLoggedIn } from './chat/protocol'
+import { getAuthStatus } from './chat/utils'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
@@ -118,8 +119,7 @@ const register = async (
     disposables.push(
         vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
             webviewOptions: { retainContextWhenHidden: true },
-        }),
-        { dispose: () => vscode.commands.executeCommand('setContext', 'cody.activated', false) }
+        })
     )
 
     const executeRecipe = async (recipe: RecipeID, showTab = true): Promise<void> => {
@@ -307,6 +307,11 @@ const register = async (
             })
         )
         await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
+    }
+
+    if (initialConfig.serverEndpoint && initialConfig.accessToken) {
+        const authStatus = await getAuthStatus(initialConfig)
+        await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
     }
 
     return {

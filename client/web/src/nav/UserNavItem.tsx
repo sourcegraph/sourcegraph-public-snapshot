@@ -189,7 +189,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     </div>
                                 )}
                             </div>
-                            {searchQueryInputFeature === 'experimental' && (
+                            {!isSourcegraphApp && searchQueryInputFeature === 'experimental' && (
                                 <div className="px-2 py-1">
                                     <div className="d-flex align-items-center justify-content-between">
                                         <div className="mr-2">
@@ -219,32 +219,27 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     )}
                                 </>
                             )}
-                            <MenuDivider className={styles.dropdownDivider} />
-                            {authenticatedUser.siteAdmin && !isSourcegraphApp && (
-                                <MenuLink as={Link} to="/site-admin">
-                                    Site admin
-                                </MenuLink>
+                            {!isSourcegraphApp && (
+                                <>
+                                    <MenuDivider className={styles.dropdownDivider} />
+                                    {authenticatedUser.siteAdmin && (
+                                        <MenuLink as={Link} to="/site-admin">
+                                            Site admin
+                                        </MenuLink>
+                                    )}
+                                    <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
+                                        Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
+                                    </MenuLink>
+                                    <MenuItem onSelect={showFeedbackModal}>Feedback</MenuItem>
+                                    <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
+                                    {authenticatedUser.session?.canSignOut && (
+                                        <MenuLink as={AnchorLink} to="/-/sign-out">
+                                            Sign out
+                                        </MenuLink>
+                                    )}
+                                </>
                             )}
-                            <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
-                                {isSourcegraphApp ? 'Documentation' : 'Help'}{' '}
-                                <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
-                            </MenuLink>
 
-                            {isSourcegraphApp ? (
-                                <MenuLink as={AnchorLink} to="/user/settings/product-research">
-                                    Feedback
-                                </MenuLink>
-                            ) : (
-                                <MenuItem onSelect={showFeedbackModal}>Feedback</MenuItem>
-                            )}
-
-                            <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
-
-                            {authenticatedUser.session?.canSignOut && !isSourcegraphApp && (
-                                <MenuLink as={AnchorLink} to="/-/sign-out">
-                                    Sign out
-                                </MenuLink>
-                            )}
                             {isSourcegraphDotCom && <MenuDivider className={styles.dropdownDivider} />}
                             {isSourcegraphDotCom && (
                                 <MenuLink

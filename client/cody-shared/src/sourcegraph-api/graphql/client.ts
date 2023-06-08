@@ -9,17 +9,34 @@ import {
     CURRENT_USER_ID_QUERY,
     IS_CONTEXT_REQUIRED_QUERY,
     REPOSITORY_ID_QUERY,
+    REPOSITORY_IDS_QUERY,
     SEARCH_EMBEDDINGS_QUERY,
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     REPOSITORY_EMBEDDING_EXISTS_QUERY,
     SEARCH_TYPE_REPO_QUERY,
     CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
+    CURRENT_SITE_VERSION_QUERY,
+    CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
+    CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
+    GET_CODY_CONTEXT_QUERY,
 } from './queries'
 
 interface APIResponse<T> {
     data?: T
     errors?: { message: string; path?: string[] }[]
+}
+
+interface SiteVersionResponse {
+    site: { productVersion: string } | null
+}
+
+interface SiteGraphqlFieldsResponse {
+    __type: { fields: { name: string }[] } | null
+}
+
+interface SiteHasCodyEnabledResponse {
+    site: { isCodyEnabled: boolean } | null
 }
 
 interface CurrentUserIdResponse {
@@ -34,6 +51,10 @@ interface RepositoryIdResponse {
     repository: { id: string } | null
 }
 
+interface RepositoryIdsResponse {
+    repositories: { nodes: { id: string; name: string }[] }
+}
+
 interface RepositoryEmbeddingExistsResponse {
     repository: { id: string; embeddingExists: boolean } | null
 }
@@ -44,6 +65,30 @@ interface EmbeddingsSearchResponse {
 
 interface EmbeddingsMultiSearchResponse {
     embeddingsMultiSearch: EmbeddingsSearchResults
+}
+
+interface CodyFileChunkContext {
+    __typename: 'FileChunkContext'
+    blob: {
+        path: string
+        repository: {
+            id: string
+            name: string
+        }
+        commit: {
+            id: string
+            oid: string
+        }
+    }
+    startLine: number
+    endLine: number
+    chunkContent: string
+}
+
+type GetCodyContextResult = CodyFileChunkContext | null
+
+interface GetCodyContextResponse {
+    getCodyContext: GetCodyContextResult[]
 }
 
 interface SearchTypeRepoResponse {
@@ -110,6 +155,32 @@ export class SourcegraphGraphQLAPIClient {
         return new URL(this.config.serverEndpoint).origin === new URL(this.dotcomUrl).origin
     }
 
+    public async getSiteVersion(): Promise<string | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(CURRENT_SITE_VERSION_QUERY, {}).then(
+            response =>
+                extractDataOrError(response, data =>
+                    // Example values: "5.1.0" or "222587_2023-05-30_5.0-39cbcf1a50f0" for insider builds
+                    data.site?.productVersion ? data.site?.productVersion : new Error('site version not found')
+                )
+        )
+    }
+
+    public async getSiteHasIsCodyEnabledField(): Promise<boolean | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<SiteGraphqlFieldsResponse>>(
+            CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data => !!data.__type?.fields?.find(field => field.name === 'isCodyEnabled'))
+        )
+    }
+
+    public async getSiteHasCodyEnabled(): Promise<boolean | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<SiteHasCodyEnabledResponse>>(
+            CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
+            {}
+        ).then(response => extractDataOrError(response, data => data.site?.isCodyEnabled ?? false))
+    }
+
     public async getCurrentUserId(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(CURRENT_USER_ID_QUERY, {}).then(response =>
             extractDataOrError(response, data =>
@@ -124,9 +195,16 @@ export class SourcegraphGraphQLAPIClient {
             {}
         ).then(response =>
             extractDataOrError(response, data =>
-                data.currentUser ? { ...data.currentUser } : new Error('current user not found')
+                data.currentUser ? { ...data.currentUser } : new Error('current user not found with verified email')
             )
         )
+    }
+
+    public async getRepoIds(names: string[]): Promise<{ id: string; name: string }[] | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RepositoryIdsResponse>>(REPOSITORY_IDS_QUERY, {
+            names,
+            first: names.length,
+        }).then(response => extractDataOrError(response, data => data.repositories?.nodes))
     }
 
     public async getRepoId(repoName: string): Promise<string | Error> {
@@ -148,6 +226,45 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response =>
             extractDataOrError(response, data => (data.repository?.embeddingExists ? data.repository.id : null))
         )
+    }
+
+    /**
+     * Checks if Cody is enabled on the current Sourcegraph instance.
+     *
+     * @returns
+     * enabled: Whether Cody is enabled.
+     * version: The Sourcegraph version.
+     *
+     * This method first checks the Sourcegraph version using `getSiteVersion()`.
+     * If the version is before 5.0.0, Cody is disabled.
+     * If the version is 5.0.0 or newer, it checks for the existence of the `isCodyEnabled` field using `getSiteHasIsCodyEnabledField()`.
+     * If the field exists, it calls `getSiteHasCodyEnabled()` to check its value.
+     * If the field does not exist, Cody is assumed to be enabled for versions between 5.0.0 - 5.1.0.
+     */
+    public async isCodyEnabled(): Promise<{ enabled: boolean; version: string }> {
+        // Check site version.
+        const siteVersion = await this.getSiteVersion()
+        if (isError(siteVersion)) {
+            return { enabled: false, version: 'unknown' }
+        }
+        const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
+        if (insiderBuild) {
+            return { enabled: true, version: siteVersion }
+        }
+        // NOTE: Cody does not work on versions older than 5.0
+        const versionBeforeCody = siteVersion < '5.0.0'
+        if (versionBeforeCody) {
+            return { enabled: false, version: siteVersion }
+        }
+        // Beta version is betwewen 5.0.0 - 5.1.0 and does not have isCodyEnabled field
+        const betaVersion = siteVersion >= '5.0.0' && siteVersion < '5.1.0'
+        const hasIsCodyEnabledField = await this.getSiteHasIsCodyEnabledField()
+        // The isCodyEnabled field does not exist before version 5.1.0
+        if (!betaVersion && !isError(hasIsCodyEnabledField) && hasIsCodyEnabledField) {
+            const siteHasCodyEnabled = await this.getSiteHasCodyEnabled()
+            return { enabled: !isError(siteHasCodyEnabled) && siteHasCodyEnabled, version: siteVersion }
+        }
+        return { enabled: insiderBuild || betaVersion, version: siteVersion }
     }
 
     public async logEvent(event: {
@@ -186,6 +303,20 @@ export class SourcegraphGraphQLAPIClient {
         } catch (error) {
             return error
         }
+    }
+
+    public async getCodyContext(
+        repos: string[],
+        query: string,
+        codeResultsCount: number,
+        textResultsCount: number
+    ): Promise<GetCodyContextResult[] | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<GetCodyContextResponse>>(GET_CODY_CONTEXT_QUERY, {
+            repos,
+            query,
+            codeResultsCount,
+            textResultsCount,
+        }).then(response => extractDataOrError(response, data => data.getCodyContext))
     }
 
     public async searchEmbeddings(

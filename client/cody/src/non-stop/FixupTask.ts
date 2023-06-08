@@ -1,24 +1,26 @@
 import * as vscode from 'vscode'
 
+import { contentSanitizer } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 
 import { debug } from '../log'
+import { editDocByUri } from '../services/InlineAssist'
 
 import { Diff } from './diff'
 import { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
 
-// TODO(bee): Create CodeLens for each task
-// TODO(bee): Create decorator for each task
+export type taskID = string
+
 export class FixupTask {
-    public id: string
+    public id: taskID
     private outputChannel = debug
     // TODO: Consider switching to line-based ranges like inline assist
     // In that case we probably *also* need a "point" to feed the LLM
     // because people write instructions like "replace the keys in this hash"
     // and the LLM needs to know where the cursor is.
     public selectionRange: vscode.Range
-    public state = CodyTaskState.idle
+    public state: CodyTaskState = CodyTaskState.idle
     // The original text that we're working on updating
     public readonly original: string
     // The text of the streaming turn of the LLM, if any
@@ -51,28 +53,42 @@ export class FixupTask {
     }
 
     public start(): void {
-        this.setState(CodyTaskState.pending)
+        this.setState(CodyTaskState.asking)
         this.output(`Task #${this.id} is currently being processed...`)
+        void vscode.commands.executeCommand('setContext', 'cody.fixup.running', true)
     }
 
     public stop(): void {
-        this.setState(CodyTaskState.done)
-        this.output(`Task #${this.id} has been completed...`)
+        this.setState(CodyTaskState.ready)
+        this.output(`Task #${this.id} is ready for fixup...`)
+        void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
     }
 
     public error(text: string = ''): void {
         this.setState(CodyTaskState.error)
         this.output(`Error for Task #${this.id} - ` + text)
+        void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
     }
 
-    public apply(): void {
+    public async apply(): Promise<void> {
         this.setState(CodyTaskState.applying)
         this.output(`Task #${this.id} is being applied...`)
+        await this.replaceSelection()
     }
 
-    private queue(): void {
+    public queue(): void {
         this.setState(CodyTaskState.queued)
         this.output(`Task #${this.id} has been added to the queue successfully...`)
+    }
+
+    public marking(): void {
+        this.setState(CodyTaskState.marking)
+        this.output(`Cody is making the fixups for #${this.id}...`)
+    }
+
+    private fixed(): void {
+        this.setState(CodyTaskState.fixed)
+        this.output(`Task #${this.id} is fixed and completed.`)
     }
     /**
      * Print output to the VS Code Output Channel under Cody AI by Sourcegraph
@@ -91,5 +107,24 @@ export class FixupTask {
      */
     public getSelectionRange(): vscode.Range | vscode.Selection {
         return this.selectionRange
+    }
+
+    // TODO (dom) delete this once the new replacement edit method is in place
+    private async replaceSelection(): Promise<void> {
+        console.log('replacing start')
+        const { editor, selectionRange, replacement } = this
+        if (!editor || !replacement) {
+            this.error()
+            return
+        }
+        const newRange = await editDocByUri(
+            editor.document.uri,
+            { start: selectionRange.start.line, end: selectionRange.end.line + 1 },
+            contentSanitizer(replacement)
+        )
+        this.selectionRange = newRange
+        this.output('opening fixed doc')
+        await vscode.window.showTextDocument(editor.document.uri, { selection: newRange })
+        this.fixed()
     }
 }

@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/xcontext"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -596,13 +597,8 @@ func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, 
 // contextWithoutDeadline returns a context which will cancel if the cOld is
 // canceled.
 func contextWithoutDeadline(cOld context.Context) (context.Context, context.CancelFunc) {
-	cNew, cancel := context.WithCancel(context.Background())
-
-	// Set trace context so we still get spans propagated
-	cNew = trace.CopyContext(cNew, cOld)
-
-	// Copy actor from cOld to cNew.
-	cNew = actor.WithActor(cNew, actor.FromContext(cOld))
+	cNew := xcontext.Detach(cOld)
+	cNew, cancel := context.WithCancel(cNew)
 
 	go func() {
 		select {
