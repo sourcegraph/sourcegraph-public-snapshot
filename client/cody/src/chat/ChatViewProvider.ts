@@ -775,6 +775,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         return this.transcript.toChat()
     }
 
+    public fixupTasksScheduler(callback: () => void): void {
+        const idleTime = 15000
+        const scheduler = new FixupIdleScheduler(idleTime)
+        scheduler.registerCallback(callback)
+        this.disposables.push(scheduler)
+    }
+
     public fixupTasksForTesting(testing: TestSupport): FixupTask[] {
         if (!testing) {
             console.error('used ForTesting method without test support object')
