@@ -25,6 +25,7 @@ type KeyValue interface {
 	GetSet(key string, value any) Value
 	Set(key string, value any) error
 	SetEx(key string, ttlSeconds int, value any) error
+	SetNx(key string, value any) (bool, error)
 	Incr(key string) (int, error)
 	Incrby(key string, value int) (int, error)
 	Del(key string) error
@@ -180,6 +181,10 @@ func (r *redisKeyValue) Set(key string, val any) error {
 
 func (r *redisKeyValue) SetEx(key string, ttlSeconds int, val any) error {
 	return r.do("SETEX", r.prefix+key, ttlSeconds, val).err
+}
+
+func (r *redisKeyValue) SetNx(key string, val any) (bool, error) {
+	return r.do("SETNX", r.prefix+key, val).Bool()
 }
 
 func (r *redisKeyValue) Incr(key string) (int, error) {

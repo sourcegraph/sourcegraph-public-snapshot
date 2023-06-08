@@ -3,9 +3,12 @@ package shared
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-redsync/redsync/v4"
@@ -218,6 +221,67 @@ func (s *redisStore) Expire(key string, ttlSeconds int) error {
 	return s.store.Expire(key, ttlSeconds)
 }
 
+var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+// tryAcquireRedisLockOnce attempts to acquire a lock with the given lock key in
+// Redis without retries. The locking algorithm is based on
+// https://redis.io/commands/setnx/ for resolving deadlocks. To avoid releasing
+// someone else's lock, the entire operation should be well-bounded below the
+// lock timeout.
+//
+// TODO(jchen): Modularize this into the redispool package.
+func tryAcquireRedisLockOnce(rs redispool.KeyValue, lockKey string, lockTimeout time.Duration) (acquired bool, release func(), _ error) {
+	timeout := time.Now().Add(lockTimeout).UnixNano()
+	// Add a random number to decrease the chance of multiple processes falsely
+	// believing they have the lock at the same time.
+	lockToken := fmt.Sprintf("%d,%d", timeout, seededRand.Intn(1e6))
+
+	release = func() {
+		// Best effort to check we're releasing the lock we think we have. Note that it
+		// is still technically possible the lock token has changed between the GET and
+		// DEL since these are two separate operations, i.e. when the current lock happen
+		// to be expired at this very moment.
+		get, _ := rs.Get(lockKey).String()
+		if get == lockToken {
+			_ = rs.Del(lockKey)
+		}
+	}
+
+	set, err := rs.SetNx(lockKey, lockToken)
+	if err != nil {
+		return false, nil, err
+	} else if set {
+		return true, release, nil
+	}
+
+	// We didn't get the lock, but we can check if the lock is expired.
+	currentLockToken, err := rs.Get(lockKey).String()
+	if err == redis.ErrNil {
+		// Someone else got the lock and released it already.
+		return false, nil, nil
+	} else if err != nil {
+		return false, nil, err
+	}
+
+	currentTimeout, _ := strconv.ParseInt(strings.SplitN(currentLockToken, ",", 2)[0], 10, 64)
+	if currentTimeout > time.Now().UnixNano() {
+		// The lock is still valid.
+		return false, nil, nil
+	}
+
+	// The lock has expired, try to acquire it.
+	get, err := rs.GetSet(lockKey, lockToken).String()
+	if err != nil {
+		return false, nil, err
+	} else if get != currentLockToken {
+		// Someone else got the lock
+		return false, nil, nil
+	}
+
+	// We got the lock.
+	return true, release, nil
+}
+
 func newRateLimitAlerter(logger log.Logger, rs redispool.KeyValue, dotcomAPIURL string, config codygateway.ActorRateLimitAlertConfig) func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32) {
 	// Ignore the error because it's already validated in the config.
 	dotcomURL, _ := url.Parse(dotcomAPIURL)
@@ -228,30 +292,37 @@ func newRateLimitAlerter(logger log.Logger, rs redispool.KeyValue, dotcomAPIURL 
 		// We only want informational alerts for product subscriptions (i.e. customers).
 		if codygateway.ActorSource(actor.Source.Name()) != codygateway.ActorSourceProductSubscription ||
 			usagePercentage < config.Threshold {
+			//return
+		}
+
+		lockKey := fmt.Sprintf("rate_limit:%s:alert:lock:%s", feature, actor.ID)
+		acquired, release, err := tryAcquireRedisLockOnce(rs, lockKey, time.Minute)
+		if err != nil {
+			logger.Error("failed to acquire lock", log.Error(err))
+			return
+		} else if !acquired {
+			return
+		}
+		//defer release()
+		_ = release
+
+		key := fmt.Sprintf("rate_limit:%s:alert:%s", feature, actor.ID)
+		get, err := rs.Get(key).String()
+		if err != nil && err != redis.ErrNil {
+			logger.Error("failed to get last alerted time", log.Error(err))
 			return
 		}
 
-		// NOTE: Despite multiple alerters may be able to grab the value at the same
-		// time, only one of them will get the real original value that can possibly
-		// indicate the cooldown period has passed. All other alerters will get the
-		// near-current time value that contenders just set, which is almost guaranteed
-		// to be within the cooldown period (as long as the cooldown period is more than
-		// few hundred milliseconds).
-		key := fmt.Sprintf("rate_limit:%s:alert:%s", feature, actor.ID)
-		t, err := rs.GetSet(key, time.Now().Format(time.RFC3339)).String()
-		if err != nil && err != redis.ErrNil {
-			// We choose to return instead of continuing because we don't want to spam the
-			// Slack channel when somehow Redis goes down.
-			logger.Error("failed to get last alerted time", log.Error(err))
-			return
-		} else if err == nil {
-			lastAlerted, err := time.Parse(time.RFC3339, t)
-			if err == nil && !time.Now().After(lastAlerted.Add(config.Interval)) {
-				// Still in the cooldown period and restore the original value
-				_ = rs.Set(key, t)
-				return
-			}
+		lastAlerted, err := time.Parse(time.RFC3339, get)
+		if err == nil && !time.Now().After(lastAlerted.Add(config.Interval)) {
+			return // Still in the cooldown period
 		}
+		defer func() {
+			err := rs.Set(key, time.Now().Format(time.RFC3339))
+			if err != nil {
+				logger.Error("failed to set last alerted time", log.Error(err))
+			}
+		}()
 
 		if config.SlackWebhookURL == "" {
 			logger.Debug("new alert",
@@ -267,7 +338,12 @@ func newRateLimitAlerter(logger log.Logger, rs redispool.KeyValue, dotcomAPIURL 
 
 		text := fmt.Sprintf("The actor <%[1]s%[2]s|%[2]s> from %q has exceeded *%d%%* of its rate limit quota for `%s`.",
 			dotcomURL.String(), actor.ID, actor.Source.Name(), int(usagePercentage*100), feature)
-		err = slack.PostWebhook(
+
+		// NOTE: The context timeout must below the lock timeout we set above.
+		ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+		defer cancel()
+		err = slack.PostWebhookContext(
+			ctx,
 			config.SlackWebhookURL,
 			&slack.WebhookMessage{
 				Blocks: &slack.Blocks{
