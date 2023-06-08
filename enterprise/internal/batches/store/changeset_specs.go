@@ -182,13 +182,17 @@ func (s *Store) UpdateChangesetSpecCommitVerification(ctx context.Context, batch
 	}})
 	defer endObservation(1, observation.Args{})
 
-	// TODO: json marshal commit verification?
+	cv, err := jsonbColumn(commit.Verification)
+
+	if err != nil {
+		return err
+	}
 
 	q := sqlf.Sprintf(`
 		UPDATE changeset_specs
 		SET commit_verification = %s
-		WHERE batch_spec_id = %s`,
-		commit,
+		WHERE id = %s`,
+		cv,
 		batchSpec,
 	)
 

@@ -4521,6 +4521,19 @@
           "Comment": ""
         },
         {
+          "Name": "commit_verification",
+          "Index": 25,
+          "TypeName": "jsonb",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "created_at",
           "Index": 10,
           "TypeName": "timestamp with time zone",

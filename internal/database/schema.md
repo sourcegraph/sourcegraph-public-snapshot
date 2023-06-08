@@ -453,6 +453,7 @@ Foreign-key constraints:
  commit_author_name  | text                     |           |          | 
  commit_author_email | text                     |           |          | 
  type                | text                     |           | not null | 
+ commit_verification | jsonb                    |           |          | 
 Indexes:
     "changeset_specs_pkey" PRIMARY KEY, btree (id)
     "changeset_specs_unique_rand_id" UNIQUE, btree (rand_id)
