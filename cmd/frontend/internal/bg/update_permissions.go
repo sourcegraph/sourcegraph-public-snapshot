@@ -66,7 +66,7 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 					// is clearly a permission which should be explicitly granted and only
 					// SITE_ADMINISTRATOR has it by default. All exceptions can be added to the
 					// `excludeFromUserRole` attribute of RBAC schema.
-					rolesToAssign = roles[:1]
+					rolesToAssign = []types.SystemRole{types.SiteAdministratorSystemRole}
 				}
 				if err := rolePermissionStore.BulkAssignPermissionsToSystemRoles(ctx, database.BulkAssignPermissionsToSystemRolesOpts{
 					Roles:        rolesToAssign,
