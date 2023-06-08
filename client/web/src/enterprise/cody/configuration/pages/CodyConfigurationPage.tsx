@@ -88,7 +88,7 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
                     {
                         text: repo ? (
                             <>
-                                Embeddings data configuration for <RepoLink repoName={repo.name} to={null} />
+                                Embeddings policies for <RepoLink repoName={repo.name} to={null} />
                             </>
                         ) : (
                             'Global embeddings policies'
