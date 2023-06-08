@@ -1,5 +1,3 @@
-import { URL } from 'url'
-
 import React, { useMemo, useState } from 'react'
 
 import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiThumbUp, mdiThumbDown, mdiOpenInNew } from '@mdi/js'
@@ -29,7 +27,6 @@ import { SearchActionsMenu } from './SearchActionsMenu'
 
 import styles from './SearchResultsInfoBar.module.scss'
 
-console.log(DOTCOM_URL)
 export interface SearchResultsInfoBarProps
     extends TelemetryProps,
         PlatformContextProps<'settings' | 'sourcegraphURL'>,
@@ -145,7 +142,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     const [codySearchInputString] = useSessionStorage<string>('cody-search-input', '')
     const codySearchInput: { input?: string; translatedQuery?: string } = JSON.parse(codySearchInputString || '{}')
     const [codyFeedback, setCodyFeedback] = useState<null | boolean>(null)
-    //check if url equals dotcom endpoint, set boolean
 
     const collectCodyFeedback = (positive: boolean): void => {
         if (codyFeedback !== null) {
