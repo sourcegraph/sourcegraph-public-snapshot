@@ -209,7 +209,9 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = React.memo(funct
     revision,
 }) {
     return repoName ? (
-        <Link to={`/${repoName}${revision ? `@${revision}` : ''}/-/blob/${path}`}>{path}</Link>
+        <Tooltip content={`${repoName}/-/blob/${path}`}>
+            <Link to={`/${repoName}${revision ? `@${revision}` : ''}/-/blob/${path}`}>{path}</Link>
+        </Tooltip>
     ) : (
         <>{path}</>
     )
