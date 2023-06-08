@@ -147,12 +147,12 @@ export const codyGroup: SiteAdminSideBarGroup = {
     header: { label: 'Cody', icon: RobotOutlineIcon },
     items: [
         {
-            label: 'Embedding jobs',
+            label: 'Embeddings jobs',
             to: '/site-admin/embeddings',
             exact: true,
         },
         {
-            label: 'Embedding policies',
+            label: 'Embeddings policies',
             to: '/site-admin/embeddings/configuration',
         },
     ],

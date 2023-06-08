@@ -81,7 +81,7 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
 
     return (
         <>
-            <PageTitle title={repo ? 'Embedding job policies for repository' : 'Global embedding job policies'} />
+            <PageTitle title={repo ? 'Embedding job policies for repository' : 'Global embeddings policies'} />
             <PageHeader
                 headingElement="h2"
                 path={[
@@ -91,7 +91,7 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
                                 Embeddings data configuration for <RepoLink repoName={repo.name} to={null} />
                             </>
                         ) : (
-                            'Global embedding job policies'
+                            'Global embeddings policies'
                         ),
                     },
                 ]}
