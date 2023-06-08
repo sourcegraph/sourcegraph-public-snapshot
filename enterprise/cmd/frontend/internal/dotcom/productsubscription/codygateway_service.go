@@ -72,7 +72,7 @@ type codyGatewayService struct {
 	opts CodyGatewayServiceOptions
 }
 
-func (s *codyGatewayService) CompletionsUsageForSubscription(ctx context.Context, feature types.CompletionsFeature, uuid string) ([]SubscriptionUsage, error) {
+func (s *codyGatewayService) CompletionsUsageForActor(ctx context.Context, feature types.CompletionsFeature, actorSource codygateway.ActorSource, actorID string) ([]SubscriptionUsage, error) {
 	if !s.opts.BigQuery.IsConfigured() {
 		// Not configured, nothing we can do.
 		return nil, nil
@@ -150,11 +150,11 @@ ORDER BY
 	q.Parameters = []bigquery.QueryParameter{
 		{
 			Name:  "source",
-			Value: codygateway.ProductSubscriptionActorSourceName,
+			Value: actorSource,
 		},
 		{
 			Name:  "identifier",
-			Value: uuid,
+			Value: actorID,
 		},
 		{
 			Name:  "eventName",
@@ -194,7 +194,7 @@ ORDER BY
 	return results, nil
 }
 
-func (s *codyGatewayService) EmbeddingsUsageForSubscription(ctx context.Context, uuid string) ([]SubscriptionUsage, error) {
+func (s *codyGatewayService) EmbeddingsUsageForActor(ctx context.Context, actorSource codygateway.ActorSource, actorID string) ([]SubscriptionUsage, error) {
 	if !s.opts.BigQuery.IsConfigured() {
 		// Not configured, nothing we can do.
 		return nil, nil
@@ -273,11 +273,11 @@ ORDER BY
 	q.Parameters = []bigquery.QueryParameter{
 		{
 			Name:  "source",
-			Value: codygateway.ProductSubscriptionActorSourceName,
+			Value: actorSource,
 		},
 		{
 			Name:  "identifier",
-			Value: uuid,
+			Value: actorID,
 		},
 		{
 			Name:  "eventName",

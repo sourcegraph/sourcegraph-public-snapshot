@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/productsubscription"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type dbTokens struct {
@@ -64,4 +65,39 @@ WHERE
 		return "", productSubscriptionNotFoundError{reason: "no associated token"}
 	}
 	return subID, nil
+}
+
+// dotcomUserGatewayAccessTokenPrefix is the prefix used for identifying tokens
+// generated for dotcom users to access the cody-gateway.
+const dotcomUserGatewayAccessTokenPrefix = "sgd_"
+
+// LookupDotcomUserIDByAccessToken returns the userID
+// corresponding to a token, trimming token prefixes if there are any.
+func (t dbTokens) LookupDotcomUserIDByAccessToken(ctx context.Context, token string) (int, error) {
+	if !strings.HasPrefix(token, dotcomUserGatewayAccessTokenPrefix) {
+		return 0, errors.New("invalid token with unknown prefix")
+	}
+	decoded, err := hex.DecodeString(strings.TrimPrefix(token, dotcomUserGatewayAccessTokenPrefix))
+	if err != nil {
+		return 0, errors.New("invalid token decoding")
+	}
+
+	query := sqlf.Sprintf(`
+UPDATE access_tokens t SET last_used_at=now()
+WHERE t.id IN (
+	SELECT t2.id FROM access_tokens t2
+	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
+	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
+	WHERE digest(value_sha256, 'sha256')=%s AND t2.deleted_at IS NULL 	
+)
+RETURNING t.subject_user_id`,
+		decoded,
+	)
+	userID, found, err := basestore.ScanFirstInt(t.store.Query(ctx, query))
+	if err != nil {
+		return 0, err
+	} else if !found {
+		return 0, errors.New("no associated token")
+	}
+	return userID, nil
 }

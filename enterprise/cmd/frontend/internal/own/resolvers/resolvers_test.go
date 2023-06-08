@@ -2145,12 +2145,36 @@ func TestDeleteAssignedTeam(t *testing.T) {
 	})
 }
 
-func Test(t *testing.T) {
-	fmt.Println(string(graphqlbackend.MarshalUserID(1)))
-	fmt.Println(string(graphqlbackend.MarshalUserID(62)))
-	fmt.Println(string(graphqlbackend.MarshalUserID(69)))
-	fmt.Println(string(graphqlbackend.MarshalUserID(70)))
-	fmt.Println(string(graphqlbackend.MarshalRepositoryID(7)))
+func TestDisplayOwnershipStats(t *testing.T) {
+	db := database.NewMockDB()
+	fakeRepoPaths := database.NewMockRepoPathStore()
+	fakeRepoPaths.AggregateFileCountFunc.SetDefaultReturn(350000, nil)
+	db.RepoPathsFunc.SetDefaultReturn(fakeRepoPaths)
+	fakeOwnershipStats := database.NewMockOwnershipStatsStore()
+	fakeOwnershipStats.QueryAggregateCountsFunc.SetDefaultReturn(
+		[]database.PathAggregateCounts{{CodeownedFileCount: 150000}}, nil)
+	db.OwnershipStatsFunc.SetDefaultReturn(fakeOwnershipStats)
+	ctx := context.Background()
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, nil, nil, logtest.NoOp(t))})
+	require.NoError(t, err)
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Schema:  schema,
+		Context: ctx,
+		Query: `
+			query GetInstanceOwnStats {
+				instanceOwnershipStats {
+					totalFiles
+					totalCodeownedFiles
+				}
+			}`,
+		ExpectedResult: `
+			{
+				"instanceOwnershipStats": {
+					"totalFiles": 350000,
+					"totalCodeownedFiles" : 150000
+				}
+			}`,
+	})
 }
 
 func createTeam(t *testing.T, ctx context.Context, db database.DB, teamName string) *types.Team {

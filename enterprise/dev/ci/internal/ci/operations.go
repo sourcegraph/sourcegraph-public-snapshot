@@ -77,8 +77,9 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 				// addBrowserExtensionUnitTests, // ~4.5m
 				addJetBrainsUnitTests, // ~2.5m
 				// addTypescriptCheck is now covered by Bazel
-				addVsceTests,          // ~3.0m
-				addCodyExtensionTests, // ~2.5m
+				addVsceTests, // ~3.0m
+				addCodyUnitIntegrationTests,
+				addCodyE2ETests,
 				// addESLint,
 				addStylelint,
 			)
@@ -94,7 +95,8 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 				addJetBrainsUnitTests,        // ~2.5m
 				addTypescriptCheck,           // ~4m
 				addVsceTests,                 // ~3.0m
-				addCodyExtensionTests,        // ~2.5m
+				addCodyUnitIntegrationTests,
+				addCodyE2ETests,
 				addESLint,
 				addStylelint,
 			)
@@ -260,17 +262,28 @@ func addVsceTests(pipeline *bk.Pipeline) {
 	)
 }
 
-func addCodyExtensionTests(pipeline *bk.Pipeline) {
+func addCodyUnitIntegrationTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
-		":vscode::robot_face: Unit, integration, and E2E tests for the Cody VS Code extension",
+		":vscode::robot_face: Unit and integration tests for the Cody VS Code extension",
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("client/cody/scripts/download-rg.sh x86_64-unknown-linux"),
 		bk.Cmd("pnpm --filter cody-ai run test:unit"),
 		bk.Cmd("pnpm --filter cody-shared run test"),
 		bk.Cmd("pnpm --filter cody-ai run test:integration"),
+	)
+}
+
+// Cody E2E tests are extracted into a separate step to auto-retry them on flaky failures.
+func addCodyE2ETests(pipeline *bk.Pipeline) {
+	pipeline.AddStep(
+		":vscode::robot_face: E2E tests for the Cody VS Code extension",
+		withPnpmCache(),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+		bk.Cmd("client/cody/scripts/download-rg.sh x86_64-unknown-linux"),
 		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
 		bk.ArtifactPaths("./playwright/**/*"),
+		bk.AutomaticRetry(3),
 	)
 }
 
