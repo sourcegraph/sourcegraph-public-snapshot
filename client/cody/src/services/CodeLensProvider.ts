@@ -106,7 +106,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
      * Check if it is in pending state
      */
     public isPending(): boolean {
-        return this.status === CodyTaskState.pending
+        return this.status === CodyTaskState.asking
     }
     /**
      * Dispose the disposables
