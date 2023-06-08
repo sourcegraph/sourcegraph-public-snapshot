@@ -8,8 +8,10 @@ import { editDocByUri } from '../services/InlineAssist'
 import { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
 
+export type taskID = string
+
 export class FixupTask {
-    public id: string
+    public id: taskID
     private outputChannel = debug
     // TODO: Consider switching to line-based ranges like inline assist
     // In that case we probably *also* need a "point" to feed the LLM
@@ -45,18 +47,21 @@ export class FixupTask {
     }
 
     public start(): void {
-        this.setState(CodyTaskState.pending)
+        this.setState(CodyTaskState.asking)
         this.output(`Task #${this.id} is currently being processed...`)
+        void vscode.commands.executeCommand('setContext', 'cody.fixup.running', true)
     }
 
     public stop(): void {
-        this.setState(CodyTaskState.done)
+        this.setState(CodyTaskState.ready)
         this.output(`Task #${this.id} is ready for fixup...`)
+        void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
     }
 
     public error(text: string = ''): void {
         this.setState(CodyTaskState.error)
         this.output(`Error for Task #${this.id} - ` + text)
+        void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
     }
 
     public async apply(): Promise<void> {
@@ -68,6 +73,11 @@ export class FixupTask {
     public queue(): void {
         this.setState(CodyTaskState.queued)
         this.output(`Task #${this.id} has been added to the queue successfully...`)
+    }
+
+    public marking(): void {
+        this.setState(CodyTaskState.marking)
+        this.output(`Cody is making the fixups for #${this.id}...`)
     }
 
     private fixed(): void {
@@ -93,6 +103,7 @@ export class FixupTask {
         return this.selectionRange
     }
 
+    // TODO (dom) delete this once the new replacement edit method is in place
     private async replaceSelection(): Promise<void> {
         const { editor, selectionRange, replacement } = this
         if (!editor || !replacement) {

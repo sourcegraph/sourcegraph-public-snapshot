@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { FixupTask } from './FixupTask'
-import { CodyTaskState, fixupTaskIcon, getFileNameAfterLastDash } from './utils'
+import { CodyTaskState, fixupTaskList, getFileNameAfterLastDash } from './utils'
 
 type taskID = string
 type fileName = string
@@ -168,7 +168,7 @@ export class FixupTaskTreeItem extends vscode.TreeItem {
         let ready = tasksSize - failedSize
 
         switch (state) {
-            case CodyTaskState.pending:
+            case CodyTaskState.asking:
                 text += ', 1 running'
                 ready--
                 break
@@ -186,12 +186,13 @@ export class FixupTaskTreeItem extends vscode.TreeItem {
         if (ready > 0) {
             text += `, ${ready} ready`
         }
+        void vscode.commands.executeCommand('setContext', 'cody.fixup.filesWithApplicableFixups', ready < 1)
         return text
     }
 
     private updateIconPath(): void {
-        const icon = fixupTaskIcon[this.state].icon
-        const mode = fixupTaskIcon[this.state].id
+        const icon = fixupTaskList[this.state].icon
+        const mode = fixupTaskList[this.state].id
         this.iconPath = new vscode.ThemeIcon(icon, new vscode.ThemeColor(mode))
     }
 }
