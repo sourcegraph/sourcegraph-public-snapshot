@@ -15,7 +15,7 @@ import styles from './TauriNavigation.module.scss'
 
 export const TauriNavigation: React.FC<{ historyStack: HistoryStack }> = ({ historyStack }) => (
     <>
-        <ul className={classNames(navBarStyles.list, styles.list)}>
+        <ul className={styles.list}>
             <NavItem>
                 <Tooltip content={historyStack.canGoBack && 'Go back'}>
                     <Button

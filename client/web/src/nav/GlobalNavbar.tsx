@@ -152,15 +152,16 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // but should not show in the navbar. Users can still
     // access this feature via the context dropdown.
     const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
-    const showCodeMonitoring = codeMonitoringEnabled
-    const showSearchNotebook = notebooksEnabled
-    const isLicensed = !!window.context?.licenseInfo
+    const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphApp
+    const showSearchNotebook = notebooksEnabled && !isSourcegraphApp
+    const isLicensed = !!window.context?.licenseInfo || isSourcegraphApp // Assume licensed when running as a native app
+    const showBatchChanges = ((props.batchChangesEnabled && isLicensed) || isSourcegraphDotCom) && !isSourcegraphApp // Batch changes are enabled on sourcegraph.com so users can see the Getting Started page
     const codyEnabled = useIsCodyEnabled()
 
     const [isSentinelEnabled] = useFeatureFlag('sentinel')
     // TODO: Include isSourcegraphDotCom in subsequent PR
     // const showSentinel = sentinelEnabled && isSourcegraphDotCom && props.authenticatedUser?.siteAdmin
-    const showSentinel = isSentinelEnabled && props.authenticatedUser?.siteAdmin
+    const showSentinel = isSentinelEnabled && props.authenticatedUser?.siteAdmin && !isSourcegraphApp
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -176,7 +177,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const navLinkVariant = useCalculatedNavLinkVariant(navbarReference, props.authenticatedUser)
 
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
-    const codeInsights = codeInsightsEnabled
+    const codeInsights = codeInsightsEnabled && !isSourcegraphApp
 
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
@@ -214,27 +215,28 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                 {isSourcegraphApp && <TauriNavigation historyStack={historyStack} />}
 
                 <NavGroup>
-                    {searchNavBarItems.length > 0 ? (
-                        <NavDropdown
-                            toggleItem={{
-                                path: PageRoutes.Search,
-                                altPath: PageRoutes.RepoContainer,
-                                icon: MagnifyIcon,
-                                content: 'Code Search',
-                                variant: navLinkVariant,
-                            }}
-                            routeMatch={routeMatch}
-                            homeItem={{ content: 'Search home' }}
-                            items={searchNavBarItems}
-                            name="search"
-                        />
-                    ) : (
-                        <NavItem icon={MagnifyIcon}>
-                            <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
-                                Code Search
-                            </NavLink>
-                        </NavItem>
-                    )}
+                    {!isSourcegraphApp &&
+                        (searchNavBarItems.length > 0 ? (
+                            <NavDropdown
+                                toggleItem={{
+                                    path: PageRoutes.Search,
+                                    altPath: PageRoutes.RepoContainer,
+                                    icon: MagnifyIcon,
+                                    content: 'Code Search',
+                                    variant: navLinkVariant,
+                                }}
+                                routeMatch={routeMatch}
+                                homeItem={{ content: 'Search home' }}
+                                items={searchNavBarItems}
+                                name="search"
+                            />
+                        ) : (
+                            <NavItem icon={MagnifyIcon}>
+                                <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
+                                    Code Search
+                                </NavLink>
+                            </NavItem>
+                        ))}
                     {codyEnabled.chat && (
                         <NavItem icon={CodyLogo}>
                             <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Cody}>
@@ -259,9 +261,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     {/* This is the only circumstance where we show something
                          batch-changes-related even if the instance does not have batch
                          changes enabled, for marketing purposes on sourcegraph.com */}
-                    {((props.batchChangesEnabled && isLicensed) || isSourcegraphDotCom) && (
-                        <BatchChangesNavItem variant={navLinkVariant} />
-                    )}
+                    {showBatchChanges && <BatchChangesNavItem variant={navLinkVariant} />}
                     {codeInsights && (
                         <NavItem icon={BarChartIcon}>
                             <NavLink variant={navLinkVariant} to="/insights">
@@ -329,6 +329,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             )}
                             size="sm"
                             target="_blank"
+                            className="d-none d-sm-block"
                             onClick={() =>
                                 eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NavBarSourcegraphApp' })
                             }

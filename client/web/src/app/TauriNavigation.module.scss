@@ -1,9 +1,16 @@
 .list {
-    gap: 0.25rem;
+    display: flex;
+    justify-content: center;
+    list-style: none;
+    height: 100%;
     margin: 0 -0.5rem;
+    padding: 0;
+    gap: 0.25rem;
 }
 
 .button {
+    display: flex;
+    align-items: center;
     padding: 0 0.25rem;
 
     &:focus-visible:not(:disabled):not(.disabled):not([aria-disabled='true']) {
