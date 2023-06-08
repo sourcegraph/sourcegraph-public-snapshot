@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
-	"io"
 	"time"
 
 	"net/http"
@@ -24,11 +23,14 @@ var (
 	licenseCheckStarted = false
 	store               = redispool.Store
 
+	routine *goroutine.PeriodicGoroutine
+)
+
+const (
+	licenseCheckInterval    = 12 * time.Hour
 	lastCalledAtStoreKey    = "licensing:last_called_at"
 	licenseValidityStoreKey = "licensing:is_license_valid"
 	prevLicenseTokenKey     = "licensing:prev_license_hash"
-
-	routine *goroutine.PeriodicGoroutine
 )
 
 type licenseChecker struct {
@@ -88,7 +90,7 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 	return nil
 }
 
-func StartLicenseCheck(ctx context.Context, interval time.Duration, logger log.Logger, siteID string) {
+func StartLicenseCheck(ctx context.Context, logger log.Logger, siteID string) {
 	if licenseCheckStarted {
 		logger.Info("license check already started")
 		return
@@ -128,7 +130,7 @@ func StartLicenseCheck(ctx context.Context, interval time.Duration, logger log.L
 			&licenseChecker{siteID: siteID, token: licenseToken, info: info, doer: httpcli.ExternalDoer},
 			goroutine.WithName("licensing.check-license-validity"),
 			goroutine.WithDescription("check if license is valid from sourcegraph.com"),
-			goroutine.WithInterval(interval),
+			goroutine.WithInterval(licenseCheckInterval),
 		)
 		go goroutine.MonitorBackgroundRoutines(ctx, routine)
 	})

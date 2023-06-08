@@ -3,7 +3,6 @@ package init
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -172,7 +171,7 @@ func Init(
 		if err != nil {
 			logger.Error("error getting global state", log.Error(err))
 		} else {
-			licensing.StartLicenseCheck(context.Background(), 12*time.Hour, logger, gs.SiteID)
+			licensing.StartLicenseCheck(context.Background(), logger, gs.SiteID)
 		}
 	}
 
