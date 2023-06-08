@@ -1,7 +1,7 @@
-/* eslint-disable no-console */
+/* eslint-disable no-console, no-sync */
 
 import { execSync } from 'child_process'
-import { promises as fs } from 'fs'
+import fs from 'fs'
 import path from 'path'
 
 import { Octokit } from 'octokit'
@@ -33,7 +33,7 @@ async function findFile(root: string, filename: string): Promise<string> {
         parts.flatMap(async (dir: string) => {
             const filePath = path.join(root, dir, filename)
             try {
-                await fs.access(filePath)
+                await fs.promises.access(filePath)
                 return filePath
             } catch {
                 return ''
@@ -71,6 +71,11 @@ function getTarPath(): string | undefined {
             const file = `sourcegraph/sourcegraph/bundle_size_cache-${revision}.tar.gz`
 
             execSync(`gsutil -q cp -r "gs://${bucket}/${file}" "${tarPath}"`)
+
+            // gsutil doesn't exit with a non-zero exit code when the file is not found.
+            if (!fs.existsSync(tarPath)) {
+                throw new Error('gsutil failed to copy the file.')
+            }
 
             console.log(`Found cached archive for ${revision}:`, tarPath)
             // TODO: remove mutable global variable
