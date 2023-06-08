@@ -39,5 +39,6 @@ export class FixupDocumentEditObserver {
         // Need to clarify whether multi-range edits are progressive in the
         // sense that edit 2 refers to ranges updated after edit 1, or if
         // all the edits refer to ranges in the original document.
+        // TODO: Create new code lenses with updated ranges for each task with .set()
     }
 }
