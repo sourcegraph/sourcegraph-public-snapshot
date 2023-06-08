@@ -53,13 +53,25 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) *schema.Completio
 			if completionsConfig.Endpoint == "" {
 				completionsConfig.Endpoint = codygateway.DefaultEndpoint
 			}
+
 			// Configure chatModel
 			if completionsConfig.ChatModel == "" {
-				completionsConfig.CompletionModel = "anthropic/claude-v1"
+				completionsConfig.ChatModel = "anthropic/claude-v1"
 			}
 			// Configure completionModel
 			if completionsConfig.CompletionModel == "" {
 				completionsConfig.CompletionModel = "anthropic/claude-instant-v1"
+			}
+
+			// Back-compat: use model for both chat and completion if anything
+			// isn't set. Remove when Model is removed.
+			if completionsConfig.Model != "" {
+				if completionsConfig.ChatModel == "" {
+					completionsConfig.ChatModel = completionsConfig.Model
+				}
+				if completionsConfig.CompletionModel == "" {
+					completionsConfig.CompletionModel = completionsConfig.Model
+				}
 			}
 
 			return completionsConfig
