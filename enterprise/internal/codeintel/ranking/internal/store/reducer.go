@@ -67,7 +67,7 @@ rank_ids AS (
 	WHERE
 		pci.graph_key = %s AND
 		NOT pci.processed
-	ORDER BY pci.graph_key, pci.definition_id, pci.id
+	ORDER BY pci.graph_key, pci.definition_id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 ),
