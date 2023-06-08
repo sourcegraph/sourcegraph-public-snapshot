@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { contentSanitizer } from '@sourcegraph/cody-shared/src/chat/recipes/helpers'
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 
 import { debug } from '../log'
@@ -110,6 +111,7 @@ export class FixupTask {
 
     // TODO (dom) delete this once the new replacement edit method is in place
     private async replaceSelection(): Promise<void> {
+        console.log('replacing start')
         const { editor, selectionRange, replacement } = this
         if (!editor || !replacement) {
             this.error()
@@ -118,9 +120,11 @@ export class FixupTask {
         const newRange = await editDocByUri(
             editor.document.uri,
             { start: selectionRange.start.line, end: selectionRange.end.line + 1 },
-            replacement.trimStart()
+            contentSanitizer(replacement)
         )
         this.selectionRange = newRange
+        this.output('opening fixed doc')
+        await vscode.window.showTextDocument(editor.document.uri, { selection: newRange })
         this.fixed()
     }
 }

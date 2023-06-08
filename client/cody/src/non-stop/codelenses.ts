@@ -16,7 +16,8 @@ export function getLensesByState(id: string, state: CodyTaskState, range: vscode
         }
         case CodyTaskState.applying: {
             const title = getApplyingLens(codeLensRange)
-            return [title]
+            const cancel = getCancelLens(codeLensRange, id)
+            return [title, cancel]
         }
         case CodyTaskState.asking: {
             const title = getAskingLens(codeLensRange)
