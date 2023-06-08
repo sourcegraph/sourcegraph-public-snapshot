@@ -91,6 +91,9 @@ func RunMigration(
 			len(plan.steps),
 		))
 
+		fmt.Printf("Being a sloooow mannnnn...\n")
+		time.Sleep(time.Minute)
+
 		out.WriteLine(output.Line(output.EmojiFingerPointRight, output.StyleReset, "Running schema migrations"))
 
 		if !dryRun {

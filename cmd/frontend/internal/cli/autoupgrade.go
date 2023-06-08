@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -65,7 +66,9 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, hook stor
 		return errors.Wrap(err, "autoupgradestore.GetAutoUpgrade")
 	}
 	if !doAutoUpgrade && !shouldAutoUpgade {
-		return nil
+		// TODO(efritz) - remove, for debugging
+		fmt.Printf("FAKING AN UPGRADE\n")
+		// return nil
 	}
 
 	stopFunc, err := serveInternalServer(obsvCtx)
@@ -74,7 +77,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, hook stor
 	}
 	defer stopFunc()
 
-	stopFunc, err = serveExternalServer(db)
+	stopFunc, err = serveExternalServer(obsvCtx, sqlDB, db)
 	if err != nil {
 		return errors.Wrap(err, "failed to start UI & healthcheck server")
 	}
@@ -88,6 +91,12 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, hook stor
 		currentVersion oobmigration.Version
 		success        bool
 	)
+
+	// TODO(efritz) - remove, for debugging
+	for i := 0; i < 300; i++ {
+		fmt.Printf("FAKING AN UPGRADE.....\n")
+		time.Sleep(time.Second)
+	}
 
 	toVersion, ok := oobmigration.NewVersionFromString(version.Version())
 	if !ok {
@@ -276,11 +285,11 @@ func serveInternalServer(obsvCtx *observation.Context) (context.CancelFunc, erro
 	return confServer.Stop, nil
 }
 
-func serveExternalServer(db database.DB) (context.CancelFunc, error) {
+func serveExternalServer(obsvCtx *observation.Context, sqlDB *sql.DB, db database.DB) (context.CancelFunc, error) {
 	serveMux := http.NewServeMux()
 
 	serveMux.Handle("/.assets/", http.StripPrefix("/.assets", secureHeadersMiddleware(assetsutil.NewAssetHandler(serveMux), crossOriginPolicyAssets)))
-	serveMux.HandleFunc("/", makeUpgradeProgressHandler(db))
+	serveMux.HandleFunc("/", makeUpgradeProgressHandler(obsvCtx, sqlDB, db))
 	h := gcontext.ClearHandler(serveMux)
 	h = healthCheckMiddleware(h)
 
