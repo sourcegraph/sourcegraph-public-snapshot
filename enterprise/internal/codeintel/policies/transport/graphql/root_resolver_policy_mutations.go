@@ -163,7 +163,7 @@ func validateConfigurationPolicy(policy resolverstubs.CodeIntelConfigurationPoli
 		}
 
 		if shared.GitObjectType(policy.Type) != shared.GitObjectTypeCommit {
-			return errors.Errorf("embeddings policies must have type 'GIT_COMMIT'")
+			return errors.Errorf("embedding policies must have type 'GIT_COMMIT'")
 		}
 	}
 
