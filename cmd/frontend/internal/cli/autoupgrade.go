@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -69,27 +68,21 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, hook stor
 		return nil
 	}
 
-	stopFunc, err := serveConfigurationServer(obsvCtx)
+	stopFunc, err := serveInternalServer(obsvCtx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to start configuration server")
 	}
 	defer stopFunc()
 
-	stopFunc, err = serveUpgradeUI(db)
+	stopFunc, err = serveExternalServer(db)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to start UI & healthcheck server")
 	}
 	defer stopFunc()
 
 	if err := blockForDisconnects(ctx, obsvCtx.Logger, db); err != nil {
-		return err
+		return errors.Wrap(err, "error blocking on postgres client disconnects")
 	}
-
-	return performAutoUpgrade(ctx, obsvCtx, db, hook)
-}
-
-func performAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db database.DB, hook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
-	upgradestore := upgradestore.New(db)
 
 	var (
 		currentVersion oobmigration.Version
@@ -98,6 +91,7 @@ func performAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db da
 
 	toVersion, ok := oobmigration.NewVersionFromString(version.Version())
 	if !ok {
+		obsvCtx.Logger.Warn("unexpected stirng for desired instance schema version, skipping auto-upgrade", log.String("version", version.Version()))
 		return nil
 	}
 
@@ -114,10 +108,9 @@ func performAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db da
 			return errors.Wrap(err, "autoupgradestore.GetServiceVersion")
 		}
 
-		var ok bool
 		currentVersion, ok = oobmigration.NewVersionFromString(currentVersionStr)
 		if !ok {
-			return errors.Newf("VERSION STRING BAD %s", currentVersion)
+			return errors.Newf("unexpected string for current instance schema version: %q", currentVersion)
 		}
 
 		if cmp := oobmigration.CompareVersions(currentVersion, toVersion); cmp == oobmigration.VersionOrderAfter || cmp == oobmigration.VersionOrderEqual {
@@ -135,7 +128,7 @@ func performAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db da
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 				defer cancel()
 				if err := upgradestore.SetUpgradeStatus(ctx, success); err != nil {
-					fmt.Println("whoopsy", err)
+					obsvCtx.Logger.Error("failed to set auto-upgrade status", log.Error(err))
 				}
 			}()
 			break
@@ -147,7 +140,7 @@ func performAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db da
 	}
 
 	if err := runMigration(ctx, obsvCtx, currentVersion, toVersion, db, hook); err != nil {
-		return err
+		return errors.Wrap(err, "error during auto-upgrade")
 	}
 
 	if err := upgradestore.SetAutoUpgrade(ctx, false); err != nil {
@@ -232,7 +225,7 @@ func runMigration(ctx context.Context,
 	)
 }
 
-func serveConfigurationServer(obsvCtx *observation.Context) (context.CancelFunc, error) {
+func serveInternalServer(obsvCtx *observation.Context) (context.CancelFunc, error) {
 	middleware := httpapi.JsonMiddleware(&httpapi.ErrorHandler{
 		Logger:       obsvCtx.Logger,
 		WriteErrBody: true,
@@ -283,7 +276,7 @@ func serveConfigurationServer(obsvCtx *observation.Context) (context.CancelFunc,
 	return confServer.Stop, nil
 }
 
-func serveUpgradeUI(db database.DB) (context.CancelFunc, error) {
+func serveExternalServer(db database.DB) (context.CancelFunc, error) {
 	serveMux := http.NewServeMux()
 
 	serveMux.Handle("/.assets/", http.StripPrefix("/.assets", secureHeadersMiddleware(assetsutil.NewAssetHandler(serveMux), crossOriginPolicyAssets)))
