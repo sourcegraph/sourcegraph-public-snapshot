@@ -241,3 +241,37 @@ func TestProductLicenses_List(t *testing.T) {
 		assert.Equalf(t, 0, len(ts), "got %d product licenses, want 0", len(ts))
 	}
 }
+
+func TestRevokeLicense(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	subscriptionStore := dbSubscriptions{db: db}
+	store := dbLicenses{db: db}
+
+	// Create a license
+	u, err := db.Users().Create(ctx, database.NewUser{Username: "alice"})
+	require.NoError(t, err)
+
+	ps, err := subscriptionStore.Create(ctx, u.ID, "")
+	require.NoError(t, err)
+
+	id, err := store.Create(ctx, ps, "key", 2, license.Info{})
+	require.NoError(t, err)
+
+	// Revoke the license
+	if err := store.Revoke(ctx, id, "reason"); err != nil {
+		t.Fatal(err)
+	}
+
+	// License should now be revoked
+	license, err := store.GetByID(ctx, id)
+	require.NoError(t, err)
+	require.NotNil(t, license.RevokedAt)
+	require.NotNil(t, license.RevokeReason)
+	require.Equal(t, "reason", *license.RevokeReason)
+}

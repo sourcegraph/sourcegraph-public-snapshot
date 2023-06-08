@@ -22,6 +22,7 @@ type DotcomResolver interface {
 	UpdateProductSubscription(context.Context, *UpdateProductSubscriptionArgs) (*EmptyResponse, error)
 	GenerateProductLicenseForSubscription(context.Context, *GenerateProductLicenseForSubscriptionArgs) (ProductLicense, error)
 	ArchiveProductSubscription(context.Context, *ArchiveProductSubscriptionArgs) (*EmptyResponse, error)
+	RevokeLicense(context.Context, *RevokeLicenseArgs) (*EmptyResponse, error)
 
 	// DotcomQuery
 	ProductSubscription(context.Context, *ProductSubscriptionArgs) (ProductSubscription, error)
@@ -96,6 +97,7 @@ type ProductLicense interface {
 	SiteID() *string
 	CreatedAt() gqlutil.DateTime
 	RevokedAt() *gqlutil.DateTime
+	RevokeReason() *string
 	Version() int32
 }
 
@@ -128,6 +130,11 @@ type ProductSubscriptionByAccessTokenArgs struct {
 type UpdateProductSubscriptionArgs struct {
 	ID     graphql.ID
 	Update UpdateProductSubscriptionInput
+}
+
+type RevokeLicenseArgs struct {
+	ID     string
+	Reason string
 }
 
 type UpdateProductSubscriptionInput struct {
