@@ -57,8 +57,8 @@ message RepoCommit {
 }
 
 message PatchCommitInfo {
-  // message is the commit message to be used for the commit
-  string message = 1;
+  // messages are the commit messages to be used for the commit
+  repeated string messages = 1;
   // author_name is the name of the author to be used for the commit
   string author_name = 2;
   // author_email is the email of the author to be used for the commit
@@ -69,6 +69,8 @@ message PatchCommitInfo {
   string committer_email = 5;
   // author_date is the date of the author to be used for the commit
   google.protobuf.Timestamp date = 6;
+  // push_ref is the optional override for the ref that is pushed to
+  optional string push_ref = 7;
 }
 
 message PushConfig {
