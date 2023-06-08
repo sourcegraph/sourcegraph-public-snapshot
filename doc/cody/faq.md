@@ -31,7 +31,7 @@ Yes. Sourcegraph is needed both to retrieve context and as a proxy for the LLM p
 
 #### What are embeddings for?
 
-Embeddings are one of the many ways Sourcegraph uses to retrieve relevant code to feed the large language model as context. Embeddings / vector search are complementary to other strategies. While it matches really well semantically ("what is this code about, what does it do?"), it drops syntax and other important precise matching info. Sourcegraph's overall approach is to blend results from multiple sources to provide the best answer possible.
+Embeddings are one of the many ways Sourcegraph retrieves relevant code to feed the large language model as context. Embeddings / vector search are complementary to other strategies. While it matches really well semantically ("what is this code about, what does it do?"), it drops syntax and other important precise matching info. Sourcegraph's overall approach is to blend results from multiple sources to provide the best answer possible.
 
 
 #### When using embeddings, are permissions enforced? Does Cody get fed code that the users doesn't have access to?
