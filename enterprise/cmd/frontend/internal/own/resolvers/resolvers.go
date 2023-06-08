@@ -405,12 +405,26 @@ type ownStatsResolver struct {
 	path   string
 }
 
+func (r *ownStatsResolver) opts() database.TreeLocationOpts {
+	return database.TreeLocationOpts{
+		RepoID: r.repoID,
+		Path:   r.path,
+	}
+}
+
 func (r *ownStatsResolver) TotalFiles(ctx context.Context) (int32, error) {
-	return 0, nil // TODO(#52826): Implement graphQL resolver with db lookup.
+	return r.db.RepoPaths().AggregateFileCount(ctx, r.opts())
 }
 
 func (r *ownStatsResolver) TotalCodeownedFiles(ctx context.Context) (int32, error) {
-	return 0, nil // TODO(#52826): Implement graphQL resolver with db lookup.
+	counts, err := r.db.OwnershipStats().QueryAggregateCounts(ctx, r.opts())
+	if err != nil {
+		return 0, err
+	}
+	if len(counts) == 0 {
+		return 0, nil
+	}
+	return int32(counts[0].CodeownedFileCount), nil
 }
 
 type ownershipConnectionResolver struct {
