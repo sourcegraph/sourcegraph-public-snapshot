@@ -8,11 +8,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
+
+// TODO: move after https://github.com/sourcegraph/sourcegraph/pull/52242 lands
+var shouldAutoUpgrade = env.MustGetBool("SRC_AUTOUPGRADE", false, "If you forgot to set intent to autoupgrade before shutting down the instance, set this env var.")
 
 func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, development bool) *cli.Command {
 	schemaNamesFlag := &cli.StringSliceFlag{
@@ -110,8 +114,21 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 		if err != nil {
 			return err
 		}
+
+		upgradestore := upgradestore.New(db)
+
+		_, autoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
+		if err != nil {
+			return err
+		}
+
+		if shouldAutoUpgrade || autoUpgrade {
+			out.WriteLine(output.Emoji(output.EmojiInfo, "Auto-upgrade flag is set, delegating upgrade to frontend instance"))
+			return nil
+		}
+
 		if !skipUpgradeValidationFlag.Get(cmd) {
-			if err := upgradestore.New(db).ValidateUpgrade(ctx, "frontend", version.Version()); err != nil {
+			if err := upgradestore.ValidateUpgrade(ctx, "frontend", version.Version()); err != nil {
 				return err
 			}
 		}
