@@ -63,6 +63,7 @@ ts_project(
         "src/non-stop/FixupDocumentEditObserver.ts",
         "src/non-stop/FixupFile.ts",
         "src/non-stop/FixupFileObserver.ts",
+        "src/non-stop/FixupIdleScheduler.ts",
         "src/non-stop/FixupScheduler.ts",
         "src/non-stop/FixupTask.ts",
         "src/non-stop/TaskViewProvider.ts",
