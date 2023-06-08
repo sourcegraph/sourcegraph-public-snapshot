@@ -178,19 +178,24 @@ func (r ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Contex
 	return &productLicenseConnection{db: r.DB, opt: opt}, nil
 }
 
-func (r *ProductSubscriptionLicensingResolver) RevokeLicense(ctx context.Context, args *graphqlbackend.RevokeLicenseArgs) error {
+func (r *ProductSubscriptionLicensingResolver) RevokeLicense(ctx context.Context, args *graphqlbackend.RevokeLicenseArgs) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins may revoke product licenses.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
-		return err
+		return nil, err
 	}
 
 	// check if the UUID is valid
 	id, err := uuid.Parse(args.ID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return dbLicenses{db: r.DB}.Revoke(ctx, id.String(), args.Reason)
+	err = dbLicenses{db: r.DB}.Revoke(ctx, id.String(), args.Reason)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 // productLicenseConnection implements the GraphQL type ProductLicenseConnection.
