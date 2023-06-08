@@ -12,8 +12,6 @@ import { highlightCode } from '@sourcegraph/shared/src/search'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 import { LoadingSpinner, Link, Code, Markdown } from '@sourcegraph/wildcard'
 
-import { LastSyncedIcon } from './LastSyncedIcon'
-
 import styles from './CommitSearchResultMatch.module.scss'
 import searchResultStyles from './SearchResult.module.scss'
 
@@ -77,9 +75,6 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
 
     return (
         <div className={styles.commitSearchResultMatch}>
-            {item.repoLastFetched && (
-                <LastSyncedIcon className={styles.lastSyncedIcon} lastSyncedTime={item.repoLastFetched} />
-            )}
             <Link
                 key={item.url}
                 to={item.url}

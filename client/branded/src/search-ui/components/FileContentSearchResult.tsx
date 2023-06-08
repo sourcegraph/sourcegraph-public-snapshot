@@ -211,7 +211,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                             ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                             : undefined
                     }
-                    className={classNames(styles.titleInner, styles.mutedRepoFileLink)}
+                    className={styles.titleInner}
                 />
                 <CopyPathAction
                     className={styles.copyButton}
@@ -257,6 +257,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             resultClassName={resultContainerStyles.highlightResult}
             rankingDebug={result.debug}
             ref={rootRef}
+            repoLastFetched={result.repoLastFetched}
         >
             <div data-testid="file-search-result" data-expanded={expanded}>
                 <FileMatchChildren

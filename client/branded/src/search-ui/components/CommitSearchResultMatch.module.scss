@@ -59,11 +59,6 @@
     position: relative;
 }
 
-.last-synced-icon {
-    /* Override top spacing for smaller padding on commit/diff results */
-    top: 0.25rem;
-}
-
 .match-hover:hover {
     background-color: var(--color-bg-1);
 }

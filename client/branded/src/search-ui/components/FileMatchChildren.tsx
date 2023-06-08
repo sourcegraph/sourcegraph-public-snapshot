@@ -16,7 +16,6 @@ import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-crea
 
 import { CodeExcerpt } from './CodeExcerpt'
 import { navigateToCodeExcerpt, navigateToFileOnMiddleMouseButtonClick } from './codeLinkNavigation'
-import { LastSyncedIcon } from './LastSyncedIcon'
 
 import styles from './FileMatchChildren.module.scss'
 
@@ -123,8 +122,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             data-testid="file-match-children"
             data-selectable-search-results-group="true"
         >
-            {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
-
             {/* Line matches */}
             {grouped.length > 0 && (
                 <div>

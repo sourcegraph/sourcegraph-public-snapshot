@@ -16,7 +16,6 @@ import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-crea
 import { CodeExcerpt } from './CodeExcerpt'
 import { navigateToCodeExcerpt, navigateToFileOnMiddleMouseButtonClick } from './codeLinkNavigation'
 import { CopyPathAction } from './CopyPathAction'
-import { LastSyncedIcon } from './LastSyncedIcon'
 import { RepoFileLink } from './RepoFileLink'
 import { ResultContainer } from './ResultContainer'
 
@@ -63,7 +62,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                         ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className={classNames(searchResultStyles.titleInner, searchResultStyles.mutedRepoFileLink)}
+                className={searchResultStyles.titleInner}
             />
             <CopyPathAction
                 filePath={result.path}
@@ -138,9 +137,9 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
             repoStars={result.repoStars}
             className={classNames(searchResultStyles.copyButtonContainer, containerClassName)}
             resultClassName={styles.symbolsOverride}
+            repoLastFetched={result.repoLastFetched}
         >
             <div className={styles.symbols}>
-                {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                 {result.symbols.map(symbol => (
                     <div
                         key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
