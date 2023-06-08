@@ -49,11 +49,11 @@ go_test(
         "middleware_test.go",
         "resolver_test.go",
     ],
+    embed = [":githubappauth"],
     tags = [
         # Test requires localhost database
         "requires-network",
-    ]
-    embed = [":githubappauth"],
+    ],
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/database",
