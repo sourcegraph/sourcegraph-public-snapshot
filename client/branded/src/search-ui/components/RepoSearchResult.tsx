@@ -99,7 +99,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                                 <div className="d-flex align-items-center">
                                     <Icon
                                         aria-label="Forked repository"
-                                        className={classNames('flex-shrink-0 text-muted mr-1', styles.icon)}
+                                        className={classNames('flex-shrink-0 text-muted mr-1')}
                                         svgPath={mdiSourceFork}
                                     />
                                     <small>Fork</small>
@@ -109,7 +109,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                                 <div className="d-flex align-items-center">
                                     <Icon
                                         aria-label="Archived repository"
-                                        className={classNames('flex-shrink-0 text-muted mr-1', styles.icon)}
+                                        className={classNames('flex-shrink-0 text-muted mr-1')}
                                         svgPath={mdiArchive}
                                     />
                                     <small>Archived</small>
@@ -119,7 +119,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                                 <div className="d-flex align-items-center">
                                     <Icon
                                         aria-label="Private repository"
-                                        className={classNames('flex-shrink-0 text-muted mr-1', styles.icon)}
+                                        className={classNames('flex-shrink-0 text-muted mr-1')}
                                         svgPath={mdiLock}
                                     />
                                     <small>Private</small>
