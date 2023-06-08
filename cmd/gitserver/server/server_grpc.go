@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -287,7 +288,10 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 		})
 	}
 
-	limitHit, err := gs.Server.search(ss.Context(), args, onMatch)
+	tr, ctx := trace.New(ss.Context(), "search", "")
+	defer tr.Finish()
+
+	limitHit, err := gs.Server.searchWithObservability(ctx, tr, args, onMatch)
 	if err != nil {
 		if notExistError := new(gitdomain.RepoNotExistError); errors.As(err, &notExistError) {
 			st, _ := status.New(codes.NotFound, err.Error()).WithDetails(&proto.NotFoundPayload{
