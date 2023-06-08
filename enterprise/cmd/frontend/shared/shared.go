@@ -37,7 +37,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	ecody "github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/scim"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
