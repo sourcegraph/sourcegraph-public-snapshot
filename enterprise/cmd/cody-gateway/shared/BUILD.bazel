@@ -57,4 +57,14 @@ go_test(
     name = "shared_test",
     srcs = ["main_test.go"],
     embed = [":shared"],
+    deps = [
+        "//enterprise/cmd/cody-gateway/internal/actor",
+        "//enterprise/cmd/cody-gateway/internal/actor/productsubscription",
+        "//enterprise/internal/codygateway",
+        "//internal/redispool",
+        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_slack_go_slack//:slack",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+    ],
 )

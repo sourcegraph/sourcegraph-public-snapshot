@@ -101,10 +101,11 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 	}
 
 	tests := []struct {
-		name      string
-		limiter   *concurrencyLimiter
-		wantErr   autogold.Value
-		wantStore autogold.Value
+		name                string
+		limiter             *concurrencyLimiter
+		wantErr             autogold.Value
+		wantUsagePercentage float32
+		wantStore           autogold.Value
 	}{
 		{
 			name: "new entry",
@@ -118,7 +119,8 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 				featureLimiter: featureLimiter,
 				nowFunc:        nowFunc,
 			},
-			wantErr: nil,
+			wantErr:             nil,
+			wantUsagePercentage: 0,
 			wantStore: autogold.Expect(limiter.MockRedisStore{
 				"foobar": limiter.MockRedisEntry{Value: 1},
 			}),
@@ -137,7 +139,8 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 				featureLimiter: featureLimiter,
 				nowFunc:        nowFunc,
 			},
-			wantErr: nil,
+			wantErr:             nil,
+			wantUsagePercentage: 0,
 			wantStore: autogold.Expect(limiter.MockRedisStore{
 				"foobar": limiter.MockRedisEntry{Value: 2, TTL: 10},
 			}),
@@ -156,7 +159,8 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 				featureLimiter: featureLimiter,
 				nowFunc:        nowFunc,
 			},
-			wantErr: nil,
+			wantErr:             nil,
+			wantUsagePercentage: 0,
 			wantStore: autogold.Expect(limiter.MockRedisStore{
 				"foobar": limiter.MockRedisEntry{Value: 2, TTL: 999},
 			}),
@@ -178,7 +182,8 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 				featureLimiter: featureLimiter,
 				nowFunc:        nowFunc,
 			},
-			wantErr: nil,
+			wantErr:             nil,
+			wantUsagePercentage: 0,
 			wantStore: autogold.Expect(limiter.MockRedisStore{
 				"foobar": limiter.MockRedisEntry{Value: 2, TTL: 10},
 			}),
@@ -198,7 +203,8 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 				featureLimiter: featureLimiter,
 				nowFunc:        nowFunc,
 			},
-			wantErr: autogold.Expect(`you exceeded the concurrency limit of 2 requests for "code_completions". Retry after 2000-01-01 00:00:10 +0000 UTC`),
+			wantErr:             autogold.Expect(`you exceeded the concurrency limit of 2 requests for "code_completions". Retry after 2000-01-01 00:00:10 +0000 UTC`),
+			wantUsagePercentage: 1,
 			wantStore: autogold.Expect(limiter.MockRedisStore{
 				"foobar": limiter.MockRedisEntry{Value: 2, TTL: 10},
 			}),
@@ -206,16 +212,15 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, err := test.limiter.TryAcquire(context.Background())
+			_, usagePercentage, err := test.limiter.TryAcquire(context.Background())
 			if test.wantErr != nil {
 				require.Error(t, err)
 				test.wantErr.Equal(t, err.Error())
 			} else {
 				require.NoError(t, err)
 			}
-			if test.wantStore != nil {
-				test.wantStore.Equal(t, test.limiter.redis)
-			}
+			assert.Equal(t, test.wantUsagePercentage, usagePercentage)
+			test.wantStore.Equal(t, test.limiter.redis)
 		})
 	}
 }

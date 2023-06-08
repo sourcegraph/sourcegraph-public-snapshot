@@ -107,7 +107,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
 	handler := httpapi.NewHandler(obctx.Logger, eventLogger, rs, authr, &httpapi.Config{
-		RateLimitAlerter:        newRateLimitAlerter(obctx.Logger, redispool.Cache, config.Dotcom.URL, config.ActorRateLimitAlert),
+		RateLimitAlerter:        newRateLimitAlerter(obctx.Logger, redispool.Cache, config.Dotcom.URL, config.ActorRateLimitAlert, slack.PostWebhookContext),
 		ConcurrencyLimit:        config.ActorConcurrencyLimit,
 		AnthropicAccessToken:    config.Anthropic.AccessToken,
 		AnthropicAllowedModels:  config.Anthropic.AllowedModels,
@@ -223,11 +223,12 @@ func (s *redisStore) Expire(key string, ttlSeconds int) error {
 
 var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-// tryAcquireRedisLockOnce attempts to acquire a lock with the given lock key in
-// Redis without retries. The locking algorithm is based on
-// https://redis.io/commands/setnx/ for resolving deadlocks. To avoid releasing
-// someone else's lock, the entire operation should be well-bounded below the
-// lock timeout.
+// tryAcquireRedisLockOnce attempts to acquire a Redis-based lock with the given
+// key in a single pass. The locking algorithm is based on
+// https://redis.io/commands/setnx/ for resolving deadlocks.
+//
+// CAUTION: To avoid releasing someone else's lock, the duration of the entire
+// operation should be well-below the lock timeout.
 //
 // TODO(jchen): Modularize this into the redispool package.
 func tryAcquireRedisLockOnce(rs redispool.KeyValue, lockKey string, lockTimeout time.Duration) (acquired bool, release func(), _ error) {
@@ -282,7 +283,15 @@ func tryAcquireRedisLockOnce(rs redispool.KeyValue, lockKey string, lockTimeout 
 	return true, release, nil
 }
 
-func newRateLimitAlerter(logger log.Logger, rs redispool.KeyValue, dotcomAPIURL string, config codygateway.ActorRateLimitAlertConfig) func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32) {
+// newRateLimitAlerter returns a function that sends an alert to the given Slack
+// webhook URL when the threshold is met.
+func newRateLimitAlerter(
+	logger log.Logger,
+	rs redispool.KeyValue,
+	dotcomAPIURL string,
+	config codygateway.ActorRateLimitAlertConfig,
+	slackSender func(ctx context.Context, url string, msg *slack.WebhookMessage) error,
+) func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32) {
 	// Ignore the error because it's already validated in the config.
 	dotcomURL, _ := url.Parse(dotcomAPIURL)
 	dotcomURL.Path = "/site-admin/dotcom/product/subscriptions/"
@@ -292,19 +301,18 @@ func newRateLimitAlerter(logger log.Logger, rs redispool.KeyValue, dotcomAPIURL 
 		// We only want informational alerts for product subscriptions (i.e. customers).
 		if codygateway.ActorSource(actor.Source.Name()) != codygateway.ActorSourceProductSubscription ||
 			usagePercentage < config.Threshold {
-			//return
+			return
 		}
 
 		lockKey := fmt.Sprintf("rate_limit:%s:alert:lock:%s", feature, actor.ID)
-		acquired, release, err := tryAcquireRedisLockOnce(rs, lockKey, time.Minute)
+		acquired, release, err := tryAcquireRedisLockOnce(rs, lockKey, 30*time.Second)
 		if err != nil {
 			logger.Error("failed to acquire lock", log.Error(err))
 			return
 		} else if !acquired {
 			return
 		}
-		//defer release()
-		_ = release
+		defer release()
 
 		key := fmt.Sprintf("rate_limit:%s:alert:%s", feature, actor.ID)
 		get, err := rs.Get(key).String()
@@ -339,10 +347,12 @@ func newRateLimitAlerter(logger log.Logger, rs redispool.KeyValue, dotcomAPIURL 
 		text := fmt.Sprintf("The actor <%[1]s%[2]s|%[2]s> from %q has exceeded *%d%%* of its rate limit quota for `%s`.",
 			dotcomURL.String(), actor.ID, actor.Source.Name(), int(usagePercentage*100), feature)
 
-		// NOTE: The context timeout must below the lock timeout we set above.
-		ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+		// NOTE: The context timeout must below the lock timeout we set above (30 seconds
+		// ) to make sure the lock doesn't expire when we release it, i.e. avoid
+		// releasing someone else's lock.
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
-		err = slack.PostWebhookContext(
+		err = slackSender(
 			ctx,
 			config.SlackWebhookURL,
 			&slack.WebhookMessage{

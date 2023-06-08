@@ -60,8 +60,13 @@ type KeyValue interface {
 // Note: the available methods are based on current need. If you need to add
 // another helper go for it.
 type Value struct {
-	reply interface{}
+	reply any
 	err   error
+}
+
+// NewValue returns a new Value for the given reply and err.
+func NewValue(reply any, err error) Value {
+	return Value{reply: reply, err: err}
 }
 
 func (v Value) Bool() (bool, error) {

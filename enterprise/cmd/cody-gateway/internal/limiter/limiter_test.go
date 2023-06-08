@@ -20,14 +20,16 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 		limiter  StaticLimiter
 		noCommit bool
 
-		wantErr   autogold.Value
-		wantStore autogold.Value
+		wantErr             autogold.Value
+		wantUsagePercentage float32
+		wantStore           autogold.Value
 	}{
 		{
-			name:      "no limits set",
-			noCommit:  true, // error scenario
-			wantErr:   autogold.Expect("completions access has not been granted"),
-			wantStore: autogold.Expect(MockRedisStore{}),
+			name:                "no limits set",
+			noCommit:            true, // error scenario
+			wantErr:             autogold.Expect("completions access has not been granted"),
+			wantUsagePercentage: 1,
+			wantStore:           autogold.Expect(MockRedisStore{}),
 		},
 		{
 			name: "new entry",
@@ -36,7 +38,8 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 				Limit:      10,
 				Interval:   24 * time.Hour,
 			},
-			wantErr: nil,
+			wantErr:             nil,
+			wantUsagePercentage: 0,
 			wantStore: autogold.Expect(MockRedisStore{"foobar": MockRedisEntry{
 				Value: 1,
 			}}),
@@ -54,7 +57,8 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 				Limit:    10,
 				Interval: 24 * time.Hour,
 			},
-			wantErr: nil,
+			wantErr:             nil,
+			wantUsagePercentage: 0.9,
 			wantStore: autogold.Expect(MockRedisStore{"foobar": MockRedisEntry{
 				Value: 10,
 				TTL:   60,
@@ -73,8 +77,9 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 				Limit:    10,
 				Interval: 24 * time.Hour,
 			},
-			noCommit: true, // value should be the same
-			wantErr:  nil,
+			noCommit:            true, // value should be the same
+			wantErr:             nil,
+			wantUsagePercentage: 0.5,
 			wantStore: autogold.Expect(MockRedisStore{"foobar": MockRedisEntry{
 				Value: 5,
 				TTL:   60,
@@ -94,7 +99,8 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 				Interval:           10 * time.Minute,
 				UpdateRateLimitTTL: false,
 			},
-			wantErr: nil,
+			wantErr:             nil,
+			wantUsagePercentage: 0.1,
 			wantStore: autogold.Expect(MockRedisStore{"foobar": MockRedisEntry{
 				Value: 2,
 				TTL:   999,
@@ -114,7 +120,8 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 				Interval:           10 * time.Minute,
 				UpdateRateLimitTTL: true,
 			},
-			wantErr: nil,
+			wantErr:             nil,
+			wantUsagePercentage: 0.1,
 			wantStore: autogold.Expect(MockRedisStore{"foobar": MockRedisEntry{
 				Value: 2,
 				TTL:   600,
@@ -133,8 +140,9 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 				Limit:    10,
 				Interval: 24 * time.Hour,
 			},
-			noCommit: true, // error scenario
-			wantErr:  autogold.Expect("you exceeded the rate limit for completions. Current usage: 10 out of 10 requests. Retry after 2000-01-01 00:01:00 +0000 UTC"),
+			noCommit:            true, // error scenario
+			wantErr:             autogold.Expect("you exceeded the rate limit for completions. Current usage: 10 out of 10 requests. Retry after 2000-01-01 00:01:00 +0000 UTC"),
+			wantUsagePercentage: 1,
 			wantStore: autogold.Expect(MockRedisStore{"foobar": MockRedisEntry{
 				Value: 10,
 				TTL:   60,
@@ -146,7 +154,7 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 				tc.limiter.Redis = MockRedisStore{}
 			}
 			tc.limiter.NowFunc = func() time.Time { return now }
-			commit, err := tc.limiter.TryAcquire(context.Background())
+			commit, usagePercentage, err := tc.limiter.TryAcquire(context.Background())
 			if tc.wantErr != nil {
 				require.Error(t, err)
 				tc.wantErr.Equal(t, err.Error())
@@ -156,9 +164,8 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 			if !tc.noCommit {
 				assert.NoError(t, commit(1))
 			}
-			if tc.wantStore != nil {
-				tc.wantStore.Equal(t, tc.limiter.Redis)
-			}
+			assert.Equal(t, tc.wantUsagePercentage, usagePercentage)
+			tc.wantStore.Equal(t, tc.limiter.Redis)
 		})
 	}
 }
