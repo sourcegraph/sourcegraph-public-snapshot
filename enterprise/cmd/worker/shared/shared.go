@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codemonitors"
-	contextdetectionembeddings "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/embeddings/contextdetection"
 	repoembeddings "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/embeddings/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
 	workerinsights "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
@@ -66,11 +65,9 @@ var additionalJobs = map[string]job.Job{
 
 	"auth-sourcegraph-operator-cleaner": auth.NewSourcegraphOperatorCleaner(),
 
-	"repo-embedding-janitor":              repoembeddings.NewRepoEmbeddingJanitorJob(),
-	"repo-embedding-job":                  repoembeddings.NewRepoEmbeddingJob(),
-	"repo-embedding-scheduler":            repoembeddings.NewRepoEmbeddingSchedulerJob(),
-	"context-detection-embedding-janitor": contextdetectionembeddings.NewContextDetectionEmbeddingJanitorJob(),
-	"context-detection-embedding-job":     contextdetectionembeddings.NewContextDetectionEmbeddingJob(),
+	"repo-embedding-janitor":   repoembeddings.NewRepoEmbeddingJanitorJob(),
+	"repo-embedding-job":       repoembeddings.NewRepoEmbeddingJob(),
+	"repo-embedding-scheduler": repoembeddings.NewRepoEmbeddingSchedulerJob(),
 
 	"own-repo-indexing-queue": own.NewOwnRepoIndexingQueue(),
 }

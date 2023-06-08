@@ -20,7 +20,6 @@ func rateLimit(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	cache limiter.RedisStore,
-	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
 	next http.Handler,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped("rateLimit", "rate limit handler")
@@ -35,7 +34,7 @@ func rateLimit(
 			return
 		}
 
-		l, ok := act.Limiter(logger, cache, feature, concurrencyLimitConfig)
+		l, ok := act.Limiter(logger, cache, feature)
 		if !ok {
 			response.JSONError(logger, w, http.StatusForbidden, errors.Newf("no access to feature %s", feature))
 			return

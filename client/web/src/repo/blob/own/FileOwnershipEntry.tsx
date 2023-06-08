@@ -16,6 +16,7 @@ import {
 import { PersonLink } from '../../../person/PersonLink'
 
 import { OwnershipBadge } from './OwnershipBadge'
+import { RemoveOwnerButton } from './RemoveOwnerButton'
 
 import containerStyles from './OwnerList.module.scss'
 
@@ -23,6 +24,11 @@ interface Props {
     owner: OwnerFields
     reasons: OwnershipReason[]
     makeOwnerButton?: React.ReactElement
+    repoID: string
+    filePath: string
+    userID?: string
+    setRemoveOwnerError: any
+    refetch: any
 }
 
 type OwnershipReason =
@@ -31,7 +37,16 @@ type OwnershipReason =
     | RecentViewOwnershipSignalFields
     | AssignedOwnerFields
 
-export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons, makeOwnerButton }) => {
+export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
+    owner,
+    reasons,
+    makeOwnerButton,
+    repoID,
+    filePath,
+    userID,
+    refetch,
+    setRemoveOwnerError,
+}) => {
     const findEmail = (): string | undefined => {
         if (owner.__typename !== 'Person') {
             return undefined
@@ -43,6 +58,12 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
     }
 
     const email = findEmail()
+
+    const assignedOwnerReasons: AssignedOwnerFields[] = reasons
+        .filter(value => value.__typename === 'AssignedOwner')
+        .map(val => val as AssignedOwnerFields)
+    const isDirectAssigned = assignedOwnerReasons.some(value => value.isDirectMatch)
+    const hasAssigned = assignedOwnerReasons.length > 0
 
     return (
         <tr>
@@ -89,7 +110,21 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                     <OwnershipBadge key={reason.title} reason={reason} />
                 ))}
             </td>
-            <td className={containerStyles.fitting}>{makeOwnerButton}</td>
+            <td className={containerStyles.fitting}>
+                <span className={containerStyles.editButton}>
+                    {makeOwnerButton ||
+                        (hasAssigned && (
+                            <RemoveOwnerButton
+                                onSuccess={refetch}
+                                onError={setRemoveOwnerError}
+                                repoId={repoID}
+                                path={filePath}
+                                userId={userID}
+                                isDirectAssigned={isDirectAssigned}
+                            />
+                        ))}
+                </span>
+            </td>
         </tr>
     )
 }

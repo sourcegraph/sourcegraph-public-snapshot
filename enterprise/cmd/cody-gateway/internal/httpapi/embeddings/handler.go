@@ -26,13 +26,12 @@ func NewHandler(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
-	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
 	mf ModelFactory,
 	allowedModels []string,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped("embeddingshandler", "The HTTP API handler for the embeddings endpoint.")
 
-	return rateLimit(baseLogger, eventLogger, limiter.NewPrefixRedisStore("rate_limit:", rs), concurrencyLimitConfig, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return rateLimit(baseLogger, eventLogger, limiter.NewPrefixRedisStore("rate_limit:", rs), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
 		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
 
