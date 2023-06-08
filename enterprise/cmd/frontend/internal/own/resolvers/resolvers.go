@@ -247,9 +247,11 @@ func (r *ownResolver) GitTreeOwnership(
 
 func (r *ownResolver) GitTreeOwnershipStats(ctx context.Context, tree *graphqlbackend.GitTreeEntryResolver) (graphqlbackend.OwnershipStatsResolver, error) {
 	return &ownStatsResolver{
-		db:     r.db,
-		repoID: tree.Repository().IDInt32(),
-		path:   tree.Path(),
+		db: r.db,
+		opts: database.TreeLocationOpts{
+			RepoID: tree.Repository().IDInt32(),
+			Path:   tree.Path(),
+		},
 	}, nil
 }
 
@@ -400,17 +402,23 @@ func (r *ownResolver) ownershipConnection(
 }
 
 type ownStatsResolver struct {
-	db     edb.EnterpriseDB
-	repoID api.RepoID
-	path   string
+	db   edb.EnterpriseDB
+	opts database.TreeLocationOpts
 }
 
 func (r *ownStatsResolver) TotalFiles(ctx context.Context) (int32, error) {
-	return 0, nil // TODO(#52826): Implement graphQL resolver with db lookup.
+	return r.db.RepoPaths().AggregateFileCount(ctx, r.opts)
 }
 
 func (r *ownStatsResolver) TotalCodeownedFiles(ctx context.Context) (int32, error) {
-	return 0, nil // TODO(#52826): Implement graphQL resolver with db lookup.
+	counts, err := r.db.OwnershipStats().QueryAggregateCounts(ctx, r.opts)
+	if err != nil {
+		return 0, err
+	}
+	if len(counts) == 0 {
+		return 0, nil
+	}
+	return int32(counts[0].CodeownedFileCount), nil
 }
 
 type ownershipConnectionResolver struct {
@@ -707,7 +715,8 @@ func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.Ent
 }
 
 type assignedOwner struct {
-	total int32
+	total       int32
+	directMatch bool
 }
 
 func (a *assignedOwner) Title() (string, error) {
@@ -716,6 +725,10 @@ func (a *assignedOwner) Title() (string, error) {
 
 func (a *assignedOwner) Description() (string, error) {
 	return "Owner is manually assigned.", nil
+}
+
+func (a *assignedOwner) IsDirectMatch() bool {
+	return a.directMatch
 }
 
 func (r *ownResolver) computeAssignedOwners(ctx context.Context, logger log.Logger, db edb.EnterpriseDB, blob *graphqlbackend.GitTreeEntryResolver, repoID api.RepoID) (results []*ownershipResolver, err error) {
@@ -728,6 +741,7 @@ func (r *ownResolver) computeAssignedOwners(ctx context.Context, logger log.Logg
 	fetchedUsers := make(map[int32]*types.User)
 	userEmails := make(map[int32]string)
 
+	isDirectMatch := false
 	for _, summary := range assignedOwnerSummaries {
 		var user *types.User
 		var email string
@@ -753,6 +767,9 @@ func (r *ownResolver) computeAssignedOwners(ctx context.Context, logger log.Logg
 			fetchedUsers[userID] = userFromDB
 			userEmails[userID] = primaryEmail
 		}
+		if blob.Path() == summary.FilePath {
+			isDirectMatch = true
+		}
 		res := ownershipResolver{
 			db: db,
 			resolvedOwner: &codeowners.Person{
@@ -762,7 +779,7 @@ func (r *ownResolver) computeAssignedOwners(ctx context.Context, logger log.Logg
 			},
 			reasons: []*ownershipReasonResolver{
 				{
-					&assignedOwner{},
+					&assignedOwner{directMatch: isDirectMatch},
 				},
 			},
 		}
