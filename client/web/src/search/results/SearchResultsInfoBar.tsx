@@ -1,3 +1,5 @@
+import { URL } from 'url'
+
 import React, { useMemo, useState } from 'react'
 
 import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiThumbUp, mdiThumbDown, mdiOpenInNew } from '@mdi/js'
@@ -14,6 +16,7 @@ import { Button, Icon, Alert, useSessionStorage, Link, Text } from '@sourcegraph
 import { AuthenticatedUser } from '../../auth'
 import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../../batches/utils'
 import { eventLogger } from '../../tracking/eventLogger'
+import { DOTCOM_URL } from '../../tracking/util'
 
 import {
     CreateAction,
@@ -26,6 +29,7 @@ import { SearchActionsMenu } from './SearchActionsMenu'
 
 import styles from './SearchResultsInfoBar.module.scss'
 
+console.log(DOTCOM_URL)
 export interface SearchResultsInfoBarProps
     extends TelemetryProps,
         PlatformContextProps<'settings' | 'sourcegraphURL'>,
@@ -135,10 +139,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     }
 
     const location = useLocation()
+    const dotcomHost = DOTCOM_URL.href
+    const isPrivateInstance = window.location.host !== dotcomHost
     const refFromCodySearch = new URLSearchParams(location.search).get('ref') === 'cody-search'
     const [codySearchInputString] = useSessionStorage<string>('cody-search-input', '')
     const codySearchInput: { input?: string; translatedQuery?: string } = JSON.parse(codySearchInputString || '{}')
     const [codyFeedback, setCodyFeedback] = useState<null | boolean>(null)
+    //check if url equals dotcom endpoint, set boolean
 
     const collectCodyFeedback = (positive: boolean): void => {
         if (codyFeedback !== null) {
@@ -147,8 +154,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
         eventLogger.log(
             'web:codySearch:feedbackSubmitted',
-            { ...codySearchInput, positive },
-            { ...codySearchInput, positive }
+            !isPrivateInstance ? { ...codySearchInput, positive } : null,
+            !isPrivateInstance ? { ...codySearchInput, positive } : null
         )
         setCodyFeedback(positive)
     }
