@@ -14,7 +14,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -92,7 +91,7 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 	return nil
 }
 
-func StartLicenseCheck(ctx context.Context, interval time.Duration, logger log.Logger, globalStateStore database.GlobalStateStore) {
+func StartLicenseCheck(ctx context.Context, interval time.Duration, logger log.Logger, siteID string) {
 	if licenseCheckStarted {
 		logger.Info("license check already started")
 		return
@@ -122,11 +121,6 @@ func StartLicenseCheck(ctx context.Context, interval time.Duration, logger log.L
 		// continue running with new license key
 		store.Set(prevLicenseTokenKey, licenseToken)
 
-		globalState, err := globalStateStore.Get(ctx)
-		if err != nil {
-			logger.Error("error getting global state", log.Error(err))
-			return
-		}
 		info, err := GetConfiguredProductLicenseInfo()
 		if err != nil {
 			logger.Error("error getting configured license info", log.Error(err))
@@ -134,7 +128,7 @@ func StartLicenseCheck(ctx context.Context, interval time.Duration, logger log.L
 		}
 		routine := goroutine.NewPeriodicGoroutine(
 			context.Background(),
-			&licenseChecker{siteID: globalState.SiteID, token: licenseToken, info: info, doer: httpcli.ExternalDoer},
+			&licenseChecker{siteID: siteID, token: licenseToken, info: info, doer: httpcli.ExternalDoer},
 			goroutine.WithName("licensing.check-license-validity"),
 			goroutine.WithDescription("check if license is valid from sourcegraph.com"),
 			goroutine.WithInterval(interval),

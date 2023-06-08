@@ -168,7 +168,12 @@ func Init(
 			productsubscription.StartCheckForUpcomingLicenseExpirations(logger, db)
 		})
 	} else {
-		licensing.StartLicenseCheck(context.Background(), 12*time.Hour, logger, db.GlobalState())
+		gs, err := db.GlobalState().Get(ctx)
+		if err != nil {
+			logger.Error("error getting global state", log.Error(err))
+		} else {
+			licensing.StartLicenseCheck(context.Background(), 12*time.Hour, logger, gs.SiteID)
+		}
 	}
 
 	return nil
