@@ -220,7 +220,7 @@ func runMigration(ctx context.Context,
 		runnerFactory,
 		plan,
 		runner.ApplyPrivilegedMigrations,
-		nil,
+		nil, // only needed when ^ is NoopPrivilegedMigrations
 		true,
 		true,
 		false,
@@ -313,9 +313,12 @@ func serveUpgradeUI(db database.DB) (context.CancelFunc, error) {
 // so that:
 // 1) we know old frontends are retired and not coming back (due to new frontends running health/ready server)
 // 2) dependent services have picked up the magic DSN and restarted
+// TODO: can we surface this in the UI?
 func blockForDisconnects(ctx context.Context, logger log.Logger, db database.DB) error {
 	for {
-		query := sqlf.Sprintf(`SELECT DISTINCT(application_name) FROM pg_stat_activity WHERE application_name <> '' AND application_name <> %s`, appName)
+		query := sqlf.Sprintf(`SELECT DISTINCT(application_name) FROM pg_stat_activity
+			WHERE application_name <> '' AND application_name <> %s AND application_name <> 'psql'`,
+			appName)
 		store := basestore.NewWithHandle(db.Handle())
 		applications, err := basestore.ScanStrings(store.Query(ctx, query))
 		if err != nil {
