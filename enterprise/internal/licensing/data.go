@@ -27,7 +27,7 @@ const (
 	PlanFree1 Plan = "free-1"
 
 	// PlanAirGappedEnterprise is the same PlanEnterprise1 but with FeatureAllowAirGapped, and works starting from 5.1.
-	PlanAirGappedEnterprise Plan = "air-gapped-enterprise"
+	PlanAirGappedEnterprise Plan = "enterprise-air-gap-0"
 )
 
 var AllPlans = []Plan{

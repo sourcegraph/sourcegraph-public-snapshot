@@ -48,6 +48,9 @@ go_test(
         "tags_test.go",
     ],
     embed = [":licensing"],
+    tags = [
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/license",
         "//internal/redispool",
