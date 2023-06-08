@@ -30,7 +30,7 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
     }
 
     return {
-        serverEndpoint: sanitizeServerEndpoint(config.get('cody.serverEndpoint', '')),
+        serverEndpoint: sanitizeServerEndpoint(config.get('cody.serverEndpoint') || 'https://sourcegraph.com'),
         codebase: sanitizeCodebase(config.get('cody.codebase')),
         customHeaders: config.get<object>('cody.customHeaders', {}) as Record<string, string>,
         useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',

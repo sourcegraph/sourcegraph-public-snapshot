@@ -695,9 +695,8 @@
         "cody.serverEndpoint": {
           "order": 1,
           "type": "string",
-          "default": "https://sourcegraph.com",
-          "example": "https://example.sourcegraph.com",
-          "description": "URL to the Sourcegraph instance."
+          "example": "https://sourcegraph.acme-inc.com",
+          "description": "URL to your Sourcegraph Enterprise instance."
         },
         "cody.codebase": {
           "order": 2,
