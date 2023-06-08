@@ -72,12 +72,9 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 	}
 
 	var body LicenseCheckResponse
-	resBody, err := io.ReadAll(res.Body)
-	if err != nil {
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
 		return err
 	}
-
-	json.Unmarshal([]byte(resBody), &body)
 
 	if body.Error != "" {
 		return errors.New(body.Error)
