@@ -17,7 +17,6 @@ import (
 
 type Config struct {
 	RateLimitAlerter        func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32)
-	ConcurrencyLimit        codygateway.ActorConcurrencyLimitConfig
 	AnthropicAccessToken    string
 	AnthropicAllowedModels  []string
 	OpenAIAccessToken       string
@@ -40,7 +39,6 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 					eventLogger,
 					rs,
 					config.RateLimitAlerter,
-					config.ConcurrencyLimit,
 					config.AnthropicAccessToken,
 					config.AnthropicAllowedModels,
 				),
@@ -55,7 +53,6 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 					eventLogger,
 					rs,
 					config.RateLimitAlerter,
-					config.ConcurrencyLimit,
 					config.OpenAIAccessToken,
 					config.OpenAIOrgID,
 					config.OpenAIAllowedModels,
@@ -76,7 +73,6 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 					eventLogger,
 					rs,
 					config.RateLimitAlerter,
-					config.ConcurrencyLimit,
 					embeddings.ModelFactoryMap{
 						embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(config.OpenAIAccessToken),
 					},

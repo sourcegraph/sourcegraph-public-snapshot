@@ -371,6 +371,7 @@ func TestHeartbeat(t *testing.T) {
 		expectedUsername: "test",
 		expectedToken:    "hunter2",
 		expectedPayload: `{
+			"version":"V2",
 			"executorName": "deadbeef",
 			"jobIds": [1,2,3],
 
@@ -411,6 +412,7 @@ func TestHeartbeatBadResponse(t *testing.T) {
 		expectedUsername: "test",
 		expectedToken:    "hunter2",
 		expectedPayload: `{
+			"version":"V2",
 			"executorName": "deadbeef",
 			"jobIds": [1,2,3],
 

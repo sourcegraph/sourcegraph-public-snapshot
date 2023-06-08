@@ -27,7 +27,6 @@ func NewHandler(
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
 	rateLimitAlerter func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32),
-	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
 	mf ModelFactory,
 	allowedModels []string,
 ) http.Handler {
@@ -38,7 +37,6 @@ func NewHandler(
 		eventLogger,
 		limiter.NewPrefixRedisStore("rate_limit:", rs),
 		rateLimitAlerter,
-		concurrencyLimitConfig,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			act := actor.FromContext(r.Context())
 			logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))

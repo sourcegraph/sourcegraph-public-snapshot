@@ -22,14 +22,20 @@
 .repository-names-text {
     display: flex;
     min-width: 0;
-    flex-grow: 1;
-    max-width: 20rem;
     font-size: 0.8rem;
     font-weight: 400;
+
+    svg {
+        min-width: 1rem;
+        min-height: 1rem;
+        max-width: 1rem;
+        max-height: 1rem;
+    }
 }
 
 .filepath-text {
     font-size: 0.8rem;
+    flex: 1;
 }
 
 .tinted-search {
@@ -56,6 +62,20 @@
     color: var(--input-focus-border-color);
 }
 
+.embeddings-status-content {
+    width: 24rem;
+    height: 100%;
+    max-width: 24rem;
+    min-height: 7rem;
+    overflow: hidden;
+    font-size: 0.8rem;
+    line-height: 1rem;
+
+    strong {
+        font-weight: 500;
+    }
+}
+
 .repository-selector-content {
     width: 20rem;
     height: 100%;
@@ -78,6 +98,7 @@
 .header {
     font-size: 0.625rem;
     line-height: 1rem;
+    font-weight: 500;
 }
 
 .repository-list-item {

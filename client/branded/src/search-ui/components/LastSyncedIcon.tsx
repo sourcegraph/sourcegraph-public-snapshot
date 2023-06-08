@@ -6,8 +6,6 @@ import format from 'date-fns/format'
 
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import styles from './LastSyncedIcon.module.scss'
-
 interface Props {
     lastSyncedTime: string
     className?: string
@@ -40,7 +38,7 @@ export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Pro
         <Tooltip content={status}>
             <Icon
                 tabIndex={0}
-                className={classNames(props.className, styles.lastSyncedIcon, 'text-muted')}
+                className={classNames(props.className, 'text-muted')}
                 aria-label={status}
                 svgPath={icon}
                 style={{ fill: color }}

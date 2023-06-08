@@ -80,15 +80,18 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Supported actor/auth sources
 	sources := actor.Sources{
-		anonymous.NewSource(config.AllowAnonymous),
+		anonymous.NewSource(config.AllowAnonymous, config.ActorConcurrencyLimit),
 		productsubscription.NewSource(
 			obctx.Logger,
 			rcache.New("product-subscriptions"),
 			dotcomClient,
-			config.Dotcom.InternalMode),
+			config.Dotcom.InternalMode,
+			config.ActorConcurrencyLimit,
+		),
 		dotcomuser.NewSource(obctx.Logger,
 			rcache.New("dotcom-users"),
 			dotcomClient,
+			config.ActorConcurrencyLimit,
 		),
 	}
 
@@ -108,7 +111,6 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	// come last.
 	handler := httpapi.NewHandler(obctx.Logger, eventLogger, rs, authr, &httpapi.Config{
 		RateLimitAlerter:        newRateLimitAlerter(obctx.Logger, redispool.Cache, config.Dotcom.URL, config.ActorRateLimitAlert, slack.PostWebhookContext),
-		ConcurrencyLimit:        config.ActorConcurrencyLimit,
 		AnthropicAccessToken:    config.Anthropic.AccessToken,
 		AnthropicAllowedModels:  config.Anthropic.AllowedModels,
 		OpenAIAccessToken:       config.OpenAI.AccessToken,

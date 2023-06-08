@@ -20,7 +20,6 @@ func rateLimit(
 	eventLogger events.Logger,
 	cache limiter.RedisStore,
 	rateLimitAlerter func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32),
-	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
 	next http.Handler,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped("rateLimit", "rate limit handler")
@@ -29,7 +28,7 @@ func rateLimit(
 		act := actor.FromContext(r.Context())
 		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
 
-		l, ok := act.Limiter(logger, cache, codygateway.FeatureEmbeddings, concurrencyLimitConfig)
+		l, ok := act.Limiter(logger, cache, codygateway.FeatureEmbeddings)
 		if !ok {
 			response.JSONError(logger, w, http.StatusForbidden, errors.New("no access to embeddings"))
 			return

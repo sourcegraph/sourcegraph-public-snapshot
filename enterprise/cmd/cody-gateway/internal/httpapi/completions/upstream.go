@@ -49,7 +49,6 @@ func makeUpstreamHandler[ReqT any](
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
 	rateLimitAlerter func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32),
-	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
 
 	// upstreamName is the name of the upstream provider. It MUST match the
 	// provider names defined clientside, i.e. "anthropic" or "openai".
@@ -82,7 +81,6 @@ func makeUpstreamHandler[ReqT any](
 		eventLogger,
 		limiter.NewPrefixRedisStore("rate_limit:", rs),
 		rateLimitAlerter,
-		concurrencyLimitConfig,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			act := actor.FromContext(r.Context())
 			logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))

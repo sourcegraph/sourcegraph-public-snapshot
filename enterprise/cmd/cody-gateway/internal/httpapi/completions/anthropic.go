@@ -22,7 +22,6 @@ func NewAnthropicHandler(
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
 	rateLimitAlerter func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32),
-	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
 	accessToken string,
 	allowedModels []string,
 ) http.Handler {
@@ -31,7 +30,6 @@ func NewAnthropicHandler(
 		eventLogger,
 		rs,
 		rateLimitAlerter,
-		concurrencyLimitConfig,
 		anthropic.ProviderName,
 		anthropicAPIURL,
 		allowedModels,
