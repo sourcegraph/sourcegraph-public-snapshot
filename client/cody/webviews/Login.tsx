@@ -41,6 +41,14 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
         [endpoint, onLogin, token]
     )
 
+    // FIXME: This is currently not possible, because user settings are used as the store when you
+    // fill out the form, so we lose the ability to differentiate if they were entered via this form
+    // or if it was configured via user settings.
+    //
+    // I think this is only possible if we switch to using localStorage for the serverEndpoint value
+    // entered into this form, leaving the user settings clean for override values only.
+    const serverEndpointInheritedFromUserSettings = true
+
     return (
         <div className={styles.container}>
             {authStatus && <ErrorContainer authStatus={authStatus} />}
@@ -49,11 +57,15 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                 <form className={styles.wrapper} onSubmit={onSubmit}>
                     <VSCodeTextField
                         id="endpoint"
-                        value={serverEndpoint || endpoint || ''}
-                        disabled={serverEndpoint ? true : undefined}
-                        title={serverEndpoint ? 'Inherited from cody.serverEndpoint user setting' : undefined}
+                        value={endpoint || ''}
+                        disabled={serverEndpointInheritedFromUserSettings ? true : undefined}
+                        title={
+                            serverEndpointInheritedFromUserSettings
+                                ? 'Inherited from cody.serverEndpoint user setting'
+                                : undefined
+                        }
                         className={styles.input}
-                        placeholder="https://example.sourcegraph.com"
+                        placeholder="https://sourcegraph.acme-inc.com"
                         onChange={e => setEndpoint((e.target as HTMLInputElement).value)}
                         onInput={e => setEndpoint((e.target as HTMLInputElement).value)}
                     >
