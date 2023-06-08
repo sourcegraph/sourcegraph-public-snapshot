@@ -115,7 +115,7 @@ func (c *Config) Load() {
 	c.ActorConcurrencyLimit.Interval = c.GetInterval("CODY_GATEWAY_ACTOR_CONCURRENCY_LIMIT_INTERVAL", "10s", "The interval at which to check the concurrent requests limit from an actor.")
 
 	c.ActorRateLimitAlert.Threshold = float32(c.GetPercent("CODY_GATEWAY_ACTOR_RATE_LIMIT_ALERT_THRESHOLD", "90", "The the percentage of the rate limit usage to trigger an alert.")) / 100
-	c.ActorRateLimitAlert.Interval = c.GetInterval("CODY_GATEWAY_ACTOR_RATE_LIMIT_ALERT_INTERVAL", "12h", "The minimum time interval between each alert for the same actor.")
+	c.ActorRateLimitAlert.Interval = c.GetInterval("CODY_GATEWAY_ACTOR_RATE_LIMIT_ALERT_INTERVAL", "24h", "The minimum time interval between each alert for the same actor.")
 	c.ActorRateLimitAlert.SlackWebhookURL = c.Get("CODY_GATEWAY_ACTOR_RATE_LIMIT_ALERT_SLACK_WEBHOOK_URL", "", "The Slack webhook URL to send alerts to.")
 }
 
