@@ -5,7 +5,7 @@ import { mdiBitbucket, mdiGithub, mdiGitlab } from '@mdi/js'
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 const iconMap: { [key: string]: { svgPath: string; color?: string } } = {
-    'github.com': { svgPath: mdiGithub, color: 'var(--black)' },
+    'github.com': { svgPath: mdiGithub, color: 'var(--body-color)' },
     'gitlab.com': { svgPath: mdiGitlab, color: '#E24329' },
     'bitbucket.org': { svgPath: mdiBitbucket, color: '#2584FF' },
 }
