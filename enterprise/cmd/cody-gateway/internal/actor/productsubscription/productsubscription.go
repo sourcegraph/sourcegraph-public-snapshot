@@ -39,19 +39,23 @@ type Source struct {
 	// internalMode, if true, indicates only dev and internal licenses may use
 	// this Cody Gateway instance.
 	internalMode bool
+
+	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
 }
 
 var _ actor.Source = &Source{}
 var _ actor.SourceUpdater = &Source{}
 var _ actor.SourceSyncer = &Source{}
 
-func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, internalMode bool) *Source {
+func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
 	return &Source{
 		log:    logger.Scoped("productsubscriptions", "product subscription actor source"),
 		cache:  cache,
 		dotcom: dotComClient,
 
 		internalMode: internalMode,
+
+		concurrencyConfig: concurrencyConfig,
 	}
 }
 
@@ -121,7 +125,7 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 
 	for _, sub := range resp.Dotcom.ProductSubscriptions.Nodes {
 		for _, token := range sub.SourcegraphAccessTokens {
-			act := NewActor(s, token, sub.ProductSubscriptionState, s.internalMode)
+			act := newActor(s, token, sub.ProductSubscriptionState, s.internalMode, s.concurrencyConfig)
 			data, err := json.Marshal(act)
 			if err != nil {
 				act.Logger(syncLog).Error("failed to marshal actor",
@@ -163,11 +167,15 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 	resp, checkErr := s.checkAccessToken(ctx, token)
 	if checkErr != nil {
 		// Generate a stateless actor so that we aren't constantly hitting the dotcom API
-		act = NewActor(s, token, dotcom.ProductSubscriptionState{}, s.internalMode)
+		act = newActor(s, token, dotcom.ProductSubscriptionState{}, s.internalMode, s.concurrencyConfig)
 	} else {
-		act = NewActor(s, token,
+		act = newActor(
+			s,
+			token,
 			resp.Dotcom.ProductSubscriptionByAccessToken.ProductSubscriptionState,
-			s.internalMode)
+			s.internalMode,
+			s.concurrencyConfig,
+		)
 	}
 
 	if data, err := json.Marshal(act); err != nil {
@@ -183,8 +191,8 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 	return act, nil
 }
 
-// NewActor creates an actor from Sourcegraph.com product subscription state.
-func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState, internalMode bool) *actor.Actor {
+// newActor creates an actor from Sourcegraph.com product subscription state.
+func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *actor.Actor {
 	// In internal mode, only allow dev and internal licenses.
 	disallowedLicense := internalMode &&
 		(s.ActiveLicense == nil || s.ActiveLicense.Info == nil ||
@@ -201,27 +209,32 @@ func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 	}
 
 	if rl := s.CodyGatewayAccess.ChatCompletionsRateLimit; rl != nil {
-		a.RateLimits[codygateway.FeatureChatCompletions] = actor.RateLimit{
-			AllowedModels: rl.AllowedModels,
-			Limit:         rl.Limit,
-			Interval:      time.Duration(rl.IntervalSeconds) * time.Second,
-		}
+		a.RateLimits[codygateway.FeatureChatCompletions] = actor.NewRateLimitWithPercentageConcurrency(
+			rl.Limit,
+			time.Duration(rl.IntervalSeconds)*time.Second,
+			rl.AllowedModels,
+			concurrencyConfig,
+		)
 	}
 
 	if rl := s.CodyGatewayAccess.CodeCompletionsRateLimit; rl != nil {
-		a.RateLimits[codygateway.FeatureCodeCompletions] = actor.RateLimit{
-			AllowedModels: rl.AllowedModels,
-			Limit:         rl.Limit,
-			Interval:      time.Duration(rl.IntervalSeconds) * time.Second,
-		}
+		a.RateLimits[codygateway.FeatureCodeCompletions] = actor.NewRateLimitWithPercentageConcurrency(
+			rl.Limit,
+			time.Duration(rl.IntervalSeconds)*time.Second,
+			rl.AllowedModels,
+			concurrencyConfig,
+		)
 	}
 
 	if rl := s.CodyGatewayAccess.EmbeddingsRateLimit; rl != nil {
-		a.RateLimits[codygateway.FeatureEmbeddings] = actor.RateLimit{
-			AllowedModels: rl.AllowedModels,
-			Limit:         rl.Limit,
-			Interval:      time.Duration(rl.IntervalSeconds) * time.Second,
-		}
+		a.RateLimits[codygateway.FeatureEmbeddings] = actor.NewRateLimitWithPercentageConcurrency(
+			rl.Limit,
+			time.Duration(rl.IntervalSeconds)*time.Second,
+			rl.AllowedModels,
+			// TODO: Once we split interactive and on-interactive, we want to apply
+			// stricter limits here than percentage based for this heavy endpoint.
+			concurrencyConfig,
+		)
 	}
 
 	return a

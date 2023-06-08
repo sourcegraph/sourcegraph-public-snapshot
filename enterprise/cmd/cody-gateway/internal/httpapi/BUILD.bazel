@@ -15,7 +15,6 @@ go_library(
         "//enterprise/cmd/cody-gateway/internal/httpapi/embeddings",
         "//enterprise/cmd/cody-gateway/internal/limiter",
         "//enterprise/cmd/cody-gateway/internal/response",
-        "//enterprise/internal/codygateway",
         "//internal/redispool",
         "//internal/trace",
         "//internal/version",

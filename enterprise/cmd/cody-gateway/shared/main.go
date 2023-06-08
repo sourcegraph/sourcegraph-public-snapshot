@@ -73,15 +73,18 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Supported actor/auth sources
 	sources := actor.Sources{
-		anonymous.NewSource(config.AllowAnonymous),
+		anonymous.NewSource(config.AllowAnonymous, config.ActorConcurrencyLimit),
 		productsubscription.NewSource(
 			obctx.Logger,
 			rcache.New("product-subscriptions"),
 			dotcomClient,
-			config.Dotcom.InternalMode),
+			config.Dotcom.InternalMode,
+			config.ActorConcurrencyLimit,
+		),
 		dotcomuser.NewSource(obctx.Logger,
 			rcache.New("dotcom-users"),
 			dotcomClient,
+			config.ActorConcurrencyLimit,
 		),
 	}
 
@@ -100,7 +103,6 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
 	handler := httpapi.NewHandler(obctx.Logger, eventLogger, rs, authr, &httpapi.Config{
-		ConcurrencyLimit:        config.ActorConcurrencyLimit,
 		AnthropicAccessToken:    config.Anthropic.AccessToken,
 		AnthropicAllowedModels:  config.Anthropic.AllowedModels,
 		OpenAIAccessToken:       config.OpenAI.AccessToken,

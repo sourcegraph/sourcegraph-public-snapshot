@@ -13,78 +13,46 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 )
 
-func TestActor_Limiter_Concurrency(t *testing.T) {
+func TestNewRateLimitWithPercentageConcurrency(t *testing.T) {
 	concurrencyLimitConfig := codygateway.ActorConcurrencyLimitConfig{
 		Percentage: 0.1,
 		Interval:   10 * time.Second,
 	}
 	tests := []struct {
 		name                 string
-		actor                *Actor
+		limit                int
+		interval             time.Duration
 		wantConcurrencyLimit int
 	}{
 		{
-			name: "feature limit internal is daily",
-			actor: &Actor{
-				RateLimits: map[codygateway.Feature]RateLimit{
-					codygateway.FeatureChatCompletions: {
-						Limit:         100,
-						Interval:      24 * time.Hour,
-						AllowedModels: []string{"model"},
-					},
-				},
-			},
+			name:                 "feature limit internal is daily",
+			limit:                100,
+			interval:             24 * time.Hour,
 			wantConcurrencyLimit: 10,
 		},
 		{
-			name: "feature limit internal is more than a day",
-			actor: &Actor{
-				RateLimits: map[codygateway.Feature]RateLimit{
-					codygateway.FeatureChatCompletions: {
-						Limit:         210,
-						Interval:      7 * 24 * time.Hour,
-						AllowedModels: []string{"model"},
-					},
-				},
-			},
+			name:                 "feature limit internal is more than a day",
+			limit:                210,
+			interval:             7 * 24 * time.Hour,
 			wantConcurrencyLimit: 3,
 		},
 		{
-			name: "feature limit internal is less than a day",
-			actor: &Actor{
-				RateLimits: map[codygateway.Feature]RateLimit{
-					codygateway.FeatureChatCompletions: {
-						Limit:         10,
-						Interval:      time.Hour,
-						AllowedModels: []string{"model"},
-					},
-				},
-			},
+			name:                 "feature limit internal is less than a day",
+			limit:                10,
+			interval:             time.Hour,
 			wantConcurrencyLimit: 24,
 		},
 		{
-			name: "computed concurrency limit is less than 1",
-			actor: &Actor{
-				RateLimits: map[codygateway.Feature]RateLimit{
-					codygateway.FeatureChatCompletions: {
-						Limit:         3,
-						Interval:      24 * time.Hour,
-						AllowedModels: []string{"model"},
-					},
-				},
-			},
+			name:                 "computed concurrency limit is less than 1",
+			limit:                3,
+			interval:             24 * time.Hour,
 			wantConcurrencyLimit: 1,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, ok := test.actor.Limiter(nil, nil, codygateway.FeatureChatCompletions, concurrencyLimitConfig)
-			assert.True(t, ok, "should have returned a limiter")
-			require.NotNil(t, got)
-
-			gotConcurrencyLimit, ok := got.(*concurrencyLimiter)
-			require.True(t, ok, "should be a *concurrencyLimiter")
-			assert.Equal(t, test.wantConcurrencyLimit, gotConcurrencyLimit.rateLimit.Limit)
+			got := NewRateLimitWithPercentageConcurrency(test.limit, test.interval, []string{"model"}, concurrencyLimitConfig)
+			assert.Equal(t, test.wantConcurrencyLimit, got.ConcurrentRequests)
 		})
 	}
 }

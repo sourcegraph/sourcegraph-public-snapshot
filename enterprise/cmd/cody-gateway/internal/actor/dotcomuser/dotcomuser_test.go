@@ -94,7 +94,7 @@ func TestNewActor(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			act := NewActor(nil, "", tt.args.s)
+			act := newActor(nil, "", tt.args.s)
 			assert.Equal(t, act.AccessEnabled, tt.wantEnabled)
 		})
 	}
