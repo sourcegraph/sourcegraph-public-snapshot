@@ -1,26 +1,20 @@
-import React, { useState } from 'react'
+import React from 'react'
 
-import { mdiEmail, mdiLoading, mdiPlus, mdiDelete } from '@mdi/js'
+import { mdiEmail } from '@mdi/js'
 
-import { useMutation } from '@sourcegraph/http-client'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { Button, ButtonLink, Icon, LinkOrSpan, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     AssignedOwnerFields,
-    AssignOwnerResult,
-    AssignOwnerVariables,
     CodeownersFileEntryFields,
     OwnerFields,
     RecentContributorOwnershipSignalFields,
     RecentViewOwnershipSignalFields,
-    RemoveAssignedOwnerResult,
-    RemoveAssignedOwnerVariables,
 } from '../../../graphql-operations'
 import { PersonLink } from '../../../person/PersonLink'
 
-import { REMOVE_ASSIGNED_OWNER } from './grapqlQueries'
 import { OwnershipBadge } from './OwnershipBadge'
 import { RemoveOwnerButton } from './RemoveOwnerButton'
 

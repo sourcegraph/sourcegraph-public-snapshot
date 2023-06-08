@@ -4,7 +4,6 @@ import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
-import { useMutation } from '@sourcegraph/http-client/out/src'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, Text } from '@sourcegraph/wildcard'
 
@@ -13,12 +12,9 @@ import {
     SearchPatternType,
     OwnerFields,
     OwnershipConnectionFields,
-    RemoveAssignedOwnerResult,
-    RemoveAssignedOwnerVariables,
 } from '../../../graphql-operations'
 
 import { FileOwnershipEntry } from './FileOwnershipEntry'
-import { REMOVE_ASSIGNED_OWNER } from './grapqlQueries'
 
 import styles from './OwnerList.module.scss'
 
@@ -162,7 +158,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                         ? ownership.owner.user.id
                                         : undefined
                                 // This list is not expected to change, so it's safe to use the index as a key.
-                                // eslint-disable-next-line react/no-array-index-key
+                                 
                                 return (
                                     <React.Fragment key={index}>
                                         {index > 0 && <tr className={styles.bordered} />}
