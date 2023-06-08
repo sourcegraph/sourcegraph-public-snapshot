@@ -55,13 +55,8 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
         return owner.email
     }
 
-    const userID =
-        owner.__typename === 'Person' &&
-        owner.user?.__typename === 'User'
-            ? owner.user.id
-            : undefined
-    const teamID =
-        owner.__typename === 'Team' ? owner.id : undefined
+    const userID = owner.__typename === 'Person' && owner.user?.__typename === 'User' ? owner.user.id : undefined
+    const teamID = owner.__typename === 'Team' ? owner.id : undefined
 
     const email = findEmail()
 

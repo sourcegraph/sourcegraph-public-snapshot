@@ -9,10 +9,11 @@ import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 import {
     RemoveAssignedOwnerResult,
     RemoveAssignedOwnerVariables,
-    RemoveAssignedTeamResult, RemoveAssignedTeamVariables
+    RemoveAssignedTeamResult,
+    RemoveAssignedTeamVariables,
 } from '../../../graphql-operations'
 
-import {REMOVE_ASSIGNED_OWNER, REMOVE_ASSIGNED_TEAM} from './grapqlQueries'
+import { REMOVE_ASSIGNED_OWNER, REMOVE_ASSIGNED_TEAM } from './grapqlQueries'
 
 export interface RemoveOwnerButtonProps {
     onSuccess: () => Promise<any>
@@ -37,30 +38,30 @@ export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({
         ? 'Ownership can only be modified at the same direct path as it was assigned.'
         : 'Remove ownership'
 
-    const [removeAssignedOwner, { loading:removeLoading }] = useMutation<RemoveAssignedOwnerResult, RemoveAssignedOwnerVariables>(
-        REMOVE_ASSIGNED_OWNER,
-        {}
-    )
-    const [removeAssignedTeam, { loading:removeTeamLoading }] = useMutation<RemoveAssignedTeamResult, RemoveAssignedTeamVariables>(
-        REMOVE_ASSIGNED_TEAM,
-        {}
-    )
+    const [removeAssignedOwner, { loading: removeLoading }] = useMutation<
+        RemoveAssignedOwnerResult,
+        RemoveAssignedOwnerVariables
+    >(REMOVE_ASSIGNED_OWNER, {})
+    const [removeAssignedTeam, { loading: removeTeamLoading }] = useMutation<
+        RemoveAssignedTeamResult,
+        RemoveAssignedTeamVariables
+    >(REMOVE_ASSIGNED_TEAM, {})
 
-    const createInputObject = (id:string) => ({
-            variables: {
-                input: {
-                    absolutePath: path,
-                    assignedOwnerID: id,
-                    repoID: repoId,
-                },
+    const createInputObject = (id: string) => ({
+        variables: {
+            input: {
+                absolutePath: path,
+                assignedOwnerID: id,
+                repoID: repoId,
             },
-            onCompleted: async () => {
-                await onSuccess()
-            },
-            onError: (errors: ErrorLike) => {
-                onError(asError(errors))
-            },
-        })
+        },
+        onCompleted: async () => {
+            await onSuccess()
+        },
+        onError: (errors: ErrorLike) => {
+            onError(asError(errors))
+        },
+    })
 
     const removeOwner: () => Promise<void> = async () => {
         if (userID) {
@@ -68,7 +69,6 @@ export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({
         } else if (teamID) {
             await removeAssignedTeam(createInputObject(teamID))
         }
-
     }
 
     return (
@@ -82,7 +82,11 @@ export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({
                 size="sm"
                 disabled={!isDirectAssigned}
             >
-                <Icon color="white" aria-hidden={true} svgPath={(removeLoading || removeTeamLoading) ? mdiLoading : mdiDelete} />
+                <Icon
+                    color="white"
+                    aria-hidden={true}
+                    svgPath={removeLoading || removeTeamLoading ? mdiLoading : mdiDelete}
+                />
                 Remove owner
             </Button>
         </Tooltip>

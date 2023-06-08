@@ -150,7 +150,6 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                             )
                             .map((ownership, index) => {
                                 if (ownership.owner.__typename === 'Team') {
-
                                 }
                                 const userId =
                                     ownership.owner.__typename === 'Person' &&
