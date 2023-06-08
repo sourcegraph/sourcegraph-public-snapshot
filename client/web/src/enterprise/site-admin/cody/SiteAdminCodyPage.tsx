@@ -125,7 +125,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
 
     return (
         <>
-            <PageTitle title="Embeddings jobs" />
+            <PageTitle title="  Embeddings jobs" />
             <PageHeader path={[{ text: 'Embeddings jobs' }]} className="mb-3" headingElement="h2" />
             <Container className="mb-3">
                 <H3>Schedule repositories for embedding</H3>

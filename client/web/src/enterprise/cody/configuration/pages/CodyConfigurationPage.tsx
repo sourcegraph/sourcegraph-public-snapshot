@@ -81,7 +81,7 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
 
     return (
         <>
-            <PageTitle title={repo ? 'Embedding job policies for repository' : 'Global embeddings policies'} />
+            <PageTitle title={repo ? 'Embeddings policies for repository' : 'Global embeddings policies'} />
             <PageHeader
                 headingElement="h2"
                 path={[
