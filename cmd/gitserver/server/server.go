@@ -2315,7 +2315,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	redactor := newURLRedactor(remoteURL)
 
-	go readCloneProgress(bgCtx, s.DB, logger, redactor, lock, pr, repo)
+	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
 	output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw)
 	if err != nil {
@@ -2379,7 +2379,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	}
 
 	// best-effort update the output of the clone
-	go s.setLastOutput(bgCtx, repo, redactor.redact(string(output)))
+	go s.setLastOutput(context.Background(), repo, redactor.redact(string(output)))
 
 	logger.Info("repo cloned")
 	repoClonedCounter.Inc()
