@@ -60,8 +60,7 @@ export const AppEmbeddingsSetupStep: FC<StepComponentProps> = ({ className }) =>
                 <Text className={styles.descriptionText}>What’s you preferred repository?</Text>
 
                 <Text className={classNames(styles.descriptionText, styles.descriptionTextSmall)}>
-                    Pick one repository to generate embeddings. This one-off choice supercharges a repo with even better
-                    intuition.
+                    Pick one repository to generate embeddings. This supercharges a repo with even better intuition.
                 </Text>
 
                 <Text className={classNames(styles.descriptionText, styles.descriptionTextSmall)}>

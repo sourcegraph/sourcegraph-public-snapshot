@@ -86,7 +86,7 @@ export const LocalRepositoriesWidget: FC<LocalRepositoriesWidgetProps> = props =
                 {!anyError && allLoaded && repositories.length === 0 && (
                     <AppNoItemsState
                         title="No local repositories"
-                        subTitle="Try pick local repositories with buttons above"
+                        subTitle="Pick local repositories with buttons above"
                     />
                 )}
                 {!anyError && allLoaded && (

@@ -60,6 +60,7 @@
     overflow: auto;
     max-height: 100vh;
     background-color: var(--gray-02);
+
     --shutter-height: 128px;
     --shutter-color-start-internal: var(--gray-02);
     --shutter-color-stop-internal: rgba(239, 242, 245, 0);
@@ -73,7 +74,7 @@
 }
 
 .item {
-    padding: 2px;
+    padding: 0.125rem;
     border-radius: 0.5rem;
     list-style: none;
 
