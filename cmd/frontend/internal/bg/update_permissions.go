@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
@@ -30,7 +31,8 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 			return errors.Wrap(err, "fetching permissions from database")
 		}
 
-		toBeAdded, toBeDeleted := rbac.ComparePermissions(dbPerms, rbac.RBACSchema)
+		rbacSchema := rbac.RBACSchema
+		toBeAdded, toBeDeleted := rbac.ComparePermissions(dbPerms, rbacSchema)
 		scopedLog.Info("RBAC Permissions update", log.Int("added", len(toBeAdded)), log.Int("deleted", len(toBeDeleted)))
 
 		if len(toBeDeleted) > 0 {
@@ -51,16 +53,19 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 			}
 
 			roles := []types.SystemRole{types.SiteAdministratorSystemRole, types.UserSystemRole}
+			excludedRoles := collections.NewSet[rtypes.PermissionNamespace](rbacSchema.ExcludeFromUserRole...)
 			for _, permission := range permissions {
 				// Assign the permission to both SITE_ADMINISTRATOR and USER roles. We do this so
 				// that we don't break the current experience and always assume that everyone has
 				// access until a site administrator revokes that access. Context:
 				// https://sourcegraph.slack.com/archives/C044BUJET7C/p1675292124253779?thread_ts=1675280399.192819&cid=C044BUJET7C
-				// The only exception (at the moment) is Ownership, because it is clearly a
-				// permission which should be explicitly granted and only SITE_ADMINISTRATOR has
-				// it by default.
+
 				rolesToAssign := roles
-				if permission.Namespace == rtypes.OwnershipNamespace {
+				if excludedRoles.Has(permission.Namespace) {
+					// The only exception to the above rule (at the moment) is Ownership, because it
+					// is clearly a permission which should be explicitly granted and only
+					// SITE_ADMINISTRATOR has it by default. All exceptions can be added to the
+					// `excludeFromUserRole` attribute of RBAC schema.
 					rolesToAssign = roles[:1]
 				}
 				if err := rolePermissionStore.BulkAssignPermissionsToSystemRoles(ctx, database.BulkAssignPermissionsToSystemRolesOpts{

@@ -43,7 +43,7 @@ func TestUpdatePermissions(t *testing.T) {
 	userPermissions, err := permissionStore.List(ctx, database.PermissionListOpts{RoleID: userRole.ID, PaginationArgs: &database.PaginationArgs{}})
 	require.NoError(t, err)
 	userPermissions = clearTimeAndID(userPermissions)
-	assert.ElementsMatch(t, allPerms[:3], userPermissions)
+	assert.ElementsMatch(t, allPerms[:3], userPermissions, "unexpected number of permissions")
 }
 
 func clearTimeAndID(perms []*types.Permission) []*types.Permission {
