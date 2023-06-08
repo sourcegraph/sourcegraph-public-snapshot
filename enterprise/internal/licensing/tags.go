@@ -22,8 +22,6 @@ const (
 	// AllowAnonymousUsageTag denotes licenses that allow anonymous usage, a.k.a public access to the instance
 	// Warning: This should be used with care and only at special, probably trial/poc stages with customers
 	AllowAnonymousUsageTag = "allow-anonymous-usage"
-	// AllowAirGappedTag denotes licenses that are used in air-gapped environments.
-	AllowAirGappedTag = "allow-air-gapped"
 )
 
 // ProductNameWithBrand returns the product name with brand (e.g., "Sourcegraph Enterprise") based
@@ -94,5 +92,4 @@ var MiscTags = []string{
 	"starter",
 	"mau",
 	GPTLLMAccessTag,
-	AllowAirGappedTag,
 }
