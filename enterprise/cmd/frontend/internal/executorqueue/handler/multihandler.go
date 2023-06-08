@@ -18,7 +18,6 @@ import (
 	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -27,27 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-const dequeueTtl = 5 * 60 // 5 minutes
-
-type dequeueProperties struct {
-	// limit sets the maximum amount of dequeues in a given time window
-	limit int
-	// weight sets the probability of being randomly selected (base = 1)
-	weight int
-}
-
-var dequeuePropertiesPerQueue = map[string]dequeueProperties{
-	// TODO: this is entirely arbitrary for dev purposes
-	"batches": {
-		limit:  50,
-		weight: 4,
-	},
-	"codeintel": {
-		limit:  250,
-		weight: 1,
-	},
-}
 
 // MultiHandler handles the HTTP requests of an executor for more than one queue. See ExecutorHandler for single-queue implementation.
 type MultiHandler struct {
@@ -69,8 +47,7 @@ func NewMultiHandler(
 	codeIntelQueueHandler QueueHandler[uploadsshared.Index],
 	batchesQueueHandler QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob],
 ) MultiHandler {
-	ctx := context.Background()
-	dequeueCache := rcache.New("executor_multihandler_dequeues")
+	dequeueCache := rcache.New(executortypes.DequeueCachePrefix)
 	multiHandler := MultiHandler{
 		executorStore:         executorStore,
 		jobTokenStore:         jobTokenStore,
@@ -78,12 +55,9 @@ func NewMultiHandler(
 		CodeIntelQueueHandler: codeIntelQueueHandler,
 		BatchesQueueHandler:   batchesQueueHandler,
 		dequeueCache:          dequeueCache,
-		validQueues:           []string{codeIntelQueueHandler.Name, batchesQueueHandler.Name},
+		validQueues:           executortypes.ValidQueues,
 		logger:                log.Scoped("executor-multi-queue-handler", "The route handler for all executor queues"),
 	}
-	cacheCleaner := NewMultiqueueCacheCleaner(multiHandler.validQueues, dequeueCache, dequeueTtl, 5*time.Second)
-	// TODO: is this even OK to do?
-	go goroutine.MonitorBackgroundRoutines(ctx, cacheCleaner)
 	return multiHandler
 }
 
@@ -134,37 +108,48 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 		switch queue {
 		case m.BatchesQueueHandler.Name:
 			count, err = m.BatchesQueueHandler.Store.QueuedCount(ctx, false)
+			//m.logger.Info("batches", log.Int("length", count))
 		case m.CodeIntelQueueHandler.Name:
 			count, err = m.CodeIntelQueueHandler.Store.QueuedCount(ctx, false)
+			//m.logger.Info("codeintel", log.Int("length", count))
 		}
 		if err != nil {
+			m.logger.Error("fetching queue size", log.Error(err), log.String("queue", queue))
 			return executortypes.Job{}, false, err
 		}
 		if count != 0 {
 			nonEmptyQueues = append(nonEmptyQueues, queue)
 		}
 	}
+	//m.logger.Info("non empty queues", log.Strings("queues", nonEmptyQueues))
 
 	var selectedQueue string
 	if len(nonEmptyQueues) == 0 {
 		// all queues are empty, dequeue nothing
+		//m.logger.Info("all queues empty, not dequeing anything")
 		return executortypes.Job{}, false, nil
 	} else if len(nonEmptyQueues) == 1 {
 		// only one queue contains items, select as candidate
+		//m.logger.Info("dequeuing only non empty queue", log.String("queue", nonEmptyQueues[0]))
 		selectedQueue = nonEmptyQueues[0]
 	} else {
 		// multiple populated queues, discard queues at dequeue limit
 		var candidateQueues []string
 		for _, queue := range nonEmptyQueues {
 			dequeues, err := m.dequeueCache.GetHashAll(queue)
+			//for key := range dequeues {
+			//	m.logger.Info("dequeues in cache", log.String("queue", queue), log.String("timestamp", key), log.String("job ID", dequeues[key]))
+			//}
 			if err != nil {
 				return executortypes.Job{}, false, errors.Wrapf(err, "failed to check dequeue count for queue '%s'", queue)
 			}
-			if len(dequeues) < dequeuePropertiesPerQueue[queue].limit {
+			if len(dequeues) < executortypes.DequeuePropertiesPerQueue[queue].Limit {
+				//m.logger.Info("adding to candidate queues", log.String("queue", queue), log.Int("dequeues", len(dequeues)), log.Int("limit", dequeuePropertiesPerQueue[queue].limit))
 				candidateQueues = append(candidateQueues, queue)
 			}
 		}
 		if len(candidateQueues) == 1 {
+			//m.logger.Info("dequeuing only non empty queue", log.String("queue", candidateQueues[0]))
 			// only one queue hasn't reached dequeue limit for this window, select as candidate
 			selectedQueue = candidateQueues[0]
 		} else {
@@ -176,13 +161,14 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 			// pick a queue based on the defined weights
 			var choices []weightedrand.Choice[string, int]
 			for _, queue := range candidateQueues {
-				choices = append(choices, weightedrand.NewChoice(queue, dequeuePropertiesPerQueue[queue].weight))
+				choices = append(choices, weightedrand.NewChoice(queue, executortypes.DequeuePropertiesPerQueue[queue].Weight))
 			}
 			chooser, err := weightedrand.NewChooser(choices...)
 			if err != nil {
 				return executortypes.Job{}, false, errors.Wrap(err, "failed to randomly select candidate queue to dequeue")
 			}
 			selectedQueue = chooser.Pick()
+			//m.logger.Info("selected queue", log.String("queue", selectedQueue))
 		}
 	}
 
@@ -264,7 +250,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	job.Token = token
 
 	// increment dequeue counter
-	err = m.dequeueCache.SetHashItem(selectedQueue, fmt.Sprint(time.Now().Unix()), job.Token)
+	err = m.dequeueCache.SetHashItem(selectedQueue, fmt.Sprint(time.Now().UnixNano()), job.Token)
 	if err != nil {
 		return executortypes.Job{}, false, errors.Wrapf(err, "failed to increment dequeue count for queue '%s'", selectedQueue)
 	}
