@@ -56,6 +56,9 @@ var BaseParserConfig = ParserConfiguration{
 		"Zig":    ScipCtags,
 		"Python": ScipCtags,
 		"C#":     ScipCtags,
-		"Java":   ScipCtags,
+
+		// TODO: Not ready to turn on java yet. Worried about not handling enough cases.
+		// May wait until after next release
+		// "Java":   ScipCtags,
 	},
 }

@@ -64,7 +64,7 @@ expression: dumped
   
           delegate int MyDelegate();
 //                     ^^^^^^^^^^ definition scip-ctags `Longer.Namespace`/Class#MyDelegate().
-          
+  
           public event ChangedEventHandler Changed;
 //                                         ^^^^^^^ definition scip-ctags `Longer.Namespace`/Class#Changed.
   
@@ -112,6 +112,19 @@ expression: dumped
   
           public static void Syntax() {}
 //                           ^^^^^^ definition scip-ctags `Longer.Namespace`/Class#Syntax().
+      }
+  }
+  
+  namespace OneClass
+//          ^^^^^^^^ definition scip-ctags OneClass/
+  {
+      public class TheClass
+//                 ^^^^^^^^ definition scip-ctags OneClass/TheClass#
+      {
+          public Clickable ClickAction { get; set; }
+//                         ^^^^^^^^^^^ definition scip-ctags OneClass/TheClass#ClickAction.
+          public string Text { get; set; }
+//                      ^^^^ definition scip-ctags OneClass/TheClass#Text.
       }
   }
 

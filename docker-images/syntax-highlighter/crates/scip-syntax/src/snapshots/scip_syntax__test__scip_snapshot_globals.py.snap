@@ -25,8 +25,10 @@ expression: dumped
           more()
   
   if 1 == 1:
-      notHere = False
+      should_show_ifs = False
+//    ^^^^^^^^^^^^^^^ definition scip-ctags should_show_ifs.
   
+  # Don't show from whiles / fors
   while False:
       notHereEither = False
   
@@ -34,5 +36,74 @@ expression: dumped
       definitelyNotInHere = False
   
   with 1:
-      what = "is this even allowed in Python anymore?"
+      what = "contained in scope"
+  
+  
+  async def my_function():
+//          ^^^^^^^^^^^ definition scip-ctags my_function().
+      pass
+  
+  
+  class SomeAsyncStuffs:
+//      ^^^^^^^^^^^^^^^ definition scip-ctags SomeAsyncStuffs#
+      def __init__(self, obj):
+//        ^^^^^^^^ definition scip-ctags SomeAsyncStuffs#__init__().
+          pass
+  
+      def __aiter__(self):
+//        ^^^^^^^^^ definition scip-ctags SomeAsyncStuffs#__aiter__().
+          pass
+  
+      async def __anext__(self):
+//              ^^^^^^^^^ definition scip-ctags SomeAsyncStuffs#__anext__().
+          pass
+  
+  def does_nothing(f):
+//    ^^^^^^^^^^^^ definition scip-ctags does_nothing().
+      return f
+  
+  def does_nothingwrapper(*args):
+//    ^^^^^^^^^^^^^^^^^^^ definition scip-ctags does_nothingwrapper().
+      return does_nothing
+  
+  @does_nothing
+  def has_a_name():
+//    ^^^^^^^^^^ definition scip-ctags has_a_name().
+      pass
+  
+  @does_nothing
+  def func02(): pass
+//    ^^^^^^ definition scip-ctags func02().
+  
+  @does_nothing
+  class ClassWithDecorators(object):
+//      ^^^^^^^^^^^^^^^^^^^ definition scip-ctags ClassWithDecorators#
+      @staticmethod
+      def static_method():
+//        ^^^^^^^^^^^^^ definition scip-ctags ClassWithDecorators#static_method().
+          print("hello")
+  
+      @classmethod
+      def class_method(cls):
+//        ^^^^^^^^^^^^ definition scip-ctags ClassWithDecorators#class_method().
+          print("hi from %s" % cls.__name__)
+  
+      @does_nothingwrapper(1, 2, 3)
+  
+      @   staticmethod
+      @does_nothing
+      def prints_something():
+//        ^^^^^^^^^^^^^^^^ definition scip-ctags ClassWithDecorators#prints_something().
+          print("something")
+  
+  
+  foo, bar, baz = 1, 2, 3
+//^^^ definition scip-ctags foo.
+//     ^^^ definition scip-ctags bar.
+//          ^^^ definition scip-ctags baz.
+  
+  # semi-colons haha
+  foo = 1; bar = foo
+//^^^ definition scip-ctags foo.
+//         ^^^ definition scip-ctags bar.
 

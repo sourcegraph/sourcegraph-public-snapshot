@@ -15,6 +15,6 @@
 
 (field_declaration (variable_declaration (variable_declarator (identifier) @descriptor.term)))
 (event_field_declaration (variable_declaration (variable_declarator (identifier) @descriptor.term)))
-(property_declaration (identifier) @descriptor.term)
+(property_declaration name: (identifier) @descriptor.term)
 (enum_member_declaration name: (_) @descriptor.term)
-(delegate_declaration (identifier) @descriptor.method)
+(delegate_declaration name: (identifier) @descriptor.method)

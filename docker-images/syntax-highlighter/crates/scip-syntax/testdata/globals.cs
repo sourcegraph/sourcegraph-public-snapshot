@@ -46,7 +46,7 @@ namespace Longer.Namespace
         }
 
         delegate int MyDelegate();
-        
+
         public event ChangedEventHandler Changed;
 
         int _speed;
@@ -76,5 +76,14 @@ namespace Longer.Namespace
         }
 
         public static void Syntax() {}
+    }
+}
+
+namespace OneClass
+{
+    public class TheClass
+    {
+        public Clickable ClickAction { get; set; }
+        public string Text { get; set; }
     }
 }
