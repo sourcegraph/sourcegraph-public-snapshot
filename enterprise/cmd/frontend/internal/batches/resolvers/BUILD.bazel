@@ -44,7 +44,6 @@ go_library(
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/externallink",
         "//cmd/frontend/graphqlbackend/graphqlutil",
-        "//enterprise/cmd/frontend/internal/auth/githubappauth",
         "//enterprise/internal/batches/graphql",
         "//enterprise/internal/batches/reconciler",
         "//enterprise/internal/batches/rewirer",
