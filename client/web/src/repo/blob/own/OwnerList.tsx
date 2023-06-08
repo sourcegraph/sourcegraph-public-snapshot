@@ -149,6 +149,9 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                 )
                             )
                             .map((ownership, index) => {
+                                if (ownership.owner.__typename === 'Team') {
+
+                                }
                                 const userId =
                                     ownership.owner.__typename === 'Person' &&
                                     ownership.owner.user?.__typename === 'User'
@@ -162,7 +165,6 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                         <FileOwnershipEntry
                                             refetch={refetch}
                                             owner={ownership.owner}
-                                            userID={userId}
                                             repoID={repoID}
                                             filePath={filePath}
                                             reasons={ownership.reasons}
@@ -211,7 +213,6 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                             owner={ownership.owner}
                                             reasons={ownership.reasons}
                                             makeOwnerButton={makeOwnerButton?.(userId)}
-                                            userID={userId}
                                             repoID={repoID}
                                             filePath={filePath}
                                             refetch={refetch}
