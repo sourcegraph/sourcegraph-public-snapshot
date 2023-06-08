@@ -24,19 +24,22 @@ type AssignedKey struct {
 }
 
 type RulesCache struct {
-	rules      map[RulesKey]*codeowners.Ruleset
-	assigned   map[AssignedKey]own.AssignedOwners
-	ownService own.Service
+	rules         map[RulesKey]*codeowners.Ruleset
+	assigned      map[AssignedKey]own.AssignedOwners
+	assignedTeams map[AssignedKey]own.AssignedTeams
+	ownService    own.Service
 
-	rulesMu    sync.RWMutex
-	assignedMu sync.RWMutex
+	rulesMu         sync.RWMutex
+	assignedMu      sync.RWMutex
+	assignedTeamsMu sync.RWMutex
 }
 
 func NewRulesCache(gs gitserver.Client, db database.DB) RulesCache {
 	return RulesCache{
-		rules:      make(map[RulesKey]*codeowners.Ruleset),
-		assigned:   make(map[AssignedKey]own.AssignedOwners),
-		ownService: own.NewService(gs, db),
+		rules:         make(map[RulesKey]*codeowners.Ruleset),
+		assigned:      make(map[AssignedKey]own.AssignedOwners),
+		assignedTeams: make(map[AssignedKey]own.AssignedTeams),
+		ownService:    own.NewService(gs, db),
 	}
 }
 
@@ -45,13 +48,18 @@ func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, repoName api.RepoN
 	if err != nil {
 		return repoOwnershipData{}, err
 	}
+	assignedTeams, err := c.AssignedTeams(ctx, repoID, commitID)
+	if err != nil {
+		return repoOwnershipData{}, err
+	}
 	codeowners, err := c.Codeowners(ctx, repoName, repoID, commitID)
 	if err != nil {
 		return repoOwnershipData{}, err
 	}
 	return repoOwnershipData{
-		assigned:   assigned,
-		codeowners: codeowners,
+		assigned:      assigned,
+		assignedTeams: assignedTeams,
+		codeowners:    codeowners,
 	}, nil
 }
 
@@ -74,6 +82,27 @@ func (c *RulesCache) AssignedOwners(ctx context.Context, repoID api.RepoID, comm
 		c.assigned[key] = assigned
 	}
 	return c.assigned[key], nil
+}
+
+func (c *RulesCache) AssignedTeams(ctx context.Context, repoID api.RepoID, commitID api.CommitID) (own.AssignedTeams, error) {
+	c.assignedTeamsMu.RLock()
+	key := AssignedKey{repoID}
+	if v, ok := c.assignedTeams[key]; ok {
+		defer c.assignedTeamsMu.RUnlock()
+		return v, nil
+	}
+	c.assignedTeamsMu.RUnlock()
+	c.assignedTeamsMu.Lock()
+	defer c.assignedTeamsMu.Unlock()
+	if _, ok := c.assignedTeams[key]; !ok {
+		assigned, err := c.ownService.AssignedTeams(ctx, repoID, commitID)
+		if err != nil {
+			// Error is picked up on a call site and in most cases a search alert is created.
+			return nil, err
+		}
+		c.assignedTeams[key] = assigned
+	}
+	return c.assignedTeams[key], nil
 }
 
 func (c *RulesCache) Codeowners(ctx context.Context, repoName api.RepoName, repoID api.RepoID, commitID api.CommitID) (*codeowners.Ruleset, error) {
@@ -102,8 +131,9 @@ func (c *RulesCache) Codeowners(ctx context.Context, repoName api.RepoName, repo
 }
 
 type repoOwnershipData struct {
-	codeowners *codeowners.Ruleset
-	assigned   own.AssignedOwners
+	codeowners    *codeowners.Ruleset
+	assigned      own.AssignedOwners
+	assignedTeams own.AssignedTeams
 }
 
 func (o repoOwnershipData) Match(path string) fileOwnershipData {
@@ -114,12 +144,14 @@ func (o repoOwnershipData) Match(path string) fileOwnershipData {
 	return fileOwnershipData{
 		rule:           rule,
 		assignedOwners: o.assigned.Match(path),
+		assignedTeams:  o.assignedTeams.Match(path),
 	}
 }
 
 type fileOwnershipData struct {
 	rule           *codeownerspb.Rule
 	assignedOwners []database.AssignedOwnerSummary
+	assignedTeams  []database.AssignedTeamSummary
 }
 
 func (d fileOwnershipData) References() []own.Reference {
@@ -129,6 +161,9 @@ func (d fileOwnershipData) References() []own.Reference {
 	}
 	for _, o := range d.assignedOwners {
 		rs = append(rs, own.Reference{UserID: o.OwnerUserID})
+	}
+	for _, o := range d.assignedTeams {
+		rs = append(rs, own.Reference{TeamID: o.OwnerTeamID})
 	}
 	return rs
 }
@@ -142,6 +177,9 @@ func (d fileOwnershipData) NonEmpty() bool {
 		return true
 	}
 	if len(d.assignedOwners) > 0 {
+		return true
+	}
+	if len(d.assignedTeams) > 0 {
 		return true
 	}
 	return false
@@ -161,6 +199,11 @@ func (d fileOwnershipData) IsWithin(bag own.Bag) bool {
 			return true
 		}
 	}
+	for _, o := range d.assignedTeams {
+		if bag.Contains(own.Reference{TeamID: o.OwnerTeamID}) {
+			return true
+		}
+	}
 	return false
 }
 
@@ -176,6 +219,9 @@ func (d fileOwnershipData) String() string {
 	}
 	for _, o := range d.assignedOwners {
 		references = append(references, fmt.Sprintf("#%d", o.OwnerUserID))
+	}
+	for _, o := range d.assignedTeams {
+		references = append(references, fmt.Sprintf("#%d", o.OwnerTeamID))
 	}
 	return fmt.Sprintf("[%s]", strings.Join(references, ", "))
 }

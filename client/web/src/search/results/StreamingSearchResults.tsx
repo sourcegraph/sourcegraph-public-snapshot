@@ -89,9 +89,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
 
-    const [rankingFeatureEnabled] = useFeatureFlag('search-ranking')
-    // The toggle is only visible when the ranking feature flag is enabled, so we default it to true
-    const [rankingToggleEnabled, setRankingToggleEnabled] = useTemporarySetting('search.ranking.experimental', true)
+    const [rankingEnabled] = useFeatureFlag('search-ranking')
 
     // Global state
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
@@ -111,15 +109,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
     const featureOverrides = useDeepMemo(
         // Nested use memo here is used for avoiding extra object calculation step on each render
-        useMemo(() => {
-            // Only disable ranking if the feature flag is set and toggle is explicitly
-            // disabled. Otherwise, don't touch the search behavior.
-            const disableRanking = rankingFeatureEnabled && rankingToggleEnabled !== undefined && !rankingToggleEnabled
-            if (disableRanking) {
-                return ['-search-ranking', ...new URLSearchParams(location.search).getAll('feat')]
-            }
-            return new URLSearchParams(location.search).getAll('feat')
-        }, [location.search, rankingFeatureEnabled, rankingToggleEnabled])
+        useMemo(() => new URLSearchParams(location.search).getAll('feat') ?? [], [location.search])
     )
     const { addRecentSearch } = useRecentSearches()
 
@@ -142,13 +132,15 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const logSearchResultClicked = useCallback(
         (index: number, type: string) => {
             telemetryService.log('SearchResultClicked')
-
-            // Ranking is used when the feature flag is enabled, and when the toggle is either unset or explicitly enabled.
-            const ranked = rankingFeatureEnabled && (rankingToggleEnabled === undefined || rankingToggleEnabled)
             // This data ends up in Prometheus and is not part of the ping payload.
-            telemetryService.log('search.ranking.result-clicked', { index, type, resultsLength, ranked })
+            telemetryService.log('search.ranking.result-clicked', {
+                index,
+                type,
+                resultsLength,
+                ranked: rankingEnabled,
+            })
         },
-        [telemetryService, resultsLength, rankingFeatureEnabled, rankingToggleEnabled]
+        [telemetryService, resultsLength, rankingEnabled]
     )
 
     // Log view event on first load
@@ -449,8 +441,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                         onShowMobileFiltersChanged={show => setShowMobileSidebar(show)}
                         sidebarCollapsed={!!sidebarCollapsed}
                         setSidebarCollapsed={setSidebarCollapsed}
-                        isRankingEnabled={!!rankingToggleEnabled}
-                        setRankingEnabled={setRankingToggleEnabled}
                         stats={
                             <StreamingProgress
                                 progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}

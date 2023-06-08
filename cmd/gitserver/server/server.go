@@ -37,6 +37,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -286,6 +287,9 @@ type Server struct {
 	// The factory creates recordable commands with a set predicate, which is used to determine whether a
 	// particular command should be recorded or not.
 	recordingCommandFactory *wrexec.RecordingCommandFactory
+
+	// Perforce is a plugin-like service attached to Server for all things Perforce.
+	Perforce *perforce.Service
 }
 
 type locks struct {
@@ -1085,8 +1089,14 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 		// An update error "wins" over a status error.
 		if updateErr != nil {
 			resp.Error = updateErr.Error()
+		} else {
+			s.Perforce.EnqueueChangelistMappingJob(&perforce.ChangelistMappingJob{
+				RepoName: req.Repo,
+				RepoDir:  dir,
+			})
 		}
 	}
+
 	return resp
 }
 
@@ -2354,6 +2364,13 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	logger.Info("repo cloned")
 	repoClonedCounter.Inc()
+
+	if err == nil {
+		s.Perforce.EnqueueChangelistMappingJob(&perforce.ChangelistMappingJob{
+			RepoName: repo,
+			RepoDir:  dir,
+		})
+	}
 
 	return nil
 }

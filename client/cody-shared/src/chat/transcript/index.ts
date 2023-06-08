@@ -5,11 +5,18 @@ import { Message } from '../../sourcegraph-api'
 import { Interaction, InteractionJSON } from './interaction'
 import { ChatMessage } from './messages'
 
+export interface TranscriptJSONScope {
+    includeInferredRepository: boolean
+    includeInferredFile: boolean
+    repositories: string[]
+}
+
 export interface TranscriptJSON {
     // This is the timestamp of the first interaction.
     id: string
     interactions: InteractionJSON[]
     lastInteractionTimestamp: string
+    scope?: TranscriptJSONScope
 }
 
 /**
@@ -155,21 +162,35 @@ export class Transcript {
         return [...(await Promise.all(this.interactions.map(interaction => interaction.toChatPromise())))].flat()
     }
 
-    public async toJSON(): Promise<TranscriptJSON> {
+    public async toJSON(scope?: TranscriptJSONScope): Promise<TranscriptJSON> {
         const interactions = await Promise.all(this.interactions.map(interaction => interaction.toJSON()))
 
         return {
             id: this.id,
             interactions,
             lastInteractionTimestamp: this.lastInteractionTimestamp,
+            scope: scope
+                ? {
+                      repositories: scope.repositories,
+                      includeInferredRepository: scope.includeInferredRepository,
+                      includeInferredFile: scope.includeInferredFile,
+                  }
+                : undefined,
         }
     }
 
-    public toJSONEmpty(): TranscriptJSON {
+    public toJSONEmpty(scope?: TranscriptJSONScope): TranscriptJSON {
         return {
             id: this.id,
             interactions: [],
             lastInteractionTimestamp: this.lastInteractionTimestamp,
+            scope: scope
+                ? {
+                      repositories: scope.repositories,
+                      includeInferredRepository: scope.includeInferredRepository,
+                      includeInferredFile: scope.includeInferredFile,
+                  }
+                : undefined,
         }
     }
 

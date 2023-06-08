@@ -4,6 +4,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "productsubscription",
     srcs = [
+        "codygateway_dotcom_user.go",
         "codygateway_graphql.go",
         "codygateway_service.go",
         "doc.go",
@@ -41,6 +42,7 @@ go_library(
         "//internal/gqlutil",
         "//internal/redispool",
         "//internal/slack",
+        "//internal/types",
         "//lib/errors",
         "@com_github_derision_test_glock//:glock",
         "@com_github_gomodule_redigo//redis",
@@ -59,6 +61,7 @@ go_library(
 go_test(
     name = "productsubscription_test",
     srcs = [
+        "codygateway_dotcom_user_test.go",
         "codygateway_graphql_test.go",
         "license_check_handler_test.go",
         "license_expiration_test.go",
@@ -80,11 +83,14 @@ go_test(
         "//enterprise/internal/licensing",
         "//enterprise/internal/productsubscription",
         "//internal/actor",
+        "//internal/auth",
+        "//internal/authz",
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/errcode",
         "//internal/featureflag",
+        "//internal/hashutil",
         "//internal/slack",
         "//internal/timeutil",
         "//internal/types",
