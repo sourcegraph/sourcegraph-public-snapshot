@@ -178,7 +178,7 @@ func (r ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Contex
 	return &productLicenseConnection{db: r.DB, opt: opt}, nil
 }
 
-func (r *ProductSubscriptionLicensingResolver) RevokeLicense(ctx context.Context, args *graphqlbackend.RevokeLicenseArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r ProductSubscriptionLicensingResolver) RevokeLicense(ctx context.Context, args *graphqlbackend.RevokeLicenseArgs) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins may revoke product licenses.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
 		return nil, err
