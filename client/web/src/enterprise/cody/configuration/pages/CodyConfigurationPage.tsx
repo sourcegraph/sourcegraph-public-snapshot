@@ -1,6 +1,7 @@
 import { FC, useCallback, useEffect, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
+import { mdiRobotOutline, mdiWebhook } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Subject } from 'rxjs'
@@ -85,6 +86,7 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
             <PageHeader
                 headingElement="h2"
                 path={[
+                    { icon: mdiRobotOutline, text: 'Cody' },
                     {
                         text: repo ? (
                             <>

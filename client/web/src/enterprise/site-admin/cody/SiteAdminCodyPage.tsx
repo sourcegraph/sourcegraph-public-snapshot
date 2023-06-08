@@ -1,6 +1,6 @@
 import { FC, useCallback, useEffect, useState, useMemo } from 'react'
 
-import { mdiMapSearch } from '@mdi/js'
+import { mdiMapSearch, mdiRobotOutline } from '@mdi/js'
 import { capitalize } from 'lodash'
 import { useLocation } from 'react-router-dom'
 
@@ -163,7 +163,11 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     return (
         <>
             <PageTitle title="Embeddings jobs" />
-            <PageHeader path={[{ text: 'Embeddings jobs' }]} className="mb-3" headingElement="h2" />
+            <PageHeader
+                path={[{ icon: mdiRobotOutline, text: 'Cody' }, { text: 'Embeddings jobs' }]}
+                className="mb-3"
+                headingElement="h2"
+            />
             <Container className="mb-3">
                 <H3>Schedule repositories for embedding</H3>
                 <Form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit}>
