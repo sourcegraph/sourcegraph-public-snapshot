@@ -44,9 +44,9 @@ type GitHubAppsStore interface {
 	// for the GitHub App with the given ID.
 	BulkInstall(ctx context.Context, id int, installationIDs []int) error
 
-	// BulkRemove revokes multiple GitHub App installation IDs from the database
+	// BulkRemoveInstallations revokes multiple GitHub App installation IDs from the database
 	// for the GitHub App with the given ID.
-	BulkRemove(ctx context.Context, id int, installationIDs []int) error
+	BulkRemoveInstallations(ctx context.Context, id int, installationIDs []int) error
 
 	// GetInstallations retrieves all installations for the GitHub App with the given ID.
 	GetInstallations(ctx context.Context, id int) ([]*ghtypes.GitHubAppInstallation, error)
@@ -408,7 +408,7 @@ func (s *gitHubAppsStore) GetInstallations(ctx context.Context, id int) ([]*ghty
 	return scanGitHubAppInstallations(s.Query(ctx, query))
 }
 
-func (s *gitHubAppsStore) BulkRemove(ctx context.Context, id int, installationIDs []int) error {
+func (s *gitHubAppsStore) BulkRemoveInstallations(ctx context.Context, id int, installationIDs []int) error {
 	var pred []*sqlf.Query
 	pred = append(pred, sqlf.Sprintf("app_id = %d", id))
 

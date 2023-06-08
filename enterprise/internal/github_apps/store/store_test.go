@@ -546,3 +546,142 @@ func TestInstallGitHubApp(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, createdAt, createdAt2)
 }
+
+func TestBulkInstallGitHubApp(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Background()
+
+	app := &ghtypes.GitHubApp{
+		AppID:        1234,
+		Name:         "Test App 1",
+		Domain:       "repos",
+		Slug:         "test-app-1",
+		BaseURL:      "https://github.com/",
+		ClientID:     "abc123",
+		ClientSecret: "secret",
+		PrivateKey:   "private-key",
+		Logo:         "logo.png",
+	}
+	appID, err := store.Create(ctx, app)
+	require.NoError(t, err)
+	installationIDs := []int{1, 2, 3}
+
+	err = store.BulkInstall(ctx, appID, installationIDs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	installations, err := store.GetInstallations(ctx, appID)
+	require.NoError(t, err)
+
+	if len(installations) != 3 {
+		require.Len(t, installations, 3, "expected 3 installations, got %d", len(installations))
+	}
+
+	for _, installationID := range installationIDs {
+		found := false
+		for _, installation := range installations {
+			if installation.InstallationID == installationID {
+				found = true
+				break
+			}
+		}
+
+		require.True(t, found, "installation with ID %d not found", installationID)
+	}
+}
+
+func TestGetInstallationsForGitHubApp(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Background()
+
+	app := &ghtypes.GitHubApp{
+		AppID:        1234,
+		Name:         "Test App 1",
+		Domain:       "repos",
+		Slug:         "test-app-1",
+		BaseURL:      "https://github.com/",
+		ClientID:     "abc123",
+		ClientSecret: "secret",
+		PrivateKey:   "private-key",
+		Logo:         "logo.png",
+	}
+
+	appID, err := store.Create(ctx, app)
+	require.NoError(t, err)
+
+	installationIDs := []int{1, 2, 3}
+	err = store.BulkInstall(ctx, appID, installationIDs)
+	require.NoError(t, err)
+
+	installations, err := store.GetInstallations(ctx, appID)
+	require.NoError(t, err)
+
+	require.Len(t, installations, 3, "expected 3 installations, got %d", len(installations))
+
+	for _, installation := range installations {
+		require.Equal(t, appID, installation.AppID, "expected AppID %d, got %d", appID, installation.AppID)
+
+		found := false
+		for _, installationID := range installationIDs {
+			if installation.InstallationID == installationID {
+				found = true
+				break
+			}
+		}
+
+		require.True(t, found, "installation with ID %d not found", installation.InstallationID)
+	}
+}
+
+func TestBulkRemoveGitHubAppInstallations(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Background()
+
+	app := &ghtypes.GitHubApp{
+		AppID:        1234,
+		Name:         "Test App 1",
+		Domain:       "repos",
+		Slug:         "test-app-1",
+		BaseURL:      "https://github.com/",
+		ClientID:     "abc123",
+		ClientSecret: "secret",
+		PrivateKey:   "private-key",
+		Logo:         "logo.png",
+	}
+
+	appID, err := store.Create(ctx, app)
+	require.NoError(t, err)
+
+	installationIDs := []int{1, 2, 3}
+	err = store.BulkInstall(ctx, appID, installationIDs)
+	require.NoError(t, err)
+
+	installations, err := store.GetInstallations(ctx, appID)
+	require.NoError(t, err)
+
+	require.Len(t, installations, 3, "expected 3 installations, got %d", len(installations))
+
+	err = store.BulkRemoveInstallations(ctx, appID, installationIDs)
+	require.NoError(t, err)
+
+	installations, err = store.GetInstallations(ctx, appID)
+	require.NoError(t, err)
+
+	require.Len(t, installations, 0, "expected 0 installations, got %d", len(installations))
+}

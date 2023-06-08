@@ -104,7 +104,7 @@ func (g *githubAppInstallationWorker) Handle(ctx context.Context) error {
 		}
 
 		if len(toBeDeleted) > 0 {
-			err = store.BulkRemove(ctx, app.ID, toBeDeleted)
+			err = store.BulkRemoveInstallations(ctx, app.ID, toBeDeleted)
 			if err != nil {
 				g.logger.Error("failed to revoke invalid installations", log.Error(err), log.Int("id", app.ID))
 				errs = errors.Append(errs, err)

@@ -92,7 +92,7 @@ func TestGitHubInstallationWorker(t *testing.T) {
 		fmt.Println("bulk install: app.ID: ", i1, " installations.ID: ", i2)
 		return nil
 	})
-	ghStore.BulkRemoveFunc.SetDefaultHook(func(ctx context.Context, i1 int, i2 []int) error {
+	ghStore.BulkRemoveInstallationsFunc.SetDefaultHook(func(ctx context.Context, i1 int, i2 []int) error {
 		fmt.Println("bulk remove: app.ID: ", i1, " installations.ID: ", i2)
 		return nil
 	})
@@ -148,7 +148,7 @@ func TestGitHubInstallationWorker(t *testing.T) {
 	}
 
 	// We bulk remove on3 installation for GitHub app with ID 3
-	if len(ghStore.BulkRemoveFunc.History()) != 1 {
-		t.Errorf("expected 1 call to BulkRemove, got %d", len(ghStore.BulkRemoveFunc.History()))
+	if len(ghStore.BulkRemoveInstallationsFunc.History()) != 1 {
+		t.Errorf("expected 1 call to BulkRemove, got %d", len(ghStore.BulkRemoveInstallationsFunc.History()))
 	}
 }

@@ -23,9 +23,9 @@ type MockGitHubAppsStore struct {
 	// BulkInstallFunc is an instance of a mock function object controlling
 	// the behavior of the method BulkInstall.
 	BulkInstallFunc *GitHubAppsStoreBulkInstallFunc
-	// BulkRemoveFunc is an instance of a mock function object controlling
-	// the behavior of the method BulkRemove.
-	BulkRemoveFunc *GitHubAppsStoreBulkRemoveFunc
+	// BulkRemoveInstallationsFunc is an instance of a mock function object
+	// controlling the behavior of the method BulkRemoveInstallations.
+	BulkRemoveInstallationsFunc *GitHubAppsStoreBulkRemoveInstallationsFunc
 	// CreateFunc is an instance of a mock function object controlling the
 	// behavior of the method Create.
 	CreateFunc *GitHubAppsStoreCreateFunc
@@ -74,7 +74,7 @@ func NewMockGitHubAppsStore() *MockGitHubAppsStore {
 				return
 			},
 		},
-		BulkRemoveFunc: &GitHubAppsStoreBulkRemoveFunc{
+		BulkRemoveInstallationsFunc: &GitHubAppsStoreBulkRemoveInstallationsFunc{
 			defaultHook: func(context.Context, int, []int) (r0 error) {
 				return
 			},
@@ -151,9 +151,9 @@ func NewStrictMockGitHubAppsStore() *MockGitHubAppsStore {
 				panic("unexpected invocation of MockGitHubAppsStore.BulkInstall")
 			},
 		},
-		BulkRemoveFunc: &GitHubAppsStoreBulkRemoveFunc{
+		BulkRemoveInstallationsFunc: &GitHubAppsStoreBulkRemoveInstallationsFunc{
 			defaultHook: func(context.Context, int, []int) error {
-				panic("unexpected invocation of MockGitHubAppsStore.BulkRemove")
+				panic("unexpected invocation of MockGitHubAppsStore.BulkRemoveInstallations")
 			},
 		},
 		CreateFunc: &GitHubAppsStoreCreateFunc{
@@ -227,8 +227,8 @@ func NewMockGitHubAppsStoreFrom(i GitHubAppsStore) *MockGitHubAppsStore {
 		BulkInstallFunc: &GitHubAppsStoreBulkInstallFunc{
 			defaultHook: i.BulkInstall,
 		},
-		BulkRemoveFunc: &GitHubAppsStoreBulkRemoveFunc{
-			defaultHook: i.BulkRemove,
+		BulkRemoveInstallationsFunc: &GitHubAppsStoreBulkRemoveInstallationsFunc{
+			defaultHook: i.BulkRemoveInstallations,
 		},
 		CreateFunc: &GitHubAppsStoreCreateFunc{
 			defaultHook: i.Create,
@@ -377,35 +377,37 @@ func (c GitHubAppsStoreBulkInstallFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// GitHubAppsStoreBulkRemoveFunc describes the behavior when the BulkRemove
-// method of the parent MockGitHubAppsStore instance is invoked.
-type GitHubAppsStoreBulkRemoveFunc struct {
+// GitHubAppsStoreBulkRemoveInstallationsFunc describes the behavior when
+// the BulkRemoveInstallations method of the parent MockGitHubAppsStore
+// instance is invoked.
+type GitHubAppsStoreBulkRemoveInstallationsFunc struct {
 	defaultHook func(context.Context, int, []int) error
 	hooks       []func(context.Context, int, []int) error
-	history     []GitHubAppsStoreBulkRemoveFuncCall
+	history     []GitHubAppsStoreBulkRemoveInstallationsFuncCall
 	mutex       sync.Mutex
 }
 
-// BulkRemove delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockGitHubAppsStore) BulkRemove(v0 context.Context, v1 int, v2 []int) error {
-	r0 := m.BulkRemoveFunc.nextHook()(v0, v1, v2)
-	m.BulkRemoveFunc.appendCall(GitHubAppsStoreBulkRemoveFuncCall{v0, v1, v2, r0})
+// BulkRemoveInstallations delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockGitHubAppsStore) BulkRemoveInstallations(v0 context.Context, v1 int, v2 []int) error {
+	r0 := m.BulkRemoveInstallationsFunc.nextHook()(v0, v1, v2)
+	m.BulkRemoveInstallationsFunc.appendCall(GitHubAppsStoreBulkRemoveInstallationsFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the BulkRemove method of
-// the parent MockGitHubAppsStore instance is invoked and the hook queue is
-// empty.
-func (f *GitHubAppsStoreBulkRemoveFunc) SetDefaultHook(hook func(context.Context, int, []int) error) {
+// SetDefaultHook sets function that is called when the
+// BulkRemoveInstallations method of the parent MockGitHubAppsStore instance
+// is invoked and the hook queue is empty.
+func (f *GitHubAppsStoreBulkRemoveInstallationsFunc) SetDefaultHook(hook func(context.Context, int, []int) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// BulkRemove method of the parent MockGitHubAppsStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitHubAppsStoreBulkRemoveFunc) PushHook(hook func(context.Context, int, []int) error) {
+// BulkRemoveInstallations method of the parent MockGitHubAppsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitHubAppsStoreBulkRemoveInstallationsFunc) PushHook(hook func(context.Context, int, []int) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -413,20 +415,20 @@ func (f *GitHubAppsStoreBulkRemoveFunc) PushHook(hook func(context.Context, int,
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitHubAppsStoreBulkRemoveFunc) SetDefaultReturn(r0 error) {
+func (f *GitHubAppsStoreBulkRemoveInstallationsFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, int, []int) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitHubAppsStoreBulkRemoveFunc) PushReturn(r0 error) {
+func (f *GitHubAppsStoreBulkRemoveInstallationsFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, int, []int) error {
 		return r0
 	})
 }
 
-func (f *GitHubAppsStoreBulkRemoveFunc) nextHook() func(context.Context, int, []int) error {
+func (f *GitHubAppsStoreBulkRemoveInstallationsFunc) nextHook() func(context.Context, int, []int) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -439,26 +441,28 @@ func (f *GitHubAppsStoreBulkRemoveFunc) nextHook() func(context.Context, int, []
 	return hook
 }
 
-func (f *GitHubAppsStoreBulkRemoveFunc) appendCall(r0 GitHubAppsStoreBulkRemoveFuncCall) {
+func (f *GitHubAppsStoreBulkRemoveInstallationsFunc) appendCall(r0 GitHubAppsStoreBulkRemoveInstallationsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GitHubAppsStoreBulkRemoveFuncCall objects
-// describing the invocations of this function.
-func (f *GitHubAppsStoreBulkRemoveFunc) History() []GitHubAppsStoreBulkRemoveFuncCall {
+// History returns a sequence of
+// GitHubAppsStoreBulkRemoveInstallationsFuncCall objects describing the
+// invocations of this function.
+func (f *GitHubAppsStoreBulkRemoveInstallationsFunc) History() []GitHubAppsStoreBulkRemoveInstallationsFuncCall {
 	f.mutex.Lock()
-	history := make([]GitHubAppsStoreBulkRemoveFuncCall, len(f.history))
+	history := make([]GitHubAppsStoreBulkRemoveInstallationsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitHubAppsStoreBulkRemoveFuncCall is an object that describes an
-// invocation of method BulkRemove on an instance of MockGitHubAppsStore.
-type GitHubAppsStoreBulkRemoveFuncCall struct {
+// GitHubAppsStoreBulkRemoveInstallationsFuncCall is an object that
+// describes an invocation of method BulkRemoveInstallations on an instance
+// of MockGitHubAppsStore.
+type GitHubAppsStoreBulkRemoveInstallationsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -475,13 +479,13 @@ type GitHubAppsStoreBulkRemoveFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitHubAppsStoreBulkRemoveFuncCall) Args() []interface{} {
+func (c GitHubAppsStoreBulkRemoveInstallationsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitHubAppsStoreBulkRemoveFuncCall) Results() []interface{} {
+func (c GitHubAppsStoreBulkRemoveInstallationsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
