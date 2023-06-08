@@ -749,15 +749,17 @@ type GerritConfig struct {
 // CreateCommitFromPatchResponse is the response type returned after creating
 // a commit from a patch
 type CreateCommitFromPatchResponse struct {
-	// ChangelistId is the numeric ID of the changelist that is shelved for the patch
-	// only supplied for Perforce code hosts, so it's a pointer so that it can be
-	// optional/nil
-	ChangelistId *uint64
 	// Rev is the tag that the staging object can be found at
 	Rev string
 
 	// Error is populated only on error
 	Error *CreateCommitFromPatchError
+
+	// ChangelistId is the numeric ID of the changelist that is shelved for the patch.
+	// only supplied for Perforce code hosts.
+	// it's a string because it's optional, but usng a scalar pointer is not allowed in protobuf
+	// so blank string means not provided
+	ChangelistId string
 }
 
 func (r *CreateCommitFromPatchResponse) ToProto() *proto.CreateCommitFromPatchBinaryResponse {
@@ -768,8 +770,9 @@ func (r *CreateCommitFromPatchResponse) ToProto() *proto.CreateCommitFromPatchBi
 		err = nil
 	}
 	return &proto.CreateCommitFromPatchBinaryResponse{
-		Rev:   r.Rev,
-		Error: err,
+		Rev:          r.Rev,
+		Error:        err,
+		ChangelistId: r.ChangelistId,
 	}
 }
 
@@ -781,6 +784,7 @@ func (r *CreateCommitFromPatchResponse) FromProto(p *proto.CreateCommitFromPatch
 		r.Error.FromProto(p.GetError())
 	}
 	r.Rev = p.GetRev()
+	r.ChangelistId = p.ChangelistId
 }
 
 // SetError adds the supplied error related details to e.

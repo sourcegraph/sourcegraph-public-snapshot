@@ -296,13 +296,8 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 				resp.SetError(repo, "", "", err)
 				return http.StatusInternalServerError, resp
 			}
-			ncid, err := strconv.ParseUint(cid, 10, 64)
-			if err != nil {
-				resp.SetError(repo, "", "", errors.Wrap(err, "invalid changelist id: "+cid))
-				return http.StatusInternalServerError, resp
-			}
 
-			resp.ChangelistId = &ncid
+			resp.ChangelistId = cid
 		} else {
 			cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL.String(), fmt.Sprintf("%s:%s", cmtHash, ref))
 			cmd.Dir = repoGitDir
@@ -587,7 +582,17 @@ View:	%s... //%s/...
 		logger.Error("p4 shelve output does not contain a changelist id", log.String("output", string(out)))
 		return "", errors.New("gitserver: p4 shelve output does not contain a changelist id")
 	}
-	return matches[1], nil
+
+	// make sure the changelist id is a non-negative number
+	cid := matches[1]
+	_, err = strconv.ParseUint(cid, 10, 64)
+	if err != nil {
+		return "", errors.Wrap(err, "invalid changelist id:"+cid)
+	}
+
+	// return it as a string - it'll be returned as a string to the front end in lieu of an int pointer
+	// because protobuf doesn't do scalar pointers
+	return cid, nil
 }
 
 func cleanUpTmpRepo(logger log.Logger, path string) {

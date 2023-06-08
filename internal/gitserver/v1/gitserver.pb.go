@@ -655,7 +655,7 @@ type CreateCommitFromPatchError struct {
 	RepositoryName string `protobuf:"bytes,1,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
 	// internal_error is the error that occurred on the server
 	InternalError string `protobuf:"bytes,2,opt,name=internal_error,json=internalError,proto3" json:"internal_error,omitempty"`
-	// command is th git command that was attempted
+	// command is the git command that was attempted
 	Command string `protobuf:"bytes,3,opt,name=command,proto3" json:"command,omitempty"`
 	// combined_output is the combined stderr and stdout from running the command
 	CombinedOutput string `protobuf:"bytes,4,opt,name=combined_output,json=combinedOutput,proto3" json:"combined_output,omitempty"`
@@ -732,6 +732,8 @@ type CreateCommitFromPatchBinaryResponse struct {
 	Rev string `protobuf:"bytes,1,opt,name=rev,proto3" json:"rev,omitempty"`
 	// error is populated only on error
 	Error *CreateCommitFromPatchError `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	// changelistid is the Perforce changelist id
+	ChangelistId string `protobuf:"bytes,3,opt,name=changelist_id,json=changelistId,proto3" json:"changelist_id,omitempty"`
 }
 
 func (x *CreateCommitFromPatchBinaryResponse) Reset() {
@@ -778,6 +780,13 @@ func (x *CreateCommitFromPatchBinaryResponse) GetError() *CreateCommitFromPatchE
 		return x.Error
 	}
 	return nil
+}
+
+func (x *CreateCommitFromPatchBinaryResponse) GetChangelistId() string {
+	if x != nil {
+		return x.ChangelistId
+	}
+	return ""
 }
 
 type ExecRequest struct {
