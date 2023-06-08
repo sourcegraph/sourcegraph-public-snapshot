@@ -145,9 +145,7 @@ func Test_licenseChecker(t *testing.T) {
 			var body struct {
 				SiteID string `json:"siteID"`
 			}
-			resBody, err := io.ReadAll(doer.Request.Body)
-			require.NoError(t, err)
-			json.Unmarshal([]byte(resBody), &body)
+			err = json.NewDecoder(doer.Request.Body).Decode(&body)
 			require.Equal(t, siteID, body.SiteID)
 		})
 	}
