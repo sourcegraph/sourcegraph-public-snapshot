@@ -3,6 +3,7 @@ package init
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -162,15 +163,12 @@ func Init(
 			db: db,
 		})
 	})
-
 	if envvar.SourcegraphDotComMode() {
 		goroutine.Go(func() {
 			productsubscription.StartCheckForUpcomingLicenseExpirations(logger, db)
 		})
 	} else {
-		goroutine.Go(func() {
-			licensing.StartLicenseCheck(logger, db.GlobalState())
-		})
+		licensing.StartLicenseCheck(context.Background(), 12*time.Hour, logger, db.GlobalState())
 	}
 
 	return nil
