@@ -48,6 +48,7 @@ func makeUpstreamHandler[ReqT any](
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
+	rateLimitAlerter func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32),
 	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
 
 	// upstreamName is the name of the upstream provider. It MUST match the
@@ -80,6 +81,7 @@ func makeUpstreamHandler[ReqT any](
 		baseLogger,
 		eventLogger,
 		limiter.NewPrefixRedisStore("rate_limit:", rs),
+		rateLimitAlerter,
 		concurrencyLimitConfig,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			act := actor.FromContext(r.Context())

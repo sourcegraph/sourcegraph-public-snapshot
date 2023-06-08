@@ -46,3 +46,14 @@ type ActorConcurrencyLimitConfig struct {
 	// Interval is the time interval of the limit bucket.
 	Interval time.Duration
 }
+
+// ActorRateLimitAlertConfig is the configuration for the rate limit alert of an
+// actor.
+type ActorRateLimitAlertConfig struct {
+	// Threshold is the percentage of the rate limit usage to trigger an alert.
+	Threshold float32
+	// Interval is the minimum time interval between each alert for the same actor.
+	Interval time.Duration
+	// SlackWebhookURL is the URL of the Slack webhook to send the alerts to.
+	SlackWebhookURL string
+}

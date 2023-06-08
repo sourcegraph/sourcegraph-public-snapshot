@@ -15,7 +15,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.RedisStore, concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig, next http.Handler) http.Handler {
+func rateLimit(
+	baseLogger log.Logger,
+	eventLogger events.Logger,
+	cache limiter.RedisStore,
+	rateLimitAlerter func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32),
+	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
+	next http.Handler,
+) http.Handler {
 	baseLogger = baseLogger.Scoped("rateLimit", "rate limit handler")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -28,7 +35,8 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 			return
 		}
 
-		commit, err := l.TryAcquire(r.Context())
+		commit, usagePercentage, err := l.TryAcquire(r.Context())
+		go rateLimitAlerter(act, codygateway.FeatureEmbeddings, usagePercentage)
 		if err != nil {
 			if loggerErr := eventLogger.LogEvent(
 				r.Context(),

@@ -20,6 +20,7 @@ func rateLimit(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	cache limiter.RedisStore,
+	rateLimitAlerter func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32),
 	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
 	next http.Handler,
 ) http.Handler {
@@ -41,7 +42,8 @@ func rateLimit(
 			return
 		}
 
-		commit, err := l.TryAcquire(r.Context())
+		commit, usagePercentage, err := l.TryAcquire(r.Context())
+		go rateLimitAlerter(act, feature, usagePercentage)
 		if err != nil {
 			limitedCause := "quota"
 			var concurrencyLimitExceeded actor.ErrConcurrencyLimitExceeded

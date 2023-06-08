@@ -2,19 +2,23 @@ package shared
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/redigo"
 	"github.com/gomodule/redigo/redis"
+	"github.com/slack-go/slack"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
@@ -100,6 +104,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
 	handler := httpapi.NewHandler(obctx.Logger, eventLogger, rs, authr, &httpapi.Config{
+		RateLimitAlerter:        newRateLimitAlerter(obctx.Logger, redispool.Cache, config.Dotcom.URL, config.ActorRateLimitAlert),
 		ConcurrencyLimit:        config.ActorConcurrencyLimit,
 		AnthropicAccessToken:    config.Anthropic.AccessToken,
 		AnthropicAllowedModels:  config.Anthropic.AllowedModels,
@@ -211,4 +216,73 @@ func (s *redisStore) TTL(key string) (int, error) {
 
 func (s *redisStore) Expire(key string, ttlSeconds int) error {
 	return s.store.Expire(key, ttlSeconds)
+}
+
+func newRateLimitAlerter(logger log.Logger, rs redispool.KeyValue, dotcomAPIURL string, config codygateway.ActorRateLimitAlertConfig) func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32) {
+	// Ignore the error because it's already validated in the config.
+	dotcomURL, _ := url.Parse(dotcomAPIURL)
+	dotcomURL.Path = "/site-admin/dotcom/product/subscriptions/"
+
+	logger = logger.Scoped("usageRateLimitAlert", "alerts for usage rate limit approaching threshold")
+	return func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32) {
+		// We only want informational alerts for product subscriptions (i.e. customers).
+		if codygateway.ActorSource(actor.Source.Name()) != codygateway.ActorSourceProductSubscription ||
+			usagePercentage < config.Threshold {
+			return
+		}
+
+		// NOTE: Despite multiple alerters may be able to grab the value at the same
+		// time, only one of them will get the real original value that can possibly
+		// indicate the cooldown period has passed. All other alerters will get the
+		// near-current time value that contenders just set, which is almost guaranteed
+		// to be within the cooldown period (as long as the cooldown period is more than
+		// few hundred milliseconds).
+		key := fmt.Sprintf("rate_limit:%s:alert:%s", feature, actor.ID)
+		t, err := rs.GetSet(key, time.Now().Format(time.RFC3339)).String()
+		if err != nil && err != redis.ErrNil {
+			// We choose to return instead of continuing because we don't want to spam the
+			// Slack channel when somehow Redis goes down.
+			logger.Error("failed to get last alerted time", log.Error(err))
+			return
+		} else if err == nil {
+			lastAlerted, err := time.Parse(time.RFC3339, t)
+			if err == nil && !time.Now().After(lastAlerted.Add(config.Interval)) {
+				// Still in the cooldown period and restore the original value
+				_ = rs.Set(key, t)
+				return
+			}
+		}
+
+		if config.SlackWebhookURL == "" {
+			logger.Debug("new alert",
+				log.Object("actor",
+					log.String("id", actor.ID),
+					log.String("source", actor.Source.Name()),
+				),
+				log.String("feature", string(feature)),
+				log.Int("usagePercentage", int(usagePercentage*100)),
+			)
+			return
+		}
+
+		text := fmt.Sprintf("The actor <%[1]s%[2]s|%[2]s> from %q has exceeded *%d%%* of its rate limit quota for `%s`.",
+			dotcomURL.String(), actor.ID, actor.Source.Name(), int(usagePercentage*100), feature)
+		err = slack.PostWebhook(
+			config.SlackWebhookURL,
+			&slack.WebhookMessage{
+				Blocks: &slack.Blocks{
+					BlockSet: []slack.Block{
+						slack.NewSectionBlock(
+							slack.NewTextBlockObject("mrkdwn", text, false, false),
+							nil,
+							nil,
+						),
+					},
+				},
+			},
+		)
+		if err != nil {
+			logger.Error("failed to send Slack webhook", log.Error(err))
+		}
+	}
 }

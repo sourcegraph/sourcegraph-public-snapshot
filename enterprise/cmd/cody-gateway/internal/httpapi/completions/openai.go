@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
@@ -20,6 +21,7 @@ func NewOpenAIHandler(
 	logger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
+	rateLimitAlerter func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32),
 	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
 	accessToken string,
 	orgID string,
@@ -29,6 +31,7 @@ func NewOpenAIHandler(
 		logger,
 		eventLogger,
 		rs,
+		rateLimitAlerter,
 		concurrencyLimitConfig,
 		openai.ProviderName,
 		openAIURL,

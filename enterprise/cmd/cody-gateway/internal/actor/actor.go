@@ -169,8 +169,8 @@ type concurrencyLimiter struct {
 	nowFunc        func() time.Time
 }
 
-func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func(int) error, error) {
-	commit, err := (limiter.StaticLimiter{
+func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func(int) error, float32, error) {
+	commit, _, err := (limiter.StaticLimiter{
 		Identifier: l.actor.ID,
 		Redis:      l.redis,
 		Limit:      l.rateLimit.Limit,
@@ -183,25 +183,25 @@ func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func(int) error, e
 		if errors.As(err, &limiter.NoAccessError{}) || errors.As(err, &limiter.RateLimitExceededError{}) {
 			retryAfter, err := limiter.RetryAfterWithTTL(l.redis, l.nowFunc, l.actor.ID)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to get TTL for rate limit counter")
+				return nil, 0, errors.Wrap(err, "failed to get TTL for rate limit counter")
 			}
-			return nil, ErrConcurrencyLimitExceeded{
+			return nil, 1, ErrConcurrencyLimitExceeded{
 				feature:    l.feature,
 				limit:      l.rateLimit.Limit,
 				retryAfter: retryAfter,
 			}
 		}
-		return nil, errors.Wrap(err, "check concurrent limit")
+		return nil, 0, errors.Wrap(err, "check concurrent limit")
 	}
 	if err = commit(1); err != nil {
 		l.logger.Error("failed to commit concurrency limit consumption", log.Error(err))
 	}
 
-	featureCommit, err := l.featureLimiter.TryAcquire(ctx)
+	featureCommit, usagePercentage, err := l.featureLimiter.TryAcquire(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "check feature rate limit")
+		return nil, 0, errors.Wrap(err, "check feature rate limit")
 	}
-	return featureCommit, nil
+	return featureCommit, usagePercentage, nil
 }
 
 type ErrConcurrencyLimitExceeded struct {
@@ -229,8 +229,8 @@ type updateOnFailureLimiter struct {
 	*Actor
 }
 
-func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func(int) error, error) {
-	commit, err := (limiter.StaticLimiter{
+func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func(int) error, float32, error) {
+	commit, usagePercentage, err := (limiter.StaticLimiter{
 		Identifier: u.ID,
 		Redis:      u.Redis,
 		Limit:      u.RateLimit.Limit,
@@ -239,12 +239,10 @@ func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func(int) error
 		UpdateRateLimitTTL: u.LastUpdated != nil && time.Since(*u.LastUpdated) < 5*time.Minute,
 		NowFunc:            time.Now,
 	}).TryAcquire(ctx)
-
 	if errors.As(err, &limiter.NoAccessError{}) || errors.As(err, &limiter.RateLimitExceededError{}) {
 		u.Actor.Update(ctx) // TODO: run this in goroutine+background context maybe?
 	}
-
-	return commit, err
+	return commit, usagePercentage, err
 }
 
 // ErrAccessTokenDenied is returned when the access token is denied due to the

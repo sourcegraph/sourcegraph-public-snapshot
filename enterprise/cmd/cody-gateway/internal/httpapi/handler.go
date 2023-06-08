@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/completions"
@@ -16,6 +16,7 @@ import (
 )
 
 type Config struct {
+	RateLimitAlerter        func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32)
 	ConcurrencyLimit        codygateway.ActorConcurrencyLimitConfig
 	AnthropicAccessToken    string
 	AnthropicAllowedModels  []string
@@ -34,14 +35,31 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 	if config.AnthropicAccessToken != "" {
 		v1router.Path("/completions/anthropic").Methods(http.MethodPost).Handler(
 			authr.Middleware(
-				completions.NewAnthropicHandler(logger, eventLogger, rs, config.ConcurrencyLimit, config.AnthropicAccessToken, config.AnthropicAllowedModels),
+				completions.NewAnthropicHandler(
+					logger,
+					eventLogger,
+					rs,
+					config.RateLimitAlerter,
+					config.ConcurrencyLimit,
+					config.AnthropicAccessToken,
+					config.AnthropicAllowedModels,
+				),
 			),
 		)
 	}
 	if config.OpenAIAccessToken != "" {
 		v1router.Path("/completions/openai").Methods(http.MethodPost).Handler(
 			authr.Middleware(
-				completions.NewOpenAIHandler(logger, eventLogger, rs, config.ConcurrencyLimit, config.OpenAIAccessToken, config.OpenAIOrgID, config.OpenAIAllowedModels),
+				completions.NewOpenAIHandler(
+					logger,
+					eventLogger,
+					rs,
+					config.RateLimitAlerter,
+					config.ConcurrencyLimit,
+					config.OpenAIAccessToken,
+					config.OpenAIOrgID,
+					config.OpenAIAllowedModels,
+				),
 			),
 		)
 
@@ -57,6 +75,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 					logger,
 					eventLogger,
 					rs,
+					config.RateLimitAlerter,
 					config.ConcurrencyLimit,
 					embeddings.ModelFactoryMap{
 						embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(config.OpenAIAccessToken),
