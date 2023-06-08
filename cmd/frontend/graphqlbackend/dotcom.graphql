@@ -121,6 +121,14 @@ type DotcomQuery {
         """
         productSubscriptionID: ID
     ): ProductLicenseConnection!
+
+    """
+    A dotcom user for purposes of connecting to the Cody Gateway.
+    Only Sourcegraph.com site admins or service accounts may perform this query.
+    Token is a Cody Gateway token, not a Sourcegraph instance access token.
+    FOR INTERNAL USE ONLY.
+    """
+    codyGatewayDotcomUserByToken(token: String!): CodyGatewayDotcomUser
 }
 
 extend type Mutation {
@@ -210,9 +218,21 @@ type ProductLicense implements Node {
     """
     licenseKey: String!
     """
+    Site ID of the instance that uses the license.
+    """
+    siteID: String
+    """
     The date when this product license was created.
     """
     createdAt: DateTime!
+    """
+    The date when this product license was revoked.
+    """
+    revokedAt: DateTime
+    """
+    The version of the license.
+    """
+    version: Int!
 }
 
 """
@@ -341,6 +361,10 @@ type CodyGatewayAccess {
     Rate limit for code completions access, or null if not enabled.
     """
     codeCompletionsRateLimit: CodyGatewayRateLimit
+    """
+    Rate limit for embedding text chunks, or null if not enabled.
+    """
+    embeddingsRateLimit: CodyGatewayRateLimit
 }
 
 """
@@ -372,11 +396,21 @@ type CodyGatewayRateLimit {
     The models that are allowed for this rate limit bucket.
     Usually, customers will have two separate rate limits, one
     for chat completions and one for code completions. A usual
-    config could include [{claude-v1, claude-v1.3},{claude-instant-v1}].
+    config could include:
+
+        chatCompletionsRateLimit: {
+            allowedModels: [anthropic/claude-v1, anthropic/claude-v1.3]
+        },
+        codeCompletionsRateLimit: {
+            allowedModels: [anthropic/claude-instant-v1]
+        }
+
+    In general, the model names are of the format "$PROVIDER/$MODEL_NAME".
     """
     allowedModels: [String!]!
     """
     Requests per time interval.
+    TODO: This needs to become BigInt, the limits for embeddings can exceed int32.
     """
     limit: Int!
     """
@@ -441,4 +475,35 @@ input UpdateCodyGatewayAccessInput {
     for this subscription.
     """
     codeCompletionsAllowedModels: [String!]
+    """
+    Override default requests per time interval for embeddings generation.
+
+    Set to 0 to remove the override.
+    """
+    embeddingsRateLimit: Int
+    """
+    Override default interval for rate limiting for embeddings generation.
+
+    Set to 0 to remove the override.
+    """
+    embeddingsRateLimitIntervalSeconds: Int
+    """
+    Override the set of allowed models for embeddings generation for this subscription.
+    """
+    embeddingsAllowedModels: [String!]
+}
+
+"""
+A dotcom user allowed to access the Cody Gateway
+FOR INTERNAL USE ONLY.
+"""
+type CodyGatewayDotcomUser {
+    """
+    The user name of the user
+    """
+    username: String!
+    """
+    Cody Gateway access granted to this user. Properties may be inferred from dotcom site config, or be defined in overrides on the user.
+    """
+    codyGatewayAccess: CodyGatewayAccess!
 }

@@ -50,14 +50,26 @@ type SearchClient interface {
 	JobClients() job.RuntimeClients
 }
 
-func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map, searcherGRPCConnectionCache *defaults.ConnectionCache, enterpriseJobs jobutil.EnterpriseJobs) SearchClient {
+// New will create a search client with a zoekt and searcher backed by conf.
+func New(logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs) SearchClient {
 	return &searchClient{
 		logger:                      logger,
 		db:                          db,
-		zoekt:                       zoektStreamer,
-		searcherURLs:                searcherURLs,
-		searcherGRPCConnectionCache: searcherGRPCConnectionCache,
+		zoekt:                       search.Indexed(),
+		searcherURLs:                search.SearcherURLs(),
+		searcherGRPCConnectionCache: search.SearcherGRPCConnectionCache(),
 		enterpriseJobs:              enterpriseJobs,
+	}
+}
+
+// MockedZoekt will return a search client for tests which uses the mocked
+// zoektStreamer.
+func MockedZoekt(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer) SearchClient {
+	return &searchClient{
+		logger:         logger,
+		db:             db,
+		zoekt:          zoektStreamer,
+		enterpriseJobs: jobutil.NewUnimplementedEnterpriseJobs(),
 	}
 }
 
@@ -292,7 +304,7 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
 		CodeOwnershipSearch:     flagSet.GetBoolOr("search-ownership", false),
 		HybridSearch:            flagSet.GetBoolOr("search-hybrid", true), // can remove flag in 4.5
-		Ranking:                 flagSet.GetBoolOr("search-ranking", false),
+		Ranking:                 flagSet.GetBoolOr("search-ranking", true),
 		Debug:                   flagSet.GetBoolOr("search-debug", false),
 	}
 }

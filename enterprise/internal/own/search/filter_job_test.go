@@ -395,6 +395,9 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			assignedOwnersStore := database.NewMockAssignedOwnersStore()
 			assignedOwnersStore.ListAssignedOwnersForRepoFunc.SetDefaultReturn(nil, nil)
 			db.AssignedOwnersFunc.SetDefaultReturn(assignedOwnersStore)
+			assignedTeamsStore := database.NewMockAssignedTeamsStore()
+			assignedTeamsStore.ListAssignedTeamsForRepoFunc.SetDefaultReturn(nil, nil)
+			db.AssignedTeamsFunc.SetDefaultReturn(assignedTeamsStore)
 			userExternalAccountsStore := database.NewMockUserExternalAccountsStore()
 			userExternalAccountsStore.ListFunc.SetDefaultReturn(nil, nil)
 			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
@@ -408,14 +411,12 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 
 			var includeBags []own.Bag
 			for _, o := range tt.args.includeOwners {
-				b, err := own.ByTextReference(ctx, db, o)
-				require.NoError(t, err)
+				b := own.ByTextReference(ctx, db, o)
 				includeBags = append(includeBags, b)
 			}
 			var excludeBags []own.Bag
 			for _, o := range tt.args.excludeOwners {
-				b, err := own.ByTextReference(ctx, db, o)
-				require.NoError(t, err)
+				b := own.ByTextReference(ctx, db, o)
 				excludeBags = append(excludeBags, b)
 			}
 			matches, _ := applyCodeOwnershipFiltering(
@@ -426,7 +427,6 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 				excludeBags,
 				tt.args.excludeOwners,
 				tt.args.matches)
-			//require.NoError(t, err)
 			tt.want.Equal(t, matches)
 		})
 	}

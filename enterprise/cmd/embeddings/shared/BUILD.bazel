@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 
 go_library(
@@ -46,6 +47,8 @@ go_library(
         "//internal/uploadstore",
         "//lib/errors",
         "@com_github_hashicorp_golang_lru_v2//:golang-lru",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
         "@com_github_weaviate_weaviate//entities/models",
         "@com_github_weaviate_weaviate_go_client_v4//weaviate",

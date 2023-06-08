@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "zoekt",
@@ -18,6 +19,7 @@ go_library(
         "//internal/api",
         "//internal/conf",
         "//internal/database",
+        "//internal/featureflag",
         "//internal/httpcli",
         "//internal/search",
         "//internal/search/backend",

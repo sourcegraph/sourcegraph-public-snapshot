@@ -136,7 +136,6 @@ func marshalChangeset(ctx context.Context, client httpcli.Doer, id graphql.ID) (
 	}
 
 	node := res.Data.Node
-
 	var batchChangeIDs []graphql.ID
 	for _, bc := range node.BatchChanges.Nodes {
 		batchChangeIDs = append(batchChangeIDs, bc.ID)

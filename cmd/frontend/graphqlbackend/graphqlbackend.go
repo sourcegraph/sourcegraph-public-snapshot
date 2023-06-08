@@ -168,7 +168,7 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 }
 
 func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName string, _ bool, _ map[string]any) (context.Context, func(*gqlerrors.QueryError)) {
-	// We don't call into t.OpenTracingTracer.TraceField since it generates too many spans which is really hard to read.
+	// We don't call into t.tracer.TraceField since it generates too many spans which is really hard to read.
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
 		isErrStr := strconv.FormatBool(err != nil)
@@ -560,6 +560,12 @@ func NewSchema(
 		schemas = append(schemas, embeddingsSchema)
 	}
 
+	if contextResolver := optional.CodyContextResolver; contextResolver != nil {
+		EnterpriseResolvers.contextResolver = contextResolver
+		resolver.CodyContextResolver = contextResolver
+		schemas = append(schemas, codyContextSchema)
+	}
+
 	if rbacResolver := optional.RBACResolver; rbacResolver != nil {
 		EnterpriseResolvers.rbacResolver = rbacResolver
 		resolver.RBACResolver = rbacResolver
@@ -632,6 +638,7 @@ type OptionalResolver struct {
 	CodeMonitorsResolver
 	CompletionsResolver
 	ComputeResolver
+	CodyContextResolver
 	DotcomRootResolver
 	EmbeddingsResolver
 	GitHubAppsResolver
@@ -742,9 +749,11 @@ var EnterpriseResolvers = struct {
 	codeMonitorsResolver        CodeMonitorsResolver
 	completionsResolver         CompletionsResolver
 	computeResolver             ComputeResolver
+	contextResolver             CodyContextResolver
 	dotcomResolver              DotcomRootResolver
 	embeddingsResolver          EmbeddingsResolver
 	gitHubAppsResolver          GitHubAppsResolver
+	insightsAggregationResolver InsightsAggregationResolver
 	insightsResolver            InsightsResolver
 	licenseResolver             LicenseResolver
 	notebooksResolver           NotebooksResolver
@@ -752,7 +761,6 @@ var EnterpriseResolvers = struct {
 	rbacResolver                RBACResolver
 	searchContextsResolver      SearchContextsResolver
 	webhooksResolver            WebhooksResolver
-	insightsAggregationResolver InsightsAggregationResolver
 }{}
 
 // Root returns a new schemaResolver.

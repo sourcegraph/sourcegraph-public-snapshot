@@ -62,6 +62,15 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.Works(err)
 		require.Equal(kv.Get("incr-set"), 6)
 		require.Equal(kv.Get("incr-unset"), 1)
+
+		// Incrby
+		require.Works(kv.Set("incrby-set", 5))
+		_, err = kv.Incrby("incrby-set", 2)
+		require.Works(err)
+		_, err = kv.Incrby("incrby-unset", 2)
+		require.Works(err)
+		require.Equal(kv.Get("incrby-set"), 7)
+		require.Equal(kv.Get("incrby-unset"), 2)
 	})
 
 	t.Run("hash", func(t *testing.T) {
@@ -87,6 +96,16 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 			"simple": "1",
 			"horse":  "graph",
 		})
+
+		// hdel and ensure it no longer exists
+		require.Equal(kv.HDel("hash", "horse"), 1)
+		require.Equal(kv.HGet("hash", "horse"), redis.ErrNil)
+		// Nonexistent key returns 0
+		require.Equal(kv.HGet("doesnotexist", "neitherdoesthis"), redis.ErrNil)
+		require.Equal(kv.HDel("doesnotexist", "neitherdoesthis"), 0)
+		// Existing key but nonexistent field returns 0
+		require.Equal(kv.HGet("hash", "doesnotexist"), redis.ErrNil)
+		require.Equal(kv.HDel("hash", "doesnotexist"), 0)
 
 		// Redis returns nil on unset fields
 		require.Equal(kv.HGet("hash", "hi"), redis.ErrNil)

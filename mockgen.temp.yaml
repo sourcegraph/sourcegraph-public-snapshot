@@ -39,6 +39,7 @@
     - AccessRequestStore
     - AccessTokenStore
     - AssignedOwnersStore
+    - AssignedTeamsStore
     - AuthzStore
     - BitbucketProjectPermissionsStore
     - ConfStore
@@ -56,6 +57,7 @@
     - OutboundWebhookStore
     - OutboundWebhookJobStore
     - OutboundWebhookLogStore
+    - OwnershipStatsStore
     - PhabricatorStore
     - RepoCommitsChangelistsStore
     - RepoStore

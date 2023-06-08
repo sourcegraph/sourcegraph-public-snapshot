@@ -84,6 +84,7 @@ const response: FetchOwnershipResult = {
                                 avatarURL: null,
                                 teamDisplayName: 'Delta Team',
                                 name: 'delta',
+                                external: false,
                                 url: '/teams/delta',
                             },
                             reasons: [

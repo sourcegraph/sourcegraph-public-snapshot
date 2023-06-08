@@ -2,9 +2,9 @@ package protocol
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -296,13 +296,6 @@ func (bl *BatchLogRequest) FromProto(p *proto.BatchLogRequest) {
 	}
 	bl.RepoCommits = repoCommits
 	bl.Format = p.GetFormat()
-}
-
-func (req BatchLogRequest) LogFields() []log.Field {
-	return []log.Field{
-		log.Int("numRepoCommits", len(req.RepoCommits)),
-		log.String("format", req.Format),
-	}
 }
 
 func (req BatchLogRequest) SpanAttributes() []attribute.KeyValue {
@@ -639,6 +632,8 @@ type CreateCommitFromPatchRequest struct {
 	// GitApplyArgs are the arguments that will be passed to `git apply` along
 	// with `--cached`.
 	GitApplyArgs []string
+	// If specified, the changes will be pushed to this ref as opposed to TargetRef.
+	PushRef *string
 }
 
 func (c *CreateCommitFromPatchRequest) ToProto() *proto.CreateCommitFromPatchBinaryRequest {
@@ -669,7 +664,7 @@ func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchB
 
 // PatchCommitInfo will be used for commit information when creating a commit from a patch
 type PatchCommitInfo struct {
-	Message        string
+	Messages       []string
 	AuthorName     string
 	AuthorEmail    string
 	CommitterName  string
@@ -679,7 +674,7 @@ type PatchCommitInfo struct {
 
 func (p *PatchCommitInfo) ToProto() *proto.PatchCommitInfo {
 	return &proto.PatchCommitInfo{
-		Message:        p.Message,
+		Message:        strings.Join(p.Messages, "\n"),
 		AuthorName:     p.AuthorName,
 		AuthorEmail:    p.AuthorEmail,
 		CommitterName:  p.CommitterName,
@@ -690,7 +685,7 @@ func (p *PatchCommitInfo) ToProto() *proto.PatchCommitInfo {
 
 func PatchCommitInfoFromProto(p *proto.PatchCommitInfo) PatchCommitInfo {
 	return PatchCommitInfo{
-		Message:        p.GetMessage(),
+		Messages:       []string{p.GetMessage()}, //TODO: @varsanojidan fix this
 		AuthorName:     p.GetAuthorName(),
 		AuthorEmail:    p.GetAuthorEmail(),
 		CommitterName:  p.GetCommitterName(),
@@ -734,6 +729,11 @@ func PushConfigFromProto(p *proto.PushConfig) *PushConfig {
 		PrivateKey: p.GetPrivateKey(),
 		Passphrase: p.GetPassphrase(),
 	}
+}
+
+type GerritConfig struct {
+	ChangeID     string
+	PushMagicRef string
 }
 
 // CreateCommitFromPatchResponse is the response type returned after creating

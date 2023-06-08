@@ -38,12 +38,12 @@ Available comamndsets in `sg.config.yaml`:
 * codeintel-kubernetes
 * cody-gateway
 * dotcom
-* embeddings
 * enterprise
 * enterprise-bazel
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
 * enterprise-codeintel-bazel
+* enterprise-codeintel-multi-queue-executor
 * enterprise-e2e
 * iam
 * monitoring
@@ -123,6 +123,7 @@ Available commands in `sg.config.yaml`:
 * jaeger
 * loki
 * monitoring-generator
+* multiqueue-executor
 * oss-frontend
 * oss-gitserver-0
 * oss-gitserver-1

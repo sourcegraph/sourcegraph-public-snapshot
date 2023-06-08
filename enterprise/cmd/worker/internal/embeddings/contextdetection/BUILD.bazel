@@ -17,6 +17,7 @@ go_library(
         "//enterprise/internal/embeddings",
         "//enterprise/internal/embeddings/background/contextdetection",
         "//enterprise/internal/embeddings/embed",
+        "//enterprise/internal/embeddings/embed/client",
         "//internal/actor",
         "//internal/conf",
         "//internal/env",

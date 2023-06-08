@@ -7,7 +7,7 @@ import (
 // RedisStore is the backend for tracking limiter state.
 type RedisStore interface {
 	// Incr increments a key's value, or initializes it to 1 if it does not exist
-	Incr(key string) (int, error)
+	Incrby(key string, val int) (int, error)
 	// Get retrieves a key's value
 	GetInt(key string) (int, error)
 	// TTL provides seconds TTL on an existing key
@@ -16,47 +16,47 @@ type RedisStore interface {
 	Expire(key string, ttlSeconds int) error
 }
 
-type mockRedisEntry struct {
-	value int
-	ttl   int
+type MockRedisEntry struct {
+	Value int
+	TTL   int
 }
 
-type mockStore map[string]mockRedisEntry
+type MockRedisStore map[string]MockRedisEntry
 
-var _ RedisStore = mockStore{}
+var _ RedisStore = MockRedisStore{}
 
-func (m mockStore) Incr(key string) (int, error) {
+func (m MockRedisStore) Incrby(key string, val int) (int, error) {
 	entry, ok := m[key]
 	if !ok {
-		entry = mockRedisEntry{}
+		entry = MockRedisEntry{}
 	}
-	entry.value++
+	entry.Value += val
 	m[key] = entry
-	return entry.value, nil
+	return entry.Value, nil
 }
 
-func (m mockStore) GetInt(key string) (int, error) {
+func (m MockRedisStore) GetInt(key string) (int, error) {
 	entry, ok := m[key]
 	if !ok {
 		return 0, nil
 	}
-	return entry.value, nil
+	return entry.Value, nil
 }
 
-func (m mockStore) TTL(key string) (int, error) {
+func (m MockRedisStore) TTL(key string) (int, error) {
 	entry, ok := m[key]
 	if !ok {
 		return -1, errors.New("unknown key")
 	}
-	return entry.ttl, nil
+	return entry.TTL, nil
 }
 
-func (m mockStore) Expire(key string, ttlSeconds int) error {
+func (m MockRedisStore) Expire(key string, ttlSeconds int) error {
 	entry, ok := m[key]
 	if !ok {
 		return errors.New("unknown key")
 	}
-	entry.ttl = ttlSeconds
+	entry.TTL = ttlSeconds
 	m[key] = entry
 	return nil
 }
