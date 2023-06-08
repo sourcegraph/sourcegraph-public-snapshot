@@ -24,6 +24,34 @@ func defaultSettings() *schema.Settings {
 
 var MockCurrentUserFinal *schema.Settings
 
+// Service is introduced to so we can more cleanly pass in the dependencies of
+// a service which wants to fetch user settings. This would also make mocking
+// cleaner/etc.
+type Service interface {
+	// UserFromContext is the CurrentUserFinal function but without the need
+	// to pass in a DB. I expect this name will read better at callsites, eg:
+	//
+	//   c.settingsService.UserFromContext(ctx)
+	//
+	// Alternative name is ActorFromContext, but when referring to settings in
+	// our app we often call it user settings. Open to other suggestions for
+	// service and method names which better convey intent.
+	UserFromContext(context.Context) (*schema.Settings, error)
+
+	// ForSubject is the Final function but without the need to pass in a DB.
+	// I expect this name will read better at callsites, eg:
+	//
+	//   c.settingsService.ForSubject(ctx, subj)
+	ForSubject(context.Context, api.SettingsSubject) (*schema.Settings, error)
+
+	// RelevantSubjects is the RelevantSubjects function but without the need
+	// to pass in a DB.
+	//
+	// Note: this only has one call site in graphql. I wonder if anyone
+	// actually reads this field anymore?
+	RelevantSubjects(context.Context, api.SettingsSubject) ([]api.SettingsSubject, error)
+}
+
 // CurrentUserFinal returns the merged settings for the current user.
 // If there is no active user, it returns the site settings.
 func CurrentUserFinal(ctx context.Context, db database.DB) (*schema.Settings, error) {
