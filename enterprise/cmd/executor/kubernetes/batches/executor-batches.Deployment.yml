@@ -35,7 +35,7 @@ spec:
             - name: EXECUTOR_MAXIMUM_NUM_JOBS
               value: "5"
             - name: SRC_LOG_LEVEL
-              value: info
+              value: dbug
             - name: SRC_LOG_FORMAT
               value: condensed
             - name: SRC_TRACE_LOG
