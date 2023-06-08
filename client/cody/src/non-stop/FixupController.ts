@@ -319,6 +319,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             // this task.
             throw new Error('unreachable')
         }
+        this.decorator.didUpdateDiff(task)
         if (!task.diff.clean) {
             // TODO: If this isn't an in-progress diff, then schedule
             // a re-spin or notify failure
