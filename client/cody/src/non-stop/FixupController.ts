@@ -116,8 +116,8 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         void vscode.window.showTextDocument(task.fixupFile.uri, { selection: task.selectionRange })
     }
 
-    // Apply single fixup from task ID
-    private async apply(id: taskID): Promise<void> {
+    // Apply single fixup from task ID. Public for testing.
+    public async apply(id: taskID): Promise<void> {
         console.log(id + ' applying')
         const task = this.tasks.get(id)
         if (!task) {
@@ -133,16 +133,10 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         // TODO: Add support for applying all fixups
         // applying fixup to all tasks
         if (!treeItem) {
-            for (const task of this.tasks.values()) {
-                if (task.state !== CodyTaskState.ready) {
-                    return
-                }
-                void vscode.window.showInformationMessage(
-                    'Applying all fixups is not implemented yet...',
-                    String(this.tasks.size)
-                )
-                return
-            }
+            void vscode.window.showInformationMessage(
+                'Applying all fixups is not implemented yet...',
+                String(this.tasks.size)
+            )
             return
         }
         // applying fixup to a single task

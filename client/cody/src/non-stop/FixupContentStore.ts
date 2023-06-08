@@ -18,6 +18,9 @@ export class ContentProvider implements vscode.TextDocumentContentProvider, vsco
     private _disposables: vscode.Disposable
 
     constructor() {
+        // TODO: Handle applying fixups to files which are opened and closed.
+        // This is tricky because we need to re-sync the range we are tracking
+        // when the file is opened.
         this._disposables = vscode.workspace.onDidCloseTextDocument(doc => this.deleteByFilePath(doc.uri.fsPath))
     }
     // Get content from the content store
