@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -173,7 +174,7 @@ func (s *repoPathStore) AggregateFileCount(ctx context.Context, opts TreeLocatio
 		qs = append(qs, sqlf.Sprintf("AND p.repo_id = %s", repoID))
 	}
 	var count int32
-	if err := s.Store.QueryRow(ctx, sqlf.Join(qs, "\n")).Scan(&count); err != nil {
+	if err := s.Store.QueryRow(ctx, sqlf.Join(qs, "\n")).Scan(&dbutil.NullInt32{&count}); err != nil {
 		return 0, err
 	}
 	return count, nil

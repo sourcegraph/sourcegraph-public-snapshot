@@ -190,6 +190,29 @@ func TestQueryAggregateCounts(t *testing.T) {
 	// 1. Setup repo and paths:
 	repo1 := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
 	repo2 := mustCreate(ctx, t, d, &types.Repo{Name: "a/c"})
+
+	t.Run("no data - query single repo", func(t *testing.T) {
+		opts := TreeLocationOpts{
+			RepoID: repo1.ID,
+		}
+		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
+		require.NoError(t, err)
+		want := []PathAggregateCounts{
+			{CodeownedFileCount: 0},
+		}
+		assert.DeepEqual(t, want, got)
+	})
+
+	t.Run("no data - query all", func(t *testing.T) {
+		opts := TreeLocationOpts{}
+		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
+		require.NoError(t, err)
+		want := []PathAggregateCounts{
+			{CodeownedFileCount: 0},
+		}
+		assert.DeepEqual(t, want, got)
+	})
+
 	// 2. Insert aggregate counts:
 	timestamp := time.Now()
 	repo1Counts := fakeAggregateStatsIterator{

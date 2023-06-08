@@ -247,9 +247,11 @@ func (r *ownResolver) GitTreeOwnership(
 
 func (r *ownResolver) GitTreeOwnershipStats(ctx context.Context, tree *graphqlbackend.GitTreeEntryResolver) (graphqlbackend.OwnershipStatsResolver, error) {
 	return &ownStatsResolver{
-		db:     r.db,
-		repoID: tree.Repository().IDInt32(),
-		path:   tree.Path(),
+		db: r.db,
+		opts: database.TreeLocationOpts{
+			RepoID: tree.Repository().IDInt32(),
+			Path:   tree.Path(),
+		},
 	}, nil
 }
 
@@ -400,17 +402,23 @@ func (r *ownResolver) ownershipConnection(
 }
 
 type ownStatsResolver struct {
-	db     edb.EnterpriseDB
-	repoID api.RepoID
-	path   string
+	db   edb.EnterpriseDB
+	opts database.TreeLocationOpts
 }
 
 func (r *ownStatsResolver) TotalFiles(ctx context.Context) (int32, error) {
-	return 0, nil // TODO(#52826): Implement graphQL resolver with db lookup.
+	return r.db.RepoPaths().AggregateFileCount(ctx, r.opts)
 }
 
 func (r *ownStatsResolver) TotalCodeownedFiles(ctx context.Context) (int32, error) {
-	return 0, nil // TODO(#52826): Implement graphQL resolver with db lookup.
+	counts, err := r.db.OwnershipStats().QueryAggregateCounts(ctx, r.opts)
+	if err != nil {
+		return 0, err
+	}
+	if len(counts) == 0 {
+		return 0, nil
+	}
+	return int32(counts[0].CodeownedFileCount), nil
 }
 
 type ownershipConnectionResolver struct {
