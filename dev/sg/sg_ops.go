@@ -17,6 +17,11 @@ import (
 	"github.com/docker/docker-credential-helpers/credentials"
 )
 
+type TagPrefixOption struct {
+	prefix     string
+	skipImages []string
+}
+
 var (
 	opsCommand = &cli.Command{
 		Name:        "ops",
@@ -33,6 +38,8 @@ var (
 	opsUpdateImagesContainerRegistryUsernameFlag string
 	opsUpdateImagesContainerRegistryPasswordFlag string
 	opsUpdateImagesPinTagFlag                    string
+	opsUpdateImagesTagPrefix                     string
+	opsUpdateImagesTagPrefixSkipImages           string
 	opsUpdateImagesCommand                       = &cli.Command{
 		Name:        "update-images",
 		ArgsUsage:   "<dir>",
@@ -51,6 +58,16 @@ var (
 				Aliases:     []string{"t"},
 				Usage:       "pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)",
 				Destination: &opsUpdateImagesPinTagFlag,
+			},
+			&cli.StringFlag{
+				Name:        "tag-prefix",
+				Usage:       "search for new tags starting with the given prefix ('k8s' deployment only)",
+				Destination: &opsUpdateImagesTagPrefix,
+			},
+			&cli.StringFlag{
+				Name:        "tag-prefix-skip",
+				Usage:       "images that should skip using the given tag prefix ('k8s' deployment only), ex: sourcegraph/redis-cache,sourcegraph/redis-store",
+				Destination: &opsUpdateImagesTagPrefixSkipImages,
 			},
 			&cli.StringFlag{
 				Name:        "cr-username",
@@ -160,5 +177,20 @@ func opsUpdateImage(ctx *cli.Context) error {
 		std.Out.WriteWarningf("No pin tag (-t) is provided - will fall back to latest main branch tag available.")
 	}
 
-	return images.Update(args[0], *dockerCredentials, images.DeploymentType(opsUpdateImagesDeploymentKindFlag), opsUpdateImagesPinTagFlag)
+	if opsUpdateImagesTagPrefixSkipImages != "" && opsUpdateImagesTagPrefix == "" {
+		std.Out.WriteWarningf("No tag-prefix given, but list of images to skip prefixing given.")
+		return flag.ErrHelp
+	}
+
+	if opsUpdateImagesTagPrefix != "" && opsUpdateImagesDeploymentKindFlag != "k8s" {
+		std.Out.WriteWarningf("Only k8s deployment kind supports tag prefix")
+		return flag.ErrHelp
+	}
+
+	skipPrefixOpt := images.TagPrefixOption{
+		Prefix:     opsUpdateImagesTagPrefix,
+		SkipImages: strings.Split(opsUpdateImagesTagPrefixSkipImages, ","),
+	}
+
+	return images.Update(args[0], *dockerCredentials, images.DeploymentType(opsUpdateImagesDeploymentKindFlag), opsUpdateImagesPinTagFlag, &skipPrefixOpt)
 }

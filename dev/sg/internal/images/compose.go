@@ -96,7 +96,7 @@ func updateComposeFile(composeFile []byte, creds credentials.Credentials, pinTag
 				return nil
 			}
 
-			newImage, err := getUpdatedSourcegraphImage(originalImage, creds, pinTag)
+			newImage, err := getUpdatedSourcegraphImage(originalImage, creds, pinTag, nil)
 			if err != nil {
 				if errors.Is(err, ErrNoUpdateNeeded) {
 					std.Out.Verbosef("%s: %s", name, err)
