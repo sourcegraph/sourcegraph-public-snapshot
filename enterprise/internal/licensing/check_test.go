@@ -29,9 +29,6 @@ func Test_licenseChecker(t *testing.T) {
 		"skips check if license is air-gapped": {
 			license.Info{Tags: []string{AllowAirGappedTag}},
 		},
-		"skips check if license is old version": {
-			license.Info{SalesforceSubscriptionID: strPtr("some-sub-id")},
-		},
 	}
 	for name, info := range tests1 {
 		t.Run(name, func(t *testing.T) {

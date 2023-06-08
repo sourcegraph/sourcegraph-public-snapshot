@@ -43,7 +43,7 @@ type licenseChecker struct {
 func (l *licenseChecker) Handle(ctx context.Context) error {
 	store.Set(lastCalledAtStoreKey, time.Now().Format(time.RFC3339))
 
-	if l.info.HasTag(AllowAirGappedTag) || l.info.SalesforceSubscriptionID != nil {
+	if l.info.HasTag(AllowAirGappedTag) {
 		store.Set(licenseValidityStoreKey, true)
 		return nil
 	}
