@@ -10,7 +10,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Fixed
 
-- Open file paths from Cody's responses in workspace with correct portocel. [pull/](https://github.com/sourcegraph/sourcegraph/pull/)
+- Open file paths from Cody's responses in a workspace with the correct protocol. [pull/](https://github.com/sourcegraph/sourcegraph/pull/)
 
 ### Changed
 
