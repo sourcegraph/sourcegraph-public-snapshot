@@ -94,7 +94,9 @@ function getHighlightedTokenHTML(token: HighlightedToken, workspaceRootPath?: st
     let filePath = token.outerValue.trim()
     // Create workspace relative links for existing files (excluding directories)
     if (!token.isHallucinated && workspaceRootPath && filePath.includes('.')) {
-        const fileUri = `file://${workspaceRootPath}/${filePath}`
+        // Need to decode the file path because it's encoded in the markdown
+        filePath = decodeURIComponent(filePath.replace(/["'`]/g, ''))
+        const fileUri = `vscode://file${workspaceRootPath}/${filePath}`
         const uri = new URL(fileUri).href
         filePath = `<a href="${uri}">${filePath}</a>`
     }
