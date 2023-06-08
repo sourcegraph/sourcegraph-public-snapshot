@@ -190,12 +190,7 @@ func (r *ProductSubscriptionLicensingResolver) RevokeLicense(ctx context.Context
 		return err
 	}
 
-	err = dbLicenses{db: r.DB}.Revoke(ctx, id.String(), args.Reason)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return dbLicenses{db: r.DB}.Revoke(ctx, id.String(), args.Reason)
 }
 
 // productLicenseConnection implements the GraphQL type ProductLicenseConnection.
