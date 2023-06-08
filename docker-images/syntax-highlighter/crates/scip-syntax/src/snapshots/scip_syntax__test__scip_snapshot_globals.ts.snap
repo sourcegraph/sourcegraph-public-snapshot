@@ -7,14 +7,14 @@ expression: dumped
       public_field: number
 //    ^^^^^^^^^^^^ definition scip-ctags MyClass#public_field.
       #private_field: number
-//    ^^^^^^^^^^^^^^ definition scip-ctags . . . MyClass##private_field.
+//    ^^^^^^^^^^^^^^ definition scip-ctags MyClass#`#private_field`.
       private also_private_field: number
 //            ^^^^^^^^^^^^^^^^^^ definition scip-ctags MyClass#also_private_field.
   
       public_method() {}
 //    ^^^^^^^^^^^^^ definition scip-ctags MyClass#public_method().
       #private_method() {}
-//    ^^^^^^^^^^^^^^^ definition scip-ctags . . . MyClass##private_method().
+//    ^^^^^^^^^^^^^^^ definition scip-ctags MyClass#`#private_method`().
       private also_private_method() {}
 //            ^^^^^^^^^^^^^^^^^^^ definition scip-ctags MyClass#also_private_method().
   }
