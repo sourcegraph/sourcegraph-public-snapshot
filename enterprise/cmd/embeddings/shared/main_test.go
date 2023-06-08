@@ -7,10 +7,11 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/stretchr/testify/require"
 )
 
 func TestEmbeddingsSearch(t *testing.T) {
@@ -79,19 +80,12 @@ func TestEmbeddingsSearch(t *testing.T) {
 			panic("unknown")
 		}
 	}
-	getContextDetectionEmbeddingIndex := func(context.Context) (*embeddings.ContextDetectionEmbeddingIndex, error) {
-		return &embeddings.ContextDetectionEmbeddingIndex{
-			MessagesWithAdditionalContextMeanEmbedding:    []float32{1, 2, 3, 4},
-			MessagesWithoutAdditionalContextMeanEmbedding: []float32{4, 3, 2, 1},
-		}, nil
-	}
 
 	server1 := httptest.NewServer(NewHandler(
 		logger,
 		getRepoEmbeddingIndex,
 		getQueryEmbedding,
 		nil,
-		getContextDetectionEmbeddingIndex,
 	))
 
 	server2 := httptest.NewServer(NewHandler(
@@ -99,7 +93,6 @@ func TestEmbeddingsSearch(t *testing.T) {
 		getRepoEmbeddingIndex,
 		getQueryEmbedding,
 		nil,
-		getContextDetectionEmbeddingIndex,
 	))
 
 	client := embeddings.NewClient(endpoint.Static(server1.URL, server2.URL), http.DefaultClient)

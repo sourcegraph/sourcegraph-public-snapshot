@@ -7,7 +7,6 @@ go_library(
     srcs = [
         "config.go",
         "context_detection.go",
-        "context_detection_cache.go",
         "main.go",
         "query_embeddings_cache.go",
         "repo_embedding_index_cache.go",
@@ -44,7 +43,6 @@ go_library(
         "//internal/observation",
         "//internal/service",
         "//internal/trace",
-        "//internal/uploadstore",
         "//lib/errors",
         "@com_github_hashicorp_golang_lru_v2//:golang-lru",
         "@com_github_prometheus_client_golang//prometheus",

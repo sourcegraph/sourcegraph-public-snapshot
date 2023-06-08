@@ -137,7 +137,3 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo
   interfaces:
     - RepoEmbeddingJobsStore
-- filename: enterprise/internal/embeddings/background/contextdetection/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/contextdetection
-  interfaces:
-    - ContextDetectionEmbeddingJobsStore

@@ -12,8 +12,6 @@ import {
     RepoEmbeddingJobFields,
     RepoEmbeddingJobsListResult,
     RepoEmbeddingJobsListVariables,
-    ScheduleContextDetectionEmbeddingJobResult,
-    ScheduleContextDetectionEmbeddingJobVariables,
     ScheduleRepoEmbeddingJobsResult,
     ScheduleRepoEmbeddingJobsVariables,
 } from '../../../graphql-operations'
@@ -81,23 +79,6 @@ export function useScheduleRepoEmbeddingJobs(): MutationTuple<
 > {
     return useMutation<ScheduleRepoEmbeddingJobsResult, ScheduleRepoEmbeddingJobsVariables>(
         SCHEDULE_REPO_EMBEDDING_JOBS
-    )
-}
-
-export const SCHEDULE_CONTEXT_DETECTION_EMBEDDING_JOB = gql`
-    mutation ScheduleContextDetectionEmbeddingJob {
-        scheduleContextDetectionForEmbedding {
-            alwaysNil
-        }
-    }
-`
-
-export function useScheduleContextDetectionEmbeddingJob(): MutationTuple<
-    ScheduleContextDetectionEmbeddingJobResult,
-    ScheduleContextDetectionEmbeddingJobVariables
-> {
-    return useMutation<ScheduleContextDetectionEmbeddingJobResult, ScheduleContextDetectionEmbeddingJobVariables>(
-        SCHEDULE_CONTEXT_DETECTION_EMBEDDING_JOB
     )
 }
 

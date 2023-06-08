@@ -89,10 +89,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		config.WeaviateURL,
 	)
 
-	getContextDetectionEmbeddingIndex := getCachedContextDetectionEmbeddingIndex(uploadStore)
-
 	// Create HTTP server
-	handler := NewHandler(logger, indexGetter.Get, getQueryEmbedding, weaviate, getContextDetectionEmbeddingIndex)
+	handler := NewHandler(logger, indexGetter.Get, getQueryEmbedding, weaviate)
 	handler = handlePanic(logger, handler)
 	handler = featureflag.Middleware(db.FeatureFlags(), handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
@@ -117,7 +115,6 @@ func NewHandler(
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
 	weaviate *weaviateClient,
-	getContextDetectionEmbeddingIndex getContextDetectionEmbeddingIndexFn,
 ) http.Handler {
 	// Initialize the legacy JSON API server
 	mux := http.NewServeMux()
@@ -162,13 +159,7 @@ func NewHandler(
 			return
 		}
 
-		isRequired, err := isContextRequiredForChatQuery(r.Context(), getQueryEmbedding, getContextDetectionEmbeddingIndex, args.Query)
-		if err != nil {
-			logger.Error("error detecting if context is required for query", log.Error(err))
-			http.Error(w, fmt.Sprintf("error detecting if context is required for query: %s", err.Error()), http.StatusInternalServerError)
-			return
-		}
-
+		isRequired := isContextRequiredForChatQuery(args.Query)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(embeddings.IsContextRequiredForChatQueryResult{IsRequired: isRequired})
 	})

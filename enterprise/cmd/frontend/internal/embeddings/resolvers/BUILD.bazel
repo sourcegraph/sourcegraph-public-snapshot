@@ -15,7 +15,6 @@ go_library(
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//enterprise/internal/cody",
         "//enterprise/internal/embeddings",
-        "//enterprise/internal/embeddings/background/contextdetection",
         "//enterprise/internal/embeddings/background/repo",
         "//internal/api",
         "//internal/auth",
@@ -40,7 +39,6 @@ go_test(
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/embeddings",
-        "//enterprise/internal/embeddings/background/contextdetection",
         "//enterprise/internal/embeddings/background/repo",
         "//enterprise/internal/licensing",
         "//internal/actor",
