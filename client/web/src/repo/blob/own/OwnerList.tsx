@@ -8,11 +8,7 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
-import {
-    SearchPatternType,
-    OwnerFields,
-    OwnershipConnectionFields,
-} from '../../../graphql-operations'
+import { SearchPatternType, OwnerFields, OwnershipConnectionFields } from '../../../graphql-operations'
 
 import { FileOwnershipEntry } from './FileOwnershipEntry'
 
@@ -95,6 +91,7 @@ interface OwnerListProps {
     makeOwnerError?: Error
     repoID: string
     filePath: string
+    refetch: any
 }
 
 export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
@@ -158,7 +155,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                         ? ownership.owner.user.id
                                         : undefined
                                 // This list is not expected to change, so it's safe to use the index as a key.
-                                 
+
                                 return (
                                     <React.Fragment key={index}>
                                         {index > 0 && <tr className={styles.bordered} />}

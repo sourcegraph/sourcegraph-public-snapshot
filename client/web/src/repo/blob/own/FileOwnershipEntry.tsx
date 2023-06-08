@@ -58,7 +58,9 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
 
     const email = findEmail()
 
-    const assignedOwnerReasons = reasons.filter(value => value.__typename === 'AssignedOwner')
+    const assignedOwnerReasons: AssignedOwnerFields[] = reasons
+        .filter(value => value.__typename === 'AssignedOwner')
+        .map(val => val as AssignedOwnerFields)
     const isDirectAssigned = assignedOwnerReasons.some(value => value.isDirectMatch)
     const hasAssigned = assignedOwnerReasons.length > 0
 
