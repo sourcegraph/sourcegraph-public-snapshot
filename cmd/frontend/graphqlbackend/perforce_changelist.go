@@ -15,20 +15,29 @@ import (
 )
 
 type PerforceChangelistResolver struct {
+	// logger is a logger - what more needs to be said. 🪵
 	logger log.Logger
 
+	// repositoryResolver is the backlink to which this change list belongs.
 	repositoryResolver *RepositoryResolver
 
-	cid          string
+	// cid is the changelist ID.
+	cid string
+	// canonicalURL is the canonical URL of this changelist ID, similar to the canonical URL of a Git commit.
 	canonicalURL string
-	commitSHA    string
+	// commitSHA is the corresponding commit SHA. This is required to look up the commitID object using ResolveRev.
+	commitSHA string
 
-	commitID   api.CommitID
+	// commitID is set when the Commit property is accessed on the resolver.
+	commitID api.CommitID
+	// commitOnce will ensure that we resolve the revision only once.
 	commitOnce sync.Once
-	commitErr  error
+	// commitErr is used to return an error that may have occured during resolving the revision when
+	// the Commit property is looked up on the resolver.
+	commitErr error
 }
 
-func newPerforceChangelistResolver(ctx context.Context, r *RepositoryResolver, changelistID, commitSHA string) *PerforceChangelistResolver {
+func newPerforceChangelistResolver(r *RepositoryResolver, changelistID, commitSHA string) *PerforceChangelistResolver {
 	repoURL := r.url()
 	canonicalURL := repoURL.Path + "/-/changelist/" + changelistID
 
@@ -53,7 +62,7 @@ func toPerforceChangelistResolver(ctx context.Context, r *RepositoryResolver, co
 		return nil, errors.Wrap(err, "failed to generate perforceChangelistID")
 	}
 
-	return newPerforceChangelistResolver(ctx, r, changelistID, string(commit.ID)), nil
+	return newPerforceChangelistResolver(r, changelistID, string(commit.ID)), nil
 }
 
 func (r *PerforceChangelistResolver) CID() string {
