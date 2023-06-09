@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -59,7 +60,8 @@ type Actor struct {
 	// For example, for product subscriptions this is the license-based access token.
 	Key string `json:"key"`
 	// ID is the identifier for this actor's rate-limiting pool. It is not a sensitive
-	// value.
+	// value. It must be set for all valid actors - if empty, the actor must be invalid
+	// and must not not have any feature access.
 	//
 	// For example, for product subscriptions this is the subscription UUID. For
 	// Sourcegraph.com users, this is the string representation of the user ID.
@@ -95,7 +97,7 @@ func FromContext(ctx context.Context) *Actor {
 // Logger returns a logger that has metadata about the actor attached to it.
 func (a *Actor) Logger(logger log.Logger) log.Logger {
 	if a == nil {
-		return logger
+		return logger.With(log.String("actor.ID", "<nil>"))
 	}
 	return logger.With(
 		log.String("actor.ID", a.ID),
@@ -199,7 +201,7 @@ func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func(int) error, e
 		return nil, errors.Wrap(err, "check concurrent limit")
 	}
 	if err = commit(1); err != nil {
-		l.logger.Error("failed to commit concurrency limit consumption", log.Error(err))
+		trace.Logger(ctx, l.logger).Error("failed to commit concurrency limit consumption", log.Error(err))
 	}
 
 	featureCommit, err := l.featureLimiter.TryAcquire(ctx)

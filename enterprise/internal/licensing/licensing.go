@@ -98,6 +98,20 @@ func GetConfiguredProductLicenseInfo() (*Info, error) {
 	return info, err
 }
 
+func isLicenseValid() bool {
+	val := store.Get(licenseValidityStoreKey)
+	if val.IsNil() {
+		return true
+	}
+
+	v, err := val.Bool()
+	if err != nil {
+		return true
+	}
+
+	return v
+}
+
 // GetConfiguredProductLicenseInfoWithSignature returns information about the current product license key
 // specified in site configuration, with the signed key's signature.
 func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
@@ -125,6 +139,10 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 
 			if err = info.hasUnknownPlan(); err != nil {
 				return nil, "", err
+			}
+
+			if !isLicenseValid() {
+				return nil, "", errors.New("license is not valid")
 			}
 
 			lastKeyText = keyText
