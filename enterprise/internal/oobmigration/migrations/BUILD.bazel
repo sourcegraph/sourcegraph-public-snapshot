@@ -9,7 +9,7 @@ go_library(
         "//enterprise/cmd/worker/shared/init/codeintel",
         "//enterprise/internal/insights",
         "//enterprise/internal/oobmigration/migrations/batches",
-        "//enterprise/internal/oobmigration/migrations/codeintel",
+        "//enterprise/internal/oobmigration/migrations/codeintel/lsif",
         "//enterprise/internal/oobmigration/migrations/iam",
         "//enterprise/internal/oobmigration/migrations/insights",
         "//enterprise/internal/oobmigration/migrations/insights/backfillv2",

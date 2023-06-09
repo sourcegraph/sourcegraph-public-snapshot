@@ -16,6 +16,7 @@ go_library(
         "//enterprise/cmd/cody-gateway/internal/limiter",
         "//enterprise/cmd/cody-gateway/internal/notify",
         "//enterprise/cmd/cody-gateway/internal/response",
+        "//internal/instrumentation",
         "//internal/redispool",
         "//internal/trace",
         "//internal/version",

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -159,9 +160,10 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		name    string
-		user    *types.User
-		wantErr error
+		name     string
+		user     *types.User
+		features map[string]bool
+		wantErr  error
 	}{
 		{
 			name:    "admin user",
@@ -169,7 +171,13 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name:    "not admin user",
+			name:     "service account",
+			user:     notAdminUser,
+			features: map[string]bool{"product-subscriptions-reader-service-account": true},
+			wantErr:  nil,
+		},
+		{
+			name:    "not admin or service account user",
 			user:    notAdminUser,
 			wantErr: auth.ErrMustBeSiteAdmin,
 		},
@@ -179,7 +187,8 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 
 			// Create a request context from the user
-			requestContext := actor.WithActor(context.Background(), actor.FromActualUser(test.user))
+			userContext := actor.WithActor(context.Background(), actor.FromActualUser(test.user))
+			requestContext := featureflag.WithFlags(userContext, featureflag.NewMemoryStore(test.features, nil, nil))
 
 			// Make request from the test user
 			r := productsubscription.CodyGatewayDotcomUserResolver{DB: db}

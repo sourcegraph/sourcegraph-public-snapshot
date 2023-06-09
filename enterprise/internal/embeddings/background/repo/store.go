@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -190,6 +191,7 @@ type EmbeddableRepoOpts struct {
 type ListOpts struct {
 	*database.PaginationArgs
 	Query *string
+	State *string
 }
 
 func init() {
@@ -307,6 +309,10 @@ func (s *repoEmbeddingJobsStore) CountRepoEmbeddingJobs(ctx context.Context, opt
 		joinClause = sqlf.Sprintf("")
 	}
 
+	if opts.State != nil && *opts.State != "" {
+		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.state = %s", strings.ToLower(*opts.State)))
+	}
+
 	var whereClause *sqlf.Query
 	if len(conds) != 0 {
 		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
@@ -343,6 +349,10 @@ func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, opts
 		joinClause = sqlf.Sprintf("JOIN repo ON repo.id = repo_embedding_jobs.repo_id")
 	} else {
 		joinClause = sqlf.Sprintf("")
+	}
+
+	if opts.State != nil && *opts.State != "" {
+		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.state = %s", strings.ToLower(*opts.State)))
 	}
 
 	var whereClause *sqlf.Query

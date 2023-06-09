@@ -1836,6 +1836,11 @@ type OwnershipUsageStatistics struct {
 
 	// Opening ownership panel.
 	OwnershipPanelOpened *OwnershipUsageStatisticsActiveUsers `json:"ownership_panel_opened,omitempty"`
+
+	// AssignedOwnersCount is the total number of assigned owners. For instance
+	// if an owner is assigned to a single file - that counts as one,
+	// for the whole repo - also counts as one.
+	AssignedOwnersCount *int32 `json:"assigned_owners_count"`
 }
 
 type OwnershipUsageReposCounts struct {
