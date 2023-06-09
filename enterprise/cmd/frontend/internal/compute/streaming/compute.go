@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/conc/stream"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -14,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/settings"
 )
 
 func toComputeResult(ctx context.Context, cmd compute.Command, match result.Match) (out []compute.Result, _ error) {
@@ -67,13 +65,6 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, en
 		}
 	})
 
-	settings, err := settings.CurrentUserFinal(ctx, db)
-	if err != nil {
-		close(eventsC)
-		close(errorC)
-		return eventsC, func() (*search.Alert, error) { return nil, err }
-	}
-
 	patternType := "regexp"
 	searchClient := client.New(logger, db, enterpriseJobs)
 	inputs, err := searchClient.Plan(
@@ -83,8 +74,6 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, en
 		searchQuery,
 		search.Precise,
 		search.Streaming,
-		settings,
-		envvar.SourcegraphDotComMode(),
 	)
 	if err != nil {
 		close(eventsC)

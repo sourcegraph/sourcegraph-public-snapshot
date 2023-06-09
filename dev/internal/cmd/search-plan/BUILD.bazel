@@ -7,6 +7,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/internal/cmd/search-plan",
     visibility = ["//visibility:private"],
     deps = [
+        "//cmd/frontend/envvar",
         "//internal/conf",
         "//internal/search",
         "//internal/search/client",
@@ -14,7 +15,6 @@ go_library(
         "//internal/search/job/jobutil",
         "//internal/search/job/printer",
         "//lib/errors",
-        "//schema",
         "@com_github_sourcegraph_log//:log",
     ],
 )

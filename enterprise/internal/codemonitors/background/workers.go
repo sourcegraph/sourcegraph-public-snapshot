@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -183,12 +182,7 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, triggerJob 
 	ctx = actor.WithActor(ctx, actor.FromUser(m.UserID))
 	ctx = featureflag.WithFlags(ctx, r.db.FeatureFlags())
 
-	settings, err := settings.CurrentUserFinal(ctx, r.db)
-	if err != nil {
-		return errors.Wrap(err, "query settings")
-	}
-
-	results, searchErr := codemonitors.Search(ctx, logger, r.db, r.enterpriseJobs, q.QueryString, m.ID, settings)
+	results, searchErr := codemonitors.Search(ctx, logger, r.db, r.enterpriseJobs, q.QueryString, m.ID)
 
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, searchErr)

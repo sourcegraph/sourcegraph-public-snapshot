@@ -5,12 +5,10 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
-	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,11 +26,6 @@ type SearchImplementer interface {
 
 // NewBatchSearchImplementer returns a SearchImplementer that provides search results and suggestions.
 func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, args *SearchArgs) (_ SearchImplementer, err error) {
-	settings, err := settings.CurrentUserFinal(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-
 	cli := client.New(logger, db, enterpriseJobs)
 	inputs, err := cli.Plan(
 		ctx,
@@ -41,8 +34,6 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 		args.Query,
 		search.Precise,
 		search.Batch,
-		settings,
-		envvar.SourcegraphDotComMode(),
 	)
 	if err != nil {
 		var queryErr *client.QueryError
