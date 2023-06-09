@@ -22,7 +22,6 @@ func TestApplySubRepoFiltering(t *testing.T) {
 	unauthorizedFileName := "README.md"
 	errorFileName := "file.go"
 	var userWithSubRepoPerms int32 = 1234
-	var userWithoutSubRepoPerms int32 = 5678
 
 	checker := authz.NewMockSubRepoPermissionChecker()
 	checker.EnabledFunc.SetDefaultReturn(true)
@@ -37,16 +36,16 @@ func TestApplySubRepoFiltering(t *testing.T) {
 				return authz.None, errors.New(errorFileName)
 			}
 		}
-		if rc.Repo.Equal("foo") && user == userWithoutSubRepoPerms {
-			return authz.None, nil
-		}
+
 		return authz.Read, nil
 	})
+
 	checker.FilePermissionsFuncFunc.SetDefaultHook(func(ctx context.Context, userID int32, repo api.RepoName) (authz.FilePermissionFunc, error) {
 		return func(path string) (authz.Perms, error) {
 			return checker.Permissions(ctx, userID, authz.RepoContent{Repo: repo, Path: path})
 		}, nil
 	})
+
 	checker.EnabledForRepoFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName) (bool, error) {
 		if rn.Equal("noSubRepoPerms") {
 			return false, nil
@@ -208,7 +207,7 @@ func TestApplySubRepoFiltering(t *testing.T) {
 		{
 			name: "should not filter commits from repos for which sub-repo perms aren't enabled",
 			args: args{
-				ctxActor: actor.FromUser(userWithoutSubRepoPerms),
+				ctxActor: actor.FromUser(userWithSubRepoPerms),
 				matches: []result.Match{
 					&result.CommitMatch{
 						ModifiedFiles: []string{unauthorizedFileName},
