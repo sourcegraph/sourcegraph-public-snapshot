@@ -1,6 +1,6 @@
 import { Navigate, RouteObject } from 'react-router-dom'
 
-import { lazyComponent } from '@sourcegraph/shared/out/src/util/lazyComponent'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { LegacyRoute } from '../../LegacyRouteContext'
 import { EnterprisePageRoutes, PageRoutes } from '../../routes.constants'
