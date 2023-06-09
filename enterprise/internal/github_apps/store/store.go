@@ -47,6 +47,7 @@ type GitHubAppsStore interface {
 	// GetInstallations retrieves all installations for the GitHub App with the given ID.
 	GetInstallations(ctx context.Context, id int) ([]*ghtypes.GitHubAppInstallation, error)
 
+	// TODO: Remove me
 	// GetLatestInstallID retrieves the latest GitHub App installation ID from the
 	// database for the GitHub App with the provided appID.
 	GetLatestInstallID(ctx context.Context, appID int) (int, error)
