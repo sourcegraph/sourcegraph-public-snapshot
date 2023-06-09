@@ -100,12 +100,14 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		return err
 	}
 
-	lastReportedStats := time.Now()
+	updateStatsTicker := time.NewTicker(time.Second)
+	defer updateStatsTicker.Stop()
 	reportStats := func(stats *bgrepo.EmbedRepoStats) {
-		if time.Since(lastReportedStats) < 5*time.Second {
+		select {
+		case <-updateStatsTicker.C:
+		default:
 			return
 		}
-		lastReportedStats = time.Now()
 		if err := h.repoEmbeddingJobsStore.UpdateRepoEmbeddingJobStats(ctx, record.ID, stats); err != nil {
 			logger.Error("failed to update embedding stats", log.Error(err))
 		}
