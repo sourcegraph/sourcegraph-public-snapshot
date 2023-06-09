@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestNewRateLimitWithPercentageConcurrency(t *testing.T) {
@@ -186,4 +187,12 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAsErrConcurrencyLimitExceeded(t *testing.T) {
+	var concurrencyLimitExceeded ErrConcurrencyLimitExceeded
+	var err error
+	err = ErrConcurrencyLimitExceeded{}
+	assert.True(t, errors.As(err, &concurrencyLimitExceeded))
+	assert.True(t, errors.As(errors.Wrap(err, "foo"), &concurrencyLimitExceeded))
 }
