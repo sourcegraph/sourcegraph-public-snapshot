@@ -50,6 +50,13 @@ export interface ResolvedRevisionSpec {
     commitID: string
 }
 
+export interface ChangelistID {
+    /**
+     * a perforce changelist ID
+     */
+    changelistID: string
+}
+
 export interface FileSpec {
     /**
      * a path to a directory or file

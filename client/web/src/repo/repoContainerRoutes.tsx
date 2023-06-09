@@ -2,6 +2,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { canWriteRepoMetadata } from '../util/rbac'
 
+import { RepositoryChangelistPage } from './commit/RepositoryCommitPage'
 import { RepoRevisionWrapper } from './components/RepoRevision'
 import { RepoContainerRoute } from './RepoContainer'
 
@@ -28,6 +29,14 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
         render: context => (
             <RepoRevisionWrapper>
                 <RepositoryCommitPage {...context} />
+            </RepoRevisionWrapper>
+        ),
+    },
+    {
+        path: '/-/changelist/:changelistID',
+        render: context => (
+            <RepoRevisionWrapper>
+                <RepositoryChangelistPage {...context} />
             </RepoRevisionWrapper>
         ),
     },

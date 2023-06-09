@@ -7,7 +7,7 @@ import { basename, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { ChangelistID, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Code, Heading, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -44,7 +44,7 @@ export const gitCommitFragment = gql`
         oid
         abbreviatedOID
         perforceChangelist {
-            ...PerforceChangelistFields
+            ...PerforceChangelistFieldsWithoutCommit
         }
         message
         subject
@@ -59,7 +59,7 @@ export const gitCommitFragment = gql`
             oid
             abbreviatedOID
             perforceChangelist {
-                ...PerforceChangelistFields
+                ...PerforceChangelistFieldsWithoutCommit
             }
             url
         }
@@ -73,8 +73,9 @@ export const gitCommitFragment = gql`
         }
     }
 
-    fragment PerforceChangelistFields on PerforceChangelist {
+    fragment PerforceChangelistFieldsWithoutCommit on PerforceChangelist {
         cid
+        canonicalURL
     }
 
     fragment SignatureFields on Signature {
@@ -131,9 +132,12 @@ export interface RepositoryCommitsPageProps extends RevisionSpec, BreadcrumbSett
 export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
     const { useBreadcrumb, repo } = props
     const location = useLocation()
+    console.log(location)
     const { filePath = '' } = parseBrowserRepoURL(location.pathname)
 
     let sourceType = RepositoryType.GIT_REPOSITORY
+
+    console.log('props.revision:', props.revision)
 
     const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
         RepositoryGitCommitsResult,

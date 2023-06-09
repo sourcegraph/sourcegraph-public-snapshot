@@ -21,6 +21,8 @@ import {
     RepositoryCommitVariables,
     RepositoryFields,
     FileDiffFields,
+    RepositoryChangelistResult,
+    RepositoryChangelistVariables,
 } from '../../graphql-operations'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
@@ -44,6 +46,35 @@ const COMMIT_QUERY = gql`
     ${gitCommitFragment}
 `
 
+// TODO: Move to backend.ts
+export const changelistFragment = gql`
+    fragment PerforceChangelistFields on PerforceChangelist {
+        cid
+        canonicalURL
+        commit {
+            ...GitCommitFields
+            __typename
+        }
+    }
+    ${gitCommitFragment}
+`
+
+const CHANGELIST_QUERY = gql`
+    query RepositoryChangelist($repo: ID!, $changelistID: String!) {
+        node(id: $repo) {
+            __typename
+            ... on Repository {
+                sourceType
+                changelist(cid: $changelistID) {
+                    __typename # Necessary for error handling to check if commit exists
+                    ...PerforceChangelistFields
+                }
+            }
+        }
+    }
+    ${changelistFragment}
+`
+
 interface RepositoryCommitPageProps extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
     repo: RepositoryFields
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
@@ -56,7 +87,7 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
     const params = useParams<{ revspec: string }>()
 
     if (!params.revspec) {
-        throw new Error('Missing `revspec` param!')
+        throw new Error('Missing `revspec` and `changelistID` param! At least one should be set.')
     }
 
     const { data, error, loading } = useQuery<RepositoryCommitResult, RepositoryCommitVariables>(COMMIT_QUERY, {
@@ -150,4 +181,105 @@ function commitParentOrEmpty(commit: GitCommitFields): string {
     // 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t tree /dev/null`, which is used as the base
     // when computing the `git diff` of the root commit.
     return commit.parents.length > 0 ? commit.parents[0].oid : '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
+}
+
+/** Displays a changelist. */
+export const RepositoryChangelistPage: React.FunctionComponent<RepositoryCommitPageProps> = props => {
+    const params = useParams<{ changelistID: string }>()
+
+    console.log(params)
+    console.log(props)
+
+    if (!params.changelistID) {
+        throw new Error('Missing `changelistID` param! It must be set.')
+    }
+
+    const { data, error, loading } = useQuery<RepositoryChangelistResult, RepositoryChangelistVariables>(
+        CHANGELIST_QUERY,
+        {
+            variables: {
+                repo: props.repo.id,
+                changelistID: params.changelistID,
+            },
+        }
+    )
+
+    const commit = useMemo(
+        () => (data?.node && data?.node?.__typename === 'Repository' ? data?.node?.changelist?.commit : undefined),
+        [data]
+    )
+
+    const [diffMode, setDiffMode] = useTemporarySetting('repo.commitPage.diffMode', 'unified')
+
+    useEffect(() => {
+        props.telemetryService.logViewEvent('RepositoryCommit')
+    }, [props.telemetryService])
+
+    useEffect(() => {
+        if (commit) {
+            props.onDidUpdateExternalLinks(commit.externalURLs)
+        }
+
+        return () => {
+            props.onDidUpdateExternalLinks(undefined)
+        }
+    }, [commit, props])
+
+    const queryDiffs = useCallback(
+        (args: FilteredConnectionQueryArguments): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
+            // Non-null assertions here are safe because the query is only executed if the commit is defined.
+            queryRepositoryComparisonFileDiffs({
+                first: args.first ?? null,
+                after: args.after ?? null,
+                paths: [],
+                repo: props.repo.id,
+                base: commitParentOrEmpty(commit!),
+                head: commit!.oid,
+            }),
+        [commit, props.repo.id]
+    )
+
+    return (
+        <div data-testid="repository-commit-page" className={classNames('p-3', styles.repositoryCommitPage)}>
+            <PageTitle title={commit ? commit.subject : `Commit ${params.revspec}`} />
+            {loading ? (
+                <LoadingSpinner className="mt-2" />
+            ) : error || !commit ? (
+                <ErrorAlert className="mt-2" error={error ?? new Error('Commit not found')} />
+            ) : (
+                <>
+                    <div className="border-bottom pb-2">
+                        <div>
+                            <GitCommitNode
+                                node={commit}
+                                expandCommitMessageBody={true}
+                                showSHAAndParentsRow={true}
+                                diffMode={diffMode}
+                                onHandleDiffMode={setDiffMode}
+                                className={styles.gitCommitNode}
+                            />
+                        </div>
+                    </div>
+                    <FilteredConnection<FileDiffFields, Omit<FileDiffNodeProps, 'node'>>
+                        listClassName="list-group list-group-flush"
+                        noun="changed file"
+                        pluralNoun="changed files"
+                        queryConnection={queryDiffs}
+                        nodeComponent={FileDiffNode}
+                        nodeComponentProps={{
+                            ...props,
+                            lineNumbers: true,
+                            diffMode,
+                        }}
+                        updateOnChange={`${props.repo.id}:${commit.oid}`}
+                        defaultFirst={15}
+                        hideSearch={true}
+                        noSummaryIfAllNodesVisible={true}
+                        withCenteredSummary={true}
+                        cursorPaging={true}
+                    />
+                </>
+            )}
+        </div>
+    )
 }
