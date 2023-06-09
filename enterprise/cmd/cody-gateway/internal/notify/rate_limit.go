@@ -58,7 +58,6 @@ func NewSlackRateLimitNotifier(
 
 		bucket := 0
 		for _, threshold := range thresholds {
-			fmt.Println("threshold", threshold, "bucket", bucket)
 			if usage < threshold {
 				break
 			}
