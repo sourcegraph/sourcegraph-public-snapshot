@@ -265,14 +265,14 @@ func (m mock) RelevantSubjects(ctx context.Context, subject api.SettingsSubject)
 // CurrentUserFinal returns the merged settings for the current user.
 // If there is no active user, it returns the site settings.
 //
-// Deprecated: use a settings.Service instead.
+// NOTE: use a settings.Service instead.
 func CurrentUserFinal(ctx context.Context, db database.DB) (*schema.Settings, error) {
 	return NewService(db).UserFromContext(ctx)
 }
 
 // Final returns the merged settings for the given subject.
 //
-// Deprecated: use a settings.Service instead.
+// NOTE: use a settings.Service instead.
 func Final(ctx context.Context, db database.DB, subject api.SettingsSubject) (*schema.Settings, error) {
 	return NewService(db).ForSubject(ctx, subject)
 }
@@ -281,7 +281,7 @@ func Final(ctx context.Context, db database.DB, subject api.SettingsSubject) (*s
 // These are returned in priority order, with the lowest priority first.
 // The order of priority is default < site < org < user.
 //
-// Deprecated: use a settings.Service instead.
+// NOTE: use a settings.Service instead.
 func RelevantSubjects(ctx context.Context, db database.DB, subject api.SettingsSubject) ([]api.SettingsSubject, error) {
 	return NewService(db).RelevantSubjects(ctx, subject)
 }
