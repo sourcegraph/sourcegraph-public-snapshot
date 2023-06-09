@@ -90,6 +90,9 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 	return nil
 }
 
+// StartLicenseCheck starts a goroutine that periodically checks
+// license validity from dotcom and stores the result in redis.
+// It re-runs the check if the license key changes.
 func StartLicenseCheck(ctx context.Context, logger log.Logger, siteID string) {
 	if licenseCheckStarted {
 		logger.Info("license check already started")

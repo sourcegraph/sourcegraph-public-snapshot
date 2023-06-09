@@ -169,10 +169,9 @@ func Init(
 	} else {
 		gs, err := db.GlobalState().Get(ctx)
 		if err != nil {
-			logger.Error("error getting global state", log.Error(err))
-		} else {
-			licensing.StartLicenseCheck(context.Background(), logger, gs.SiteID)
+			return err
 		}
+		licensing.StartLicenseCheck(context.Background(), logger, gs.SiteID)
 	}
 
 	return nil
