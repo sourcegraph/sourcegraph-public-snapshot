@@ -88,9 +88,9 @@ func TestGitHubInstallationWorker(t *testing.T) {
 		return installs, nil
 	})
 
-	ghStore.BulkInstallFunc.SetDefaultHook(func(ctx context.Context, i1 int, i2 []int) error {
-		fmt.Println("bulk install: app.ID: ", i1, " installations.ID: ", i2)
-		return nil
+	ghStore.InstallFunc.SetDefaultHook(func(ctx context.Context, in ghtypes.GitHubAppInstallation) (*ghtypes.GitHubAppInstallation, error) {
+		fmt.Println("install: appID: ", in.AppID, " installationID: ", in.InstallationID)
+		return nil, nil
 	})
 	ghStore.BulkRemoveInstallationsFunc.SetDefaultHook(func(ctx context.Context, i1 int, i2 []int) error {
 		fmt.Println("bulk remove: app.ID: ", i1, " installations.ID: ", i2)
@@ -143,8 +143,8 @@ func TestGitHubInstallationWorker(t *testing.T) {
 	require.NoError(t, err)
 
 	// We bulk install two installations for GitHub app with ID 1 and one installation for ID 2
-	if len(ghStore.BulkInstallFunc.History()) != 2 {
-		t.Errorf("expected 2 calls to BulkInstall, got %d", len(ghStore.BulkInstallFunc.History()))
+	if len(ghStore.InstallFunc.History()) != 3 {
+		t.Errorf("expected 3 calls to Install, got %d", len(ghStore.InstallFunc.History()))
 	}
 
 	// We bulk remove on3 installation for GitHub app with ID 3

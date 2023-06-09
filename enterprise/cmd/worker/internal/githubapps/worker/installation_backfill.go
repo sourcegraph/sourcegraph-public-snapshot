@@ -40,19 +40,41 @@ func (g *githubAppInstallationWorker) Handle(ctx context.Context) error {
 
 	var errs errors.MultiError
 	for _, app := range apps {
-		g.logger.Info("github app installation job", log.String("appName", app.Name))
+		g.logger.Info("github app installation job", log.String("appName", app.Name), log.Int("id", app.ID))
 
 		client, err := newGithubClient(app, g.logger)
 		if err != nil {
-			g.logger.Error("creating github client", log.Error(err), log.Int("id", app.ID))
+			g.logger.Error("creating github client", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
 			errs = errors.Append(errs, err)
 			continue
 		}
 
 		remoteInstallations, err := client.GetAppInstallations(ctx)
 		if err != nil {
-			g.logger.Error("fetching app installations from GitHub", log.Error(err), log.Int("id", app.ID))
+			g.logger.Error("fetching app installations from GitHub", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
 			errs = errors.Append(errs, err)
+
+			// This likely means the App has been deleted from GitHub, so we should remove
+			// all installations of it from our database.
+			dbInstallations, err := store.GetInstallations(ctx, app.ID)
+			if err != nil {
+				g.logger.Error("fetching app installations from database", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
+				errs = errors.Append(errs, err)
+				continue
+			}
+
+			var toBeDeleted []int
+			for _, install := range dbInstallations {
+				toBeDeleted = append(toBeDeleted, install.InstallationID)
+			}
+			g.logger.Info("deleting github app installations", log.String("appName", app.Name), log.Ints("installationIDs", toBeDeleted))
+			err = store.BulkRemoveInstallations(ctx, app.ID, toBeDeleted)
+			if err != nil {
+				g.logger.Error("failed to delete invalid installations", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
+				errs = errors.Append(errs, err)
+				continue
+			}
+
 			continue
 		}
 
@@ -63,7 +85,7 @@ func (g *githubAppInstallationWorker) Handle(ctx context.Context) error {
 
 		dbInstallations, err := store.GetInstallations(ctx, app.ID)
 		if err != nil {
-			g.logger.Error("fetching app installations from database", log.Error(err), log.Int("id", app.ID))
+			g.logger.Error("fetching app installations from database", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
 			errs = errors.Append(errs, err)
 			continue
 		}
@@ -73,40 +95,55 @@ func (g *githubAppInstallationWorker) Handle(ctx context.Context) error {
 			dbInstallsMap[in.InstallationID] = struct{}{}
 		}
 
-		var toBeAdded []int
-		var toBeDeleted []int
+		var toBeAdded []ghtypes.GitHubAppInstallation
 
-		for id := range dbInstallsMap {
-			_, exists := remoteInstallsMap[id]
-			if !exists {
-				// if the installation id exists in the database but doesn't exist on GitHub, we add it to the
-				// slice of installations to be deleted.
-				toBeDeleted = append(toBeDeleted, id)
+		for _, install := range remoteInstallations {
+			if install == nil || install.ID == nil {
+				continue
 			}
-		}
-
-		for id := range remoteInstallsMap {
-			_, exists := dbInstallsMap[id]
-			if !exists {
-				// if the installation exists on GitHub but we don't have it in our database, we add it to the
-				// slice of installations to be added.
-				toBeAdded = append(toBeAdded, id)
+			// We add any installation that exists on GitHub regardless of whether or
+			// not it already exists in our database, because we will upsert it to
+			// ensure that we have the latest metadata for the installation.
+			toBeAdded = append(toBeAdded, ghtypes.GitHubAppInstallation{
+				InstallationID:   int(install.GetID()),
+				AppID:            app.ID,
+				URL:              install.GetHTMLURL(),
+				AccountLogin:     install.Account.GetLogin(),
+				AccountAvatarURL: install.Account.GetAvatarURL(),
+				AccountURL:       install.Account.GetHTMLURL(),
+				AccountType:      install.Account.GetType(),
+			})
+			_, exists := dbInstallsMap[int(install.GetID())]
+			// If the installation already existed in the DB, we delete it from the
+			// map of database installations so that we can determine later which
+			// installations need to be deleted from the database. Any installations
+			// that remain in the map after this loop will be deleted.
+			if exists {
+				delete(dbInstallsMap, int(install.GetID()))
 			}
 		}
 
 		if len(toBeAdded) > 0 {
-			err = store.BulkInstall(ctx, app.ID, toBeAdded)
-			if err != nil {
-				g.logger.Error("failed to save new installations", log.Error(err), log.Int("id", app.ID))
-				errs = errors.Append(errs, err)
-				continue
+			for _, install := range toBeAdded {
+				g.logger.Info("upserting github app installation", log.String("appName", app.Name), log.Int("installationID", install.InstallationID))
+				_, err = store.Install(ctx, install)
+				if err != nil {
+					g.logger.Error("failed to save new installation", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
+					errs = errors.Append(errs, err)
+					continue
+				}
 			}
 		}
 
-		if len(toBeDeleted) > 0 {
+		if len(dbInstallsMap) > 0 {
+			var toBeDeleted []int
+			for id := range dbInstallsMap {
+				toBeDeleted = append(toBeDeleted, id)
+			}
+			g.logger.Info("deleting github app installations", log.String("appName", app.Name), log.Ints("installationIDs", toBeDeleted))
 			err = store.BulkRemoveInstallations(ctx, app.ID, toBeDeleted)
 			if err != nil {
-				g.logger.Error("failed to revoke invalid installations", log.Error(err), log.Int("id", app.ID))
+				g.logger.Error("failed to delete invalid installations", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
 				errs = errors.Append(errs, err)
 				continue
 			}
