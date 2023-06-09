@@ -94,6 +94,13 @@ func (s *store) DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int)
 		if err := tx.db.Exec(ctx, sqlf.Sprintf(deleteSCIPSymbolNamesQuery, pq.Array(bundleIDs), pq.Array(bundleIDs))); err != nil {
 			return err
 		}
+		// TODO - need to periodically delete abandoned ones as well :(
+		if err := tx.db.Exec(ctx, sqlf.Sprintf(deleteSCIPDocumentLookupSchemaVersionsQuery, pq.Array(bundleIDs))); err != nil {
+			return err
+		}
+		if err := tx.db.Exec(ctx, sqlf.Sprintf(deleteSCIPSymbolsSchemaVersionsQuery, pq.Array(bundleIDs))); err != nil {
+			return err
+		}
 
 		if err := s.db.Exec(ctx, sqlf.Sprintf(deleteLastReconcileQuery, pq.Array(bundleIDs))); err != nil {
 			return err
@@ -131,7 +138,7 @@ WHERE id IN (SELECT id FROM locked_document_lookup)
 
 const deleteSCIPSymbolNamesQuery = `
 WITH
-locked_document_lookup AS (
+locked_symbol_names AS (
 	SELECT id
 	FROM codeintel_scip_symbol_names
 	WHERE upload_id = ANY(%s)
@@ -139,7 +146,15 @@ locked_document_lookup AS (
 	FOR UPDATE
 )
 DELETE FROM codeintel_scip_symbol_names
-WHERE upload_id = ANY(%s) AND id IN (SELECT id FROM locked_document_lookup)
+WHERE upload_id = ANY(%s) AND id IN (SELECT id FROM locked_symbol_names)
+`
+
+const deleteSCIPDocumentLookupSchemaVersionsQuery = `
+DELETE FROM codeintel_scip_document_lookup_schema_versions WHERE upload_id = ANY(%s)
+`
+
+const deleteSCIPSymbolsSchemaVersionsQuery = `
+DELETE FROM codeintel_scip_symbols_schema_versions WHERE upload_id = ANY(%s)
 `
 
 const deleteLastReconcileQuery = `
