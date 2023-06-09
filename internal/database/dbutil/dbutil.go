@@ -317,6 +317,8 @@ func (n *NullJSONRawMessage) Value() (driver.Value, error) {
 	return n.Raw, nil
 }
 
+// JSONMessage wraps a value that can be encoded/decoded as JSON so that
+// it implements db.Scanner and db.Valuer.
 func JSONMessage[T any](val *T) jsonMessage[T] {
 	return jsonMessage[T]{val}
 }
