@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -76,13 +77,13 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		anonymous.NewSource(config.AllowAnonymous, config.ActorConcurrencyLimit),
 		productsubscription.NewSource(
 			obctx.Logger,
-			rcache.New("product-subscriptions"),
+			rcache.New(fmt.Sprintf("product-subscriptions:%s", productsubscription.SourceVersion)),
 			dotcomClient,
 			config.Dotcom.InternalMode,
 			config.ActorConcurrencyLimit,
 		),
 		dotcomuser.NewSource(obctx.Logger,
-			rcache.New("dotcom-users"),
+			rcache.New(fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion)),
 			dotcomClient,
 			config.ActorConcurrencyLimit,
 		),
