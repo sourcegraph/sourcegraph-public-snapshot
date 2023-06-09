@@ -2,7 +2,6 @@ package lsifstore
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -176,9 +175,6 @@ func (s *store) DeleteAbandonedSchemaVersionsRecords(ctx context.Context) (_ int
 		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
-
-	// TODO - remove
-	fmt.Printf("YO WTF\n")
 
 	count1, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(deleteAbandonedSymbolsSchemaVersionsQuery)))
 	if err != nil {
