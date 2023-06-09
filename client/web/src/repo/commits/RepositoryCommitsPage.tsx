@@ -7,7 +7,7 @@ import { basename, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ChangelistID, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Code, Heading, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
