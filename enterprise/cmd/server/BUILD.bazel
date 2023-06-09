@@ -131,6 +131,12 @@ pkg_tar(
     package_dir = "/usr/local/bin",
 )
 
+pkg_tar(
+    name = "tar_image_test_scripts",
+    srcs = ["//enterprise/cmd/server/image_tests:scripts"],
+    package_dir = "/opt/image_tests",
+)
+
 # Tip: to view exactly what gets built here, you can run:
 #   bazel cquery '//cmd/server:image' --output build
 oci_image(
@@ -157,6 +163,7 @@ oci_image(
         ":tar_postgres_optimize",
         ":tar_prom-wrapper",
         "//enterprise/cmd/gitserver:tar_p4_fusion_wrappers",
+        "tar_image_test_scripts",
     ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
     workdir = "/",
 )
