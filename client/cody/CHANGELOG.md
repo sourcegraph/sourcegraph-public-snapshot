@@ -8,7 +8,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Added
 
-- Show network error message when connection is lost and a reload button to get back when network is restored. [pull/52479](https://github.com/sourcegraph/sourcegraph/issues/52479)
+- Show network error message when connection is lost and a reload button to get back when network is restored. [pull/52538](https://github.com/sourcegraph/sourcegraph/issues/52538)
 
 ### Fixed
 
