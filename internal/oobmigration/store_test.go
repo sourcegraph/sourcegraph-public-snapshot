@@ -211,6 +211,39 @@ func TestListEnterprise(t *testing.T) {
 	}
 }
 
+func TestGetMultiple(t *testing.T) {
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := testStore(t, db)
+
+	migrations, err := store.GetByIDs(context.Background(), []int{1, 2, 3, 4, 5})
+	if err != nil {
+		t.Fatalf("unexpected error getting multiple migrations: %s", err)
+	}
+
+	for i, expectedMigration := range testMigrations {
+		if diff := cmp.Diff(expectedMigration, migrations[i]); diff != "" {
+			t.Errorf("unexpected migration (-want +got):\n%s", diff)
+		}
+	}
+
+	for i, expectedMigration := range testEnterpriseMigrations {
+		if diff := cmp.Diff(expectedMigration, migrations[i+len(testMigrations)]); diff != "" {
+			t.Errorf("unexpected enterprise migration (-want +got):\n%s", diff)
+		}
+	}
+
+	_, err = store.GetByIDs(context.Background(), []int{0, 1, 2, 3, 4, 5, 6})
+	if err == nil {
+		t.Fatalf("unexpected nil error getting multiple migrations")
+	}
+
+	if err.Error() != "unknown migration id(s) [0 6]" {
+		t.Fatalf("unexpected error, got=%q", err.Error())
+	}
+}
+
 func TestUpdateDirection(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
