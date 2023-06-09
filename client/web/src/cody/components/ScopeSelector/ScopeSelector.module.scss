@@ -113,7 +113,8 @@
 }
 
 .not-included-in-context {
-    &, .repo-icon {
+    &,
+    .repo-icon {
         color: var(--text-disabled);
     }
     .embedding-icon-no-embeddings {
