@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -98,6 +99,19 @@ func GetConfiguredProductLicenseInfo() (*Info, error) {
 	return info, err
 }
 
+func isLicenseValid() bool {
+	val := redispool.Store.Get(licenseValidityStoreKey)
+	if val.IsNil() {
+		return true
+	}
+
+	if val, err := val.Bool(); err != nil {
+		return val
+	}
+
+	return true
+}
+
 // GetConfiguredProductLicenseInfoWithSignature returns information about the current product license key
 // specified in site configuration, with the signed key's signature.
 func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
@@ -125,6 +139,10 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 
 			if err = info.hasUnknownPlan(); err != nil {
 				return nil, "", err
+			}
+
+			if !isLicenseValid() {
+				return nil, "", errors.New("license is not valid")
 			}
 
 			lastKeyText = keyText
