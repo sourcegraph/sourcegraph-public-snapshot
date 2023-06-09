@@ -28,8 +28,9 @@ type PerforceChangelistResolver struct {
 	commitErr  error
 }
 
-func newPerforceChangelistResolver(ctx context.Context, r *RepositoryResolver, changelistID, commitSHA, repoPath string) *PerforceChangelistResolver {
-	canonicalURL := repoPath + "/-/changelist/" + changelistID
+func newPerforceChangelistResolver(ctx context.Context, r *RepositoryResolver, changelistID, commitSHA string) *PerforceChangelistResolver {
+	repoURL := r.url()
+	canonicalURL := repoURL.Path + "/-/changelist/" + changelistID
 
 	return &PerforceChangelistResolver{
 		logger:             r.logger.Scoped("PerforceChangelistResolver", "resolve a specific changelist"),
@@ -52,10 +53,7 @@ func toPerforceChangelistResolver(ctx context.Context, r *RepositoryResolver, co
 		return nil, errors.Wrap(err, "failed to generate perforceChangelistID")
 	}
 
-	repoURL := r.url()
-	repoURL.Path += "/-/changelist/" + changelistID
-
-	return newPerforceChangelistResolver(ctx, r, changelistID, string(commit.ID), repoURL.Path), nil
+	return newPerforceChangelistResolver(ctx, r, changelistID, string(commit.ID)), nil
 }
 
 func (r *PerforceChangelistResolver) CID() string {
@@ -68,7 +66,6 @@ func (r *PerforceChangelistResolver) CanonicalURL() string {
 
 func (r *PerforceChangelistResolver) Commit(ctx context.Context) (_ *GitCommitResolver, err error) {
 	repoResolver := r.repositoryResolver
-	r.logger.Warn("resolving commit", log.String("sha", r.commitSHA))
 	r.commitOnce.Do(func() {
 		repo, err := repoResolver.repo(ctx)
 		if err != nil {

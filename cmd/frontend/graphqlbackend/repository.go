@@ -285,7 +285,6 @@ func (r *RepositoryResolver) Changelist(ctx context.Context, args *RepositoryCha
 		r,
 		fmt.Sprintf("%d", rc.PerforceChangelistID),
 		string(rc.CommitSHA),
-		r.url().Path,
 	), nil
 }
 
