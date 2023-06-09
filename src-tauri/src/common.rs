@@ -60,7 +60,6 @@ pub fn prompt_to_clear_all_data(app: &AppHandle) {
 }
 
 fn clear_all_data_and_restart(app: &AppHandle) {
-    let window = app.get_window("main").unwrap();
     let path_resolver = app.path_resolver();
 
     // Delete app data dir
@@ -77,12 +76,14 @@ fn clear_all_data_and_restart(app: &AppHandle) {
         }
     }
 
-    // Delete webview browsing data (caches and local storage)
-    window.with_webview(|webview| {
-        // TODO: this doesn't work
-        // but see https://github.com/tauri-apps/wry/pull/915
-        webview.webview().clear_browsing_data().unwrap();
-    });
+    clear_local_storage(app);
 
     app.restart();
+}
+
+fn clear_local_storage(app: &AppHandle) {
+    let window = app.get_window("main").unwrap();
+    // Note that this will clear localStorage only for the current origin, which
+    // is fine assuming the webview is still on localhost:3080.
+    window.eval("localStorage.clear();").unwrap();
 }
