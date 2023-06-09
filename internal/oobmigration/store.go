@@ -425,7 +425,8 @@ SELECT
 FROM out_of_band_migrations m
 LEFT JOIN out_of_band_migrations_errors e ON e.migration_id = m.id
 WHERE m.id = ANY(%s)
-ORDER BY m.id ASC, e.created DESC`
+ORDER BY m.id ASC, e.created DESC
+`
 
 // ReturnEnterpriseMigrations is set by the enterprise application to enable the
 // inclusion of enterprise-only migration records in the output of oobmigration.List.
