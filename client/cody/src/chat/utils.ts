@@ -10,7 +10,7 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
 
 import { Config } from './ChatViewProvider'
-import { AuthStatus, defaultAuthStatus, isLocalApp, unauthenticatedStatus } from './protocol'
+import { AuthStatus, defaultAuthStatus, isLocalApp, unauthenticatedStatus, networkErrorAuthStatus } from './protocol'
 
 // Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
 // This should captures:
@@ -108,9 +108,24 @@ export async function getAuthStatus(
     const isDotComOrApp = client.isDotCom() || isLocalApp(config.serverEndpoint)
     if (!isDotComOrApp) {
         const currentUserID = await client.getCurrentUserId()
+
+        // check first if it's a network error
+        if (isError(currentUserID)) {
+            if (isNetworkError(currentUserID.message)) {
+                return { ...networkErrorAuthStatus }
+            }
+        }
         return newAuthStatus(isDotComOrApp, !isError(currentUserID), false, enabled, version)
     }
     const userInfo = await client.getCurrentUserIdAndVerifiedEmail()
+
+    // check first if it's a network error
+    if (isError(userInfo)) {
+        if (isNetworkError(userInfo.message)) {
+            return { ...networkErrorAuthStatus }
+        }
+    }
+
     return isError(userInfo)
         ? { ...unauthenticatedStatus }
         : newAuthStatus(isDotComOrApp, !!userInfo.id, userInfo.hasVerifiedEmail, true, version)
@@ -145,4 +160,13 @@ export function newAuthStatus(
     newAuthStatus.siteHasCodyEnabled = isCodyEnabled
     newAuthStatus.siteVersion = version
     return newAuthStatus
+}
+
+export function isNetworkError(error: string): boolean {
+    return (
+        error.includes('ENOTFOUND') ||
+        error.includes('ECONNREFUSED') ||
+        error.includes('ECONNRESET') ||
+        error.includes('EHOSTUNREACH')
+    )
 }

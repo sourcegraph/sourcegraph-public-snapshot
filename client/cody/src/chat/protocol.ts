@@ -78,6 +78,16 @@ export const unauthenticatedStatus = {
     siteVersion: '',
 }
 
+export const networkErrorAuthStatus = {
+    showInvalidAccessTokenError: false,
+    authenticated: false,
+    hasVerifiedEmail: false,
+    showNetworkError: true,
+    requiresVerifiedEmail: false,
+    siteHasCodyEnabled: false,
+    siteVersion: '',
+}
+
 export function isLoggedIn(authStatus: AuthStatus): boolean {
     if (!authStatus.siteHasCodyEnabled) {
         return false
