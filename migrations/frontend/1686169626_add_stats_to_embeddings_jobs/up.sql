@@ -11,17 +11,17 @@
 --    in the associated metadata.yaml file.
 
 ALTER TABLE repo_embedding_jobs
-ADD COLUMN stat_has_ranks BOOLEAN NOT NULL DEFAULT FALSE,
-ADD COLUMN stat_is_incremental BOOLEAN NOT NULL DEFAULT FALSE,
-ADD COLUMN stat_code_files_total INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN stat_code_files_embedded INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN stat_code_chunks_embedded INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN stat_code_files_skipped JSONB NOT NULL DEFAULT '{}',
-ADD COLUMN stat_code_bytes_skipped JSONB NOT NULL DEFAULT '{}',
-ADD COLUMN stat_code_bytes_embedded INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN stat_text_files_total INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN stat_text_files_embedded INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN stat_text_chunks_embedded INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN stat_text_files_skipped JSONB NOT NULL DEFAULT '{}',
-ADD COLUMN stat_text_bytes_skipped JSONB NOT NULL DEFAULT '{}',
-ADD COLUMN stat_text_bytes_embedded INTEGER NOT NULL DEFAULT 0;
+ADD COLUMN IF NOT EXISTS stat_has_ranks BOOLEAN NOT NULL DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS stat_is_incremental BOOLEAN NOT NULL DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS stat_code_files_total INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS stat_code_files_embedded INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS stat_code_chunks_embedded INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS stat_code_files_skipped JSONB NOT NULL DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS stat_code_bytes_skipped JSONB NOT NULL DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS stat_code_bytes_embedded INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS stat_text_files_total INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS stat_text_files_embedded INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS stat_text_chunks_embedded INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS stat_text_files_skipped JSONB NOT NULL DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS stat_text_bytes_skipped JSONB NOT NULL DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS stat_text_bytes_embedded INTEGER NOT NULL DEFAULT 0;
