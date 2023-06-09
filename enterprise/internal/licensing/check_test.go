@@ -143,6 +143,7 @@ func Test_licenseChecker(t *testing.T) {
 				SiteID string `json:"siteID"`
 			}
 			err = json.NewDecoder(doer.Request.Body).Decode(&body)
+			require.NoError(t, err)
 			require.Equal(t, siteID, body.SiteID)
 		})
 	}
