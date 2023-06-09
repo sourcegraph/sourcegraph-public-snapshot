@@ -20,7 +20,7 @@ jobs:
       - uses: jcs090218/setup-emacs@master
         with:
           version: ${{ matrix.emacs-version }}
-      - uses: emacs-eask/setup-eask@v2
+      - uses: emacs-eask/setup-eask@master
         with:
           version: '0.8.1'
       - name: Compile
