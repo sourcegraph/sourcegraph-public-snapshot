@@ -2,14 +2,18 @@ package licensing
 
 import (
 	"testing"
+	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/gomodule/redigo/redis"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/stretchr/testify/require"
 )
 
 func TestIsLicenseValid(t *testing.T) {
-	rcache.SetupForTest(t)
+	store = redispool.NewKeyValue("127.0.0.1:6379", &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 5 * time.Second,
+	})
 
 	t.Run("unset key returns true", func(t *testing.T) {
 		require.True(t, isLicenseValid())

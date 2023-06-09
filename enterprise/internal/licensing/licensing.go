@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -100,7 +99,7 @@ func GetConfiguredProductLicenseInfo() (*Info, error) {
 }
 
 func isLicenseValid() bool {
-	val := redispool.Store.Get(licenseValidityStoreKey)
+	val := store.Get(licenseValidityStoreKey)
 	if val.IsNil() {
 		return true
 	}
