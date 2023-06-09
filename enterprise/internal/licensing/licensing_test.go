@@ -9,23 +9,33 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func cleanupStore(t *testing.T, store redispool.KeyValue) {
+	t.Cleanup(func() {
+		store.Del(licenseValidityStoreKey)
+	})
+}
+
 func TestIsLicenseValid(t *testing.T) {
 	store = redispool.NewKeyValue("127.0.0.1:6379", &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 5 * time.Second,
 	})
+	store.Del(licenseValidityStoreKey)
 
 	t.Run("unset key returns true", func(t *testing.T) {
+		cleanupStore(t, store)
 		require.True(t, isLicenseValid())
 	})
 
 	t.Run("set false key returns false", func(t *testing.T) {
-		require.NoError(t, redispool.Store.Set("is_license_valid", false))
+		cleanupStore(t, store)
+		require.NoError(t, store.Set(licenseValidityStoreKey, false))
 		require.False(t, isLicenseValid())
 	})
 
 	t.Run("set true key returns true", func(t *testing.T) {
-		require.NoError(t, redispool.Store.Set("is_license_valid", true))
+		cleanupStore(t, store)
+		require.NoError(t, store.Set(licenseValidityStoreKey, true))
 		require.True(t, isLicenseValid())
 	})
 }

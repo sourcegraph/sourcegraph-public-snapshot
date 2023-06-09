@@ -104,11 +104,12 @@ func isLicenseValid() bool {
 		return true
 	}
 
-	if val, err := val.Bool(); err != nil {
-		return val
+	v, err := val.Bool()
+	if err != nil {
+		return true
 	}
 
-	return true
+	return v
 }
 
 // GetConfiguredProductLicenseInfoWithSignature returns information about the current product license key
