@@ -103,8 +103,10 @@
 }
 
 .repository-list-item {
+    all: unset;
     font-size: 0.8rem;
     line-height: 1rem;
+    display: block;
 
     svg {
         min-width: 1rem;
@@ -115,6 +117,8 @@
         visibility: hidden;
     }
     &:hover {
+        background-color: var(--gray-01);
+
         .remove-repo-icon {
             visibility: visible;
         }

@@ -186,7 +186,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                             <button
                                                 type="button"
                                                 className={classNames(
-                                                    'd-flex justify-content-between flex-row bg-transparent outline-none border-0 text-truncate w-100 px-2 py-1',
+                                                    'd-flex justify-content-between flex-row text-truncate px-2 py-1',
                                                     styles.repositoryListItem,
                                                     {
                                                         [styles.notIncludedInContext]: !includeInferredRepository,
@@ -216,7 +216,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                 <button
                                                     type="button"
                                                     className={classNames(
-                                                        'd-flex justify-content-between flex-row bg-transparent outline-none border-0 text-truncate w-100 px-2 py-1 mt-1',
+                                                        'd-flex justify-content-between flex-row text-truncate px-2 py-1 mt-1',
                                                         styles.repositoryListItem,
                                                         {
                                                             [styles.notIncludedInContext]: !includeInferredFile,
@@ -364,7 +364,7 @@ const AdditionalRepositoriesListItem: React.FC<{
         <button
             type="button"
             className={classNames(
-                'd-flex justify-content-between flex-row bg-transparent outline-none border-0 text-truncate w-100 px-2 py-1 mb-1',
+                'd-flex justify-content-between flex-row text-truncate px-2 py-1 mb-1',
                 styles.repositoryListItem
             )}
             onClick={onClick}
@@ -415,7 +415,7 @@ const SearchResultsListItem: React.FC<{
         <button
             type="button"
             className={classNames(
-                'd-flex justify-content-between flex-row bg-transparent outline-none border-0 text-truncate w-100 px-2 py-1 mb-1',
+                'd-flex justify-content-between flex-row text-truncate px-2 py-1 mb-1',
                 styles.repositoryListItem,
                 { [styles.disabledSearchResult]: disabled }
             )}
