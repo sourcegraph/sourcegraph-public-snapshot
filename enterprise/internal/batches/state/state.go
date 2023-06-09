@@ -121,8 +121,8 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 		return computeBitbucketCloudBuildState(c.UpdatedAt, m, events)
 	case *azuredevops.AnnotatedPullRequest:
 		return computeAzureDevOpsBuildState(m)
-	case gerritbatches.AnnotatedChange:
-		// Gerrit doesn't have builds built-in, I think its better to be explicit by still
+	case *gerritbatches.AnnotatedChange, *protocol.PerforceChangelistState:
+		// Gerrit and Perforce don't have builds built-in, its better to be explicit by still
 		// including this case for clarity.
 		return btypes.ChangesetCheckStateUnknown
 	}

@@ -18,6 +18,7 @@ import (
 type PerforceSource struct {
 	server          schema.PerforceConnection
 	gitServerClient gitserver.Client
+	auther          auth.AuthenticatorWithRetrieveableCredentials
 }
 
 func NewPerforceSource(ctx context.Context, svc *types.ExternalService, _ *httpcli.Factory) (*PerforceSource, error) {
@@ -47,14 +48,28 @@ func (s PerforceSource) GitserverPushConfig(_ *types.Repo) (*protocol.PushConfig
 // WithAuthenticator returns a copy of the original Source configured to use the
 // given authenticator, provided that authenticator type is supported by the
 // code host.
-func (s PerforceSource) WithAuthenticator(_ auth.Authenticator) (ChangesetSource, error) {
+func (s PerforceSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
+	credAuther, ok := a.(auth.AuthenticatorWithRetrieveableCredentials)
+	if !ok {
+		return s, errors.New("unexpected auther type for Perforce Source")
+	}
+	s.auther = credAuther
 	return s, nil
 }
 
 // ValidateAuthenticator validates the currently set authenticator is usable.
 // Returns an error, when validating the Authenticator yielded an error.
-func (s PerforceSource) ValidateAuthenticator(_ context.Context) error {
-	return nil
+func (s PerforceSource) ValidateAuthenticator(ctx context.Context) error {
+	username, password := s.auther.Credentials()
+	if username == "" || password == "" {
+		return errors.New("no auther set for Perforce Source")
+	}
+	rc, _, err := s.gitServerClient.P4Exec(ctx, s.server.P4Port, username, password, "users")
+	if err == nil {
+		_ = rc.Close()
+		return nil
+	}
+	return err
 }
 
 // LoadChangeset loads the given Changeset from the source and updates it. If

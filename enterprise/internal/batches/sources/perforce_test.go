@@ -2,8 +2,11 @@ package sources
 
 import (
 	"context"
+	"io"
+	"net/http"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/stretchr/testify/assert"
 
@@ -16,6 +19,21 @@ var (
 	testPerforceProjectName = "testdepot"
 	testPerforceChangeID    = "111"
 )
+
+func TestPerforceSource_ValidateAuthenticator(t *testing.T) {
+	ctx := context.Background()
+
+	for name, want := range map[string]error{
+		"nil":   nil,
+		"error": errors.New("error"),
+	} {
+		t.Run(name, func(t *testing.T) {
+			s, client := mockPerforceSource()
+			client.P4ExecFunc.SetDefaultReturn(fakeCloser{}, http.Header{}, want)
+			assert.Equal(t, want, s.ValidateAuthenticator(ctx))
+		})
+	}
+}
 
 func TestPerforceSource_LoadChangeset(t *testing.T) {
 	ctx := context.Background()
@@ -122,7 +140,13 @@ func mockPerforceChange() *protocol.PerforceChangelist {
 
 func mockPerforceSource() (*PerforceSource, *MockGitserverClient) {
 	client := NewStrictMockGitserverClient()
-	s := &PerforceSource{gitServerClient: client}
-
+	auther := auth.BasicAuth{Username: "user", Password: "pass"}
+	s := &PerforceSource{gitServerClient: client, auther: &auther}
 	return s, client
 }
+
+type fakeCloser struct {
+	io.Reader
+}
+
+func (fakeCloser) Close() error { return nil }
