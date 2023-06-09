@@ -1,4 +1,4 @@
-package codeintel
+package lsif
 
 import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
