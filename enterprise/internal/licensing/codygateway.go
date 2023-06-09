@@ -68,7 +68,7 @@ func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string
 		PlanEnterprise0:
 		return CodyGatewayRateLimit{
 			AllowedModels:   models,
-			Limit:           int32(500 * uc),
+			Limit:           int32(1000 * uc),
 			IntervalSeconds: 60 * 60 * 24, // day
 		}
 

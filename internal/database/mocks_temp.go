@@ -2816,6 +2816,9 @@ func (c AccessTokenStoreWithTransactFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
 // testing.
 type MockAssignedOwnersStore struct {
+	// CountAssignedOwnersFunc is an instance of a mock function object
+	// controlling the behavior of the method CountAssignedOwners.
+	CountAssignedOwnersFunc *AssignedOwnersStoreCountAssignedOwnersFunc
 	// DeleteOwnerFunc is an instance of a mock function object controlling
 	// the behavior of the method DeleteOwner.
 	DeleteOwnerFunc *AssignedOwnersStoreDeleteOwnerFunc
@@ -2833,6 +2836,11 @@ type MockAssignedOwnersStore struct {
 // overwritten.
 func NewMockAssignedOwnersStore() *MockAssignedOwnersStore {
 	return &MockAssignedOwnersStore{
+		CountAssignedOwnersFunc: &AssignedOwnersStoreCountAssignedOwnersFunc{
+			defaultHook: func(context.Context) (r0 int32, r1 error) {
+				return
+			},
+		},
 		DeleteOwnerFunc: &AssignedOwnersStoreDeleteOwnerFunc{
 			defaultHook: func(context.Context, int32, api.RepoID, string) (r0 error) {
 				return
@@ -2856,6 +2864,11 @@ func NewMockAssignedOwnersStore() *MockAssignedOwnersStore {
 // overwritten.
 func NewStrictMockAssignedOwnersStore() *MockAssignedOwnersStore {
 	return &MockAssignedOwnersStore{
+		CountAssignedOwnersFunc: &AssignedOwnersStoreCountAssignedOwnersFunc{
+			defaultHook: func(context.Context) (int32, error) {
+				panic("unexpected invocation of MockAssignedOwnersStore.CountAssignedOwners")
+			},
+		},
 		DeleteOwnerFunc: &AssignedOwnersStoreDeleteOwnerFunc{
 			defaultHook: func(context.Context, int32, api.RepoID, string) error {
 				panic("unexpected invocation of MockAssignedOwnersStore.DeleteOwner")
@@ -2879,6 +2892,9 @@ func NewStrictMockAssignedOwnersStore() *MockAssignedOwnersStore {
 // implementation, unless overwritten.
 func NewMockAssignedOwnersStoreFrom(i AssignedOwnersStore) *MockAssignedOwnersStore {
 	return &MockAssignedOwnersStore{
+		CountAssignedOwnersFunc: &AssignedOwnersStoreCountAssignedOwnersFunc{
+			defaultHook: i.CountAssignedOwners,
+		},
 		DeleteOwnerFunc: &AssignedOwnersStoreDeleteOwnerFunc{
 			defaultHook: i.DeleteOwner,
 		},
@@ -2889,6 +2905,115 @@ func NewMockAssignedOwnersStoreFrom(i AssignedOwnersStore) *MockAssignedOwnersSt
 			defaultHook: i.ListAssignedOwnersForRepo,
 		},
 	}
+}
+
+// AssignedOwnersStoreCountAssignedOwnersFunc describes the behavior when
+// the CountAssignedOwners method of the parent MockAssignedOwnersStore
+// instance is invoked.
+type AssignedOwnersStoreCountAssignedOwnersFunc struct {
+	defaultHook func(context.Context) (int32, error)
+	hooks       []func(context.Context) (int32, error)
+	history     []AssignedOwnersStoreCountAssignedOwnersFuncCall
+	mutex       sync.Mutex
+}
+
+// CountAssignedOwners delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAssignedOwnersStore) CountAssignedOwners(v0 context.Context) (int32, error) {
+	r0, r1 := m.CountAssignedOwnersFunc.nextHook()(v0)
+	m.CountAssignedOwnersFunc.appendCall(AssignedOwnersStoreCountAssignedOwnersFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CountAssignedOwners
+// method of the parent MockAssignedOwnersStore instance is invoked and the
+// hook queue is empty.
+func (f *AssignedOwnersStoreCountAssignedOwnersFunc) SetDefaultHook(hook func(context.Context) (int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountAssignedOwners method of the parent MockAssignedOwnersStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AssignedOwnersStoreCountAssignedOwnersFunc) PushHook(hook func(context.Context) (int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AssignedOwnersStoreCountAssignedOwnersFunc) SetDefaultReturn(r0 int32, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AssignedOwnersStoreCountAssignedOwnersFunc) PushReturn(r0 int32, r1 error) {
+	f.PushHook(func(context.Context) (int32, error) {
+		return r0, r1
+	})
+}
+
+func (f *AssignedOwnersStoreCountAssignedOwnersFunc) nextHook() func(context.Context) (int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AssignedOwnersStoreCountAssignedOwnersFunc) appendCall(r0 AssignedOwnersStoreCountAssignedOwnersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AssignedOwnersStoreCountAssignedOwnersFuncCall objects describing the
+// invocations of this function.
+func (f *AssignedOwnersStoreCountAssignedOwnersFunc) History() []AssignedOwnersStoreCountAssignedOwnersFuncCall {
+	f.mutex.Lock()
+	history := make([]AssignedOwnersStoreCountAssignedOwnersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AssignedOwnersStoreCountAssignedOwnersFuncCall is an object that
+// describes an invocation of method CountAssignedOwners on an instance of
+// MockAssignedOwnersStore.
+type AssignedOwnersStoreCountAssignedOwnersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AssignedOwnersStoreCountAssignedOwnersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AssignedOwnersStoreCountAssignedOwnersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // AssignedOwnersStoreDeleteOwnerFunc describes the behavior when the
@@ -44947,6 +45072,293 @@ func (c RepoCommitsChangelistsStoreGetLatestForRepoFuncCall) Args() []interface{
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RepoCommitsChangelistsStoreGetLatestForRepoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockRepoPathStore is a mock implementation of the RepoPathStore interface
+// (from the package github.com/sourcegraph/sourcegraph/internal/database)
+// used for unit testing.
+type MockRepoPathStore struct {
+	// AggregateFileCountFunc is an instance of a mock function object
+	// controlling the behavior of the method AggregateFileCount.
+	AggregateFileCountFunc *RepoPathStoreAggregateFileCountFunc
+	// UpdateFileCountsFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateFileCounts.
+	UpdateFileCountsFunc *RepoPathStoreUpdateFileCountsFunc
+}
+
+// NewMockRepoPathStore creates a new mock of the RepoPathStore interface.
+// All methods return zero values for all results, unless overwritten.
+func NewMockRepoPathStore() *MockRepoPathStore {
+	return &MockRepoPathStore{
+		AggregateFileCountFunc: &RepoPathStoreAggregateFileCountFunc{
+			defaultHook: func(context.Context, TreeLocationOpts) (r0 int32, r1 error) {
+				return
+			},
+		},
+		UpdateFileCountsFunc: &RepoPathStoreUpdateFileCountsFunc{
+			defaultHook: func(context.Context, api.RepoID, RepoTreeCounts, time.Time) (r0 int, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockRepoPathStore creates a new mock of the RepoPathStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockRepoPathStore() *MockRepoPathStore {
+	return &MockRepoPathStore{
+		AggregateFileCountFunc: &RepoPathStoreAggregateFileCountFunc{
+			defaultHook: func(context.Context, TreeLocationOpts) (int32, error) {
+				panic("unexpected invocation of MockRepoPathStore.AggregateFileCount")
+			},
+		},
+		UpdateFileCountsFunc: &RepoPathStoreUpdateFileCountsFunc{
+			defaultHook: func(context.Context, api.RepoID, RepoTreeCounts, time.Time) (int, error) {
+				panic("unexpected invocation of MockRepoPathStore.UpdateFileCounts")
+			},
+		},
+	}
+}
+
+// NewMockRepoPathStoreFrom creates a new mock of the MockRepoPathStore
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockRepoPathStoreFrom(i RepoPathStore) *MockRepoPathStore {
+	return &MockRepoPathStore{
+		AggregateFileCountFunc: &RepoPathStoreAggregateFileCountFunc{
+			defaultHook: i.AggregateFileCount,
+		},
+		UpdateFileCountsFunc: &RepoPathStoreUpdateFileCountsFunc{
+			defaultHook: i.UpdateFileCounts,
+		},
+	}
+}
+
+// RepoPathStoreAggregateFileCountFunc describes the behavior when the
+// AggregateFileCount method of the parent MockRepoPathStore instance is
+// invoked.
+type RepoPathStoreAggregateFileCountFunc struct {
+	defaultHook func(context.Context, TreeLocationOpts) (int32, error)
+	hooks       []func(context.Context, TreeLocationOpts) (int32, error)
+	history     []RepoPathStoreAggregateFileCountFuncCall
+	mutex       sync.Mutex
+}
+
+// AggregateFileCount delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockRepoPathStore) AggregateFileCount(v0 context.Context, v1 TreeLocationOpts) (int32, error) {
+	r0, r1 := m.AggregateFileCountFunc.nextHook()(v0, v1)
+	m.AggregateFileCountFunc.appendCall(RepoPathStoreAggregateFileCountFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the AggregateFileCount
+// method of the parent MockRepoPathStore instance is invoked and the hook
+// queue is empty.
+func (f *RepoPathStoreAggregateFileCountFunc) SetDefaultHook(hook func(context.Context, TreeLocationOpts) (int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AggregateFileCount method of the parent MockRepoPathStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *RepoPathStoreAggregateFileCountFunc) PushHook(hook func(context.Context, TreeLocationOpts) (int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoPathStoreAggregateFileCountFunc) SetDefaultReturn(r0 int32, r1 error) {
+	f.SetDefaultHook(func(context.Context, TreeLocationOpts) (int32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoPathStoreAggregateFileCountFunc) PushReturn(r0 int32, r1 error) {
+	f.PushHook(func(context.Context, TreeLocationOpts) (int32, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoPathStoreAggregateFileCountFunc) nextHook() func(context.Context, TreeLocationOpts) (int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoPathStoreAggregateFileCountFunc) appendCall(r0 RepoPathStoreAggregateFileCountFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoPathStoreAggregateFileCountFuncCall
+// objects describing the invocations of this function.
+func (f *RepoPathStoreAggregateFileCountFunc) History() []RepoPathStoreAggregateFileCountFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoPathStoreAggregateFileCountFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoPathStoreAggregateFileCountFuncCall is an object that describes an
+// invocation of method AggregateFileCount on an instance of
+// MockRepoPathStore.
+type RepoPathStoreAggregateFileCountFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 TreeLocationOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoPathStoreAggregateFileCountFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoPathStoreAggregateFileCountFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// RepoPathStoreUpdateFileCountsFunc describes the behavior when the
+// UpdateFileCounts method of the parent MockRepoPathStore instance is
+// invoked.
+type RepoPathStoreUpdateFileCountsFunc struct {
+	defaultHook func(context.Context, api.RepoID, RepoTreeCounts, time.Time) (int, error)
+	hooks       []func(context.Context, api.RepoID, RepoTreeCounts, time.Time) (int, error)
+	history     []RepoPathStoreUpdateFileCountsFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateFileCounts delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockRepoPathStore) UpdateFileCounts(v0 context.Context, v1 api.RepoID, v2 RepoTreeCounts, v3 time.Time) (int, error) {
+	r0, r1 := m.UpdateFileCountsFunc.nextHook()(v0, v1, v2, v3)
+	m.UpdateFileCountsFunc.appendCall(RepoPathStoreUpdateFileCountsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the UpdateFileCounts
+// method of the parent MockRepoPathStore instance is invoked and the hook
+// queue is empty.
+func (f *RepoPathStoreUpdateFileCountsFunc) SetDefaultHook(hook func(context.Context, api.RepoID, RepoTreeCounts, time.Time) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateFileCounts method of the parent MockRepoPathStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *RepoPathStoreUpdateFileCountsFunc) PushHook(hook func(context.Context, api.RepoID, RepoTreeCounts, time.Time) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoPathStoreUpdateFileCountsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID, RepoTreeCounts, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoPathStoreUpdateFileCountsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, api.RepoID, RepoTreeCounts, time.Time) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoPathStoreUpdateFileCountsFunc) nextHook() func(context.Context, api.RepoID, RepoTreeCounts, time.Time) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoPathStoreUpdateFileCountsFunc) appendCall(r0 RepoPathStoreUpdateFileCountsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoPathStoreUpdateFileCountsFuncCall
+// objects describing the invocations of this function.
+func (f *RepoPathStoreUpdateFileCountsFunc) History() []RepoPathStoreUpdateFileCountsFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoPathStoreUpdateFileCountsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoPathStoreUpdateFileCountsFuncCall is an object that describes an
+// invocation of method UpdateFileCounts on an instance of
+// MockRepoPathStore.
+type RepoPathStoreUpdateFileCountsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 RepoTreeCounts
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoPathStoreUpdateFileCountsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoPathStoreUpdateFileCountsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
