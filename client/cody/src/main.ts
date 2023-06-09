@@ -122,6 +122,17 @@ const register = async (
         })
     )
 
+    vscode.commands.registerCommand('cody.menu.enableCodeCompletions', async () => {
+        await workspaceConfig.update('cody.experimental.suggestions', true, vscode.ConfigurationTarget.Global)
+    })
+    vscode.commands.registerCommand('cody.menu.disableCodeCompletions', async () => {
+        await workspaceConfig.update('cody.experimental.suggestions', false, vscode.ConfigurationTarget.Global)
+    })
+
+    vscode.commands.registerCommand('cody.menu.customCommand', async () => {
+        await workspaceConfig.update('cody.experimental.suggestions', true, vscode.ConfigurationTarget.Global)
+    })
+
     const executeRecipe = async (recipe: RecipeID, showTab = true): Promise<void> => {
         if (showTab) {
             await vscode.commands.executeCommand('cody.chat.focus')

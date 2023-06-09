@@ -283,7 +283,7 @@
       },
       {
         "command": "cody.delete-access-token",
-        "title": "Cody: Sign out"
+        "title": "%command.pr.openPullsWebsite.title%"
       },
       {
         "command": "cody.manual-completions",
@@ -291,7 +291,7 @@
       },
       {
         "command": "cody.settings",
-        "title": "Cody: Settings",
+        "title": "Settings",
         "group": "Cody",
         "icon": "$(gear)"
       },
@@ -334,6 +334,16 @@
       {
         "command": "cody.walkthrough.enableCodeCompletions",
         "title": "Cody Walkthrough: Enable Code Completions"
+      },
+      {
+        "command": "cody.menu.enableCodeCompletions",
+        "title": "\tCompletions",
+        "when": "!config.cody.experimental.suggestions"
+      },
+      {
+        "command": "cody.menu.disableCodeCompletions",
+        "title": "✓ Completions",
+        "when": "config.cody.experimental.suggestions"
       },
       {
         "command": "cody.comment.add",
@@ -632,6 +642,26 @@
           "command": "cody.fixup.apply-all",
           "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated",
           "group": "navigation"
+        },
+        {
+          "command": "cody.menu.enableCodeCompletions",
+          "group": "menu-1",
+          "when": "view == cody.chat && !config.cody.experimental.suggestions"
+        },
+        {
+          "command": "cody.menu.disableCodeCompletions",
+          "group": "menu-1",
+          "when": "view == cody.chat && config.cody.experimental.suggestions"
+        },
+        {
+          "command": "cody.settings",
+          "group": "menu-2",
+          "when": "view == cody.chat"
+        },
+        {
+          "command": "cody.delete-access-token",
+          "group": "menu-3",
+          "when": "view == cody.chat"
         }
       ],
       "editor/title": [
