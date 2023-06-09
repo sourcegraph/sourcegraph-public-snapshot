@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -185,7 +186,7 @@ const listRecentViewSignalsFmtstr = `
 	-- Optional WHERE clauses
 	WHERE %s
 	-- Order, limit
-	ORDER BY o.id
+	ORDER BY 3 DESC
 	%s
 `
 
@@ -201,18 +202,13 @@ func (s *recentViewSignalStore) List(ctx context.Context, opts ListRecentViewSig
 }
 
 func createListQuery(opts ListRecentViewSignalOpts) *sqlf.Query {
-	joinClause := &sqlf.Query{}
-	if opts.RepoID != 0 || opts.Path != "" {
-		joinClause = sqlf.Sprintf("INNER JOIN repo_paths AS p ON p.id = o.viewed_file_path_id")
-	}
+	joinClause := sqlf.Sprintf("INNER JOIN repo_paths AS p ON p.id = o.viewed_file_path_id")
 	whereClause := sqlf.Sprintf("TRUE")
 	wherePredicates := make([]*sqlf.Query, 0)
 	if opts.RepoID != 0 {
 		wherePredicates = append(wherePredicates, sqlf.Sprintf("p.repo_id = %s", opts.RepoID))
 	}
-	if opts.Path != "" {
-		wherePredicates = append(wherePredicates, sqlf.Sprintf("p.absolute_path = %s", opts.Path))
-	}
+	wherePredicates = append(wherePredicates, sqlf.Sprintf("p.absolute_path = %s", opts.Path))
 	if opts.ViewerUserID != 0 {
 		wherePredicates = append(wherePredicates, sqlf.Sprintf("o.viewer_id = %s", opts.ViewerUserID))
 	}
