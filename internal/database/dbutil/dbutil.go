@@ -338,7 +338,7 @@ func (m jsonMessage[T]) Scan(value any) error {
 }
 
 // Value implements the driver Valuer interface.
-func (m *jsonMessage[T]) Value() (driver.Value, error) {
+func (m jsonMessage[T]) Value() (driver.Value, error) {
 	b, err := json.Marshal(m.inner)
 	if err != nil {
 		return nil, err
