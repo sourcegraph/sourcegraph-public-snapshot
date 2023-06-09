@@ -167,7 +167,7 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 				featureLimiter: featureLimiter,
 				nowFunc:        nowFunc,
 			},
-			wantErr: autogold.Expect(`you exceeded the concurrency limit of 2 requests for "code_completions". Retry after 2000-01-01 00:00:10 +0000 UTC`),
+			wantErr: autogold.Expect(`"code_completions": concurrency limit exceeded`),
 			wantStore: autogold.Expect(limiter.MockRedisStore{
 				"foobar": limiter.MockRedisEntry{Value: 2, TTL: 10},
 			}),
