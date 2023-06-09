@@ -4,9 +4,7 @@ go_library(
     name = "perforce",
     srcs = [
         "account.go",
-        "events.go",
         "repos.go",
-        "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/perforce",
     visibility = ["//:__subpackages__"],
