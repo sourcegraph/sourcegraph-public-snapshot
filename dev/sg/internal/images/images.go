@@ -26,13 +26,23 @@ import (
 
 var seenImageRepos = map[string]imageRepository{}
 
-type TagPrefixOption struct {
-	Prefix     string
-	SkipImages []string
+type Options struct {
+	Prefix           string
+	SkipPrefixImages []string
+	SkipUpdate       []string
 }
 
-func (o *TagPrefixOption) Skip(image string) bool {
-	for _, img := range o.SkipImages {
+func (o *Options) SkipPrefix(image string) bool {
+	for _, img := range o.SkipPrefixImages {
+		if image == img {
+			return true
+		}
+	}
+	return false
+}
+
+func (o *Options) SkipUpdates(image string) bool {
+	for _, img := range o.SkipUpdate {
 		if image == img {
 			return true
 		}
@@ -50,10 +60,10 @@ const (
 
 // Update updates manifests for the given deploy type to pin images to the latest version
 // of pinTag.
-func Update(path string, creds credentials.Credentials, deploy DeploymentType, pinTag string, tagPrefixOpt *TagPrefixOption) error {
+func Update(path string, creds credentials.Credentials, deploy DeploymentType, pinTag string, opts *Options) error {
 	switch deploy {
 	case DeploymentTypeK8S:
-		return UpdateK8s(path, creds, pinTag, tagPrefixOpt)
+		return UpdateK8s(path, creds, pinTag, opts)
 	case DeploymentTypeHelm:
 		return UpdateHelm(path, creds, pinTag)
 	case DeploymentTypeCompose:
@@ -62,7 +72,7 @@ func Update(path string, creds credentials.Credentials, deploy DeploymentType, p
 	return errors.Newf("deployment kind %s is not supported", deploy)
 }
 
-func UpdateK8s(path string, creds credentials.Credentials, pinTag string, tagPrefixOpt *TagPrefixOption) error {
+func UpdateK8s(path string, creds credentials.Credentials, pinTag string, opts *Options) error {
 	rw := &kio.LocalPackageReadWriter{
 		KeepReaderAnnotations: false,
 		PreserveSeqIndent:     true,
@@ -78,7 +88,7 @@ func UpdateK8s(path string, creds credentials.Credentials, pinTag string, tagPre
 
 	err := kio.Pipeline{
 		Inputs:                []kio.Reader{rw},
-		Filters:               []kio.Filter{imageFilter{credentials: &creds, pinTag: pinTag, tagPrefixOpt: tagPrefixOpt}},
+		Filters:               []kio.Filter{imageFilter{credentials: &creds, pinTag: pinTag, opts: opts}},
 		Outputs:               []kio.Writer{rw},
 		ContinueOnEmptyResult: true,
 	}.Execute()
@@ -166,9 +176,9 @@ func UpdateHelm(path string, creds credentials.Credentials, pinTag string) error
 }
 
 type imageFilter struct {
-	credentials  *credentials.Credentials
-	pinTag       string
-	tagPrefixOpt *TagPrefixOption
+	credentials *credentials.Credentials
+	pinTag      string
+	opts        *Options
 }
 
 var _ kio.Filter = &imageFilter{}
@@ -184,7 +194,7 @@ func (filter imageFilter) Filter(in []*yaml.RNode) ([]*yaml.RNode, error) {
 			std.Out.Verbosef("Skipping manifest of kind: %v", k)
 			continue
 		}
-		if err := findImage(r, *filter.credentials, filter.pinTag, filter.tagPrefixOpt); err != nil {
+		if err := findImage(r, *filter.credentials, filter.pinTag, filter.opts); err != nil {
 			if errors.As(err, &ErrNoImage{}) || errors.Is(err, ErrNoUpdateNeeded) {
 				std.Out.Verbosef("Encountered expected err: %v", err)
 				continue
@@ -200,7 +210,7 @@ var conventionalInitContainerPaths = [][]string{
 	{"spec", "template", "spec", "initContainers"},
 }
 
-func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string, tagPrefixOpt *TagPrefixOption) error {
+func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string, opts *Options) error {
 	containers, err := r.Pipe(yaml.LookupFirstMatch(yaml.ConventionalContainerPaths))
 	if err != nil {
 		return errors.Newf("%v: %s", err, r.GetName())
@@ -221,11 +231,22 @@ func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string,
 		if image == nil {
 			return errors.Newf("couldn't find image for container %s: %w", node.GetName(), ErrNoImage{r.GetKind(), r.GetName()})
 		}
+
 		originalImage, err := image.Value.String()
 		if err != nil {
 			return errors.Wrapf(err, "%s: invalid image", node.GetName())
 		}
-		updatedImage, err := getUpdatedSourcegraphImage(originalImage, credential, pinTag, tagPrefixOpt)
+
+		ir, err := parseImgString(originalImage)
+		if err != nil {
+			return errors.Wrapf(err, "%s: invalid image", node.GetName())
+		}
+
+		if opts.SkipUpdates(ir.Name) {
+			std.Out.WriteWarningf("skipping update for %s", ir.Name)
+		}
+
+		updatedImage, err := getUpdatedSourcegraphImage(originalImage, credential, pinTag, opts)
 		if err != nil {
 			std.Out.WriteWarningf("could not get updated image for %s: %s", originalImage, err)
 			return nil
@@ -298,7 +319,7 @@ func parseImgString(rawImg string) (*ImageReference, error) {
 // DeploySourcegraphDockerImage, and errors if the image is unknown.
 //
 // Callers should not treat the returned error as fatal.
-func getUpdatedSourcegraphImage(originalImage string, creds credentials.Credentials, pinTag string, tagPrefixOpt *TagPrefixOption) (newImage string, err error) {
+func getUpdatedSourcegraphImage(originalImage string, creds credentials.Credentials, pinTag string, opts *Options) (newImage string, err error) {
 	str := strings.Split(originalImage, "/")
 	imageName := str[len(str)-1]
 
@@ -313,7 +334,7 @@ func getUpdatedSourcegraphImage(originalImage string, creds credentials.Credenti
 		return imageName, errors.New("not a sourcegraph image")
 	}
 
-	newImage, err = getUpdatedImage(originalImage, creds, pinTag, tagPrefixOpt)
+	newImage, err = getUpdatedImage(originalImage, creds, pinTag, opts)
 	if err != nil {
 		return imageName, err
 	}
@@ -321,7 +342,7 @@ func getUpdatedSourcegraphImage(originalImage string, creds credentials.Credenti
 }
 
 // getUpdatedImage retrieves the updated docker image corresponding to pinTag.
-func getUpdatedImage(originalImage string, credential credentials.Credentials, pinTag string, tagPrefixOpt *TagPrefixOption) (string, error) {
+func getUpdatedImage(originalImage string, credential credentials.Credentials, pinTag string, opts *Options) (string, error) {
 	imgRef, err := parseImgString(originalImage)
 	if err != nil {
 		return "", err
@@ -340,7 +361,7 @@ func getUpdatedImage(originalImage string, credential credentials.Credentials, p
 		return prevRepo.imageRef.String(), nil
 	}
 
-	repo, err := createAndFillImageRepository(imgRef, pinTag, tagPrefixOpt)
+	repo, err := createAndFillImageRepository(imgRef, pinTag, opts)
 	if err != nil {
 		if errors.Is(err, ErrNoUpdateNeeded) {
 			return imgRef.String(), ErrNoUpdateNeeded
@@ -412,7 +433,7 @@ func (i *imageRepository) fetchAuthToken(registryName string) (string, error) {
 	return result.AccessToken, nil
 }
 
-func createAndFillImageRepository(ref *ImageReference, pinTag string, tagPrefixOpt *TagPrefixOption) (repo *imageRepository, err error) {
+func createAndFillImageRepository(ref *ImageReference, pinTag string, tagPrefixOpt *Options) (repo *imageRepository, err error) {
 	// TODO(@bobheadxi) Figure out what is going on here and simplify - we set the
 	// imageRef, call a function that does something to imageRepository, and then reset
 	// imageRef later using values from ref?
@@ -439,7 +460,7 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string, tagPrefixO
 		if err != nil {
 			return nil, err
 		}
-		if tagPrefixOpt == nil || tagPrefixOpt.Prefix == "" || tagPrefixOpt.Skip(ref.Name) {
+		if tagPrefixOpt == nil || tagPrefixOpt.Prefix == "" || tagPrefixOpt.SkipPrefix(ref.Name) {
 			targetTag, err = findLatestMainTag(tags)
 			if err != nil {
 				std.Out.Verbose("findLatestMainTag: " + err.Error())

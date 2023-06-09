@@ -39,6 +39,7 @@ var (
 	opsUpdateImagesContainerRegistryPasswordFlag string
 	opsUpdateImagesPinTagFlag                    string
 	opsUpdateImagesTagPrefix                     string
+	opsUpdateImagesSkipImages                    string
 	opsUpdateImagesTagPrefixSkipImages           string
 	opsUpdateImagesCommand                       = &cli.Command{
 		Name:        "update-images",
@@ -58,6 +59,11 @@ var (
 				Aliases:     []string{"t"},
 				Usage:       "pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)",
 				Destination: &opsUpdateImagesPinTagFlag,
+			},
+			&cli.StringFlag{
+				Name:        "skip-images",
+				Usage:       "images to skip updating entirely ('k8s' deployment only)",
+				Destination: &opsUpdateImagesSkipImages,
 			},
 			&cli.StringFlag{
 				Name:        "tag-prefix",
@@ -187,10 +193,11 @@ func opsUpdateImage(ctx *cli.Context) error {
 		return flag.ErrHelp
 	}
 
-	skipPrefixOpt := images.TagPrefixOption{
-		Prefix:     opsUpdateImagesTagPrefix,
-		SkipImages: strings.Split(opsUpdateImagesTagPrefixSkipImages, ","),
+	opts := images.Options{
+		Prefix:           opsUpdateImagesTagPrefix,
+		SkipPrefixImages: strings.Split(opsUpdateImagesTagPrefixSkipImages, ","),
+		SkipUpdate:       strings.Split(opsUpdateImagesSkipImages, ","),
 	}
 
-	return images.Update(args[0], *dockerCredentials, images.DeploymentType(opsUpdateImagesDeploymentKindFlag), opsUpdateImagesPinTagFlag, &skipPrefixOpt)
+	return images.Update(args[0], *dockerCredentials, images.DeploymentType(opsUpdateImagesDeploymentKindFlag), opsUpdateImagesPinTagFlag, &opts)
 }
