@@ -2,6 +2,7 @@ package lsifstore
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -101,10 +102,6 @@ func (s *store) DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int)
 			return err
 		}
 
-		// TODO - need to periodically delete abandoned ones as well :(
-		// DELETE FROM codeintel_scip_symbols_schema_versions sv         WHERE NOT EXISTS (SELECT 1 FROM codeintel_scip_symbols s         WHERE s.upload_id = sv.upload_id);
-		// DELETE FROM codeintel_scip_document_lookup_schema_versions sv WHERE NOT EXISTS (SELECT 1 FROM codeintel_scip_document_lookup l WHERE l.upload_id = sv.upload_id);
-
 		if err := s.db.Exec(ctx, sqlf.Sprintf(deleteLastReconcileQuery, pq.Array(bundleIDs))); err != nil {
 			return err
 		}
@@ -170,6 +167,56 @@ WITH locked_rows AS (
 )
 DELETE FROM codeintel_last_reconcile
 WHERE dump_id IN (SELECT dump_id FROM locked_rows)
+`
+
+// TODO - test
+func (s *store) DeleteAbandonedSchemaVersionsRecords(ctx context.Context) (_ int, err error) {
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// TODO - remove
+	fmt.Printf("YO WTF\n")
+
+	count1, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(deleteAbandonedSymbolsSchemaVersionsQuery)))
+	if err != nil {
+		return 0, err
+	}
+
+	count2, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(deleteAbandonedDocumentLookupSchemaVersionsQuery)))
+	if err != nil {
+		return 0, err
+	}
+
+	return count1 + count2, nil
+}
+
+const deleteAbandonedSymbolsSchemaVersionsQuery = `
+WITH del AS (
+	DELETE FROM codeintel_scip_symbols_schema_versions sv
+	WHERE NOT EXISTS (
+		SELECT 1
+		FROM codeintel_scip_symbols s
+		WHERE s.upload_id = sv.upload_id
+	)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM del
+`
+
+const deleteAbandonedDocumentLookupSchemaVersionsQuery = `
+WITH del AS (
+	DELETE FROM codeintel_scip_document_lookup_schema_versions sv
+	WHERE NOT EXISTS (
+		SELECT 1
+		FROM codeintel_scip_document_lookup l
+		WHERE l.upload_id = sv.upload_id
+	)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM del
 `
 
 func (s *store) DeleteUnreferencedDocuments(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (_, _ int, err error) {
