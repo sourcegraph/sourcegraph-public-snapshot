@@ -500,6 +500,10 @@ func TestRecentViewSignalStore_List(t *testing.T) {
 			opts:           ListRecentViewSignalOpts{},
 			expectedCounts: []int{viewCounts2[""], viewCounts1[""]},
 		},
+		"list values for root path with min threashold": {
+			opts:           ListRecentViewSignalOpts{MinThreshold: 15000},
+			expectedCounts: []int{viewCounts2[""]},
+		},
 		"filter by viewer ID": {
 			opts:           ListRecentViewSignalOpts{ViewerUserID: 1},
 			expectedCounts: []int{viewCounts1[""]},

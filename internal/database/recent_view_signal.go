@@ -32,9 +32,16 @@ type RecentViewSignalStore interface {
 }
 
 type ListRecentViewSignalOpts struct {
+	// ViewerUserID indicates the user whos views are fetched.
+	// If unset - all users are considered.
 	ViewerUserID int
-	RepoID       api.RepoID
-	Path         string
+	// RepoID if not set - will result in fetching results from multiple repos.
+	RepoID api.RepoID
+	// Path for which the views should be fetched. View counts are aggregated
+	// up the file tree. Unset value - empty string - indicates repo root.
+	Path string
+	// MinThreshold is a lower bound of views entry per path per user to be considered.
+	MinThreshold int
 	LimitOffset  *LimitOffset
 }
 
@@ -211,6 +218,9 @@ func createListQuery(opts ListRecentViewSignalOpts) *sqlf.Query {
 	wherePredicates = append(wherePredicates, sqlf.Sprintf("p.absolute_path = %s", opts.Path))
 	if opts.ViewerUserID != 0 {
 		wherePredicates = append(wherePredicates, sqlf.Sprintf("o.viewer_id = %s", opts.ViewerUserID))
+	}
+	if opts.MinThreshold > 0 {
+		wherePredicates = append(wherePredicates, sqlf.Sprintf("o.views_count > %s", opts.MinThreshold))
 	}
 	if len(wherePredicates) > 0 {
 		whereClause = sqlf.Sprintf("%s", sqlf.Join(wherePredicates, "AND"))
