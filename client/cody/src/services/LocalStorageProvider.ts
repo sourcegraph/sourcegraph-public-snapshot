@@ -103,6 +103,9 @@ export class LocalStorage {
     }
 
     public async set(key: string, value: string): Promise<void> {
+        if (!key || !value) {
+            return
+        }
         try {
             await this.storage.update(key, value)
         } catch (error) {

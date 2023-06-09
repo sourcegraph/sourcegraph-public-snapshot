@@ -6,6 +6,7 @@ import type {
     ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared/src/configuration'
 
+import { DOTCOM_URL } from './chat/protocol'
 import { SecretStorage, getAccessToken } from './services/SecretStorageProvider'
 
 /**
@@ -33,7 +34,7 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
     const deprecatedExperimentalSuggestions = config.get('cody.experimental.suggestions', isTesting)
 
     return {
-        serverEndpoint: sanitizeServerEndpoint(config.get('cody.serverEndpoint', '')),
+        serverEndpoint: sanitizeServerEndpoint(config.get('cody.serverEndpoint', DOTCOM_URL.href)),
         codebase: sanitizeCodebase(config.get('cody.codebase')),
         customHeaders: config.get<object>('cody.customHeaders', {}) as Record<string, string>,
         useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
@@ -41,8 +42,8 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
         debugVerbose: config.get<boolean>('cody.debug.verbose', false),
         debugFilter: debugRegex,
         completions: completions || deprecatedExperimentalSuggestions,
+        inlineAssist: config.get('cody.inlineAssist', true),
         experimentalChatPredictions: config.get('cody.experimental.chatPredictions', isTesting),
-        experimentalInline: config.get('cody.experimental.inline', isTesting),
         experimentalGuardrails: config.get('cody.experimental.guardrails', isTesting),
         experimentalNonStop: config.get('cody.experimental.nonStop', isTesting),
     }
@@ -57,7 +58,10 @@ function sanitizeCodebase(codebase: string | undefined): string {
     return codebase.replace(protocolRegexp, '').trim().replace(trailingSlashRegexp, '')
 }
 
-function sanitizeServerEndpoint(serverEndpoint: string): string {
+function sanitizeServerEndpoint(serverEndpoint?: string): string {
+    if (!serverEndpoint) {
+        return DOTCOM_URL.href
+    }
     const trailingSlashRegexp = /\/$/
     return serverEndpoint.trim().replace(trailingSlashRegexp, '')
 }

@@ -39,6 +39,18 @@ export class InlineController {
     constructor(private extensionPath: string) {
         this.commentController = vscode.comments.createCommentController(this.id, this.label)
         this.commentController.options = this.options
+
+        const initConfig = vscode.workspace.getConfiguration('cody').get('inlineAssist') as boolean
+        this.enable(initConfig)
+
+        // On config change, update inline assist
+        vscode.workspace.onDidChangeConfiguration(e => {
+            // check if the config change is related to 'cody.inlineAssist'
+            if (e.affectsConfiguration('cody')) {
+                const isEnabled = vscode.workspace.getConfiguration('cody').get('inlineAssist') as boolean
+                this.enable(isEnabled)
+            }
+        })
         // Track last selection range in valid doc before an action is called
         vscode.window.onDidChangeTextEditorSelection(e => {
             if (
@@ -75,6 +87,14 @@ export class InlineController {
         this._disposables.push(
             vscode.commands.registerCommand('cody.inline.decorations.remove', id => this.removeLens(id))
         )
+    }
+    private enable(isEnabled: boolean): void {
+        this.commentController.commentingRangeProvider = {
+            provideCommentingRanges: (document: vscode.TextDocument) => {
+                const lineCount = document.lineCount
+                return isEnabled ? [new vscode.Range(0, 0, lineCount - 1, 0)] : []
+            },
+        }
     }
     /**
      * Getter to return instance

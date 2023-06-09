@@ -692,7 +692,6 @@
         "cody.serverEndpoint": {
           "order": 1,
           "type": "string",
-          "default": "https://sourcegraph.com",
           "example": "https://example.sourcegraph.com",
           "description": "URL to the Sourcegraph instance."
         },
@@ -739,18 +738,22 @@
           "markdownDescription": "Enables experimental Cody completions in your editor.",
           "default": false
         },
-        "cody.experimental.chatPredictions": {
-          "order": 6,
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
-        },
         "cody.experimental.inline": {
-          "order": 7,
+          "markdownDeprecationMessage": "This setting was renamed to `cody.inlineAssist`.",
+          "default": false
+        },
+        "cody.inlineAssist": {
+          "order": 6,
           "title": "Cody Inline Assist",
           "type": "boolean",
           "markdownDescription": "Enables Cody Inline Assist, an inline way to explicitly ask questions and propose modifications to code.",
-          "default": false
+          "default": true
+        },
+        "cody.experimental.chatPredictions": {
+          "order": 7,
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
         },
         "cody.experimental.guardrails": {
           "order": 8,

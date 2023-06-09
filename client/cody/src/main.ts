@@ -163,6 +163,7 @@ const register = async (
             await chatProvider.executeRecipe('inline-chat', comment.text.trimStart(), false)
             logEvent(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
         }),
+        vscode.commands.registerCommand('cody.recipe.file-touch', () => executeRecipe('file-touch', false)),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             commentController.delete(thread)
         }),
@@ -274,19 +275,6 @@ const register = async (
                 CompletionsLogger.accept(codyLogId)
             }),
             vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
-        )
-    }
-
-    // Initiate inline assist when feature flag is on
-    if (initialConfig.experimentalInline) {
-        commentController.get().commentingRangeProvider = {
-            provideCommentingRanges: (document: vscode.TextDocument) => {
-                const lineCount = document.lineCount
-                return [new vscode.Range(0, 0, lineCount - 1, 0)]
-            },
-        }
-        disposables.push(
-            vscode.commands.registerCommand('cody.recipe.file-touch', () => executeRecipe('file-touch', false))
         )
     }
 

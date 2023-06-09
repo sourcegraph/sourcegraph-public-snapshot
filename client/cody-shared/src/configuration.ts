@@ -9,8 +9,8 @@ export interface Configuration {
     useContext: ConfigurationUseContext
     customHeaders: Record<string, string>
     completions: boolean
+    inlineAssist: boolean
     experimentalChatPredictions: boolean
-    experimentalInline: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
 }
