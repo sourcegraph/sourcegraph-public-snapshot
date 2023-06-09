@@ -394,6 +394,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     public async executeRecipe(recipeId: RecipeID, humanChatInput: string = '', showTab = true): Promise<void> {
         debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
+        void this.registerNonFixupActivity(recipeId)
         if (this.isMessageInProgress) {
             this.sendErrorToWebview('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
             return
@@ -429,6 +430,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         switch (recipeId) {
             case 'context-search':
                 this.onCompletionEnd()
+                break
+            case 'fixup':
+            case 'non-stop':
                 break
             default: {
                 this.sendTranscript()
@@ -684,6 +688,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         const isPrivateInstance = new URL(this.config.serverEndpoint).href !== DOTCOM_URL.href
         const endpointUri = { serverEndpoint: this.config.serverEndpoint }
         switch (event) {
+            case 'typing':
+                // when user is typing in the chatbox
+                this.registerNonFixupActivity(event)
+                break
             case 'feedback':
                 // Only include context for dot com users with connected codebase
                 logEvent(
@@ -785,8 +793,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Fixup Tasks
      */
 
-    public async scheduleFixupCallbacks(callback: () => void): Promise<void> {
-        await this.fixupScheduler.registerCallback(callback)
+    public registerNonFixupActivity(event: string): void {
+        if (event === 'fixup' || event === 'non-stop') {
+            return
+        }
+        this.fixupScheduler.registerActivity()
     }
 
     public fixupTasksForTesting(testing: TestSupport): FixupTask[] {

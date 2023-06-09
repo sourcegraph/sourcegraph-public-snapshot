@@ -49,6 +49,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     suggestions,
     setSuggestions,
 }) => {
+    const onUserInput = useCallback(
+        (text: string) => {
+            setFormInput(text)
+            vscodeAPI.postMessage({ command: 'event', event: 'typing', value: text })
+        },
+        [setFormInput, vscodeAPI]
+    )
+
     const onSubmit = useCallback(
         (text: string, submitType: 'user' | 'suggestion') => {
             vscodeAPI.postMessage({ command: 'submit', text, submitType })
@@ -89,7 +97,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             transcript={transcript}
             contextStatus={contextStatus}
             formInput={formInput}
-            setFormInput={setFormInput}
+            setFormInput={onUserInput}
             inputHistory={inputHistory}
             setInputHistory={setInputHistory}
             onSubmit={onSubmit}
