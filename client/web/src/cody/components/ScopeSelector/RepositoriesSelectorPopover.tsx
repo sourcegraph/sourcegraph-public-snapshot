@@ -169,9 +169,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                         {!searchText && (
                             <>
                                 <div className="d-flex justify-content-between p-2 border-bottom mb-1">
-                                    <Text className={classNames('m-0 text-uppercase', styles.header)}>
-                                        Chat Context
-                                    </Text>
+                                    <Text className={classNames('m-0', styles.header)}>Chat Context</Text>
                                     <Button
                                         onClick={resetScope}
                                         variant="icon"
@@ -179,7 +177,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                         title="Reset scope"
                                         className={styles.header}
                                     >
-                                        RESET
+                                        Reset
                                     </Button>
                                 </div>
                                 <div className={classNames('d-flex flex-column', styles.contextItemsContainer)}>
@@ -281,7 +279,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                         {searchText && (
                             <>
                                 <div className="d-flex justify-content-between p-2 border-bottom mb-1">
-                                    <Text className={classNames('m-0 text-uppercase', styles.header)}>
+                                    <Text className={classNames('m-0', styles.header)}>
                                         {additionalRepositoriesLeft
                                             ? `Add up to ${additionalRepositoriesLeft} Additional Repositories`
                                             : 'Maximum additional epositories added'}
