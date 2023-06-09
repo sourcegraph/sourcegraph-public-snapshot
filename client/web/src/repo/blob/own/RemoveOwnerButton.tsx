@@ -48,7 +48,7 @@ export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({
         RemoveAssignedTeamVariables
     >(REMOVE_ASSIGNED_TEAM, {})
 
-    const createInputObject = (id: string): MutationFunctionOptions => ({
+    const createInputObject = (id: string): any => ({
         variables: {
             input: {
                 absolutePath: path,
