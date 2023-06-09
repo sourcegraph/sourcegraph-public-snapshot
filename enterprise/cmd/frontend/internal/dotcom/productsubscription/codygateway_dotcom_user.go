@@ -21,7 +21,7 @@ type CodyGatewayDotcomUserResolver struct {
 
 func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.Context, args *graphqlbackend.CodyGatewayUsersByAccessTokenArgs) (graphqlbackend.CodyGatewayUser, error) {
 	// 🚨 SECURITY: Only site admins or the service accounts may check users.
-	if err := serviceAccountOrSiteAdmin(ctx, r.DB, true); err != nil {
+	if err := serviceAccountOrSiteAdmin(ctx, r.DB, false); err != nil {
 		return nil, err
 	}
 	dbTokens := newDBTokens(r.DB)
