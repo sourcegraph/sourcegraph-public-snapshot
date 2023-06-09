@@ -64,7 +64,7 @@ type Value struct {
 	err   error
 }
 
-// NewValue returns a new Value for the given reply and err.
+// NewValue returns a new Value for the given reply and err. Useful in tests using NewMockKeyValue.
 func NewValue(reply any, err error) Value {
 	return Value{reply: reply, err: err}
 }
