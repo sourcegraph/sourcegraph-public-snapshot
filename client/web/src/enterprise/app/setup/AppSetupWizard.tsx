@@ -44,7 +44,7 @@ const APP_SETUP_STEPS: StepConfiguration[] = [
         name: 'All set',
         path: 'all-set',
         component: AppAllSetSetupStep,
-        nextURL: '/',
+        nextURL: '/cody',
         onView: () => {
             localStorage.setItem('app.setup.finished', 'true')
         },
