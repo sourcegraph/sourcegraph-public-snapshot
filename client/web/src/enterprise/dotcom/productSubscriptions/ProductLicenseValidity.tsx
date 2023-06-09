@@ -45,7 +45,7 @@ export const ProductLicenseValidity: React.FunctionComponent<
     const timestampSuffix = isExpired || isRevoked ? 'ago' : 'remaining'
 
     return (
-        <Text className={className}>
+        <div className={className}>
             <Icon
                 svgPath={getIcon(isExpired, isRevoked)}
                 aria-hidden={true}
@@ -62,6 +62,6 @@ export const ProductLicenseValidity: React.FunctionComponent<
                     <span className="ml-3">{revokeReason}</span>
                 </div>
             )}
-        </Text>
+        </div>
     )
 }

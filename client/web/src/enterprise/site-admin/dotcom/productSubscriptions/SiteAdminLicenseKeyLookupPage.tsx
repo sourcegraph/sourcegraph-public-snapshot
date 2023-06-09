@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 
 import { Container, H2, Text } from '@sourcegraph/wildcard'
 
@@ -30,10 +30,8 @@ const SEARCH_PARAM_KEY = 'query'
 export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
     useEffect(() => eventLogger.logPageView('SiteAdminLicenseKeyLookup'), [])
 
-    const location = useLocation()
-    const navigate = useNavigate()
+    const [searchParams, setSearchParams] = useSearchParams()
 
-    const searchParams = new URLSearchParams(location.search)
     const [search, setSearch] = useState<string>(searchParams.get(SEARCH_PARAM_KEY) ?? '')
 
     const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useQueryProductLicensesConnection(
@@ -41,14 +39,11 @@ export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsW
         20
     )
 
-    const updateQueryParams = useCallback(
-        (query: string) => {
-            const searchParams = new URLSearchParams()
-            searchParams.set(SEARCH_PARAM_KEY, query)
-            navigate({ search: searchParams.toString() }, { replace: true })
-        },
-        [navigate]
-    )
+    useEffect(() => {
+        const query = search?.trim() ?? ''
+        searchParams.set(SEARCH_PARAM_KEY, query)
+        setSearchParams(searchParams)
+    }, [search, searchParams, setSearchParams])
 
     return (
         <div className="site-admin-product-subscriptions-page">
@@ -63,7 +58,6 @@ export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsW
                     onInputChange={event => {
                         const search = event.target.value
                         setSearch(search)
-                        updateQueryParams(search.trim())
                     }}
                     inputPlaceholder="Search product licenses..."
                 />
