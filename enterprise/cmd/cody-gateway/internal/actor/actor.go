@@ -96,12 +96,24 @@ func FromContext(ctx context.Context) *Actor {
 
 // Logger returns a logger that has metadata about the actor attached to it.
 func (a *Actor) Logger(logger log.Logger) log.Logger {
-	if a == nil {
+	// If there's no ID and no source and no key, this is probably just no
+	// actor available. Possible in actor-less endpoints like diagnostics.
+	if a == nil || (a.ID == "" && a.Source == nil && a.Key == "") {
 		return logger.With(log.String("actor.ID", "<nil>"))
 	}
+
+	// TODO: We shouldn't ever have a nil source, but check just in case, since
+	// we don't want to panic on some instrumentation.
+	var sourceName string
+	if a.Source != nil {
+		sourceName = a.Source.Name()
+	} else {
+		sourceName = "<nil>"
+	}
+
 	return logger.With(
 		log.String("actor.ID", a.ID),
-		log.String("actor.Source", a.Source.Name()),
+		log.String("actor.Source", sourceName),
 		log.Bool("actor.AccessEnabled", a.AccessEnabled),
 		log.Timep("actor.LastUpdated", a.LastUpdated),
 	)
