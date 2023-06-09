@@ -201,7 +201,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                 <div className="d-flex align-items-center text-truncate">
                                                     <Icon
                                                         aria-hidden={true}
-                                                        className={classNames('mr-2 text-muted', {
+                                                        className={classNames('mr-1 text-muted', {
                                                             [styles.visibilityHidden]: !includeInferredRepository,
                                                         })}
                                                         svgPath={mdiCheck}
@@ -231,7 +231,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                     <div className="d-flex align-items-center text-truncate">
                                                         <Icon
                                                             aria-hidden={true}
-                                                            className={classNames('mr-2 text-muted', {
+                                                            className={classNames('mr-1 text-muted', {
                                                                 [styles.visibilityHidden]: !includeInferredFile,
                                                             })}
                                                             svgPath={mdiCheck}
@@ -370,7 +370,7 @@ const AdditionalRepositoriesListItem: React.FC<{
             <div className="d-flex align-items-center text-truncate">
                 <Icon
                     aria-hidden={true}
-                    className={classNames('mr-2 text-muted', styles.removeRepoIcon)}
+                    className={classNames('mr-1 text-muted', styles.removeRepoIcon)}
                     svgPath={mdiMinusCircleOutline}
                 />
                 <ExternalRepositoryIcon externalRepo={repository.externalRepository} className={styles.repoIcon} />
@@ -423,7 +423,7 @@ const SearchResultsListItem: React.FC<{
             <div className="text-truncate">
                 <Icon
                     aria-hidden={true}
-                    className={classNames('mr-2 text-muted', { [styles.visibilityHidden]: !selected })}
+                    className={classNames('mr-1 text-muted', { [styles.visibilityHidden]: !selected })}
                     svgPath={mdiCheck}
                 />
                 <ExternalRepositoryIcon externalRepo={repository.externalRepository} className={styles.repoIcon} />
