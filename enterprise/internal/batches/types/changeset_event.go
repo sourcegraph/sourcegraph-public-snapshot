@@ -121,19 +121,6 @@ const (
 	ChangesetEventKindGerritChangeReviewed                ChangesetEventKind = "gerrit:change:reviewed"
 	ChangesetEventKindGerritChangeNeedsChanges            ChangesetEventKind = "gerrit:change:needs_changes"
 	ChangesetEventKindGerritChangeRejected                ChangesetEventKind = "gerrit:change:rejected"
-	// TODO: review and fix/change. BCC'd from ADO implementation
-	ChangesetEventKindPerforcePullRequestCreated                 ChangesetEventKind = "perforce:pullrequest:created"
-	ChangesetEventKindPerforcePullRequestMerged                  ChangesetEventKind = "perforce:pullrequest:merged"
-	ChangesetEventKindPerforcePullRequestUpdated                 ChangesetEventKind = "perforce:pullrequest:updated"
-	ChangesetEventKindPerforcePullRequestApproved                ChangesetEventKind = "perforce:pullrequest:approved"
-	ChangesetEventKindPerforcePullRequestApprovedWithSuggestions ChangesetEventKind = "perforce:pullrequest:approved_with_suggestions"
-	ChangesetEventKindPerforcePullRequesReviewed                 ChangesetEventKind = "perforce:pullrequest:reviewed"
-	ChangesetEventKindPerforcePullRequestWaitingForAuthor        ChangesetEventKind = "perforce:pullrequest:waiting_for_author"
-	ChangesetEventKindPerforcePullRequestRejected                ChangesetEventKind = "perforce:pullrequest:rejected"
-	ChangesetEventKindPerforcePullRequestBuildSucceeded          ChangesetEventKind = "perforce:pullrequest:build_succeeded"
-	ChangesetEventKindPerforcePullRequestBuildFailed             ChangesetEventKind = "perforce:pullrequest:build_failed"
-	ChangesetEventKindPerforcePullRequestBuildError              ChangesetEventKind = "perforce:pullrequest:build_error"
-	ChangesetEventKindPerforcePullRequestBuildPending            ChangesetEventKind = "perforce:pullrequest:build_pending"
 
 	ChangesetEventKindInvalid ChangesetEventKind = "invalid"
 )
@@ -224,9 +211,7 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 		ChangesetEventKindGitLabApproved,
 		ChangesetEventKindBitbucketCloudApproved,
 		ChangesetEventKindBitbucketCloudPullRequestApproved,
-		ChangesetEventKindAzureDevOpsPullRequestApproved,
-		// TODO: review and remove/fix - BCC'd from ADO
-		ChangesetEventKindPerforcePullRequestApproved:
+		ChangesetEventKindAzureDevOpsPullRequestApproved:
 		return ChangesetReviewStateApproved, nil
 
 	// BitbucketServer's "REVIEWED" activity is created when someone clicks
@@ -235,10 +220,7 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 		ChangesetEventKindBitbucketCloudChangesRequested,
 		ChangesetEventKindBitbucketCloudPullRequestChangesRequestCreated,
 		ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor,
-		ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions,
-		// TODO: review and remove/fix - BCC'd from ADO
-		ChangesetEventKindPerforcePullRequestWaitingForAuthor,
-		ChangesetEventKindPerforcePullRequestApprovedWithSuggestions:
+		ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions:
 		return ChangesetReviewStateChangesRequested, nil
 
 	case ChangesetEventKindGitHubReviewed:
@@ -261,9 +243,7 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 		ChangesetEventKindGitLabUnapproved,
 		ChangesetEventKindBitbucketCloudPullRequestUnapproved,
 		ChangesetEventKindBitbucketCloudPullRequestChangesRequestRemoved,
-		ChangesetEventKindAzureDevOpsPullRequestRejected,
-		// TODO: review and remove/fix - BCC'd from ADO
-		ChangesetEventKindPerforcePullRequestRejected:
+		ChangesetEventKindAzureDevOpsPullRequestRejected:
 		return ChangesetReviewStateDismissed, nil
 	default:
 		return ChangesetReviewStatePending, nil
