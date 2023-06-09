@@ -67,12 +67,14 @@ func (g *githubAppInstallationWorker) Handle(ctx context.Context) error {
 			for _, install := range dbInstallations {
 				toBeDeleted = append(toBeDeleted, install.InstallationID)
 			}
-			g.logger.Info("deleting github app installations", log.String("appName", app.Name), log.Ints("installationIDs", toBeDeleted))
-			err = store.BulkRemoveInstallations(ctx, app.ID, toBeDeleted)
-			if err != nil {
-				g.logger.Error("failed to delete invalid installations", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
-				errs = errors.Append(errs, err)
-				continue
+			if len(toBeDeleted) > 0 {
+				g.logger.Info("deleting github app installations", log.String("appName", app.Name), log.Ints("installationIDs", toBeDeleted))
+				err = store.BulkRemoveInstallations(ctx, app.ID, toBeDeleted)
+				if err != nil {
+					g.logger.Error("failed to delete invalid installations", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
+					errs = errors.Append(errs, err)
+					continue
+				}
 			}
 
 			continue
