@@ -693,7 +693,8 @@
           "order": 1,
           "type": "string",
           "example": "https://example.sourcegraph.com",
-          "description": "URL to the Sourcegraph instance."
+          "description": "URL to the Sourcegraph instance.",
+          "format": "uri"
         },
         "cody.codebase": {
           "order": 2,
