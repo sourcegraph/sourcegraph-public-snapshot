@@ -117,7 +117,7 @@ func TestRecentViewSignalStore_BuildAggregateFromEvents(t *testing.T) {
 
 	// Getting all RecentViewSummary entries from the DB and checking their
 	// correctness.
-	summaries, err := store.List(ctx, ListRecentViewSignalOpts{})
+	summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
 	require.NoError(t, err)
 
 	assert.Contains(t, summaries, RecentViewSummary{UserID: 1, FilePathID: repo1PathToID["cmd/gitserver/server/lock.go"], ViewsCount: 2})
@@ -235,7 +235,7 @@ func TestRecentViewSignalStore_BuildAggregateFromEvents_WithExcludedRepos(t *tes
 
 	// Getting all RecentViewSummary entries from the DB and checking their
 	// correctness.
-	summaries, err := store.List(ctx, ListRecentViewSignalOpts{})
+	summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
 	require.NoError(t, err)
 
 	assert.Contains(t, summaries, RecentViewSummary{UserID: 1, FilePathID: repo1PathToID["cmd/gitserver/server/lock.go"], ViewsCount: 2})
@@ -283,7 +283,7 @@ func TestRecentViewSignalStore_Insert(t *testing.T) {
 	t.Run("inserting initial signal", func(t *testing.T) {
 		err = store.Insert(ctx, 1, 2, 10)
 		require.NoError(t, err)
-		summaries, err := store.List(ctx, ListRecentViewSignalOpts{})
+		summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
 		require.NoError(t, err)
 		assert.Len(t, summaries, 1)
 		assert.Equal(t, 2, summaries[0].FilePathID)
@@ -295,20 +295,20 @@ func TestRecentViewSignalStore_Insert(t *testing.T) {
 		err = store.Insert(ctx, 1, 2, 10)
 		err = store.Insert(ctx, 1, 3, 20)
 		require.NoError(t, err)
-		summaries, err := store.List(ctx, ListRecentViewSignalOpts{})
+		summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
 		require.NoError(t, err)
 		assert.Len(t, summaries, 2)
-		assert.Equal(t, 2, summaries[0].FilePathID)
-		assert.Equal(t, 10, summaries[0].ViewsCount)
-		assert.Equal(t, 3, summaries[1].FilePathID)
-		assert.Equal(t, 20, summaries[1].ViewsCount)
+		assert.Equal(t, 3, summaries[0].FilePathID)
+		assert.Equal(t, 20, summaries[0].ViewsCount)
+		assert.Equal(t, 2, summaries[1].FilePathID)
+		assert.Equal(t, 10, summaries[1].ViewsCount)
 		clearTable(ctx, db)
 	})
 
 	t.Run("inserting conflicting entry will update it", func(t *testing.T) {
 		err = store.Insert(ctx, 1, 2, 10)
 		require.NoError(t, err)
-		summaries, err := store.List(ctx, ListRecentViewSignalOpts{})
+		summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
 		require.NoError(t, err)
 		assert.Len(t, summaries, 1)
 		assert.Equal(t, 2, summaries[0].FilePathID)
@@ -317,7 +317,7 @@ func TestRecentViewSignalStore_Insert(t *testing.T) {
 		// Inserting a conflicting entry.
 		err = store.Insert(ctx, 1, 2, 100)
 		require.NoError(t, err)
-		summaries, err = store.List(ctx, ListRecentViewSignalOpts{})
+		summaries, err = store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
 		require.NoError(t, err)
 		assert.Len(t, summaries, 1)
 		assert.Equal(t, 2, summaries[0].FilePathID)
@@ -370,7 +370,7 @@ func TestRecentViewSignalStore_InsertPaths(t *testing.T) {
 		pathIDs[1]: 1000, // file src/cde
 	})
 	require.NoError(t, err)
-	got, err := store.List(ctx, ListRecentViewSignalOpts{})
+	got, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
 	require.NoError(t, err)
 	want := []RecentViewSummary{
 		{
@@ -434,7 +434,7 @@ func TestRecentViewSignalStore_InsertPaths_OverBatchSize(t *testing.T) {
 
 	err = store.InsertPaths(ctx, 1, counts)
 	require.NoError(t, err)
-	summaries, err := store.List(ctx, ListRecentViewSignalOpts{})
+	summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
 	require.NoError(t, err)
 	require.Len(t, summaries, 5502) // Two extra entries - repo root and 'src' directory
 }
