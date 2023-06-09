@@ -40,6 +40,17 @@ type GitHubAppsStore interface {
 	// Install creates a new GitHub App installation in the database.
 	Install(ctx context.Context, id, installationID int) error
 
+	// BulkInstalls inserts multiple GitHub App installation IDs into the database
+	// for the GitHub App with the given ID.
+	BulkInstall(ctx context.Context, id int, installationIDs []int) error
+
+	// BulkRemoveInstallations revokes multiple GitHub App installation IDs from the database
+	// for the GitHub App with the given ID.
+	BulkRemoveInstallations(ctx context.Context, id int, installationIDs []int) error
+
+	// GetInstallations retrieves all installations for the GitHub App with the given ID.
+	GetInstallations(ctx context.Context, id int) ([]*ghtypes.GitHubAppInstallation, error)
+
 	// GetLatestInstallID retrieves the latest GitHub App installation ID from the
 	// database for the GitHub App with the provided appID.
 	GetLatestInstallID(ctx context.Context, appID int) (int, error)
@@ -170,9 +181,24 @@ func scanGitHubApp(s dbutil.Scanner) (*ghtypes.GitHubApp, error) {
 	return &app, err
 }
 
+func scanGitHubAppInstallation(s dbutil.Scanner) (*ghtypes.GitHubAppInstallation, error) {
+	var install ghtypes.GitHubAppInstallation
+
+	err := s.Scan(
+		&install.ID,
+		&install.AppID,
+		&install.InstallationID,
+		&install.CreatedAt,
+	)
+	return &install, err
+}
+
 var (
 	scanGitHubApps     = basestore.NewSliceScanner(scanGitHubApp)
 	scanFirstGitHubApp = basestore.NewFirstScanner(scanGitHubApp)
+
+	scanGitHubAppInstallations     = basestore.NewSliceScanner(scanGitHubAppInstallation)
+	scanFirstGitHubAppInstallation = basestore.NewFirstScanner(scanGitHubAppInstallation)
 )
 
 func (s *gitHubAppsStore) decrypt(ctx context.Context, apps ...*ghtypes.GitHubApp) ([]*ghtypes.GitHubApp, error) {
@@ -344,4 +370,57 @@ func (s *gitHubAppsStore) List(ctx context.Context, domain *itypes.GitHubAppDoma
 		where = sqlf.Sprintf("domain = %s", *domain)
 	}
 	return s.list(ctx, where)
+}
+
+// BulkInstalls inserts multiple GitHub App installation IDs into the database
+// for the GitHub App with the given ID.
+//
+// id is the ID of the GitHub App in the database.
+//
+// installationIDs is a slice of GitHub App installation IDs to insert.
+func (s *gitHubAppsStore) BulkInstall(ctx context.Context, id int, installationIDs []int) error {
+	var installations []*sqlf.Query
+	for _, installID := range installationIDs {
+		installations = append(installations, sqlf.Sprintf("( %d, %d )", id, installID))
+	}
+
+	query := sqlf.Sprintf(`
+		INSERT INTO github_app_installs (app_id, installation_id)
+    	VALUES
+			%s
+		ON CONFLICT DO NOTHING
+		RETURNING id`,
+		sqlf.Join(installations, ", "))
+	return s.Exec(ctx, query)
+}
+
+// GetInstallations retrieves all installations for the GitHub App with the given ID.
+func (s *gitHubAppsStore) GetInstallations(ctx context.Context, id int) ([]*ghtypes.GitHubAppInstallation, error) {
+	query := sqlf.Sprintf(`
+		SELECT
+			id,
+			app_id,
+			installation_id,
+			created_at
+		FROM
+			github_app_installs
+	`)
+	return scanGitHubAppInstallations(s.Query(ctx, query))
+}
+
+func (s *gitHubAppsStore) BulkRemoveInstallations(ctx context.Context, id int, installationIDs []int) error {
+	var pred []*sqlf.Query
+	pred = append(pred, sqlf.Sprintf("app_id = %d", id))
+
+	var installIDQuery []*sqlf.Query
+	for _, id := range installationIDs {
+		installIDQuery = append(installIDQuery, sqlf.Sprintf("%d", id))
+	}
+	pred = append(pred, sqlf.Sprintf("installation_id IN (%s)", sqlf.Join(installIDQuery, ", ")))
+
+	query := sqlf.Sprintf(`
+		DELETE FROM github_app_installs
+		WHERE %s
+	`, sqlf.Join(pred, " AND "))
+	return s.Exec(ctx, query)
 }
