@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export SANITY_CHECK=true
+
 services=(
   embededings
   frontend
