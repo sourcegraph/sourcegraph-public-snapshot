@@ -20,6 +20,7 @@ import (
 
 	k8swatch "k8s.io/apimachinery/pkg/watch"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -28,8 +29,6 @@ import (
 const (
 	// KubernetesExecutorMountPath is the path where the PersistentVolumeClaim is mounted in the Executor Pod.
 	KubernetesExecutorMountPath = "/data"
-	// KubernetesJobContainerName is the name of the container in the Job Pod that runs the step from the executor types.Job.
-	KubernetesJobContainerName = "sg-executor-job-container"
 	// KubernetesJobMountPath is the path where the PersistentVolumeClaim is mounted in the Job Pod.
 	KubernetesJobMountPath = "/job"
 )
@@ -57,6 +56,7 @@ type KubernetesContainerOptions struct {
 	Deadline              *int64
 	KeepJobs              bool
 	SecurityContext       KubernetesSecurityContext
+	SingleJobPod          bool
 }
 
 // KubernetesNodeAffinity contains the Kubernetes node affinity for a Job.
@@ -113,71 +113,36 @@ func (c *KubernetesCommand) ReadLogs(
 	namespace string,
 	pod *corev1.Pod,
 	containerName string,
-	logEntry LogEntry,
+	singleJob bool,
+	logEntry cmdlogger.LogEntry,
 ) (err error) {
 	ctx, _, endObservation := c.Operations.KubernetesReadLogs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("podName", pod.Name),
 		attribute.String("containerName", containerName),
+		attribute.Bool("singleJob", singleJob),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	// If the pod just failed to even start, then we can't get logs from it.
-	if pod.Status.Phase == corev1.PodFailed && len(pod.Status.ContainerStatuses) == 0 {
+	if pod.Status.Phase == corev1.PodFailed &&
+		(!singleJob && len(pod.Status.ContainerStatuses) == 0) ||
+		(singleJob && len(pod.Status.InitContainerStatuses) == 0) {
 		logEntry.Finalize(1)
 	} else {
 		exitCode := 0
-		for _, status := range pod.Status.ContainerStatuses {
-			if status.Name == containerName {
-				exitCode = int(status.State.Terminated.ExitCode)
-				break
+		if singleJob {
+			for _, status := range pod.Status.InitContainerStatuses {
+				if status.Name == containerName {
+					exitCode = int(status.State.Terminated.ExitCode)
+					break
+				}
 			}
-		}
-		// Ensure we always get the exit code in case an error occurs when reading the logs.
-		defer logEntry.Finalize(exitCode)
-
-		req := c.Clientset.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container: containerName})
-		stream, err := req.Stream(ctx)
-		if err != nil {
-			return errors.Wrapf(err, "opening log stream for pod %s", pod.Name)
-		}
-
-		pipeReaderWaitGroup := readProcessPipe(logEntry, stream)
-
-		select {
-		case <-ctx.Done():
-		case err = <-watchErrGroup(pipeReaderWaitGroup):
-			if err != nil {
-				return errors.Wrap(err, "reading process pipes")
-			}
-		}
-	}
-
-	return nil
-}
-
-// ReadLogsV2 reads the logs of the given pod and writes them to the logger.
-func (c *KubernetesCommand) ReadLogsV2(
-	ctx context.Context,
-	namespace string,
-	pod *corev1.Pod,
-	containerName string,
-	logEntry LogEntry,
-) (err error) {
-	ctx, _, endObservation := c.Operations.KubernetesReadLogs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("podName", pod.Name),
-		attribute.String("containerName", containerName),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	// If the pod just failed to even start, then we can't get logs from it.
-	if pod.Status.Phase == corev1.PodFailed && len(pod.Status.InitContainerStatuses) == 0 {
-		logEntry.Finalize(1)
-	} else {
-		exitCode := 0
-		for _, status := range pod.Status.InitContainerStatuses {
-			if status.Name == containerName {
-				exitCode = int(status.State.Terminated.ExitCode)
-				break
+		} else {
+			for _, status := range pod.Status.ContainerStatuses {
+				if status.Name == containerName {
+					exitCode = int(status.State.Terminated.ExitCode)
+					break
+				}
 			}
 		}
 		// Ensure we always get the exit code in case an error occurs when reading the logs.
@@ -214,72 +179,7 @@ func readProcessPipe(w io.WriteCloser, stdout io.Reader) *errgroup.Group {
 }
 
 // WaitForPodToSucceed waits for the pod with the given job label to succeed.
-func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, namespace string, jobName string) (p *corev1.Pod, err error) {
-	ctx, _, endObservation := c.Operations.KubernetesWaitForPodToSucceed.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("jobName", jobName),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	watch, err := c.Clientset.CoreV1().Pods(namespace).Watch(ctx, metav1.ListOptions{Watch: true, LabelSelector: "job-name=" + jobName})
-	if err != nil {
-		return nil, errors.Wrap(err, "watching pod")
-	}
-	defer watch.Stop()
-	// No need to add a timer. If the job exceeds the deadline, it will fail.
-	for event := range watch.ResultChan() {
-		// Will be *corev1.Pod in all cases except for an error, which is *metav1.Status.
-		if event.Type == k8swatch.Error {
-			if status, ok := event.Object.(*metav1.Status); ok {
-				c.Logger.Error("Watch error",
-					log.String("status", status.Status),
-					log.String("message", status.Message),
-					log.String("reason", string(status.Reason)),
-					log.Int32("code", status.Code),
-				)
-			} else {
-				c.Logger.Error("Unexpected watch error object", log.String("object", fmt.Sprintf("%T", event.Object)))
-			}
-			// If we get an event for something other than a pod, log it for now and try again. We don't have enough
-			// information to know if this is a problem or not. We have seen this happen in the wild, but hard to
-			// replicate.
-			continue
-		}
-		// We _should_ have a pod here, but just in case, ensure the cast succeeds.
-		pod, ok := event.Object.(*corev1.Pod)
-		if !ok {
-			// If we get an event for something other than a pod, log it for now and try again. We don't have enough
-			// information to know if this is a problem or not. We have seen this happen in the wild, but hard to
-			// replicate.
-			c.Logger.Error(
-				"Unexpected watch object",
-				log.String("type", string(event.Type)),
-				log.String("object", fmt.Sprintf("%T", event.Object)),
-			)
-			continue
-		}
-		c.Logger.Debug(
-			"Watching pod",
-			log.String("name", pod.Name),
-			log.String("phase", string(pod.Status.Phase)),
-			log.Time("creationTimestamp", pod.CreationTimestamp.Time),
-			kubernetesTimep("deletionTimestamp", pod.DeletionTimestamp),
-		)
-		switch pod.Status.Phase {
-		case corev1.PodFailed:
-			return pod, ErrKubernetesPodFailed
-		case corev1.PodSucceeded:
-			return pod, nil
-		case corev1.PodPending:
-			if pod.DeletionTimestamp != nil {
-				return nil, ErrKubernetesPodNotScheduled
-			}
-		}
-	}
-	return nil, errors.New("unexpected end of watch")
-}
-
-// WaitForJobPodToSucceed waits for the pod with the given job label to succeed.
-func (c *KubernetesCommand) WaitForJobPodToSucceed(ctx context.Context, logger Logger, namespace string, jobName string, spec Spec) (p *corev1.Pod, err error) {
+func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, logger cmdlogger.Logger, namespace string, jobName string, spec Spec) (p *corev1.Pod, err error) {
 	ctx, _, endObservation := c.Operations.KubernetesWaitForPodToSucceed.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("jobName", jobName),
 	}})
@@ -291,7 +191,7 @@ func (c *KubernetesCommand) WaitForJobPodToSucceed(ctx context.Context, logger L
 	}
 	defer watch.Stop()
 
-	logEntries := make(map[string]LogEntry)
+	logEntries := make(map[string]cmdlogger.LogEntry)
 	logEntriesStarted := make(map[string]bool)
 	defer func() {
 		for _, entry := range logEntries {
@@ -360,7 +260,27 @@ func (c *KubernetesCommand) WaitForJobPodToSucceed(ctx context.Context, logger L
 						entry = logEntries[status.Name]
 					}
 					if !logEntriesStarted[status.Name] {
-						if err = c.ReadLogsV2(ctx, namespace, pod, status.Name, entry); err != nil {
+						if err = c.ReadLogs(ctx, namespace, pod, status.Name, true, entry); err != nil {
+							return nil, err
+						}
+						logEntriesStarted[status.Name] = true
+					}
+				}
+			}
+		}
+		if len(pod.Status.ContainerStatuses) > 0 {
+			for _, status := range pod.Status.ContainerStatuses {
+				if status.State.Running != nil {
+					logEntries[status.Name] = logger.LogEntry(status.Name, getCommand(status.Name, spec))
+					logEntriesStarted[status.Name] = false
+				} else {
+					entry, ok := logEntries[status.Name]
+					if !ok {
+						logEntries[status.Name] = logger.LogEntry(status.Name, getCommand(status.Name, spec))
+						entry = logEntries[status.Name]
+					}
+					if !logEntriesStarted[status.Name] {
+						if err = c.ReadLogs(ctx, namespace, pod, status.Name, false, entry); err != nil {
 							return nil, err
 						}
 						logEntriesStarted[status.Name] = true
@@ -493,7 +413,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 					ActiveDeadlineSeconds: options.Deadline,
 					Containers: []corev1.Container{
 						{
-							Name:            KubernetesJobContainerName,
+							Name:            spec.Key,
 							Image:           image,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Command:         spec.Command,
@@ -528,8 +448,8 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 	}
 }
 
-// NewKubernetesJobV2 creates a Kubernetes job with the given name, image, volume path, and spec.
-func NewKubernetesJobV2(name string, spec Spec, workspaceFiles []files.WorkspaceFile, options KubernetesContainerOptions) *batchv1.Job {
+// NewKubernetesSingleJob creates a Kubernetes job with the given name, image, volume path, and spec.
+func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.WorkspaceFile, options KubernetesContainerOptions) *batchv1.Job {
 	var affinity *corev1.Affinity
 	if len(options.RequiredNodeAffinity.MatchExpressions) > 0 || len(options.RequiredNodeAffinity.MatchFields) > 0 {
 		affinity = &corev1.Affinity{
@@ -621,11 +541,11 @@ func NewKubernetesJobV2(name string, spec Spec, workspaceFiles []files.Workspace
 		Command:         []string{"sh", "-c"},
 		Args:            setupArgs,
 		//		Env:             setupEnvs,
-		WorkingDir: "/job",
+		WorkingDir: KubernetesJobMountPath,
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				Name:      "job-data",
-				MountPath: "/job",
+				MountPath: KubernetesJobMountPath,
 			},
 		},
 	}
@@ -655,7 +575,7 @@ func NewKubernetesJobV2(name string, spec Spec, workspaceFiles []files.Workspace
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      "job-data",
-					MountPath: "/job",
+					MountPath: KubernetesJobMountPath,
 				},
 			},
 		}
@@ -692,11 +612,11 @@ func NewKubernetesJobV2(name string, spec Spec, workspaceFiles []files.Workspace
 							Args: []string{
 								"ls -alR",
 							},
-							WorkingDir: "/job",
+							WorkingDir: KubernetesJobMountPath,
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "job-data",
-									MountPath: "/job",
+									MountPath: KubernetesJobMountPath,
 								},
 							},
 						},

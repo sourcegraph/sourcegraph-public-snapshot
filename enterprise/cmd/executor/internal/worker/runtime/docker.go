@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
@@ -15,7 +16,7 @@ import (
 type dockerRuntime struct {
 	cmd          command.Command
 	operations   *command.Operations
-	filesStore   workspace.FilesStore
+	filesStore   files.Store
 	cloneOptions workspace.CloneOptions
 	dockerOpts   command.DockerOptions
 }
@@ -26,7 +27,7 @@ func (r *dockerRuntime) Name() Name {
 	return NameDocker
 }
 
-func (r *dockerRuntime) PrepareWorkspace(ctx context.Context, logger command.Logger, job types.Job) (workspace.Workspace, error) {
+func (r *dockerRuntime) PrepareWorkspace(ctx context.Context, logger cmdlogger.Logger, job types.Job) (workspace.Workspace, error) {
 	return workspace.NewDockerWorkspace(
 		ctx,
 		r.filesStore,
@@ -38,7 +39,7 @@ func (r *dockerRuntime) PrepareWorkspace(ctx context.Context, logger command.Log
 	)
 }
 
-func (r *dockerRuntime) NewRunner(ctx context.Context, logger command.Logger, filesStore files.Store, options RunnerOptions) (runner.Runner, error) {
+func (r *dockerRuntime) NewRunner(ctx context.Context, logger cmdlogger.Logger, filesStore files.Store, options RunnerOptions) (runner.Runner, error) {
 	run := runner.NewDockerRunner(r.cmd, logger, options.Path, r.dockerOpts, options.DockerAuthConfig)
 	if err := run.Setup(ctx); err != nil {
 		return nil, errors.Wrap(err, "failed to setup docker runner")

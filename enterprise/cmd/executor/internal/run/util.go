@@ -234,6 +234,7 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 				RunAsGroup: runAsGroup,
 				FSGroup:    fsGroup,
 			},
+			SingleJobPod: c.KubernetesSingleJobPod,
 		},
 	}
 }

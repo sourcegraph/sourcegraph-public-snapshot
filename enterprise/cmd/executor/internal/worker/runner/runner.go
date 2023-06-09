@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 )
@@ -47,7 +48,7 @@ type Options struct {
 // NewRunner creates a new runner with the given options.
 // TODO: this is for backwards compatibility with the old command runner. It will be removed in favor of the runtime
 // implementation - src-cli required to be removed.
-func NewRunner(cmd command.Command, dir, vmName string, logger command.Logger, options Options, dockerAuthConfig types.DockerAuthConfig, operations *command.Operations) Runner {
+func NewRunner(cmd command.Command, dir, vmName string, logger cmdlogger.Logger, options Options, dockerAuthConfig types.DockerAuthConfig, operations *command.Operations) Runner {
 	if util.HasShellBuildTag() {
 		return NewShellRunner(cmd, logger, dir, options.DockerOptions)
 	}

@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
@@ -14,7 +15,7 @@ import (
 type shellRuntime struct {
 	cmd          command.Command
 	operations   *command.Operations
-	filesStore   workspace.FilesStore
+	filesStore   files.Store
 	cloneOptions workspace.CloneOptions
 	dockerOpts   command.DockerOptions
 }
@@ -25,7 +26,7 @@ func (r *shellRuntime) Name() Name {
 	return NameShell
 }
 
-func (r *shellRuntime) PrepareWorkspace(ctx context.Context, logger command.Logger, job types.Job) (workspace.Workspace, error) {
+func (r *shellRuntime) PrepareWorkspace(ctx context.Context, logger cmdlogger.Logger, job types.Job) (workspace.Workspace, error) {
 	return workspace.NewDockerWorkspace(
 		ctx,
 		r.filesStore,
@@ -37,7 +38,7 @@ func (r *shellRuntime) PrepareWorkspace(ctx context.Context, logger command.Logg
 	)
 }
 
-func (r *shellRuntime) NewRunner(ctx context.Context, logger command.Logger, filesStore files.Store, options RunnerOptions) (runner.Runner, error) {
+func (r *shellRuntime) NewRunner(ctx context.Context, logger cmdlogger.Logger, filesStore files.Store, options RunnerOptions) (runner.Runner, error) {
 	run := runner.NewShellRunner(r.cmd, logger, options.Path, r.dockerOpts)
 	if err := run.Setup(ctx); err != nil {
 		return nil, errors.Wrap(err, "failed to setup shell runner")

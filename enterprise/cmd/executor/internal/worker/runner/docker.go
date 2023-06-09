@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -17,7 +18,7 @@ type dockerRunner struct {
 	cmd              command.Command
 	dir              string
 	internalLogger   log.Logger
-	commandLogger    command.Logger
+	commandLogger    cmdlogger.Logger
 	options          command.DockerOptions
 	dockerAuthConfig types.DockerAuthConfig
 	// tmpDir is used to store temporary files used for docker execution.
@@ -28,7 +29,7 @@ var _ Runner = &dockerRunner{}
 
 func NewDockerRunner(
 	cmd command.Command,
-	logger command.Logger,
+	logger cmdlogger.Logger,
 	dir string,
 	options command.DockerOptions,
 	dockerAuthConfig types.DockerAuthConfig,

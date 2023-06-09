@@ -73,6 +73,8 @@ type Config struct {
 	KubernetesSecurityContextRunAsUser             int
 	KubernetesSecurityContextRunAsGroup            int
 	KubernetesSecurityContextFSGroup               int
+	// TODO remove in 5.2
+	KubernetesSingleJobPod bool
 
 	dockerAuthConfigStr                                          string
 	dockerAuthConfigUnmarshalError                               error
@@ -144,6 +146,9 @@ func (c *Config) Load() {
 	c.KubernetesSecurityContextRunAsUser = c.GetInt("KUBERNETES_RUN_AS_USER", "-1", "The user ID to run Kubernetes jobs as.")
 	c.KubernetesSecurityContextRunAsGroup = c.GetInt("KUBERNETES_RUN_AS_GROUP", "-1", "The group ID to run Kubernetes jobs as.")
 	c.KubernetesSecurityContextFSGroup = c.GetInt("KUBERNETES_FS_GROUP", "1000", "The group ID to run all containers in the Kubernetes jobs as. Defaults to 1000, the group ID of the docker group in the executor container.")
+	c.KubernetesSingleJobPod = c.GetBool("KUBERNETES_SINGLE_JOB_POD", "false", "Determine if a single Job Pod should be used to process a workspace")
+	// create pvc + size
+	// mount volume (certs)
 
 	if c.QueueNamesStr != "" {
 		c.QueueNames = strings.Split(c.QueueNamesStr, ",")

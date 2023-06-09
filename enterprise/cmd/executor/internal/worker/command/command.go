@@ -12,6 +12,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -33,7 +34,7 @@ func init() {
 }
 
 type Command interface {
-	Run(ctx context.Context, cmdLogger Logger, spec Spec) error
+	Run(ctx context.Context, cmdLogger cmdlogger.Logger, spec Spec) error
 }
 
 type RealCommand struct {
@@ -57,7 +58,7 @@ type Spec struct {
 }
 
 type Step struct {
-	Key string
+	Key     string
 	Command []string
 	Dir     string
 	Env     []string
@@ -71,7 +72,7 @@ type CloneOptions struct {
 	ExecutorToken  string
 }
 
-func (c *RealCommand) Run(ctx context.Context, cmdLogger Logger, spec Spec) (err error) {
+func (c *RealCommand) Run(ctx context.Context, cmdLogger cmdlogger.Logger, spec Spec) (err error) {
 	// The context here is used below as a guard against the command finishing before we close
 	// the stdout and stderr pipes. This context may not cancel until after logs for the job
 	// have been flushed, or after the 30m job deadline, so we enforce a cancellation of a

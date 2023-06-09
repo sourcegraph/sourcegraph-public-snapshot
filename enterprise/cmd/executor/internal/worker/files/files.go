@@ -8,9 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// ScriptsPath is the location relative to the executor workspace where the executor
+// will write scripts required for the execution of the job.
+const ScriptsPath = ".sourcegraph-executor"
 
 // Store handles interactions with the file store.
 type Store interface {
@@ -20,11 +25,22 @@ type Store interface {
 	Get(ctx context.Context, job types.Job, bucket string, key string) (io.ReadCloser, error)
 }
 
-func GetWorkspaceFiles(ctx context.Context, store Store, job types.Job, workingDirectory string) ([]WorkspaceFile, error) {
+// GetWorkspaceFiles returns the files that should be accessible to jobs within the workspace.
+func GetWorkspaceFiles(ctx context.Context, logger cmdlogger.Logger, store Store, job types.Job, workingDirectory string) (workspaceFiles []WorkspaceFile, err error) {
 	// Construct a map from filenames to file Content that should be accessible to jobs
 	// within the workspace. This consists of files supplied within the job record itself,
 	// as well as file-version of each script step.
-	var workspaceFiles []WorkspaceFile
+	logEntry := logger.LogEntry("setup.workspace.files", nil)
+	defer func() {
+		if err == nil {
+			logEntry.Finalize(0)
+		} else {
+			logEntry.Finalize(1)
+		}
+
+		logEntry.Close()
+	}()
+
 	for relativePath, machineFile := range job.VirtualMachineFiles {
 		path, err := filepath.Abs(filepath.Join(workingDirectory, relativePath))
 		if err != nil {
@@ -51,33 +67,35 @@ func GetWorkspaceFiles(ctx context.Context, store Store, job types.Job, workingD
 		workspaceFiles = append(
 			workspaceFiles,
 			WorkspaceFile{
-				Path:    filepath.Join(workingDirectory, ".sourcegraph-executor", scriptNameFromJobStep(job, i)),
-				Content: []byte(buildScript(dockerStep.Commands)),
+				Path:         filepath.Join(workingDirectory, ScriptsPath, ScriptNameFromJobStep(job, i)),
+				Content:      []byte(buildScript(dockerStep.Commands)),
+				IsStepScript: true,
 			},
 		)
 	}
 	return workspaceFiles, nil
 }
 
+// WorkspaceFile represents a file that should be accessible to jobs within the workspace.
 type WorkspaceFile struct {
-	Path       string
-	Content    []byte
-	ModifiedAt time.Time
+	Path         string
+	Content      []byte
+	ModifiedAt   time.Time
+	IsStepScript bool
 }
 
-func getContent(ctx context.Context, job types.Job, store Store, machineFile types.VirtualMachineFile) ([]byte, error) {
-	content := machineFile.Content
+func getContent(ctx context.Context, job types.Job, store Store, machineFile types.VirtualMachineFile) (content []byte, err error) {
+	content = machineFile.Content
 	if store != nil && machineFile.Bucket != "" && machineFile.Key != "" {
 		src, err := store.Get(ctx, job, machineFile.Bucket, machineFile.Key)
 		if err != nil {
 			return nil, err
 		}
 		defer src.Close()
-		b, err := io.ReadAll(src)
+		content, err = io.ReadAll(src)
 		if err != nil {
 			return nil, err
 		}
-		content = b
 	}
 	return content, nil
 }
@@ -117,6 +135,7 @@ func buildScript(commands []string) string {
 	return strings.Join(append([]string{scriptPreamble, ""}, commands...), "\n") + "\n"
 }
 
-func scriptNameFromJobStep(job types.Job, i int) string {
+// ScriptNameFromJobStep returns the name of the script file for the given job step.
+func ScriptNameFromJobStep(job types.Job, i int) string {
 	return fmt.Sprintf("%d.%d_%s@%s.sh", job.ID, i, strings.ReplaceAll(job.RepositoryName, "/", "_"), job.Commit)
 }
