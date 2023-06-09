@@ -14,8 +14,8 @@ export const ExternalRepositoryIcon: React.FunctionComponent<
 > = ({ externalRepo, className }) => {
     const IconComponent = externalRepoIcon(externalRepo)
     return IconComponent ? (
-        <Icon as={IconComponent} aria-label="Code host logo" className={classNames('mr-2', className)} />
+        <Icon as={IconComponent} aria-label="Code host logo" className={classNames('mr-1', className)} />
     ) : (
-        <Icon svgPath={mdiCloudQuestion} aria-label="Unknown code host" className={classNames('mr-2', className)} />
+        <Icon svgPath={mdiCloudQuestion} aria-label="Unknown code host" className={classNames('mr-1', className)} />
     )
 }

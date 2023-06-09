@@ -7,10 +7,9 @@
 }
 
 .separator {
-    background-color: var(--border-color-2);
     height: 100%;
-    min-width: 0.0625rem;
-    width: 0.0625rem;
+    border-left: 1px solid var(--border-color-2);
+    margin-right: 0.675rem;
 }
 
 .footer {
@@ -26,10 +25,9 @@
     font-weight: 400;
 
     svg {
-        min-width: 1rem;
-        min-height: 1rem;
-        max-width: 1rem;
-        max-height: 1rem;
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
     }
 }
 
@@ -42,14 +40,6 @@
     background-color: var(--mark-bg);
 }
 
-.input-container {
-    position: relative;
-
-    input {
-        padding-right: 2rem;
-    }
-}
-
 .clear-button {
     position: absolute;
     top: 1.25rem;
@@ -60,20 +50,6 @@
     outline: none;
     cursor: pointer;
     color: var(--input-focus-border-color);
-}
-
-.embeddings-status-content {
-    width: 24rem;
-    height: 100%;
-    max-width: 24rem;
-    min-height: 7rem;
-    overflow: hidden;
-    font-size: 0.8rem;
-    line-height: 1rem;
-
-    strong {
-        font-weight: 500;
-    }
 }
 
 .repository-selector-content {
@@ -99,11 +75,14 @@
     font-size: 0.625rem;
     line-height: 1rem;
     font-weight: 500;
+    text-transform: uppercase;
 }
 
 .repository-list-item {
+    all: unset;
     font-size: 0.8rem;
     line-height: 1rem;
+    display: block;
 
     svg {
         min-width: 1rem;
@@ -114,6 +93,8 @@
         visibility: hidden;
     }
     &:hover {
+        background-color: var(--gray-01);
+
         .remove-repo-icon {
             visibility: visible;
         }
@@ -130,9 +111,19 @@
 }
 
 .not-included-in-context {
-    opacity: 50%;
+    &,
+    .repo-icon {
+        color: var(--text-disabled);
+    }
+    .embedding-icon-no-embeddings {
+        color: var(--gray-05);
+    }
 }
 
 .not-included-in-context:hover {
     opacity: 100%;
+}
+
+.embedding-icon-no-embeddings {
+    color: var(--warning);
 }
