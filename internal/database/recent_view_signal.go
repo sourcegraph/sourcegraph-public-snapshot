@@ -40,6 +40,8 @@ type ListRecentViewSignalOpts struct {
 	// Path for which the views should be fetched. View counts are aggregated
 	// up the file tree. Unset value - empty string - indicates repo root.
 	Path string
+	// IncludeAllPaths when true - results will not be limited based on value of `Path`.
+	IncludeAllPaths bool
 	// MinThreshold is a lower bound of views entry per path per user to be considered.
 	MinThreshold int
 	LimitOffset  *LimitOffset
@@ -215,7 +217,9 @@ func createListQuery(opts ListRecentViewSignalOpts) *sqlf.Query {
 	if opts.RepoID != 0 {
 		wherePredicates = append(wherePredicates, sqlf.Sprintf("p.repo_id = %s", opts.RepoID))
 	}
-	wherePredicates = append(wherePredicates, sqlf.Sprintf("p.absolute_path = %s", opts.Path))
+	if !opts.IncludeAllPaths {
+		wherePredicates = append(wherePredicates, sqlf.Sprintf("p.absolute_path = %s", opts.Path))
+	}
 	if opts.ViewerUserID != 0 {
 		wherePredicates = append(wherePredicates, sqlf.Sprintf("o.viewer_id = %s", opts.ViewerUserID))
 	}

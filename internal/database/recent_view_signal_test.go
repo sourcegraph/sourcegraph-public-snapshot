@@ -495,6 +495,10 @@ func TestRecentViewSignalStore_List(t *testing.T) {
 		expectedCounts    []int
 		expectedNoEntries bool
 	}{
+		"list values for the whole table": {
+			opts:           ListRecentViewSignalOpts{IncludeAllPaths: true},
+			expectedCounts: []int{20000, 10000, 2000, 1000, 200, 100, 20, 10},
+		},
 		"list values for root path": {
 			opts:           ListRecentViewSignalOpts{},
 			expectedCounts: []int{viewCounts2[""], viewCounts1[""]},
