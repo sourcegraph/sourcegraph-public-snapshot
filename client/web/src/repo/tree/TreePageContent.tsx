@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { mdiCog, mdiFile, mdiFileOutline, mdiGlasses, mdiInformationOutline, mdiPencil } from '@mdi/js'
+import { mdiCog, mdiFileOutline, mdiGlasses, mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { formatISO, subYears } from 'date-fns'
 import { capitalize, escapeRegExp } from 'lodash'
