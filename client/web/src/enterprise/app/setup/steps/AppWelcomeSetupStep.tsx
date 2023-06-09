@@ -5,13 +5,11 @@ import classNames from 'classnames'
 import { Button, H1, H2, H3, Link, Text } from '@sourcegraph/wildcard'
 
 import { EnterprisePageRoutes } from '../../../../routes.constants'
-import { SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
+import { StepComponentProps } from '../../../../setup-wizard/components'
 
 import styles from './AppWelcomeSetupStep.module.scss'
 
 export const AppWelcomeSetupStep: FC<StepComponentProps> = ({ className }) => {
-    const { onNextStep } = useContext(SetupStepsContext)
-
     return (
         <div className={classNames(styles.root, className)}>
             <div className={styles.content}>
@@ -37,10 +35,6 @@ export const AppWelcomeSetupStep: FC<StepComponentProps> = ({ className }) => {
                             >
                                 <SourcegraphLogo />
                                 Connect to Sourcegraph.com
-                            </Button>
-
-                            <Button variant="secondary" size="lg" className={styles.actionsButton} onClick={onNextStep}>
-                                Skip, I want code search without Cody →
                             </Button>
                         </div>
 
