@@ -2,6 +2,7 @@ package completions
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -192,6 +193,11 @@ func makeUpstreamHandler[ReqT any](
 
 			resp, err := httpcli.ExternalDoer.Do(req)
 			if err != nil {
+				// Ignore reporting errors where client disconnected
+				if req.Context().Err() == context.Canceled && errors.Is(err, context.Canceled) {
+					return
+				}
+
 				response.JSONError(logger, w, http.StatusInternalServerError,
 					errors.Wrapf(err, "failed to make request to upstream provider %s", upstreamName))
 				return
