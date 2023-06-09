@@ -677,13 +677,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     public sendEvent(event: string, value: string): void {
         const isPrivateInstance = new URL(this.config.serverEndpoint).href !== DOTCOM_URL.href
         const endpointUri = { serverEndpoint: this.config.serverEndpoint }
+        const chatTranscript = { chatTranscript: this.transcript.toChat() }
         switch (event) {
             case 'feedback':
                 // Only include context for dot com users with connected codebase
                 logEvent(
                     `CodyVSCodeExtension:codyFeedback:${value}`,
                     null,
-                    !isPrivateInstance && this.codebaseContext.getCodebase() ? this.transcript.toChat() : null
+                    !isPrivateInstance && this.codebaseContext.getCodebase() ? chatTranscript : null
                 )
                 break
             case 'token':

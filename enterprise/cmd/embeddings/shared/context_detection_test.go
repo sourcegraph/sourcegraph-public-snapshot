@@ -1,80 +1,63 @@
 package shared
 
 import (
-	"context"
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 )
 
 func TestIsContextRequiredForChatQuery(t *testing.T) {
-	getContextDetectionEmbeddingIndex := func(ctx context.Context) (*embeddings.ContextDetectionEmbeddingIndex, error) {
-		return &embeddings.ContextDetectionEmbeddingIndex{
-			MessagesWithAdditionalContextMeanEmbedding:    []float32{0.0, 1.0},
-			MessagesWithoutAdditionalContextMeanEmbedding: []float32{1.0, 0.0},
-		}, nil
-	}
-
 	cases := []struct {
-		name         string
-		query        string
-		embedding    []float32
-		embeddingErr error
-		want         bool
+		query string
+		want  bool
 	}{
 		{
-			name:      "query matches no context regex",
-			query:     "that answer looks incorrect",
-			embedding: []float32{0.0, 1.0}, // unused
-			want:      false,
+			query: "this answer looks incorrect",
+			want:  false,
 		},
 		{
-			name:      "query matches context regex",
-			query:     "where is the cody plugin code?",
-			embedding: []float32{1.0, 0.0}, // unused
-			want:      true,
+			query: "that doesn’t seem right",
+			want:  false,
 		},
 		{
-			name:      "query that matches context regex 2",
-			query:     "is the zoekt package used in my repo",
-			embedding: []float32{1.0, 0.0}, // unused
-			want:      true,
+			query: "I don't understand what you're saying",
+			want:  false,
 		},
 		{
-			name:      "query matches context regex 3",
-			query:     "what directory contains the cody plugin",
-			embedding: []float32{1.0, 0.0}, // unused
-			want:      true,
+			query: "I don't think that's right",
+			want:  false,
 		},
 		{
-			name:      "query similar to no context embeddings",
-			query:     "hello, testing this works!",
-			embedding: []float32{0.9, 0.1},
-			want:      false,
+			query: "explain that in more detail",
+			want:  false,
 		},
 		{
-			name:      "query not similar enough to no context embeddings",
-			query:     "hello, testing this works!",
-			embedding: []float32{0.5, 0.5},
-			want:      true,
+			query: "are you sure??",
+			want:  false,
+		},
+		{
+			query: "what directory contains the cody plugin",
+			want:  true,
+		},
+		{
+			query: "Is crewjam/saml used anywhere?",
+			want:  true,
+		},
+		{
+			query: "are sub-repo permissions respected in embeddings?",
+			want:  true,
+		},
+		{
+			query: "What is BrandLogo",
+			want:  true,
+		},
+		{
+			query: "please correct the selected code",
+			want:  true,
 		},
 	}
 
 	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			getQueryEmbedding := func(_ context.Context, query string) ([]float32, error) {
-				return tt.embedding, tt.embeddingErr
-			}
-
-			got, err := isContextRequiredForChatQuery(context.Background(),
-				getQueryEmbedding,
-				getContextDetectionEmbeddingIndex,
-				tt.query)
-
-			if err != nil {
-				t.Fatal(err)
-			}
-
+		t.Run(tt.query, func(t *testing.T) {
+			got := isContextRequiredForChatQuery(tt.query)
 			if got != tt.want {
 				t.Fatalf("expected context required to be %t but was %t", tt.want, got)
 			}

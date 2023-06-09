@@ -1306,6 +1306,7 @@ ts_project(
         "src/repo/blob/own/MakeOwnerButton.tsx",
         "src/repo/blob/own/OwnerList.tsx",
         "src/repo/blob/own/OwnershipBadge.tsx",
+        "src/repo/blob/own/RemoveOwnerButton.tsx",
         "src/repo/blob/own/TreeOwnershipPanel.tsx",
         "src/repo/blob/own/grapqlQueries.ts",
         "src/repo/blob/panel/BlobPanel.tsx",

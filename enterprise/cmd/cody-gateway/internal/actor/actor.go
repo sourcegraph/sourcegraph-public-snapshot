@@ -11,8 +11,31 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func NewRateLimitWithPercentageConcurrency(limit int, interval time.Duration, allowedModels []string, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) RateLimit {
+	// The actual type of time.Duration is int64, so we can use it to compute the
+	// ratio of the rate limit interval to a day (24 hours).
+	ratioToDay := float32(interval) / float32(24*time.Hour)
+	// Then use the ratio to compute the rate limit for a day.
+	dailyLimit := float32(limit) / ratioToDay
+	// Finally, compute the concurrency limit with the given percentage of the daily limit.
+	concurrencyLimit := int(dailyLimit * concurrencyConfig.Percentage)
+	// Just in case a poor choice of percentage results in a concurrency limit less than 1.
+	if concurrencyLimit < 1 {
+		concurrencyLimit = 1
+	}
+
+	return RateLimit{
+		AllowedModels:              allowedModels,
+		Limit:                      limit,
+		Interval:                   interval,
+		ConcurrentRequests:         concurrencyLimit,
+		ConcurrentRequestsInterval: concurrencyConfig.Interval,
+	}
+}
 
 type RateLimit struct {
 	// AllowedModels is a set of models in Cody Gateway's model configuration
@@ -21,6 +44,9 @@ type RateLimit struct {
 
 	Limit    int           `json:"limit"`
 	Interval time.Duration `json:"interval"`
+
+	ConcurrentRequests         int           `json:"concurrentRequests"`
+	ConcurrentRequestsInterval time.Duration `json:"concurrentRequestsInterval"`
 }
 
 func (r *RateLimit) IsValid() bool {
@@ -34,7 +60,8 @@ type Actor struct {
 	// For example, for product subscriptions this is the license-based access token.
 	Key string `json:"key"`
 	// ID is the identifier for this actor's rate-limiting pool. It is not a sensitive
-	// value.
+	// value. It must be set for all valid actors - if empty, the actor must be invalid
+	// and must not not have any feature access.
 	//
 	// For example, for product subscriptions this is the subscription UUID. For
 	// Sourcegraph.com users, this is the string representation of the user ID.
@@ -70,7 +97,7 @@ func FromContext(ctx context.Context) *Actor {
 // Logger returns a logger that has metadata about the actor attached to it.
 func (a *Actor) Logger(logger log.Logger) log.Logger {
 	if a == nil {
-		return logger
+		return logger.With(log.String("actor.ID", "<nil>"))
 	}
 	return logger.With(
 		log.String("actor.ID", a.ID),
@@ -102,7 +129,6 @@ func (a *Actor) Limiter(
 	logger log.Logger,
 	redis limiter.RedisStore,
 	feature codygateway.Feature,
-	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
 ) (limiter.Limiter, bool) {
 	if a == nil {
 		// Not logged in, no limit applicable.
@@ -118,25 +144,6 @@ func (a *Actor) Limiter(
 		return nil, false
 	}
 
-	var concurrencyLimit int
-	if feature == codygateway.FeatureEmbeddings {
-		// For embeddings, we use a custom, hardcoded limit. Concurrency on the client side
-		// should be 1, so 15 is a very safe default here.
-		concurrencyLimit = 15
-	} else {
-		// The actual type of time.Duration is int64, so we can use it to compute the
-		// ratio of the rate limit interval to a day (24 hours).
-		ratioToDay := float32(limit.Interval) / float32(24*time.Hour)
-		// Then use the ratio to compute the rate limit for a day.
-		dailyLimit := float32(limit.Limit) / ratioToDay
-		// Finally, compute the concurrency limit with the given percentage of the daily limit.
-		concurrencyLimit = int(dailyLimit * concurrencyLimitConfig.Percentage)
-		// Just in case a poor choice of percentage results in a concurrency limit less than 1.
-		if concurrencyLimit < 1 {
-			concurrencyLimit = 1
-		}
-	}
-
 	// The redis store has to use a prefix for the given feature because we need to
 	// rate limit by feature.
 	featurePrefix := fmt.Sprintf("%s:", feature)
@@ -146,8 +153,8 @@ func (a *Actor) Limiter(
 		feature: feature,
 		redis:   limiter.NewPrefixRedisStore(fmt.Sprintf("concurrent:%s", featurePrefix), redis),
 		rateLimit: RateLimit{
-			Limit:    concurrencyLimit,
-			Interval: concurrencyLimitConfig.Interval,
+			Limit:    limit.ConcurrentRequests,
+			Interval: limit.ConcurrentRequestsInterval,
 		},
 		featureLimiter: updateOnFailureLimiter{
 			Redis:     limiter.NewPrefixRedisStore(featurePrefix, redis),
@@ -194,7 +201,7 @@ func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func(int) error, e
 		return nil, errors.Wrap(err, "check concurrent limit")
 	}
 	if err = commit(1); err != nil {
-		l.logger.Error("failed to commit concurrency limit consumption", log.Error(err))
+		trace.Logger(ctx, l.logger).Error("failed to commit concurrency limit consumption", log.Error(err))
 	}
 
 	featureCommit, err := l.featureLimiter.TryAcquire(ctx)
