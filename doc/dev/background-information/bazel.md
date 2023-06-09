@@ -282,6 +282,42 @@ This is caused by the fact that there is no straightforward way of telling Bazel
 
 See [this issue](https://github.com/sourcegraph/sourcegraph/issues/52914) to track progress on this particular problem. 
 
+### Queries 
+
+Bazel queries (`bazel query`, `bazel cquery` and `bazel aqueries`) are powerful tools that can assist you to visualize dependencies and understand how targets are being built or tested. 
+
+#### Errors about not being able to fetch a manifest for an OCI rule 
+
+When running the following query: 
+
+```
+bazel query 'kind("go_binary", rdeps(//..., //internal/database/migration/cliutil))'
+```
+
+We get the following error. 
+
+```
+WARNING: Could not fetch the manifest. Either there was an authentication issue or trying to pull an image with OCI image media types. 
+Falling back to using `curl`. See https://github.com/bazelbuild/bazel/issues/17829 for the context.
+INFO: Repository wolfi_redis_base_single instantiated at:
+  /home/noah/Sourcegraph/sourcegraph/WORKSPACE:376:9: in <toplevel>
+  /home/noah/Sourcegraph/sourcegraph/dev/oci_deps.bzl:73:13: in oci_deps
+  /home/noah/.cache/bazel/_bazel_noah/8fd1d20666a46767e7f29541678514a0/external/rules_oci/oci/pull.bzl:133:18: in oci_pull
+Repository rule oci_pull defined at:
+  /home/noah/.cache/bazel/_bazel_noah/8fd1d20666a46767e7f29541678514a0/external/rules_oci/oci/private/pull.bzl:434:27: in <toplevel>
+WARNING: Download from https://us.gcr.io/v2/sourcegraph-dev/wolfi-redis-base/manifests/sha256:08e80c858fe3ef9b5ffd1c4194a771b6fd45f9831ad40dad3b5f5b53af880582 failed: class com.google.devtools.build.lib.bazel.repository.downloader.UnrecoverableHttpException GET returned 401 Unauthorized
+ERROR: An error occurred during the fetch of repository 'wolfi_redis_base_single':
+   Traceback (most recent call last):
+        File "/home/noah/.cache/bazel/_bazel_noah/8fd1d20666a46767e7f29541678514a0/external/rules_oci/oci/private/pull.bzl", line 357, column 46, in _oci_pull_impl
+                mf, mf_len = downloader.download_manifest(rctx.attr.identifier, "manifest.json")
+```
+
+This query requires to analyse external dependencies for the [base images](bazel_containers.md), which are not yet publicly available.  
+
+Solution: `gcloud auth configure-docker us.gcr.io` to get access to the registry. 
+
+Solution: Pass the `--keep_going` additional flag to your `bazel query` command, so the evaluation doesn't stop at the first error. 
+
 ### Go
 
 #### It complains about some missing symbols, but I'm sure they are there since I can see my files
