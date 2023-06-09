@@ -1,6 +1,7 @@
 import { FC, useCallback, useEffect, useState, useMemo } from 'react'
 
 import { mdiMapSearch } from '@mdi/js'
+import { capitalize } from 'lodash'
 import { useLocation } from 'react-router-dom'
 
 import { RepoEmbeddingJobState } from '@sourcegraph/shared/src/graphql-operations'
@@ -62,7 +63,7 @@ const enumToFilterValues = <T extends string>(enumeration: { [key in T]: T }): F
     for (const key of Object.keys(enumeration)) {
         values.push({
             value: key.toLowerCase(),
-            label: key.toLowerCase(),
+            label: capitalize(key),
             args: {},
             tooltip: `Show ${key.toLowerCase()} jobs`,
         })
@@ -86,7 +87,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     const filters: FilteredConnectionFilter[] = [
         {
             id: 'state',
-            label: 'Job Status',
+            label: 'State',
             type: 'select',
             values: [
                 {
