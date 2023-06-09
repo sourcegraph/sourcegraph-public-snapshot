@@ -101,7 +101,7 @@ type encodedInfo struct {
 	Info
 }
 
-func (l Info) version() int {
+func (l Info) Version() int {
 	if l.SalesforceSubscriptionID == nil {
 		return 1
 	}
@@ -109,7 +109,7 @@ func (l Info) version() int {
 }
 
 func (l Info) encode() ([]byte, error) {
-	e := encodedInfo{Version: l.version(), Info: l}
+	e := encodedInfo{Version: l.Version(), Info: l}
 	if _, err := rand.Read(e.Nonce[:8]); err != nil {
 		return nil, err
 	}
@@ -121,8 +121,8 @@ func (l *Info) decode(data []byte) error {
 	if err := json.Unmarshal(data, &e); err != nil {
 		return err
 	}
-	if e.Version != e.Info.version() {
-		return errors.Errorf("license key format is version %d, expected version %d", e.Version, e.Info.version())
+	if e.Version != e.Info.Version() {
+		return errors.Errorf("license key format is version %d, expected version %d", e.Version, e.Info.Version())
 	}
 	*l = e.Info
 	return nil
@@ -148,7 +148,7 @@ func GenerateSignedKey(info Info, privateKey ssh.Signer) (licenseKey string, ver
 	if err != nil {
 		return "", 0, errors.Wrap(err, "marshal")
 	}
-	return base64.RawURLEncoding.EncodeToString(signedKeyData), info.version(), nil
+	return base64.RawURLEncoding.EncodeToString(signedKeyData), info.Version(), nil
 }
 
 // ParseSignedKey parses and verifies the signed license key. If parsing or verification fails, a

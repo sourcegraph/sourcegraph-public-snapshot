@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 )
 
@@ -189,5 +190,24 @@ func TestCheckFeature(t *testing.T) {
 		check(t, FeatureBackupAndRestore, licenseInfo(plan(PlanTeam0)), false)
 		check(t, FeatureBackupAndRestore, licenseInfo(plan(PlanEnterprise0)), false)
 		check(t, FeatureBackupAndRestore, licenseInfo(plan(PlanEnterprise0), string(FeatureBackupAndRestore)), true)
+	})
+
+	t.Run(string(FeatureAllowAirGapped), func(t *testing.T) {
+		check(t, FeatureAllowAirGapped, nil, false)
+
+		check(t, FeatureAllowAirGapped, licenseInfo("starter"), false)
+		check(t, FeatureAllowAirGapped, licenseInfo(), false)
+		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanOldEnterpriseStarter)), false)
+		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanOldEnterprise)), false)
+		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanTeam0)), false)
+		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanEnterprise0)), false)
+		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanBusiness0)), false)
+		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanEnterprise1)), false)
+		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanEnterpriseExtension)), false)
+		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanFree0)), false)
+		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanFree1)), false)
+
+		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanEnterprise0), string(FeatureAllowAirGapped)), true)
+		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanAirGappedEnterprise)), true)
 	})
 }

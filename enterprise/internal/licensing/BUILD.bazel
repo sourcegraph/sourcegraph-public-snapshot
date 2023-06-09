@@ -5,6 +5,7 @@ go_library(
     name = "licensing",
     srcs = [
         "access_token.go",
+        "check.go",
         "codygateway.go",
         "conf.go",
         "data.go",
@@ -24,7 +25,9 @@ go_library(
         "//internal/conf/conftypes",
         "//internal/env",
         "//internal/errcode",
+        "//internal/goroutine",
         "//internal/hashutil",
+        "//internal/httpcli",
         "//internal/redispool",
         "//lib/errors",
         "@com_github_gomodule_redigo//redis",
@@ -38,15 +41,22 @@ go_test(
     name = "licensing_test",
     timeout = "short",
     srcs = [
+        "check_test.go",
         "codygateway_test.go",
         "features_test.go",
         "plans_test.go",
         "tags_test.go",
     ],
     embed = [":licensing"],
+    tags = [
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/license",
+        "//internal/redispool",
+        "@com_github_gomodule_redigo//redis",
         "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )
