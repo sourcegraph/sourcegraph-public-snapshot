@@ -3,7 +3,6 @@ package dotcomuser
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
 
