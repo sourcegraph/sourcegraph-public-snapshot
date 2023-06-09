@@ -677,7 +677,9 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 
 	repoMetadata, err := getEventRepoMetadata(h.ctx, h.db, event)
 	if err != nil {
-		h.logger.Error("failed to get repo metadata", log.Error(err))
+		if !errors.IsContextCanceled(err) {
+			h.logger.Error("failed to get repo metadata", log.Error(err))
+		}
 		return
 	}
 

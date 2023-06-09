@@ -24,7 +24,8 @@ Configure Cody features to talk to your local Cody Gateway:
     "enabled": true,
     "provider": "sourcegraph",
     "endpoint": "http://localhost:9992",
-    "model": "anthropic/claude-v1",
+    "chatModel": "anthropic/claude-v1",
+    "completionModel": "anthropic/claude-instant-v1",
     // Create a subscription and create a license key:
     // https://sourcegraph.test:3443/site-admin/dotcom/product/subscriptions
     // Under "Cody services", ensure access is enabled and get the access token
@@ -58,3 +59,31 @@ You can get full tracing of Cody interactions, including Cody Gateway parts, wit
 Cody Gateway will also emit traces of its background jobs.
 
 All event logging is output as standard logs in development under the `cody-gateway.events` log scope.
+
+## Working with BigQuery for events logging
+
+> NOTE: To make authentication work magically with the GCP, you need to install the [`gcloud`](https://cloud.google.com/sdk/docs/install-sdk) CLI and 
+run `gcloud auth login --project cody-gateway-dev` once.
+
+To send events to BigQuery while developing Cody Gateway locally, add the following to your `sg.config.overwrite.yaml`:
+
+```yaml
+commands:
+  cody-gateway:
+    env:
+      CODY_GATEWAY_BIGQUERY_PROJECT_ID: cody-gateway-dev
+```
+
+Then to view events statistics on the product subscription page, add the following section in the site configuration, and run the `sg start dotcom` stack:
+
+```json
+{
+  "dotcom": {
+    "codyGateway": {
+      "bigQueryGoogleProjectID": "cody-gateway-dev",
+      "bigQueryDataset": "cody_gateway",
+      "bigQueryTable": "events"
+    }
+  }
+}
+```
