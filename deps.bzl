@@ -5429,6 +5429,15 @@ def go_dependencies():
     )
 
     go_repository(
+        # This is no longer used but we keep it for backwards compatability
+        # tests while on 5.0.x.
+        name = "com_github_opentracing_contrib_go_stdlib",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/opentracing-contrib/go-stdlib",
+        sum = "h1:TBS7YuVotp8myLon4Pv7BtCBzOTo1DeZCld0Z63mW2w=",
+        version = "v1.0.0",
+    ) # keep
+    go_repository(
         name = "com_github_opentracing_opentracing_go",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/opentracing/opentracing-go",
