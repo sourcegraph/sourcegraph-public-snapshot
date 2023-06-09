@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { MutationFunctionOptions } from '@apollo/client'
 import { mdiDelete, mdiLoading } from '@mdi/js'
 
 import { ErrorLike, asError } from '@sourcegraph/common'
@@ -14,7 +15,6 @@ import {
 } from '../../../graphql-operations'
 
 import { REMOVE_ASSIGNED_OWNER, REMOVE_ASSIGNED_TEAM } from './grapqlQueries'
-import {MutationFunctionOptions} from "@apollo/client";
 
 export interface RemoveOwnerButtonProps {
     onSuccess: () => Promise<any>
