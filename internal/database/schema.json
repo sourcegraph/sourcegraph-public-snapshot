@@ -12776,6 +12776,16 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
+          "Name": "unique_app_install",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX unique_app_install ON github_app_installs USING btree (app_id, installation_id)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (app_id, installation_id)"
+        },
+        {
           "Name": "app_id_idx",
           "IsPrimaryKey": false,
           "IsUnique": false,

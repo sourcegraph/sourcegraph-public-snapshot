@@ -1748,6 +1748,7 @@ Referenced by:
  updated_at         | timestamp with time zone |           | not null | now()
 Indexes:
     "github_app_installs_pkey" PRIMARY KEY, btree (id)
+    "unique_app_install" UNIQUE CONSTRAINT, btree (app_id, installation_id)
     "app_id_idx" btree (app_id)
     "github_app_installs_account_login" btree (account_login)
     "installation_id_idx" btree (installation_id)

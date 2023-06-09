@@ -47,10 +47,9 @@ type GitHubAppsStore interface {
 	// GetInstallations retrieves all installations for the GitHub App with the given ID.
 	GetInstallations(ctx context.Context, id int) ([]*ghtypes.GitHubAppInstallation, error)
 
-	// TODO: Remove me
-	// GetLatestInstallID retrieves the latest GitHub App installation ID from the
-	// database for the GitHub App with the provided appID.
-	GetLatestInstallID(ctx context.Context, appID int) (int, error)
+	// GetInstall retrieves the GitHub App installation ID from the database for the
+	// GitHub App with the provided appID and account name, if one can be found.
+	GetInstallID(ctx context.Context, appID int, account string) (int, error)
 
 	// GetByID retrieves a GitHub App from the database by ID.
 	GetByID(ctx context.Context, id int) (*ghtypes.GitHubApp, error)
@@ -303,14 +302,15 @@ func (s *gitHubAppsStore) Install(ctx context.Context, ghai ghtypes.GitHubAppIns
 	return in, err
 }
 
-func (s *gitHubAppsStore) GetLatestInstallID(ctx context.Context, appID int) (int, error) {
+func (s *gitHubAppsStore) GetInstallID(ctx context.Context, appID int, account string) (int, error) {
 	query := sqlf.Sprintf(`
 		SELECT installation_id
 		FROM github_app_installs
 		JOIN github_apps ON github_app_installs.app_id = github_apps.id
 		WHERE github_apps.app_id = %s
+		AND github_app_installs.account_login = %s
 		ORDER BY github_app_installs.id DESC LIMIT 1
-		`, appID)
+		`, appID, account)
 	installID, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
 	return installID, err
 }

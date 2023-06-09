@@ -5569,6 +5569,9 @@ ALTER TABLE ONLY temporary_settings
 ALTER TABLE ONLY temporary_settings
     ADD CONSTRAINT temporary_settings_user_id_key UNIQUE (user_id);
 
+ALTER TABLE ONLY github_app_installs
+    ADD CONSTRAINT unique_app_install UNIQUE (app_id, installation_id);
+
 ALTER TABLE ONLY user_credentials
     ADD CONSTRAINT user_credentials_domain_user_id_external_service_type_exter_key UNIQUE (domain, user_id, external_service_type, external_service_id);
 
