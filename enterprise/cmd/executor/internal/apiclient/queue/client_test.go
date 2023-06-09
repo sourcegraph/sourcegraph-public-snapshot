@@ -464,7 +464,8 @@ func TestMultiQueueHeartbeat(t *testing.T) {
 			"igniteVersion": "test-ignite-version",
 			"srcCliVersion": "test-src-cli-version",
 
-			"prometheusMetrics": ""
+			"prometheusMetrics": "",
+			"version": ""
 		}`,
 		responseStatus:  http.StatusOK,
 		responsePayload: `{"knownIDs": ["1-test_queue_one"], "cancelIDs": ["2-test_queue_two"]}`,
@@ -514,7 +515,8 @@ func TestMultiQueueHeartbeatBadResponse(t *testing.T) {
 			"igniteVersion": "test-ignite-version",
 			"srcCliVersion": "test-src-cli-version",
 
-			"prometheusMetrics": ""
+			"prometheusMetrics": "",
+			"version": ""
 		}`,
 		responseStatus:  http.StatusInternalServerError,
 		responsePayload: ``,
