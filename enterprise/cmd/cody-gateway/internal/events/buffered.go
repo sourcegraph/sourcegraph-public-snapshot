@@ -83,7 +83,8 @@ func (l *BufferedLogger) LogEvent(spanCtx context.Context, event Event) error {
 func (l *BufferedLogger) Start() {
 	for event := range l.bufferC {
 		if err := l.handler.LogEvent(event.spanCtx, event.Event); err != nil {
-			l.log.Error("failed to log buffered event", log.Error(err))
+			trace.Logger(event.spanCtx, l.log).
+				Error("failed to log buffered event", log.Error(err))
 		}
 	}
 
