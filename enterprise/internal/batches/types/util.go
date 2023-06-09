@@ -28,7 +28,7 @@ var SupportedExternalServices = map[string]CodehostCapabilities{
 	extsvc.TypeAzureDevOps:     {CodehostCapabilityDraftChangesets: true},
 	extsvc.TypeGerrit:          {CodehostCapabilityDraftChangesets: true},
 	// TODO: review - BCC'd from ADO
-	extsvc.TypePerforce: {},
+	extsvc.TypePerforce: {CodehostCapabilityDraftChangesets: false},
 }
 
 // IsRepoSupported returns whether the given ExternalRepoSpec is supported by

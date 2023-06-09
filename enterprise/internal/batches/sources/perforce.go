@@ -2,6 +2,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strings"
 
@@ -36,12 +37,12 @@ func NewPerforceSource(ctx context.Context, svc *types.ExternalService, cf *http
 
 // GitserverPushConfig returns an authenticated push config used for pushing commits to the code host.
 func (s PerforceSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	// Return a PushConfig with a crafted URL that includes the Perforce scheme and the credentials
+	// The perforce scheme will tell `createCommitFromPatch` that this repo is a Perforce repo
+	// so it can handle it differently from Git repos.
+	// TODO: include the depot in the path component. Not sure where to get that from yet. It's not api.Repo.
 	return &protocol.PushConfig{
-		RemoteURL: s.server.P4Port,
-		P4Credentials: &protocol.P4Credentials{
-			P4User:   s.server.P4User,
-			P4Passwd: s.server.P4Passwd,
-		},
+		RemoteURL: fmt.Sprintf("perforce://%s:%s@%s", s.server.P4User, s.server.P4Passwd, s.server.P4Port),
 	}, nil
 }
 
@@ -61,10 +62,12 @@ func (s PerforceSource) ValidateAuthenticator(ctx context.Context) error {
 // LoadChangeset loads the given Changeset from the source and updates it. If
 // the Changeset could not be found on the source, a ChangesetNotFoundError is
 // returned.
-func (s PerforceSource) LoadChangeset(_ context.Context, _ *Changeset) error {
+func (s PerforceSource) LoadChangeset(_ context.Context, cs *Changeset) error {
 	// TODO: implement this method
 	// probably will load a pending changelist
-	return nil
+	// call gitserver to get the changelist info
+	//cs.ExternalID
+	return errors.New("not implemented")
 }
 
 // CreateChangeset will create the Changeset on the source. If it already
@@ -74,9 +77,9 @@ func (s PerforceSource) CreateChangeset(_ context.Context, cs *Changeset) (bool,
 }
 
 // CreateDraftChangeset creates the given changeset on the code host in draft mode.
-// Perforce does not support draft PRs so it creates a sstandard one
+// Perforce does not support draft changelists
 func (s PerforceSource) CreateDraftChangeset(_ context.Context, cs *Changeset) (bool, error) {
-	return s.createChangeset(cs)
+	return false, errors.New("not implemented")
 }
 
 func (s PerforceSource) createChangeset(cs *Changeset) (bool, error) {
@@ -106,7 +109,7 @@ func (s PerforceSource) setChangesetMetadata(cl *perforce.Changelist, cs *Change
 func (s PerforceSource) UndraftChangeset(ctx context.Context, cs *Changeset) error {
 	// TODO: implement this function?
 	// not sure what it means in Perforce - submit the changelist?
-	return nil
+	return errors.New("not implemented")
 }
 
 // CloseChangeset will close the Changeset on the source, where "close"
@@ -115,14 +118,14 @@ func (s PerforceSource) UndraftChangeset(ctx context.Context, cs *Changeset) err
 func (s PerforceSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
 	// TODO: implement this function
 	// delete changelist?
-	return nil
+	return errors.New("not implemented")
 }
 
 // UpdateChangeset can update Changesets.
 func (s PerforceSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
 	// TODO: implement this function
 	// not sure what this means for Perforce
-	return nil
+	return errors.New("not implemented")
 }
 
 // ReopenChangeset will reopen the Changeset on the source, if it's closed.
@@ -130,14 +133,14 @@ func (s PerforceSource) UpdateChangeset(ctx context.Context, cs *Changeset) erro
 func (s PerforceSource) ReopenChangeset(ctx context.Context, cs *Changeset) error {
 	// TODO: implement function
 	// noop for Perforce?
-	return nil
+	return errors.New("not implemented")
 }
 
 // CreateComment posts a comment on the Changeset.
 func (s PerforceSource) CreateComment(ctx context.Context, cs *Changeset, comment string) error {
 	// TODO: implement function
 	// comment on changelist?
-	return nil
+	return errors.New("not implemented")
 }
 
 // MergeChangeset merges a Changeset on the code host, if in a mergeable state.
@@ -148,7 +151,7 @@ func (s PerforceSource) CreateComment(ctx context.Context, cs *Changeset, commen
 func (s PerforceSource) MergeChangeset(ctx context.Context, cs *Changeset, squash bool) error {
 	// TODO: implement function
 	// submit CL? Or no-op because we want to keep CLs pending and let the Perforce users manage them in other tools?
-	return nil
+	return errors.New("not implemented")
 }
 
 // GetFork returns a repo pointing to a fork of the target repo, ensuring that the fork
@@ -156,9 +159,8 @@ func (s PerforceSource) MergeChangeset(ctx context.Context, cs *Changeset, squas
 // If name is not provided, the fork will be named with the default Sourcegraph convention:
 // "${original-namespace}-${original-name}"
 func (s PerforceSource) GetFork(ctx context.Context, targetRepo *types.Repo, ns, n *string) (*types.Repo, error) {
-	// TODO: implement function
-	// no-op for Perforce?
-	return nil, nil
+	// no-op for Perforce
+	return nil, errors.New("not implemented")
 }
 
 func (s PerforceSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {

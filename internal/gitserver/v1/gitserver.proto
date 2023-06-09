@@ -71,11 +71,6 @@ message PatchCommitInfo {
   google.protobuf.Timestamp date = 6;
 }
 
-message P4Credentials {
-    string p4_user = 1;
-    string p4_passwd = 2;
-}
-
 message PushConfig {
   // remote_url is the git remote URL to which to push the commits.
   // The URL needs to include HTTP basic auth credentials if no
@@ -88,8 +83,6 @@ message PushConfig {
   // passphrase is the passphrase to decrypt the private key. It is required
   // when passing PrivateKey.
   string passphrase = 3;
-  // p4_credentials holds the username + password for Perforce code hosts
-  P4Credentials p4_credentials = 4;
 }
 
 // CreateCommitFromPatchBinaryRequest is the request information needed for creating

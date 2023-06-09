@@ -695,24 +695,6 @@ func PatchCommitInfoFromProto(p *proto.PatchCommitInfo) PatchCommitInfo {
 	}
 }
 
-// P4Credentials holds the username and password for making a connecton to a Perforce server
-type P4Credentials struct {
-	P4User   string
-	P4Passwd string
-}
-
-func (p *P4Credentials) ToProto() *proto.P4Credentials {
-	return &proto.P4Credentials{
-		P4User:   p.P4User,
-		P4Passwd: p.P4Passwd,
-	}
-}
-
-func (p *P4Credentials) FromProto(pr *proto.P4Credentials) {
-	p.P4User = pr.P4User
-	p.P4Passwd = pr.P4Passwd
-}
-
 // PushConfig provides the configuration required to push one or more commits to
 // a code host.
 type PushConfig struct {
@@ -729,17 +711,13 @@ type PushConfig struct {
 	// Passphrase is the passphrase to decrypt the private key. It is required
 	// when passing PrivateKey.
 	Passphrase string
-
-	// for Perforce code hosts, P4Credentials is filled out
-	P4Credentials *P4Credentials
 }
 
 func (p *PushConfig) ToProto() *proto.PushConfig {
 	return &proto.PushConfig{
-		RemoteUrl:     p.RemoteURL,
-		PrivateKey:    p.PrivateKey,
-		Passphrase:    p.Passphrase,
-		P4Credentials: p.P4Credentials.ToProto(),
+		RemoteUrl:  p.RemoteURL,
+		PrivateKey: p.PrivateKey,
+		Passphrase: p.Passphrase,
 	}
 }
 
@@ -747,18 +725,10 @@ func PushConfigFromProto(p *proto.PushConfig) *PushConfig {
 	if p == nil {
 		return nil
 	}
-	var p4c *P4Credentials
-	if p.GetP4Credentials() != nil {
-		p4c = &P4Credentials{
-			P4User:   p.GetP4Credentials().P4User,
-			P4Passwd: p.GetP4Credentials().P4Passwd,
-		}
-	}
 	return &PushConfig{
-		RemoteURL:     p.GetRemoteUrl(),
-		PrivateKey:    p.GetPrivateKey(),
-		Passphrase:    p.GetPassphrase(),
-		P4Credentials: p4c,
+		RemoteURL:  p.GetRemoteUrl(),
+		PrivateKey: p.GetPrivateKey(),
+		Passphrase: p.GetPassphrase(),
 	}
 }
 
