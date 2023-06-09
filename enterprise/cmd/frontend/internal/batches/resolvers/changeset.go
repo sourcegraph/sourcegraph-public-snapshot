@@ -22,6 +22,7 @@ import (
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -352,6 +353,23 @@ func (r *changesetResolver) ForkName() *string {
 	return nil
 }
 
+func (r *changesetResolver) CommitVerification(ctx context.Context) (graphqlbackend.CommitVerificationResolver, error) {
+	switch r.changeset.ExternalServiceType {
+	case extsvc.TypeGitHub:
+		r.spec, r.specErr = r.store.GetChangesetSpecByID(ctx, r.changeset.CurrentSpecID)
+		if r.specErr != nil {
+			return nil, r.specErr
+		}
+		if r.spec.CommitVerification != nil {
+			return &commitVerificationResolver{
+				// TODO: Fix this type
+				commitVerification: r.spec.CommitVerification,
+			}, nil
+		}
+	}
+	return nil, nil
+}
+
 func (r *changesetResolver) ReviewState(ctx context.Context) *string {
 	if !r.changeset.Published() {
 		return nil
@@ -557,4 +575,40 @@ func (r *changesetLabelResolver) Description() *string {
 		return nil
 	}
 	return &r.label.Description
+}
+
+var _ graphqlbackend.CommitVerificationResolver = &commitVerificationResolver{}
+
+type commitVerificationResolver struct {
+	commitVerification *btypes.CommitVerification
+}
+
+func (c *commitVerificationResolver) ToGitHubCommitVerification() (graphqlbackend.GitHubCommitVerificationResolver, bool) {
+	if c.commitVerification != nil {
+		return &gitHubCommitVerificationResolver{commitVerification: c.commitVerification}, true
+	}
+
+	return nil, false
+}
+
+var _ graphqlbackend.GitHubCommitVerificationResolver = &gitHubCommitVerificationResolver{}
+
+type gitHubCommitVerificationResolver struct {
+	commitVerification *btypes.CommitVerification
+}
+
+func (r *gitHubCommitVerificationResolver) Verified() bool {
+	return r.commitVerification.Verified
+}
+
+func (r *gitHubCommitVerificationResolver) Reason() string {
+	return r.commitVerification.Reason
+}
+
+func (r *gitHubCommitVerificationResolver) Signature() string {
+	return r.commitVerification.Signature
+}
+
+func (r *gitHubCommitVerificationResolver) Payload() string {
+	return r.commitVerification.Payload
 }

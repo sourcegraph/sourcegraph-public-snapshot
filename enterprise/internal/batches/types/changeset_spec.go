@@ -115,7 +115,15 @@ type ChangesetSpec struct {
 	CommitAuthorName  string
 	CommitAuthorEmail string
 
-	ForkNamespace *string
+	ForkNamespace      *string
+	CommitVerification *CommitVerification
+}
+
+type CommitVerification struct {
+	Verified  bool
+	Reason    string
+	Signature string
+	Payload   string
 }
 
 // Clone returns a clone of a ChangesetSpec.

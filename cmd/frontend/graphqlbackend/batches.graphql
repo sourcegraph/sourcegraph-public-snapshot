@@ -436,6 +436,11 @@ type ExternalChangeset implements Node & Changeset {
     forkName: String
 
     """
+    Commit verification for commit signing, if any has been set up. Always nil if the code host didn't setup commit signing.
+    """
+    commitVerification: CommitVerification
+
+    """
     The review state of this changeset. This is only set once the changeset is published on the code host.
 
     Note: The COMMENTED and DISMISSED review states are not yet implemented.
@@ -478,6 +483,35 @@ type ExternalChangeset implements Node & Changeset {
     Null if the changeset was only imported.
     """
     currentSpec: VisibleChangesetSpec
+}
+
+"""
+Commit signing verification for a code host, e.g. GitHubApp or SSHKey. Today, the
+only supported form of commit signing is via a GitHub App.
+"""
+union CommitVerification = GitHubCommitVerification
+
+"""
+The verification object for a GitHubApp created for Batch Changes commit signing.
+https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#create-a-commit
+"""
+type GitHubCommitVerification {
+    """
+    Indicates whether GitHub considers the signature in the commit verified
+    """
+    verified: Boolean!
+    """
+    The reason for the verified value
+    """
+    Reason: String!
+    """
+    The signature extracted from the commit
+    """
+    Signature: String!
+    """
+    The value that was signed
+    """
+    Payload: String!
 }
 
 """
