@@ -67,6 +67,7 @@ export const test = base
 
             const sidebar = await getCodySidebar(page)
 
+            console.log('prerun')
             await run(async () => {
                 // Ensure we're logged out
                 // TODO(philipp-spiess): Find a way to access the extension host via the injected
@@ -76,10 +77,14 @@ export const test = base
                     await sidebar.getByRole('button', { name: 'Logout' }).click()
                 }
 
+                console.log('run')
+
                 await use(page)
             })
 
+            console.log('postrun')
             await app.close()
+            console.log('postclose')
 
             // // Delete the recorded video if the test passes
             // if (testInfo.status === 'passed') {
@@ -88,6 +93,8 @@ export const test = base
 
             rmdirSync(userDataDirectory, { recursive: true })
             rmdirSync(extensionsDirectory, { recursive: true })
+
+            console.log('postall')
         },
     })
     .extend<{ sidebar: Frame }>({
