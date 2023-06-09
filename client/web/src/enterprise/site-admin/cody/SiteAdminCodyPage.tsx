@@ -1,7 +1,10 @@
-import { FC, useCallback, useEffect, useState } from 'react'
+import { FC, useCallback, useEffect, useState, useMemo } from 'react'
 
+import { mdiMapSearch } from '@mdi/js'
+import { capitalize } from 'lodash'
 import { useLocation } from 'react-router-dom'
 
+import { RepoEmbeddingJobState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -16,8 +19,10 @@ import {
     ErrorAlert,
     Form,
     useDebounce,
+    Icon,
 } from '@sourcegraph/wildcard'
 
+import { FilteredConnectionFilter, FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -28,6 +33,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
+import { getFilterFromURL } from '../../../components/FilteredConnection/utils'
 import { PageTitle } from '../../../components/PageTitle'
 import { RepositoriesField } from '../../insights/components'
 
@@ -51,19 +57,63 @@ const repositoriesValidator: Validator<string[]> = value => {
     return
 }
 
+// Helper function to convert an enum to a list of FilteredConnectionFilterValue
+const enumToFilterValues = <T extends string>(enumeration: { [key in T]: T }): FilteredConnectionFilterValue[] => {
+    const values: FilteredConnectionFilterValue[] = []
+    for (const key of Object.keys(enumeration)) {
+        values.push({
+            value: key.toLowerCase(),
+            label: capitalize(key),
+            args: {},
+            tooltip: `Show ${key.toLowerCase()} jobs`,
+        })
+    }
+    return values
+}
+
 export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService }) => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminCodyPage')
     }, [telemetryService])
 
     const location = useLocation()
-    const searchParams = new URLSearchParams(location.search)
+    const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search])
     const queryParam = searchParams.get('query')
 
     const [searchValue, setSearchValue] = useState(queryParam || '')
     const query = useDebounce(searchValue, 200)
 
-    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useRepoEmbeddingJobsConnection(query)
+    const defaultStateFilterValue = 'all'
+    const filters: FilteredConnectionFilter[] = [
+        {
+            id: 'state',
+            label: 'State',
+            type: 'select',
+            values: [
+                {
+                    label: 'All',
+                    value: defaultStateFilterValue,
+                    tooltip: 'Show all jobs',
+                    args: {},
+                },
+                ...enumToFilterValues(RepoEmbeddingJobState),
+            ],
+        },
+    ]
+
+    const [filterValues, setFilterValues] = useState<Map<string, FilteredConnectionFilterValue>>(() =>
+        getFilterFromURL(searchParams, filters)
+    )
+
+    const getStateFilterValue = (filterValues: Map<string, FilteredConnectionFilterValue>): string | null => {
+        const val = filterValues.get('state')?.value || defaultStateFilterValue
+        return val === defaultStateFilterValue ? null : val
+    }
+
+    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useRepoEmbeddingJobsConnection(
+        query,
+        getStateFilterValue(filterValues)
+    )
 
     const [scheduleRepoEmbeddingJobs, { loading: repoEmbeddingJobsLoading, error: repoEmbeddingJobsError }] =
         useScheduleRepoEmbeddingJobs()
@@ -88,11 +138,11 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
         validators: { sync: repositoriesValidator },
     })
 
-    const updateQueryParams = (newQueryValue: string): void => {
-        if (newQueryValue === '') {
-            searchParams.delete('query')
+    const updateQueryParams = (key: string, value: string): void => {
+        if (value === '') {
+            searchParams.delete(key)
         } else {
-            searchParams.set('query', newQueryValue)
+            searchParams.set(key, value)
         }
 
         const queryString = searchParams.toString()
@@ -153,12 +203,24 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                 <H3 className="mt-3">Repository embeddings jobs</H3>
                 <ConnectionContainer>
                     <ConnectionForm
+                        formClassName="mb-2"
+                        inputClassName="flex-1 ml-2"
                         inputValue={searchValue}
                         onInputChange={event => {
                             setSearchValue(event.target.value)
-                            updateQueryParams(event.target.value)
+                            updateQueryParams('query', event.target.value)
                         }}
                         inputPlaceholder="Filter embeddings jobs..."
+                        filters={filters}
+                        filterValues={filterValues}
+                        onFilterSelect={(filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => {
+                            setFilterValues(values => {
+                                const newValues = new Map(values)
+                                newValues.set(filter.id, value)
+                                return newValues
+                            })
+                            updateQueryParams(filter.id, value.value)
+                        }}
                     />
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
@@ -191,6 +253,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
 
 const EmptyList: FC<{}> = () => (
     <div className="text-muted text-center mb-3 w-100">
-        <div className="pt-2">No repository embeddings jobs have been created so far.</div>
+        <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
+        <div className="pt-2">No repository embeddings jobs found.</div>
     </div>
 )
