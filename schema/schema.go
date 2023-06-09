@@ -628,6 +628,8 @@ type Embeddings struct {
 	Endpoint string `json:"endpoint,omitempty"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
+	// GlobalPolicyMatchLimit description: The maximum number of repositories that can be matched by a global embeddings policy
+	GlobalPolicyMatchLimit int `json:"globalPolicyMatchLimit,omitempty"`
 	// Incremental description: Experimental: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.
 	Incremental bool `json:"incremental,omitempty"`
 	// MaxCodeEmbeddingsPerRepo description: The maximum number of embeddings for code files to generate per repo

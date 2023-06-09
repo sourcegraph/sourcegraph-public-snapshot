@@ -151,7 +151,7 @@ repositories_matching_policy AS (
             r.blocked IS NULL AND
             gr.clone_status = 'cloned'
         ORDER BY stars DESC NULLS LAST, id
-        LIMIT 5000 -- Some repository match limit to stop you from returning all of dotcom
+        %s -- limit clause
     ) UNION ALL (
         SELECT r.id, gr.last_changed
         FROM repo r
@@ -186,6 +186,10 @@ type EmbeddableRepoOpts struct {
 	// MinimumInterval is the minimum amount of time that must have passed since the last
 	// successful embedding job.
 	MinimumInterval time.Duration
+
+	// GlobalPolicyMatchLimit limits the maximum number of repositories that can be
+	// matched by a global policy. A negative value means the policy is unlimited.
+	GlobalPolicyMatchLimit int
 }
 
 type ListOpts struct {
@@ -213,25 +217,44 @@ func embeddingConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
 	return nil
 }
 
-func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
-	defaultMinimumInterval := 24 * time.Hour
+var defaultOpts = EmbeddableRepoOpts{
+	MinimumInterval:        24 * time.Hour,
+	GlobalPolicyMatchLimit: 5000,
+}
 
+func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
 	embeddingsConf := conf.Get().Embeddings
 	if embeddingsConf == nil {
-		return EmbeddableRepoOpts{MinimumInterval: defaultMinimumInterval}
+		return defaultOpts
 	}
+
+	opts := defaultOpts
 
 	minimumIntervalString := embeddingsConf.MinimumInterval
 	d, err := time.ParseDuration(minimumIntervalString)
-	if err != nil {
-		return EmbeddableRepoOpts{MinimumInterval: defaultMinimumInterval}
+	if err == nil {
+		opts.MinimumInterval = d
 	}
 
-	return EmbeddableRepoOpts{MinimumInterval: d}
+	opts.GlobalPolicyMatchLimit = embeddingsConf.GlobalPolicyMatchLimit
+
+	return opts
 }
 
 func (s *repoEmbeddingJobsStore) GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error) {
-	q := sqlf.Sprintf(getEmbeddableReposFmtStr, opts.MinimumInterval.Seconds())
+	var limitClause *sqlf.Query
+	if opts.GlobalPolicyMatchLimit >= 0 {
+		limitClause = sqlf.Sprintf("LIMIT %d", opts.GlobalPolicyMatchLimit)
+	} else {
+		limitClause = sqlf.Sprintf("")
+	}
+
+	q := sqlf.Sprintf(
+		getEmbeddableReposFmtStr,
+		limitClause,
+		opts.MinimumInterval.Seconds(),
+	)
+
 	return scanEmbeddableRepos(s.Query(ctx, q))
 }
 
