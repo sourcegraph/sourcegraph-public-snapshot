@@ -86,7 +86,8 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	require.Equal(t, id1, lastEmbeddingJobForRevision.ID)
 
 	// Complete the second job and check if we get it back when calling GetLastCompletedRepoEmbeddingJob.
-	setJobState(t, ctx, store, id2, "completed")
+	stateCompleted := "completed"
+	setJobState(t, ctx, store, id2, stateCompleted)
 	lastCompletedJob, err := store.GetLastCompletedRepoEmbeddingJob(ctx, createdRepo.ID)
 	require.NoError(t, err)
 
@@ -97,7 +98,16 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, exists, true)
 
+	// Check that we get the correct repo embedding job if we filter by "state".
+	jobs, err = store.ListRepoEmbeddingJobs(ctx, ListOpts{State: &stateCompleted, PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(jobs))
+	require.Equal(t, id2, jobs[0].ID)
+
 	t.Run("update stats", func(t *testing.T) {
+		jobs, err := store.ListRepoEmbeddingJobs(ctx, ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}})
+		require.NoError(t, err)
+
 		emptyFileStats := EmbedFilesStats{FilesSkipped: map[string]int{}, BytesSkipped: map[string]int{}}
 		emptyStats := EmbedRepoStats{CodeIndexStats: emptyFileStats, TextIndexStats: emptyFileStats}
 		require.Equal(t, emptyStats, jobs[0].Stats)
@@ -122,11 +132,11 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 				BytesSkipped:   map[string]int{},
 			},
 		}
-		err := store.UpdateRepoEmbeddingJobStats(ctx, jobs[0].ID, &updatedStats)
+		err = store.UpdateRepoEmbeddingJobStats(ctx, jobs[0].ID, &updatedStats)
 		require.NoError(t, err)
 
 		first := 1
-		jobs, err := store.ListRepoEmbeddingJobs(ctx, ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}})
+		jobs, err = store.ListRepoEmbeddingJobs(ctx, ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}})
 		require.NoError(t, err)
 
 		require.Equal(t, updatedStats, jobs[0].Stats)

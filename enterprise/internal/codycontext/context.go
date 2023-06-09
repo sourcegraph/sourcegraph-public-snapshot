@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
@@ -22,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -179,11 +177,6 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		return nil, nil
 	}
 
-	settings, err := settings.CurrentUserFinal(ctx, c.db)
-	if err != nil {
-		return nil, err
-	}
-
 	// mini-HACK: pass in the scope using repo: filters. In an ideal world, we
 	// would not be using query text manipulation for this and would be using
 	// the job structs directly.
@@ -212,8 +205,6 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 			query,
 			search.Precise,
 			search.Streaming,
-			settings,
-			envvar.SourcegraphDotComMode(),
 		)
 		if err != nil {
 			return nil, err
