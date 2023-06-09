@@ -3,7 +3,7 @@
 export SANITY_CHECK=true
 
 services=(
-  embededings
+  embeddings
   frontend
   github-proxy
   gitserver
