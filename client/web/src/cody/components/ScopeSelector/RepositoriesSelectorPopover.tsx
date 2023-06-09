@@ -320,7 +320,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                     : 'Maximum additional repositories added'
                             }
                             variant="small"
-                            disabled={!additionalRepositoriesLeft}
+                            disabled={!searchText && !additionalRepositoriesLeft}
                             value={searchText}
                             onChange={onSearch}
                         />
