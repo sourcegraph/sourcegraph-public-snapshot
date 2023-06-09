@@ -204,7 +204,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                     />
                                                     <ExternalRepositoryIcon
                                                         externalRepo={inferredRepository.externalRepository}
-                                                        className="text-muted"
+                                                        className={styles.repoIcon}
                                                     />
                                                     <span className="text-truncate">
                                                         {getRepoName(inferredRepository.name)}
@@ -234,7 +234,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                         />
                                                         <ExternalRepositoryIcon
                                                             externalRepo={inferredRepository.externalRepository}
-                                                            className="text-muted"
+                                                            className={styles.repoIcon}
                                                         />
                                                         <span className="text-truncate">
                                                             {getFileName(inferredFilePath)}
@@ -375,7 +375,7 @@ const AdditionalRepositoriesListItem: React.FC<{
                     className={classNames('mr-2 text-muted', styles.removeRepoIcon)}
                     svgPath={mdiMinusCircleOutline}
                 />
-                <ExternalRepositoryIcon externalRepo={repository.externalRepository} className="text-muted" />
+                <ExternalRepositoryIcon externalRepo={repository.externalRepository} className={styles.repoIcon} />
                 <span className="text-truncate">{getRepoName(repository.name)}</span>
             </div>
             <EmbeddingExistsIcon repo={repository} />
@@ -428,7 +428,7 @@ const SearchResultsListItem: React.FC<{
                     className={classNames('mr-2 text-success', { [styles.visibilityHidden]: !selected })}
                     svgPath={mdiCheck}
                 />
-                <ExternalRepositoryIcon externalRepo={repository.externalRepository} className="text-muted" />
+                <ExternalRepositoryIcon externalRepo={repository.externalRepository} className={styles.repoIcon} />
                 {getTintedText(getRepoName(repository.name), searchText)}
             </div>
             <EmbeddingExistsIcon repo={repository} />
@@ -483,8 +483,7 @@ const EmbeddingExistsIcon: React.FC<{ repo: { embeddingExists: boolean } }> = Re
                 <Icon
                     aria-hidden={true}
                     className={classNames({
-                        'text-muted': embeddingExists,
-                        'text-warning': !embeddingExists,
+                        [styles.embeddingIconNoEmbeddings]: !embeddingExists,
                     })}
                     svgPath={embeddingExists ? mdiDatabaseCheckOutline : mdiDatabaseRemoveOutline}
                 />

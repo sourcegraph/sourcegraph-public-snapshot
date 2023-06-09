@@ -131,9 +131,18 @@
 }
 
 .not-included-in-context {
-    opacity: 50%;
+    &, .repo-icon {
+        color: var(--text-disabled);
+    }
+    .embedding-icon-no-embeddings {
+        color: var(--gray-05);
+    }
 }
 
 .not-included-in-context:hover {
     opacity: 100%;
+}
+
+.embedding-icon-no-embeddings {
+    color: var(--warning);
 }
