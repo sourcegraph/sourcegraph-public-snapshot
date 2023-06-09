@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 
@@ -6,6 +6,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { ButtonLink, ErrorAlert, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { GitHubAppsResult, GitHubAppsVariables } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 import {
     ConnectionContainer,
     ConnectionLoading,
@@ -22,6 +23,10 @@ export const GitHubAppsPage: React.FC = () => {
     const { data, loading, error, refetch } = useQuery<GitHubAppsResult, GitHubAppsVariables>(GITHUB_APPS_QUERY, {})
     const gitHubApps = useMemo(() => data?.gitHubApps?.nodes ?? [], [data])
 
+    useEffect(() => {
+        eventLogger.logPageView('SiteAdminGitHubApps')
+    }, [])
+
     const reloadApps = async (): Promise<void> => {
         await refetch({})
     }
@@ -37,8 +42,7 @@ export const GitHubAppsPage: React.FC = () => {
             <div className="d-flex align-items-center">
                 <span>
                     Create and connect a GitHub App to better manage GitHub code host connections.
-                    {/* TODO: add docs link here once we have them */}
-                    <Link to="" className="ml-1">
+                    <Link to="/help/admin/external_service/github#using-a-github-app" className="ml-1">
                         See how GitHub App configuration works.
                     </Link>
                 </span>

@@ -166,6 +166,14 @@ services:
       - 'SAMPLING_STRATEGIES_FILE=/etc/jaeger/sampling_strategies.json'
 ```
 
+### Enabling Embeddings service
+
+The Embeddings service handles searching embeddings for Cody context. It can be enabled using the [override file](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-docker/-/blob/docker-compose/embeddings/embeddings.docker-compose.yaml)
+
+#### Configuring the Embeddings service
+By default the Embeddings service uses the `blobstore` service for storing embeddings indexes.
+To configure an external [object store](../../../cody/explanations/code_graph_context.md#storing-embedding-indexes) the override file can modified by setting environment variables. These variables **must** be set on both the `worker` and `embeddings` services.
+
 ### Git configuration
 
 #### Git SSH configuration

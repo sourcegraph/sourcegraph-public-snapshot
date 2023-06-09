@@ -38,6 +38,8 @@
   interfaces:
     - AccessRequestStore
     - AccessTokenStore
+    - AssignedOwnersStore
+    - AssignedTeamsStore
     - AuthzStore
     - BitbucketProjectPermissionsStore
     - ConfStore
@@ -55,7 +57,10 @@
     - OutboundWebhookStore
     - OutboundWebhookJobStore
     - OutboundWebhookLogStore
+    - OwnershipStatsStore
     - PhabricatorStore
+    - RepoCommitsChangelistsStore
+    - RepoPathStore
     - RepoStore
     - SavedSearchStore
     - SearchContextsStore
@@ -81,6 +86,7 @@
     - RepoStatisticsStore
     - RecentContributionSignalStore
     - RecentViewSignalStore
+    - SignalConfigurationStore
 - filename: internal/gitserver/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
   interfaces:

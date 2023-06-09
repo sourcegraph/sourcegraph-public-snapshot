@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )

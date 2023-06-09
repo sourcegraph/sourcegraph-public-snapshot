@@ -17,16 +17,14 @@ import (
 
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/gregjones/httpcache"
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -315,16 +313,6 @@ func GitHubProxyRedirectMiddleware(cli Doer) Doer {
 	})
 }
 
-// GerritUnauthenticateMiddleware rewrites requests to Gerrit code host to
-// make them unauthenticated, used for testing against a non-Authed gerrit instance
-func GerritUnauthenticateMiddleware(cli Doer) Doer {
-	return DoerFunc(func(req *http.Request) (*http.Response, error) {
-		req.URL.Path = strings.ReplaceAll(req.URL.Path, "/a/", "/")
-		req.Header.Del("Authorization")
-		return cli.Do(req)
-	})
-}
-
 // requestContextKey is used to denote keys to fields that should be logged by the logging
 // middleware. They should be set to the request context associated with a response.
 type requestContextKey int
@@ -471,14 +459,9 @@ func TracedTransportOpt(cli *http.Client) error {
 	// Propagate trace policy
 	cli.Transport = &policy.Transport{RoundTripper: cli.Transport}
 
-	// Keep the legacy nethttp transport for now that was used before - otelhttp
-	// should propagate traces in the same way, but we keep this just in case.
-	// This used to be in policy.Transport, but is clearer here.
-	cli.Transport = &nethttp.Transport{RoundTripper: cli.Transport}
-
 	// Collect and propagate OpenTelemetry trace (among other formats initialized
 	// in internal/tracer)
-	cli.Transport = otelhttp.NewTransport(cli.Transport)
+	cli.Transport = instrumentation.NewHTTPTransport(cli.Transport)
 
 	return nil
 }
@@ -547,20 +530,19 @@ func NewRetryPolicy(max int, retryAfterMaxSleepDuration time.Duration) rehttp.Re
 		defer func() {
 			// Avoid trace log spam if we haven't invoked the retry policy.
 			shouldTraceLog := retry || a.Index > 0
-			if span := opentracing.SpanFromContext(a.Request.Context()); span != nil && shouldTraceLog {
-				fields := []otlog.Field{
-					otlog.Event("request-retry-decision"),
-					otlog.Bool("retry", retry),
-					otlog.Int("attempt", a.Index),
-					otlog.String("method", a.Request.Method),
-					otlog.String("url", a.Request.URL.String()),
-					otlog.Int("status", status),
-					otlog.String("retry-after", retryAfterHeader),
+			if tr := trace.TraceFromContext(a.Request.Context()); tr != nil && shouldTraceLog {
+				fields := []attribute.KeyValue{
+					attribute.Bool("retry", retry),
+					attribute.Int("attempt", a.Index),
+					attribute.String("method", a.Request.Method),
+					attribute.Stringer("url", a.Request.URL),
+					attribute.Int("status", status),
+					attribute.String("retry-after", retryAfterHeader),
 				}
 				if a.Error != nil {
-					fields = append(fields, otlog.Error(a.Error))
+					fields = append(fields, trace.Error(a.Error))
 				}
-				span.LogFields(fields...)
+				tr.AddEvent("request-retry-decision", fields...)
 			}
 
 			// Update request context with latest retry for logging middleware

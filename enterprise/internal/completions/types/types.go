@@ -58,7 +58,27 @@ type CompletionResponse struct {
 
 type SendCompletionEvent func(event CompletionResponse) error
 
+type CompletionsFeature string
+
+const (
+	CompletionsFeatureChat CompletionsFeature = "chat_completions"
+	CompletionsFeatureCode CompletionsFeature = "code_completions"
+)
+
+func (b CompletionsFeature) IsValid() bool {
+	switch b {
+	case CompletionsFeatureChat,
+		CompletionsFeatureCode:
+		return true
+	}
+	return false
+}
+
 type CompletionsClient interface {
-	Stream(ctx context.Context, requestParams CompletionRequestParameters, sendEvent SendCompletionEvent) error
-	Complete(ctx context.Context, requestParams CompletionRequestParameters) (*CompletionResponse, error)
+	// Stream executions a completions request, streaming results to the callback.
+	// Callers should check for ErrStatusNotOK and handle the error appropriately.
+	Stream(context.Context, CompletionsFeature, CompletionRequestParameters, SendCompletionEvent) error
+	// Complete executions a completions request until done. Callers should check
+	// for ErrStatusNotOK and handle the error appropriately.
+	Complete(context.Context, CompletionsFeature, CompletionRequestParameters) (*CompletionResponse, error)
 }

@@ -24,6 +24,8 @@ interface ChatProps extends ChatClassNames {
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
     onSubmit: (text: string, submitType: 'user' | 'suggestion') => void
+    contextStatusComponent?: React.FunctionComponent<any>
+    contextStatusComponentProps?: any
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
@@ -37,6 +39,8 @@ interface ChatProps extends ChatClassNames {
     copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | []) => void
+    needsEmailVerification?: boolean
+    needsEmailVerificationNotice?: React.FunctionComponent
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -51,6 +55,7 @@ export interface ChatUITextAreaProps {
     autoFocus: boolean
     value: string
     required: boolean
+    disabled?: boolean
     onInput: React.FormEventHandler<HTMLElement>
     onKeyDown?: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
 }
@@ -79,8 +84,9 @@ export interface FeedbackButtonsProps {
     feedbackButtonsOnSubmit: (text: string) => void
 }
 
+// TODO: Rename to CodeBlockActionsProps
 export interface CopyButtonProps {
-    copyButtonOnSubmit: (text: string) => void
+    copyButtonOnSubmit: (text: string, insert?: boolean) => void
 }
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
@@ -103,6 +109,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     afterTips,
     className,
     codeBlocksCopyButtonClassName,
+    codeBlocksInsertButtonClassName,
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
@@ -117,6 +124,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     copyButtonOnSubmit,
     suggestions,
     setSuggestions,
+    needsEmailVerification = false,
+    needsEmailVerificationNotice: NeedsEmailVerificationNotice,
+    contextStatusComponent: ContextStatusComponent,
+    contextStatusComponentProps = {},
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -149,6 +160,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setInputHistory([...inputHistory, input])
         },
         [inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions]
+    )
+    const onChatInput = useCallback(
+        ({ target }: React.SyntheticEvent) => {
+            const { value } = target as HTMLInputElement
+            inputHandler(value)
+        },
+        [inputHandler]
     )
 
     const onChatSubmit = useCallback((): void => {
@@ -198,33 +216,46 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     )
 
     const transcriptWithWelcome = useMemo<ChatMessage[]>(
-        () => [{ speaker: 'assistant', displayText: welcomeText(afterTips) }, ...transcript],
+        () => [
+            {
+                speaker: 'assistant',
+                displayText: welcomeText(afterTips),
+            },
+            ...transcript,
+        ],
         [afterTips, transcript]
     )
 
     return (
         <div className={classNames(className, styles.innerContainer)}>
-            <Transcript
-                transcript={transcriptWithWelcome}
-                messageInProgress={messageInProgress}
-                messageBeingEdited={messageBeingEdited}
-                setMessageBeingEdited={setMessageBeingEdited}
-                fileLinkComponent={fileLinkComponent}
-                codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
-                transcriptItemClassName={transcriptItemClassName}
-                humanTranscriptItemClassName={humanTranscriptItemClassName}
-                transcriptItemParticipantClassName={transcriptItemParticipantClassName}
-                transcriptActionClassName={transcriptActionClassName}
-                className={styles.transcriptContainer}
-                textAreaComponent={TextArea}
-                EditButtonContainer={EditButtonContainer}
-                editButtonOnSubmit={editButtonOnSubmit}
-                FeedbackButtonsContainer={FeedbackButtonsContainer}
-                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                copyButtonOnSubmit={copyButtonOnSubmit}
-                submitButtonComponent={SubmitButton}
-                chatInputClassName={chatInputClassName}
-            />
+            {needsEmailVerification && NeedsEmailVerificationNotice ? (
+                <div className="flex-1">
+                    <NeedsEmailVerificationNotice />
+                </div>
+            ) : (
+                <Transcript
+                    transcript={transcriptWithWelcome}
+                    messageInProgress={messageInProgress}
+                    messageBeingEdited={messageBeingEdited}
+                    setMessageBeingEdited={setMessageBeingEdited}
+                    fileLinkComponent={fileLinkComponent}
+                    codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                    codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
+                    transcriptItemClassName={transcriptItemClassName}
+                    humanTranscriptItemClassName={humanTranscriptItemClassName}
+                    transcriptItemParticipantClassName={transcriptItemParticipantClassName}
+                    transcriptActionClassName={transcriptActionClassName}
+                    className={styles.transcriptContainer}
+                    textAreaComponent={TextArea}
+                    EditButtonContainer={EditButtonContainer}
+                    editButtonOnSubmit={editButtonOnSubmit}
+                    FeedbackButtonsContainer={FeedbackButtonsContainer}
+                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
+                    submitButtonComponent={SubmitButton}
+                    chatInputClassName={chatInputClassName}
+                />
+            )}
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
                 {suggestions !== undefined && suggestions.length !== 0 && SuggestionButton ? (
@@ -247,20 +278,22 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         value={formInput}
                         autoFocus={true}
                         required={true}
-                        onInput={({ target }) => {
-                            const { value } = target as HTMLInputElement
-                            inputHandler(value)
-                        }}
+                        disabled={needsEmailVerification}
+                        onInput={onChatInput}
                         onKeyDown={onChatKeyDown}
                     />
                     <SubmitButton
                         className={styles.submitButton}
                         onClick={onChatSubmit}
-                        disabled={!!messageInProgress}
+                        disabled={!!messageInProgress || needsEmailVerification}
                     />
                 </div>
-                {contextStatus && (
-                    <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
+                {ContextStatusComponent ? (
+                    <ContextStatusComponent {...contextStatusComponentProps} />
+                ) : (
+                    contextStatus && (
+                        <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
+                    )
                 )}
             </form>
         </div>

@@ -27,12 +27,14 @@ export type FeatureFlagName =
     | 'clone-progress-logging'
     | 'sourcegraph-operator-site-admin-hide-maintenance'
     | 'repository-metadata'
-    | 'llm-proxy-management-ui'
+    | 'cody-gateway-management-ui'
     | 'cody-web-chat'
     | 'cody-web-search'
     | 'cody-web-sidebar'
     | 'cody-web-all'
     | 'cody-web-editor-recipes'
+    | 'own-promote'
+    | 'own-analytics'
 
 interface OrgFlagOverride {
     orgID: string

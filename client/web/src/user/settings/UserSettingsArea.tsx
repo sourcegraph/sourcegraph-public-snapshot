@@ -22,6 +22,7 @@ import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { RouteV6Descriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 
+import { isAccessTokenCallbackPage } from './accessTokens/UserSettingsCreateAccessTokenCallbackPage'
 import { EditUserProfilePageGQLFragment } from './profile/UserSettingsProfilePage'
 import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSidebar'
 
@@ -140,7 +141,32 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
 
     const siteAdminViewingOtherUser = user.id !== authenticatedUser.id
 
-    return (
+    // The callback page for creating a personal access token is a full-screen page,
+    // so we don't want to render the sidebar on it.
+    const isFullScreenPage = isAccessTokenCallbackPage()
+
+    const routeSuspense = (
+        <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
+            <Routes>
+                {props.routes.map(
+                    ({ path, render, condition = () => true }) =>
+                        condition(context) && (
+                            <Route
+                                errorElement={<RouteError />}
+                                element={render(context)}
+                                path={path}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            />
+                        )
+                )}
+                <Route path="*" element={<NotFoundPage pageType="settings" />} />
+            </Routes>
+        </React.Suspense>
+    )
+
+    return isFullScreenPage ? (
+        routeSuspense
+    ) : (
         <>
             {/* Indicate when the site admin is viewing another user's account */}
             {siteAdminViewingOtherUser && (
@@ -154,24 +180,7 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<
                     {...context}
                     className={classNames('flex-0 mr-3 mb-4', styles.userSettingsSidebar)}
                 />
-                <div className="flex-1">
-                    <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
-                        <Routes>
-                            {props.routes.map(
-                                ({ path, render, condition = () => true }) =>
-                                    condition(context) && (
-                                        <Route
-                                            errorElement={<RouteError />}
-                                            element={render(context)}
-                                            path={path}
-                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        />
-                                    )
-                            )}
-                            <Route path="*" element={<NotFoundPage pageType="settings" />} />
-                        </Routes>
-                    </React.Suspense>
-                </div>
+                <div className="flex-1">{routeSuspense}</div>
             </div>
         </>
     )

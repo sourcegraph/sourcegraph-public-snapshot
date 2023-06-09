@@ -8,38 +8,3 @@
     align-items: center;
     height: 100%;
 }
-
-.table {
-    width: 100%;
-
-    td {
-        padding-bottom: 0.5rem;
-    }
-
-    td:nth-child(3) {
-        white-space: nowrap;
-        text-overflow: ellipsis;
-    }
-
-    td:nth-child(1),
-    td:nth-child(2),
-    td:nth-child(3) {
-        width: 0; // This shrinks the cells to fit the content
-    }
-}
-
-.own-explanation {
-    &-container {
-        background-color: var(--color-bg-1);
-    }
-
-    &-title {
-        margin-bottom: 0.25rem;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-    }
-
-    &-content {
-        font-size: 0.75rem;
-    }
-}

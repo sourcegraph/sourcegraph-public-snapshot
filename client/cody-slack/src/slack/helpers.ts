@@ -1,5 +1,6 @@
 import { KnownEventFromType, SlackEvent } from '@slack/bolt'
 import { ChatPostMessageResponse } from '@slack/web-api'
+import slackifyMarkdown from 'slackify-markdown'
 
 import { webClient } from './init'
 
@@ -10,6 +11,14 @@ export async function getThreadMessages(channel: string, thread_ts: string) {
     })
 
     return result?.messages || []
+}
+
+export async function getSlackChannelName(channel: string) {
+    const result = await webClient.conversations.info({
+        channel,
+    })
+
+    return result.channel?.name
 }
 
 export function getEventTs(event: KnownEventFromType<'app_mention'> | KnownEventFromType<'message'>) {
@@ -28,7 +37,35 @@ export async function updateMessage(channel: string, messageTs: string, newText:
     const response = await webClient.chat.update({
         channel,
         ts: messageTs, // The timestamp of the message you want to update.
-        text: newText, // The new text for the updated message.
+        text: slackifyMarkdown(newText), // The new text for the updated message.
+        mrkdwn: true,
+    })
+
+    if (!response.ok) {
+        throw new Error(`Error updating message: ${response.error}`)
+    }
+}
+
+export async function updateMessageWithFileList(
+    channel: string,
+    messageTs: string,
+    newText: string,
+    fileList: string
+): Promise<void> {
+    const response = await webClient.chat.update({
+        channel,
+        blocks: [
+            {
+                type: 'section',
+                text: {
+                    type: 'mrkdwn',
+                    text: slackifyMarkdown(fileList),
+                },
+            },
+        ],
+        ts: messageTs, // The timestamp of the message you want to update.
+        text: slackifyMarkdown(newText), // The new text for the updated message.
+        mrkdwn: true,
     })
 
     if (!response.ok) {
@@ -43,8 +80,9 @@ export async function postMessage(
 ): Promise<ChatPostMessageResponse | undefined> {
     const response = await webClient.chat.postMessage({
         channel,
-        text: message,
+        text: slackifyMarkdown(message),
         thread_ts, // Use the timestamp of the parent message to reply in the thread.
+        mrkdwn: true,
     })
 
     if (!response.ok) {

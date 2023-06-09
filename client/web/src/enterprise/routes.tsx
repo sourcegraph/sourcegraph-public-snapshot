@@ -35,10 +35,20 @@ const SearchContextPage = lazyComponent(() => import('./searchContexts/SearchCon
 const CodySearchPage = lazyComponent(() => import('../cody/search/CodySearchPage'), 'CodySearchPage')
 const CodyChatPage = lazyComponent(() => import('../cody/chat/CodyChatPage'), 'CodyChatPage')
 const OwnPage = lazyComponent(() => import('./own/OwnPage'), 'OwnPage')
-const AppComingSoonPage = lazyComponent(() => import('./app/AppComingSoonPage'), 'AppComingSoonPage')
 const AppAuthCallbackPage = lazyComponent(() => import('./app/AppAuthCallbackPage'), 'AppAuthCallbackPage')
+const AppSetup = lazyComponent(() => import('./app/setup/AppSetupWizard'), 'AppSetupWizard')
 
 export const enterpriseRoutes: RouteObject[] = [
+    {
+        path: `${EnterprisePageRoutes.AppSetup}/*`,
+        handle: { isFullPage: true },
+        element: (
+            <LegacyRoute
+                render={props => <AppSetup telemetryService={props.telemetryService} />}
+                condition={({ isSourcegraphApp }) => isSourcegraphApp}
+            />
+        ),
+    },
     {
         path: EnterprisePageRoutes.BatchChanges,
         element: (
@@ -102,18 +112,12 @@ export const enterpriseRoutes: RouteObject[] = [
         element: <LegacyRoute render={props => <CodySearchPage {...props} />} />,
     },
     {
-        path: EnterprisePageRoutes.Cody,
+        path: EnterprisePageRoutes.Cody + '/*',
         element: <LegacyRoute render={props => <CodyChatPage {...props} />} />,
     },
     {
         path: EnterprisePageRoutes.Own,
         element: <OwnPage />,
-    },
-    {
-        path: EnterprisePageRoutes.AppComingSoon,
-        element: (
-            <LegacyRoute render={() => <AppComingSoonPage />} condition={({ isSourcegraphApp }) => isSourcegraphApp} />
-        ),
     },
     {
         path: EnterprisePageRoutes.AppAuthCallback,

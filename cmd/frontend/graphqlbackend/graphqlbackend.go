@@ -168,7 +168,7 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 }
 
 func (requestTracer) TraceField(ctx context.Context, _, typeName, fieldName string, _ bool, _ map[string]any) (context.Context, func(*gqlerrors.QueryError)) {
-	// We don't call into t.OpenTracingTracer.TraceField since it generates too many spans which is really hard to read.
+	// We don't call into t.tracer.TraceField since it generates too many spans which is really hard to read.
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
 		isErrStr := strconv.FormatBool(err != nil)
@@ -540,7 +540,7 @@ func NewSchema(
 	}
 
 	if insightsAggregation := optional.InsightsAggregationResolver; insightsAggregation != nil {
-		EnterpriseResolvers.InsightsAggregationResolver = insightsAggregation
+		EnterpriseResolvers.insightsAggregationResolver = insightsAggregation
 		resolver.InsightsAggregationResolver = insightsAggregation
 		schemas = append(schemas, insightsAggregationsSchema)
 	}
@@ -558,6 +558,12 @@ func NewSchema(
 		EnterpriseResolvers.embeddingsResolver = embeddingsResolver
 		resolver.EmbeddingsResolver = embeddingsResolver
 		schemas = append(schemas, embeddingsSchema)
+	}
+
+	if contextResolver := optional.CodyContextResolver; contextResolver != nil {
+		EnterpriseResolvers.contextResolver = contextResolver
+		resolver.CodyContextResolver = contextResolver
+		schemas = append(schemas, codyContextSchema)
 	}
 
 	if rbacResolver := optional.RBACResolver; rbacResolver != nil {
@@ -625,24 +631,25 @@ type schemaResolver struct {
 // OptionalResolver are the resolvers that do not have to be set. If a field
 // is non-nil, NewSchema will register the corresponding graphql schema.
 type OptionalResolver struct {
-	BatchChangesResolver
-	AuthzResolver
-	CodeIntelResolver
-	ComputeResolver
-	InsightsResolver
-	CodeMonitorsResolver
-	LicenseResolver
-	DotcomRootResolver
-	SearchContextsResolver
-	NotebooksResolver
-	InsightsAggregationResolver
-	WebhooksResolver
-	EmbeddingsResolver
-	RBACResolver
-	OwnResolver
 	AppResolver
+	AuthzResolver
+	BatchChangesResolver
+	CodeIntelResolver
+	CodeMonitorsResolver
 	CompletionsResolver
+	ComputeResolver
+	CodyContextResolver
+	DotcomRootResolver
+	EmbeddingsResolver
 	GitHubAppsResolver
+	InsightsAggregationResolver
+	InsightsResolver
+	LicenseResolver
+	NotebooksResolver
+	OwnResolver
+	RBACResolver
+	SearchContextsResolver
+	WebhooksResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -736,23 +743,24 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client, enterpr
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
-	codeIntelResolver           CodeIntelResolver
-	computeResolver             ComputeResolver
-	insightsResolver            InsightsResolver
 	authzResolver               AuthzResolver
 	batchChangesResolver        BatchChangesResolver
+	codeIntelResolver           CodeIntelResolver
 	codeMonitorsResolver        CodeMonitorsResolver
-	licenseResolver             LicenseResolver
-	dotcomResolver              DotcomRootResolver
-	searchContextsResolver      SearchContextsResolver
-	notebooksResolver           NotebooksResolver
-	InsightsAggregationResolver InsightsAggregationResolver
-	webhooksResolver            WebhooksResolver
-	embeddingsResolver          EmbeddingsResolver
-	rbacResolver                RBACResolver
-	ownResolver                 OwnResolver
 	completionsResolver         CompletionsResolver
+	computeResolver             ComputeResolver
+	contextResolver             CodyContextResolver
+	dotcomResolver              DotcomRootResolver
+	embeddingsResolver          EmbeddingsResolver
 	gitHubAppsResolver          GitHubAppsResolver
+	insightsAggregationResolver InsightsAggregationResolver
+	insightsResolver            InsightsResolver
+	licenseResolver             LicenseResolver
+	notebooksResolver           NotebooksResolver
+	ownResolver                 OwnResolver
+	rbacResolver                RBACResolver
+	searchContextsResolver      SearchContextsResolver
+	webhooksResolver            WebhooksResolver
 }{}
 
 // Root returns a new schemaResolver.

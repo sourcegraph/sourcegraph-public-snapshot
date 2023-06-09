@@ -15,5 +15,5 @@
       "path": "../extension-api-types",
     },
   ],
-  "include": ["./src/**/*", "./*.ts"],
+  "include": ["src", "*.js"],
 }

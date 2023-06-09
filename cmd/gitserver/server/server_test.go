@@ -27,6 +27,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -185,7 +187,7 @@ func TestExecRequest(t *testing.T) {
 	h := s.Handler()
 
 	origRepoCloned := repoCloned
-	repoCloned = func(dir GitDir) bool {
+	repoCloned = func(dir common.GitDir) bool {
 		return dir == s.dir("github.com/gorilla/mux") || dir == s.dir("my-mux")
 	}
 	t.Cleanup(func() { repoCloned = origRepoCloned })
@@ -338,7 +340,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 	tmp := b.TempDir()
 
 	dir := filepath.Join(tmp, ".git")
-	gitDir := GitDir(dir)
+	gitDir := common.GitDir(dir)
 	if err := os.Mkdir(dir, 0o700); err != nil {
 		b.Fatal(err)
 	}
@@ -412,7 +414,7 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) 
 	tmp := b.TempDir()
 
 	dir := filepath.Join(tmp, ".git")
-	gitDir := GitDir(dir)
+	gitDir := common.GitDir(dir)
 	if err := os.Mkdir(dir, 0o700); err != nil {
 		b.Fatal(err)
 	}
@@ -546,10 +548,19 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		mDB := database.NewMockDB()
 		mDB.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
 		mDB.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
+
+		repoStore := database.NewMockRepoStore()
+		repoStore.GetByNameFunc.SetDefaultReturn(nil, &database.RepoNotFoundErr{})
+
+		mDB.ReposFunc.SetDefaultReturn(repoStore)
+
 		db = mDB
 	}
+
+	logger := logtest.Scoped(t)
+
 	s := &Server{
-		Logger:           logtest.Scoped(t),
+		Logger:           logger,
 		ObservationCtx:   observation.TestContextTB(t),
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
@@ -564,6 +575,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		cloneableLimiter:        limiter.NewMutable(1),
 		rpsLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		recordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
+		Perforce:                perforce.NewService(ctx, logger, db, list.New()),
 	}
 
 	s.StartClonePipeline(ctx)
@@ -1140,7 +1152,7 @@ func TestHandleRepoUpdateFromShard(t *testing.T) {
 
 func TestRemoveBadRefs(t *testing.T) {
 	dir := t.TempDir()
-	gitDir := GitDir(filepath.Join(dir, ".git"))
+	gitDir := common.GitDir(filepath.Join(dir, ".git"))
 
 	cmd := func(name string, arg ...string) string {
 		t.Helper()
@@ -1232,7 +1244,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		_ = makeSingleCommitRepo(cmd)
 		s := makeTestServer(ctx, t, reposDir, remote, nil)
 
-		testRepoCorrupter = func(_ context.Context, tmpDir GitDir) {
+		testRepoCorrupter = func(_ context.Context, tmpDir common.GitDir) {
 			if err := os.Remove(tmpDir.Path("HEAD")); err != nil {
 				t.Fatal(err)
 			}
@@ -1272,7 +1284,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		_ = makeSingleCommitRepo(cmd)
 		s := makeTestServer(ctx, t, reposDir, remote, nil)
 
-		testRepoCorrupter = func(_ context.Context, tmpDir GitDir) {
+		testRepoCorrupter = func(_ context.Context, tmpDir common.GitDir) {
 			cmd("sh", "-c", fmt.Sprintf(": > %s/HEAD", tmpDir))
 		}
 		t.Cleanup(func() { testRepoCorrupter = nil })
@@ -1464,7 +1476,7 @@ type BatchLogTest struct {
 
 func TestHandleBatchLog(t *testing.T) {
 	originalRepoCloned := repoCloned
-	repoCloned = func(dir GitDir) bool {
+	repoCloned = func(dir common.GitDir) bool {
 		return dir == "github.com/foo/bar/.git" || dir == "github.com/foo/baz/.git" || dir == "github.com/foo/bonk/.git"
 	}
 	t.Cleanup(func() { repoCloned = originalRepoCloned })

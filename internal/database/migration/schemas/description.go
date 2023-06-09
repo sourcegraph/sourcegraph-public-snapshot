@@ -282,7 +282,11 @@ func (d IndexDescription) CreateStatement(table TableDescription) string {
 	return fmt.Sprintf("%s;", d.IndexDefinition)
 }
 
-func (d IndexDescription) DropStatement() string {
+func (d IndexDescription) DropStatement(table TableDescription) string {
+	if d.ConstraintType == "u" || d.ConstraintType == "p" {
+		return fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", table.Name, d.Name)
+	}
+
 	return fmt.Sprintf("DROP INDEX IF EXISTS %s;", d.GetName())
 }
 

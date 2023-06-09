@@ -50,14 +50,26 @@ type SearchClient interface {
 	JobClients() job.RuntimeClients
 }
 
-func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map, searcherGRPCConnectionCache *defaults.ConnectionCache, enterpriseJobs jobutil.EnterpriseJobs) SearchClient {
+// New will create a search client with a zoekt and searcher backed by conf.
+func New(logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs) SearchClient {
 	return &searchClient{
 		logger:                      logger,
 		db:                          db,
-		zoekt:                       zoektStreamer,
-		searcherURLs:                searcherURLs,
-		searcherGRPCConnectionCache: searcherGRPCConnectionCache,
+		zoekt:                       search.Indexed(),
+		searcherURLs:                search.SearcherURLs(),
+		searcherGRPCConnectionCache: search.SearcherGRPCConnectionCache(),
 		enterpriseJobs:              enterpriseJobs,
+	}
+}
+
+// MockedZoekt will return a search client for tests which uses the mocked
+// zoektStreamer.
+func MockedZoekt(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer) SearchClient {
+	return &searchClient{
+		logger:         logger,
+		db:             db,
+		zoekt:          zoektStreamer,
+		enterpriseJobs: jobutil.NewUnimplementedEnterpriseJobs(),
 	}
 }
 
@@ -81,10 +93,7 @@ func (s *searchClient) Plan(
 	sourcegraphDotComMode bool,
 ) (_ *search.Inputs, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchInputs", searchQuery)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	searchType, err := detectSearchType(version, patternType)
 	if err != nil {
@@ -141,10 +150,7 @@ func (s *searchClient) Execute(
 	inputs *search.Inputs,
 ) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "Execute", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan, s.enterpriseJobs)
 	if err != nil {
@@ -298,7 +304,7 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
 		CodeOwnershipSearch:     flagSet.GetBoolOr("search-ownership", false),
 		HybridSearch:            flagSet.GetBoolOr("search-hybrid", true), // can remove flag in 4.5
-		Ranking:                 flagSet.GetBoolOr("search-ranking", false),
+		Ranking:                 flagSet.GetBoolOr("search-ranking", true),
 		Debug:                   flagSet.GetBoolOr("search-debug", false),
 	}
 }

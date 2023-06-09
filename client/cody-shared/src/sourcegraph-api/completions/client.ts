@@ -12,7 +12,10 @@ export interface CompletionLogger {
           }
 }
 
-export type Config = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'debug' | 'customHeaders'>
+export type Config = Pick<
+    ConfigurationWithAccessToken,
+    'serverEndpoint' | 'accessToken' | 'debugEnable' | 'customHeaders'
+>
 
 export abstract class SourcegraphCompletionsClient {
     constructor(protected config: Config, protected logger?: CompletionLogger) {}

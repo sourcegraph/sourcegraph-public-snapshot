@@ -34,6 +34,13 @@ func currentVersion(logger log.Logger) (oobmigration.Version, error) {
 		return version, nil
 	}
 
+	// TODO: @jhchabran
+	// The infer mechanism doesn't work in CI, because we weren't expecting to run a container
+	// with a 0.0.0+dev version. This fixes it. We should come back to this.
+	if version.IsDev(version.Version()) && os.Getenv("BAZEL_SKIP_OOB_INFER_VERSION") != "" {
+		return oobmigration.NewVersion(5, 99), nil
+	}
+
 	version, err := inferNextReleaseVersion()
 	if err != nil {
 		return oobmigration.Version{}, err

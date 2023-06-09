@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { mdiClose, mdiFormatListBulleted, mdiPlus, mdiDelete } from '@mdi/js'
 
@@ -7,7 +7,8 @@ import { Button, Icon, Tooltip, Badge } from '@sourcegraph/wildcard'
 
 import { ChatUI, ScrollDownButton } from '../components/ChatUI'
 import { HistoryList } from '../components/HistoryList'
-import { useChatStoreState } from '../stores/chat'
+
+import { useCodySidebar } from './Provider'
 
 import styles from './CodySidebar.module.scss'
 
@@ -17,8 +18,19 @@ interface CodySidebarProps {
     onClose?: () => void
 }
 
-export const CodySidebar = ({ onClose }: CodySidebarProps): JSX.Element => {
-    const { reset, transcript, messageInProgress, clearHistory } = useChatStoreState()
+export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
+    const codySidebarStore = useCodySidebar()
+    const {
+        initializeNewChat,
+        transcript,
+        messageInProgress,
+        clearHistory,
+        loaded,
+        isCodyEnabled,
+        transcriptHistory,
+        deleteHistoryItem,
+        loadTranscriptFromHistory,
+    } = codySidebarStore
 
     const codySidebarRef = useRef<HTMLDivElement>(null)
     const [showHistory, setShowHistory] = useState(false)
@@ -44,14 +56,10 @@ export const CodySidebar = ({ onClose }: CodySidebarProps): JSX.Element => {
         }
     }
 
-    const onReset = useCallback(async () => {
-        await reset()
+    const onReset = useCallback(() => {
+        initializeNewChat()
         setShowHistory(false)
-    }, [reset, setShowHistory])
-
-    const closeHistory = useCallback(() => {
-        setShowHistory(false)
-    }, [setShowHistory])
+    }, [initializeNewChat, setShowHistory])
 
     useEffect(() => {
         const sidebar = codySidebarRef.current
@@ -60,17 +68,30 @@ export const CodySidebar = ({ onClose }: CodySidebarProps): JSX.Element => {
         }
     }, [transcript, shouldScrollToBottom, messageInProgress])
 
+    const onHistoryItemSelect = useCallback(
+        async (id: string) => {
+            await loadTranscriptFromHistory(id)
+            setShowHistory(false)
+        },
+        [loadTranscriptFromHistory, setShowHistory]
+    )
+
+    if (!(loaded && isCodyEnabled.sidebar)) {
+        return null
+    }
+
     return (
         <div className={styles.mainWrapper}>
             <div className={styles.codySidebar} ref={codySidebarRef} onScroll={handleScroll}>
                 <div className={styles.codySidebarHeader}>
-                    <div className="d-flex col-3 p-0">
+                    <div className="d-flex col-2 p-0">
                         <Tooltip content="Chat history">
                             <Button
                                 variant="icon"
                                 className="mr-2"
                                 aria-label="Active chats"
                                 onClick={() => setShowHistory(showing => !showing)}
+                                aria-pressed={showHistory}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiFormatListBulleted} />
                             </Button>
@@ -93,21 +114,36 @@ export const CodySidebar = ({ onClose }: CodySidebarProps): JSX.Element => {
                             </Tooltip>
                         )}
                     </div>
-                    <div className="col-6 d-flex justify-content-center">
-                        <CodyLogo />
-                        {showHistory ? 'Chats' : 'Ask Cody'}
-                        <div className="ml-2">
-                            <Badge variant="info">Beta</Badge>
+                    <div className="col-8 d-flex justify-content-center">
+                        <div className="d-flex flex-shrink-0 align-items-center">
+                            <CodyLogo />
+                            {showHistory ? 'Chats' : 'Ask Cody'}
+                            <div className="ml-2">
+                                <Badge variant="info">Beta</Badge>
+                            </div>
                         </div>
                     </div>
-                    <div className="col-3 d-flex justify-content-end p-0">
-                        <Button variant="icon" aria-label="Close" onClick={onClose}>
-                            <Icon aria-hidden={true} svgPath={mdiClose} />
-                        </Button>
+                    <div className="col-2 d-flex justify-content-end p-0">
+                        {onClose && (
+                            <Button variant="icon" aria-label="Close" onClick={onClose}>
+                                <Icon aria-hidden={true} svgPath={mdiClose} />
+                            </Button>
+                        )}
                     </div>
                 </div>
 
-                {showHistory ? <HistoryList onSelect={closeHistory} itemClassName="rounded-0" /> : <ChatUI />}
+                {showHistory ? (
+                    <HistoryList
+                        itemClassName="rounded-0"
+                        currentTranscript={transcript}
+                        transcriptHistory={transcriptHistory}
+                        truncateMessageLength={60}
+                        loadTranscriptFromHistory={onHistoryItemSelect}
+                        deleteHistoryItem={deleteHistoryItem}
+                    />
+                ) : (
+                    <ChatUI codyChatStore={codySidebarStore} />
+                )}
             </div>
             {showScrollDownButton && <ScrollDownButton onClick={() => scrollToBottom('smooth')} />}
         </div>

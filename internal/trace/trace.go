@@ -62,6 +62,9 @@ func (t *Trace) SetError(err error) {
 		return
 	}
 
+	// Truncate the error string to avoid tracing massive error messages.
+	err = truncateError(err, defaultErrorRuneLimit)
+
 	t.oteltraceSpan.RecordError(err)
 	t.oteltraceSpan.SetStatus(codes.Error, err.Error())
 
@@ -73,6 +76,7 @@ func (t *Trace) SetError(err error) {
 // context.DeadlineExceeded.
 func (t *Trace) SetErrorIfNotContext(err error) {
 	if errors.IsAny(err, context.Canceled, context.DeadlineExceeded) {
+		err = truncateError(err, defaultErrorRuneLimit)
 		t.oteltraceSpan.RecordError(err)
 		t.nettraceTrace.LazyPrintf("error: %v", err)
 		return
@@ -86,4 +90,12 @@ func (t *Trace) SetErrorIfNotContext(err error) {
 func (t *Trace) Finish() {
 	t.nettraceTrace.Finish()
 	t.oteltraceSpan.End()
+}
+
+// FinishWithErr finishes the span and sets its error value.
+// It takes a pointer to an error so it can be used directly
+// in a defer statement.
+func (t *Trace) FinishWithErr(err *error) {
+	t.SetError(*err)
+	t.Finish()
 }

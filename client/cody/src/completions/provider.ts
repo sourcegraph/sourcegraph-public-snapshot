@@ -9,7 +9,15 @@ import {
 
 import { Completion } from '.'
 import { ReferenceSnippet } from './context'
+import { truncateMultilineCompletion } from './multiline'
 import { messagesToText } from './prompts'
+
+const COMPLETIONS_PREAMBLE = `You are Cody, a code completion AI developed by Sourcegraph.
+You only respond in a single Markdown code blocks to all questions.
+All answers must be valid {lang} programs.
+DO NOT respond with anything other than code.`
+
+const BAD_COMPLETION_START = /^(\p{Emoji_Presentation}|\u{200B}|\+ |- |. )+(\s)+/u
 
 export abstract class CompletionProvider {
     constructor(
@@ -20,6 +28,7 @@ export abstract class CompletionProvider {
         protected prefix: string,
         protected suffix: string,
         protected injectPrefix: string,
+        protected languageId: string,
         protected defaultN: number = 1
     ) {}
 
@@ -60,7 +69,7 @@ export abstract class CompletionProvider {
                     },
                     {
                         speaker: 'assistant',
-                        text: 'Okay, I have added it to my knowledge base.',
+                        text: '```\n// Ok```',
                     },
                 ]
 
@@ -101,7 +110,7 @@ export abstract class CompletionProvider {
     public abstract generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]>
 }
 
-export class MultilineCompletionProvider extends CompletionProvider {
+export class ManualCompletionProvider extends CompletionProvider {
     protected createPromptPrefix(): Message[] {
         // TODO(beyang): escape 'Human:' and 'Assistant:'
         const prefix = this.prefix.trim()
@@ -177,20 +186,58 @@ export class MultilineCompletionProvider extends CompletionProvider {
                 messages: prompt,
                 maxTokensToSample: this.responseTokens,
             },
-            n || this.defaultN,
+            // We over-fetch the number of completions to account for potential
+            // empty results
+            (n || this.defaultN) + 2,
             abortSignal
         )
         // Post-process
-        return responses.map(resp => ({
-            prefix,
-            messages: prompt,
-            content: this.postProcess(resp.completion),
-            stopReason: resp.stopReason,
-        }))
+        return responses
+            .flatMap(resp => {
+                const completion = this.postProcess(resp.completion)
+                if (completion.trim() === '') {
+                    return []
+                }
+
+                return [
+                    {
+                        prefix,
+                        messages: prompt,
+                        content: this.postProcess(resp.completion),
+                        stopReason: resp.stopReason,
+                    },
+                ]
+            })
+            .slice(0, 3)
     }
 }
 
-export class EndOfLineCompletionProvider extends CompletionProvider {
+export class InlineCompletionProvider extends CompletionProvider {
+    constructor(
+        completionsClient: SourcegraphNodeCompletionsClient,
+        promptChars: number,
+        responseTokens: number,
+        snippets: ReferenceSnippet[],
+        prefix: string,
+        suffix: string,
+        injectPrefix: string,
+        languageId: string,
+        defaultN: number = 1,
+        protected multilineMode: null | 'block' | 'statement' = null
+    ) {
+        super(
+            completionsClient,
+            promptChars,
+            responseTokens,
+            snippets,
+            prefix,
+            suffix,
+            injectPrefix,
+            languageId,
+            defaultN
+        )
+    }
+
     protected createPromptPrefix(): Message[] {
         // TODO(beyang): escape 'Human:' and 'Assistant:'
         const prefixLines = this.prefix.split('\n')
@@ -204,6 +251,14 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
             prefixMessages = [
                 {
                     speaker: 'human',
+                    text: COMPLETIONS_PREAMBLE.replace('{lang}', this.languageId),
+                },
+                {
+                    speaker: 'assistant',
+                    text: '```\n// Ok```',
+                },
+                {
+                    speaker: 'human',
                     text:
                         'Complete the following file:\n' +
                         '```' +
@@ -212,10 +267,7 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
                 },
                 {
                     speaker: 'assistant',
-                    text:
-                        'Here is the completion of the file:\n' +
-                        '```' +
-                        `\n${prefixLines.slice(endLine).join('\n')}${this.injectPrefix}`,
+                    text: `\`\`\`\n${prefixLines.slice(endLine).join('\n')}${this.injectPrefix}`,
                 },
             ]
         } else {
@@ -234,25 +286,76 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
         return prefixMessages
     }
 
-    private postProcess(completion: string): string {
+    private postProcess(completion: string): null | string {
+        // Extract a few common parts for the processing
+        const currentLinePrefix = this.prefix.slice(this.prefix.lastIndexOf('\n') + 1)
+        const firstNlInSuffix = this.suffix.indexOf('\n') + 1
+        const nextNonEmptyLine =
+            this.suffix
+                .slice(firstNlInSuffix)
+                .split('\n')
+                .find(line => line.trim().length > 0) ?? ''
+
         // Sometimes Claude emits an extra space
+        let hasOddIndentation = false
         if (
             completion.length > 0 &&
             completion.startsWith(' ') &&
             this.prefix.length > 0 &&
-            this.prefix.endsWith(' ')
+            (this.prefix.endsWith(' ') || this.prefix.endsWith('\t'))
         ) {
             completion = completion.slice(1)
+            hasOddIndentation = true
         }
+
+        // Experimental: Trim start of the completion to remove all trailing whitespace nonsense
+        completion = completion.trimStart()
+
+        // Detect bad completion start
+        if (BAD_COMPLETION_START.test(completion)) {
+            completion = completion.replace(BAD_COMPLETION_START, '')
+        }
+
         // Insert the injected prefix back in
         if (this.injectPrefix.length > 0) {
             completion = this.injectPrefix + completion
         }
+
         // Strip out trailing markdown block and trim trailing whitespace
         const endBlockIndex = completion.indexOf('```')
         if (endBlockIndex !== -1) {
-            return completion.slice(0, endBlockIndex).trimEnd()
+            completion = completion.slice(0, endBlockIndex)
         }
+
+        if (this.multilineMode !== null) {
+            completion = truncateMultilineCompletion(
+                completion,
+                hasOddIndentation,
+                this.prefix,
+                nextNonEmptyLine,
+                this.languageId
+            )
+        }
+
+        // If a completed line matches the next non-empty line of the suffix 1:1, we remove
+        const lines = completion.split('\n')
+        const matchedLineIndex = lines.findIndex((line, index) => {
+            if (index === 0) {
+                line = currentLinePrefix + line
+            }
+            if (line.trim() !== '' && nextNonEmptyLine.trim() !== '') {
+                // We need a trimEnd here because the machine likes to add trailing whitespace.
+                //
+                // TODO: Fix this earlier in the post process run but this needs to be careful not
+                // to alter the meaning
+                return line.trimEnd() === nextNonEmptyLine
+            }
+            return false
+        })
+        if (matchedLineIndex !== -1) {
+            completion = lines.slice(0, matchedLineIndex).join('\n')
+        }
+
         return completion.trimEnd()
     }
 
@@ -270,7 +373,8 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
             this.completionsClient,
             {
                 messages: prompt,
-                stopSequences: [anthropic.HUMAN_PROMPT, '\n'],
+                stopSequences:
+                    this.multilineMode !== null ? [anthropic.HUMAN_PROMPT, '\n\n\n'] : [anthropic.HUMAN_PROMPT, '\n'],
                 maxTokensToSample: this.responseTokens,
                 temperature: 1,
                 topK: -1,
@@ -279,13 +383,24 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
             n || this.defaultN,
             abortSignal
         )
+
         // Post-process
-        return responses.map(resp => ({
-            prefix,
-            messages: prompt,
-            content: this.postProcess(resp.completion),
-            stopReason: resp.stopReason,
-        }))
+        return responses.flatMap(resp => {
+            const content = this.postProcess(resp.completion)
+
+            if (content === null) {
+                return []
+            }
+
+            return [
+                {
+                    prefix,
+                    messages: prompt,
+                    content,
+                    stopReason: resp.stopReason,
+                },
+            ]
+        })
     }
 }
 

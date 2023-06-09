@@ -17,7 +17,7 @@ func Test_LoadConfigurations(t *testing.T) {
 	ctx := context.Background()
 
 	store := db.OwnSignalConfigurations()
-	configurations, err := store.LoadConfigurations(ctx)
+	configurations, err := store.LoadConfigurations(ctx, LoadSignalConfigurationArgs{})
 	require.NoError(t, err)
 
 	autogold.Expect([]SignalConfiguration{
@@ -33,6 +33,21 @@ func Test_LoadConfigurations(t *testing.T) {
 		},
 	}).Equal(t, configurations)
 
+	t.Run("load by name", func(t *testing.T) {
+		configs, err := store.LoadConfigurations(ctx, LoadSignalConfigurationArgs{Name: "recent-contributors"})
+		require.NoError(t, err)
+		autogold.Expect([]SignalConfiguration{{
+			ID:          1,
+			Name:        "recent-contributors",
+			Description: "Indexes contributors in each file using repository history.",
+		}}).Equal(t, configs)
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		configs, err := store.LoadConfigurations(ctx, LoadSignalConfigurationArgs{Name: "not a real job"})
+		require.NoError(t, err)
+		require.Empty(t, configs)
+	})
 	t.Run("update signal config", func(t *testing.T) {
 		require.NotEmpty(t, configurations)
 		cfg := configurations[0]
@@ -43,7 +58,7 @@ func Test_LoadConfigurations(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		configurations, err := store.LoadConfigurations(ctx)
+		configurations, err := store.LoadConfigurations(ctx, LoadSignalConfigurationArgs{})
 		require.NoError(t, err)
 
 		autogold.Expect([]SignalConfiguration{

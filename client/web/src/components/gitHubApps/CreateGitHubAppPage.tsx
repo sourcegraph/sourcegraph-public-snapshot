@@ -1,10 +1,11 @@
-import { FC, useState, useCallback, useRef } from 'react'
+import { FC, useState, useCallback, useRef, useEffect } from 'react'
 
 import { Link } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Container, Button, Input, Label, Text, PageHeader, ButtonLink } from '@sourcegraph/wildcard'
 
+import { eventLogger } from '../../tracking/eventLogger'
 import { PageTitle } from '../PageTitle'
 
 export interface AddGitHubPageProps extends TelemetryProps {}
@@ -17,13 +18,17 @@ interface stateResponse {
 /**
  * Page for choosing a service kind and variant to add, among the available options.
  */
-export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
+export const CreateGitHubAppPage: FC<AddGitHubPageProps> = () => {
     const ref = useRef<HTMLFormElement>(null)
     const formInput = useRef<HTMLInputElement>(null)
     const [name, setName] = useState<string>('')
     const [url, setUrl] = useState<string>('')
     const [org, setOrg] = useState<string>('')
     const [error, setError] = useState<any>(null)
+
+    useEffect(() => {
+        eventLogger.logPageView('SiteAdminCreateGiHubApp')
+    }, [])
 
     const baseUrl = window.location.origin
     const getManifest = useCallback(
@@ -128,8 +133,7 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
                 description={
                     <>
                         Create and connect a GitHub App to better manage GitHub code host connections.
-                        {/* TODO: add docs link here once we have them */}
-                        <Link to="" className="ml-1">
+                        <Link to="/help/admin/external_service/github#using-a-github-app" className="ml-1">
                             See how GitHub App configuration works.
                         </Link>
                     </>

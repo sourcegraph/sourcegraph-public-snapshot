@@ -16,8 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-const maxAutofixAttempts = 3
-
 func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, development bool, expectedSchemaFactories ...ExpectedSchemaFactory) *cli.Command {
 	defaultVersion := ""
 	if development {
@@ -133,7 +131,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			}
 		}
 
-		expectedSchema, err := fetchExpectedSchema(ctx, schemaName, version, out, expectedSchemaFactories)
+		expectedSchema, err := FetchExpectedSchema(ctx, schemaName, version, out, expectedSchemaFactories)
 		if err != nil {
 			return err
 		}
@@ -143,36 +141,14 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			return err
 		}
 		schema := schemas["public"]
-		summaries := drift.CompareSchemaDescriptions(schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
+		summaries := drift.CompareSchemaDescriptions(schemaName, version, Canonicalize(schema), Canonicalize(expectedSchema))
 
-		var autofixErr error
 		if autofixFlag.Get(cmd) {
-			for attempts := maxAutofixAttempts; attempts > 0 && len(summaries) > 0 && autofixErr == nil; attempts-- {
-				allStatements := []string{}
-				for _, summary := range summaries {
-					if statements, ok := summary.Statements(); ok {
-						allStatements = append(allStatements, statements...)
-					}
-				}
-				if len(allStatements) == 0 {
-					out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "No autofix to apply"))
-					break
-				}
-
-				autofixErr = store.RunDDLStatements(ctx, allStatements)
-				if autofixErr != nil {
-					out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to apply autofix: %s", autofixErr))
-				} else {
-					out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Successfully applied autofix"))
-					out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Re-checking drift"))
-				}
-
-				schemas, err := store.Describe(ctx)
-				if err != nil {
-					return err
-				}
-				schema := schemas["public"]
-				summaries = drift.CompareSchemaDescriptions(schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
+			summaries, err = attemptAutofix(ctx, out, store, summaries, func(schema descriptions.SchemaDescription) []drift.Summary {
+				return drift.CompareSchemaDescriptions(schemaName, version, Canonicalize(schema), Canonicalize(expectedSchema))
+			})
+			if err != nil {
+				return err
 			}
 		}
 
@@ -199,7 +175,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 	}
 }
 
-func fetchExpectedSchema(
+func FetchExpectedSchema(
 	ctx context.Context,
 	schemaName string,
 	version string,
@@ -297,7 +273,7 @@ func fetchExpectedSchema(
 	return descriptions.SchemaDescription{}, errors.New("failed to locate target schema description")
 }
 
-func canonicalize(schemaDescription descriptions.SchemaDescription) descriptions.SchemaDescription {
+func Canonicalize(schemaDescription descriptions.SchemaDescription) descriptions.SchemaDescription {
 	descriptions.Canonicalize(schemaDescription)
 
 	filtered := schemaDescription.Tables[:0]

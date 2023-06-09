@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opentracing/opentracing-go/ext"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -130,7 +129,7 @@ func (s *store) Open(ctx context.Context, key []string, fetcher Fetcher) (file *
 
 func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherWithPath) (file *File, err error) {
 	ctx, trace, endObservation := s.observe.cachedFetch.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String(string(ext.Component), s.component),
+		attribute.String("component", s.component),
 	}})
 	defer endObservation(1, observation.Args{})
 

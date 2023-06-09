@@ -73,9 +73,12 @@ type Handlers struct {
 	// Code Insights
 	CodeInsightsDataExportHandler http.Handler
 
+	// Dotcom license check
+	NewDotcomLicenseCheckHandler enterprise.NewDotcomLicenseCheckHandler
+
 	// Completions stream
-	NewCompletionsStreamHandler enterprise.NewCompletionsStreamHandler
-	NewCodeCompletionsHandler   enterprise.NewCodeCompletionsHandler
+	NewChatCompletionsStreamHandler enterprise.NewChatCompletionsStreamHandler
+	NewCodeCompletionsHandler       enterprise.NewCodeCompletionsHandler
 }
 
 // NewHandler returns a new API handler that uses the provided API
@@ -151,13 +154,15 @@ func NewHandler(
 	m.Get(apirouter.SCIPUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(true)))
 	m.Get(apirouter.SCIPUploadExists).Handler(trace.Route(noopHandler))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
-	m.Get(apirouter.CompletionsStream).Handler(trace.Route(handlers.NewCompletionsStreamHandler()))
+	m.Get(apirouter.ChatCompletionsStream).Handler(trace.Route(handlers.NewChatCompletionsStreamHandler()))
 	m.Get(apirouter.CodeCompletions).Handler(trace.Route(handlers.NewCodeCompletionsHandler()))
 
 	m.Get(apirouter.CodeInsightsDataExport).Handler(trace.Route(handlers.CodeInsightsDataExportHandler))
 
 	if envvar.SourcegraphDotComMode() {
+		m.Path("/app/check/update").Name(updatecheck.RouteAppUpdateCheck).Handler(trace.Route(updatecheck.AppUpdateHandler(logger)))
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.HandlerWithLog(logger))))
+		m.Path("/license/check").Methods("POST").Name("dotcom.license.check").Handler(trace.Route(handlers.NewDotcomLicenseCheckHandler()))
 	}
 
 	m.Get(apirouter.SCIM).Handler(trace.Route(handlers.SCIMHandler))

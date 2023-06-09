@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "api",
@@ -52,6 +53,7 @@ go_test(
         "//cmd/symbols/internal/database/writer",
         "//cmd/symbols/parser",
         "//internal/api",
+        "//internal/ctags_config",
         "//internal/database",
         "//internal/diskcache",
         "//internal/endpoint",

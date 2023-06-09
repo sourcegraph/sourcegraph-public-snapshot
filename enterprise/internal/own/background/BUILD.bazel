@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "background",
@@ -12,6 +13,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/shared/background",
+        "//enterprise/internal/own/types",
         "//internal/actor",
         "//internal/api",
         "//internal/conf",
@@ -43,6 +45,7 @@ go_test(
     name = "background_test",
     timeout = "moderate",
     srcs = [
+        "background_test.go",
         "recent_contributors_test.go",
         "recent_views_test.go",
         "scheduler_test.go",
@@ -54,6 +57,7 @@ go_test(
     deps = [
         "//cmd/frontend/globals",
         "//enterprise/internal/database",
+        "//enterprise/internal/own/types",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",

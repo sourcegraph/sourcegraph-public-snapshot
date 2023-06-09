@@ -19,7 +19,7 @@ import (
 )
 
 func TestClientSource_AddrMatchesTarget(t *testing.T) {
-	source := NewTestClientSource([]string{"localhost:1234", "localhost:4321"})
+	source := NewTestClientSource(t, []string{"localhost:1234", "localhost:4321"})
 	testGitserverConns := source.(*testGitserverConns)
 	conns := GitserverConns(*testGitserverConns.conns)
 

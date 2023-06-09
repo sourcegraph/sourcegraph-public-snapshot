@@ -291,7 +291,8 @@ func loadExternalService(ctx context.Context, s database.ExternalServiceStore, o
 			*schema.BitbucketServerConnection,
 			*schema.GitLabConnection,
 			*schema.BitbucketCloudConnection,
-			*schema.AzureDevOpsConnection:
+			*schema.AzureDevOpsConnection,
+			*schema.GerritConnection:
 			return e, nil
 		}
 	}
@@ -313,6 +314,8 @@ func buildChangesetSource(ctx context.Context, cf *httpcli.Factory, externalServ
 		return NewBitbucketCloudSource(ctx, externalService, cf)
 	case extsvc.KindAzureDevOps:
 		return NewAzureDevOpsSource(ctx, externalService, cf)
+	case extsvc.KindGerrit:
+		return NewGerritSource(ctx, externalService, cf)
 	default:
 		return nil, errors.Errorf("unsupported external service type %q", extsvc.KindToType(externalService.Kind))
 	}
@@ -374,7 +377,7 @@ func setBasicAuth(u *vcs.URL, extSvcType, username, password string) error {
 	switch extSvcType {
 	case extsvc.TypeGitHub, extsvc.TypeGitLab:
 		return errors.New("need token to push commits to " + extSvcType)
-	case extsvc.TypeBitbucketServer, extsvc.TypeBitbucketCloud, extsvc.TypeAzureDevOps:
+	case extsvc.TypeBitbucketServer, extsvc.TypeBitbucketCloud, extsvc.TypeAzureDevOps, extsvc.TypeGerrit:
 		u.User = url.UserPassword(username, password)
 
 	default:

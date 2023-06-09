@@ -91,7 +91,7 @@
 }
 
 .submit-button {
-    right: 0.6rem !important;
+    right: 0 !important;
     // stylelint-disable-next-line declaration-property-unit-allowed-list
     bottom: 1px !important;
     color: var(--body-color) !important;
@@ -140,5 +140,15 @@
                 color: var(--body-color);
             }
         }
+    }
+}
+
+.cody-message-header {
+    font-size: 0.8rem;
+    font-weight: bold;
+    height: 2rem;
+    svg {
+        height: 1.5rem;
+        width: 1.5rem;
     }
 }

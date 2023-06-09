@@ -17,6 +17,7 @@ import (
 	auth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	azuredevops "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	bitbucketcloud "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	gerrit "github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -26,6 +27,9 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources)
 // used for unit testing.
 type MockChangesetSource struct {
+	// BuildCommitOptsFunc is an instance of a mock function object
+	// controlling the behavior of the method BuildCommitOpts.
+	BuildCommitOptsFunc *ChangesetSourceBuildCommitOptsFunc
 	// CloseChangesetFunc is an instance of a mock function object
 	// controlling the behavior of the method CloseChangeset.
 	CloseChangesetFunc *ChangesetSourceCloseChangesetFunc
@@ -63,6 +67,11 @@ type MockChangesetSource struct {
 // overwritten.
 func NewMockChangesetSource() *MockChangesetSource {
 	return &MockChangesetSource{
+		BuildCommitOptsFunc: &ChangesetSourceBuildCommitOptsFunc{
+			defaultHook: func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) (r0 protocol.CreateCommitFromPatchRequest) {
+				return
+			},
+		},
 		CloseChangesetFunc: &ChangesetSourceCloseChangesetFunc{
 			defaultHook: func(context.Context, *Changeset) (r0 error) {
 				return
@@ -120,6 +129,11 @@ func NewMockChangesetSource() *MockChangesetSource {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockChangesetSource() *MockChangesetSource {
 	return &MockChangesetSource{
+		BuildCommitOptsFunc: &ChangesetSourceBuildCommitOptsFunc{
+			defaultHook: func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+				panic("unexpected invocation of MockChangesetSource.BuildCommitOpts")
+			},
+		},
 		CloseChangesetFunc: &ChangesetSourceCloseChangesetFunc{
 			defaultHook: func(context.Context, *Changeset) error {
 				panic("unexpected invocation of MockChangesetSource.CloseChangeset")
@@ -178,6 +192,9 @@ func NewStrictMockChangesetSource() *MockChangesetSource {
 // overwritten.
 func NewMockChangesetSourceFrom(i ChangesetSource) *MockChangesetSource {
 	return &MockChangesetSource{
+		BuildCommitOptsFunc: &ChangesetSourceBuildCommitOptsFunc{
+			defaultHook: i.BuildCommitOpts,
+		},
 		CloseChangesetFunc: &ChangesetSourceCloseChangesetFunc{
 			defaultHook: i.CloseChangeset,
 		},
@@ -209,6 +226,119 @@ func NewMockChangesetSourceFrom(i ChangesetSource) *MockChangesetSource {
 			defaultHook: i.WithAuthenticator,
 		},
 	}
+}
+
+// ChangesetSourceBuildCommitOptsFunc describes the behavior when the
+// BuildCommitOpts method of the parent MockChangesetSource instance is
+// invoked.
+type ChangesetSourceBuildCommitOptsFunc struct {
+	defaultHook func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest
+	hooks       []func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest
+	history     []ChangesetSourceBuildCommitOptsFuncCall
+	mutex       sync.Mutex
+}
+
+// BuildCommitOpts delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockChangesetSource) BuildCommitOpts(v0 *types.Repo, v1 *types1.Changeset, v2 *types1.ChangesetSpec, v3 *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	r0 := m.BuildCommitOptsFunc.nextHook()(v0, v1, v2, v3)
+	m.BuildCommitOptsFunc.appendCall(ChangesetSourceBuildCommitOptsFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the BuildCommitOpts
+// method of the parent MockChangesetSource instance is invoked and the hook
+// queue is empty.
+func (f *ChangesetSourceBuildCommitOptsFunc) SetDefaultHook(hook func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BuildCommitOpts method of the parent MockChangesetSource instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ChangesetSourceBuildCommitOptsFunc) PushHook(hook func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ChangesetSourceBuildCommitOptsFunc) SetDefaultReturn(r0 protocol.CreateCommitFromPatchRequest) {
+	f.SetDefaultHook(func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ChangesetSourceBuildCommitOptsFunc) PushReturn(r0 protocol.CreateCommitFromPatchRequest) {
+	f.PushHook(func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+		return r0
+	})
+}
+
+func (f *ChangesetSourceBuildCommitOptsFunc) nextHook() func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ChangesetSourceBuildCommitOptsFunc) appendCall(r0 ChangesetSourceBuildCommitOptsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ChangesetSourceBuildCommitOptsFuncCall
+// objects describing the invocations of this function.
+func (f *ChangesetSourceBuildCommitOptsFunc) History() []ChangesetSourceBuildCommitOptsFuncCall {
+	f.mutex.Lock()
+	history := make([]ChangesetSourceBuildCommitOptsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ChangesetSourceBuildCommitOptsFuncCall is an object that describes an
+// invocation of method BuildCommitOpts on an instance of
+// MockChangesetSource.
+type ChangesetSourceBuildCommitOptsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 *types.Repo
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types1.Changeset
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *types1.ChangesetSpec
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *protocol.PushConfig
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 protocol.CreateCommitFromPatchRequest
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ChangesetSourceBuildCommitOptsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ChangesetSourceBuildCommitOptsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ChangesetSourceCloseChangesetFunc describes the behavior when the
@@ -1294,6 +1424,9 @@ func (c ChangesetSourceWithAuthenticatorFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources)
 // used for unit testing.
 type MockForkableChangesetSource struct {
+	// BuildCommitOptsFunc is an instance of a mock function object
+	// controlling the behavior of the method BuildCommitOpts.
+	BuildCommitOptsFunc *ForkableChangesetSourceBuildCommitOptsFunc
 	// CloseChangesetFunc is an instance of a mock function object
 	// controlling the behavior of the method CloseChangeset.
 	CloseChangesetFunc *ForkableChangesetSourceCloseChangesetFunc
@@ -1334,6 +1467,11 @@ type MockForkableChangesetSource struct {
 // results, unless overwritten.
 func NewMockForkableChangesetSource() *MockForkableChangesetSource {
 	return &MockForkableChangesetSource{
+		BuildCommitOptsFunc: &ForkableChangesetSourceBuildCommitOptsFunc{
+			defaultHook: func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) (r0 protocol.CreateCommitFromPatchRequest) {
+				return
+			},
+		},
 		CloseChangesetFunc: &ForkableChangesetSourceCloseChangesetFunc{
 			defaultHook: func(context.Context, *Changeset) (r0 error) {
 				return
@@ -1397,6 +1535,11 @@ func NewMockForkableChangesetSource() *MockForkableChangesetSource {
 // unless overwritten.
 func NewStrictMockForkableChangesetSource() *MockForkableChangesetSource {
 	return &MockForkableChangesetSource{
+		BuildCommitOptsFunc: &ForkableChangesetSourceBuildCommitOptsFunc{
+			defaultHook: func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+				panic("unexpected invocation of MockForkableChangesetSource.BuildCommitOpts")
+			},
+		},
 		CloseChangesetFunc: &ForkableChangesetSourceCloseChangesetFunc{
 			defaultHook: func(context.Context, *Changeset) error {
 				panic("unexpected invocation of MockForkableChangesetSource.CloseChangeset")
@@ -1460,6 +1603,9 @@ func NewStrictMockForkableChangesetSource() *MockForkableChangesetSource {
 // implementation, unless overwritten.
 func NewMockForkableChangesetSourceFrom(i ForkableChangesetSource) *MockForkableChangesetSource {
 	return &MockForkableChangesetSource{
+		BuildCommitOptsFunc: &ForkableChangesetSourceBuildCommitOptsFunc{
+			defaultHook: i.BuildCommitOpts,
+		},
 		CloseChangesetFunc: &ForkableChangesetSourceCloseChangesetFunc{
 			defaultHook: i.CloseChangeset,
 		},
@@ -1494,6 +1640,121 @@ func NewMockForkableChangesetSourceFrom(i ForkableChangesetSource) *MockForkable
 			defaultHook: i.WithAuthenticator,
 		},
 	}
+}
+
+// ForkableChangesetSourceBuildCommitOptsFunc describes the behavior when
+// the BuildCommitOpts method of the parent MockForkableChangesetSource
+// instance is invoked.
+type ForkableChangesetSourceBuildCommitOptsFunc struct {
+	defaultHook func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest
+	hooks       []func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest
+	history     []ForkableChangesetSourceBuildCommitOptsFuncCall
+	mutex       sync.Mutex
+}
+
+// BuildCommitOpts delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) BuildCommitOpts(v0 *types.Repo, v1 *types1.Changeset, v2 *types1.ChangesetSpec, v3 *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	r0 := m.BuildCommitOptsFunc.nextHook()(v0, v1, v2, v3)
+	m.BuildCommitOptsFunc.appendCall(ForkableChangesetSourceBuildCommitOptsFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the BuildCommitOpts
+// method of the parent MockForkableChangesetSource instance is invoked and
+// the hook queue is empty.
+func (f *ForkableChangesetSourceBuildCommitOptsFunc) SetDefaultHook(hook func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BuildCommitOpts method of the parent MockForkableChangesetSource instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ForkableChangesetSourceBuildCommitOptsFunc) PushHook(hook func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ForkableChangesetSourceBuildCommitOptsFunc) SetDefaultReturn(r0 protocol.CreateCommitFromPatchRequest) {
+	f.SetDefaultHook(func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ForkableChangesetSourceBuildCommitOptsFunc) PushReturn(r0 protocol.CreateCommitFromPatchRequest) {
+	f.PushHook(func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+		return r0
+	})
+}
+
+func (f *ForkableChangesetSourceBuildCommitOptsFunc) nextHook() func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ForkableChangesetSourceBuildCommitOptsFunc) appendCall(r0 ForkableChangesetSourceBuildCommitOptsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ForkableChangesetSourceBuildCommitOptsFuncCall objects describing the
+// invocations of this function.
+func (f *ForkableChangesetSourceBuildCommitOptsFunc) History() []ForkableChangesetSourceBuildCommitOptsFuncCall {
+	f.mutex.Lock()
+	history := make([]ForkableChangesetSourceBuildCommitOptsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ForkableChangesetSourceBuildCommitOptsFuncCall is an object that
+// describes an invocation of method BuildCommitOpts on an instance of
+// MockForkableChangesetSource.
+type ForkableChangesetSourceBuildCommitOptsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 *types.Repo
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types1.Changeset
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *types1.ChangesetSpec
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *protocol.PushConfig
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 protocol.CreateCommitFromPatchRequest
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ForkableChangesetSourceBuildCommitOptsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ForkableChangesetSourceBuildCommitOptsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ForkableChangesetSourceCloseChangesetFunc describes the behavior when the
@@ -8102,4 +8363,1751 @@ func (c AzureDevOpsClientWithAuthenticatorFuncCall) Args() []interface{} {
 // invocation.
 func (c AzureDevOpsClientWithAuthenticatorFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockGerritClient is a mock implementation of the Client interface (from
+// the package github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit)
+// used for unit testing.
+type MockGerritClient struct {
+	// AbandonChangeFunc is an instance of a mock function object
+	// controlling the behavior of the method AbandonChange.
+	AbandonChangeFunc *GerritClientAbandonChangeFunc
+	// AuthenticatorFunc is an instance of a mock function object
+	// controlling the behavior of the method Authenticator.
+	AuthenticatorFunc *GerritClientAuthenticatorFunc
+	// GetAuthenticatedUserAccountFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// GetAuthenticatedUserAccount.
+	GetAuthenticatedUserAccountFunc *GerritClientGetAuthenticatedUserAccountFunc
+	// GetChangeFunc is an instance of a mock function object controlling
+	// the behavior of the method GetChange.
+	GetChangeFunc *GerritClientGetChangeFunc
+	// GetChangeReviewsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetChangeReviews.
+	GetChangeReviewsFunc *GerritClientGetChangeReviewsFunc
+	// GetGroupFunc is an instance of a mock function object controlling the
+	// behavior of the method GetGroup.
+	GetGroupFunc *GerritClientGetGroupFunc
+	// GetURLFunc is an instance of a mock function object controlling the
+	// behavior of the method GetURL.
+	GetURLFunc *GerritClientGetURLFunc
+	// ListProjectsFunc is an instance of a mock function object controlling
+	// the behavior of the method ListProjects.
+	ListProjectsFunc *GerritClientListProjectsFunc
+	// RestoreChangeFunc is an instance of a mock function object
+	// controlling the behavior of the method RestoreChange.
+	RestoreChangeFunc *GerritClientRestoreChangeFunc
+	// SetReadyForReviewFunc is an instance of a mock function object
+	// controlling the behavior of the method SetReadyForReview.
+	SetReadyForReviewFunc *GerritClientSetReadyForReviewFunc
+	// SetWIPFunc is an instance of a mock function object controlling the
+	// behavior of the method SetWIP.
+	SetWIPFunc *GerritClientSetWIPFunc
+	// SubmitChangeFunc is an instance of a mock function object controlling
+	// the behavior of the method SubmitChange.
+	SubmitChangeFunc *GerritClientSubmitChangeFunc
+	// WithAuthenticatorFunc is an instance of a mock function object
+	// controlling the behavior of the method WithAuthenticator.
+	WithAuthenticatorFunc *GerritClientWithAuthenticatorFunc
+	// WriteReviewCommentFunc is an instance of a mock function object
+	// controlling the behavior of the method WriteReviewComment.
+	WriteReviewCommentFunc *GerritClientWriteReviewCommentFunc
+}
+
+// NewMockGerritClient creates a new mock of the Client interface. All
+// methods return zero values for all results, unless overwritten.
+func NewMockGerritClient() *MockGerritClient {
+	return &MockGerritClient{
+		AbandonChangeFunc: &GerritClientAbandonChangeFunc{
+			defaultHook: func(context.Context, string) (r0 *gerrit.Change, r1 error) {
+				return
+			},
+		},
+		AuthenticatorFunc: &GerritClientAuthenticatorFunc{
+			defaultHook: func() (r0 auth.Authenticator) {
+				return
+			},
+		},
+		GetAuthenticatedUserAccountFunc: &GerritClientGetAuthenticatedUserAccountFunc{
+			defaultHook: func(context.Context) (r0 *gerrit.Account, r1 error) {
+				return
+			},
+		},
+		GetChangeFunc: &GerritClientGetChangeFunc{
+			defaultHook: func(context.Context, string) (r0 *gerrit.Change, r1 error) {
+				return
+			},
+		},
+		GetChangeReviewsFunc: &GerritClientGetChangeReviewsFunc{
+			defaultHook: func(context.Context, string) (r0 *[]gerrit.Reviewer, r1 error) {
+				return
+			},
+		},
+		GetGroupFunc: &GerritClientGetGroupFunc{
+			defaultHook: func(context.Context, string) (r0 gerrit.Group, r1 error) {
+				return
+			},
+		},
+		GetURLFunc: &GerritClientGetURLFunc{
+			defaultHook: func() (r0 *url.URL) {
+				return
+			},
+		},
+		ListProjectsFunc: &GerritClientListProjectsFunc{
+			defaultHook: func(context.Context, gerrit.ListProjectsArgs) (r0 gerrit.ListProjectsResponse, r1 bool, r2 error) {
+				return
+			},
+		},
+		RestoreChangeFunc: &GerritClientRestoreChangeFunc{
+			defaultHook: func(context.Context, string) (r0 *gerrit.Change, r1 error) {
+				return
+			},
+		},
+		SetReadyForReviewFunc: &GerritClientSetReadyForReviewFunc{
+			defaultHook: func(context.Context, string) (r0 error) {
+				return
+			},
+		},
+		SetWIPFunc: &GerritClientSetWIPFunc{
+			defaultHook: func(context.Context, string) (r0 error) {
+				return
+			},
+		},
+		SubmitChangeFunc: &GerritClientSubmitChangeFunc{
+			defaultHook: func(context.Context, string) (r0 *gerrit.Change, r1 error) {
+				return
+			},
+		},
+		WithAuthenticatorFunc: &GerritClientWithAuthenticatorFunc{
+			defaultHook: func(auth.Authenticator) (r0 gerrit.Client, r1 error) {
+				return
+			},
+		},
+		WriteReviewCommentFunc: &GerritClientWriteReviewCommentFunc{
+			defaultHook: func(context.Context, string, gerrit.ChangeReviewComment) (r0 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockGerritClient creates a new mock of the Client interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockGerritClient() *MockGerritClient {
+	return &MockGerritClient{
+		AbandonChangeFunc: &GerritClientAbandonChangeFunc{
+			defaultHook: func(context.Context, string) (*gerrit.Change, error) {
+				panic("unexpected invocation of MockGerritClient.AbandonChange")
+			},
+		},
+		AuthenticatorFunc: &GerritClientAuthenticatorFunc{
+			defaultHook: func() auth.Authenticator {
+				panic("unexpected invocation of MockGerritClient.Authenticator")
+			},
+		},
+		GetAuthenticatedUserAccountFunc: &GerritClientGetAuthenticatedUserAccountFunc{
+			defaultHook: func(context.Context) (*gerrit.Account, error) {
+				panic("unexpected invocation of MockGerritClient.GetAuthenticatedUserAccount")
+			},
+		},
+		GetChangeFunc: &GerritClientGetChangeFunc{
+			defaultHook: func(context.Context, string) (*gerrit.Change, error) {
+				panic("unexpected invocation of MockGerritClient.GetChange")
+			},
+		},
+		GetChangeReviewsFunc: &GerritClientGetChangeReviewsFunc{
+			defaultHook: func(context.Context, string) (*[]gerrit.Reviewer, error) {
+				panic("unexpected invocation of MockGerritClient.GetChangeReviews")
+			},
+		},
+		GetGroupFunc: &GerritClientGetGroupFunc{
+			defaultHook: func(context.Context, string) (gerrit.Group, error) {
+				panic("unexpected invocation of MockGerritClient.GetGroup")
+			},
+		},
+		GetURLFunc: &GerritClientGetURLFunc{
+			defaultHook: func() *url.URL {
+				panic("unexpected invocation of MockGerritClient.GetURL")
+			},
+		},
+		ListProjectsFunc: &GerritClientListProjectsFunc{
+			defaultHook: func(context.Context, gerrit.ListProjectsArgs) (gerrit.ListProjectsResponse, bool, error) {
+				panic("unexpected invocation of MockGerritClient.ListProjects")
+			},
+		},
+		RestoreChangeFunc: &GerritClientRestoreChangeFunc{
+			defaultHook: func(context.Context, string) (*gerrit.Change, error) {
+				panic("unexpected invocation of MockGerritClient.RestoreChange")
+			},
+		},
+		SetReadyForReviewFunc: &GerritClientSetReadyForReviewFunc{
+			defaultHook: func(context.Context, string) error {
+				panic("unexpected invocation of MockGerritClient.SetReadyForReview")
+			},
+		},
+		SetWIPFunc: &GerritClientSetWIPFunc{
+			defaultHook: func(context.Context, string) error {
+				panic("unexpected invocation of MockGerritClient.SetWIP")
+			},
+		},
+		SubmitChangeFunc: &GerritClientSubmitChangeFunc{
+			defaultHook: func(context.Context, string) (*gerrit.Change, error) {
+				panic("unexpected invocation of MockGerritClient.SubmitChange")
+			},
+		},
+		WithAuthenticatorFunc: &GerritClientWithAuthenticatorFunc{
+			defaultHook: func(auth.Authenticator) (gerrit.Client, error) {
+				panic("unexpected invocation of MockGerritClient.WithAuthenticator")
+			},
+		},
+		WriteReviewCommentFunc: &GerritClientWriteReviewCommentFunc{
+			defaultHook: func(context.Context, string, gerrit.ChangeReviewComment) error {
+				panic("unexpected invocation of MockGerritClient.WriteReviewComment")
+			},
+		},
+	}
+}
+
+// NewMockGerritClientFrom creates a new mock of the MockGerritClient
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockGerritClientFrom(i gerrit.Client) *MockGerritClient {
+	return &MockGerritClient{
+		AbandonChangeFunc: &GerritClientAbandonChangeFunc{
+			defaultHook: i.AbandonChange,
+		},
+		AuthenticatorFunc: &GerritClientAuthenticatorFunc{
+			defaultHook: i.Authenticator,
+		},
+		GetAuthenticatedUserAccountFunc: &GerritClientGetAuthenticatedUserAccountFunc{
+			defaultHook: i.GetAuthenticatedUserAccount,
+		},
+		GetChangeFunc: &GerritClientGetChangeFunc{
+			defaultHook: i.GetChange,
+		},
+		GetChangeReviewsFunc: &GerritClientGetChangeReviewsFunc{
+			defaultHook: i.GetChangeReviews,
+		},
+		GetGroupFunc: &GerritClientGetGroupFunc{
+			defaultHook: i.GetGroup,
+		},
+		GetURLFunc: &GerritClientGetURLFunc{
+			defaultHook: i.GetURL,
+		},
+		ListProjectsFunc: &GerritClientListProjectsFunc{
+			defaultHook: i.ListProjects,
+		},
+		RestoreChangeFunc: &GerritClientRestoreChangeFunc{
+			defaultHook: i.RestoreChange,
+		},
+		SetReadyForReviewFunc: &GerritClientSetReadyForReviewFunc{
+			defaultHook: i.SetReadyForReview,
+		},
+		SetWIPFunc: &GerritClientSetWIPFunc{
+			defaultHook: i.SetWIP,
+		},
+		SubmitChangeFunc: &GerritClientSubmitChangeFunc{
+			defaultHook: i.SubmitChange,
+		},
+		WithAuthenticatorFunc: &GerritClientWithAuthenticatorFunc{
+			defaultHook: i.WithAuthenticator,
+		},
+		WriteReviewCommentFunc: &GerritClientWriteReviewCommentFunc{
+			defaultHook: i.WriteReviewComment,
+		},
+	}
+}
+
+// GerritClientAbandonChangeFunc describes the behavior when the
+// AbandonChange method of the parent MockGerritClient instance is invoked.
+type GerritClientAbandonChangeFunc struct {
+	defaultHook func(context.Context, string) (*gerrit.Change, error)
+	hooks       []func(context.Context, string) (*gerrit.Change, error)
+	history     []GerritClientAbandonChangeFuncCall
+	mutex       sync.Mutex
+}
+
+// AbandonChange delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGerritClient) AbandonChange(v0 context.Context, v1 string) (*gerrit.Change, error) {
+	r0, r1 := m.AbandonChangeFunc.nextHook()(v0, v1)
+	m.AbandonChangeFunc.appendCall(GerritClientAbandonChangeFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the AbandonChange method
+// of the parent MockGerritClient instance is invoked and the hook queue is
+// empty.
+func (f *GerritClientAbandonChangeFunc) SetDefaultHook(hook func(context.Context, string) (*gerrit.Change, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AbandonChange method of the parent MockGerritClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GerritClientAbandonChangeFunc) PushHook(hook func(context.Context, string) (*gerrit.Change, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientAbandonChangeFunc) SetDefaultReturn(r0 *gerrit.Change, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (*gerrit.Change, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientAbandonChangeFunc) PushReturn(r0 *gerrit.Change, r1 error) {
+	f.PushHook(func(context.Context, string) (*gerrit.Change, error) {
+		return r0, r1
+	})
+}
+
+func (f *GerritClientAbandonChangeFunc) nextHook() func(context.Context, string) (*gerrit.Change, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientAbandonChangeFunc) appendCall(r0 GerritClientAbandonChangeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientAbandonChangeFuncCall objects
+// describing the invocations of this function.
+func (f *GerritClientAbandonChangeFunc) History() []GerritClientAbandonChangeFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientAbandonChangeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientAbandonChangeFuncCall is an object that describes an
+// invocation of method AbandonChange on an instance of MockGerritClient.
+type GerritClientAbandonChangeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *gerrit.Change
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientAbandonChangeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientAbandonChangeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GerritClientAuthenticatorFunc describes the behavior when the
+// Authenticator method of the parent MockGerritClient instance is invoked.
+type GerritClientAuthenticatorFunc struct {
+	defaultHook func() auth.Authenticator
+	hooks       []func() auth.Authenticator
+	history     []GerritClientAuthenticatorFuncCall
+	mutex       sync.Mutex
+}
+
+// Authenticator delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGerritClient) Authenticator() auth.Authenticator {
+	r0 := m.AuthenticatorFunc.nextHook()()
+	m.AuthenticatorFunc.appendCall(GerritClientAuthenticatorFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Authenticator method
+// of the parent MockGerritClient instance is invoked and the hook queue is
+// empty.
+func (f *GerritClientAuthenticatorFunc) SetDefaultHook(hook func() auth.Authenticator) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Authenticator method of the parent MockGerritClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GerritClientAuthenticatorFunc) PushHook(hook func() auth.Authenticator) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientAuthenticatorFunc) SetDefaultReturn(r0 auth.Authenticator) {
+	f.SetDefaultHook(func() auth.Authenticator {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientAuthenticatorFunc) PushReturn(r0 auth.Authenticator) {
+	f.PushHook(func() auth.Authenticator {
+		return r0
+	})
+}
+
+func (f *GerritClientAuthenticatorFunc) nextHook() func() auth.Authenticator {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientAuthenticatorFunc) appendCall(r0 GerritClientAuthenticatorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientAuthenticatorFuncCall objects
+// describing the invocations of this function.
+func (f *GerritClientAuthenticatorFunc) History() []GerritClientAuthenticatorFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientAuthenticatorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientAuthenticatorFuncCall is an object that describes an
+// invocation of method Authenticator on an instance of MockGerritClient.
+type GerritClientAuthenticatorFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 auth.Authenticator
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientAuthenticatorFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientAuthenticatorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GerritClientGetAuthenticatedUserAccountFunc describes the behavior when
+// the GetAuthenticatedUserAccount method of the parent MockGerritClient
+// instance is invoked.
+type GerritClientGetAuthenticatedUserAccountFunc struct {
+	defaultHook func(context.Context) (*gerrit.Account, error)
+	hooks       []func(context.Context) (*gerrit.Account, error)
+	history     []GerritClientGetAuthenticatedUserAccountFuncCall
+	mutex       sync.Mutex
+}
+
+// GetAuthenticatedUserAccount delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockGerritClient) GetAuthenticatedUserAccount(v0 context.Context) (*gerrit.Account, error) {
+	r0, r1 := m.GetAuthenticatedUserAccountFunc.nextHook()(v0)
+	m.GetAuthenticatedUserAccountFunc.appendCall(GerritClientGetAuthenticatedUserAccountFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetAuthenticatedUserAccount method of the parent MockGerritClient
+// instance is invoked and the hook queue is empty.
+func (f *GerritClientGetAuthenticatedUserAccountFunc) SetDefaultHook(hook func(context.Context) (*gerrit.Account, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetAuthenticatedUserAccount method of the parent MockGerritClient
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GerritClientGetAuthenticatedUserAccountFunc) PushHook(hook func(context.Context) (*gerrit.Account, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientGetAuthenticatedUserAccountFunc) SetDefaultReturn(r0 *gerrit.Account, r1 error) {
+	f.SetDefaultHook(func(context.Context) (*gerrit.Account, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientGetAuthenticatedUserAccountFunc) PushReturn(r0 *gerrit.Account, r1 error) {
+	f.PushHook(func(context.Context) (*gerrit.Account, error) {
+		return r0, r1
+	})
+}
+
+func (f *GerritClientGetAuthenticatedUserAccountFunc) nextHook() func(context.Context) (*gerrit.Account, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientGetAuthenticatedUserAccountFunc) appendCall(r0 GerritClientGetAuthenticatedUserAccountFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GerritClientGetAuthenticatedUserAccountFuncCall objects describing the
+// invocations of this function.
+func (f *GerritClientGetAuthenticatedUserAccountFunc) History() []GerritClientGetAuthenticatedUserAccountFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientGetAuthenticatedUserAccountFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientGetAuthenticatedUserAccountFuncCall is an object that
+// describes an invocation of method GetAuthenticatedUserAccount on an
+// instance of MockGerritClient.
+type GerritClientGetAuthenticatedUserAccountFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *gerrit.Account
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientGetAuthenticatedUserAccountFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientGetAuthenticatedUserAccountFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GerritClientGetChangeFunc describes the behavior when the GetChange
+// method of the parent MockGerritClient instance is invoked.
+type GerritClientGetChangeFunc struct {
+	defaultHook func(context.Context, string) (*gerrit.Change, error)
+	hooks       []func(context.Context, string) (*gerrit.Change, error)
+	history     []GerritClientGetChangeFuncCall
+	mutex       sync.Mutex
+}
+
+// GetChange delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGerritClient) GetChange(v0 context.Context, v1 string) (*gerrit.Change, error) {
+	r0, r1 := m.GetChangeFunc.nextHook()(v0, v1)
+	m.GetChangeFunc.appendCall(GerritClientGetChangeFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetChange method of
+// the parent MockGerritClient instance is invoked and the hook queue is
+// empty.
+func (f *GerritClientGetChangeFunc) SetDefaultHook(hook func(context.Context, string) (*gerrit.Change, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetChange method of the parent MockGerritClient instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *GerritClientGetChangeFunc) PushHook(hook func(context.Context, string) (*gerrit.Change, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientGetChangeFunc) SetDefaultReturn(r0 *gerrit.Change, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (*gerrit.Change, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientGetChangeFunc) PushReturn(r0 *gerrit.Change, r1 error) {
+	f.PushHook(func(context.Context, string) (*gerrit.Change, error) {
+		return r0, r1
+	})
+}
+
+func (f *GerritClientGetChangeFunc) nextHook() func(context.Context, string) (*gerrit.Change, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientGetChangeFunc) appendCall(r0 GerritClientGetChangeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientGetChangeFuncCall objects
+// describing the invocations of this function.
+func (f *GerritClientGetChangeFunc) History() []GerritClientGetChangeFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientGetChangeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientGetChangeFuncCall is an object that describes an invocation
+// of method GetChange on an instance of MockGerritClient.
+type GerritClientGetChangeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *gerrit.Change
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientGetChangeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientGetChangeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GerritClientGetChangeReviewsFunc describes the behavior when the
+// GetChangeReviews method of the parent MockGerritClient instance is
+// invoked.
+type GerritClientGetChangeReviewsFunc struct {
+	defaultHook func(context.Context, string) (*[]gerrit.Reviewer, error)
+	hooks       []func(context.Context, string) (*[]gerrit.Reviewer, error)
+	history     []GerritClientGetChangeReviewsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetChangeReviews delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGerritClient) GetChangeReviews(v0 context.Context, v1 string) (*[]gerrit.Reviewer, error) {
+	r0, r1 := m.GetChangeReviewsFunc.nextHook()(v0, v1)
+	m.GetChangeReviewsFunc.appendCall(GerritClientGetChangeReviewsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetChangeReviews
+// method of the parent MockGerritClient instance is invoked and the hook
+// queue is empty.
+func (f *GerritClientGetChangeReviewsFunc) SetDefaultHook(hook func(context.Context, string) (*[]gerrit.Reviewer, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetChangeReviews method of the parent MockGerritClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GerritClientGetChangeReviewsFunc) PushHook(hook func(context.Context, string) (*[]gerrit.Reviewer, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientGetChangeReviewsFunc) SetDefaultReturn(r0 *[]gerrit.Reviewer, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (*[]gerrit.Reviewer, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientGetChangeReviewsFunc) PushReturn(r0 *[]gerrit.Reviewer, r1 error) {
+	f.PushHook(func(context.Context, string) (*[]gerrit.Reviewer, error) {
+		return r0, r1
+	})
+}
+
+func (f *GerritClientGetChangeReviewsFunc) nextHook() func(context.Context, string) (*[]gerrit.Reviewer, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientGetChangeReviewsFunc) appendCall(r0 GerritClientGetChangeReviewsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientGetChangeReviewsFuncCall
+// objects describing the invocations of this function.
+func (f *GerritClientGetChangeReviewsFunc) History() []GerritClientGetChangeReviewsFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientGetChangeReviewsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientGetChangeReviewsFuncCall is an object that describes an
+// invocation of method GetChangeReviews on an instance of MockGerritClient.
+type GerritClientGetChangeReviewsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *[]gerrit.Reviewer
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientGetChangeReviewsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientGetChangeReviewsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GerritClientGetGroupFunc describes the behavior when the GetGroup method
+// of the parent MockGerritClient instance is invoked.
+type GerritClientGetGroupFunc struct {
+	defaultHook func(context.Context, string) (gerrit.Group, error)
+	hooks       []func(context.Context, string) (gerrit.Group, error)
+	history     []GerritClientGetGroupFuncCall
+	mutex       sync.Mutex
+}
+
+// GetGroup delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGerritClient) GetGroup(v0 context.Context, v1 string) (gerrit.Group, error) {
+	r0, r1 := m.GetGroupFunc.nextHook()(v0, v1)
+	m.GetGroupFunc.appendCall(GerritClientGetGroupFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetGroup method of
+// the parent MockGerritClient instance is invoked and the hook queue is
+// empty.
+func (f *GerritClientGetGroupFunc) SetDefaultHook(hook func(context.Context, string) (gerrit.Group, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetGroup method of the parent MockGerritClient instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *GerritClientGetGroupFunc) PushHook(hook func(context.Context, string) (gerrit.Group, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientGetGroupFunc) SetDefaultReturn(r0 gerrit.Group, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (gerrit.Group, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientGetGroupFunc) PushReturn(r0 gerrit.Group, r1 error) {
+	f.PushHook(func(context.Context, string) (gerrit.Group, error) {
+		return r0, r1
+	})
+}
+
+func (f *GerritClientGetGroupFunc) nextHook() func(context.Context, string) (gerrit.Group, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientGetGroupFunc) appendCall(r0 GerritClientGetGroupFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientGetGroupFuncCall objects
+// describing the invocations of this function.
+func (f *GerritClientGetGroupFunc) History() []GerritClientGetGroupFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientGetGroupFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientGetGroupFuncCall is an object that describes an invocation of
+// method GetGroup on an instance of MockGerritClient.
+type GerritClientGetGroupFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 gerrit.Group
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientGetGroupFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientGetGroupFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GerritClientGetURLFunc describes the behavior when the GetURL method of
+// the parent MockGerritClient instance is invoked.
+type GerritClientGetURLFunc struct {
+	defaultHook func() *url.URL
+	hooks       []func() *url.URL
+	history     []GerritClientGetURLFuncCall
+	mutex       sync.Mutex
+}
+
+// GetURL delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGerritClient) GetURL() *url.URL {
+	r0 := m.GetURLFunc.nextHook()()
+	m.GetURLFunc.appendCall(GerritClientGetURLFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GetURL method of the
+// parent MockGerritClient instance is invoked and the hook queue is empty.
+func (f *GerritClientGetURLFunc) SetDefaultHook(hook func() *url.URL) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetURL method of the parent MockGerritClient instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *GerritClientGetURLFunc) PushHook(hook func() *url.URL) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientGetURLFunc) SetDefaultReturn(r0 *url.URL) {
+	f.SetDefaultHook(func() *url.URL {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientGetURLFunc) PushReturn(r0 *url.URL) {
+	f.PushHook(func() *url.URL {
+		return r0
+	})
+}
+
+func (f *GerritClientGetURLFunc) nextHook() func() *url.URL {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientGetURLFunc) appendCall(r0 GerritClientGetURLFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientGetURLFuncCall objects
+// describing the invocations of this function.
+func (f *GerritClientGetURLFunc) History() []GerritClientGetURLFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientGetURLFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientGetURLFuncCall is an object that describes an invocation of
+// method GetURL on an instance of MockGerritClient.
+type GerritClientGetURLFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *url.URL
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientGetURLFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientGetURLFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GerritClientListProjectsFunc describes the behavior when the ListProjects
+// method of the parent MockGerritClient instance is invoked.
+type GerritClientListProjectsFunc struct {
+	defaultHook func(context.Context, gerrit.ListProjectsArgs) (gerrit.ListProjectsResponse, bool, error)
+	hooks       []func(context.Context, gerrit.ListProjectsArgs) (gerrit.ListProjectsResponse, bool, error)
+	history     []GerritClientListProjectsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListProjects delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGerritClient) ListProjects(v0 context.Context, v1 gerrit.ListProjectsArgs) (gerrit.ListProjectsResponse, bool, error) {
+	r0, r1, r2 := m.ListProjectsFunc.nextHook()(v0, v1)
+	m.ListProjectsFunc.appendCall(GerritClientListProjectsFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the ListProjects method
+// of the parent MockGerritClient instance is invoked and the hook queue is
+// empty.
+func (f *GerritClientListProjectsFunc) SetDefaultHook(hook func(context.Context, gerrit.ListProjectsArgs) (gerrit.ListProjectsResponse, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListProjects method of the parent MockGerritClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GerritClientListProjectsFunc) PushHook(hook func(context.Context, gerrit.ListProjectsArgs) (gerrit.ListProjectsResponse, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientListProjectsFunc) SetDefaultReturn(r0 gerrit.ListProjectsResponse, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, gerrit.ListProjectsArgs) (gerrit.ListProjectsResponse, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientListProjectsFunc) PushReturn(r0 gerrit.ListProjectsResponse, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, gerrit.ListProjectsArgs) (gerrit.ListProjectsResponse, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *GerritClientListProjectsFunc) nextHook() func(context.Context, gerrit.ListProjectsArgs) (gerrit.ListProjectsResponse, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientListProjectsFunc) appendCall(r0 GerritClientListProjectsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientListProjectsFuncCall objects
+// describing the invocations of this function.
+func (f *GerritClientListProjectsFunc) History() []GerritClientListProjectsFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientListProjectsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientListProjectsFuncCall is an object that describes an
+// invocation of method ListProjects on an instance of MockGerritClient.
+type GerritClientListProjectsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 gerrit.ListProjectsArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 gerrit.ListProjectsResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientListProjectsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientListProjectsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// GerritClientRestoreChangeFunc describes the behavior when the
+// RestoreChange method of the parent MockGerritClient instance is invoked.
+type GerritClientRestoreChangeFunc struct {
+	defaultHook func(context.Context, string) (*gerrit.Change, error)
+	hooks       []func(context.Context, string) (*gerrit.Change, error)
+	history     []GerritClientRestoreChangeFuncCall
+	mutex       sync.Mutex
+}
+
+// RestoreChange delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGerritClient) RestoreChange(v0 context.Context, v1 string) (*gerrit.Change, error) {
+	r0, r1 := m.RestoreChangeFunc.nextHook()(v0, v1)
+	m.RestoreChangeFunc.appendCall(GerritClientRestoreChangeFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RestoreChange method
+// of the parent MockGerritClient instance is invoked and the hook queue is
+// empty.
+func (f *GerritClientRestoreChangeFunc) SetDefaultHook(hook func(context.Context, string) (*gerrit.Change, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RestoreChange method of the parent MockGerritClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GerritClientRestoreChangeFunc) PushHook(hook func(context.Context, string) (*gerrit.Change, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientRestoreChangeFunc) SetDefaultReturn(r0 *gerrit.Change, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (*gerrit.Change, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientRestoreChangeFunc) PushReturn(r0 *gerrit.Change, r1 error) {
+	f.PushHook(func(context.Context, string) (*gerrit.Change, error) {
+		return r0, r1
+	})
+}
+
+func (f *GerritClientRestoreChangeFunc) nextHook() func(context.Context, string) (*gerrit.Change, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientRestoreChangeFunc) appendCall(r0 GerritClientRestoreChangeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientRestoreChangeFuncCall objects
+// describing the invocations of this function.
+func (f *GerritClientRestoreChangeFunc) History() []GerritClientRestoreChangeFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientRestoreChangeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientRestoreChangeFuncCall is an object that describes an
+// invocation of method RestoreChange on an instance of MockGerritClient.
+type GerritClientRestoreChangeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *gerrit.Change
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientRestoreChangeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientRestoreChangeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GerritClientSetReadyForReviewFunc describes the behavior when the
+// SetReadyForReview method of the parent MockGerritClient instance is
+// invoked.
+type GerritClientSetReadyForReviewFunc struct {
+	defaultHook func(context.Context, string) error
+	hooks       []func(context.Context, string) error
+	history     []GerritClientSetReadyForReviewFuncCall
+	mutex       sync.Mutex
+}
+
+// SetReadyForReview delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGerritClient) SetReadyForReview(v0 context.Context, v1 string) error {
+	r0 := m.SetReadyForReviewFunc.nextHook()(v0, v1)
+	m.SetReadyForReviewFunc.appendCall(GerritClientSetReadyForReviewFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetReadyForReview
+// method of the parent MockGerritClient instance is invoked and the hook
+// queue is empty.
+func (f *GerritClientSetReadyForReviewFunc) SetDefaultHook(hook func(context.Context, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetReadyForReview method of the parent MockGerritClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GerritClientSetReadyForReviewFunc) PushHook(hook func(context.Context, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientSetReadyForReviewFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientSetReadyForReviewFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string) error {
+		return r0
+	})
+}
+
+func (f *GerritClientSetReadyForReviewFunc) nextHook() func(context.Context, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientSetReadyForReviewFunc) appendCall(r0 GerritClientSetReadyForReviewFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientSetReadyForReviewFuncCall
+// objects describing the invocations of this function.
+func (f *GerritClientSetReadyForReviewFunc) History() []GerritClientSetReadyForReviewFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientSetReadyForReviewFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientSetReadyForReviewFuncCall is an object that describes an
+// invocation of method SetReadyForReview on an instance of
+// MockGerritClient.
+type GerritClientSetReadyForReviewFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientSetReadyForReviewFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientSetReadyForReviewFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GerritClientSetWIPFunc describes the behavior when the SetWIP method of
+// the parent MockGerritClient instance is invoked.
+type GerritClientSetWIPFunc struct {
+	defaultHook func(context.Context, string) error
+	hooks       []func(context.Context, string) error
+	history     []GerritClientSetWIPFuncCall
+	mutex       sync.Mutex
+}
+
+// SetWIP delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGerritClient) SetWIP(v0 context.Context, v1 string) error {
+	r0 := m.SetWIPFunc.nextHook()(v0, v1)
+	m.SetWIPFunc.appendCall(GerritClientSetWIPFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetWIP method of the
+// parent MockGerritClient instance is invoked and the hook queue is empty.
+func (f *GerritClientSetWIPFunc) SetDefaultHook(hook func(context.Context, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetWIP method of the parent MockGerritClient instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *GerritClientSetWIPFunc) PushHook(hook func(context.Context, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientSetWIPFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientSetWIPFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string) error {
+		return r0
+	})
+}
+
+func (f *GerritClientSetWIPFunc) nextHook() func(context.Context, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientSetWIPFunc) appendCall(r0 GerritClientSetWIPFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientSetWIPFuncCall objects
+// describing the invocations of this function.
+func (f *GerritClientSetWIPFunc) History() []GerritClientSetWIPFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientSetWIPFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientSetWIPFuncCall is an object that describes an invocation of
+// method SetWIP on an instance of MockGerritClient.
+type GerritClientSetWIPFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientSetWIPFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientSetWIPFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GerritClientSubmitChangeFunc describes the behavior when the SubmitChange
+// method of the parent MockGerritClient instance is invoked.
+type GerritClientSubmitChangeFunc struct {
+	defaultHook func(context.Context, string) (*gerrit.Change, error)
+	hooks       []func(context.Context, string) (*gerrit.Change, error)
+	history     []GerritClientSubmitChangeFuncCall
+	mutex       sync.Mutex
+}
+
+// SubmitChange delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGerritClient) SubmitChange(v0 context.Context, v1 string) (*gerrit.Change, error) {
+	r0, r1 := m.SubmitChangeFunc.nextHook()(v0, v1)
+	m.SubmitChangeFunc.appendCall(GerritClientSubmitChangeFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the SubmitChange method
+// of the parent MockGerritClient instance is invoked and the hook queue is
+// empty.
+func (f *GerritClientSubmitChangeFunc) SetDefaultHook(hook func(context.Context, string) (*gerrit.Change, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SubmitChange method of the parent MockGerritClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GerritClientSubmitChangeFunc) PushHook(hook func(context.Context, string) (*gerrit.Change, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientSubmitChangeFunc) SetDefaultReturn(r0 *gerrit.Change, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (*gerrit.Change, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientSubmitChangeFunc) PushReturn(r0 *gerrit.Change, r1 error) {
+	f.PushHook(func(context.Context, string) (*gerrit.Change, error) {
+		return r0, r1
+	})
+}
+
+func (f *GerritClientSubmitChangeFunc) nextHook() func(context.Context, string) (*gerrit.Change, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientSubmitChangeFunc) appendCall(r0 GerritClientSubmitChangeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientSubmitChangeFuncCall objects
+// describing the invocations of this function.
+func (f *GerritClientSubmitChangeFunc) History() []GerritClientSubmitChangeFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientSubmitChangeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientSubmitChangeFuncCall is an object that describes an
+// invocation of method SubmitChange on an instance of MockGerritClient.
+type GerritClientSubmitChangeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *gerrit.Change
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientSubmitChangeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientSubmitChangeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GerritClientWithAuthenticatorFunc describes the behavior when the
+// WithAuthenticator method of the parent MockGerritClient instance is
+// invoked.
+type GerritClientWithAuthenticatorFunc struct {
+	defaultHook func(auth.Authenticator) (gerrit.Client, error)
+	hooks       []func(auth.Authenticator) (gerrit.Client, error)
+	history     []GerritClientWithAuthenticatorFuncCall
+	mutex       sync.Mutex
+}
+
+// WithAuthenticator delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGerritClient) WithAuthenticator(v0 auth.Authenticator) (gerrit.Client, error) {
+	r0, r1 := m.WithAuthenticatorFunc.nextHook()(v0)
+	m.WithAuthenticatorFunc.appendCall(GerritClientWithAuthenticatorFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the WithAuthenticator
+// method of the parent MockGerritClient instance is invoked and the hook
+// queue is empty.
+func (f *GerritClientWithAuthenticatorFunc) SetDefaultHook(hook func(auth.Authenticator) (gerrit.Client, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithAuthenticator method of the parent MockGerritClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GerritClientWithAuthenticatorFunc) PushHook(hook func(auth.Authenticator) (gerrit.Client, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientWithAuthenticatorFunc) SetDefaultReturn(r0 gerrit.Client, r1 error) {
+	f.SetDefaultHook(func(auth.Authenticator) (gerrit.Client, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientWithAuthenticatorFunc) PushReturn(r0 gerrit.Client, r1 error) {
+	f.PushHook(func(auth.Authenticator) (gerrit.Client, error) {
+		return r0, r1
+	})
+}
+
+func (f *GerritClientWithAuthenticatorFunc) nextHook() func(auth.Authenticator) (gerrit.Client, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientWithAuthenticatorFunc) appendCall(r0 GerritClientWithAuthenticatorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientWithAuthenticatorFuncCall
+// objects describing the invocations of this function.
+func (f *GerritClientWithAuthenticatorFunc) History() []GerritClientWithAuthenticatorFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientWithAuthenticatorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientWithAuthenticatorFuncCall is an object that describes an
+// invocation of method WithAuthenticator on an instance of
+// MockGerritClient.
+type GerritClientWithAuthenticatorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 auth.Authenticator
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 gerrit.Client
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientWithAuthenticatorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientWithAuthenticatorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GerritClientWriteReviewCommentFunc describes the behavior when the
+// WriteReviewComment method of the parent MockGerritClient instance is
+// invoked.
+type GerritClientWriteReviewCommentFunc struct {
+	defaultHook func(context.Context, string, gerrit.ChangeReviewComment) error
+	hooks       []func(context.Context, string, gerrit.ChangeReviewComment) error
+	history     []GerritClientWriteReviewCommentFuncCall
+	mutex       sync.Mutex
+}
+
+// WriteReviewComment delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGerritClient) WriteReviewComment(v0 context.Context, v1 string, v2 gerrit.ChangeReviewComment) error {
+	r0 := m.WriteReviewCommentFunc.nextHook()(v0, v1, v2)
+	m.WriteReviewCommentFunc.appendCall(GerritClientWriteReviewCommentFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WriteReviewComment
+// method of the parent MockGerritClient instance is invoked and the hook
+// queue is empty.
+func (f *GerritClientWriteReviewCommentFunc) SetDefaultHook(hook func(context.Context, string, gerrit.ChangeReviewComment) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WriteReviewComment method of the parent MockGerritClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GerritClientWriteReviewCommentFunc) PushHook(hook func(context.Context, string, gerrit.ChangeReviewComment) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientWriteReviewCommentFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string, gerrit.ChangeReviewComment) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientWriteReviewCommentFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string, gerrit.ChangeReviewComment) error {
+		return r0
+	})
+}
+
+func (f *GerritClientWriteReviewCommentFunc) nextHook() func(context.Context, string, gerrit.ChangeReviewComment) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientWriteReviewCommentFunc) appendCall(r0 GerritClientWriteReviewCommentFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientWriteReviewCommentFuncCall
+// objects describing the invocations of this function.
+func (f *GerritClientWriteReviewCommentFunc) History() []GerritClientWriteReviewCommentFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientWriteReviewCommentFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientWriteReviewCommentFuncCall is an object that describes an
+// invocation of method WriteReviewComment on an instance of
+// MockGerritClient.
+type GerritClientWriteReviewCommentFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 gerrit.ChangeReviewComment
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientWriteReviewCommentFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientWriteReviewCommentFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }

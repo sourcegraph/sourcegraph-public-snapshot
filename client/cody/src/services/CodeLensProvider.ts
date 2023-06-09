@@ -1,10 +1,12 @@
 import * as vscode from 'vscode'
 
+import { CodyTaskState } from '../non-stop/utils'
+
 import { DecorationProvider } from './DecorationProvider'
-import { CodyTaskState, singleLineRange } from './InlineController'
+import { getSingleLineRange, updateRangeOnDocChange } from './InlineAssist'
 
 export class CodeLensProvider implements vscode.CodeLensProvider {
-    private ranges: vscode.Range | null = null
+    private selectionRange: vscode.Range | null = null
     private static lenses: CodeLensProvider
 
     private status = CodyTaskState.idle
@@ -21,25 +23,18 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
                 return
             }
             for (const change of e.contentChanges) {
-                if (!this.ranges || (change.range.end.line > this.ranges.start.line && this.isPending())) {
+                if (
+                    !this.selectionRange ||
+                    (change.range.end.line > this.selectionRange.start.line && this.isPending())
+                ) {
                     return
                 }
-                if (change.range.start.line === this.ranges?.start.line && !this.isPending()) {
+                if (change.range.start.line === this.selectionRange?.start.line && !this.isPending()) {
                     this.remove()
                     return
                 }
-                let addedLines = 0
-                if (change.text.includes('\n')) {
-                    addedLines = change.text.split('\n').length - 1
-                } else if (change.range.end.line - change.range.start.line > 0) {
-                    addedLines -= change.range.end.line - change.range.start.line
-                }
-                const newRange = new vscode.Range(
-                    new vscode.Position(this.ranges.start.line + addedLines, 0),
-                    new vscode.Position(this.ranges.end.line + addedLines, 0)
-                )
-                this.ranges = newRange
-                this.decorator.setState(this.status, newRange)
+                this.selectionRange = updateRangeOnDocChange(this.selectionRange, change.range, change.text)
+                this.decorator.setState(this.status, this.selectionRange)
             }
             this._onDidChangeCodeLenses.fire()
         })
@@ -59,7 +54,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         this.status = state
         this.decorator.setState(state, newRange)
         void this.decorator.decorate(newRange)
-        this.ranges = newRange
+        this.selectionRange = newRange
         this._onDidChangeCodeLenses.fire()
     }
     /**
@@ -67,7 +62,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
      */
     public remove(): void {
         this.decorator.remove()
-        this.ranges = null
+        this.selectionRange = null
         this.status = CodyTaskState.idle
         this.dispose()
         this._onDidChangeCodeLenses.fire()
@@ -90,31 +85,14 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
      * Lenses to display above the code that Cody edited
      */
     private createCodeLenses(): vscode.CodeLens[] {
-        const range = this.ranges
-        const codeLenses: vscode.CodeLens[] = []
+        const range = this.selectionRange
         if (!range) {
-            return codeLenses
+            return []
         }
-        const codeLensRange = singleLineRange(range.start.line)
-        const codeLensTitle = new vscode.CodeLens(codeLensRange)
-        // Open Chat View
-        codeLensTitle.command = {
-            title: this.isPending() ? '$(sync~spin) Processing by Cody' : '✨ Edited by Cody',
-            tooltip: 'Open Cody chat view',
-            command: 'cody.focus',
-        }
-        codeLenses.push(codeLensTitle)
-        // Remove decorations
-        if (!this.isPending()) {
-            const codeLensSave = new vscode.CodeLens(codeLensRange)
-            codeLensSave.command = {
-                title: 'Save',
-                tooltip: 'Accept and save all changes',
-                command: 'workbench.action.files.save',
-            }
-            codeLenses.push(codeLensSave)
-        }
-        return codeLenses
+        const codeLensRange = getSingleLineRange(range.start.line)
+        return this.status === CodyTaskState.error
+            ? getErrorLenses(codeLensRange, this.id)
+            : getLenses(codeLensRange, this.isPending())
     }
     /**
      * Check if the file path is the same
@@ -128,7 +106,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
      * Check if it is in pending state
      */
     public isPending(): boolean {
-        return this.status === CodyTaskState.pending
+        return this.status === CodyTaskState.asking
     }
     /**
      * Dispose the disposables
@@ -139,4 +117,39 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         }
         this._disposables = []
     }
+}
+
+function getLenses(codeLensRange: vscode.Range, isPending: boolean): vscode.CodeLens[] {
+    const codeLensTitle = new vscode.CodeLens(codeLensRange)
+    // Open Chat View
+    codeLensTitle.command = {
+        title: isPending ? '$(sync~spin) Processing by Cody' : '✨ Edited by Cody',
+        tooltip: 'Open Cody chat view',
+        command: 'cody.focus',
+    }
+    const codeLensSave = new vscode.CodeLens(codeLensRange)
+    codeLensSave.command = {
+        title: 'Save',
+        tooltip: 'Accept and save all changes',
+        command: 'workbench.action.files.save',
+    }
+
+    return isPending ? [codeLensTitle] : [codeLensTitle, codeLensSave]
+}
+
+function getErrorLenses(codeLensRange: vscode.Range, id: string): vscode.CodeLens[] {
+    const codeLensError = new vscode.CodeLens(codeLensRange)
+    codeLensError.command = {
+        title: '⛔️ Not Edited by Cody',
+        tooltip: 'Open Cody chat view',
+        command: 'cody.focus',
+    }
+    const codeLensClose = new vscode.CodeLens(codeLensRange)
+    codeLensClose.command = {
+        title: 'Close',
+        tooltip: 'Click to remove decorations',
+        command: 'cody.inline.decorations.remove',
+        arguments: [id],
+    }
+    return [codeLensError, codeLensClose]
 }

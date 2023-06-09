@@ -49,6 +49,95 @@ const siteAdminProductSubscriptionFragment = gql`
     }
 `
 
+export const CODY_GATEWAY_ACCESS_FIELDS_FRAGMENT = gql`
+    fragment CodyGatewayAccessFields on CodyGatewayAccess {
+        enabled
+        codeCompletionsRateLimit {
+            ...CodyGatewayRateLimitFields
+        }
+        chatCompletionsRateLimit {
+            ...CodyGatewayRateLimitFields
+        }
+        embeddingsRateLimit {
+            ...CodyGatewayRateLimitFields
+        }
+    }
+
+    fragment CodyGatewayRateLimitFields on CodyGatewayRateLimit {
+        allowedModels
+        source
+        limit
+        intervalSeconds
+    }
+`
+
+const CODY_GATEWAY_RATE_LIMIT_USAGE_FIELDS = gql`
+    fragment CodyGatewayRateLimitUsageFields on CodyGatewayRateLimit {
+        usage {
+            ...CodyGatewayRateLimitUsageDatapoint
+        }
+    }
+
+    fragment CodyGatewayRateLimitUsageDatapoint on CodyGatewayUsageDatapoint {
+        date
+        count
+        model
+    }
+`
+
+export const CODY_GATEWAY_ACCESS_COMPLETIONS_USAGE_FIELDS_FRAGMENT = gql`
+    fragment CodyGatewayAccessCompletionsUsageFields on CodyGatewayAccess {
+        codeCompletionsRateLimit {
+            ...CodyGatewayRateLimitUsageFields
+        }
+        chatCompletionsRateLimit {
+            ...CodyGatewayRateLimitUsageFields
+        }
+    }
+
+    ${CODY_GATEWAY_RATE_LIMIT_USAGE_FIELDS}
+`
+
+export const DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_COMPLETIONS_USAGE = gql`
+    query DotComProductSubscriptionCodyGatewayCompletionsUsage($uuid: String!) {
+        dotcom {
+            productSubscription(uuid: $uuid) {
+                id
+                codyGatewayAccess {
+                    ...CodyGatewayAccessCompletionsUsageFields
+                }
+            }
+        }
+    }
+
+    ${CODY_GATEWAY_ACCESS_COMPLETIONS_USAGE_FIELDS_FRAGMENT}
+`
+
+export const CODY_GATEWAY_ACCESS_EMBEDDINGS_USAGE_FIELDS_FRAGMENT = gql`
+    fragment CodyGatewayAccessEmbeddingsUsageFields on CodyGatewayAccess {
+        embeddingsRateLimit {
+            ...CodyGatewayRateLimitUsageFields
+        }
+    }
+
+    ${CODY_GATEWAY_RATE_LIMIT_USAGE_FIELDS}
+`
+
+export const DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_EMBEDDINGS_USAGE = gql`
+    query DotComProductSubscriptionCodyGatewayEmbeddingsUsage($uuid: String!) {
+        dotcom {
+            productSubscription(uuid: $uuid) {
+                id
+                codyGatewayAccess {
+                    ...CodyGatewayAccessEmbeddingsUsageFields
+                }
+            }
+        }
+    }
+
+    ${CODY_GATEWAY_ACCESS_EMBEDDINGS_USAGE_FIELDS_FRAGMENT}
+`
+
 export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
     query DotComProductSubscription($uuid: String!) {
         dotcom {
@@ -65,9 +154,14 @@ export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
                             tags
                             userCount
                             expiresAt
+                            salesforceSubscriptionID
+                            salesforceOpportunityID
                         }
                         licenseKey
                         createdAt
+                        revokedAt
+                        siteID
+                        version
                     }
                     totalCount
                     pageInfo {
@@ -86,8 +180,8 @@ export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
                     createdAt
                 }
                 currentSourcegraphAccessToken
-                llmProxyAccess {
-                    ...LLMProxyAccessFields
+                codyGatewayAccess {
+                    ...CodyGatewayAccessFields
                 }
                 createdAt
                 isArchived
@@ -95,22 +189,7 @@ export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
             }
         }
     }
-    fragment LLMProxyAccessFields on LLMProxyAccess {
-        enabled
-        rateLimit {
-            ...LLMProxyRateLimitFields
-        }
-        usage {
-            date
-            count
-        }
-    }
 
-    fragment LLMProxyRateLimitFields on LLMProxyRateLimit {
-        source
-        limit
-        intervalSeconds
-    }
     fragment DotComProductSubscriptionEmailFields on User {
         id
         username
@@ -120,6 +199,8 @@ export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
             verified
         }
     }
+
+    ${CODY_GATEWAY_ACCESS_FIELDS_FRAGMENT}
 `
 
 export const ARCHIVE_PRODUCT_SUBSCRIPTION = gql`
@@ -132,10 +213,10 @@ export const ARCHIVE_PRODUCT_SUBSCRIPTION = gql`
     }
 `
 
-export const UPDATE_LLM_PROXY_CONFIG = gql`
-    mutation UpdateLLMProxyConfig($productSubscriptionID: ID!, $llmProxyAccess: UpdateLLMProxyAccessInput!) {
+export const UPDATE_CODY_GATEWAY_CONFIG = gql`
+    mutation UpdateCodyGatewayConfig($productSubscriptionID: ID!, $access: UpdateCodyGatewayAccessInput!) {
         dotcom {
-            updateProductSubscription(id: $productSubscriptionID, update: { llmProxyAccess: $llmProxyAccess }) {
+            updateProductSubscription(id: $productSubscriptionID, update: { codyGatewayAccess: $access }) {
                 alwaysNil
             }
         }
@@ -167,10 +248,13 @@ const siteAdminProductLicenseFragment = gql`
             urlForSiteAdmin
         }
         licenseKey
+        siteID
         info {
             ...ProductLicenseInfoFields
         }
         createdAt
+        revokedAt
+        version
     }
 
     fragment ProductLicenseInfoFields on ProductLicenseInfo {
@@ -178,6 +262,8 @@ const siteAdminProductLicenseFragment = gql`
         tags
         userCount
         expiresAt
+        salesforceSubscriptionID
+        salesforceOpportunityID
     }
 
     fragment ProductLicenseSubscriptionAccount on User {

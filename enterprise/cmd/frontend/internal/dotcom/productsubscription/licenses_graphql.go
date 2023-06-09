@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -87,9 +88,11 @@ func (r *productLicense) Info() (*graphqlbackend.ProductLicenseInfo, error) {
 		return nil, err
 	}
 	return &graphqlbackend.ProductLicenseInfo{
-		TagsValue:      info.Tags,
-		UserCountValue: info.UserCount,
-		ExpiresAtValue: info.ExpiresAt,
+		TagsValue:                     info.Tags,
+		UserCountValue:                info.UserCount,
+		ExpiresAtValue:                info.ExpiresAt,
+		SalesforceSubscriptionIDValue: info.SalesforceSubscriptionID,
+		SalesforceOpportunityIDValue:  info.SalesforceOpportunityID,
 	}, nil
 }
 
@@ -99,11 +102,32 @@ func (r *productLicense) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.v.CreatedAt}
 }
 
+func (r *productLicense) RevokedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.v.RevokedAt)
+}
+
+func (r *productLicense) RevokeReason() *string {
+	return r.v.RevokeReason
+}
+
+func (r *productLicense) SiteID() *string {
+	return r.v.SiteID
+}
+
+func (r *productLicense) Version() int32 {
+	if r.v.LicenseVersion == nil {
+		return 0
+	}
+	return *r.v.LicenseVersion
+}
+
 func generateProductLicenseForSubscription(ctx context.Context, db database.DB, subscriptionID string, input *graphqlbackend.ProductLicenseInput) (id string, err error) {
 	info := license.Info{
-		Tags:      license.SanitizeTagsList(input.Tags),
-		UserCount: uint(input.UserCount),
-		ExpiresAt: time.Unix(int64(input.ExpiresAt), 0),
+		Tags:                     license.SanitizeTagsList(input.Tags),
+		UserCount:                uint(input.UserCount),
+		ExpiresAt:                time.Unix(int64(input.ExpiresAt), 0),
+		SalesforceSubscriptionID: input.SalesforceSubscriptionID,
+		SalesforceOpportunityID:  input.SalesforceOpportunityID,
 	}
 	licenseKey, version, err := licensing.GenerateProductLicenseKey(info)
 	if err != nil {
@@ -152,6 +176,26 @@ func (r ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Contex
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &productLicenseConnection{db: r.DB, opt: opt}, nil
+}
+
+func (r ProductSubscriptionLicensingResolver) RevokeLicense(ctx context.Context, args *graphqlbackend.RevokeLicenseArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins may revoke product licenses.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+		return nil, err
+	}
+
+	// check if the UUID is valid
+	id, err := uuid.Parse(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = dbLicenses{db: r.DB}.Revoke(ctx, id.String(), args.Reason)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 // productLicenseConnection implements the GraphQL type ProductLicenseConnection.

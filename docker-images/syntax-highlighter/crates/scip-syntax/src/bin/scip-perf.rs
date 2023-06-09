@@ -18,7 +18,7 @@ struct ParseTiming {
 }
 
 fn parse_files(dir: &Path) -> Vec<ParseTiming> {
-    let mut config = scip_syntax::languages::get_local_configuration(BundledParser::Go).unwrap();
+    let config = scip_syntax::languages::get_local_configuration(BundledParser::Go).unwrap();
     let extension = "go";
 
     let mut timings = vec![];
@@ -36,8 +36,9 @@ fn parse_files(dir: &Path) -> Vec<ParseTiming> {
 
         let source = std::fs::read_to_string(entry).unwrap();
         let source_bytes = source.as_bytes();
-        let tree = config.parser.parse(source_bytes, None).unwrap();
-        parse_tree(&mut config, &tree, source_bytes).unwrap();
+        let mut parser = config.get_parser();
+        let tree = parser.parse(source_bytes, None).unwrap();
+        parse_tree(config, &tree, source_bytes).unwrap();
 
         let finish = Instant::now();
 

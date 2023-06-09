@@ -37,6 +37,9 @@ type EventLogStore interface {
 	// AggregatedCodyEvents calculates CodyAggregatedEvent for each every unique event type related to Cody.
 	AggregatedCodyEvents(ctx context.Context, now time.Time) ([]types.CodyAggregatedEvent, error)
 
+	// AggregatedRepoMetadataEvents calculates RepoMetadataAggregatedEvent for each every unique event type related to RepoMetadata.
+	AggregatedRepoMetadataEvents(ctx context.Context, now time.Time, period PeriodType) (*types.RepoMetadataAggregatedEvents, error)
+
 	// AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
 	AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error)
 
@@ -550,7 +553,7 @@ func jsonSettingFragment(setting string, value any) string {
 func buildCountUniqueUserConds(opt *CountUniqueUsersOptions) []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
-		conds = buildCommonUsageConds(&opt.CommonUsageOptions, conds)
+		conds = BuildCommonUsageConds(&opt.CommonUsageOptions, conds)
 
 		if opt.EventFilters != nil {
 			if opt.EventFilters.ByEventNamePrefix != "" {
@@ -574,7 +577,7 @@ func buildCountUniqueUserConds(opt *CountUniqueUsersOptions) []*sqlf.Query {
 	return conds
 }
 
-func buildCommonUsageConds(opt *CommonUsageOptions, conds []*sqlf.Query) []*sqlf.Query {
+func BuildCommonUsageConds(opt *CommonUsageOptions, conds []*sqlf.Query) []*sqlf.Query {
 	if opt != nil {
 		if opt.ExcludeSystemUsers {
 			conds = append(conds, sqlf.Sprintf("event_logs.user_id > 0 OR event_logs.anonymous_user_id <> 'backend'"))
@@ -906,7 +909,7 @@ func (l *eventLogStore) SiteUsageCurrentPeriods(ctx context.Context) (types.Site
 func (l *eventLogStore) siteUsageCurrentPeriods(ctx context.Context, now time.Time, opt *SiteUsageOptions) (summary types.SiteUsageSummary, err error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
-		conds = buildCommonUsageConds(&opt.CommonUsageOptions, conds)
+		conds = BuildCommonUsageConds(&opt.CommonUsageOptions, conds)
 	}
 
 	query := sqlf.Sprintf(siteUsageCurrentPeriodsQuery, now, now, now, now, now, now, sqlf.Join(conds, ") AND ("))
@@ -1418,6 +1421,97 @@ func (l *eventLogStore) aggregatedCodyEvents(ctx context.Context, queryString st
 	return events, nil
 }
 
+func buildAggregatedRepoMetadataEventsQuery(period PeriodType) (string, error) {
+	unit := ""
+	switch period {
+	case Daily:
+		unit = "day"
+	case Weekly:
+		unit = "week"
+	case Monthly:
+		unit = "month"
+	default:
+		return "", ErrInvalidPeriodType
+	}
+	return `
+	WITH events AS (
+		SELECT
+			name,
+			` + aggregatedUserIDQueryFragment + ` AS user_id,
+			argument
+		FROM event_logs
+		WHERE
+			timestamp >= ` + makeDateTruncExpression(unit, "%s::timestamp") + `
+			AND name IN ('RepoMetadataAdded', 'RepoMetadataUpdated', 'RepoMetadataDeleted', 'SearchSubmitted')
+	)
+	SELECT
+		` + makeDateTruncExpression(unit, "%s::timestamp") + ` as start_time,
+
+		COUNT(*) FILTER (WHERE name IN ('RepoMetadataAdded')) AS added_count,
+		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('RepoMetadataAdded')) AS added_unique_count,
+
+		COUNT(*) FILTER (WHERE name IN ('RepoMetadataUpdated')) AS updated_count,
+		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('RepoMetadataUpdated')) AS updated_unique_count,
+
+		COUNT(*) FILTER (WHERE name IN ('RepoMetadataDeleted')) AS deleted_count,
+		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('RepoMetadataDeleted')) AS deleted_unique_count,
+
+		COUNT(*) FILTER (
+			WHERE name IN ('SearchSubmitted')
+			AND (
+				argument->>'query' ILIKE '%%repo:has(%%'
+				OR argument->>'query' ILIKE '%%repo:has.key(%%'
+				OR argument->>'query' ILIKE '%%repo:has.tag(%%'
+				OR argument->>'query' ILIKE '%%repo:has.meta(%%'
+			)
+		) AS searches_count,
+		COUNT(DISTINCT user_id) FILTER (
+			WHERE name IN ('SearchSubmitted')
+			AND (
+				argument->>'query' ILIKE '%%repo:has(%%'
+				OR argument->>'query' ILIKE '%%repo:has.key(%%'
+				OR argument->>'query' ILIKE '%%repo:has.tag(%%'
+				OR argument->>'query' ILIKE '%%repo:has.meta(%%'
+			)
+		) AS searches_unique_count
+	FROM events;
+	`, nil
+}
+
+func (l *eventLogStore) AggregatedRepoMetadataEvents(ctx context.Context, now time.Time, period PeriodType) (*types.RepoMetadataAggregatedEvents, error) {
+	query, err := buildAggregatedRepoMetadataEventsQuery(period)
+	if err != nil {
+		return nil, err
+	}
+	row := l.QueryRow(ctx, sqlf.Sprintf(query, now, now))
+	var startTime time.Time
+	var createEvent types.EventStats
+	var updateEvent types.EventStats
+	var deleteEvent types.EventStats
+	var searchEvent types.EventStats
+	if err := row.Scan(
+		&startTime,
+		&createEvent.EventsCount,
+		&createEvent.UsersCount,
+		&updateEvent.EventsCount,
+		&updateEvent.UsersCount,
+		&deleteEvent.EventsCount,
+		&deleteEvent.UsersCount,
+		&searchEvent.EventsCount,
+		&searchEvent.UsersCount,
+	); err != nil {
+		return nil, err
+	}
+
+	return &types.RepoMetadataAggregatedEvents{
+		StartTime:          startTime,
+		CreateRepoMetadata: &createEvent,
+		UpdateRepoMetadata: &updateEvent,
+		DeleteRepoMetadata: &deleteEvent,
+		SearchFilterUsage:  &searchEvent,
+	}, nil
+}
+
 func (l *eventLogStore) AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error) {
 	latencyEvents, err := l.aggregatedSearchEvents(ctx, aggregatedSearchLatencyEventsQuery, now)
 	if err != nil {
@@ -1666,16 +1760,19 @@ END
 
 // makeDateTruncExpression returns an expression that converts the given
 // SQL expression into the start of the containing date container specified
-// by the unit parameter (e.g. day, week, month, or rolling month [prior 30 days]).
+// by the unit parameter (e.g. day, week, month, or rolling month [prior 1 month]).
+// Note: If unit is 'week', the function will truncate to the preceding Sunday.
+// This is because some locales start the week on Sunday, unlike the Postgres default
+// (and many parts of the world) which start the week on Monday.
 func makeDateTruncExpression(unit, expr string) string {
 	if unit == "week" {
-		return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s) + '1 day'::interval) - '1 day'::interval`, unit, expr)
+		return fmt.Sprintf(`TIMEZONE('UTC', (DATE_TRUNC('week', TIMEZONE('UTC', %s) + '1 day'::interval) - '1 day'::interval))`, expr)
 	}
 	if unit == "rolling_month" {
-		return fmt.Sprintf(`DATE_TRUNC('day', TIMEZONE('UTC', %s)) - '30 day'::interval`, expr)
+		return fmt.Sprintf(`TIMEZONE('UTC', (DATE_TRUNC('day', TIMEZONE('UTC', %s)) - '1 month'::interval))`, expr)
 	}
 
-	return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s))`, unit, expr)
+	return fmt.Sprintf(`TIMEZONE('UTC', DATE_TRUNC('%s', TIMEZONE('UTC', %s)))`, unit, expr)
 }
 
 // RequestsByLanguage returns a map of language names to the number of requests of precise support for that language.

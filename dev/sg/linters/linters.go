@@ -48,6 +48,13 @@ var Targets = []Target{
 		},
 	},
 	{
+		Name:        "graphql",
+		Description: "Checks the graphql code for linting errors [bazel]",
+		Checks: []*linter{
+			onlyLocal(bazelTest("graphql schema lint (bazel)", "//cmd/frontend/graphqlbackend:graphql_schema_lint_test")),
+		},
+	},
+	{
 		Name:        "docs",
 		Description: "Documentation checks",
 		Checks: []*linter{
@@ -135,6 +142,15 @@ func runCheck(name string, check check.CheckAction[*repo.State]) *linter {
 	return &linter{
 		Name:  name,
 		Check: check,
+	}
+}
+
+func bazelTest(name, target string) *linter {
+	return &linter{
+		Name: name,
+		Check: func(ctx context.Context, out *std.Output, args *repo.State) error {
+			return root.Run(run.Cmd(ctx, "bazel", "test", target)).StreamLines(out.Write)
+		},
 	}
 }
 

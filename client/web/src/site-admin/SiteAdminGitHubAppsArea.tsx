@@ -12,7 +12,10 @@ import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { SITE_EXTERNAL_SERVICE_CONFIG } from './backend'
 
-const AddGitHubAppPage = lazyComponent(() => import('../components/gitHubApps/CreateGitHubAppPage'), 'AddGitHubAppPage')
+const CreateGitHubAppPage = lazyComponent(
+    () => import('../components/gitHubApps/CreateGitHubAppPage'),
+    'CreateGitHubAppPage'
+)
 const GitHubAppPage = lazyComponent(() => import('../components/gitHubApps/GitHubAppPage'), 'GitHubAppPage')
 const GitHubAppsPage = lazyComponent(() => import('../components/gitHubApps/GitHubAppsPage'), 'GitHubAppsPage')
 
@@ -43,7 +46,7 @@ export const SiteAdminGitHubAppsArea: FC<Props> = props => {
         <Routes>
             <Route index={true} element={<GitHubAppsPage />} />
 
-            <Route path="new" element={<AddGitHubAppPage {...props} />} />
+            <Route path="new" element={<CreateGitHubAppPage {...props} />} />
             <Route
                 path=":appID"
                 element={

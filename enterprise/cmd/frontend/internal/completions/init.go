@@ -9,8 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/httpapi"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -24,14 +24,14 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	logger := log.Scoped("completions", "")
+	logger := log.Scoped("completions", "Cody completions")
 
-	enterpriseServices.NewCompletionsStreamHandler = func() http.Handler {
-		completionsHandler := httpapi.NewCompletionsStreamHandler(logger, db)
+	enterpriseServices.NewChatCompletionsStreamHandler = func() http.Handler {
+		completionsHandler := httpapi.NewChatCompletionsStreamHandler(logger.Scoped("chat", "chat completions handler"), db)
 		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, completionsHandler)
 	}
 	enterpriseServices.NewCodeCompletionsHandler = func() http.Handler {
-		codeCompletionsHandler := httpapi.NewCodeCompletionsHandler(logger, db)
+		codeCompletionsHandler := httpapi.NewCodeCompletionsHandler(logger.Scoped("code", "code completions handler"), db)
 		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, codeCompletionsHandler)
 	}
 	enterpriseServices.CompletionsResolver = resolvers.NewCompletionsResolver(db, observationCtx.Logger)

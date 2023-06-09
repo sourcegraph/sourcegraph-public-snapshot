@@ -20,7 +20,7 @@ import { UserHistory } from './UserHistory'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<Pick<Configuration, 'debug' | 'serverEndpoint'> | null>(null)
+    const [config, setConfig] = useState<Pick<Configuration, 'debugEnable' | 'serverEndpoint'> | null>(null)
     const [debugLog, setDebugLog] = useState<string[]>([])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -127,9 +127,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 />
             ) : (
                 <>
-                    <NavBar view={view} setView={setView} devMode={Boolean(config?.debug)} />
+                    <NavBar view={view} setView={setView} devMode={Boolean(config?.debugEnable)} />
                     {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
-                    {view === 'debug' && config?.debug && <Debug debugLog={debugLog} />}
+                    {view === 'debug' && config?.debugEnable && <Debug debugLog={debugLog} />}
                     {view === 'history' && (
                         <UserHistory
                             userHistory={userHistory}
