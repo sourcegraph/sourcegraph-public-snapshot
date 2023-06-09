@@ -7,7 +7,7 @@ import (
 )
 
 type GuardrailsResolver interface {
-	SnippetAttribution(ctx context.Context, args *SnippetAttributionArgs) (*SnippetAttributionConnectionResolver, error)
+	SnippetAttribution(ctx context.Context, args *SnippetAttributionArgs) (SnippetAttributionConnectionResolver, error)
 }
 
 type SnippetAttributionArgs struct {
@@ -15,13 +15,13 @@ type SnippetAttributionArgs struct {
 	Snippet string
 }
 
-type SnippetAttributionConnectionResolver struct {
-	TotalCount int
-	LimitHit   bool
-	PageInfo   *graphqlutil.PageInfo
-	Nodes      []SnippetAttributionResolver
+type SnippetAttributionConnectionResolver interface {
+	TotalCount() int32
+	LimitHit() bool
+	PageInfo() *graphqlutil.PageInfo
+	Nodes() []SnippetAttributionResolver
 }
 
-type SnippetAttributionResolver struct {
-	RepositoryName string
+type SnippetAttributionResolver interface {
+	RepositoryName() string
 }
