@@ -73,8 +73,8 @@ var (
 
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
-func InitDB(logger sglog.Logger) (sqlDB *sql.DB, err error) {
-	sqlDB, err = connections.EnsureNewFrontendDB(observation.ContextWithLogger(logger, &observation.TestContext), "", "frontend")
+func InitDB(logger sglog.Logger) (*sql.DB, error) {
+	sqlDB, err := connections.EnsureNewFrontendDB(observation.ContextWithLogger(logger, &observation.TestContext), "", "frontend")
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}

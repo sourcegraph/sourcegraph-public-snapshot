@@ -11,14 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 )
-
-func init() {
-	// TODO(sqs): TODO(single-binary): could we move this out of init?
-	oobmigration.ReturnEnterpriseMigrations = true
-}
 
 type svc struct{}
 
