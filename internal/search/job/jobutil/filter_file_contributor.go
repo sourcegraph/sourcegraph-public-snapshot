@@ -61,8 +61,8 @@ func (j *fileHasContributorsJob) Run(ctx context.Context, clients job.RuntimeCli
 					continue
 				}
 
-				if fileMatchContributors.Filtered(excludeContributors, true) ||
-					fileMatchContributors.Filtered(includeContributors, false) {
+				if !fileMatchContributors.Filtered(excludeContributors, true) ||
+					!fileMatchContributors.Filtered(includeContributors, false) {
 					continue
 				}
 
@@ -153,15 +153,17 @@ type FilterableContributors struct {
 	LowerBuf     []byte
 }
 
-// Filtered returns true if the related match should be removed from results due to the set of provided filters.
+// Filtered returns true if the match should be returned based on filter validation.
 // Filters are AND'ed together. Filters are negation filters if excludeContributors is true.
 func (f *FilterableContributors) Filtered(filters []*casetransform.Regexp, excludeContributors bool) bool {
 	for _, filter := range filters {
 		if f.Match(filter) == excludeContributors {
+			// Result needs to be filtered out
 			return false
 		}
 	}
 
+	// Result passed all filters
 	return true
 }
 
