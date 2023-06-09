@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { FC, useEffect, useMemo, useState } from 'react'
 
 import { mdiCog, mdiDelete, mdiOpenInNew, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
@@ -6,7 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { ErrorLike } from '@sourcegraph/common'
-import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
@@ -20,25 +20,19 @@ import {
     H3,
     Link,
     Text,
-    Tooltip,
     Grid,
     AnchorLink,
     Alert,
 } from '@sourcegraph/wildcard'
 
-import {
-    DeleteGitHubAppResult,
-    DeleteGitHubAppVariables,
-    GitHubAppDomain,
-    GitHubAppByIDResult,
-    GitHubAppByIDVariables,
-} from '../../graphql-operations'
+import { GitHubAppDomain, GitHubAppByIDResult, GitHubAppByIDVariables } from '../../graphql-operations'
 import { ExternalServiceNode } from '../externalServices/ExternalServiceNode'
 import { ConnectionList, SummaryContainer, ConnectionSummary } from '../FilteredConnection/ui'
 import { PageTitle } from '../PageTitle'
 
 import { AuthProviderMessage } from './AuthProviderMessage'
-import { GITHUB_APP_BY_ID_QUERY, DELETE_GITHUB_APP_BY_ID_QUERY } from './backend'
+import { GITHUB_APP_BY_ID_QUERY } from './backend'
+import { RemoveGitHubAppModal } from './RemoveGitHubAppModal'
 
 import styles from './GitHubAppCard.module.scss'
 
@@ -47,34 +41,18 @@ interface Props extends TelemetryProps {}
 export const GitHubAppPage: FC<Props> = ({ telemetryService }) => {
     const { appID } = useParams()
     const navigate = useNavigate()
+    const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminGitHubApp')
     }, [telemetryService])
     const [fetchError, setError] = useState<ErrorLike>()
 
-    const [deleteGitHubApp, { loading: deleteLoading }] = useMutation<DeleteGitHubAppResult, DeleteGitHubAppVariables>(
-        DELETE_GITHUB_APP_BY_ID_QUERY
-    )
-
     const { data, loading, error } = useQuery<GitHubAppByIDResult, GitHubAppByIDVariables>(GITHUB_APP_BY_ID_QUERY, {
         variables: { id: appID ?? '' },
     })
 
     const app = useMemo(() => data?.gitHubApp, [data])
-
-    const onDelete = useCallback<React.MouseEventHandler>(async () => {
-        if (!window.confirm(`Delete the GitHub App "${app?.name}"?`)) {
-            return
-        }
-        try {
-            await deleteGitHubApp({
-                variables: { gitHubApp: app?.id ?? '' },
-            })
-        } finally {
-            navigate('/site-admin/github-apps')
-        }
-    }, [app, deleteGitHubApp, navigate])
 
     if (!appID) {
         return null
@@ -103,6 +81,13 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService }) => {
             {loading && <LoadingSpinner />}
             {app && (
                 <>
+                    {removeModalOpen && (
+                        <RemoveGitHubAppModal
+                            onCancel={() => setRemoveModalOpen(false)}
+                            afterDelete={() => navigate('/site-admin/github-apps')}
+                            app={app}
+                        />
+                    )}
                     <PageHeader
                         path={[
                             { icon: mdiCog },
@@ -134,18 +119,14 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService }) => {
                             <Button onClick={() => navigate(-1)} variant="secondary">
                                 Cancel
                             </Button>
-                            <Tooltip content="Delete GitHub App">
-                                <Button
-                                    aria-label="Delete"
-                                    className="ml-2"
-                                    onClick={onDelete}
-                                    disabled={deleteLoading}
-                                    variant="danger"
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiDelete} />
-                                    {' Delete'}
-                                </Button>
-                            </Tooltip>
+                            <Button
+                                className="ml-2 text-nowrap"
+                                aria-label="Remove GitHub App"
+                                onClick={() => setRemoveModalOpen(true)}
+                                variant="danger"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete
+                            </Button>
                         </span>
                     </div>
                 </>

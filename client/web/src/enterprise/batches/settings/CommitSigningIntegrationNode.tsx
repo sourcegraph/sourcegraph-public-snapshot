@@ -1,18 +1,13 @@
-import React, { useCallback } from 'react'
+import React, { useState } from 'react'
 
 import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline, mdiDelete, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { useMutation } from '@sourcegraph/http-client'
 import { AnchorLink, Button, ButtonLink, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import { DELETE_GITHUB_APP_BY_ID_QUERY } from '../../../components/gitHubApps/backend'
-import {
-    BatchChangesCodeHostFields,
-    DeleteGitHubAppResult,
-    DeleteGitHubAppVariables,
-} from '../../../graphql-operations'
+import { RemoveGitHubAppModal } from '../../../components/gitHubApps/RemoveGitHubAppModal'
+import { BatchChangesCodeHostFields } from '../../../graphql-operations'
 
 import styles from './CommitSigningIntegrationNode.module.scss'
 
@@ -73,29 +68,14 @@ interface AppDetailsControlsProps {
 }
 
 const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ baseURL, config, refetch }) => {
-    const [deleteGitHubApp, { loading }] = useMutation<DeleteGitHubAppResult, DeleteGitHubAppVariables>(
-        DELETE_GITHUB_APP_BY_ID_QUERY
-    )
-
-    const onDelete = useCallback<React.MouseEventHandler>(async () => {
-        if (!config) {
-            return
-        }
-        if (!window.confirm(`Delete the GitHub App "${config.name}"?`)) {
-            return
-        }
-        try {
-            await deleteGitHubApp({
-                variables: { gitHubApp: config.id },
-            })
-        } finally {
-            refetch()
-        }
-    }, [config, deleteGitHubApp, refetch])
+    const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
 
     const createURL = `/site-admin/batch-changes/new-github-app?baseURL=${encodeURIComponent(baseURL)}`
     return config ? (
         <>
+            {removeModalOpen && (
+                <RemoveGitHubAppModal onCancel={() => setRemoveModalOpen(false)} afterDelete={refetch} app={config} />
+            )}
             <div className="d-flex align-items-center">
                 <img className={styles.appLogoLarge} src={config.logo} alt="app logo" aria-hidden={true} />
                 <div className={styles.appDetailsColumn}>
@@ -113,7 +93,12 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
                         View In GitHub <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true} />
                     </small>
                 </AnchorLink>
-                <Button aria-label="Remove" onClick={onDelete} disabled={loading} variant="danger" size="sm">
+                <Button
+                    aria-label="Remove GitHub App"
+                    onClick={() => setRemoveModalOpen(true)}
+                    variant="danger"
+                    size="sm"
+                >
                     <Icon aria-hidden={true} svgPath={mdiDelete} /> Remove
                 </Button>
             </div>
