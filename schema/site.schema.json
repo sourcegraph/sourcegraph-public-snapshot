@@ -2396,9 +2396,12 @@
           "type": "string",
           "default": "24h"
         },
-        "globalPolicyMatchLimit": {
+        "policyRepositoryMatchLimit": {
           "description": "The maximum number of repositories that can be matched by a global embeddings policy",
           "type": "integer",
+          "!go": {
+            "pointer": true
+          },
           "default": "5000"
         }
       },
