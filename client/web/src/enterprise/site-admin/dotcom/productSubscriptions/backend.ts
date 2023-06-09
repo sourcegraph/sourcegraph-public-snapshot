@@ -159,6 +159,7 @@ export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
                         licenseKey
                         createdAt
                         revokedAt
+                        revokeReason
                         siteID
                         version
                     }

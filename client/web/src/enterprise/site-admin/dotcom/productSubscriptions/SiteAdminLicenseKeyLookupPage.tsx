@@ -34,9 +34,9 @@ export const SiteAdminLicenseKeyLookupPage: React.FunctionComponent<React.PropsW
     const navigate = useNavigate()
 
     const searchParams = new URLSearchParams(location.search)
-    const [search, setSearch] = useState(searchParams.get(SEARCH_PARAM_KEY))
+    const [search, setSearch] = useState<string>(searchParams.get(SEARCH_PARAM_KEY) ?? '')
 
-    const { loading, hasNextPage, fetchMore, refetchAll, connection, error, reset } = useQueryProductLicensesConnection(
+    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useQueryProductLicensesConnection(
         search,
         20
     )
