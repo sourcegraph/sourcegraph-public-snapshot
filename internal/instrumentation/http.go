@@ -67,6 +67,7 @@ func HTTPMiddleware(operation string, next http.Handler, opts ...otelhttp.Option
 			// want this to be fairly bare-bones for use in standalone services
 			// like Cody Gateway.
 			w.Header().Set("X-Trace", span.TraceID().String())
+			w.Header().Set("X-Trace-Span", span.SpanID().String())
 		}
 
 		next.ServeHTTP(w, r)
