@@ -196,6 +196,12 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 		}
 	}
 
+	{ // Apply file:has.contributor() post-search filter
+		if includeOwners, excludeOwners, ok := isContributorSearch(b); ok {
+			basicJob = NewFileHasContributorsJob(basicJob, b.IsCaseSensitive(), includeOwners, excludeOwners)
+		}
+	}
+
 	{ // Apply subrepo permissions checks
 		checker := authz.DefaultSubRepoPermsChecker
 		if authz.SubRepoEnabled(checker) {
@@ -559,6 +565,13 @@ func isOwnershipSearch(b query.Basic) (include, exclude []string, ok bool) {
 func isSelectOwnersSearch(sp filter.SelectPath) bool {
 	// If the filter is for file.owners, this is a select:file.owners search, and we should apply special limits.
 	return sp.Root() == filter.File && len(sp) == 2 && sp[1] == "owners"
+}
+
+func isContributorSearch(b query.Basic) (include, exclude []string, ok bool) {
+	if includeOwners, excludeOwners := b.FileHasContributor(); len(includeOwners) > 0 || len(excludeOwners) > 0 {
+		return includeOwners, excludeOwners, true
+	}
+	return nil, nil, false
 }
 
 func timeoutDuration(b query.Basic) time.Duration {
