@@ -656,7 +656,7 @@ const OwnerNode: React.FC<OwnerNodeProps> = ({ node }) => {
                 )}
                 {primaryReason?.__typename === 'RecentViewOwnershipSignal' && (
                     <Badge tooltip={primaryReason.description} className={styles.badge} variant="secondary">
-                        <Icon aria-label={primaryReason.title} svgPath={mdiGlasses} /> x5
+                        <Icon aria-label={primaryReason.title} svgPath={mdiGlasses} /> 5X
                     </Badge>
                 )}
                 {node.reasons.length > 1 && (
