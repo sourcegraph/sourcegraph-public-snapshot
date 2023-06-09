@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 
-import { computeDiff } from './diff'
+import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
 import { ContentProvider } from './FixupContentStore'
 import { FixupDecorator } from './FixupDecorator'
@@ -86,7 +86,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
 
         // Create a task and then mark it as started
         const fixupFile = this.files.forUri(editor.document.uri)
-        const task = new FixupTask(fixupFile, input, selection, editor)
+        const task = new FixupTask(fixupFile, input, editor)
         void this.setTaskState(task, CodyTaskState.asking)
         // Move the cursor to the start of the selection range to show fixup markups
         editor.selection = new vscode.Selection(task.selectionRange.start, task.selectionRange.start)
@@ -125,7 +125,66 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             console.error('cannot find task')
             return
         }
+        await this.applyTask(task)
+    }
+
+    // Tries to get a clean, up-to-date diff to apply. If the diff is not
+    // up-to-date, it is synchronously recomputed. If the diff is not clean,
+    // will return undefined. This may update the task with the newly computed
+    // diff.
+    private applicableDiffOrRespin(task: FixupTask, document: vscode.TextDocument): Diff | undefined {
+        const bufferText = document.getText(task.selectionRange)
+        let diff = task.diff
+        if (task.replacement !== undefined && bufferText !== diff?.bufferText) {
+            // The buffer changed since we last computed the diff.
+            task.diff = diff = computeDiff(task.original, task.replacement, bufferText, task.selectionRange.start)
+            this.didUpdateDiff(task)
+        }
+        if (!diff?.clean) {
+            // TODO: Schedule a re-spin for diffs with conflicts.
+            void vscode.window.showWarningMessage('applying fixup with incomplete/conflict diff is not yet implemented')
+            return undefined
+        }
+        return diff
+    }
+
+    private async applyTask(task: FixupTask): Promise<void> {
         await this.setTaskState(task, CodyTaskState.applying)
+
+        let editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
+        if (!editor) {
+            editor = await vscode.window.showTextDocument(task.fixupFile.uri)
+        }
+
+        const diff = this.applicableDiffOrRespin(task, editor.document)
+        if (!diff) {
+            return
+        }
+
+        editor.revealRange(task.selectionRange)
+        const editOk = await editor.edit(editBuilder => {
+            for (const edit of diff.edits) {
+                editBuilder.replace(
+                    new vscode.Range(
+                        new vscode.Position(edit.range.start.line, edit.range.start.character),
+                        new vscode.Position(edit.range.end.line, edit.range.end.character)
+                    ),
+                    edit.text
+                )
+            }
+        })
+
+        if (!editOk) {
+            // TODO: Try to recover, for example by respinning
+            void vscode.window.showWarningMessage('edit did not apply')
+            return
+        }
+
+        // TODO: is this the right transition for being all done?
+        // TODO: Consider keeping tasks around to resurrect them if the user
+        // hits undo.
+        // TODO: See if we can discard a FixupFile now.
+        await this.setTaskState(task, CodyTaskState.fixed)
     }
 
     // Applying fixups from tree item click
@@ -181,6 +240,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         if (!task) {
             return
         }
+        this.needsDiffUpdate_.delete(task)
         this.codelenses.didDeleteTask(task)
         this.contentStore.delete(id)
         this.decorator.didCompleteTask(task)
@@ -306,11 +366,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
                 continue
             }
             const bufferText = editor.document.getText(task.selectionRange)
-            // TODO: The selection range needs to be updated for edits.
-            // Switch to using a gross line-based range and updating it in the
-            // FixupDocumentEditObserver.
-            const diff = computeDiff(task.original, botText, bufferText, task.selectionRange.start)
-            task.diff = diff
+            task.diff = computeDiff(task.original, botText, bufferText, task.selectionRange.start)
             this.didUpdateDiff(task)
         }
 
@@ -349,19 +405,22 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         if (!task) {
             return
         }
-        // show diff view between the current document and replacement
-        const origin = task?.selection.selectedText
-        const replacement = task?.replacement
-        if (!origin || !replacement) {
-            await this.setTaskState(task, CodyTaskState.error)
+        // Get an up-to-date diff
+        const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
+        if (!editor) {
             return
         }
+        const diff = this.applicableDiffOrRespin(task, editor.document)
+        if (!diff || diff.mergedText === undefined) {
+            return
+        }
+        // show diff view between the current document and replacement
         // Add replacement content to the temp document
         const tempDocUri = vscode.Uri.parse(`cody-fixup:${task.fixupFile.uri.fsPath}#${task.id}`)
         const doc = await vscode.workspace.openTextDocument(tempDocUri)
         const edit = new vscode.WorkspaceEdit()
-        const range = task.getSelectionRange()
-        edit.replace(tempDocUri, range, replacement)
+        const range = task.selectionRange
+        edit.replace(tempDocUri, range, diff.mergedText)
         await vscode.workspace.applyEdit(edit)
         await doc.save()
 
@@ -381,7 +440,10 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         )
     }
 
-    private async setTaskState(task: FixupTask, state: CodyTaskState): Promise<FixupTask | null> {
+    private setTaskState(task: FixupTask, state: CodyTaskState): Promise<FixupTask | null> {
+        // TODO: Something is abusing this method to refresh code lenses. Find
+        // the state 2->2 (and maybe more) callers, work out what they are
+        // actually notifying, and just notify about that.
         console.log(task.id, 'changing state from', task.state, 'to', state)
         switch (state) {
             case CodyTaskState.queued:
@@ -397,24 +459,19 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
                 task.marking()
                 break
             case CodyTaskState.fixed:
-                this.discard(task.id)
+                task.fixed()
                 break
             case CodyTaskState.error:
                 task.error()
                 break
             case CodyTaskState.applying:
-                // NOTE: task.apply() handles replacing the text in the document
-                // TODO (dom) add new method for replacement
-                await task.apply()
-                if (task.state !== CodyTaskState.fixed) {
-                    task.error('Failed to apply fixup')
-                }
+                task.apply()
                 break
         }
         console.log(task.id, 'current state', task.state)
         if (task.state === CodyTaskState.fixed) {
             this.discard(task.id)
-            return null
+            return Promise.resolve(null)
         }
         // Save states of the task
         this.codelenses.didUpdateTask(task)
@@ -422,7 +479,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         // creation.
         this.tasks.set(task.id, task)
         this.taskViewProvider.setTreeItem(task)
-        return task
+        return Promise.resolve(task)
     }
 
     private reset(): void {

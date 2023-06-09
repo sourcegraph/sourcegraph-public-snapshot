@@ -74,6 +74,9 @@ class Range {
     public get endCharacter(): number {
         return this.end.character
     }
+    public isEqual(other: Range): boolean {
+        return this.start.isEqual(other.start) && this.end.isEqual(other.end)
+    }
 }
 
 class Uri {
