@@ -5,14 +5,12 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/anthropic"
 )
 
@@ -22,7 +20,7 @@ func NewAnthropicHandler(
 	logger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
-	rateLimitAlerter func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32, ttl time.Duration),
+	rateLimitNotifier notify.RateLimitNotifier,
 	accessToken string,
 	allowedModels []string,
 ) http.Handler {
@@ -30,7 +28,7 @@ func NewAnthropicHandler(
 		logger,
 		eventLogger,
 		rs,
-		rateLimitAlerter,
+		rateLimitNotifier,
 		anthropic.ProviderName,
 		anthropicAPIURL,
 		allowedModels,

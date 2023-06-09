@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -26,7 +27,7 @@ func NewHandler(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
-	rateLimitAlerter func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32, ttl time.Duration),
+	rateLimitNotifier notify.RateLimitNotifier,
 	mf ModelFactory,
 	allowedModels []string,
 ) http.Handler {
@@ -36,7 +37,7 @@ func NewHandler(
 		baseLogger,
 		eventLogger,
 		limiter.NewPrefixRedisStore("rate_limit:", rs),
-		rateLimitAlerter,
+		rateLimitNotifier,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			act := actor.FromContext(r.Context())
 			logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))

@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -127,7 +128,7 @@ func (a *Actor) Limiter(
 	logger log.Logger,
 	redis limiter.RedisStore,
 	feature codygateway.Feature,
-	rateLimitAlerter func(actor *Actor, feature codygateway.Feature, usagePercentage float32, ttl time.Duration),
+	rateLimitNotifier notify.RateLimitNotifier,
 ) (limiter.Limiter, bool) {
 	if a == nil {
 		// Not logged in, no limit applicable.
@@ -159,8 +160,8 @@ func (a *Actor) Limiter(
 			Redis:     limiter.NewPrefixRedisStore(featurePrefix, redis),
 			RateLimit: limit,
 			Actor:     a,
-			rateLimitAlerter: func(usagePercentage float32, ttl time.Duration) {
-				rateLimitAlerter(a, feature, usagePercentage, ttl)
+			rateLimitNotifier: func(usagePercentage float32, ttl time.Duration) {
+				rateLimitNotifier(a.ID, codygateway.ActorSource(a.Source.Name()), feature, usagePercentage, ttl)
 			},
 		},
 		nowFunc: time.Now,
@@ -237,7 +238,9 @@ type updateOnFailureLimiter struct {
 	RateLimit RateLimit
 	*Actor
 
-	rateLimitAlerter func(usagePercentage float32, ttl time.Duration)
+	// rateLimitNotifier is called (when set) whenever the rate limit usage has
+	// changed.
+	rateLimitNotifier func(usagePercentage float32, ttl time.Duration)
 }
 
 func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func(int) error, error) {
@@ -249,7 +252,7 @@ func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func(int) error
 		// Only update rate limit TTL if the actor has been updated recently.
 		UpdateRateLimitTTL: u.LastUpdated != nil && time.Since(*u.LastUpdated) < 5*time.Minute,
 		NowFunc:            time.Now,
-		RateLimitAlerter:   u.rateLimitAlerter,
+		RateLimitAlerter:   u.rateLimitNotifier,
 	}).TryAcquire(ctx)
 	if errors.As(err, &limiter.NoAccessError{}) || errors.As(err, &limiter.RateLimitExceededError{}) {
 		u.Actor.Update(ctx) // TODO: run this in goroutine+background context maybe?

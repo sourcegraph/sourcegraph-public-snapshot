@@ -3,13 +3,13 @@ package embeddings
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -20,7 +20,7 @@ func rateLimit(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	cache limiter.RedisStore,
-	rateLimitAlerter func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32, ttl time.Duration),
+	rateLimitNotifier notify.RateLimitNotifier,
 	next http.Handler,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped("rateLimit", "rate limit handler")
@@ -29,7 +29,7 @@ func rateLimit(
 		act := actor.FromContext(r.Context())
 		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
 
-		l, ok := act.Limiter(logger, cache, codygateway.FeatureEmbeddings, rateLimitAlerter)
+		l, ok := act.Limiter(logger, cache, codygateway.FeatureEmbeddings, rateLimitNotifier)
 		if !ok {
 			response.JSONError(logger, w, http.StatusForbidden, errors.New("no access to embeddings"))
 			return

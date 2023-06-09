@@ -2,13 +2,9 @@ package shared
 
 import (
 	"context"
-	"fmt"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/go-redsync/redsync/v4"
@@ -21,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
@@ -107,10 +103,23 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		log.Float32("percentage", config.ActorConcurrencyLimit.Percentage),
 		log.String("internal", config.ActorConcurrencyLimit.Interval.String()),
 	)
+
+	// Ignore the error because it's already validated in the config.
+	dotcomURL, _ := url.Parse(config.Dotcom.URL)
+	dotcomURL.Path = ""
+	rateLimitNotifier := notify.NewSlackRateLimitNotifier(
+		obctx.Logger,
+		redispool.Cache,
+		dotcomURL.String(),
+		config.ActorRateLimitNotify.Thresholds,
+		config.ActorRateLimitNotify.SlackWebhookURL,
+		slack.PostWebhookContext,
+	)
+
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
 	handler := httpapi.NewHandler(obctx.Logger, eventLogger, rs, authr, &httpapi.Config{
-		RateLimitAlerter:        newRateLimitAlerter(obctx.Logger, redispool.Cache, config.Dotcom.URL, config.ActorRateLimitAlert, slack.PostWebhookContext),
+		RateLimitNotifier:       rateLimitNotifier,
 		AnthropicAccessToken:    config.Anthropic.AccessToken,
 		AnthropicAllowedModels:  config.Anthropic.AllowedModels,
 		OpenAIAccessToken:       config.OpenAI.AccessToken,
@@ -221,173 +230,4 @@ func (s *redisStore) TTL(key string) (int, error) {
 
 func (s *redisStore) Expire(key string, ttlSeconds int) error {
 	return s.store.Expire(key, ttlSeconds)
-}
-
-var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
-
-// tryAcquireRedisLockOnce attempts to acquire a Redis-based lock with the given
-// key in a single pass. The locking algorithm is based on
-// https://redis.io/commands/setnx/ for resolving deadlocks.
-//
-// CAUTION: To avoid releasing someone else's lock, the duration of the entire
-// operation should be well-below the lock timeout.
-//
-// TODO(jchen): Modularize this into the redispool package.
-func tryAcquireRedisLockOnce(rs redispool.KeyValue, lockKey string, lockTimeout time.Duration) (acquired bool, release func(), _ error) {
-	timeout := time.Now().Add(lockTimeout).UnixNano()
-	// Add a random number to decrease the chance of multiple processes falsely
-	// believing they have the lock at the same time.
-	lockToken := fmt.Sprintf("%d,%d", timeout, seededRand.Intn(1e6))
-
-	release = func() {
-		// Best effort to check we're releasing the lock we think we have. Note that it
-		// is still technically possible the lock token has changed between the GET and
-		// DEL since these are two separate operations, i.e. when the current lock happen
-		// to be expired at this very moment.
-		get, _ := rs.Get(lockKey).String()
-		if get == lockToken {
-			_ = rs.Del(lockKey)
-		}
-	}
-
-	set, err := rs.SetNx(lockKey, lockToken)
-	if err != nil {
-		return false, nil, err
-	} else if set {
-		return true, release, nil
-	}
-
-	// We didn't get the lock, but we can check if the lock is expired.
-	currentLockToken, err := rs.Get(lockKey).String()
-	if err == redis.ErrNil {
-		// Someone else got the lock and released it already.
-		return false, nil, nil
-	} else if err != nil {
-		return false, nil, err
-	}
-
-	currentTimeout, _ := strconv.ParseInt(strings.SplitN(currentLockToken, ",", 2)[0], 10, 64)
-	if currentTimeout > time.Now().UnixNano() {
-		// The lock is still valid.
-		return false, nil, nil
-	}
-
-	// The lock has expired, try to acquire it.
-	get, err := rs.GetSet(lockKey, lockToken).String()
-	if err != nil {
-		return false, nil, err
-	} else if get != currentLockToken {
-		// Someone else got the lock
-		return false, nil, nil
-	}
-
-	// We got the lock.
-	return true, release, nil
-}
-
-// newRateLimitAlerter returns a function that sends an alert to the given Slack
-// webhook URL when the threshold is met.
-func newRateLimitAlerter(
-	logger log.Logger,
-	rs redispool.KeyValue,
-	dotcomAPIURL string,
-	config codygateway.ActorRateLimitAlertConfig,
-	slackSender func(ctx context.Context, url string, msg *slack.WebhookMessage) error,
-) func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32, ttl time.Duration) {
-	// Ignore the error because it's already validated in the config.
-	dotcomURL, _ := url.Parse(dotcomAPIURL)
-	dotcomURL.Path = ""
-
-	logger = logger.Scoped("usageRateLimitAlert", "alerts for usage rate limit approaching threshold")
-	return func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32, ttl time.Duration) {
-		usage := int(usagePercentage * 100)
-		if usage < config.Thresholds[0] {
-			return
-		}
-
-		lockKey := fmt.Sprintf("rate_limit:%s:alert:lock:%s", feature, actor.ID)
-		acquired, release, err := tryAcquireRedisLockOnce(rs, lockKey, 30*time.Second)
-		if err != nil {
-			logger.Error("failed to acquire lock", log.Error(err))
-			return
-		} else if !acquired {
-			return
-		}
-		defer release()
-
-		bucket := 0
-		for _, threshold := range config.Thresholds {
-			if usage < threshold {
-				break
-			}
-			bucket = threshold
-		}
-
-		key := fmt.Sprintf("rate_limit:%s:alert:%s", feature, actor.ID)
-		lastBucket, err := rs.Get(key).Int()
-		if err != nil && err != redis.ErrNil {
-			logger.Error("failed to get last alert bucket", log.Error(err))
-			return
-		}
-
-		if bucket <= lastBucket {
-			return
-		}
-
-		defer func() {
-			err := rs.SetEx(key, int(ttl.Seconds()), bucket)
-			if err != nil {
-				logger.Error("failed to set last alerted time", log.Error(err))
-			}
-		}()
-
-		if config.SlackWebhookURL == "" {
-			logger.Debug("new usage alert",
-				log.Object("actor",
-					log.String("id", actor.ID),
-					log.String("source", actor.Source.Name()),
-				),
-				log.String("feature", string(feature)),
-				log.Int("usagePercentage", int(usagePercentage*100)),
-			)
-			return
-		}
-
-		var actorLink string
-		switch codygateway.ActorSource(actor.Source.Name()) {
-		case codygateway.ActorSourceProductSubscription:
-			actorLink = fmt.Sprintf("<%[1]s/site-admin/dotcom/product/subscriptions/%[2]s|%[2]s>", dotcomURL.String(), actor.ID)
-		case codygateway.ActorSourceDotcomUser:
-			actorLink = fmt.Sprintf("<%[1]s/users/%[2]s|%[2]s>", dotcomURL.String(), actor.ID)
-		default:
-			actorLink = fmt.Sprintf(`%s`, actor.ID)
-		}
-
-		text := fmt.Sprintf("The actor %s from %q has exceeded *%d%%* of its rate limit quota for `%s`. The quota will reset in `%s` at `%s`.",
-			actorLink, actor.Source.Name(), usage, feature, ttl.String(), time.Now().Add(ttl).Format(time.RFC3339))
-
-		// NOTE: The context timeout must below the lock timeout we set above (30 seconds
-		// ) to make sure the lock doesn't expire when we release it, i.e. avoid
-		// releasing someone else's lock.
-		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
-		err = slackSender(
-			ctx,
-			config.SlackWebhookURL,
-			&slack.WebhookMessage{
-				Blocks: &slack.Blocks{
-					BlockSet: []slack.Block{
-						slack.NewSectionBlock(
-							slack.NewTextBlockObject("mrkdwn", text, false, false),
-							nil,
-							nil,
-						),
-					},
-				},
-			},
-		)
-		if err != nil {
-			logger.Error("failed to send Slack webhook", log.Error(err))
-		}
-	}
 }

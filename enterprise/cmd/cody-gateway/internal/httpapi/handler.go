@@ -2,22 +2,20 @@ package httpapi
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/completions"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 )
 
 type Config struct {
-	RateLimitAlerter        func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32, ttl time.Duration)
+	RateLimitNotifier       notify.RateLimitNotifier
 	AnthropicAccessToken    string
 	AnthropicAllowedModels  []string
 	OpenAIAccessToken       string
@@ -39,7 +37,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 					logger,
 					eventLogger,
 					rs,
-					config.RateLimitAlerter,
+					config.RateLimitNotifier,
 					config.AnthropicAccessToken,
 					config.AnthropicAllowedModels,
 				),
@@ -53,7 +51,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 					logger,
 					eventLogger,
 					rs,
-					config.RateLimitAlerter,
+					config.RateLimitNotifier,
 					config.OpenAIAccessToken,
 					config.OpenAIOrgID,
 					config.OpenAIAllowedModels,
@@ -73,7 +71,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 					logger,
 					eventLogger,
 					rs,
-					config.RateLimitAlerter,
+					config.RateLimitNotifier,
 					embeddings.ModelFactoryMap{
 						embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(config.OpenAIAccessToken),
 					},
