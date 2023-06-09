@@ -44,6 +44,7 @@ go_test(
         "check_test.go",
         "codygateway_test.go",
         "features_test.go",
+        "licensing_test.go",
         "plans_test.go",
         "tags_test.go",
     ],
