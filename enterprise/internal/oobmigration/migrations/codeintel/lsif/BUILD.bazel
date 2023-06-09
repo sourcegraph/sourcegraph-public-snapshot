@@ -46,6 +46,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":lsif"],
+    tags = ["requires-network"],
     deps = [
         "//enterprise/internal/codeintel/shared",
         "//internal/database",
