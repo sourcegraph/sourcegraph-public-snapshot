@@ -67,6 +67,10 @@ func (w dockerWorkspace) Path() string {
 	return w.workspaceDir
 }
 
+func (w dockerWorkspace) WorkingDirectory() string {
+	return w.workspaceDir
+}
+
 func (w dockerWorkspace) ScriptFilenames() []string {
 	return w.scriptFilenames
 }

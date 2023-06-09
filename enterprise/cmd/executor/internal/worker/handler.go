@@ -165,7 +165,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 		}
 		if executorutil.IsPreStepKey(spec.CommandSpec.Key) {
 			// Check if there is a skip file. and if so, what the next step is.
-			nextStep, err := runner.NextStep(ws.Path())
+			nextStep, err := runner.NextStep(ws.WorkingDirectory())
 			if err != nil {
 				return errors.Wrap(err, "checking for skip file")
 			}
