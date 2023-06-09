@@ -9,9 +9,31 @@ extend type Query {
 EXPERIMENTAL: A list of snippet attributions.
 """
 type SnippetAttributionConnection {
+    """
+    totalCount is the total number of repository attributions we found before
+    stopping the search.
+
+    Note: if we didn't finish searching the full corpus then limitHit will be
+    true. For filtering use case this means if limitHit is true you need to be
+    conservative with TotalCount and assume it could be higher.
+    """
     totalCount: Int!
+
+    """
+    limitHit is true if we stopped searching before looking into the full
+    corpus. If limitHit is true then it is possible there are more than
+    totalCount attributions.
+    """
     limitHit: Boolean!
+
+    """
+    The pagination info for the connection.
+    """
     pageInfo: PageInfo!
+
+    """
+    The page set of SnippetAttribution entries in this connection.
+    """
     nodes: [SnippetAttribution!]!
 }
 
