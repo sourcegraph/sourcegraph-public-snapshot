@@ -265,7 +265,7 @@ func TestGetEmbeddableReposLimit(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(fmt.Sprintf("policyRepositoryMatchLimit=%d", tt.policyRepositoryMatchLimit), func(t *testing.T) {
-			repos, err := store.GetEmbeddableRepos(ctx, EmbeddableRepoOpts{MinimumInterval: 1 * time.Hour, PolicyRepositoryMatchLimit: tt.policyRepositoryMatchLimit})
+			repos, err := store.GetEmbeddableRepos(ctx, EmbeddableRepoOpts{MinimumInterval: 1 * time.Hour, PolicyRepositoryMatchLimit: &tt.policyRepositoryMatchLimit})
 			require.NoError(t, err)
 			require.Equal(t, tt.wantMatches, len(repos))
 		})
@@ -278,14 +278,14 @@ func TestGetEmbeddableRepoOpts(t *testing.T) {
 
 	opts := GetEmbeddableRepoOpts()
 	require.Equal(t, defaultOpts.MinimumInterval, opts.MinimumInterval)
-	require.Equal(t, defaultOpts.PolicyRepositoryMatchLimit, opts.PolicyRepositoryMatchLimit)
+	require.Equal(t, *defaultOpts.PolicyRepositoryMatchLimit, *opts.PolicyRepositoryMatchLimit)
 
 	limit := 5
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{Embeddings: &schema.Embeddings{MinimumInterval: "1h", PolicyRepositoryMatchLimit: &limit}}})
 
 	opts = GetEmbeddableRepoOpts()
 	require.Equal(t, 1*time.Hour, opts.MinimumInterval)
-	require.Equal(t, 5, opts.PolicyRepositoryMatchLimit)
+	require.Equal(t, 5, *opts.PolicyRepositoryMatchLimit)
 }
 
 func setJobState(t *testing.T, ctx context.Context, store RepoEmbeddingJobsStore, jobID int, state string) {

@@ -187,9 +187,10 @@ type EmbeddableRepoOpts struct {
 	// successful embedding job.
 	MinimumInterval time.Duration
 
-	// PolicyRepositoryMatchLimit limits the maximum number of repositories that can be
-	// matched by a global policy. A negative value means the policy is unlimited.
-	PolicyRepositoryMatchLimit int
+	// PolicyRepositoryMatchLimit limits the maximum number of repositories that can
+	// be matched by a global policy. If set to nil or a negative value, the policy
+	// is unlimited.
+	PolicyRepositoryMatchLimit *int
 }
 
 type ListOpts struct {
@@ -217,9 +218,11 @@ func embeddingConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
 	return nil
 }
 
+var defaultPolicyRepositoryMatchLimit = 5000
+
 var defaultOpts = EmbeddableRepoOpts{
 	MinimumInterval:            24 * time.Hour,
-	PolicyRepositoryMatchLimit: 5000,
+	PolicyRepositoryMatchLimit: &defaultPolicyRepositoryMatchLimit,
 }
 
 func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
@@ -236,18 +239,15 @@ func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
 		opts.MinimumInterval = d
 	}
 
-	policyRepositoryMatchLimit := embeddingsConf.PolicyRepositoryMatchLimit
-	if policyRepositoryMatchLimit != nil {
-		opts.PolicyRepositoryMatchLimit = *policyRepositoryMatchLimit
-	}
+	opts.PolicyRepositoryMatchLimit = embeddingsConf.PolicyRepositoryMatchLimit
 
 	return opts
 }
 
 func (s *repoEmbeddingJobsStore) GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error) {
 	var limitClause *sqlf.Query
-	if opts.PolicyRepositoryMatchLimit >= 0 {
-		limitClause = sqlf.Sprintf("LIMIT %d", opts.PolicyRepositoryMatchLimit)
+	if opts.PolicyRepositoryMatchLimit != nil && *opts.PolicyRepositoryMatchLimit >= 0 {
+		limitClause = sqlf.Sprintf("LIMIT %d", *opts.PolicyRepositoryMatchLimit)
 	} else {
 		limitClause = sqlf.Sprintf("")
 	}
