@@ -37,13 +37,16 @@ type licenseChecker struct {
 	siteID string
 	token  string
 	doer   httpcli.Doer
+	logger log.Logger
 }
 
 func (l *licenseChecker) Handle(ctx context.Context) error {
+	l.logger.Debug("starting license check", log.String("siteID", l.siteID))
 	store.Set(lastCalledAtStoreKey, time.Now().Format(time.RFC3339))
 
 	// skip if has explicitly allowed air-gapped feature
 	if err := Check(FeatureAllowAirGapped); err == nil {
+		l.logger.Debug("license is air-gapped, skipping check", log.String("siteID", l.siteID))
 		store.Set(licenseValidityStoreKey, true)
 		return nil
 	}
@@ -66,27 +69,33 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 
 	res, err := l.doer.Do(req)
 	if err != nil {
+		l.logger.Warn("error while checking license validity", log.Error(err), log.String("siteID", l.siteID))
 		return err
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
+		l.logger.Warn("invalid http response while checking license validity", log.String("httpStatus", res.Status), log.String("siteID", l.siteID))
 		return errors.Newf("Failed to check license, status code: %d", res.StatusCode)
 	}
 
 	var body LicenseCheckResponse
 	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		l.logger.Warn("error while decoding license check response", log.Error(err), log.String("siteID", l.siteID))
 		return err
 	}
 
 	if body.Error != "" {
+		l.logger.Warn("error in license check", log.String("responseError", body.Error), log.String("siteID", l.siteID))
 		return errors.New(body.Error)
 	}
 
 	if body.Data == nil {
+		l.logger.Warn("no data returned from license check", log.String("siteID", l.siteID))
 		return errors.New("No data returned from license check")
 	}
 
 	store.Set(licenseValidityStoreKey, body.Data.IsValid)
+	l.logger.Debug("finished license check", log.String("siteID", l.siteID))
 	return nil
 }
 
@@ -121,7 +130,7 @@ func StartLicenseCheck(ctx context.Context, logger log.Logger, siteID string) {
 
 		routine := goroutine.NewPeriodicGoroutine(
 			context.Background(),
-			&licenseChecker{siteID: siteID, token: licenseToken, doer: httpcli.ExternalDoer},
+			&licenseChecker{siteID: siteID, token: licenseToken, doer: httpcli.ExternalDoer, logger: logger.Scoped("licenseChecker", "Periodically checks license validity")},
 			goroutine.WithName("licensing.check-license-validity"),
 			goroutine.WithDescription("check if license is valid from sourcegraph.com"),
 			goroutine.WithInterval(licenseCheckInterval),

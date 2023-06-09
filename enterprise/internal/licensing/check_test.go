@@ -12,6 +12,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
@@ -48,6 +49,7 @@ func Test_licenseChecker(t *testing.T) {
 			siteID: siteID,
 			token:  token,
 			doer:   doer,
+			logger: logtest.NoOp(t),
 		}
 
 		err := handler.Handle(context.Background())
@@ -111,6 +113,7 @@ func Test_licenseChecker(t *testing.T) {
 				siteID: siteID,
 				token:  token,
 				doer:   doer,
+				logger: logtest.NoOp(t),
 			}
 
 			err := checker.Handle(context.Background())
