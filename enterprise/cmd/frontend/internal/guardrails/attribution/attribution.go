@@ -10,22 +10,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // Service is an attribution service which searches for matches on snippets of
 // code.
 type Service struct {
-	// CurrentUserFinal is settings.CurrentUserFinal without the DB parameter.
-	// This is temporary since we intend on moving the settings package into a
-	// service.
-	CurrentUserFinal func(context.Context) (*schema.Settings, error)
-
 	// SearchClient is used to find attribution on the local instance.
 	SearchClient client.SearchClient
-
-	// SourcegraphDotComMode is true if this instance is sourcegraph.com
-	SourcegraphDotComMode bool
 }
 
 // SnippetAttributions is holds the collection of attributions for a snippet.
@@ -63,11 +54,6 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 		protocol   = search.Batch
 	)
 
-	settings, err := c.CurrentUserFinal(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get user settings")
-	}
-
 	patternType := "literal"
 	searchQuery := fmt.Sprintf("type:file select:repo index:only count:%d content:%q", limit, snippet)
 
@@ -78,8 +64,6 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 		searchQuery,
 		searchMode,
 		protocol,
-		settings,
-		c.SourcegraphDotComMode,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create search plan")
