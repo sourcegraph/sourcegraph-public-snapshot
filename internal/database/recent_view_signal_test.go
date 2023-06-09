@@ -449,7 +449,7 @@ func TestRecentViewSignalStore_List(t *testing.T) {
 	d := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	// Creating a user.
+	// Creating 2 users.
 	user1, err := d.Users().Create(ctx, NewUser{Username: "user1"})
 	require.NoError(t, err)
 	user2, err := d.Users().Create(ctx, NewUser{Username: "user2"})
