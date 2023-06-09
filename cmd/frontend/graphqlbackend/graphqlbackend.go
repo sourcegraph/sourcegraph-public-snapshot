@@ -386,40 +386,8 @@ func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
 	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{})
 }
 
-func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{NotebooksResolver: notebooks})
-}
-
-func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{AuthzResolver: authz})
-}
-
-func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{BatchChangesResolver: batchChanges})
-}
-
-func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{CodeMonitorsResolver: codeMonitors})
-}
-
-func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{LicenseResolver: license})
-}
-
-func NewSchemaWithWebhooksResolver(db database.DB, webhooksResolver WebhooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{WebhooksResolver: webhooksResolver})
-}
-
-func NewSchemaWithRBACResolver(db database.DB, rbacResolver RBACResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{RBACResolver: rbacResolver})
-}
-
-func NewSchemaWithOwnResolver(db database.DB, own OwnResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{OwnResolver: own})
-}
-
-func NewSchemaWithCompletionsResolver(db database.DB, completionsResolver CompletionsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, OptionalResolver{CompletionsResolver: completionsResolver})
+func NewSchemaWithResolver(db database.DB, optional OptionalResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient(), nil, optional)
 }
 
 func NewSchema(
