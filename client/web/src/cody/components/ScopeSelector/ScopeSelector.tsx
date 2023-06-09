@@ -108,7 +108,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                 />
                 {scope.includeInferredFile && activeEditor?.filePath && (
                     <div className={classNames('d-flex align-items-center', styles.filepathText)}>
-                        <div className={classNames('mx-2', styles.separator)} />
+                        <div className={styles.separator} />
                         {getFileName(activeEditor.filePath)}
                     </div>
                 )}

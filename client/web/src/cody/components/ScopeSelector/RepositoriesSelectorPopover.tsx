@@ -130,7 +130,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                 as={Button}
                 outline={false}
                 className={classNames(
-                    'd-flex justify-content-between p-0 align-items-center w-100',
+                    'd-flex justify-content-between p-0 pr-1 align-items-center w-100',
                     styles.repositoryNamesText
                 )}
             >
@@ -485,7 +485,7 @@ const EmbeddingStatusIndicator: React.FC<{ reposWithoutEmbeddingsCount: number; 
         if (!totalReposCount) {
             return (
                 <div className="mr-1">
-                    <Icon aria-hidden={true} className="text-muted" svgPath={mdiDatabaseOutline} />
+                    <Icon aria-hidden={true} className="text-muted align-center" svgPath={mdiDatabaseOutline} />
                 </div>
             )
         }
@@ -503,7 +503,11 @@ const EmbeddingStatusIndicator: React.FC<{ reposWithoutEmbeddingsCount: number; 
                     }
                 >
                     {reposWithoutEmbeddingsCount ? (
-                        <Icon aria-hidden={true} className="text-warning" svgPath={mdiDatabaseRemoveOutline} />
+                        <Icon
+                            aria-hidden={true}
+                            className="text-warning align-center"
+                            svgPath={mdiDatabaseRemoveOutline}
+                        />
                     ) : (
                         <CodyHighQualityIcon />
                     )}

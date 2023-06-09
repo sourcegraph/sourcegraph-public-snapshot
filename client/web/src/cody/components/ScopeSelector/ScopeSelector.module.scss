@@ -7,10 +7,9 @@
 }
 
 .separator {
-    background-color: var(--border-color-2);
     height: 100%;
-    min-width: 0.0625rem;
-    width: 0.0625rem;
+    border-left: 1px solid var(--border-color-2);
+    margin-right: .675rem;
 }
 
 .footer {
