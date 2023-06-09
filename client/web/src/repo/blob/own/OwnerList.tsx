@@ -149,15 +149,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                 )
                             )
                             .map((ownership, index) => {
-                                if (ownership.owner.__typename === 'Team') {
-                                }
-                                const userId =
-                                    ownership.owner.__typename === 'Person' &&
-                                    ownership.owner.user?.__typename === 'User'
-                                        ? ownership.owner.user.id
-                                        : undefined
                                 // This list is not expected to change, so it's safe to use the index as a key.
-
                                 return (
                                     <React.Fragment key={index}>
                                         {index > 0 && <tr className={styles.bordered} />}
