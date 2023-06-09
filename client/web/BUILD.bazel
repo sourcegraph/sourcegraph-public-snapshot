@@ -964,6 +964,7 @@ ts_project(
         "src/enterprise/organizations/routes.tsx",
         "src/enterprise/organizations/settings/routes.tsx",
         "src/enterprise/organizations/settings/sidebaritems.ts",
+        "src/enterprise/own/AddOwnerModal.tsx",
         "src/enterprise/own/DeleteFileButton.tsx",
         "src/enterprise/own/IngestedFileViewer.tsx",
         "src/enterprise/own/OwnPage.tsx",
