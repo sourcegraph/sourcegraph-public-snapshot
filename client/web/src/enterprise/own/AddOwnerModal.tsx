@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 
+import { noop } from 'lodash'
 import { useNavigate } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
@@ -31,7 +32,7 @@ export const AddOwnerModal: React.FunctionComponent<React.PropsWithChildren<AddO
             input: {
                 absolutePath: path,
                 assignedOwnerID: selectedUser,
-                repoID: repoID,
+                repoID,
             },
         },
         onCompleted: () => navigate(0),
@@ -46,7 +47,7 @@ export const AddOwnerModal: React.FunctionComponent<React.PropsWithChildren<AddO
             <Form
                 onSubmit={event => {
                     event.preventDefault()
-                    assignOwner()
+                    assignOwner().catch(noop)
                 }}
             >
                 <Label htmlFor="add-owner--owner" className="mt-2">

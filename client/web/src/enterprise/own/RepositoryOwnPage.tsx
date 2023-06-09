@@ -23,6 +23,8 @@ import { TreeOwnershipPanel } from '../../repo/blob/own/TreeOwnershipPanel'
 import { AddOwnerModal } from './AddOwnerModal'
 import { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
 
+import styles from './RepositoryOwnPageContents.module.scss'
+
 const BREADCRUMB = { key: 'own', element: 'Ownership' }
 
 export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPageProps> = ({
@@ -67,7 +69,7 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
         <>
             <Page>
                 <PageTitle title={`Ownership for ${displayRepoName(repo.name)}`} />
-                <div style={{ float: 'right' }}>
+                <div className={styles.actionButtons}>
                     <ButtonLink
                         aria-label="Navigate to edit ownership page"
                         className="mr-2"
