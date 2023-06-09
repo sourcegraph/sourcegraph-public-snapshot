@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/sourcegraph/log"
@@ -876,6 +875,7 @@ func (s *Service) GetDefinitions(ctx context.Context, args RequestArgs, requestS
 		attribute.Int("numMonikers", len(orderedMonikers)),
 		attribute.String("monikers", monikersToString(orderedMonikers)))
 
+	// TODO: START HERE
 	// Determine the set of uploads over which we need to perform a moniker search. This will
 	// include all all indexes which define one of the ordered monikers. This should not include
 	// any of the indexes we have already performed an LSIF graph traversal in above.
@@ -1475,87 +1475,92 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 
 func (s *Service) GetSCIPDocumentsBySymbolNames(
 	ctx context.Context,
-	uploads []uploadsshared.Dump,
+	uploadID int,
 	symbolNames []string,
-	rangeMap map[string][]int32,
-	repoName api.RepoName,
-	repoID api.RepoID,
-	commitID api.CommitID,
-	path string,
-) (content []string, err error) {
-	type docsAndPath struct {
-		docs []*scip.Document
-		root string
-	}
-	var allDocs []docsAndPath
-	for _, upload := range uploads {
-		// TODO: pass in a list of uploadIDs instead of looping thru
-		docs, err := s.lsifstore.GetSCIPDocumentsBySymbolNames(ctx, upload.ID, symbolNames)
-		if err != nil {
-			return nil, err
-		}
-		root := "/"
-		if upload.Root != "" {
-			root = upload.Root
-		}
-		d := docsAndPath{
-			docs: docs,
-			root: root,
-		}
-		allDocs = append(allDocs, d)
-	}
+	// rangeMap map[string][]int32,
+	// repoName api.RepoName,
+	// repoID api.RepoID,
+	// commitID api.CommitID,
+	// path string,
+	// ) (content []string, err error) {
+) (documents []*scip.Document, err error) {
+	return s.lsifstore.GetSCIPDocumentsBySymbolNames(ctx, uploadID, symbolNames)
+	// type docsAndPath struct {
+	// 	docs []*scip.Document
+	// 	root string
+	// }
+	// var allDocs []types.DocsAndPath
+	// for _, upload := range uploads {
+	// 	// TODO: pass in a list of uploadIDs instead of looping thru
+	// 	docs, err := s.lsifstore.GetSCIPDocumentsBySymbolNames(ctx, upload.ID, symbolNames)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	root := "/"
+	// 	if upload.Root != "" {
+	// 		root = upload.Root
+	// 	}
+	// 	d := types.DocsAndPath{
+	// 		Docs: docs,
+	// 		Root: root,
+	// 	}
+	// 	allDocs = append(allDocs, d)
+	// }
 
+	// return allDocs, nil
+
+	// The below works
 	// -TODO: loop thru doc to get relative path-
 	// TODO: add upload .root to doc.RelativePath for the gitserver.ReadFile
-	contentMap := map[string]struct{}{}
-	for _, docs := range allDocs {
-		for _, doc := range docs.docs {
-			pathWithRoot := filepath.Join(docs.root, doc.RelativePath)
+	// contentMap := map[string]struct{}{}
+	// for _, docs := range allDocs {
+	// 	for _, doc := range docs.Docs {
+	// 		pathWithRoot := filepath.Join(docs.Root, doc.RelativePath)
 
-			file, err := s.gitserver.ReadFile(
-				ctx,
-				authz.DefaultSubRepoPermsChecker,
-				repoName,
-				commitID,
-				pathWithRoot,
-			)
-			if err != nil {
-				return nil, err
-			}
-			c := strings.Split(string(file), "\n")
-			for _, occ := range doc.Occurrences {
-				defs := extactDefinitions(doc, occ)
-				for _, def := range defs {
-					e := strings.Split(def.Symbol, "/")
-					key := e[len(e)-1]
-					if _, ok := rangeMap[key]; ok {
-						r := rangeMap[key]
-						scipRange := scip.NewRange(r)
-						fmt.Println("defs start line >>>>", scipRange.Start.Line)
-						fmt.Println("defs end line >>>>", scipRange.End.Line)
-						fmt.Println("defs start char >>>>", scipRange.Start.Character)
-						fmt.Println("defs end char >>>>", scipRange.End.Character)
+	// 		file, err := s.gitserver.ReadFile(
+	// 			ctx,
+	// 			authz.DefaultSubRepoPermsChecker,
+	// 			repoName,
+	// 			commitID,
+	// 			pathWithRoot,
+	// 		)
+	// 		if err != nil {
+	// 			return nil, err
+	// 		}
+	// 		c := strings.Split(string(file), "\n")
+	// 		for _, occ := range doc.Occurrences {
+	// 			defs := extactDefinitions(doc, occ)
+	// 			for _, def := range defs {
+	// 				e := strings.Split(def.Symbol, "/")
+	// 				key := e[len(e)-1]
+	// 				if _, ok := rangeMap[key]; ok {
+	// 					r := rangeMap[key]
+	// 					scipRange := scip.NewRange(r)
+	// 					fmt.Println("defs start line >>>>", scipRange.Start.Line)
+	// 					fmt.Println("defs end line >>>>", scipRange.End.Line)
+	// 					fmt.Println("defs start char >>>>", scipRange.Start.Character)
+	// 					fmt.Println("defs end char >>>>", scipRange.End.Character)
 
-						// TODO: redo the insides of pageContent. it contains lots of unnecessary checks
-						content := pageContent(c, &scipRange.Start.Line, &scipRange.End.Line, scipRange.Start.Character, scipRange.End.Character)
+	// 					// TODO: redo the insides of pageContent. it contains lots of unnecessary checks
+	// 					content := pageContent(c, &scipRange.Start.Line, &scipRange.End.Line, scipRange.Start.Character, scipRange.End.Character)
 
-						fmt.Println("content >>>>", content)
-						if _, ok := contentMap[content]; !ok {
-							contentMap[content] = struct{}{}
-						}
-					}
-				}
-			}
-		}
-	}
-	var allContent []string
-	for k := range contentMap {
-		allContent = append(allContent, k)
-	}
+	// 					fmt.Println("content >>>>", content)
+	// 					if _, ok := contentMap[content]; !ok {
+	// 						contentMap[content] = struct{}{}
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// var allContent []string
+	// for k := range contentMap {
+	// 	allContent = append(allContent, k)
+	// }
 
-	// TODO: send back the scipDocuments and do the extractDefinitions in context service
-	// that way you can reuse the treesitter parser to get the encoded ranges
-	return allContent, nil
+	// // TODO: send back the scipDocuments and do the extractDefinitions in context service
+	// // that way you can reuse the treesitter parser to get the encoded ranges
+	// return allContent, nil
 }
 
 func pageContent(content []string, startLine, endLine *int32, startChar, endChar int32) string {

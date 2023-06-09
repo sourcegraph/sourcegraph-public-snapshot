@@ -42,7 +42,6 @@ func NewRequestState(
 	hunkCache HunkCache,
 ) RequestState {
 	r := &RequestState{
-		// repoStore:    repoStore,
 		RepositoryID: int(repo.ID),
 		Commit:       commit,
 		Path:         path,

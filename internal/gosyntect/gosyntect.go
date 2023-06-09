@@ -307,7 +307,7 @@ func (c *Client) Symbols(ctx context.Context, q *SymbolsQuery) (*SymbolsResponse
 		return nil, errors.Wrap(err, "encoding query")
 	}
 
-	fmt.Println("jsonQuery", string(jsonQuery))
+	// fmt.Println("jsonQuery", string(jsonQuery))
 
 	req, err := http.NewRequest("POST", c.url("/symbols"), bytes.NewReader(jsonQuery))
 	if err != nil {

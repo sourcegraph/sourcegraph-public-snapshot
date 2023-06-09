@@ -37,6 +37,7 @@ type ServiceDependencies struct {
 
 func NewServices(deps ServiceDependencies) (Services, error) {
 	db, codeIntelDB := deps.DB, deps.CodeIntelDB
+	repoDB := deps.DB.Repos()
 	gitserverClient := gitserver.NewClient()
 	syntectClient := gosyntect.GetSyntectClient()
 
@@ -47,7 +48,7 @@ func NewServices(deps ServiceDependencies) (Services, error) {
 	codenavSvc := codenav.NewService(deps.ObservationCtx, db, codeIntelDB, uploadsSvc, gitserverClient)
 	rankingSvc := ranking.NewService(deps.ObservationCtx, db, codeIntelDB)
 	sentinelService := sentinel.NewService(deps.ObservationCtx, db)
-	contextService := context.NewService(deps.ObservationCtx, codeIntelDB, syntectClient, codenavSvc)
+	contextService := context.NewService(deps.ObservationCtx, codeIntelDB, repoDB, codenavSvc, syntectClient, gitserverClient)
 
 	return Services{
 		AutoIndexingService: autoIndexingSvc,

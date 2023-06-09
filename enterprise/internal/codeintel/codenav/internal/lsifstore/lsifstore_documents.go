@@ -96,13 +96,27 @@ func (s *store) GetSCIPDocumentsBySymbolNames(ctx context.Context, uploadID int,
 	return documents, err
 }
 
+// const getDocumentsBySymbolNameQuery = `
+// SELECT
+//     sd.raw_scip_payload,
+// 	sdl.document_path
+// FROM codeintel_scip_symbols_lookup ssl
+// JOIN codeintel_scip_symbols ss ON ss.upload_id = ssl.upload_id AND ss.descriptor_id = ssl.id
+// JOIN codeintel_scip_document_lookup sdl ON sdl.id = ss.document_lookup_id
+// JOIN codeintel_scip_documents sd ON sd.id = sdl.document_id
+// WHERE
+//     ssl.name ILIKE ANY(%s)
+//     AND ssl.scip_name_type = 'DESCRIPTOR'
+//     AND ssl.upload_id = %s;
+// `
+
 const getDocumentsBySymbolNameQuery = `
-SELECT
+SELECT DISTINCT
     sd.raw_scip_payload,
 	sdl.document_path
-FROM codeintel_scip_symbols_lookup ssl
-JOIN codeintel_scip_symbols ss ON ss.upload_id = ssl.upload_id AND ss.descriptor_id = ssl.id
-JOIN codeintel_scip_document_lookup sdl ON sdl.id = ss.document_lookup_id
+FROM codeintel_scip_document_lookup sdl
+JOIN codeintel_scip_symbols ss ON ss.document_lookup_id = sdl.id
+JOIN codeintel_scip_symbols_lookup ssl ON ssl.upload_id = ss.upload_id AND ssl.id = ss.descriptor_id
 JOIN codeintel_scip_documents sd ON sd.id = sdl.document_id
 WHERE
     ssl.name ILIKE ANY(%s)

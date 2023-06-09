@@ -553,4 +553,4 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
-replace github.com/sourcegraph/scip => /Users/efritz/dev/sourcegraph/scip
+replace github.com/sourcegraph/scip => /Users/cesar/go/src/scip
