@@ -8,6 +8,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
 
@@ -41,11 +43,12 @@ type Resolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
 	db              edb.EnterpriseDB
+	logger          log.Logger
 }
 
 // New returns a new Resolver whose store uses the given database
-func New(db edb.EnterpriseDB, store *store.Store, gitserverClient gitserver.Client) graphqlbackend.BatchChangesResolver {
-	return &Resolver{store: store, gitserverClient: gitserverClient, db: db}
+func New(db edb.EnterpriseDB, store *store.Store, gitserverClient gitserver.Client, logger log.Logger) graphqlbackend.BatchChangesResolver {
+	return &Resolver{store: store, gitserverClient: gitserverClient, db: db, logger: logger}
 }
 
 // batchChangesCreateAccess returns true if the current user has batch changes enabled for
@@ -154,7 +157,7 @@ func (r *Resolver) changesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
-	return NewChangesetResolver(r.store, r.gitserverClient, changeset, repo), nil
+	return NewChangesetResolver(r.store, r.gitserverClient, r.logger, changeset, repo), nil
 }
 
 func (r *Resolver) batchChangeByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangeResolver, error) {
@@ -179,7 +182,7 @@ func (r *Resolver) batchChangeByID(ctx context.Context, id graphql.ID) (graphqlb
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange}, nil
+	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange, logger: r.logger}, nil
 }
 
 func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
@@ -202,7 +205,7 @@ func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchCh
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange}, nil
+	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange, logger: r.logger}, nil
 }
 
 func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *graphqlbackend.ResolveWorkspacesForBatchSpecArgs) ([]graphqlbackend.ResolvedBatchSpecWorkspaceResolver, error) {
@@ -262,7 +265,7 @@ func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 	// Everyone can see a batch spec, if they have the rand ID. The batch specs won't be
 	// enumerated to users other than their creators + admins, but they can be accessed
 	// directly if shared, e.g. to share a preview link before applying a new batch spec.
-	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
+	return &batchSpecResolver{store: r.store, logger: r.logger, batchSpec: batchSpec}, nil
 }
 
 func (r *Resolver) changesetSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetSpecResolver, error) {
@@ -375,7 +378,7 @@ func (r *Resolver) bulkOperationByIDString(ctx context.Context, id string) (grap
 		}
 		return nil, err
 	}
-	return &bulkOperationResolver{store: r.store, gitserverClient: r.gitserverClient, bulkOperation: bulkOperation}, nil
+	return &bulkOperationResolver{store: r.store, gitserverClient: r.gitserverClient, bulkOperation: bulkOperation, logger: r.logger}, nil
 }
 
 func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID) (graphqlbackend.BatchSpecWorkspaceResolver, error) {
@@ -410,7 +413,7 @@ func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID)
 		return nil, err
 	}
 
-	return newBatchSpecWorkspaceResolver(ctx, r.store, w, ex, spec.Spec)
+	return newBatchSpecWorkspaceResolver(ctx, r.store, r.logger, w, ex, spec.Spec)
 }
 
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
@@ -440,7 +443,7 @@ func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.C
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange}, nil
+	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange, logger: r.logger}, nil
 }
 
 func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.ApplyBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
@@ -462,7 +465,7 @@ func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.Ap
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange}, nil
+	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange, logger: r.logger}, nil
 }
 
 func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublicationStateInput, opts *service.UiPublicationStates) error {
@@ -594,6 +597,7 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 
 	specResolver := &batchSpecResolver{
 		store:     r.store,
+		logger:    r.logger,
 		batchSpec: batchSpec,
 	}
 
@@ -710,7 +714,7 @@ func (r *Resolver) MoveBatchChange(ctx context.Context, args *graphqlbackend.Mov
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange}, nil
+	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange, logger: r.logger}, nil
 }
 
 func (r *Resolver) DeleteBatchChange(ctx context.Context, args *graphqlbackend.DeleteBatchChangeArgs) (_ *graphqlbackend.EmptyResponse, err error) {
@@ -818,6 +822,7 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	return &batchChangesConnectionResolver{
 		store:           r.store,
 		gitserverClient: r.gitserverClient,
+		logger:          r.logger,
 		opts:            opts,
 	}, nil
 }
@@ -888,7 +893,7 @@ func (r *Resolver) BatchChangesCodeHosts(ctx context.Context, args *graphqlbacke
 		limitOffset.Offset = int(cursor)
 	}
 
-	return &batchChangesCodeHostConnectionResolver{userID: args.UserID, limitOffset: limitOffset, store: r.store, db: r.db}, nil
+	return &batchChangesCodeHostConnectionResolver{userID: args.UserID, limitOffset: limitOffset, store: r.store, db: r.db, logger: r.logger}, nil
 }
 
 // listChangesetOptsFromArgs turns the graphqlbackend.ListChangesetsArgs into
@@ -1021,7 +1026,7 @@ func (r *Resolver) CloseBatchChange(ctx context.Context, args *graphqlbackend.Cl
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange}, nil
+	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange, logger: r.logger}, nil
 }
 
 func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {
@@ -1076,7 +1081,7 @@ func (r *Resolver) ReenqueueChangeset(ctx context.Context, args *graphqlbackend.
 		return nil, err
 	}
 
-	return NewChangesetResolver(r.store, r.gitserverClient, changeset, repo), nil
+	return NewChangesetResolver(r.store, r.gitserverClient, r.logger, changeset, repo), nil
 }
 
 func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graphqlbackend.CreateBatchChangesCredentialArgs) (_ graphqlbackend.BatchChangesCredentialResolver, err error) {
@@ -1568,7 +1573,7 @@ func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatc
 		opts.Cursor = int64(id)
 	}
 
-	return &batchSpecConnectionResolver{store: r.store, opts: opts}, nil
+	return &batchSpecConnectionResolver{store: r.store, logger: r.logger, opts: opts}, nil
 }
 
 func (r *Resolver) CreateEmptyBatchChange(ctx context.Context, args *graphqlbackend.CreateEmptyBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
@@ -1603,7 +1608,7 @@ func (r *Resolver) CreateEmptyBatchChange(ctx context.Context, args *graphqlback
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange}, nil
+	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange, logger: r.logger}, nil
 }
 
 func (r *Resolver) UpsertEmptyBatchChange(ctx context.Context, args *graphqlbackend.UpsertEmptyBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
@@ -1634,7 +1639,7 @@ func (r *Resolver) UpsertEmptyBatchChange(ctx context.Context, args *graphqlback
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange}, nil
+	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange, logger: r.logger}, nil
 }
 
 func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlbackend.CreateBatchSpecFromRawArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
@@ -1674,7 +1679,7 @@ func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlback
 		return nil, err
 	}
 
-	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
+	return &batchSpecResolver{store: r.store, logger: r.logger, batchSpec: batchSpec}, nil
 }
 
 func (r *Resolver) ExecuteBatchSpec(ctx context.Context, args *graphqlbackend.ExecuteBatchSpecArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
@@ -1712,7 +1717,7 @@ func (r *Resolver) ExecuteBatchSpec(ctx context.Context, args *graphqlbackend.Ex
 		return nil, err
 	}
 
-	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
+	return &batchSpecResolver{store: r.store, logger: r.logger, batchSpec: batchSpec}, nil
 }
 
 func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecExecutionArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
@@ -1740,7 +1745,7 @@ func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlba
 		return nil, err
 	}
 
-	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
+	return &batchSpecResolver{store: r.store, logger: r.logger, batchSpec: batchSpec}, nil
 }
 
 func (r *Resolver) RetryBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.RetryBatchSpecWorkspaceExecutionArgs) (_ *graphqlbackend.EmptyResponse, err error) {
@@ -1821,7 +1826,7 @@ func (r *Resolver) ReplaceBatchSpecInput(ctx context.Context, args *graphqlbacke
 		return nil, err
 	}
 
-	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
+	return &batchSpecResolver{store: r.store, logger: r.logger, batchSpec: batchSpec}, nil
 }
 
 func (r *Resolver) UpsertBatchSpecInput(ctx context.Context, args *graphqlbackend.UpsertBatchSpecInputArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
@@ -1861,7 +1866,7 @@ func (r *Resolver) UpsertBatchSpecInput(ctx context.Context, args *graphqlbacken
 		return nil, err
 	}
 
-	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
+	return &batchSpecResolver{store: r.store, logger: r.logger, batchSpec: batchSpec}, nil
 }
 
 func (r *Resolver) CancelBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecWorkspaceExecutionArgs) (*graphqlbackend.EmptyResponse, error) {

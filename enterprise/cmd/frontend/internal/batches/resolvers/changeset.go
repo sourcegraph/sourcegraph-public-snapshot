@@ -9,6 +9,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
@@ -29,6 +31,7 @@ import (
 type changesetResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
+	logger          log.Logger
 
 	changeset *btypes.Changeset
 
@@ -49,20 +52,21 @@ type changesetResolver struct {
 	specErr  error
 }
 
-func NewChangesetResolverWithNextSync(store *store.Store, gitserverClient gitserver.Client, changeset *btypes.Changeset, repo *types.Repo, nextSyncAt time.Time) *changesetResolver {
-	r := NewChangesetResolver(store, gitserverClient, changeset, repo)
+func NewChangesetResolverWithNextSync(store *store.Store, gitserverClient gitserver.Client, logger log.Logger, changeset *btypes.Changeset, repo *types.Repo, nextSyncAt time.Time) *changesetResolver {
+	r := NewChangesetResolver(store, gitserverClient, logger, changeset, repo)
 	r.attemptedPreloadNextSyncAt = true
 	r.preloadedNextSyncAt = nextSyncAt
 	return r
 }
 
-func NewChangesetResolver(store *store.Store, gitserverClient gitserver.Client, changeset *btypes.Changeset, repo *types.Repo) *changesetResolver {
+func NewChangesetResolver(store *store.Store, gitserverClient gitserver.Client, logger log.Logger, changeset *btypes.Changeset, repo *types.Repo) *changesetResolver {
 	return &changesetResolver{
 		store:           store,
 		gitserverClient: gitserverClient,
-		repo:            repo,
-		repoResolver:    graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), gitserverClient, repo),
-		changeset:       changeset,
+
+		repo:         repo,
+		repoResolver: graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), gitserverClient, repo),
+		changeset:    changeset,
 	}
 }
 
@@ -188,7 +192,7 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 		}
 	}
 
-	return &batchChangesConnectionResolver{store: r.store, gitserverClient: r.gitserverClient, opts: opts}, nil
+	return &batchChangesConnectionResolver{store: r.store, gitserverClient: r.gitserverClient, opts: opts, logger: r.logger}, nil
 }
 
 // This points to the Batch Change that can close or open this changeset on its codehost. If this is nil,

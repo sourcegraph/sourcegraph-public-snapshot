@@ -90,7 +90,7 @@ func (r *resolver) GitHubApps(ctx context.Context, args *graphqlbackend.GitHubAp
 
 	resolvers := make([]graphqlbackend.GitHubAppResolver, len(apps))
 	for i := range apps {
-		resolvers[i] = NewGitHubAppResolver(r.db, apps[i])
+		resolvers[i] = NewGitHubAppResolver(r.db, apps[i], r.logger)
 	}
 
 	gitHubAppConnection := &gitHubAppConnectionResolver{
@@ -150,8 +150,9 @@ func (r *resolver) gitHubAppByID(ctx context.Context, id graphql.ID) (*gitHubApp
 	}
 
 	return &gitHubAppResolver{
-		app: app,
-		db:  r.db,
+		app:    app,
+		db:     r.db,
+		logger: r.logger,
 	}, nil
 }
 
@@ -167,14 +168,15 @@ func (r *resolver) gitHubAppByAppID(ctx context.Context, appID int, baseURL stri
 	}
 
 	return &gitHubAppResolver{
-		app: app,
-		db:  r.db,
+		app:    app,
+		db:     r.db,
+		logger: r.logger,
 	}, nil
 }
 
 // NewGitHubAppResolver creates a new GitHubAppResolver from a GitHubApp.
-func NewGitHubAppResolver(db edb.EnterpriseDB, app *types.GitHubApp) *gitHubAppResolver {
-	return &gitHubAppResolver{app: app, db: db}
+func NewGitHubAppResolver(db edb.EnterpriseDB, app *types.GitHubApp, logger log.Logger) *gitHubAppResolver {
+	return &gitHubAppResolver{app: app, db: db, logger: logger}
 }
 
 type gitHubAppConnectionResolver struct {
@@ -192,8 +194,9 @@ func (r *gitHubAppConnectionResolver) TotalCount(ctx context.Context) int32 {
 
 // gitHubAppResolver is a GraphQL node resolver for GitHubApps.
 type gitHubAppResolver struct {
-	app *types.GitHubApp
-	db  edb.EnterpriseDB
+	logger log.Logger
+	app    *types.GitHubApp
+	db     edb.EnterpriseDB
 }
 
 func (r *gitHubAppResolver) ID() graphql.ID {

@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -14,8 +16,9 @@ import (
 )
 
 type batchSpecWorkspaceConnectionResolver struct {
-	store *store.Store
-	opts  store.ListBatchSpecWorkspacesOpts
+	store  *store.Store
+	logger log.Logger
+	opts   store.ListBatchSpecWorkspacesOpts
 
 	// Cache results because they are used by multiple fields.
 	once       sync.Once
@@ -65,7 +68,7 @@ func (r *batchSpecWorkspaceConnectionResolver) Nodes(ctx context.Context) ([]gra
 
 	resolvers := make([]graphqlbackend.BatchSpecWorkspaceResolver, 0, len(nodes))
 	for _, w := range nodes {
-		res := newBatchSpecWorkspaceResolverWithRepo(r.store, w, executionsByWorkspaceID[w.ID], batchSpec.Spec, repos[w.RepoID])
+		res := newBatchSpecWorkspaceResolverWithRepo(r.store, r.logger, w, executionsByWorkspaceID[w.ID], batchSpec.Spec, repos[w.RepoID])
 		resolvers = append(resolvers, res)
 	}
 
