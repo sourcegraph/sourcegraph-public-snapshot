@@ -164,6 +164,14 @@ func canReadPaths(ctx context.Context, checker SubRepoPermissionChecker, repo ap
 		return true, nil
 	}
 
+	enabled, err := SubRepoEnabledForRepo(ctx, checker, repo)
+	if err != nil {
+		return false, err
+	}
+	if !enabled {
+		return true, nil
+	}
+
 	start := time.Now()
 	var checkPathPermsCount int
 	defer func() {
