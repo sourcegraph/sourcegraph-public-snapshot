@@ -120,7 +120,7 @@ func (r *ownResolver) GitBlobOwnership(
 		return nil, err
 	}
 
-	var ownerships []*ownershipResolver
+	var ors []ownershipReason
 
 	// Evaluate CODEOWNERS rules.
 	if args.IncludeReason(graphqlbackend.CodeownersFileEntry) {
@@ -128,7 +128,7 @@ func (r *ownResolver) GitBlobOwnership(
 		if err != nil {
 			return nil, err
 		}
-		ownerships = append(ownerships, codeowners...)
+		ors = append(ors, codeowners...)
 	}
 
 	repoID := blob.Repository().IDInt32()
@@ -139,7 +139,7 @@ func (r *ownResolver) GitBlobOwnership(
 		if err != nil {
 			return nil, err
 		}
-		ownerships = append(ownerships, contribResolvers...)
+		ors = append(ors, contribResolvers...)
 	}
 
 	// Retrieve recent view signals.
@@ -284,78 +284,107 @@ func (r *ownResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	}
 }
 
+type ownershipReason struct {
+	codeownersRule           *codeownerspb.Rule
+	recentContributionsCount int
+	reference                own.Reference
+}
+
 // computeCodeowners evaluates the codeowners file (if any) against given file (blob)
 // and returns resolvers for identified owners.
-func (r *ownResolver) computeCodeowners(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver) ([]*ownershipResolver, error) {
+func (r *ownResolver) computeCodeowners(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver) ([]ownershipReason, error) {
 	repo := blob.Repository()
 	repoID, repoName := repo.IDInt32(), repo.RepoName()
 	commitID := api.CommitID(blob.Commit().OID())
-	var ownerships []*ownershipResolver
-	rs, err := r.ownService().RulesetForRepo(ctx, repoName, repoID, commitID)
+	// Find ruleset which represents CODEOWNERS file at given revision.
+	ruleset, err := r.ownService().RulesetForRepo(ctx, repoName, repoID, commitID)
 	if err != nil {
 		return nil, err
 	}
 	var rule *codeownerspb.Rule
-	if rs != nil {
-		rule = rs.Match(blob.Path())
+	if ruleset != nil {
+		rule = ruleset.Match(blob.Path())
 	}
-	bag := own.EmptyBag()
-	ruleToRefs := make(map[*codeownerspb.Rule][]own.Reference, 0)
-	if rule != nil {
-		owners := rule.GetOwner()
-		externalRepo, err := repo.ExternalRepo(ctx)
+	// Compute repo context if possible to allow better unification of references.
+	var repoContext *own.RepoContext
+	if len(rule.GetOwner()) > 0 {
+		spec, err := repo.ExternalRepo(ctx)
+		// Best effort resolution. We still want to serve the reason if external service cannot be resolved here.
 		if err != nil {
-			return nil, err
-		}
-		// For each owner from CODEOWNERS file, we create a reference and put it into the
-		// bag.
-		for _, owner := range owners {
-			ref := own.Reference{
-				RepoContext: &own.RepoContext{
-					Name:         repoName,
-					CodeHostKind: externalRepo.ServiceType,
-				},
-				Handle: owner.Handle,
-				Email:  owner.Email,
-			}
-			bag.Add(ref)
-			if _, ok := ruleToRefs[rule]; !ok {
-				ruleToRefs[rule] = make([]own.Reference, 0)
-			}
-			ruleToRefs[rule] = append(ruleToRefs[rule], ref)
-		}
-	}
-	bag.Resolve(ctx, r.db)
-	for rule, refs := range ruleToRefs {
-		for _, ref := range refs {
-			resolvedOwner, found := bag.FindResolved(ref)
-			if !found {
-				if guess := ref.ResolutionGuess(); guess != nil {
-					resolvedOwner = guess
-				}
-			}
-			if resolvedOwner != nil {
-				res := &codeownersFileEntryResolver{
-					db:              r.db,
-					gitserverClient: r.gitserver,
-					source:          rs.GetSource(),
-					repo:            blob.Repository(),
-					matchLineNumber: rule.GetLineNumber(),
-				}
-				ownerships = append(ownerships, &ownershipResolver{
-					db:            r.db,
-					resolvedOwner: resolvedOwner,
-					reasons: []*ownershipReasonResolver{
-						{
-							res,
-						},
-					},
-				})
+			repoContext = &own.RepoContext{
+				Name:         repoName,
+				CodeHostKind: spec.ServiceType,
 			}
 		}
 	}
-
-	return ownerships, nil
+	// Return references
+	var ors []ownershipReason
+	for _, o := range rule.GetOwner() {
+		ors = append(ors, ownershipReason{
+			codeownersRule: rule,
+			reference: own.Reference{
+				RepoContext: repoContext,
+				Handle:      o.Handle,
+				Email:       o.Email,
+			},
+		})
+	}
+	return ors, nil
+	// bag := own.EmptyBag()
+	// ruleToRefs := make(map[*codeownerspb.Rule][]own.Reference, 0)
+	// if rule != nil {
+	// 	owners := rule.GetOwner()
+	// 	externalRepo, err := repo.ExternalRepo(ctx)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	// For each owner from CODEOWNERS file, we create a reference and put it into the
+	// 	// bag.
+	// 	for _, owner := range owners {
+	// 		ref := own.Reference{
+	// 			RepoContext: &own.RepoContext{
+	// 				Name:         repoName,
+	// 				CodeHostKind: externalRepo.ServiceType,
+	// 			},
+	// 			Handle: owner.Handle,
+	// 			Email:  owner.Email,
+	// 		}
+	// 		bag.Add(ref)
+	// 		if _, ok := ruleToRefs[rule]; !ok {
+	// 			ruleToRefs[rule] = make([]own.Reference, 0)
+	// 		}
+	// 		ruleToRefs[rule] = append(ruleToRefs[rule], ref)
+	// 	}
+	// }
+	// bag.Resolve(ctx, r.db)
+	// for rule, refs := range ruleToRefs {
+	// 	for _, ref := range refs {
+	// 		resolvedOwner, found := bag.FindResolved(ref)
+	// 		if !found {
+	// 			if guess := ref.ResolutionGuess(); guess != nil {
+	// 				resolvedOwner = guess
+	// 			}
+	// 		}
+	// 		if resolvedOwner != nil {
+	// 			res := &codeownersFileEntryResolver{
+	// 				db:              r.db,
+	// 				gitserverClient: r.gitserver,
+	// 				source:          rs.GetSource(),
+	// 				repo:            blob.Repository(),
+	// 				matchLineNumber: rule.GetLineNumber(),
+	// 			}
+	// 			ownerships = append(ownerships, &ownershipResolver{
+	// 				db:            r.db,
+	// 				resolvedOwner: resolvedOwner,
+	// 				reasons: []*ownershipReasonResolver{
+	// 					{
+	// 						res,
+	// 					},
+	// 				},
+	// 			})
+	// 		}
+	// 	}
+	// }
 }
 
 // ownershipConnection handles ordering and pagination of given set of ownerships.
@@ -595,7 +624,7 @@ func (g *recentContributorOwnershipSignal) Description() (string, error) {
 	return "Owner is associated because they have contributed to this file in the last 90 days.", nil
 }
 
-func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) (results []*ownershipResolver, err error) {
+func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) ([]ownershipReason, error) {
 	enabled, err := db.OwnSignalConfigurations().IsEnabled(ctx, owntypes.SignalRecentContributors)
 	if err != nil {
 		return nil, errors.Wrap(err, "IsEnabled")
@@ -609,33 +638,45 @@ func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, p
 		return nil, errors.Wrap(err, "FindRecentAuthors")
 	}
 
-	for _, author := range recentAuthors {
-		res := ownershipResolver{
-			db: db,
-			resolvedOwner: &codeowners.Person{
-				Handle: author.AuthorName,
-				Email:  author.AuthorEmail,
+	var ors []ownershipReason
+	for _, a := range recentAuthors {
+		ors = append(ors, ownershipReason{
+			recentContributionsCount: a.ContributionCount,
+			reference: own.Reference{
+				// Just use the email.
+				Email: a.AuthorEmail,
 			},
-			reasons: []*ownershipReasonResolver{
-				{
-					&recentContributorOwnershipSignal{},
-				},
-			},
-		}
-		user, err := db.Users().GetByVerifiedEmail(ctx, author.AuthorEmail)
-		if err == nil {
-			// if we don't get an error (meaning we can match) we will add it to the resolver, otherwise use the contributor data
-			em := author.AuthorEmail
-			res.resolvedOwner = &codeowners.Person{
-				User:         user,
-				Email:        em,
-				PrimaryEmail: &em,
-				Handle:       author.AuthorName,
-			}
-		}
-		results = append(results, &res)
+		})
 	}
-	return results, nil
+	return ors, nil
+
+	// for _, author := range recentAuthors {
+	// 	res := ownershipResolver{
+	// 		db: db,
+	// 		resolvedOwner: &codeowners.Person{
+	// 			Handle: author.AuthorName,
+	// 			Email:  author.AuthorEmail,
+	// 		},
+	// 		reasons: []*ownershipReasonResolver{
+	// 			{
+	// 				&recentContributorOwnershipSignal{},
+	// 			},
+	// 		},
+	// 	}
+	// 	user, err := db.Users().GetByVerifiedEmail(ctx, author.AuthorEmail)
+	// 	if err == nil {
+	// 		// if we don't get an error (meaning we can match) we will add it to the resolver, otherwise use the contributor data
+	// 		em := author.AuthorEmail
+	// 		res.resolvedOwner = &codeowners.Person{
+	// 			User:         user,
+	// 			Email:        em,
+	// 			PrimaryEmail: &em,
+	// 			Handle:       author.AuthorName,
+	// 		}
+	// 	}
+	// 	results = append(results, &res)
+	// }
+	// return ors, nil
 }
 
 type recentViewOwnershipSignal struct {
