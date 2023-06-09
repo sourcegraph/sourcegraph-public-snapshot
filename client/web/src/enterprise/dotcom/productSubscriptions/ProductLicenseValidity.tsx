@@ -4,7 +4,7 @@ import { mdiCheckCircle, mdiCloseCircle, mdiShieldRemove } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Icon, Label, Text } from '@sourcegraph/wildcard'
+import { Icon, Label } from '@sourcegraph/wildcard'
 
 import { ProductLicenseFields } from '../../../graphql-operations'
 import { isProductLicenseExpired } from '../../../productSubscription/helpers'
