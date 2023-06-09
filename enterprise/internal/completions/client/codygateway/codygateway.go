@@ -7,6 +7,9 @@ import (
 	"net/url"
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/openai"
@@ -102,6 +105,21 @@ func gatewayDoer(upstream httpcli.Doer, feature types.CompletionsFeature, gatewa
 		req.URL.Path = path
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 		req.Header.Set(codygateway.FeatureHeaderName, string(feature))
-		return upstream.Do(req)
+
+		resp, err := upstream.Do(req)
+
+		// If we get a repsonse, record Cody Gateway's x-trace response header,
+		// so that we can link up to an event on our end if needed.
+		if resp != nil && resp.Header != nil {
+			if span := trace.SpanFromContext(req.Context()); span.SpanContext().IsValid() {
+				// Would be cool if we can make an OTEL trace link instead, but
+				// adding a link after a span has started is not supported yet:
+				// https://github.com/open-telemetry/opentelemetry-specification/issues/454
+				span.SetAttributes(attribute.String("cody-gateway.x-trace", resp.Header.Get("X-Trace")))
+				span.SetAttributes(attribute.String("cody-gateway.x-trace-span", resp.Header.Get("X-Trace-Span")))
+			}
+		}
+
+		return resp, err
 	})
 }

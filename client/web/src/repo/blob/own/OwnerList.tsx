@@ -89,6 +89,9 @@ interface OwnerListProps {
     isDirectory?: boolean
     makeOwnerButton?: (userId: string | undefined) => JSX.Element
     makeOwnerError?: Error
+    repoID: string
+    filePath: string
+    refetch: any
 }
 
 export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
@@ -96,7 +99,12 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
     isDirectory = false,
     makeOwnerButton,
     makeOwnerError,
+    repoID,
+    filePath,
+    refetch,
 }) => {
+    const [removeOwnerError, setRemoveOwnerError] = React.useState<Error | undefined>(undefined)
+
     if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
@@ -106,6 +114,11 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                 {makeOwnerError && (
                     <div className={styles.contents}>
                         <ErrorAlert error={makeOwnerError} prefix="Error promoting an owner" className="mt-2" />
+                    </div>
+                )}
+                {removeOwnerError && (
+                    <div className={styles.contents}>
+                        <ErrorAlert error={removeOwnerError} prefix="Error promoting an owner" className="mt-2" />
                     </div>
                 )}
                 <table className={styles.table}>
@@ -135,14 +148,29 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                         reason.__typename === 'AssignedOwner'
                                 )
                             )
-                            .map((ownership, index) => (
+                            .map((ownership, index) => {
+                                const userId =
+                                    ownership.owner.__typename === 'Person' &&
+                                    ownership.owner.user?.__typename === 'User'
+                                        ? ownership.owner.user.id
+                                        : undefined
                                 // This list is not expected to change, so it's safe to use the index as a key.
-                                // eslint-disable-next-line react/no-array-index-key
-                                <React.Fragment key={index}>
-                                    {index > 0 && <tr className={styles.bordered} />}
-                                    <FileOwnershipEntry owner={ownership.owner} reasons={ownership.reasons} />
-                                </React.Fragment>
-                            ))}
+
+                                return (
+                                    <React.Fragment key={index}>
+                                        {index > 0 && <tr className={styles.bordered} />}
+                                        <FileOwnershipEntry
+                                            refetch={refetch}
+                                            owner={ownership.owner}
+                                            userID={userId}
+                                            repoID={repoID}
+                                            filePath={filePath}
+                                            reasons={ownership.reasons}
+                                            setRemoveOwnerError={setRemoveOwnerError}
+                                        />
+                                    </React.Fragment>
+                                )
+                            })}
                         {
                             /* Visually separate two sets with a horizontal rule (like subsequent owners are)
                              * if there is data in both owners and signals.
@@ -183,6 +211,11 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                             owner={ownership.owner}
                                             reasons={ownership.reasons}
                                             makeOwnerButton={makeOwnerButton?.(userId)}
+                                            userID={userId}
+                                            repoID={repoID}
+                                            filePath={filePath}
+                                            refetch={refetch}
+                                            setRemoveOwnerError={setRemoveOwnerError}
                                         />
                                     </React.Fragment>
                                 )

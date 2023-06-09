@@ -20,7 +20,6 @@ func rateLimit(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	cache limiter.RedisStore,
-	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
 	next http.Handler,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped("rateLimit", "rate limit handler")
@@ -35,7 +34,7 @@ func rateLimit(
 			return
 		}
 
-		l, ok := act.Limiter(logger, cache, feature, concurrencyLimitConfig)
+		l, ok := act.Limiter(logger, cache, feature)
 		if !ok {
 			response.JSONError(logger, w, http.StatusForbidden, errors.Newf("no access to feature %s", feature))
 			return
@@ -44,25 +43,29 @@ func rateLimit(
 		commit, err := l.TryAcquire(r.Context())
 		if err != nil {
 			limitedCause := "quota"
+			defer func() {
+				if loggerErr := eventLogger.LogEvent(
+					r.Context(),
+					events.Event{
+						Name:       codygateway.EventNameRateLimited,
+						Source:     act.Source.Name(),
+						Identifier: act.ID,
+						Metadata: map[string]any{
+							"error": err.Error(),
+							codygateway.CompletionsEventFeatureMetadataField: feature,
+							"cause": limitedCause,
+						},
+					},
+				); loggerErr != nil {
+					logger.Error("failed to log event", log.Error(loggerErr))
+				}
+			}()
+
 			var concurrencyLimitExceeded actor.ErrConcurrencyLimitExceeded
 			if errors.As(err, &concurrencyLimitExceeded) {
 				limitedCause = "concurrency"
-			}
-
-			if loggerErr := eventLogger.LogEvent(
-				r.Context(),
-				events.Event{
-					Name:       codygateway.EventNameRateLimited,
-					Source:     act.Source.Name(),
-					Identifier: act.ID,
-					Metadata: map[string]any{
-						"error": err.Error(),
-						codygateway.CompletionsEventFeatureMetadataField: feature,
-						"cause": limitedCause,
-					},
-				},
-			); loggerErr != nil {
-				logger.Error("failed to log event", log.Error(loggerErr))
+				concurrencyLimitExceeded.WriteResponse(w)
+				return
 			}
 
 			var rateLimitExceeded limiter.RateLimitExceededError
@@ -73,11 +76,6 @@ func rateLimit(
 
 			if errors.Is(err, limiter.NoAccessError{}) {
 				response.JSONError(logger, w, http.StatusForbidden, err)
-				return
-			}
-
-			if limitedCause == "concurrency" {
-				concurrencyLimitExceeded.WriteResponse(w)
 				return
 			}
 
