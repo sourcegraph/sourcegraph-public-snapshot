@@ -90,60 +90,108 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
 )
 
 const RepoEmbeddingJobExecutionInfo: FC<
-    Pick<RepoEmbeddingJobFields, 'state' | 'cancel' | 'finishedAt' | 'failureMessage' | 'queuedAt' | 'startedAt', 'filesScheduled', 'filesEmbedded', 'filesSkipped'>
-> = ({ state, cancel, finishedAt, queuedAt, startedAt, failureMessage }) => {
-    const [isPopoverOpen, setIsPopoverOpen] = useState(false)
-    return (
-        <>
-            {state === RepoEmbeddingJobState.COMPLETED && finishedAt && (
-                <small>
-                    Completed <Timestamp date={finishedAt} />
-                </small>
-            )}
-            {state === RepoEmbeddingJobState.CANCELED && finishedAt && (
-                <small>
-                    Stopped <Timestamp date={finishedAt} />
-                </small>
-            )}
-            {state === RepoEmbeddingJobState.QUEUED && (
-                <small>
-                    {cancel ? (
-                        'Cancelling ...'
-                    ) : (
-                        <>
-                            Queued <Timestamp date={queuedAt} />
-                        </>
-                    )}
-                </small>
-            )}
-            {state === RepoEmbeddingJobState.PROCESSING && startedAt && (
-                <small>
-                    {cancel ? (
-                        'Cancelling ...'
-                    ) : (
-                        <>
-                            Started processing <Timestamp date={startedAt} />
-                        </>
-                    )}
-                </small>
-            )}
-            {(state === RepoEmbeddingJobState.ERRORED || state === RepoEmbeddingJobState.FAILED) && failureMessage && (
-                <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
-                    <PopoverTrigger as={Button} variant="secondary" size="sm" aria-label="See errors">
-                        See errors
-                    </PopoverTrigger>
+    Pick<
+        RepoEmbeddingJobFields,
+        | 'state'
+        | 'cancel'
+        | 'finishedAt'
+        | 'failureMessage'
+        | 'queuedAt'
+        | 'startedAt'
+        | 'filesScheduled'
+        | 'filesEmbedded'
+        | 'filesSkipped'
+    >
+> = ({
+    state,
+    cancel,
+    finishedAt,
+    queuedAt,
+    startedAt,
+    failureMessage,
+    filesScheduled,
+    filesEmbedded,
+    filesSkipped,
+}) => {
+        const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+        const estimatedFinish = calculateEstimatedFinish(startedAt, filesScheduled, filesEmbedded, filesSkipped)
 
-                    <PopoverContent position={Position.right} className={styles.errorContent}>
-                        <Alert variant="danger" className={classNames('m-2', styles.alertOverflow)}>
-                            <H4>Error embedding repository:</H4>
-                            <div>{failureMessage}</div>
-                        </Alert>
-                    </PopoverContent>
-                    <PopoverTail size="sm" />
-                </Popover>
-            )}
-        </>
-    )
+        return (
+            <>
+                {state === RepoEmbeddingJobState.COMPLETED && finishedAt && (
+                    <small>
+                        Completed <Timestamp date={finishedAt} />
+                    </small>
+                )}
+                {state === RepoEmbeddingJobState.CANCELED && finishedAt && (
+                    <small>
+                        Stopped <Timestamp date={finishedAt} />
+                    </small>
+                )}
+                {state === RepoEmbeddingJobState.QUEUED && (
+                    <small>
+                        {cancel ? (
+                            'Cancelling ...'
+                        ) : (
+                            <>
+                                Queued <Timestamp date={queuedAt} />
+                            </>
+                        )}
+                    </small>
+                )}
+                {state === RepoEmbeddingJobState.PROCESSING && startedAt && (
+                    <small>
+                        {cancel ? (
+                            'Cancelling ...'
+                        ) : estimatedFinish ? (
+                            <>
+                                Expected to finish <Timestamp date={estimatedFinish} /> ({filesSkipped + filesEmbedded}/{filesScheduled} files)
+                            </>
+                        ) : (
+                            <>
+                                Started processing <Timestamp date={startedAt} />
+                            </>
+                        )}
+                    </small>
+                )}
+                {(state === RepoEmbeddingJobState.ERRORED || state === RepoEmbeddingJobState.FAILED) && failureMessage && (
+                    <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
+                        <PopoverTrigger as={Button} variant="secondary" size="sm" aria-label="See errors">
+                            See errors
+                        </PopoverTrigger>
+
+                        <PopoverContent position={Position.right} className={styles.errorContent}>
+                            <Alert variant="danger" className={classNames('m-2', styles.alertOverflow)}>
+                                <H4>Error embedding repository:</H4>
+                                <div>{failureMessage}</div>
+                            </Alert>
+                        </PopoverContent>
+                        <PopoverTail size="sm" />
+                    </Popover>
+                )}
+            </>
+        )
+    }
+
+function calculateEstimatedFinish(
+    startedAt: string | null,
+    filesScheduled: number,
+    filesEmbedded: number,
+    filesSkipped: number,
+    now?: number
+): Date | null {
+    const currentTime = now ?? Date.now()
+    if (!startedAt) {
+        return null
+    }
+    const startTime = Date.parse(startedAt)
+    if (filesScheduled === 0) {
+        return null
+    }
+    const proportionFinished = (filesEmbedded + filesSkipped) / filesScheduled
+    const timeElapsed = currentTime - startTime
+    const estimatedTotalTime = timeElapsed / proportionFinished
+    return new Date(startTime + estimatedTotalTime)
 }
 
 function getRepoEmbeddingJobStateBadgeVariant(state: RepoEmbeddingJobState): BadgeVariantType {
