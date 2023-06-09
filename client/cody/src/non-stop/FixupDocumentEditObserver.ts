@@ -38,8 +38,8 @@ function updateRanges(ranges: Range[], changes: TextChange[]): void {
 
 // Updates the range in an edit.
 function updateEdits(edits: Edit[], changes: TextChange[]): void {
-    for (let i = 0; i < edits.length; i++) {
-        edits[i].range = updateDiffRange(edits[i].range, changes)
+    for (const [i, edit] of edits.entries()) {
+        edits[i].range = updateDiffRange(edit.range, changes)
     }
 }
 

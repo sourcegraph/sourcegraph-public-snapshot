@@ -142,7 +142,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         }
         if (!diff?.clean) {
             // TODO: Schedule a re-spin for diffs with conflicts.
-            vscode.window.showWarningMessage('applying fixup with incomplete/conflict diff is not yet implemented')
+            void vscode.window.showWarningMessage('applying fixup with incomplete/conflict diff is not yet implemented')
             return undefined
         }
         return diff
@@ -161,7 +161,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             return
         }
 
-        await editor.revealRange(task.selectionRange)
+        editor.revealRange(task.selectionRange)
         const editOk = await editor.edit(editBuilder => {
             for (const edit of diff.edits) {
                 editBuilder.replace(
@@ -176,7 +176,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
 
         if (!editOk) {
             // TODO: Try to recover, for example by respinning
-            vscode.window.showWarningMessage('edit did not apply')
+            void vscode.window.showWarningMessage('edit did not apply')
             return
         }
 
@@ -184,7 +184,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         // TODO: Consider keeping tasks around to resurrect them if the user
         // hits undo.
         // TODO: See if we can discard a FixupFile now.
-        this.setTaskState(task, CodyTaskState.fixed)
+        await this.setTaskState(task, CodyTaskState.fixed)
     }
 
     // Applying fixups from tree item click
@@ -440,7 +440,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         )
     }
 
-    private async setTaskState(task: FixupTask, state: CodyTaskState): Promise<FixupTask | null> {
+    private setTaskState(task: FixupTask, state: CodyTaskState): Promise<FixupTask | null> {
         // TODO: Something is abusing this method to refresh code lenses. Find
         // the state 2->2 (and maybe more) callers, work out what they are
         // actually notifying, and just notify about that.
@@ -471,7 +471,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         console.log(task.id, 'current state', task.state)
         if (task.state === CodyTaskState.fixed) {
             this.discard(task.id)
-            return null
+            return Promise.resolve(null)
         }
         // Save states of the task
         this.codelenses.didUpdateTask(task)
@@ -479,7 +479,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         // creation.
         this.tasks.set(task.id, task)
         this.taskViewProvider.setTreeItem(task)
-        return task
+        return Promise.resolve(task)
     }
 
     private reset(): void {

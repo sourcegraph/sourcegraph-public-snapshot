@@ -70,7 +70,7 @@ export class FixupTask {
         void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
     }
 
-    public async apply(): Promise<void> {
+    public apply(): void {
         this.setState(CodyTaskState.applying)
         this.output(`Task #${this.id} is being applied...`)
     }

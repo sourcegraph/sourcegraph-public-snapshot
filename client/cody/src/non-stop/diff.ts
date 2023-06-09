@@ -262,7 +262,7 @@ export function computeDiff(original: string, a: string, b: string, bStart: Posi
     let clean = true
     let originalPos = bStart
     let mergedPos = bStart
-    let mergedText: string[] = []
+    const mergedText: string[] = []
     for (const chunk of chunks) {
         const originalEnd = updatedPosition(originalPos, chunk[2])
         if (chunk[1] === chunk[2] && chunk[0] !== chunk[1]) {
