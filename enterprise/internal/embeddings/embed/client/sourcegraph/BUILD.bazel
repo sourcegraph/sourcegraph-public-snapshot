@@ -9,6 +9,7 @@ go_library(
         "//enterprise/internal/codygateway",
         "//enterprise/internal/embeddings/embed/client",
         "//enterprise/internal/licensing",
+        "//internal/conf/deploy",
         "//internal/httpcli",
         "//lib/errors",
         "//schema",

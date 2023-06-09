@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -42,6 +43,10 @@ func getAccessToken(config *schema.SiteConfiguration) string {
 	// If an access token is configured, use it.
 	if config.Embeddings.AccessToken != "" {
 		return config.Embeddings.AccessToken
+	}
+	// App generates a token from the api token the user used to connect app to dotcom.
+	if deploy.IsApp() {
+		return licensing.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
 	}
 	// Otherwise, use the current license key to compute an access token.
 	return licensing.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)

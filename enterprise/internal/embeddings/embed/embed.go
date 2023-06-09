@@ -14,11 +14,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func NewEmbeddingsClient(siteConfig *schema.SiteConfiguration) (client.EmbeddingsClient, error) {
+	if deploy.IsApp() {
+		return newAppEmbeddingsClient(siteConfig)
+	}
+
 	c := siteConfig.Embeddings
 	if c == nil || !c.Enabled {
 		return nil, errors.New("embeddings are not configured or disabled")
@@ -35,6 +40,23 @@ func NewEmbeddingsClient(siteConfig *schema.SiteConfiguration) (client.Embedding
 	default:
 		return nil, errors.Newf("invalid provider %q", c.Provider)
 	}
+}
+
+func newAppEmbeddingsClient(siteConfig *schema.SiteConfiguration) (client.EmbeddingsClient, error) {
+	if siteConfig.App != nil && len(siteConfig.App.DotcomAuthToken) > 0 {
+		// Ensure that the embeddings config isn't nil because it is expected to exist
+		// App is the Cody app so if the user has a dotcom access token embeddings are on
+		embeddingsConfig := siteConfig.Embeddings
+		if embeddingsConfig == nil {
+			embeddingsConfig = &schema.Embeddings{}
+		}
+		tmpConfig := &schema.SiteConfiguration{
+			App:        siteConfig.App,
+			Embeddings: embeddingsConfig,
+		}
+		return sourcegraph.NewClient(tmpConfig), nil
+	}
+	return nil, errors.New("embeddings are not configured or disabled")
 }
 
 const (
