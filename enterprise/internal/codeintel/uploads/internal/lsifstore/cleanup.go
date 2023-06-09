@@ -94,13 +94,16 @@ func (s *store) DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int)
 		if err := tx.db.Exec(ctx, sqlf.Sprintf(deleteSCIPSymbolNamesQuery, pq.Array(bundleIDs), pq.Array(bundleIDs))); err != nil {
 			return err
 		}
-		// TODO - need to periodically delete abandoned ones as well :(
 		if err := tx.db.Exec(ctx, sqlf.Sprintf(deleteSCIPDocumentLookupSchemaVersionsQuery, pq.Array(bundleIDs))); err != nil {
 			return err
 		}
 		if err := tx.db.Exec(ctx, sqlf.Sprintf(deleteSCIPSymbolsSchemaVersionsQuery, pq.Array(bundleIDs))); err != nil {
 			return err
 		}
+
+		// TODO - need to periodically delete abandoned ones as well :(
+		// DELETE FROM codeintel_scip_symbols_schema_versions sv         WHERE NOT EXISTS (SELECT 1 FROM codeintel_scip_symbols s         WHERE s.upload_id = sv.upload_id);
+		// DELETE FROM codeintel_scip_document_lookup_schema_versions sv WHERE NOT EXISTS (SELECT 1 FROM codeintel_scip_document_lookup l WHERE l.upload_id = sv.upload_id);
 
 		if err := s.db.Exec(ctx, sqlf.Sprintf(deleteLastReconcileQuery, pq.Array(bundleIDs))); err != nil {
 			return err
