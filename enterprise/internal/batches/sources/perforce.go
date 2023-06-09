@@ -20,7 +20,7 @@ type PerforceSource struct {
 	gitServerClient gitserver.Client
 }
 
-func NewPerforceSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*PerforceSource, error) {
+func NewPerforceSource(ctx context.Context, svc *types.ExternalService, _ *httpcli.Factory) (*PerforceSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -34,11 +34,11 @@ func NewPerforceSource(ctx context.Context, svc *types.ExternalService, cf *http
 }
 
 // GitserverPushConfig returns an authenticated push config used for pushing commits to the code host.
-func (s PerforceSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+func (s PerforceSource) GitserverPushConfig(_ *types.Repo) (*protocol.PushConfig, error) {
 	// Return a PushConfig with a crafted URL that includes the Perforce scheme and the credentials
 	// The perforce scheme will tell `createCommitFromPatch` that this repo is a Perforce repo
 	// so it can handle it differently from Git repos.
-	// TODO: include the depot in the path component. Not sure where to get that from yet. It's not api.Repo.
+	// TODO: @peterguy include the depot in the path component. Not sure where to get that from yet. It's not api.Repo.
 	return &protocol.PushConfig{
 		RemoteURL: fmt.Sprintf("perforce://%s:%s@%s", s.server.P4User, s.server.P4Passwd, s.server.P4Port),
 	}, nil
@@ -47,13 +47,13 @@ func (s PerforceSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushCon
 // WithAuthenticator returns a copy of the original Source configured to use the
 // given authenticator, provided that authenticator type is supported by the
 // code host.
-func (s PerforceSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
+func (s PerforceSource) WithAuthenticator(_ auth.Authenticator) (ChangesetSource, error) {
 	return s, nil
 }
 
 // ValidateAuthenticator validates the currently set authenticator is usable.
 // Returns an error, when validating the Authenticator yielded an error.
-func (s PerforceSource) ValidateAuthenticator(ctx context.Context) error {
+func (s PerforceSource) ValidateAuthenticator(_ context.Context) error {
 	return nil
 }
 
@@ -63,7 +63,7 @@ func (s PerforceSource) ValidateAuthenticator(ctx context.Context) error {
 func (s PerforceSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 	cl, err := s.gitServerClient.P4GetChangelist(ctx, cs.ExternalID)
 	if err != nil {
-		errors.Wrap(err, "getting changelist")
+		return errors.Wrap(err, "getting changelist")
 	}
 	return errors.Wrap(s.setChangesetMetadata(&cl, cs), "setting perforce changeset metadata")
 }
@@ -76,7 +76,7 @@ func (s PerforceSource) CreateChangeset(ctx context.Context, cs *Changeset) (boo
 
 // CreateDraftChangeset creates the given changeset on the code host in draft mode.
 // Perforce does not support draft changelists
-func (s PerforceSource) CreateDraftChangeset(_ context.Context, cs *Changeset) (bool, error) {
+func (s PerforceSource) CreateDraftChangeset(_ context.Context, _ *Changeset) (bool, error) {
 	return false, errors.New("not implemented")
 }
 
@@ -89,7 +89,7 @@ func (s PerforceSource) setChangesetMetadata(cl *protocol.PerforceChangelist, cs
 }
 
 // UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
-func (s PerforceSource) UndraftChangeset(ctx context.Context, cs *Changeset) error {
+func (s PerforceSource) UndraftChangeset(_ context.Context, _ *Changeset) error {
 	// TODO: @peterguy implement this function?
 	// not sure what it means in Perforce - submit the changelist?
 	return errors.New("not implemented")
@@ -98,30 +98,30 @@ func (s PerforceSource) UndraftChangeset(ctx context.Context, cs *Changeset) err
 // CloseChangeset will close the Changeset on the source, where "close"
 // means the appropriate final state on the codehost.
 // deleted on Perforce, maybe?
-func (s PerforceSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
+func (s PerforceSource) CloseChangeset(_ context.Context, _ *Changeset) error {
 	// TODO: @peterguy implement this function
 	// delete changelist?
 	return errors.New("not implemented")
 }
 
 // UpdateChangeset can update Changesets.
-func (s PerforceSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
-	// TODO: implement this function
+func (s PerforceSource) UpdateChangeset(_ context.Context, _ *Changeset) error {
+	// TODO: @peterguy implement this function
 	// not sure what this means for Perforce
 	return errors.New("not implemented")
 }
 
 // ReopenChangeset will reopen the Changeset on the source, if it's closed.
 // If not, it's a noop.
-func (s PerforceSource) ReopenChangeset(ctx context.Context, cs *Changeset) error {
-	// TODO: implement function
+func (s PerforceSource) ReopenChangeset(_ context.Context, _ *Changeset) error {
+	// TODO: @peterguy implement function
 	// noop for Perforce?
 	return errors.New("not implemented")
 }
 
 // CreateComment posts a comment on the Changeset.
-func (s PerforceSource) CreateComment(ctx context.Context, cs *Changeset, comment string) error {
-	// TODO: implement function
+func (s PerforceSource) CreateComment(_ context.Context, _ *Changeset, _ string) error {
+	// TODO: @peterguy implement function
 	// comment on changelist?
 	return errors.New("not implemented")
 }
@@ -131,8 +131,8 @@ func (s PerforceSource) CreateComment(ctx context.Context, cs *Changeset, commen
 // must attempt a squash merge. Otherwise, it is expected to perform a regular
 // merge. If the changeset cannot be merged, because it is in an unmergeable
 // state, ChangesetNotMergeableError must be returned.
-func (s PerforceSource) MergeChangeset(ctx context.Context, cs *Changeset, squash bool) error {
-	// TODO: implement function
+func (s PerforceSource) MergeChangeset(_ context.Context, _ *Changeset, _ bool) error {
+	// TODO: @peterguy implement function
 	// submit CL? Or no-op because we want to keep CLs pending and let the Perforce users manage them in other tools?
 	return errors.New("not implemented")
 }

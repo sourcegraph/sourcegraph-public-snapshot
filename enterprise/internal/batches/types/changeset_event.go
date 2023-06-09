@@ -8,8 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
-
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -214,11 +212,6 @@ func (e *ChangesetEvent) ReviewAuthor() string {
 		return meta.PullRequest.Reviewers[len(meta.PullRequest.Reviewers)-1].UniqueName
 	case *azuredevops.PullRequestUpdatedEvent:
 		return meta.PullRequest.CreatedBy.UniqueName
-
-	// TODO: review choices here
-	case *perforce.ChangelistEvent:
-		return meta.Changelist.CreatedBy.UniqueName
-
 	default:
 		return ""
 	}
@@ -393,10 +386,6 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 	case *azuredevops.PullRequestRejectedEvent:
 		t = ev.CreatedDate
 	case *azuredevops.PullRequestMergedEvent:
-		t = ev.CreatedDate
-
-	// TODO: review choices here
-	case *perforce.ChangelistEvent:
 		t = ev.CreatedDate
 	}
 
@@ -941,27 +930,6 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) error {
 	case *azuredevops.PullRequestRejectedEvent:
 		o := o.Metadata.(*azuredevops.PullRequestRejectedEvent)
 		*e = *o
-
-	// TODO: review and remove/fix - BCC'd from ADO
-	case *perforce.ChangelistUpdatedEvent:
-		o := o.Metadata.(*perforce.ChangelistUpdatedEvent)
-		*e = *o
-	case *perforce.ChangelistSubmittedEvent:
-		o := o.Metadata.(*perforce.ChangelistSubmittedEvent)
-		*e = *o
-	case *perforce.ChangelistApprovedEvent:
-		o := o.Metadata.(*perforce.ChangelistApprovedEvent)
-		*e = *o
-	case *perforce.ChangelistApprovedWithSuggestionsEvent:
-		o := o.Metadata.(*perforce.ChangelistApprovedWithSuggestionsEvent)
-		*e = *o
-	case *perforce.ChangelistWaitingForAuthorEvent:
-		o := o.Metadata.(*perforce.ChangelistWaitingForAuthorEvent)
-		*e = *o
-	case *perforce.ChangelistRejectedEvent:
-		o := o.Metadata.(*perforce.ChangelistRejectedEvent)
-		*e = *o
-
 	default:
 		return errors.Errorf("unknown changeset event metadata %T", e)
 	}
