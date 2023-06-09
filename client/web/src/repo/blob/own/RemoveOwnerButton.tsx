@@ -1,6 +1,5 @@
 import React from 'react'
 
-import { MutationFunctionOptions } from '@apollo/client'
 import { mdiDelete, mdiLoading } from '@mdi/js'
 
 import { ErrorLike, asError } from '@sourcegraph/common'
