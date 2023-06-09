@@ -91,7 +91,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, hook stor
 
 	toVersion, ok := oobmigration.NewVersionFromString(version.Version())
 	if !ok {
-		obsvCtx.Logger.Warn("unexpected stirng for desired instance schema version, skipping auto-upgrade", log.String("version", version.Version()))
+		obsvCtx.Logger.Warn("unexpected string for desired instance schema version, skipping auto-upgrade", log.String("version", version.Version()))
 		return nil
 	}
 
@@ -99,45 +99,21 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, hook stor
 		return errors.Wrap(err, "autoupgradestore.EnsureUpgradeTable")
 	}
 
-	// try to claim
-	for {
-		obsvCtx.Logger.Info("attempting to claim autoupgrade lock")
-
-		currentVersionStr, _, err := upgradestore.GetServiceVersion(ctx)
-		if err != nil {
-			return errors.Wrap(err, "autoupgradestore.GetServiceVersion")
-		}
-
-		currentVersion, ok = oobmigration.NewVersionFromString(currentVersionStr)
-		if !ok {
-			return errors.Newf("unexpected string for current instance schema version: %q", currentVersion)
-		}
-
-		if cmp := oobmigration.CompareVersions(currentVersion, toVersion); cmp == oobmigration.VersionOrderAfter || cmp == oobmigration.VersionOrderEqual {
-			obsvCtx.Logger.Info("installation is up-to-date, nothing to do!")
-			return nil
-		}
-
-		claimed, err := upgradestore.ClaimAutoUpgrade(ctx, currentVersionStr, version.Version())
-		if err != nil {
-			return errors.Wrap(err, "autoupgradstore.ClaimAutoUpgrade")
-		}
-
-		if claimed {
-			defer func() {
-				ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-				defer cancel()
-				if err := upgradestore.SetUpgradeStatus(ctx, success); err != nil {
-					obsvCtx.Logger.Error("failed to set auto-upgrade status", log.Error(err))
-				}
-			}()
-			break
-		}
-
-		obsvCtx.Logger.Warn("unable to claim autoupgrade lock, sleeping...")
-
-		time.Sleep(time.Second * 10)
+	stillNeedsUpgrade, err := claimAutoUpgradeLock(ctx, obsvCtx, upgradestore, toVersion)
+	if err != nil {
+		return errors.Wrap(err, "claimAutoUpgradeLock")
 	}
+	if !stillNeedsUpgrade {
+		return nil
+	}
+
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
+		if err := upgradestore.SetUpgradeStatus(ctx, success); err != nil {
+			obsvCtx.Logger.Error("failed to set auto-upgrade status", log.Error(err))
+		}
+	}()
 
 	if err := runMigration(ctx, obsvCtx, currentVersion, toVersion, db, hook); err != nil {
 		return errors.Wrap(err, "error during auto-upgrade")
@@ -274,6 +250,46 @@ func serveInternalServer(obsvCtx *observation.Context) (context.CancelFunc, erro
 	})
 
 	return confServer.Stop, nil
+}
+
+type UpgradeStore interface {
+	GetServiceVersion(ctx context.Context) (string, bool, error)
+	ClaimAutoUpgrade(ctx context.Context, from, to string) (claimed bool, err error)
+}
+
+func claimAutoUpgradeLock(ctx context.Context, obsvCtx *observation.Context, upgradestore UpgradeStore, toVersion oobmigration.Version) (stillNeedsUpgrade bool, err error) {
+	// try to claim
+	for {
+		obsvCtx.Logger.Info("attempting to claim autoupgrade lock")
+
+		currentVersionStr, _, err := upgradestore.GetServiceVersion(ctx)
+		if err != nil {
+			return false, errors.Wrap(err, "autoupgradestore.GetServiceVersion")
+		}
+
+		currentVersion, ok := oobmigration.NewVersionFromString(currentVersionStr)
+		if !ok {
+			return false, errors.Newf("unexpected string for current instance schema version: %q", currentVersion)
+		}
+
+		if cmp := oobmigration.CompareVersions(currentVersion, toVersion); cmp == oobmigration.VersionOrderAfter || cmp == oobmigration.VersionOrderEqual {
+			obsvCtx.Logger.Info("installation is up-to-date, nothing to do!")
+			return false, nil
+		}
+
+		claimed, err := upgradestore.ClaimAutoUpgrade(ctx, currentVersionStr, version.Version())
+		if err != nil {
+			return false, errors.Wrap(err, "autoupgradstore.ClaimAutoUpgrade")
+		}
+
+		if claimed {
+			return true, nil
+		}
+
+		obsvCtx.Logger.Warn("unable to claim autoupgrade lock, sleeping...")
+
+		time.Sleep(time.Second * 10)
+	}
 }
 
 func serveExternalServer(db database.DB) (context.CancelFunc, error) {
