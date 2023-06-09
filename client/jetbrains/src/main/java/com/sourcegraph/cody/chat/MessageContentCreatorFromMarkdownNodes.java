@@ -85,6 +85,11 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   }
 
   @Override
+  public void visit(OrderedList orderedList) {
+    addContentOfNodeAsHtml(htmlRenderer.render(orderedList));
+  }
+
+  @Override
   public void visit(Emphasis emphasis) {
     addContentOfNodeAsHtml(htmlRenderer.render(emphasis));
     super.visit(emphasis);
@@ -159,12 +164,6 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   public void visit(ListItem listItem) {
     addContentOfNodeAsHtml(htmlRenderer.render(listItem));
     super.visit(listItem);
-  }
-
-  @Override
-  public void visit(OrderedList orderedList) {
-    addContentOfNodeAsHtml(htmlRenderer.render(orderedList));
-    super.visit(orderedList);
   }
 
   @Override

@@ -35,22 +35,26 @@ import javax.swing.plaf.basic.BasicTextAreaUI;
 import org.jetbrains.annotations.NotNull;
 
 class CodyToolWindowContent implements UpdatableChat {
+  private static final int CHAT_TAB_INDEX = 0;
+  private static final int RECIPES_TAB_INDEX = 1;
   private final @NotNull JBTabbedPane tabbedPane = new JBTabbedPane();
   private final @NotNull JPanel messagesPanel = new JPanel();
   private final @NotNull JBTextArea promptInput;
   private final @NotNull JButton sendButton;
+  private final @NotNull Project project;
   private boolean needScrollingDown = true;
 
   public CodyToolWindowContent(@NotNull Project project) {
+    this.project = project;
     // Tabs
     @NotNull JPanel contentPanel = new JPanel();
-    tabbedPane.insertTab("Chat", null, contentPanel, null, 0);
+    tabbedPane.insertTab("Chat", null, contentPanel, null, CHAT_TAB_INDEX);
     @NotNull JPanel recipesPanel = new JPanel(new GridLayout(0, 1));
     recipesPanel.setLayout(new BoxLayout(recipesPanel, BoxLayout.Y_AXIS));
-    tabbedPane.insertTab("Recipes", null, recipesPanel, null, 1);
+    tabbedPane.insertTab("Recipes", null, recipesPanel, null, RECIPES_TAB_INDEX);
 
     // Recipes panel
-    RecipeRunner recipeRunner = new RecipeRunner(project, this);
+    RecipeRunner recipeRunner = new RecipeRunner(this.project, this);
     JButton explainCodeDetailedButton = createWideButton("Explain selected code (detailed)");
     explainCodeDetailedButton.addActionListener(e -> recipeRunner.runExplainCodeDetailed());
     JButton explainCodeHighLevelButton = createWideButton("Explain selected code (high level)");
@@ -107,8 +111,8 @@ class CodyToolWindowContent implements UpdatableChat {
     JPanel controlsPanel = new JPanel();
     controlsPanel.setLayout(new BorderLayout());
     controlsPanel.setBorder(new EmptyBorder(JBUI.insets(14)));
-    sendButton = createSendButton(project);
-    promptInput = createPromptInput(project);
+    sendButton = createSendButton(this.project);
+    promptInput = createPromptInput(this.project);
 
     JPanel messagePanel = new JPanel(new BorderLayout());
     messagePanel.add(promptInput, BorderLayout.CENTER);
@@ -140,7 +144,7 @@ class CodyToolWindowContent implements UpdatableChat {
   private void addWelcomeMessage() {
     var welcomeText =
         "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.";
-    addMessage(ChatMessage.createAssistantMessage(welcomeText));
+    addMessageToChat(ChatMessage.createAssistantMessage(welcomeText));
   }
 
   @NotNull
@@ -176,7 +180,7 @@ class CodyToolWindowContent implements UpdatableChat {
     return promptInput;
   }
 
-  public synchronized void addMessage(@NotNull ChatMessage message) {
+  public synchronized void addMessageToChat(@NotNull ChatMessage message) {
     ApplicationManager.getApplication()
         .invokeLater(
             () -> {
@@ -200,6 +204,17 @@ class CodyToolWindowContent implements UpdatableChat {
                         messagesPanel.repaint();
                       });
             });
+  }
+
+  @Override
+  public void activateChatTab() {
+    this.tabbedPane.setSelectedIndex(CHAT_TAB_INDEX);
+  }
+
+  @Override
+  public void respondToMessage(@NotNull ChatMessage message) {
+    activateChatTab();
+    sendMessage(this.project, message.getDisplayText());
   }
 
   public synchronized void updateLastMessage(@NotNull ChatMessage message) {
@@ -239,6 +254,11 @@ class CodyToolWindowContent implements UpdatableChat {
   }
 
   private void sendMessage(@NotNull Project project) {
+    String messageText = promptInput.getText();
+    sendMessage(project, messageText);
+  }
+
+  private void sendMessage(@NotNull Project project, String messageText) {
     if (!sendButton.isEnabled()) return;
     startMessageProcessing();
     // Build message
@@ -255,8 +275,8 @@ class CodyToolWindowContent implements UpdatableChat {
     var chat = new Chat("", instanceUrl, accessToken != null ? accessToken : "");
     ArrayList<String> contextFiles =
         EditorContextGetter.getEditorContext(project).getCurrentFileContentAsArrayList();
-    ChatMessage humanMessage = ChatMessage.createHumanMessage(promptInput.getText(), contextFiles);
-    addMessage(humanMessage);
+    ChatMessage humanMessage = ChatMessage.createHumanMessage(messageText, contextFiles);
+    addMessageToChat(humanMessage);
 
     // Get assistant message
     // Note: A separate thread is needed because it's a long-running task. If we did the back-end
