@@ -134,7 +134,7 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 				Interval: 24 * time.Hour,
 			},
 			noCommit: true, // error scenario
-			wantErr:  autogold.Expect("you exceeded the rate limit for completions. Current usage: 10 out of 10 requests. Retry after 2000-01-01 00:01:00 +0000 UTC"),
+			wantErr:  autogold.Expect("rate limit exceeded"),
 			wantStore: autogold.Expect(MockRedisStore{"foobar": MockRedisEntry{
 				Value: 10,
 				TTL:   60,

@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestNewRateLimitWithPercentageConcurrency(t *testing.T) {
@@ -166,7 +167,7 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 				featureLimiter: featureLimiter,
 				nowFunc:        nowFunc,
 			},
-			wantErr: autogold.Expect(`you exceeded the concurrency limit of 2 requests for "code_completions". Retry after 2000-01-01 00:00:10 +0000 UTC`),
+			wantErr: autogold.Expect(`"code_completions": concurrency limit exceeded`),
 			wantStore: autogold.Expect(limiter.MockRedisStore{
 				"foobar": limiter.MockRedisEntry{Value: 2, TTL: 10},
 			}),
@@ -186,4 +187,12 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAsErrConcurrencyLimitExceeded(t *testing.T) {
+	var concurrencyLimitExceeded ErrConcurrencyLimitExceeded
+	var err error
+	err = ErrConcurrencyLimitExceeded{}
+	assert.True(t, errors.As(err, &concurrencyLimitExceeded))
+	assert.True(t, errors.As(errors.Wrap(err, "foo"), &concurrencyLimitExceeded))
 }
