@@ -366,6 +366,7 @@ ts_project(
         "src/components/gitHubApps/GitHubAppPage.tsx",
         "src/components/gitHubApps/GitHubAppSelector.tsx",
         "src/components/gitHubApps/GitHubAppsPage.tsx",
+        "src/components/gitHubApps/RemoveGitHubAppModal.tsx",
         "src/components/gitHubApps/backend.ts",
         "src/components/shared.tsx",
         "src/components/time/Duration.tsx",
