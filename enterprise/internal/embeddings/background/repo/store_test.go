@@ -238,34 +238,34 @@ func TestGetEmbeddableReposLimit(t *testing.T) {
 	require.NoError(t, err)
 
 	cases := []struct {
-		globalPolicyMatchLimit int
-		wantMatches            int
+		policyRepositoryMatchLimit int
+		wantMatches                int
 	}{
 		{
-			globalPolicyMatchLimit: -1, // unlimited
-			wantMatches:            2,
+			policyRepositoryMatchLimit: -1, // unlimited
+			wantMatches:                2,
 		},
 		{
-			globalPolicyMatchLimit: 0,
-			wantMatches:            0,
+			policyRepositoryMatchLimit: 0,
+			wantMatches:                0,
 		},
 		{
-			globalPolicyMatchLimit: 1,
-			wantMatches:            1,
+			policyRepositoryMatchLimit: 1,
+			wantMatches:                1,
 		},
 		{
-			globalPolicyMatchLimit: 2,
-			wantMatches:            2,
+			policyRepositoryMatchLimit: 2,
+			wantMatches:                2,
 		},
 		{
-			globalPolicyMatchLimit: 3,
-			wantMatches:            2,
+			policyRepositoryMatchLimit: 3,
+			wantMatches:                2,
 		},
 	}
 
 	for _, tt := range cases {
-		t.Run(fmt.Sprintf("globalPolicyMatchLimit=%d", tt.globalPolicyMatchLimit), func(t *testing.T) {
-			repos, err := store.GetEmbeddableRepos(ctx, EmbeddableRepoOpts{MinimumInterval: 1 * time.Hour, PolicyRepositoryMatchLimit: tt.globalPolicyMatchLimit})
+		t.Run(fmt.Sprintf("policyRepositoryMatchLimit=%d", tt.policyRepositoryMatchLimit), func(t *testing.T) {
+			repos, err := store.GetEmbeddableRepos(ctx, EmbeddableRepoOpts{MinimumInterval: 1 * time.Hour, PolicyRepositoryMatchLimit: tt.policyRepositoryMatchLimit})
 			require.NoError(t, err)
 			require.Equal(t, tt.wantMatches, len(repos))
 		})
