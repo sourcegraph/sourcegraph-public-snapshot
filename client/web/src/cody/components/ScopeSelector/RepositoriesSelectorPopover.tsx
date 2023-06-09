@@ -249,8 +249,11 @@ export const RepositoriesSelectorPopover: React.FC<{
                                         <div className="d-flex flex-column">
                                             <Text
                                                 className={classNames(
-                                                    'mt-1 mb-0 px-2 py-1 text-muted d-flex justify-content-between',
-                                                    styles.subHeader
+                                                    'mb-0 px-2 py-1 text-muted d-flex justify-content-between',
+                                                    styles.subHeader,
+                                                    {
+                                                        'mt-1': inferredRepository || inferredFilePath,
+                                                    }
                                                 )}
                                             >
                                                 <span className="small">
@@ -318,7 +321,9 @@ export const RepositoriesSelectorPopover: React.FC<{
                             spellCheck="false"
                             placeholder={
                                 additionalRepositoriesLeft
-                                    ? 'Add additional repositories...'
+                                    ? inferredRepository
+                                        ? 'Add additional repositories...'
+                                        : 'Add repositories...'
                                     : 'Maximum additional repositories added'
                             }
                             variant="small"
