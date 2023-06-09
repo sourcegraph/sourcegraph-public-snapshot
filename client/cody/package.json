@@ -132,8 +132,8 @@
           },
           {
             "id": "learn-more",
-            "title": "Learn More",
-            "description": "📖 Dive deeper into Cody by reading our [full documentation](https://docs.sourcegraph.com/cody).\n🎨 Discover more features by searching for \"Cody\" in the [Command Palette](command:workbench.action.showCommands).\n🗒️ Find out how Cody is improving by taking a look at the [Changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/cody/CHANGELOG.md).",
+            "title": "Learn More & Feedback",
+            "description": "📖 Dive deeper into Cody by reading our [full documentation](https://docs.sourcegraph.com/cody).\n🎨 Discover more features by searching for \"Cody\" in the [Command Palette](command:workbench.action.showCommands).\n🗒️ Find out how Cody is improving by taking a look at the [Changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/cody/CHANGELOG.md).\n💬 Bugs, ideas or feedback? Post a message on our [GitHub Discussions](https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode).",
             "media": {
               "markdown": "walkthroughs/learn-more.md"
             }
