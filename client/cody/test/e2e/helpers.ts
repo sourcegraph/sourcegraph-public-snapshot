@@ -81,10 +81,10 @@ export const test = base
 
             await app.close()
 
-            // Delete the recorded video if the test passes
-            if (testInfo.status === 'passed') {
-                rmdirSync(videoDirectory, { recursive: true })
-            }
+            // // Delete the recorded video if the test passes
+            // if (testInfo.status === 'passed') {
+            //     rmdirSync(videoDirectory, { recursive: true })
+            // }
 
             rmdirSync(userDataDirectory, { recursive: true })
             rmdirSync(extensionsDirectory, { recursive: true })
