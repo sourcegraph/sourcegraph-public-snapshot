@@ -115,7 +115,6 @@ func newActor(source *Source, cacheKey string, user dotcom.DotcomUserState) *act
 		Source:        source,
 	}
 
-
 	if rl := user.CodyGatewayAccess.ChatCompletionsRateLimit; rl != nil {
 		a.RateLimits[codygateway.FeatureChatCompletions] = actor.NewRateLimitWithPercentageConcurrency(
 			rl.Limit,
