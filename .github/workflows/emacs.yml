@@ -5,7 +5,7 @@ on:
       - "**.el"
 
 jobs:
-  test:
+  verify:
     defaults:
       run:
         working-directory: client/emacs/lsp-cody
@@ -29,3 +29,5 @@ jobs:
         run: eask package
       - name: Install
         run: eask install
+      - name: Run Tests
+        run: eask test buttercup
