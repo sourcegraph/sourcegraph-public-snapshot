@@ -222,6 +222,9 @@ export interface Edit {
 }
 
 export interface Diff {
+    bufferText: string
+    mergedText: string | undefined
+    // TODO: We can use the presence of mergedText to indicate clean
     clean: boolean
     conflicts: Range[]
     edits: Edit[]
@@ -248,6 +251,9 @@ function updatedPosition(position: Position, text: string): Position {
 // - Whether the diff can be applied without conflicts.
 // - A set of insertions and deletions to apply in b.
 // - A set of ranges to highlight in the merged text, explaining edits in a.
+// "a" is the text produced by Cody, which is treated as "foreign".
+// "b" is the text produced by the human (perhaps applying Cody), which is
+// treated as known.
 export function computeDiff(original: string, a: string, b: string, bStart: Position): Diff {
     const chunks = computeChunks(original, a, b)
     const edits = []
@@ -256,11 +262,11 @@ export function computeDiff(original: string, a: string, b: string, bStart: Posi
     let clean = true
     let originalPos = bStart
     let mergedPos = bStart
+    const mergedText: string[] = []
     for (const chunk of chunks) {
         const originalEnd = updatedPosition(originalPos, chunk[2])
         if (chunk[1] === chunk[2] && chunk[0] !== chunk[1]) {
             // Changed by robot
-            // TODO, do we need to treat deletions differently to replacements to insertions?
             edits.push({
                 kind: 'insert',
                 text: chunk[0],
@@ -269,6 +275,7 @@ export function computeDiff(original: string, a: string, b: string, bStart: Posi
                     end: originalEnd,
                 },
             })
+            mergedText.push(chunk[0])
             const mergedEnd = updatedPosition(mergedPos, chunk[0])
             if (clean) {
                 postEditHighlights.push({ start: mergedPos, end: mergedEnd })
@@ -277,9 +284,11 @@ export function computeDiff(original: string, a: string, b: string, bStart: Posi
         } else if (chunk[1] === chunk[0] && chunk[1] !== chunk[2]) {
             // Changed by human
             mergedPos = updatedPosition(mergedPos, chunk[2])
+            mergedText.push(chunk[2])
         } else if (chunk[0] === chunk[2]) {
             // Changed by both, to the same thing
             mergedPos = updatedPosition(mergedPos, chunk[2])
+            mergedText.push(chunk[2])
         } else {
             // Conflict! chunk[0]/chunk[2]`
             conflicts.push({ start: originalPos, end: originalEnd })
@@ -289,6 +298,8 @@ export function computeDiff(original: string, a: string, b: string, bStart: Posi
         originalPos = originalEnd
     }
     return {
+        bufferText: b,
+        mergedText: clean ? mergedText.join('') : undefined,
         clean,
         conflicts,
         edits,

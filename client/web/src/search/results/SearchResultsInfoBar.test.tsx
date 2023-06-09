@@ -28,8 +28,6 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     setSidebarCollapsed: noop,
     sidebarCollapsed: false,
     isSourcegraphDotCom: true,
-    isRankingEnabled: true,
-    setRankingEnabled: noop,
     options: {
         version: 'V3',
         patternType: SearchPatternType.standard,
@@ -53,8 +51,6 @@ describe('SearchResultsInfoBar', () => {
             renderSearchResultsInfoBar({
                 query: 'foo type:diff',
                 enableCodeMonitoring: false,
-                isRankingEnabled: true,
-                setRankingEnabled: noop,
             }).asFragment()
         ).toMatchSnapshot()
     })

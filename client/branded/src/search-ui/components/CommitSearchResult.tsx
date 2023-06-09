@@ -36,13 +36,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
 }) => {
     const title = (
         <div className={styles.title}>
-            <span
-                className={classNames(
-                    'test-search-result-label flex-grow-1',
-                    styles.titleInner,
-                    styles.mutedRepoFileLink
-                )}
-            >
+            <span className={classNames('test-search-result-label flex-grow-1', styles.titleInner)}>
                 <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
                 <span aria-hidden={true}> ›</span> <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
                 <span aria-hidden={true}>{': '}</span>
@@ -78,6 +72,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
             repoStars={result.repoStars}
             className={containerClassName}
             as={as}
+            repoLastFetched={result.repoLastFetched}
         >
             <CommitSearchResultMatch
                 key={result.url}

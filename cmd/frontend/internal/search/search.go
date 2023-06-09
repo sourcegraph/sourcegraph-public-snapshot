@@ -46,7 +46,7 @@ func StreamHandler(db database.DB, enterpriseJobs jobutil.EnterpriseJobs) http.H
 	return &streamHandler{
 		logger:              logger,
 		db:                  db,
-		searchClient:        client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), search.SearcherGRPCConnectionCache(), enterpriseJobs),
+		searchClient:        client.New(logger, db, enterpriseJobs),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
 	}
@@ -677,7 +677,9 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 
 	repoMetadata, err := getEventRepoMetadata(h.ctx, h.db, event)
 	if err != nil {
-		h.logger.Error("failed to get repo metadata", log.Error(err))
+		if !errors.IsContextCanceled(err) {
+			h.logger.Error("failed to get repo metadata", log.Error(err))
+		}
 		return
 	}
 

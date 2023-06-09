@@ -12,6 +12,7 @@ import { Optional } from 'utility-types'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
+import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
 import { asError, ErrorLike, isErrorLike, basename } from '@sourcegraph/common'
 import {
     createActiveSpan,
@@ -44,6 +45,8 @@ import {
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeIntelligenceProps } from '../../codeintel'
+import { FileContentEditor } from '../../cody/components/FileContentEditor'
+import { useCodySidebar } from '../../cody/sidebar/Provider'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
@@ -339,6 +342,19 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                 ? 'rendered'
                 : 'code'
     }
+
+    const { setEditorScope } = useCodySidebar()
+
+    useEffect(() => {
+        if (!isSearchNotebook && formattedBlobInfoOrError?.richHTML && renderMode === 'rendered') {
+            setEditorScope(new FileContentEditor(formattedBlobInfoOrError))
+        }
+        return () => {
+            if (!isSearchNotebook && formattedBlobInfoOrError?.richHTML && renderMode === 'rendered') {
+                setEditorScope(new NoopEditor())
+            }
+        }
+    }, [isSearchNotebook, formattedBlobInfoOrError, renderMode, setEditorScope])
 
     // Always render these to avoid UI jitter during loading when switching to a new file.
     const alwaysRender = (

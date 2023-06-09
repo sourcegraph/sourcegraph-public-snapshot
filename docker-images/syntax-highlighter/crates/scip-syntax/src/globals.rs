@@ -131,7 +131,6 @@ pub fn parse_tree<'a>(
     let mut local_ranges = BitVec::<u8, Msb0>::repeat(false, source_bytes.len());
 
     let matches = cursor.matches(&config.query, root_node, source_bytes);
-
     for m in matches {
         let mut node = None;
         let mut enclosing_node = None;
@@ -185,11 +184,36 @@ pub fn parse_tree<'a>(
                         children: vec![],
                         descriptors,
                     }),
-                    None => globals.push(Global {
-                        range: node.into(),
-                        enclosing: enclosing_node.map(|n| n.into()),
-                        descriptors,
-                    }),
+                    None => {
+                        let (last, rest) = match descriptors.split_last() {
+                            Some(res) => res,
+                            None => continue,
+                        };
+
+                        match config.transform(m.pattern_index, last) {
+                            Some(transformed) => {
+                                for transform in transformed {
+                                    globals.push(Global {
+                                        range: node.into(),
+                                        enclosing: enclosing_node.map(|n| n.into()),
+                                        descriptors: {
+                                            let mut descriptors = rest
+                                                .iter()
+                                                .map(|d| (*d).clone())
+                                                .collect::<Vec<_>>();
+                                            descriptors.push(transform);
+                                            descriptors
+                                        },
+                                    });
+                                }
+                            }
+                            None => globals.push(Global {
+                                range: node.into(),
+                                enclosing: enclosing_node.map(|n| n.into()),
+                                descriptors,
+                            }),
+                        }
+                    }
                 }
             }
             None => {
@@ -262,8 +286,8 @@ mod test {
 
     #[test]
     fn test_can_parse_rust_tree() -> Result<()> {
-        let config = crate::languages::get_tag_configuration(&BundledParser::Rust)
-            .expect("to have rust parser");
+        let config =
+            crate::languages::get_tag_configuration(&BundledParser::Rust).expect("to have parser");
         let source_code = include_str!("../testdata/scopes.rs");
         let doc = parse_file_for_lang(config, source_code)?;
 
@@ -275,8 +299,8 @@ mod test {
 
     #[test]
     fn test_can_parse_go_tree() -> Result<()> {
-        let config = crate::languages::get_tag_configuration(&BundledParser::Go)
-            .expect("to have rust parser");
+        let config =
+            crate::languages::get_tag_configuration(&BundledParser::Go).expect("to have parser");
         let source_code = include_str!("../testdata/example.go");
         let doc = parse_file_for_lang(config, source_code)?;
 
@@ -288,8 +312,8 @@ mod test {
 
     #[test]
     fn test_can_parse_go_internal_tree() -> Result<()> {
-        let config = crate::languages::get_tag_configuration(&BundledParser::Go)
-            .expect("to have rust parser");
+        let config =
+            crate::languages::get_tag_configuration(&BundledParser::Go).expect("to have parser");
         let source_code = include_str!("../testdata/internal_go.go");
         let doc = parse_file_for_lang(config, source_code)?;
 
@@ -300,9 +324,22 @@ mod test {
     }
 
     #[test]
+    fn test_can_parse_ruby_internal_tree() -> Result<()> {
+        let config =
+            crate::languages::get_tag_configuration(&BundledParser::Ruby).expect("to have parser");
+        let source_code = include_str!("../testdata/ruby-globals.rb");
+        let doc = parse_file_for_lang(config, source_code)?;
+
+        let dumped = dump_document(&doc, source_code)?;
+        insta::assert_snapshot!(dumped);
+
+        Ok(())
+    }
+
+    #[test]
     fn test_enclosing_range() -> Result<()> {
-        let config = crate::languages::get_tag_configuration(&BundledParser::Go)
-            .expect("to have rust parser");
+        let config =
+            crate::languages::get_tag_configuration(&BundledParser::Go).expect("to have parser");
         let source_code = include_str!("../testdata/scopes_of_go.go");
         let doc = parse_file_for_lang(config, source_code)?;
 

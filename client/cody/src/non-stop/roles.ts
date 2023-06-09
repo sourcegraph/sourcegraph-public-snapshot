@@ -34,4 +34,5 @@ export interface FixupIdleTaskRunner {
  */
 export interface FixupTextChanged {
     textDidChange(task: FixupTask): void
+    rangeDidChange(task: FixupTask): void
 }

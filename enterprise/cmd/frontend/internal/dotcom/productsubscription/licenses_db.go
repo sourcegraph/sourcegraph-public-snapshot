@@ -2,7 +2,6 @@ package productsubscription
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/hex"
 	"time"
 
@@ -11,9 +10,9 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -31,6 +30,7 @@ type dbLicense struct {
 	SiteID                   *string // UUID
 	LicenseCheckToken        *[]byte
 	RevokedAt                *time.Time
+	RevokeReason             *string
 	SalesforceSubscriptionID *string
 	SalesforceOpportunityID  *string
 }
@@ -64,8 +64,6 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		return "", errors.Wrap(err, "new UUID")
 	}
 
-	keyHash := sha256.Sum256([]byte(licenseKey))
-
 	var expiresAt *time.Time
 	if !info.ExpiresAt.IsZero() {
 		expiresAt = &info.ExpiresAt
@@ -78,7 +76,7 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		pq.Array(info.Tags),
 		dbutil.NewNullInt64(int64(info.UserCount)),
 		dbutil.NullTime{Time: expiresAt},
-		hashutil.ToSHA256Bytes(keyHash[:]),
+		licensing.GenerateHashedLicenseKeyAccessToken(licenseKey),
 		info.SalesforceSubscriptionID,
 		info.SalesforceOpportunityID,
 	).Scan(&id); err != nil {
@@ -109,11 +107,13 @@ func (s dbLicenses) GetByID(ctx context.Context, id string) (*dbLicense, error) 
 //
 // 🚨 SECURITY: The caller must ensure that errTokenInvalid error is handled appropriately
 func (s dbLicenses) GetByToken(ctx context.Context, tokenHexEncoded string) (*dbLicense, error) {
+	if mocks.licenses.GetByToken != nil {
+		return mocks.licenses.GetByToken(tokenHexEncoded)
+	}
 	token, err := hex.DecodeString(tokenHexEncoded)
 	if err != nil {
 		return nil, errTokenInvalid
 	}
-
 	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("license_check_token=%s", token)}, nil)
 	if err != nil {
 		return nil, err
@@ -211,6 +211,7 @@ SELECT
 	site_id,
 	license_check_token,
 	revoked_at,
+	revoke_reason,
 	salesforce_sub_id,
 	salesforce_opp_id
 FROM product_licenses
@@ -243,6 +244,7 @@ ORDER BY created_at DESC
 			&v.SiteID,
 			&v.LicenseCheckToken,
 			&v.RevokedAt,
+			&v.RevokeReason,
 			&v.SalesforceSubscriptionID,
 			&v.SalesforceOpportunityID,
 		); err != nil {
@@ -263,9 +265,21 @@ func (s dbLicenses) Count(ctx context.Context, opt dbLicensesListOptions) (int, 
 	return count, nil
 }
 
+func (s dbLicenses) Revoke(ctx context.Context, id, reason string) error {
+	q := sqlf.Sprintf(
+		"UPDATE product_licenses SET revoked_at = now(), revoke_reason = %s WHERE id = %s",
+		reason,
+		id,
+	)
+	_, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return err
+}
+
 type mockLicenses struct {
 	Create          func(subscriptionID, licenseKey string) (id string, err error)
 	GetByID         func(id string) (*dbLicense, error)
 	GetByLicenseKey func(licenseKey string) (*dbLicense, error)
+	GetByToken      func(tokenHexEncoded string) (*dbLicense, error)
 	List            func(ctx context.Context, opt dbLicensesListOptions) ([]*dbLicense, error)
+	Revoke          func(ctx context.Context, id uuid.UUID, reason string) error
 }

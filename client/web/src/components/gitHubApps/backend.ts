@@ -52,6 +52,7 @@ export const GITHUB_APP_BY_ID_QUERY = gql`
         gitHubApp(id: $id) {
             id
             appID
+            domain
             baseURL
             name
             slug
