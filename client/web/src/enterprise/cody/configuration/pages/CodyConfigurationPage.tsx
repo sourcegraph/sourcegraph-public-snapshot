@@ -1,7 +1,7 @@
 import { FC, useCallback, useEffect, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import { mdiRobotOutline, mdiWebhook } from '@mdi/js'
+import { mdiRobotOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Subject } from 'rxjs'
