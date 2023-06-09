@@ -40,37 +40,9 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
         },
         [endpoint, onLogin, token]
     )
-    const handleReload = (): void => {
-        getVSCodeAPI().postMessage({ command: 'settings', serverEndpoint: '', accessToken: '' })
-    }
 
     return (
         <div className={styles.container}>
-            {authStatus?.showNetworkError && (
-                <>
-                    <div className={styles.error}>
-                        <p>
-                            Due to network-related problems, Cody cannot be reached. Try again after checking it! Once
-                            your connection is restored, attempt a reload.
-                        </p>
-                        <VSCodeButton className={styles.button} type="button" onClick={handleReload}>
-                            Reload
-                        </VSCodeButton>
-                    </div>
-                </>
-            )}
-            {authStatus?.showInvalidAccessTokenError && (
-                <p className={styles.error}>
-                    Invalid credentials. Please check the Sourcegraph instance URL and access token.
-                </p>
-            )}
-            {authStatus?.authenticated === true &&
-                authStatus?.requiresVerifiedEmail &&
-                authStatus?.hasVerifiedEmail === false && (
-                    <p className={styles.error}>
-                        Email not verified. Please add a verified email to your Sourcegraph.com account.
-                    </p>
-                )}
             {authStatus && <ErrorContainer authStatus={authStatus} />}
             <section className={styles.section}>
                 <h2 className={styles.sectionHeader}>Enterprise User</h2>
@@ -132,6 +104,8 @@ const ERROR_MESSAGES = {
         'Cody is not supported by your Sourcegraph instance version (version: $SITEVERSION). To use Cody, please contact your site admin to upgrade to version 5.1.0 or above.',
     INVALID: 'Invalid credentials. Please check the Sourcegraph instance URL and access token.',
     EMAIL_NOT_VERIFIED: 'Email not verified. Please add a verified email to your Sourcegraph.com account.',
+    NETWORK_ERROR:
+        'Due to network-related problems, Cody cannot be reached. Try again after checking it! Once your connection is restored, attempt a reload.',
 }
 
 const ErrorContainer: React.FunctionComponent<{ authStatus: AuthStatus }> = ({ authStatus }) => {
@@ -142,16 +116,35 @@ const ErrorContainer: React.FunctionComponent<{ authStatus: AuthStatus }> = ({ a
         requiresVerifiedEmail,
         hasVerifiedEmail,
         siteVersion,
+        showNetworkError,
     } = authStatus
     // Version is compatible if this is an insider build or version is 5.1.0 or above
     // Right now we assumes all insider builds have Cody enabled
     // NOTE: Insider build includes App builds but we should seperate them in the future
-    if (!authenticated && !showInvalidAccessTokenError) {
+    if (!authenticated && !showInvalidAccessTokenError && !showNetworkError) {
         return null
     }
     const isInsiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
     const isVersionCompatible = isInsiderBuild || siteVersion >= '5.1.0'
     const isVersionBeforeCody = !isVersionCompatible && siteVersion < '5.0.0'
+
+    const handleReload = (): void => {
+        getVSCodeAPI().postMessage({ command: 'settings', serverEndpoint: '', accessToken: '' })
+    }
+
+    // When there's a network error
+    if (showNetworkError) {
+        return (
+            <>
+                <div className={styles.error}>
+                    <p>{ERROR_MESSAGES.NETWORK_ERROR}</p>
+                    <VSCodeButton className={styles.button} type="button" onClick={handleReload}>
+                        Reload
+                    </VSCodeButton>
+                </div>
+            </>
+        )
+    }
     // When doesn't have a valid token
     if (showInvalidAccessTokenError) {
         return <p className={styles.error}>{ERROR_MESSAGES.INVALID}</p>
