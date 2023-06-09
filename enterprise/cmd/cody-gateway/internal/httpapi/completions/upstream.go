@@ -226,6 +226,7 @@ func makeUpstreamHandler[ReqT any](
 				var headers bytes.Buffer
 				_ = resp.Header.Write(&headers)
 				logger.Error("upstream returned 429, rewriting to 503",
+					log.Error(errors.New(resp.Status)), // real error needed for Sentry reporting
 					log.String("resp.headers", headers.String()))
 				resolvedStatusCode = http.StatusServiceUnavailable
 			}
