@@ -34,14 +34,6 @@ func (e *ChangelistNotFoundError) Error() string {
 	return fmt.Sprintf("revision not found: %s@%s", e.Repo, e.ID)
 }
 
-func (e *ChangelistNotFoundError) HTTPStatusCode() int {
-	return 404
-}
-
-func (e *ChangelistNotFoundError) NotFound() bool {
-	return true
-}
-
 type BadChangelistError struct {
 	CID  string
 	Repo api.RepoName
