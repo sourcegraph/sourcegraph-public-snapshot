@@ -88,10 +88,7 @@
             "description": "Get started by logging into Sourcegraph and setting up Cody.\n[Setup Cody](command:cody.walkthrough.showLogin)",
             "media": {
               "markdown": "walkthroughs/setup.md"
-            },
-            "completionEvents": [
-              "onContext:cody.activated"
-            ]
+            }
           },
           {
             "id": "chat",
