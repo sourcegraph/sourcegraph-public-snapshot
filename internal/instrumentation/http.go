@@ -52,11 +52,32 @@ var defaultOTELHTTPOptions = []otelhttp.Option{
 //     using the globally configured propagator.
 //
 // The provided operation name is used to add details to spans.
-func HTTPMiddleware(operation string, h http.Handler, opts ...otelhttp.Option) http.Handler {
-	instrumentedHandler := otelhttp.NewHandler(h, operation,
+func HTTPMiddleware(operation string, next http.Handler, opts ...otelhttp.Option) http.Handler {
+	afterInstrumentedHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set X-Trace after otelhttp's handler which starts the trace. The
+		// top-level trace should be an OTEL trace, so we use otel/trace to
+		// extract it. Then, we add it to the header before next writes the
+		// header back to client.
+		span := trace.SpanContextFromContext(r.Context())
+		if span.IsValid() {
+			// We only set the trace ID here. The trace URL is set to
+			// X-Trace-URL by httptrace.HTTPMiddleware that does some more
+			// elaborate handling. In particular, we don't want to introduce
+			// a conf.Get() dependency here to build the trace URL, since we
+			// want this to be fairly bare-bones for use in standalone services
+			// like Cody Gateway.
+			w.Header().Set("X-Trace", span.TraceID().String())
+			w.Header().Set("X-Trace-Span", span.SpanID().String())
+		}
+
+		next.ServeHTTP(w, r)
+	})
+
+	instrumentedHandler := otelhttp.NewHandler(afterInstrumentedHandler, operation,
 		append(defaultOTELHTTPOptions, opts...)...)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set up trace policy before instrumented handler
 		var shouldTrace bool
 		switch policy.GetTracePolicy() {
 		case policy.TraceSelective:
