@@ -382,6 +382,7 @@ go_test(
         "git_tree_entry_test.go",
         "git_tree_test.go",
         "graphqlbackend_test.go",
+        "guardrails_test.go",
         "lfs_test.go",
         "main_test.go",
         "namespaces_test.go",
