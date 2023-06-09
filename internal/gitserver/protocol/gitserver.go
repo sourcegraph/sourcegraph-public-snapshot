@@ -868,8 +868,9 @@ func (r *GetObjectResponse) FromProto(p *proto.GetObjectResponse) {
 }
 
 type PerforceChangelist struct {
+	ID           string
 	CreationDate time.Time
-	State        PerforceChangelistState //enum
+	State        PerforceChangelistState
 	Author       string
 	Title        string
 	Level        string
@@ -880,4 +881,7 @@ type PerforceChangelistState string
 const (
 	PerforceChangelistStateSubmitted PerforceChangelistState = "submitted"
 	PerforceChangelistStatePending   PerforceChangelistState = "pending"
+	PerforceChangelistStateShelved   PerforceChangelistState = "shelved"
+	// Perforce doesn't actually return a state for closed changelists, so this is one we use to indicate the changelist is closed.
+	PerforceChangelistStateClosed PerforceChangelistState = "closed"
 )

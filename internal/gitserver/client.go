@@ -276,6 +276,9 @@ type Client interface {
 	// P4Exec sends a p4 command with given arguments and returns an io.ReadCloser for the output.
 	P4Exec(_ context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error)
 
+	// P4GetChangelist gets the changelist specified by changelistID.
+	P4GetChangelist(_ context.Context, changelistID string) (protocol.PerforceChangelist, error)
+
 	// Remove removes the repository clone from gitserver.
 	Remove(context.Context, api.RepoName) error
 
@@ -921,6 +924,11 @@ var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_gitserver_client_deadline_exceeded",
 	Help: "Times that Client.sendExec() returned context.DeadlineExceeded",
 })
+
+func (c *clientImplementor) P4GetChangelist(_ context.Context, changelistID string) (protocol.PerforceChangelist, error) {
+	//TODO: @peterguy implement function.
+	return protocol.PerforceChangelist{}, nil
+}
 
 // BatchLog invokes the given callback with the `git log` output for a batch of repository
 // and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
