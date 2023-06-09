@@ -22,7 +22,6 @@ import {
     Text,
     Grid,
     AnchorLink,
-    Alert,
 } from '@sourcegraph/wildcard'
 
 import { GitHubAppDomain, GitHubAppByIDResult, GitHubAppByIDVariables } from '../../graphql-operations'
@@ -131,12 +130,7 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService }) => {
                     </div>
                 </>
             )}
-            {!app ? null : app.domain !== GitHubAppDomain.REPOS ? (
-                <Alert variant="danger" className="mt-3">
-                    Editing this GitHub App from Sourcegraph is not supported. To make changes, please delete it and
-                    create a new one.
-                </Alert>
-            ) : (
+            {app && (
                 <Container className="mt-3 mb-3">
                     <Grid columnCount={2} templateColumns="auto 1fr" spacing={[0.6, 2]}>
                         <span className="font-weight-bold">GitHub App Name</span>
@@ -148,7 +142,7 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService }) => {
                         <span className="font-weight-bold">AppID</span>
                         <span>{app.appID}</span>
                     </Grid>
-                    <AuthProviderMessage app={app} id={appID} />
+                    {app.domain === GitHubAppDomain.REPOS && <AuthProviderMessage app={app} id={appID} />}
 
                     <hr className="mt-4 mb-4" />
 
@@ -189,57 +183,59 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService }) => {
                                                 </small>
                                             </AnchorLink>
                                         </div>
-                                        <div className="mt-4">
-                                            <H3 className="d-flex align-items-center mb-0">
-                                                Code host connections
-                                                <ButtonLink
-                                                    variant="primary"
-                                                    className="ml-auto"
-                                                    to={`/site-admin/external-services/new?id=ghapp&appID=${
-                                                        app.appID
-                                                    }&installationID=${installation.id}&url=${encodeURI(
-                                                        app.baseURL
-                                                    )}&org=${installation.account.login}`}
-                                                    size="sm"
-                                                >
-                                                    <Icon svgPath={mdiPlus} aria-hidden={true} /> Add connection
-                                                </ButtonLink>
-                                            </H3>
-                                            {installation.externalServices?.nodes?.length > 0 ? (
-                                                <>
-                                                    <ConnectionList
-                                                        as="ul"
-                                                        className={styles.listGroup}
-                                                        aria-label="Code Host Connections"
+                                        {app.domain === GitHubAppDomain.REPOS && (
+                                            <div className="mt-4">
+                                                <H3 className="d-flex align-items-center mb-0">
+                                                    Code host connections
+                                                    <ButtonLink
+                                                        variant="primary"
+                                                        className="ml-auto"
+                                                        to={`/site-admin/external-services/new?id=ghapp&appID=${
+                                                            app.appID
+                                                        }&installationID=${installation.id}&url=${encodeURI(
+                                                            app.baseURL
+                                                        )}&org=${installation.account.login}`}
+                                                        size="sm"
                                                     >
-                                                        {installation.externalServices?.nodes?.map(node => (
-                                                            <ExternalServiceNode
-                                                                key={node.id}
-                                                                node={node}
-                                                                editingDisabled={false}
-                                                            />
-                                                        ))}
-                                                    </ConnectionList>
-                                                    {installation.externalServices && (
-                                                        <SummaryContainer className="mt-2" centered={true}>
-                                                            <ConnectionSummary
-                                                                noSummaryIfAllNodesVisible={false}
-                                                                first={100}
-                                                                centered={true}
-                                                                connection={installation.externalServices}
-                                                                noun="code host connection"
-                                                                pluralNoun="code host connections"
-                                                                hasNextPage={false}
-                                                            />
-                                                        </SummaryContainer>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <Text className="text-center mt-4">
-                                                    You haven't added any code host connections yet.
-                                                </Text>
-                                            )}
-                                        </div>
+                                                        <Icon svgPath={mdiPlus} aria-hidden={true} /> Add connection
+                                                    </ButtonLink>
+                                                </H3>
+                                                {installation.externalServices?.nodes?.length > 0 ? (
+                                                    <>
+                                                        <ConnectionList
+                                                            as="ul"
+                                                            className={styles.listGroup}
+                                                            aria-label="Code Host Connections"
+                                                        >
+                                                            {installation.externalServices?.nodes?.map(node => (
+                                                                <ExternalServiceNode
+                                                                    key={node.id}
+                                                                    node={node}
+                                                                    editingDisabled={false}
+                                                                />
+                                                            ))}
+                                                        </ConnectionList>
+                                                        {installation.externalServices && (
+                                                            <SummaryContainer className="mt-2" centered={true}>
+                                                                <ConnectionSummary
+                                                                    noSummaryIfAllNodesVisible={false}
+                                                                    first={100}
+                                                                    centered={true}
+                                                                    connection={installation.externalServices}
+                                                                    noun="code host connection"
+                                                                    pluralNoun="code host connections"
+                                                                    hasNextPage={false}
+                                                                />
+                                                            </SummaryContainer>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <Text className="text-center mt-4">
+                                                        You haven't added any code host connections yet.
+                                                    </Text>
+                                                )}
+                                            </div>
+                                        )}
                                     </Container>
                                 ))
                             )}
