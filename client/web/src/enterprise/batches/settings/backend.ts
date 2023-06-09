@@ -89,7 +89,7 @@ const CODE_HOST_FIELDS_FRAGMENT = gql`
             ...BatchChangesCredentialFields
         }
         commitSigningConfiguration {
-            ... on GitHubAppConfiguration {
+            ... on GitHubApp {
                 id
                 appID
                 name

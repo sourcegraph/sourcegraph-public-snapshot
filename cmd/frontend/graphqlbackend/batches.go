@@ -571,16 +571,7 @@ type BatchChangesCredentialResolver interface {
 
 // Only GitHubApps are supported for commit signing for now.
 type CommitSigningConfigResolver interface {
-	ToGitHubAppConfiguration() (GitHubAppConfigResolver, bool)
-}
-
-type GitHubAppConfigResolver interface {
-	ID() graphql.ID
-	AppID() int32
-	Name() string
-	BaseURL() string
-	AppURL() string
-	Logo() string
+	ToGitHubApp() (GitHubAppResolver, bool)
 }
 
 type ChangesetCountsArgs struct {

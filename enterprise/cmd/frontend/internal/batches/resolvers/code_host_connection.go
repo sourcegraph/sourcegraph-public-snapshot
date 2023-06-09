@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -18,6 +19,7 @@ type batchChangesCodeHostConnectionResolver struct {
 	opts                  store.ListCodeHostsOpts
 	limitOffset           database.LimitOffset
 	store                 *store.Store
+	db                    edb.EnterpriseDB
 
 	once          sync.Once
 	chs           []*btypes.CodeHost
@@ -63,7 +65,7 @@ func (c *batchChangesCodeHostConnectionResolver) Nodes(ctx context.Context) ([]g
 			externalServiceType: ch.ExternalServiceType,
 		}
 		cred := credsByIDType[t]
-		nodes[i] = &batchChangesCodeHostResolver{codeHost: ch, credential: cred, store: c.store}
+		nodes[i] = &batchChangesCodeHostResolver{codeHost: ch, credential: cred, store: c.store, db: c.db}
 	}
 
 	return nodes, nil

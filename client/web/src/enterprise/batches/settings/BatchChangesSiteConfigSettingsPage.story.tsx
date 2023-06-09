@@ -62,7 +62,7 @@ export const Overview: Story = () => (
                                 requiresUsername: false,
                                 supportsCommitSigning: true,
                                 commitSigningConfiguration: {
-                                    __typename: 'GitHubAppConfiguration',
+                                    __typename: 'GitHubApp',
                                     id: '123',
                                     appID: 123,
                                     name: 'Sourcegraph Commit Signing',
@@ -138,7 +138,7 @@ export const ConfigAdded: Story = () => (
                                 requiresUsername: false,
                                 supportsCommitSigning: true,
                                 commitSigningConfiguration: {
-                                    __typename: 'GitHubAppConfiguration',
+                                    __typename: 'GitHubApp',
                                     id: '123',
                                     appID: 123,
                                     name: 'Sourcegraph Commit Signing',

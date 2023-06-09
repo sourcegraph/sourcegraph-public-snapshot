@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -39,11 +40,12 @@ import (
 type Resolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
+	db              edb.EnterpriseDB
 }
 
 // New returns a new Resolver whose store uses the given database
-func New(store *store.Store, gitserverClient gitserver.Client) graphqlbackend.BatchChangesResolver {
-	return &Resolver{store: store, gitserverClient: gitserverClient}
+func New(db edb.EnterpriseDB, store *store.Store, gitserverClient gitserver.Client) graphqlbackend.BatchChangesResolver {
+	return &Resolver{store: store, gitserverClient: gitserverClient, db: db}
 }
 
 // batchChangesCreateAccess returns true if the current user has batch changes enabled for
@@ -886,7 +888,7 @@ func (r *Resolver) BatchChangesCodeHosts(ctx context.Context, args *graphqlbacke
 		limitOffset.Offset = int(cursor)
 	}
 
-	return &batchChangesCodeHostConnectionResolver{userID: args.UserID, limitOffset: limitOffset, store: r.store}, nil
+	return &batchChangesCodeHostConnectionResolver{userID: args.UserID, limitOffset: limitOffset, store: r.store, db: r.db}, nil
 }
 
 // listChangesetOptsFromArgs turns the graphqlbackend.ListChangesetsArgs into

@@ -3478,37 +3478,7 @@ type BatchChangesCodeHost {
 Commit signing configuration for a code host, e.g. GitHubApp or SSHKey. Today, the
 only supported form of commit signing is via a GitHub App.
 """
-union CommitSigningConfiguration = GitHubAppConfiguration
-
-"""
-The configuration for a GitHubApp created for Batch Changes commit signing.
-"""
-type GitHubAppConfiguration {
-    """
-    A globally unique identifier.
-    """
-    id: ID!
-    """
-    The ID of the GitHub App.
-    """
-    appID: Int!
-    """
-    The name of the GitHub App
-    """
-    name: String!
-    """
-    The URL of the GitHub App page
-    """
-    appURL: String!
-    """
-    The base URL of the GitHub App
-    """
-    baseURL: String!
-    """
-    The logo URL of the GitHub App
-    """
-    logo: String!
-}
+union CommitSigningConfiguration = GitHubApp
 
 """
 A user token configured for batch changes use on the specified code host.
