@@ -37,7 +37,6 @@ export class FixupIdleScheduler {
      * This should be called whenever the user interacts with Cody through execute recipes.
      * When there is no activity, we should run the fixup tasks.
      */
-    // Schedule the timeout onlyif there is work waiting
     public registerActivity(): void {
         this.lastActivityTime = Date.now()
         // when there is no timeout scheduled, run the callback immediately

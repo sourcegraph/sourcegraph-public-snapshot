@@ -118,25 +118,21 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
 
     // Apply single fixup from task ID. Public for testing.
     public async apply(id: taskID): Promise<void> {
-        console.log(id + ' applying')
         const task = this.tasks.get(id)
-        if (!task) {
-            this.discard(id)
-            console.error('cannot find task')
-            return
+        if (task) {
+            this.setTaskState(task, CodyTaskState.applying)
+            await task.replace()
         }
-        await this.setTaskState(task, CodyTaskState.applying)
+        this.discard(id)
     }
 
     // Applying fixups from tree item click
     private async applyFixups(treeItem?: FixupTaskTreeItem): Promise<void> {
-        // TODO: Add support for applying all fixups
         // applying fixup to all tasks
         if (!treeItem) {
-            void vscode.window.showInformationMessage(
-                'Applying all fixups is not implemented yet...',
-                String(this.tasks.size)
-            )
+            const tasksMap = this.tasks.values()
+            const tasks = [...tasksMap]
+            await this.groupEditing(tasks)
             return
         }
         // applying fixup to a single task
@@ -144,21 +140,37 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             await this.apply(treeItem.id)
             return
         }
-        // TODO: Add support for applying fixups from a directory
         // applying fixup to all tasks in a directory
         if (treeItem.contextValue === 'fsPath') {
-            for (const task of this.tasks.values()) {
-                void vscode.window.showInformationMessage(
-                    'Applying fixups from a directory is not implemented yet...',
-                    String(this.tasks.size)
-                )
-                if (task.fixupFile.uri.fsPath.endsWith(treeItem.fsPath)) {
-                    return
-                }
-            }
-            return
+            const tasksMap = this.tasks.values()
+            const tasks = [...tasksMap].filter(task => task.fixupFile.uri.fsPath.endsWith(treeItem.fsPath))
+            await this.groupEditing(tasks)
         }
         console.error('cannot apply fixups')
+    }
+
+    private async groupEditing(tasks: FixupTask[]): Promise<void> {
+        const edits = []
+        const ids = []
+        for (const task of tasks) {
+            if (!task.replacement) {
+                task.error('There is no replacement content for this task.')
+                this.setTaskState(task, CodyTaskState.error)
+                return
+            }
+            this.setTaskState(task, CodyTaskState.applying)
+            const edit = vscode.TextEdit.replace(task.selectionRange, task.replacement)
+            edits.push(edit)
+            ids.push(task.id)
+        }
+        const fileUri = tasks[0].editor.document.uri
+        if (fileUri) {
+            const workspaceEdit = new vscode.WorkspaceEdit()
+            workspaceEdit.set(fileUri, edits)
+            await vscode.workspace.applyEdit(workspaceEdit)
+        }
+        ids.map(id => this.discard(id))
+        return
     }
 
     // TODO: Add support for editing a fixup task
@@ -196,33 +208,33 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         return Array.from(this.tasks.values())
     }
 
-    public async didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
+    public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): void {
         const task = this.tasks.get(id)
         if (!task) {
-            return Promise.resolve()
+            return
         }
         if (task.state !== CodyTaskState.asking && task.state !== CodyTaskState.marking) {
             // TODO: Update this when we re-spin tasks with conflicts so that
             // we store the new text but can also display something reasonably
             // stable in the editor
-            return Promise.resolve()
+            return
         }
 
         switch (state) {
             case 'streaming':
                 task.inProgressReplacement = text
                 task.marking()
-                await this.setTaskState(task, CodyTaskState.marking)
+                this.setTaskState(task, CodyTaskState.marking)
                 break
             case 'complete':
                 task.inProgressReplacement = undefined
                 task.replacement = text
                 task.stop()
-                await this.setTaskState(task, CodyTaskState.ready)
+                this.setTaskState(task, CodyTaskState.ready)
                 break
         }
         this.textDidChange(task)
-        return Promise.resolve()
+        return
     }
 
     // Handles changes to the source document in the fixup selection, or the
@@ -353,7 +365,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         const origin = task?.selection.selectedText
         const replacement = task?.replacement
         if (!origin || !replacement) {
-            await this.setTaskState(task, CodyTaskState.error)
+            this.setTaskState(task, CodyTaskState.error)
             return
         }
         // Add replacement content to the temp document
@@ -381,8 +393,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         )
     }
 
-    private async setTaskState(task: FixupTask, state: CodyTaskState): Promise<FixupTask | null> {
-        console.log(task.id, 'changing state from', task.state, 'to', state)
+    private setTaskState(task: FixupTask, state: CodyTaskState): FixupTask | null {
         switch (state) {
             case CodyTaskState.queued:
                 task.queue()
@@ -403,15 +414,9 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
                 task.error()
                 break
             case CodyTaskState.applying:
-                // NOTE: task.apply() handles replacing the text in the document
-                // TODO (dom) add new method for replacement
-                await task.apply()
-                if (task.state !== CodyTaskState.fixed) {
-                    task.error('Failed to apply fixup')
-                }
+                task.apply()
                 break
         }
-        console.log(task.id, 'current state', task.state)
         if (task.state === CodyTaskState.fixed) {
             this.discard(task.id)
             return null

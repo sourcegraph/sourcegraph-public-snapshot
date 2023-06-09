@@ -70,10 +70,9 @@ export class FixupTask {
         void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
     }
 
-    public async apply(): Promise<void> {
+    public apply(): void {
         this.setState(CodyTaskState.applying)
         this.output(`Task #${this.id} is being applied...`)
-        await this.replaceSelection()
     }
 
     public queue(): void {
@@ -110,7 +109,7 @@ export class FixupTask {
     }
 
     // TODO (dom) delete this once the new replacement edit method is in place
-    private async replaceSelection(): Promise<void> {
+    public async replace(): Promise<void> {
         console.log('replacing start')
         const { editor, selectionRange, replacement } = this
         if (!editor || !replacement) {
