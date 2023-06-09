@@ -10,6 +10,7 @@ import { AppAllSetSetupStep } from './steps/AppAllSetSetupStep'
 import { AppInstallExtensionsSetupStep } from './steps/AppInstallExtensionsSetupStep'
 import { AddLocalRepositoriesSetupPage } from './steps/AppLocalRepositoriesSetupStep'
 import { AppWelcomeSetupStep } from './steps/AppWelcomeSetupStep'
+import { AppEmbeddingsSetupStep } from './steps/embeddings-step/AppEmbeddingsSetupStep'
 
 import styles from './AppSetupWizard.module.scss'
 
@@ -25,6 +26,12 @@ const APP_SETUP_STEPS: StepConfiguration[] = [
         name: 'Add local repositories',
         path: 'local-repositories',
         component: AddLocalRepositoriesSetupPage,
+    },
+    {
+        id: 'embeddings',
+        name: 'Pick repositories for embeddings',
+        path: 'embeddings',
+        component: AppEmbeddingsSetupStep,
     },
     {
         id: 'install-extensions',

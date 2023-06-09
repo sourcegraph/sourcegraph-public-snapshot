@@ -56,7 +56,7 @@ tree-sitter = "0.20.9"
 tree-sitter-highlight = "0.20"
 
 # Since there is no version tag, we pin the dependency to a specific revision
-scip = { git = "https://github.com/sourcegraph/scip", rev="6b5114f74b063baf7bde5ede67dba79690f28fc0" }
+scip = { git = "https://github.com/sourcegraph/scip", rev="1bf111e1cf175569970e95566b379fb2a548d70a" }
 protobuf = "3"
 
 

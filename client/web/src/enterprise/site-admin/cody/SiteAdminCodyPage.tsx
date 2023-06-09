@@ -31,12 +31,7 @@ import {
 import { PageTitle } from '../../../components/PageTitle'
 import { RepositoriesField } from '../../insights/components'
 
-import {
-    useCancelRepoEmbeddingJob,
-    useRepoEmbeddingJobsConnection,
-    useScheduleContextDetectionEmbeddingJob,
-    useScheduleRepoEmbeddingJobs,
-} from './backend'
+import { useCancelRepoEmbeddingJob, useRepoEmbeddingJobsConnection, useScheduleRepoEmbeddingJobs } from './backend'
 import { RepoEmbeddingJobNode } from './RepoEmbeddingJobNode'
 
 import styles from './SiteAdminCodyPage.module.scss'
@@ -73,20 +68,12 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     const [scheduleRepoEmbeddingJobs, { loading: repoEmbeddingJobsLoading, error: repoEmbeddingJobsError }] =
         useScheduleRepoEmbeddingJobs()
 
-    const [
-        scheduleContextDetectionEmbeddingJob,
-        { loading: contextDetectionEmbeddingJobLoading, error: contextDetectionEmbeddingJobError },
-    ] = useScheduleContextDetectionEmbeddingJob()
-
     const onSubmit = useCallback(
         async (repoNames: string[]) => {
-            await Promise.all([
-                scheduleContextDetectionEmbeddingJob(),
-                scheduleRepoEmbeddingJobs({ variables: { repoNames } }),
-            ])
+            await scheduleRepoEmbeddingJobs({ variables: { repoNames } })
             refetchAll()
         },
-        [refetchAll, scheduleContextDetectionEmbeddingJob, scheduleRepoEmbeddingJobs]
+        [refetchAll, scheduleRepoEmbeddingJobs]
     )
 
     const form = useForm<RepoEmbeddingJobsFormValues>({
@@ -125,8 +112,8 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
 
     return (
         <>
-            <PageTitle title="Cody" />
-            <PageHeader path={[{ text: 'Cody' }]} className="mb-3" headingElement="h2" />
+            <PageTitle title="Embeddings jobs" />
+            <PageHeader path={[{ text: 'Embeddings jobs' }]} className="mb-3" headingElement="h2" />
             <Container className="mb-3">
                 <H3>Schedule repositories for embedding</H3>
                 <Form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit}>
@@ -146,30 +133,24 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                                 type="submit"
                                 variant="secondary"
                                 className={styles.scheduleButton}
-                                disabled={repoEmbeddingJobsLoading || contextDetectionEmbeddingJobLoading}
+                                disabled={repoEmbeddingJobsLoading}
                             >
-                                {repoEmbeddingJobsLoading || contextDetectionEmbeddingJobLoading
-                                    ? 'Scheduling...'
-                                    : 'Schedule Embedding'}
+                                {repoEmbeddingJobsLoading ? 'Scheduling...' : 'Schedule Embedding'}
                             </Button>
                         </div>
                     </div>
                 </Form>
-                {(repoEmbeddingJobsError || contextDetectionEmbeddingJobError || cancelRepoEmbeddingJobError) && (
+                {(repoEmbeddingJobsError || cancelRepoEmbeddingJobError) && (
                     <div className="mt-1">
                         <ErrorAlert
-                            prefix="Error scheduling embedding jobs"
-                            error={
-                                repoEmbeddingJobsError ||
-                                contextDetectionEmbeddingJobError ||
-                                cancelRepoEmbeddingJobError
-                            }
+                            prefix="Error scheduling embeddings jobs"
+                            error={repoEmbeddingJobsError || cancelRepoEmbeddingJobError}
                         />
                     </div>
                 )}
             </Container>
             <Container>
-                <H3 className="mt-3">Repository embedding jobs</H3>
+                <H3 className="mt-3">Repository embeddings jobs</H3>
                 <ConnectionContainer>
                     <ConnectionForm
                         inputValue={searchValue}
@@ -177,11 +158,11 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                             setSearchValue(event.target.value)
                             updateQueryParams(event.target.value)
                         }}
-                        inputPlaceholder="Filter embedding jobs..."
+                        inputPlaceholder="Filter embeddings jobs..."
                     />
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
-                    <ConnectionList as="ul" className="list-group" aria-label="Repository embedding jobs">
+                    <ConnectionList as="ul" className="list-group" aria-label="Repository embeddings jobs">
                         {connection?.nodes?.map(node => (
                             <RepoEmbeddingJobNode key={node.id} {...node} onCancel={onCancel} />
                         ))}
@@ -194,8 +175,8 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                                 centered={true}
                                 connection={connection}
                                 connectionQuery={query}
-                                noun="repository embedding job"
-                                pluralNoun="repository embedding jobs"
+                                noun="repository embeddings job"
+                                pluralNoun="repository embeddings jobs"
                                 hasNextPage={hasNextPage}
                                 emptyElement={<EmptyList />}
                             />
@@ -210,6 +191,6 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
 
 const EmptyList: FC<{}> = () => (
     <div className="text-muted text-center mb-3 w-100">
-        <div className="pt-2">No repository embedding jobs have been created so far.</div>
+        <div className="pt-2">No repository embeddings jobs have been created so far.</div>
     </div>
 )

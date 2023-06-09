@@ -79,7 +79,7 @@ func TestCodyGatewayCodeRateLimit(t *testing.T) {
 			licenseTags: []string{GPTLLMAccessTag},
 			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"openai/gpt-3.5-turbo"},
-				Limit:           25000,
+				Limit:           50000,
 				IntervalSeconds: 60 * 60 * 24,
 			},
 		},
@@ -89,7 +89,7 @@ func TestCodyGatewayCodeRateLimit(t *testing.T) {
 			userCount: intPtr(50),
 			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"anthropic/claude-instant-v1"},
-				Limit:           25000,
+				Limit:           50000,
 				IntervalSeconds: 60 * 60 * 24,
 			},
 		},
@@ -98,7 +98,7 @@ func TestCodyGatewayCodeRateLimit(t *testing.T) {
 			plan: PlanEnterprise1,
 			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"anthropic/claude-instant-v1"},
-				Limit:           500,
+				Limit:           1000,
 				IntervalSeconds: 60 * 60 * 24,
 			},
 		},
