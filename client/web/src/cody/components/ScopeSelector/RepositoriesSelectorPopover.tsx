@@ -125,6 +125,8 @@ export const RepositoriesSelectorPopover: React.FC<{
 
     const additionalRepositoriesLeft = Math.max(MAX_ADDITIONAL_REPOSITORIES - additionalRepositories.length, 0)
 
+    const scopeChanged = additionalRepositories.length !== 0 || !includeInferredFile || !includeInferredRepository
+
     return (
         <Popover isOpen={isPopoverOpen} onOpenChange={onOpenChange}>
             <PopoverTrigger
@@ -170,15 +172,17 @@ export const RepositoriesSelectorPopover: React.FC<{
                             <>
                                 <div className="d-flex justify-content-between p-2 border-bottom mb-1">
                                     <Text className={classNames('m-0', styles.header)}>Chat Context</Text>
-                                    <Button
-                                        onClick={resetScope}
-                                        variant="icon"
-                                        aria-label="Reset scope"
-                                        title="Reset scope"
-                                        className={styles.header}
-                                    >
-                                        Reset
-                                    </Button>
+                                    {scopeChanged && (
+                                        <Button
+                                            onClick={resetScope}
+                                            variant="icon"
+                                            aria-label="Reset scope"
+                                            title="Reset scope"
+                                            className={styles.header}
+                                        >
+                                            Reset
+                                        </Button>
+                                    )}
                                 </div>
                                 <div className={classNames('d-flex flex-column', styles.contextItemsContainer)}>
                                     {inferredRepository && (
