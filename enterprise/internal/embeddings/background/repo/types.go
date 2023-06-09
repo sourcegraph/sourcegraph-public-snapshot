@@ -61,7 +61,7 @@ func (e *EmbedRepoStats) ToFields() []log.Field {
 
 func NewEmbedFilesStats(filesTotal int) EmbedFilesStats {
 	return EmbedFilesStats{
-		FilesTotal:     filesTotal,
+		FilesScheduled: filesTotal,
 		FilesEmbedded:  0,
 		FilesSkipped:   map[string]int{},
 		ChunksEmbedded: 0,
@@ -73,7 +73,7 @@ func NewEmbedFilesStats(filesTotal int) EmbedFilesStats {
 type EmbedFilesStats struct {
 	// The total number of files scheduled for embedding. For a complete job,
 	// should be the sum of FilesEmbedded and all the FilesSkipoped reasons.
-	FilesTotal int
+	FilesScheduled int
 
 	// The number of files embedded
 	FilesEmbedded int
@@ -117,7 +117,7 @@ func (e *EmbedFilesStats) ToFields() []log.Field {
 		skippedCounts = append(skippedCounts, log.Int(reason, count))
 	}
 	return []log.Field{
-		log.Int("filesTotal", e.FilesTotal),
+		log.Int("filesTotal", e.FilesScheduled),
 		log.Int("filesEmbedded", e.FilesEmbedded),
 		log.Int("chunksEmbedded", e.ChunksEmbedded),
 		log.Int("bytesEmbedded", e.BytesEmbedded),

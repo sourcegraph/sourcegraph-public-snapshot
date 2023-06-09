@@ -187,6 +187,10 @@ function calculateEstimatedFinish(
     }
     const startTime = Date.parse(startedAt)
     if (filesScheduled === 0) {
+        // There is a period between when the job starts processing and when
+        // we know how many files need to be processed. In the case where
+        // we do not have an update with the number of files scheduled,
+        // we cannot calculate a meaningful ETA.
         return null
     }
     const proportionFinished = (filesEmbedded + filesSkipped) / filesScheduled

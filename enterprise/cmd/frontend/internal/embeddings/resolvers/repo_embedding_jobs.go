@@ -150,7 +150,7 @@ func (r *repoEmbeddingJobResolver) Cancel() bool {
 }
 
 func (r *repoEmbeddingJobResolver) FilesScheduled() int32 {
-	return int32(r.job.Stats.CodeIndexStats.FilesTotal + r.job.Stats.TextIndexStats.FilesTotal)
+	return int32(r.job.Stats.CodeIndexStats.FilesScheduled + r.job.Stats.TextIndexStats.FilesScheduled)
 }
 
 func (r *repoEmbeddingJobResolver) FilesEmbedded() int32 {
