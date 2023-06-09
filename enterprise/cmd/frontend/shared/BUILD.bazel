@@ -24,6 +24,7 @@ go_library(
         "//enterprise/cmd/frontend/internal/dotcom",
         "//enterprise/cmd/frontend/internal/embeddings",
         "//enterprise/cmd/frontend/internal/executorqueue",
+        "//enterprise/cmd/frontend/internal/guardrails",
         "//enterprise/cmd/frontend/internal/insights",
         "//enterprise/cmd/frontend/internal/licensing/init",
         "//enterprise/cmd/frontend/internal/notebooks",

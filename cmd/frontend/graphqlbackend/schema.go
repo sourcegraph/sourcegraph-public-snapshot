@@ -104,3 +104,8 @@ var completionSchema string
 //
 //go:embed githubapps.graphql
 var gitHubAppsSchema string
+
+// guardrailsSchema is the Sourcegraph Guardrails raw graphql schema.
+//
+//go:embed guardrails.graphql
+var guardrailsSchema string

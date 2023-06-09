@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "attribution",
+    srcs = ["attribution.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails/attribution",
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/search",
+        "//internal/search/client",
+        "//internal/search/streaming",
+        "//lib/errors",
+        "//schema",
+    ],
+)
