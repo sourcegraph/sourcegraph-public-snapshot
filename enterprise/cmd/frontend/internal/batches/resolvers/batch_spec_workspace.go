@@ -149,7 +149,7 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 			}
 
 			// Get the log from the run step.
-			logKeyRegex, err := regexp.Compile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.step\\.%d\\.run$", idx))
+			logKeyRegex, err := regexp.Compile(fmt.Sprintf("^step(\\.|-)(docker|kubernetes)(\\.|-)step(\\.|-)%d(\\.|-)run$", idx))
 			if err != nil {
 				return nil, err
 			}
@@ -175,7 +175,7 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 			// to get the step info and or skipped status.
 			if !resolver.skipped && resolver.cachedResult == nil {
 				// The skip log will be in the pre step.
-				logKeyPreRegex, err := regexp.Compile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.step\\.%d\\.pre$", idx))
+				logKeyPreRegex, err := regexp.Compile(fmt.Sprintf("^step(\\.|-)(docker|kubernetes)(\\.|-)step(\\.|-)%d(\\.|-)pre$", idx))
 				if err != nil {
 					return nil, err
 				}
@@ -189,7 +189,7 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 					}
 				}
 
-				logKeyPreRegex, err = regexp.Compile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.step\\.%d\\.post$", idx))
+				logKeyPreRegex, err = regexp.Compile(fmt.Sprintf("^step(\\.|-)(docker|kubernetes)(\\.|-)step(\\.|-)%d(\\.|-)post$", idx))
 				if err != nil {
 					return nil, err
 				}
@@ -555,8 +555,8 @@ func (r *batchSpecWorkspaceStagesResolver) Setup() []graphqlbackend.ExecutionLog
 }
 
 var (
-	logKeyPrefixSetup = regexp.MustCompile("^setup\\.")
-	logKeyApplyDiff   = regexp.MustCompile("^step\\.(docker|kubernetes)\\.apply-diff$")
+	logKeyPrefixSetup = regexp.MustCompile("^setup(\\.|-)")
+	logKeyApplyDiff   = regexp.MustCompile("^step(\\.|-)(docker|kubernetes)(\\.|-)apply-diff$")
 )
 
 func (r *batchSpecWorkspaceStagesResolver) SrcExec() []graphqlbackend.ExecutionLogEntryResolver {
@@ -576,15 +576,15 @@ func (r *batchSpecWorkspaceStagesResolver) SrcExec() []graphqlbackend.ExecutionL
 var (
 	// V1 execution uses a single `step.src.batch-exec` step, for backcompat we return just that
 	// here.
-	logKeySrc        = regexp.MustCompile("^step\\.src\\.(batch-exec|0)$")
-	logKeyPrefixStep = regexp.MustCompile("^step\\.(docker|kubernetes)\\.step\\.")
+	logKeySrc        = regexp.MustCompile("^step(\\.|-)src(\\.|-)(batch-exec|0)$")
+	logKeyPrefixStep = regexp.MustCompile("^step(\\.|-)(docker|kubernetes)(\\.|-)step(\\.|-)")
 )
 
 func (r *batchSpecWorkspaceStagesResolver) Teardown() []graphqlbackend.ExecutionLogEntryResolver {
 	return r.executionLogEntryResolversWithPrefix(logKeyPrefixTeardown)
 }
 
-var logKeyPrefixTeardown = regexp.MustCompile("^teardown\\.")
+var logKeyPrefixTeardown = regexp.MustCompile("^teardown(\\.|-)")
 
 func (r *batchSpecWorkspaceStagesResolver) executionLogEntryResolversWithPrefix(prefix *regexp.Regexp) []graphqlbackend.ExecutionLogEntryResolver {
 	var resolvers []graphqlbackend.ExecutionLogEntryResolver

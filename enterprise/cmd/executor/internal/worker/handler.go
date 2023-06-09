@@ -127,6 +127,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	runtimeRunner, err := h.jobRuntime.NewRunner(
 		ctx,
 		commandLogger,
+		h.filesStore,
 		runtime.RunnerOptions{Path: ws.Path(), DockerAuthConfig: job.DockerAuthConfig, Name: name},
 	)
 	if err != nil {
@@ -143,7 +144,8 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 
 	// Get the commands we will execute.
 	logger.Info("Creating commands")
-	commands, err := h.jobRuntime.NewRunnerSpecs(ws, job.DockerSteps)
+	job.Queue = h.options.QueueName
+	commands, err := h.jobRuntime.NewRunnerSpecs(ws, job)
 	if err != nil {
 		return errors.Wrap(err, "creating commands")
 	}
@@ -158,8 +160,6 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 			// We have a match, so reset the skip key.
 			skipKey = ""
 		}
-		spec.Queue = h.options.QueueName
-		spec.JobID = job.ID
 		if err := runtimeRunner.Run(ctx, spec); err != nil {
 			return errors.Wrapf(err, "running command %q", spec.CommandSpec.Key)
 		}

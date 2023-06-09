@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
@@ -37,7 +38,7 @@ func (r *dockerRuntime) PrepareWorkspace(ctx context.Context, logger command.Log
 	)
 }
 
-func (r *dockerRuntime) NewRunner(ctx context.Context, logger command.Logger, options RunnerOptions) (runner.Runner, error) {
+func (r *dockerRuntime) NewRunner(ctx context.Context, logger command.Logger, filesStore files.Store, options RunnerOptions) (runner.Runner, error) {
 	run := runner.NewDockerRunner(r.cmd, logger, options.Path, r.dockerOpts, options.DockerAuthConfig)
 	if err := run.Setup(ctx); err != nil {
 		return nil, errors.Wrap(err, "failed to setup docker runner")
@@ -45,10 +46,12 @@ func (r *dockerRuntime) NewRunner(ctx context.Context, logger command.Logger, op
 	return run, nil
 }
 
-func (r *dockerRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types.DockerStep) ([]runner.Spec, error) {
-	runnerSpecs := make([]runner.Spec, len(steps))
-	for i, step := range steps {
+func (r *dockerRuntime) NewRunnerSpecs(ws workspace.Workspace, job types.Job) ([]runner.Spec, error) {
+	runnerSpecs := make([]runner.Spec, len(job.DockerSteps))
+	for i, step := range job.DockerSteps {
 		runnerSpecs[i] = runner.Spec{
+			JobID: job.ID,
+			Queue: job.Queue,
 			CommandSpec: command.Spec{
 				Key:       dockerKey(step.Key, i),
 				Command:   nil,

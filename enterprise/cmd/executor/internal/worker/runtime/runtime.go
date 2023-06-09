@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
@@ -23,9 +24,9 @@ type Runtime interface {
 	// PrepareWorkspace sets up the workspace for the Job.
 	PrepareWorkspace(ctx context.Context, logger command.Logger, job types.Job) (workspace.Workspace, error)
 	// NewRunner creates a runner that will execute the steps.
-	NewRunner(ctx context.Context, logger command.Logger, options RunnerOptions) (runner.Runner, error)
+	NewRunner(ctx context.Context, logger command.Logger, filesStore files.Store, options RunnerOptions) (runner.Runner, error)
 	// NewRunnerSpecs builds and returns the commands that the runner will execute.
-	NewRunnerSpecs(ws workspace.Workspace, steps []types.DockerStep) ([]runner.Spec, error)
+	NewRunnerSpecs(ws workspace.Workspace, job types.Job) ([]runner.Spec, error)
 	//CommandKey() string
 }
 

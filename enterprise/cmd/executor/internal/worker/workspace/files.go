@@ -46,7 +46,7 @@ func prepareScripts(
 			return nil, err
 		}
 		if !strings.HasPrefix(path, workspaceDir) {
-			return nil, errors.Errorf("refusing to write outside of working directory")
+			return nil, errors.New("refusing to write outside of working directory")
 		}
 		// Either write raw content that has already been provided or retrieve it from the store.
 		workspaceFilesByPath[path] = workspaceFile{
@@ -63,7 +63,7 @@ func prepareScripts(
 		scriptNames = append(scriptNames, scriptName)
 
 		path := filepath.Join(workspaceDir, command.ScriptsPath, scriptName)
-		workspaceFilesByPath[path] = buildScript(dockerStep)
+		workspaceFilesByPath[path] = buildScript(dockerStep.Commands)
 	}
 
 	if err := writeFiles(ctx, filesStore, job, workspaceFilesByPath, commandLogger); err != nil {
@@ -111,8 +111,8 @@ set +e
 set -x
 `
 
-func buildScript(dockerStep types.DockerStep) workspaceFile {
-	return workspaceFile{content: []byte(strings.Join(append([]string{scriptPreamble, ""}, dockerStep.Commands...), "\n") + "\n")}
+func buildScript(commands []string) workspaceFile {
+	return workspaceFile{content: []byte(strings.Join(append([]string{scriptPreamble, ""}, commands...), "\n") + "\n")}
 }
 
 func scriptNameFromJobStep(job types.Job, i int) string {

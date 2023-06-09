@@ -35,17 +35,17 @@ func (r *indexStepsResolver) Setup() []resolverstubs.ExecutionLogEntryResolver {
 	return r.executionLogEntryResolversWithPrefix(logKeyPrefixSetup)
 }
 
-var logKeyPrefixSetup = regexp.MustCompile("^setup\\.")
+var logKeyPrefixSetup = regexp.MustCompile("^setup(\\.|-)")
 
 func (r *indexStepsResolver) PreIndex() []resolverstubs.PreIndexStepResolver {
 	var resolvers []resolverstubs.PreIndexStepResolver
 	for i, step := range r.index.DockerSteps {
-		logKeyPreIndex := regexp.MustCompile(fmt.Sprintf("step\\.(docker|kubernetes)\\.pre-index\\.%d", i))
+		logKeyPreIndex := regexp.MustCompile(fmt.Sprintf("step(\\.|-)(docker|kubernetes)(\\.|-)pre-index(\\.|-)%d", i))
 		if entry, ok := r.findExecutionLogEntry(logKeyPreIndex); ok {
 			resolvers = append(resolvers, newPreIndexStepResolver(r.siteAdminChecker, step, &entry))
 			// This is here for backwards compatibility for records that were created before
 			// named keys for steps existed.
-		} else if entry, ok := r.findExecutionLogEntry(regexp.MustCompile(fmt.Sprintf("step\\.(docker|kubernetes)\\.%d", i))); ok {
+		} else if entry, ok := r.findExecutionLogEntry(regexp.MustCompile(fmt.Sprintf("step(\\.|-)(docker|kubernetes)(\\.|-)%d", i))); ok {
 			resolvers = append(resolvers, newPreIndexStepResolver(r.siteAdminChecker, step, &entry))
 		} else {
 			resolvers = append(resolvers, newPreIndexStepResolver(r.siteAdminChecker, step, nil))
@@ -62,7 +62,7 @@ func (r *indexStepsResolver) Index() resolverstubs.IndexStepResolver {
 
 	// This is here for backwards compatibility for records that were created before
 	// named keys for steps existed.
-	logKeyRegex := regexp.MustCompile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.%d", len(r.index.DockerSteps)))
+	logKeyRegex := regexp.MustCompile(fmt.Sprintf("^step(\\.|-)(docker|kubernetes)(\\.|-)%d", len(r.index.DockerSteps)))
 	if entry, ok := r.findExecutionLogEntry(logKeyRegex); ok {
 		return newIndexStepResolver(r.siteAdminChecker, r.index, &entry)
 	}
@@ -70,7 +70,7 @@ func (r *indexStepsResolver) Index() resolverstubs.IndexStepResolver {
 	return newIndexStepResolver(r.siteAdminChecker, r.index, nil)
 }
 
-var logKeyPrefixIndexer = regexp.MustCompile("^step\\.(docker|kubernetes)\\.indexer")
+var logKeyPrefixIndexer = regexp.MustCompile("^step(\\.|-)(docker|kubernetes)(\\.|-)indexer")
 
 func (r *indexStepsResolver) Upload() resolverstubs.ExecutionLogEntryResolver {
 	if entry, ok := r.findExecutionLogEntry(logKeyPrefixUpload); ok {
@@ -87,15 +87,15 @@ func (r *indexStepsResolver) Upload() resolverstubs.ExecutionLogEntryResolver {
 }
 
 var (
-	logKeyPrefixUpload       = regexp.MustCompile("^step\\.(docker|kubernetes|src)\\.upload")
-	logKeyPrefixSrcFirstStep = regexp.MustCompile("^step\\.src\\.0")
+	logKeyPrefixUpload       = regexp.MustCompile("^step(\\.|-)(docker|kubernetes|src)(\\.|-)upload")
+	logKeyPrefixSrcFirstStep = regexp.MustCompile("^step(\\.|-)src(\\.|-)0")
 )
 
 func (r *indexStepsResolver) Teardown() []resolverstubs.ExecutionLogEntryResolver {
 	return r.executionLogEntryResolversWithPrefix(logKeyPrefixTeardown)
 }
 
-var logKeyPrefixTeardown = regexp.MustCompile("^teardown\\.")
+var logKeyPrefixTeardown = regexp.MustCompile("^teardown(\\.|-)")
 
 func (r *indexStepsResolver) findExecutionLogEntry(key *regexp.Regexp) (executor.ExecutionLogEntry, bool) {
 	for _, entry := range r.index.ExecutionLogs {

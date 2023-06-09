@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -23,6 +24,7 @@ type kubernetesRunner struct {
 	cmd            *command.KubernetesCommand
 	jobNames       []string
 	dir            string
+	filesStore     files.Store
 	options        command.KubernetesContainerOptions
 	// tmpDir is used to store temporary files used for k8s execution.
 	tmpDir string
@@ -35,6 +37,7 @@ func NewKubernetesRunner(
 	cmd *command.KubernetesCommand,
 	commandLogger command.Logger,
 	dir string,
+	filesStore files.Store,
 	options command.KubernetesContainerOptions,
 ) Runner {
 	return &kubernetesRunner{
@@ -42,6 +45,7 @@ func NewKubernetesRunner(
 		commandLogger:  commandLogger,
 		cmd:            cmd,
 		dir:            dir,
+		filesStore:     filesStore,
 		options:        options,
 	}
 }
@@ -73,13 +77,69 @@ func (r *kubernetesRunner) Teardown(ctx context.Context) error {
 }
 
 func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
-	job := command.NewKubernetesJob(
-		fmt.Sprintf("sg-executor-job-%s-%d-%s", spec.Queue, spec.JobID, spec.CommandSpec.Key),
-		spec.Image,
+	//	job := command.NewKubernetesJob(
+	//		fmt.Sprintf("sg-executor-job-%s-%d-%s", spec.Queue, spec.JobID, spec.CommandSpec.Key),
+	//		spec.Image,
+	//		spec.CommandSpec,
+	//		r.dir,
+	//		r.options,
+	//	)
+	//	r.internalLogger.Debug("Creating job", log.Int("jobID", spec.JobID))
+	//	if _, err := r.cmd.CreateJob(ctx, r.options.Namespace, job); err != nil {
+	//		return errors.Wrap(err, "creating job")
+	//	}
+	//	r.jobNames = append(r.jobNames, job.Name)
+	//
+	//	// Start the log entry for the command.
+	//	logEntry := r.commandLogger.LogEntry(spec.CommandSpec.Key, spec.CommandSpec.Command)
+	//	defer logEntry.Close()
+	//
+	//	// Wait for the job to complete before reading the logs. This lets us get also get exit codes.
+	//	r.internalLogger.Debug("Waiting for pod to succeed", log.Int("jobID", spec.JobID), log.String("jobName", job.Name))
+	//	pod, podWaitErr := r.cmd.WaitForPodToSucceed(ctx, r.options.Namespace, job.Name)
+	//	// Handle when the wait failed to do the things.
+	//	if podWaitErr != nil && pod == nil {
+	//		// There is no pod to read the logs of. Finalize the log entry and return the error.
+	//		logEntry.Finalize(1)
+	//		return errors.Wrapf(podWaitErr, "waiting for job %s to complete", job.Name)
+	//	}
+	//	// Always read the logs, even if the job fails.
+	//	r.internalLogger.Debug("Reading logs", log.String("podName", pod.Name))
+	//	readLogErr := r.cmd.ReadLogs(
+	//		ctx,
+	//		r.options.Namespace,
+	//		pod,
+	//		command.KubernetesJobContainerName,
+	//		logEntry,
+	//	)
+	//	// Now handle the wait error.
+	//	if podWaitErr != nil {
+	//		var errMessage string
+	//		if pod.Status.Message != "" {
+	//			errMessage = fmt.Sprintf("job %s failed: %s", job.Name, pod.Status.Message)
+	//		} else {
+	//			errMessage = fmt.Sprintf("job %s failed", job.Name)
+	//		}
+	//
+	//		if readLogErr != nil {
+	//			return errors.Wrap(readLogErr, errMessage)
+	//		}
+	//		return errors.New(errMessage)
+	//	}
+	//	r.internalLogger.Debug("Job completed successfully", log.Int("jobID", spec.JobID))
+	//	return readLogErr
+	workspaceFiles, err := files.GetWorkspaceFiles(ctx, r.filesStore, spec.CommandSpec.Job, "/job")
+	if err != nil {
+		return err
+	}
+
+	job := command.NewKubernetesJobV2(
+		fmt.Sprintf("sg-executor-job-%s-%d", spec.CommandSpec.Job.Queue, spec.CommandSpec.Job.ID),
 		spec.CommandSpec,
-		r.dir,
+		workspaceFiles,
 		r.options,
 	)
+
 	r.internalLogger.Debug("Creating job", log.Int("jobID", spec.JobID))
 	if _, err := r.cmd.CreateJob(ctx, r.options.Namespace, job); err != nil {
 		return errors.Wrap(err, "creating job")
@@ -92,22 +152,13 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 
 	// Wait for the job to complete before reading the logs. This lets us get also get exit codes.
 	r.internalLogger.Debug("Waiting for pod to succeed", log.Int("jobID", spec.JobID), log.String("jobName", job.Name))
-	pod, podWaitErr := r.cmd.WaitForPodToSucceed(ctx, r.options.Namespace, job.Name)
+	pod, podWaitErr := r.cmd.WaitForJobPodToSucceed(ctx, r.commandLogger, r.options.Namespace, job.Name, spec.CommandSpec)
 	// Handle when the wait failed to do the things.
 	if podWaitErr != nil && pod == nil {
 		// There is no pod to read the logs of. Finalize the log entry and return the error.
 		logEntry.Finalize(1)
 		return errors.Wrapf(podWaitErr, "waiting for job %s to complete", job.Name)
 	}
-	// Always read the logs, even if the job fails.
-	r.internalLogger.Debug("Reading logs", log.String("podName", pod.Name))
-	readLogErr := r.cmd.ReadLogs(
-		ctx,
-		r.options.Namespace,
-		pod,
-		command.KubernetesJobContainerName,
-		logEntry,
-	)
 	// Now handle the wait error.
 	if podWaitErr != nil {
 		var errMessage string
@@ -116,12 +167,8 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 		} else {
 			errMessage = fmt.Sprintf("job %s failed", job.Name)
 		}
-
-		if readLogErr != nil {
-			return errors.Wrap(readLogErr, errMessage)
-		}
 		return errors.New(errMessage)
 	}
 	r.internalLogger.Debug("Job completed successfully", log.Int("jobID", spec.JobID))
-	return readLogErr
+	return nil
 }

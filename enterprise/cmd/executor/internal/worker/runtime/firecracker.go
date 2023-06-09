@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
@@ -40,7 +41,7 @@ func (r *firecrackerRuntime) PrepareWorkspace(ctx context.Context, logger comman
 	)
 }
 
-func (r *firecrackerRuntime) NewRunner(ctx context.Context, logger command.Logger, options RunnerOptions) (runner.Runner, error) {
+func (r *firecrackerRuntime) NewRunner(ctx context.Context, logger command.Logger, filesStore files.Store, options RunnerOptions) (runner.Runner, error) {
 	run := runner.NewFirecrackerRunner(
 		r.cmd,
 		logger,
@@ -56,10 +57,12 @@ func (r *firecrackerRuntime) NewRunner(ctx context.Context, logger command.Logge
 	return run, nil
 }
 
-func (r *firecrackerRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types.DockerStep) ([]runner.Spec, error) {
-	runnerSpecs := make([]runner.Spec, len(steps))
-	for i, step := range steps {
+func (r *firecrackerRuntime) NewRunnerSpecs(ws workspace.Workspace, job types.Job) ([]runner.Spec, error) {
+	runnerSpecs := make([]runner.Spec, len(job.DockerSteps))
+	for i, step := range job.DockerSteps {
 		runnerSpecs[i] = runner.Spec{
+			JobID: job.ID,
+			Queue: job.Queue,
 			CommandSpec: command.Spec{
 				Key:       dockerKey(step.Key, i),
 				Command:   nil,

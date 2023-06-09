@@ -12,6 +12,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -48,6 +49,26 @@ type Spec struct {
 	Dir       string
 	Env       []string
 	Operation *observation.Operation
+
+	// Kubernetes Single Pod Specific OptØions
+	CloneOptions CloneOptions
+	Job          types.Job
+	Steps        []Step
+}
+
+type Step struct {
+	Key string
+	Command []string
+	Dir     string
+	Env     []string
+	Image   string
+}
+
+type CloneOptions struct {
+	ExecutorName   string
+	EndpointURL    string
+	GitServicePath string
+	ExecutorToken  string
 }
 
 func (c *RealCommand) Run(ctx context.Context, cmdLogger Logger, spec Spec) (err error) {

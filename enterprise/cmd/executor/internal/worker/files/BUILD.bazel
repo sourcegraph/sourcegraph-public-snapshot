@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "files",
+    srcs = ["files.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files",
+    visibility = ["//enterprise/cmd/executor:__subpackages__"],
+    deps = [
+        "//enterprise/internal/executor/types",
+        "//lib/errors",
+    ],
+)
