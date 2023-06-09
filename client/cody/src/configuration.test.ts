@@ -11,7 +11,7 @@ describe('getConfiguration', () => {
             serverEndpoint: '',
             codebase: '',
             useContext: 'embeddings',
-            experimentalSuggest: false,
+            completions: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             experimentalInline: false,
@@ -38,6 +38,7 @@ describe('getConfiguration', () => {
                             'Cache-Control': 'no-cache',
                             'Proxy-Authenticate': 'Basic',
                         }
+                    case 'cody.completions':
                     case 'cody.experimental.suggestions':
                         return true
                     case 'cody.experimental.chatPredictions':
@@ -67,7 +68,7 @@ describe('getConfiguration', () => {
                 'Cache-Control': 'no-cache',
                 'Proxy-Authenticate': 'Basic',
             },
-            experimentalSuggest: true,
+            completions: true,
             experimentalChatPredictions: true,
             experimentalGuardrails: true,
             experimentalInline: true,

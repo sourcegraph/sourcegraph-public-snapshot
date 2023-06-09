@@ -200,10 +200,10 @@ const register = async (
             })
         }),
         vscode.commands.registerCommand('cody.walkthrough.enableCodeCompletions', async () => {
-            await workspaceConfig.update('cody.experimental.suggestions', true, vscode.ConfigurationTarget.Global)
+            await workspaceConfig.update('cody.completions', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openSettings', {
-                query: 'cody.experimental.suggestions',
+                query: 'cody.completions',
                 openToSide: true,
             })
         }),
@@ -254,7 +254,7 @@ const register = async (
         })
     )
 
-    if (initialConfig.experimentalSuggest) {
+    if (initialConfig.completions) {
         // TODO(sqs): make this listen to config and not just use initialConfig
         const docprovider = new CompletionsDocumentProvider()
         disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))

@@ -515,7 +515,7 @@
         },
         {
           "command": "cody.manual-completions",
-          "when": "config.cody.experimental.suggestions"
+          "when": "config.cody.completions"
         },
         {
           "command": "cody.guardrails.debug",
@@ -730,6 +730,10 @@
           ]
         },
         "cody.experimental.suggestions": {
+          "markdownDeprecationMessage": "This setting was renamed to `cody.completions`.",
+          "default": false
+        },
+        "cody.completions": {
           "order": 5,
           "type": "boolean",
           "markdownDescription": "Enables experimental Cody completions in your editor.",
