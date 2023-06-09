@@ -10246,5 +10246,12 @@ type PerforceChangelist {
     The changelist ID.
     """
     cid: String!
+    """
+    The canonical URL to this changelist.
+    """
     canonicalURL: String!
+    """
+    The corresponding git commit of this changelist.
+    """
+    commit: GitCommit!
 }

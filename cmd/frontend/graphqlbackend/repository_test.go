@@ -69,6 +69,11 @@ func TestRepository_Commit(t *testing.T) {
 func TestRepository_Changelist(t *testing.T) {
 	repo := &types.Repo{ID: 2, Name: "github.com/gorilla/mux"}
 
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		assert.Equal(t, api.RepoID(2), repo.ID)
+		return exampleCommitSHA1, nil
+	}
+
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(repo, nil)
 	repos.GetByNameFunc.SetDefaultReturn(repo, nil)
@@ -93,20 +98,26 @@ func TestRepository_Changelist(t *testing.T) {
 						changelist(cid: "123") {
 							cid
 							canonicalURL
+							commit {
+								oid
+							}
 						}
 					}
 				}
 			`,
-		ExpectedResult: `
+		ExpectedResult: fmt.Sprintf(`
 				{
 					"repository": {
 						"changelist": {
 							"cid": "123",
-							"canonicalURL": "/github.com/gorilla/mux/-/changelist/123"
+							"canonicalURL": "/github.com/gorilla/mux/-/changelist/123",
+"commit": {
+	"oid": "%s"
+}
 						}
 					}
 				}
-			`,
+			`, exampleCommitSHA1),
 	})
 }
 
