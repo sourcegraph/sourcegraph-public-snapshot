@@ -2,6 +2,7 @@ package jobutil
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/sourcegraph/log"
@@ -85,6 +86,15 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 	filtered := matches[:0]
 
 	for _, m := range matches {
+		enabled, err := authz.SubRepoEnabledForRepo(ctx, checker, m.Key().Repo)
+		if err != nil {
+			logger.Warn(fmt.Sprintf("Could not determine if sub-repo permissions are enabled for repo %s. Skipping.", m.Key().Repo))
+			continue
+		}
+		if !enabled {
+			filtered = append(filtered, m)
+			continue
+		}
 		switch mm := m.(type) {
 		case *result.FileMatch:
 			repo := mm.Repo.Name
