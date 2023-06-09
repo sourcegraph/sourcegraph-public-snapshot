@@ -39366,7 +39366,7 @@ type MockOwnershipStatsStore struct {
 func NewMockOwnershipStatsStore() *MockOwnershipStatsStore {
 	return &MockOwnershipStatsStore{
 		QueryAggregateCountsFunc: &OwnershipStatsStoreQueryAggregateCountsFunc{
-			defaultHook: func(context.Context, TreeLocationOpts) (r0 []PathAggregateCounts, r1 error) {
+			defaultHook: func(context.Context, TreeLocationOpts) (r0 PathAggregateCounts, r1 error) {
 				return
 			},
 		},
@@ -39394,7 +39394,7 @@ func NewMockOwnershipStatsStore() *MockOwnershipStatsStore {
 func NewStrictMockOwnershipStatsStore() *MockOwnershipStatsStore {
 	return &MockOwnershipStatsStore{
 		QueryAggregateCountsFunc: &OwnershipStatsStoreQueryAggregateCountsFunc{
-			defaultHook: func(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error) {
+			defaultHook: func(context.Context, TreeLocationOpts) (PathAggregateCounts, error) {
 				panic("unexpected invocation of MockOwnershipStatsStore.QueryAggregateCounts")
 			},
 		},
@@ -39440,15 +39440,15 @@ func NewMockOwnershipStatsStoreFrom(i OwnershipStatsStore) *MockOwnershipStatsSt
 // the QueryAggregateCounts method of the parent MockOwnershipStatsStore
 // instance is invoked.
 type OwnershipStatsStoreQueryAggregateCountsFunc struct {
-	defaultHook func(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error)
-	hooks       []func(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error)
+	defaultHook func(context.Context, TreeLocationOpts) (PathAggregateCounts, error)
+	hooks       []func(context.Context, TreeLocationOpts) (PathAggregateCounts, error)
 	history     []OwnershipStatsStoreQueryAggregateCountsFuncCall
 	mutex       sync.Mutex
 }
 
 // QueryAggregateCounts delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockOwnershipStatsStore) QueryAggregateCounts(v0 context.Context, v1 TreeLocationOpts) ([]PathAggregateCounts, error) {
+func (m *MockOwnershipStatsStore) QueryAggregateCounts(v0 context.Context, v1 TreeLocationOpts) (PathAggregateCounts, error) {
 	r0, r1 := m.QueryAggregateCountsFunc.nextHook()(v0, v1)
 	m.QueryAggregateCountsFunc.appendCall(OwnershipStatsStoreQueryAggregateCountsFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -39457,7 +39457,7 @@ func (m *MockOwnershipStatsStore) QueryAggregateCounts(v0 context.Context, v1 Tr
 // SetDefaultHook sets function that is called when the QueryAggregateCounts
 // method of the parent MockOwnershipStatsStore instance is invoked and the
 // hook queue is empty.
-func (f *OwnershipStatsStoreQueryAggregateCountsFunc) SetDefaultHook(hook func(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error)) {
+func (f *OwnershipStatsStoreQueryAggregateCountsFunc) SetDefaultHook(hook func(context.Context, TreeLocationOpts) (PathAggregateCounts, error)) {
 	f.defaultHook = hook
 }
 
@@ -39466,7 +39466,7 @@ func (f *OwnershipStatsStoreQueryAggregateCountsFunc) SetDefaultHook(hook func(c
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *OwnershipStatsStoreQueryAggregateCountsFunc) PushHook(hook func(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error)) {
+func (f *OwnershipStatsStoreQueryAggregateCountsFunc) PushHook(hook func(context.Context, TreeLocationOpts) (PathAggregateCounts, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -39474,20 +39474,20 @@ func (f *OwnershipStatsStoreQueryAggregateCountsFunc) PushHook(hook func(context
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *OwnershipStatsStoreQueryAggregateCountsFunc) SetDefaultReturn(r0 []PathAggregateCounts, r1 error) {
-	f.SetDefaultHook(func(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error) {
+func (f *OwnershipStatsStoreQueryAggregateCountsFunc) SetDefaultReturn(r0 PathAggregateCounts, r1 error) {
+	f.SetDefaultHook(func(context.Context, TreeLocationOpts) (PathAggregateCounts, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *OwnershipStatsStoreQueryAggregateCountsFunc) PushReturn(r0 []PathAggregateCounts, r1 error) {
-	f.PushHook(func(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error) {
+func (f *OwnershipStatsStoreQueryAggregateCountsFunc) PushReturn(r0 PathAggregateCounts, r1 error) {
+	f.PushHook(func(context.Context, TreeLocationOpts) (PathAggregateCounts, error) {
 		return r0, r1
 	})
 }
 
-func (f *OwnershipStatsStoreQueryAggregateCountsFunc) nextHook() func(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error) {
+func (f *OwnershipStatsStoreQueryAggregateCountsFunc) nextHook() func(context.Context, TreeLocationOpts) (PathAggregateCounts, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -39530,7 +39530,7 @@ type OwnershipStatsStoreQueryAggregateCountsFuncCall struct {
 	Arg1 TreeLocationOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []PathAggregateCounts
+	Result0 PathAggregateCounts
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
