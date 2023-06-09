@@ -22,6 +22,7 @@ func defaultSettings() *schema.Settings {
 	}
 }
 
+// Deprecated: use Mock
 var MockCurrentUserFinal *schema.Settings
 
 // Service calculates settings for users and other subjects.
@@ -240,6 +241,25 @@ func mergeLeft(left, right reflect.Value, depth int) reflect.Value {
 
 	// Type is not mergeable, so clobber existing value
 	return right
+}
+
+// Mock will return itself for UserFromContext and ForSubject.
+func Mock(settings *schema.Settings) Service {
+	return mock{settings: settings}
+}
+
+type mock struct {
+	settings *schema.Settings
+}
+
+func (m mock) UserFromContext(ctx context.Context) (*schema.Settings, error) {
+	return m.settings, nil
+}
+func (m mock) ForSubject(ctx context.Context, subject api.SettingsSubject) (*schema.Settings, error) {
+	return m.settings, nil
+}
+func (m mock) RelevantSubjects(ctx context.Context, subject api.SettingsSubject) ([]api.SettingsSubject, error) {
+	return nil, nil
 }
 
 // CurrentUserFinal returns the merged settings for the current user.
