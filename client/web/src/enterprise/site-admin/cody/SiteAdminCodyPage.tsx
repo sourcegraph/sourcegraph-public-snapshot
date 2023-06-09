@@ -1,6 +1,6 @@
 import { FC, useCallback, useEffect, useState, useMemo } from 'react'
 
-import { mdiMapSearch, mdiRobotOutline } from '@mdi/js'
+import { mdiMapSearch } from '@mdi/js'
 import { capitalize } from 'lodash'
 import { useLocation } from 'react-router-dom'
 
@@ -22,6 +22,7 @@ import {
     Icon,
 } from '@sourcegraph/wildcard'
 
+import { CodyColorIcon, CodyPageIcon } from '../../../cody/chat/CodyPageIcon'
 import { FilteredConnectionFilter, FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
 import {
     ConnectionContainer,
@@ -164,7 +165,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
         <>
             <PageTitle title="Embeddings jobs" />
             <PageHeader
-                path={[{ icon: mdiRobotOutline, text: 'Cody' }, { text: 'Embeddings jobs' }]}
+                path={[{ icon: CodyColorIcon, text: 'Cody' }, { text: 'Embeddings jobs' }]}
                 className="mb-3"
                 headingElement="h2"
             />

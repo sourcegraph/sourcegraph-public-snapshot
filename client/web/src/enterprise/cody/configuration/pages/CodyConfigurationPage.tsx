@@ -1,7 +1,6 @@
 import { FC, useCallback, useEffect, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import { mdiRobotOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Subject } from 'rxjs'
@@ -11,6 +10,7 @@ import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Container, ErrorAlert, Link, PageHeader } from '@sourcegraph/wildcard'
 
+import { CodyColorIcon, CodyPageIcon } from '../../../../cody/chat/CodyPageIcon'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
@@ -86,7 +86,7 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
             <PageHeader
                 headingElement="h2"
                 path={[
-                    { icon: mdiRobotOutline, text: 'Cody' },
+                    { icon: CodyColorIcon, text: 'Cody' },
                     {
                         text: repo ? (
                             <>
