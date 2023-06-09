@@ -2,6 +2,8 @@ package shared
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -9,6 +11,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/telemetry-gateway/internal/events"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -66,8 +69,13 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	// 	Sources:     sources,
 	// }
 
+	topicConfig := events.TopicConfig{
+		ProjectName: config.PubSub.ProjectName,
+		TopicName:   config.PubSub.TopicName,
+	}
+
 	// Set up our handler chain,
-	handler := NewHandler()
+	handler := NewHandler(topicConfig)
 
 	// Instrumentation layers
 	handler = requestLogger(obctx.Logger.Scoped("requests", "HTTP requests"), handler)
@@ -102,13 +110,13 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	return nil
 }
 
-func NewHandler() http.Handler {
+func NewHandler(config events.TopicConfig) http.Handler {
 	r := mux.NewRouter()
 
 	// V1 service routes
 	v1 := r.PathPrefix("/v1").Subrouter()
 
-	v1.Path("/events").Methods(http.MethodPost).Handler(eventsHandler())
+	v1.Path("/events").Methods(http.MethodPost).Handler(eventsHandler(config))
 
 	return r
 }
@@ -128,8 +136,22 @@ func requestLogger(logger log.Logger, next http.Handler) http.Handler {
 	})
 }
 
-func eventsHandler() http.Handler {
+func eventsHandler(config events.TopicConfig) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		var proxyReq events.TelemetryGatewayProxyRequest
+		if err := json.NewDecoder(request.Body).Decode(&proxyReq); err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// err := events.SendEvents(request.Context(), proxyReq, events.TopicConfig{})
+		// if err != nil {
+		// 	http.Error(writer, err.Error(), http.StatusInternalServerError) // need to improve this
+		// }
+
+		log.Scoped("asdf", "asdf").Info("input", log.String("input", fmt.Sprintf("%v", proxyReq)))
+
+		// Use proxyReq...
 		_, _ = writer.Write([]byte("jobs done"))
 	})
 }
