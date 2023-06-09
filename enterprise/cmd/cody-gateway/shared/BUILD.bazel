@@ -21,6 +21,7 @@ go_library(
         "//enterprise/cmd/cody-gateway/internal/events",
         "//enterprise/cmd/cody-gateway/internal/httpapi",
         "//enterprise/cmd/cody-gateway/internal/limiter",
+        "//enterprise/cmd/cody-gateway/internal/notify",
         "//enterprise/internal/codygateway",
         "//internal/debugserver",
         "//internal/env",
@@ -50,22 +51,5 @@ go_library(
         "@io_opentelemetry_go_otel//semconv/v1.7.0:v1_7_0",
         "@io_opentelemetry_go_otel_sdk//resource",
         "@io_opentelemetry_go_otel_sdk//trace",
-    ],
-)
-
-go_test(
-    name = "shared_test",
-    srcs = ["main_test.go"],
-    embed = [":shared"],
-    deps = [
-        "//enterprise/cmd/cody-gateway/internal/actor",
-        "//enterprise/cmd/cody-gateway/internal/actor/productsubscription",
-        "//enterprise/internal/codygateway",
-        "//internal/redispool",
-        "@com_github_derision_test_go_mockgen//testutil/require",
-        "@com_github_slack_go_slack//:slack",
-        "@com_github_sourcegraph_log//logtest",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
     ],
 )

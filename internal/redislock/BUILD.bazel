@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "redislock",
+    srcs = ["redislock.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/redislock",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/redispool",
+        "@com_github_gomodule_redigo//redis",
+    ],
+)
+
+go_test(
+    name = "redislock_test",
+    srcs = ["redislock_test.go"],
+    embed = [":redislock"],
+    deps = [
+        "//internal/redispool",
+        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -14,6 +14,7 @@ go_library(
         "//enterprise/cmd/cody-gateway/internal/actor",
         "//enterprise/cmd/cody-gateway/internal/events",
         "//enterprise/cmd/cody-gateway/internal/limiter",
+        "//enterprise/cmd/cody-gateway/internal/notify",
         "//enterprise/cmd/cody-gateway/internal/response",
         "//enterprise/internal/codygateway",
         "//enterprise/internal/completions/client/anthropic",

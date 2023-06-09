@@ -11,6 +11,7 @@ go_library(
     visibility = ["//enterprise/cmd/cody-gateway:__subpackages__"],
     deps = [
         "//enterprise/cmd/cody-gateway/internal/limiter",
+        "//enterprise/cmd/cody-gateway/internal/notify",
         "//enterprise/internal/codygateway",
         "//internal/goroutine",
         "//internal/observation",
