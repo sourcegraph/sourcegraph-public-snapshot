@@ -66,8 +66,9 @@ func TestGetCompletionsConfig(t *testing.T) {
 				LicenseKey:  "",
 			},
 			want: autogold.Expect(&schema.Completions{
+				ChatModel:       "anthropic/claude-v1",
+				CompletionModel: "anthropic/claude-instant-v1",
 				Enabled:         true,
-				CompletionModel: "anthropic/claude-v1",
 				Endpoint:        "https://cody-gateway.sourcegraph.com",
 				Provider:        "sourcegraph",
 			}),

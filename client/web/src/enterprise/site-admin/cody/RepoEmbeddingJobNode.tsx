@@ -91,17 +91,21 @@ const RepoEmbeddingJobExecutionInfo: FC<
         <>
             {state === RepoEmbeddingJobState.COMPLETED && finishedAt && (
                 <small>
-                    Embedding completed successfully <Timestamp date={finishedAt} />.
+                    Completed <Timestamp date={finishedAt} />
                 </small>
             )}
-            {state === RepoEmbeddingJobState.CANCELED && <small>Embedding was canceled.</small>}
+            {state === RepoEmbeddingJobState.CANCELED && finishedAt && (
+                <small>
+                    Stopped <Timestamp date={finishedAt} />
+                </small>
+            )}
             {state === RepoEmbeddingJobState.QUEUED && (
                 <small>
                     {cancel ? (
                         'Cancelling ...'
                     ) : (
                         <>
-                            Embedding was queued <Timestamp date={queuedAt} />.
+                            Queued <Timestamp date={queuedAt} />
                         </>
                     )}
                 </small>
@@ -112,7 +116,7 @@ const RepoEmbeddingJobExecutionInfo: FC<
                         'Cancelling ...'
                     ) : (
                         <>
-                            Embedding started processing <Timestamp date={startedAt} />.
+                            Started processing <Timestamp date={startedAt} />
                         </>
                     )}
                 </small>

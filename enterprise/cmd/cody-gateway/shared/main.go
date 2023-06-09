@@ -28,6 +28,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor/anonymous"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor/productsubscription"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi"
@@ -68,14 +69,23 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		}
 	}
 
+	dotcomClient := dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
+
 	// Supported actor/auth sources
 	sources := actor.Sources{
-		anonymous.NewSource(config.AllowAnonymous),
+		anonymous.NewSource(config.AllowAnonymous, config.ActorConcurrencyLimit),
 		productsubscription.NewSource(
 			obctx.Logger,
 			rcache.New("product-subscriptions"),
-			dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken),
-			config.Dotcom.InternalMode),
+			dotcomClient,
+			config.Dotcom.InternalMode,
+			config.ActorConcurrencyLimit,
+		),
+		dotcomuser.NewSource(obctx.Logger,
+			rcache.New("dotcom-users"),
+			dotcomClient,
+			config.ActorConcurrencyLimit,
+		),
 	}
 
 	authr := &auth.Authenticator{
@@ -93,7 +103,6 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
 	handler := httpapi.NewHandler(obctx.Logger, eventLogger, rs, authr, &httpapi.Config{
-		ConcurrencyLimit:        config.ActorConcurrencyLimit,
 		AnthropicAccessToken:    config.Anthropic.AccessToken,
 		AnthropicAllowedModels:  config.Anthropic.AllowedModels,
 		OpenAIAccessToken:       config.OpenAI.AccessToken,

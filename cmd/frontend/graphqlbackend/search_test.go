@@ -354,7 +354,7 @@ func BenchmarkSearchResults(b *testing.B) {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
-			client: client.NewSearchClient(logtest.Scoped(b), db, z, nil, nil, jobutil.NewUnimplementedEnterpriseJobs()),
+			client: client.MockedZoekt(logtest.Scoped(b), db, z),
 			db:     db,
 			SearchInputs: &search.Inputs{
 				Plan:         plan,

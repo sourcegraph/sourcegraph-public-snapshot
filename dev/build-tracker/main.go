@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -139,7 +139,7 @@ func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
 	eventName := h[0]
 	s.logger.Debug("received event", log.String("eventName", eventName))
 
-	data, err := ioutil.ReadAll(req.Body)
+	data, err := io.ReadAll(req.Body)
 	defer req.Body.Close()
 	if err != nil {
 		s.logger.Error("failed to read request body", log.Error(err))
