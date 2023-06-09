@@ -1,5 +1,6 @@
 import React, { useMemo, useCallback, useEffect } from 'react'
 
+import { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
 import { useParams } from 'react-router-dom'
 import { Observable } from 'rxjs'
@@ -23,57 +24,14 @@ import {
     FileDiffFields,
     RepositoryChangelistResult,
     RepositoryChangelistVariables,
+    RepositoryType,
 } from '../../graphql-operations'
 import { GitCommitNode } from '../commits/GitCommitNode'
-import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { queryRepositoryComparisonFileDiffs, RepositoryComparisonDiff } from '../compare/RepositoryCompareDiffPage'
 
+import { CHANGELIST_QUERY, COMMIT_QUERY } from './backend'
+
 import styles from './RepositoryCommitPage.module.scss'
-
-const COMMIT_QUERY = gql`
-    query RepositoryCommit($repo: ID!, $revspec: String!) {
-        node(id: $repo) {
-            __typename
-            ... on Repository {
-                sourceType
-                commit(rev: $revspec) {
-                    __typename # Necessary for error handling to check if commit exists
-                    ...GitCommitFields
-                }
-            }
-        }
-    }
-    ${gitCommitFragment}
-`
-
-// TODO: Move to backend.ts
-export const changelistFragment = gql`
-    fragment PerforceChangelistFields on PerforceChangelist {
-        cid
-        canonicalURL
-        commit {
-            ...GitCommitFields
-            __typename
-        }
-    }
-    ${gitCommitFragment}
-`
-
-const CHANGELIST_QUERY = gql`
-    query RepositoryChangelist($repo: ID!, $changelistID: String!) {
-        node(id: $repo) {
-            __typename
-            ... on Repository {
-                sourceType
-                changelist(cid: $changelistID) {
-                    __typename # Necessary for error handling to check if commit exists
-                    ...PerforceChangelistFields
-                }
-            }
-        }
-    }
-    ${changelistFragment}
-`
 
 interface RepositoryCommitPageProps extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
     repo: RepositoryFields
@@ -102,93 +60,21 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
         [data]
     )
 
-    const [diffMode, setDiffMode] = useTemporarySetting('repo.commitPage.diffMode', 'unified')
-
-    useEffect(() => {
-        props.telemetryService.logViewEvent('RepositoryCommit')
-    }, [props.telemetryService])
-
-    useEffect(() => {
-        if (commit) {
-            props.onDidUpdateExternalLinks(commit.externalURLs)
-        }
-
-        return () => {
-            props.onDidUpdateExternalLinks(undefined)
-        }
-    }, [commit, props])
-
-    const queryDiffs = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
-            // Non-null assertions here are safe because the query is only executed if the commit is defined.
-            queryRepositoryComparisonFileDiffs({
-                first: args.first ?? null,
-                after: args.after ?? null,
-                paths: [],
-                repo: props.repo.id,
-                base: commitParentOrEmpty(commit!),
-                head: commit!.oid,
-            }),
-        [commit, props.repo.id]
-    )
-
     return (
-        <div data-testid="repository-commit-page" className={classNames('p-3', styles.repositoryCommitPage)}>
-            <PageTitle title={commit ? commit.subject : `Commit ${params.revspec}`} />
-            {loading ? (
-                <LoadingSpinner className="mt-2" />
-            ) : error || !commit ? (
-                <ErrorAlert className="mt-2" error={error ?? new Error('Commit not found')} />
-            ) : (
-                <>
-                    <div className="border-bottom pb-2">
-                        <div>
-                            <GitCommitNode
-                                node={commit}
-                                expandCommitMessageBody={true}
-                                showSHAAndParentsRow={true}
-                                diffMode={diffMode}
-                                onHandleDiffMode={setDiffMode}
-                                className={styles.gitCommitNode}
-                            />
-                        </div>
-                    </div>
-                    <FilteredConnection<FileDiffFields, Omit<FileDiffNodeProps, 'node'>>
-                        listClassName="list-group list-group-flush"
-                        noun="changed file"
-                        pluralNoun="changed files"
-                        queryConnection={queryDiffs}
-                        nodeComponent={FileDiffNode}
-                        nodeComponentProps={{
-                            ...props,
-                            lineNumbers: true,
-                            diffMode,
-                        }}
-                        updateOnChange={`${props.repo.id}:${commit.oid}`}
-                        defaultFirst={15}
-                        hideSearch={true}
-                        noSummaryIfAllNodesVisible={true}
-                        withCenteredSummary={true}
-                        cursorPaging={true}
-                    />
-                </>
-            )}
-        </div>
+        <RepositoryRevisionNodes
+            error={error}
+            loading={loading}
+            revspec={params.revspec}
+            changelistID=""
+            commit={commit}
+            {...props}
+        />
     )
-}
-
-function commitParentOrEmpty(commit: GitCommitFields): string {
-    // 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t tree /dev/null`, which is used as the base
-    // when computing the `git diff` of the root commit.
-    return commit.parents.length > 0 ? commit.parents[0].oid : '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
 }
 
 /** Displays a changelist. */
 export const RepositoryChangelistPage: React.FunctionComponent<RepositoryCommitPageProps> = props => {
     const params = useParams<{ changelistID: string }>()
-
-    console.log(params)
-    console.log(props)
 
     if (!params.changelistID) {
         throw new Error('Missing `changelistID` param! It must be set.')
@@ -209,7 +95,34 @@ export const RepositoryChangelistPage: React.FunctionComponent<RepositoryCommitP
         [data]
     )
 
+    return (
+        <RepositoryRevisionNodes
+            error={error}
+            loading={loading}
+            changelistID={params.changelistID}
+            revspec=""
+            commit={commit}
+            {...props}
+        />
+    )
+}
+
+interface RepositoryRevisionNodesProps extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
+    error: ApolloError | undefined
+    loading: boolean
+
+    revspec: String
+    changelistID: String
+
+    repo: RepositoryFields
+    commit: GitCommitFields | undefined | null
+    onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
+}
+
+const RepositoryRevisionNodes: React.FunctionComponent<RepositoryRevisionNodesProps> = props => {
     const [diffMode, setDiffMode] = useTemporarySetting('repo.commitPage.diffMode', 'unified')
+
+    const { error, loading, commit, repo } = { ...props }
 
     useEffect(() => {
         props.telemetryService.logViewEvent('RepositoryCommit')
@@ -223,7 +136,7 @@ export const RepositoryChangelistPage: React.FunctionComponent<RepositoryCommitP
         return () => {
             props.onDidUpdateExternalLinks(undefined)
         }
-    }, [commit, props])
+    }, [props])
 
     const queryDiffs = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
@@ -232,20 +145,28 @@ export const RepositoryChangelistPage: React.FunctionComponent<RepositoryCommitP
                 first: args.first ?? null,
                 after: args.after ?? null,
                 paths: [],
-                repo: props.repo.id,
+                repo: repo.id,
                 base: commitParentOrEmpty(commit!),
                 head: commit!.oid,
             }),
-        [commit, props.repo.id]
+        [commit, repo.id]
     )
+
+    const pageTitle = commit
+        ? commit.subject
+        : repo.sourceType == RepositoryType.PERFORCE_DEPOT
+        ? `Changelist ${props.changelistID}`
+        : `Commit ${props.revspec}`
+
+    const pageError = repo.sourceType == RepositoryType.PERFORCE_DEPOT ? 'Changelist not found' : 'Commit not found'
 
     return (
         <div data-testid="repository-commit-page" className={classNames('p-3', styles.repositoryCommitPage)}>
-            <PageTitle title={commit ? commit.subject : `Commit ${params.revspec}`} />
+            <PageTitle title={pageTitle} />
             {loading ? (
                 <LoadingSpinner className="mt-2" />
             ) : error || !commit ? (
-                <ErrorAlert className="mt-2" error={error ?? new Error('Commit not found')} />
+                <ErrorAlert className="mt-2" error={error ?? new Error(pageError)} />
             ) : (
                 <>
                     <div className="border-bottom pb-2">
@@ -271,7 +192,7 @@ export const RepositoryChangelistPage: React.FunctionComponent<RepositoryCommitP
                             lineNumbers: true,
                             diffMode,
                         }}
-                        updateOnChange={`${props.repo.id}:${commit.oid}`}
+                        updateOnChange={`${repo.id}:${commit.oid}`}
                         defaultFirst={15}
                         hideSearch={true}
                         noSummaryIfAllNodesVisible={true}
@@ -282,4 +203,10 @@ export const RepositoryChangelistPage: React.FunctionComponent<RepositoryCommitP
             )}
         </div>
     )
+}
+
+function commitParentOrEmpty(commit: GitCommitFields): string {
+    // 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t tree /dev/null`, which is used as the base
+    // when computing the `git diff` of the root commit.
+    return commit.parents.length > 0 ? commit.parents[0].oid : '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
 }
