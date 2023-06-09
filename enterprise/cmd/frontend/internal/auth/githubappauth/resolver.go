@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -197,6 +198,10 @@ type gitHubAppResolver struct {
 	logger log.Logger
 	app    *types.GitHubApp
 	db     edb.EnterpriseDB
+
+	once          sync.Once
+	installations []graphqlbackend.GitHubAppInstallation
+	err           error
 }
 
 func (r *gitHubAppResolver) ID() graphql.ID {
@@ -247,60 +252,12 @@ func (r *gitHubAppResolver) UpdatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.app.UpdatedAt}
 }
 
-func (r *gitHubAppResolver) Installations(ctx context.Context) (installations []graphqlbackend.GitHubAppInstallation) {
-	auther, err := ghauth.NewGitHubAppAuthenticator(int(r.AppID()), []byte(r.app.PrivateKey))
+func (r *gitHubAppResolver) Installations(ctx context.Context) (installations []graphqlbackend.GitHubAppInstallation, err error) {
+	installations, err = r.compute(ctx)
 	if err != nil {
-		return nil
+		return []graphqlbackend.GitHubAppInstallation{}, err
 	}
-
-	baseURL, err := url.Parse(r.app.BaseURL)
-	if err != nil {
-		return nil
-	}
-	apiURL, _ := github.APIRoot(baseURL)
-
-	cli := github.NewV3Client(log.Scoped("GitHubAppResolver", ""), "", apiURL, auther, nil)
-	installs, err := cli.GetAppInstallations(ctx)
-	if err != nil {
-		return nil
-	}
-
-	extsvcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
-		Kinds: []string{extsvc.KindGitHub},
-	})
-	if err != nil {
-		return nil
-	}
-
-	for _, install := range installs {
-		var installationExtsvcs []*itypes.ExternalService
-		for _, es := range extsvcs {
-			parsed, err := extsvc.ParseEncryptableConfig(ctx, extsvc.KindGitHub, es.Config)
-			if err != nil {
-				continue
-			}
-			c := parsed.(*schema.GitHubConnection)
-			if c.GitHubAppDetails == nil || c.GitHubAppDetails.AppID != r.app.AppID || c.Url != r.app.BaseURL || c.GitHubAppDetails.InstallationID != int(install.GetID()) {
-				continue
-			}
-			installationExtsvcs = append(installationExtsvcs, es)
-		}
-
-		installations = append(installations, graphqlbackend.GitHubAppInstallation{
-			DB:         r.db,
-			InstallID:  int32(*install.ID),
-			InstallURL: install.GetHTMLURL(),
-			InstallAccount: graphqlbackend.GitHubAppInstallationAccount{
-				AccountLogin:     install.Account.GetLogin(),
-				AccountAvatarURL: install.Account.GetAvatarURL(),
-				AccountURL:       install.Account.GetHTMLURL(),
-				AccountType:      install.Account.GetType(),
-			},
-			InstallExternalServices: installationExtsvcs,
-		})
-	}
-
-	return
+	return installations, nil
 }
 
 func (r *gitHubAppResolver) Webhook(ctx context.Context) graphqlbackend.WebhookResolver {
@@ -312,4 +269,89 @@ func (r *gitHubAppResolver) Webhook(ctx context.Context) graphqlbackend.WebhookR
 		return nil
 	}
 	return resolvers.NewWebhookResolver(r.db, hook)
+}
+
+func (r *gitHubAppResolver) compute(ctx context.Context) ([]graphqlbackend.GitHubAppInstallation, error) {
+	r.once.Do(func() {
+		auther, err := ghauth.NewGitHubAppAuthenticator(int(r.AppID()), []byte(r.app.PrivateKey))
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		baseURL, err := url.Parse(r.app.BaseURL)
+		if err != nil {
+			r.err = err
+			return
+		}
+		apiURL, _ := github.APIRoot(baseURL)
+
+		cli := github.NewV3Client(log.Scoped("GitHubAppResolver", ""), "", apiURL, auther, nil)
+		installs, err := cli.GetAppInstallations(ctx)
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		// We use this opportunity to sync installations in our database.
+		for _, install := range installs {
+			if install == nil || install.ID == nil {
+				continue
+			}
+			r.logger.Info("Upserting GitHub App installation", log.String("app_name", r.app.Name), log.Int("installation_id", int(install.GetID())))
+			// We add any installation that exists on GitHub regardless of whether or
+			// not it already exists in our database, because we will upsert it to
+			// ensure that we have the latest metadata for the installation.
+			_, err = r.db.GitHubApps().Install(ctx, types.GitHubAppInstallation{
+				InstallationID:   int(install.GetID()),
+				AppID:            r.app.ID,
+				URL:              install.GetHTMLURL(),
+				AccountLogin:     install.Account.GetLogin(),
+				AccountAvatarURL: install.Account.GetAvatarURL(),
+				AccountURL:       install.Account.GetHTMLURL(),
+				AccountType:      install.Account.GetType(),
+			})
+			if err != nil {
+				r.logger.Error("Failed to upsert GitHub App installation", log.Error(err))
+				continue
+			}
+		}
+
+		extsvcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
+			Kinds: []string{extsvc.KindGitHub},
+		})
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		for _, install := range installs {
+			var installationExtsvcs []*itypes.ExternalService
+			for _, es := range extsvcs {
+				parsed, err := extsvc.ParseEncryptableConfig(ctx, extsvc.KindGitHub, es.Config)
+				if err != nil {
+					continue
+				}
+				c := parsed.(*schema.GitHubConnection)
+				if c.GitHubAppDetails == nil || c.GitHubAppDetails.AppID != r.app.AppID || c.Url != r.app.BaseURL || c.GitHubAppDetails.InstallationID != int(install.GetID()) {
+					continue
+				}
+				installationExtsvcs = append(installationExtsvcs, es)
+			}
+
+			r.installations = append(r.installations, graphqlbackend.GitHubAppInstallation{
+				DB:         r.db,
+				InstallID:  int32(*install.ID),
+				InstallURL: install.GetHTMLURL(),
+				InstallAccount: graphqlbackend.GitHubAppInstallationAccount{
+					AccountLogin:     install.Account.GetLogin(),
+					AccountAvatarURL: install.Account.GetAvatarURL(),
+					AccountURL:       install.Account.GetHTMLURL(),
+					AccountType:      install.Account.GetType(),
+				},
+				InstallExternalServices: installationExtsvcs,
+			})
+		}
+	})
+	return r.installations, r.err
 }
