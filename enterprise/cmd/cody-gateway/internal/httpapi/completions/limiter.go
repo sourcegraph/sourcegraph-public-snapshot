@@ -3,6 +3,7 @@ package completions
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -20,7 +21,7 @@ func rateLimit(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	cache limiter.RedisStore,
-	rateLimitAlerter func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32),
+	rateLimitAlerter func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32, ttl time.Duration),
 	next http.Handler,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped("rateLimit", "rate limit handler")

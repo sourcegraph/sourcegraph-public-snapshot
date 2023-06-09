@@ -127,7 +127,7 @@ func (a *Actor) Limiter(
 	logger log.Logger,
 	redis limiter.RedisStore,
 	feature codygateway.Feature,
-	rateLimitAlerter func(actor *Actor, feature codygateway.Feature, usagePercentage float32),
+	rateLimitAlerter func(actor *Actor, feature codygateway.Feature, usagePercentage float32, ttl time.Duration),
 ) (limiter.Limiter, bool) {
 	if a == nil {
 		// Not logged in, no limit applicable.
@@ -159,8 +159,8 @@ func (a *Actor) Limiter(
 			Redis:     limiter.NewPrefixRedisStore(featurePrefix, redis),
 			RateLimit: limit,
 			Actor:     a,
-			rateLimitAlerter: func(usagePercentage float32) {
-				rateLimitAlerter(a, feature, usagePercentage)
+			rateLimitAlerter: func(usagePercentage float32, ttl time.Duration) {
+				rateLimitAlerter(a, feature, usagePercentage, ttl)
 			},
 		},
 		nowFunc: time.Now,
@@ -237,7 +237,7 @@ type updateOnFailureLimiter struct {
 	RateLimit RateLimit
 	*Actor
 
-	rateLimitAlerter func(usagePercentage float32)
+	rateLimitAlerter func(usagePercentage float32, ttl time.Duration)
 }
 
 func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func(int) error, error) {

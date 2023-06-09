@@ -3,6 +3,8 @@ package shared
 import (
 	"net/url"
 	"os"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -114,8 +116,20 @@ func (c *Config) Load() {
 	c.ActorConcurrencyLimit.Percentage = float32(c.GetPercent("CODY_GATEWAY_ACTOR_CONCURRENCY_LIMIT_PERCENTAGE", "50", "The percentage of daily rate limit to be allowed as concurrent requests limit from an actor.")) / 100
 	c.ActorConcurrencyLimit.Interval = c.GetInterval("CODY_GATEWAY_ACTOR_CONCURRENCY_LIMIT_INTERVAL", "10s", "The interval at which to check the concurrent requests limit from an actor.")
 
-	c.ActorRateLimitAlert.Threshold = float32(c.GetPercent("CODY_GATEWAY_ACTOR_RATE_LIMIT_ALERT_THRESHOLD", "90", "The the percentage of the rate limit usage to trigger an alert.")) / 100
-	c.ActorRateLimitAlert.Interval = c.GetInterval("CODY_GATEWAY_ACTOR_RATE_LIMIT_ALERT_INTERVAL", "24h", "The minimum time interval between each alert for the same actor.")
+	thresholds := c.Get("CODY_GATEWAY_ACTOR_RATE_LIMIT_ALERT_THRESHOLDS", "90,95,99", "The comma-separated list of the percentage of the rate limit usage to trigger an alert.")
+	c.ActorRateLimitAlert.Thresholds = make([]int, 0, len(thresholds))
+	for _, str := range strings.Split(thresholds, ",") {
+		threshold, _ := strconv.ParseInt(strings.TrimSpace(str), 10, 64)
+		if threshold <= 0 {
+			continue
+		}
+		c.ActorRateLimitAlert.Thresholds = append(c.ActorRateLimitAlert.Thresholds, int(threshold))
+	}
+	if len(c.ActorRateLimitAlert.Thresholds) == 0 {
+		c.ActorRateLimitAlert.Thresholds = []int{90, 95, 99}
+	} else {
+		sort.Ints(c.ActorRateLimitAlert.Thresholds)
+	}
 	c.ActorRateLimitAlert.SlackWebhookURL = c.Get("CODY_GATEWAY_ACTOR_RATE_LIMIT_ALERT_SLACK_WEBHOOK_URL", "", "The Slack webhook URL to send alerts to.")
 }
 

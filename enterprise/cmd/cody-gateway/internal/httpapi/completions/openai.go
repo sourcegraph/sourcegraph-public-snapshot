@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -21,7 +22,7 @@ func NewOpenAIHandler(
 	logger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
-	rateLimitAlerter func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32),
+	rateLimitAlerter func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32, ttl time.Duration),
 	accessToken string,
 	orgID string,
 	allowedModels []string,

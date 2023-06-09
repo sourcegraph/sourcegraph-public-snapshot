@@ -26,7 +26,7 @@ func NewHandler(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
-	rateLimitAlerter func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32),
+	rateLimitAlerter func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32, ttl time.Duration),
 	mf ModelFactory,
 	allowedModels []string,
 ) http.Handler {

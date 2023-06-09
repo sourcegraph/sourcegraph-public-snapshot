@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
@@ -16,7 +17,7 @@ import (
 )
 
 type Config struct {
-	RateLimitAlerter        func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32)
+	RateLimitAlerter        func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32, ttl time.Duration)
 	AnthropicAccessToken    string
 	AnthropicAllowedModels  []string
 	OpenAIAccessToken       string

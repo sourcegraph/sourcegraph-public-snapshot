@@ -29,35 +29,42 @@ func TestRateLimitAlerter(t *testing.T) {
 		wantAlerted     bool
 	}{
 		{
-			name:            "no alerts below threshold",
+			name:            "no alerts below lowest bucket",
 			mockRedis:       func(*testing.T) redispool.KeyValue { return redispool.NewMockKeyValue() },
 			usagePercentage: 0.1,
 			wantAlerted:     false,
 		},
 		{
-			name: "alert above threshold",
+			name: "alert when hits 50% bucket",
 			mockRedis: func(*testing.T) redispool.KeyValue {
 				rs := redispool.NewMockKeyValue()
 				rs.SetNxFunc.SetDefaultReturn(true, nil)
 				return rs
 			},
-			usagePercentage: 0.8,
+			usagePercentage: 0.5,
 			wantAlerted:     true,
 		},
 		{
-			name: "no alert during cooldown",
-			mockRedis: func(t *testing.T) redispool.KeyValue {
+			name: "no alert when hits alerted bucket",
+			mockRedis: func(*testing.T) redispool.KeyValue {
 				rs := redispool.NewMockKeyValue()
 				rs.SetNxFunc.SetDefaultReturn(true, nil)
-				rs.GetFunc.SetDefaultReturn(redispool.NewValue(time.Now().Add(time.Minute).Format(time.RFC3339), nil))
-
-				t.Cleanup(func() {
-					mockrequire.Called(t, rs.GetFunc)
-				})
+				rs.GetFunc.SetDefaultReturn(redispool.NewValue(int64(50), nil))
+				return rs
+			},
+			usagePercentage: 0.6,
+			wantAlerted:     false,
+		},
+		{
+			name: "alert when hits another bucket",
+			mockRedis: func(*testing.T) redispool.KeyValue {
+				rs := redispool.NewMockKeyValue()
+				rs.SetNxFunc.SetDefaultReturn(true, nil)
+				rs.GetFunc.SetDefaultReturn(redispool.NewValue(int64(50), nil))
 				return rs
 			},
 			usagePercentage: 0.8,
-			wantAlerted:     false,
+			wantAlerted:     true,
 		},
 	}
 	for _, test := range tests {
@@ -68,8 +75,7 @@ func TestRateLimitAlerter(t *testing.T) {
 				test.mockRedis(t),
 				"https://sourcegraph.com/.api/graphql",
 				codygateway.ActorRateLimitAlertConfig{
-					Threshold:       0.8,
-					Interval:        time.Minute,
+					Thresholds:      []int{50, 80, 90},
 					SlackWebhookURL: "https://hooks.slack.com",
 				},
 				func(ctx context.Context, url string, msg *slack.WebhookMessage) error {
@@ -78,7 +84,7 @@ func TestRateLimitAlerter(t *testing.T) {
 				},
 			)
 
-			alerter(&actor.Actor{ID: "alice", Source: source}, codygateway.FeatureChatCompletions, test.usagePercentage)
+			alerter(&actor.Actor{ID: "alice", Source: source}, codygateway.FeatureChatCompletions, test.usagePercentage, time.Minute)
 			assert.Equal(t, test.wantAlerted, alerted, "alert fired incorrectly")
 		})
 	}

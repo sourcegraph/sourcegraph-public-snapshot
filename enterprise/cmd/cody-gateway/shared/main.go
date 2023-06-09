@@ -293,14 +293,15 @@ func newRateLimitAlerter(
 	dotcomAPIURL string,
 	config codygateway.ActorRateLimitAlertConfig,
 	slackSender func(ctx context.Context, url string, msg *slack.WebhookMessage) error,
-) func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32) {
+) func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32, ttl time.Duration) {
 	// Ignore the error because it's already validated in the config.
 	dotcomURL, _ := url.Parse(dotcomAPIURL)
 	dotcomURL.Path = ""
 
 	logger = logger.Scoped("usageRateLimitAlert", "alerts for usage rate limit approaching threshold")
-	return func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32) {
-		if usagePercentage < config.Threshold {
+	return func(actor *actor.Actor, feature codygateway.Feature, usagePercentage float32, ttl time.Duration) {
+		usage := int(usagePercentage * 100)
+		if usage < config.Thresholds[0] {
 			return
 		}
 
@@ -314,19 +315,27 @@ func newRateLimitAlerter(
 		}
 		defer release()
 
+		bucket := 0
+		for _, threshold := range config.Thresholds {
+			if usage < threshold {
+				break
+			}
+			bucket = threshold
+		}
+
 		key := fmt.Sprintf("rate_limit:%s:alert:%s", feature, actor.ID)
-		get, err := rs.Get(key).String()
+		lastBucket, err := rs.Get(key).Int()
 		if err != nil && err != redis.ErrNil {
-			logger.Error("failed to get last alerted time", log.Error(err))
+			logger.Error("failed to get last alert bucket", log.Error(err))
 			return
 		}
 
-		lastAlerted, err := time.Parse(time.RFC3339, get)
-		if err == nil && !time.Now().After(lastAlerted.Add(config.Interval)) {
-			return // Still in the cooldown period
+		if bucket <= lastBucket {
+			return
 		}
+
 		defer func() {
-			err := rs.Set(key, time.Now().Format(time.RFC3339))
+			err := rs.SetEx(key, int(ttl.Seconds()), bucket)
 			if err != nil {
 				logger.Error("failed to set last alerted time", log.Error(err))
 			}
@@ -344,18 +353,18 @@ func newRateLimitAlerter(
 			return
 		}
 
-		var text string
+		var actorLink string
 		switch codygateway.ActorSource(actor.Source.Name()) {
 		case codygateway.ActorSourceProductSubscription:
-			text = fmt.Sprintf("The actor <%[1]s/site-admin/dotcom/product/subscriptions/%[2]s|%[2]s> from %q has exceeded *%d%%* of its rate limit quota for `%s`.",
-				dotcomURL.String(), actor.ID, actor.Source.Name(), int(usagePercentage*100), feature)
+			actorLink = fmt.Sprintf("<%[1]s/site-admin/dotcom/product/subscriptions/%[2]s|%[2]s>", dotcomURL.String(), actor.ID)
 		case codygateway.ActorSourceDotcomUser:
-			text = fmt.Sprintf("The actor <%[1]s/users/%[2]s|%[2]s> from %q has exceeded *%d%%* of its rate limit quota for `%s`.",
-				dotcomURL.String(), actor.ID, actor.Source.Name(), int(usagePercentage*100), feature)
+			actorLink = fmt.Sprintf("<%[1]s/users/%[2]s|%[2]s>", dotcomURL.String(), actor.ID)
 		default:
-			text = fmt.Sprintf("The actor `%s` from %q has exceeded *%d%%* of its rate limit quota for `%s`.",
-				actor.ID, actor.Source.Name(), int(usagePercentage*100), feature)
+			actorLink = fmt.Sprintf(`%s`, actor.ID)
 		}
+
+		text := fmt.Sprintf("The actor %s from %q has exceeded *%d%%* of its rate limit quota for `%s`. The quota will reset in `%s` at `%s`.",
+			actorLink, actor.Source.Name(), usage, feature, ttl.String(), time.Now().Add(ttl).Format(time.RFC3339))
 
 		// NOTE: The context timeout must below the lock timeout we set above (30 seconds
 		// ) to make sure the lock doesn't expire when we release it, i.e. avoid
