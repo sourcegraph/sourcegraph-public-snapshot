@@ -12,6 +12,7 @@ import (
 	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
 	adobatches "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -584,6 +585,17 @@ func computeSingleChangesetExternalState(c *btypes.Changeset) (s btypes.Changese
 			}
 		default:
 			return "", errors.Errorf("unknown Gerrit Change state: %s", m.Change.Status)
+		}
+	case *protocol.PerforceChangelist:
+		switch m.State {
+		case protocol.PerforceChangelistStateClosed:
+			s = btypes.ChangesetExternalStateClosed
+		case protocol.PerforceChangelistStateSubmitted:
+			s = btypes.ChangesetExternalStateMerged
+		case protocol.PerforceChangelistStatePending, protocol.PerforceChangelistStateShelved:
+			s = btypes.ChangesetExternalStateOpen
+		default:
+			return "", errors.Errorf("unknown Gerrit Change state: %s", m.State)
 		}
 	default:
 		return "", errors.New("unknown changeset type")
