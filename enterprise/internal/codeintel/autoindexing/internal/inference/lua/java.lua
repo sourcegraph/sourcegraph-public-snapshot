@@ -49,13 +49,23 @@ return recognizer.new_path_recognizer {
   },
   generate = function(api, paths)
     local unique_paths = {}
+
     for i = 1, #paths do
       unique_paths[path.dirname(paths[i])] = true
     end
 
+    local unique_paths_array = {}
+
+    for path in pairs(unique_paths) do
+      table.insert(unique_paths_array, path)
+    end
+
+    table.sort(unique_paths_array, function(l, r) return string.len(l) < string.len(r) end)
+
     local roots = {}
 
-    for project_root in pairs(unique_paths) do
+    for i = 1, #unique_paths_array do
+      local project_root = unique_paths_array[i]
       api:register(recognizer.new_path_recognizer {
         patterns = {
           new_rooted_extension(project_root, "java"),
