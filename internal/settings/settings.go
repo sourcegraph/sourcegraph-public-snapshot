@@ -24,37 +24,40 @@ func defaultSettings() *schema.Settings {
 
 var MockCurrentUserFinal *schema.Settings
 
-// Service is introduced to so we can more cleanly pass in the dependencies of
-// a service which wants to fetch user settings. This would also make mocking
-// cleaner/etc.
+// Service calculates settings for users and other subjects.
 type Service interface {
-	// UserFromContext is the CurrentUserFinal function but without the need
-	// to pass in a DB. I expect this name will read better at callsites, eg:
-	//
-	//   c.settingsService.UserFromContext(ctx)
-	//
-	// Alternative name is ActorFromContext, but when referring to settings in
-	// our app we often call it user settings. Open to other suggestions for
-	// service and method names which better convey intent.
+	// UserFromContext returns the merged settings for the current user. If
+	// there is no active user, it returns the site settings.
 	UserFromContext(context.Context) (*schema.Settings, error)
 
-	// ForSubject is the Final function but without the need to pass in a DB.
-	// I expect this name will read better at callsites, eg:
+	// ForSubject returns the merged settings for the given subject.
 	//
-	//   c.settingsService.ForSubject(ctx, subj)
+	// A "subject" is either a user, an org, the site, or the default. Each
+	// subject has a set of relevant subjects. To calculate a user's final
+	// settings, the settings a user specifically sets are needed, as are the
+	// settings for all orgs a user belongs to, as is the global site
+	// settings, as is the default settings. These are the "relevant
+	// subjects." The settings for all these "relevant subjects" are merged
+	// together to get the final set of settings.
 	ForSubject(context.Context, api.SettingsSubject) (*schema.Settings, error)
 
-	// RelevantSubjects is the RelevantSubjects function but without the need
-	// to pass in a DB.
+	// RelevantSubjects returns a list of subjects whose settings are
+	// applicable to the given subject.
 	//
-	// Note: this only has one call site in graphql. I wonder if anyone
-	// actually reads this field anymore?
+	// These are returned in priority order, with the lowest priority first.
+	// The order of priority is default < site < org < user.
 	RelevantSubjects(context.Context, api.SettingsSubject) ([]api.SettingsSubject, error)
 }
 
-// CurrentUserFinal returns the merged settings for the current user.
-// If there is no active user, it returns the site settings.
-func CurrentUserFinal(ctx context.Context, db database.DB) (*schema.Settings, error) {
+func NewService(db database.DB) Service {
+	return &service{db: db}
+}
+
+type service struct {
+	db database.DB
+}
+
+func (s *service) UserFromContext(ctx context.Context) (*schema.Settings, error) {
 	if MockCurrentUserFinal != nil {
 		return MockCurrentUserFinal, nil
 	}
@@ -63,34 +66,31 @@ func CurrentUserFinal(ctx context.Context, db database.DB) (*schema.Settings, er
 	if !currentUser.IsAuthenticated() {
 		// An unauthenticated user has no user-specific or org-specific
 		// settings, so its relevant settings subject is the site subject.
-		return Final(ctx, db, api.SettingsSubject{Site: true})
+		return s.ForSubject(ctx, api.SettingsSubject{Site: true})
 	}
-	return Final(ctx, db, api.SettingsSubject{User: &currentUser.UID})
+	return s.ForSubject(ctx, api.SettingsSubject{User: &currentUser.UID})
 }
 
-// Final returns the merged settings for the given subject.
-func Final(ctx context.Context, db database.DB, subject api.SettingsSubject) (_ *schema.Settings, err error) {
-	tr, ctx := trace.New(ctx, "settings", "Final")
+func (s *service) ForSubject(ctx context.Context, subject api.SettingsSubject) (_ *schema.Settings, err error) {
+	tr, ctx := trace.New(ctx, "settings", "ForSubject")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	subjects, err := RelevantSubjects(ctx, db, subject)
+	subjects, err := s.RelevantSubjects(ctx, subject)
 	if err != nil {
 		return nil, err
 	}
 
 	allSettings, err := iter.MapErr(subjects, func(subject *api.SettingsSubject) (*schema.Settings, error) {
-		return latest(ctx, db, *subject)
+		return latest(ctx, s.db, *subject)
 	})
 
 	return mergeSettings(allSettings...), nil
 }
 
-// latest gets the latest settings specific to a given subject. Most consumers
-// of this package will want to use Final or CurrentUserFinal instead because
-// those properly merge all settings relevant to a subject. If no settings
+// latest gets the latest settings specific to a given subject. If no settings
 // have been defined for a subject, latest will return nil.
 func latest(ctx context.Context, db database.DB, subject api.SettingsSubject) (*schema.Settings, error) {
 	// The store does not handle the default settings subject
@@ -115,10 +115,7 @@ func latest(ctx context.Context, db database.DB, subject api.SettingsSubject) (*
 	return &unmarshalled, nil
 }
 
-// RelevantSubjects returns a list of subjects whose settings are applicable to the given subject.
-// These are returned in priority order, with the lowest priority first.
-// The order of priority is default < site < org < user.
-func RelevantSubjects(ctx context.Context, db database.DB, subject api.SettingsSubject) ([]api.SettingsSubject, error) {
+func (s *service) RelevantSubjects(ctx context.Context, subject api.SettingsSubject) ([]api.SettingsSubject, error) {
 	switch {
 	case subject.Default:
 		return []api.SettingsSubject{
@@ -141,7 +138,7 @@ func RelevantSubjects(ctx context.Context, db database.DB, subject api.SettingsS
 			{Site: true},
 		}
 
-		orgs, err := db.Orgs().GetByUserID(ctx, *subject.User)
+		orgs, err := s.db.Orgs().GetByUserID(ctx, *subject.User)
 		if err != nil {
 			return nil, err
 		}
@@ -243,4 +240,28 @@ func mergeLeft(left, right reflect.Value, depth int) reflect.Value {
 
 	// Type is not mergeable, so clobber existing value
 	return right
+}
+
+// CurrentUserFinal returns the merged settings for the current user.
+// If there is no active user, it returns the site settings.
+//
+// Deprecated: use a settings.Service instead.
+func CurrentUserFinal(ctx context.Context, db database.DB) (*schema.Settings, error) {
+	return NewService(db).UserFromContext(ctx)
+}
+
+// Final returns the merged settings for the given subject.
+//
+// Deprecated: use a settings.Service instead.
+func Final(ctx context.Context, db database.DB, subject api.SettingsSubject) (*schema.Settings, error) {
+	return NewService(db).ForSubject(ctx, subject)
+}
+
+// RelevantSubjects returns a list of subjects whose settings are applicable to the given subject.
+// These are returned in priority order, with the lowest priority first.
+// The order of priority is default < site < org < user.
+//
+// Deprecated: use a settings.Service instead.
+func RelevantSubjects(ctx context.Context, db database.DB, subject api.SettingsSubject) ([]api.SettingsSubject, error) {
+	return NewService(db).RelevantSubjects(ctx, subject)
 }
