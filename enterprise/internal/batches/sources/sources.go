@@ -332,12 +332,14 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 		return nil, errors.Wrap(err, "parsing GitHub connection URL")
 	}
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
+
 	app, err := tx.GitHubAppsStore().GetByDomain(ctx, types.BatchesGitHubAppDomain, baseURL.String())
 	if err != nil {
 		return nil, ErrNoGitHubAppConfigured
 	}
+
 	installID, err := tx.GitHubAppsStore().GetInstallID(ctx, app.AppID, account)
-	if err != nil {
+	if err != nil || installID == 0 {
 		return nil, ErrNoGitHubAppInstallation
 	}
 
