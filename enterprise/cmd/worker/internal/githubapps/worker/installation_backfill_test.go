@@ -142,12 +142,12 @@ func TestGitHubInstallationWorker(t *testing.T) {
 	err := worker.Handle(ctx)
 	require.NoError(t, err)
 
-	// We bulk install two installations for GitHub app with ID 1 and one installation for ID 2
-	if len(ghStore.InstallFunc.History()) != 3 {
-		t.Errorf("expected 3 calls to Install, got %d", len(ghStore.InstallFunc.History()))
+	// We upsert all installations we received
+	if len(ghStore.InstallFunc.History()) != 5 {
+		t.Errorf("expected 5 calls to Install, got %d", len(ghStore.InstallFunc.History()))
 	}
 
-	// We bulk remove on3 installation for GitHub app with ID 3
+	// We bulk remove one installation for GitHub app with ID 3
 	if len(ghStore.BulkRemoveInstallationsFunc.History()) != 1 {
 		t.Errorf("expected 1 call to BulkRemove, got %d", len(ghStore.BulkRemoveInstallationsFunc.History()))
 	}
