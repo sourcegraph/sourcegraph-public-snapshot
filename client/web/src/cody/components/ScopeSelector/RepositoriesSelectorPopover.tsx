@@ -3,9 +3,7 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import {
     mdiChevronUp,
     mdiMinusCircleOutline,
-    mdiClose,
     mdiCheck,
-    mdiCloseCircle,
     mdiDatabaseCheckOutline,
     mdiDatabaseRemoveOutline,
 } from '@mdi/js'
@@ -93,8 +91,6 @@ export const RepositoriesSelectorPopover: React.FC<{
             /* eslint-enable no-console */
         }
     }, [searchTextDebounced, searchRepositories])
-
-    const clearSearchText = useCallback(() => setSearchText(''), [setSearchText])
 
     const onOpenChange = useCallback(
         (event: { isOpen: boolean }) => {
@@ -314,7 +310,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                             </>
                         )}
                     </div>
-                    <div className={classNames('relative p-2 border-top mt-auto', styles.inputContainer)}>
+                    <div className="p-2 border-top mt-auto">
                         <Input
                             role="combobox"
                             autoFocus={true}
@@ -329,20 +325,8 @@ export const RepositoriesSelectorPopover: React.FC<{
                             disabled={!searchText && !additionalRepositoriesLeft}
                             value={searchText}
                             onChange={onSearch}
+                            type="search"
                         />
-                        {!!searchText && (
-                            <Button
-                                className={classNames(
-                                    'd-flex p-1 align-items-center justify-content-center',
-                                    styles.clearButton
-                                )}
-                                variant="icon"
-                                onClick={clearSearchText}
-                                aria-label="Clear"
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiCloseCircle} />
-                            </Button>
-                        )}
                     </div>
                 </Card>
             </PopoverContent>
