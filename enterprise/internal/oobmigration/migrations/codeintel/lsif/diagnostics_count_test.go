@@ -1,10 +1,9 @@
-package codeintel
+package lsif
 
 import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
@@ -14,12 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
-func TestLocationsCountMigrator(t *testing.T) {
+func TestDiagnosticsCountMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
 	rawDB := lastDBWithLSIF(logger, t)
 	db := database.NewDB(logger, rawDB)
 	store := basestore.NewWithHandle(db.Handle())
-	migrator := newLocationsCountMigrator(store, 10, time.Second, "lsif_data_definitions", 250, 1)
+	migrator := NewDiagnosticsCountMigrator(store, 250, 1)
 	serializer := newSerializer()
 
 	assertProgress := func(expectedProgress float64, applyReverse bool) {
@@ -31,7 +30,7 @@ func TestLocationsCountMigrator(t *testing.T) {
 	}
 
 	assertCounts := func(expectedCounts []int) {
-		query := sqlf.Sprintf(`SELECT num_locations FROM lsif_data_definitions ORDER BY scheme, identifier`)
+		query := sqlf.Sprintf(`SELECT num_diagnostics FROM lsif_data_documents ORDER BY path`)
 
 		if counts, err := basestore.ScanInts(store.Query(context.Background(), query)); err != nil {
 			t.Fatalf("unexpected error querying num diagnostics: %s", err)
@@ -42,22 +41,23 @@ func TestLocationsCountMigrator(t *testing.T) {
 
 	n := 500
 	expectedCounts := make([]int, 0, n)
-	locations := make([]LocationData, 0, n)
+	diagnostics := make([]DiagnosticData, 0, n)
 
 	for i := 0; i < n; i++ {
 		expectedCounts = append(expectedCounts, i+1)
-		locations = append(locations, LocationData{URI: fmt.Sprintf("file://%d", i)})
+		diagnostics = append(diagnostics, DiagnosticData{Code: fmt.Sprintf("c%d", i)})
 
-		data, err := serializer.MarshalLocations(locations)
+		data, err := serializer.MarshalLegacyDocumentData(DocumentData{
+			Diagnostics: diagnostics,
+		})
 		if err != nil {
-			t.Fatalf("unexpected error serializing locations: %s", err)
+			t.Fatalf("unexpected error serializing document data: %s", err)
 		}
 
 		if err := store.Exec(context.Background(), sqlf.Sprintf(
-			"INSERT INTO lsif_data_definitions (dump_id, scheme, identifier, data, schema_version, num_locations) VALUES (%s, %s, %s, %s, 1, 0)",
+			"INSERT INTO lsif_data_documents (dump_id, path, data, schema_version, num_diagnostics) VALUES (%s, %s, %s, 1, 0)",
 			42+i/(n/2), // 50% id=42, 50% id=43
-			fmt.Sprintf("s%04d", i),
-			fmt.Sprintf("i%04d", i),
+			fmt.Sprintf("p%04d", i),
 			data,
 		)); err != nil {
 			t.Fatalf("unexpected error inserting row: %s", err)
