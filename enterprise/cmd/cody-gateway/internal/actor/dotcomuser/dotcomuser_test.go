@@ -2,13 +2,19 @@ package dotcomuser
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 )
 
 func TestNewActor(t *testing.T) {
+	concurrencyConfig := codygateway.ActorConcurrencyLimitConfig{
+		Percentage: 50,
+		Interval:   10 * time.Second,
+	}
 	type args struct {
 		s dotcom.DotcomUserState
 	}
@@ -94,7 +100,7 @@ func TestNewActor(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			act := newActor(nil, "", tt.args.s)
+			act := newActor(nil, "", tt.args.s, concurrencyConfig)
 			assert.Equal(t, act.AccessEnabled, tt.wantEnabled)
 		})
 	}
