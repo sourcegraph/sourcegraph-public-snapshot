@@ -65,7 +65,7 @@ export const AddOwnerModal: React.FunctionComponent<React.PropsWithChildren<AddO
                         type="submit"
                         variant="primary"
                         loading={loading}
-                        disabled={loading}
+                        disabled={loading || selectedUser === ''}
                         alwaysShowLabel={true}
                         label="Add owner"
                     />
