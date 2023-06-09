@@ -21,7 +21,8 @@ var (
 	ReasonLicenseRevokedMsg        = "license revoked"
 )
 
-func NewLicenseCheckHandler(logger log.Logger, db database.DB) http.Handler {
+func NewLicenseCheckHandler(db database.DB) http.Handler {
+	logger := log.Scoped("LicenseCheckHandler", "Handles license validity checks")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tokenHexEncoded, err := authz.ParseBearerHeader(r.Header.Get("Authorization"))
 		if err != nil {
