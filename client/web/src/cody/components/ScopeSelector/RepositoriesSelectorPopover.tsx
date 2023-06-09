@@ -282,7 +282,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                     <Text className={classNames('m-0', styles.header)}>
                                         {additionalRepositoriesLeft
                                             ? `Add up to ${additionalRepositoriesLeft} Additional Repositories`
-                                            : 'Maximum additional epositories added'}
+                                            : 'Maximum additional repositories added'}
                                     </Text>
                                 </div>
                                 <div className={classNames('d-flex flex-column', styles.contextItemsContainer)}>
