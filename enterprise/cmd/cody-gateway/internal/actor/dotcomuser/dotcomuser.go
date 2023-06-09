@@ -3,6 +3,7 @@ package dotcomuser
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
@@ -114,28 +115,35 @@ func newActor(source *Source, cacheKey string, user dotcom.DotcomUserState) *act
 		Source:        source,
 	}
 
+	fmt.Printf("newActor for dotcomuser: %+#v\n", user.CodyGatewayAccess.ChatCompletionsRateLimit)
+	fmt.Printf("newActor for dotcomuser: %+#v\n", user.CodyGatewayAccess.CodeCompletionsRateLimit)
+	fmt.Printf("newActor for dotcomuser: %+#v\n", user.CodyGatewayAccess.EmbeddingsRateLimit)
+
 	if rl := user.CodyGatewayAccess.ChatCompletionsRateLimit; rl != nil {
-		a.RateLimits[codygateway.FeatureChatCompletions] = actor.RateLimit{
-			AllowedModels: rl.AllowedModels,
-			Limit:         rl.Limit,
-			Interval:      time.Duration(rl.IntervalSeconds) * time.Second,
-		}
+		a.RateLimits[codygateway.FeatureChatCompletions] = actor.NewRateLimitWithPercentageConcurrency(
+			rl.Limit,
+			time.Duration(rl.IntervalSeconds)*time.Second,
+			rl.AllowedModels,
+			source.concurrencyConfig,
+		)
 	}
 
 	if rl := user.CodyGatewayAccess.CodeCompletionsRateLimit; rl != nil {
-		a.RateLimits[codygateway.FeatureCodeCompletions] = actor.RateLimit{
-			AllowedModels: rl.AllowedModels,
-			Limit:         rl.Limit,
-			Interval:      time.Duration(rl.IntervalSeconds) * time.Second,
-		}
+		a.RateLimits[codygateway.FeatureCodeCompletions] = actor.NewRateLimitWithPercentageConcurrency(
+			rl.Limit,
+			time.Duration(rl.IntervalSeconds)*time.Second,
+			rl.AllowedModels,
+			source.concurrencyConfig,
+		)
 	}
 
 	if rl := user.CodyGatewayAccess.EmbeddingsRateLimit; rl != nil {
-		a.RateLimits[codygateway.FeatureEmbeddings] = actor.RateLimit{
-			AllowedModels: rl.AllowedModels,
-			Limit:         rl.Limit,
-			Interval:      time.Duration(rl.IntervalSeconds) * time.Second,
-		}
+		a.RateLimits[codygateway.FeatureEmbeddings] = actor.NewRateLimitWithPercentageConcurrency(
+			rl.Limit,
+			time.Duration(rl.IntervalSeconds)*time.Second,
+			rl.AllowedModels,
+			source.concurrencyConfig,
+		)
 	}
 
 	return a
