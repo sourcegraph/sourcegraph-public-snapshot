@@ -2152,7 +2152,7 @@ func TestDisplayOwnershipStats(t *testing.T) {
 	db.RepoPathsFunc.SetDefaultReturn(fakeRepoPaths)
 	fakeOwnershipStats := database.NewMockOwnershipStatsStore()
 	fakeOwnershipStats.QueryAggregateCountsFunc.SetDefaultReturn(
-		[]database.PathAggregateCounts{{CodeownedFileCount: 150000}}, nil)
+		database.PathAggregateCounts{CodeownedFileCount: 150000}, nil)
 	db.OwnershipStatsFunc.SetDefaultReturn(fakeOwnershipStats)
 	ctx := context.Background()
 	schema, err := graphqlbackend.NewSchema(db, nil, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, nil, nil, logtest.NoOp(t))})
