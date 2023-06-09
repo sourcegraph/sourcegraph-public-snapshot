@@ -14,6 +14,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	githubapp "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/githubappauth"
@@ -123,7 +125,7 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 }
 
 func newSchema(db database.DB, bcr graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	ghar := githubapp.NewResolver(nil, edb.NewEnterpriseDB(db))
+	ghar := githubapp.NewResolver(log.NoOp(), edb.NewEnterpriseDB(db))
 	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, bcr, ghar)
 }
 
