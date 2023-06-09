@@ -22,7 +22,7 @@ import {
     Icon,
 } from '@sourcegraph/wildcard'
 
-import { CodyColorIcon, CodyPageIcon } from '../../../cody/chat/CodyPageIcon'
+import { CodyColorIcon } from '../../../cody/chat/CodyPageIcon'
 import { FilteredConnectionFilter, FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
 import {
     ConnectionContainer,
