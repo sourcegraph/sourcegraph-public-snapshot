@@ -111,6 +111,8 @@ func postgresProcfile() (string, error) {
 			os.RemoveAll(path)
 			return "", err
 		}
+
+		// TODO: If we're initialising the database, create the 5.1-reindex file now as we don't need to reindex
 	} else {
 		// Between restarts the owner of the volume may have changed. Ensure
 		// postgres can still read it.
