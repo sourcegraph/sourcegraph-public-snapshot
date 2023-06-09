@@ -284,14 +284,6 @@ export const RepositoriesSelectorPopover: React.FC<{
                                             ? `Add up to ${additionalRepositoriesLeft} Additional Repositories`
                                             : 'Maximum additional epositories added'}
                                     </Text>
-                                    <Button
-                                        onClick={() => setIsPopoverOpen(false)}
-                                        variant="icon"
-                                        aria-label="Close"
-                                        className="text-muted"
-                                    >
-                                        <Icon aria-hidden={true} svgPath={mdiClose} />
-                                    </Button>
                                 </div>
                                 <div className={classNames('d-flex flex-column', styles.contextItemsContainer)}>
                                     {searchResults.length ? (
