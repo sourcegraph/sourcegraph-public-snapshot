@@ -4,6 +4,7 @@ import { KeywordContextFetcher, KeywordContextFetcherResult } from '../keyword-c
 import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
 import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
+import { UnifiedContextFetcher } from '../unified-context'
 import { isError } from '../utils'
 
 import { ContextMessage, ContextFile, getContextMessageWithResponse } from './messages'
@@ -14,11 +15,13 @@ export interface ContextSearchOptions {
 }
 
 export class CodebaseContext {
+    private embeddingResultsError = ''
     constructor(
         private config: Pick<Configuration, 'useContext' | 'serverEndpoint'>,
         private codebase: string | undefined,
         private embeddings: EmbeddingsSearch | null,
-        private keywords: KeywordContextFetcher | null
+        private keywords: KeywordContextFetcher | null,
+        private unifiedContextFetcher?: UnifiedContextFetcher | null
     ) {}
 
     public getCodebase(): string | undefined {
@@ -31,6 +34,8 @@ export class CodebaseContext {
 
     public async getContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
         switch (this.config.useContext) {
+            case 'unified':
+                return this.getUnifiedContextMessages(query, options)
             case 'keyword':
                 return this.getKeywordContextMessages(query, options)
             case 'none':
@@ -44,6 +49,10 @@ export class CodebaseContext {
 
     public checkEmbeddingsConnection(): boolean {
         return !!this.embeddings
+    }
+
+    public getEmbeddingSearchErrors(): string {
+        return this.embeddingResultsError.trim()
     }
 
     public async getSearchResults(
@@ -90,11 +99,13 @@ export class CodebaseContext {
             options.numCodeResults,
             options.numTextResults
         )
+
         if (isError(embeddingsSearchResults)) {
             console.error('Error retrieving embeddings:', embeddingsSearchResults)
+            this.embeddingResultsError = `Error retrieving embeddings: ${embeddingsSearchResults}`
             return []
         }
-
+        this.embeddingResultsError = ''
         return embeddingsSearchResults.codeResults.concat(embeddingsSearchResults.textResults)
     }
 
@@ -106,6 +117,28 @@ export class CodebaseContext {
         return groupedResults.results.flatMap<Message>(text =>
             getContextMessageWithResponse(contextTemplateFn(text, groupedResults.file.fileName), groupedResults.file)
         )
+    }
+
+    private async getUnifiedContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
+        if (!this.unifiedContextFetcher) {
+            return []
+        }
+
+        const results = await this.unifiedContextFetcher.getContext(
+            query,
+            options.numCodeResults,
+            options.numTextResults
+        )
+
+        if (isError(results)) {
+            console.error('Error retrieving context:', results)
+            return []
+        }
+
+        return results.flatMap(({ content, filePath, repoName, revision }) => {
+            const messageText = populateCodeContextTemplate(content, filePath)
+            return getContextMessageWithResponse(messageText, { fileName: filePath, repoName, revision })
+        })
     }
 
     private async getKeywordContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {

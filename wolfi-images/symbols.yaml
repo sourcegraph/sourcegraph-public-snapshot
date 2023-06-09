@@ -9,5 +9,14 @@ contents:
     ## symbols packages
     - ca-certificates
     - jansson
-    - libstdc++                  # TODO: For tree-sitter. Not an apk dependency
+    - libstdc++ # Used by tree-sitter, which is not packaged
     - ctags@sourcegraph
+
+paths:
+  - path: /mnt/cache/symbols
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
+
+# MANUAL REBUILD: 

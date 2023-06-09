@@ -1,8 +1,18 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "common",
-    srcs = ["common.go"],
+    srcs = [
+        "common.go",
+        "queue.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common",
     visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "common_test",
+    srcs = ["queue_test.go"],
+    embed = [":common"],
 )

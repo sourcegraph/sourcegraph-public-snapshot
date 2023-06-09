@@ -8,25 +8,47 @@ import (
 
 	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/openai"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/sourcegraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-const GET_EMBEDDINGS_MAX_RETRIES = 5
+func NewEmbeddingsClient(siteConfig *schema.SiteConfiguration) (client.EmbeddingsClient, error) {
+	c := siteConfig.Embeddings
+	if c == nil || !c.Enabled {
+		return nil, errors.New("embeddings are not configured or disabled")
+	}
 
-const EMBEDDING_BATCHES = 5
-const EMBEDDING_BATCH_SIZE = 512
+	switch c.Provider {
+	case "sourcegraph":
+		// TODO(eseliger): Readd empty string defaulting to sourcegraph.
+		// For a transition period until we have configured S2 and dotcom with the
+		// new config, this will have to be in here.
+		return sourcegraph.NewClient(siteConfig), nil
+	case "openai", "":
+		return openai.NewClient(c), nil
+	default:
+		return nil, errors.Newf("invalid provider %q", c.Provider)
+	}
+}
 
-const maxFileSize = 1000000 // 1MB
+const (
+	getEmbeddingsMaxRetries = 5
+	embeddingsBatchSize     = 512
+	maxFileSize             = 1_000_000 // 1MB
+)
 
 // EmbedRepo embeds file contents from the given file names for a repository.
 // It separates the file names into code files and text files and embeds them separately.
 // It returns a RepoEmbeddingIndex containing the embeddings and metadata.
 func EmbedRepo(
 	ctx context.Context,
-	client EmbeddingsClient,
+	client client.EmbeddingsClient,
 	contextService ContextService,
 	readLister FileReadLister,
 	ranks types.RepoPathRanks,
@@ -39,9 +61,9 @@ func EmbedRepo(
 	var toRemove []string
 	var err error
 
-	isDelta := opts.IndexedRevision != ""
+	isIncremental := opts.IndexedRevision != ""
 
-	if isDelta {
+	if isIncremental {
 		toIndex, toRemove, err = readLister.Diff(ctx, opts.IndexedRevision)
 		if err != nil {
 			logger.Error(
@@ -52,11 +74,11 @@ func EmbedRepo(
 				log.Error(err),
 			)
 			toRemove = nil
-			isDelta = false
+			isIncremental = false
 		}
 	}
 
-	if !isDelta { // full index
+	if !isIncremental { // full index
 		toIndex, err = readLister.List(ctx)
 		if err != nil {
 			return nil, nil, nil, err
@@ -65,7 +87,7 @@ func EmbedRepo(
 
 	var codeFileNames, textFileNames []FileEntry
 	for _, file := range toIndex {
-		if isValidTextFile(file.Name) {
+		if IsValidTextFile(file.Name) {
 			textFileNames = append(textFileNames, file)
 		} else {
 			codeFileNames = append(codeFileNames, file)
@@ -95,7 +117,7 @@ func EmbedRepo(
 		HasRanks:       len(ranks.Paths) > 0,
 		CodeIndexStats: codeIndexStats,
 		TextIndexStats: textIndexStats,
-		IsDelta:        isDelta,
+		IsIncremental:  isIncremental,
 	}
 
 	return index, toRemove, stats, nil
@@ -119,7 +141,7 @@ type EmbedRepoOpts struct {
 func embedFiles(
 	ctx context.Context,
 	files []FileEntry,
-	client EmbeddingsClient,
+	client client.EmbeddingsClient,
 	contextService ContextService,
 	excludePatterns []*paths.GlobPattern,
 	splitOptions codeintelContext.SplitOptions,
@@ -159,7 +181,7 @@ func embedFiles(
 			index.Ranks = append(index.Ranks, float32(repoPathRanks.Paths[chunk.FileName]))
 		}
 
-		batchEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, batchChunks, GET_EMBEDDINGS_MAX_RETRIES)
+		batchEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, batchChunks, getEmbeddingsMaxRetries)
 		if err != nil {
 			return errors.Wrap(err, "error while getting embeddings")
 		}
@@ -171,7 +193,7 @@ func embedFiles(
 
 	addToBatch := func(chunk codeintelContext.EmbeddableChunk) error {
 		batch = append(batch, chunk)
-		if len(batch) >= EMBEDDING_BATCH_SIZE {
+		if len(batch) >= embeddingsBatchSize {
 			// Flush if we've hit batch size
 			return flush()
 		}
@@ -185,6 +207,10 @@ func embedFiles(
 		statsSkipped            SkipStats
 	)
 	for _, file := range files {
+		if ctx.Err() != nil {
+			return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, ctx.Err()
+		}
+
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
 		if statsEmbeddedChunkCount >= maxEmbeddingVectors {
 			statsSkipped.Add(SkipReasonMaxEmbeddings, int(file.Size))

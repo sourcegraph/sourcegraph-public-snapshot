@@ -6,7 +6,11 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { PageTitle } from '../../../components/PageTitle'
 import { StepConfiguration, SetupStepsContent, SetupStepsRoot } from '../../../setup-wizard'
 
-import { AppWelcomeSetupPage, AddLocalRepositoriesSetupPage, InstallExtensionsSetupPage } from './AppSetupSteps'
+import { AppAllSetSetupStep } from './steps/AppAllSetSetupStep'
+import { AppInstallExtensionsSetupStep } from './steps/AppInstallExtensionsSetupStep'
+import { AddLocalRepositoriesSetupPage } from './steps/AppLocalRepositoriesSetupStep'
+import { AppWelcomeSetupStep } from './steps/AppWelcomeSetupStep'
+import { AppEmbeddingsSetupStep } from './steps/embeddings-step/AppEmbeddingsSetupStep'
 
 import styles from './AppSetupWizard.module.scss'
 
@@ -15,7 +19,7 @@ const APP_SETUP_STEPS: StepConfiguration[] = [
         id: 'welcome',
         name: 'Welcome page',
         path: 'welcome',
-        component: AppWelcomeSetupPage,
+        component: AppWelcomeSetupStep,
     },
     {
         id: 'local-repositories',
@@ -24,12 +28,24 @@ const APP_SETUP_STEPS: StepConfiguration[] = [
         component: AddLocalRepositoriesSetupPage,
     },
     {
+        id: 'embeddings',
+        name: 'Pick repositories for embeddings',
+        path: 'embeddings',
+        component: AppEmbeddingsSetupStep,
+    },
+    {
         id: 'install-extensions',
         name: 'Install Sourcegraph extensions',
         path: 'install-extensions',
-        component: InstallExtensionsSetupPage,
+        component: AppInstallExtensionsSetupStep,
+    },
+    {
+        id: 'all-set',
+        name: 'All set',
+        path: 'all-set',
+        component: AppAllSetSetupStep,
         nextURL: '/',
-        onNext: () => {
+        onView: () => {
             localStorage.setItem('app.setup.finished', 'true')
         },
     },
@@ -59,7 +75,7 @@ export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService }) => {
     }
 
     return (
-        <div className={styles.root}>
+        <>
             <PageTitle title="Sourcegraph App setup" />
 
             <SetupStepsRoot
@@ -70,6 +86,6 @@ export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService }) => {
             >
                 <SetupStepsContent telemetryService={telemetryService} className={styles.content} />
             </SetupStepsRoot>
-        </div>
+        </>
     )
 }

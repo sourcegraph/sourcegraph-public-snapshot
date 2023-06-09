@@ -149,7 +149,7 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAut
 	return r.autoIndexingRootResolver.QueueAutoIndexJobsForRepo(ctx, args)
 }
 
-func (r *Resolver) InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) (_ []AutoIndexJobDescriptionResolver, err error) {
+func (r *Resolver) InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) (_ InferAutoIndexJobsResultResolver, err error) {
 	return r.autoIndexingRootResolver.InferAutoIndexJobsForRepo(ctx, args)
 }
 
@@ -209,6 +209,14 @@ func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, ar
 	return r.policiesRootResolver.PreviewGitObjectFilter(ctx, id, args)
 }
 
-func (r *Resolver) RankingSummary(ctx context.Context) (_ []RankingSummaryResolver, err error) {
+func (r *Resolver) RankingSummary(ctx context.Context) (_ GlobalRankingSummaryResolver, err error) {
 	return r.rankingServiceResolver.RankingSummary(ctx)
+}
+
+func (r *Resolver) BumpDerivativeGraphKey(ctx context.Context) (_ *EmptyResponse, err error) {
+	return r.rankingServiceResolver.BumpDerivativeGraphKey(ctx)
+}
+
+func (r *Resolver) DeleteRankingProgress(ctx context.Context, args *DeleteRankingProgressArgs) (_ *EmptyResponse, err error) {
+	return r.rankingServiceResolver.DeleteRankingProgress(ctx, args)
 }

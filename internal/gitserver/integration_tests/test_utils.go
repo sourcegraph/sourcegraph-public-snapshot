@@ -18,12 +18,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var root string
@@ -36,6 +38,7 @@ var (
 )
 
 func InitGitserver() {
+	var t testing.T
 	// Ignore users configuration in tests
 	os.Setenv("GIT_CONFIG_NOSYSTEM", "true")
 	os.Setenv("HOME", "/dev/null")
@@ -54,6 +57,17 @@ func InitGitserver() {
 	db := database.NewMockDB()
 	db.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
 	db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
+
+	r := database.NewMockRepoStore()
+	r.GetByNameFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName) (*types.Repo, error) {
+		return &types.Repo{
+			Name: repoName,
+			ExternalRepo: api.ExternalRepoSpec{
+				ServiceType: extsvc.TypeGitHub,
+			},
+		}, nil
+	})
+	db.ReposFunc.SetDefaultReturn(r)
 
 	s := server.Server{
 		Logger:         sglog.Scoped("server", "the gitserver service"),
@@ -83,7 +97,7 @@ func InitGitserver() {
 	}()
 
 	serverAddress := l.Addr().String()
-	source := gitserver.NewTestClientSource([]string{serverAddress})
+	source := gitserver.NewTestClientSource(&t, []string{serverAddress})
 	testGitserverClient = gitserver.NewTestClient(httpcli.InternalDoer, source)
 	GitserverAddresses = []string{serverAddress}
 }
@@ -127,6 +141,14 @@ func InitGitRepository(t testing.TB, cmds ...string) string {
 func GitCommand(dir, name string, args ...string) *exec.Cmd {
 	c := exec.Command(name, args...)
 	c.Dir = dir
-	c.Env = append(os.Environ(), "GIT_CONFIG="+path.Join(dir, ".git", "config"))
+	c.Env = append(os.Environ(),
+		"GIT_CONFIG="+path.Join(dir, ".git", "config"),
+		"GIT_COMMITTER_NAME=a",
+		"GIT_COMMITTER_EMAIL=a@a.com",
+		"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z",
+		"GIT_AUTHOR_NAME=a",
+		"GIT_AUTHOR_EMAIL=a@a.com",
+		"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z",
+	)
 	return c
 }

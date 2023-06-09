@@ -10,10 +10,9 @@
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "build": "esbuild ./src/app.ts --bundle --outfile=dist/app.js --external:hnswlib-node --format=cjs --platform=node",
-    "build-ts": "tsc -b --emitDeclarationOnly",
-    "release": "pnpm run build && cd dist && git add . && git commit -m wip && git push heroku master",
-    "build:gcp": "esbuild ./src/app.ts --bundle --outfile=package/app.js --external:hnswlib-node --format=cjs --platform=node",
-    "release:gcp": "pnpm run build && cd package && git add . && git commit -m wip && git push gcp main"
+    "build:ts": "tsc -b --emitDeclarationOnly",
+    "build:docker": "IMAGE=cody-slack:0.0.1 ./build.sh",
+    "release": "pnpm run build && cd dist && git add . && git commit -m wip && git push heroku master"
   },
   "dependencies": {
     "@slack/bolt": "^3.12.2",

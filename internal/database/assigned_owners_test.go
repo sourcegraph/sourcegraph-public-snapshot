@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestAssignedOwnersStore_ListAssignedOwnersForRepo(t *testing.T) {
@@ -35,10 +36,6 @@ func TestAssignedOwnersStore_ListAssignedOwnersForRepo(t *testing.T) {
 	err = db.Repos().Create(ctx, &types.Repo{ID: 2, Name: "github.com/sourcegraph/sourcegraph2"})
 	require.NoError(t, err)
 
-	// Creating repo paths.
-	_, err = db.QueryContext(ctx, "INSERT INTO repo_paths (repo_id, absolute_path, parent_id) VALUES (1, '', NULL), (1, 'src', 1), (1, 'src/abc', 2), (1, 'src/def', 2)")
-	require.NoError(t, err)
-
 	// Inserting assigned owners.
 	store := AssignedOwnersStoreWith(db, logger)
 	err = store.Insert(ctx, user1.ID, 1, "src", user2.ID)
@@ -46,6 +43,8 @@ func TestAssignedOwnersStore_ListAssignedOwnersForRepo(t *testing.T) {
 	err = store.Insert(ctx, user2.ID, 1, "src/abc", user1.ID)
 	require.NoError(t, err)
 	err = store.Insert(ctx, user2.ID, 1, "src/def", user1.ID)
+	require.NoError(t, err)
+	err = store.Insert(ctx, user2.ID, 1, "", user1.ID)
 	require.NoError(t, err)
 
 	// Getting assigned owners for a non-existent repo.
@@ -61,17 +60,19 @@ func TestAssignedOwnersStore_ListAssignedOwnersForRepo(t *testing.T) {
 	// Getting assigned owners for a given repo.
 	owners, err = store.ListAssignedOwnersForRepo(ctx, 1)
 	require.NoError(t, err)
-	assert.Len(t, owners, 3)
+	assert.Len(t, owners, 4)
 	sort.Slice(owners, func(i, j int) bool {
 		return owners[i].FilePath < owners[j].FilePath
 	})
 	// We are checking everything except timestamps, non-zero check is sufficient for them.
-	assert.Equal(t, owners[0], &AssignedOwnerSummary{OwnerUserID: 1, RepoID: 1, FilePath: "src", WhoAssignedUserID: 2, AssignedAt: owners[0].AssignedAt})
+	assert.Equal(t, owners[0], &AssignedOwnerSummary{OwnerUserID: 2, RepoID: 1, FilePath: "", WhoAssignedUserID: 1, AssignedAt: owners[0].AssignedAt})
 	assert.NotZero(t, owners[0].AssignedAt)
-	assert.Equal(t, owners[1], &AssignedOwnerSummary{OwnerUserID: 2, RepoID: 1, FilePath: "src/abc", WhoAssignedUserID: 1, AssignedAt: owners[1].AssignedAt})
+	assert.Equal(t, owners[1], &AssignedOwnerSummary{OwnerUserID: 1, RepoID: 1, FilePath: "src", WhoAssignedUserID: 2, AssignedAt: owners[1].AssignedAt})
 	assert.NotZero(t, owners[1].AssignedAt)
-	assert.Equal(t, owners[2], &AssignedOwnerSummary{OwnerUserID: 2, RepoID: 1, FilePath: "src/def", WhoAssignedUserID: 1, AssignedAt: owners[2].AssignedAt})
+	assert.Equal(t, owners[2], &AssignedOwnerSummary{OwnerUserID: 2, RepoID: 1, FilePath: "src/abc", WhoAssignedUserID: 1, AssignedAt: owners[2].AssignedAt})
 	assert.NotZero(t, owners[2].AssignedAt)
+	assert.Equal(t, owners[3], &AssignedOwnerSummary{OwnerUserID: 2, RepoID: 1, FilePath: "src/def", WhoAssignedUserID: 1, AssignedAt: owners[3].AssignedAt})
+	assert.NotZero(t, owners[3].AssignedAt)
 }
 
 func TestAssignedOwnersStore_Insert(t *testing.T) {
@@ -90,10 +91,6 @@ func TestAssignedOwnersStore_Insert(t *testing.T) {
 
 	// Creating a repo.
 	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
-	require.NoError(t, err)
-
-	// Creating repo paths.
-	_, err = db.QueryContext(ctx, "INSERT INTO repo_paths (repo_id, absolute_path, parent_id) VALUES (1, '', NULL), (1, 'src', 1)")
 	require.NoError(t, err)
 
 	store := AssignedOwnersStoreWith(db, logger)
@@ -133,10 +130,6 @@ func TestAssignedOwnersStore_Delete(t *testing.T) {
 	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
 	require.NoError(t, err)
 
-	// Creating repo paths.
-	_, err = db.QueryContext(ctx, "INSERT INTO repo_paths (repo_id, absolute_path, parent_id) VALUES (1, '', NULL), (1, 'src', 1), (1, 'src/abc', 2)")
-	require.NoError(t, err)
-
 	store := AssignedOwnersStoreWith(db, logger)
 
 	// Inserting assigned owners.
@@ -168,4 +161,33 @@ func TestAssignedOwnersStore_Delete(t *testing.T) {
 	err = store.DeleteOwner(ctx, user2.ID, 1, "src/abc")
 	assert.NoError(t, err)
 	assertNumberOfOwnersForRepo(1, 2)
+}
+
+func TestAssignedOwnersStore_Count(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Creating users.
+	user1, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	require.NoError(t, err)
+
+	// Creating a repo.
+	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
+	require.NoError(t, err)
+
+	// Inserting assigned owners.
+	paths := []string{"a/b/c", "", "foo/bar", "src/main/java/sourcegraph"}
+	for _, path := range paths {
+		err = db.AssignedOwners().Insert(ctx, user1.ID, 1, path, user1.ID)
+		require.NoError(t, err)
+	}
+	count, err := db.AssignedOwners().CountAssignedOwners(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, int32(len(paths)), count)
 }

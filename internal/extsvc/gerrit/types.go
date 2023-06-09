@@ -1,10 +1,20 @@
 package gerrit
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 )
+
+var (
+	ChangeStatusNew       ChangeStatus = "NEW"
+	ChangeStatusAbandoned ChangeStatus = "ABANDONED"
+	ChangeStatusMerged    ChangeStatus = "MERGED"
+)
+
+type ChangeStatus string
 
 // ListProjectsArgs defines options to be set on ListProjects method calls.
 type ListProjectsArgs struct {
@@ -17,21 +27,68 @@ type ListProjectsArgs struct {
 type ListProjectsResponse map[string]*Project
 
 type Change struct {
-	ID       string `json:"id"`
-	Project  string `json:"project"`
-	Branch   string `json:"branch"`
-	ChangeID string `json:"change_id"`
-	Topic    string `json:"topic"`
-	Subject  string `json:"subject"`
-	Status   string `json:"status"`
-	Created  string `json:"created"`
-	Updated  string `json:"updated"`
-	Owner    struct {
+	ID             string       `json:"id"`
+	Project        string       `json:"project"`
+	Branch         string       `json:"branch"`
+	ChangeID       string       `json:"change_id"`
+	Topic          string       `json:"topic"`
+	Subject        string       `json:"subject"`
+	Status         ChangeStatus `json:"status"`
+	Created        time.Time    `json:"-"`
+	Updated        time.Time    `json:"-"`
+	Reviewed       bool         `json:"reviewed"`
+	WorkInProgress bool         `json:"work_in_progress"`
+	Hashtags       []string     `json:"hashtags"`
+	ChangeNumber   int          `json:"_number"`
+	Owner          struct {
 		Name     string `json:"name"`
 		Email    string `json:"email"`
 		Username string `json:"username"`
 	} `json:"owner"`
-	// Add more fields as needed
+}
+
+func (c *Change) UnmarshalJSON(data []byte) error {
+	type Alias Change
+	aux := &struct {
+		Created string `json:"created"`
+		Updated string `json:"updated"`
+		*Alias
+	}{
+		Alias: (*Alias)(c),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	var created, updated time.Time
+
+	createdParsed, err := time.Parse("2006-01-02 15:04:05.000000000", aux.Created)
+	if err == nil {
+		created = createdParsed
+	}
+	c.Created = created
+
+	updatedParsed, err := time.Parse("2006-01-02 15:04:05.000000000", aux.Updated)
+	if err == nil {
+		updated = updatedParsed
+	}
+	c.Updated = updated
+
+	return nil
+}
+
+func (c *Change) MarshalJSON() ([]byte, error) {
+	type Alias Change
+	return json.Marshal(&struct {
+		Created string `json:"created"`
+		Updated string `json:"updated"`
+		*Alias
+	}{
+		Created: c.Created.Format("2006-01-02 15:04:05.000000000"),
+		Updated: c.Updated.Format("2006-01-02 15:04:05.000000000"),
+		Alias:   (*Alias)(c),
+	})
 }
 
 type ChangeReviewComment struct {
@@ -42,6 +99,26 @@ type ChangeReviewComment struct {
 	NotifyDetails *NotifyDetails    `json:"notify_details,omitempty"`
 	OnBehalfOf    string            `json:"on_behalf_of,omitempty"`
 	Comments      map[string]string `json:"comments,omitempty"`
+}
+
+// Approvals
+// Score represents the status of a review on Gerrit. Here are possible values for Vote:
+//
+//	+2 : approved, can be merged
+//	+1 : approved, but needs additional reviews
+//	 0 : no score
+//	-1 : needs changes
+//	-2 : rejected
+type Approvals struct {
+	CodeReview string `json:"Code-Review"`
+}
+
+type Reviewer struct {
+	Approvals Approvals `json:"approvals"`
+	AccountID int       `json:"_account_id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Username  string    `json:"username,omitempty"`
 }
 
 type NotifyDetails struct {

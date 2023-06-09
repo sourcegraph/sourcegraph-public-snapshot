@@ -5,34 +5,34 @@ interactions:
     body: ""
     form: {}
     headers: {}
-    url: https://gerrit.sgdev.org/a/changes/I520f9c61e8e1785d60195ed444cb71ce54cd4353/submit
+    url: https://gerrit.sgdev.org/a/changes/I4ae8b9886059252657eef100c74602251b544e82/submit
     method: POST
   response:
     body: |
       )]}'
       {
-        "id": "src-cli~master~I520f9c61e8e1785d60195ed444cb71ce54cd4353",
+        "id": "src-cli~master~I4ae8b9886059252657eef100c74602251b544e82",
         "project": "src-cli",
         "branch": "master",
         "hashtags": [],
-        "change_id": "I520f9c61e8e1785d60195ed444cb71ce54cd4353",
-        "subject": "Revert \"newest change\"",
+        "change_id": "I4ae8b9886059252657eef100c74602251b544e82",
+        "subject": "Revert \"Revert \"newest change\"\"",
         "status": "NEW",
-        "created": "2023-05-16 20:34:52.000000000",
-        "updated": "2023-05-16 20:46:29.000000000",
-        "submitted": "2023-05-16 20:46:45.000000000",
+        "created": "2023-05-16 20:50:25.000000000",
+        "updated": "2023-05-23 23:42:03.000000000",
+        "submitted": "2023-05-23 23:42:27.000000000",
         "submitter": {
           "_account_id": 1000018
         },
         "submit_type": "MERGE_IF_NECESSARY",
         "mergeable": true,
-        "insertions": 0,
-        "deletions": 2,
+        "insertions": 2,
+        "deletions": 0,
         "total_comment_count": 0,
         "unresolved_comment_count": 0,
         "has_review_started": true,
-        "revert_of": 328,
-        "_number": 347,
+        "revert_of": 347,
+        "_number": 348,
         "owner": {
           "_account_id": 1000018
         },
@@ -44,13 +44,13 @@ interactions:
       Cf-Cache-Status:
       - DYNAMIC
       Cf-Ray:
-      - 7c8678d03a70f97d-YYZ
+      - 7cc127caee30a1f3-YYZ
       Content-Disposition:
       - attachment
       Content-Type:
       - application/json;charset=utf-8
       Date:
-      - Tue, 16 May 2023 20:46:46 GMT
+      - Tue, 23 May 2023 23:42:28 GMT
       Expires:
       - Mon, 01 Jan 1990 00:00:00 GMT
       Pragma:

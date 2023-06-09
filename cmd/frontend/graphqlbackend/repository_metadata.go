@@ -9,9 +9,12 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -27,6 +30,8 @@ func (k KeyValuePair) Key() string {
 func (k KeyValuePair) Value() *string {
 	return k.value
 }
+
+var featureDisabledError = errors.New("'repository-metadata' feature flag is not enabled")
 
 type emptyNonNilValueError struct {
 	value string
@@ -56,8 +61,8 @@ func (r *schemaResolver) AddRepoMetadata(ctx context.Context, args struct {
 		return &EmptyResponse{}, err
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
+		return nil, featureDisabledError
 	}
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
@@ -69,7 +74,12 @@ func (r *schemaResolver) AddRepoMetadata(ctx context.Context, args struct {
 		return &EmptyResponse{}, emptyNonNilValueError{value: *args.Value}
 	}
 
-	return &EmptyResponse{}, r.db.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
+	err = r.db.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
+	if err == nil {
+		r.logBackendEvent(ctx, "RepoMetadataAdded")
+	}
+
+	return &EmptyResponse{}, err
 }
 
 // Deprecated: Use UpdateRepoMetadata instead.
@@ -92,8 +102,8 @@ func (r *schemaResolver) UpdateRepoMetadata(ctx context.Context, args struct {
 		return &EmptyResponse{}, err
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
+		return nil, featureDisabledError
 	}
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
@@ -106,6 +116,9 @@ func (r *schemaResolver) UpdateRepoMetadata(ctx context.Context, args struct {
 	}
 
 	_, err = r.db.RepoKVPs().Update(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
+	if err == nil {
+		r.logBackendEvent(ctx, "RepoMetadataUpdated")
+	}
 	return &EmptyResponse{}, err
 }
 
@@ -127,8 +140,8 @@ func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
 		return &EmptyResponse{}, err
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
+		return nil, featureDisabledError
 	}
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
@@ -136,7 +149,29 @@ func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
 		return &EmptyResponse{}, err
 	}
 
-	return &EmptyResponse{}, r.db.RepoKVPs().Delete(ctx, repoID, args.Key)
+	err = r.db.RepoKVPs().Delete(ctx, repoID, args.Key)
+	if err == nil {
+		r.logBackendEvent(ctx, "RepoMetadataDeleted")
+	}
+	return &EmptyResponse{}, err
+}
+
+func (r *schemaResolver) logBackendEvent(ctx context.Context, eventName string) {
+	a := actor.FromContext(ctx)
+	if a.IsAuthenticated() && !a.IsMockUser() {
+		if err := usagestats.LogBackendEvent(
+			r.db,
+			a.UID,
+			deviceid.FromContext(ctx),
+			eventName,
+			nil,
+			nil,
+			featureflag.GetEvaluatedFlagSet(ctx),
+			nil,
+		); err != nil {
+			r.logger.Warn("Could not log " + eventName)
+		}
+	}
 }
 
 type repoMetaResolver struct {
@@ -159,8 +194,8 @@ func (r *repoMetaResolver) Keys(ctx context.Context, args *RepoMetadataKeysArgs)
 		return nil, err
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
+		return nil, featureDisabledError
 	}
 
 	listOptions := &args.RepoKVPListKeysOptions
@@ -235,8 +270,8 @@ func (r *repoMetaKeyResolver) Values(ctx context.Context, args *RepoMetadataValu
 		return nil, err
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
+		return nil, featureDisabledError
 	}
 
 	connectionStore := &repoMetaValuesConnectionStore{

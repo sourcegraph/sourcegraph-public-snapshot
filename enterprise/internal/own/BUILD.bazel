@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "own",
@@ -9,16 +10,17 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/own",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//cmd/frontend/auth/providers",
         "//cmd/frontend/envvar",
         "//enterprise/internal/database",
         "//enterprise/internal/own/codeowners",
         "//enterprise/internal/own/codeowners/v1:codeowners",
         "//internal/api",
+        "//internal/auth/providers",
         "//internal/authz",
         "//internal/conf",
         "//internal/database",
         "//internal/errcode",
+        "//internal/extsvc",
         "//internal/gitserver",
         "//internal/types",
         "//lib/errors",
@@ -37,12 +39,12 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//cmd/frontend/auth/providers",
         "//enterprise/internal/database",
         "//enterprise/internal/own/codeowners",
         "//enterprise/internal/own/codeowners/v1:codeowners",
         "//enterprise/internal/own/types",
         "//internal/api",
+        "//internal/auth/providers",
         "//internal/authz",
         "//internal/conf",
         "//internal/database",

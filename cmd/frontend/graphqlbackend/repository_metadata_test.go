@@ -25,9 +25,6 @@ import (
 func TestRepositoryMetadata(t *testing.T) {
 	ctx := context.Background()
 
-	flags := map[string]bool{"repository-metadata": true}
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(flags, flags, flags))
-
 	logger := logtest.Scoped(t)
 	db := database.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
@@ -190,6 +187,44 @@ func TestRepositoryMetadata(t *testing.T) {
 		require.Empty(t, kvps)
 	})
 
+	t.Run("handles feature flag", func(t *testing.T) {
+		flags := map[string]bool{"repository-metadata": false}
+		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(flags, flags, flags))
+		_, err = schema.AddRepoMetadata(ctx, struct {
+			Repo  graphql.ID
+			Key   string
+			Value *string
+		}{
+			Repo:  gqlID,
+			Key:   "key1",
+			Value: strPtr("val1"),
+		})
+		require.Error(t, err)
+		require.Equal(t, featureDisabledError, err)
+
+		_, err = schema.UpdateRepoMetadata(ctx, struct {
+			Repo  graphql.ID
+			Key   string
+			Value *string
+		}{
+			Repo:  gqlID,
+			Key:   "key1",
+			Value: strPtr("val2"),
+		})
+		require.Error(t, err)
+		require.Equal(t, featureDisabledError, err)
+
+		_, err = schema.DeleteRepoMetadata(ctx, struct {
+			Repo graphql.ID
+			Key  string
+		}{
+			Repo: gqlID,
+			Key:  "key1",
+		})
+		require.Error(t, err)
+		require.Equal(t, featureDisabledError, err)
+	})
+
 	t.Run("handles rbac", func(t *testing.T) {
 		permissions.GetPermissionForUserFunc.SetDefaultReturn(nil, nil)
 
@@ -230,4 +265,5 @@ func TestRepositoryMetadata(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(t, err, &rbac.ErrNotAuthorized{Permission: string(rbac.RepoMetadataWritePermission)})
 	})
+
 }

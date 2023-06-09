@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "sources",
@@ -7,6 +8,7 @@ go_library(
         "bitbucketcloud.go",
         "bitbucketserver.go",
         "common.go",
+        "gerrit.go",
         "github.go",
         "gitlab.go",
         "sources.go",
@@ -17,8 +19,11 @@ go_library(
     deps = [
         "//enterprise/internal/batches/sources/azuredevops",
         "//enterprise/internal/batches/sources/bitbucketcloud",
+        "//enterprise/internal/batches/sources/gerrit",
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
+        "//internal/api",
+        "//internal/conf",
         "//internal/database",
         "//internal/errcode",
         "//internal/extsvc",
@@ -26,6 +31,7 @@ go_library(
         "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
+        "//internal/extsvc/gerrit",
         "//internal/extsvc/github",
         "//internal/extsvc/github/auth",
         "//internal/extsvc/gitlab",
@@ -50,6 +56,7 @@ go_test(
         "azuredevops_test.go",
         "bitbucketcloud_test.go",
         "bitbucketserver_test.go",
+        "gerrit_test.go",
         "github_test.go",
         "gitlab_test.go",
         "main_test.go",
@@ -64,6 +71,7 @@ go_test(
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
         "//internal/api",
+        "//internal/conf",
         "//internal/database",
         "//internal/errcode",
         "//internal/extsvc",
@@ -71,6 +79,7 @@ go_test(
         "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
+        "//internal/extsvc/gerrit",
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",
         "//internal/extsvc/versions",

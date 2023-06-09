@@ -33,8 +33,8 @@ func TestRecentViewSignalStore_BuildAggregateFromEvents(t *testing.T) {
 	_, err = db.Users().Create(ctx, NewUser{Username: "user2"})
 	require.NoError(t, err)
 
-	// Creating 3 repos.
-	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"}, &types.Repo{ID: 2, Name: "github.com/sourcegraph/sourcegraph2"}, &types.Repo{ID: 3, Name: "github.com/sourcegraph/sourcegraph3"})
+	// Creating 2 repos.
+	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"}, &types.Repo{ID: 2, Name: "github.com/sourcegraph/sourcegraph2"})
 	require.NoError(t, err)
 
 	// Creating ViewBlob events.
@@ -127,6 +127,128 @@ func TestRecentViewSignalStore_BuildAggregateFromEvents(t *testing.T) {
 	assert.Contains(t, summaries, RecentViewSummary{UserID: 2, FilePathID: repo1PathToID["cmd/gitserver/server/lock.go"], ViewsCount: 1})
 	assert.Contains(t, summaries, RecentViewSummary{UserID: 2, FilePathID: repo2PathToID["cmd/gitserver/server/patch.go"], ViewsCount: 2})
 	assert.Contains(t, summaries, RecentViewSummary{UserID: 2, FilePathID: repo2PathToID["cmd/gitserver/server/lock.go"], ViewsCount: 1})
+}
+
+func TestRecentViewSignalStore_BuildAggregateFromEvents_WithExcludedRepos(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Creating 2 users.
+	_, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	require.NoError(t, err)
+	_, err = db.Users().Create(ctx, NewUser{Username: "user2"})
+	require.NoError(t, err)
+
+	// Creating 3 repos.
+	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"}, &types.Repo{ID: 2, Name: "github.com/sourcegraph/pattern-repo-1337"}, &types.Repo{ID: 3, Name: "github.com/sourcegraph/pattern-repo-421337"})
+	require.NoError(t, err)
+
+	// Creating ViewBlob events.
+	events := []*Event{
+		{
+			UserID:         1,
+			Name:           "ViewBlob",
+			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/patch.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+		},
+		{
+			UserID:         1,
+			Name:           "ViewBlob",
+			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+		},
+		{
+			UserID:         1,
+			Name:           "ViewBlob",
+			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+		},
+		{
+			UserID:         1,
+			Name:           "ViewBlob",
+			PublicArgument: json.RawMessage(`{"filePath": "enterprise/cmd/frontend/main.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+		},
+		{
+			UserID:         2,
+			Name:           "ViewBlob",
+			PublicArgument: json.RawMessage(`{"filePath": "enterprise/cmd/frontend/main.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+		},
+		{
+			UserID:         2,
+			Name:           "ViewBlob",
+			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+		},
+		{
+			UserID:         2,
+			Name:           "ViewBlob",
+			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/patch.go", "repoName": "github.com/sourcegraph/pattern-repo-1337"}`),
+		},
+		{
+			UserID:         2,
+			Name:           "ViewBlob",
+			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/patch.go", "repoName": "github.com/sourcegraph/pattern-repo-421337"}`),
+		},
+		{
+			UserID:         2,
+			Name:           "ViewBlob",
+			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/sourcegraph/pattern-repo-421337"}`),
+		},
+		{
+			UserID:         2,
+			Name:           "ViewBlob",
+			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/not/found"}`),
+		},
+	}
+
+	// Adding a config with excluded repos.
+	configStore := SignalConfigurationStoreWith(db)
+	err = configStore.UpdateConfiguration(ctx, UpdateSignalConfigurationArgs{Name: "recent-views", Enabled: true, ExcludedRepoPatterns: []string{"github.com/sourcegraph/pattern-repo%"}})
+	require.NoError(t, err)
+	err = configStore.UpdateConfiguration(ctx, UpdateSignalConfigurationArgs{Name: "recent-contributors", Enabled: true, ExcludedRepoPatterns: []string{"github.com/sourcegraph/sourcegraph"}})
+	require.NoError(t, err)
+
+	// Building signal aggregates.
+	store := RecentViewSignalStoreWith(db, logger)
+	err = store.BuildAggregateFromEvents(ctx, events)
+	require.NoError(t, err)
+
+	resolvePathsForRepo := func(ctx context.Context, db DB, repoID int) map[string]int {
+		t.Helper()
+		rows, err := db.QueryContext(ctx, "SELECT id, absolute_path FROM repo_paths WHERE repo_id = $1 AND absolute_path LIKE $2", repoID, "%.go")
+		require.NoError(t, err)
+		pathToID := make(map[string]int)
+		for rows.Next() {
+			var id int
+			var path string
+			err := rows.Scan(&id, &path)
+			require.NoError(t, err)
+			pathToID[path] = id
+		}
+		return pathToID
+	}
+
+	// Getting actual mapping of path to its ID.
+	repo1PathToID := resolvePathsForRepo(ctx, db, 1)
+
+	// Getting all RecentViewSummary entries from the DB and checking their
+	// correctness.
+	summaries, err := store.List(ctx, ListRecentViewSignalOpts{})
+	require.NoError(t, err)
+
+	assert.Contains(t, summaries, RecentViewSummary{UserID: 1, FilePathID: repo1PathToID["cmd/gitserver/server/lock.go"], ViewsCount: 2})
+	assert.Contains(t, summaries, RecentViewSummary{UserID: 1, FilePathID: repo1PathToID["cmd/gitserver/server/patch.go"], ViewsCount: 1})
+	assert.Contains(t, summaries, RecentViewSummary{UserID: 1, FilePathID: repo1PathToID["enterprise/cmd/frontend/main.go"], ViewsCount: 1})
+	assert.Contains(t, summaries, RecentViewSummary{UserID: 2, FilePathID: repo1PathToID["enterprise/cmd/frontend/main.go"], ViewsCount: 1})
+
+	// We shouldn't have any paths inserted for repos
+	// "github.com/sourcegraph/pattern-repo-1337" and
+	// "github.com/sourcegraph/pattern-repo-421337" because they are excluded.
+	count, _, err := basestore.ScanFirstInt(db.QueryContext(context.Background(), "SELECT COUNT(*) FROM repo_paths WHERE repo_id IN (2, 3)"))
+	require.NoError(t, err)
+	assert.Zero(t, count)
 }
 
 func TestRecentViewSignalStore_Insert(t *testing.T) {

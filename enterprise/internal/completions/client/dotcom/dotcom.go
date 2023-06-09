@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
@@ -18,31 +17,58 @@ const ProviderName = "dotcom"
 
 var done_bytes = []byte("done")
 
-const api_url = "https://sourcegraph.com/.api/completions/stream"
+const (
+	completionsURL = "https://sourcegraph.com/.api/completions/stream"
+	codeURL        = "https://sourcegraph.com/.api/completions/code"
+)
 
 type dotcomClient struct {
 	cli         httpcli.Doer
 	accessToken string
-	model       string
 }
 
-func NewClient(cli httpcli.Doer, accessToken string, model string) types.CompletionsClient {
+func NewClient(cli httpcli.Doer, accessToken string) types.CompletionsClient {
 	return &dotcomClient{
 		cli:         cli,
 		accessToken: accessToken,
-		model:       model,
 	}
 }
 
 func (a *dotcomClient) Complete(
 	ctx context.Context,
+	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
-	return nil, errors.New("not implemented")
+	reqBody, err := json.Marshal(requestParams)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, "POST", codeURL, bytes.NewReader(reqBody))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("token %s", a.accessToken))
+
+	resp, err := a.cli.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, types.NewErrStatusNotOK("Sourcegraph.com", resp)
+	}
+
+	var result types.CompletionResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, errors.Wrap(err, "failed to decode payload")
+	}
+	return &result, nil
 }
 
 func (a *dotcomClient) Stream(
 	ctx context.Context,
+	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
@@ -50,7 +76,7 @@ func (a *dotcomClient) Stream(
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", api_url, bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", completionsURL, bytes.NewReader(reqBody))
 	if err != nil {
 		return err
 	}
@@ -63,8 +89,7 @@ func (a *dotcomClient) Stream(
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(resp.Body)
-		return errors.Errorf("API failed with: %s", string(respBody))
+		return types.NewErrStatusNotOK("sourcegraph.com", resp)
 	}
 
 	dec := streamhttp.NewDecoder(resp.Body)

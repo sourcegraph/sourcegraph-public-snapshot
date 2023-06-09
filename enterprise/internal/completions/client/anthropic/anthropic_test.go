@@ -10,6 +10,7 @@ import (
 
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 )
@@ -36,7 +37,7 @@ func getMockClient(responseBody []byte) types.CompletionsClient {
 		func(r *http.Request) (*http.Response, error) {
 			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewReader(responseBody))}, nil
 		},
-	}, "", "", "")
+	}, "", "")
 }
 
 func TestValidAnthropicStream(t *testing.T) {
@@ -50,7 +51,7 @@ func TestValidAnthropicStream(t *testing.T) {
 
 	mockClient := getMockClient(linesToResponse(mockAnthropicResponseLines))
 	events := []types.CompletionResponse{}
-	err := mockClient.Stream(context.Background(), types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {
+	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {
 		events = append(events, event)
 		return nil
 	})
@@ -64,9 +65,39 @@ func TestInvalidAnthropicStream(t *testing.T) {
 	var mockAnthropicInvalidResponseLines = []string{`{]`}
 
 	mockClient := getMockClient(linesToResponse(mockAnthropicInvalidResponseLines))
-	err := mockClient.Stream(context.Background(), types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil })
+	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil })
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
 	assert.Contains(t, err.Error(), "failed to decode event payload")
+}
+
+func TestErrStatusNotOK(t *testing.T) {
+	mockClient := NewClient(&mockDoer{
+		func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusTooManyRequests,
+				Body:       io.NopCloser(bytes.NewReader([]byte("oh no, please slow down!"))),
+			}, nil
+		},
+	}, "", "")
+
+	t.Run("Complete", func(t *testing.T) {
+		resp, err := mockClient.Complete(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{})
+		require.Error(t, err)
+		assert.Nil(t, resp)
+
+		autogold.Expect("Anthropic: unexpected status code 429: oh no, please slow down!").Equal(t, err.Error())
+		_, ok := types.IsErrStatusNotOK(err)
+		assert.True(t, ok)
+	})
+
+	t.Run("Stream", func(t *testing.T) {
+		err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil })
+		require.Error(t, err)
+
+		autogold.Expect("Anthropic: unexpected status code 429: oh no, please slow down!").Equal(t, err.Error())
+		_, ok := types.IsErrStatusNotOK(err)
+		assert.True(t, ok)
+	})
 }

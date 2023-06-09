@@ -13,7 +13,31 @@ import (
 type ListOwnershipArgs struct {
 	First   *int32
 	After   *string
-	Reasons *[]string
+	Reasons *[]OwnershipReasonType
+}
+
+type OwnershipReasonType string
+
+const (
+	CodeownersFileEntry              OwnershipReasonType = "CODEOWNERS_FILE_ENTRY"
+	AssignedOwner                    OwnershipReasonType = "ASSIGNED_OWNER"
+	RecentContributorOwnershipSignal OwnershipReasonType = "RECENT_CONTRIBUTOR_OWNERSHIP_SIGNAL"
+	RecentViewOwnershipSignal        OwnershipReasonType = "RECENT_VIEW_OWNERSHIP_SIGNAL"
+)
+
+func (args *ListOwnershipArgs) IncludeReason(reason OwnershipReasonType) bool {
+	rs := args.Reasons
+	// When the reasons list is empty, we do not filter - the result
+	// contains all the reasons, so for every reason we return true.
+	if rs == nil || len(*rs) == 0 {
+		return true
+	}
+	for _, r := range *rs {
+		if r == reason {
+			return true
+		}
+	}
+	return false
 }
 
 type OwnResolver interface {
@@ -21,22 +45,31 @@ type OwnResolver interface {
 	GitCommitOwnership(ctx context.Context, commit *GitCommitResolver, args ListOwnershipArgs) (OwnershipConnectionResolver, error)
 	GitTreeOwnership(ctx context.Context, tree *GitTreeEntryResolver, args ListOwnershipArgs) (OwnershipConnectionResolver, error)
 
+	GitTreeOwnershipStats(ctx context.Context, tree *GitTreeEntryResolver) (OwnershipStatsResolver, error)
+	InstanceOwnershipStats(ctx context.Context) (OwnershipStatsResolver, error)
+
 	PersonOwnerField(person *PersonResolver) string
 	UserOwnerField(user *UserResolver) string
 	TeamOwnerField(team *TeamResolver) string
 
 	NodeResolvers() map[string]NodeByIDFunc
 
-	// Codeowners queries
+	// Codeowners queries.
 	CodeownersIngestedFiles(context.Context, *CodeownersIngestedFilesArgs) (CodeownersIngestedFileConnectionResolver, error)
 	RepoIngestedCodeowners(context.Context, api.RepoID) (CodeownersIngestedFileResolver, error)
 
-	// Codeowners mutations
+	// Codeowners mutations.
 	AddCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
 	UpdateCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
 	DeleteCodeownersFiles(context.Context, *DeleteCodeownersFileArgs) (*EmptyResponse, error)
 
-	// config
+	// Assigned ownership mutations.
+	AssignOwner(context.Context, *AssignOwnerOrTeamArgs) (*EmptyResponse, error)
+	RemoveAssignedOwner(context.Context, *AssignOwnerOrTeamArgs) (*EmptyResponse, error)
+	AssignTeam(context.Context, *AssignOwnerOrTeamArgs) (*EmptyResponse, error)
+	RemoveAssignedTeam(context.Context, *AssignOwnerOrTeamArgs) (*EmptyResponse, error)
+
+	// Config.
 	OwnSignalConfigurations(ctx context.Context) ([]SignalConfigurationResolver, error)
 	UpdateOwnSignalConfigurations(ctx context.Context, configurationsArgs UpdateSignalConfigurationsArgs) ([]SignalConfigurationResolver, error)
 }
@@ -46,6 +79,11 @@ type OwnershipConnectionResolver interface {
 	TotalOwners(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
 	Nodes(context.Context) ([]OwnershipResolver, error)
+}
+
+type OwnershipStatsResolver interface {
+	TotalFiles(context.Context) (int32, error)
+	TotalCodeownedFiles(context.Context) (int32, error)
 }
 
 type Ownable interface {
@@ -97,6 +135,12 @@ type RecentViewOwnershipSignalResolver interface {
 type AssignedOwnerResolver interface {
 	Title() (string, error)
 	Description() (string, error)
+	IsDirectMatch() bool
+}
+
+type AssignedTeamResolver interface {
+	Title() (string, error)
+	Description() (string, error)
 }
 
 type CodeownersFileArgs struct {
@@ -112,6 +156,17 @@ type CodeownersFileInput struct {
 type DeleteCodeownersFilesInput struct {
 	RepoID   *graphql.ID
 	RepoName *string
+}
+
+type AssignOwnerOrTeamArgs struct {
+	Input AssignOwnerOrTeamInput
+}
+
+type AssignOwnerOrTeamInput struct {
+	// AssignedOwnerID is an ID of a user or a team who is assigned as an owner.
+	AssignedOwnerID graphql.ID
+	RepoID          graphql.ID
+	AbsolutePath    string
 }
 
 type DeleteCodeownersFileArgs struct {

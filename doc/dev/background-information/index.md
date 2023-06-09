@@ -22,6 +22,7 @@
   - [Full `sg` reference](./sg/reference.md)
 - [Using Bazel](./bazel.md)
   - [Bazel and client code](./bazel_web.md)
+  - [Bazel and container images](./bazel_containers.md)
 - [Developing the web clients](web/index.md)
   - [Developing the web app](web/web_app.md)
   - [Developing the code host integrations](web/code_host_integrations.md)
@@ -82,6 +83,10 @@
 - [Renovate dependency updates](renovate.md)
 - [Honeycomb](honeycomb.md)
 - [Using PostgreSQL](postgresql.md)
+
+## Wolfi
+
+- [Wolfi Overview](wolfi/index.md)
 
 ## Other
 

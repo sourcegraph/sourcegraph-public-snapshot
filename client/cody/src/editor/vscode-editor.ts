@@ -8,10 +8,22 @@ import {
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
+import { FixupController } from '../non-stop/FixupController'
 import { InlineController } from '../services/InlineController'
 
 export class VSCodeEditor implements Editor {
-    constructor(public controller: InlineController) {}
+    constructor(
+        public controllers: {
+            inline: InlineController
+            // TODO: Rename this from "task" to "fixup" when the fixup data
+            // model moves from client/cody-shared to client/cody
+            task: FixupController
+        }
+    ) {}
+
+    public get fileName(): string {
+        return vscode.window.activeTextEditor?.document.fileName ?? ''
+    }
 
     public getWorkspaceRootPath(): string | null {
         const uri = vscode.window.activeTextEditor?.document?.uri
@@ -40,7 +52,7 @@ export class VSCodeEditor implements Editor {
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
-        if (this.controller.isInProgress) {
+        if (this.controllers.inline.isInProgress) {
             return null
         }
         const activeEditor = this.getActiveTextEditorInstance()
@@ -115,8 +127,8 @@ export class VSCodeEditor implements Editor {
 
     public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
         const activeEditor = this.getActiveTextEditorInstance()
-        if (this.controller.isInProgress) {
-            await this.controller.replaceSelection(replacement)
+        if (this.controllers.inline.isInProgress) {
+            await this.controllers.inline.replace(fileName, replacement, selectedText)
             return
         }
         if (!activeEditor || vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath) !== fileName) {
@@ -158,5 +170,11 @@ export class VSCodeEditor implements Editor {
         return vscode.window.showInputBox({
             placeHolder: prompt || 'Enter here...',
         })
+    }
+
+    // TODO: When Non-Stop Fixup doesn't depend directly on the chat view,
+    // move the recipe to client/cody and remove this entrypoint.
+    public async didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
+        await this.controllers.task.didReceiveFixupText(id, text, state)
     }
 }

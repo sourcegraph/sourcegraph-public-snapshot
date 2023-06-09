@@ -210,7 +210,7 @@ const ExtraInfoSection: React.FC<{
     className?: string
     hasWritePermissions?: boolean
 }> = ({ repo, className, hasWritePermissions }) => {
-    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
+    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
 
     const metadataItems = useMemo(() => repo.metadata.map(({ key, value }) => ({ key, value })) || [], [repo.metadata])
     const queryState = useNavbarQueryState(state => state.queryState)
@@ -218,7 +218,7 @@ const ExtraInfoSection: React.FC<{
     return (
         <Card className={className}>
             <ExtraInfoSectionItem>
-                <ExtraInfoSectionItemHeader title="Description" tooltip="Synced from the code host." />
+                <ExtraInfoSectionItemHeader title="Description" tooltip="Synchronized from the code host" />
                 {repo.description && <Text>{repo.description}</Text>}
             </ExtraInfoSectionItem>
             {enableRepositoryMetadata && (
@@ -280,6 +280,8 @@ interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps
 export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = props => {
     const { filePath, tree, repo, revision, isPackage } = props
 
+    const isRoot = filePath === ''
+
     const readmeEntry = useMemo(() => {
         for (const entry of tree.entries) {
             const name = entry.name.toLocaleLowerCase()
@@ -311,21 +313,25 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
     return (
         <>
-            <section className={classNames('container mb-3 px-0', styles.section)}>
-                {readmeEntry && (
-                    <ReadmePreviewCard
-                        entry={readmeEntry}
-                        repoName={repo.name}
-                        revision={revision}
-                        className={styles.files}
-                    />
-                )}
-                <ExtraInfoSection
-                    repo={repo}
-                    className={classNames(styles.contributors, 'p-3')}
-                    hasWritePermissions={hasRepoMetaWritePermissions}
-                />
-            </section>
+            {(readmeEntry || isRoot) && (
+                <section className={classNames('container mb-3 px-0', styles.section)}>
+                    {readmeEntry && (
+                        <ReadmePreviewCard
+                            entry={readmeEntry}
+                            repoName={repo.name}
+                            revision={revision}
+                            className={styles.files}
+                        />
+                    )}
+                    {isRoot && (
+                        <ExtraInfoSection
+                            repo={repo}
+                            className={styles.extraInfo}
+                            hasWritePermissions={hasRepoMetaWritePermissions}
+                        />
+                    )}
+                </section>
+            )}
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
                 <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} filePath={filePath} />
 
@@ -551,54 +557,59 @@ const Ownership: React.FC<OwnershipProps> = ({ repo, filePath }) => {
         node?.commit?.path?.ownership?.__typename === 'OwnershipConnection'
             ? node.commit.path.ownership
             : null
-
     return (
-        <ConnectionContainer>
-            {error && <ConnectionError errors={[error.message]} />}
-            {connection && connection.nodes.length > 0 && (
-                <ConnectionList
-                    className={classNames('test-filtered-contributors-connection', styles.table)}
-                    as="table"
-                >
-                    <tbody>
-                        {connection.nodes.map((node: TreePageOwnershipNodeFields) => (
-                            <OwnerNode
-                                key={
-                                    node.owner.__typename === 'Person'
-                                        ? node.owner.email
-                                        : node.owner.__typename === 'Team'
-                                        ? node.owner.name
-                                        : null
-                                }
-                                node={node}
-                            />
-                        ))}
-                    </tbody>
-                </ConnectionList>
-            )}
-            {loading && (
-                <div className={contributorsStyles.filteredConnectionLoading}>
-                    <ConnectionLoading />
-                </div>
-            )}
-            <SummaryContainer className={styles.tableSummary}>
-                {connection && (
-                    <>
-                        <ConnectionSummary
-                            compact={true}
-                            connection={connection}
-                            first={COUNT}
-                            noun="owner"
-                            pluralNoun="owners"
-                            hasNextPage={connection.pageInfo.hasNextPage}
-                        />
-                        {/* TODO(#51792): Show more button should lead
-                         * to the ownership tab with detailed view for each owner.
-                         */}
-                    </>
+        <div>
+            <ConnectionContainer>
+                {error && <ConnectionError errors={[error.message]} />}
+                {connection && connection.nodes.length > 0 && (
+                    <ConnectionList
+                        className={classNames('test-filtered-contributors-connection', styles.table)}
+                        as="table"
+                    >
+                        <tbody>
+                            {connection.nodes.map((node: TreePageOwnershipNodeFields) => (
+                                <OwnerNode
+                                    key={
+                                        node.owner.__typename === 'Person'
+                                            ? node.owner.email
+                                            : node.owner.__typename === 'Team'
+                                            ? node.owner.name
+                                            : null
+                                    }
+                                    node={node}
+                                />
+                            ))}
+                        </tbody>
+                    </ConnectionList>
                 )}
-            </SummaryContainer>
-        </ConnectionContainer>
+                {loading && (
+                    <div className={contributorsStyles.filteredConnectionLoading}>
+                        <ConnectionLoading />
+                    </div>
+                )}
+                <SummaryContainer className={styles.tableSummary}>
+                    {connection && (
+                        <>
+                            <ConnectionSummary
+                                compact={true}
+                                connection={connection}
+                                first={COUNT}
+                                noun="owner"
+                                pluralNoun="owners"
+                                hasNextPage={connection.pageInfo.hasNextPage}
+                            />
+                            <small>
+                                <Link
+                                    to={`${repo.url}/-/own?${filePath ? 'path=' + encodeURIComponent(filePath) : ''}`}
+                                >
+                                    Show more
+                                </Link>
+                            </small>
+                        </>
+                    )}
+                </SummaryContainer>
+            </ConnectionContainer>
+        </div>
     )
 }
 

@@ -1,4 +1,5 @@
-import * as fs from 'fs'
+import { promises as fs } from 'fs'
+import path from 'path'
 
 import * as esbuild from 'esbuild'
 
@@ -9,6 +10,19 @@ import {
     buildTimerPlugin,
 } from '@sourcegraph/build-config'
 import { isDefined } from '@sourcegraph/common'
+
+async function copyStaticFiles(sourceDir: string, destinationDir: string): Promise<void> {
+    await fs.mkdir(destinationDir, { recursive: true })
+
+    const files = await fs.readdir(sourceDir)
+
+    for (const file of files) {
+        const sourceFile = path.join(sourceDir, file)
+        const destinationFile = path.join(destinationDir, file)
+        await fs.copyFile(sourceFile, destinationFile)
+        console.info(`${sourceFile} written to ${destinationFile}`)
+    }
+}
 
 export const BUILD_OPTIONS: esbuild.BuildOptions = {
     entryPoints: ['src/app-shell.tsx'],
@@ -44,14 +58,13 @@ export const build = async (): Promise<void> => {
         outdir: 'dist/scripts/',
         metafile: Boolean(metafile),
     })
+
     if (metafile) {
-        fs.writeFileSync(metafile, JSON.stringify(result.metafile), 'utf-8')
+        await fs.writeFile(metafile, JSON.stringify(result.metafile), 'utf-8')
     }
 
     if (result.errors.length === 0) {
-        const content = await fs.promises.readFile('index.html', 'utf8')
-        fs.writeFileSync('dist/index.html', content)
-        console.info('index.html written to dist/index.html')
+        await copyStaticFiles('static', 'dist')
     }
 }
 

@@ -91,8 +91,8 @@ func TestSearch(t *testing.T) {
 
 	testSearchOther(t)
 
-	// Run the search tests with file-based ranking enabled
-	err = client.SetFeatureFlag("search-ranking", true)
+	// Run the search tests with file-based ranking disabled
+	err = client.SetFeatureFlag("search-ranking", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +143,6 @@ func addKVPs(t *testing.T, client *gqltestutil.Client) {
 		t.Fatal(err)
 	}
 
-	err = client.SetFeatureFlag("repository-metadata", true)
 	if err != nil {
 		t.Fatal(err)
 	}

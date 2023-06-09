@@ -39,6 +39,7 @@ export interface Client {
         recipeId: RecipeID,
         options?: {
             prefilledOptions?: PrefilledOptions
+            humanChatInput?: string
         }
     ) => Promise<void>
     reset: () => void
@@ -105,6 +106,7 @@ export async function createClient({
             intentDetector,
             codebaseContext,
             responseMultiplexer: new BotResponseMultiplexer(),
+            firstInteraction: transcript.isEmpty,
         })
         if (!interaction) {
             return
@@ -136,9 +138,7 @@ export async function createClient({
             },
             onError(error) {
                 // Display error message as assistant response
-                transcript.addErrorAsAssistantResponse(
-                    `<div class="cody-chat-error"><span>Request failed: </span>${error}</div>`
-                )
+                transcript.addErrorAsAssistantResponse(error)
                 isMessageInProgress = false
                 sendTranscript()
                 console.error(`Completion request failed: ${error}`)

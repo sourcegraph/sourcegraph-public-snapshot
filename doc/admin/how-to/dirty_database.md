@@ -33,7 +33,7 @@ The following procedure requires that you are able to execute commands from insi
 
 Some classes of errors can be successfully retried via a manual invocation of the failed `migrator` command. If the previous operation was interrupted due to a network issue, a timeout, or a crashed/restarted database host, or if the error that occurred was due to a transient error such as a SQL deadlock, then re-application of the migration is likely to succeed.
 
-When [re-running the migrator](./manual_database_migrations.md), add the optional flag `--ignore-single-dirty-log` to attempt re-application of a previously failed migration, and add the optional flag `--ignore-single-pending-log` to to attempt re-application of a migration which was never completed by a previous invocation of the `migrator`. Both flags apply to the `migrator` commands `up`, `upto`, `downto`, `upgrade`, and `downgrade`. These flags only allow re-application of the **next** migration in the sequence (and multiple sequential failures will require multiple invocations).
+When [re-running the migrator](../updates/migrator/migrator-operations.md), add the optional flag `--ignore-single-dirty-log` to attempt re-application of a previously failed migration, and add the optional flag `--ignore-single-pending-log` to to attempt re-application of a migration which was never completed by a previous invocation of the `migrator`. Both flags apply to the `migrator` commands `up`, `upto`, `downto`, `upgrade`, and `downgrade`. These flags only allow re-application of the **next** migration in the sequence (and multiple sequential failures will require multiple invocations).
 
 **DO NOT** set either of these flags permanently on a `migrator` attached as an init container (in Kubernetes) or as a dependent container (in Docker Compose), as it may allow mutation of the database schema with non-mutual access. Concurrent modification may result in greater error frequency (at best) and data corruption (at worst). These flags should only be used on a manual invocation of a `migrator` command.
 
@@ -107,7 +107,7 @@ If you're running into errors such as being unable to create a unique index due 
 
 ### 3. Add a migration log entry
 
-**Ensure the migration applied, then signal that the migration has been run**. Run the `migrator` instance against your database to create an explicit migration log. For the following, consult the [Kubernetes](./manual_database_migrations.md#kubernetes), [Docker-compose](./manual_database_migrations.md#docker--docker-compose), or [local development](./manual_database_migrations.md#local-development) instructions on how to manually run database operations. The specific migrator command to run is:
+**Ensure the migration applied, then signal that the migration has been run**. Run the `migrator` instance against your database to create an explicit migration log. For the following, consult the [Kubernetes](../updates/migrator/migrator-operations.md#kubernetes), [Docker-compose](../updates/migrator/migrator-operations.md#docker--docker-compose), or [local development](../updates/migrator/migrator-operations.md#local-development) instructions on how to manually run database operations. The specific migrator command to run is:
 
 - For Kubernetes: replace container args with `["add-log", "-db=<schema>", "-version=<version>"]`
 - For Docker-compose: replace container args with `"add-log" "-db=<schema>" "-version=<version>"`

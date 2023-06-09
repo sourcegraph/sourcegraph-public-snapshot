@@ -66,7 +66,7 @@ func TestGetCommits(t *testing.T) {
 			nil,
 			nil,
 		}
-		source := gitserver.NewTestClientSource(inttests.GitserverAddresses)
+		source := gitserver.NewTestClientSource(t, inttests.GitserverAddresses)
 
 		commits, err := gitserver.NewTestClient(http.DefaultClient, source).GetCommits(ctx, getTestSubRepoPermsChecker("file1", "file3"), repoCommits, true)
 		if err != nil {
@@ -99,10 +99,10 @@ func getGitCommandsWithFiles(fileName1, fileName2 string) []string {
 	return []string{
 		fmt.Sprintf("touch %s", fileName1),
 		fmt.Sprintf("git add %s", fileName1),
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m commit1",
 		fmt.Sprintf("touch %s", fileName2),
 		fmt.Sprintf("git add %s", fileName2),
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m commit2",
 	}
 }
 
@@ -117,14 +117,14 @@ func mustParseDate(s string, t *testing.T) *time.Time {
 
 func TestHead(t *testing.T) {
 	inttests.InitGitserver()
-	source := gitserver.NewTestClientSource(inttests.GitserverAddresses)
+	source := gitserver.NewTestClientSource(t, inttests.GitserverAddresses)
 	client := gitserver.NewTestClient(http.DefaultClient, source)
 
 	t.Run("with sub-repo permissions", func(t *testing.T) {
 		gitCommands := []string{
 			"touch file",
 			"git add file",
-			"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+			"git commit -m foo",
 		}
 		repo := inttests.MakeGitRepository(t, gitCommands...)
 		ctx := actor.WithActor(context.Background(), &actor.Actor{

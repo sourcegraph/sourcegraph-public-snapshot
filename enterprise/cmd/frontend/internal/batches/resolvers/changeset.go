@@ -9,7 +9,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
@@ -478,7 +477,8 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 	}
 
 	db := r.store.DatabaseDB()
-	if r.changeset.Unpublished() {
+	// If the Changeset is from a code host that doesn't push to branches (like Gerrit), we can just use the branch spec description.
+	if r.changeset.Unpublished() || r.changeset.SyncState.BaseRefOid == r.changeset.SyncState.HeadRefOid {
 		desc, err := r.getBranchSpecDescription(ctx)
 		if err != nil {
 			return nil, err

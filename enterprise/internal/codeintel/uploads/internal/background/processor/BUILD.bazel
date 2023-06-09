@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "processor",
@@ -20,7 +21,6 @@ go_library(
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
-        "//internal/env",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/honey",

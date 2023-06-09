@@ -10,6 +10,7 @@ export const OWNER_FIELDS = gql`
             email
             avatarURL
             user {
+                id
                 username
                 displayName
                 url
@@ -23,6 +24,7 @@ export const OWNER_FIELDS = gql`
             teamDisplayName: displayName
             avatarURL
             url
+            external
         }
     }
 `
@@ -45,6 +47,7 @@ export const ASSIGNED_OWNER_FIELDS = gql`
     fragment AssignedOwnerFields on AssignedOwner {
         title
         description
+        isDirectMatch
     }
 `
 
@@ -86,6 +89,65 @@ export const FETCH_OWNERS = gql`
                 }
             }
         }
+        currentUser {
+            permissions {
+                nodes {
+                    displayName
+                }
+            }
+        }
+    }
+`
+
+export const FETCH_TREE_OWNERS = gql`
+    ${OWNER_FIELDS}
+    ${RECENT_CONTRIBUTOR_FIELDS}
+    ${RECENT_VIEW_FIELDS}
+    ${ASSIGNED_OWNER_FIELDS}
+
+    fragment CodeownersFileEntryFields on CodeownersFileEntry {
+        title
+        description
+        codeownersFile {
+            url
+        }
+        ruleLineMatch
+    }
+
+    fragment OwnershipConnectionFields on OwnershipConnection {
+        totalOwners
+        nodes {
+            owner {
+                ...OwnerFields
+            }
+            reasons {
+                ...CodeownersFileEntryFields
+                ...RecentContributorOwnershipSignalFields
+                ...RecentViewOwnershipSignalFields
+                ...AssignedOwnerFields
+            }
+        }
+    }
+
+    query FetchTreeOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+        node(id: $repo) {
+            ... on Repository {
+                commit(rev: $revision) {
+                    tree(path: $currentPath) {
+                        ownership {
+                            ...OwnershipConnectionFields
+                        }
+                    }
+                }
+            }
+        }
+        currentUser {
+            permissions {
+                nodes {
+                    displayName
+                }
+            }
+        }
     }
 `
 
@@ -99,12 +161,15 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
                 sourceType
                 commit(rev: $revision) {
                     blob(path: $currentPath) {
-                        ownership(first: 2) {
+                        ownership(first: 2, reasons: [CODEOWNERS_FILE_ENTRY]) {
                             nodes {
                                 owner {
                                     ...OwnerFields
                                 }
                             }
+                            totalCount
+                        }
+                        contributors: ownership(reasons: [RECENT_CONTRIBUTOR_OWNERSHIP_SIGNAL]) {
                             totalCount
                         }
                     }
@@ -115,6 +180,22 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
                     }
                 }
             }
+        }
+    }
+`
+
+export const ASSIGN_OWNER = gql`
+    mutation AssignOwner($input: AssignOwnerOrTeamInput!) {
+        assignOwner(input: $input) {
+            alwaysNil
+        }
+    }
+`
+
+export const REMOVE_ASSIGNED_OWNER = gql`
+    mutation RemoveAssignedOwner($input: AssignOwnerOrTeamInput!) {
+        removeAssignedOwner(input: $input) {
+            alwaysNil
         }
     }
 `

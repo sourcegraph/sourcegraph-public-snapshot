@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"go.opentelemetry.io/otel/attribute"
 
@@ -48,39 +47,36 @@ func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, 
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer finish(alert, err)
 
-	var (
-		mu   sync.Mutex
-		errs error
-	)
+	var maxAlerter search.MaxAlerter
 
 	rules := NewRulesCache(clients.Gitserver, clients.DB)
 
-	// Bag the search terms
-	includeBag, err := own.ByTextReference(ctx, database.NewEnterpriseDB(clients.DB), s.includeOwners...)
-	if err != nil {
-		return nil, errors.Wrap(err, "failure trying to resolve search term")
+	// Semantics of multiple values in includeOwners and excludeOwners is that all
+	// need to match for ownership. Therefore we create a single bag per entry.
+	var includeBags []own.Bag
+	for _, o := range s.includeOwners {
+		b := own.ByTextReference(ctx, database.NewEnterpriseDB(clients.DB), o)
+		includeBags = append(includeBags, b)
 	}
-	excludeBag, err := own.ByTextReference(ctx, database.NewEnterpriseDB(clients.DB), s.excludeOwners...)
-	if err != nil {
-		return nil, errors.Wrap(err, "failure trying to resolve search term")
+	var excludeBags []own.Bag
+	for _, o := range s.excludeOwners {
+		b := own.ByTextReference(ctx, database.NewEnterpriseDB(clients.DB), o)
+		excludeBags = append(excludeBags, b)
 	}
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applyCodeOwnershipFiltering(ctx, &rules, includeBag, s.includeOwners, excludeBag, s.excludeOwners, event.Results)
+		event.Results, err = applyCodeOwnershipFiltering(ctx, &rules, includeBags, s.includeOwners, excludeBags, s.excludeOwners, event.Results)
 		if err != nil {
-			mu.Lock()
-			errs = errors.Append(errs, err)
-			mu.Unlock()
+			maxAlerter.Add(search.AlertForOwnershipSearchError())
 		}
 		stream.Send(event)
 	})
 
 	alert, err = s.child.Run(ctx, clients, filteredStream)
-	if err != nil {
-		errs = errors.Append(errs, err)
-	}
-	return alert, errs
+	// Add is nil-safe, we can just add an alert even if its pointer is nil.
+	maxAlerter.Add(alert)
+	return maxAlerter.Alert, err
 }
 
 func (s *fileHasOwnersJob) Name() string {
@@ -113,9 +109,9 @@ func (s *fileHasOwnersJob) MapChildren(fn job.MapFunc) job.Job {
 func applyCodeOwnershipFiltering(
 	ctx context.Context,
 	rules *RulesCache,
-	include own.Bag,
+	includeBags []own.Bag,
 	includeTerms []string,
-	exclude own.Bag,
+	excludeBags []own.Bag,
 	excludeTerms []string,
 	matches []result.Match,
 ) ([]result.Match, error) {
@@ -137,10 +133,10 @@ matchesLoop:
 			continue matchesLoop
 		}
 		fileOwners := file.Match(mm.File.Path)
-		if len(includeTerms) > 0 && !containsOwner(fileOwners, includeTerms, include) {
+		if len(includeTerms) > 0 && !containsOwner(fileOwners, includeTerms, includeBags) {
 			continue matchesLoop
 		}
-		if len(excludeTerms) > 0 && containsOwner(fileOwners, excludeTerms, exclude) {
+		if len(excludeTerms) > 0 && containsOwner(fileOwners, excludeTerms, excludeBags) {
 			continue matchesLoop
 		}
 
@@ -151,12 +147,21 @@ matchesLoop:
 }
 
 // containsOwner searches within emails and handles in a case-insensitive
-// manner. Empty string passed as search term means any, so the predicate
-// returns true if there is at least one owner, and false otherwise.
-func containsOwner(owners fileOwnershipData, searchTerms []string, bag own.Bag) bool {
+// manner.
+//
+//   - Empty string passed as search term means any, so the predicate
+//     returns true if there is at least one owner, and false otherwise.
+//   - Multiple bags have AND semantics, so ownership data needs to be within
+//     all of the search term bags.
+func containsOwner(ownership fileOwnershipData, searchTerms []string, allBags []own.Bag) bool {
 	// Empty search terms means any owner matches.
 	if len(searchTerms) == 1 && searchTerms[0] == "" {
-		return owners.NonEmpty()
+		return ownership.NonEmpty()
 	}
-	return owners.Contains(bag)
+	for _, bag := range allBags {
+		if !ownership.IsWithin(bag) {
+			return false
+		}
+	}
+	return true
 }
