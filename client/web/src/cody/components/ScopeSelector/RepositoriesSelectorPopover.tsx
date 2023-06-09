@@ -4,6 +4,7 @@ import {
     mdiChevronUp,
     mdiMinusCircleOutline,
     mdiCheck,
+    mdiDatabaseOutline,
     mdiDatabaseCheckOutline,
     mdiDatabaseRemoveOutline,
 } from '@mdi/js'
@@ -150,7 +151,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                     ) : netRepositories.length ? (
                         getFileName(netRepositories[0].name)
                     ) : (
-                        'Add repositories to the scope...'
+                        'Add repositories...'
                     )}
                 </div>
                 <Icon aria-hidden={true} svgPath={mdiChevronUp} />
@@ -481,7 +482,14 @@ const EmbeddingExistsIcon: React.FC<{ repo: { embeddingExists: boolean } }> = Re
 
 const EmbeddingStatusIndicator: React.FC<{ reposWithoutEmbeddingsCount: number; totalReposCount: number }> = React.memo(
     function EmbeddingsStatusIndicatorContent({ reposWithoutEmbeddingsCount, totalReposCount }) {
-        return totalReposCount ? (
+        if (!totalReposCount) {
+            return (
+                <div className="mr-1">
+                    <Icon aria-hidden={true} className="text-muted" svgPath={mdiDatabaseOutline} />
+                </div>
+            )
+        }
+        return (
             <div className="mr-1">
                 <Tooltip
                     content={
@@ -501,6 +509,6 @@ const EmbeddingStatusIndicator: React.FC<{ reposWithoutEmbeddingsCount: number; 
                     )}
                 </Tooltip>
             </div>
-        ) : null
+        )
     }
 )
