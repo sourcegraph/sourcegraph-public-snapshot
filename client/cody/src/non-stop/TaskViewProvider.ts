@@ -54,9 +54,9 @@ export class TaskViewProvider implements vscode.TreeDataProvider<FixupTaskTreeIt
         this.treeItems.set(task.id, treeItem)
 
         // Add fsPath to treeNodes
-        const treeNode = this.treeNodes.get(task.selection.fileName) || new FixupTaskTreeItem(task.selection.fileName)
+        const treeNode = this.treeNodes.get(task.fixupFile.fileName) || new FixupTaskTreeItem(task.fixupFile.fileName)
         treeNode.addChildren(task.id, task.state)
-        this.treeNodes.set(task.selection.fileName, treeNode)
+        this.treeNodes.set(task.fixupFile.fileName, treeNode)
 
         this.refresh()
     }
@@ -136,7 +136,7 @@ export class FixupTaskTreeItem extends vscode.TreeItem {
         }
         this.state = task.state
         this.id = task.id
-        this.fsPath = task.selection.fileName
+        this.fsPath = task.fixupFile.fileName
         // TODO: Files change URIs when they are renamed, so add a change
         // notification and don't cache this here.
         this.resourceUri = task.fixupFile.uri
