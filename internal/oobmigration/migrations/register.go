@@ -30,7 +30,7 @@ func RegisterOSSMigratorsUsingConfAndStoreFactory(
 	db database.DB,
 	runner *oobmigration.Runner,
 	conf conftypes.UnifiedQuerier,
-	storeFactory StoreFactory,
+	_ StoreFactory,
 ) error {
 	keys, err := keyring.NewRing(ctx, conf.SiteConfig().EncryptionKeys)
 	if err != nil {

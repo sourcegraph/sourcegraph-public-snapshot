@@ -1,4 +1,4 @@
-package cliutil
+package schemas
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -22,7 +21,7 @@ type ExpectedSchemaFactory interface {
 	Name() string
 	VersionPatterns() []NamedRegexp
 	ResourcePath(filename, version string) string
-	CreateFromPath(ctx context.Context, path string) (descriptions.SchemaDescription, error)
+	CreateFromPath(ctx context.Context, path string) (SchemaDescription, error)
 }
 
 type NamedRegexp struct {
@@ -43,9 +42,9 @@ var (
 )
 
 // GitHubExpectedSchemaFactory reads schema definitions from the sourcegraph/sourcegraph repository via GitHub's API.
-var GitHubExpectedSchemaFactory = NewExpectedSchemaFactory("GitHub", allPatterns, githubExpectedSchemaPath, fetchSchema)
+var GitHubExpectedSchemaFactory = NewExpectedSchemaFactory("GitHub", allPatterns, GithubExpectedSchemaPath, fetchSchema)
 
-func githubExpectedSchemaPath(filename, version string) string {
+func GithubExpectedSchemaPath(filename, version string) string {
 	return fmt.Sprintf("https://raw.githubusercontent.com/sourcegraph/sourcegraph/%s/%s", version, filename)
 }
 
@@ -54,18 +53,18 @@ func githubExpectedSchemaPath(filename, version string) string {
 // been backfilled to this bucket by hand.
 //
 // See the ./drift-schemas directory for more details on how this data was generated.
-var GCSExpectedSchemaFactory = NewExpectedSchemaFactory("GCS", []NamedRegexp{tagPattern}, gcsExpectedSchemaPath, fetchSchema)
+var GCSExpectedSchemaFactory = NewExpectedSchemaFactory("GCS", []NamedRegexp{tagPattern}, GcsExpectedSchemaPath, fetchSchema)
 
-func gcsExpectedSchemaPath(filename, version string) string {
+func GcsExpectedSchemaPath(filename, version string) string {
 	return fmt.Sprintf("https://storage.googleapis.com/sourcegraph-assets/migrations/drift/%s-%s", version, strings.ReplaceAll(filename, "/", "_"))
 }
 
 // LocalExpectedSchemaFactory reads schema definitions from a local directory baked into the migrator image.
-var LocalExpectedSchemaFactory = NewExpectedSchemaFactory("Local file", []NamedRegexp{tagPattern}, localSchemaPath, ReadSchemaFromFile)
+var LocalExpectedSchemaFactory = NewExpectedSchemaFactory("Local file", []NamedRegexp{tagPattern}, LocalSchemaPath, ReadSchemaFromFile)
 
 const migratorImageDescriptionPrefix = "/schema-descriptions"
 
-func localSchemaPath(filename, version string) string {
+func LocalSchemaPath(filename, version string) string {
 	return filepath.Join(migratorImageDescriptionPrefix, fmt.Sprintf("%s-%s", version, strings.ReplaceAll(filename, "/", "_")))
 }
 
@@ -76,32 +75,32 @@ func NewExplicitFileSchemaFactory(filename string) ExpectedSchemaFactory {
 }
 
 // fetchSchema makes an HTTP GET request to the given URL and reads the schema description from the response.
-func fetchSchema(ctx context.Context, url string) (descriptions.SchemaDescription, error) {
+func fetchSchema(ctx context.Context, url string) (SchemaDescription, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return descriptions.SchemaDescription{}, err
+		return SchemaDescription{}, err
 	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return descriptions.SchemaDescription{}, err
+		return SchemaDescription{}, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return descriptions.SchemaDescription{}, errors.Newf("HTTP %d: %s", resp.StatusCode, url)
+		return SchemaDescription{}, errors.Newf("HTTP %d: %s", resp.StatusCode, url)
 	}
 
-	var schemaDescription descriptions.SchemaDescription
+	var schemaDescription SchemaDescription
 	err = json.NewDecoder(resp.Body).Decode(&schemaDescription)
 	return schemaDescription, err
 }
 
 // ReadSchemaFromFile reads a schema description from the given filename.
-func ReadSchemaFromFile(ctx context.Context, filename string) (descriptions.SchemaDescription, error) {
+func ReadSchemaFromFile(ctx context.Context, filename string) (SchemaDescription, error) {
 	f, err := os.Open(filename)
 	if err != nil {
-		return descriptions.SchemaDescription{}, err
+		return SchemaDescription{}, err
 	}
 	defer func() {
 		if closeErr := f.Close(); closeErr != nil {
@@ -109,7 +108,7 @@ func ReadSchemaFromFile(ctx context.Context, filename string) (descriptions.Sche
 		}
 	}()
 
-	var schemaDescription descriptions.SchemaDescription
+	var schemaDescription SchemaDescription
 	err = json.NewDecoder(f).Decode(&schemaDescription)
 	return schemaDescription, err
 }
@@ -121,14 +120,14 @@ type expectedSchemaFactory struct {
 	name               string
 	versionPatterns    []NamedRegexp
 	resourcePathFunc   func(filename, version string) string
-	createFromPathFunc func(ctx context.Context, path string) (descriptions.SchemaDescription, error)
+	createFromPathFunc func(ctx context.Context, path string) (SchemaDescription, error)
 }
 
 func NewExpectedSchemaFactory(
 	name string,
 	versionPatterns []NamedRegexp,
 	resourcePathFunc func(filename, version string) string,
-	createFromPathFunc func(ctx context.Context, path string) (descriptions.SchemaDescription, error),
+	createFromPathFunc func(ctx context.Context, path string) (SchemaDescription, error),
 ) ExpectedSchemaFactory {
 	return &expectedSchemaFactory{
 		name:               name,
@@ -150,6 +149,6 @@ func (f expectedSchemaFactory) ResourcePath(filename, version string) string {
 	return f.resourcePathFunc(filename, version)
 }
 
-func (f expectedSchemaFactory) CreateFromPath(ctx context.Context, path string) (descriptions.SchemaDescription, error) {
+func (f expectedSchemaFactory) CreateFromPath(ctx context.Context, path string) (SchemaDescription, error) {
 	return f.createFromPathFunc(ctx, path)
 }

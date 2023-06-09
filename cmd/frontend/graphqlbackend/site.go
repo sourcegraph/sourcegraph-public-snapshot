@@ -26,8 +26,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/drift"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/multiversion"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
@@ -321,16 +324,16 @@ type upgradeReadinessResolver struct {
 
 	initOnce    sync.Once
 	initErr     error
-	runner      cliutil.Runner
+	runner      *runner.Runner
 	version     string
 	schemaNames []string
 }
 
-var devSchemaFactory = cliutil.NewExpectedSchemaFactory(
+var devSchemaFactory = schemas.NewExpectedSchemaFactory(
 	"Local file",
-	[]cliutil.NamedRegexp{{Regexp: lazyregexp.New(`^dev$`)}},
+	[]schemas.NamedRegexp{{Regexp: lazyregexp.New(`^dev$`)}},
 	func(filename, _ string) string { return filename },
-	cliutil.ReadSchemaFromFile,
+	schemas.ReadSchemaFromFile,
 )
 
 var schemaFactories = append(
@@ -341,9 +344,9 @@ var schemaFactories = append(
 
 var insidersVersionPattern = lazyregexp.New(`^[\w-]+_\d{4}-\d{2}-\d{2}_\d+\.\d+-(\w+)$`)
 
-func (r *upgradeReadinessResolver) init(ctx context.Context) (_ cliutil.Runner, version string, schemaNames []string, _ error) {
+func (r *upgradeReadinessResolver) init(ctx context.Context) (_ *runner.Runner, version string, schemaNames []string, _ error) {
 	r.initOnce.Do(func() {
-		r.runner, r.version, r.schemaNames, r.initErr = func() (cliutil.Runner, string, []string, error) {
+		r.runner, r.version, r.schemaNames, r.initErr = func() (*runner.Runner, string, []string, error) {
 			schemaNames := []string{schemas.Frontend.Name, schemas.CodeIntel.Name}
 			schemaList := []*schemas.Schema{schemas.Frontend, schemas.CodeIntel}
 			if insights.IsCodeInsightsEnabled() {
@@ -351,7 +354,7 @@ func (r *upgradeReadinessResolver) init(ctx context.Context) (_ cliutil.Runner, 
 				schemaList = append(schemaList, schemas.CodeInsights)
 			}
 			observationCtx := observation.NewContext(r.logger)
-			runner, err := migratorshared.NewRunnerWithSchemas(observationCtx, r.logger, schemaNames, schemaList)
+			runner, err := migration.NewRunnerWithSchemas(observationCtx, output.OutputFromLogger(r.logger), "frontend-upgradereadiness", schemaNames, schemaList)
 			if err != nil {
 				return nil, "", nil, errors.Wrap(err, "new runner")
 			}
@@ -447,12 +450,12 @@ func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) ([]*schemaDr
 		var buf bytes.Buffer
 		driftOut := output.NewOutput(&buf, output.OutputOpts{})
 
-		expectedSchema, err := cliutil.FetchExpectedSchema(ctx, schemaName, version, driftOut, schemaFactories)
+		expectedSchema, err := multiversion.FetchExpectedSchema(ctx, schemaName, version, driftOut, schemaFactories)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, summary := range drift.CompareSchemaDescriptions(schemaName, version, cliutil.Canonicalize(schema), cliutil.Canonicalize(expectedSchema)) {
+		for _, summary := range drift.CompareSchemaDescriptions(schemaName, version, multiversion.Canonicalize(schema), multiversion.Canonicalize(expectedSchema)) {
 			resolvers = append(resolvers, &schemaDriftResolver{
 				summary: summary,
 			})

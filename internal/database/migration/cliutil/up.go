@@ -7,6 +7,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
@@ -105,7 +106,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			return err
 		}
 
-		db, err := extractDatabase(ctx, r)
+		db, err := store.ExtractDatabase(ctx, r)
 		if err != nil {
 			return err
 		}

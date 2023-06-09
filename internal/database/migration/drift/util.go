@@ -1,4 +1,4 @@
-package cliutil
+package drift
 
 import (
 	"fmt"
@@ -6,15 +6,15 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/drift"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var errOutOfSync = errors.Newf("database schema is out of sync")
 
-func displayDriftSummaries(rawOut *output.Output, summaries []drift.Summary) (err error) {
+func DisplaySchemaSummaries(rawOut *output.Output, summaries []Summary) (err error) {
 	out := &preambledOutput{rawOut, false}
+
 	for _, summary := range summaries {
 		displaySummary(out, summary)
 		err = errOutOfSync
@@ -26,7 +26,7 @@ func displayDriftSummaries(rawOut *output.Output, summaries []drift.Summary) (er
 	return err
 }
 
-func displaySummary(out *preambledOutput, summary drift.Summary) {
+func displaySummary(out *preambledOutput, summary Summary) {
 	out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, summary.Problem()))
 
 	if a, b, ok := summary.Diff(); ok {

@@ -77,7 +77,7 @@ func InitDB(logger sglog.Logger) (*sql.DB, error) {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
-	if err := upgradestore.New(database.NewDB(logger, sqlDB)).UpdateServiceVersion(context.Background(), "frontend", version.Version()); err != nil {
+	if err := upgradestore.New(database.NewDB(logger, sqlDB)).UpdateServiceVersion(context.Background(), version.Version()); err != nil {
 		return nil, err
 	}
 

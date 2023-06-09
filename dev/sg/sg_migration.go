@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
@@ -114,9 +115,9 @@ var (
 	// at compile-time in sg.
 	outputFactory = func() *output.Output { return std.Out.Output }
 
-	schemaFactories = []cliutil.ExpectedSchemaFactory{
+	schemaFactories = []schemas.ExpectedSchemaFactory{
 		localGitExpectedSchemaFactory,
-		cliutil.GCSExpectedSchemaFactory,
+		schemas.GCSExpectedSchemaFactory,
 	}
 
 	upCommand       = cliutil.Up("sg migration", makeRunner, outputFactory, true)
@@ -209,7 +210,7 @@ sg migration squash
 	}
 )
 
-func makeRunner(schemaNames []string) (cliutil.Runner, error) {
+func makeRunner(schemaNames []string) (*runner.Runner, error) {
 	filesystemSchemas, err := getFilesystemSchemas()
 	if err != nil {
 		return nil, err
@@ -218,7 +219,7 @@ func makeRunner(schemaNames []string) (cliutil.Runner, error) {
 	return makeRunnerWithSchemas(schemaNames, filesystemSchemas)
 }
 
-func makeRunnerWithSchemas(schemaNames []string, schemas []*schemas.Schema) (cliutil.Runner, error) {
+func makeRunnerWithSchemas(schemaNames []string, schemas []*schemas.Schema) (*runner.Runner, error) {
 	// Try to read the `sg` configuration so we can read ENV vars from the
 	// configuration and use process env as fallback.
 	var getEnv func(string) string
@@ -238,13 +239,13 @@ func makeRunnerWithSchemas(schemaNames []string, schemas []*schemas.Schema) (cli
 		return nil, err
 	}
 
-	return cliutil.NewShim(r), nil
+	return r, nil
 }
 
 // localGitExpectedSchemaFactory returns the description of the given schema at the given version via the
 // (assumed) local git clone. If the version is not resolvable as a git rev-like, or if the file does not
 // exist at that revision, then a false valued-flag is returned. All other failures are reported as errors.
-var localGitExpectedSchemaFactory = cliutil.NewExpectedSchemaFactory(
+var localGitExpectedSchemaFactory = schemas.NewExpectedSchemaFactory(
 	"git",
 	nil,
 	func(filename, version string) string {

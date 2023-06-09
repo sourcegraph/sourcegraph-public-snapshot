@@ -5,6 +5,7 @@ go_library(
     name = "schemas",
     srcs = [
         "description.go",
+        "drift_schema.go",
         "formatter.go",
         "formatter_json.go",
         "formatter_psql.go",

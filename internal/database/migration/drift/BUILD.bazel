@@ -15,12 +15,15 @@ go_library(
         "compare_triggers.go",
         "compare_views.go",
         "summary.go",
+        "util.go",
         "util_search.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/database/migration/drift",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database/migration/schemas",
+        "//lib/errors",
+        "//lib/output",
         "@com_github_google_go_cmp//cmp",
     ],
 )

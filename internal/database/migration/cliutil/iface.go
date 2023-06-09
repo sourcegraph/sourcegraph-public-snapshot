@@ -25,17 +25,4 @@ type Store interface {
 // OutputFactory allows providing global output that might not be instantiated at compile time.
 type OutputFactory func() *output.Output
 
-type RunnerFactory func(schemaNames []string) (Runner, error)
-type RunnerFactoryWithSchemas func(schemaNames []string, schemas []*schemas.Schema) (Runner, error)
-
-type runnerShim struct {
-	*runner.Runner
-}
-
-func NewShim(runner *runner.Runner) Runner {
-	return &runnerShim{Runner: runner}
-}
-
-func (r *runnerShim) Store(ctx context.Context, schemaName string) (Store, error) {
-	return r.Runner.Store(ctx, schemaName)
-}
+type RunnerFactory func(schemaNames []string) (*runner.Runner, error)

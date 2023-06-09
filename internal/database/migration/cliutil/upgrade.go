@@ -6,7 +6,10 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/multiversion"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -17,10 +20,10 @@ import (
 
 func Upgrade(
 	commandName string,
-	runnerFactory RunnerFactoryWithSchemas,
+	runnerFactory runner.RunnerFactoryWithSchemas,
 	outFactory OutputFactory,
 	registerMigrators func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
-	expectedSchemaFactories ...ExpectedSchemaFactory,
+	expectedSchemaFactories ...schemas.ExpectedSchemaFactory,
 ) *cli.Command {
 	fromFlag := &cli.StringFlag{
 		Name:     "from",
@@ -99,12 +102,11 @@ func Upgrade(
 		}
 
 		// connect to db and get upgrade readiness state
-		db, err := extractDatabase(ctx, runner)
+		db, err := store.ExtractDatabase(ctx, runner)
 		if err != nil {
 			return errors.Wrap(err, "new db handle")
 		}
-		store := upgradestore.New(db)
-		currentVersion, autoUpgrade, err := store.GetAutoUpgrade(ctx)
+		currentVersion, autoUpgrade, err := upgradestore.New(db).GetAutoUpgrade(ctx)
 		if err != nil {
 			return errors.Wrap(err, "checking auto upgrade")
 		}
@@ -151,7 +153,7 @@ func Upgrade(
 
 		// Find the relevant schema and data migrations to perform (and in what order)
 		// for the given version range.
-		plan, err := planMigration(from, to, versionRange, interrupts)
+		plan, err := multiversion.PlanMigration(from, to, versionRange, interrupts)
 		if err != nil {
 			return err
 		}
@@ -162,8 +164,9 @@ func Upgrade(
 		}
 
 		// Perform the upgrade on the configured databases.
-		return runMigration(
+		return multiversion.RunMigration(
 			ctx,
+			db,
 			runnerFactory,
 			plan,
 			privilegedMode,
