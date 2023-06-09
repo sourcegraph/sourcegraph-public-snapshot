@@ -25,10 +25,9 @@
     font-weight: 400;
 
     svg {
-        min-width: 1rem;
-        min-height: 1rem;
-        max-width: 1rem;
-        max-height: 1rem;
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
     }
 }
 

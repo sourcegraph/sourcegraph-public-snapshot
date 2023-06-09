@@ -134,10 +134,12 @@ export const RepositoriesSelectorPopover: React.FC<{
                     styles.repositoryNamesText
                 )}
             >
-                <EmbeddingStatusIndicator
-                    reposWithoutEmbeddingsCount={reposWithoutEmbeddings.length}
-                    totalReposCount={netRepositories.length}
-                />
+                <div className="mr-1">
+                    <EmbeddingStatusIndicator
+                        reposWithoutEmbeddingsCount={reposWithoutEmbeddings.length}
+                        totalReposCount={netRepositories.length}
+                    />
+                </div>
                 <div
                     className={classNames('text-truncate mr-1', {
                         'text-muted': !netRepositories.length,
@@ -464,7 +466,7 @@ const EmbeddingExistsIcon: React.FC<{ repo: { embeddingExists: boolean } }> = Re
             <Tooltip
                 content={
                     embeddingExists
-                        ? 'Embeddings are enabled for this repository'
+                        ? 'Embeddings enabled'
                         : 'Embeddings are missing for this repository. Enable embeddings to increase the quality of Cody’s responses.'
                 }
             >
@@ -484,35 +486,32 @@ const EmbeddingStatusIndicator: React.FC<{ reposWithoutEmbeddingsCount: number; 
     function EmbeddingsStatusIndicatorContent({ reposWithoutEmbeddingsCount, totalReposCount }) {
         if (!totalReposCount) {
             return (
-                <div className="mr-1">
-                    <Icon aria-hidden={true} className="text-muted align-center" svgPath={mdiDatabaseOutline} />
-                </div>
+                <Tooltip content="Add repositories for Cody to reference">
+                    <Icon aria-label="Database icon" className="text-muted align-center" svgPath={mdiDatabaseOutline} />
+                </Tooltip>
             )
         }
-        return (
-            <div className="mr-1">
+
+        if (reposWithoutEmbeddingsCount) {
+            return (
                 <Tooltip
-                    content={
-                        reposWithoutEmbeddingsCount
-                            ? `Embeddings are missing for ${
-                                  totalReposCount === 1 ? 'this repository' : 'some repositories'
-                              }. Enable embeddings to increase the quality of Cody’s responses.`
-                            : totalReposCount === 1
-                            ? 'Embeddings are enabled for this repository'
-                            : 'Embeddings are enabled' // Doesn't use 'all repos' otherwise it might sound system-wide
-                    }
+                    content={`Embeddings are missing for ${
+                        totalReposCount === 1 ? 'this repository' : 'some repositories'
+                    }. Enable embeddings to increase the quality of Cody’s responses.`}
                 >
-                    {reposWithoutEmbeddingsCount ? (
-                        <Icon
-                            aria-hidden={true}
-                            className="text-warning align-center"
-                            svgPath={mdiDatabaseRemoveOutline}
-                        />
-                    ) : (
-                        <CodyHighQualityIcon />
-                    )}
+                    <Icon
+                        svgPath={mdiDatabaseRemoveOutline}
+                        aria-label="Database icon with a cross"
+                        className="text-warning align-center"
+                    />
                 </Tooltip>
-            </div>
+            )
+        }
+
+        return (
+            <Tooltip content="Embeddings enabled">
+                <Icon as={CodyHighQualityIcon} aria-label="Database icon with a check mark" className="align-center" />
+            </Tooltip>
         )
     }
 )
