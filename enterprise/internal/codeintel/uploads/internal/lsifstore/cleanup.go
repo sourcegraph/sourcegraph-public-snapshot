@@ -198,8 +198,8 @@ WITH del AS (
 	DELETE FROM codeintel_scip_symbols_schema_versions sv
 	WHERE NOT EXISTS (
 		SELECT 1
-		FROM codeintel_scip_symbols s
-		WHERE s.upload_id = sv.upload_id
+		FROM codeintel_scip_metadata m
+		WHERE m.upload_id = sv.upload_id
 	)
 	RETURNING 1
 )
@@ -211,8 +211,8 @@ WITH del AS (
 	DELETE FROM codeintel_scip_document_lookup_schema_versions sv
 	WHERE NOT EXISTS (
 		SELECT 1
-		FROM codeintel_scip_document_lookup l
-		WHERE l.upload_id = sv.upload_id
+		FROM codeintel_scip_metadata m
+		WHERE m.upload_id = sv.upload_id
 	)
 	RETURNING 1
 )
