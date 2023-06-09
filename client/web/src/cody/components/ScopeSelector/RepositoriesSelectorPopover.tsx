@@ -249,12 +249,14 @@ export const RepositoriesSelectorPopover: React.FC<{
                                         <div className="d-flex flex-column">
                                             <Text
                                                 className={classNames(
-                                                    'mb-1 px-2 py-1 text-muted d-flex justify-content-between',
+                                                    'mt-1 mb-0 px-2 py-1 text-muted d-flex justify-content-between',
                                                     styles.subHeader
                                                 )}
                                             >
-                                                <span>{inferredRepository ? 'Additional' : ''} Repositories</span>
-                                                <span>({additionalRepositories.length}/10)</span>
+                                                <span className="small">
+                                                    {inferredRepository ? 'Additional repositories' : 'Repositories'}
+                                                </span>
+                                                <span className="small">{additionalRepositories.length}/10</span>
                                             </Text>
                                             {additionalRepositories.map(repository => (
                                                 <AdditionalRepositoriesListItem
@@ -281,7 +283,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                 <div className="d-flex justify-content-between p-2 border-bottom mb-1">
                                     <Text className={classNames('m-0', styles.header)}>
                                         {additionalRepositoriesLeft
-                                            ? `Add up to ${additionalRepositoriesLeft} Additional Repositories`
+                                            ? `Add up to ${additionalRepositoriesLeft} additional repositories`
                                             : 'Maximum additional repositories added'}
                                     </Text>
                                 </div>
@@ -316,7 +318,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                             spellCheck="false"
                             placeholder={
                                 additionalRepositoriesLeft
-                                    ? 'Add repositories...'
+                                    ? 'Add additional repositories...'
                                     : 'Maximum additional repositories added'
                             }
                             variant="small"
