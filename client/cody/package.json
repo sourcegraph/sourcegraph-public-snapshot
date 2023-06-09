@@ -282,8 +282,20 @@
         "title": "Cody: Set Access Token"
       },
       {
+        "command": "cody.change-instance-url.enterprise",
+        "title": "​    Enterprise Instance"
+      },
+      {
+        "command": "cody.change-instance-url.dotcom",
+        "title": "✓ Sourcegraph.com"
+      },
+      {
+        "command": "cody.change-instance-url.app",
+        "title": "​    Cody App"
+      },
+      {
         "command": "cody.delete-access-token",
-        "title": "%command.pr.openPullsWebsite.title%"
+        "title": "Log Out"
       },
       {
         "command": "cody.manual-completions",
@@ -337,13 +349,23 @@
       },
       {
         "command": "cody.menu.enableCodeCompletions",
-        "title": "\tCompletions",
+        "title": "Enable Completions",
         "when": "!config.cody.experimental.suggestions"
       },
       {
         "command": "cody.menu.disableCodeCompletions",
-        "title": "✓ Completions",
+        "title": "Disable Completions",
         "when": "config.cody.experimental.suggestions"
+      },
+      {
+        "command": "cody.menu.enableInlineAssist",
+        "title": "Disable Inline Assist",
+        "when": "!config.cody.experimental.inline"
+      },
+      {
+        "command": "cody.menu.disableInlineAssist",
+        "title": "Disable Inline Assist",
+        "when": "config.cody.experimental.inline"
       },
       {
         "command": "cody.comment.add",
@@ -442,6 +464,14 @@
       {
         "label": "Ask Cody",
         "id": "cody.submenu"
+      },
+      {
+        "label": "Features",
+        "id": "menu-features.submenu"
+      },
+      {
+        "label": "Switch Account",
+        "id": "menu-account.submenu"
       }
     ],
     "menus": {
@@ -644,14 +674,9 @@
           "group": "navigation"
         },
         {
-          "command": "cody.menu.enableCodeCompletions",
+          "submenu": "menu-features.submenu",
           "group": "menu-1",
-          "when": "view == cody.chat && !config.cody.experimental.suggestions"
-        },
-        {
-          "command": "cody.menu.disableCodeCompletions",
-          "group": "menu-1",
-          "when": "view == cody.chat && config.cody.experimental.suggestions"
+          "when": "view == cody.chat"
         },
         {
           "command": "cody.settings",
@@ -659,9 +684,50 @@
           "when": "view == cody.chat"
         },
         {
-          "command": "cody.delete-access-token",
-          "group": "menu-3",
+          "submenu": "menu-account.submenu",
+          "group": "menu-3@1",
           "when": "view == cody.chat"
+        },
+        {
+          "command": "cody.delete-access-token",
+          "group": "menu-3@2",
+          "when": "view == cody.chat"
+        }
+      ],
+      "menu-account.submenu": [
+        {
+          "group": "submenu-account-1@1",
+          "command": "cody.change-instance-url.app"
+        },
+        {
+          "group": "submenu-account-1@2",
+          "command": "cody.change-instance-url.dotcom"
+        },
+        {
+          "group": "submenu-account-1@3",
+          "command": "cody.change-instance-url.enterprise"
+        }
+      ],
+      "menu-features.submenu": [
+        {
+          "command": "cody.menu.enableCodeCompletions",
+          "group": "menu-1@1",
+          "when": "view == cody.chat && !config.cody.experimental.suggestions"
+        },
+        {
+          "command": "cody.menu.disableCodeCompletions",
+          "group": "menu-1@1",
+          "when": "view == cody.chat && config.cody.experimental.suggestions"
+        },
+        {
+          "command": "cody.menu.enableInlineAssist",
+          "group": "menu-2@1",
+          "when": "view == cody.chat && !config.cody.experimental.inline"
+        },
+        {
+          "command": "cody.menu.disableInlineAssist",
+          "group": "menu-2@1",
+          "when": "view == cody.chat && config.cody.experimental.suggestions"
         }
       ],
       "editor/title": [
