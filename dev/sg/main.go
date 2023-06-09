@@ -79,7 +79,7 @@ const sgBugReportTemplate = "https://github.com/sourcegraph/sourcegraph/issues/n
 
 // sg is the main sg CLI application.
 //
-//go:generate go run . -disable-overwrite help -full -output ./doc/dev/background-information/sg/reference.md
+//go:generate go run . -disable-overwrite help -full -output ../../doc/dev/background-information/sg/reference.md
 var sg = &cli.App{
 	Usage:       "The Sourcegraph developer tool!",
 	Description: "Learn more: https://docs.sourcegraph.com/dev/background-information/sg",
