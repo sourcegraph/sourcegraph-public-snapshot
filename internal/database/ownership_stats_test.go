@@ -197,9 +197,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 		}
 		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
-		want := []PathAggregateCounts{
-			{CodeownedFileCount: 0},
-		}
+		want := PathAggregateCounts{CodeownedFileCount: 0}
 		assert.DeepEqual(t, want, got)
 	})
 
@@ -207,9 +205,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 		opts := TreeLocationOpts{}
 		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
-		want := []PathAggregateCounts{
-			{CodeownedFileCount: 0},
-		}
+		want := PathAggregateCounts{CodeownedFileCount: 0}
 		assert.DeepEqual(t, want, got)
 	})
 
@@ -236,9 +232,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 		}
 		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
-		want := []PathAggregateCounts{
-			{CodeownedFileCount: 1},
-		}
+		want := PathAggregateCounts{CodeownedFileCount: 1}
 		assert.DeepEqual(t, want, got)
 	})
 
@@ -249,9 +243,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 		}
 		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
-		want := []PathAggregateCounts{
-			{CodeownedFileCount: 2},
-		}
+		want := PathAggregateCounts{CodeownedFileCount: 2}
 		assert.DeepEqual(t, want, got)
 	})
 
@@ -261,9 +253,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 		}
 		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
-		want := []PathAggregateCounts{
-			{CodeownedFileCount: 3},
-		}
+		want := PathAggregateCounts{CodeownedFileCount: 3}
 		assert.DeepEqual(t, want, got)
 	})
 
@@ -271,9 +261,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 		opts := TreeLocationOpts{}
 		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
-		want := []PathAggregateCounts{
-			{CodeownedFileCount: 13},
-		}
+		want := PathAggregateCounts{CodeownedFileCount: 13}
 		assert.DeepEqual(t, want, got)
 	})
 }
