@@ -25,6 +25,7 @@ describe('SiteAdminProductLicenseNode', () => {
                             licenseKey: 'lk1',
                             version: 1,
                             revokedAt: null,
+                            revokeReason: null,
                             siteID: null,
                             info: {
                                 __typename: 'ProductLicenseInfo',
@@ -44,6 +45,9 @@ describe('SiteAdminProductLicenseNode', () => {
                             },
                         }}
                         showSubscription={true}
+                        onRevokeCompleted={function (): void {
+                            throw new Error('Function not implemented.')
+                        }}
                     />
                 </MockedTestProvider>
             ).asFragment()
@@ -60,6 +64,7 @@ describe('SiteAdminProductLicenseNode', () => {
                         licenseKey: 'lk1',
                         version: 1,
                         revokedAt: null,
+                        revokeReason: null,
                         siteID: null,
                         info: {
                             __typename: 'ProductLicenseInfo',
@@ -79,6 +84,9 @@ describe('SiteAdminProductLicenseNode', () => {
                         },
                     }}
                     showSubscription={true}
+                    onRevokeCompleted={function (): void {
+                        throw new Error('Function not implemented.')
+                    }}
                 />
             ).asFragment()
         ).toMatchSnapshot()
