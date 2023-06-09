@@ -148,29 +148,20 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                         reason.__typename === 'AssignedOwner'
                                 )
                             )
-                            .map((ownership, index) => {
-                                const userId =
-                                    ownership.owner.__typename === 'Person' &&
-                                    ownership.owner.user?.__typename === 'User'
-                                        ? ownership.owner.user.id
-                                        : undefined
+                            .map((ownership, index) => (
                                 // This list is not expected to change, so it's safe to use the index as a key.
-
-                                return (
-                                    <React.Fragment key={index}>
-                                        {index > 0 && <tr className={styles.bordered} />}
-                                        <FileOwnershipEntry
-                                            refetch={refetch}
-                                            owner={ownership.owner}
-                                            userID={userId}
-                                            repoID={repoID}
-                                            filePath={filePath}
-                                            reasons={ownership.reasons}
-                                            setRemoveOwnerError={setRemoveOwnerError}
-                                        />
-                                    </React.Fragment>
-                                )
-                            })}
+                                <React.Fragment key={index}>
+                                    {index > 0 && <tr className={styles.bordered} />}
+                                    <FileOwnershipEntry
+                                        refetch={refetch}
+                                        owner={ownership.owner}
+                                        repoID={repoID}
+                                        filePath={filePath}
+                                        reasons={ownership.reasons}
+                                        setRemoveOwnerError={setRemoveOwnerError}
+                                    />
+                                </React.Fragment>
+                            ))}
                         {
                             /* Visually separate two sets with a horizontal rule (like subsequent owners are)
                              * if there is data in both owners and signals.
@@ -211,7 +202,6 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                             owner={ownership.owner}
                                             reasons={ownership.reasons}
                                             makeOwnerButton={makeOwnerButton?.(userId)}
-                                            userID={userId}
                                             repoID={repoID}
                                             filePath={filePath}
                                             refetch={refetch}
