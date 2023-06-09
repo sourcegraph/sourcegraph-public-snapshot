@@ -21,6 +21,10 @@ export class CodeMirrorEditor implements Editor {
         this.editor = editor
     }
 
+    public get fileName(): string {
+        return this.editor?.filename || ''
+    }
+
     public get repoName(): string | undefined {
         return this.editor?.repo
     }
@@ -53,13 +57,13 @@ export class CodeMirrorEditor implements Editor {
             return null
         }
 
-        const selection = editor.view?.state.selection.main
+        const selection = editor.view.state.selection.main
         const { head, anchor } = selection
 
         if (head !== anchor) {
-            const precedingText = editor.view?.state.sliceDoc(undefined, selection.from)
-            const selectedText = editor.view?.state.sliceDoc(selection.from, selection.to)
-            const followingText = editor.view?.state.sliceDoc(selection.to, undefined)
+            const precedingText = editor.view.state.sliceDoc(undefined, selection.from)
+            const selectedText = editor.view.state.sliceDoc(selection.from, selection.to)
+            const followingText = editor.view.state.sliceDoc(selection.to, undefined)
 
             return {
                 fileName: editor.filename,
@@ -99,7 +103,8 @@ export class CodeMirrorEditor implements Editor {
         if (editor) {
             const { from, to } = editor.view.viewport
 
-            const content = editor.view?.state.sliceDoc(from, to)
+            const content = editor.view.state.sliceDoc(from, to)
+
             return {
                 fileName: editor.filename,
                 repoName: this.repoName,
@@ -112,28 +117,27 @@ export class CodeMirrorEditor implements Editor {
     }
 
     public replaceSelection(_fileName: string, _selectedText: string, _replacement: string): Promise<void> {
+        // Not implemented.
         return Promise.resolve()
     }
 
     public showQuickPick(labels: string[]): Promise<string | undefined> {
-        // TODO: Use a proper UI element
+        // Not implemented.
         return Promise.resolve(window.prompt(`Choose between: ${labels.join(', ')}`, labels[0]) || undefined)
     }
 
     public async showWarningMessage(message: string): Promise<void> {
-        // TODO: Use a proper UI element
+        // Not implemented.
         // eslint-disable-next-line no-console
         console.warn(message)
         return Promise.resolve()
     }
 
     public showInputBox(): Promise<string | undefined> {
-        // TODO: Use a proper UI element
+        // Not implemented.
         return Promise.resolve(window.prompt('Enter your answer: ') || undefined)
     }
 
-    // TODO: When non-stop fixup is decoupled from chat and no longer a recipe,
-    // remove this entrypoint.
     public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
         // Not implemented.
         return Promise.resolve(undefined)

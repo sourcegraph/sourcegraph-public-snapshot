@@ -38,7 +38,6 @@ Available comamndsets in `sg.config.yaml`:
 * codeintel-kubernetes
 * cody-gateway
 * dotcom
-* embeddings
 * enterprise
 * enterprise-bazel
 * enterprise-codeinsights
