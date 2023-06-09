@@ -2,6 +2,7 @@ package completions
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	oteltrace "go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
@@ -192,6 +194,13 @@ func makeUpstreamHandler[ReqT any](
 
 			resp, err := httpcli.ExternalDoer.Do(req)
 			if err != nil {
+				// Ignore reporting errors where client disconnected
+				if req.Context().Err() == context.Canceled && errors.Is(err, context.Canceled) {
+					oteltrace.SpanFromContext(req.Context()).RecordError(err)
+					logger.Info("request canceled", log.Error(err))
+					return
+				}
+
 				response.JSONError(logger, w, http.StatusInternalServerError,
 					errors.Wrapf(err, "failed to make request to upstream provider %s", upstreamName))
 				return
@@ -217,6 +226,7 @@ func makeUpstreamHandler[ReqT any](
 				var headers bytes.Buffer
 				_ = resp.Header.Write(&headers)
 				logger.Error("upstream returned 429, rewriting to 503",
+					log.Error(errors.New(resp.Status)), // real error needed for Sentry reporting
 					log.String("resp.headers", headers.String()))
 				resolvedStatusCode = http.StatusServiceUnavailable
 			}
