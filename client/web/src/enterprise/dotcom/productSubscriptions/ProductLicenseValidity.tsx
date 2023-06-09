@@ -57,9 +57,9 @@ export const ProductLicenseValidity: React.FunctionComponent<
             <strong>{getText(isExpired, isRevoked)}</strong> (
             <Timestamp date={timestamp} noAbout={true} noAgo={true} /> {timestampSuffix})
             {!isExpired && isRevoked && revokeReason && (
-                <div className="mt-1">
-                    <Label className="mb-2">Reason to revoke</Label>
-                    <div className="mb-3">{revokeReason}</div>
+                <div className="mt-1 d-flex">
+                    <Label>Reason to revoke</Label>
+                    <span className="ml-3">{revokeReason}</span>
                 </div>
             )}
         </Text>

@@ -86,10 +86,22 @@ export const SiteAdminProductLicenseNode: React.FunctionComponent<
             <ProductLicenseValidity license={node} className="mb-2" />
             {node.version > 1 && (
                 <>
-                    <Label className="mb-2">
-                        <Text className="mb-0">Site ID</Text>
-                    </Label>
-                    <Text className="mb-3 w-100">{node.siteID ?? <span className="text-muted">Unused</span>}</Text>
+                    <div className="d-flex">
+                        <Label>Site ID</Label>
+                        <Text className="ml-3">{node.siteID ?? <span className="text-muted">Unused</span>}</Text>
+                    </div>
+                    <div className="d-flex">
+                        <Label>Salesforce Subscription ID</Label>
+                        <Text className="ml-3">
+                            {node.info?.salesforceSubscriptionID ?? <span className="text-muted">Unused</span>}
+                        </Text>
+                    </div>
+                    <div className="d-flex">
+                        <Label>Salesforce Opportunity ID</Label>
+                        <Text className="ml-3">
+                            {node.info?.salesforceOpportunityID ?? <span className="text-muted">Unused</span>}
+                        </Text>
+                    </div>
                 </>
             )}
             {node.info && node.info.tags.length > 0 && (
