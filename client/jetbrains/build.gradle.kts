@@ -32,6 +32,7 @@ intellij {
 
 dependencies {
     implementation("org.commonmark:commonmark:0.21.0")
+    implementation("edu.stanford.nlp:stanford-corenlp:4.5.4")
     testImplementation(platform("org.junit:junit-bom:5.7.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
