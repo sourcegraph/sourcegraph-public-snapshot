@@ -205,7 +205,7 @@ func (s *store) EnsureUpgradeTable(ctx context.Context) (err error) {
 }
 
 func (s *store) ClaimAutoUpgrade(ctx context.Context, from, to string) (claimed bool, err error) {
-	s.db.WithTransact(ctx, func(tx *basestore.Store) error {
+	err = s.db.WithTransact(ctx, func(tx *basestore.Store) error {
 		// Allow selects to still work (for UI purposes) but serializes claiming.
 		// May impact writing logs.
 		if err := tx.Exec(ctx, sqlf.Sprintf("LOCK TABLE upgrade_logs IN EXCLUSIVE MODE NOWAIT")); err != nil {
@@ -241,16 +241,12 @@ WITH claim_attempt AS (
 			SELECT MAX(id)
 			FROM upgrade_logs
 		)
-		AND (
-			-- that is currently running
-			finished_at IS NULL
-
-			-- or that failed
-			OR success <> true
-
-			-- or else completed successfully to the same version
-			-- that we want to migrate to
-			OR to_version = %s
+		-- that is currently running
+		AND finished_at IS NULL
+		-- or that succeeded to the expected version
+		OR (
+			success = true
+			AND to_version = %s
 		)
 	)
 	RETURNING true AS claimed
