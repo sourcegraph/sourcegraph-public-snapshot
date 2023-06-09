@@ -217,7 +217,13 @@ type ErrConcurrencyLimitExceeded struct {
 	retryAfter time.Time
 }
 
+// Error generates a simple string that is fairly static for use in logging.
+// This helps with categorizing errors. For more detailed output use Summary().
 func (e ErrConcurrencyLimitExceeded) Error() string {
+	return fmt.Sprintf("%q: concurrency limit exceeded", e.feature)
+}
+
+func (e ErrConcurrencyLimitExceeded) Summary() string {
 	return fmt.Sprintf("you exceeded the concurrency limit of %d requests for %q. Retry after %s",
 		e.limit, e.feature, e.retryAfter.Truncate(time.Second))
 }
@@ -227,7 +233,8 @@ func (e ErrConcurrencyLimitExceeded) WriteResponse(w http.ResponseWriter) {
 	w.Header().Set("x-ratelimit-limit", strconv.Itoa(e.limit))
 	w.Header().Set("x-ratelimit-remaining", "0")
 	w.Header().Set("retry-after", e.retryAfter.Format(time.RFC1123))
-	http.Error(w, e.Error(), http.StatusTooManyRequests)
+	// Use Summary instead of Error for more informative text
+	http.Error(w, e.Summary(), http.StatusTooManyRequests)
 }
 
 type updateOnFailureLimiter struct {
