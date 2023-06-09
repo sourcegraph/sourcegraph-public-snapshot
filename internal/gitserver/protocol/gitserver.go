@@ -866,3 +866,18 @@ func (r *GetObjectResponse) FromProto(p *proto.GetObjectResponse) {
 	}
 
 }
+
+type PerforceChangelist struct {
+	CreationDate time.Time
+	State        PerforceChangelistState //enum
+	Author       string
+	Title        string
+	Level        string
+}
+
+type PerforceChangelistState string
+
+const (
+	PerforceChangelistStateSubmitted PerforceChangelistState = "submitted"
+	PerforceChangelistStatePending   PerforceChangelistState = "pending"
+)
