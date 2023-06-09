@@ -8,63 +8,8 @@ commandTests:
         value: "true"
 
   # Sourcegraph binaries
-  - name: "embeddings binary is runnable"
-    command: "embeddings"
-    envVars:
-      - key: "SANITY_CHECK"
-        value: "true"
-  - name: "frontend binary is runnable"
-    command: "frontend"
-    envVars:
-      - key: "SANITY_CHECK"
-        value: "true"
-  - name: "github-proxy binary is runnable"
-    command: "github-proxy"
-    envVars:
-      - key: "SANITY_CHECK"
-        value: "true"
-  - name: "gitserver binary is runnable"
-    command: "gitserver"
-    envVars:
-      - key: "SANITY_CHECK"
-        value: "true"
-  - name: "migrator binary is runnable"
-    command: "migrator"
-    envVars:
-      - key: "SANITY_CHECK"
-        value: "true"
-  - name: "precise-code-intel-worker binary is runnable"
-    command: "precise-code-intel-worker"
-    envVars:
-      - key: "SANITY_CHECK"
-        value: "true"
-  - name: "repo-updater binary is runnable"
-    command: "repo-updater"
-    envVars:
-      - key: "SANITY_CHECK"
-        value: "true"
-  - name: "searcher binary is runnable"
-    command: "searcher"
-    envVars:
-      - key: "SANITY_CHECK"
-        value: "true"
-  - name: "symbols binary is runnable"
-    command: "symbols"
-    envVars:
-      - key: "SANITY_CHECK"
-        value: "true"
-  - name: "syntax_highlighter binary is runnable"
-    command: "syntax_highlighter"
-    envVars:
-      - key: "SANITY_CHECK"
-        value: "true"
-  - name: "scip-ctags is runnable"
-    command: "/usr/local/bin/scip-ctags"
-    envVars:
-      - key: "SANITY_CHECK"
-        value: "true"
-  - name: "worker binary is runnable"
-    command: "worker"
+  - name: "sourcegraph binaries are runnable"
+    command: "/opt/image_tests/test_services.sh"
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
