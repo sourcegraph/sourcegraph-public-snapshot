@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -27,38 +28,56 @@ func TestToPerforceChangelistResolver(t *testing.T) {
 	repoResolver := NewRepositoryResolver(db, nil, repo)
 
 	testCases := []struct {
-		name             string
-		inputCommitBody  string
-		expectedResolver *PerforceChangelistResolver
-		expectedErr      error
+		name              string
+		inputCommit       *gitdomain.Commit
+		inputChangelistID string
+		expectedResolver  *PerforceChangelistResolver
+		expectedErr       error
 	}{
 		{
-			name:            "p4-fusion",
-			inputCommitBody: `[p4-fusion: depot-paths = "//test-perms/": change = 80972]`,
+			name: "p4-fusion",
+			inputCommit: &gitdomain.Commit{
+				ID: exampleCommitSHA1,
+				Message: `test change
+[p4-fusion: depot-paths = "//test-perms/": change = 80972]`,
+			},
+			inputChangelistID: "80972",
 			expectedResolver: &PerforceChangelistResolver{
 				cid:          "80972",
 				canonicalURL: "/perforce.sgdev.org/foo/bar/-/changelist/80972",
 			},
 		},
 		{
-			name:            "git-p4",
-			inputCommitBody: `[git-p4: depot-paths = "//test-perms/": change = 80999]`,
+			name: "git-p4",
+			inputCommit: &gitdomain.Commit{
+				ID: exampleCommitSHA1,
+				Message: `test change
+[git-p4: depot-paths = "//test-perms/": change = 80999]`,
+			},
+			inputChangelistID: "80999",
 			expectedResolver: &PerforceChangelistResolver{
 				cid:          "80999",
 				canonicalURL: "/perforce.sgdev.org/foo/bar/-/changelist/80999",
 			},
 		},
 		{
-			name:             "error",
-			inputCommitBody:  `foo bar`,
+			name: "error",
+			inputCommit: &gitdomain.Commit{
+				ID: exampleCommitSHA1,
+				Message: `test change
+foo bar`,
+			},
 			expectedResolver: nil,
-			expectedErr:      errors.Wrap(errors.New(`failed to retrieve changelist ID from commit body: "foo bar"`), "failed to generate perforceChangelistID"),
+			expectedErr: errors.Wrap(
+				errors.New(`failed to retrieve changelist ID from commit body: "foo bar"`), "failed to generate perforceChangelistID",
+			),
 		},
 	}
 
+	ctx := context.Background()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			gotResolver, gotErr := toPerforceChangelistResolver(context.Background(), repoResolver, tc.inputCommitBody)
+			gotResolver, gotErr := toPerforceChangelistResolver(ctx, repoResolver, tc.inputCommit)
 
 			if !errors.Is(gotErr, tc.expectedErr) {
 				t.Fatalf("mismatched errors, \nwant: %v\n got: %v", tc.expectedErr, gotErr)
