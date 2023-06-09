@@ -39,11 +39,10 @@ type repoEmbeddingJobsConnectionStore struct {
 	gitserverClient gitserver.Client
 	store           repobg.RepoEmbeddingJobsStore
 	args            graphqlbackend.ListRepoEmbeddingJobsArgs
-	query           *string
 }
 
 func (s *repoEmbeddingJobsConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := s.store.CountRepoEmbeddingJobs(ctx, repobg.ListOpts{Query: s.args.Query})
+	count, err := s.store.CountRepoEmbeddingJobs(ctx, repobg.ListOpts{Query: s.args.Query, State: s.args.State})
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +51,7 @@ func (s *repoEmbeddingJobsConnectionStore) ComputeTotal(ctx context.Context) (*i
 }
 
 func (s *repoEmbeddingJobsConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.RepoEmbeddingJobResolver, error) {
-	jobs, err := s.store.ListRepoEmbeddingJobs(ctx, repobg.ListOpts{PaginationArgs: args, Query: s.args.Query})
+	jobs, err := s.store.ListRepoEmbeddingJobs(ctx, repobg.ListOpts{PaginationArgs: args, Query: s.args.Query, State: s.args.State})
 	if err != nil {
 		return nil, err
 	}

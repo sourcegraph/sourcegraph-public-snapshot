@@ -82,6 +82,10 @@ extend type Query {
         Filter by the name of the repository.
         """
         query: String
+        """
+        Filter by the state of the job.
+        """
+        state: String
     ): RepoEmbeddingJobsConnection!
 }
 

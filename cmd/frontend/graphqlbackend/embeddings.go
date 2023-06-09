@@ -59,6 +59,7 @@ type EmbeddingsSearchResultResolver interface {
 type ListRepoEmbeddingJobsArgs struct {
 	graphqlutil.ConnectionResolverArgs
 	Query *string
+	State *string
 }
 
 type CancelRepoEmbeddingJobArgs struct {
