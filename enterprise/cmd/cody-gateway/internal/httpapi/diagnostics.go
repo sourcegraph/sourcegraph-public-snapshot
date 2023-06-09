@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/response"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -20,7 +21,7 @@ import (
 func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret string) http.Handler {
 	baseLogger = baseLogger.Scoped("diagnostics", "healthz checks")
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		// For service liveness and readiness probes
 		case "/-/healthz":
@@ -61,6 +62,8 @@ func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret stri
 			next.ServeHTTP(w, r)
 		}
 	})
+
+	return instrumentation.HTTPMiddleware("diagnostics", handler)
 }
 
 func healthz(ctx context.Context) error {
