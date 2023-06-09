@@ -467,7 +467,7 @@ const EmbeddingExistsIcon: React.FC<{ repo: { embeddingExists: boolean } }> = Re
                 content={
                     embeddingExists
                         ? 'Embeddings enabled'
-                        : 'Embeddings are missing for this repository. Enable embeddings to increase the quality of Cody’s responses.'
+                        : 'Embeddings are missing for this repository. Enable embeddings to improve the quality of Cody’s responses.'
                 }
             >
                 <Icon
@@ -497,7 +497,7 @@ const EmbeddingStatusIndicator: React.FC<{ reposWithoutEmbeddingsCount: number; 
                 <Tooltip
                     content={`Embeddings are missing for ${
                         totalReposCount === 1 ? 'this repository' : 'some repositories'
-                    }. Enable embeddings to increase the quality of Cody’s responses.`}
+                    }. Enable embeddings to improve the quality of Cody’s responses.`}
                 >
                     <Icon
                         svgPath={mdiDatabaseRemoveOutline}
