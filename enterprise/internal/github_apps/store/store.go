@@ -38,11 +38,7 @@ type GitHubAppsStore interface {
 	Update(ctx context.Context, id int, app *ghtypes.GitHubApp) (*ghtypes.GitHubApp, error)
 
 	// Install creates a new GitHub App installation in the database.
-	Install(ctx context.Context, id, installationID int) error
-
-	// BulkInstalls inserts multiple GitHub App installation IDs into the database
-	// for the GitHub App with the given ID.
-	BulkInstall(ctx context.Context, id int, installationIDs []int) error
+	Install(ctx context.Context, ghai ghtypes.GitHubAppInstallation) (*ghtypes.GitHubAppInstallation, error)
 
 	// BulkRemoveInstallations revokes multiple GitHub App installation IDs from the database
 	// for the GitHub App with the given ID.
@@ -98,16 +94,6 @@ func (s *gitHubAppsStore) getEncryptionKey() encryption.Key {
 	}
 	return keyring.Default().GitHubAppKey
 }
-
-var scanIDAndTimes = basestore.NewFirstScanner(func(s dbutil.Scanner) (*ghtypes.GitHubApp, error) {
-	var app ghtypes.GitHubApp
-
-	err := s.Scan(
-		&app.ID,
-		&app.CreatedAt,
-		&app.UpdatedAt)
-	return &app, err
-})
 
 // Create inserts a new GitHub App into the database. The default domain for the App is "repos".
 func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (int, error) {
@@ -181,6 +167,33 @@ func scanGitHubApp(s dbutil.Scanner) (*ghtypes.GitHubApp, error) {
 	return &app, err
 }
 
+// githubAppInstallColumns are used by the github app install related Store methods to
+// insert, update and query.
+var githubAppInstallColumns = []*sqlf.Query{
+	sqlf.Sprintf("github_app_installs.id"),
+	sqlf.Sprintf("github_app_installs.app_id"),
+	sqlf.Sprintf("github_app_installs.installation_id"),
+	sqlf.Sprintf("github_app_installs.url"),
+	sqlf.Sprintf("github_app_installs.account_login"),
+	sqlf.Sprintf("github_app_installs.account_avatar_url"),
+	sqlf.Sprintf("github_app_installs.account_url"),
+	sqlf.Sprintf("github_app_installs.account_type"),
+	sqlf.Sprintf("github_app_installs.created_at"),
+	sqlf.Sprintf("github_app_installs.updated_at"),
+}
+
+// githubAppInstallInsertColumns is the list of github app install columns that are modified in
+// Install.
+var githubAppInstallInsertColumns = []*sqlf.Query{
+	sqlf.Sprintf("app_id"),
+	sqlf.Sprintf("installation_id"),
+	sqlf.Sprintf("url"),
+	sqlf.Sprintf("account_login"),
+	sqlf.Sprintf("account_avatar_url"),
+	sqlf.Sprintf("account_url"),
+	sqlf.Sprintf("account_type"),
+}
+
 func scanGitHubAppInstallation(s dbutil.Scanner) (*ghtypes.GitHubAppInstallation, error) {
 	var install ghtypes.GitHubAppInstallation
 
@@ -188,7 +201,13 @@ func scanGitHubAppInstallation(s dbutil.Scanner) (*ghtypes.GitHubAppInstallation
 		&install.ID,
 		&install.AppID,
 		&install.InstallationID,
+		&dbutil.NullString{S: &install.URL},
+		&dbutil.NullString{S: &install.AccountLogin},
+		&dbutil.NullString{S: &install.AccountAvatarURL},
+		&dbutil.NullString{S: &install.AccountURL},
+		&dbutil.NullString{S: &install.AccountType},
 		&install.CreatedAt,
+		&install.UpdatedAt,
 	)
 	return &install, err
 }
@@ -252,14 +271,35 @@ func (s *gitHubAppsStore) Update(ctx context.Context, id int, app *ghtypes.GitHu
 }
 
 // Install creates a new GitHub App installation in the database.
-func (s *gitHubAppsStore) Install(ctx context.Context, id, installationID int) error {
+func (s *gitHubAppsStore) Install(ctx context.Context, ghai ghtypes.GitHubAppInstallation) (*ghtypes.GitHubAppInstallation, error) {
 	query := sqlf.Sprintf(`
-		INSERT INTO github_app_installs (app_id, installation_id)
-    	VALUES (%s, %s)
-		ON CONFLICT DO NOTHING
-		RETURNING id`,
-		id, installationID)
-	return s.Exec(ctx, query)
+		INSERT INTO github_app_installs (%s)
+    	VALUES (%s, %s, %s, %s, %s, %s, %s)
+		ON CONFLICT (app_id, installation_id)
+		DO UPDATE SET
+		(%s) = (%s, %s, %s, %s, %s, %s, %s)
+		WHERE github_app_installs.app_id = excluded.app_id AND github_app_installs.installation_id = excluded.installation_id
+		RETURNING %s`,
+		sqlf.Join(githubAppInstallInsertColumns, ", "),
+		ghai.AppID,
+		ghai.InstallationID,
+		ghai.URL,
+		ghai.AccountLogin,
+		ghai.AccountAvatarURL,
+		ghai.AccountURL,
+		ghai.AccountType,
+		sqlf.Join(githubAppInstallInsertColumns, ", "),
+		ghai.AppID,
+		ghai.InstallationID,
+		ghai.URL,
+		ghai.AccountLogin,
+		ghai.AccountAvatarURL,
+		ghai.AccountURL,
+		ghai.AccountType,
+		sqlf.Join(githubAppInstallColumns, ", "),
+	)
+	in, _, err := scanFirstGitHubAppInstallation(s.Query(ctx, query))
+	return in, err
 }
 
 func (s *gitHubAppsStore) GetLatestInstallID(ctx context.Context, appID int) (int, error) {
@@ -372,39 +412,13 @@ func (s *gitHubAppsStore) List(ctx context.Context, domain *itypes.GitHubAppDoma
 	return s.list(ctx, where)
 }
 
-// BulkInstalls inserts multiple GitHub App installation IDs into the database
-// for the GitHub App with the given ID.
-//
-// id is the ID of the GitHub App in the database.
-//
-// installationIDs is a slice of GitHub App installation IDs to insert.
-func (s *gitHubAppsStore) BulkInstall(ctx context.Context, id int, installationIDs []int) error {
-	var installations []*sqlf.Query
-	for _, installID := range installationIDs {
-		installations = append(installations, sqlf.Sprintf("( %d, %d )", id, installID))
-	}
-
-	query := sqlf.Sprintf(`
-		INSERT INTO github_app_installs (app_id, installation_id)
-    	VALUES
-			%s
-		ON CONFLICT DO NOTHING
-		RETURNING id`,
-		sqlf.Join(installations, ", "))
-	return s.Exec(ctx, query)
-}
-
 // GetInstallations retrieves all installations for the GitHub App with the given ID.
 func (s *gitHubAppsStore) GetInstallations(ctx context.Context, id int) ([]*ghtypes.GitHubAppInstallation, error) {
-	query := sqlf.Sprintf(`
-		SELECT
-			id,
-			app_id,
-			installation_id,
-			created_at
-		FROM
-			github_app_installs
-	`)
+	query := sqlf.Sprintf(
+		`SELECT %s FROM github_app_installs WHERE app_id = %s`,
+		sqlf.Join(githubAppInstallColumns, ", "),
+		id,
+	)
 	return scanGitHubAppInstallations(s.Query(ctx, query))
 }
 

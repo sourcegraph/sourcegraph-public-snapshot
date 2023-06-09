@@ -28,8 +28,14 @@ type GitHubApp struct {
 
 // GitHubAppInstallation represents an installation of a GitHub App.
 type GitHubAppInstallation struct {
-	ID             int
-	AppID          int
-	InstallationID int
-	CreatedAt      time.Time
+	ID               int
+	AppID            int
+	InstallationID   int
+	URL              string
+	AccountLogin     string
+	AccountAvatarURL string
+	AccountURL       string
+	AccountType      string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
 }
