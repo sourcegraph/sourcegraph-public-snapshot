@@ -197,8 +197,8 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 	}
 
 	{ // Apply file:has.contributor() post-search filter
-		if includeOwners, excludeOwners, ok := isContributorSearch(b); ok {
-			basicJob = NewFileHasContributorsJob(basicJob, b.IsCaseSensitive(), includeOwners, excludeOwners)
+		if includeContributors, excludeContributors, ok := isContributorSearch(b); ok {
+			basicJob = NewFileHasContributorsJob(basicJob, b.IsCaseSensitive(), includeContributors, excludeContributors)
 		}
 	}
 
@@ -568,8 +568,8 @@ func isSelectOwnersSearch(sp filter.SelectPath) bool {
 }
 
 func isContributorSearch(b query.Basic) (include, exclude []string, ok bool) {
-	if includeOwners, excludeOwners := b.FileHasContributor(); len(includeOwners) > 0 || len(excludeOwners) > 0 {
-		return includeOwners, excludeOwners, true
+	if includeContributors, excludeContributors := b.FileHasContributor(); len(includeContributors) > 0 || len(excludeContributors) > 0 {
+		return includeContributors, excludeContributors, true
 	}
 	return nil, nil, false
 }
