@@ -11,6 +11,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	client2 "github.com/sourcegraph/sourcegraph/enterprise/cmd/telemetry-gateway/shared/client"
+	events2 "github.com/sourcegraph/sourcegraph/enterprise/cmd/telemetry-gateway/shared/events"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
 	"github.com/keegancsmith/sqlf"
@@ -28,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/log"
 
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -51,9 +54,9 @@ func (t *telemetryJob) Config() []env.Config {
 }
 
 func (t *telemetryJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	if !isEnabled() {
-		return nil, nil
-	}
+	// if !isEnabled() {
+	// 	return nil, nil
+	// }
 	observationCtx.Logger.Info("Usage telemetry export enabled - initializing background routine")
 
 	db, err := workerdb.InitDB(observationCtx)
@@ -120,7 +123,12 @@ func (j *queueSizeJob) Handle(ctx context.Context) error {
 func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.BackgroundRoutine {
 	observationCtx := observation.NewContext(log.NoOp())
 	handlerMetrics := newHandlerMetrics(observationCtx)
-	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), sendEvents, handlerMetrics)
+
+	var sender sendEventsCallbackFunc
+	// sender = sendEvents
+	sender = sendEventsUsingProxy
+
+	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), sender, handlerMetrics)
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
 		th,
@@ -190,13 +198,15 @@ const (
 )
 
 func (t *telemetryHandler) Handle(ctx context.Context) (err error) {
-	if !isEnabled() {
-		return disabledErr
-	}
-	topicConfig, err := getTopicConfig()
-	if err != nil {
-		return errors.Wrap(err, "getTopicConfig")
-	}
+	// if !isEnabled() {
+	// 	return disabledErr
+	// }
+	// topicConfig, err := getTopicConfig()
+	// if err != nil {
+	// 	return errors.Wrap(err, "getTopicConfig")
+	// }
+
+	var tc topicConfig
 
 	instanceMetadata, err := getInstanceMetadata(ctx, t.globalStateStore, t.userEmailsStore)
 	if err != nil {
@@ -222,7 +232,7 @@ func (t *telemetryHandler) Handle(ctx context.Context) (err error) {
 	maxId := int(all[len(all)-1].ID)
 	t.logger.Info("telemetryHandler executed", log.Int("event count", len(all)), log.Int("maxId", maxId))
 
-	err = sendBatch(ctx, all, topicConfig, instanceMetadata, t.metrics, t.sendEventsCallback)
+	err = sendBatch(ctx, all, tc, instanceMetadata, t.metrics, t.sendEventsCallback)
 	if err != nil {
 		return errors.Wrap(err, "sendBatch")
 	}
@@ -359,6 +369,52 @@ func sendEvents(ctx context.Context, events []*database.Event, config topicConfi
 	}
 
 	return nil
+}
+
+func sendEventsUsingProxy(ctx context.Context, events []*database.Event, config topicConfig, metadata instanceMetadata) error {
+	client := client2.NewEventProxyClient("http://localhost:9992/v1/events")
+
+	req := buildProxyObject(events, metadata)
+
+	err := client.Send(ctx, req)
+	if err != nil {
+		return errors.Wrap(err, "NewEventProxyClient.Send")
+	}
+	return nil
+}
+
+func buildProxyObject(input []*database.Event, metadata instanceMetadata) events2.TelemetryGatewayProxyRequest {
+	var converted []events2.TelemetryEvent
+
+	for _, event := range input {
+		converted = append(converted, events2.TelemetryEvent{
+			EventName:       event.Name,
+			UserID:          int(event.UserID),
+			AnonymousUserID: event.AnonymousUserID,
+			URL:             "", // omitting URL intentionally
+			Source:          event.Source,
+			Timestamp:       event.Timestamp.Format(time.RFC3339),
+			PublicArgument:  string(event.PublicArgument),
+			FeatureFlags:    string(event.EvaluatedFlagSet.Json()),
+			CohortID:        event.CohortID,
+			FirstSourceURL:  emptyIfNil(event.FirstSourceURL),
+			LastSourceURL:   emptyIfNil(event.LastSourceURL),
+			Referrer:        emptyIfNil(event.Referrer),
+			DeviceID:        event.DeviceID,
+			InsertID:        event.InsertID,
+		})
+	}
+
+	return events2.TelemetryGatewayProxyRequest{
+		Client: events2.ClientInfo{
+			DeployType:        metadata.DeployType,
+			Version:           metadata.Version,
+			SiteID:            metadata.SiteID,
+			LicenseKey:        metadata.LicenseKey,
+			InitialAdminEmail: metadata.InitialAdminEmail,
+		},
+		Events: converted,
+	}
 }
 
 type bigQueryEvent struct {

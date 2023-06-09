@@ -3,9 +3,11 @@ package events
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"cloud.google.com/go/pubsub"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/telemetry-gateway/shared/events"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -14,59 +16,48 @@ type TopicConfig struct {
 	TopicName   string
 }
 
-type ClientInfo struct {
-	SiteId string
+type EventProxy struct {
+	client *pubsub.Client
+	config TopicConfig
 }
 
-type TelemetryGatewayProxyRequest struct {
-	Client ClientInfo
-	Events TelemetryEvent
-}
-
-type TelemetryEvent struct {
-	SiteID            string  `json:"site_id"`
-	LicenseKey        string  `json:"license_key"`
-	InitialAdminEmail string  `json:"initial_admin_email"`
-	DeployType        string  `json:"deploy_type"`
-	EventName         string  `json:"name"`
-	URL               string  `json:"url"`
-	AnonymousUserID   string  `json:"anonymous_user_id"`
-	FirstSourceURL    string  `json:"first_source_url"`
-	LastSourceURL     string  `json:"last_source_url"`
-	UserID            int     `json:"user_id"`
-	Source            string  `json:"source"`
-	Timestamp         string  `json:"timestamp"`
-	Version           string  `json:"Version"`
-	FeatureFlags      string  `json:"feature_flags"`
-	CohortID          *string `json:"cohort_id,omitempty"`
-	Referrer          string  `json:"referrer,omitempty"`
-	PublicArgument    string  `json:"public_argument"`
-	DeviceID          *string `json:"device_id,omitempty"`
-	InsertID          *string `json:"insert_id,omitempty"`
-}
-
-func SendEvents(ctx context.Context, request TelemetryGatewayProxyRequest, config TopicConfig) error {
-	client, err := pubsub.NewClient(ctx, config.ProjectName)
+func NewEventProxy(config TopicConfig) (*EventProxy, error) {
+	client, err := pubsub.NewClient(context.Background(), config.ProjectName)
 	if err != nil {
-		return errors.Wrap(err, "pubsub.NewClient")
+		return nil, errors.Wrap(err, "pubsub.NewClient")
 	}
-	defer client.Close()
+	return &EventProxy{client: client, config: config}, nil
+}
 
+func (e *EventProxy) SendEvents(ctx context.Context, request events.TelemetryGatewayProxyRequest) error {
 	marshal, err := json.Marshal(request)
 	if err != nil {
 		return errors.Wrap(err, "json.Marshal")
 	}
 
-	topic := client.Topic(config.TopicName)
+	topic := e.client.Topic(e.config.TopicName)
 	defer topic.Stop()
-	masg := &pubsub.Message{
+	msg := &pubsub.Message{
 		Data: marshal,
 	}
-	result := topic.Publish(ctx, masg)
+	result := topic.Publish(ctx, msg)
 	_, err = result.Get(ctx)
 	if err != nil {
 		return errors.Wrap(err, "result.Get")
 	}
 
+	return nil
+}
+
+type EventSender interface {
+	SendEvents(ctx context.Context, request events.TelemetryGatewayProxyRequest) error
+}
+
+type FakeEventSender struct {
+}
+
+func (f *FakeEventSender) SendEvents(ctx context.Context, request events.TelemetryGatewayProxyRequest) error {
+	jsonify, _ := json.Marshal(request)
+	fmt.Printf("%v\n", string(jsonify))
 	return nil
 }

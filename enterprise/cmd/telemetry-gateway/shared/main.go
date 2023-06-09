@@ -3,7 +3,6 @@ package shared
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/telemetry-gateway/internal/events"
+	events2 "github.com/sourcegraph/sourcegraph/enterprise/cmd/telemetry-gateway/shared/events"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -137,8 +137,10 @@ func requestLogger(logger log.Logger, next http.Handler) http.Handler {
 }
 
 func eventsHandler(config events.TopicConfig) http.Handler {
+	sender := events.FakeEventSender{}
+
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		var proxyReq events.TelemetryGatewayProxyRequest
+		var proxyReq events2.TelemetryGatewayProxyRequest
 		if err := json.NewDecoder(request.Body).Decode(&proxyReq); err != nil {
 			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
@@ -149,7 +151,11 @@ func eventsHandler(config events.TopicConfig) http.Handler {
 		// 	http.Error(writer, err.Error(), http.StatusInternalServerError) // need to improve this
 		// }
 
-		log.Scoped("asdf", "asdf").Info("input", log.String("input", fmt.Sprintf("%v", proxyReq)))
+		err := sender.SendEvents(request.Context(), proxyReq)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		// Use proxyReq...
 		_, _ = writer.Write([]byte("jobs done"))
