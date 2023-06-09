@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline, mdiDelete, mdiOpenInNew } from '@mdi/js'
+import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline, mdiCogOutline, mdiDelete, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
 import { AnchorLink, Button, ButtonLink, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
@@ -70,7 +70,7 @@ interface AppDetailsControlsProps {
 const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ baseURL, config, refetch }) => {
     const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
 
-    const createURL = `/site-admin/batch-changes/new-github-app?baseURL=${encodeURIComponent(baseURL)}`
+    const createURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(baseURL)}`
     return config ? (
         <>
             {removeModalOpen && (
@@ -93,6 +93,15 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
                         View In GitHub <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true} />
                     </small>
                 </AnchorLink>
+                <ButtonLink
+                    className="mr-2"
+                    aria-label="Edit"
+                    to={`github-apps/${config.id}`}
+                    variant="secondary"
+                    size="sm"
+                >
+                    <Icon aria-hidden={true} svgPath={mdiCogOutline} /> Edit
+                </ButtonLink>
                 <Button
                     aria-label="Remove GitHub App"
                     onClick={() => setRemoveModalOpen(true)}

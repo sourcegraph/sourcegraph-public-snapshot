@@ -23,6 +23,7 @@ import {
     Grid,
     AnchorLink,
 } from '@sourcegraph/wildcard'
+import { BreadcrumbItem } from '@sourcegraph/wildcard/src/components/PageHeader'
 
 import { GitHubAppDomain, GitHubAppByIDResult, GitHubAppByIDVariables } from '../../graphql-operations'
 import { ExternalServiceNode } from '../externalServices/ExternalServiceNode'
@@ -35,9 +36,14 @@ import { RemoveGitHubAppModal } from './RemoveGitHubAppModal'
 
 import styles from './GitHubAppCard.module.scss'
 
-interface Props extends TelemetryProps {}
+interface Props extends TelemetryProps {
+    /**
+     * The parent breadcrumb item to show for this page in the header.
+     */
+    headerParentBreadcrumb: BreadcrumbItem
+}
 
-export const GitHubAppPage: FC<Props> = ({ telemetryService }) => {
+export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcrumb }) => {
     const { appID } = useParams()
     const navigate = useNavigate()
     const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
@@ -77,7 +83,7 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService }) => {
         <div>
             {app ? <PageTitle title={`GitHub App - ${app.name}`} /> : <PageTitle title="GitHub App" />}
             {(error || fetchError) && <ErrorAlert className="mb-3" error={error ?? fetchError} />}
-            {loading && <LoadingSpinner />}
+            {loading && !app && <LoadingSpinner />}
             {app && (
                 <>
                     {removeModalOpen && (
@@ -90,7 +96,7 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService }) => {
                     <PageHeader
                         path={[
                             { icon: mdiCog },
-                            { to: '/site-admin/github-apps', text: 'GitHub Apps' },
+                            headerParentBreadcrumb,
                             {
                                 text: (
                                     <span className="d-flex align-items-center">
@@ -142,6 +148,7 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService }) => {
                         <span className="font-weight-bold">AppID</span>
                         <span>{app.appID}</span>
                     </Grid>
+                    {/* Auth provider is only relevant to repos domain GitHub Apps */}
                     {app.domain === GitHubAppDomain.REPOS && <AuthProviderMessage app={app} id={appID} />}
 
                     <hr className="mt-4 mb-4" />
@@ -183,6 +190,7 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService }) => {
                                                 </small>
                                             </AnchorLink>
                                         </div>
+                                        {/* Code host connections are only relevant to repos domain GitHub Apps */}
                                         {app.domain === GitHubAppDomain.REPOS && (
                                             <div className="mt-4">
                                                 <H3 className="d-flex align-items-center mb-0">
