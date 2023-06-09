@@ -66,9 +66,7 @@ func TestAnalyticsIndexerSuccess(t *testing.T) {
 
 	codeownedCount, err := db.OwnershipStats().QueryAggregateCounts(ctx, database.TreeLocationOpts{})
 	require.NoError(t, err)
-	assert.Equal(t, []database.PathAggregateCounts{
-		{CodeownedFileCount: 3},
-	}, codeownedCount)
+	assert.Equal(t, database.PathAggregateCounts{CodeownedFileCount: 3}, codeownedCount)
 }
 
 func TestAnalyticsIndexerNoCodeowners(t *testing.T) {
@@ -91,7 +89,5 @@ func TestAnalyticsIndexerNoCodeowners(t *testing.T) {
 
 	codeownedCount, err := db.OwnershipStats().QueryAggregateCounts(ctx, database.TreeLocationOpts{})
 	require.NoError(t, err)
-	assert.Equal(t, []database.PathAggregateCounts{
-		{CodeownedFileCount: 0},
-	}, codeownedCount)
+	assert.Equal(t, database.PathAggregateCounts{CodeownedFileCount: 0}, codeownedCount)
 }
