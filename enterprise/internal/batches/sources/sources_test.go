@@ -350,9 +350,13 @@ func TestSourcer_ForChangeset(t *testing.T) {
 	}
 
 	repo := &types.Repo{
-		Name:    api.RepoName("test-repo"),
+		Name:    api.RepoName("some-org/test-repo"),
 		URI:     "test-repo",
 		Private: true,
+		Metadata: &github.Repository{
+			ID:            "external-id-123",
+			NameWithOwner: "some-org/test-repo",
+		},
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "external-id-123",
 			ServiceType: extsvc.TypeGitHub,
@@ -497,7 +501,8 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				}
 				return ghApp, nil
 			})
-			ghaStore.GetLatestInstallIDFunc.SetDefaultHook(func(ctx context.Context, appId int) (int, error) {
+			ghaStore.GetInstallIDFunc.SetDefaultHook(func(ctx context.Context, appId int, account string) (int, error) {
+				assert.EqualValues(t, "some-org", account)
 				assert.EqualValues(t, 1234, appId)
 				return 5678, nil
 			})
