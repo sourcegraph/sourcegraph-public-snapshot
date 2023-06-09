@@ -2816,6 +2816,9 @@ func (c AccessTokenStoreWithTransactFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
 // testing.
 type MockAssignedOwnersStore struct {
+	// CountAssignedOwnersFunc is an instance of a mock function object
+	// controlling the behavior of the method CountAssignedOwners.
+	CountAssignedOwnersFunc *AssignedOwnersStoreCountAssignedOwnersFunc
 	// DeleteOwnerFunc is an instance of a mock function object controlling
 	// the behavior of the method DeleteOwner.
 	DeleteOwnerFunc *AssignedOwnersStoreDeleteOwnerFunc
@@ -2833,6 +2836,11 @@ type MockAssignedOwnersStore struct {
 // overwritten.
 func NewMockAssignedOwnersStore() *MockAssignedOwnersStore {
 	return &MockAssignedOwnersStore{
+		CountAssignedOwnersFunc: &AssignedOwnersStoreCountAssignedOwnersFunc{
+			defaultHook: func(context.Context) (r0 int32, r1 error) {
+				return
+			},
+		},
 		DeleteOwnerFunc: &AssignedOwnersStoreDeleteOwnerFunc{
 			defaultHook: func(context.Context, int32, api.RepoID, string) (r0 error) {
 				return
@@ -2856,6 +2864,11 @@ func NewMockAssignedOwnersStore() *MockAssignedOwnersStore {
 // overwritten.
 func NewStrictMockAssignedOwnersStore() *MockAssignedOwnersStore {
 	return &MockAssignedOwnersStore{
+		CountAssignedOwnersFunc: &AssignedOwnersStoreCountAssignedOwnersFunc{
+			defaultHook: func(context.Context) (int32, error) {
+				panic("unexpected invocation of MockAssignedOwnersStore.CountAssignedOwners")
+			},
+		},
 		DeleteOwnerFunc: &AssignedOwnersStoreDeleteOwnerFunc{
 			defaultHook: func(context.Context, int32, api.RepoID, string) error {
 				panic("unexpected invocation of MockAssignedOwnersStore.DeleteOwner")
@@ -2879,6 +2892,9 @@ func NewStrictMockAssignedOwnersStore() *MockAssignedOwnersStore {
 // implementation, unless overwritten.
 func NewMockAssignedOwnersStoreFrom(i AssignedOwnersStore) *MockAssignedOwnersStore {
 	return &MockAssignedOwnersStore{
+		CountAssignedOwnersFunc: &AssignedOwnersStoreCountAssignedOwnersFunc{
+			defaultHook: i.CountAssignedOwners,
+		},
 		DeleteOwnerFunc: &AssignedOwnersStoreDeleteOwnerFunc{
 			defaultHook: i.DeleteOwner,
 		},
@@ -2889,6 +2905,115 @@ func NewMockAssignedOwnersStoreFrom(i AssignedOwnersStore) *MockAssignedOwnersSt
 			defaultHook: i.ListAssignedOwnersForRepo,
 		},
 	}
+}
+
+// AssignedOwnersStoreCountAssignedOwnersFunc describes the behavior when
+// the CountAssignedOwners method of the parent MockAssignedOwnersStore
+// instance is invoked.
+type AssignedOwnersStoreCountAssignedOwnersFunc struct {
+	defaultHook func(context.Context) (int32, error)
+	hooks       []func(context.Context) (int32, error)
+	history     []AssignedOwnersStoreCountAssignedOwnersFuncCall
+	mutex       sync.Mutex
+}
+
+// CountAssignedOwners delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAssignedOwnersStore) CountAssignedOwners(v0 context.Context) (int32, error) {
+	r0, r1 := m.CountAssignedOwnersFunc.nextHook()(v0)
+	m.CountAssignedOwnersFunc.appendCall(AssignedOwnersStoreCountAssignedOwnersFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CountAssignedOwners
+// method of the parent MockAssignedOwnersStore instance is invoked and the
+// hook queue is empty.
+func (f *AssignedOwnersStoreCountAssignedOwnersFunc) SetDefaultHook(hook func(context.Context) (int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountAssignedOwners method of the parent MockAssignedOwnersStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *AssignedOwnersStoreCountAssignedOwnersFunc) PushHook(hook func(context.Context) (int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AssignedOwnersStoreCountAssignedOwnersFunc) SetDefaultReturn(r0 int32, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AssignedOwnersStoreCountAssignedOwnersFunc) PushReturn(r0 int32, r1 error) {
+	f.PushHook(func(context.Context) (int32, error) {
+		return r0, r1
+	})
+}
+
+func (f *AssignedOwnersStoreCountAssignedOwnersFunc) nextHook() func(context.Context) (int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AssignedOwnersStoreCountAssignedOwnersFunc) appendCall(r0 AssignedOwnersStoreCountAssignedOwnersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AssignedOwnersStoreCountAssignedOwnersFuncCall objects describing the
+// invocations of this function.
+func (f *AssignedOwnersStoreCountAssignedOwnersFunc) History() []AssignedOwnersStoreCountAssignedOwnersFuncCall {
+	f.mutex.Lock()
+	history := make([]AssignedOwnersStoreCountAssignedOwnersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AssignedOwnersStoreCountAssignedOwnersFuncCall is an object that
+// describes an invocation of method CountAssignedOwners on an instance of
+// MockAssignedOwnersStore.
+type AssignedOwnersStoreCountAssignedOwnersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AssignedOwnersStoreCountAssignedOwnersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AssignedOwnersStoreCountAssignedOwnersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // AssignedOwnersStoreDeleteOwnerFunc describes the behavior when the

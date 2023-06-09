@@ -7,7 +7,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -245,4 +248,28 @@ func TestGetOwnershipUsageStatsAggregatedStats(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetOwnershipUsageStatsAssignedOwnersCount(t *testing.T) {
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	var repoID api.RepoID = 1
+	require.NoError(t, db.Repos().Create(ctx, &types.Repo{
+		ID:   repoID,
+		Name: "github.com/sourcegraph/sourcegraph",
+	}))
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "foo"})
+	require.NoError(t, err)
+	paths := []string{"src", "test", "docs/README.md"}
+	for _, p := range paths {
+		require.NoError(t, db.AssignedOwners().Insert(ctx, user.ID, repoID, p, user.ID))
+	}
+	stats, err := GetOwnershipUsageStats(ctx, db)
+	if err != nil {
+		t.Fatalf("GetOwnershipUsageStats err: %s", err)
+	}
+	wantCount := int32(len(paths))
+	assert.Equal(t, &wantCount, stats.AssignedOwnersCount)
 }

@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestAssignedOwnersStore_ListAssignedOwnersForRepo(t *testing.T) {
@@ -160,4 +161,33 @@ func TestAssignedOwnersStore_Delete(t *testing.T) {
 	err = store.DeleteOwner(ctx, user2.ID, 1, "src/abc")
 	assert.NoError(t, err)
 	assertNumberOfOwnersForRepo(1, 2)
+}
+
+func TestAssignedOwnersStore_Count(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Creating users.
+	user1, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	require.NoError(t, err)
+
+	// Creating a repo.
+	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
+	require.NoError(t, err)
+
+	// Inserting assigned owners.
+	paths := []string{"a/b/c", "", "foo/bar", "src/main/java/sourcegraph"}
+	for _, path := range paths {
+		err = db.AssignedOwners().Insert(ctx, user1.ID, 1, path, user1.ID)
+		require.NoError(t, err)
+	}
+	count, err := db.AssignedOwners().CountAssignedOwners(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, int32(len(paths)), count)
 }
