@@ -100,16 +100,19 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		return err
 	}
 
-	updateStatsTicker := time.NewTicker(time.Second)
-	defer updateStatsTicker.Stop()
 	reportStats := func(stats *bgrepo.EmbedRepoStats) {
-		select {
-		case <-updateStatsTicker.C:
-		default:
-			return
-		}
 		if err := h.repoEmbeddingJobsStore.UpdateRepoEmbeddingJobStats(ctx, record.ID, stats); err != nil {
 			logger.Error("failed to update embedding stats", log.Error(err))
+		}
+	}
+
+	reportStatsTicker := time.NewTicker(time.Second)
+	defer reportStatsTicker.Stop()
+	reportStatsPeriodically := func(stats *bgrepo.EmbedRepoStats) {
+		select {
+		case <-reportStatsTicker.C:
+			reportStats(stats)
+		default:
 		}
 	}
 
@@ -121,11 +124,13 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		ranks,
 		opts,
 		logger,
-		reportStats,
+		reportStatsPeriodically,
 	)
 	if err != nil {
 		return err
 	}
+
+	reportStats(stats) // final, complete report
 
 	logger.Info(
 		"finished generating repo embeddings",

@@ -236,6 +236,19 @@ func TestEmbedRepo(t *testing.T) {
 		require.Equal(t, expectedStats, stats)
 	})
 
+	t.Run("mixed code and text files", func(t *testing.T) {
+		// 3 will be embedded, 4 will be skipped
+		fileNames := []string{"a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin"}
+		rl := newReadLister(fileNames...)
+		statReports := 0
+		countingReporter := func(*bgrepo.EmbedRepoStats) {
+			statReports++
+		}
+		_, _, _, err := EmbedRepo(ctx, client, contextService, rl, mockRepoPathRanks, opts, logger, countingReporter)
+		require.NoError(t, err)
+		require.Equal(t, 3, statReports, "expected one update for each embedded file")
+	})
+
 	t.Run("embeddings limited", func(t *testing.T) {
 		optsCopy := opts
 		optsCopy.MaxCodeEmbeddings = 3
