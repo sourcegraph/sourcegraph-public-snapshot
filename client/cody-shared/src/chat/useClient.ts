@@ -266,9 +266,7 @@ export const useClient = ({
                     },
                     onError(error) {
                         // Display error message as assistant response
-                        transcript.addErrorAsAssistantResponse(
-                            `<div class="cody-chat-error"><span>Request failed: </span>${error}</div>`
-                        )
+                        transcript.addErrorAsAssistantResponse(error)
 
                         console.error(`Completion request failed: ${error}`)
 

@@ -398,6 +398,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                                 Number and ratio of repositories for which ownership data is available via CODEOWNERS
                                 file or the API.
                             </li>
+                            <li>Total count of assigned owners.</li>
                             <li>Aggregate monthly weekly and daily active users for the following activities:</li>
                             <ul>
                                 <li>Narrowing search results by owner using file:has.owner() predicate.</li>

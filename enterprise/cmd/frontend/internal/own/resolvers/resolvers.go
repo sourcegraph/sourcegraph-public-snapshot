@@ -415,10 +415,7 @@ func (r *ownStatsResolver) TotalCodeownedFiles(ctx context.Context) (int32, erro
 	if err != nil {
 		return 0, err
 	}
-	if len(counts) == 0 {
-		return 0, nil
-	}
-	return int32(counts[0].CodeownedFileCount), nil
+	return int32(counts.CodeownedFileCount), nil
 }
 
 type ownershipConnectionResolver struct {

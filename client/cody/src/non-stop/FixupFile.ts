@@ -17,6 +17,10 @@ export class FixupFile {
         return this.uri_
     }
 
+    public get fileName(): string {
+        return this.uri_.fsPath
+    }
+
     public toString(): string {
         return `FixupFile${this.id_}(${this.uri_})`
     }
