@@ -3,8 +3,11 @@ package graphqlbackend
 import (
 	"context"
 	"strings"
+	"sync"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
@@ -12,37 +15,45 @@ import (
 )
 
 type PerforceChangelistResolver struct {
+	logger log.Logger
+
+	repositoryResolver *RepositoryResolver
+
 	cid          string
 	canonicalURL string
+	commitSHA    string
+
+	commitID   api.CommitID
+	commitOnce sync.Once
+	commitErr  error
 }
 
-func newPerforceChangelistResolver(changelistID, repoPath string) *PerforceChangelistResolver {
-	canonicalURL := repoPath + "/-/changelist/" + changelistID
+func newPerforceChangelistResolver(ctx context.Context, r *RepositoryResolver, changelistID, commitSHA string) *PerforceChangelistResolver {
+	repoURL := r.url()
+	canonicalURL := repoURL.Path + "/-/changelist/" + changelistID
+
 	return &PerforceChangelistResolver{
-		cid:          changelistID,
-		canonicalURL: canonicalURL,
+		logger:             r.logger.Scoped("PerforceChangelistResolver", "resolve a specific changelist"),
+		repositoryResolver: r,
+		cid:                changelistID,
+		commitSHA:          commitSHA,
+		canonicalURL:       canonicalURL,
 	}
 }
 
-func toPerforceChangelistResolver(ctx context.Context, r *RepositoryResolver, commitBody string) (*PerforceChangelistResolver, error) {
+func toPerforceChangelistResolver(ctx context.Context, r *RepositoryResolver, commit *gitdomain.Commit) (*PerforceChangelistResolver, error) {
 	if source, err := r.SourceType(ctx); err != nil {
 		return nil, err
 	} else if *source != PerforceDepotSourceType {
 		return nil, nil
 	}
 
-	changelistID, err := perforce.GetP4ChangelistID(commitBody)
+	changelistID, err := perforce.GetP4ChangelistID(commit.Message.Body())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to generate perforceChangelistID")
 	}
 
-	repoURL := r.url()
-	repoURL.Path += "/-/changelist/" + changelistID
-
-	return &PerforceChangelistResolver{
-		cid:          changelistID,
-		canonicalURL: repoURL.String(),
-	}, nil
+	return newPerforceChangelistResolver(ctx, r, changelistID, string(commit.ID)), nil
 }
 
 func (r *PerforceChangelistResolver) CID() string {
@@ -51,6 +62,31 @@ func (r *PerforceChangelistResolver) CID() string {
 
 func (r *PerforceChangelistResolver) CanonicalURL() string {
 	return r.canonicalURL
+}
+
+func (r *PerforceChangelistResolver) Commit(ctx context.Context) (_ *GitCommitResolver, err error) {
+	repoResolver := r.repositoryResolver
+	r.commitOnce.Do(func() {
+		repo, err := repoResolver.repo(ctx)
+		if err != nil {
+			r.commitErr = err
+			return
+		}
+
+		r.commitID, r.commitErr = backend.NewRepos(
+			r.logger,
+			repoResolver.db,
+			repoResolver.gitserverClient,
+		).ResolveRev(ctx, repo, r.commitSHA)
+	})
+
+	if r.commitErr != nil {
+		return nil, r.commitErr
+	}
+
+	commitResolver := NewGitCommitResolver(repoResolver.db, repoResolver.gitserverClient, r.repositoryResolver, r.commitID, nil)
+	commitResolver.inputRev = &r.commitSHA
+	return commitResolver, nil
 }
 
 var p4FusionCommitSubjectPattern = lazyregexp.New(`^(\d+) - (.*)$`)
