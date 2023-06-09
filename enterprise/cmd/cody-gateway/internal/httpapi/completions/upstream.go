@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	oteltrace "go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
@@ -195,6 +196,7 @@ func makeUpstreamHandler[ReqT any](
 			if err != nil {
 				// Ignore reporting errors where client disconnected
 				if req.Context().Err() == context.Canceled && errors.Is(err, context.Canceled) {
+					oteltrace.SpanFromContext(req.Context()).RecordError(err)
 					return
 				}
 
