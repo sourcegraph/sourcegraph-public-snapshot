@@ -1042,7 +1042,8 @@ func TestSerializeOwn(t *testing.T) {
 				"dau": 100,
 				"wau": 150,
 				"mau": 300
-			}
+			},
+			"assigned_owners_count": 12
 		}`),
 	}
 
@@ -1095,7 +1096,8 @@ func TestSerializeOwn(t *testing.T) {
 				"dau": 100,
 				"wau": 150,
 				"mau": 300
-			}
+			},
+			"assigned_owners_count": 12
 		},
 		"search_usage": null,
 		"growth_statistics": null,
