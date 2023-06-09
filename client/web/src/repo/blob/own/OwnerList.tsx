@@ -148,9 +148,9 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                         reason.__typename === 'AssignedOwner'
                                 )
                             )
-                            .map((ownership, index) => {
+                            .map((ownership, index) => 
                                 // This list is not expected to change, so it's safe to use the index as a key.
-                                return (
+                                 (
                                     <React.Fragment key={index}>
                                         {index > 0 && <tr className={styles.bordered} />}
                                         <FileOwnershipEntry
@@ -163,7 +163,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                         />
                                     </React.Fragment>
                                 )
-                            })}
+                            )}
                         {
                             /* Visually separate two sets with a horizontal rule (like subsequent owners are)
                              * if there is data in both owners and signals.

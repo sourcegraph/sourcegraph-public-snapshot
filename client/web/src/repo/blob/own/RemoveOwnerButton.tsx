@@ -14,6 +14,7 @@ import {
 } from '../../../graphql-operations'
 
 import { REMOVE_ASSIGNED_OWNER, REMOVE_ASSIGNED_TEAM } from './grapqlQueries'
+import {MutationFunctionOptions} from "@apollo/client";
 
 export interface RemoveOwnerButtonProps {
     onSuccess: () => Promise<any>
@@ -47,7 +48,7 @@ export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({
         RemoveAssignedTeamVariables
     >(REMOVE_ASSIGNED_TEAM, {})
 
-    const createInputObject = (id: string) => ({
+    const createInputObject = (id: string): MutationFunctionOptions => ({
         variables: {
             input: {
                 absolutePath: path,
