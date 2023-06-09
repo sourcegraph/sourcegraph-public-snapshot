@@ -417,7 +417,7 @@ const SearchResultsListItem: React.FC<{
             <div className="text-truncate">
                 <Icon
                     aria-hidden={true}
-                    className={classNames('mr-2 text-success', { [styles.visibilityHidden]: !selected })}
+                    className={classNames('mr-2 text-muted', { [styles.visibilityHidden]: !selected })}
                     svgPath={mdiCheck}
                 />
                 <ExternalRepositoryIcon externalRepo={repository.externalRepository} className={styles.repoIcon} />
