@@ -197,6 +197,7 @@ func makeUpstreamHandler[ReqT any](
 				// Ignore reporting errors where client disconnected
 				if req.Context().Err() == context.Canceled && errors.Is(err, context.Canceled) {
 					oteltrace.SpanFromContext(req.Context()).RecordError(err)
+					logger.Info("request canceled", log.Error(err))
 					return
 				}
 
