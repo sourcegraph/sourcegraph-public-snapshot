@@ -1,0 +1,21 @@
+{
+  "name": "@sourcegraph/cody-lsp-gateway",
+  "displayName": "Cody LSP Gateway",
+  "private": true,
+  "description": "An LSP Compatible Interface to Cody",
+  "version": "0.0.1",
+  "license": "Apache-2.0",
+  "main": "dist/app.js",
+  "bin": {
+    "cody-lsp-gateway": "./dist/app.js"
+  },
+  "scripts": {
+    "start": "ts-node-transpile-only ./src/app.ts",
+    "lint": "pnpm run lint:js",
+    "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
+    "build": "esbuild ./src/app.ts --bundle --outfile=dist/app.js --format=cjs --platform=node",
+    "build-ts": "tsc -b --emitDeclarationOnly"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
