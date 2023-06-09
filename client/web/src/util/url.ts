@@ -59,6 +59,7 @@ export function replaceRevisionInURL(href: string, newRevision: string): string 
  * Parses the properties of a blob URL.
  */
 export function parseBrowserRepoURL(href: string): ParsedRepoURI & Pick<ParsedRepoRevision, 'rawRevision'> {
+    console.log('here', href)
     const url = new URL(href, window.location.href)
     let pathname = url.pathname.slice(1) // trim leading '/'
     if (pathname.endsWith('/')) {
@@ -127,5 +128,6 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI & Pick<ParsedRe
             }
         }
     }
+    console.log(pathname)
     return { repoName, revision, rawRevision, commitID, filePath, commitRange, position, range }
 }
