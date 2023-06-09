@@ -217,11 +217,13 @@ func embeddingConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
 	return nil
 }
 
+var defaultOpts = EmbeddableRepoOpts{
+	MinimumInterval:            24 * time.Hour,
+	PolicyRepositoryMatchLimit: 5000,
+}
+
 func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
-	var opts = EmbeddableRepoOpts{
-		MinimumInterval:            24 * time.Hour,
-		PolicyRepositoryMatchLimit: 5000,
-	}
+	opts := defaultOpts
 
 	embeddingsConf := conf.Get().Embeddings
 	if embeddingsConf == nil {
