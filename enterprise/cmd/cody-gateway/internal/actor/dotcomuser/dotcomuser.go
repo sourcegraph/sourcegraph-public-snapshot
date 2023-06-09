@@ -25,18 +25,20 @@ var (
 )
 
 type Source struct {
-	log    log.Logger
-	cache  httpcache.Cache
-	dotcom graphql.Client
+	log               log.Logger
+	cache             httpcache.Cache
+	dotcom            graphql.Client
+	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
 }
 
 var _ actor.Source = &Source{}
 
-func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client) *Source {
+func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
 	return &Source{
-		log:    logger.Scoped("dotcomuser", "dotcom user actor source"),
-		cache:  cache,
-		dotcom: dotComClient,
+		log:               logger.Scoped("dotcomuser", "dotcom user actor source"),
+		cache:             cache,
+		dotcom:            dotComClient,
+		concurrencyConfig: concurrencyConfig,
 	}
 }
 
@@ -81,10 +83,10 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 	resp, checkErr := dotcom.CheckDotcomUserAccessToken(ctx, s.dotcom, token)
 	if checkErr != nil {
 		// Generate a stateless actor so that we aren't constantly hitting the dotcom API
-		act = NewActor(s, token, dotcom.DotcomUserState{})
+		act = newActor(s, token, dotcom.DotcomUserState{}, s.concurrencyConfig)
 	} else {
-		act = NewActor(s, token,
-			resp.Dotcom.CodyGatewayDotcomUserByToken.DotcomUserState)
+		act = newActor(s, token,
+			resp.Dotcom.CodyGatewayDotcomUserByToken.DotcomUserState, s.concurrencyConfig)
 	}
 
 	if data, err := json.Marshal(act); err != nil {
@@ -100,8 +102,8 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 	return act, nil
 }
 
-// NewActor creates an actor from Sourcegraph.com user.
-func NewActor(source *Source, cacheKey string, user dotcom.DotcomUserState) *actor.Actor {
+// newActor creates an actor from Sourcegraph.com user.
+func newActor(source *Source, cacheKey string, user dotcom.DotcomUserState, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *actor.Actor {
 	now := time.Now()
 	a := &actor.Actor{
 		Key:           cacheKey,
@@ -112,28 +114,31 @@ func NewActor(source *Source, cacheKey string, user dotcom.DotcomUserState) *act
 		Source:        source,
 	}
 
-	if user.CodyGatewayAccess.ChatCompletionsRateLimit != nil {
-		a.RateLimits[codygateway.FeatureChatCompletions] = actor.RateLimit{
-			AllowedModels: user.CodyGatewayAccess.ChatCompletionsRateLimit.AllowedModels,
-			Limit:         user.CodyGatewayAccess.ChatCompletionsRateLimit.Limit,
-			Interval:      time.Duration(user.CodyGatewayAccess.ChatCompletionsRateLimit.IntervalSeconds) * time.Second,
-		}
+	if rl := user.CodyGatewayAccess.ChatCompletionsRateLimit; rl != nil {
+		a.RateLimits[codygateway.FeatureChatCompletions] = actor.NewRateLimitWithPercentageConcurrency(
+			rl.Limit,
+			time.Duration(rl.IntervalSeconds)*time.Second,
+			rl.AllowedModels,
+			concurrencyConfig,
+		)
 	}
 
-	if user.CodyGatewayAccess.CodeCompletionsRateLimit != nil {
-		a.RateLimits[codygateway.FeatureCodeCompletions] = actor.RateLimit{
-			AllowedModels: user.CodyGatewayAccess.CodeCompletionsRateLimit.AllowedModels,
-			Limit:         user.CodyGatewayAccess.CodeCompletionsRateLimit.Limit,
-			Interval:      time.Duration(user.CodyGatewayAccess.CodeCompletionsRateLimit.IntervalSeconds) * time.Second,
-		}
+	if rl := user.CodyGatewayAccess.CodeCompletionsRateLimit; rl != nil {
+		a.RateLimits[codygateway.FeatureCodeCompletions] = actor.NewRateLimitWithPercentageConcurrency(
+			rl.Limit,
+			time.Duration(rl.IntervalSeconds)*time.Second,
+			rl.AllowedModels,
+			concurrencyConfig,
+		)
 	}
 
-	if user.CodyGatewayAccess.EmbeddingsRateLimit != nil {
-		a.RateLimits[codygateway.FeatureEmbeddings] = actor.RateLimit{
-			AllowedModels: user.CodyGatewayAccess.EmbeddingsRateLimit.AllowedModels,
-			Limit:         user.CodyGatewayAccess.EmbeddingsRateLimit.Limit,
-			Interval:      time.Duration(user.CodyGatewayAccess.EmbeddingsRateLimit.IntervalSeconds) * time.Second,
-		}
+	if rl := user.CodyGatewayAccess.EmbeddingsRateLimit; rl != nil {
+		a.RateLimits[codygateway.FeatureEmbeddings] = actor.NewRateLimitWithPercentageConcurrency(
+			rl.Limit,
+			time.Duration(rl.IntervalSeconds)*time.Second,
+			rl.AllowedModels,
+			concurrencyConfig,
+		)
 	}
 
 	return a

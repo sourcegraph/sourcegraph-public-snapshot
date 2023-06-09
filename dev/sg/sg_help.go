@@ -1,11 +1,10 @@
 package main
 
 import (
-	"strings"
+	"os"
+	"path/filepath"
 
 	"github.com/urfave/cli/v2"
-
-	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -54,9 +53,13 @@ var helpCommand = &cli.Command{
 		}
 
 		if output := cmd.String("output"); output != "" {
-			cmd := run.Cmd(cmd.Context, "cp /dev/stdin", output).
-				Input(strings.NewReader(generatedSgReferenceHeader + "\n\n" + doc))
-			if err := root.Run(cmd).Wait(); err != nil {
+			root, err := root.RepositoryRoot()
+			if err != nil {
+				return err
+			}
+			output = filepath.Join(root, output)
+
+			if err := os.WriteFile(output, []byte(generatedSgReferenceHeader+"\n\n"+doc), 0644); err != nil {
 				return errors.Wrapf(err, "failed to write reference to %q", output)
 			}
 			return nil

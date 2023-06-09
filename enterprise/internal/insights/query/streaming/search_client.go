@@ -5,13 +5,11 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/settings"
 )
 
 type SearchClient interface {
@@ -32,10 +30,6 @@ type insightsSearchClient struct {
 }
 
 func (r *insightsSearchClient) Search(ctx context.Context, query string, patternType *string, sender streaming.Sender) (*search.Alert, error) {
-	settings, err := settings.CurrentUserFinal(ctx, r.db)
-	if err != nil {
-		return nil, err
-	}
 	inputs, err := r.searchClient.Plan(
 		ctx,
 		"",
@@ -43,8 +37,6 @@ func (r *insightsSearchClient) Search(ctx context.Context, query string, pattern
 		query,
 		search.Precise,
 		search.Streaming,
-		settings,
-		envvar.SourcegraphDotComMode(),
 	)
 	if err != nil {
 		return nil, err

@@ -23,6 +23,7 @@ go_test(
     embed = [":dotcomuser"],
     deps = [
         "//enterprise/cmd/cody-gateway/internal/dotcom",
+        "//enterprise/internal/codygateway",
         "@com_github_stretchr_testify//assert",
     ],
 )
