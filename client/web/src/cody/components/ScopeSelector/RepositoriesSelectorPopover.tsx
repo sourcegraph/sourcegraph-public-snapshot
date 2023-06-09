@@ -458,8 +458,8 @@ const EmbeddingExistsIcon: React.FC<{ repo: { embeddingExists: boolean } }> = Re
             <Tooltip
                 content={
                     embeddingExists
-                        ? 'Embeddings are enabled for this repository. When embeddings are running, you’ll see how amazing the results are!'
-                        : 'Embeddings are not enabled for this repository. You can still use Cody, but the quality of Cody’s responses may be low.'
+                        ? 'Embeddings are enabled for this repository'
+                        : 'Embeddings are missing for this repository. Enable embeddings to increase the quality of Cody’s responses.'
                 }
             >
                 <Icon
@@ -474,69 +474,27 @@ const EmbeddingExistsIcon: React.FC<{ repo: { embeddingExists: boolean } }> = Re
     }
 )
 
-const noop = (): void => {}
-const stopEventBubble = (event: { stopPropagation: () => void }): void => event.stopPropagation()
-
 const EmbeddingStatusIndicator: React.FC<{ reposWithoutEmbeddingsCount: number; totalReposCount: number }> = React.memo(
     function EmbeddingsStatusIndicatorContent({ reposWithoutEmbeddingsCount, totalReposCount }) {
-        const [isEmbeddingsStatusOpen, setIsEmbeddingsStatusOpen] = useState(false)
-
-        const onEmbeddingsStatusOpenChange = useCallback(
-            (event: { isOpen: boolean }) => {
-                setIsEmbeddingsStatusOpen(event.isOpen)
-            },
-            [setIsEmbeddingsStatusOpen]
-        )
-
         return totalReposCount ? (
-            <div onClick={stopEventBubble} role="button" tabIndex={0} onKeyDown={noop}>
-                <Popover isOpen={isEmbeddingsStatusOpen} onOpenChange={onEmbeddingsStatusOpenChange}>
-                    <PopoverTrigger as={Button} outline={false} className="p-0 mr-2 d-flex align-items-center">
-                        {reposWithoutEmbeddingsCount ? (
-                            <Icon aria-hidden={true} className="text-warning" svgPath={mdiDatabaseRemoveOutline} />
-                        ) : (
-                            <CodyHighQualityIcon />
-                        )}
-                    </PopoverTrigger>
-                    <PopoverContent position={Position.topStart}>
-                        <Card className={classNames('d-flex flex-column', styles.embeddingsStatusContent)}>
-                            <div className="d-flex justify-content-between p-2 border-bottom mb-1">
-                                <Text className={classNames('m-0 text-uppercase', styles.header)}>
-                                    Cody's Response Quality is{' '}
-                                    {reposWithoutEmbeddingsCount ? (
-                                        <span className="text-warning">Medium</span>
-                                    ) : (
-                                        <span className="text-success">High</span>
-                                    )}
-                                </Text>
-                            </div>
-                            <div className="d-flex align-items-start p-2">
-                                <Text className="m-0 pr-2">
-                                    <strong>Embeddings:</strong>
-                                </Text>
-                                {reposWithoutEmbeddingsCount ? (
-                                    <Text className="m-0">
-                                        <strong>
-                                            Not enabled for{' '}
-                                            {reposWithoutEmbeddingsCount === totalReposCount
-                                                ? 'any of the repositories'
-                                                : totalReposCount > 1
-                                                ? `${reposWithoutEmbeddingsCount} of ${totalReposCount} repositories`
-                                                : 'the repository'}{' '}
-                                            you selected.
-                                        </strong>{' '}
-                                        You can still use Cody, but the quality of Cody’s responses may be low.
-                                    </Text>
-                                ) : (
-                                    <Text className="m-0">
-                                        <strong>All selected repositories are indexed.</strong> When embeddings are
-                                        running, you’ll see how amazing the results are!
-                                    </Text>
-                                )}
-                            </div>
-                        </Card>
-                    </PopoverContent>
-                </Popover>
+            <div className="mr-1">
+                <Tooltip
+                    content={
+                        reposWithoutEmbeddingsCount
+                            ? `Embeddings are missing for ${
+                                  totalReposCount === 1 ? 'this repository' : 'some repositories'
+                              }. Enable embeddings to increase the quality of Cody’s responses.`
+                            : totalReposCount === 1
+                            ? 'Embeddings are enabled for this repository'
+                            : 'Embeddings are enabled' // Doesn't use 'all repos' otherwise it might sound system-wide
+                    }
+                >
+                    {reposWithoutEmbeddingsCount ? (
+                        <Icon aria-hidden={true} className="text-warning" svgPath={mdiDatabaseRemoveOutline} />
+                    ) : (
+                        <CodyHighQualityIcon />
+                    )}
+                </Tooltip>
             </div>
         ) : null
     }

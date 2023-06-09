@@ -54,20 +54,6 @@
     color: var(--input-focus-border-color);
 }
 
-.embeddings-status-content {
-    width: 24rem;
-    height: 100%;
-    max-width: 24rem;
-    min-height: 7rem;
-    overflow: hidden;
-    font-size: 0.8rem;
-    line-height: 1rem;
-
-    strong {
-        font-weight: 500;
-    }
-}
-
 .repository-selector-content {
     width: 20rem;
     height: 100%;
