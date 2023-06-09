@@ -277,7 +277,7 @@ type Client interface {
 	P4Exec(_ context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error)
 
 	// P4GetChangelist gets the changelist specified by changelistID.
-	P4GetChangelist(_ context.Context, changelistID string) (protocol.PerforceChangelist, error)
+	P4GetChangelist(_ context.Context, changelistID string, creds PerforceCredentials) (protocol.PerforceChangelist, error)
 
 	// Remove removes the repository clone from gitserver.
 	Remove(context.Context, api.RepoName) error
@@ -925,9 +925,15 @@ var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "Times that Client.sendExec() returned context.DeadlineExceeded",
 })
 
-func (c *clientImplementor) P4GetChangelist(_ context.Context, changelistID string) (protocol.PerforceChangelist, error) {
+func (c *clientImplementor) P4GetChangelist(_ context.Context, changelistID string, creds PerforceCredentials) (protocol.PerforceChangelist, error) {
 	//TODO: @peterguy implement function.
 	return protocol.PerforceChangelist{}, nil
+}
+
+type PerforceCredentials struct {
+	Host     string
+	Username string
+	Password string
 }
 
 // BatchLog invokes the given callback with the `git log` output for a batch of repository

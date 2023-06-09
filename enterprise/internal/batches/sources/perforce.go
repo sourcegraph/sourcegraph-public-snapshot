@@ -76,7 +76,15 @@ func (s PerforceSource) ValidateAuthenticator(ctx context.Context) error {
 // the Changeset could not be found on the source, a ChangesetNotFoundError is
 // returned.
 func (s PerforceSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
-	cl, err := s.gitServerClient.P4GetChangelist(ctx, cs.ExternalID)
+	username, password := s.auther.Credentials()
+	if username == "" || password == "" {
+		return errors.New("no auther set for Perforce Source")
+	}
+	cl, err := s.gitServerClient.P4GetChangelist(ctx, cs.ExternalID, gitserver.PerforceCredentials{
+		Host:     s.server.P4Port,
+		Username: username,
+		Password: password,
+	})
 	if err != nil {
 		return errors.Wrap(err, "getting changelist")
 	}

@@ -7,7 +7,9 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/assert"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -18,6 +20,7 @@ import (
 var (
 	testPerforceProjectName = "testdepot"
 	testPerforceChangeID    = "111"
+	testPerforceCredentials = gitserver.PerforceCredentials{Username: "user", Password: "pass", Host: "https://perforce.sgdev.org:1666"}
 )
 
 func TestPerforceSource_ValidateAuthenticator(t *testing.T) {
@@ -42,8 +45,9 @@ func TestPerforceSource_LoadChangeset(t *testing.T) {
 		cs, _ := mockPerforceChangeset()
 		s, client := mockPerforceSource()
 		want := errors.New("error")
-		client.P4GetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string) (protocol.PerforceChangelist, error) {
+		client.P4GetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string, credentials gitserver.PerforceCredentials) (protocol.PerforceChangelist, error) {
 			assert.Equal(t, changeID, testPerforceChangeID)
+			assert.Equal(t, testPerforceCredentials, credentials)
 			return protocol.PerforceChangelist{}, want
 		})
 
@@ -57,8 +61,9 @@ func TestPerforceSource_LoadChangeset(t *testing.T) {
 		s, client := mockPerforceSource()
 
 		change := mockPerforceChange()
-		client.P4GetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string) (protocol.PerforceChangelist, error) {
+		client.P4GetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string, credentials gitserver.PerforceCredentials) (protocol.PerforceChangelist, error) {
 			assert.Equal(t, changeID, testPerforceChangeID)
+			assert.Equal(t, testPerforceCredentials, credentials)
 			return *change, nil
 		})
 
@@ -74,8 +79,9 @@ func TestPerforceSource_CreateChangeset(t *testing.T) {
 		cs, _ := mockPerforceChangeset()
 		s, client := mockPerforceSource()
 		want := errors.New("error")
-		client.P4GetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string) (protocol.PerforceChangelist, error) {
+		client.P4GetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string, credentials gitserver.PerforceCredentials) (protocol.PerforceChangelist, error) {
 			assert.Equal(t, changeID, testPerforceChangeID)
+			assert.Equal(t, testPerforceCredentials, credentials)
 			return protocol.PerforceChangelist{}, want
 		})
 
@@ -90,8 +96,9 @@ func TestPerforceSource_CreateChangeset(t *testing.T) {
 		s, client := mockPerforceSource()
 
 		change := mockPerforceChange()
-		client.P4GetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string) (protocol.PerforceChangelist, error) {
+		client.P4GetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string, credentials gitserver.PerforceCredentials) (protocol.PerforceChangelist, error) {
 			assert.Equal(t, changeID, testPerforceChangeID)
+			assert.Equal(t, testPerforceCredentials, credentials)
 			return *change, nil
 		})
 
@@ -99,15 +106,6 @@ func TestPerforceSource_CreateChangeset(t *testing.T) {
 		assert.Nil(t, err)
 		assert.False(t, b)
 	})
-}
-
-func assertPerforceChangesetMatchesPullRequest(t *testing.T, cs *Changeset, pr *protocol.PerforceChangelist) {
-	t.Helper()
-
-	// We're not thoroughly testing setChangesetMetadata() et al in this
-	// assertion, but we do want to ensure that the PR was used to populate
-	// fields on the Changeset.
-	assert.EqualValues(t, pr.ID, cs.ExternalID)
 }
 
 // mockPerforceChangeset creates a plausible non-forked changeset, repo,
@@ -141,7 +139,7 @@ func mockPerforceChange() *protocol.PerforceChangelist {
 func mockPerforceSource() (*PerforceSource, *MockGitserverClient) {
 	client := NewStrictMockGitserverClient()
 	auther := auth.BasicAuth{Username: "user", Password: "pass"}
-	s := &PerforceSource{gitServerClient: client, auther: &auther}
+	s := &PerforceSource{gitServerClient: client, auther: &auther, server: schema.PerforceConnection{P4Port: "https://perforce.sgdev.org:1666"}}
 	return s, client
 }
 
