@@ -461,7 +461,6 @@ func TestRecentViewSignalStore_List(t *testing.T) {
 	require.NoError(t, err)
 
 	// Creating some paths.
-	// TODO DROP
 	paths := []string{"", "src", "src/abc", "src/cde", "src/def"}
 	ids, err := ensureRepoPaths(ctx, d.(*db).Store, paths, repoID)
 	require.NoError(t, err)
