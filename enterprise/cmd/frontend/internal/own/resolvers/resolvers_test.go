@@ -1233,6 +1233,12 @@ func Test_SignalConfigurations(t *testing.T) {
 			  "description": "Indexes users that recently viewed files in Sourcegraph.",
 			  "isEnabled": false,
 			  "excludedRepoPatterns": []
+			},
+			{
+			  "name": "analytics",
+			  "description": "Indexes ownership data to present in aggregated views like Admin > Analytics > Own and Repo > Ownership",
+			  "isEnabled": false,
+			  "excludedRepoPatterns": []
 			}
 		  ]
 		}`,
@@ -1289,6 +1295,11 @@ func Test_SignalConfigurations(t *testing.T) {
 				Name:        owntypes.SignalRecentViews,
 				Description: "Indexes users that recently viewed files in Sourcegraph.",
 			},
+			{
+				ID:          3,
+				Name:        "analytics",
+				Description: "Indexes ownership data to present in aggregated views like Admin > Analytics > Own and Repo > Ownership",
+			},
 		}).Equal(t, configsFromDb)
 
 		readTest := baseReadTest
@@ -1313,6 +1324,12 @@ func Test_SignalConfigurations(t *testing.T) {
 			{
 			  "name": "recent-views",
 			  "description": "Indexes users that recently viewed files in Sourcegraph.",
+			  "isEnabled": false,
+			  "excludedRepoPatterns": []
+			},
+			{
+			  "name": "analytics",
+			  "description": "Indexes ownership data to present in aggregated views like Admin > Analytics > Own and Repo > Ownership",
 			  "isEnabled": false,
 			  "excludedRepoPatterns": []
 			}

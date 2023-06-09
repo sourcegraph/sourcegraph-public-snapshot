@@ -20,4 +20,5 @@ type CodeownersFile struct {
 const (
 	SignalRecentContributors = "recent-contributors"
 	SignalRecentViews        = "recent-views"
+	Analytics                = "analytics"
 )

@@ -19,6 +19,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+func verifyCount(t *testing.T, ctx context.Context, db database.DB, signaName string, expected int) {
+	store := basestore.NewWithHandle(db.Handle())
+	// Check that correct rows were added to own_background_jobs
+
+	count, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM own_background_jobs WHERE job_type = (select id from own_signal_configurations where name = %s)", signaName)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	require.Equal(t, expected, count)
+}
+
 func TestOwnRepoIndexSchedulerJob_JobsAutoIndex(t *testing.T) {
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
@@ -30,35 +41,47 @@ func TestOwnRepoIndexSchedulerJob_JobsAutoIndex(t *testing.T) {
 	insertRepo(t, db, 502, "great-repo-3", true)
 	insertRepo(t, db, 503, "great-repo-4", false)
 
-	verifyCount := func(t *testing.T, signaName string, expected int) {
-		store := basestore.NewWithHandle(db.Handle())
-		// Check that correct rows were added to own_background_jobs
-
-		count, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM own_background_jobs WHERE job_type = (select id from own_signal_configurations where name = %s)", signaName)))
-		if err != nil {
-			t.Fatal(err)
-		}
-		require.Equal(t, expected, count)
+	wantJobCountByName := map[string]int{
+		types.SignalRecentContributors: 3,
+		types.Analytics:                0, // Turned off by default
 	}
 
 	for _, jobType := range QueuePerRepoIndexJobs {
 		t.Run(jobType.Name, func(t *testing.T) {
-			ctx := context.Background()
-
-			_, err := db.FeatureFlags().CreateBool(ctx, featureFlagName(jobType), true)
-			if err != nil {
-				t.Fatal(err)
-			}
-
 			job := newOwnRepoIndexSchedulerJob(db, jobType, logger)
-			err = job.Handle(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			verifyCount(t, job.jobType.Name, 3)
+			require.NoError(t, job.Handle(ctx))
+			verifyCount(t, ctx, db, job.jobType.Name, wantJobCountByName[job.jobType.Name])
 		})
 	}
+
+}
+
+func TestOwnRepoIndexSchedulerJob_AnalyticsEnabled(t *testing.T) {
+	obsCtx := observation.TestContextTB(t)
+	logger := obsCtx.Logger
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	insertRepo(t, db, 500, "great-repo-1", true)
+	insertRepo(t, db, 501, "great-repo-2", true)
+	insertRepo(t, db, 502, "great-repo-3", true)
+	insertRepo(t, db, 503, "great-repo-4", false)
+
+	err := db.OwnSignalConfigurations().UpdateConfiguration(ctx, database.UpdateSignalConfigurationArgs{
+		Name:    types.Analytics,
+		Enabled: true,
+	})
+	require.NoError(t, err)
+	var jobType IndexJobType
+	for _, jobType = range QueuePerRepoIndexJobs {
+		if jobType.Name == types.Analytics {
+			break
+		}
+	}
+	require.True(t, jobType.Name == types.Analytics)
+	job := newOwnRepoIndexSchedulerJob(db, jobType, logger)
+	require.NoError(t, job.Handle(ctx))
+	verifyCount(t, ctx, db, job.jobType.Name, 3)
 }
 
 func TestOwnRepoIndexSchedulerJob_JobsAreExcluded(t *testing.T) {
