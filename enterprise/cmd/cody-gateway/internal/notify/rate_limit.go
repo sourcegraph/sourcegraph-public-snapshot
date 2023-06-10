@@ -101,7 +101,7 @@ func NewSlackRateLimitNotifier(
 		case codygateway.ActorSourceDotcomUser:
 			actorLink = fmt.Sprintf("<%[1]s/users/%[2]s|%[2]s>", dotcomURL, actorID)
 		default:
-			actorLink = fmt.Sprintf(`%s`, actorID)
+			actorLink = fmt.Sprintf("`%s`", actorID)
 		}
 
 		text := fmt.Sprintf("The actor %s from %q has exceeded *%d%%* of its rate limit quota for `%s`. The quota will reset in `%s` at `%s`.",
