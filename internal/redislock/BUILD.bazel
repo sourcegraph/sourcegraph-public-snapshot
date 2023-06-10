@@ -9,6 +9,7 @@ go_library(
     deps = [
         "//internal/redispool",
         "@com_github_gomodule_redigo//redis",
+        "@com_github_google_uuid//:uuid",
     ],
 )
 

@@ -2,17 +2,15 @@ package redislock
 
 import (
 	"fmt"
-	"math/rand"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/google/uuid"
 
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
-
-var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 // TryAcquire attempts to acquire a Redis-based lock with the given key in a
 // single pass. It does not block if the lock is already held by someone else.
@@ -33,9 +31,9 @@ var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 // operation should be well-below the lock timeout.
 func TryAcquire(rs redispool.KeyValue, lockKey string, lockTimeout time.Duration) (acquired bool, release func(), _ error) {
 	timeout := time.Now().Add(lockTimeout).UnixNano()
-	// Add a random number to decrease the chance of multiple processes falsely
-	// believing they have the lock at the same time.
-	lockToken := fmt.Sprintf("%d,%d", timeout, seededRand.Intn(1e6))
+	// Encode UUID as part of the token to eliminate the chance of multiple processes
+	// falsely believing they have the lock at the same time.
+	lockToken := fmt.Sprintf("%d,%s", timeout, uuid.New().String())
 
 	release = func() {
 		// Best effort to check we're releasing the lock we think we have. Note that it
