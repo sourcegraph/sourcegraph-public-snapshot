@@ -8,6 +8,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
+
 	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -41,11 +43,15 @@ type GitHubAppsStore interface {
 	Install(ctx context.Context, ghai ghtypes.GitHubAppInstallation) (*ghtypes.GitHubAppInstallation, error)
 
 	// BulkRemoveInstallations revokes multiple GitHub App installation IDs from the database
-	// for the GitHub App with the given ID.
-	BulkRemoveInstallations(ctx context.Context, id int, installationIDs []int) error
+	// for the GitHub App with the given App ID.
+	BulkRemoveInstallations(ctx context.Context, appID int, installationIDs []int) error
 
-	// GetInstallations retrieves all installations for the GitHub App with the given ID.
-	GetInstallations(ctx context.Context, id int) ([]*ghtypes.GitHubAppInstallation, error)
+	// GetInstallations retrieves all installations for the GitHub App with the given App ID.
+	GetInstallations(ctx context.Context, appID int) ([]*ghtypes.GitHubAppInstallation, error)
+
+	// SyncInstallations retrieves all installations for the GitHub App with the given ID
+	// from GitHub and updates the database to match.
+	SyncInstallations(ctx context.Context, app ghtypes.GitHubApp, logger log.Logger, client ghtypes.GitHubAppClient) (errs errors.MultiError)
 
 	// GetInstall retrieves the GitHub App installation ID from the database for the
 	// GitHub App with the provided appID and account name, if one can be found.
@@ -414,19 +420,19 @@ func (s *gitHubAppsStore) List(ctx context.Context, domain *itypes.GitHubAppDoma
 	return s.list(ctx, where)
 }
 
-// GetInstallations retrieves all installations for the GitHub App with the given ID.
-func (s *gitHubAppsStore) GetInstallations(ctx context.Context, id int) ([]*ghtypes.GitHubAppInstallation, error) {
+// GetInstallations retrieves all installations for the GitHub App with the given App ID.
+func (s *gitHubAppsStore) GetInstallations(ctx context.Context, appID int) ([]*ghtypes.GitHubAppInstallation, error) {
 	query := sqlf.Sprintf(
 		`SELECT %s FROM github_app_installs WHERE app_id = %s`,
 		sqlf.Join(githubAppInstallColumns, ", "),
-		id,
+		appID,
 	)
 	return scanGitHubAppInstallations(s.Query(ctx, query))
 }
 
-func (s *gitHubAppsStore) BulkRemoveInstallations(ctx context.Context, id int, installationIDs []int) error {
+func (s *gitHubAppsStore) BulkRemoveInstallations(ctx context.Context, appID int, installationIDs []int) error {
 	var pred []*sqlf.Query
-	pred = append(pred, sqlf.Sprintf("app_id = %d", id))
+	pred = append(pred, sqlf.Sprintf("app_id = %d", appID))
 
 	var installIDQuery []*sqlf.Query
 	for _, id := range installationIDs {
@@ -439,4 +445,106 @@ func (s *gitHubAppsStore) BulkRemoveInstallations(ctx context.Context, id int, i
 		WHERE %s
 	`, sqlf.Join(pred, " AND "))
 	return s.Exec(ctx, query)
+}
+
+func (s *gitHubAppsStore) SyncInstallations(ctx context.Context, app ghtypes.GitHubApp, logger log.Logger, client ghtypes.GitHubAppClient) (errs errors.MultiError) {
+	dbInstallations, err := s.GetInstallations(ctx, app.ID)
+	if err != nil {
+		logger.Error("Fetching App Installations from database", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
+		return errors.Append(errs, err)
+	}
+
+	remoteInstallations, err := client.GetAppInstallations(ctx)
+	if err != nil {
+		logger.Error("Fetching App Installations from GitHub", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
+		errs = errors.Append(errs, err)
+
+		// This likely means the App has been deleted from GitHub, so we should remove all
+		// installations of it from our database, if we have any.
+		if len(dbInstallations) == 0 {
+			return errs
+		}
+
+		var toBeDeleted []int
+		for _, install := range dbInstallations {
+			toBeDeleted = append(toBeDeleted, install.InstallationID)
+		}
+		if len(toBeDeleted) > 0 {
+			logger.Info("Deleting GitHub App Installations", log.String("appName", app.Name), log.Ints("installationIDs", toBeDeleted))
+			err = s.BulkRemoveInstallations(ctx, app.ID, toBeDeleted)
+			if err != nil {
+				logger.Error("Failed to remove GitHub App Installations", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
+				return errors.Append(errs, err)
+			}
+		}
+
+		return errs
+	}
+
+	var remoteInstallsMap = make(map[int]struct{}, len(remoteInstallations))
+	for _, in := range remoteInstallations {
+		remoteInstallsMap[int(*in.ID)] = struct{}{}
+	}
+
+	var dbInstallsMap = make(map[int]struct{}, len(dbInstallations))
+	for _, in := range dbInstallations {
+		dbInstallsMap[in.InstallationID] = struct{}{}
+	}
+
+	var toBeAdded []ghtypes.GitHubAppInstallation
+
+	for _, install := range remoteInstallations {
+		if install == nil || install.ID == nil {
+			continue
+		}
+		// We add any installation that exists on GitHub regardless of whether or not it
+		// already exists in our database, because we will upsert it to ensure that we
+		// have the latest metadata for the installation.
+		toBeAdded = append(toBeAdded, ghtypes.GitHubAppInstallation{
+			InstallationID:   int(install.GetID()),
+			AppID:            app.ID,
+			URL:              install.GetHTMLURL(),
+			AccountLogin:     install.Account.GetLogin(),
+			AccountAvatarURL: install.Account.GetAvatarURL(),
+			AccountURL:       install.Account.GetHTMLURL(),
+			AccountType:      install.Account.GetType(),
+		})
+		_, exists := dbInstallsMap[int(install.GetID())]
+		// If the installation already existed in the DB, we remove it from the map of
+		// database installations so that we can determine later which installations need
+		// to be removed from the database. Any installations that remain in the map after
+		// this loop will be removed.
+		if exists {
+			delete(dbInstallsMap, int(install.GetID()))
+		}
+	}
+
+	if len(toBeAdded) > 0 {
+		for _, install := range toBeAdded {
+			logger.Info("Upserting GitHub App Installation", log.String("appName", app.Name), log.Int("installationID", install.InstallationID))
+			_, err = s.Install(ctx, install)
+			if err != nil {
+				logger.Error("Failed to save new GitHub App Installation", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
+				errs = errors.Append(errs, err)
+				continue
+			}
+		}
+	}
+
+	// If there are any installations left in the map, it means they were not present in
+	// the remote installations, so we should remove them from the database.
+	if len(dbInstallsMap) > 0 {
+		var toBeDeleted []int
+		for id := range dbInstallsMap {
+			toBeDeleted = append(toBeDeleted, id)
+		}
+		logger.Info("Deleting GitHub App Installations", log.String("appName", app.Name), log.Ints("installationIDs", toBeDeleted))
+		err = s.BulkRemoveInstallations(ctx, app.ID, toBeDeleted)
+		if err != nil {
+			logger.Error("Failed to remove GitHub App Installations", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
+			return errors.Append(errs, err)
+		}
+	}
+
+	return errs
 }

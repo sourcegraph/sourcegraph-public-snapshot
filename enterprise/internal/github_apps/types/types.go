@@ -1,7 +1,10 @@
 package types
 
 import (
+	"context"
 	"time"
+
+	gogithub "github.com/google/go-github/v41/github"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -38,4 +41,8 @@ type GitHubAppInstallation struct {
 	AccountType      string
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
+}
+
+type GitHubAppClient interface {
+	GetAppInstallations(context.Context) ([]*gogithub.Installation, error)
 }
