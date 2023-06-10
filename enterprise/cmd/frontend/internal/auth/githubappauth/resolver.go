@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -327,6 +328,8 @@ func (r *gitHubAppResolver) compute(ctx context.Context) ([]graphqlbackend.GitHu
 // the resolver because they should not block the request from completing.
 func (r *gitHubAppResolver) syncInstallations() {
 	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+	defer cancel()
 
 	r.logger.Info("Performing opportunistic GitHub App Installations sync", log.String("app_name", r.app.Name))
 
