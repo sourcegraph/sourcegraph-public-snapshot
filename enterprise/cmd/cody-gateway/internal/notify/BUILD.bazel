@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "notify",
+    srcs = ["rate_limit.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify",
+    visibility = ["//enterprise/cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//enterprise/internal/codygateway",
+        "//internal/redislock",
+        "//internal/redispool",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_slack_go_slack//:slack",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "notify_test",
+    srcs = ["rate_limit_test.go"],
+    embed = [":notify"],
+    deps = [
+        "//enterprise/internal/codygateway",
+        "//internal/redispool",
+        "@com_github_slack_go_slack//:slack",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

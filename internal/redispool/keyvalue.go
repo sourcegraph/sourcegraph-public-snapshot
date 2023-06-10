@@ -25,6 +25,7 @@ type KeyValue interface {
 	GetSet(key string, value any) Value
 	Set(key string, value any) error
 	SetEx(key string, ttlSeconds int, value any) error
+	SetNx(key string, value any) (bool, error)
 	Incr(key string) (int, error)
 	Incrby(key string, value int) (int, error)
 	Del(key string) error
@@ -59,8 +60,13 @@ type KeyValue interface {
 // Note: the available methods are based on current need. If you need to add
 // another helper go for it.
 type Value struct {
-	reply interface{}
+	reply any
 	err   error
+}
+
+// NewValue returns a new Value for the given reply and err. Useful in tests using NewMockKeyValue.
+func NewValue(reply any, err error) Value {
+	return Value{reply: reply, err: err}
 }
 
 func (v Value) Bool() (bool, error) {
@@ -180,6 +186,14 @@ func (r *redisKeyValue) Set(key string, val any) error {
 
 func (r *redisKeyValue) SetEx(key string, ttlSeconds int, val any) error {
 	return r.do("SETEX", r.prefix+key, ttlSeconds, val).err
+}
+
+func (r *redisKeyValue) SetNx(key string, val any) (bool, error) {
+	_, err := r.do("SET", r.prefix+key, val, "NX").String()
+	if err == redis.ErrNil {
+		return false, nil
+	}
+	return true, err
 }
 
 func (r *redisKeyValue) Incr(key string) (int, error) {

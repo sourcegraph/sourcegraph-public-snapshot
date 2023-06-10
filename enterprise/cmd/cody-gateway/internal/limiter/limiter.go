@@ -32,7 +32,8 @@ type StaticLimiter struct {
 	// be updated if there is a significant deviance from the desired interval.
 	UpdateRateLimitTTL bool
 
-	NowFunc func() time.Time
+	NowFunc          func() time.Time
+	RateLimitAlerter func(usagePercentage float32, ttl time.Duration)
 }
 
 // RetryAfterWithTTL consults the current TTL using the given identifier and
@@ -45,7 +46,7 @@ func RetryAfterWithTTL(redis RedisStore, nowFunc func() time.Time, identifier st
 	return nowFunc().Add(time.Duration(ttl) * time.Second), nil
 }
 
-func (l StaticLimiter) TryAcquire(ctx context.Context) (func(int) error, error) {
+func (l StaticLimiter) TryAcquire(ctx context.Context) (commit func(int) error, _ error) {
 	// Zero values implies no access - this is a fallback check, callers should
 	// be checking independently if access is granted.
 	if l.Identifier == "" || l.Limit <= 0 || l.Interval <= 0 {
@@ -66,6 +67,11 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (func(int) error, error) 
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get TTL for rate limit counter")
 		}
+
+		if l.RateLimitAlerter != nil {
+			go l.RateLimitAlerter(1, retryAfter.Sub(l.NowFunc()))
+		}
+
 		return nil, RateLimitExceededError{
 			Limit: l.Limit,
 			// Return the minimum value of currentUsage and limit to not return
@@ -107,10 +113,18 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (func(int) error, error) 
 			return errors.Wrap(err, "failed to get TTL for rate limit counter")
 		}
 		intervalSeconds := int(l.Interval / time.Second)
+		var alertTTL time.Duration
 		if ttl < 0 || (l.UpdateRateLimitTTL && ttl > intervalSeconds) {
 			if err := l.Redis.Expire(l.Identifier, intervalSeconds); err != nil {
 				return errors.Wrap(err, "failed to set expiry for rate limit counter")
 			}
+			alertTTL = time.Duration(intervalSeconds) * time.Second
+		} else {
+			alertTTL = time.Duration(ttl) * time.Second
+		}
+
+		if l.RateLimitAlerter != nil {
+			go l.RateLimitAlerter(float32(currentUsage+usage)/float32(l.Limit), alertTTL)
 		}
 
 		return nil

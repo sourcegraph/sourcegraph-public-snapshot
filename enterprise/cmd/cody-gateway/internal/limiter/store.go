@@ -6,7 +6,7 @@ import (
 
 // RedisStore is the backend for tracking limiter state.
 type RedisStore interface {
-	// Incr increments a key's value, or initializes it to 1 if it does not exist
+	// Incrby increments a key's value, or initializes it to 1 if it does not exist
 	Incrby(key string, val int) (int, error)
 	// Get retrieves a key's value
 	GetInt(key string) (int, error)

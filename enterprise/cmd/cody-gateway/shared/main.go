@@ -3,17 +3,20 @@ package shared
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/redigo"
 	"github.com/gomodule/redigo/redis"
+	"github.com/slack-go/slack"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -94,9 +97,22 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	rs := newRedisStore(redispool.Cache)
 
+	// Ignore the error because it's already validated in the config.
+	dotcomURL, _ := url.Parse(config.Dotcom.URL)
+	dotcomURL.Path = ""
+	rateLimitNotifier := notify.NewSlackRateLimitNotifier(
+		obctx.Logger,
+		redispool.Cache,
+		dotcomURL.String(),
+		config.ActorRateLimitNotify.Thresholds,
+		config.ActorRateLimitNotify.SlackWebhookURL,
+		slack.PostWebhookContext,
+	)
+
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
 	handler := httpapi.NewHandler(obctx.Logger, eventLogger, rs, authr, &httpapi.Config{
+		RateLimitNotifier:       rateLimitNotifier,
 		AnthropicAccessToken:    config.Anthropic.AccessToken,
 		AnthropicAllowedModels:  config.Anthropic.AllowedModels,
 		OpenAIAccessToken:       config.OpenAI.AccessToken,

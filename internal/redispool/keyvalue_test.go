@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -39,6 +40,15 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.Equal(kv.Get("simple"), true)
 		require.Equal(kv.Get("simple"), []byte("1"))
 
+		// Set when not exists
+		set, err := kv.SetNx("setnx", "2")
+		require.Works(err)
+		assert.True(t, set)
+		set, err = kv.SetNx("setnx", "3")
+		require.Works(err)
+		assert.False(t, set)
+		require.Equal(kv.Get("setnx"), "2")
+
 		// GetSet on existing value
 		require.Equal(kv.GetSet("simple", "2"), "1")
 		require.Equal(kv.GetSet("simple", "3"), "2")
@@ -56,7 +66,7 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 
 		// Incr
 		require.Works(kv.Set("incr-set", 5))
-		_, err := kv.Incr("incr-set")
+		_, err = kv.Incr("incr-set")
 		require.Works(err)
 		_, err = kv.Incr("incr-unset")
 		require.Works(err)

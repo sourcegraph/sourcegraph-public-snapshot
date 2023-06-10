@@ -363,3 +363,7 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed
   interfaces:
     - ContextService
+- filename: internal/redispool/mocks.go
+  path: github.com/sourcegraph/sourcegraph/internal/redispool
+  interfaces:
+    - KeyValue

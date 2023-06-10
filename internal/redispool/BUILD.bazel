@@ -7,6 +7,7 @@ go_library(
         "db.go",
         "keyvalue.go",
         "mem.go",
+        "mocks.go",
         "naive.go",
         "redis.go",
         "redis_conn.go",
@@ -44,5 +45,6 @@ go_test(
         "//lib/errors",
         "@com_github_gomodule_redigo//redis",
         "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
     ],
 )
