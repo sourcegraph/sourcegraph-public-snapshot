@@ -286,6 +286,10 @@
         "title": "Cody: Sign out"
       },
       {
+        "command": "cody.clear-chat-history",
+        "title": "Cody: Clear chat history"
+      },
+      {
         "command": "cody.manual-completions",
         "title": "Cody: Open Completions Panel"
       },
