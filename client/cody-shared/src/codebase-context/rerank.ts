@@ -1,0 +1,79 @@
+import { parseStringPromise } from 'xml2js'
+
+import { ChatClient } from '../chat/chat'
+import { ContextResult } from '../local-context'
+
+export class Reranker {
+    constructor(private chatClient: ChatClient) {}
+    async rerank(userQuery: string, results: ContextResult[]): Promise<ContextResult[]> {
+        // Reverse the results so the most important appears first
+        results = [...results].reverse()
+
+        let out = await new Promise<string>((resolve, reject) => {
+            let responseText = ''
+            this.chatClient.chat(
+                [
+                    {
+                        speaker: 'human',
+                        text: `I am a professional computer programmer and need help deciding which of these files to read first to answer my question. My question is <userQuestion>${userQuery}</userQuestion>. Select the files from the following list that I should read to answer my question, ranked by most relevant first. Format the result as XML, like this: <list><item><filename>filename 1</filename><explanation>this is why I chose this item</explanation></item><item><filename>filename 2</filename><explanation>why I chose this item</explanation></item></list>\n${results
+                            .map(r => r.fileName)
+                            .join('\n')}`,
+                    },
+                ],
+                {
+                    onChange: (text: string) => {
+                        responseText = text
+                    },
+                    onComplete: () => {
+                        resolve(responseText)
+                    },
+                    onError: (message: string, statusCode?: number) => {
+                        reject(new Error(message))
+                    },
+                },
+                {
+                    temperature: 0,
+                    fast: true,
+                }
+            )
+        })
+        if (out.indexOf('<list>') > 0) {
+            out = out.slice(out.indexOf('<list>'))
+        }
+        if (out.indexOf('</list>') !== out.length - '</list>'.length) {
+            out = out.slice(0, out.indexOf('</list>') + '</list>'.length)
+        }
+        const boostedFilenames = await parseXml(out)
+
+        const resultsMap = Object.fromEntries(results.map(r => [r.fileName, r]))
+        const boostedNames = new Set<string>()
+        const rerankedResults = []
+        for (const boostedFilename of boostedFilenames) {
+            const boostedResult = resultsMap[boostedFilename]
+            if (!boostedResult) {
+                continue
+            }
+            rerankedResults.push(boostedResult)
+            boostedNames.add(boostedFilename)
+        }
+        for (const result of results) {
+            if (!boostedNames.has(result.fileName)) {
+                rerankedResults.push(result)
+            }
+        }
+
+        rerankedResults.reverse()
+        return rerankedResults
+    }
+}
+
+async function parseXml(xml: string): Promise<string[]> {
+    const result = await parseStringPromise(xml)
+    const items = result.list.item
+    const files: { filename: string; explanation: string }[] = items.map((item: any) => ({
+        filename: item.filename[0],
+        explanation: item.explanation[0],
+    }))
+
+    return files.map(f => f.filename)
+}

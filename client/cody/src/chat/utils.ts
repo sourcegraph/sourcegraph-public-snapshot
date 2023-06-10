@@ -1,5 +1,6 @@
 import { spawnSync } from 'child_process'
 
+import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
@@ -7,7 +8,9 @@ import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
-import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
+import { FilenameContextFetcher } from '../local-context/filename-context-fetcher'
+import { LocalKeywordContextFetcher } from '../local-context/local-keyword-context-fetcher'
+import { getRerankWithLog } from '../logged-rerank'
 
 import { Config } from './ChatViewProvider'
 import { AuthStatus, defaultAuthStatus, isLocalApp, unauthenticatedStatus } from './protocol'
@@ -55,10 +58,19 @@ export function convertGitCloneURLToCodebaseName(cloneURL: string): string | nul
     }
 }
 
+/**
+ * Gets codebase context for the current workspace.
+ *
+ * @param config Cody configuration
+ * @param rgPath Path to rg (ripgrep) executable
+ * @param editor Editor instance
+ * @returns CodebaseContext if a codebase can be determined, else null
+ */
 export async function getCodebaseContext(
     config: Config,
     rgPath: string,
-    editor: Editor
+    editor: Editor,
+    chatClient: ChatClient
 ): Promise<CodebaseContext | null> {
     const client = new SourcegraphGraphQLAPIClient(config)
     const workspaceRoot = editor.getWorkspaceRootPath()
@@ -81,7 +93,15 @@ export async function getCodebaseContext(
     }
 
     const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
-    return new CodebaseContext(config, codebase, embeddingsSearch, new LocalKeywordContextFetcher(rgPath, editor))
+    return new CodebaseContext(
+        config,
+        codebase,
+        embeddingsSearch,
+        new LocalKeywordContextFetcher(rgPath, editor, chatClient),
+        new FilenameContextFetcher(rgPath, editor, chatClient),
+        undefined,
+        getRerankWithLog(chatClient)
+    )
 }
 
 let client: SourcegraphGraphQLAPIClient

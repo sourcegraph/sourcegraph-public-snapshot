@@ -107,7 +107,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             }),
             vscode.workspace.onDidChangeConfiguration(async () => {
                 this.config = await getFullConfig(this.secretStorage)
-                const newCodebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor)
+                const newCodebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor, chat)
                 if (newCodebaseContext) {
                     this.codebaseContext = newCodebaseContext
                     await this.setAnonymousUserID()
@@ -373,7 +373,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         this.currentWorkspaceRoot = workspaceRoot
 
-        const codebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor)
+        const codebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor, this.chat)
         if (!codebaseContext) {
             return
         }
@@ -427,12 +427,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             default: {
                 this.sendTranscript()
 
-                const prompt = await this.transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
+                const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
+                    getPreamble(this.codebaseContext.getCodebase())
+                )
+                this.transcript.setUsedContextFilesForLastInteraction(contextFiles)
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
                 await this.saveTranscriptToChatHistory()
             }
         }
-
         logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
     }
 
@@ -457,7 +459,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         transcript.addInteraction(interaction)
 
-        const prompt = await transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
+        const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
+            getPreamble(this.codebaseContext.getCodebase())
+        )
+        transcript.setUsedContextFilesForLastInteraction(contextFiles)
 
         logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
 

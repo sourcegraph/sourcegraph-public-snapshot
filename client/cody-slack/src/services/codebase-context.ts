@@ -36,7 +36,8 @@ export async function createCodebaseContext(
         { useContext: contextType, serverEndpoint },
         codebase,
         embeddingsSearch,
-        new LocalKeywordContextFetcherMock()
+        new LocalKeywordContextFetcherMock(),
+        null
     )
 
     return codebaseContext
