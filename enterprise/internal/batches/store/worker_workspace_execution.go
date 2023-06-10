@@ -349,7 +349,7 @@ func logEventsFromLogEntries(logs []executor.ExecutionLogEntry) []*batcheslib.Lo
 		// V1 executions used either `step.src.0` or `step.src.batch-exec` (after named keys were introduced).
 		// From V2 on, every step has a step in the scheme of `step.docker.step.%d.post` that emits the
 		// AfterStepResult. This will be revised when we are able to upload artifacts from executions.
-		if strings.HasSuffix(e.Key, ".post") || strings.HasSuffix(e.Key, "-post") || e.Key == "step.src.0" || e.Key == "step.src.batch-exec" {
+		if strings.HasSuffix(e.Key, ".post") || e.Key == "step.src.0" || e.Key == "step.src.batch-exec" {
 			entries = append(entries, btypes.ParseJSONLogsFromOutput(e.Out)...)
 		}
 	}

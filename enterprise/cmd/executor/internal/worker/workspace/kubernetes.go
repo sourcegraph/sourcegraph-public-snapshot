@@ -32,7 +32,7 @@ func NewKubernetesWorkspace(
 ) (Workspace, error) {
 	// TODO switch to the single job in 5.2
 	if singleJob {
-		return &kubernetesWorkspace{}, nil
+		return &kubernetesWorkspace{logger: logger}, nil
 	}
 
 	workspaceDir := filepath.Join(mountPath, fmt.Sprintf("job-%d", job.ID))
@@ -83,7 +83,7 @@ func (w kubernetesWorkspace) Remove(ctx context.Context, keepWorkspace bool) {
 		return
 	}
 
-	if len(w.workspaceDir) > 0 {
+	if w.workspaceDir != "" {
 		fmt.Fprintf(handle, "Removing %s\n", w.workspaceDir)
 		if rmErr := os.RemoveAll(w.workspaceDir); rmErr != nil {
 			fmt.Fprintf(handle, "Operation failed: %s\n", rmErr.Error())

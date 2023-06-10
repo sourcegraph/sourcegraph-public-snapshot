@@ -20,4 +20,4 @@ RUN apk add --no-cache \
     # Don't use alpine/edge, the git release on this segfaults
     'git>=2.38.0' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main
 
-COPY executor-kubernetes-helper /usr/local/bin/
+COPY batcheshelper /usr/local/bin/

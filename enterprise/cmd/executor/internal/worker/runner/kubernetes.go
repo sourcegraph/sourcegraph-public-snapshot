@@ -25,6 +25,8 @@ type kubernetesRunner struct {
 	commandLogger  cmdlogger.Logger
 	cmd            *command.KubernetesCommand
 	jobNames       []string
+	secretName     string
+	volumeName     string
 	dir            string
 	filesStore     files.Store
 	options        command.KubernetesContainerOptions
@@ -63,6 +65,10 @@ func (r *kubernetesRunner) TempDir() string {
 
 func (r *kubernetesRunner) Teardown(ctx context.Context) error {
 	if !r.options.KeepJobs {
+		logEntry := r.commandLogger.LogEntry("teardown.kubernetes.job", nil)
+		defer logEntry.Close()
+
+		exitCode := 0
 		for _, name := range r.jobNames {
 			r.internalLogger.Debug("Deleting kubernetes job", log.String("name", name))
 			if err := r.cmd.DeleteJob(ctx, r.options.Namespace, name); err != nil {
@@ -71,8 +77,36 @@ func (r *kubernetesRunner) Teardown(ctx context.Context) error {
 					log.String("jobName", name),
 					log.Error(err),
 				)
+				logEntry.Write([]byte("Failed to delete job " + name))
+				exitCode = 1
 			}
 		}
+
+		if r.secretName != "" {
+			if err := r.cmd.DeleteSecret(ctx, r.options.Namespace, r.secretName); err != nil {
+				r.internalLogger.Error(
+					"Failed to delete kubernetes job secret",
+					log.String("secret", r.secretName),
+					log.Error(err),
+				)
+				logEntry.Write([]byte("Failed to delete job secret " + r.secretName))
+				exitCode = 1
+			}
+		}
+
+		if r.volumeName != "" {
+			if err := r.cmd.DeleteJobPVC(ctx, r.options.Namespace, r.volumeName); err != nil {
+				r.internalLogger.Error(
+					"Failed to delete kubernetes job volume",
+					log.String("volume", r.volumeName),
+					log.Error(err),
+				)
+				logEntry.Write([]byte("Failed to delete job volume " + r.volumeName))
+				exitCode = 1
+			}
+		}
+
+		logEntry.Finalize(exitCode)
 	}
 
 	return nil
@@ -86,22 +120,39 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 			return err
 		}
 
+		jobName := fmt.Sprintf("sg-executor-job-%s-%d", spec.CommandSpec.Job.Queue, spec.CommandSpec.Job.ID)
+
+		r.secretName = jobName + "-secrets"
+		secrets, err := r.cmd.CreateSecrets(ctx, r.options.Namespace, r.secretName, map[string]string{"TOKEN": spec.CommandSpec.Job.Token})
+		if err != nil {
+			return err
+		}
+
+		if r.options.JobVolume.Type == command.KubernetesVolumeTypePVC {
+			r.volumeName = jobName + "-pvc"
+			if err = r.cmd.CreateJobPVC(ctx, r.options.Namespace, r.volumeName, r.options.JobVolume.Size); err != nil {
+				return err
+			}
+		}
+
 		job = command.NewKubernetesSingleJob(
-			fmt.Sprintf("sg-executor-job-%s-%d", spec.CommandSpec.Job.Queue, spec.CommandSpec.Job.ID),
+			jobName,
 			spec.CommandSpec,
 			workspaceFiles,
+			secrets,
+			r.volumeName,
 			r.options,
 		)
 	} else {
 		job = command.NewKubernetesJob(
-			fmt.Sprintf("sg-executor-job-%s-%d-%s", spec.Queue, spec.JobID, spec.CommandSpec.Key),
+			fmt.Sprintf("sg-executor-job-%s-%d-%s", spec.CommandSpec.Job.Queue, spec.CommandSpec.Job.ID, spec.CommandSpec.Key),
 			spec.Image,
 			spec.CommandSpec,
 			r.dir,
 			r.options,
 		)
 	}
-	r.internalLogger.Debug("Creating job", log.Int("jobID", spec.JobID))
+	r.internalLogger.Debug("Creating job", log.Int("jobID", spec.CommandSpec.Job.ID))
 	if _, err := r.cmd.CreateJob(ctx, r.options.Namespace, job); err != nil {
 		return errors.Wrap(err, "creating job")
 	}
@@ -112,7 +163,7 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	defer logEntry.Close()
 
 	// Wait for the job to complete before reading the logs. This lets us get also get exit codes.
-	r.internalLogger.Debug("Waiting for pod to succeed", log.Int("jobID", spec.JobID), log.String("jobName", job.Name))
+	r.internalLogger.Debug("Waiting for pod to succeed", log.Int("jobID", spec.CommandSpec.Job.ID), log.String("jobName", job.Name))
 
 	pod, podWaitErr := r.cmd.WaitForPodToSucceed(ctx, r.commandLogger, r.options.Namespace, job.Name, spec.CommandSpec)
 	// Handle when the wait failed to do the things.
@@ -132,6 +183,6 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 		}
 		return errors.New(errMessage)
 	}
-	r.internalLogger.Debug("Job completed successfully", log.Int("jobID", spec.JobID))
+	r.internalLogger.Debug("Job completed successfully", log.Int("jobID", spec.CommandSpec.Job.ID))
 	return nil
 }

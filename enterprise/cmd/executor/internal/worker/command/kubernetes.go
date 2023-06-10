@@ -43,6 +43,7 @@ const (
 
 // KubernetesContainerOptions contains options for the Kubernetes Job containers.
 type KubernetesContainerOptions struct {
+	ExecutorName          string
 	Namespace             string
 	NodeName              string
 	NodeSelector          map[string]string
@@ -57,6 +58,7 @@ type KubernetesContainerOptions struct {
 	KeepJobs              bool
 	SecurityContext       KubernetesSecurityContext
 	SingleJobPod          bool
+	JobVolume             KubernetesJobVolume
 }
 
 // KubernetesNodeAffinity contains the Kubernetes node affinity for a Job.
@@ -77,6 +79,20 @@ type KubernetesSecurityContext struct {
 	RunAsGroup *int64
 	FSGroup    *int64
 }
+
+type KubernetesJobVolume struct {
+	Type    KubernetesVolumeType
+	Size    resource.Quantity
+	Volumes []corev1.Volume
+	Mounts  []corev1.VolumeMount
+}
+
+type KubernetesVolumeType string
+
+const (
+	KubernetesVolumeTypeEmptyDir KubernetesVolumeType = "emptyDir"
+	KubernetesVolumeTypePVC      KubernetesVolumeType = "pvc"
+)
 
 // KubernetesCommand interacts with the Kubernetes API.
 type KubernetesCommand struct {
@@ -105,7 +121,198 @@ func (c *KubernetesCommand) DeleteJob(ctx context.Context, namespace string, job
 	return c.Clientset.BatchV1().Jobs(namespace).Delete(ctx, jobName, metav1.DeleteOptions{PropagationPolicy: &propagationPolicy})
 }
 
+func (c *KubernetesCommand) CreateSecrets(ctx context.Context, namespace string, name string, secrets map[string]string) (JobSecret, error) {
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		StringData: secrets,
+	}
+	if _, err := c.Clientset.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{}); err != nil {
+		return JobSecret{}, err
+	}
+	keys := make([]string, len(secrets))
+	i := 0
+	for key := range secrets {
+		keys[i] = key
+		i++
+	}
+	return JobSecret{Name: name, Keys: keys}, nil
+}
+
+func (c *KubernetesCommand) DeleteSecret(ctx context.Context, namespace string, name string) error {
+	return c.Clientset.CoreV1().Secrets(namespace).Delete(ctx, name, metav1.DeleteOptions{PropagationPolicy: &propagationPolicy})
+}
+
+func (c *KubernetesCommand) CreateJobPVC(ctx context.Context, namespace string, name string, size resource.Quantity) error {
+	pvc := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{corev1.ResourceStorage: size},
+			},
+		},
+	}
+	if _, err := c.Clientset.CoreV1().PersistentVolumeClaims(namespace).Create(ctx, pvc, metav1.CreateOptions{}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *KubernetesCommand) DeleteJobPVC(ctx context.Context, namespace string, name string) error {
+	return c.Clientset.CoreV1().PersistentVolumeClaims(namespace).Delete(ctx, name, metav1.DeleteOptions{PropagationPolicy: &propagationPolicy})
+}
+
 var propagationPolicy = metav1.DeletePropagationBackground
+
+// WaitForPodToSucceed waits for the pod with the given job label to succeed.
+func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, logger cmdlogger.Logger, namespace string, jobName string, spec Spec) (p *corev1.Pod, err error) {
+	ctx, _, endObservation := c.Operations.KubernetesWaitForPodToSucceed.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("jobName", jobName),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	watch, err := c.Clientset.CoreV1().Pods(namespace).Watch(ctx, metav1.ListOptions{Watch: true, LabelSelector: "job-name=" + jobName})
+	if err != nil {
+		return nil, errors.Wrap(err, "watching pod")
+	}
+	defer watch.Stop()
+
+	containerLoggers := make(map[string]containerLogger)
+	defer func() {
+		for _, loggers := range containerLoggers {
+			loggers.logEntry.Close()
+		}
+	}()
+
+	// No need to add a timer. If the job exceeds the deadline, it will fail.
+	for event := range watch.ResultChan() {
+		// Will be *corev1.Pod in all cases except for an error, which is *metav1.Status.
+		if event.Type == k8swatch.Error {
+			if status, ok := event.Object.(*metav1.Status); ok {
+				c.Logger.Error("Watch error",
+					log.String("status", status.Status),
+					log.String("message", status.Message),
+					log.String("reason", string(status.Reason)),
+					log.Int32("code", status.Code),
+				)
+			} else {
+				c.Logger.Error("Unexpected watch error object", log.String("object", fmt.Sprintf("%T", event.Object)))
+			}
+			// If we get an event for something other than a pod, log it for now and try again. We don't have enough
+			// information to know if this is a problem or not. We have seen this happen in the wild, but hard to
+			// replicate.
+			continue
+		}
+		// We _should_ have a pod here, but just in case, ensure the cast succeeds.
+		pod, ok := event.Object.(*corev1.Pod)
+		if !ok {
+			// If we get an event for something other than a pod, log it for now and try again. We don't have enough
+			// information to know if this is a problem or not. We have seen this happen in the wild, but hard to
+			// replicate.
+			c.Logger.Error(
+				"Unexpected watch object",
+				log.String("type", string(event.Type)),
+				log.String("object", fmt.Sprintf("%T", event.Object)),
+			)
+			continue
+		}
+		c.Logger.Debug(
+			"Watching pod",
+			log.String("name", pod.Name),
+			log.String("phase", string(pod.Status.Phase)),
+			log.Time("creationTimestamp", pod.CreationTimestamp.Time),
+			kubernetesTimep("deletionTimestamp", pod.DeletionTimestamp),
+		)
+		if len(pod.Status.InitContainerStatuses) > 0 {
+			for _, status := range pod.Status.InitContainerStatuses {
+				key := normalizeKey(status.Name)
+				if status.State.Running != nil {
+					c.Logger.Debug("Starting log stream", log.String("key", key))
+					containerLoggers[key] = containerLogger{logEntry: logger.LogEntry(key, getCommand(status.Name, spec))}
+				} else if status.State.Terminated != nil {
+					l, ok := containerLoggers[key]
+					if !ok {
+						c.Logger.Debug("Starting log stream", log.String("key", key))
+						containerLoggers[key] = containerLogger{logEntry: logger.LogEntry(key, getCommand(status.Name, spec))}
+						l = containerLoggers[key]
+					}
+					if !l.completed {
+						if err = c.ReadLogs(ctx, namespace, pod, status.Name, true, l.logEntry); err != nil {
+							return nil, err
+						}
+						l.completed = true
+						containerLoggers[key] = l
+					}
+				}
+			}
+		}
+		if len(pod.Status.ContainerStatuses) > 0 {
+			for _, status := range pod.Status.ContainerStatuses {
+				key := normalizeKey(status.Name)
+				if status.State.Running != nil {
+					c.Logger.Debug("Starting log stream", log.String("key", key))
+					containerLoggers[key] = containerLogger{logEntry: logger.LogEntry(key, getCommand(status.Name, spec))}
+				} else if status.State.Terminated != nil {
+					l, ok := containerLoggers[key]
+					if !ok {
+						c.Logger.Debug("Starting log stream", log.String("key", key))
+						containerLoggers[key] = containerLogger{logEntry: logger.LogEntry(key, getCommand(status.Name, spec))}
+						l = containerLoggers[key]
+					}
+					if !l.completed {
+						if err = c.ReadLogs(ctx, namespace, pod, status.Name, false, l.logEntry); err != nil {
+							return nil, err
+						}
+						l.completed = true
+						containerLoggers[key] = l
+					}
+				}
+			}
+		}
+		switch pod.Status.Phase {
+		case corev1.PodFailed:
+			return pod, ErrKubernetesPodFailed
+		case corev1.PodSucceeded:
+			return pod, nil
+		case corev1.PodPending:
+			if pod.DeletionTimestamp != nil {
+				return nil, ErrKubernetesPodNotScheduled
+			}
+		}
+	}
+	return nil, errors.New("unexpected end of watch")
+}
+
+func kubernetesTimep(key string, time *metav1.Time) log.Field {
+	if time == nil {
+		return log.Timep(key, nil)
+	}
+	return log.Time(key, time.Time)
+}
+
+func normalizeKey(key string) string {
+	return strings.ReplaceAll(key, "-", ".")
+}
+
+func getCommand(key string, spec Spec) []string {
+	for _, step := range spec.Steps {
+		if step.Key == key {
+			return step.Command
+		}
+	}
+	return nil
+}
+
+type containerLogger struct {
+	logEntry  cmdlogger.LogEntry
+	completed bool
+}
 
 // ReadLogs reads the logs of the given pod and writes them to the logger.
 func (c *KubernetesCommand) ReadLogs(
@@ -122,6 +329,13 @@ func (c *KubernetesCommand) ReadLogs(
 		attribute.Bool("singleJob", singleJob),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	c.Logger.Debug(
+		"Reading logs",
+		log.String("podName", pod.Name),
+		log.String("containerName", containerName),
+		log.Bool("singleJob", singleJob),
+	)
 
 	// If the pod just failed to even start, then we can't get logs from it.
 	if pod.Status.Phase == corev1.PodFailed &&
@@ -176,140 +390,6 @@ func readProcessPipe(w io.WriteCloser, stdout io.Reader) *errgroup.Group {
 	})
 
 	return eg
-}
-
-// WaitForPodToSucceed waits for the pod with the given job label to succeed.
-func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, logger cmdlogger.Logger, namespace string, jobName string, spec Spec) (p *corev1.Pod, err error) {
-	ctx, _, endObservation := c.Operations.KubernetesWaitForPodToSucceed.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("jobName", jobName),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	watch, err := c.Clientset.CoreV1().Pods(namespace).Watch(ctx, metav1.ListOptions{Watch: true, LabelSelector: "job-name=" + jobName})
-	if err != nil {
-		return nil, errors.Wrap(err, "watching pod")
-	}
-	defer watch.Stop()
-
-	logEntries := make(map[string]cmdlogger.LogEntry)
-	logEntriesStarted := make(map[string]bool)
-	defer func() {
-		for _, entry := range logEntries {
-			entry.Close()
-		}
-	}()
-
-	// No need to add a timer. If the job exceeds the deadline, it will fail.
-	for event := range watch.ResultChan() {
-		// Will be *corev1.Pod in all cases except for an error, which is *metav1.Status.
-		if event.Type == k8swatch.Error {
-			if status, ok := event.Object.(*metav1.Status); ok {
-				c.Logger.Error("Watch error",
-					log.String("status", status.Status),
-					log.String("message", status.Message),
-					log.String("reason", string(status.Reason)),
-					log.Int32("code", status.Code),
-				)
-			} else {
-				c.Logger.Error("Unexpected watch error object", log.String("object", fmt.Sprintf("%T", event.Object)))
-			}
-			// If we get an event for something other than a pod, log it for now and try again. We don't have enough
-			// information to know if this is a problem or not. We have seen this happen in the wild, but hard to
-			// replicate.
-			continue
-		}
-		// We _should_ have a pod here, but just in case, ensure the cast succeeds.
-		pod, ok := event.Object.(*corev1.Pod)
-		if !ok {
-			// If we get an event for something other than a pod, log it for now and try again. We don't have enough
-			// information to know if this is a problem or not. We have seen this happen in the wild, but hard to
-			// replicate.
-			c.Logger.Error(
-				"Unexpected watch object",
-				log.String("type", string(event.Type)),
-				log.String("object", fmt.Sprintf("%T", event.Object)),
-			)
-			continue
-		}
-		c.Logger.Debug(
-			"Watching pod",
-			log.String("name", pod.Name),
-			log.String("phase", string(pod.Status.Phase)),
-			log.Time("creationTimestamp", pod.CreationTimestamp.Time),
-			kubernetesTimep("deletionTimestamp", pod.DeletionTimestamp),
-		)
-		switch pod.Status.Phase {
-		case corev1.PodFailed:
-			return pod, ErrKubernetesPodFailed
-		case corev1.PodSucceeded:
-			return pod, nil
-		case corev1.PodPending:
-			if pod.DeletionTimestamp != nil {
-				return nil, ErrKubernetesPodNotScheduled
-			}
-		}
-		if len(pod.Status.InitContainerStatuses) > 0 {
-			for _, status := range pod.Status.InitContainerStatuses {
-				if status.State.Running != nil {
-					logEntries[status.Name] = logger.LogEntry(status.Name, getCommand(status.Name, spec))
-					logEntriesStarted[status.Name] = false
-				} else if status.State.Terminated != nil {
-					entry, ok := logEntries[status.Name]
-					if !ok {
-						logEntries[status.Name] = logger.LogEntry(status.Name, getCommand(status.Name, spec))
-						entry = logEntries[status.Name]
-					}
-					if !logEntriesStarted[status.Name] {
-						if err = c.ReadLogs(ctx, namespace, pod, status.Name, true, entry); err != nil {
-							return nil, err
-						}
-						logEntriesStarted[status.Name] = true
-					}
-				}
-			}
-		}
-		if len(pod.Status.ContainerStatuses) > 0 {
-			for _, status := range pod.Status.ContainerStatuses {
-				if status.State.Running != nil {
-					logEntries[status.Name] = logger.LogEntry(status.Name, getCommand(status.Name, spec))
-					logEntriesStarted[status.Name] = false
-				} else {
-					entry, ok := logEntries[status.Name]
-					if !ok {
-						logEntries[status.Name] = logger.LogEntry(status.Name, getCommand(status.Name, spec))
-						entry = logEntries[status.Name]
-					}
-					if !logEntriesStarted[status.Name] {
-						if err = c.ReadLogs(ctx, namespace, pod, status.Name, false, entry); err != nil {
-							return nil, err
-						}
-						logEntriesStarted[status.Name] = true
-					}
-				}
-			}
-		}
-	}
-	return nil, errors.New("unexpected end of watch")
-}
-
-func getCommand(key string, spec Spec) []string {
-	if key == "setup-workspace" {
-		// this doesn't really exist, but give the illusion that it does to not freak a regular user out
-		return []string{"./setup-workspace.sh"}
-	}
-	for _, step := range spec.Steps {
-		if step.Key == key {
-			return step.Command
-		}
-	}
-	return []string{"magic"}
-}
-
-func kubernetesTimep(key string, time *metav1.Time) log.Field {
-	if time == nil {
-		return log.Timep(key, nil)
-	}
-	return log.Time(key, time.Time)
 }
 
 // ErrKubernetesPodFailed is returned when a Kubernetes pod fails.
@@ -449,7 +529,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 }
 
 // NewKubernetesSingleJob creates a Kubernetes job with the given name, image, volume path, and spec.
-func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.WorkspaceFile, options KubernetesContainerOptions) *batchv1.Job {
+func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.WorkspaceFile, secret JobSecret, volumeName string, options KubernetesContainerOptions) *batchv1.Job {
 	var affinity *corev1.Affinity
 	if len(options.RequiredNodeAffinity.MatchExpressions) > 0 || len(options.RequiredNodeAffinity.MatchFields) > 0 {
 		affinity = &corev1.Affinity{
@@ -512,12 +592,60 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 		resourceRequest[corev1.ResourceCPU] = options.ResourceRequest.CPU
 	}
 
+	volumes := make([]corev1.Volume, len(options.JobVolume.Volumes)+1)
+	switch options.JobVolume.Type {
+	case KubernetesVolumeTypePVC:
+		volumes[0] = corev1.Volume{
+			Name: "job-data",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: volumeName,
+				},
+			},
+		}
+	case KubernetesVolumeTypeEmptyDir:
+		fallthrough
+	default:
+		volumes[0] = corev1.Volume{
+			Name: "job-data",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					SizeLimit: &options.JobVolume.Size,
+				},
+			},
+		}
+	}
+	for i, volume := range options.JobVolume.Volumes {
+		volumes[i+1] = volume
+	}
+
+	setupEnvs := make([]corev1.EnvVar, len(secret.Keys))
+	for i, key := range secret.Keys {
+		setupEnvs[i] = corev1.EnvVar{
+			Name: key,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					Key: key,
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secret.Name,
+					},
+				},
+			},
+		}
+	}
+
 	setupArgs := []string{
 		"mkdir -p repository; " +
 			"git -C repository init; " +
 			fmt.Sprintf("git -C repository remote add origin http://host.docker.internal:3082/.executors/git/%s; ", spec.Job.RepositoryName) +
 			"git -C /repository config --local gc.auto 0; " +
-			fmt.Sprintf("git -C repository -c http.extraHeader=\"Authorization:token-executor hunter2hunter2hunter2\" -c http.extraHeader=X-Sourcegraph-Actor-UID:internal -c protocol.version=2 fetch --progress --no-recurse-submodules --no-tags --depth=1 origin %s; ", spec.Job.Commit) +
+			fmt.Sprintf("git -C repository "+
+				"-c http.extraHeader=\"Authorization:Bearer $TOKEN\" "+
+				"-c http.extraHeader=X-Sourcegraph-Actor-UID:internal "+
+				"-c http.extraHeader=X-Sourcegraph-Job-ID:%d "+
+				"-c http.extraHeader=X-Sourcegraph-Executor-Name:%s "+
+				"-c protocol.version=2 "+
+				"fetch --progress --no-recurse-submodules --no-tags --depth=1 origin %s; ", spec.Job.ID, options.ExecutorName, spec.Job.Commit) +
 			fmt.Sprintf("git -C repository checkout --progress --force %s; ", spec.Job.Commit) +
 			"mkdir -p .sourcegraph-executor; " +
 			"echo '" + nextIndexScript + "' > nextIndex.sh; " +
@@ -531,23 +659,25 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 		}
 	}
 
-	fmt.Println(setupArgs[0])
-
 	stepInitContainers := make([]corev1.Container, len(spec.Steps)+1)
+	mounts := make([]corev1.VolumeMount, len(options.JobVolume.Mounts)+1)
+	mounts[0] = corev1.VolumeMount{
+		Name:      "job-data",
+		MountPath: KubernetesJobMountPath,
+	}
+	for i, mount := range options.JobVolume.Mounts {
+		mounts[i+1] = mount
+	}
+
 	stepInitContainers[0] = corev1.Container{
 		Name:            "setup-workspace",
-		Image:           "alpine/git:latest",
+		Image:           "sourcegraph/batcheshelper:insiders",
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command:         []string{"sh", "-c"},
 		Args:            setupArgs,
-		//		Env:             setupEnvs,
-		WorkingDir: KubernetesJobMountPath,
-		VolumeMounts: []corev1.VolumeMount{
-			{
-				Name:      "job-data",
-				MountPath: KubernetesJobMountPath,
-			},
-		},
+		Env:             setupEnvs,
+		WorkingDir:      KubernetesJobMountPath,
+		VolumeMounts:    mounts,
 	}
 
 	for stepIndex, step := range spec.Steps {
@@ -570,14 +700,9 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 				nextIndexCommand +
 					fmt.Sprintf("%s fi", strings.Join(step.Command, "; ")+"; "),
 			},
-			Env:        jobEnvs,
-			WorkingDir: filepath.Join(KubernetesJobMountPath, step.Dir),
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      "job-data",
-					MountPath: KubernetesJobMountPath,
-				},
-			},
+			Env:          jobEnvs,
+			WorkingDir:   filepath.Join(KubernetesJobMountPath, step.Dir),
+			VolumeMounts: mounts,
 		}
 	}
 
@@ -606,29 +731,17 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 					Containers: []corev1.Container{
 						{
 							Name:            "main",
-							Image:           "alpine:latest",
+							Image:           "sourcegraph/batcheshelper:insiders",
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Command:         []string{"sh", "-c"},
 							Args: []string{
-								"ls -alR",
+								"echo 'complete'",
 							},
-							WorkingDir: KubernetesJobMountPath,
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "job-data",
-									MountPath: KubernetesJobMountPath,
-								},
-							},
+							WorkingDir:   KubernetesJobMountPath,
+							VolumeMounts: mounts,
 						},
 					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "job-data",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
-							},
-						},
-					},
+					Volumes: volumes,
 				},
 			},
 		},
@@ -646,3 +759,8 @@ fi
 
 grep -o '"nextIndex":[^,]*' $file | sed 's/"nextIndex"://' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
 `
+
+type JobSecret struct {
+	Name string
+	Keys []string
+}

@@ -145,7 +145,6 @@ func Pre(
 
 	stepScriptPath := filepath.Join(workingDirectory, fmt.Sprintf("step%d.sh", stepIdx))
 	fullScript := []byte(envPreamble + fileMountsPreamble + runScript.String())
-	fmt.Println(runScript.String())
 	if err = os.WriteFile(stepScriptPath, fullScript, os.ModePerm); err != nil {
 		return errors.Wrap(err, "failed to write step script file")
 	}

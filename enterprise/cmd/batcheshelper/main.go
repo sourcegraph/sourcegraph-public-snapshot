@@ -123,7 +123,6 @@ func parseInput(inputPath string) (batcheslib.WorkspacesExecutionInput, error) {
 		return executionInput, errors.Wrapf(err, "failed to read execution input file %q", inputPath)
 	}
 
-	fmt.Println(string(input))
 	if err = json.Unmarshal(input, &executionInput); err != nil {
 		return executionInput, errors.Wrap(err, "failed to unmarshal execution input")
 	}

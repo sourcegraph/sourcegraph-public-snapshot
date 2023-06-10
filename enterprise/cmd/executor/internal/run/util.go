@@ -214,6 +214,7 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 		Enabled:    config.IsKubernetes(),
 		ConfigPath: c.KubernetesConfigPath,
 		ContainerOptions: command.KubernetesContainerOptions{
+			ExecutorName: c.WorkerHostname,
 			NodeName:     c.KubernetesNodeName,
 			NodeSelector: nodeSelector,
 			RequiredNodeAffinity: command.KubernetesNodeAffinity{
@@ -235,6 +236,12 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 				FSGroup:    fsGroup,
 			},
 			SingleJobPod: c.KubernetesSingleJobPod,
+			JobVolume: command.KubernetesJobVolume{
+				Type:    command.KubernetesVolumeType(c.KubernetesJobVolumeType),
+				Size:    resource.MustParse(c.KubernetesJobVolumeSize),
+				Volumes: c.KubernetesJobVolumes,
+				Mounts:  c.KubernetesJobVolumeMounts,
+			},
 		},
 	}
 }

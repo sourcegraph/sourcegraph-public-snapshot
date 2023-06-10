@@ -508,10 +508,10 @@ package command_test
 //	assert.Equal(t, resource.MustParse("1"), *job.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu())
 //	assert.Equal(t, resource.MustParse("1Gi"), *job.Spec.Template.Spec.Containers[0].Resources.Requests.Memory())
 //
-//	require.Len(t, job.Spec.Template.Spec.Containers[0].VolumeMounts, 1)
-//	assert.Equal(t, "sg-executor-job-volume", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name)
-//	assert.Equal(t, "/job", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath)
-//	assert.Equal(t, "/my/path", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].SubPath)
+//	require.Len(t, job.Spec.Template.Spec.Containers[0].Mounts, 1)
+//	assert.Equal(t, "sg-executor-job-volume", job.Spec.Template.Spec.Containers[0].Mounts[0].Name)
+//	assert.Equal(t, "/job", job.Spec.Template.Spec.Containers[0].Mounts[0].MountPath)
+//	assert.Equal(t, "/my/path", job.Spec.Template.Spec.Containers[0].Mounts[0].SubPath)
 //
 //	require.Len(t, job.Spec.Template.Spec.Volumes, 1)
 //	assert.Equal(t, "sg-executor-job-volume", job.Spec.Template.Spec.Volumes[0].Name)

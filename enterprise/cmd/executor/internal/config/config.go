@@ -74,7 +74,11 @@ type Config struct {
 	KubernetesSecurityContextRunAsGroup            int
 	KubernetesSecurityContextFSGroup               int
 	// TODO remove in 5.2
-	KubernetesSingleJobPod bool
+	KubernetesSingleJobPod    bool
+	KubernetesJobVolumeType   string
+	KubernetesJobVolumeSize   string
+	KubernetesJobVolumes      []corev1.Volume
+	KubernetesJobVolumeMounts []corev1.VolumeMount
 
 	dockerAuthConfigStr                                          string
 	dockerAuthConfigUnmarshalError                               error
@@ -88,6 +92,10 @@ type Config struct {
 	kubernetesPodAntiAffinityUnmarshalError                      error
 	kubernetesNodeTolerations                                    string
 	kubernetesNodeTolerationsUnmarshalError                      error
+	kubernetesJobVolumeMounts                                    string
+	kubernetesJobVolumeMountsUnmarshalError                      error
+	kubernetesJobVolumes                                         string
+	kubernetesJobVolumesUnmarshalError                           error
 
 	defaultFrontendPassword string
 }
@@ -147,8 +155,10 @@ func (c *Config) Load() {
 	c.KubernetesSecurityContextRunAsGroup = c.GetInt("KUBERNETES_RUN_AS_GROUP", "-1", "The group ID to run Kubernetes jobs as.")
 	c.KubernetesSecurityContextFSGroup = c.GetInt("KUBERNETES_FS_GROUP", "1000", "The group ID to run all containers in the Kubernetes jobs as. Defaults to 1000, the group ID of the docker group in the executor container.")
 	c.KubernetesSingleJobPod = c.GetBool("KUBERNETES_SINGLE_JOB_POD", "false", "Determine if a single Job Pod should be used to process a workspace")
-	// create pvc + size
-	// mount volume (certs)
+	c.KubernetesJobVolumeType = c.Get("KUBERNETES_JOB_VOLUME_TYPE", "emptyDir", "Determines the type of volume to use with the single job. Options are 'emptyDir' and 'pvc'.")
+	c.KubernetesJobVolumeSize = c.Get("KUBERNETES_JOB_VOLUME_SIZE", "5Gi", "Determines the size of the job volume.")
+	c.kubernetesJobVolumes = c.GetOptional("KUBERNETES_JOB_VOLUMES", "Addtional volumes to associate with the Jobs. e.g. [{\"name\": \"my-volume\", \"configMap\": {\name\": \"cluser-volume\"}}]")
+	c.kubernetesJobVolumeMounts = c.GetOptional("KUBERNETES_JOB_VOLUME_MOUNTS", "Volumes to mount to the Jobs. e.g. [{\"name\":\"my-volume\", \"mountPath\":\"/foo/bar\"}]")
 
 	if c.QueueNamesStr != "" {
 		c.QueueNames = strings.Split(c.QueueNamesStr, ",")
@@ -172,6 +182,12 @@ func (c *Config) Load() {
 	}
 	if c.kubernetesNodeTolerations != "" {
 		c.kubernetesNodeTolerationsUnmarshalError = json.Unmarshal([]byte(c.kubernetesNodeTolerations), &c.KubernetesNodeTolerations)
+	}
+	if c.kubernetesJobVolumes != "" {
+		c.kubernetesJobVolumesUnmarshalError = json.Unmarshal([]byte(c.kubernetesJobVolumes), &c.KubernetesJobVolumes)
+	}
+	if c.kubernetesJobVolumeMounts != "" {
+		c.kubernetesJobVolumeMountsUnmarshalError = json.Unmarshal([]byte(c.kubernetesJobVolumeMounts), &c.KubernetesJobVolumeMounts)
 	}
 
 	if c.KubernetesConfigPath == "" {
@@ -230,6 +246,18 @@ func (c *Config) Validate() error {
 
 	if c.kubernetesPodAffinityUnmarshalError != nil {
 		c.AddError(errors.Wrap(c.kubernetesPodAffinityUnmarshalError, "invalid EXECUTOR_KUBERNETES_POD_AFFINITY, failed to parse"))
+	}
+
+	if c.kubernetesJobVolumeMountsUnmarshalError != nil {
+		c.AddError(errors.Wrap(c.kubernetesJobVolumeMountsUnmarshalError, "invalid KUBERNETES_JOB_MOUNTS, failed to parse"))
+	}
+
+	if c.kubernetesJobVolumesUnmarshalError != nil {
+		c.AddError(errors.Wrap(c.kubernetesJobVolumesUnmarshalError, "invalid KUBERNETES_JOB_VOLUMES, failed to parse"))
+	}
+
+	if c.KubernetesJobVolumeType != "emptyDir" && c.KubernetesJobVolumeType != "pvc" {
+		c.AddError(errors.New("invalid KUBERNETES_JOB_VOLUME_TYPE, valid values are 'emptyDir' and 'pvc'"))
 	}
 
 	if len(c.KubernetesPodAffinity) > 0 {
