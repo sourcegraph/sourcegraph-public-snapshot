@@ -145,7 +145,12 @@ export const useClient = ({
     )
 
     const toggleIncludeInferredRepository = useCallback(
-        () => setScopeState(scope => ({ ...scope, includeInferredRepository: !scope.includeInferredRepository })),
+        () =>
+            setScopeState(scope => ({
+                ...scope,
+                includeInferredRepository: !scope.includeInferredRepository,
+                includeInferredFile: !scope.includeInferredRepository,
+            })),
         [setScopeState]
     )
 
