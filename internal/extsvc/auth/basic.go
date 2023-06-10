@@ -25,10 +25,6 @@ func (basic *BasicAuth) Hash() string {
 	return hex.EncodeToString(uk[:]) + hex.EncodeToString(pk[:])
 }
 
-func (basic *BasicAuth) Credentials() (username, password string) {
-	return basic.Username, basic.Password
-}
-
 // BasicAuthWithSSH implements HTTP Basic Authentication for extsvc clients
 // and holds an additional RSA keypair.
 type BasicAuthWithSSH struct {

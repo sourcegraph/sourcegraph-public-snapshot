@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -138,8 +137,7 @@ func mockPerforceChange() *protocol.PerforceChangelist {
 
 func mockPerforceSource() (*PerforceSource, *MockGitserverClient) {
 	client := NewStrictMockGitserverClient()
-	auther := auth.BasicAuth{Username: "user", Password: "pass"}
-	s := &PerforceSource{gitServerClient: client, auther: &auther, server: schema.PerforceConnection{P4Port: "https://perforce.sgdev.org:1666"}}
+	s := &PerforceSource{gitServerClient: client, perforceCreds: &testPerforceCredentials, server: schema.PerforceConnection{P4Port: "https://perforce.sgdev.org:1666"}}
 	return s, client
 }
 

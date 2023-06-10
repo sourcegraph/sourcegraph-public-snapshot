@@ -31,12 +31,6 @@ type Authenticator interface {
 	Hash() string
 }
 
-// AuthenticatorWithRetrieveableCredentials is an Authenticator that exposes the underlying credentials
-type AuthenticatorWithRetrieveableCredentials interface {
-	Authenticator
-	Credentials() (username, password string)
-}
-
 type Refreshable interface {
 	// NeedsRefresh returns true if the Authenticator is no longer valid and
 	// needs to be refreshed, such as checking if an OAuth token is close to

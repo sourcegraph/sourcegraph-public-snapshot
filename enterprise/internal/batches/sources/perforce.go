@@ -18,7 +18,7 @@ import (
 type PerforceSource struct {
 	server          schema.PerforceConnection
 	gitServerClient gitserver.Client
-	auther          auth.AuthenticatorWithRetrieveableCredentials
+	perforceCreds   *gitserver.PerforceCredentials
 }
 
 func NewPerforceSource(ctx context.Context, svc *types.ExternalService, _ *httpcli.Factory) (*PerforceSource, error) {
@@ -49,22 +49,33 @@ func (s PerforceSource) GitserverPushConfig(_ *types.Repo) (*protocol.PushConfig
 // given authenticator, provided that authenticator type is supported by the
 // code host.
 func (s PerforceSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
-	credAuther, ok := a.(auth.AuthenticatorWithRetrieveableCredentials)
-	if !ok {
+	switch av := a.(type) {
+	case *auth.BasicAuthWithSSH:
+		s.perforceCreds = &gitserver.PerforceCredentials{
+			Username: av.Username,
+			Password: av.Password,
+			Host:     s.server.P4Port,
+		}
+	case *auth.BasicAuth:
+		s.perforceCreds = &gitserver.PerforceCredentials{
+			Username: av.Username,
+			Password: av.Password,
+			Host:     s.server.P4Port,
+		}
+	default:
 		return s, errors.New("unexpected auther type for Perforce Source")
 	}
-	s.auther = credAuther
+
 	return s, nil
 }
 
 // ValidateAuthenticator validates the currently set authenticator is usable.
 // Returns an error, when validating the Authenticator yielded an error.
 func (s PerforceSource) ValidateAuthenticator(ctx context.Context) error {
-	username, password := s.auther.Credentials()
-	if username == "" || password == "" {
-		return errors.New("no auther set for Perforce Source")
+	if s.perforceCreds == nil {
+		return errors.New("no credentials set for Perforce Source")
 	}
-	rc, _, err := s.gitServerClient.P4Exec(ctx, s.server.P4Port, username, password, "users")
+	rc, _, err := s.gitServerClient.P4Exec(ctx, s.perforceCreds.Host, s.perforceCreds.Username, s.perforceCreds.Password, "users")
 	if err == nil {
 		_ = rc.Close()
 		return nil
@@ -76,15 +87,10 @@ func (s PerforceSource) ValidateAuthenticator(ctx context.Context) error {
 // the Changeset could not be found on the source, a ChangesetNotFoundError is
 // returned.
 func (s PerforceSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
-	username, password := s.auther.Credentials()
-	if username == "" || password == "" {
-		return errors.New("no auther set for Perforce Source")
+	if s.perforceCreds == nil {
+		return errors.New("no credentials set for Perforce Source")
 	}
-	cl, err := s.gitServerClient.P4GetChangelist(ctx, cs.ExternalID, gitserver.PerforceCredentials{
-		Host:     s.server.P4Port,
-		Username: username,
-		Password: password,
-	})
+	cl, err := s.gitServerClient.P4GetChangelist(ctx, cs.ExternalID, *s.perforceCreds)
 	if err != nil {
 		return errors.Wrap(err, "getting changelist")
 	}
