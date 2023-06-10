@@ -22,7 +22,7 @@ export class ChatClient {
         return this.completions.stream(
             {
                 ...DEFAULT_CHAT_COMPLETION_PARAMETERS,
-                ...(params ? params : {}),
+                ...params,
                 messages: augmentedMessages,
             },
             cb

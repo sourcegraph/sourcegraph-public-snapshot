@@ -71,7 +71,8 @@ export class ReleaseNotes implements Recipe {
                     prefix: emptyGitLogMessage,
                     text: emptyGitLogMessage,
                 },
-                Promise.resolve([])
+                Promise.resolve([]),
+                []
             )
         }
 

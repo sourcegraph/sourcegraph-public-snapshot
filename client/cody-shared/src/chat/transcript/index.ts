@@ -150,7 +150,7 @@ export class Transcript {
     public async getPromptForLastInteraction(
         preamble: Message[] = []
     ): Promise<{ prompt: Message[]; contextFiles: ContextFile[] }> {
-        if (this.interactions.length == 0) {
+        if (this.interactions.length === 0) {
             return { prompt: [], contextFiles: [] }
         }
 
@@ -186,7 +186,7 @@ export class Transcript {
         }
     }
 
-    public async setUsedContextFilesForLastInteraction(contextFiles: ContextFile[]) {
+    public setUsedContextFilesForLastInteraction(contextFiles: ContextFile[]): void {
         if (this.interactions.length === 0) {
             throw new Error('Cannot set context files for empty transcript')
         }

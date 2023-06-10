@@ -8,7 +8,7 @@ import { ContextResult } from '../local-context'
  */
 export class Reranker {
     constructor(private chatClient: ChatClient) {}
-    async rerank(userQuery: string, results: ContextResult[]): Promise<ContextResult[]> {
+    public async rerank(userQuery: string, results: ContextResult[]): Promise<ContextResult[]> {
         // Reverse the results so the most important appears first
         results = [...results].reverse()
 
