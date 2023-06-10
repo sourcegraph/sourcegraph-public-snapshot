@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/log"
 
@@ -57,13 +58,21 @@ func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret stri
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(version.Version()))
 
-		// Next handler in the middleware
+		// Unknown "/-/..." endpoint
 		default:
-			next.ServeHTTP(w, r)
+			w.WriteHeader(http.StatusNotFound)
 		}
 	})
 
-	return instrumentation.HTTPMiddleware("diagnostics", handler)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/-/") {
+			instrumentation.HTTPMiddleware("diagnostics", handler).ServeHTTP(w, r)
+			return
+		}
+
+		// Next handler, we don't care about this request
+		next.ServeHTTP(w, r)
+	})
 }
 
 func healthz(ctx context.Context) error {
