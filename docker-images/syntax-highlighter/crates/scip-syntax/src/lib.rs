@@ -41,10 +41,7 @@ mod test {
                 let filename = $filename;
                 let dumped_name = format!("scip_snapshot_{filename}");
 
-                let root = env!("CARGO_MANIFEST_DIR").to_string();
-                let filename = root + "/testdata/" + filename;
-                let contents = std::fs::read(&filename).expect("file to exist");
-                let source_code = String::from_utf8(contents).expect("to read file");
+                let source_code = include_str!(concat!("../testdata/", $filename));
 
                 let extension = Path::new(&filename)
                     .extension()
@@ -70,12 +67,9 @@ mod test {
                 let mut buf_writer = BufWriter::new(&mut buffer);
 
                 let ctags_name = format!("tags_snapshot_{filename}");
+                let contents = include_str!(concat!("../testdata/", $filename));
 
-                let root = env!("CARGO_MANIFEST_DIR").to_string();
-                let filename = root + "/testdata/" + filename;
-                let contents = std::fs::read(&filename).expect("file to exist");
-
-                generate_tags(&mut buf_writer, filename.clone(), &contents);
+                generate_tags(&mut buf_writer, filename.to_string(), contents.as_bytes());
                 insta::assert_snapshot!(ctags_name, String::from_utf8_lossy(buf_writer.buffer()));
             }
         };
