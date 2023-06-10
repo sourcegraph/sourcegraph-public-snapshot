@@ -35,7 +35,7 @@ func NewSlackRateLimitNotifier(
 
 	// Just in case
 	if len(thresholds) == 0 {
-		thresholds = []int{90, 95, 99}
+		thresholds = []int{90, 95, 100}
 		logger.Warn("no thresholds provided, using defaults", log.Ints("thresholds", thresholds))
 	}
 	sort.Ints(thresholds)
