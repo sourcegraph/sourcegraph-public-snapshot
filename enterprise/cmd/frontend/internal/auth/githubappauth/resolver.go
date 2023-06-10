@@ -273,49 +273,15 @@ func (r *gitHubAppResolver) Webhook(ctx context.Context) graphqlbackend.WebhookR
 
 func (r *gitHubAppResolver) compute(ctx context.Context) ([]graphqlbackend.GitHubAppInstallation, error) {
 	r.once.Do(func() {
-		auther, err := ghauth.NewGitHubAppAuthenticator(int(r.AppID()), []byte(r.app.PrivateKey))
+		installs, err := r.db.GitHubApps().GetInstallations(ctx, r.app.ID)
 		if err != nil {
 			r.err = err
 			return
 		}
 
-		baseURL, err := url.Parse(r.app.BaseURL)
-		if err != nil {
-			r.err = err
-			return
-		}
-		apiURL, _ := github.APIRoot(baseURL)
-
-		cli := github.NewV3Client(log.Scoped("GitHubAppResolver", ""), "", apiURL, auther, nil)
-		installs, err := cli.GetAppInstallations(ctx)
-		if err != nil {
-			r.err = err
-			return
-		}
-
-		// We use this opportunity to sync installations in our database.
-		for _, install := range installs {
-			if install == nil || install.ID == nil {
-				continue
-			}
-			r.logger.Info("Upserting GitHub App installation", log.String("app_name", r.app.Name), log.Int("installation_id", int(install.GetID())))
-			// We add any installation that exists on GitHub regardless of whether or
-			// not it already exists in our database, because we will upsert it to
-			// ensure that we have the latest metadata for the installation.
-			_, err = r.db.GitHubApps().Install(ctx, types.GitHubAppInstallation{
-				InstallationID:   int(install.GetID()),
-				AppID:            r.app.ID,
-				URL:              install.GetHTMLURL(),
-				AccountLogin:     install.Account.GetLogin(),
-				AccountAvatarURL: install.Account.GetAvatarURL(),
-				AccountURL:       install.Account.GetHTMLURL(),
-				AccountType:      install.Account.GetType(),
-			})
-			if err != nil {
-				r.logger.Error("Failed to upsert GitHub App installation", log.Error(err))
-				continue
-			}
-		}
+		// We use this opportunity to sync installations in our database. This is done in
+		// a goroutine so that we don't block the request completion.
+		go r.syncInstallations()
 
 		extsvcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
 			Kinds: []string{extsvc.KindGitHub},
@@ -333,7 +299,7 @@ func (r *gitHubAppResolver) compute(ctx context.Context) ([]graphqlbackend.GitHu
 					continue
 				}
 				c := parsed.(*schema.GitHubConnection)
-				if c.GitHubAppDetails == nil || c.GitHubAppDetails.AppID != r.app.AppID || c.Url != r.app.BaseURL || c.GitHubAppDetails.InstallationID != int(install.GetID()) {
+				if c.GitHubAppDetails == nil || c.GitHubAppDetails.AppID != r.app.AppID || c.Url != r.app.BaseURL || c.GitHubAppDetails.InstallationID != int(install.InstallationID) {
 					continue
 				}
 				installationExtsvcs = append(installationExtsvcs, es)
@@ -341,17 +307,46 @@ func (r *gitHubAppResolver) compute(ctx context.Context) ([]graphqlbackend.GitHu
 
 			r.installations = append(r.installations, graphqlbackend.GitHubAppInstallation{
 				DB:         r.db,
-				InstallID:  int32(*install.ID),
-				InstallURL: install.GetHTMLURL(),
+				InstallID:  int32(install.InstallationID),
+				InstallURL: install.URL,
 				InstallAccount: graphqlbackend.GitHubAppInstallationAccount{
-					AccountLogin:     install.Account.GetLogin(),
-					AccountAvatarURL: install.Account.GetAvatarURL(),
-					AccountURL:       install.Account.GetHTMLURL(),
-					AccountType:      install.Account.GetType(),
+					AccountLogin:     install.AccountLogin,
+					AccountAvatarURL: install.AccountAvatarURL,
+					AccountURL:       install.AccountURL,
+					AccountType:      install.AccountType,
 				},
 				InstallExternalServices: installationExtsvcs,
 			})
 		}
 	})
 	return r.installations, r.err
+}
+
+// syncInstallations syncs the GitHub App Installations in our database with those
+// found on GitHub.com. This method only logs errors rather than assigning them to
+// the resolver because they should not block the request from completing.
+func (r *gitHubAppResolver) syncInstallations() {
+	ctx := context.Background()
+
+	r.logger.Info("Performing opportunistic GitHub App Installations sync", log.String("app_name", r.app.Name))
+
+	auther, err := ghauth.NewGitHubAppAuthenticator(int(r.AppID()), []byte(r.app.PrivateKey))
+	if err != nil {
+		r.logger.Warn("Error creating GitHub App authenticator", log.Error(err))
+		return
+	}
+
+	baseURL, err := url.Parse(r.app.BaseURL)
+	if err != nil {
+		r.logger.Warn("Error parsing GitHub App base URL", log.Error(err))
+		return
+	}
+	apiURL, _ := github.APIRoot(baseURL)
+
+	client := github.NewV3Client(r.logger, "", apiURL, auther, nil)
+
+	errs := r.db.GitHubApps().SyncInstallations(ctx, *r.app, r.logger, client)
+	if errs != nil && len(errs.Errors()) > 0 {
+		r.logger.Warn("Error syncing GitHub App Installations", log.Error(errs))
+	}
 }
