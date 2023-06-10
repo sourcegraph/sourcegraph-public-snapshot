@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"fmt"
 	"net/url"
 	"os"
 	"strconv"
@@ -145,7 +144,7 @@ func (c *Config) Validate() error {
 
 	for _, threshold := range c.ActorRateLimitNotify.Thresholds {
 		if threshold <= 0 || threshold > 100 {
-			c.AddError(fmt.Errorf("threshold out of range %d, should be (0, 100]", threshold))
+			c.AddError(errors.Errorf("threshold out of range %d, should be (0, 100]", threshold))
 		}
 	}
 
