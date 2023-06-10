@@ -83,6 +83,11 @@ function longestCommonPrefix(s: string, t: string): string {
     return s.slice(0, endIdx)
 }
 
+/**
+ * A local context fetcher that uses a LLM to generate a keyword query, which is then
+ * converted to a regex fed to ripgrep to search for files that are relevant to the
+ * user query.
+ */
 export class LocalKeywordContextFetcher implements KeywordContextFetcher {
     constructor(private rgPath: string, private editor: Editor, private chatClient: ChatClient) {}
 
@@ -236,7 +241,9 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
             }
         } = {}
 
-        const f = (assembler: Assembler) => {
+        // Process the ripgrep JSON output to get the file sizes. We use an object filter to
+        // fast-filter out irrelevant lines of output
+        const objectFilter = (assembler: Assembler) => {
             // Each ripgrep JSON line begins with the following format:
             //
             //   {"type":"begin|match|end","data":"...
@@ -248,11 +255,10 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
             // return undefined to indicate our uncertainty at this moment
             return undefined
         }
-
         await new Promise<void>((resolve, reject) => {
             try {
                 proc.stdout
-                    .pipe(StreamValues.withParser({ objectFilter: f }))
+                    .pipe(StreamValues.withParser({ objectFilter }))
                     .on('data', data => {
                         try {
                             const typedData = data as RipgrepStreamData

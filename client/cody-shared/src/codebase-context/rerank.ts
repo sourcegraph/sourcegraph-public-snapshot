@@ -3,6 +3,9 @@ import { parseStringPromise } from 'xml2js'
 import { ChatClient } from '../chat/chat'
 import { ContextResult } from '../local-context'
 
+/**
+ * A reranker class that uses a LLM to boost high-relevance results.
+ */
 export class Reranker {
     constructor(private chatClient: ChatClient) {}
     async rerank(userQuery: string, results: ContextResult[]): Promise<ContextResult[]> {

@@ -10,6 +10,10 @@ import { ContextResult } from '@sourcegraph/cody-shared/src/local-context'
 
 import { debug } from '../log'
 
+/**
+ * A local context fetcher that uses a LLM to generate filename fragments, which are then used to
+ * find files that are relevant based on their path or name.
+ */
 export class FilenameContextFetcher {
     constructor(private rgPath: string, private editor: Editor, private chatClient: ChatClient) {}
 
