@@ -1,7 +1,12 @@
 package internalerrs
 
 import (
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protopath"
+	"google.golang.org/protobuf/reflect/protorange"
 	"strings"
+	"unicode/utf8"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -12,20 +17,20 @@ import (
 type callBackClientStream struct {
 	grpc.ClientStream
 
-	postMessageSend    func(error)
-	postMessageReceive func(error)
+	postMessageSend    func(message interface{}, err error)
+	postMessageReceive func(message interface{}, err error)
 }
 
 func (c *callBackClientStream) SendMsg(m interface{}) error {
 	err := c.ClientStream.SendMsg(m)
-	c.postMessageSend(err)
+	c.postMessageSend(m, err)
 
 	return err
 }
 
 func (c *callBackClientStream) RecvMsg(m interface{}) error {
 	err := c.ClientStream.RecvMsg(m)
-	c.postMessageReceive(err)
+	c.postMessageReceive(m, err)
 
 	return err
 }
@@ -86,4 +91,32 @@ func splitMethodName(fullMethod string) (string, string) {
 		return fullMethod[:i], fullMethod[i+1:]
 	}
 	return "unknown", "unknown"
+}
+
+// findNonUTF8StringFields returns a list of field names that contain invalid UTF-8 strings
+// in the given proto message.
+//
+// Example: ["author", "attachments[1].key_value_attachment.data["key2"]`]
+func findNonUTF8StringFields(m proto.Message) ([]string, error) {
+	if m == nil {
+		return nil, nil
+	}
+
+	var fields []string
+	err := protorange.Range(m.ProtoReflect(), func(p protopath.Values) error {
+		last := p.Index(-1)
+		s, ok := last.Value.Interface().(string)
+		if ok && !utf8.ValidString(s) {
+			fieldName := p.Path[1:].String()
+			fields = append(fields, strings.TrimPrefix(fieldName, "."))
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, errors.Wrap(err, "iterating over proto message")
+	}
+
+	return fields, nil
 }

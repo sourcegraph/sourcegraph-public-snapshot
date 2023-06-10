@@ -2,6 +2,11 @@ package internalerrs
 
 import (
 	"errors"
+	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	newspb "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news"
+	"google.golang.org/protobuf/proto"
+	"sort"
 	"strings"
 	"testing"
 
@@ -12,7 +17,8 @@ import (
 )
 
 func TestCallBackClientStream(t *testing.T) {
-	t.Run("SendMsg calls postMessageSend with error", func(t *testing.T) {
+	t.Run("SendMsg calls postMessageSend with message and error", func(t *testing.T) {
+		sentinelMessage := struct{}{}
 		sentinelErr := errors.New("send error")
 
 		var called bool
@@ -20,16 +26,19 @@ func TestCallBackClientStream(t *testing.T) {
 			ClientStream: &mockClientStream{
 				sendErr: sentinelErr,
 			},
-			postMessageSend: func(err error) {
+			postMessageSend: func(message interface{}, err error) {
 				called = true
 
+				if diff := cmp.Diff(message, sentinelMessage); diff != "" {
+					t.Errorf("postMessageSend called with unexpected message (-want +got):\n%s", diff)
+				}
 				if !errors.Is(err, sentinelErr) {
 					t.Errorf("got %v, want %v", err, sentinelErr)
 				}
 			},
 		}
 
-		sendErr := stream.SendMsg(nil)
+		sendErr := stream.SendMsg(sentinelMessage)
 		if !called {
 			t.Error("postMessageSend not called")
 		}
@@ -39,7 +48,8 @@ func TestCallBackClientStream(t *testing.T) {
 		}
 	})
 
-	t.Run("RecvMsg calls postMessageReceive with error", func(t *testing.T) {
+	t.Run("RecvMsg calls postMessageReceive with message and error", func(t *testing.T) {
+		sentinelMessage := struct{}{}
 		sentinelErr := errors.New("receive error")
 
 		var called bool
@@ -47,16 +57,19 @@ func TestCallBackClientStream(t *testing.T) {
 			ClientStream: &mockClientStream{
 				recvErr: sentinelErr,
 			},
-			postMessageReceive: func(err error) {
+			postMessageReceive: func(message interface{}, err error) {
 				called = true
 
+				if diff := cmp.Diff(message, sentinelMessage); diff != "" {
+					t.Errorf("postMessageReceive called with unexpected message (-want +got):\n%s", diff)
+				}
 				if !errors.Is(err, sentinelErr) {
 					t.Errorf("got %v, want %v", err, sentinelErr)
 				}
 			},
 		}
 
-		receiveErr := stream.RecvMsg(nil)
+		receiveErr := stream.RecvMsg(sentinelMessage)
 		if !called {
 			t.Error("postMessageReceive not called")
 		}
@@ -217,6 +230,73 @@ func TestSplitMethodName(t *testing.T) {
 
 			if diff := cmp.Diff(method, tc.wantMethod); diff != "" {
 				t.Errorf("splitMethodName(%q) method (-want +got):\n%s", tc.fullMethod, diff)
+			}
+		})
+	}
+}
+
+func TestFindNonUTF8StringFields(t *testing.T) {
+	// Create instances of the BinaryAttachment and KeyValueAttachment messages
+	invalidBinaryAttachment := &newspb.BinaryAttachment{
+		Name: "inval\x80id_binary",
+		Data: []byte("sample data"),
+	}
+
+	invalidKeyValueAttachment := &newspb.KeyValueAttachment{
+		Name: "inval\x80id_key_value",
+		Data: map[string]string{
+			"key1": "value1",
+			"key2": "inval\x80id_value",
+		},
+	}
+
+	// Create a sample Article message with invalid UTF-8 strings
+	article := &newspb.Article{
+		Author:  "inval\x80id_author",
+		Date:    &timestamp.Timestamp{Seconds: 1234567890},
+		Title:   "valid_title",
+		Content: "valid_content",
+		Status:  newspb.Article_PUBLISHED,
+		Attachments: []*newspb.Attachment{
+			{Contents: &newspb.Attachment_BinaryAttachment{BinaryAttachment: invalidBinaryAttachment}},
+			{Contents: &newspb.Attachment_KeyValueAttachment{KeyValueAttachment: invalidKeyValueAttachment}},
+		},
+	}
+
+	tests := []struct {
+		name          string
+		message       proto.Message
+		expectedPaths []string
+	}{
+		{
+			name:    "Article with invalid UTF-8 strings",
+			message: article,
+			expectedPaths: []string{
+				"author",
+				"attachments[0].binary_attachment.name",
+				"attachments[1].key_value_attachment.name",
+				`attachments[1].key_value_attachment.data["key2"]`,
+			},
+		},
+		{
+			name:          "nil message",
+			message:       nil,
+			expectedPaths: []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			invalidFields, err := findNonUTF8StringFields(tt.message)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			sort.Strings(invalidFields)
+			sort.Strings(tt.expectedPaths)
+
+			if diff := cmp.Diff(tt.expectedPaths, invalidFields, cmpopts.EquateEmpty()); diff != "" {
+				t.Fatalf("unexpected invalid fields (-want +got):\n%s", diff)
 			}
 		})
 	}
