@@ -19,7 +19,7 @@ async function generateLongTranscript(): Promise<{ transcript: Transcript; token
     const numInteractions = 100
     const transcript = new Transcript()
     for (let i = 0; i < numInteractions; i++) {
-        const interaction = await new ChatQuestion(() => { }).getInteraction(
+        const interaction = await new ChatQuestion(() => {}).getInteraction(
             'ABCD'.repeat(256), // 256 tokens, 1 token is ~4 chars
             newRecipeContext()
         )
@@ -43,7 +43,7 @@ describe('Transcript', () => {
     })
 
     it('generates a prompt without context for a chat question', async () => {
-        const interaction = await new ChatQuestion(() => { }).getInteraction(
+        const interaction = await new ChatQuestion(() => {}).getInteraction(
             'how do access tokens work in sourcegraph',
             newRecipeContext()
         )
@@ -68,7 +68,7 @@ describe('Transcript', () => {
                 }),
         })
 
-        const interaction = await new ChatQuestion(() => { }).getInteraction(
+        const interaction = await new ChatQuestion(() => {}).getInteraction(
             'how do access tokens work in sourcegraph',
             newRecipeContext({
                 intentDetector: new MockIntentDetector({
@@ -108,7 +108,7 @@ describe('Transcript', () => {
                 }),
         })
 
-        const interaction = await new ChatQuestion(() => { }).getInteraction(
+        const interaction = await new ChatQuestion(() => {}).getInteraction(
             'how do access tokens work in sourcegraph',
             newRecipeContext({
                 codebaseContext: new CodebaseContext(
@@ -154,7 +154,7 @@ describe('Transcript', () => {
             null
         )
 
-        const chatQuestionRecipe = new ChatQuestion(() => { })
+        const chatQuestionRecipe = new ChatQuestion(() => {})
         const transcript = new Transcript()
 
         const firstInteraction = await chatQuestionRecipe.getInteraction(
@@ -240,7 +240,7 @@ describe('Transcript', () => {
             null
         )
 
-        const chatQuestionRecipe = new ChatQuestion(() => { })
+        const chatQuestionRecipe = new ChatQuestion(() => {})
         const transcript = new Transcript()
 
         const interaction = await chatQuestionRecipe.getInteraction(
@@ -283,7 +283,7 @@ describe('Transcript', () => {
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(false) })
 
         const transcript = new Transcript()
-        const interaction = await new ChatQuestion(() => { }).getInteraction(
+        const interaction = await new ChatQuestion(() => {}).getInteraction(
             'how do access tokens work in sourcegraph',
             newRecipeContext({
                 editor,
@@ -317,7 +317,7 @@ describe('Transcript', () => {
             null
         )
 
-        const chatQuestionRecipe = new ChatQuestion(() => { })
+        const chatQuestionRecipe = new ChatQuestion(() => {})
         const transcript = new Transcript()
 
         const firstInteraction = await chatQuestionRecipe.getInteraction(
