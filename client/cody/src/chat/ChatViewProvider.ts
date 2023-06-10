@@ -1,3 +1,4 @@
+import { spawnSync } from 'child_process'
 import path from 'path'
 
 import * as vscode from 'vscode'
@@ -11,17 +12,24 @@ import { ChatMessage, ChatHistory } from '@sourcegraph/cody-shared/src/chat/tran
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
 import { Guardrails, annotateAttribution } from '@sourcegraph/cody-shared/src/guardrails'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../webviews/NavBar'
 import { getFullConfig, updateConfiguration } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent } from '../event-logger'
 import { LocalAppDetector } from '../local-app-detector'
+import { FilenameContextFetcher } from '../local-context/filename-context-fetcher'
+import { LocalKeywordContextFetcher } from '../local-context/local-keyword-context-fetcher'
 import { debug } from '../log'
+import { getRerankWithLog } from '../logged-rerank'
 import { FixupTask } from '../non-stop/FixupTask'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../services/SecretStorageProvider'
@@ -38,7 +46,7 @@ import {
     isLoggedIn,
 } from './protocol'
 import { getRecipe } from './recipes'
-import { getAuthStatus, getCodebaseContext } from './utils'
+import { convertGitCloneURLToCodebaseName, getAuthStatus } from './utils'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -795,4 +803,50 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         this.disposables = []
     }
+}
+
+/**
+ * Gets codebase context for the current workspace.
+ *
+ * @param config Cody configuration
+ * @param rgPath Path to rg (ripgrep) executable
+ * @param editor Editor instance
+ * @returns CodebaseContext if a codebase can be determined, else null
+ */
+export async function getCodebaseContext(
+    config: Config,
+    rgPath: string,
+    editor: Editor,
+    chatClient: ChatClient
+): Promise<CodebaseContext | null> {
+    const client = new SourcegraphGraphQLAPIClient(config)
+    const workspaceRoot = editor.getWorkspaceRootPath()
+    if (!workspaceRoot) {
+        return null
+    }
+    const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
+    const gitOutput = gitCommand.stdout.toString().trim()
+    // Get codebase from config or fallback to getting repository name from git clone URL
+    const codebase = config.codebase || convertGitCloneURLToCodebaseName(gitOutput)
+    if (!codebase) {
+        return null
+    }
+    // Check if repo is embedded in endpoint
+    const repoId = await client.getRepoIdIfEmbeddingExists(codebase)
+    if (isError(repoId)) {
+        const infoMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
+        console.info(infoMessage)
+        return null
+    }
+
+    const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
+    return new CodebaseContext(
+        config,
+        codebase,
+        embeddingsSearch,
+        new LocalKeywordContextFetcher(rgPath, editor, chatClient),
+        new FilenameContextFetcher(rgPath, editor, chatClient),
+        undefined,
+        getRerankWithLog(chatClient)
+    )
 }
