@@ -394,6 +394,11 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			logger := log.NoOp()
 			client := github.NewV3Client(logger, "", apiURL, auther, nil)
 
+			// The installation often takes a few seconds to become available after the
+			// app is first installed, so we sleep for a bit to give it time to load. The exact
+			// length of time to sleep was determined empirically.
+			time.Sleep(3 * time.Second)
+
 			remoteInstall, err := client.GetAppInstallation(ctx, int64(installationID))
 			if err != nil {
 				redirectURL := generateRedirectURL(&stateDeets.Domain, &installationID, &stateDeets.AppID, nil, errors.Newf("Unexpected error while fetching App installation details from GitHub: %s", err.Error()))
