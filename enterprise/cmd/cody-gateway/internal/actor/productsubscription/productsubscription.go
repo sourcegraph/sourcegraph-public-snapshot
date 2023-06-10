@@ -33,7 +33,7 @@ var (
 
 type Source struct {
 	log    log.Logger
-	cache  httpcache.Cache // TODO: add something to regularly clean up the cache
+	cache  httpcache.Cache // cache is expected to be something with automatic TTL
 	dotcom graphql.Client
 
 	// internalMode, if true, indicates only dev and internal licenses may use

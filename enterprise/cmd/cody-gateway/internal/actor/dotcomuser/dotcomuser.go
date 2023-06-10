@@ -26,7 +26,7 @@ var (
 
 type Source struct {
 	log               log.Logger
-	cache             httpcache.Cache
+	cache             httpcache.Cache // cache is expected to be something with automatic TTL
 	dotcom            graphql.Client
 	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
 }
