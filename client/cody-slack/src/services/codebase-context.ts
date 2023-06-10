@@ -2,7 +2,7 @@ import { memoize } from 'lodash'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
-import { KeywordContextFetcher } from '@sourcegraph/cody-shared/src/keyword-context'
+import { KeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { sourcegraphClient } from './sourcegraph-client'

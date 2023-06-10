@@ -48,20 +48,14 @@ export class CodebaseContext {
         switch (this.config.useContext) {
             case 'unified':
                 return this.getUnifiedContextMessages(query, options)
-            case 'keyword': {
-                const keywordResults = this.getKeywordSearchResults(query, options)
-                const filenameResults = this.getFilenameSearchResults(query, options)
-                const combinedResults = this.mergeContextResults(await keywordResults, await filenameResults)
-                const rerankedResults = await (this.rerank ? this.rerank(query, combinedResults) : combinedResults)
-                const messages = resultsToMessages(rerankedResults)
-                return messages
-            }
+            case 'keyword':
+                return this.getLocalContextMessages(query, options)
             case 'none':
                 return []
             default:
                 return this.embeddings
                     ? this.getEmbeddingsContextMessages(query, options)
-                    : resultsToMessages(await this.getKeywordSearchResults(query, options))
+                    : this.getLocalContextMessages(query, options)
         }
     }
 
@@ -157,6 +151,15 @@ export class CodebaseContext {
             const messageText = populateCodeContextTemplate(content, filePath)
             return getContextMessageWithResponse(messageText, { fileName: filePath, repoName, revision })
         })
+    }
+
+    private async getLocalContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
+        const keywordResults = this.getKeywordSearchResults(query, options)
+        const filenameResults = this.getFilenameSearchResults(query, options)
+        const combinedResults = this.mergeContextResults(await keywordResults, await filenameResults)
+        const rerankedResults = await (this.rerank ? this.rerank(query, combinedResults) : combinedResults)
+        const messages = resultsToMessages(rerankedResults)
+        return messages
     }
 
     private async getKeywordSearchResults(query: string, options: ContextSearchOptions): Promise<ContextResult[]> {
