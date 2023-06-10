@@ -67,7 +67,7 @@ rank_ids AS (
 	WHERE
 		pci.graph_key = %s AND
 		NOT pci.processed
-	ORDER BY pci.graph_key, pci.definition_id, pci.id
+	ORDER BY pci.graph_key, pci.definition_id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 ),
@@ -91,7 +91,7 @@ input_ranks AS (
 processed AS (
 	UPDATE codeintel_ranking_path_counts_inputs
 	SET processed = true
-	WHERE id IN (SELECT ir.id FROM input_ranks ir)
+	WHERE id IN (SELECT ir.id FROM rank_ids ir)
 	RETURNING 1
 ),
 inserted AS (
@@ -128,7 +128,7 @@ set_progress AS (
 	UPDATE codeintel_ranking_progress
 	SET
 		num_count_records_processed = COALESCE(num_count_records_processed, 0) + (SELECT COUNT(*) FROM processed),
-		reducer_completed_at        = CASE WHEN (SELECT COUNT(*) FROM input_ranks) = 0 THEN NOW() ELSE NULL END
+		reducer_completed_at        = CASE WHEN (SELECT COUNT(*) FROM rank_ids) = 0 THEN NOW() ELSE NULL END
 	WHERE id IN (SELECT id FROM progress)
 )
 SELECT

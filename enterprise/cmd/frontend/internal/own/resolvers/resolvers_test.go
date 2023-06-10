@@ -1233,6 +1233,12 @@ func Test_SignalConfigurations(t *testing.T) {
 			  "description": "Indexes users that recently viewed files in Sourcegraph.",
 			  "isEnabled": false,
 			  "excludedRepoPatterns": []
+			},
+			{
+			  "name": "analytics",
+			  "description": "Indexes ownership data to present in aggregated views like Admin > Analytics > Own and Repo > Ownership",
+			  "isEnabled": false,
+			  "excludedRepoPatterns": []
 			}
 		  ]
 		}`,
@@ -1289,6 +1295,11 @@ func Test_SignalConfigurations(t *testing.T) {
 				Name:        owntypes.SignalRecentViews,
 				Description: "Indexes users that recently viewed files in Sourcegraph.",
 			},
+			{
+				ID:          3,
+				Name:        "analytics",
+				Description: "Indexes ownership data to present in aggregated views like Admin > Analytics > Own and Repo > Ownership",
+			},
 		}).Equal(t, configsFromDb)
 
 		readTest := baseReadTest
@@ -1313,6 +1324,12 @@ func Test_SignalConfigurations(t *testing.T) {
 			{
 			  "name": "recent-views",
 			  "description": "Indexes users that recently viewed files in Sourcegraph.",
+			  "isEnabled": false,
+			  "excludedRepoPatterns": []
+			},
+			{
+			  "name": "analytics",
+			  "description": "Indexes ownership data to present in aggregated views like Admin > Analytics > Own and Repo > Ownership",
 			  "isEnabled": false,
 			  "excludedRepoPatterns": []
 			}
@@ -2145,12 +2162,36 @@ func TestDeleteAssignedTeam(t *testing.T) {
 	})
 }
 
-func Test(t *testing.T) {
-	fmt.Println(string(graphqlbackend.MarshalUserID(1)))
-	fmt.Println(string(graphqlbackend.MarshalUserID(62)))
-	fmt.Println(string(graphqlbackend.MarshalUserID(69)))
-	fmt.Println(string(graphqlbackend.MarshalUserID(70)))
-	fmt.Println(string(graphqlbackend.MarshalRepositoryID(7)))
+func TestDisplayOwnershipStats(t *testing.T) {
+	db := database.NewMockDB()
+	fakeRepoPaths := database.NewMockRepoPathStore()
+	fakeRepoPaths.AggregateFileCountFunc.SetDefaultReturn(350000, nil)
+	db.RepoPathsFunc.SetDefaultReturn(fakeRepoPaths)
+	fakeOwnershipStats := database.NewMockOwnershipStatsStore()
+	fakeOwnershipStats.QueryAggregateCountsFunc.SetDefaultReturn(
+		database.PathAggregateCounts{CodeownedFileCount: 150000}, nil)
+	db.OwnershipStatsFunc.SetDefaultReturn(fakeOwnershipStats)
+	ctx := context.Background()
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, nil, nil, logtest.NoOp(t))})
+	require.NoError(t, err)
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Schema:  schema,
+		Context: ctx,
+		Query: `
+			query GetInstanceOwnStats {
+				instanceOwnershipStats {
+					totalFiles
+					totalCodeownedFiles
+				}
+			}`,
+		ExpectedResult: `
+			{
+				"instanceOwnershipStats": {
+					"totalFiles": 350000,
+					"totalCodeownedFiles" : 150000
+				}
+			}`,
+	})
 }
 
 func createTeam(t *testing.T, ctx context.Context, db database.DB, teamName string) *types.Team {

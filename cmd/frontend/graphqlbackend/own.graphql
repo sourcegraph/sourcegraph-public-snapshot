@@ -198,6 +198,11 @@ type AssignedOwner {
     More detailed description to display in the UI for the determination.
     """
     description: String!
+
+    """
+    Whether or not this rule matches a path directly, or is inherited from a parent path.
+    """
+    isDirectMatch: Boolean!
 }
 
 """

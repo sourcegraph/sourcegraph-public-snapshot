@@ -44,6 +44,7 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
             },
         }
     )
+    const [makeOwnerError, setMakeOwnerError] = React.useState<Error | undefined>(undefined)
     const [ownPromotionEnabled] = useFeatureFlag('own-promote')
 
     if (loading) {
@@ -61,7 +62,7 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
             ? (userId: string | undefined) => (
                   <MakeOwnerButton
                       onSuccess={refetch}
-                      onError={() => {}} // TODO(#52911)
+                      onError={setMakeOwnerError}
                       repoId={repoID}
                       path={filePath}
                       userId={userId}
@@ -84,8 +85,12 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
                 data={data?.node?.commit?.tree?.ownership}
                 isDirectory={true}
                 makeOwnerButton={makeOwnerButton}
+                repoID={repoID}
+                filePath={filePath}
+                refetch={refetch}
+                makeOwnerError={makeOwnerError}
             />
         )
     }
-    return <OwnerList />
+    return <OwnerList repoID={repoID} filePath={filePath} refetch={refetch} />
 }

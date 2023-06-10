@@ -1,51 +1,64 @@
-// TODO: Refine these states.
-// - "done" means (presumably?) the LLM is done, not the whole task is done,
-//   so use a clearer name
-// - tasks can be both "done" (LLM turns completed) and turning if we are
-//   running the task again
-// - these states don't capture whether the diff (probably) applies cleanly
 export enum CodyTaskState {
     'idle' = 0,
     'queued' = 1,
-    'pending' = 2,
-    'done' = 3,
-    'applying' = 4,
-    'error' = 5,
+    'asking' = 2,
+    'marking' = 3,
+    'ready' = 4,
+    'applying' = 5,
+    'fixed' = 6,
+    'error' = 7,
 }
 
-export type CodyTaskIcon = {
+export type CodyTaskList = {
     [key in CodyTaskState]: {
         id: string
         icon: string
+        description: string
     }
 }
 /**
  * Icon for each task state
  */
-export const fixupTaskIcon: CodyTaskIcon = {
+export const fixupTaskList: CodyTaskList = {
     [CodyTaskState.idle]: {
         id: 'idle',
-        icon: 'smiley',
+        icon: 'clock',
+        description: 'Initial state - all task starts from here',
     },
-    [CodyTaskState.pending]: {
-        id: 'pending',
+    [CodyTaskState.asking]: {
+        id: 'asking',
         icon: 'sync~spin',
+        description: 'In the process of pending for Cody response',
     },
-    [CodyTaskState.done]: {
-        id: 'done',
-        icon: 'issue-closed',
+    [CodyTaskState.ready]: {
+        id: 'ready',
+        icon: 'smiley',
+        description: 'Cody has responsed with suggestions and is ready to apply them',
     },
     [CodyTaskState.error]: {
         id: 'error',
         icon: 'stop',
+        description: 'The task has been completed and returned error',
     },
     [CodyTaskState.queued]: {
         id: 'queue',
-        icon: 'clock',
+        icon: 'debug-pause',
+        description: 'The task is in the queue to be processed by Cody',
     },
     [CodyTaskState.applying]: {
         id: 'applying',
         icon: 'sync~spin',
+        description: 'In the process of applying the fixups to the docs',
+    },
+    [CodyTaskState.marking]: {
+        id: 'marking',
+        icon: 'edit',
+        description: 'Marking the fixups as Cody responses',
+    },
+    [CodyTaskState.fixed]: {
+        id: 'fixed',
+        icon: 'pass-filled',
+        description: 'Suggestions from Cody have been applied to the docs successfully',
     },
 }
 /**

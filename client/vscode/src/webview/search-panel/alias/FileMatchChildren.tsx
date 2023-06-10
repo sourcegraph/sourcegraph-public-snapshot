@@ -5,7 +5,7 @@ import * as H from 'history'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { LastSyncedIcon, FileMatchChildrenStyles as styles, CodeExcerpt } from '@sourcegraph/branded'
+import { FileMatchChildrenStyles as styles, CodeExcerpt } from '@sourcegraph/branded'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { appendLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
@@ -226,7 +226,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
 
     return (
         <div className={styles.fileMatchChildren} data-testid="file-match-children">
-            {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
             {/* Path */}
             {result.type === 'path' && (
                 <div className={styles.item} data-testid="file-match-children-item">

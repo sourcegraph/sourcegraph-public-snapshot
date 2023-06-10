@@ -9,6 +9,7 @@ import {
     CURRENT_USER_ID_QUERY,
     IS_CONTEXT_REQUIRED_QUERY,
     REPOSITORY_ID_QUERY,
+    REPOSITORY_IDS_QUERY,
     SEARCH_EMBEDDINGS_QUERY,
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
@@ -18,6 +19,7 @@ import {
     CURRENT_SITE_VERSION_QUERY,
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
     CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
+    GET_CODY_CONTEXT_QUERY,
 } from './queries'
 
 interface APIResponse<T> {
@@ -49,6 +51,10 @@ interface RepositoryIdResponse {
     repository: { id: string } | null
 }
 
+interface RepositoryIdsResponse {
+    repositories: { nodes: { id: string; name: string }[] }
+}
+
 interface RepositoryEmbeddingExistsResponse {
     repository: { id: string; embeddingExists: boolean } | null
 }
@@ -59,6 +65,30 @@ interface EmbeddingsSearchResponse {
 
 interface EmbeddingsMultiSearchResponse {
     embeddingsMultiSearch: EmbeddingsSearchResults
+}
+
+interface CodyFileChunkContext {
+    __typename: 'FileChunkContext'
+    blob: {
+        path: string
+        repository: {
+            id: string
+            name: string
+        }
+        commit: {
+            id: string
+            oid: string
+        }
+    }
+    startLine: number
+    endLine: number
+    chunkContent: string
+}
+
+type GetCodyContextResult = CodyFileChunkContext | null
+
+interface GetCodyContextResponse {
+    getCodyContext: GetCodyContextResult[]
 }
 
 interface SearchTypeRepoResponse {
@@ -170,6 +200,13 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
+    public async getRepoIds(names: string[]): Promise<{ id: string; name: string }[] | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RepositoryIdsResponse>>(REPOSITORY_IDS_QUERY, {
+            names,
+            first: names.length,
+        }).then(response => extractDataOrError(response, data => data.repositories?.nodes))
+    }
+
     public async getRepoId(repoName: string): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdResponse>>(REPOSITORY_ID_QUERY, {
             name: repoName,
@@ -266,6 +303,20 @@ export class SourcegraphGraphQLAPIClient {
         } catch (error) {
             return error
         }
+    }
+
+    public async getCodyContext(
+        repos: string[],
+        query: string,
+        codeResultsCount: number,
+        textResultsCount: number
+    ): Promise<GetCodyContextResult[] | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<GetCodyContextResponse>>(GET_CODY_CONTEXT_QUERY, {
+            repos,
+            query,
+            codeResultsCount,
+            textResultsCount,
+        }).then(response => extractDataOrError(response, data => data.getCodyContext))
     }
 
     public async searchEmbeddings(

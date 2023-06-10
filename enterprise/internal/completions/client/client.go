@@ -53,14 +53,20 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) *schema.Completio
 			if completionsConfig.Endpoint == "" {
 				completionsConfig.Endpoint = codygateway.DefaultEndpoint
 			}
+
 			// Configure chatModel
 			if completionsConfig.ChatModel == "" {
-				completionsConfig.CompletionModel = "anthropic/claude-v1"
+				completionsConfig.ChatModel = "anthropic/claude-v1"
 			}
 			// Configure completionModel
 			if completionsConfig.CompletionModel == "" {
 				completionsConfig.CompletionModel = "anthropic/claude-instant-v1"
 			}
+
+			// NOTE: We explicitly aren't adding back-compat for completions.model
+			// because Cody Gateway disallows the use of most chat models for
+			// code completions, so in most cases the back-compat wouldn't work
+			// anyway.
 
 			return completionsConfig
 		}
