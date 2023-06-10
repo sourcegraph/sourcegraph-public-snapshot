@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/auth"
@@ -12,10 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/completions"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 )
 
 type Config struct {
+	RateLimitNotifier       notify.RateLimitNotifier
 	AnthropicAccessToken    string
 	AnthropicAllowedModels  []string
 	OpenAIAccessToken       string
@@ -34,7 +35,14 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 		v1router.Path("/completions/anthropic").Methods(http.MethodPost).Handler(
 			instrumentation.HTTPMiddleware("v1.completions.anthropic",
 				authr.Middleware(
-					completions.NewAnthropicHandler(logger, eventLogger, rs, config.AnthropicAccessToken, config.AnthropicAllowedModels),
+					completions.NewAnthropicHandler(
+						logger,
+						eventLogger,
+						rs,
+						config.RateLimitNotifier,
+						config.AnthropicAccessToken,
+						config.AnthropicAllowedModels,
+					),
 				),
 			),
 		)
@@ -43,7 +51,15 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 		v1router.Path("/completions/openai").Methods(http.MethodPost).Handler(
 			instrumentation.HTTPMiddleware("v1.completions.openai",
 				authr.Middleware(
-					completions.NewOpenAIHandler(logger, eventLogger, rs, config.OpenAIAccessToken, config.OpenAIOrgID, config.OpenAIAllowedModels),
+					completions.NewOpenAIHandler(
+						logger,
+						eventLogger,
+						rs,
+						config.RateLimitNotifier,
+						config.OpenAIAccessToken,
+						config.OpenAIOrgID,
+						config.OpenAIAllowedModels,
+					),
 				),
 			),
 		)
@@ -63,6 +79,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 						logger,
 						eventLogger,
 						rs,
+						config.RateLimitNotifier,
 						embeddings.ModelFactoryMap{
 							embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(config.OpenAIAccessToken),
 						},

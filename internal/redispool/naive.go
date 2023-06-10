@@ -95,6 +95,23 @@ func (kv *naiveKeyValue) SetEx(key string, ttlSeconds int, value any) error {
 	}).err
 }
 
+func (kv *naiveKeyValue) SetNx(key string, value any) (bool, error) {
+	op := write
+	v := kv.maybeUpdate(key, func(_ redisValue, found bool) (redisValue, updaterOp, error) {
+		if found {
+			op = readOnly
+		}
+		return redisValue{
+			Group: redisGroupString,
+			Reply: value,
+		}, op, nil
+	})
+	if v.err != nil {
+		return false, v.err
+	}
+	return op == write, nil
+}
+
 func (kv *naiveKeyValue) Incr(key string) (int, error) {
 	return kv.maybeUpdateGroup(redisGroupString, key, func(value redisValue, found bool) (redisValue, updaterOp, error) {
 		if !found {
