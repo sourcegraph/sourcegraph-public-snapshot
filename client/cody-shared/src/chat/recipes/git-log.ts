@@ -85,7 +85,8 @@ export class GitHistory implements Recipe {
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
             },
-            Promise.resolve([])
+            Promise.resolve([]),
+            []
         )
     }
 }

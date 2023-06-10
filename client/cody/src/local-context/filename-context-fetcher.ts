@@ -22,7 +22,7 @@ export class FilenameContextFetcher {
      * @param query user query
      * @param numResults the number of context results to return
      * @returns a list of context results, sorted in *reverse* order (that is,
-     *  the most important result appears at the bottom)
+     * the most important result appears at the bottom)
      */
     public async getContext(query: string, numResults: number): Promise<ContextResult[]> {
         const time0 = performance.now()

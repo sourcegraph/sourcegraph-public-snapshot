@@ -43,12 +43,13 @@ export class LocalStorage {
                                   ([humanMessage, assistantMessageAndContextFiles]) => ({
                                       humanMessage,
                                       assistantMessage: assistantMessageAndContextFiles,
-                                      context: assistantMessageAndContextFiles.contextFiles
+                                      fullContext: assistantMessageAndContextFiles.contextFiles
                                           ? assistantMessageAndContextFiles.contextFiles.map(fileName => ({
                                                 speaker: 'assistant',
                                                 fileName,
                                             }))
                                           : [],
+                                      usedContextFiles: [],
                                       // Timestamp not recoverable so we use the group timestamp
                                       timestamp: id,
                                   })

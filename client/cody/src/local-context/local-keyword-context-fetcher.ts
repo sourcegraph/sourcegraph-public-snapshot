@@ -97,7 +97,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
      * @param query user query
      * @param numResults the number of context results to return
      * @returns a list of context results, sorted in *reverse* order (that is,
-     *  the most important result appears at the bottom)
+     * the most important result appears at the bottom)
      */
     public async getContext(query: string, numResults: number): Promise<ContextResult[]> {
         const startTime = performance.now()
@@ -243,13 +243,13 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
 
         // Process the ripgrep JSON output to get the file sizes. We use an object filter to
         // fast-filter out irrelevant lines of output
-        const objectFilter = (assembler: Assembler) => {
+        const objectFilter = (assembler: Assembler): boolean | undefined => {
             // Each ripgrep JSON line begins with the following format:
             //
             //   {"type":"begin|match|end","data":"...
             //
             // We only care about the "type":"end" lines, which contain the file size in bytes.
-            if (assembler.key === null && assembler.stack.length == 0 && assembler.current.hasOwnProperty('type')) {
+            if (assembler.key === null && assembler.stack.length === 0 && assembler.current.type) {
                 return assembler.current.type === 'end'
             }
             // return undefined to indicate our uncertainty at this moment
@@ -263,7 +263,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                         try {
                             const typedData = data as RipgrepStreamData
                             switch (typedData.value.type) {
-                                case 'end':
+                                case 'end': {
                                     let filename = typedData.value.data.path.text
                                     if (filename.startsWith(`.${path.sep}`)) {
                                         filename = filename.slice(2)
@@ -273,6 +273,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                                     }
                                     fileTermCounts[filename].bytesSearched = typedData.value.data.stats.bytes_searched
                                     break
+                                }
                             }
                         } catch (error) {
                             reject(error)
