@@ -144,13 +144,13 @@ type UpdateProductSubscriptionInput struct {
 
 type UpdateCodyGatewayAccessInput struct {
 	Enabled                                 *bool
-	ChatCompletionsRateLimit                *int32
+	ChatCompletionsRateLimit                *int64
 	ChatCompletionsRateLimitIntervalSeconds *int32
 	ChatCompletionsAllowedModels            *[]string
-	CodeCompletionsRateLimit                *int32
+	CodeCompletionsRateLimit                *int64
 	CodeCompletionsRateLimitIntervalSeconds *int32
 	CodeCompletionsAllowedModels            *[]string
-	EmbeddingsRateLimit                     *int32
+	EmbeddingsRateLimit                     *int64
 	EmbeddingsRateLimitIntervalSeconds      *int32
 	EmbeddingsAllowedModels                 *[]string
 }
@@ -187,7 +187,7 @@ const (
 type CodyGatewayRateLimit interface {
 	Source() CodyGatewayRateLimitSource
 	AllowedModels() []string
-	Limit() int32
+	Limit() BigInt
 	IntervalSeconds() int32
 	Usage(context.Context) ([]CodyGatewayUsageDatapoint, error)
 }

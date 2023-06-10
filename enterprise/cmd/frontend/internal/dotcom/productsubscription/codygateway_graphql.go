@@ -163,7 +163,9 @@ func (r *codyGatewayRateLimitResolver) Source() graphqlbackend.CodyGatewayRateLi
 
 func (r *codyGatewayRateLimitResolver) AllowedModels() []string { return r.v.AllowedModels }
 
-func (r *codyGatewayRateLimitResolver) Limit() int32 { return r.v.Limit }
+func (r *codyGatewayRateLimitResolver) Limit() graphqlbackend.BigInt {
+	return graphqlbackend.BigInt(r.v.Limit)
+}
 
 func (r *codyGatewayRateLimitResolver) IntervalSeconds() int32 { return r.v.IntervalSeconds }
 

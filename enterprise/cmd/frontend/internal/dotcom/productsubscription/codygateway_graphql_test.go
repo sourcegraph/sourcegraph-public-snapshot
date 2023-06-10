@@ -57,7 +57,7 @@ func TestCodeGatewayAccessResolverRateLimit(t *testing.T) {
 	t.Run("override default rate limit for a plan", func(t *testing.T) {
 		err := (dbSubscriptions{db: db}.Update(ctx, subID, dbSubscriptionUpdate{
 			codyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{
-				ChatCompletionsRateLimit: pointify(int32(10)),
+				ChatCompletionsRateLimit: pointify(int64(10)),
 			},
 		}))
 		require.NoError(t, err)
