@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -31,9 +32,18 @@ type RecentViewSignalStore interface {
 }
 
 type ListRecentViewSignalOpts struct {
+	// ViewerUserID indicates the user whos views are fetched.
+	// If unset - all users are considered.
 	ViewerUserID int
-	RepoID       api.RepoID
-	Path         string
+	// RepoID if not set - will result in fetching results from multiple repos.
+	RepoID api.RepoID
+	// Path for which the views should be fetched. View counts are aggregated
+	// up the file tree. Unset value - empty string - indicates repo root.
+	Path string
+	// IncludeAllPaths when true - results will not be limited based on value of `Path`.
+	IncludeAllPaths bool
+	// MinThreshold is a lower bound of views entry per path per user to be considered.
+	MinThreshold int
 	LimitOffset  *LimitOffset
 }
 
@@ -185,7 +195,7 @@ const listRecentViewSignalsFmtstr = `
 	-- Optional WHERE clauses
 	WHERE %s
 	-- Order, limit
-	ORDER BY o.id
+	ORDER BY 3 DESC
 	%s
 `
 
@@ -201,20 +211,20 @@ func (s *recentViewSignalStore) List(ctx context.Context, opts ListRecentViewSig
 }
 
 func createListQuery(opts ListRecentViewSignalOpts) *sqlf.Query {
-	joinClause := &sqlf.Query{}
-	if opts.RepoID != 0 || opts.Path != "" {
-		joinClause = sqlf.Sprintf("INNER JOIN repo_paths AS p ON p.id = o.viewed_file_path_id")
-	}
+	joinClause := sqlf.Sprintf("INNER JOIN repo_paths AS p ON p.id = o.viewed_file_path_id")
 	whereClause := sqlf.Sprintf("TRUE")
 	wherePredicates := make([]*sqlf.Query, 0)
 	if opts.RepoID != 0 {
 		wherePredicates = append(wherePredicates, sqlf.Sprintf("p.repo_id = %s", opts.RepoID))
 	}
-	if opts.Path != "" {
+	if !opts.IncludeAllPaths {
 		wherePredicates = append(wherePredicates, sqlf.Sprintf("p.absolute_path = %s", opts.Path))
 	}
 	if opts.ViewerUserID != 0 {
 		wherePredicates = append(wherePredicates, sqlf.Sprintf("o.viewer_id = %s", opts.ViewerUserID))
+	}
+	if opts.MinThreshold > 0 {
+		wherePredicates = append(wherePredicates, sqlf.Sprintf("o.views_count > %s", opts.MinThreshold))
 	}
 	if len(wherePredicates) > 0 {
 		whereClause = sqlf.Sprintf("%s", sqlf.Join(wherePredicates, "AND"))

@@ -36,7 +36,8 @@ func TestRecentViewsIndexer(t *testing.T) {
 	// Assertion function.
 	assertSummaries := func(summariesCount, expectedCount int) {
 		t.Helper()
-		summaries, err := db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{})
+		opts := database.ListRecentViewSignalOpts{IncludeAllPaths: true}
+		summaries, err := db.RecentViewSignal().List(ctx, opts)
 		require.NoError(t, err)
 		assert.Len(t, summaries, summariesCount)
 	}
@@ -94,7 +95,7 @@ func TestRecentViewsIndexer(t *testing.T) {
 	// First round of handling: we should have all counts equal to 1.
 	err = indexer.Handle(ctx)
 	require.NoError(t, err)
-	got, err := db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{})
+	got, err := db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{IncludeAllPaths: true})
 	require.NoError(t, err)
 	want := expectedSummaries(1)
 	sortSummaries(got)
@@ -107,7 +108,7 @@ func TestRecentViewsIndexer(t *testing.T) {
 	// Second round of handling: we should have all counts equal to 2.
 	err = indexer.Handle(ctx)
 	require.NoError(t, err)
-	got, err = db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{})
+	got, err = db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{IncludeAllPaths: true})
 	require.NoError(t, err)
 	want = expectedSummaries(2)
 	sortSummaries(got)
