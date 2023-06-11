@@ -253,13 +253,11 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 						},
 					},
 					&result.FileMatch{
-						//HAS OWNER
 						File: result.File{
 							Path: "package.json",
 						},
 					},
 					&result.FileMatch{
-						//HAS OWNER
 						File: result.File{
 							Path: "/test/AbstractFactoryTest.java",
 						},
