@@ -169,7 +169,7 @@ export class Transcript {
         }
 
         const preambleTokensUsage = preamble.reduce((acc, message) => acc + estimateTokensUsage(message), 0)
-        const truncatedMessages = truncatePrompt(messages, MAX_AVAILABLE_PROMPT_LENGTH - preambleTokensUsage)
+        let truncatedMessages = truncatePrompt(messages, MAX_AVAILABLE_PROMPT_LENGTH - preambleTokensUsage)
 
         // Return what context fits in the window
         const contextFiles: ContextFile[] = []
@@ -179,6 +179,9 @@ export class Transcript {
                 contextFiles.push(contextFile)
             }
         }
+
+        // Filter out extraneous fields from ContextMessage instances
+        truncatedMessages = truncatedMessages.map(({ speaker, text }) => ({ speaker, text }))
 
         return {
             prompt: [...preamble, ...truncatedMessages],
