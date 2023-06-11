@@ -1,5 +1,4 @@
 use std::fs;
-use std::path::PathBuf;
 use tauri::api::dialog::confirm;
 use tauri::api::shell;
 use tauri::AppHandle;
@@ -54,21 +53,37 @@ pub fn prompt_to_clear_all_data(app: &AppHandle) {
         "This will remove all data.\nAre you sure?",
         move |answer| {
             if answer {
-                if let Some(base_folder) = path_resolver.app_data_dir() {
-                    let db_dir = base_folder.join("postgresql/data");
-                    clear_all_data_and_restart(&app_clone, db_dir);
-                }
+                clear_all_data_and_restart(&app_clone)
             }
         },
     );
 }
 
-fn clear_all_data_and_restart(app: &AppHandle, db_dir: PathBuf) {
-    log::warn!("attempting to remove: {}", db_dir.to_string_lossy());
+fn clear_all_data_and_restart(app: &AppHandle) {
+    let path_resolver = app.path_resolver();
 
-    if let Err(err) = fs::remove_dir_all(&db_dir) {
-        log::error!("{}", err);
-    } else {
-        app.restart();
+    // Delete app data dir
+    if let Some(app_data_dir_path) = path_resolver.app_data_dir() {
+        if let Err(err) = fs::remove_dir_all(&app_data_dir_path) {
+            log::error!("{}", err);
+        }
     }
+
+    // Delete app config dir
+    if let Some(app_config_dir_path) = path_resolver.app_config_dir() {
+        if let Err(err) = fs::remove_dir_all(&app_config_dir_path) {
+            log::error!("{}", err);
+        }
+    }
+
+    clear_local_storage(app);
+
+    app.restart();
+}
+
+fn clear_local_storage(app: &AppHandle) {
+    let window = app.get_window("main").unwrap();
+    // Note that this will clear localStorage only for the current origin, which
+    // is fine assuming the webview is still on localhost:3080.
+    window.eval("localStorage.clear();").unwrap();
 }

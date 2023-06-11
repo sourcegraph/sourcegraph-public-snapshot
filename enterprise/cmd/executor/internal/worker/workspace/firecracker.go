@@ -22,6 +22,7 @@ type firecrackerWorkspace struct {
 	scriptFilenames []string
 	blockDeviceFile string
 	blockDevice     string
+	tmpMountDir     string
 	logger          command.Logger
 }
 
@@ -81,6 +82,7 @@ func NewFirecrackerWorkspace(
 		scriptFilenames: scriptPaths,
 		blockDeviceFile: blockDeviceFile,
 		blockDevice:     blockDevice,
+		tmpMountDir:     tmpMountDir,
 		logger:          logger,
 	}, err
 }
@@ -186,6 +188,10 @@ func detachLoopDevice(ctx context.Context, cmdRunner util.CmdRunner, blockDevice
 
 func (w firecrackerWorkspace) Path() string {
 	return w.blockDevice
+}
+
+func (w firecrackerWorkspace) WorkingDirectory() string {
+	return w.tmpMountDir
 }
 
 func (w firecrackerWorkspace) ScriptFilenames() []string {

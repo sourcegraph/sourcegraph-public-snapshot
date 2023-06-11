@@ -28,11 +28,17 @@ type IndexJobType struct {
 }
 
 // QueuePerRepoIndexJobs is a slice of jobs that will automatically initialize and will queue up one index job per repo every IndexInterval.
-var QueuePerRepoIndexJobs = []IndexJobType{{
-	Name:            types.SignalRecentContributors,
-	IndexInterval:   time.Hour * 24,
-	RefreshInterval: time.Minute * 5,
-}}
+var QueuePerRepoIndexJobs = []IndexJobType{
+	{
+		Name:            types.SignalRecentContributors,
+		IndexInterval:   time.Hour * 24,
+		RefreshInterval: time.Minute * 5,
+	}, {
+		Name:            types.Analytics,
+		IndexInterval:   time.Hour * 24,
+		RefreshInterval: time.Hour * 24,
+	},
+}
 
 var repoCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Namespace: "src",

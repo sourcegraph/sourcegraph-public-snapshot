@@ -279,7 +279,6 @@ func addCodyE2ETests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
 		":vscode::robot_face: E2E tests for the Cody VS Code extension",
 		withPnpmCache(),
-		bk.Skip("2023-06-08 Cody e2e tests failing"),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("client/cody/scripts/download-rg.sh x86_64-unknown-linux"),
 		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
