@@ -147,12 +147,11 @@ matchesLoop:
 }
 
 // ownersFilters searches within emails to determine if ownership passes filtering by searchTerms and allBags.
-// ownersFilters handles in a case-insensitive manner.
-//
 //   - Multiple bags have AND semantics, so ownership data needs to pass filtering criteria of each Bag.
 //   - If exclude is true then we expect ownership to not be within a bag (i.e. IsWithin() is false)
 //   - Empty string passed as search term means any, so the ownership is a match if there is at least one owner,
 //     and false otherwise.
+//   - Filtering is handled in a case-insensitive manner.
 func ownersFilters(ownership fileOwnershipData, searchTerms []string, allBags []own.Bag, exclude bool) bool {
 	// Empty search terms means any owner matches.
 	if len(searchTerms) == 1 && searchTerms[0] == "" {
