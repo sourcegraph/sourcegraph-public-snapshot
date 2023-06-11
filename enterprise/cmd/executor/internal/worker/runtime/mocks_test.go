@@ -1224,6 +1224,9 @@ type MockWorkspace struct {
 	// ScriptFilenamesFunc is an instance of a mock function object
 	// controlling the behavior of the method ScriptFilenames.
 	ScriptFilenamesFunc *WorkspaceScriptFilenamesFunc
+	// WorkingDirectoryFunc is an instance of a mock function object
+	// controlling the behavior of the method WorkingDirectory.
+	WorkingDirectoryFunc *WorkspaceWorkingDirectoryFunc
 }
 
 // NewMockWorkspace creates a new mock of the Workspace interface. All
@@ -1242,6 +1245,11 @@ func NewMockWorkspace() *MockWorkspace {
 		},
 		ScriptFilenamesFunc: &WorkspaceScriptFilenamesFunc{
 			defaultHook: func() (r0 []string) {
+				return
+			},
+		},
+		WorkingDirectoryFunc: &WorkspaceWorkingDirectoryFunc{
+			defaultHook: func() (r0 string) {
 				return
 			},
 		},
@@ -1267,6 +1275,11 @@ func NewStrictMockWorkspace() *MockWorkspace {
 				panic("unexpected invocation of MockWorkspace.ScriptFilenames")
 			},
 		},
+		WorkingDirectoryFunc: &WorkspaceWorkingDirectoryFunc{
+			defaultHook: func() string {
+				panic("unexpected invocation of MockWorkspace.WorkingDirectory")
+			},
+		},
 	}
 }
 
@@ -1282,6 +1295,9 @@ func NewMockWorkspaceFrom(i workspace.Workspace) *MockWorkspace {
 		},
 		ScriptFilenamesFunc: &WorkspaceScriptFilenamesFunc{
 			defaultHook: i.ScriptFilenames,
+		},
+		WorkingDirectoryFunc: &WorkspaceWorkingDirectoryFunc{
+			defaultHook: i.WorkingDirectory,
 		},
 	}
 }
@@ -1581,6 +1597,105 @@ func (c WorkspaceScriptFilenamesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c WorkspaceScriptFilenamesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// WorkspaceWorkingDirectoryFunc describes the behavior when the
+// WorkingDirectory method of the parent MockWorkspace instance is invoked.
+type WorkspaceWorkingDirectoryFunc struct {
+	defaultHook func() string
+	hooks       []func() string
+	history     []WorkspaceWorkingDirectoryFuncCall
+	mutex       sync.Mutex
+}
+
+// WorkingDirectory delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockWorkspace) WorkingDirectory() string {
+	r0 := m.WorkingDirectoryFunc.nextHook()()
+	m.WorkingDirectoryFunc.appendCall(WorkspaceWorkingDirectoryFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WorkingDirectory
+// method of the parent MockWorkspace instance is invoked and the hook queue
+// is empty.
+func (f *WorkspaceWorkingDirectoryFunc) SetDefaultHook(hook func() string) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WorkingDirectory method of the parent MockWorkspace instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *WorkspaceWorkingDirectoryFunc) PushHook(hook func() string) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *WorkspaceWorkingDirectoryFunc) SetDefaultReturn(r0 string) {
+	f.SetDefaultHook(func() string {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *WorkspaceWorkingDirectoryFunc) PushReturn(r0 string) {
+	f.PushHook(func() string {
+		return r0
+	})
+}
+
+func (f *WorkspaceWorkingDirectoryFunc) nextHook() func() string {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *WorkspaceWorkingDirectoryFunc) appendCall(r0 WorkspaceWorkingDirectoryFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of WorkspaceWorkingDirectoryFuncCall objects
+// describing the invocations of this function.
+func (f *WorkspaceWorkingDirectoryFunc) History() []WorkspaceWorkingDirectoryFuncCall {
+	f.mutex.Lock()
+	history := make([]WorkspaceWorkingDirectoryFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// WorkspaceWorkingDirectoryFuncCall is an object that describes an
+// invocation of method WorkingDirectory on an instance of MockWorkspace.
+type WorkspaceWorkingDirectoryFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c WorkspaceWorkingDirectoryFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c WorkspaceWorkingDirectoryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
