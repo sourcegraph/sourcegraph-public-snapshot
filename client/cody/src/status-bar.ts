@@ -1,5 +1,9 @@
 import * as vscode from 'vscode'
 
+import type { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+
+import { getConfiguration } from './configuration'
+
 export interface CodyStatusBar {
     dispose(): void
     startLoading(label: string): () => void
@@ -12,22 +16,54 @@ export function createStatusBar(): CodyStatusBar {
     statusBarItem.show()
 
     const command = vscode.commands.registerCommand(statusBarItem.command, async () => {
-        const res = await vscode.window.showQuickPick(
+        const workspaceConfig = vscode.workspace.getConfiguration()
+        const config = getConfiguration(workspaceConfig)
+
+        function createFeatureToggle(
+            name: string,
+            setting: string,
+            getValue: (config: Configuration) => boolean
+        ): vscode.QuickPickItem & { onSelect: () => Promise<void> } {
+            const isEnabled = getValue(config)
+            return {
+                label: (isEnabled ? 'Disable' : 'Enable') + ' ' + name,
+                onSelect: async () => {
+                    await workspaceConfig.update(setting, !isEnabled, vscode.ConfigurationTarget.Global)
+                    await vscode.window.showInformationMessage(name + ' ' + (isEnabled ? 'disabled' : 'enabled') + '.')
+                },
+            }
+        }
+
+        const option = await vscode.window.showQuickPick(
             [
-                { label: '$(check) Disable Code Completions (Beta)' },
-                { label: '$(circle-large-outline) Enable Code Fixups (Beta)' },
-                { label: '$(check) Enable Chat Suggestions (Experimental)' },
+                createFeatureToggle('Code Completions (Beta)', 'cody.completions', c => c.completions),
+                createFeatureToggle('Code Fixups (Beta)', 'cody.experimental.inline', c => c.experimentalInline),
+                createFeatureToggle(
+                    'Chat Suggestions (Experimental)',
+                    'cody.experimental.chatPredictions',
+                    c => c.experimentalChatPredictions
+                ),
                 { label: '', kind: vscode.QuickPickItemKind.Separator },
-                { label: '$(cody-logo) Open Documentation' },
-                { label: '$(feedback) Send Feedback' },
+                {
+                    label: '$(cody-logo) Share Feedback',
+                    async onSelect(): Promise<void> {
+                        await vscode.env.openExternal(
+                            vscode.Uri.parse(
+                                'https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode'
+                            )
+                        )
+                    },
+                },
             ],
             {
                 placeHolder: 'Select an option',
             }
         )
 
-        // const res = await vscode.window.showInformationMessage('Do you want to disable Cody Completions?', 'Disable')
-        console.log({ res })
+        if (option && 'onSelect' in option) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            option.onSelect()
+        }
     })
 
     // Reference counting to ensure loading states are handled consistently across different
