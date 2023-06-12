@@ -37,6 +37,7 @@ go_library(
 
 go_test(
     name = "lsifstore_test",
+    timeout = "moderate",
     srcs = [
         "document_metadata_test.go",
         "locations_by_position_test.go",

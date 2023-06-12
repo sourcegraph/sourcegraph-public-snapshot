@@ -49,6 +49,7 @@ go_library(
 
 go_test(
     name = "scheduler_test",
+    timeout = "moderate",
     srcs = [
         "backfill_state_inprogress_handler_test.go",
         "backfill_state_new_handler_test.go",

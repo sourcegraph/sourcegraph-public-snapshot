@@ -2166,6 +2166,7 @@ build_test(
 
 bundlesize_bin.bundlesize_test(
     name = "bundlesize-report",
+    timeout = "short",
     args = [
         "--config",
         "$(location bundlesize.config.js)",
