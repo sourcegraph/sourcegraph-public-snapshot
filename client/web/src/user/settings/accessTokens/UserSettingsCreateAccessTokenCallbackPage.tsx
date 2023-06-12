@@ -108,6 +108,8 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     }, [telemetryService])
     /** Get the requester from the url parameters if any */
     const requestFrom = new URLSearchParams(location.search).get('requestFrom')
+    /** Get the client info for VS Code from the url parameters if any */
+    const clientURLScheme = new URLSearchParams(location.search).get('client')
     /** The validated requester where the callback request originally comes from. */
     const [requester, setRequester] = useState<TokenRequester | null | undefined>(undefined)
     /** The contents of the note input field. */
@@ -154,18 +156,16 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
         }
 
         // Different VS Code clients have different custom URL schemes used as URL protocols
-        // Example: 'vscode-insider://' for VS Code Insider or
-        // Get the fragment from the location URL and use it as the custom URL scheme
-        if (nextRequester.customURLScheme === 'vscode') {
-            const customURLScheme = location.hash || nextRequester.customURLScheme
+        // Example: 'vscode-insider://' for VS Code Insider
+        if (clientURLScheme && nextRequester.customURLScheme === 'vscode') {
             const redirectURL = new URL(nextRequester.redirectURL)
-            redirectURL.protocol = customURLScheme
+            redirectURL.protocol = clientURLScheme
             nextRequester.redirectURL = redirectURL.toString()
         }
 
         setRequester(nextRequester)
         setNote(REQUESTERS[requestFrom].name)
-    }, [isSourcegraphDotCom, isSourcegraphApp, location.search, navigate, requestFrom, requester, location.hash])
+    }, [isSourcegraphDotCom, isSourcegraphApp, location.search, navigate, requestFrom, requester, clientURLScheme])
 
     /**
      * We use this to handle token creation request from redirections.

@@ -32,7 +32,9 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 }) => {
     const [token, setToken] = useState<string>('')
     const [endpoint, setEndpoint] = useState(serverEndpoint)
-    const authUri = `https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=CODY#${callbackScheme}`
+    const authUri = new URL('https://sourcegraph/user/settings/tokens/new/callback')
+    authUri.searchParams.append('requestFrom', 'CODY')
+    authUri.searchParams.append('client', callbackScheme || 'vscode')
 
     const onSubmit = useCallback<React.FormEventHandler>(
         event => {
@@ -82,7 +84,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                 <p className={styles.openMessage}>
                     Cody for open source code is available to all users with a Sourcegraph.com account
                 </p>
-                <a href={authUri}>
+                <a href={authUri.href}>
                     <VSCodeButton
                         className={styles.button}
                         type="button"
