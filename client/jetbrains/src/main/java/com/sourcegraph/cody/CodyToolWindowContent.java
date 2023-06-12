@@ -269,7 +269,7 @@ class CodyToolWindowContent implements UpdatableChat {
     String accessToken =
         isEnterprise
             ? ConfigUtil.getEnterpriseAccessToken(project)
-            : ConfigUtil.getDotcomAccessToken(project);
+            : ConfigUtil.getDotComAccessToken(project);
     System.out.println("isEnterprise: " + isEnterprise);
 
     var chat = new Chat("", instanceUrl, accessToken != null ? accessToken : "");
