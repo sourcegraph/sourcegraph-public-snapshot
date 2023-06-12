@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -190,7 +189,7 @@ func TestZoektParameters(t *testing.T) {
 				}()
 			}
 
-			got := tt.params.ToSearchOptions(tt.context, logtest.Scoped(t))
+			got := tt.params.ToSearchOptions(tt.context)
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Fatalf("search params mismatch (-want +got):\n%s", diff)
 			}

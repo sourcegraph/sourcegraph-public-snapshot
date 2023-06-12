@@ -77,7 +77,7 @@ func zoektSearch(ctx context.Context, logger log.Logger, client zoekt.Streamer, 
 
 	searchOpts := (&search.ZoektParameters{
 		FileMatchLimit: args.FileMatchLimit,
-	}).ToSearchOptions(ctx, logger)
+	}).ToSearchOptions(ctx)
 	searchOpts.Whole = true
 
 	filePathPatterns, err := handleFilePathPatterns(args)

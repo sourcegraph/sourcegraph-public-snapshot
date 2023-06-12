@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"go.opentelemetry.io/otel/attribute"
@@ -185,7 +184,7 @@ type ZoektParameters struct {
 }
 
 // ToSearchOptions converts the parameters to options for the Zoekt search API.
-func (o *ZoektParameters) ToSearchOptions(ctx context.Context, logger log.Logger) *zoekt.SearchOptions {
+func (o *ZoektParameters) ToSearchOptions(ctx context.Context) *zoekt.SearchOptions {
 	defaultTimeout := 20 * time.Second
 	searchOpts := &zoekt.SearchOptions{
 		Trace:             policy.ShouldTrace(ctx),
