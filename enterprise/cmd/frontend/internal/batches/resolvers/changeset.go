@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strconv"
 	"sync"
@@ -354,6 +355,7 @@ func (r *changesetResolver) ForkName() *string {
 }
 
 func (r *changesetResolver) CommitVerification(ctx context.Context) (graphqlbackend.CommitVerificationResolver, error) {
+	fmt.Print("COMMITVERIFICATION RESOLVER: ", r.changeset.ExternalServiceType, r.changeset.ExternalServiceType == extsvc.TypeGitHub)
 	switch r.changeset.ExternalServiceType {
 	case extsvc.TypeGitHub:
 		r.spec, r.specErr = r.store.GetChangesetSpecByID(ctx, r.changeset.CurrentSpecID)
@@ -362,7 +364,6 @@ func (r *changesetResolver) CommitVerification(ctx context.Context) (graphqlback
 		}
 		if r.spec.CommitVerification != nil {
 			return &commitVerificationResolver{
-				// TODO: Fix this type
 				commitVerification: r.spec.CommitVerification,
 			}, nil
 		}

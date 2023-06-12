@@ -48,9 +48,8 @@ type executor struct {
 	sourcer           sources.Sourcer
 	noSleepBeforeSync bool
 	tx                *store.Store
-	//TODO: use tx store to create an instance of the changeset_spec store
-	ch   *btypes.Changeset
-	spec *btypes.ChangesetSpec
+	ch                *btypes.Changeset
+	spec              *btypes.ChangesetSpec
 
 	// targetRepo represents the repo where the changeset should be opened.
 	targetRepo *types.Repo

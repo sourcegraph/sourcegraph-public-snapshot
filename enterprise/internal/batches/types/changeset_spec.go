@@ -103,20 +103,20 @@ type ChangesetSpec struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	ExternalID        string
-	BaseRev           string
-	BaseRef           string
-	HeadRef           string
-	Title             string
-	Body              string
-	Published         batcheslib.PublishedValue
-	Diff              []byte
-	CommitMessage     string
-	CommitAuthorName  string
-	CommitAuthorEmail string
-
-	ForkNamespace      *string
+	ExternalID         string
+	BaseRev            string
+	BaseRef            string
+	HeadRef            string
+	Title              string
+	Body               string
+	Published          batcheslib.PublishedValue
+	Diff               []byte
+	CommitMessage      string
+	CommitAuthorName   string
+	CommitAuthorEmail  string
 	CommitVerification *CommitVerification
+
+	ForkNamespace *string
 }
 
 type CommitVerification struct {
