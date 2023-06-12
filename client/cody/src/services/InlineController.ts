@@ -12,6 +12,8 @@ import { editDocByUri, getIconPath, updateRangeOnDocChange } from './InlineAssis
 const initPost = new vscode.Position(0, 0)
 const initRange = new vscode.Range(initPost, initPost)
 
+const config = vscode.workspace.getConfiguration('cody')
+
 export class InlineController {
     // Controller init
     private readonly id = 'cody-inline-chat'
@@ -39,16 +41,13 @@ export class InlineController {
     constructor(private extensionPath: string) {
         this.commentController = vscode.comments.createCommentController(this.id, this.label)
         this.commentController.options = this.options
-
-        const initConfig = vscode.workspace.getConfiguration('cody').get('inlineAssist') as boolean
-        this.enable(initConfig)
+        this.enable()
 
         // On config change, update inline assist
         vscode.workspace.onDidChangeConfiguration(e => {
             // check if the config change is related to 'cody.inlineAssist'
             if (e.affectsConfiguration('cody')) {
-                const isEnabled = vscode.workspace.getConfiguration('cody').get('inlineAssist') as boolean
-                this.enable(isEnabled)
+                this.enable()
             }
         })
         // Track last selection range in valid doc before an action is called
@@ -85,13 +84,17 @@ export class InlineController {
             }
         })
         this._disposables.push(
-            vscode.commands.registerCommand('cody.inline.decorations.remove', id => this.removeLens(id))
+            vscode.commands.registerCommand('cody.inline.decorations.remove', id => this.removeLens(id)),
+            vscode.commands.registerCommand('cody.inline.file.revert', id => this.revert(id)),
+            vscode.commands.registerCommand('cody.inline.fix.undo', id => this.undo(id))
         )
     }
-    private enable(isEnabled: boolean): void {
+
+    private enable(): void {
         this.commentController.commentingRangeProvider = {
             provideCommentingRanges: (document: vscode.TextDocument) => {
                 const lineCount = document.lineCount
+                const isEnabled = config.get('inlineAssist') as boolean
                 return isEnabled ? [new vscode.Range(0, 0, lineCount - 1, 0)] : []
             },
         }
@@ -111,6 +114,7 @@ export class InlineController {
             return null
         }
         this.thread = this.commentController.createCommentThread(editor?.document.uri, editor.selection, [])
+        this.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
         const threads = {
             text: humanInput,
             thread: this.thread,
@@ -127,6 +131,7 @@ export class InlineController {
         // disable reply until the task is completed
         thread.canReply = false
         thread.label = this.threadLabel
+        thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
         const comment = new Comment(humanInput, 'Me', this.userIcon, isFixMode, thread, 'loading')
         thread.comments = [...thread.comments, comment]
         await this.runFixMode(isFixMode, comment, thread)
@@ -145,6 +150,18 @@ export class InlineController {
         this.thread.comments = [...this.thread.comments, codyReply]
         this.thread.canReply = true
         void vscode.commands.executeCommand('setContext', 'cody.replied', true)
+    }
+
+    private revert(id: string): void {
+        void vscode.commands.executeCommand('workbench.action.files.revert')
+        this.codeLenses.get(id)?.remove()
+        this.codeLenses.delete(id)
+    }
+
+    private undo(id: string): void {
+        void vscode.commands.executeCommand('undo')
+        this.codeLenses.get(id)?.remove()
+        this.codeLenses.delete(id)
     }
     /**
      * Remove a comment thread / conversation
@@ -181,7 +198,7 @@ export class InlineController {
         if (!isFixMode) {
             return
         }
-        const lens = await this.makeCodeLenses(comment.id, thread.uri, this.extensionPath)
+        const lens = await this.makeCodeLenses(comment.id, this.extensionPath, thread)
         lens.updateState(CodyTaskState.asking, thread.range)
         lens.decorator.setState(CodyTaskState.asking, thread.range)
         await lens.decorator.decorate(thread.range)
@@ -199,7 +216,7 @@ export class InlineController {
             return
         }
         const range = newRange || this.selectionRange
-        const status = error ? CodyTaskState.error : CodyTaskState.ready
+        const status = error ? CodyTaskState.error : CodyTaskState.fixed
         const lens = this.codeLenses.get(this.currentTaskId)
         lens?.updateState(status, range)
         lens?.decorator.setState(status, range)
@@ -251,9 +268,13 @@ export class InlineController {
      * When a comment thread is open, the Editor will be switched to the comment input editor.
      * Get the current editor using the comment thread uri instead
      */
-    public async makeCodeLenses(taskID: string, uri: vscode.Uri, extPath: string): Promise<CodeLensProvider> {
-        const lens = new CodeLensProvider(taskID, extPath, uri)
-        const activeDocument = await vscode.workspace.openTextDocument(uri)
+    public async makeCodeLenses(
+        taskID: string,
+        extPath: string,
+        thread: vscode.CommentThread
+    ): Promise<CodeLensProvider> {
+        const lens = new CodeLensProvider(taskID, extPath, thread)
+        const activeDocument = await vscode.workspace.openTextDocument(thread.uri)
         await lens.provideCodeLenses(activeDocument, new vscode.CancellationTokenSource().token)
         vscode.languages.registerCodeLensProvider('*', lens)
         return lens

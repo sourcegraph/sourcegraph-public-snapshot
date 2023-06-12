@@ -7,7 +7,6 @@ import { getSingleLineRange, updateRangeOnDocChange } from './InlineAssist'
 
 export class CodeLensProvider implements vscode.CodeLensProvider {
     private selectionRange: vscode.Range | null = null
-    private static lenses: CodeLensProvider
 
     private status = CodyTaskState.idle
     public decorator: DecorationProvider
@@ -16,10 +15,11 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
     private _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>()
     public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event
 
-    constructor(public id = '', private extPath = '', private fileUri: vscode.Uri | null = null) {
+    constructor(public id: string, private extPath: string, private thread: vscode.CommentThread) {
+        this.provideCodeLenses = this.provideCodeLenses.bind(this)
         this.decorator = new DecorationProvider(this.id, this.extPath)
         vscode.workspace.onDidChangeTextDocument(e => {
-            if (e.document.uri.fsPath !== this.fileUri?.fsPath) {
+            if (e.document.uri.fsPath !== this.thread?.uri.fsPath) {
                 return
             }
             for (const change of e.contentChanges) {
@@ -41,12 +41,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         vscode.workspace.onDidCloseTextDocument(e => this.removeOnFSPath(e.uri))
         vscode.workspace.onDidSaveTextDocument(e => this.removeOnFSPath(e.uri))
     }
-    /**
-     * Getter
-     */
-    public static get instance(): CodeLensProvider {
-        return (this.lenses ??= new this())
-    }
+
     /**
      * Define Current States
      */
@@ -64,6 +59,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         this.decorator.remove()
         this.selectionRange = null
         this.status = CodyTaskState.idle
+        this.thread.dispose()
         this.dispose()
         this._onDidChangeCodeLenses.fire()
     }
@@ -75,10 +71,10 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         token: vscode.CancellationToken
     ): vscode.CodeLens[] | Thenable<vscode.CodeLens[]> {
         // Only create Code lens in known filePath
-        if (!document || !token || document.uri.fsPath !== this.fileUri?.fsPath) {
+        if (!document || !token || document.uri.fsPath !== this.thread.uri.fsPath) {
             return []
         }
-        this.decorator.setFileUri(this.fileUri)
+        this.decorator.setFileUri(this.thread.uri)
         return this.createCodeLenses()
     }
     /**
@@ -91,14 +87,17 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         }
         const codeLensRange = getSingleLineRange(range.start.line)
         return this.status === CodyTaskState.error
-            ? getErrorLenses(codeLensRange, this.id)
-            : getLenses(codeLensRange, this.isPending())
+            ? getErrorLenses(this.id, codeLensRange)
+            : getLenses(this.id, codeLensRange, this.isPending())
     }
     /**
      * Check if the file path is the same
      */
     private removeOnFSPath(uri: vscode.Uri): void {
-        if (uri.fsPath === this.fileUri?.fsPath) {
+        if (this.status === CodyTaskState.asking) {
+            return
+        }
+        if (uri.fsPath === this.thread.uri.fsPath) {
             this.remove()
         }
     }
@@ -119,37 +118,60 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
     }
 }
 
-function getLenses(codeLensRange: vscode.Range, isPending: boolean): vscode.CodeLens[] {
-    const codeLensTitle = new vscode.CodeLens(codeLensRange)
+function getLenses(id: string, codeLensRange: vscode.Range, isPending: boolean): vscode.CodeLens[] {
+    const title = new vscode.CodeLens(codeLensRange)
     // Open Chat View
-    codeLensTitle.command = {
-        title: isPending ? '$(sync~spin) Processing by Cody' : '✨ Edited by Cody',
+    title.command = {
+        title: isPending ? '$(sync~spin) Asking Cody...' : '✨ Edited by Cody',
         tooltip: 'Open Cody chat view',
         command: 'cody.focus',
     }
-    const codeLensSave = new vscode.CodeLens(codeLensRange)
-    codeLensSave.command = {
-        title: 'Save',
-        tooltip: 'Accept and save all changes',
-        command: 'workbench.action.files.save',
-    }
-
-    return isPending ? [codeLensTitle] : [codeLensTitle, codeLensSave]
+    const undo = getInlineUndoLens(id, codeLensRange)
+    const revert = getInlineRevertLens(id, codeLensRange)
+    const close = getInlineCloseLens(id, codeLensRange)
+    return isPending ? [title, close] : [title, undo, revert, close]
 }
 
-function getErrorLenses(codeLensRange: vscode.Range, id: string): vscode.CodeLens[] {
-    const codeLensError = new vscode.CodeLens(codeLensRange)
-    codeLensError.command = {
+function getErrorLenses(id: string, codeLensRange: vscode.Range): vscode.CodeLens[] {
+    const title = new vscode.CodeLens(codeLensRange)
+    title.command = {
         title: '⛔️ Not Edited by Cody',
         tooltip: 'Open Cody chat view',
         command: 'cody.focus',
     }
-    const codeLensClose = new vscode.CodeLens(codeLensRange)
-    codeLensClose.command = {
+    const close = getInlineCloseLens(id, codeLensRange)
+    return [title, close]
+}
+
+function getInlineCloseLens(id: string, codeLensRange: vscode.Range): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
         title: 'Close',
         tooltip: 'Click to remove decorations',
         command: 'cody.inline.decorations.remove',
         arguments: [id],
     }
-    return [codeLensError, codeLensClose]
+    return lens
+}
+
+function getInlineRevertLens(id: string, codeLensRange: vscode.Range): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
+        title: 'Revert File',
+        tooltip: 'Revert file to last saved state',
+        command: 'cody.inline.file.revert',
+        arguments: [id],
+    }
+    return lens
+}
+
+function getInlineUndoLens(id: string, codeLensRange: vscode.Range): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
+        title: '$(undo) Undo',
+        tooltip: 'Undo last change',
+        command: 'cody.inline.fix.undo',
+        arguments: [id],
+    }
+    return lens
 }
