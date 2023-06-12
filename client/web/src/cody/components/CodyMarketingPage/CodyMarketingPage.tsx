@@ -106,14 +106,14 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                 >
                     <H2>Sign up to get free access</H2>
                     <Text className="mt-3">
-                        Cody combines an LLM with the context of Sourcegraph’s code graph on public code or your code at
+                        Cody combines an LLM with the context of Sourcegraph's code graph on public code or your code at
                         work. Sign up with:
                     </Text>
                     <div className={styles.buttonWrapper}>
                         <ExternalsAuth
                             context={context}
-                            githubLabel="Github"
-                            gitlabLabel="Gitlab"
+                            githubLabel="GitHub"
+                            gitlabLabel="GitLab"
                             withCenteredText={true}
                             onClick={onClickCTAButton}
                             ctaClassName={styles.authButton}
