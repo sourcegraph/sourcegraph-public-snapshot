@@ -14,11 +14,10 @@
 
 .assistant-row:before {
     position: absolute;
-
     top: 0;
     left: 0;
 
-    width: 2px;
+    width: 0.1em;
     height: 100%;
 
     content: '';
