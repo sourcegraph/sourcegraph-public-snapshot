@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/internalerrs"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/messagesize"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/propagator"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -33,20 +34,22 @@ func Dial(addr string, logger log.Logger, additionalOpts ...grpc.DialOption) (*g
 
 // DialContext creates a client connection to the given target with the default options.
 func DialContext(ctx context.Context, addr string, logger log.Logger, additionalOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	return grpc.DialContext(ctx, addr, append(DialOptions(logger), additionalOpts...)...)
+	return grpc.DialContext(ctx, addr, DialOptions(logger, additionalOpts...)...)
 }
 
 // DialOptions is a set of default dial options that should be used for all
-// gRPC clients in Sourcegraph. The options can be extended with
-// service-specific options.
-func DialOptions(logger log.Logger) []grpc.DialOption {
+// gRPC clients in Sourcegraph, along with any additional client-specific options.
+//
+// **Note**: Do not append to this slice directly, instead provide extra options
+// via "additionalOptions".
+func DialOptions(logger log.Logger, additionalOptions ...grpc.DialOption) []grpc.DialOption {
 	// Generate the options dynamically rather than using a static slice
 	// because these options depend on some globals (tracer, trace sampling)
 	// that are not initialized during init time.
 
 	metrics := mustGetClientMetrics()
 
-	return []grpc.DialOption{
+	out := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainStreamInterceptor(
 			grpc_prometheus.StreamClientInterceptor(metrics),
@@ -67,26 +70,39 @@ func DialOptions(logger log.Logger) []grpc.DialOption {
 			internalerrs.LoggingUnaryClientInterceptor(logger),
 		),
 	}
+
+	out = append(out, additionalOptions...)
+
+	// Ensure that the message size options are set last, so they override any other
+	// client-specific options that tweak the message size.
+	//
+	// The message size options are only provided if the environment variable is set. These options serve as an escape hatch, so they
+	// take precedence over everything else with a uniform size setting that's easy to reason about.
+	out = append(out, messagesize.MustGetClientMessageSizeFromEnv()...)
+
+	return out
 }
 
 // NewServer creates a new *grpc.Server with the default options
 func NewServer(logger log.Logger, additionalOpts ...grpc.ServerOption) *grpc.Server {
-	s := grpc.NewServer(append(ServerOptions(logger), additionalOpts...)...)
+	s := grpc.NewServer(ServerOptions(logger, additionalOpts...)...)
 	reflection.Register(s)
 	return s
 }
 
 // ServerOptions is a set of default server options that should be used for all
-// gRPC servers in Sourcegraph. The options can be extended with
-// service-specific options.
-func ServerOptions(logger log.Logger) []grpc.ServerOption {
+// gRPC servers in Sourcegraph. along with any additional service-specific options.
+//
+// **Note**: Do not append to this slice directly, instead provide extra options
+// via "additionalOptions".
+func ServerOptions(logger log.Logger, additionalOptions ...grpc.ServerOption) []grpc.ServerOption {
 	// Generate the options dynamically rather than using a static slice
 	// because these options depend on some globals (tracer, trace sampling)
 	// that are not initialized during init time.
 
 	metrics := mustGetServerMetrics()
 
-	return []grpc.ServerOption{
+	out := []grpc.ServerOption{
 		grpc.ChainStreamInterceptor(
 			internalgrpc.NewStreamPanicCatcher(logger),
 			grpc_prometheus.StreamServerInterceptor(metrics),
@@ -104,6 +120,17 @@ func ServerOptions(logger log.Logger) []grpc.ServerOption {
 			otelgrpc.UnaryServerInterceptor(),
 		),
 	}
+
+	out = append(out, additionalOptions...)
+
+	// Ensure that the message size options are set last, so they override any other
+	// server-specific options that tweak the message size.
+	//
+	// The message size options are only provided if the environment variable is set. These options serve as an escape hatch, so they
+	// take precedence over everything else with a uniform size setting that's easy to reason about.
+	out = append(out, messagesize.MustGetServerMessageSizeFromEnv()...)
+
+	return out
 }
 
 var (

@@ -8,11 +8,13 @@ import (
 
 	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/conc"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestBufferedLogger(t *testing.T) {
@@ -47,37 +49,69 @@ func TestBufferedLogger(t *testing.T) {
 
 		// blockEventSubmissionC should be closed to unblock event submission,
 		// until it is all events to handler blocks indefinitely.
+		// We have an additional test case to assert that we attempt to submit
+		// events directly when the buffer is full, so we have directSubmit as
+		// a toggle to stop blocking.
+		const blockedEventID = "blocked-submission"
+		const bufferFullEventID = "buffer-full"
 		blockEventSubmissionC := make(chan struct{})
 		handler := &mockLogger{
-			PreLogEventHook: func() { <-blockEventSubmissionC }, // block until test completion
+			PreLogEventHook: func(id string) error {
+				if id == blockedEventID {
+					<-blockEventSubmissionC // hold up the queue
+					return nil
+				}
+				if id == bufferFullEventID {
+					return errors.New("TEST SENTINEL ERROR: 'buffer-full' submitted immediately")
+				}
+				return nil
+			},
 		}
+
+		// Assert on our error logging
+		l, exportLogs := logtest.Captured(t)
 
 		// Set up a buffered logger we can fill up
 		size := 3
-		b := events.NewBufferedLogger(logtest.Scoped(t), handler, size)
+		b := events.NewBufferedLogger(l, handler, size)
 		wg := conc.NewWaitGroup()
 		wg.Go(b.Start)
 
+		// Send an event that will block the queue.
+		assert.NoErrorf(t, b.LogEvent(ctx, events.Event{Identifier: blockedEventID}), "event 1 (blocking)")
 		// Fill up the buffer with blocked events
-		for i := 0; i <= size; i++ {
-			assert.NoErrorf(t, b.LogEvent(ctx, events.Event{Identifier: strconv.Itoa(i)}), "event %d", i)
+		for i := 1; i <= size; i++ {
+			assert.NoErrorf(t, b.LogEvent(ctx, events.Event{Identifier: strconv.Itoa(i)}), "event %d (non-blocking)", i)
 		}
 
-		// Drop the next event - the queue should be full now
-		err := b.LogEvent(ctx, events.Event{Identifier: "blocked"})
+		// The queue should be full now, directly submit the next event
+		err := b.LogEvent(ctx, events.Event{Identifier: bufferFullEventID})
+		// Sentinel error indicates we indeed attempted to submit the event directly
 		require.Error(t, err)
-		autogold.Expect("failed to insert event in 150ms: buffer full: 3 items pending").Equal(t, err.Error())
+		autogold.Expect("TEST SENTINEL ERROR: 'buffer-full' submitted immediately").Equal(t, err.Error())
 
 		// Indicate close and stop the worker so that the buffer can flush
 		close(blockEventSubmissionC)
 		b.Stop()
 		wg.Wait()
 
-		// All backlogged events get submitted, but the blocked event is dropped.
-		autogold.Expect([]string{"0", "1", "2", "3"}).Equal(t, asIdentifiersList(handler.ReceivedEvents))
+		// All backlogged events get submitted. Note the "buffer-full" event is
+		// submitted "first" because the queue was full when it came in, and
+		// we directly submitted it. Then "blocked-submission" is submitted
+		// when it is unblocked, and the rest come in order as the queue is
+		// flushed.
+		autogold.Expect([]string{
+			"buffer-full", "blocked-submission", "1", "2",
+			"3",
+		}).Equal(t, asIdentifiersList(handler.ReceivedEvents))
+
+		// Assert our error logging. There should only be one entry (i.e. no
+		// errors on flush).
+		errorLogs := exportLogs().Filter(func(l logtest.CapturedLog) bool { return l.Level == log.LevelError })
+		autogold.Expect([]string{"failed to queue event within timeout, submitting event directly"}).Equal(t, errorLogs.Messages())
 	})
 
-	t.Run("rejects events after stop", func(t *testing.T) {
+	t.Run("submits events after stop", func(t *testing.T) {
 		t.Parallel()
 
 		handler := &mockLogger{}
@@ -108,7 +142,7 @@ func TestBufferedLogger(t *testing.T) {
 type mockLogger struct {
 	// PreLogEventHook, if set, is called on LogEvent before the event is added
 	// to (*mockLogger).Events.
-	PreLogEventHook func()
+	PreLogEventHook func(id string) error
 	// ReceivedEvents are all the events submitted to LogEvent. When mockLogger
 	// is used as the handler for a BufferedLogger, ReceivedEvents must not be
 	// accessed until (*BufferedLogger).Stop() has been called and
@@ -117,11 +151,12 @@ type mockLogger struct {
 }
 
 func (m *mockLogger) LogEvent(spanCtx context.Context, event events.Event) error {
+	var err error
 	if m.PreLogEventHook != nil {
-		m.PreLogEventHook()
+		err = m.PreLogEventHook(event.Identifier)
 	}
 	m.ReceivedEvents = append(m.ReceivedEvents, event)
-	return nil
+	return err
 }
 
 // asIdentifiersList renders a list of events as a list of their identifiers,

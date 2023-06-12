@@ -25,6 +25,9 @@ const (
 
 	// PlanFree1 is the default plan if no license key is set from 4.5 onwards.
 	PlanFree1 Plan = "free-1"
+
+	// PlanAirGappedEnterprise is the same PlanEnterprise1 but with FeatureAllowAirGapped, and works starting from 5.1.
+	PlanAirGappedEnterprise Plan = "enterprise-air-gap-0"
 )
 
 var AllPlans = []Plan{
@@ -38,6 +41,7 @@ var AllPlans = []Plan{
 	PlanEnterpriseExtension,
 	PlanFree0,
 	PlanFree1,
+	PlanAirGappedEnterprise,
 }
 
 // The list of features. For each feature, add a new const here and the checking logic in
@@ -88,6 +92,9 @@ const (
 
 	// FeatureCody is whether or not Cody and embeddings has been purchased on this instance.
 	FeatureCody BasicFeature = "cody"
+
+	// FeatureAllowAirGapped is whether or not air gapped mode is allowed on this instance.
+	FeatureAllowAirGapped BasicFeature = "allow-air-gapped"
 )
 
 var AllFeatures = []Feature{
@@ -103,6 +110,7 @@ var AllFeatures = []Feature{
 	FeatureCodeInsights,
 	&FeatureBatchChanges{},
 	FeatureSCIM,
+	FeatureAllowAirGapped,
 }
 
 type PlanDetails struct {
@@ -248,6 +256,24 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureMonitoring,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{MaxNumPrivateRepos: 1},
+		},
+	},
+	PlanAirGappedEnterprise: {
+		Features: []Feature{
+			FeatureACLs,
+			FeatureCampaigns,
+			FeatureCodeInsights,
+			&FeatureBatchChanges{Unrestricted: true},
+			&FeaturePrivateRepositories{Unrestricted: true},
+			FeatureExplicitPermissionsAPI,
+			FeatureSSO,
+			FeatureSCIM,
+			FeatureCody,
+			FeatureAllowAirGapped,
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
 		},
 	},
 }

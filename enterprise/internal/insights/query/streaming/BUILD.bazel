@@ -10,7 +10,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//enterprise/internal/compute",
         "//enterprise/internal/compute/client",
         "//internal/api",
@@ -23,7 +22,6 @@ go_library(
         "//internal/search/streaming",
         "//internal/search/streaming/api",
         "//internal/search/streaming/http",
-        "//internal/settings",
         "//internal/trace",
         "//internal/types",
         "@com_github_sourcegraph_log//:log",
