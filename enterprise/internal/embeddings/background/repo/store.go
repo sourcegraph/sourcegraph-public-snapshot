@@ -239,7 +239,9 @@ func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
 		opts.MinimumInterval = d
 	}
 
-	opts.PolicyRepositoryMatchLimit = embeddingsConf.PolicyRepositoryMatchLimit
+	if embeddingsConf.PolicyRepositoryMatchLimit != nil {
+		opts.PolicyRepositoryMatchLimit = embeddingsConf.PolicyRepositoryMatchLimit
+	}
 
 	return opts
 }

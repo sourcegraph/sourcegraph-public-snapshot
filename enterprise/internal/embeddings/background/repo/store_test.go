@@ -280,6 +280,11 @@ func TestGetEmbeddableRepoOpts(t *testing.T) {
 	require.Equal(t, defaultOpts.MinimumInterval, opts.MinimumInterval)
 	require.Equal(t, *defaultOpts.PolicyRepositoryMatchLimit, *opts.PolicyRepositoryMatchLimit)
 
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{Embeddings: &schema.Embeddings{}}})
+	opts = GetEmbeddableRepoOpts()
+	require.Equal(t, defaultOpts.MinimumInterval, opts.MinimumInterval)
+	require.Equal(t, *defaultOpts.PolicyRepositoryMatchLimit, *opts.PolicyRepositoryMatchLimit)
+
 	limit := 5
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{Embeddings: &schema.Embeddings{MinimumInterval: "1h", PolicyRepositoryMatchLimit: &limit}}})
 
