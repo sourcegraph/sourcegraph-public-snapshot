@@ -11,8 +11,7 @@ import (
 )
 
 type externalEmitter[T workerutil.Record] struct {
-	queueName string
-	//stores     []store.Store[T]
+	queueName  string
 	countFuncs []func(ctx context.Context, includeProcessing bool) (int, error)
 	reporters  []reporter
 	allocation QueueAllocation
