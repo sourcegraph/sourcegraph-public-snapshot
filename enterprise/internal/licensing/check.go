@@ -2,7 +2,6 @@ package licensing
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"time"
 
@@ -114,7 +113,7 @@ func StartLicenseCheck(ctx context.Context, logger log.Logger, siteID string) {
 	// watch for any config changes
 	conf.Watch(func() {
 		prevLicenseToken, _ := store.Get(prevLicenseTokenKey).String()
-		licenseToken := hex.EncodeToString(GenerateHashedLicenseKeyAccessToken(conf.Get().LicenseKey))
+		licenseToken := GenerateLicenseKeyBasedAccessToken(conf.Get().LicenseKey)
 		// skip if license key hasn't changed and already running
 		if prevLicenseToken == licenseToken && routine != nil {
 			return

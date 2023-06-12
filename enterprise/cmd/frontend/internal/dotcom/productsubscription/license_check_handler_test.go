@@ -19,9 +19,9 @@ import (
 )
 
 func TestNewLicenseCheckHandler(t *testing.T) {
-	makeToken := func(licenseKey string) *[]byte {
-		token := licensing.GenerateHashedLicenseKeyAccessToken(licenseKey)
-		return &token
+	makeToken := func(licenseKey string) []byte {
+		token := licensing.GenerateLicenseKeyBasedAccessToken(licenseKey)
+		return []byte(token)
 	}
 	strPtr := func(s string) *string { return &s }
 	now := time.Now()
@@ -60,7 +60,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			return nil, err
 		}
 		for _, license := range licenses {
-			if license.LicenseCheckToken != nil && bytes.Equal(*license.LicenseCheckToken, token) {
+			if license.LicenseCheckToken != nil && bytes.Equal(license.LicenseCheckToken, token) {
 				return &license, nil
 			}
 		}
@@ -94,7 +94,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			name: "expired license access token",
 			body: `{"siteID": "some-site-id"}`,
 			headers: http.Header{
-				"Authorization": {"Bearer " + hex.EncodeToString(*expiredLicense.LicenseCheckToken)},
+				"Authorization": {"Bearer " + hex.EncodeToString(expiredLicense.LicenseCheckToken)},
 			},
 			want:       licensing.LicenseCheckResponse{Error: "license expired"},
 			wantStatus: http.StatusForbidden,
@@ -103,7 +103,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			name: "revoked license access token",
 			body: `{"siteID": "some-site-id"}`,
 			headers: http.Header{
-				"Authorization": {"Bearer " + hex.EncodeToString(*revokedLicense.LicenseCheckToken)},
+				"Authorization": {"Bearer " + hex.EncodeToString(revokedLicense.LicenseCheckToken)},
 			},
 			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: false, Reason: "license revoked"}},
 			wantStatus: http.StatusForbidden,
@@ -112,7 +112,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			name: "valid access token, invalid request body",
 			body: "invalid body",
 			headers: http.Header{
-				"Authorization": {"Bearer " + hex.EncodeToString(*validLicense.LicenseCheckToken)},
+				"Authorization": {"Bearer " + hex.EncodeToString(validLicense.LicenseCheckToken)},
 			},
 			want:       licensing.LicenseCheckResponse{Error: "invalid request body"},
 			wantStatus: http.StatusBadRequest,
@@ -120,7 +120,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 		{
 			name: "valid access token, invalid site id (abuse)",
 			headers: http.Header{
-				"Authorization": {"Bearer " + hex.EncodeToString(*assignedLicense.LicenseCheckToken)},
+				"Authorization": {"Bearer " + hex.EncodeToString(assignedLicense.LicenseCheckToken)},
 			},
 			body:       `{"siteID": "some-site-id"}`,
 			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: false, Reason: "license is already in use"}},
@@ -130,7 +130,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			name: "valid access token, valid site id",
 			body: fmt.Sprintf(`{"siteID": "%s"}`, *assignedLicense.SiteID),
 			headers: http.Header{
-				"Authorization": {"Bearer " + hex.EncodeToString(*assignedLicense.LicenseCheckToken)},
+				"Authorization": {"Bearer " + hex.EncodeToString(assignedLicense.LicenseCheckToken)},
 			},
 			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: true}},
 			wantStatus: http.StatusOK,
@@ -139,7 +139,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			name: "valid access token, new site id",
 			body: `{"siteID": "some-site-id"}`,
 			headers: http.Header{
-				"Authorization": {"Bearer " + hex.EncodeToString(*validLicense.LicenseCheckToken)},
+				"Authorization": {"Bearer " + hex.EncodeToString(validLicense.LicenseCheckToken)},
 			},
 			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: true}},
 			wantStatus: http.StatusOK,

@@ -2,6 +2,7 @@ package productsubscription
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/hex"
 	"time"
 
@@ -10,9 +11,9 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,7 +29,7 @@ type dbLicense struct {
 	LicenseExpiresAt         *time.Time
 	AccessTokenEnabled       bool
 	SiteID                   *string // UUID
-	LicenseCheckToken        *[]byte
+	LicenseCheckToken        []byte
 	RevokedAt                *time.Time
 	RevokeReason             *string
 	SalesforceSubscriptionID *string
@@ -64,6 +65,8 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		return "", errors.Wrap(err, "new UUID")
 	}
 
+	keyHash := sha256.Sum256([]byte(licenseKey))
+
 	var expiresAt *time.Time
 	if !info.ExpiresAt.IsZero() {
 		expiresAt = &info.ExpiresAt
@@ -76,7 +79,7 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		pq.Array(info.Tags),
 		dbutil.NewNullInt64(int64(info.UserCount)),
 		dbutil.NullTime{Time: expiresAt},
-		licensing.GenerateHashedLicenseKeyAccessToken(licenseKey),
+		hashutil.ToSHA256Bytes(keyHash[:]),
 		info.SalesforceSubscriptionID,
 		info.SalesforceOpportunityID,
 	).Scan(&id); err != nil {

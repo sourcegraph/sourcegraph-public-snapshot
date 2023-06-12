@@ -120,7 +120,7 @@ func TestGetByToken(t *testing.T) {
 	}{
 		{
 			name:  "ok",
-			token: hex.EncodeToString(*license.LicenseCheckToken),
+			token: hex.EncodeToString(license.LicenseCheckToken),
 			want:  &license.ID,
 		},
 		{
