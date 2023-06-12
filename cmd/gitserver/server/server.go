@@ -25,6 +25,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
@@ -183,6 +184,8 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd wrexec.Cmder
 // possible to simplify this, but to do that, doClone will need to do a lot less than it does at the
 // moment.
 type cloneJob struct {
+	uuid uuid.UUID
+
 	repo   api.RepoName
 	dir    common.GitDir
 	syncer VCSSyncer
@@ -196,9 +199,27 @@ type cloneJob struct {
 	options   *cloneOptions
 }
 
+func (c *cloneJob) Identifier() string {
+	return string(c.repo)
+}
+
+// UUID is idempotent.
+func (c *cloneJob) UUID() string {
+	// Safeguard against unset uuids, ensuring that the first time this is called we always return a
+	// UUID and subsequent calls returns the same UUID.
+	if c.uuid == uuid.Nil {
+		c.uuid = uuid.New()
+	}
+
+	return c.uuid.String()
+}
+
+// Ensure that cloneJob implements common.Job.
+var _ common.Jobber = &cloneJob{}
+
 // NewCloneQueue initializes a new cloneQueue.
-func NewCloneQueue(jobs *list.List) *common.Queue[cloneJob] {
-	return common.NewQueue[cloneJob](jobs)
+func NewCloneQueue(ctx *observation.Context, jobs *list.List) *common.Queue[*cloneJob] {
+	return common.NewQueue[*cloneJob](ctx, "clone-queue", jobs)
 }
 
 // Server is a gitserver server.
@@ -244,7 +265,7 @@ type Server struct {
 
 	// CloneQueue is a threadsafe queue used by DoBackgroundClones to process incoming clone
 	// requests asynchronously.
-	CloneQueue *common.Queue[cloneJob]
+	CloneQueue *common.Queue[*cloneJob]
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -630,7 +651,7 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 			}
 
 			select {
-			case jobs <- job:
+			case jobs <- *job:
 			case <-ctx.Done():
 				s.Logger.Error("cloneJobProducer: ", log.Error(ctx.Err()))
 				return
@@ -659,6 +680,9 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 		}
 
 		go func(job *cloneJob) {
+			start := time.Now()
+			defer s.CloneQueue.RecordProcessingTime(job.Identifier(), start)
+
 			defer cancel()
 
 			err := s.doClone(ctx, job.repo, job.dir, job.syncer, job.lock, job.remoteURL, job.options)
@@ -2227,14 +2251,16 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// We push the cloneJob to a queue and let the producer-consumer pipeline take over from this
 	// point. See definitions of cloneJobProducer and cloneJobConsumer to understand how these jobs
 	// are processed.
-	s.CloneQueue.Push(&cloneJob{
+	job := &cloneJob{
+		uuid:      uuid.New(),
 		repo:      repo,
 		dir:       dir,
 		syncer:    syncer,
 		lock:      lock,
 		remoteURL: remoteURL,
 		options:   opts,
-	})
+	}
+	s.CloneQueue.Push(job)
 
 	return "", nil
 }
