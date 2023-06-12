@@ -1,12 +1,13 @@
 package internalerrs
 
 import (
+	"strings"
+	"unicode/utf8"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protopath"
 	"google.golang.org/protobuf/reflect/protorange"
-	"strings"
-	"unicode/utf8"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -17,18 +18,18 @@ import (
 type callBackClientStream struct {
 	grpc.ClientStream
 
-	postMessageSend    func(message interface{}, err error)
-	postMessageReceive func(message interface{}, err error)
+	postMessageSend    func(message any, err error)
+	postMessageReceive func(message any, err error)
 }
 
-func (c *callBackClientStream) SendMsg(m interface{}) error {
+func (c *callBackClientStream) SendMsg(m any) error {
 	err := c.ClientStream.SendMsg(m)
 	c.postMessageSend(m, err)
 
 	return err
 }
 
-func (c *callBackClientStream) RecvMsg(m interface{}) error {
+func (c *callBackClientStream) RecvMsg(m any) error {
 	err := c.ClientStream.RecvMsg(m)
 	c.postMessageReceive(m, err)
 

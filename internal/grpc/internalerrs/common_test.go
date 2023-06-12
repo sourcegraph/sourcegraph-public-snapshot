@@ -27,7 +27,7 @@ func TestCallBackClientStream(t *testing.T) {
 			ClientStream: &mockClientStream{
 				sendErr: sentinelErr,
 			},
-			postMessageSend: func(message interface{}, err error) {
+			postMessageSend: func(message any, err error) {
 				called = true
 
 				if diff := cmp.Diff(message, sentinelMessage); diff != "" {
@@ -58,7 +58,7 @@ func TestCallBackClientStream(t *testing.T) {
 			ClientStream: &mockClientStream{
 				recvErr: sentinelErr,
 			},
-			postMessageReceive: func(message interface{}, err error) {
+			postMessageReceive: func(message any, err error) {
 				called = true
 
 				if diff := cmp.Diff(message, sentinelMessage); diff != "" {
