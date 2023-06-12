@@ -3,10 +3,21 @@ import { parseStringPromise } from 'xml2js'
 import { ChatClient } from '../chat/chat'
 import { ContextResult } from '../local-context'
 
+export interface Reranker {
+    rerank(userQuery: string, results: ContextResult[]): Promise<ContextResult[]>
+}
+
+export class MockReranker implements Reranker {
+    constructor(private rerank_: (userQuery: string, results: ContextResult[]) => Promise<ContextResult[]>) {}
+    public rerank(userQuery: string, results: ContextResult[]): Promise<ContextResult[]> {
+        return this.rerank_(userQuery, results)
+    }
+}
+
 /**
  * A reranker class that uses a LLM to boost high-relevance results.
  */
-export class Reranker {
+export class LLMReranker implements Reranker {
     constructor(private chatClient: ChatClient) {}
     public async rerank(userQuery: string, results: ContextResult[]): Promise<ContextResult[]> {
         // Reverse the results so the most important appears first
@@ -31,7 +42,7 @@ export class Reranker {
                         resolve(responseText)
                     },
                     onError: (message: string, statusCode?: number) => {
-                        reject(new Error(message))
+                        reject(new Error(`Status code ${statusCode}: ${message}`))
                     },
                 },
                 {
