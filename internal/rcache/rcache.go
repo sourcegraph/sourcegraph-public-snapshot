@@ -7,6 +7,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/google/uuid"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -184,7 +185,8 @@ func SetupForTest(t TB) {
 	}
 	kvMock = redispool.RedisKeyValue(pool)
 
-	globalPrefix = "__test__" + t.Name()
+	id, _ := uuid.NewRandom()
+	globalPrefix = fmt.Sprintf("__test__%s_%s", t.Name(), id)
 	c := pool.Get()
 	defer c.Close()
 
