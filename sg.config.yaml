@@ -628,6 +628,7 @@ commands:
     cmd: |
       cd $MANIFEST_PATH
       cleanup() {
+        kubectl delete jobs --all
         kubectl delete -f .
       }
       kubectl delete -f . --ignore-not-found
