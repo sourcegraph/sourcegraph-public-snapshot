@@ -133,9 +133,12 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}
 
+	var latency *time.Duration
 	logLatency := func() {
+		elapsed := time.Since(start)
 		metricLatency.WithLabelValues(string(GuessSource(r))).
-			Observe(time.Since(start).Seconds())
+			Observe(elapsed.Seconds())
+		latency = &elapsed
 	}
 
 	// HACK: We awkwardly call an inline function here so that we can defer the
@@ -170,38 +173,40 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 	if alert != nil {
 		eventWriter.Alert(alert)
 	}
-	logSearch(ctx, h.logger, alert, err, start, inputs.OriginalQuery, progress)
+	logSearch(ctx, h.logger, alert, err, time.Since(start), latency, inputs.OriginalQuery, progress)
 	return err
 }
 
-func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err error, start time.Time, originalQuery string, progress *streamclient.ProgressAggregator) {
-	status := graphqlbackend.DetermineStatusForLogs(alert, progress.Stats, err)
+func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err error, duration time.Duration, latency *time.Duration, originalQuery string, progress *streamclient.ProgressAggregator) {
+	if honey.Enabled() {
+		status := graphqlbackend.DetermineStatusForLogs(alert, progress.Stats, err)
+		var alertType string
+		if alert != nil {
+			alertType = alert.PrometheusType
+		}
 
-	var alertType string
-	if alert != nil {
-		alertType = alert.PrometheusType
-	}
+		var latencyMs *int64
+		if latency != nil {
+			ms := latency.Milliseconds()
+			latencyMs = &ms
+		}
 
-	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
-	if honey.Enabled() || isSlow {
-		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
+		_ = searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
 			OriginalQuery: originalQuery,
 			Typ:           "stream",
 			Source:        string(trace.RequestSource(ctx)),
 			Status:        status,
 			AlertType:     alertType,
-			DurationMs:    time.Since(start).Milliseconds(),
+			DurationMs:    duration.Milliseconds(),
+			LatencyMs:     latencyMs,
 			ResultSize:    progress.MatchCount,
 			Error:         err,
-		})
+		}).Send()
+	}
 
-		if honey.Enabled() {
-			_ = ev.Send()
-		}
-
-		if isSlow {
-			logger.Warn("streaming: slow search request", log.String("query", originalQuery))
-		}
+	isSlow := duration > searchlogs.LogSlowSearchesThreshold()
+	if isSlow {
+		logger.Warn("streaming: slow search request", log.String("query", originalQuery))
 	}
 }
 
