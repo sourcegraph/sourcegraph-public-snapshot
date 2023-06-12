@@ -1,5 +1,7 @@
 import { formatISO, startOfWeek } from 'date-fns'
 
+export const DOTCOM_URL = new URL('https://sourcegraph.com')
+
 /**
  * Strip provided URL parameters and update window history
  */
