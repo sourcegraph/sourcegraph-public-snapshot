@@ -31,10 +31,10 @@ func TestFileHasContributorsJob(t *testing.T) {
 		}
 	}
 
-	ccs := func(nameAndEmail ...[]string) (contributorCounts []*gitdomain.ContributorCount) {
+	ccs := func(nameAndEmails ...[]string) (contributorCounts []*gitdomain.ContributorCount) {
 		cc := gitdomain.ContributorCount{}
-		for _, nae := range nameAndEmail {
-			if len(nameAndEmail) == 2 {
+		for _, nae := range nameAndEmails {
+			if len(nae) == 2 {
 				cc.Name = nae[0]
 				cc.Email = nae[1]
 			}
@@ -44,83 +44,140 @@ func TestFileHasContributorsJob(t *testing.T) {
 	}
 
 	tests := []struct {
-		name                string
-		ignoreCase          bool
-		includeContributors []string
-		excludeContributors []string
-		matches             result.Match
-		contributors        []*gitdomain.ContributorCount
-		outputEvent         streaming.SearchEvent
+		name          string
+		caseSensitive bool
+		include       []string
+		exclude       []string
+		matches       result.Match
+		contributors  []*gitdomain.ContributorCount
+		outputEvent   streaming.SearchEvent
 	}{{
-		name:                "include contributor matches name",
-		ignoreCase:          true,
-		includeContributors: []string{"Author"},
-		excludeContributors: []string{},
-		matches:             fm(),
-		contributors:        ccs([]string{"Author", ""}),
-		outputEvent:         streaming.SearchEvent{Results: result.Matches{}},
+		name:         "include matches name",
+		include:      []string{"Author"},
+		matches:      fm(),
+		contributors: ccs([]string{"contributor", "contributor@mail.com"}, []string{"author", "author@mail.com"}),
+		outputEvent:  streaming.SearchEvent{Results: r(fm())},
 	}, {
-		name:                "include contributor matches email",
-		ignoreCase:          true,
-		includeContributors: []string{"Author"},
-		excludeContributors: []string{},
-		matches:             fm(),
-		contributors:        ccs([]string{"", "Author"}),
-		outputEvent:         streaming.SearchEvent{Results: result.Matches{}},
+		name:         "include matches email",
+		include:      []string{"Author@mail.com"},
+		matches:      fm(),
+		contributors: ccs([]string{"contributor", "contributor@mail.com"}, []string{"author", "author@mail.com"}),
+		outputEvent:  streaming.SearchEvent{Results: r(fm())},
 	}, {
-		name:                "no matches are files",
-		ignoreCase:          true,
-		includeContributors: []string{},
-		excludeContributors: []string{},
-		matches:             &result.CommitMatch{},
-		contributors:        ccs(),
-		outputEvent:         streaming.SearchEvent{Results: result.Matches{}},
+		name:         "include has no matches",
+		include:      []string{"Author"},
+		matches:      fm(),
+		contributors: ccs([]string{"contributor", "contributor@mail.com"}),
+		outputEvent:  streaming.SearchEvent{Results: result.Matches{}},
 	}, {
-		name:                "not all matches are files",
-		ignoreCase:          true,
-		includeContributors: []string{},
-		excludeContributors: []string{},
-		matches:             fm(),
-		outputEvent: streaming.SearchEvent{
-			Results: r(&result.FileMatch{
-				File: result.File{
-					Path: "path",
-				},
-			}),
-		},
+		name:         "exclude matches name",
+		exclude:      []string{"Author"},
+		matches:      fm(),
+		contributors: ccs([]string{"contributor", "contributor@mail.com"}, []string{"author", "author@mail.com"}),
+		outputEvent:  streaming.SearchEvent{Results: result.Matches{}},
 	}, {
-		name:                "not all matches are files",
-		ignoreCase:          true,
-		includeContributors: []string{},
-		excludeContributors: []string{},
-		matches:             fm(),
-		outputEvent: streaming.SearchEvent{
-			Results: r(&result.FileMatch{
-				File: result.File{
-					Path: "path",
-				},
-			}),
-		},
+		name:         "exclude matches email",
+		exclude:      []string{"Author@mail.com"},
+		matches:      fm(),
+		contributors: ccs([]string{"contributor", "contributor@mail.com"}, []string{"author", "author@mail.com"}),
+		outputEvent:  streaming.SearchEvent{Results: result.Matches{}},
+	}, {
+		name:         "exclude has no matches",
+		exclude:      []string{"Author"},
+		matches:      fm(),
+		contributors: ccs([]string{"contributor", "contributor@mail.com"}),
+		outputEvent:  streaming.SearchEvent{Results: r(fm())},
+	}, {
+		name:         "exclude and include each match",
+		include:      []string{"contributor"},
+		exclude:      []string{"Author"},
+		matches:      fm(),
+		contributors: ccs([]string{"contributor", "contributor@mail.com"}, []string{"author", "author@mail.com"}),
+		outputEvent:  streaming.SearchEvent{Results: result.Matches{}},
+	}, {
+		name:         "not every include matches",
+		include:      []string{"contributor", "author"},
+		matches:      fm(),
+		contributors: ccs([]string{"contributor", "contributor@mail.com"}, []string{"editor", "editor@mail.com"}),
+		outputEvent:  streaming.SearchEvent{Results: result.Matches{}},
+	}, {
+		name:         "not every exclude matches",
+		exclude:      []string{"contributor", "author"},
+		matches:      fm(),
+		contributors: ccs([]string{"contributor", "contributor@mail.com"}, []string{"editor", "editor@mail.com"}),
+		outputEvent:  streaming.SearchEvent{Results: r(fm())},
+	}, {
+		name:         "include regex matches",
+		include:      []string{"Au.hor@mai.*"},
+		matches:      fm(),
+		contributors: ccs([]string{"contributor", "contributor@mail.com"}, []string{"author", "author@mail.com"}),
+		outputEvent:  streaming.SearchEvent{Results: r(fm())},
+	}, {
+		name:         "exclude regex matches",
+		exclude:      []string{"Au.hor@mai.*"},
+		matches:      fm(),
+		contributors: ccs([]string{"contributor", "contributor@mail.com"}, []string{"author", "author@mail.com"}),
+		outputEvent:  streaming.SearchEvent{Results: result.Matches{}},
+	}, {
+		name:          "include case sensitive has matches",
+		include:       []string{"Author"},
+		caseSensitive: true,
+		matches:       fm(),
+		contributors:  ccs([]string{"Author", "author@mail.com"}),
+		outputEvent:   streaming.SearchEvent{Results: r(fm())},
+	}, {
+		name:          "include case sensitive has no matches",
+		include:       []string{"Author"},
+		caseSensitive: true,
+		matches:       fm(),
+		contributors:  ccs([]string{"author", "author@mail.com"}),
+		outputEvent:   streaming.SearchEvent{Results: result.Matches{}},
+	}, {
+		name:          "exclude case sensitive has matches",
+		exclude:       []string{"Author"},
+		caseSensitive: true,
+		matches:       fm(),
+		contributors:  ccs([]string{"Author", "author@mail.com"}),
+		outputEvent:   streaming.SearchEvent{Results: result.Matches{}},
+	}, {
+		name:          "exclude case sensitive has no matches",
+		exclude:       []string{"Author"},
+		caseSensitive: true,
+		matches:       fm(),
+		contributors:  ccs([]string{"author", "author@mail.com"}),
+		outputEvent:   streaming.SearchEvent{Results: r(fm())},
+	}, {
+		name:         "empty include and empty exclude always returns",
+		matches:      fm(),
+		contributors: ccs([]string{"author", "author@mail.com"}),
+		outputEvent:  streaming.SearchEvent{Results: r(fm())},
+	}, {
+		name:        "not all matches are files",
+		include:     []string{"Author"},
+		matches:     &result.CommitMatch{},
+		outputEvent: streaming.SearchEvent{Results: result.Matches{}},
 	}}
 	for _, tc := range tests {
-		childJob := mockjob.NewMockJob()
-		childJob.RunFunc.SetDefaultHook(func(_ context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
-			s.Send(streaming.SearchEvent{Results: r(tc.matches)})
-			return nil, nil
+		t.Run(tc.name, func(t *testing.T) {
+			childJob := mockjob.NewMockJob()
+			childJob.RunFunc.SetDefaultHook(func(_ context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
+				s.Send(streaming.SearchEvent{Results: r(tc.matches)})
+				return nil, nil
+			})
+
+			gitServerClient := gitserver.NewMockClient()
+			gitServerClient.ContributorCountFunc.PushReturn(tc.contributors, nil)
+
+			var resultEvent streaming.SearchEvent
+			streamCollector := streaming.StreamFunc(func(ev streaming.SearchEvent) {
+				resultEvent = ev
+			})
+
+			j := NewFileHasContributorsJob(childJob, !tc.caseSensitive, tc.include, tc.exclude)
+			alert, err := j.Run(context.Background(), job.RuntimeClients{Gitserver: gitServerClient}, streamCollector)
+			require.Nil(t, alert)
+			require.NoError(t, err)
+			require.Equal(t, tc.outputEvent, resultEvent)
 		})
-
-		gitServerClient := gitserver.NewMockClient()
-		gitServerClient.ContributorCountFunc.PushReturn(tc.contributors, nil)
-
-		var resultEvent streaming.SearchEvent
-		streamCollector := streaming.StreamFunc(func(ev streaming.SearchEvent) {
-			resultEvent = ev
-		})
-
-		j := NewFileHasContributorsJob(childJob, tc.ignoreCase, tc.includeContributors, tc.excludeContributors)
-		alert, err := j.Run(context.Background(), job.RuntimeClients{Gitserver: gitServerClient}, streamCollector)
-		require.Nil(t, alert)
-		require.NoError(t, err)
-		require.Equal(t, tc.outputEvent, resultEvent)
 	}
 }
