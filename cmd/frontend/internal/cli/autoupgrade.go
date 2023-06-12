@@ -134,9 +134,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 	}
 
 	success = true
-
-	obsvCtx.Logger.Info("MIGRATION SUCCESSFUL")
-
+	obsvCtx.Logger.Info("Upgrade successful")
 	return nil
 }
 
