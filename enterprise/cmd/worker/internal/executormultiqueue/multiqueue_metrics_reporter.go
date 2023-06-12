@@ -1,4 +1,4 @@
-package executorqueue
+package executormultiqueue
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 
 type multiqueueMetricsReporterJob struct{}
 
-func NewMultiqueueMetricsRepoterJob() job.Job {
+func NewMultiqueueMetricsReporterJob() job.Job {
 	return &multiqueueMetricsReporterJob{}
 }
 
