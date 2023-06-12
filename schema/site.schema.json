@@ -2422,6 +2422,10 @@
           "description": "DEPRECATED. Use chatModel instead.",
           "type": "string"
         },
+        "fastChatModel": {
+          "description": "The model used for fast chat completions.",
+          "type": "string"
+        },
         "chatModel": {
           "description": "The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.",
           "type": "string"

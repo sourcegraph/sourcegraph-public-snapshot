@@ -19,8 +19,11 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 	logger = logger.Scoped("chat", "chat completions handler")
 	rl := NewRateLimiter(db, redispool.Store, types.CompletionsFeatureChat)
 
-	return newCompletionsHandler(rl, "chat", func(requestParams types.CompletionRequestParameters, c *schema.Completions) string {
+	return newCompletionsHandler(rl, "chat", func(requestParams types.CodyCompletionRequestParameters, c *schema.Completions) string {
 		// No user defined models for now.
+		if requestParams.Fast {
+			return c.FastChatModel
+		}
 		return c.ChatModel
 	}, func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
 		eventWriter, err := streamhttp.NewWriter(w)

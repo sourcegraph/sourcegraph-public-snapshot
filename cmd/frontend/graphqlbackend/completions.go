@@ -8,6 +8,7 @@ type CompletionsResolver interface {
 
 type CompletionsArgs struct {
 	Input CompletionsInput
+	Fast  bool
 }
 
 type Message struct {

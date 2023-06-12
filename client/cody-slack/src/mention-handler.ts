@@ -44,7 +44,8 @@ export async function handleHumanMessage(event: AppMentionEvent, appContext: App
     const response = await slackHelpers.postMessage(IN_PROGRESS_MESSAGE, channel, thread_ts)
 
     // Generate a prompt and start completion streaming
-    const prompt = await transcript.toPrompt(SLACK_PREAMBLE)
+    const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(SLACK_PREAMBLE)
+    transcript.setUsedContextFilesForLastInteraction(contextFiles)
     console.log('PROMPT', prompt)
     startCompletionStreaming(prompt, channel, transcript, response?.ts)
 }

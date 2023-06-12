@@ -76,7 +76,8 @@ export class NonStop implements Recipe {
                     speaker: 'assistant',
                     prefix: 'Check your document for updates from Cody.',
                 },
-                this.getContextMessages(selection.selectedText, context.codebaseContext)
+                this.getContextMessages(selection.selectedText, context.codebaseContext),
+                []
             )
         )
     }

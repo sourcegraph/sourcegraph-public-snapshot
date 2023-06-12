@@ -44,7 +44,8 @@ export class GenerateTest implements Recipe {
                 truncatedFollowingText,
                 selection,
                 context.codebaseContext
-            )
+            ),
+            []
         )
     }
 }

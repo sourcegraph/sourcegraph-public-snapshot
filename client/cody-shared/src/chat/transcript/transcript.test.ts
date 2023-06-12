@@ -38,7 +38,7 @@ async function generateLongTranscript(): Promise<{ transcript: Transcript; token
 describe('Transcript', () => {
     it('generates an empty prompt with no interactions', async () => {
         const transcript = new Transcript()
-        const prompt = await transcript.toPrompt()
+        const { prompt } = await transcript.getPromptForLastInteraction()
         assert.deepStrictEqual(prompt, [])
     })
 
@@ -51,7 +51,7 @@ describe('Transcript', () => {
         const transcript = new Transcript()
         transcript.addInteraction(interaction)
 
-        const prompt = await transcript.toPrompt()
+        const { prompt } = await transcript.getPromptForLastInteraction()
         const expectedPrompt = [
             { speaker: 'human', text: 'how do access tokens work in sourcegraph' },
             { speaker: 'assistant', text: undefined },
@@ -78,7 +78,8 @@ describe('Transcript', () => {
                     { useContext: 'embeddings', serverEndpoint: 'https://example.com' },
                     'dummy-codebase',
                     embeddings,
-                    defaultKeywordContextFetcher
+                    defaultKeywordContextFetcher,
+                    null
                 ),
             })
         )
@@ -86,7 +87,7 @@ describe('Transcript', () => {
         const transcript = new Transcript()
         transcript.addInteraction(interaction)
 
-        const prompt = await transcript.toPrompt()
+        const { prompt } = await transcript.getPromptForLastInteraction()
         const expectedPrompt = [
             { speaker: 'human', text: 'Use the following text from file `docs/README.md`:\n# Main' },
             { speaker: 'assistant', text: 'Ok.' },
@@ -114,7 +115,8 @@ describe('Transcript', () => {
                     { useContext: 'embeddings', serverEndpoint: 'https://example.com' },
                     'dummy-codebase',
                     embeddings,
-                    defaultKeywordContextFetcher
+                    defaultKeywordContextFetcher,
+                    null
                 ),
                 firstInteraction: true,
             })
@@ -123,7 +125,7 @@ describe('Transcript', () => {
         const transcript = new Transcript()
         transcript.addInteraction(interaction)
 
-        const prompt = await transcript.toPrompt()
+        const { prompt } = await transcript.getPromptForLastInteraction()
         const expectedPrompt = [
             { speaker: 'human', text: 'Use the following text from file `docs/README.md`:\n# Main' },
             { speaker: 'assistant', text: 'Ok.' },
@@ -148,7 +150,8 @@ describe('Transcript', () => {
             { useContext: 'embeddings', serverEndpoint: 'https://example.com' },
             'dummy-codebase',
             embeddings,
-            defaultKeywordContextFetcher
+            defaultKeywordContextFetcher,
+            null
         )
 
         const chatQuestionRecipe = new ChatQuestion(() => {})
@@ -175,7 +178,7 @@ describe('Transcript', () => {
         )
         transcript.addInteraction(secondInteraction)
 
-        const prompt = await transcript.toPrompt()
+        const { prompt } = await transcript.getPromptForLastInteraction()
         const expectedPrompt = [
             { speaker: 'human', text: 'how do access tokens work in sourcegraph' },
             { speaker: 'assistant', text: assistantResponse },
@@ -195,7 +198,7 @@ describe('Transcript', () => {
         const numExpectedInteractions = Math.floor(MAX_AVAILABLE_PROMPT_LENGTH / tokensPerInteraction)
         const numExpectedMessages = numExpectedInteractions * 2 // Each interaction has two messages.
 
-        const prompt = await transcript.toPrompt()
+        const { prompt } = await transcript.getPromptForLastInteraction()
         assert.deepStrictEqual(prompt.length, numExpectedMessages)
     })
 
@@ -212,7 +215,7 @@ describe('Transcript', () => {
         const numExpectedInteractions = Math.floor(MAX_AVAILABLE_PROMPT_LENGTH / tokensPerInteraction)
         const numExpectedMessages = numExpectedInteractions * 2 // Each interaction has two messages.
 
-        const prompt = await transcript.toPrompt(preamble)
+        const { prompt } = await transcript.getPromptForLastInteraction(preamble)
         assert.deepStrictEqual(prompt.length, numExpectedMessages)
         assert.deepStrictEqual(preamble, prompt.slice(0, 4))
     })
@@ -233,7 +236,8 @@ describe('Transcript', () => {
             { useContext: 'embeddings', serverEndpoint: 'https://example.com' },
             'dummy-codebase',
             embeddings,
-            defaultKeywordContextFetcher
+            defaultKeywordContextFetcher,
+            null
         )
 
         const chatQuestionRecipe = new ChatQuestion(() => {})
@@ -249,7 +253,7 @@ describe('Transcript', () => {
         )
         transcript.addInteraction(interaction)
 
-        const prompt = await transcript.toPrompt()
+        const { prompt } = await transcript.getPromptForLastInteraction()
         const expectedPrompt = [
             { speaker: 'human', text: 'Use the following text from file `docs/README.md`:\n# Main' },
             { speaker: 'assistant', text: 'Ok.' },
@@ -288,7 +292,7 @@ describe('Transcript', () => {
         )
         transcript.addInteraction(interaction)
 
-        const prompt = await transcript.toPrompt()
+        const { prompt } = await transcript.getPromptForLastInteraction()
         const expectedPrompt = [
             { speaker: 'human', text: 'how do access tokens work in sourcegraph' },
             { speaker: 'assistant', text: undefined },
@@ -309,7 +313,8 @@ describe('Transcript', () => {
             { useContext: 'embeddings', serverEndpoint: 'https://example.com' },
             'dummy-codebase',
             embeddings,
-            defaultKeywordContextFetcher
+            defaultKeywordContextFetcher,
+            null
         )
 
         const chatQuestionRecipe = new ChatQuestion(() => {})
@@ -344,7 +349,7 @@ describe('Transcript', () => {
         )
         transcript.addInteraction(thirdInteraction)
 
-        const prompt = await transcript.toPrompt()
+        const { prompt } = await transcript.getPromptForLastInteraction()
         const expectedPrompt = [
             { speaker: 'human', text: 'how do batch changes work in sourcegraph' },
             { speaker: 'assistant', text: 'Smartly.' },

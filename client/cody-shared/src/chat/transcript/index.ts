@@ -1,5 +1,6 @@
-import { OldContextMessage } from '../../codebase-context/messages'
+import { ContextFile, ContextMessage, OldContextMessage } from '../../codebase-context/messages'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
+import { PromptMixin } from '../../prompt/prompt-mixin'
 import { Message } from '../../sourcegraph-api'
 
 import { Interaction, InteractionJSON } from './interaction'
@@ -20,18 +21,19 @@ export interface TranscriptJSON {
 }
 
 /**
- * A transcript of a conversation between a human and an assistant.
+ * The "model" class that tracks the call and response of the Cody chat box.
+ * Any "controller" logic belongs outside of this class.
  */
 export class Transcript {
     public static fromJSON(json: TranscriptJSON): Transcript {
         return new Transcript(
             json.interactions.map(
-                ({ humanMessage, assistantMessage, context, timestamp }) =>
+                ({ humanMessage, assistantMessage, fullContext, usedContextFiles, timestamp }) =>
                     new Interaction(
                         humanMessage,
                         assistantMessage,
                         Promise.resolve(
-                            context.map(message => {
+                            fullContext.map(message => {
                                 if (message.file) {
                                     return message
                                 }
@@ -44,6 +46,7 @@ export class Transcript {
                                 return message
                             })
                         ),
+                        usedContextFiles,
                         timestamp || new Date().toISOString()
                     )
             ),
@@ -144,20 +147,53 @@ export class Transcript {
         return -1
     }
 
-    public async toPrompt(preamble: Message[] = []): Promise<Message[]> {
+    public async getPromptForLastInteraction(
+        preamble: Message[] = []
+    ): Promise<{ prompt: Message[]; contextFiles: ContextFile[] }> {
+        if (this.interactions.length === 0) {
+            return { prompt: [], contextFiles: [] }
+        }
+
         const lastInteractionWithContextIndex = await this.getLastInteractionWithContextIndex()
         const messages: Message[] = []
         for (let index = 0; index < this.interactions.length; index++) {
-            // Include context messages for the last interaction that has a non-empty context.
-            const interactionMessages = await this.interactions[index].toPrompt(
-                index === lastInteractionWithContextIndex
-            )
-            messages.push(...interactionMessages)
+            const interaction = this.interactions[index]
+            const humanMessage = PromptMixin.mixInto(interaction.getHumanMessage())
+            const assistantMessage = interaction.getAssistantMessage()
+            const contextMessages = await interaction.getFullContext()
+            if (index === lastInteractionWithContextIndex) {
+                messages.push(...contextMessages, humanMessage, assistantMessage)
+            } else {
+                messages.push(humanMessage, assistantMessage)
+            }
         }
 
         const preambleTokensUsage = preamble.reduce((acc, message) => acc + estimateTokensUsage(message), 0)
-        const truncatedMessages = truncatePrompt(messages, MAX_AVAILABLE_PROMPT_LENGTH - preambleTokensUsage)
-        return [...preamble, ...truncatedMessages]
+        let truncatedMessages = truncatePrompt(messages, MAX_AVAILABLE_PROMPT_LENGTH - preambleTokensUsage)
+
+        // Return what context fits in the window
+        const contextFiles: ContextFile[] = []
+        for (const msg of truncatedMessages) {
+            const contextFile = (msg as ContextMessage).file
+            if (contextFile) {
+                contextFiles.push(contextFile)
+            }
+        }
+
+        // Filter out extraneous fields from ContextMessage instances
+        truncatedMessages = truncatedMessages.map(({ speaker, text }) => ({ speaker, text }))
+
+        return {
+            prompt: [...preamble, ...truncatedMessages],
+            contextFiles,
+        }
+    }
+
+    public setUsedContextFilesForLastInteraction(contextFiles: ContextFile[]): void {
+        if (this.interactions.length === 0) {
+            throw new Error('Cannot set context files for empty transcript')
+        }
+        this.interactions[this.interactions.length - 1].setUsedContext(contextFiles)
     }
 
     public toChat(): ChatMessage[] {

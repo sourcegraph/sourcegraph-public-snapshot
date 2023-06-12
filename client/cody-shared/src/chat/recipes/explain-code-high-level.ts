@@ -32,7 +32,8 @@ export class ExplainCodeHighLevel implements Recipe {
                 truncatedFollowingText,
                 selection,
                 context.codebaseContext
-            )
+            ),
+            []
         )
     }
 }

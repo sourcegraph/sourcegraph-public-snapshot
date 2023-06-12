@@ -56,7 +56,8 @@ export class InlineAssist implements Recipe {
                     displayText,
                 },
                 { speaker: 'assistant' },
-                this.getContextMessages(truncatedText, context.codebaseContext, selection, context.editor)
+                this.getContextMessages(truncatedText, context.codebaseContext, selection, context.editor),
+                []
             )
         )
     }

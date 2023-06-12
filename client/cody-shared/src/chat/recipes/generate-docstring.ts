@@ -60,7 +60,8 @@ export class GenerateDocstring implements Recipe {
                 truncatedFollowingText,
                 selection,
                 context.codebaseContext
-            )
+            ),
+            []
         )
     }
 }

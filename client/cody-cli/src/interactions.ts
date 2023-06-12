@@ -45,7 +45,8 @@ export async function interactionFromMessage(
         new Interaction(
             { speaker: 'human', text, displayText: text },
             { speaker: 'assistant', text: '', displayText: '' },
-            contextMessages
+            contextMessages,
+            []
         )
     )
 }

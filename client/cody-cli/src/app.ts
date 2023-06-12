@@ -111,7 +111,8 @@ async function startCLI() {
         }
     }
 
-    const finalPrompt = await transcript.toPrompt(getPreamble(codebase))
+    const { prompt: finalPrompt, contextFiles } = await transcript.getPromptForLastInteraction(getPreamble(codebase))
+    transcript.setUsedContextFilesForLastInteraction(contextFiles)
 
     let text = ''
     streamCompletions(completionsClient, finalPrompt, {
