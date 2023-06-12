@@ -70,6 +70,18 @@ export class LocalStorage {
         }
     }
 
+    public async deleteChatHistory(chatID: string): Promise<void> {
+        const userHistory = this.getChatHistory()
+        if (userHistory) {
+            try {
+                delete userHistory.chat[chatID]
+                await this.storage.update(this.KEY_LOCAL_HISTORY, { ...userHistory })
+            } catch (error) {
+                console.error(error)
+            }
+        }
+    }
+
     public async removeChatHistory(): Promise<void> {
         try {
             await this.storage.update(this.KEY_LOCAL_HISTORY, null)

@@ -415,10 +415,7 @@ func (r *ownStatsResolver) TotalCodeownedFiles(ctx context.Context) (int32, erro
 	if err != nil {
 		return 0, err
 	}
-	if len(counts) == 0 {
-		return 0, nil
-	}
-	return int32(counts[0].CodeownedFileCount), nil
+	return int32(counts.CodeownedFileCount), nil
 }
 
 type ownershipConnectionResolver struct {
@@ -797,6 +794,7 @@ func (r *ownResolver) computeAssignedTeams(ctx context.Context, db edb.Enterpris
 
 	fetchedTeams := make(map[int32]*types.Team)
 
+	isDirectMatch := false
 	for _, summary := range assignedTeamSummaries {
 		var team *types.Team
 		teamID := summary.OwnerTeamID
@@ -810,6 +808,9 @@ func (r *ownResolver) computeAssignedTeams(ctx context.Context, db edb.Enterpris
 			team = teamFromDB
 			fetchedTeams[teamID] = teamFromDB
 		}
+		if blob.Path() == summary.FilePath {
+			isDirectMatch = true
+		}
 		res := ownershipResolver{
 			db: db,
 			resolvedOwner: &codeowners.Team{
@@ -817,7 +818,7 @@ func (r *ownResolver) computeAssignedTeams(ctx context.Context, db edb.Enterpris
 			},
 			reasons: []*ownershipReasonResolver{
 				{
-					&assignedOwner{},
+					&assignedOwner{directMatch: isDirectMatch},
 				},
 			},
 		}

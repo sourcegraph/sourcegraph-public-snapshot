@@ -7,6 +7,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/sourcegraph/log"
+	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -42,10 +43,17 @@ func NewBigQueryLogger(projectID, dataset, table string) (Logger, error) {
 
 // Event contains information to be logged.
 type Event struct {
-	Name       codygateway.EventName
-	Source     string
+	// Event categorizes the event. Required.
+	Name codygateway.EventName
+	// Source indicates the source of the actor associated with the event.
+	// Required.
+	Source string
+	// Identifier identifies the actor associated with the event. If empty,
+	// the actor is presumed to be unknown - we do not record any events for
+	// unknown actors.
 	Identifier string
-	Metadata   map[string]any
+	// Metadata contains optional, additional details.
+	Metadata map[string]any
 }
 
 var _ bigquery.ValueSaver = bigQueryEvent{}
@@ -73,8 +81,19 @@ func (e bigQueryEvent) Save() (map[string]bigquery.Value, string, error) {
 
 // LogEvent logs an event to BigQuery.
 func (l *bigQueryLogger) LogEvent(spanCtx context.Context, event Event) (err error) {
-	if event.Name == "" || event.Source == "" || event.Identifier == "" {
-		return errors.New("missing event name, source or identifier")
+	if event.Name == "" {
+		return errors.New("missing event name")
+	}
+	if event.Source == "" {
+		return errors.New("missing event source")
+	}
+
+	// If empty, the actor is presumed to be unknown - we do not record any events
+	// for unknown actors.
+	if event.Identifier == "" {
+		oteltrace.SpanFromContext(spanCtx).
+			RecordError(errors.New("event is missing actor identifier, discarding event"))
+		return nil
 	}
 
 	var metadata json.RawMessage

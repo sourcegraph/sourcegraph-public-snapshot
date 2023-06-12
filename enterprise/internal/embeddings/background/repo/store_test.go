@@ -86,7 +86,8 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	require.Equal(t, id1, lastEmbeddingJobForRevision.ID)
 
 	// Complete the second job and check if we get it back when calling GetLastCompletedRepoEmbeddingJob.
-	setJobState(t, ctx, store, id2, "completed")
+	stateCompleted := "completed"
+	setJobState(t, ctx, store, id2, stateCompleted)
 	lastCompletedJob, err := store.GetLastCompletedRepoEmbeddingJob(ctx, createdRepo.ID)
 	require.NoError(t, err)
 
@@ -96,6 +97,12 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	exists, err = repoStore.RepoEmbeddingExists(ctx, createdRepo.ID)
 	require.NoError(t, err)
 	require.Equal(t, exists, true)
+
+	// Check that we get the correct repo embedding job if we filter by "state".
+	jobs, err = store.ListRepoEmbeddingJobs(ctx, ListOpts{State: &stateCompleted, PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(jobs))
+	require.Equal(t, id2, jobs[0].ID)
 }
 
 func TestCancelRepoEmbeddingJob(t *testing.T) {
