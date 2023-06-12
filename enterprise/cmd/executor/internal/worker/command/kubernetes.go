@@ -420,75 +420,11 @@ var ErrKubernetesPodNotScheduled = errors.New("deleted by scheduler: pod could n
 
 // NewKubernetesJob creates a Kubernetes job with the given name, image, volume path, and spec.
 func NewKubernetesJob(name string, image string, spec Spec, path string, options KubernetesContainerOptions) *batchv1.Job {
-	jobEnvs := make([]corev1.EnvVar, len(spec.Env))
-	for i, env := range spec.Env {
-		parts := strings.SplitN(env, "=", 2)
-		jobEnvs[i] = corev1.EnvVar{
-			Name:  parts[0],
-			Value: parts[1],
-		}
-	}
-	var affinity *corev1.Affinity
-	if len(options.RequiredNodeAffinity.MatchExpressions) > 0 || len(options.RequiredNodeAffinity.MatchFields) > 0 {
-		affinity = &corev1.Affinity{
-			NodeAffinity: &corev1.NodeAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					NodeSelectorTerms: []corev1.NodeSelectorTerm{
-						{
-							MatchExpressions: options.RequiredNodeAffinity.MatchExpressions,
-							MatchFields:      options.RequiredNodeAffinity.MatchFields,
-						},
-					},
-				},
-			},
-			PodAffinity: &corev1.PodAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
-					{
-						LabelSelector: nil,
-						TopologyKey:   "",
-					},
-				},
-			},
-			PodAntiAffinity: &corev1.PodAntiAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
-					{
-						LabelSelector: nil,
-						TopologyKey:   "",
-					},
-				},
-			},
-		}
-	}
-	if len(options.PodAffinity) > 0 {
-		if affinity == nil {
-			affinity = &corev1.Affinity{}
-		}
-		affinity.PodAffinity = &corev1.PodAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: options.PodAffinity,
-		}
-	}
-	if len(options.PodAntiAffinity) > 0 {
-		if affinity == nil {
-			affinity = &corev1.Affinity{}
-		}
-		affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: options.PodAntiAffinity,
-		}
-	}
+	jobEnvs := newEnvVars(spec.Env)
 
-	resourceLimit := corev1.ResourceList{
-		corev1.ResourceMemory: options.ResourceLimit.Memory,
-	}
-	if !options.ResourceLimit.CPU.IsZero() {
-		resourceLimit[corev1.ResourceCPU] = options.ResourceLimit.CPU
-	}
-
-	resourceRequest := corev1.ResourceList{
-		corev1.ResourceMemory: options.ResourceRequest.Memory,
-	}
-	if !options.ResourceRequest.CPU.IsZero() {
-		resourceRequest[corev1.ResourceCPU] = options.ResourceRequest.CPU
-	}
+	affinity := newAffinity(options)
+	resourceLimit := newResourceLimit(options)
+	resourceRequest := newResourceRequest(options)
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -550,67 +486,10 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 
 // NewKubernetesSingleJob creates a Kubernetes job with the given name, image, volume path, and spec.
 func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.WorkspaceFile, secret JobSecret, volumeName string, options KubernetesContainerOptions) *batchv1.Job {
-	var affinity *corev1.Affinity
-	if len(options.RequiredNodeAffinity.MatchExpressions) > 0 || len(options.RequiredNodeAffinity.MatchFields) > 0 {
-		affinity = &corev1.Affinity{
-			NodeAffinity: &corev1.NodeAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					NodeSelectorTerms: []corev1.NodeSelectorTerm{
-						{
-							MatchExpressions: options.RequiredNodeAffinity.MatchExpressions,
-							MatchFields:      options.RequiredNodeAffinity.MatchFields,
-						},
-					},
-				},
-			},
-			PodAffinity: &corev1.PodAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
-					{
-						LabelSelector: nil,
-						TopologyKey:   "",
-					},
-				},
-			},
-			PodAntiAffinity: &corev1.PodAntiAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
-					{
-						LabelSelector: nil,
-						TopologyKey:   "",
-					},
-				},
-			},
-		}
-	}
-	if len(options.PodAffinity) > 0 {
-		if affinity == nil {
-			affinity = &corev1.Affinity{}
-		}
-		affinity.PodAffinity = &corev1.PodAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: options.PodAffinity,
-		}
-	}
-	if len(options.PodAntiAffinity) > 0 {
-		if affinity == nil {
-			affinity = &corev1.Affinity{}
-		}
-		affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: options.PodAntiAffinity,
-		}
-	}
+	affinity := newAffinity(options)
 
-	resourceLimit := corev1.ResourceList{
-		corev1.ResourceMemory: options.ResourceLimit.Memory,
-	}
-	if !options.ResourceLimit.CPU.IsZero() {
-		resourceLimit[corev1.ResourceCPU] = options.ResourceLimit.CPU
-	}
-
-	resourceRequest := corev1.ResourceList{
-		corev1.ResourceMemory: options.ResourceRequest.Memory,
-	}
-	if !options.ResourceRequest.CPU.IsZero() {
-		resourceRequest[corev1.ResourceCPU] = options.ResourceRequest.CPU
-	}
+	resourceLimit := newResourceLimit(options)
+	resourceRequest := newResourceRequest(options)
 
 	volumes := make([]corev1.Volume, len(options.JobVolume.Volumes)+1)
 	switch options.JobVolume.Type {
@@ -668,15 +547,14 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 				"fetch --progress --no-recurse-submodules --no-tags --depth=1 origin %s; ", spec.Job.ID, options.ExecutorName, spec.Job.Commit) +
 			fmt.Sprintf("git -C repository checkout --progress --force %s; ", spec.Job.Commit) +
 			"mkdir -p .sourcegraph-executor; " +
-			"echo '" + strings.ReplaceAll(nextIndexScript, "'", "'\"'\"'") + "' > nextIndex.sh; " +
+			"echo '" + formatContent(nextIndexScript) + "' > nextIndex.sh; " +
 			"chmod +x nextIndex.sh; ",
 	}
 
 	for _, file := range workspaceFiles {
 		// Get the file path without the ending file name.
 		dir := filepath.Dir(file.Path)
-		// Having single ticks in the content mess things up real quick. Replace ' with '"'"'. This forces ' to be a string.
-		setupArgs[0] += "mkdir -p " + dir + "; echo -E '" + strings.ReplaceAll(string(file.Content), "'", "'\"'\"'") + "' > " + file.Path + "; chmod +x " + file.Path + "; "
+		setupArgs[0] += "mkdir -p " + dir + "; echo -E '" + formatContent(string(file.Content)) + "' > " + file.Path + "; chmod +x " + file.Path + "; "
 		if !file.ModifiedAt.IsZero() {
 			setupArgs[0] += fmt.Sprintf("touch -m -d '%s' %s; ", file.ModifiedAt.Format(time.RFC3339), file.Path)
 		}
@@ -700,18 +578,15 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 		Args:            setupArgs,
 		Env:             setupEnvs,
 		WorkingDir:      KubernetesJobMountPath,
-		VolumeMounts:    mounts,
+		Resources: corev1.ResourceRequirements{
+			Limits:   resourceLimit,
+			Requests: resourceRequest,
+		},
+		VolumeMounts: mounts,
 	}
 
 	for stepIndex, step := range spec.Steps {
-		jobEnvs := make([]corev1.EnvVar, len(step.Env))
-		for j, env := range step.Env {
-			parts := strings.SplitN(env, "=", 2)
-			jobEnvs[j] = corev1.EnvVar{
-				Name:  parts[0],
-				Value: parts[1],
-			}
-		}
+		jobEnvs := newEnvVars(step.Env)
 
 		nextIndexCommand := fmt.Sprintf("if [ \"$(%s /job/skip.json %s)\" != \"skip\" ]; then ", filepath.Join(KubernetesJobMountPath, "nextIndex.sh"), normalizeKey(step.Key))
 		stepInitContainers[stepIndex+1] = corev1.Container{
@@ -723,8 +598,12 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 				nextIndexCommand +
 					fmt.Sprintf("%s fi", strings.Join(step.Command, "; ")+"; "),
 			},
-			Env:          jobEnvs,
-			WorkingDir:   filepath.Join(KubernetesJobMountPath, step.Dir),
+			Env:        jobEnvs,
+			WorkingDir: filepath.Join(KubernetesJobMountPath, step.Dir),
+			Resources: corev1.ResourceRequirements{
+				Limits:   resourceLimit,
+				Requests: resourceRequest,
+			},
 			VolumeMounts: mounts,
 		}
 	}
@@ -760,7 +639,11 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 							Args: []string{
 								"echo 'complete'",
 							},
-							WorkingDir:   KubernetesJobMountPath,
+							WorkingDir: KubernetesJobMountPath,
+							Resources: corev1.ResourceRequirements{
+								Limits:   resourceLimit,
+								Requests: resourceRequest,
+							},
 							VolumeMounts: mounts,
 						},
 					},
@@ -769,6 +652,94 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 			},
 		},
 	}
+}
+
+func newEnvVars(envs []string) []corev1.EnvVar {
+	jobEnvs := make([]corev1.EnvVar, len(envs))
+	for j, env := range envs {
+		parts := strings.SplitN(env, "=", 2)
+		jobEnvs[j] = corev1.EnvVar{
+			Name:  parts[0],
+			Value: parts[1],
+		}
+	}
+	return jobEnvs
+}
+
+func newAffinity(options KubernetesContainerOptions) *corev1.Affinity {
+	var affinity *corev1.Affinity
+	if len(options.RequiredNodeAffinity.MatchExpressions) > 0 || len(options.RequiredNodeAffinity.MatchFields) > 0 {
+		affinity = &corev1.Affinity{
+			NodeAffinity: &corev1.NodeAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{
+						{
+							MatchExpressions: options.RequiredNodeAffinity.MatchExpressions,
+							MatchFields:      options.RequiredNodeAffinity.MatchFields,
+						},
+					},
+				},
+			},
+			PodAffinity: &corev1.PodAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+					{
+						LabelSelector: nil,
+						TopologyKey:   "",
+					},
+				},
+			},
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+					{
+						LabelSelector: nil,
+						TopologyKey:   "",
+					},
+				},
+			},
+		}
+	}
+	if len(options.PodAffinity) > 0 {
+		if affinity == nil {
+			affinity = &corev1.Affinity{}
+		}
+		affinity.PodAffinity = &corev1.PodAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: options.PodAffinity,
+		}
+	}
+	if len(options.PodAntiAffinity) > 0 {
+		if affinity == nil {
+			affinity = &corev1.Affinity{}
+		}
+		affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
+			RequiredDuringSchedulingIgnoredDuringExecution: options.PodAntiAffinity,
+		}
+	}
+	return affinity
+}
+
+func newResourceLimit(options KubernetesContainerOptions) corev1.ResourceList {
+	resourceLimit := corev1.ResourceList{
+		corev1.ResourceMemory: options.ResourceLimit.Memory,
+	}
+	if !options.ResourceLimit.CPU.IsZero() {
+		resourceLimit[corev1.ResourceCPU] = options.ResourceLimit.CPU
+	}
+	return resourceLimit
+}
+
+func newResourceRequest(options KubernetesContainerOptions) corev1.ResourceList {
+	resourceRequest := corev1.ResourceList{
+		corev1.ResourceMemory: options.ResourceRequest.Memory,
+	}
+	if !options.ResourceRequest.CPU.IsZero() {
+		resourceRequest[corev1.ResourceCPU] = options.ResourceRequest.CPU
+	}
+	return resourceRequest
+}
+
+func formatContent(content string) string {
+	// Having single ticks in the content mess things up real quick. Replace ' with '"'"'. This forces ' to be a string.
+	return strings.ReplaceAll(content, "'", "'\"'\"'")
 }
 
 const nextIndexScript = `#!/bin/sh
