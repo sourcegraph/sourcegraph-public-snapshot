@@ -931,8 +931,8 @@ func (c *clientImplementor) P4GetChangelist(ctx context.Context, changelistID st
 		"changes",
 		"-r",      // list in reverse order, which means that the given changelist id will be the first one listed
 		"-m", "1", // limit output to one record, so that the given changelist is the only one listed
+		"-l",               // use a long listing, which includes the whole commit message
 		"-e", changelistID, // start from this changelist and go up
-		"-l", // use a long listing, which includes the whole commit message
 	)
 	if err != nil {
 		return nil, err
