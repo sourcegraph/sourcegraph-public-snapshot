@@ -14,17 +14,13 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 ### Fixed
 
 - Fix the loading of files and scroll chat to the end while restoring the history [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
-
-### Changed
-
-- Save the current ongoing conversation to the chat history [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
-
-### Fixed
-
 - Open file paths from Cody's responses in a workspace with the correct protocol. [pull/53103](https://github.com/sourcegraph/sourcegraph/pull/53103)
 - Cody completions: Fixes an issue where completions would often start in the next line. [pull/53246](https://github.com/sourcegraph/sourcegraph/pull/53246)
 
 ### Changed
+
+- Save the current ongoing conversation to the chat history [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
+- Cody completions: Changed the feature flag from `cody.experimental.suggestions` to `cody.completions`. [pull/53240](https://github.com/sourcegraph/sourcegraph/pull/53240)
 
 ## [0.2.2]
 
