@@ -22,5 +22,5 @@ func FormatPostKey(index int) string {
 
 // IsPreStepKey returns true if the given key is a pre step key.
 func IsPreStepKey(key string) bool {
-	return strings.HasSuffix(key, ".pre")
+	return strings.HasSuffix(key, ".pre") || strings.HasSuffix(key, "-pre")
 }
