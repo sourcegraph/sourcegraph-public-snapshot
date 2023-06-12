@@ -175,6 +175,9 @@ const register = async (
         vscode.commands.registerCommand('cody.delete-access-token', async () => {
             await chatProvider.logout()
         }),
+        vscode.commands.registerCommand('cody.clear-chat-history', async () => {
+            await chatProvider.clearHistory()
+        }),
         // Commands
         vscode.commands.registerCommand('cody.welcome', () =>
             vscode.commands.executeCommand('workbench.action.openWalkthrough', 'sourcegraph.cody-ai#welcome', false)

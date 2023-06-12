@@ -22,6 +22,7 @@
 
 .item-button {
     display: block;
+    position: relative;
     padding-top: .5rem;
     padding-bottom: .5rem;
 }
@@ -35,6 +36,17 @@
 .item-date {
     font-size: smaller;
     margin-bottom: .25rem;
+}
+
+.item-delete {
+    position: absolute;
+    right: 0.25rem;
+    top: 0.5rem;
+    visibility: hidden;
+}
+
+.item-button:hover .item-delete {
+    visibility: visible;
 }
 
 .item-last-message {

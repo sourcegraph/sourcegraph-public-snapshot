@@ -35,6 +35,7 @@ export async function beforeIntegrationTest(): Promise<void> {
 export async function afterIntegrationTest(): Promise<void> {
     await ensureExecuteCommand('cody.delete-access-token')
     await ensureExecuteCommand('cody.interactive.clear')
+    await ensureExecuteCommand('cody.clear-chat-history')
 }
 
 // executeCommand specifies ...any[] https://code.visualstudio.com/api/references/vscode-api#commands
