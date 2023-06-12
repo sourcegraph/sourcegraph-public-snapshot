@@ -11,5 +11,6 @@ go_library(
         "//internal/search/client",
         "//internal/search/streaming",
         "//lib/errors",
+        "@com_github_sourcegraph_conc//pool",
     ],
 )
