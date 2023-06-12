@@ -68,6 +68,7 @@ go_test(
     deps = [
         "//internal/api",
         "//internal/conf",
+        "//internal/ctags_config",
         "//internal/types",
         "//lib/errors",
         "//schema",
