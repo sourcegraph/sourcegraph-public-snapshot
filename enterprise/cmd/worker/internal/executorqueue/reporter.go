@@ -16,7 +16,28 @@ func NewMetricReporter[T workerutil.Record](observationCtx *observation.Context,
 	initPrometheusMetric(observationCtx, queueName, store)
 
 	// Emit metrics to control executor auto-scaling.
-	return initExternalMetricReporters(queueName, metricsConfig, store.QueuedCount)
+	return initExternalMetricReporters(queueName, store, metricsConfig)
+}
+
+func initExternalMetricReporters[T workerutil.Record](queueName string, store store.Store[T], metricsConfig *Config) (goroutine.BackgroundRoutine, error) {
+	reporters, err := configureReporters(metricsConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := context.Background()
+	return goroutine.NewPeriodicGoroutine(
+		ctx,
+		&externalEmitter[T]{
+			queueName:  queueName,
+			countFuncs: []func(ctx context.Context, includeProcessing bool) (int, error){store.QueuedCount},
+			reporters:  reporters,
+			allocation: metricsConfig.Allocations[queueName],
+		},
+		goroutine.WithName("executors.autoscaler-metrics"),
+		goroutine.WithDescription("emits metrics to GCP/AWS for auto-scaling"),
+		goroutine.WithInterval(5*time.Second),
+	), nil
 }
 
 func NewMultiqueueMetricReporter[T workerutil.Record](queueNames []string, metricsConfig *Config, countFuncs ...func(ctx context.Context, includeProcessing bool) (int, error)) (goroutine.BackgroundRoutine, error) {
@@ -38,27 +59,6 @@ func NewMultiqueueMetricReporter[T workerutil.Record](queueNames []string, metri
 		},
 		goroutine.WithName("multiqueue-executors.autoscaler-metrics"),
 		goroutine.WithDescription("emits multiqueue metrics to GCP/AWS for auto-scaling"),
-		goroutine.WithInterval(5*time.Second),
-	), nil
-}
-
-func initExternalMetricReporters[T workerutil.Record](queueName string, metricsConfig *Config, countFuncs ...func(ctx context.Context, includeProcessing bool) (int, error)) (goroutine.BackgroundRoutine, error) {
-	reporters, err := configureReporters(metricsConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	ctx := context.Background()
-	return goroutine.NewPeriodicGoroutine(
-		ctx,
-		&externalEmitter[T]{
-			queueName:  queueName,
-			countFuncs: countFuncs,
-			reporters:  reporters,
-			allocation: metricsConfig.Allocations[queueName],
-		},
-		goroutine.WithName("executors.autoscaler-metrics"),
-		goroutine.WithDescription("emits metrics to GCP/AWS for auto-scaling"),
 		goroutine.WithInterval(5*time.Second),
 	), nil
 }
