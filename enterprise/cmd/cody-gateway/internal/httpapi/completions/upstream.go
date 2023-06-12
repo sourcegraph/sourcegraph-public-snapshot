@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/featurelimiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/response"
@@ -79,7 +80,7 @@ func makeUpstreamHandler[ReqT any](
 		allowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, allowedModels[i])
 	}
 
-	return rateLimit(
+	return featurelimiter.Handle(
 		baseLogger,
 		eventLogger,
 		limiter.NewPrefixRedisStore("rate_limit:", rs),
@@ -88,9 +89,9 @@ func makeUpstreamHandler[ReqT any](
 			act := actor.FromContext(r.Context())
 			logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
 
-			feature, err := extractFeature(r)
-			if err != nil {
-				response.JSONError(logger, w, http.StatusBadRequest, err)
+			feature := featurelimiter.GetFeature(r.Context())
+			if feature == "" {
+				response.JSONError(logger, w, http.StatusBadRequest, errors.New("no feature provided"))
 				return
 			}
 

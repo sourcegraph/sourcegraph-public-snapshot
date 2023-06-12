@@ -1,6 +1,7 @@
-package completions
+package featurelimiter
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -17,24 +18,67 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func rateLimit(
+type contextKey string
+
+const contextKeyFeature contextKey = "feature"
+
+// GetFeature gets the feature used by Handle or HandleFeature.
+func GetFeature(ctx context.Context) codygateway.Feature {
+	if f, ok := ctx.Value(contextKeyFeature).(codygateway.Feature); ok {
+		return f
+	}
+	return ""
+}
+
+// Handle extracts features from codygateway.FeatureHeaderName and uses it to
+// determine the appropriate per-feature rate limits applied for an actor.
+func Handle(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	cache limiter.RedisStore,
 	rateLimitNotifier notify.RateLimitNotifier,
 	next http.Handler,
 ) http.Handler {
-	baseLogger = baseLogger.Scoped("rateLimit", "rate limit handler")
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		feature, err := extractFeature(r)
+		if err != nil {
+			response.JSONError(baseLogger, w, http.StatusBadRequest, err)
+			return
+		}
 
+		HandleFeature(baseLogger, eventLogger, cache, rateLimitNotifier, feature, next).
+			ServeHTTP(w, r)
+	})
+}
+
+func extractFeature(r *http.Request) (codygateway.Feature, error) {
+	h := strings.TrimSpace(r.Header.Get(codygateway.FeatureHeaderName))
+	if h == "" {
+		return "", errors.Newf("%s header is required", codygateway.FeatureHeaderName)
+	}
+	feature := types.CompletionsFeature(h)
+	if !feature.IsValid() {
+		return "", errors.Newf("invalid value for %s", codygateway.FeatureHeaderName)
+	}
+	// codygateway.Feature and types.CompletionsFeature map 1:1 for completions.
+	return codygateway.Feature(feature), nil
+}
+
+// Handle uses a predefined feature to determine the appropriate per-feature
+// rate limits applied for an actor.
+func HandleFeature(
+	baseLogger log.Logger,
+	eventLogger events.Logger,
+	cache limiter.RedisStore,
+	rateLimitNotifier notify.RateLimitNotifier,
+	feature codygateway.Feature,
+	next http.Handler,
+) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
 		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
 
-		feature, err := extractFeature(r)
-		if err != nil {
-			response.JSONError(logger, w, http.StatusBadRequest, err)
-			return
-		}
+		r = r.WithContext(context.WithValue(r.Context(), contextKeyFeature, feature))
 
 		l, ok := act.Limiter(logger, cache, feature, rateLimitNotifier)
 		if !ok {
@@ -95,17 +139,4 @@ func rateLimit(
 			}
 		}
 	})
-}
-
-func extractFeature(r *http.Request) (codygateway.Feature, error) {
-	h := strings.TrimSpace(r.Header.Get(codygateway.FeatureHeaderName))
-	if h == "" {
-		return "", errors.Newf("%s header is required", codygateway.FeatureHeaderName)
-	}
-	feature := types.CompletionsFeature(h)
-	if !feature.IsValid() {
-		return "", errors.Newf("invalid value for %s", codygateway.FeatureHeaderName)
-	}
-	// codygateway.Feature and types.CompletionsFeature map 1:1 for completions.
-	return codygateway.Feature(feature), nil
 }

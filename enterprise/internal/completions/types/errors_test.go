@@ -47,7 +47,7 @@ func TestErrStatusNotOK(t *testing.T) {
 			assert.Equal(t, resp.Header, writtenResp.Header)
 
 			// Should not have written the response body.
-			writtenBody, err := io.ReadAll(resp.Body)
+			writtenBody, err := io.ReadAll(writtenResp.Body)
 			assert.NoError(t, err)
 			assert.Empty(t, writtenBody)
 		})
