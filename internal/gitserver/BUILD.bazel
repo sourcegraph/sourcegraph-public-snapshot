@@ -38,6 +38,7 @@ go_library(
         "//internal/limiter",
         "//internal/metrics",
         "//internal/observation",
+        "//internal/perforce",
         "//internal/search/streaming/http",
         "//internal/trace",
         "//lib/errors",
