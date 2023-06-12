@@ -38,7 +38,7 @@ type DotcomMutation {
         """
         The UUID of the license to revoke
         """
-        id: String!
+        id: ID!
         """
         Reason for revoking of the license
         """
@@ -52,7 +52,7 @@ type DotcomMutation {
     """
     updateProductSubscription(
         """
-        The product subscription to update.
+        The product subscription ID to update.
         """
         id: ID!
         """
