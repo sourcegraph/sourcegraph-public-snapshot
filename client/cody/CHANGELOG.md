@@ -8,6 +8,17 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Added
 
+- Add delete button for removing individual history [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
+- Load the recent ongoing chat on reload of window [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
+
+### Fixed
+
+- Fix the loading of files and scroll chat to the end while restoring the history [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
+
+### Changed
+
+- Save the current ongoing conversation to the chat history [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
+
 ### Fixed
 
 - Open file paths from Cody's responses in a workspace with the correct protocol. [pull/53103](https://github.com/sourcegraph/sourcegraph/pull/53103)
