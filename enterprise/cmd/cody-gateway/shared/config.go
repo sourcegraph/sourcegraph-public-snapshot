@@ -68,7 +68,7 @@ type TraceConfig struct {
 func (c *Config) Load() {
 	c.InsecureDev = env.InsecureDev
 	c.Address = c.Get("CODY_GATEWAY_ADDR", ":9992", "Address to serve Cody Gateway on.")
-	c.DiagnosticsSecret = c.GetOptional("CODY_GATEWAY_DIAGNOSTICS_SECRET", "Secret for accessing diagnostics - "+
+	c.DiagnosticsSecret = c.Get("CODY_GATEWAY_DIAGNOSTICS_SECRET", "", "Secret for accessing diagnostics - "+
 		"should be used as 'Authorization: Bearer $secret' header when accessing diagnostics endpoints.")
 
 	c.Dotcom.AccessToken = c.Get("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN", "", "The Sourcegraph.com access token to be used.")

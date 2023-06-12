@@ -73,7 +73,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	dotcomClient := dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
 
 	// Supported actor/auth sources
-	sources := actor.Sources{
+	sources := actor.NewSources(
 		anonymous.NewSource(config.AllowAnonymous, config.ActorConcurrencyLimit),
 		productsubscription.NewSource(
 			obctx.Logger,
@@ -87,7 +87,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			dotcomClient,
 			config.ActorConcurrencyLimit,
 		),
-	}
+	)
 
 	authr := &auth.Authenticator{
 		Logger:      obctx.Logger.Scoped("auth", "authentication middleware"),
@@ -122,7 +122,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	})
 
 	// Diagnostic layers
-	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, config.DiagnosticsSecret)
+	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, config.DiagnosticsSecret, sources)
 
 	// Basic instrumentation. Note that tracing should be added on individual
 	// handlers rather than here at a high level so that we don't collect traces
