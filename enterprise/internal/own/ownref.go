@@ -385,9 +385,14 @@ func fetchCodeHostHandles(ctx context.Context, db edb.EnterpriseDB, userID int32
 	}
 	codeHostHandles := make([]string, 0, len(accounts))
 	for _, account := range accounts {
-		p := providers.GetProviderbyServiceType(account.ServiceType)
+		serviceType := account.ServiceType
+		// We cannot parse external code host handle from SCIM account type.
+		if serviceType == extsvc.VariantSCIM.AsType() {
+			continue
+		}
+		p := providers.GetProviderbyServiceType(serviceType)
 		if p == nil {
-			return nil, errors.Errorf("cannot find authorization provider for the external account, service type: %s", account.ServiceType)
+			return nil, errors.Errorf("cannot find authorization provider for the external account, service type: %s", serviceType)
 		}
 		data, err := p.ExternalAccountInfo(ctx, *account)
 		if err != nil || data == nil {
