@@ -62,7 +62,8 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 		l.LimiterName = "StaticLimiter"
 	}
 	intervalSeconds := l.Interval.Seconds()
-	ctx, span := tracer.Start(ctx, l.LimiterName+".TryAcquire",
+	var span trace.Span
+	ctx, span = tracer.Start(ctx, l.LimiterName+".TryAcquire",
 		trace.WithAttributes(
 			attribute.Int("limit", l.Limit),
 			attribute.Float64("intervalSeconds", intervalSeconds)))
@@ -126,7 +127,7 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 	return func(ctx context.Context, usage int) (err error) {
 		var incrementedTo, ttlSeconds int
 		// We need to start a new span because the previous one has ended
-		ctx, span := tracer.Start(ctx, l.LimiterName+".commit",
+		ctx, span = tracer.Start(ctx, l.LimiterName+".commit",
 			trace.WithAttributes(attribute.Int("usage", usage)))
 		defer func() {
 			span.SetAttributes(
