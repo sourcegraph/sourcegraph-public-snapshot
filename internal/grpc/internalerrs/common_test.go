@@ -2,13 +2,14 @@ package internalerrs
 
 import (
 	"errors"
-	"github.com/golang/protobuf/ptypes/timestamp"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	newspb "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news/v1"
-	"google.golang.org/protobuf/proto"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp/cmpopts"
+	newspb "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news/v1"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/grpc"
@@ -87,11 +88,11 @@ type mockClientStream struct {
 	recvErr error
 }
 
-func (s *mockClientStream) SendMsg(m interface{}) error {
+func (s *mockClientStream) SendMsg(any) error {
 	return s.sendErr
 }
 
-func (s *mockClientStream) RecvMsg(m interface{}) error {
+func (s *mockClientStream) RecvMsg(any) error {
 	return s.recvErr
 }
 
@@ -253,7 +254,7 @@ func TestFindNonUTF8StringFields(t *testing.T) {
 	// Create a sample Article message with invalid UTF-8 strings
 	article := &newspb.Article{
 		Author:  "inval\x80id_author",
-		Date:    &timestamp.Timestamp{Seconds: 1234567890},
+		Date:    &timestamppb.Timestamp{Seconds: 1234567890},
 		Title:   "valid_title",
 		Content: "valid_content",
 		Status:  newspb.Article_STATUS_PUBLISHED,

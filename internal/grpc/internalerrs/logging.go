@@ -3,12 +3,13 @@ package internalerrs
 import (
 	"context"
 	"fmt"
+	"io"
+	"strings"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
-	"io"
-	"strings"
 
 	"github.com/sourcegraph/log"
 	"google.golang.org/grpc"
@@ -24,8 +25,8 @@ var (
 	envLoggingEnabled        = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_ENABLED", true, "Enables logging of gRPC internal errors")
 	envLogStackTracesEnabled = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_STACK_TRACES", false, "Enables including stack traces in logs of gRPC internal errors")
 
-	envLogNonUTF8ProtobufMessages        = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES", true, "Enables logging of non-UTF-8 protobuf messages")
-	envLogNonUTF8ProtobufMessagesMaxSize = env.MustGetInt("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES_MAX_SIZE", 1024, "Maximum size of non-UTF-8 protobuf messages to log, in bytes")
+	envLogNonUTF8ProtobufMessages        = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES", false, "Enables logging of non-UTF-8 protobuf messages")
+	envLogNonUTF8ProtobufMessagesMaxSize = env.MustGetUint64("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES_MAX_SIZE_BYTES", 1024, "Maximum size of non-UTF-8 protobuf messages to log, in bytes")
 )
 
 // LoggingUnaryClientInterceptor returns a grpc.UnaryClientInterceptor that logs
@@ -127,7 +128,7 @@ func doLog(logger log.Logger, serviceName, methodName string, message interface{
 
 			if envLogNonUTF8ProtobufMessages {
 				messageString := prototext.MarshalOptions{AllowPartial: true}.Format(m)
-				messageString = truncate(messageString, envLogNonUTF8ProtobufMessagesMaxSize)
+				messageString = truncate(messageString, int(envLogNonUTF8ProtobufMessagesMaxSize))
 
 				fields = append(fields, log.String("message", messageString))
 			}
@@ -137,12 +138,12 @@ func doLog(logger log.Logger, serviceName, methodName string, message interface{
 	logger.Error(s.Message(), fields...)
 }
 
-func truncate(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
+func truncate(s string, max int) string {
+	if max > 0 && len(s) > max {
+		s = s[:max] + "...(truncated)"
 	}
 
-	return s[:maxLen] + "...(truncated)"
+	return s
 }
 
 func isNonUTF8StringError(s *status.Status) bool {
