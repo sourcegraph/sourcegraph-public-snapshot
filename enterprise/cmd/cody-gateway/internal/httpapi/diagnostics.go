@@ -1,11 +1,14 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"strings"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/hook"
+	"github.com/sourcegraph/log/output"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/auth"
@@ -21,7 +24,7 @@ import (
 // on "/-/..." paths. It should be placed before any authentication middleware, since
 // we do a simple auth on a static secret instead that is uniquely generated per
 // deployment.
-func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret string, sources actor.Sources) http.Handler {
+func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret string, sources *actor.Sources) http.Handler {
 	baseLogger = baseLogger.Scoped("diagnostics", "healthz checks")
 
 	mustHaveSecret := func(l log.Logger, w http.ResponseWriter, r *http.Request) {
@@ -66,13 +69,18 @@ func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret stri
 			logger := sgtrace.Logger(r.Context(), baseLogger)
 			mustHaveSecret(logger, w, r)
 
+			// Tee log output into "jq --slurp '.[].Body'"-compatible output
+			// for ease of use
+			var b bytes.Buffer
+			logger = hook.Writer(logger, &b, log.LevelInfo, output.FormatJSON)
+
 			if err := sources.SyncAll(r.Context(), logger); err != nil {
 				response.JSONError(baseLogger, w, http.StatusInternalServerError, err)
 				return
 			}
 
 			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte("all sources synched"))
+			_, _ = w.Write(b.Bytes())
 
 		// Unknown "/-/..." endpoint
 		default:
