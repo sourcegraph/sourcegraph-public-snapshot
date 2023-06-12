@@ -53,3 +53,11 @@ export const ASSIGN_OWNER = gql`
         }
     }
 `
+
+export const ASSIGN_TEAM = gql`
+    mutation AssignTeam($input: AssignOwnerOrTeamInput!) {
+        assignTeam(input: $input) {
+            alwaysNil
+        }
+    }
+`
