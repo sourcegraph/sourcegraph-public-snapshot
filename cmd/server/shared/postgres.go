@@ -112,7 +112,19 @@ func postgresProcfile() (string, error) {
 			return "", err
 		}
 
-		// TODO: If we're initialising the database, create the 5.1-reindex file now as we don't need to reindex
+		// Create the 5.1-reindex file; DB was initialized by Sourcegraph >=5.1 so reindexing is not required
+		postgresReindexMarkerFile := postgresReindexMarkerFile(path)
+		f, err := os.Create(postgresReindexMarkerFile)
+		if err != nil {
+			return "", err
+		}
+		defer f.Close()
+
+		_, err = f.WriteString("Database initialised by Sourcegraph 5.1 or later\n")
+		if err != nil {
+			return "", err
+		}
+
 	} else {
 		// Between restarts the owner of the volume may have changed. Ensure
 		// postgres can still read it.
