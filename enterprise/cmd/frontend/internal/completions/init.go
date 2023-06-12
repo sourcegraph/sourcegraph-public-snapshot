@@ -9,8 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/httpapi"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -27,11 +27,11 @@ func Init(
 	logger := log.Scoped("completions", "Cody completions")
 
 	enterpriseServices.NewChatCompletionsStreamHandler = func() http.Handler {
-		completionsHandler := httpapi.NewChatCompletionsStreamHandler(logger.Scoped("chat", "chat completions handler"), db)
+		completionsHandler := httpapi.NewChatCompletionsStreamHandler(logger, db)
 		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, completionsHandler)
 	}
 	enterpriseServices.NewCodeCompletionsHandler = func() http.Handler {
-		codeCompletionsHandler := httpapi.NewCodeCompletionsHandler(logger.Scoped("code", "code completions handler"), db)
+		codeCompletionsHandler := httpapi.NewCodeCompletionsHandler(logger, db)
 		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, codeCompletionsHandler)
 	}
 	enterpriseServices.CompletionsResolver = resolvers.NewCompletionsResolver(db, observationCtx.Logger)

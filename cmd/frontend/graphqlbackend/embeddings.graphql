@@ -82,6 +82,10 @@ extend type Query {
         Filter by the name of the repository.
         """
         query: String
+        """
+        Filter by the state of the job.
+        """
+        state: String
     ): RepoEmbeddingJobsConnection!
 }
 
@@ -91,10 +95,6 @@ extend type Mutation {
     If force is set to true, then the repo will be re-embedded even if there's already an up-to-date embeddings index.
     """
     scheduleRepositoriesForEmbedding(repoNames: [String!]!, force: Boolean): EmptyResponse!
-    """
-    Experimental: Schedules a job to create an embedding index used for context detection. The index is used to determine wheter a query requires additional context.
-    """
-    scheduleContextDetectionForEmbedding: EmptyResponse!
     """
     Experimental: Cancels the embedding job with the given ID. The job must exist and be in either 'processing' or 'queued' state.
     """

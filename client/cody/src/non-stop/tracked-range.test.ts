@@ -2,7 +2,7 @@ import assert from 'assert'
 
 import { Position, Range } from 'vscode'
 
-import { updateRange } from './tracked-range'
+import { updateRange, updateRangeMultipleChanges } from './tracked-range'
 
 // Creates a position.
 function pos(line: number, character: number): Position {
@@ -190,8 +190,8 @@ describe('Tracked Range', () => {
     it('should track intra-line edits overlapping the end of the range by truncating the end of the range', () => {
         expect(track('[hello(, ]world)!', ' everyone')).toBe('[hello] everyone!')
     })
-    it('should obliterate the range for edits encompassing the entire range', () => {
-        expect(track('([hello, ]world)!', 'woozl wuzl')).toBe('woozl wuzl!')
+    it('should the range to the start of the edit, if the edit encompasses the entire range', () => {
+        expect(track('all the (h[ello, ]world) things!', 'woozl wuzl')).toBe('all the []woozl wuzl things!')
     })
     it('should track multiline insertions before the range, ending on the same line as the range', () => {
         expect(track('he(llo,\nworld) [is a common\ngreeting]', "y jude,\ndon't be afraid")).toBe(
@@ -200,5 +200,52 @@ describe('Tracked Range', () => {
     })
     it('should track multiline insertions before the range, starting and ending on the same line as the range', () => {
         expect(track('hello(,) [world]!', ' everybody\naround the')).toBe('hello everybody\naround the [world]!')
+    })
+})
+
+describe('Multi-change Tracked Range', () => {
+    it('should stack edits on separate lines', () => {
+        const range = rng(pos(2, 7), pos(17, 13))
+        const changes = [
+            {
+                // Minus one line; the last line has
+                // the five characters before the start of the edit
+                // and the 13-3 = 10 characters after the end of the edit
+                range: rng(pos(16, 5), pos(17, 3)),
+                text: '',
+            },
+            {
+                // -1 (the difference in positions) +2 (the length of "hi")
+                // => +1 character
+                range: rng(pos(2, 2), pos(2, 3)),
+                text: 'hi',
+            },
+        ]
+        const result = updateRangeMultipleChanges(range, changes)
+        expect(result).toEqual(rng(pos(2, 8), pos(16, 15)))
+    })
+    it('should stack edits touching the same line', () => {
+        const range = rng(pos(2, 7), pos(5, 13))
+        const changes = [
+            {
+                range: rng(pos(2, 10), pos(3, 4)),
+                text: 'hi',
+            },
+            {
+                range: rng(pos(3, 7), pos(5, 11)),
+                text: 'bye',
+            },
+        ]
+        const result = updateRangeMultipleChanges(range, changes)
+        // Lines are simple, we have deleted all the line breaks and ended
+        // up on the same line.
+        // Character is more subtle:
+        // +7 characters to the start of the range
+        // +3 characters between (2,7) and (2,10)
+        // +2 characters inserted, "hi"
+        // +3 characters between (3,4) and (3,7)
+        // +3 characters inserted, "bye"
+        // +2 characters between (5,11) and (5,13)
+        expect(result).toEqual(rng(pos(2, 7), pos(2, 20)))
     })
 })

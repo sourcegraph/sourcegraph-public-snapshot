@@ -22,6 +22,9 @@ import (
 
 var tracer = otel.GetTracerProvider().Tracer("cody-gateway/internal/actor")
 
+// ErrNotFromSource indicates that a Source doesn't care about an incoming
+// token - it is not a hard-error case, and instead is a sentinel signal to
+// indicate that we should try another Source.
 type ErrNotFromSource struct{ Reason string }
 
 func (e ErrNotFromSource) Error() string {
@@ -30,6 +33,8 @@ func (e ErrNotFromSource) Error() string {
 	}
 	return fmt.Sprintf("token not from source: %s", e.Reason)
 }
+
+func IsErrNotFromSource(err error) bool { return errors.As(err, &ErrNotFromSource{}) }
 
 // Source is the interface for actor sources.
 type Source interface {
@@ -69,11 +74,12 @@ func (s Sources) Get(ctx context.Context, token string) (_ *Actor, err error) {
 		actor, err := src.Get(ctx, token)
 		// Only if the Source indicates it doesn't know about this token do
 		// we continue to the next Source.
-		if err != nil && errors.Is(err, ErrNotFromSource{}) {
+		if err != nil && IsErrNotFromSource(err) {
 			continue
 		}
 
-		// Otherwise we continue with the first result we get.
+		// Otherwise we continue with the first result we get. We also return
+		// the error here, anything that's not ErrNotFromSource is a hard error.
 		span.SetAttributes(attribute.String("matched_source", src.Name()))
 		return actor, errors.Wrap(err, src.Name())
 	}

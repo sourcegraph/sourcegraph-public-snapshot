@@ -32,11 +32,11 @@ func (p ProductSubscriptionLicensingResolver) ProductLicenseByID(ctx context.Con
 // productLicenseByID looks up and returns the ProductLicense with the given GraphQL ID. If no such
 // ProductLicense exists, it returns a non-nil error.
 func productLicenseByID(ctx context.Context, db database.DB, id graphql.ID) (*productLicense, error) {
-	idInt32, err := unmarshalProductLicenseID(id)
+	lid, err := unmarshalProductLicenseID(id)
 	if err != nil {
 		return nil, err
 	}
-	return productLicenseByDBID(ctx, db, idInt32)
+	return productLicenseByDBID(ctx, db, lid)
 }
 
 // productLicenseByDBID looks up and returns the ProductLicense with the given database ID. If no
@@ -87,9 +87,11 @@ func (r *productLicense) Info() (*graphqlbackend.ProductLicenseInfo, error) {
 		return nil, err
 	}
 	return &graphqlbackend.ProductLicenseInfo{
-		TagsValue:      info.Tags,
-		UserCountValue: info.UserCount,
-		ExpiresAtValue: info.ExpiresAt,
+		TagsValue:                     info.Tags,
+		UserCountValue:                info.UserCount,
+		ExpiresAtValue:                info.ExpiresAt,
+		SalesforceSubscriptionIDValue: info.SalesforceSubscriptionID,
+		SalesforceOpportunityIDValue:  info.SalesforceOpportunityID,
 	}, nil
 }
 
@@ -97,6 +99,25 @@ func (r *productLicense) LicenseKey() string { return r.v.LicenseKey }
 
 func (r *productLicense) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.v.CreatedAt}
+}
+
+func (r *productLicense) RevokedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.v.RevokedAt)
+}
+
+func (r *productLicense) RevokeReason() *string {
+	return r.v.RevokeReason
+}
+
+func (r *productLicense) SiteID() *string {
+	return r.v.SiteID
+}
+
+func (r *productLicense) Version() int32 {
+	if r.v.LicenseVersion == nil {
+		return 0
+	}
+	return *r.v.LicenseVersion
 }
 
 func generateProductLicenseForSubscription(ctx context.Context, db database.DB, subscriptionID string, input *graphqlbackend.ProductLicenseInput) (id string, err error) {
@@ -154,6 +175,26 @@ func (r ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Contex
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &productLicenseConnection{db: r.DB, opt: opt}, nil
+}
+
+func (r ProductSubscriptionLicensingResolver) RevokeLicense(ctx context.Context, args *graphqlbackend.RevokeLicenseArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins may revoke product licenses.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+		return nil, err
+	}
+
+	// check if the UUID is valid
+	id, err := unmarshalProductLicenseID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = dbLicenses{db: r.DB}.Revoke(ctx, id, args.Reason)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 // productLicenseConnection implements the GraphQL type ProductLicenseConnection.

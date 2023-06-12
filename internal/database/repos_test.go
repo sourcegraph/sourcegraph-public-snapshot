@@ -759,18 +759,18 @@ func TestRepos_List_LastChanged(t *testing.T) {
 	setGitserverRepoLastChanged(t, db, r3.Name, now.Add(-time.Hour))
 	{
 		if _, err := db.Handle().ExecContext(ctx, `
-			INSERT INTO codeintel_path_ranks (graph_key, repository_id, updated_at, payload)
-			VALUES ('test', $1, $2, '{}'::jsonb)
+			INSERT INTO codeintel_path_ranks(graph_key, repository_id, updated_at, payload)
+			VALUES ('test', $1, NOW() + '1 day'::interval, '{}'::jsonb)
 		`,
-			r3.ID, now,
+			r3.ID,
 		); err != nil {
 			t.Fatal(err)
 		}
 
 		if _, err := db.Handle().ExecContext(ctx, `
 			INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at)
-			VALUES ('test', 1000, NOW(), NOW())
-		`,
+			VALUES ('test', 1000, NOW(), $1)
+		`, now,
 		); err != nil {
 			t.Fatal(err)
 		}

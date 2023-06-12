@@ -2,6 +2,7 @@ package dotcom
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/graph-gophers/graphql-go"
 
@@ -18,6 +19,7 @@ import (
 // dotcomRootResolver implements the GraphQL types DotcomMutation and DotcomQuery.
 type dotcomRootResolver struct {
 	productsubscription.ProductSubscriptionLicensingResolver
+	productsubscription.CodyGatewayDotcomUserResolver
 }
 
 func (d dotcomRootResolver) Dotcom() graphqlbackend.DotcomResolver {
@@ -51,6 +53,12 @@ func Init(
 			ProductSubscriptionLicensingResolver: productsubscription.ProductSubscriptionLicensingResolver{
 				DB: db,
 			},
+			CodyGatewayDotcomUserResolver: productsubscription.CodyGatewayDotcomUserResolver{
+				DB: db,
+			},
+		}
+		enterpriseServices.NewDotcomLicenseCheckHandler = func() http.Handler {
+			return productsubscription.NewLicenseCheckHandler(db)
 		}
 	}
 	return nil

@@ -13,6 +13,9 @@ fragment CodyGatewayAccessFields on CodyGatewayAccess {
     codeCompletionsRateLimit {
         ...RateLimitFields
     }
+    embeddingsRateLimit {
+        ...RateLimitFields
+    }
 }
 
 fragment ProductSubscriptionState on ProductSubscription {
@@ -55,6 +58,23 @@ query ListProductSubscriptions {
             nodes {
                 ...ListProductSubscriptionFields
             }
+        }
+    }
+}
+
+fragment DotcomUserState on CodyGatewayDotcomUser {
+    username
+    codyGatewayAccess {
+        ...CodyGatewayAccessFields
+    }
+}
+
+# CheckDotcomUserAccessToken returns traits of the product subscription associated with
+# the given access token.
+query CheckDotcomUserAccessToken($token: String!) {
+    dotcom {
+        codyGatewayDotcomUserByToken(token: $token) {
+            ...DotcomUserState
         }
     }
 }

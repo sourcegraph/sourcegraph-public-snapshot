@@ -16,6 +16,7 @@ import { detectMultilineMode } from './multiline'
 import { CompletionProvider, InlineCompletionProvider, ManualCompletionProvider } from './provider'
 
 const LOG_MANUAL = { type: 'manual' }
+const WINDOW_SIZE = 50
 
 function lastNLines(text: string, n: number): string {
     const lines = text.split('\n')
@@ -152,12 +153,11 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const contextChars = this.tokToChar(this.promptTokens) - emptyPromptLength
 
-        const windowSize = 20
         const similarCode = await getContext(
             currentEditor,
             this.history,
-            lastNLines(prefix, windowSize),
-            windowSize,
+            lastNLines(prefix, WINDOW_SIZE),
+            WINDOW_SIZE,
             contextChars
         )
 
@@ -195,7 +195,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 document.languageId
             ))
         ) {
-            timeout = 500
+            timeout = 200
             completers.push(
                 new InlineCompletionProvider(
                     this.completionsClient,
@@ -211,8 +211,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 )
             )
         } else if (sameLinePrefix.trim() === '') {
-            // Start of line: medium debounce
-            timeout = 200
+            // The current line is empty
+            timeout = 20
             completers.push(
                 new InlineCompletionProvider(
                     this.completionsClient,
@@ -223,12 +223,12 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     suffix,
                     '',
                     document.languageId,
-                    2 // tries
+                    3 // tries
                 )
             )
         } else {
-            // End of line: long debounce, complete until newline
-            timeout = 500
+            // The current line has a suffix
+            timeout = 200
             completers.push(
                 new InlineCompletionProvider(
                     this.completionsClient,
@@ -273,11 +273,15 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             (await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))).flat()
         )
 
-        if (hasVisibleCompletions(results)) {
+        const visibleResults = filterCompletions(results)
+
+        if (visibleResults.length > 0) {
             CompletionLogger.suggest(logId)
-            inlineCompletionsCache.add(logId, results)
-            return toInlineCompletionItems(logId, results)
+            inlineCompletionsCache.add(logId, visibleResults)
+            return toInlineCompletionItems(logId, visibleResults)
         }
+
+        CompletionLogger.noResponse(logId)
         return []
     }
 
@@ -330,12 +334,11 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const contextChars = this.tokToChar(this.promptTokens) - emptyPromptLength
 
-        const windowSize = 20
         const similarCode = await getContext(
             currentEditor,
             this.history,
-            lastNLines(prefix, windowSize),
-            windowSize,
+            lastNLines(prefix, WINDOW_SIZE),
+            WINDOW_SIZE,
             contextChars
         )
 
@@ -471,6 +474,6 @@ function rankCompletions(completions: Completion[]): Completion[] {
     return completions.sort((a, b) => b.content.split('\n').length - a.content.split('\n').length)
 }
 
-function hasVisibleCompletions(completions: Completion[]): boolean {
-    return completions.length > 0 && !!completions.find(c => c.content.trim() !== '')
+function filterCompletions(completions: Completion[]): Completion[] {
+    return completions.filter(c => c.content.trim() !== '')
 }

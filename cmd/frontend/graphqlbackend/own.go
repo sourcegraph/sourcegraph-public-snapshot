@@ -20,6 +20,7 @@ type OwnershipReasonType string
 
 const (
 	CodeownersFileEntry              OwnershipReasonType = "CODEOWNERS_FILE_ENTRY"
+	AssignedOwner                    OwnershipReasonType = "ASSIGNED_OWNER"
 	RecentContributorOwnershipSignal OwnershipReasonType = "RECENT_CONTRIBUTOR_OWNERSHIP_SIGNAL"
 	RecentViewOwnershipSignal        OwnershipReasonType = "RECENT_VIEW_OWNERSHIP_SIGNAL"
 )
@@ -63,8 +64,10 @@ type OwnResolver interface {
 	DeleteCodeownersFiles(context.Context, *DeleteCodeownersFileArgs) (*EmptyResponse, error)
 
 	// Assigned ownership mutations.
-	AssignOwner(context.Context, *AssignOwnerArgs) (*EmptyResponse, error)
-	RemoveAssignedOwner(context.Context, *AssignOwnerArgs) (*EmptyResponse, error)
+	AssignOwner(context.Context, *AssignOwnerOrTeamArgs) (*EmptyResponse, error)
+	RemoveAssignedOwner(context.Context, *AssignOwnerOrTeamArgs) (*EmptyResponse, error)
+	AssignTeam(context.Context, *AssignOwnerOrTeamArgs) (*EmptyResponse, error)
+	RemoveAssignedTeam(context.Context, *AssignOwnerOrTeamArgs) (*EmptyResponse, error)
 
 	// Config.
 	OwnSignalConfigurations(ctx context.Context) ([]SignalConfigurationResolver, error)
@@ -132,6 +135,12 @@ type RecentViewOwnershipSignalResolver interface {
 type AssignedOwnerResolver interface {
 	Title() (string, error)
 	Description() (string, error)
+	IsDirectMatch() bool
+}
+
+type AssignedTeamResolver interface {
+	Title() (string, error)
+	Description() (string, error)
 }
 
 type CodeownersFileArgs struct {
@@ -149,12 +158,12 @@ type DeleteCodeownersFilesInput struct {
 	RepoName *string
 }
 
-type AssignOwnerArgs struct {
-	Input AssignOwnerInput
+type AssignOwnerOrTeamArgs struct {
+	Input AssignOwnerOrTeamInput
 }
 
-type AssignOwnerInput struct {
-	// AssignedOwnerID is an ID of a user who is assigned as an owner.
+type AssignOwnerOrTeamInput struct {
+	// AssignedOwnerID is an ID of a user or a team who is assigned as an owner.
 	AssignedOwnerID graphql.ID
 	RepoID          graphql.ID
 	AbsolutePath    string
