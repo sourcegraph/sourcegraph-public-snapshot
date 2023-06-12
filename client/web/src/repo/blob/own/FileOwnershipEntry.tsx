@@ -97,8 +97,8 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
                 ))}
             </td>
             <td className={containerStyles.fitting}>
-                <span className={containerStyles.editButton}>
-                    <div style={{ 'margin-right': '8px' }}>
+                <span className={containerStyles.editButtonColumn}>
+                    <div className={containerStyles.removeAddButton}>
                         {makeOwnerButton ||
                             (hasAssigned && (
                                 <RemoveOwnerButton
