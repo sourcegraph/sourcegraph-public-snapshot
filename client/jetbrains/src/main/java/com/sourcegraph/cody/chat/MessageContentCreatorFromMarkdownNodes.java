@@ -16,9 +16,11 @@ import com.intellij.ui.ColorUtil;
 import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.UIUtil;
 import java.awt.*;
+import java.util.List;
 import java.util.Optional;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.*;
 import org.commonmark.node.Image;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -26,7 +28,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   private static final int TEXT_MARGIN = 14;
-  private final HtmlRenderer htmlRenderer = HtmlRenderer.builder().build();
+  private final HtmlRenderer htmlRenderer =
+      HtmlRenderer.builder().extensions(List.of(TablesExtension.create())).build();
   private final JPanel messagePanel;
   private final int gradientWidth;
   private StringBuilder htmlContent = new StringBuilder();
@@ -187,7 +190,6 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   @Override
   public void visit(CustomBlock customBlock) {
     addContentOfNodeAsHtml(htmlRenderer.render(customBlock));
-    super.visit(customBlock);
   }
 
   private void addContentOfNodeAsHtml(String renderedHtml) {
