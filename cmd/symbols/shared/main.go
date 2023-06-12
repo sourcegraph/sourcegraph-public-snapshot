@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api"
@@ -51,7 +52,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// Initialize tracing/metrics
 	observationCtx = observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
 		Name:       "codeintel-symbols",
-		SampleRate: 20,
+		SampleRate: 200,
 	}))
 
 	// Allow to do a sanity check of sqlite.
