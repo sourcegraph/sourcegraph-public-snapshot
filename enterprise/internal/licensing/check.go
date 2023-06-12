@@ -8,6 +8,7 @@ import (
 
 	"net/http"
 
+	"github.com/derision-test/glock"
 	"github.com/sourcegraph/log"
 
 	"context"
@@ -97,22 +98,29 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 	return nil
 }
 
-// todo: add tests
-func calcDurationToWaitForNextHandle() time.Duration {
+// calcDurationSinceLastCalled calculates the duration to wait
+// before running the next license check. It returns 0 if the
+// license check should be run immediately.
+func calcDurationSinceLastCalled(clock glock.Clock) (time.Duration, error) {
 	lastCalledAt, err := store.Get(lastCalledAtStoreKey).String()
 	if err != nil {
-		return 0
+		return 0, err
 	}
 	lastCalledAtTime, err := time.Parse(time.RFC3339, lastCalledAt)
 	if err != nil {
-		return 0
+		return 0, err
 	}
-	elapsed := time.Since(lastCalledAtTime)
+
+	if lastCalledAtTime.After(clock.Now()) {
+		return 0, errors.New("lastCalledAt cannot be in the future")
+	}
+
+	elapsed := clock.Since(lastCalledAtTime)
 
 	if elapsed > LicenseCheckInterval {
-		return 0
+		return 0, nil
 	}
-	return LicenseCheckInterval - elapsed
+	return LicenseCheckInterval - elapsed, nil
 }
 
 // StartLicenseCheck starts a goroutine that periodically checks
@@ -140,7 +148,8 @@ func StartLicenseCheck(originalCtx context.Context, logger log.Logger, siteID st
 		licenseToken := hex.EncodeToString(GenerateHashedLicenseKeyAccessToken(conf.Get().LicenseKey))
 		var initialWaitInterval time.Duration = 0
 		if prevLicenseToken == licenseToken {
-			initialWaitInterval = calcDurationToWaitForNextHandle()
+			durationSinceLastCalled, _ := calcDurationSinceLastCalled(glock.NewRealClock())
+			initialWaitInterval = durationSinceLastCalled
 		}
 
 		// todo: clarify shall we use sync.Mutex or something else?
