@@ -222,7 +222,14 @@ export const useClient = ({
             }
 
             const unifiedContextFetcherClient = new UnifiedContextFetcherClient(graphqlClient, repoIds)
-            const codebaseContext = new CodebaseContext(config, undefined, null, null, unifiedContextFetcherClient)
+            const codebaseContext = new CodebaseContext(
+                config,
+                undefined,
+                null,
+                null,
+                null,
+                unifiedContextFetcherClient
+            )
 
             const { humanChatInput = '', prefilledOptions } = options ?? {}
             // TODO(naman): save scope with each interaction
@@ -242,10 +249,13 @@ export const useClient = ({
             setIsMessageInProgressState(true)
             onEvent?.('submit')
 
-            const prompt = await transcript.toPrompt(getMultiRepoPreamble(repoNames))
+            const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
+                getMultiRepoPreamble(repoNames)
+            )
+            transcript.setUsedContextFilesForLastInteraction(contextFiles)
+
             const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
             let rawText = ''
-
             return new Promise(resolve => {
                 chatClient.chat(prompt, {
                     onChange(_rawText) {
