@@ -121,8 +121,7 @@ public class SourcegraphApplicationService
   }
 
   public boolean areCodyCompletionsEnabled() {
-    boolean enabledViaEnv = "true".equals(System.getenv("CODY_COMPLETIONS_ENABLED"));
-    return enabledViaEnv || Optional.ofNullable(areCodyCompletionsEnabled).orElse(false);
+    return Optional.ofNullable(areCodyCompletionsEnabled).orElse(false);
   }
 
   public boolean isAccessTokenNotificationDismissed() {

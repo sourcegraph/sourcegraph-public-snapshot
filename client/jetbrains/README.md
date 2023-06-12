@@ -87,7 +87,6 @@ The plugin works with all JetBrains IDEs, including:
 - **Globbing**: Determines whether you can specify sets of filenames with wildcard characters.
 - **Cody completions**: Enables/disables Cody completions in the editor.
   - The completions are disabled by default.
-  - It is possible to override this setting with the `CODY_COMPLETIONS_ENABLED` environment variable.
 
 ### Git remote setting
 
