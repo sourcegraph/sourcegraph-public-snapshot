@@ -14,7 +14,7 @@ describe('getConfiguration', () => {
             completions: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
-            inlineAssist: false,
+            inlineAssist: true,
             experimentalNonStop: false,
             customHeaders: {},
             debugEnable: false,
@@ -45,6 +45,7 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.guardrails':
                         return true
+                    case 'cody.inlineAssist':
                     case 'cody.experimental.inline':
                         return true
                     case 'cody.experimental.nonStop':
