@@ -673,7 +673,8 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 	}
 
 	for _, file := range workspaceFiles {
-		setupArgs[0] += "echo '" + strings.ReplaceAll(string(file.Content), "'", "\\\"") + "' > " + file.Path + "; chmod +x " + file.Path + "; "
+		// Having single ticks in the content mess things up real quick. Replace ' with '"'"'. This forces ' to be a string.
+		setupArgs[0] += "echo -E '" + strings.ReplaceAll(string(file.Content), "'", "'\"'\"'") + "' > " + file.Path + "; chmod +x " + file.Path + "; "
 		if !file.ModifiedAt.IsZero() {
 			setupArgs[0] += fmt.Sprintf("touch -m -d '%s' %s; ", file.ModifiedAt.Format(time.RFC3339), file.Path)
 		}
