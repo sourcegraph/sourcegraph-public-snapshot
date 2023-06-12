@@ -130,7 +130,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 	}
 
 	if err := finalMileMigrations(obsvCtx); err != nil {
-		return nil
+		return err
 	}
 
 	success = true
