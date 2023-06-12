@@ -622,14 +622,14 @@ type Embeddings struct {
 	AccessToken string `json:"accessToken,omitempty"`
 	// Dimensions description: The dimensionality of the embedding vectors. Required field if not using the sourcegraph provider.
 	Dimensions int `json:"dimensions,omitempty"`
-	// DisableIncremental description: Disables incremental embedding generation. If set to true, all embeddings will be regenerated on each run.
-	DisableIncremental bool `json:"disableIncremental,omitempty"`
 	// Enabled description: Toggles whether embedding service is enabled.
 	Enabled bool `json:"enabled"`
 	// Endpoint description: The endpoint under which to reach the provider. Sensible default will be used for each provider.
 	Endpoint string `json:"endpoint,omitempty"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
+	// Incremental description: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.
+	Incremental *bool `json:"incremental,omitempty"`
 	// MaxCodeEmbeddingsPerRepo description: The maximum number of embeddings for code files to generate per repo
 	MaxCodeEmbeddingsPerRepo int `json:"maxCodeEmbeddingsPerRepo,omitempty"`
 	// MaxTextEmbeddingsPerRepo description: The maximum number of embeddings for text files to generate per repo

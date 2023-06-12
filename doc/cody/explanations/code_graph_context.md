@@ -108,14 +108,14 @@ embeddings of the modified and added files are added to the repository's embeddi
 data sent to the embedding provider and saves costs.
 
 Incremental embeddings are enabled by default. You can disable incremental embeddings by setting
-the `disableIncremental` property in the embeddings configuration to `true`.
+the `incremental` property in the embeddings configuration to `false`.
 
 ```json
 {
   // [...]
   "embeddings": {
     // [...]
-    "disableIncremental": true
+    "incremental": false
   }
 }
 ```
