@@ -21,6 +21,7 @@ pub struct NodeFilter {
 
 pub struct TagConfiguration {
     language: Language,
+    query_text: String,
     pub query: Query,
 
     // Handles #transform! predicates in queries
@@ -31,7 +32,24 @@ pub struct TagConfiguration {
 }
 
 impl TagConfiguration {
-    fn new(language: Language, query: Query) -> Self {
+    fn new(language: Language, query_text: &str) -> Self {
+        let first_line = query_text.lines().next();
+        let query_text = match first_line {
+            Some(line) if line.starts_with(";;include") => {
+                let (_, included_lang) =
+                    line.split_once(";;include").expect("must have ;; include");
+                let included_lang = included_lang.trim();
+
+                let parser = BundledParser::get_parser(included_lang).expect("valid language");
+                let configuration = get_tag_configuration(&parser).expect("valid config");
+
+                format!("{}\n{}", configuration.query_text, query_text)
+            }
+            _ => query_text.to_string(),
+        };
+
+        let query = Query::new(language, &query_text).expect("to parse query");
+
         let mut transforms = HashMap::new();
         let mut filters = HashMap::new();
 
@@ -114,6 +132,7 @@ impl TagConfiguration {
 
         Self {
             language,
+            query_text,
             query,
             transforms,
             filters,
@@ -181,8 +200,6 @@ mod tags {
                 INSTANCE.get_or_init(|| {
                     let language = $parser.get_language();
                     let query = include_scip_query!($file, "scip-tags");
-                    let query = Query::new(language, query).expect("to parse query");
-
                     TagConfiguration::new(language, query)
                 })
             }
