@@ -282,16 +282,8 @@
         "title": "Cody: Set Access Token"
       },
       {
-        "command": "cody.change-instance-url.enterprise",
-        "title": "​    Enterprise Instance"
-      },
-      {
-        "command": "cody.change-instance-url.dotcom",
-        "title": "✓ Sourcegraph.com"
-      },
-      {
-        "command": "cody.change-instance-url.app",
-        "title": "​    Cody App"
+        "command": "cody.menu.switch-account",
+        "title": "Switch Account"
       },
       {
         "command": "cody.delete-access-token",
@@ -349,22 +341,22 @@
       },
       {
         "command": "cody.menu.enableCodeCompletions",
-        "title": "Enable Completions",
+        "title": "Code Completions",
         "when": "!config.cody.experimental.suggestions"
       },
       {
         "command": "cody.menu.disableCodeCompletions",
-        "title": "Disable Completions",
+        "title": "✓ Code Completions",
         "when": "config.cody.experimental.suggestions"
       },
       {
         "command": "cody.menu.enableInlineAssist",
-        "title": "Disable Inline Assist",
+        "title": "✓ Inline Assist",
         "when": "!config.cody.experimental.inline"
       },
       {
         "command": "cody.menu.disableInlineAssist",
-        "title": "Disable Inline Assist",
+        "title": "Inline Assist",
         "when": "config.cody.experimental.inline"
       },
       {
@@ -464,14 +456,6 @@
       {
         "label": "Ask Cody",
         "id": "cody.submenu"
-      },
-      {
-        "label": "Features",
-        "id": "menu-features.submenu"
-      },
-      {
-        "label": "Switch Account",
-        "id": "menu-account.submenu"
       }
     ],
     "menus": {
@@ -659,11 +643,6 @@
           "group": "navigation@3"
         },
         {
-          "command": "cody.settings",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@4"
-        },
-        {
           "command": "cody.welcome",
           "when": "view == cody.chat",
           "group": "navigation@5"
@@ -674,60 +653,39 @@
           "group": "navigation"
         },
         {
-          "submenu": "menu-features.submenu",
-          "group": "menu-1",
-          "when": "view == cody.chat"
-        },
-        {
-          "command": "cody.settings",
-          "group": "menu-2",
-          "when": "view == cody.chat"
-        },
-        {
-          "submenu": "menu-account.submenu",
-          "group": "menu-3@1",
-          "when": "view == cody.chat"
-        },
-        {
-          "command": "cody.delete-access-token",
-          "group": "menu-3@2",
-          "when": "view == cody.chat"
-        }
-      ],
-      "menu-account.submenu": [
-        {
-          "group": "submenu-account-1@1",
-          "command": "cody.change-instance-url.app"
-        },
-        {
-          "group": "submenu-account-1@2",
-          "command": "cody.change-instance-url.dotcom"
-        },
-        {
-          "group": "submenu-account-1@3",
-          "command": "cody.change-instance-url.enterprise"
-        }
-      ],
-      "menu-features.submenu": [
-        {
           "command": "cody.menu.enableCodeCompletions",
-          "group": "menu-1@1",
+          "group": "menu-group1-@1",
           "when": "view == cody.chat && !config.cody.experimental.suggestions"
         },
         {
           "command": "cody.menu.disableCodeCompletions",
-          "group": "menu-1@1",
+          "group": "menu-group1-@1",
           "when": "view == cody.chat && config.cody.experimental.suggestions"
         },
         {
           "command": "cody.menu.enableInlineAssist",
-          "group": "menu-2@1",
+          "group": "menu-group1-@2",
           "when": "view == cody.chat && !config.cody.experimental.inline"
         },
         {
           "command": "cody.menu.disableInlineAssist",
-          "group": "menu-2@1",
-          "when": "view == cody.chat && config.cody.experimental.suggestions"
+          "group": "menu-group1-@2",
+          "when": "view == cody.chat && config.cody.experimental.inline"
+        },
+        {
+          "command": "cody.settings",
+          "group": "menu-group2-@1",
+          "when": "view == cody.chat"
+        },
+        {
+          "command": "cody.menu.switch-account",
+          "group": "menu-group3-@1",
+          "when": "view == cody.chat"
+        },
+        {
+          "command": "cody.delete-access-token",
+          "group": "menu-group4-@1",
+          "when": "view == cody.chat"
         }
       ],
       "editor/title": [

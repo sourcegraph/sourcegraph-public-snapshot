@@ -122,6 +122,7 @@ const register = async (
         })
     )
 
+    // TODO: Make these non camel cased
     vscode.commands.registerCommand('cody.menu.enableCodeCompletions', async () => {
         await workspaceConfig.update('cody.experimental.suggestions', true, vscode.ConfigurationTarget.Global)
     })
@@ -129,8 +130,21 @@ const register = async (
         await workspaceConfig.update('cody.experimental.suggestions', false, vscode.ConfigurationTarget.Global)
     })
 
-    vscode.commands.registerCommand('cody.menu.customCommand', async () => {
-        await workspaceConfig.update('cody.experimental.suggestions', true, vscode.ConfigurationTarget.Global)
+    vscode.commands.registerCommand('cody.menu.switch-account', async () => {
+        const items = ['Item 1', 'Item 2', 'Item 3']
+        const options = {
+            canPickMany: false,
+            placeHolder: 'Select an item',
+        }
+
+        const selectedItem = await vscode.window.showQuickPick(items, options)
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        vscode.window.showQuickPick(items, options).then(selectedItem => {
+            if (selectedItem) {
+                // eslint-disable-next-line @typescript-eslint/no-floating-promises
+                vscode.window.showInformationMessage(`You picked ${selectedItem}`)
+            }
+        })
     })
 
     const executeRecipe = async (recipe: RecipeID, showTab = true): Promise<void> => {
