@@ -56,7 +56,7 @@ class SlackInteraction {
     }
 
     public getTranscriptInteraction() {
-        return new Interaction(this.humanMessage, this.assistantMessage, Promise.resolve(this.contextMessages))
+        return new Interaction(this.humanMessage, this.assistantMessage, Promise.resolve(this.contextMessages), [])
     }
 }
 

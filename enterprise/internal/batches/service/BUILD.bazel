@@ -57,6 +57,7 @@ go_library(
 
 go_test(
     name = "service_test",
+    timeout = "moderate",
     srcs = [
         "service_apply_batch_change_test.go",
         "service_test.go",

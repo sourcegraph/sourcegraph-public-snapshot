@@ -105,6 +105,7 @@ go_library(
 
 go_test(
     name = "server_test",
+    timeout = "moderate",
     srcs = [
         "cleanup_test.go",
         "customfetch_test.go",

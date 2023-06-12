@@ -22,6 +22,7 @@ import {
     Icon,
 } from '@sourcegraph/wildcard'
 
+import { CodyColorIcon } from '../../../cody/chat/CodyPageIcon'
 import { FilteredConnectionFilter, FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
 import {
     ConnectionContainer,
@@ -163,7 +164,11 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     return (
         <>
             <PageTitle title="Embeddings jobs" />
-            <PageHeader path={[{ text: 'Embeddings jobs' }]} className="mb-3" headingElement="h2" />
+            <PageHeader
+                path={[{ icon: CodyColorIcon, text: 'Cody' }, { text: 'Embeddings jobs' }]}
+                className="mb-3"
+                headingElement="h2"
+            />
             <Container className="mb-3">
                 <H3>Schedule repositories for embedding</H3>
                 <Form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit}>

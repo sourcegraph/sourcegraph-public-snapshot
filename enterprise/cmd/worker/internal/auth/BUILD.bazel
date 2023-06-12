@@ -25,6 +25,7 @@ go_library(
 
 go_test(
     name = "auth_test",
+    timeout = "moderate",
     srcs = ["sourcegraph_operator_cleaner_test.go"],
     embed = [":auth"],
     tags = [

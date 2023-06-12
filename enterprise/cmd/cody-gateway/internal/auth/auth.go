@@ -16,7 +16,7 @@ import (
 type Authenticator struct {
 	Logger      log.Logger
 	EventLogger events.Logger
-	Sources     actor.Sources
+	Sources     *actor.Sources
 }
 
 func (a *Authenticator) Middleware(next http.Handler) http.Handler {
