@@ -64,7 +64,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 				LicenseKey: "foobar",
 			},
 			want: autogold.Expect(&schema.Completions{
-				AccessToken:     "slk_c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2",
+				AccessToken:     "slk_3f2c7ccae98af81e44c0ec419659f50d8b7d48c681e5d57fc747d0461e42dda1",
 				ChatModel:       "anthropic/claude-v1",
 				CompletionModel: "anthropic/claude-instant-v1",
 				Enabled:         true,
