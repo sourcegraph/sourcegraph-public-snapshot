@@ -104,6 +104,7 @@ func (s *Sources) SyncAll(ctx context.Context, logger log.Logger) error {
 	if !s.syncRunning.CompareAndSwap(s.syncRunning.Load(), true) {
 		return errors.New("sources.SyncAll already running")
 	}
+	defer s.syncRunning.Store(false)
 
 	p := pool.New().WithErrors().WithContext(ctx)
 	for _, src := range s.sources {
