@@ -122,8 +122,11 @@ func HTTPMiddleware(l log.Logger, next http.Handler, siteConfig conftypes.SiteCo
 		trace := Context(ctx)
 		var traceURL string
 		if trace.TraceID != "" {
+			// We set X-Trace-URL to a configured URL template for traces.
+			// X-Trace for the trace ID is set in instrumentation.HTTPMiddleware,
+			// which is a more bare-bones OpenTelemetry handler.
 			traceURL = URL(trace.TraceID, siteConfig)
-			rw.Header().Set("X-Trace", traceURL)
+			rw.Header().Set("X-Trace-URL", traceURL)
 			logger = logger.WithTrace(trace)
 		}
 

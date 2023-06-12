@@ -31,7 +31,7 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
     // System.out.println(DateTimeFormatter.ofPattern("yyyy-MM-dd
     // HH:mm:ss.SSS").format(LocalDateTime.now()) + " Data received by callback: " + data);
     if (!gotFirstMessage) {
-      chat.addMessage(ChatMessage.createAssistantMessage(reformatBotMessage(data, prefix)));
+      chat.addMessageToChat(ChatMessage.createAssistantMessage(reformatBotMessage(data, prefix)));
       gotFirstMessage = true;
     } else {
       chat.updateLastMessage(ChatMessage.createAssistantMessage(reformatBotMessage(data, prefix)));
@@ -41,26 +41,30 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
   @Override
   public void onError(@NotNull Throwable error) {
     if (error.getMessage().equals("Connection refused")) {
-      chat.addMessage(
+      chat.addMessageToChat(
           ChatMessage.createAssistantMessage(
               "I'm sorry, I can't connect to the server. Please make sure that the server is running and try again."));
     } else {
-      chat.addMessage(
+      chat.addMessageToChat(
           ChatMessage.createAssistantMessage(
               "I'm sorry, something wet wrong. Please try again. The error message I got was: \""
                   + error.getMessage()
                   + "\"."));
     }
+    chat.finishMessageProcessing();
     System.err.println("Error: " + error);
   }
 
   @Override
   public void onComplete() {
     System.out.println("Streaming completed.");
+    chat.finishMessageProcessing();
   }
 
   @Override
-  public void onCancelled() {}
+  public void onCancelled() {
+    chat.finishMessageProcessing();
+  }
 
   private static @NotNull String reformatBotMessage(@NotNull String text, @Nullable String prefix) {
     String STOP_SEQUENCE_REGEXP = "(H|Hu|Hum|Huma|Human|Human:)$";

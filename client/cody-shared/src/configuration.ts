@@ -1,4 +1,4 @@
-export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended'
+export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'
 
 export interface Configuration {
     serverEndpoint: string
@@ -8,7 +8,7 @@ export interface Configuration {
     debugVerbose: boolean
     useContext: ConfigurationUseContext
     customHeaders: Record<string, string>
-    experimentalSuggest: boolean
+    completions: boolean
     experimentalChatPredictions: boolean
     experimentalInline: boolean
     experimentalGuardrails: boolean

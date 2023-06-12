@@ -65,6 +65,7 @@ func TestConfig_Load(t *testing.T) {
 	assert.Equal(t, "EXECUTOR_FRONTEND_URL", cfg.FrontendURL)
 	assert.Equal(t, "EXECUTOR_FRONTEND_PASSWORD", cfg.FrontendAuthorizationToken)
 	assert.Equal(t, "EXECUTOR_QUEUE_NAME", cfg.QueueName)
+	assert.Equal(t, "EXECUTOR_QUEUE_NAMES", cfg.QueueNamesStr)
 	assert.Equal(t, 10*time.Second, cfg.QueuePollInterval)
 	assert.Equal(t, 10, cfg.MaximumNumJobs)
 	assert.True(t, cfg.UseFirecracker)
@@ -150,6 +151,7 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Empty(t, cfg.FrontendURL)
 	assert.Empty(t, cfg.FrontendAuthorizationToken)
 	assert.Empty(t, cfg.QueueName)
+	assert.Empty(t, cfg.QueueNamesStr)
 	assert.Equal(t, time.Second, cfg.QueuePollInterval)
 	assert.Equal(t, 1, cfg.MaximumNumJobs)
 	assert.Equal(t, "sourcegraph/executor-vm:insiders", cfg.FirecrackerImage)
@@ -211,7 +213,7 @@ func TestConfig_Validate(t *testing.T) {
 		},
 		{
 			name:        "Default config",
-			expectedErr: errors.New("4 errors occurred:\n\t* invalid value \"\" for EXECUTOR_FRONTEND_URL: no value supplied\n\t* invalid value \"\" for EXECUTOR_FRONTEND_PASSWORD: no value supplied\n\t* invalid value \"\" for EXECUTOR_QUEUE_NAME: no value supplied\n\t* EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"),
+			expectedErr: errors.New("4 errors occurred:\n\t* invalid value \"\" for EXECUTOR_FRONTEND_URL: no value supplied\n\t* invalid value \"\" for EXECUTOR_FRONTEND_PASSWORD: no value supplied\n\t* neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES is set\n\t* EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"),
 		},
 		{
 			name: "Invalid EXECUTOR_DOCKER_AUTH_CONFIG",
@@ -246,6 +248,54 @@ func TestConfig_Validate(t *testing.T) {
 				}
 			},
 			expectedErr: errors.New("EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"),
+		},
+		{
+			name: "EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES both defined",
+			getterFunc: func(name string, defaultValue, description string) string {
+				switch name {
+				case "EXECUTOR_QUEUE_NAME":
+					return "batches"
+				case "EXECUTOR_QUEUE_NAMES":
+					return "batches,codeintel"
+				case "EXECUTOR_FRONTEND_URL":
+					return "http://some-url.com"
+				case "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-password"
+				default:
+					return defaultValue
+				}
+			},
+			expectedErr: errors.New("both EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES are set"),
+		},
+		{
+			name: "Neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES defined",
+			getterFunc: func(name string, defaultValue, description string) string {
+				switch name {
+				case "EXECUTOR_FRONTEND_URL":
+					return "http://some-url.com"
+				case "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-password"
+				default:
+					return defaultValue
+				}
+			},
+			expectedErr: errors.New("neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES is set"),
+		},
+		{
+			name: "EXECUTOR_QUEUE_NAMES using incorrect separator",
+			getterFunc: func(name string, defaultValue, description string) string {
+				switch name {
+				case "EXECUTOR_FRONTEND_URL":
+					return "http://some-url.com"
+				case "EXECUTOR_QUEUE_NAMES":
+					return "batches;codeintel"
+				case "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-password"
+				default:
+					return defaultValue
+				}
+			},
+			expectedErr: errors.New("EXECUTOR_QUEUE_NAMES contains invalid queue name 'batches;codeintel'"),
 		},
 	}
 	for _, test := range tests {

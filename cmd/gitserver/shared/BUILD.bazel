@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "shared",
@@ -12,6 +13,7 @@ go_library(
     deps = [
         "//cmd/gitserver/server",
         "//cmd/gitserver/server/accesslog",
+        "//cmd/gitserver/server/perforce",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",

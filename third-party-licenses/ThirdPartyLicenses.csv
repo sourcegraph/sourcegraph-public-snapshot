@@ -1525,7 +1525,7 @@ Go,github.com/gregjones/httpcache,v0.0.0-20190611155906-901d90724c79,MIT,github.
 Go,github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2,v2.0.0-rc.3,Apache 2.0,github.com/grpc-ecosystem/go-grpc-middleware,Approved
 Go,github.com/grpc-ecosystem/go-grpc-middleware/v2,v2.0.0-rc.3,Apache 2.0,github.com/grpc-ecosystem/go-grpc-middleware,Approved
 Go,github.com/grpc-ecosystem/grpc-gateway/v2,v2.15.0,New BSD,github.com/grpc-ecosystem/grpc-gateway,Approved
-Go,github.com/hashicorp/cronexpr,v1.1.1,unknown,github.com/hashicorp/cronexpr,Not approved
+Go,github.com/hashicorp/cronexpr,v1.1.1,Apache 2.0,github.com/hashicorp/cronexpr,Approved
 Go,github.com/hashicorp/errwrap,v1.1.0,Mozilla Public License 2.0,github.com/hashicorp/errwrap,Approved
 Go,github.com/hashicorp/go-cleanhttp,v0.5.2,Mozilla Public License 2.0,github.com/hashicorp/go-cleanhttp,Approved
 Go,github.com/hashicorp/go-multierror,v1.1.1,Mozilla Public License 2.0,github.com/hashicorp/go-multierror,Approved
@@ -1660,7 +1660,7 @@ Go,github.com/sourcegraph/mountinfo,v0.0.0-20230106004439-7026e28cef67,Apache 2.
 Go,github.com/sourcegraph/run,v0.12.0,Apache 2.0,github.com/sourcegraph/run,Approved
 Go,github.com/sourcegraph/scip,v0.2.4-0.20230403145725-e720fb88e6fd,Apache 2.0,github.com/sourcegraph/scip,Approved
 Go,github.com/sourcegraph/yaml,v1.0.1-0.20200714132230-56936252f152,MIT,github.com/sourcegraph/yaml,Approved
-Go,github.com/sourcegraph/zoekt,v0.0.0-20230601140222-ffc7feb6a86c,Apache 2.0,github.com/sourcegraph/zoekt,Approved
+Go,github.com/sourcegraph/zoekt,v0.0.0-20230602150854-c4c4a21d80dd,Apache 2.0,github.com/sourcegraph/zoekt,Approved
 Go,github.com/spf13/pflag,v1.0.5,New BSD,github.com/spf13/pflag,Approved
 Go,github.com/stretchr/testify,v1.8.2,MIT,github.com/stretchr/testify,Approved
 Go,github.com/throttled/throttled/v2,v2.9.0,New BSD,github.com/throttled/throttled,Approved

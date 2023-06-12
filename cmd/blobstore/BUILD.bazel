@@ -114,6 +114,5 @@ oci_tarball(
 oci_push(
     name = "s3_proxy_candidate_push",
     image = ":s3_proxy_image",
-    remote_tags = "//:tags",
     repository = image_repository("blobstore"),
 )

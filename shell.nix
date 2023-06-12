@@ -53,6 +53,13 @@ let
     unshareCgroup = false;
   };
 
+  # pkgs.universal-ctags installs the binary as "ctags", not "universal-ctags"
+  # like zoekt expects.
+  universal-ctags = pkgs.writeScriptBin "universal-ctags" ''
+    #!${pkgs.stdenv.shell}
+    exec ${pkgs.universal-ctags}/bin/ctags "$@"
+  '';
+
   # We have scripts which use gsed on darwin since that is what homebrew calls
   # the binary for GNU sed.
   gsed = pkgs.writeShellScriptBin "gsed" ''exec ${pkgs.gnused}/bin/sed "$@"'';
@@ -106,7 +113,7 @@ mkShell {
     (if hostPlatform.isLinux then bazel-fhs else bazel-wrapper)
     bazel-watcher
     bazel-buildtools
-  ] ++ lib.optional (hostPlatform.system != "aarch64-linux") p4-fusion;
+  ];
 
   # Startup postgres, redis & set nixos specific stuff
   shellHook = ''
@@ -119,7 +126,7 @@ mkShell {
 
   # By explicitly setting this environment variable we avoid starting up
   # universal-ctags via docker.
-  CTAGS_COMMAND = "${pkgs.universal-ctags}/bin/universal-ctags";
+  CTAGS_COMMAND = "${universal-ctags}/bin/universal-ctags";
 
   RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
 
@@ -128,7 +135,7 @@ mkShell {
   # Some of the bazel actions require some tools assumed to be in the PATH defined by the "strict action env" that we enable
   # through --incompatible_strict_action_env. We can poke a custom PATH through with --action_env=PATH=$BAZEL_ACTION_PATH.
   # See https://sourcegraph.com/github.com/bazelbuild/bazel@6.1.2/-/blob/src/main/java/com/google/devtools/build/lib/bazel/rules/BazelRuleClassProvider.java?L532-547
-  BAZEL_ACTION_PATH = with pkgs; lib.makeBinPath [ bash stdenv.cc coreutils unzip zip curl gzip gnutar git patch openssh ];
+  BAZEL_ACTION_PATH = with pkgs; lib.makeBinPath [ bash stdenv.cc coreutils unzip zip curl gzip gnutar git patch openssh findutils ];
 
   # bazel complains when the bazel version differs even by a patch version to whats defined in .bazelversion,
   # so we tell it to h*ck off here.

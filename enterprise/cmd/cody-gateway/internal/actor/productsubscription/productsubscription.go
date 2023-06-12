@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/productsubscription"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -34,29 +33,33 @@ var (
 
 type Source struct {
 	log    log.Logger
-	cache  httpcache.Cache // TODO: add something to regularly clean up the cache
+	cache  httpcache.Cache // cache is expected to be something with automatic TTL
 	dotcom graphql.Client
 
 	// internalMode, if true, indicates only dev and internal licenses may use
 	// this Cody Gateway instance.
 	internalMode bool
+
+	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
 }
 
 var _ actor.Source = &Source{}
 var _ actor.SourceUpdater = &Source{}
 var _ actor.SourceSyncer = &Source{}
 
-func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, internalMode bool) *Source {
+func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
 	return &Source{
 		log:    logger.Scoped("productsubscriptions", "product subscription actor source"),
 		cache:  cache,
 		dotcom: dotComClient,
 
 		internalMode: internalMode,
+
+		concurrencyConfig: concurrencyConfig,
 	}
 }
 
-func (s *Source) Name() string { return codygateway.ProductSubscriptionActorSourceName }
+func (s *Source) Name() string { return string(codygateway.ActorSourceProductSubscription) }
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	if token == "" {
@@ -122,7 +125,7 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 
 	for _, sub := range resp.Dotcom.ProductSubscriptions.Nodes {
 		for _, token := range sub.SourcegraphAccessTokens {
-			act := NewActor(s, token, sub.ProductSubscriptionState, s.internalMode)
+			act := newActor(s, token, sub.ProductSubscriptionState, s.internalMode, s.concurrencyConfig)
 			data, err := json.Marshal(act)
 			if err != nil {
 				act.Logger(syncLog).Error("failed to marshal actor",
@@ -164,11 +167,15 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 	resp, checkErr := s.checkAccessToken(ctx, token)
 	if checkErr != nil {
 		// Generate a stateless actor so that we aren't constantly hitting the dotcom API
-		act = NewActor(s, token, dotcom.ProductSubscriptionState{}, s.internalMode)
+		act = newActor(s, token, dotcom.ProductSubscriptionState{}, s.internalMode, s.concurrencyConfig)
 	} else {
-		act = NewActor(s, token,
+		act = newActor(
+			s,
+			token,
 			resp.Dotcom.ProductSubscriptionByAccessToken.ProductSubscriptionState,
-			s.internalMode)
+			s.internalMode,
+			s.concurrencyConfig,
+		)
 	}
 
 	if data, err := json.Marshal(act); err != nil {
@@ -184,8 +191,8 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 	return act, nil
 }
 
-// NewActor creates an actor from Sourcegraph.com product subscription state.
-func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState, internalMode bool) *actor.Actor {
+// newActor creates an actor from Sourcegraph.com product subscription state.
+func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *actor.Actor {
 	// In internal mode, only allow dev and internal licenses.
 	disallowedLicense := internalMode &&
 		(s.ActiveLicense == nil || s.ActiveLicense.Info == nil ||
@@ -196,25 +203,38 @@ func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 		Key:           token,
 		ID:            s.Uuid,
 		AccessEnabled: !disallowedLicense && !s.IsArchived && s.CodyGatewayAccess.Enabled,
-		RateLimits:    map[types.CompletionsFeature]actor.RateLimit{},
+		RateLimits:    map[codygateway.Feature]actor.RateLimit{},
 		LastUpdated:   &now,
 		Source:        source,
 	}
 
-	if s.CodyGatewayAccess.ChatCompletionsRateLimit != nil {
-		a.RateLimits[types.CompletionsFeatureChat] = actor.RateLimit{
-			AllowedModels: s.CodyGatewayAccess.ChatCompletionsRateLimit.AllowedModels,
-			Limit:         s.CodyGatewayAccess.ChatCompletionsRateLimit.Limit,
-			Interval:      time.Duration(s.CodyGatewayAccess.ChatCompletionsRateLimit.IntervalSeconds) * time.Second,
-		}
+	if rl := s.CodyGatewayAccess.ChatCompletionsRateLimit; rl != nil {
+		a.RateLimits[codygateway.FeatureChatCompletions] = actor.NewRateLimitWithPercentageConcurrency(
+			rl.Limit,
+			time.Duration(rl.IntervalSeconds)*time.Second,
+			rl.AllowedModels,
+			concurrencyConfig,
+		)
 	}
 
-	if s.CodyGatewayAccess.CodeCompletionsRateLimit != nil {
-		a.RateLimits[types.CompletionsFeatureCode] = actor.RateLimit{
-			AllowedModels: s.CodyGatewayAccess.CodeCompletionsRateLimit.AllowedModels,
-			Limit:         s.CodyGatewayAccess.CodeCompletionsRateLimit.Limit,
-			Interval:      time.Duration(s.CodyGatewayAccess.CodeCompletionsRateLimit.IntervalSeconds) * time.Second,
-		}
+	if rl := s.CodyGatewayAccess.CodeCompletionsRateLimit; rl != nil {
+		a.RateLimits[codygateway.FeatureCodeCompletions] = actor.NewRateLimitWithPercentageConcurrency(
+			rl.Limit,
+			time.Duration(rl.IntervalSeconds)*time.Second,
+			rl.AllowedModels,
+			concurrencyConfig,
+		)
+	}
+
+	if rl := s.CodyGatewayAccess.EmbeddingsRateLimit; rl != nil {
+		a.RateLimits[codygateway.FeatureEmbeddings] = actor.NewRateLimitWithPercentageConcurrency(
+			rl.Limit,
+			time.Duration(rl.IntervalSeconds)*time.Second,
+			rl.AllowedModels,
+			// TODO: Once we split interactive and on-interactive, we want to apply
+			// stricter limits here than percentage based for this heavy endpoint.
+			concurrencyConfig,
+		)
 	}
 
 	return a

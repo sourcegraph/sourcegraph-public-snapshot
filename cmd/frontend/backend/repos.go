@@ -6,10 +6,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 
@@ -27,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -181,8 +181,8 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	ctx, done := startTrace(ctx, "Repos", "List", opt, &err)
 	defer func() {
 		if err == nil {
-			if span := opentracing.SpanFromContext(ctx); span != nil {
-				span.LogFields(otlog.Int("result.len", len(repos)))
+			if tr := trace.TraceFromContext(ctx); tr != nil {
+				tr.SetAttributes(attribute.Int("result.len", len(repos)))
 			}
 		}
 		done()
@@ -200,8 +200,8 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 	ctx, done := startTrace(ctx, "Repos", "ListIndexable", nil, &err)
 	defer func() {
 		if err == nil {
-			if span := opentracing.SpanFromContext(ctx); span != nil {
-				span.LogFields(otlog.Int("result.len", len(repos)))
+			if tr := trace.TraceFromContext(ctx); tr != nil {
+				tr.SetAttributes(attribute.Int("result.len", len(repos)))
 			}
 		}
 		done()

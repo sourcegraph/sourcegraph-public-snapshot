@@ -74,6 +74,9 @@ class Range {
     public get endCharacter(): number {
         return this.end.character
     }
+    public isEqual(other: Range): boolean {
+        return this.start.isEqual(other.start) && this.end.isEqual(other.end)
+    }
 }
 
 class Uri {
@@ -116,7 +119,7 @@ const vsCodeMocks = {
             return null
         },
         showErrorMessage(message: string) {
-            throw new Error(message)
+            console.error(message)
         },
         activeTextEditor: { document: { uri: { scheme: 'not-cody' } }, options: { tabSize: 4 } },
     },

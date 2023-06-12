@@ -155,7 +155,7 @@ public class CodyCompletionsManager {
     return isSupported;
   }
 
-  private boolean isEditorInstanceSupported(Editor editor) {
+  public static boolean isEditorInstanceSupported(Editor editor) {
     return !editor.isViewer()
         && !editor.isOneLineMode()
         && !(editor instanceof EditorWindow)
@@ -175,7 +175,7 @@ public class CodyCompletionsManager {
     String accessToken =
         isEnterprise
             ? ConfigUtil.getEnterpriseAccessToken(project)
-            : ConfigUtil.getDotcomAccessToken(project);
+            : ConfigUtil.getDotComAccessToken(project);
     if (!instanceUrl.endsWith("/")) {
       instanceUrl = instanceUrl + "/";
     }

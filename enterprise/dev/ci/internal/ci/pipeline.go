@@ -173,10 +173,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
-			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
-			ClientLintOnlyChangedFiles: false,
-			CreateBundleSizeDiff:       true,
-			ForceBazel:                 !c.MessageFlags.NoBazel,
+			CreateBundleSizeDiff:      true,
+			ForceBazel:                !c.MessageFlags.NoBazel,
 		}))
 
 		// Now we set up conditional operations that only apply to pull requests.
@@ -219,7 +217,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is the Cody VS Code extension release branch, run the Cody tests and release
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			addCodyExtensionTests,
+			addCodyUnitIntegrationTests,
+			addCodyE2ETests,
 			wait,
 			addCodyReleaseSteps("stable"))
 
@@ -227,7 +226,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a Cody VS Code extension nightly build, run the Cody tests and release
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			addCodyExtensionTests,
+			addCodyUnitIntegrationTests,
+			addCodyE2ETests,
 			wait,
 			addCodyReleaseSteps("nightly"))
 

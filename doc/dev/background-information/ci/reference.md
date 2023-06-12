@@ -27,7 +27,7 @@ The default run type.
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
+  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
   - **Pipeline setup**: Trigger async
 
 - Pipeline for `GraphQL` changes:
@@ -35,7 +35,7 @@ The default run type.
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
-  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
+  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
 
 - Pipeline for `DatabaseSchema` changes:
   - **Metadata**: Pipeline metadata
@@ -150,9 +150,9 @@ The run type for environment including `{"BEXT_NIGHTLY":"true"}`.
 
 Base pipeline (more steps might be included based on branch changes):
 
+- Stylelint (all)
 - ESLint (all)
 - ESLint (web)
-- Stylelint (all)
 - Test (client/browser)
 - Puppeteer tests for chrome extension
 - Test (all)
@@ -164,9 +164,9 @@ The run type for environment including `{"VSCE_NIGHTLY":"true"}`.
 
 Base pipeline (more steps might be included based on branch changes):
 
+- Stylelint (all)
 - ESLint (all)
 - ESLint (web)
-- Stylelint (all)
 - Tests for VS Code extension
 
 ### Cody VS Code extension nightly release build
@@ -175,10 +175,11 @@ The run type for environment including `{"CODY_NIGHTLY":"true"}`.
 
 Base pipeline (more steps might be included based on branch changes):
 
+- Stylelint (all)
 - ESLint (all)
 - ESLint (web)
-- Stylelint (all)
-- Unit, integration, and E2E tests for the Cody VS Code extension
+- Unit and integration tests for the Cody VS Code extension
+- E2E tests for the Cody VS Code extension
 - Cody release
 
 ### App release build
@@ -211,7 +212,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
 - **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
 - **Publish images**: server, executor, alpine-3.14, postgres-12-alpine, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, syntax-highlighter, worker, symbols, batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, cody-gateway, sg, cody-slack, Publish executor image, Publish executor binary, Publish docker registry mirror image, Push OCI/Wolfi
@@ -230,7 +231,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
 - **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
 - **Publish images**: server, executor, alpine-3.14, postgres-12-alpine, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, syntax-highlighter, worker, symbols, batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, cody-gateway, sg, cody-slack, Push OCI/Wolfi
@@ -241,9 +242,9 @@ The run type for branches matching `bext/release` (exact match).
 
 Base pipeline (more steps might be included based on branch changes):
 
+- Stylelint (all)
 - ESLint (all)
 - ESLint (web)
-- Stylelint (all)
 - Test (client/browser)
 - Puppeteer tests for chrome extension
 - Test (all)
@@ -258,9 +259,9 @@ The run type for branches matching `vsce/release` (exact match).
 
 Base pipeline (more steps might be included based on branch changes):
 
+- Stylelint (all)
 - ESLint (all)
 - ESLint (web)
-- Stylelint (all)
 - Tests for VS Code extension
 - Extension release
 
@@ -270,10 +271,11 @@ The run type for branches matching `cody/release` (exact match).
 
 Base pipeline (more steps might be included based on branch changes):
 
+- Stylelint (all)
 - ESLint (all)
 - ESLint (web)
-- Stylelint (all)
-- Unit, integration, and E2E tests for the Cody VS Code extension
+- Unit and integration tests for the Cody VS Code extension
+- E2E tests for the Cody VS Code extension
 - Cody release
 
 ### Main branch
@@ -290,7 +292,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
 - **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
 - **Publish images**: server, executor, alpine-3.14, postgres-12-alpine, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, syntax-highlighter, worker, symbols, batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, cody-gateway, sg, cody-slack, Publish executor image, Publish executor binary, Push OCI/Wolfi
@@ -314,7 +316,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
 - **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
 - **Publish images**: server, executor, alpine-3.14, postgres-12-alpine, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, syntax-highlighter, worker, symbols, batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, cody-gateway, sg, cody-slack, Push OCI/Wolfi

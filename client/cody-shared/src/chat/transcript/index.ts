@@ -5,11 +5,18 @@ import { Message } from '../../sourcegraph-api'
 import { Interaction, InteractionJSON } from './interaction'
 import { ChatMessage } from './messages'
 
+export interface TranscriptJSONScope {
+    includeInferredRepository: boolean
+    includeInferredFile: boolean
+    repositories: string[]
+}
+
 export interface TranscriptJSON {
     // This is the timestamp of the first interaction.
     id: string
     interactions: InteractionJSON[]
     lastInteractionTimestamp: string
+    scope?: TranscriptJSONScope
 }
 
 /**
@@ -106,6 +113,12 @@ export class Transcript {
         })
     }
 
+    /**
+     * Adds a error div to the assistant response. If the assistant has collected
+     * some response before, we will add the error message after it.
+     *
+     * @param errorText The error TEXT to be displayed. Do not wrap it in HTML tags.
+     */
     public addErrorAsAssistantResponse(errorText: string): void {
         const lastInteraction = this.getLastInteraction()
         if (!lastInteraction) {
@@ -155,21 +168,35 @@ export class Transcript {
         return [...(await Promise.all(this.interactions.map(interaction => interaction.toChatPromise())))].flat()
     }
 
-    public async toJSON(): Promise<TranscriptJSON> {
+    public async toJSON(scope?: TranscriptJSONScope): Promise<TranscriptJSON> {
         const interactions = await Promise.all(this.interactions.map(interaction => interaction.toJSON()))
 
         return {
             id: this.id,
             interactions,
             lastInteractionTimestamp: this.lastInteractionTimestamp,
+            scope: scope
+                ? {
+                      repositories: scope.repositories,
+                      includeInferredRepository: scope.includeInferredRepository,
+                      includeInferredFile: scope.includeInferredFile,
+                  }
+                : undefined,
         }
     }
 
-    public toJSONEmpty(): TranscriptJSON {
+    public toJSONEmpty(scope?: TranscriptJSONScope): TranscriptJSON {
         return {
             id: this.id,
             interactions: [],
             lastInteractionTimestamp: this.lastInteractionTimestamp,
+            scope: scope
+                ? {
+                      repositories: scope.repositories,
+                      includeInferredRepository: scope.includeInferredRepository,
+                      includeInferredFile: scope.includeInferredFile,
+                  }
+                : undefined,
         }
     }
 

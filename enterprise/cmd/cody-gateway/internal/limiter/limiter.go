@@ -14,7 +14,10 @@ type Limiter interface {
 	// actually consume a request. This allows us to easily avoid deducting from
 	// the rate limit if the request to upstream fails, at the cost of slight
 	// over-allowance.
-	TryAcquire(ctx context.Context) (commit func() error, err error)
+	//
+	// The commit callback accepts a parameter that dictates how much rate
+	// limit to consume for this request.
+	TryAcquire(ctx context.Context) (commit func(int) error, err error)
 }
 
 type StaticLimiter struct {
@@ -26,14 +29,24 @@ type StaticLimiter struct {
 	Interval time.Duration
 
 	// UpdateRateLimitTTL, if true, indicates that the TTL of the rate limit count should
-	// updated if there is a significant deviance from the desired interval.
+	// be updated if there is a significant deviance from the desired interval.
 	UpdateRateLimitTTL bool
 
-	// Optional stub for current time. Used for testing.
-	nowFunc func() time.Time
+	NowFunc          func() time.Time
+	RateLimitAlerter func(usagePercentage float32, ttl time.Duration)
 }
 
-func (l StaticLimiter) TryAcquire(ctx context.Context) (func() error, error) {
+// RetryAfterWithTTL consults the current TTL using the given identifier and
+// returns the time should be retried.
+func RetryAfterWithTTL(redis RedisStore, nowFunc func() time.Time, identifier string) (time.Time, error) {
+	ttl, err := redis.TTL(identifier)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return nowFunc().Add(time.Duration(ttl) * time.Second), nil
+}
+
+func (l StaticLimiter) TryAcquire(ctx context.Context) (commit func(int) error, _ error) {
 	// Zero values implies no access - this is a fallback check, callers should
 	// be checking independently if access is granted.
 	if l.Identifier == "" || l.Limit <= 0 || l.Interval <= 0 {
@@ -50,24 +63,22 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (func() error, error) {
 	// the error is of type RateLimitExceededError and extract additional information
 	// like the limit and the time by when they should retry.
 	if currentUsage >= l.Limit {
-		// Read TTL to compute the RetryAfter time.
-		ttl, err := l.Redis.TTL(l.Identifier)
+		retryAfter, err := RetryAfterWithTTL(l.Redis, l.NowFunc, l.Identifier)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get TTL for rate limit counter")
 		}
-		var now time.Time
-		if l.nowFunc != nil {
-			now = l.nowFunc()
-		} else {
-			now = time.Now()
+
+		if l.RateLimitAlerter != nil {
+			go l.RateLimitAlerter(1, retryAfter.Sub(l.NowFunc()))
 		}
+
 		return nil, RateLimitExceededError{
 			Limit: l.Limit,
 			// Return the minimum value of currentUsage and limit to not return
 			// confusing values when the limit was exceeded. This method increases
 			// on every check, even if the limit was reached.
 			Used:       min(currentUsage, l.Limit),
-			RetryAfter: now.Add(time.Duration(ttl) * time.Second),
+			RetryAfter: retryAfter,
 		}
 	}
 
@@ -88,8 +99,8 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (func() error, error) {
 	// yet have a deadline set. This means if the user comes back later we wouldn't of expired
 	// just one token. This seems fine. Note: this isn't an issue on subsequent requests in the
 	// same time block since the TTL would have been set.
-	return func() error {
-		if _, err := l.Redis.Incr(l.Identifier); err != nil {
+	return func(usage int) error {
+		if _, err := l.Redis.Incrby(l.Identifier, usage); err != nil {
 			return errors.Wrap(err, "failed to increment rate limit counter")
 		}
 
@@ -102,10 +113,18 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (func() error, error) {
 			return errors.Wrap(err, "failed to get TTL for rate limit counter")
 		}
 		intervalSeconds := int(l.Interval / time.Second)
+		var alertTTL time.Duration
 		if ttl < 0 || (l.UpdateRateLimitTTL && ttl > intervalSeconds) {
 			if err := l.Redis.Expire(l.Identifier, intervalSeconds); err != nil {
 				return errors.Wrap(err, "failed to set expiry for rate limit counter")
 			}
+			alertTTL = time.Duration(intervalSeconds) * time.Second
+		} else {
+			alertTTL = time.Duration(ttl) * time.Second
+		}
+
+		if l.RateLimitAlerter != nil {
+			go l.RateLimitAlerter(float32(currentUsage+usage)/float32(l.Limit), alertTTL)
 		}
 
 		return nil
