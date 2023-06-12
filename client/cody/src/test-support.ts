@@ -45,9 +45,9 @@ export class TestSupport {
 
     public getReranker(): Reranker {
         if (!this.reranker) {
-            return new MockReranker((_: string, results: ContextResult[]): Promise<ContextResult[]> => {
-                return Promise.resolve(results)
-            })
+            return new MockReranker(
+                (_: string, results: ContextResult[]): Promise<ContextResult[]> => Promise.resolve(results)
+            )
         }
         return this.reranker
     }
