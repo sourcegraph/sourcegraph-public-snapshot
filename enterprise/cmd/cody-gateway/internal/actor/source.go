@@ -91,7 +91,8 @@ func (s *Sources) Get(ctx context.Context, token string) (_ *Actor, err error) {
 		span.SetAttributes(
 			attribute.String("matched_source", src.Name()),
 			attribute.String("actor.id", actor.ID),
-			attribute.String("actor.lastUpdated", actor.LastUpdated.String()))
+			attribute.String("actor.lastUpdated", actor.LastUpdated.String()),
+			attribute.Bool("actor.accessEnabled", actor.AccessEnabled))
 		// Best-effort add attribute summarizing rate limits
 		if rateLimitsJSON, err := json.Marshal(actor.RateLimits); err == nil {
 			span.SetAttributes(attribute.String("actor.rateLimits", string(rateLimitsJSON)))
