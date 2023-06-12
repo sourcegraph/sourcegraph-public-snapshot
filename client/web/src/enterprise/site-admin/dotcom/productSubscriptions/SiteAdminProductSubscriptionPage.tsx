@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -87,15 +87,21 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
 
     const toggleShowGenerate = useCallback((): void => setShowGenerate(previousValue => !previousValue), [])
 
-    const [licensesRefetch, setLicensesRefetch] = useState<() => void>()
+    const refetchRef = useRef<(() => void) | null>(null)
+    const setRefetchRef = useCallback(
+        (refetch: (() => void) | null) => {
+            refetchRef.current = refetch
+        },
+        [refetchRef]
+    )
 
     const onLicenseUpdate = useCallback(async () => {
         await refetch()
-        if (licensesRefetch) {
-            licensesRefetch()
+        if (refetchRef.current) {
+            refetchRef.current()
         }
         setShowGenerate(false)
-    }, [refetch, licensesRefetch])
+    }, [refetch, refetchRef])
 
     // Feature flag only used as this is under development - will be enabled by default
     const [codyGatewayMananagementUI] = useFeatureFlag('cody-gateway-management-ui')
@@ -197,7 +203,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                 <Container className="mb-2">
                     <ProductSubscriptionLicensesConnection
                         subscriptionUUID={subscriptionUUID}
-                        onRefetch={setLicensesRefetch}
+                        setRefetch={setRefetchRef}
                     />
                 </Container>
             </div>
@@ -217,16 +223,16 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
 
 const ProductSubscriptionLicensesConnection: React.FunctionComponent<{
     subscriptionUUID: string
-    onRefetch: (refetch: () => void) => void
-}> = ({ subscriptionUUID, onRefetch }) => {
+    setRefetch: (refetch: () => void) => void
+}> = ({ subscriptionUUID, setRefetch }) => {
     const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useProductSubscriptionLicensesConnection(
         subscriptionUUID,
         20
     )
 
     useEffect(() => {
-        onRefetch(refetchAll)
-    }, [onRefetch, refetchAll])
+        setRefetch(refetchAll)
+    }, [setRefetch, refetchAll])
 
     return (
         <ConnectionContainer>
