@@ -25,6 +25,7 @@ import {
     SecretStorage,
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
+import { createStatusBar } from './status-bar'
 
 const CODY_FEEDBACK_URL =
     'https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode'
@@ -258,6 +259,8 @@ const register = async (
     )
 
     if (initialConfig.completions) {
+        const statusBar = createStatusBar()
+
         // TODO(sqs): make this listen to config and not just use initialConfig
         const docprovider = new CompletionsDocumentProvider()
         disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))
@@ -267,9 +270,11 @@ const register = async (
             webviewErrorMessager,
             completionsClient,
             docprovider,
-            history
+            history,
+            statusBar
         )
         disposables.push(
+            statusBar,
             vscode.commands.registerCommand('cody.manual-completions', async () => {
                 await completionsProvider.fetchAndShowManualCompletions()
             }),
