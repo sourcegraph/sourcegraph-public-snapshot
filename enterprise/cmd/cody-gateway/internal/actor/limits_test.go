@@ -80,12 +80,12 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 			limiter: &concurrencyLimiter{
 				actor: &Actor{ID: "foobar"},
 				redis: limiter.MockRedisStore{},
-				rateLimit: RateLimit{
-					Limit:    2,
-					Interval: 10 * time.Second,
-				},
-				featureLimiter: featureLimiter,
-				nowFunc:        nowFunc,
+
+				concurrentRequests: 2,
+				concurrentInterval: 10 * time.Second,
+
+				nextLimiter: featureLimiter,
+				nowFunc:     nowFunc,
 			},
 			wantErr: nil,
 			wantStore: autogold.Expect(limiter.MockRedisStore{
@@ -99,35 +99,16 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 				redis: limiter.MockRedisStore{
 					"foobar": limiter.MockRedisEntry{Value: 1, TTL: 10},
 				},
-				rateLimit: RateLimit{
-					Limit:    2,
-					Interval: 10 * time.Second,
-				},
-				featureLimiter: featureLimiter,
-				nowFunc:        nowFunc,
+
+				concurrentRequests: 2,
+				concurrentInterval: 10 * time.Second,
+
+				nextLimiter: featureLimiter,
+				nowFunc:     nowFunc,
 			},
 			wantErr: nil,
 			wantStore: autogold.Expect(limiter.MockRedisStore{
 				"foobar": limiter.MockRedisEntry{Value: 2, TTL: 10},
-			}),
-		},
-		{
-			name: "existing limit's TTL is longer than desired interval but UpdateRateLimitTTL=false",
-			limiter: &concurrencyLimiter{
-				actor: &Actor{ID: "foobar"},
-				redis: limiter.MockRedisStore{
-					"foobar": limiter.MockRedisEntry{Value: 1, TTL: 999},
-				},
-				rateLimit: RateLimit{
-					Limit:    2,
-					Interval: 10 * time.Second,
-				},
-				featureLimiter: featureLimiter,
-				nowFunc:        nowFunc,
-			},
-			wantErr: nil,
-			wantStore: autogold.Expect(limiter.MockRedisStore{
-				"foobar": limiter.MockRedisEntry{Value: 2, TTL: 999},
 			}),
 		},
 		{
@@ -140,12 +121,12 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 				redis: limiter.MockRedisStore{
 					"foobar": limiter.MockRedisEntry{Value: 1, TTL: 999},
 				},
-				rateLimit: RateLimit{
-					Limit:    2,
-					Interval: 10 * time.Second,
-				},
-				featureLimiter: featureLimiter,
-				nowFunc:        nowFunc,
+
+				concurrentRequests: 2,
+				concurrentInterval: 10 * time.Second,
+
+				nextLimiter: featureLimiter,
+				nowFunc:     nowFunc,
 			},
 			wantErr: nil,
 			wantStore: autogold.Expect(limiter.MockRedisStore{
@@ -160,12 +141,12 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 				redis: limiter.MockRedisStore{
 					"foobar": limiter.MockRedisEntry{Value: 2, TTL: 10},
 				},
-				rateLimit: RateLimit{
-					Limit:    2,
-					Interval: 10 * time.Second,
-				},
-				featureLimiter: featureLimiter,
-				nowFunc:        nowFunc,
+
+				concurrentRequests: 2,
+				concurrentInterval: 10 * time.Second,
+
+				nextLimiter: featureLimiter,
+				nowFunc:     nowFunc,
 			},
 			wantErr: autogold.Expect(`"code_completions": concurrency limit exceeded`),
 			wantStore: autogold.Expect(limiter.MockRedisStore{

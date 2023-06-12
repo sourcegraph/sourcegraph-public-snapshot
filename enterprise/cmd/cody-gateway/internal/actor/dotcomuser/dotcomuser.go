@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -62,7 +63,7 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 
 	var act *actor.Actor
 	if err := json.Unmarshal(data, &act); err != nil || act == nil {
-		s.log.Error("failed to unmarshal actor", log.Error(err))
+		trace.Logger(ctx, s.log).Error("failed to unmarshal actor", log.Error(err))
 
 		// Delete the corrupted record.
 		s.cache.Delete(token)

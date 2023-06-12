@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/productsubscription"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -81,7 +82,7 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 
 	var act *actor.Actor
 	if err := json.Unmarshal(data, &act); err != nil {
-		s.log.Error("failed to unmarshal subscription", log.Error(err))
+		trace.Logger(ctx, s.log).Error("failed to unmarshal subscription", log.Error(err))
 
 		// Delete the corrupted record.
 		s.cache.Delete(token)
@@ -104,7 +105,7 @@ func (s *Source) Update(ctx context.Context, actor *actor.Actor) {
 	}
 
 	if _, err := s.fetchAndCache(ctx, actor.Key); err != nil {
-		s.log.Info("failed to update actor", log.Error(err))
+		trace.Logger(ctx, s.log).Info("failed to update actor", log.Error(err))
 	}
 }
 
@@ -179,7 +180,7 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 	}
 
 	if data, err := json.Marshal(act); err != nil {
-		s.log.Error("failed to marshal actor",
+		trace.Logger(ctx, s.log).Error("failed to marshal actor",
 			log.Error(err))
 	} else {
 		s.cache.Set(token, data)
