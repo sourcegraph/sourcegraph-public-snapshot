@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"crypto/md5"
 	"fmt"
 	"strings"
 	"testing"
@@ -139,4 +140,23 @@ func insertRepo(t testing.TB, db database.DB, id int, name string) {
 	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error while upserting repository: %s", err)
 	}
+}
+
+func hash(symbolName string) [16]byte {
+	return md5.Sum([]byte(symbolName))
+}
+
+func castToChecksums(vs [][]byte) [][16]byte {
+	cs := [][16]byte{}
+	for _, v := range vs {
+		cs = append(cs, castToChecksum(v))
+	}
+
+	return cs
+}
+
+func castToChecksum(s []byte) [16]byte {
+	a := [16]byte{}
+	copy(a[:], s)
+	return a
 }

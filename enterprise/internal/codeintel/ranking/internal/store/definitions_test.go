@@ -39,19 +39,19 @@ func TestInsertDefinition(t *testing.T) {
 		{
 			UploadID:         4,
 			ExportedUploadID: 104,
-			SymbolName:       "foo",
+			SymbolChecksum:   hash("foo"),
 			DocumentPath:     "foo.go",
 		},
 		{
 			UploadID:         4,
 			ExportedUploadID: 104,
-			SymbolName:       "bar",
+			SymbolChecksum:   hash("bar"),
 			DocumentPath:     "bar.go",
 		},
 		{
 			UploadID:         4,
 			ExportedUploadID: 104,
-			SymbolName:       "foo",
+			SymbolChecksum:   hash("foo"),
 			DocumentPath:     "foo.go",
 		},
 	}
@@ -87,7 +87,7 @@ func getRankingDefinitions(
 	graphKey string,
 ) (_ []shared.RankingDefinitions, err error) {
 	query := fmt.Sprintf(`
-		SELECT cre.upload_id, cre.id, rd.symbol_name, rd.document_path
+		SELECT cre.upload_id, cre.id, rd.symbol_checksum, rd.document_path
 		FROM codeintel_ranking_definitions rd
 		JOIN codeintel_ranking_exports cre ON cre.id = rd.exported_upload_id
 		WHERE rd.graph_key = '%s'
@@ -104,16 +104,16 @@ func getRankingDefinitions(
 	for rows.Next() {
 		var uploadID int
 		var exportedUploadID int
-		var symbolName string
+		var symbolChecksum []byte
 		var documentPath string
-		err = rows.Scan(&uploadID, &exportedUploadID, &symbolName, &documentPath)
+		err = rows.Scan(&uploadID, &exportedUploadID, &symbolChecksum, &documentPath)
 		if err != nil {
 			return nil, err
 		}
 		definitions = append(definitions, shared.RankingDefinitions{
 			UploadID:         uploadID,
 			ExportedUploadID: exportedUploadID,
-			SymbolName:       symbolName,
+			SymbolChecksum:   castToChecksum(symbolChecksum),
 			DocumentPath:     documentPath,
 		})
 	}

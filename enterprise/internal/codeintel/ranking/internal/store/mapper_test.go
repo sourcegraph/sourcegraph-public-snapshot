@@ -54,25 +54,25 @@ func TestInsertPathCountInputs(t *testing.T) {
 	mockDefinitions <- shared.RankingDefinitions{
 		UploadID:         42,
 		ExportedUploadID: 142,
-		SymbolName:       "foo",
+		SymbolChecksum:   hash("foo"),
 		DocumentPath:     "foo.go",
 	}
 	mockDefinitions <- shared.RankingDefinitions{
 		UploadID:         42,
 		ExportedUploadID: 142,
-		SymbolName:       "bar",
+		SymbolChecksum:   hash("bar"),
 		DocumentPath:     "bar.go",
 	}
 	mockDefinitions <- shared.RankingDefinitions{
 		UploadID:         43,
 		ExportedUploadID: 143,
-		SymbolName:       "baz",
+		SymbolChecksum:   hash("baz"),
 		DocumentPath:     "baz.go",
 	}
 	mockDefinitions <- shared.RankingDefinitions{
 		UploadID:         43,
 		ExportedUploadID: 143,
-		SymbolName:       "bonk",
+		SymbolChecksum:   hash("bonk"),
 		DocumentPath:     "bonk.go",
 	}
 	close(mockDefinitions)
@@ -93,9 +93,9 @@ func TestInsertPathCountInputs(t *testing.T) {
 	//
 	// Basic test case
 
-	mockReferences := make(chan string, 2)
-	mockReferences <- "foo"
-	mockReferences <- "bar"
+	mockReferences := make(chan [16]byte, 2)
+	mockReferences <- hash("foo")
+	mockReferences <- hash("bar")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 190, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
@@ -106,26 +106,26 @@ func TestInsertPathCountInputs(t *testing.T) {
 	}
 
 	// Same ID split over two batches
-	mockReferences = make(chan string, 1)
-	mockReferences <- "baz"
+	mockReferences = make(chan [16]byte, 1)
+	mockReferences <- hash("baz")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 190, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
 	// Duplicate of 92 (below) - should not be processed as it's older
-	mockReferences = make(chan string, 4)
-	mockReferences <- "foo"
-	mockReferences <- "bar"
-	mockReferences <- "baz"
-	mockReferences <- "bonk"
+	mockReferences = make(chan [16]byte, 4)
+	mockReferences <- hash("foo")
+	mockReferences <- hash("bar")
+	mockReferences <- hash("baz")
+	mockReferences <- hash("bonk")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 191, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
-	mockReferences = make(chan string, 1)
-	mockReferences <- "bonk"
+	mockReferences = make(chan [16]byte, 1)
+	mockReferences <- hash("bonk")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 192, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
@@ -139,9 +139,9 @@ func TestInsertPathCountInputs(t *testing.T) {
 	//
 	// Incremental insertion test case
 
-	mockReferences = make(chan string, 2)
-	mockReferences <- "foo"
-	mockReferences <- "bar"
+	mockReferences = make(chan [16]byte, 2)
+	mockReferences <- hash("foo")
+	mockReferences <- hash("bar")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 193, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
@@ -155,11 +155,11 @@ func TestInsertPathCountInputs(t *testing.T) {
 	//
 	// No-op test case
 
-	mockReferences = make(chan string, 4)
-	mockReferences <- "foo"
-	mockReferences <- "bar"
-	mockReferences <- "baz"
-	mockReferences <- "bonk"
+	mockReferences = make(chan [16]byte, 4)
+	mockReferences <- hash("foo")
+	mockReferences <- hash("bar")
+	mockReferences <- hash("baz")
+	mockReferences <- hash("bonk")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 194, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
@@ -278,8 +278,8 @@ func TestVacuumStaleProcessedReferences(t *testing.T) {
 
 	if _, err := db.ExecContext(ctx, `
 		WITH v AS (SELECT unnest('{1, 2, 3}'::integer[]))
-		INSERT INTO codeintel_ranking_references (graph_key, symbol_names, exported_upload_id)
-		SELECT $1, '{}', id FROM codeintel_ranking_exports
+		INSERT INTO codeintel_ranking_references (graph_key, symbol_names, symbol_checksums, exported_upload_id)
+		SELECT $1, '{}', '{}', id FROM codeintel_ranking_exports
 	`,
 		mockRankingGraphKey,
 	); err != nil {
@@ -404,26 +404,26 @@ func TestVacuumStaleGraphs(t *testing.T) {
 		t.Fatalf("failed to insert exported upload: %s", err)
 	}
 
-	mockReferences := make(chan string, 2)
-	mockReferences <- "foo"
-	mockReferences <- "bar"
+	mockReferences := make(chan [16]byte, 2)
+	mockReferences <- hash("foo")
+	mockReferences <- hash("bar")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 101, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
-	mockReferences = make(chan string, 3)
-	mockReferences <- "foo"
-	mockReferences <- "bar"
-	mockReferences <- "baz"
+	mockReferences = make(chan [16]byte, 3)
+	mockReferences <- hash("foo")
+	mockReferences <- hash("bar")
+	mockReferences <- hash("baz")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 102, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
-	mockReferences = make(chan string, 2)
-	mockReferences <- "bar"
-	mockReferences <- "baz"
+	mockReferences = make(chan [16]byte, 2)
+	mockReferences <- hash("bar")
+	mockReferences <- hash("baz")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 103, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)

@@ -1853,7 +1853,8 @@ CREATE TABLE codeintel_ranking_definitions (
     symbol_name text NOT NULL,
     document_path text NOT NULL,
     graph_key text NOT NULL,
-    exported_upload_id integer NOT NULL
+    exported_upload_id integer NOT NULL,
+    symbol_checksum bytea DEFAULT '\x'::bytea NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_definitions_id_seq
@@ -1952,7 +1953,8 @@ CREATE TABLE codeintel_ranking_references (
     id bigint NOT NULL,
     symbol_names text[] NOT NULL,
     graph_key text NOT NULL,
-    exported_upload_id integer NOT NULL
+    exported_upload_id integer NOT NULL,
+    symbol_checksums bytea[] DEFAULT '{}'::bytea[] NOT NULL
 );
 
 COMMENT ON TABLE codeintel_ranking_references IS 'References for a given upload proceduced by background job consuming SCIP indexes.';
@@ -5712,7 +5714,7 @@ CREATE INDEX codeintel_path_ranks_repository_id_updated_at_id ON codeintel_path_
 
 CREATE INDEX codeintel_ranking_definitions_exported_upload_id ON codeintel_ranking_definitions USING btree (exported_upload_id);
 
-CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_name, exported_upload_id, document_path);
+CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_checksum_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_checksum, exported_upload_id, document_path);
 
 CREATE INDEX codeintel_ranking_exports_graph_key_deleted_at_id ON codeintel_ranking_exports USING btree (graph_key, deleted_at DESC, id);
 

@@ -19,7 +19,7 @@ func (s *store) InsertDefinitionsForRanking(
 	return s.withTransaction(ctx, func(tx *store) error {
 		inserter := func(inserter *batch.Inserter) error {
 			for definition := range definitions {
-				if err := inserter.Insert(ctx, definition.ExportedUploadID, definition.SymbolName, definition.DocumentPath, rankingGraphKey); err != nil {
+				if err := inserter.Insert(ctx, definition.ExportedUploadID, "", derefChecksum(definition.SymbolChecksum), definition.DocumentPath, rankingGraphKey); err != nil {
 					return err
 				}
 			}
@@ -35,6 +35,7 @@ func (s *store) InsertDefinitionsForRanking(
 			[]string{
 				"exported_upload_id",
 				"symbol_name",
+				"symbol_checksum",
 				"document_path",
 				"graph_key",
 			},
