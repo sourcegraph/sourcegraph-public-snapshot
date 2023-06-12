@@ -217,9 +217,9 @@ class CodyToolWindowContent implements UpdatableChat {
   }
 
   @Override
-  public void respondToMessage(@NotNull ChatMessage message) {
+  public void respondToMessage(@NotNull ChatMessage message, @NotNull String responsePrefix) {
     activateChatTab();
-    sendMessage(this.project, message);
+    sendMessage(this.project, message, responsePrefix);
   }
 
   public synchronized void updateLastMessage(@NotNull ChatMessage message) {
@@ -261,10 +261,12 @@ class CodyToolWindowContent implements UpdatableChat {
   private void sendMessage(@NotNull Project project) {
     String messageText = promptInput.getText();
     sendMessage(
-        project, ChatMessage.createHumanMessage(messageText, messageText, Collections.emptyList()));
+        project,
+        ChatMessage.createHumanMessage(messageText, messageText, Collections.emptyList()),
+        "");
   }
 
-  private void sendMessage(@NotNull Project project, ChatMessage message) {
+  private void sendMessage(@NotNull Project project, ChatMessage message, String responsePrefix) {
     if (!sendButton.isEnabled()) return;
     startMessageProcessing();
     // Build message
@@ -291,7 +293,7 @@ class CodyToolWindowContent implements UpdatableChat {
     //       in the main thread and then waited, we wouldn't see the messages streamed back to us.
     new Thread(
             () -> {
-              chat.sendMessage(humanMessage, "", this); // TODO: Use prefix
+              chat.sendMessage(humanMessage, responsePrefix, this); // TODO: Use prefix
             })
         .start();
   }

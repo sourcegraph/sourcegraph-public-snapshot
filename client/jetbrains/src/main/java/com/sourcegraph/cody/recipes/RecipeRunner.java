@@ -22,19 +22,23 @@ public class RecipeRunner {
 
   public void runRecipe(PromptProvider promptProvider) {
     EditorContext editorContext = EditorContextGetter.getEditorContext(project);
-    String selectedText = editorContext.getSelection();
-    if (selectedText == null) {
+    String editorSelection = editorContext.getSelection();
+    if (editorSelection == null) {
       chat.activateChatTab();
       chat.addMessageToChat(
           ChatMessage.createAssistantMessage(
               "No code selected. Please select some code and try again."));
       return;
     }
-    String languageName =
-        LanguageUtils.getNormalizedLanguageName(editorContext.getCurrentFileExtension());
+    Language language =
+        new Language(
+            LanguageUtils.getNormalizedLanguageName(editorContext.getCurrentFileExtension()));
 
-    String truncatedSelectedText =
-        TruncationUtils.truncateText(selectedText, TruncationUtils.MAX_RECIPE_INPUT_TOKENS);
+    TruncatedText truncatedSelectedText =
+        new TruncatedText(
+            TruncationUtils.truncateText(editorSelection, TruncationUtils.MAX_RECIPE_INPUT_TOKENS));
+
+    SelectedText selectedText = new SelectedText(editorSelection);
     String truncatedPrecedingText =
         editorContext.getPrecedingText() != null
             ? TruncationUtils.truncateTextStart(
@@ -47,13 +51,13 @@ public class RecipeRunner {
             : "";
 
     PromptContext promptContext =
-        promptProvider.getPromptContext(languageName, selectedText, truncatedSelectedText);
+        promptProvider.getPromptContext(language, selectedText, truncatedSelectedText);
 
     ChatMessage humanMessage =
         ChatMessage.createHumanMessage(
             promptContext.getPrompt(), promptContext.getDisplayText(), Collections.emptyList());
 
-    chat.respondToMessage(humanMessage);
+    chat.respondToMessage(humanMessage, promptContext.getResponsePrefix());
   }
 
   public void runImproveVariableNames() {}
