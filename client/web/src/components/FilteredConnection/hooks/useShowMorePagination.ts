@@ -48,6 +48,8 @@ interface UseShowMorePaginationConfig<TResult> {
     // workaround for existing APIs where after may already be in use for
     // another field.
     useAlternateAfterCursor?: boolean
+    /** Skip the query if this condition is true */
+    skip?: boolean
 }
 
 interface UseShowMorePaginationParameters<TResult, TVariables, TData> {
@@ -131,6 +133,7 @@ export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
             ...initialControls,
         },
         notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
+        skip: options?.skip,
         fetchPolicy: options?.fetchPolicy,
         onCompleted: options?.onCompleted,
     })

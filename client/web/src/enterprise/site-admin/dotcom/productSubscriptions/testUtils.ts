@@ -17,6 +17,7 @@ export const mockLicense = {
     licenseKey: 'license-key',
     createdAt: '2020-01-01T00:00:00Z',
     revokedAt: null,
+    revokeReason: null,
     siteID: null,
     version: 1,
 }

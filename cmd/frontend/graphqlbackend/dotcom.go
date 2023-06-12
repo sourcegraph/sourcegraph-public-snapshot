@@ -134,7 +134,7 @@ type UpdateProductSubscriptionArgs struct {
 }
 
 type RevokeLicenseArgs struct {
-	ID     string
+	ID     graphql.ID
 	Reason string
 }
 

@@ -264,9 +264,8 @@ func TestRevokeLicense(t *testing.T) {
 	require.NoError(t, err)
 
 	// Revoke the license
-	if err := store.Revoke(ctx, id, "reason"); err != nil {
-		t.Fatal(err)
-	}
+	err = store.Revoke(ctx, id, "reason")
+	require.NoError(t, err)
 
 	// License should now be revoked
 	license, err := store.GetByID(ctx, id)
@@ -274,4 +273,8 @@ func TestRevokeLicense(t *testing.T) {
 	require.NotNil(t, license.RevokedAt)
 	require.NotNil(t, license.RevokeReason)
 	require.Equal(t, "reason", *license.RevokeReason)
+
+	// Revoke non-existent license
+	err = store.Revoke(ctx, "12345678-1234-5678-1234-567812345678", "reason")
+	require.Error(t, err, "product license not found")
 }
