@@ -19,9 +19,9 @@ go_library(
         "//internal/oobmigration",
         "//internal/sanitycheck",
         "//internal/service/svcmain",
+        "//internal/tracer",
         "//ui/assets",
         "//ui/assets/enterprise",
-        "@com_github_sourcegraph_log//:log",
     ],
 )
 

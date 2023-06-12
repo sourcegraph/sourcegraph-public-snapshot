@@ -9,7 +9,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/tmpfriend"
 	sglog "github.com/sourcegraph/log"
@@ -42,14 +41,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/users"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
@@ -97,21 +94,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	if err := tryAutoUpgrade(ctx, observationCtx, ready, enterpriseMigratorHook); err != nil {
 		return errors.Wrap(err, "frontend.tryAutoUpgrade")
 	}
-
-	liblog := sglog.Init(sglog.Resource{
-		Name:       env.MyName,
-		Version:    version.Version(),
-		InstanceID: hostname.Get(),
-	},
-		sglog.NewSentrySinkWith(
-			sglog.SentrySink{
-				ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
-			},
-		),
-	)
-	logsource := conf.NewLogsSinksSource(conf.DefaultClient())
-	go logsource.Watch(liblog.Update(logsource.SinksConfig))
-	tracer.Init(sglog.Scoped("tracer", "internal tracer package"), tracer.ConfConfigurationSource{WatchableSiteConfig: conf.DefaultClient()})
 
 	sqlDB, err := InitDB(logger)
 	if err != nil {

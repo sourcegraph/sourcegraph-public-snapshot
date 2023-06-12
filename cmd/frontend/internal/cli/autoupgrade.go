@@ -45,9 +45,16 @@ import (
 
 const appName = "frontend-autoupgrader"
 
-var shouldAutoUpgade = env.MustGetBool("SRC_AUTOUPGRADE", false, "If you forgot to set intent to autoupgrade before shutting down the instance, set this env var.")
+var (
+	AutoUpgradeDone  = make(chan struct{})
+	shouldAutoUpgade = env.MustGetBool("SRC_AUTOUPGRADE", false, "If you forgot to set intent to autoupgrade before shutting down the instance, set this env var.")
+)
 
 func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready service.ReadyFunc, hook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) (err error) {
+	defer func() {
+		close(AutoUpgradeDone)
+	}()
+
 	sqlDB, err := connections.RawNewFrontendDB(obsvCtx, "", appName)
 	if err != nil {
 		return errors.Errorf("failed to connect to frontend database: %s", err)
