@@ -22,8 +22,6 @@ import (
 var (
 	licenseCheckStarted = false
 	store               = redispool.Store
-
-	routine *goroutine.PeriodicGoroutine
 )
 
 const (
@@ -99,42 +97,64 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 	return nil
 }
 
+// todo: add tests
+func calcDurationToWaitForNextHandle() time.Duration {
+	lastCalledAt, err := store.Get(lastCalledAtStoreKey).String()
+	if err != nil {
+		return 0
+	}
+	lastCalledAtTime, err := time.Parse(time.RFC3339, lastCalledAt)
+	if err != nil {
+		return 0
+	}
+	elapsed := time.Since(lastCalledAtTime)
+
+	if elapsed > LicenseCheckInterval {
+		return 0
+	}
+	return LicenseCheckInterval - elapsed
+}
+
 // StartLicenseCheck starts a goroutine that periodically checks
 // license validity from dotcom and stores the result in redis.
 // It re-runs the check if the license key changes.
-func StartLicenseCheck(ctx context.Context, logger log.Logger, siteID string) {
+func StartLicenseCheck(originalCtx context.Context, logger log.Logger, siteID string) {
+
 	if licenseCheckStarted {
 		logger.Info("license check already started")
 		return
 	}
 	licenseCheckStarted = true
 
+	ctxWithCancel, cancel := context.WithCancel(originalCtx)
+
 	// The entire logic is dependent on config so we will
 	// wait for initial config to be loaded as well as
 	// watch for any config changes
 	conf.Watch(func() {
+		// stop previously running routine
+		cancel()
+		ctxWithCancel, cancel = context.WithCancel(originalCtx)
+
 		prevLicenseToken, _ := store.Get(prevLicenseTokenKey).String()
 		licenseToken := hex.EncodeToString(GenerateHashedLicenseKeyAccessToken(conf.Get().LicenseKey))
-		// skip if license key hasn't changed and already running
-		if prevLicenseToken == licenseToken && routine != nil {
-			return
+		var initialWaitInterval time.Duration = 0
+		if prevLicenseToken == licenseToken {
+			initialWaitInterval = calcDurationToWaitForNextHandle()
 		}
 
-		// stop previously running routine
-		if routine != nil {
-			routine.Stop()
-		}
-
+		// todo: clarify shall we use sync.Mutex or something else?
 		// continue running with new license key
 		store.Set(prevLicenseTokenKey, licenseToken)
 
 		routine := goroutine.NewPeriodicGoroutine(
-			context.Background(),
+			ctxWithCancel,
 			&licenseChecker{siteID: siteID, token: licenseToken, doer: httpcli.ExternalDoer, logger: logger.Scoped("licenseChecker", "Periodically checks license validity")},
 			goroutine.WithName("licensing.check-license-validity"),
 			goroutine.WithDescription("check if license is valid from sourcegraph.com"),
 			goroutine.WithInterval(LicenseCheckInterval),
+			goroutine.WithInitialDelay(initialWaitInterval),
 		)
-		go goroutine.MonitorBackgroundRoutines(ctx, routine)
+		go goroutine.MonitorBackgroundRoutines(ctxWithCancel, routine)
 	})
 }
