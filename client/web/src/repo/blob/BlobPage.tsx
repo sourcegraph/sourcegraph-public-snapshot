@@ -63,6 +63,7 @@ import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
 import { ToggleBlameAction } from '../actions/ToggleBlameAction'
 import { useBlameHunks } from '../blame/useBlameHunks'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
+import { TryCodyWidget } from '../components/TryCodyWidget/TryCodyWidget'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
 import { HoverThresholdProps } from '../RepoContainer'
@@ -80,7 +81,6 @@ import { GoToRawAction } from './GoToRawAction'
 import { HistoryAndOwnBar } from './own/HistoryAndOwnBar'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
-import { TryCodyWidget } from './TryCodyWidget'
 
 import styles from './BlobPage.module.scss'
 
@@ -361,7 +361,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         <>
             <PageTitle title={getPageTitle()} />
             {!!props.isSourcegraphDotCom && !!props.authenticatedUser && (
-                <TryCodyWidget className="mb-4" telemetryService={props.telemetryService} />
+                <TryCodyWidget className="mb-4" telemetryService={props.telemetryService} type="blob" />
             )}
             {window.context.isAuthenticatedUser && (
                 <RepoHeaderContributionPortal

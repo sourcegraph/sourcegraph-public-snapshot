@@ -1,0 +1,71 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+:global(.theme-dark) {
+    --cody-blob-bg-gradient: linear-gradient(339.95deg, #15171e -44.65%, #49169d 15.56%, #5e398c 88.23%);
+    --cody-repo-bg-gradient: linear-gradient(339.95deg, #15171e -44.65%, #49169d -16.82%, #1e212e 88.23%), #ffffff;
+    --cody-repo-border: var(--gray-09);
+}
+
+:global(.theme-light) {
+    --cody-blob-bg-gradient: linear-gradient(339.95deg, #ffffff -44.65%, #d0b9f5 -16.82%, rgba(255, 255, 255, 0) 88.23%),
+        #ffffff;
+    --cody-repo-bg-gradient: var(--cody-blob-bg-gradient);
+    --cody-repo-border: var(--gray-03);
+}
+
+.close-button {
+    top: 0;
+    right: 0;
+}
+
+.repo-card-wrapper {
+    padding: 0.065rem !important;
+    background: var(--cody-repo-border);
+
+    .card {
+        background: var(--cody-repo-bg-gradient);
+    }
+}
+
+.blob-card-wrapper {
+    padding: 0.065rem !important;
+
+    .card {
+        background: var(--cody-blob-bg-gradient);
+    }
+}
+
+.card {
+    padding-top: 2.9375rem;
+    gap: 1rem;
+}
+
+.card-title {
+    color: var(--body-color);
+    font-weight: 600;
+    font-size: 1.25rem;
+    line-height: 1.5rem;
+    letter-spacing: -0.25px;
+    margin-bottom: 0.6875rem;
+}
+
+.card-list {
+    font-size: 1rem;
+    line-height: 1.25rem;
+    color: var(--body-color);
+    width: max-content;
+}
+
+.card-images {
+    width: 100%;
+    align-items: self-end;
+
+    @media (--md-breakpoint-down) {
+        width: unset;
+    }
+}
+
+.card-image {
+    max-width: 35.688rem;
+    max-height: 7.438rem;
+}
