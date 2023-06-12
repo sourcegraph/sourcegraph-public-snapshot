@@ -66,14 +66,14 @@ func newPrometheusServerStream(s grpc.ClientStream, serviceName, methodName stri
 
 	return &callBackClientStream{
 		ClientStream: s,
-		postMessageSend: func(_ interface{}, err error) {
+		postMessageSend: func(_ any, err error) {
 			if err != nil {
 				observeOnce.Do(func() {
 					doObservation(serviceName, methodName, err)
 				})
 			}
 		},
-		postMessageReceive: func(_ interface{}, err error) {
+		postMessageReceive: func(_ any, err error) {
 			if err != nil {
 				if err == io.EOF {
 					// EOF signals end of stream, not an error. We handle this by setting err to nil, because
