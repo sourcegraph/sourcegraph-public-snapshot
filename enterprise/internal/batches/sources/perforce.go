@@ -3,6 +3,7 @@ package sources
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -35,13 +36,19 @@ func NewPerforceSource(ctx context.Context, svc *types.ExternalService, _ *httpc
 }
 
 // GitserverPushConfig returns an authenticated push config used for pushing commits to the code host.
-func (s PerforceSource) GitserverPushConfig(_ *types.Repo) (*protocol.PushConfig, error) {
+func (s PerforceSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
 	// Return a PushConfig with a crafted URL that includes the Perforce scheme and the credentials
 	// The perforce scheme will tell `createCommitFromPatch` that this repo is a Perforce repo
 	// so it can handle it differently from Git repos.
-	// TODO: @peterguy include the depot in the path component. Not sure where to get that from yet. It's not api.Repo.
+	// TODO: @peterguy: this seems to be the correct way to include the depot; confirm with more examples from code host configurations
+	depot := ""
+	u, err := url.Parse(repo.URI)
+	if err == nil {
+		depot = "//" + u.Path + "/"
+	}
+	remoteURL := fmt.Sprintf("perforce://%s:%s@%s%s", s.perforceCreds.Username, s.perforceCreds.Password, s.server.P4Port, depot)
 	return &protocol.PushConfig{
-		RemoteURL: fmt.Sprintf("perforce://%s:%s@%s", s.server.P4User, s.server.P4Passwd, s.server.P4Port),
+		RemoteURL: remoteURL,
 	}, nil
 }
 
@@ -94,7 +101,7 @@ func (s PerforceSource) LoadChangeset(ctx context.Context, cs *Changeset) error 
 	if err != nil {
 		return errors.Wrap(err, "getting changelist")
 	}
-	return errors.Wrap(s.setChangesetMetadata(&cl, cs), "setting perforce changeset metadata")
+	return errors.Wrap(s.setChangesetMetadata(cl, cs), "setting perforce changeset metadata")
 }
 
 // CreateChangeset will create the Changeset on the source. If it already
