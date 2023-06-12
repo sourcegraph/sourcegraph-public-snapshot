@@ -87,7 +87,7 @@ For example:
   - For example, `@descriptor.term` will create a new term descriptor with the string contents of whatever node is captured
   - Can use more than one of these per match.
     - For example, in Go, when you declare a method, you would do `func (thing *MyThing) ThisFunc() {}`. In this case, you want to associate
-    `ThisFunc` with the struct `MyThing. You can do that via the following query:
+      `ThisFunc` with the struct `MyThing. You can do that via the following query:
 
 ```
 (method_declaration
@@ -97,19 +97,21 @@ For example:
 ```
 
 - `@scope`
+
   - Used to create a new scope, with whatever descriptors are defined by this query.
   - This allows namespacing nested elements
 
 - `@enclosing`
+
   - Used primarily for the `/symbols` endpoint, but gives the enclosing range for a particular symbol.
   - Does not need to be used with `@scope` because `@scope` already gives us the range already.
     - TODO: In the future, it may be possible we come up with some scenarios for this,
-    but I haven't found any use cases for it at the moment
+      but I haven't found any use cases for it at the moment
 
 - `@local`
   - Use this to ignore any new symbols that might be generated within this block.
   - Future improvement would hope that we just skip parsing / matching on this block, but I don't think that's
-  feasible at the moment. For now it just notices the match and skips doing anymore work on it.
+    feasible at the moment. For now it just notices the match and skips doing anymore work on it.
 
 ## Predicates
 
@@ -142,7 +144,7 @@ For example:
 
 - `(#transform! "regex-string" "regex-replacement")`
   - `#transform!` can be used to take the last descriptor of a match and generat new identifiers from it. This is useful when
-  a language feature mangles a name in some new way, but it's predicatble in text.
+    a language feature mangles a name in some new way, but it's predicatble in text.
 
 ```scheme
 ;; attr_accessor :bar -> bar, bar=
