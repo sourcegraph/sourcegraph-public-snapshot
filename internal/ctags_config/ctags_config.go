@@ -1,6 +1,10 @@
 package ctags_config
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import (
+	"strings"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
 
 type ParserType = uint8
 
@@ -11,8 +15,8 @@ const (
 	ScipCtags
 )
 
-func ParserTypeToName(pType ParserType) string {
-	switch pType {
+func ParserTypeToName(parserType ParserType) string {
+	switch parserType {
 	case NoCtags:
 		return "off"
 	case UniversalCtags:
@@ -37,19 +41,23 @@ func ParserNameToParserType(name string) (ParserType, error) {
 	}
 }
 
-type ParserConfiguration struct {
-	Default ParserType
-	Engine  map[string]ParserType
+func ParserIsNoop(parserType ParserType) bool {
+	return parserType == UnknownCtags || parserType == NoCtags
 }
 
-var SupportLanguages = map[string]struct{}{
-	"Zig": {},
+func LanguageSupportsParserType(language string, parserType ParserType) bool {
+	switch parserType {
+	case ScipCtags:
+		_, ok := supportedLanguages[strings.ToLower(language)]
+		return ok
+	default:
+		return true
+	}
 }
 
-var BaseParserConfig = ParserConfiguration{
-	Engine: map[string]ParserType{
-		// TODO: put our other languages here
-		// TODO: also list the languages we support
-		"Zig": ScipCtags,
-	},
+var supportedLanguages = map[string]struct{}{
+	"c_sharp": {},
+	"java":    {},
+	"python":  {},
+	"zig":     {},
 }

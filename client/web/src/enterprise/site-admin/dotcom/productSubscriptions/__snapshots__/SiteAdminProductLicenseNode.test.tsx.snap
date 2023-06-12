@@ -6,9 +6,11 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
     class="list-group-item py-3"
   >
     <div
-      class="mr-3 text-truncate"
+      class="text-truncate d-flex mb-2"
     >
-      <strong>
+      <h3
+        class="h3"
+      >
         License in 
         <a
           class="anchorLink mr-3"
@@ -16,7 +18,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
         >
           s
         </a>
-      </strong>
+      </h3>
       <span
         class="mr-3"
       >
@@ -46,14 +48,20 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
         </small>
       </p>
       <p
-        class="ml-auto mb-0"
+        class="ml-3 mb-0 text-muted"
       >
         <small>
           Version 1
         </small>
       </p>
+      <button
+        class="btn btnDanger ml-auto d-flex justify-content-center align-items-center"
+        type="button"
+      >
+        Revoke
+      </button>
     </div>
-    <p
+    <div
       class="mb-2"
     >
       <svg
@@ -79,7 +87,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
         almost 15 years
       </span>
        remaining)
-    </p>
+    </div>
     <div
       aria-live="assertive"
       class="alert alertDanger mb-2"
@@ -167,9 +175,11 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
     class="list-group-item py-3"
   >
     <div
-      class="mr-3 text-truncate"
+      class="text-truncate d-flex mb-2"
     >
-      <strong>
+      <h3
+        class="h3"
+      >
         License in 
         <a
           class="anchorLink mr-3"
@@ -177,7 +187,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
         >
           s
         </a>
-      </strong>
+      </h3>
       <span
         class="mr-3"
       >
@@ -207,14 +217,20 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
         </small>
       </p>
       <p
-        class="ml-auto mb-0"
+        class="ml-3 mb-0 text-muted"
       >
         <small>
           Version 1
         </small>
       </p>
+      <button
+        class="btn btnDanger ml-auto d-flex justify-content-center align-items-center"
+        type="button"
+      >
+        Revoke
+      </button>
     </div>
-    <p
+    <div
       class="mb-2"
     >
       <svg
@@ -240,7 +256,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
         almost 15 years
       </span>
        remaining)
-    </p>
+    </div>
     <div
       aria-live="assertive"
       class="alert alertDanger mb-2"

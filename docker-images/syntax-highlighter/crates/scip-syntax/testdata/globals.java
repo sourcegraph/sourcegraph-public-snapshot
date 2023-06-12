@@ -1,3 +1,5 @@
+package MyPackage;
+
 public class globals {
     private static int field1;
     protected static int field2;
