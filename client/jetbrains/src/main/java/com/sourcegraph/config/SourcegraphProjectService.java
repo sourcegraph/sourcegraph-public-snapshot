@@ -4,6 +4,7 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.sourcegraph.find.Search;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,6 +15,11 @@ public class SourcegraphProjectService
     implements PersistentStateComponent<SourcegraphProjectService>, SourcegraphService {
   @Nullable public String instanceType;
   @Nullable public String url;
+
+  @Nullable
+  @Deprecated(since = "3.0.0-alpha.2", forRemoval = true)
+  public String accessToken; // kept for backwards compatibility
+
   @Nullable public String dotComAccessToken;
   @Nullable public String enterpriseAccessToken;
   @Nullable public String customRequestHeaders;
@@ -84,6 +90,7 @@ public class SourcegraphProjectService
   public void loadState(@NotNull SourcegraphProjectService settings) {
     this.instanceType = settings.instanceType;
     this.url = settings.url;
+    this.accessToken = settings.accessToken;
     this.dotComAccessToken = settings.dotComAccessToken;
     this.enterpriseAccessToken = settings.enterpriseAccessToken;
     this.customRequestHeaders = settings.customRequestHeaders;
@@ -99,9 +106,13 @@ public class SourcegraphProjectService
 
   @Override
   public String getEnterpriseAccessToken() {
-    return enterpriseAccessToken == null
+    // configuring enterpriseAccessToken overrides the deprecated accessToken field
+    String configuredEnterpriseAccessToken =
+        StringUtils.isEmpty(enterpriseAccessToken) ? accessToken : enterpriseAccessToken;
+    // defaulting to SRC_ACCESS_TOKEN env if nothing else was configured
+    return configuredEnterpriseAccessToken == null
         ? System.getenv("SRC_ACCESS_TOKEN")
-        : enterpriseAccessToken;
+        : configuredEnterpriseAccessToken;
   }
 
   @Override
