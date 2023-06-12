@@ -18,6 +18,8 @@ export type Config = Pick<
 >
 
 export abstract class SourcegraphCompletionsClient {
+    private errorEncountered = false
+
     constructor(protected config: Config, protected logger?: CompletionLogger) {}
 
     public onConfigurationChange(newConfig: Config): void {
@@ -39,10 +41,13 @@ export abstract class SourcegraphCompletionsClient {
                     cb.onChange(event.completion)
                     break
                 case 'error':
+                    this.errorEncountered = true
                     cb.onError(event.error)
                     break
                 case 'done':
-                    cb.onComplete()
+                    if (!this.errorEncountered) {
+                        cb.onComplete()
+                    }
                     break
             }
         }
