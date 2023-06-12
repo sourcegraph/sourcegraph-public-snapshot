@@ -18,6 +18,7 @@ func TestRelevantSettings(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	settingsService := NewService(db)
 
 	createOrg := func(name string) *types.Org {
 		org, err := db.Orgs().Create(ctx, name, nil)
@@ -95,7 +96,7 @@ func TestRelevantSettings(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.subject.String(), func(t *testing.T) {
-			got, err := RelevantSubjects(ctx, db, tc.subject)
+			got, err := settingsService.RelevantSubjects(ctx, tc.subject)
 			require.NoError(t, err)
 			require.Equal(t, tc.expected, got)
 		})

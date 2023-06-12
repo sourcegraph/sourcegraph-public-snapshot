@@ -14,6 +14,7 @@ go_library(
         "//enterprise/cmd/cody-gateway/internal/actor",
         "//enterprise/cmd/cody-gateway/internal/events",
         "//enterprise/cmd/cody-gateway/internal/limiter",
+        "//enterprise/cmd/cody-gateway/internal/notify",
         "//enterprise/cmd/cody-gateway/internal/response",
         "//enterprise/internal/codygateway",
         "//enterprise/internal/completions/client/anthropic",
@@ -23,6 +24,7 @@ go_library(
         "//internal/trace",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel_trace//:trace",
         "@org_golang_x_exp//slices",
     ],
 )

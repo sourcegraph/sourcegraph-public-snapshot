@@ -13,8 +13,10 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -387,19 +389,15 @@ func (s *Store) GetByIDs(ctx context.Context, ids []int) (_ []Migration, err err
 		return nil, err
 	}
 
-	sort.Slice(migrations, func(i, j int) bool { return migrations[i].ID < migrations[j].ID })
-
-	var missingMigrations []int
-	var offset int
-	for i, id := range ids {
-		if migrations[i-offset].ID != id {
-			offset += 1
-			missingMigrations = append(missingMigrations, id)
-			continue
-		}
+	wanted := collections.NewSet(ids...)
+	received := collections.NewSet[int]()
+	for _, migration := range migrations {
+		received.Add(migration.ID)
 	}
-	if len(missingMigrations) > 0 {
-		return nil, errors.Newf("unknown migration id(s) %v", missingMigrations)
+	difference := wanted.Difference(received).Values()
+	if len(difference) > 0 {
+		slices.Sort(difference)
+		return nil, errors.Newf("unknown migration id(s) %v", difference)
 	}
 
 	return migrations, nil
@@ -427,7 +425,8 @@ SELECT
 FROM out_of_band_migrations m
 LEFT JOIN out_of_band_migrations_errors e ON e.migration_id = m.id
 WHERE m.id = ANY(%s)
-ORDER BY e.created desc`
+ORDER BY m.id ASC, e.created DESC
+`
 
 // ReturnEnterpriseMigrations is set by the enterprise application to enable the
 // inclusion of enterprise-only migration records in the output of oobmigration.List.
