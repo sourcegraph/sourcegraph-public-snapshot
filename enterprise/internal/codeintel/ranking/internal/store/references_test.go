@@ -97,15 +97,10 @@ func getRankingReferences(
 			return nil, err
 		}
 
-		var cs [][16]byte
-		for _, x := range symbolChecksums {
-			cs = append(cs, castToChecksum(x))
-		}
-
 		references = append(references, shared.RankingReferences{
 			UploadID:         uploadID,
 			ExportedUploadID: exportedUploadID,
-			SymbolChecksums:  cs,
+			SymbolChecksums:  castToChecksums(symbolChecksums),
 		})
 	}
 

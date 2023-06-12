@@ -146,6 +146,15 @@ func hash(symbolName string) [16]byte {
 	return md5.Sum([]byte(symbolName))
 }
 
+func castToChecksums(vs [][]byte) [][16]byte {
+	cs := [][16]byte{}
+	for _, v := range vs {
+		cs = append(cs, castToChecksum(v))
+	}
+
+	return cs
+}
+
 func castToChecksum(s []byte) [16]byte {
 	a := [16]byte{}
 	copy(a[:], s)
