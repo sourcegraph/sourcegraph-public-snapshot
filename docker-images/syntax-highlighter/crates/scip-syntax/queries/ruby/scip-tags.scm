@@ -1,7 +1,7 @@
-(assignment left: [(identifier) (constant) (class_variable)] @descriptor.term)
-(module name: (_) @descriptor.namespace) @scope
+(assignment left: [(identifier) (constant)] @descriptor.term)
 (class name: (_) @descriptor.type) @scope
 (method name: (_) @descriptor.method) @local
+
 (singleton_method name: (_) @descriptor.method) @local
 [(do_block) (block) (unless) (case) (begin) (if) (while) (for)] @local
 
