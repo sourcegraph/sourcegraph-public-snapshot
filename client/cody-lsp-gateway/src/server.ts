@@ -9,7 +9,10 @@ export const startServer = (): void => {
 
     connection.onInitialize(() => {
         connection.console.log('Received an initialization request');
-        return {} as InitializeResult;
+        const ret: InitializeResult = {
+            capabilities: {},
+        };
+        return ret;
     });
 
     connection.onInitialized(() => {
