@@ -40,7 +40,7 @@ func initExternalMetricReporters[T workerutil.Record](queueName string, store st
 	), nil
 }
 
-func NewMultiqueueMetricReporter[T workerutil.Record](queueNames []string, metricsConfig *Config, countFuncs ...func(ctx context.Context, includeProcessing bool) (int, error)) (goroutine.BackgroundRoutine, error) {
+func NewMultiqueueMetricReporter(queueNames []string, metricsConfig *Config, countFuncs ...func(ctx context.Context, includeProcessing bool) (int, error)) (goroutine.BackgroundRoutine, error) {
 	reporters, err := configureReporters(metricsConfig)
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func NewMultiqueueMetricReporter[T workerutil.Record](queueNames []string, metri
 	ctx := context.Background()
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
-		&externalEmitter[T]{
+		&externalEmitter[workerutil.Record]{
 			queueName:  queueStr,
 			countFuncs: countFuncs,
 			reporters:  reporters,
