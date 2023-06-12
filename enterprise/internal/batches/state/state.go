@@ -707,7 +707,8 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 				states[btypes.ChangesetReviewStatePending] = true
 			}
 		}
-
+	case *protocol.PerforceChangelist:
+		states[btypes.ChangesetReviewStatePending] = true
 	default:
 		return "", errors.New("unknown changeset type")
 	}
