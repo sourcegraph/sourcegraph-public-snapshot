@@ -10,8 +10,7 @@ commit="${commit:0:12}"
 
 stamp_version="${build_number}_${date_fragment}_${latest_tag}-${commit}"
 
-# echo STABLE_VERSION "$stamp_version"
-echo STABLE_VERSION "$VERSION"
+echo STABLE_VERSION "$stamp_version"
 echo VERSION_TIMESTAMP "$(date +%s)"
 
 # Unstable Buildkite env vars
