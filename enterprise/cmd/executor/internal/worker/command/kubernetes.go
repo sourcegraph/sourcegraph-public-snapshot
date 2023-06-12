@@ -230,50 +230,18 @@ func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, logger cmdl
 			log.Time("creationTimestamp", pod.CreationTimestamp.Time),
 			kubernetesTimep("deletionTimestamp", pod.DeletionTimestamp),
 		)
+		// If there are init containers, stream their logs.
 		if len(pod.Status.InitContainerStatuses) > 0 {
-			for _, status := range pod.Status.InitContainerStatuses {
-				key := normalizeKey(status.Name)
-				if status.State.Running != nil {
-					c.Logger.Debug("Starting log stream", log.String("key", key))
-					containerLoggers[key] = containerLogger{logEntry: logger.LogEntry(key, getCommand(status.Name, spec))}
-				} else if status.State.Terminated != nil {
-					l, ok := containerLoggers[key]
-					if !ok {
-						c.Logger.Debug("Starting log stream", log.String("key", key))
-						containerLoggers[key] = containerLogger{logEntry: logger.LogEntry(key, getCommand(status.Name, spec))}
-						l = containerLoggers[key]
-					}
-					if !l.completed {
-						if err = c.ReadLogs(ctx, namespace, pod, status.Name, true, l.logEntry); err != nil {
-							return nil, err
-						}
-						l.completed = true
-						containerLoggers[key] = l
-					}
-				}
+			err = c.handleContainers(ctx, logger, namespace, pod, pod.Status.InitContainerStatuses, containerLoggers, spec)
+			if err != nil {
+				return pod, err
 			}
 		}
+		// If there are containers, stream their logs.
 		if len(pod.Status.ContainerStatuses) > 0 {
-			for _, status := range pod.Status.ContainerStatuses {
-				key := normalizeKey(status.Name)
-				if status.State.Running != nil {
-					c.Logger.Debug("Starting log stream", log.String("key", key))
-					containerLoggers[key] = containerLogger{logEntry: logger.LogEntry(key, getCommand(status.Name, spec))}
-				} else if status.State.Terminated != nil {
-					l, ok := containerLoggers[key]
-					if !ok {
-						c.Logger.Debug("Starting log stream", log.String("key", key))
-						containerLoggers[key] = containerLogger{logEntry: logger.LogEntry(key, getCommand(status.Name, spec))}
-						l = containerLoggers[key]
-					}
-					if !l.completed {
-						if err = c.ReadLogs(ctx, namespace, pod, status.Name, false, l.logEntry); err != nil {
-							return nil, err
-						}
-						l.completed = true
-						containerLoggers[key] = l
-					}
-				}
+			err = c.handleContainers(ctx, logger, namespace, pod, pod.Status.ContainerStatuses, containerLoggers, spec)
+			if err != nil {
+				return pod, err
 			}
 		}
 		switch pod.Status.Phase {
@@ -290,6 +258,43 @@ func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, logger cmdl
 	return nil, errors.New("unexpected end of watch")
 }
 
+func (c *KubernetesCommand) handleContainers(
+	ctx context.Context,
+	logger cmdlogger.Logger,
+	namespace string,
+	pod *corev1.Pod,
+	containerStatus []corev1.ContainerStatus,
+	containerLoggers map[string]containerLogger,
+	spec Spec,
+) error {
+	for _, status := range containerStatus {
+		// If the container is waiting, it hasn't started yet, so skip it.
+		if status.State.Waiting != nil {
+			continue
+		}
+		// If the container is not waiting, then it has either started or completed. Either way, we will want to
+		// create the logEntry if it doesn't exist.
+		l, ok := containerLoggers[status.Name]
+		if !ok {
+			// Potentially the container completed too quickly, so we may not have started the log entry yet.
+			containerLoggers[status.Name] = containerLogger{logEntry: logger.LogEntry(normalizeKey(status.Name), getCommand(status.Name, spec))}
+			l = containerLoggers[status.Name]
+		}
+		if status.State.Terminated != nil {
+			// We only want to read the logs once. If the log entry is already completed, we can skip it.
+			// Waiting for the container to complete also gives us access to the exit code.
+			if !l.completed {
+				if err := c.ReadLogs(ctx, namespace, pod, status.Name, containerStatus, l.logEntry); err != nil {
+					return err
+				}
+				l.completed = true
+				containerLoggers[status.Name] = l
+			}
+		}
+	}
+	return nil
+}
+
 func kubernetesTimep(key string, time *metav1.Time) log.Field {
 	if time == nil {
 		return log.Timep(key, nil)
@@ -298,6 +303,8 @@ func kubernetesTimep(key string, time *metav1.Time) log.Field {
 }
 
 func normalizeKey(key string) string {
+	// Since '.' are not allowed in container names, we need to convert the key to have '.' to make our logging
+	// happy.
 	return strings.ReplaceAll(key, "-", ".")
 }
 
@@ -321,13 +328,12 @@ func (c *KubernetesCommand) ReadLogs(
 	namespace string,
 	pod *corev1.Pod,
 	containerName string,
-	singleJob bool,
+	containerStatus []corev1.ContainerStatus,
 	logEntry cmdlogger.LogEntry,
 ) (err error) {
 	ctx, _, endObservation := c.Operations.KubernetesReadLogs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("podName", pod.Name),
 		attribute.String("containerName", containerName),
-		attribute.Bool("singleJob", singleJob),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -335,29 +341,17 @@ func (c *KubernetesCommand) ReadLogs(
 		"Reading logs",
 		log.String("podName", pod.Name),
 		log.String("containerName", containerName),
-		log.Bool("singleJob", singleJob),
 	)
 
 	// If the pod just failed to even start, then we can't get logs from it.
-	if pod.Status.Phase == corev1.PodFailed &&
-		(!singleJob && len(pod.Status.ContainerStatuses) == 0) ||
-		(singleJob && len(pod.Status.InitContainerStatuses) == 0) {
+	if pod.Status.Phase == corev1.PodFailed && len(containerStatus) == 0 {
 		logEntry.Finalize(1)
 	} else {
 		exitCode := 0
-		if singleJob {
-			for _, status := range pod.Status.InitContainerStatuses {
-				if status.Name == containerName {
-					exitCode = int(status.State.Terminated.ExitCode)
-					break
-				}
-			}
-		} else {
-			for _, status := range pod.Status.ContainerStatuses {
-				if status.Name == containerName {
-					exitCode = int(status.State.Terminated.ExitCode)
-					break
-				}
+		for _, status := range containerStatus {
+			if status.Name == containerName {
+				exitCode = int(status.State.Terminated.ExitCode)
+				break
 			}
 		}
 		// Ensure we always get the exit code in case an error occurs when reading the logs.
