@@ -1,2 +1,5 @@
 #! /usr/bin/env node
-console.log('Hello, World!');
+
+import { startServer } from "./server";
+
+startServer();

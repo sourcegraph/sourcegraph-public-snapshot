@@ -10,12 +10,14 @@
     "cody-lsp-gateway": "./dist/app.js"
   },
   "scripts": {
-    "start": "ts-node-transpile-only ./src/app.ts",
+    "start": "ts-node-transpile-only ./src/app.ts -- --stdio",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "build": "esbuild ./src/app.ts --bundle --outfile=dist/app.js --format=cjs --platform=node",
     "build-ts": "tsc -b --emitDeclarationOnly"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "vscode-languageserver": "^8.1.0",
+    "vscode-languageserver-textdocument": "^1.0.8"
+  }
 }
