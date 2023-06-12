@@ -3,6 +3,7 @@ package exporter
 import (
 	"context"
 	"crypto/md5"
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -150,12 +151,16 @@ func setDefinitionsAndReferencesForUpload(
 			if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) || strings.HasPrefix(occ.Symbol, skipPrefix) {
 				continue
 			}
-
-			if _, ok := seenDefinitions[occ.Symbol]; ok {
+			checksum, ok := canonicalizeSymbol(occ.Symbol)
+			if !ok {
 				continue
 			}
+			if _, ok := seenDefinitions[checksum]; ok {
+				continue
+			}
+
 			if !scip.SymbolRole_Definition.Matches(occ) {
-				references <- canonicalizeSymbol(occ.Symbol)
+				references <- checksum
 				referencesCount++
 			}
 		}
@@ -178,8 +183,8 @@ func setDefinitionsForUpload(
 	upload uploadsshared.ExportedUpload,
 	rankingGraphKey, path string,
 	document *scip.Document,
-) (map[string]struct{}, error) {
-	seenDefinitions := map[string]struct{}{}
+) (map[[16]byte]struct{}, error) {
+	seenDefinitions := map[[16]byte]struct{}{}
 	definitions := make(chan shared.RankingDefinitions)
 
 	go func() {
@@ -189,15 +194,19 @@ func setDefinitionsForUpload(
 			if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) || strings.HasPrefix(occ.Symbol, skipPrefix) {
 				continue
 			}
+			checksum, ok := canonicalizeSymbol(occ.Symbol)
+			if !ok {
+				continue
+			}
 
 			if scip.SymbolRole_Definition.Matches(occ) {
 				definitions <- shared.RankingDefinitions{
 					UploadID:         upload.UploadID,
 					ExportedUploadID: upload.ExportedUploadID,
-					SymbolChecksum:   canonicalizeSymbol(occ.Symbol),
+					SymbolChecksum:   checksum,
 					DocumentPath:     filepath.Join(upload.Root, path),
 				}
-				seenDefinitions[occ.Symbol] = struct{}{}
+				seenDefinitions[checksum] = struct{}{}
 			}
 		}
 	}()
@@ -222,13 +231,14 @@ func setDefinitionsForUpload(
 //     uploads exactly to get a reference count.
 //   - We then hash the simplified symbol name into a fixed-sized block that
 //     can be matched in constant time against other symbols in Postgres.
-func canonicalizeSymbol(symbolName string) [16]byte {
+func canonicalizeSymbol(symbolName string) ([16]byte, bool) {
 	symbol, err := noVersionFormatter.Format(symbolName)
 	if err != nil {
-		panic(err.Error())
+		fmt.Printf("HUH: %q\n", symbolName)
+		return [16]byte{}, false
 	}
 
-	return md5.Sum([]byte(symbol))
+	return md5.Sum([]byte(symbol)), true
 }
 
 var noVersionFormatter = scip.SymbolFormatter{
