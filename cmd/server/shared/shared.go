@@ -328,8 +328,8 @@ func runPostgresReindex(postgresDataPath string) {
 		fmt.Printf("\n**************** MIGRATION REQUIRED **************\n\n")
 		fmt.Printf("Upgrading to Sourcegraph 5.1 or later from an earlier release requires a database reindex.\n\n")
 		fmt.Printf("This process may take several hours, depending on the size of your database.\n\n")
-		fmt.Printf("If you do not wish to perform the reindex process now, you should switch back to an image from an earlier release.\n\n")
-		fmt.Printf("To perform the reindexing process now, restart the container with the environment variable `SOURCEGRAPH_5_1_DB_MIGRATION=true`\n")
+		fmt.Printf("If you do not wish to perform the reindex process now, you should switch back to a release before Sourcegraph 5.1.\n\n")
+		fmt.Printf("To perform the reindexing process now, restart the container with the environment variable `SOURCEGRAPH_5_1_DB_MIGRATION=true` set.\n")
 		fmt.Printf("\n**************** MIGRATION REQUIRED **************\n\n")
 
 		os.Exit(1)
