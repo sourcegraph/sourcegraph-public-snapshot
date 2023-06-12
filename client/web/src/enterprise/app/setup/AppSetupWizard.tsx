@@ -77,6 +77,7 @@ export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService }) => {
     // main app
     useLayoutEffect(() => {
         document.documentElement.classList.toggle('theme-light', true)
+        document.documentElement.classList.toggle('theme-dark', false)
 
         return () => {
             const isLightTheme = theme === Theme.Light
