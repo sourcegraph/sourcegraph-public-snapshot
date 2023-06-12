@@ -1,7 +1,9 @@
 package com.sourcegraph.cody.chat;
 
 import java.awt.*;
+import java.util.List;
 import javax.swing.*;
+import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.*;
 import org.commonmark.parser.Parser;
 import org.jetbrains.annotations.NotNull;
@@ -20,7 +22,7 @@ public class ChatBubble extends JPanel {
   @NotNull
   private JPanel buildMessagePanel(@NotNull ChatMessage message) {
     MessagePanel messagePanel = new MessagePanel(message, GRADIENT_WIDTH);
-    Parser parser = Parser.builder().build();
+    Parser parser = Parser.builder().extensions(List.of(TablesExtension.create())).build();
     Node document = parser.parse(message.getDisplayText());
     MessageContentCreatorFromMarkdownNodes messageContentCreator =
         new MessageContentCreatorFromMarkdownNodes(messagePanel, GRADIENT_WIDTH);

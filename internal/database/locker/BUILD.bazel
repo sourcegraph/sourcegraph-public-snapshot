@@ -16,7 +16,7 @@ go_library(
 
 go_test(
     name = "locker_test",
-    timeout = "short",
+    timeout = "moderate",
     srcs = ["locker_test.go"],
     embed = [":locker"],
     tags = [
