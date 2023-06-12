@@ -155,17 +155,6 @@ func MustGetInt(name string, defaultValue int, description string) int {
 	return i
 }
 
-// MustGetUint64 is similar to Get but ensures that the value is a valid uint64.
-func MustGetUint64(name string, defaultValue uint64, description string) uint64 {
-	s := Get(name, strconv.FormatUint(defaultValue, 10), description)
-	i, err := strconv.ParseUint(s, 10, 64)
-	if err != nil {
-		panic(fmt.Sprintf("parsing environment variable %q. Expected valid unsigned integer, got %q", name, s))
-	}
-
-	return i
-}
-
 // MustGetBool is similar to Get but ensures that the value is a valid bool.
 func MustGetBool(name string, defaultValue bool, description string) bool {
 	s := Get(name, strconv.FormatBool(defaultValue), description)

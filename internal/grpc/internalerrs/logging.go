@@ -26,7 +26,7 @@ var (
 	envLogStackTracesEnabled = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_STACK_TRACES", false, "Enables including stack traces in logs of gRPC internal errors")
 
 	envLogNonUTF8ProtobufMessages        = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES_ENABLED", false, "Enables logging of non-UTF-8 protobuf messages")
-	envLogNonUTF8ProtobufMessagesMaxSize = env.MustGetUint64("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES_MAX_SIZE_BYTES", 1024, "Maximum size of non-UTF-8 protobuf messages to log, in bytes")
+	envLogNonUTF8ProtobufMessagesMaxSize = env.MustGetInt("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES_MAX_SIZE_BYTES", 1024, "Maximum size of non-UTF-8 protobuf messages to log before truncation, in bytes. Negative values disable truncation.")
 )
 
 // LoggingUnaryClientInterceptor returns a grpc.UnaryClientInterceptor that logs
@@ -138,9 +138,9 @@ func doLog(logger log.Logger, serviceName, methodName string, payload any, err e
 // additionalNonUTF8StringDebugFields returns additional log fields that should be included when logging a non-UTF8 string error.
 //
 // By default, this includes the names of all fields that contain non-UTF8 strings.
-// If shouldLogMessageJSON is true, then the JSON representation of the message is also included. The maxMessageSizeLogBytes parameter
-// controls the maximum size of the message that will be logged, after which it will be truncated.
-func additionalNonUTF8StringDebugFields(message proto.Message, shouldLogMessageJSON bool, maxMessageSizeLogBytes uint64) []log.Field {
+// If shouldLogMessageJSON is true, then the JSON representation of the message is also included.
+// The maxMessageSizeLogBytes parameter controls the maximum size of the message that will be logged, after which it will be truncated. Negative values disable truncation.
+func additionalNonUTF8StringDebugFields(message proto.Message, shouldLogMessageJSON bool, maxMessageLogSizeBytes int) []log.Field {
 	var allFields []log.Field
 
 	// Add the names of all protobuf fields that contain non-UTF-8 strings to the log.
@@ -166,15 +166,17 @@ func additionalNonUTF8StringDebugFields(message proto.Message, shouldLogMessageJ
 		return allFields
 	}
 
-	// Truncate the message if it's too large for logging.
-	max := int(maxMessageSizeLogBytes)
-	if max >= 0 && len(jsonBytes) > max {
-		jsonBytes = jsonBytes[:max]
-		jsonBytes = append(jsonBytes, []byte("...(truncated)")...)
+	if maxMessageLogSizeBytes < 0 { // If truncation is disabled, set the max size to the full message size.
+		maxMessageLogSizeBytes = len(jsonBytes)
+	}
+
+	bytesToTruncate := len(jsonBytes) - maxMessageLogSizeBytes
+	if bytesToTruncate > 0 {
+		jsonBytes = jsonBytes[:maxMessageLogSizeBytes]
+		jsonBytes = append(jsonBytes, []byte(fmt.Sprintf("...(truncated %d bytes)", bytesToTruncate))...)
 	}
 
 	allFields = append(allFields, log.String("messageJSON", string(jsonBytes)))
-
 	return allFields
 }
 
