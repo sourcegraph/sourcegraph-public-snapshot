@@ -1,7 +1,7 @@
 (namespace_import (identifier) @descriptor.term)
 (named_imports
-    [(import_specifier alias: (_) @descriptor.term)
-     (import_specifier name: (_) @descriptor.term !alias)])
+ [(import_specifier alias: (_) @descriptor.term)
+  (import_specifier name: (_) @descriptor.term !alias)])
 
 ;; Function / Generator declaration.
 ;;   Don't think there is any reason to expose anything from within the body of the functions
