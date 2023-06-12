@@ -23,6 +23,7 @@
 (null_literal) @constant.null
 (boolean_literal) @boolean
 (comment) @comment
+(block_comment) @comment
 [
   "case"
   "match"

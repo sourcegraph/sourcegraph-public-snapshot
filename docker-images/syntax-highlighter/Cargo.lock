@@ -2525,8 +2525,9 @@ dependencies = [
 
 [[package]]
 name = "tree-sitter-scala"
-version = "0.20.7"
-source = "git+https://github.com/sourcegraph/tree-sitter-scala?rev=6cd3cb6074624dd3d88e458343475ca4c701cb06#6cd3cb6074624dd3d88e458343475ca4c701cb06"
+version = "0.20.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4e1f1de7a274c95937c40bc75dcaee97b5f23107ffcc78fc99a7b982d4f745ef"
 dependencies = [
  "cc",
  "tree-sitter",

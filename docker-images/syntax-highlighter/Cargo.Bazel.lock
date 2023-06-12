@@ -1,5 +1,5 @@
 {
-  "checksum": "aa9977a216df54628f8e2e08d8ce18b639876645c135de306b91f807e5518e53",
+  "checksum": "c30618ed9bc87fcd2c58cc8475a042ac740f0737ae192b358049e1ff2bd6a2e9",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -9835,7 +9835,7 @@
               "target": "tree_sitter_rust"
             },
             {
-              "id": "tree-sitter-scala 0.20.7",
+              "id": "tree-sitter-scala 0.20.1",
               "target": "tree_sitter_scala"
             },
             {
@@ -13834,15 +13834,13 @@
       },
       "license": "MIT"
     },
-    "tree-sitter-scala 0.20.7": {
+    "tree-sitter-scala 0.20.1": {
       "name": "tree-sitter-scala",
-      "version": "0.20.7",
+      "version": "0.20.1",
       "repository": {
-        "Git": {
-          "remote": "https://github.com/sourcegraph/tree-sitter-scala",
-          "commitish": {
-            "Rev": "6cd3cb6074624dd3d88e458343475ca4c701cb06"
-          }
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/tree-sitter-scala/0.20.1/download",
+          "sha256": "4e1f1de7a274c95937c40bc75dcaee97b5f23107ffcc78fc99a7b982d4f745ef"
         }
       },
       "targets": [
@@ -13877,14 +13875,14 @@
               "target": "tree_sitter"
             },
             {
-              "id": "tree-sitter-scala 0.20.7",
+              "id": "tree-sitter-scala 0.20.1",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.20.7"
+        "version": "0.20.1"
       },
       "build_script_attrs": {
         "data_glob": [
