@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/util"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
@@ -49,6 +50,12 @@ func Pre(
 	cond, err := template.EvalStepCondition(step.IfCondition(), &stepContext)
 	if err != nil {
 		return errors.Wrap(err, "failed to evaluate step condition")
+	}
+
+	// Remove skip file if it exists.
+	// It is ok to remove since this execution is the step that will run.
+	if err = os.Remove(filepath.Join(workingDirectory, types.SkipFile)); err != nil && !os.IsNotExist(err) {
+		return errors.Wrap(err, "failed to remove skip file")
 	}
 
 	if !cond {
