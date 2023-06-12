@@ -575,8 +575,10 @@ type CommitSigningConfigResolver interface {
 }
 
 type GitHubAppConfigResolver interface {
+	ID() graphql.ID
 	AppID() int32
 	Name() string
+	BaseURL() string
 	AppURL() string
 	Logo() string
 }

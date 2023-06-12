@@ -44,9 +44,13 @@ const SiteAdminExternalAccountsPage = lazyComponent(
     () => import('./SiteAdminExternalAccountsPage'),
     'SiteAdminExternalAccountsPage'
 )
-const BatchChangesSiteConfigSettingsArea = lazyComponent(
-    () => import('../batches/settings/BatchChangesSiteConfigSettingsArea'),
-    'BatchChangesSiteConfigSettingsArea'
+const BatchChangesSiteConfigSettingsPage = lazyComponent(
+    () => import('../batches/settings/BatchChangesSiteConfigSettingsPage'),
+    'BatchChangesSiteConfigSettingsPage'
+)
+const BatchChangesCreateGitHubAppPage = lazyComponent(
+    () => import('../batches/settings/BatchChangesCreateGitHubAppPage'),
+    'BatchChangesCreateGitHubAppPage'
 )
 const BatchSpecsPage = lazyComponent<BatchSpecsPageProps, 'BatchSpecsPage'>(
     () => import('../batches/BatchSpecsPage'),
@@ -134,7 +138,12 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
         {
             path: '/batch-changes',
-            render: () => <BatchChangesSiteConfigSettingsArea />,
+            render: () => <BatchChangesSiteConfigSettingsPage />,
+            condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+        },
+        {
+            path: '/batch-changes/new-github-app',
+            render: () => <BatchChangesCreateGitHubAppPage />,
             condition: ({ batchChangesEnabled }) => batchChangesEnabled,
         },
         {

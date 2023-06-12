@@ -1,12 +1,12 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline, mdiDelete, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import { noop } from 'lodash'
 
-import { AnchorLink, Button, ButtonLink, H3, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
+import { AnchorLink, Button, ButtonLink, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
+import { RemoveGitHubAppModal } from '../../../components/gitHubApps/RemoveGitHubAppModal'
 import { BatchChangesCodeHostFields } from '../../../graphql-operations'
 
 import styles from './CommitSigningIntegrationNode.module.scss'
@@ -14,11 +14,12 @@ import styles from './CommitSigningIntegrationNode.module.scss'
 interface CommitSigningIntegrationNodeProps {
     readOnly: boolean
     node: BatchChangesCodeHostFields
+    refetch: () => void
 }
 
 export const CommitSigningIntegrationNode: React.FunctionComponent<
     React.PropsWithChildren<CommitSigningIntegrationNodeProps>
-> = ({ node, readOnly }) => {
+> = ({ node, readOnly, refetch }) => {
     const ExternalServiceIcon = defaultExternalServices[node.externalServiceKind].icon
     return (
         <li className={classNames(styles.node, 'list-group-item')}>
@@ -49,7 +50,11 @@ export const CommitSigningIntegrationNode: React.FunctionComponent<
                 {readOnly ? (
                     <ReadOnlyAppDetails config={node.commitSigningConfiguration} />
                 ) : (
-                    <AppDetailsControls config={node.commitSigningConfiguration} />
+                    <AppDetailsControls
+                        baseURL={node.externalServiceURL}
+                        config={node.commitSigningConfiguration}
+                        refetch={refetch}
+                    />
                 )}
             </div>
         </li>
@@ -57,12 +62,20 @@ export const CommitSigningIntegrationNode: React.FunctionComponent<
 }
 
 interface AppDetailsControlsProps {
+    baseURL: string
     config: BatchChangesCodeHostFields['commitSigningConfiguration']
+    refetch: () => void
 }
 
-const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ config }) =>
-    config ? (
+const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ baseURL, config, refetch }) => {
+    const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
+
+    const createURL = `/site-admin/batch-changes/new-github-app?baseURL=${encodeURIComponent(baseURL)}`
+    return config ? (
         <>
+            {removeModalOpen && (
+                <RemoveGitHubAppModal onCancel={() => setRemoveModalOpen(false)} afterDelete={refetch} app={config} />
+            )}
             <div className="d-flex align-items-center">
                 <img className={styles.appLogoLarge} src={config.logo} alt="app logo" aria-hidden={true} />
                 <div className={styles.appDetailsColumn}>
@@ -80,26 +93,22 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
                         View In GitHub <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true} />
                     </small>
                 </AnchorLink>
-                {/* TODO: Hook up delete button */}
-                <Tooltip content="Remove GitHub App">
-                    <Button aria-label="Remove" onClick={noop} disabled={false} variant="danger" size="sm">
-                        <Icon aria-hidden={true} svgPath={mdiDelete} /> Remove
-                    </Button>
-                </Tooltip>
+                <Button
+                    aria-label="Remove GitHub App"
+                    onClick={() => setRemoveModalOpen(true)}
+                    variant="danger"
+                    size="sm"
+                >
+                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Remove
+                </Button>
             </div>
         </>
     ) : (
-        // TODO: Hook up create button
-        <ButtonLink
-            to="/batch-changes/new-github-app"
-            className="ml-auto text-nowrap"
-            variant="success"
-            as={Link}
-            size="sm"
-        >
+        <ButtonLink to={createURL} className="ml-auto text-nowrap" variant="success" as={Link} size="sm">
             Create GitHub App
         </ButtonLink>
     )
+}
 
 interface ReadOnlyAppDetailsProps {
     config: BatchChangesCodeHostFields['commitSigningConfiguration']

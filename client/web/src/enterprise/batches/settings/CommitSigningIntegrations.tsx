@@ -1,7 +1,10 @@
 import React from 'react'
 
+import { useLocation } from 'react-router-dom'
+
 import { Container, H3, Link, Text } from '@sourcegraph/wildcard'
 
+import { DismissibleAlert } from '../../../components/DismissibleAlert'
 import { UseShowMorePaginationResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
@@ -12,6 +15,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
+import { GitHubAppFailureAlert } from '../../../components/gitHubApps/GitHubAppFailureAlert'
 import {
     BatchChangesCodeHostFields,
     GlobalBatchChangesCodeHostsResult,
@@ -47,7 +51,12 @@ interface CommitSigningIntegrationsProps {
 export const CommitSigningIntegrations: React.FunctionComponent<
     React.PropsWithChildren<CommitSigningIntegrationsProps>
 > = ({ connectionResult, readOnly }) => {
-    const { loading, hasNextPage, fetchMore, connection, error } = connectionResult
+    const { loading, hasNextPage, fetchMore, connection, error, refetchAll } = connectionResult
+
+    const location = useLocation()
+    const success = new URLSearchParams(location.search).get('success') === 'true'
+    const appName = new URLSearchParams(location.search).get('app_name')
+    const setupError = new URLSearchParams(location.search).get('error')
     return (
         <Container>
             <H3>Commit signing integrations</H3>
@@ -61,6 +70,12 @@ export const CommitSigningIntegrations: React.FunctionComponent<
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}
                 {loading && !connection && <ConnectionLoading />}
+                {success && !readOnly && (
+                    <DismissibleAlert className="mb-3" variant="success">
+                        GitHub App {appName?.length ? `"${appName}" ` : ''}successfully connected.
+                    </DismissibleAlert>
+                )}
+                {!success && setupError && !readOnly && <GitHubAppFailureAlert error={setupError} />}
                 <ConnectionList as="ul" className="list-group" aria-label="commit signing integrations">
                     {connection?.nodes?.map(node =>
                         node.supportsCommitSigning ? (
@@ -68,6 +83,7 @@ export const CommitSigningIntegrations: React.FunctionComponent<
                                 key={node.externalServiceURL}
                                 node={node}
                                 readOnly={readOnly}
+                                refetch={refetchAll}
                             />
                         ) : null
                     )}

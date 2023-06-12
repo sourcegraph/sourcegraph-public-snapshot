@@ -3,7 +3,10 @@ package resolvers
 import (
 	"context"
 
+	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	githubapp "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/githubappauth"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	ghstore "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
@@ -93,12 +96,20 @@ type gitHubAppConfigResolver struct {
 	ghapp *ghtypes.GitHubApp
 }
 
+func (r *gitHubAppConfigResolver) ID() graphql.ID {
+	return githubapp.MarshalGitHubAppID(int64(r.ghapp.ID))
+}
+
 func (r *gitHubAppConfigResolver) AppID() int32 {
 	return int32(r.ghapp.AppID)
 }
 
 func (r *gitHubAppConfigResolver) Name() string {
 	return r.ghapp.Name
+}
+
+func (r *gitHubAppConfigResolver) BaseURL() string {
+	return r.ghapp.BaseURL
 }
 
 func (r *gitHubAppConfigResolver) AppURL() string {

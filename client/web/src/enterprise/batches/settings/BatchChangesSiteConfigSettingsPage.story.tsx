@@ -10,12 +10,12 @@ import { BATCH_CHANGES_SITE_CONFIGURATION } from '../backend'
 import { rolloutWindowConfigMockResult } from '../mocks'
 
 import { GLOBAL_CODE_HOSTS } from './backend'
-import { BatchChangesSiteConfigSettingsArea } from './BatchChangesSiteConfigSettingsArea'
+import { BatchChangesSiteConfigSettingsPage } from './BatchChangesSiteConfigSettingsPage'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
-    title: 'web/batches/settings/BatchChangesSiteConfigSettingsArea',
+    title: 'web/batches/settings/BatchChangesSiteConfigSettingsPage',
     decorators: [decorator],
 }
 
@@ -48,7 +48,7 @@ const createMock = (...hosts: BatchChangesCodeHostFields[]): WildcardMockedRespo
 
 export const Overview: Story = () => (
     <WebStory>
-        {props => (
+        {() => (
             <MockedTestProvider
                 link={
                     new WildcardMockLink([
@@ -63,9 +63,11 @@ export const Overview: Story = () => (
                                 supportsCommitSigning: true,
                                 commitSigningConfiguration: {
                                     __typename: 'GitHubAppConfiguration',
+                                    id: '123',
                                     appID: 123,
                                     name: 'Sourcegraph Commit Signing',
                                     appURL: 'https://github.com/apps/sourcegraph-commit-signing',
+                                    baseURL: 'https://github.com/',
                                     logo: 'https://github.com/identicons/app/app/commit-testing-local',
                                 },
                             },
@@ -109,7 +111,7 @@ export const Overview: Story = () => (
                     ])
                 }
             >
-                <BatchChangesSiteConfigSettingsArea {...props} />
+                <BatchChangesSiteConfigSettingsPage />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -117,7 +119,7 @@ export const Overview: Story = () => (
 
 export const ConfigAdded: Story = () => (
     <WebStory>
-        {props => (
+        {() => (
             <MockedTestProvider
                 link={
                     new WildcardMockLink([
@@ -137,9 +139,11 @@ export const ConfigAdded: Story = () => (
                                 supportsCommitSigning: true,
                                 commitSigningConfiguration: {
                                     __typename: 'GitHubAppConfiguration',
+                                    id: '123',
                                     appID: 123,
                                     name: 'Sourcegraph Commit Signing',
                                     appURL: 'https://github.com/apps/sourcegraph-commit-signing',
+                                    baseURL: 'https://github.com/',
                                     logo: 'https://github.com/identicons/app/app/commit-testing-local',
                                 },
                             },
@@ -189,7 +193,7 @@ export const ConfigAdded: Story = () => (
                     ])
                 }
             >
-                <BatchChangesSiteConfigSettingsArea {...props} />
+                <BatchChangesSiteConfigSettingsPage />
             </MockedTestProvider>
         )}
     </WebStory>

@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
+import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { ButtonLink, ErrorAlert, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
@@ -19,6 +20,7 @@ import { PageTitle } from '../PageTitle'
 
 import { GITHUB_APPS_QUERY } from './backend'
 import { GitHubAppCard } from './GitHubAppCard'
+import { GitHubAppFailureAlert } from './GitHubAppFailureAlert'
 
 import styles from './GitHubAppsPage.module.scss'
 
@@ -37,6 +39,10 @@ export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled }) => {
     useEffect(() => {
         eventLogger.logPageView('SiteAdminGitHubApps')
     }, [])
+
+    const location = useLocation()
+    const success = new URLSearchParams(location.search).get('success') === 'true'
+    const setupError = new URLSearchParams(location.search).get('error')
 
     const reloadApps = async (): Promise<void> => {
         await refetch({})
@@ -79,7 +85,7 @@ export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled }) => {
                     </ButtonLink>
                 }
             />
-            {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} />}
+            {!success && setupError && <GitHubAppFailureAlert error={setupError} />}
             <ConnectionContainer>
                 {error && <ErrorAlert error={error} />}
                 {loading && !data && <ConnectionLoading />}

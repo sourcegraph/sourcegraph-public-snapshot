@@ -8,11 +8,11 @@ import { GlobalCodeHostConnections } from './CodeHostConnections'
 import { GlobalCommitSigningIntegrations } from './CommitSigningIntegrations'
 import { RolloutWindowsConfiguration } from './RolloutWindowsConfiguration'
 
-export interface BatchChangesSiteConfigSettingsAreaProps {}
+interface BatchChangesSiteConfigSettingsPageProps {}
 
 /** The page area for all batch changes settings. It's shown in the site admin settings sidebar. */
-export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<
-    React.PropsWithChildren<BatchChangesSiteConfigSettingsAreaProps>
+export const BatchChangesSiteConfigSettingsPage: React.FunctionComponent<
+    BatchChangesSiteConfigSettingsPageProps
 > = () => (
     <>
         <PageTitle title="Batch changes settings" />
