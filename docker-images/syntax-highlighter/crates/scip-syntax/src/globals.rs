@@ -132,6 +132,10 @@ pub fn parse_tree<'a>(
 
     let matches = cursor.matches(&config.query, root_node, source_bytes);
     for m in matches {
+        if config.is_filtered(&m) {
+            continue;
+        }
+
         let mut node = None;
         let mut enclosing_node = None;
         let mut scope = None;
@@ -302,6 +306,32 @@ pub mod test {
             },
         )?;
 
+        insta::assert_snapshot!(dumped);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_can_parse_javascript_tree() -> Result<()> {
+        let config = crate::languages::get_tag_configuration(&BundledParser::Javascript)
+            .expect("to have parser");
+        let source_code = include_str!("../testdata/globals.js");
+        let doc = parse_file_for_lang(config, source_code)?;
+
+        let dumped = dump_document(&doc, source_code)?;
+        insta::assert_snapshot!(dumped);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_can_parse_javascript_object() -> Result<()> {
+        let config = crate::languages::get_tag_configuration(&BundledParser::Javascript)
+            .expect("to have parser");
+        let source_code = include_str!("../testdata/javascript-object.js");
+        let doc = parse_file_for_lang(config, source_code)?;
+
+        let dumped = dump_document(&doc, source_code)?;
         insta::assert_snapshot!(dumped);
 
         Ok(())
