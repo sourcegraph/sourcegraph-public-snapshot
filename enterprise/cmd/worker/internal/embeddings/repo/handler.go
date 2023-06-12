@@ -66,7 +66,6 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	// we fall back to a full index.
 	var lastSuccessfulJobRevision api.CommitID
 	var previousEmbeddingsIndex *embeddings.RepoEmbeddingIndex
-
 	if incrementalEnabled := !conf.Get().Embeddings.DisableIncremental; incrementalEnabled {
 		lastSuccessfulJobRevision, previousEmbeddingsIndex = h.getPreviousEmbeddingIndex(ctx, logger, repo)
 	}
