@@ -74,6 +74,18 @@ class Range {
     public get endCharacter(): number {
         return this.end.character
     }
+    public isEqual(other: Range): boolean {
+        return this.start.isEqual(other.start) && this.end.isEqual(other.end)
+    }
+}
+
+class Uri {
+    public fsPath: string
+    public path: string
+    constructor(path: string) {
+        this.fsPath = path
+        this.path = path
+    }
 }
 
 class InlineCompletionItem {
@@ -83,10 +95,21 @@ class InlineCompletionItem {
     }
 }
 
+// TODO(abeatrix): Implement delete and insert mocks
+class WorkspaceEdit {
+    public delete(uri: Uri, range: Range): Range {
+        return range
+    }
+    public insert(uri: Uri, position: Position, content: string): string {
+        return content
+    }
+}
+
 const vsCodeMocks = {
     Range,
     Position,
     InlineCompletionItem,
+    WorkspaceEdit,
     window: {
         showInformationMessage: () => undefined,
         showWarningMessage: () => undefined,
@@ -96,7 +119,7 @@ const vsCodeMocks = {
             return null
         },
         showErrorMessage(message: string) {
-            throw new Error(message)
+            console.error(message)
         },
         activeTextEditor: { document: { uri: { scheme: 'not-cody' } }, options: { tabSize: 4 } },
     },
@@ -104,9 +127,21 @@ const vsCodeMocks = {
         getConfiguration() {
             return undefined
         },
+        openTextDocument: (uri: string) => ({
+            getText: () => 'foo\nbar\nfoo',
+            save: () => true,
+        }),
+        applyEdit: (edit: WorkspaceEdit) => true,
+        save: () => true,
     },
     ConfigurationTarget: {
         Global: undefined,
+    },
+    Uri: {
+        file: (path: string) => ({
+            fsPath: path,
+            path,
+        }),
     },
 } as const
 

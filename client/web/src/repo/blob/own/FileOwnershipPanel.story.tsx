@@ -81,9 +81,11 @@ const response: FetchOwnershipResult = {
                             __typename: 'Ownership',
                             owner: {
                                 __typename: 'Team',
+                                id: 'asdf',
                                 avatarURL: null,
                                 teamDisplayName: 'Delta Team',
                                 name: 'delta',
+                                external: false,
                                 url: '/teams/delta',
                             },
                             reasons: [

@@ -27,7 +27,8 @@ public class RecipeRunner {
   public void runExplainCodeDetailed() {
     EditorContext editorContext = EditorContextGetter.getEditorContext(project);
     if (editorContext.getSelection() == null) {
-      chat.addMessage(
+      chat.activateChatTab();
+      chat.addMessageToChat(
           ChatMessage.createAssistantMessage(
               "No code selected. Please select some code and try again."));
       return;
@@ -51,11 +52,16 @@ public class RecipeRunner {
 
     String promptMessage =
         String.format(
-            "Please explain the following %s code. Be very detailed and specific, and indicate when it is not clear to you what is going on. Format your response as an ordered list.\n```\n%s\n```\n%s",
-            languageName, truncatedSelectedText, getMarkdownFormatPrompt());
+            "Please explain the following %s code. Be very detailed and specific, and indicate when it is not clear to you what is going on. Format your response as an ordered list.\n```%s\n%s\n```\n%s",
+            languageName,
+            languageName.toLowerCase(),
+            truncatedSelectedText,
+            getMarkdownFormatPrompt());
 
     String displayText =
-        String.format("Explain the following code:\n```\n%s\n```", editorContext.getSelection());
+        String.format(
+            "Explain the following code:\n```%s\n%s\n```",
+            languageName, editorContext.getSelection());
 
     //        return new Interaction(
     //            { speaker: 'human', text: promptMessage, displayText },
@@ -69,7 +75,7 @@ public class RecipeRunner {
     //        )
     ChatMessage humanMessage = ChatMessage.createHumanMessage(promptMessage, new ArrayList<>());
 
-    chat.addMessage(humanMessage);
+    chat.respondToMessage(humanMessage);
   }
 
   //    private ArrayList<ChatMessage> getContextMessagesFromSelection(EditorContext editorContext)

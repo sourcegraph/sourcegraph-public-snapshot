@@ -56,6 +56,10 @@ export const LINE_MATCH_RESULT: ContentMatch = {
 export const REPO_MATCH_RESULT: RepositoryMatch = {
     type: 'repo',
     repository: 'github.com/golang/oauth2',
+    metadata: {
+        'open-source': undefined,
+        authentication: undefined,
+    },
 }
 
 export const REPO_MATCH_RESULTS_WITH_METADATA: RepositoryMatch[] = [

@@ -16,6 +16,7 @@ go_library(
     deps = [
         "//enterprise/cmd/frontend/shared",
         "//enterprise/cmd/sourcegraph/enterprisecmd",
+        "//internal/oobmigration",
         "//internal/sanitycheck",
         "//ui/assets",
         "//ui/assets/enterprise",
@@ -78,6 +79,5 @@ container_structure_test(
 oci_push(
     name = "candidate_push",
     image = ":image",
-    remote_tags = "//:tags",
     repository = image_repository("frontend"),
 )

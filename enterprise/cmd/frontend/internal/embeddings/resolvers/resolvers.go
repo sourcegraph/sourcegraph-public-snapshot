@@ -14,13 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	contextdetectionbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/contextdetection"
 	repobg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -32,26 +31,23 @@ func NewResolver(
 	gitserverClient gitserver.Client,
 	embeddingsClient embeddings.Client,
 	repoStore repobg.RepoEmbeddingJobsStore,
-	contextDetectionStore contextdetectionbg.ContextDetectionEmbeddingJobsStore,
 ) graphqlbackend.EmbeddingsResolver {
 	return &Resolver{
-		db:                        db,
-		logger:                    logger,
-		gitserverClient:           gitserverClient,
-		embeddingsClient:          embeddingsClient,
-		repoEmbeddingJobsStore:    repoStore,
-		contextDetectionJobsStore: contextDetectionStore,
+		db:                     db,
+		logger:                 logger,
+		gitserverClient:        gitserverClient,
+		embeddingsClient:       embeddingsClient,
+		repoEmbeddingJobsStore: repoStore,
 	}
 }
 
 type Resolver struct {
-	db                        database.DB
-	logger                    log.Logger
-	gitserverClient           gitserver.Client
-	embeddingsClient          embeddings.Client
-	repoEmbeddingJobsStore    repobg.RepoEmbeddingJobsStore
-	contextDetectionJobsStore contextdetectionbg.ContextDetectionEmbeddingJobsStore
-	emails                    backend.UserEmailsService
+	db                     database.DB
+	logger                 log.Logger
+	gitserverClient        gitserver.Client
+	embeddingsClient       embeddings.Client
+	repoEmbeddingJobsStore repobg.RepoEmbeddingJobsStore
+	emails                 backend.UserEmailsService
 }
 
 func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.EmbeddingsSearchInputArgs) (graphqlbackend.EmbeddingsSearchResultsResolver, error) {
@@ -153,10 +149,12 @@ func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args gr
 	for _, repo := range args.RepoNames {
 		repoNames = append(repoNames, api.RepoName(repo))
 	}
+	forceReschedule := args.Force != nil && *args.Force
 
 	err = embeddings.ScheduleRepositoriesForEmbedding(
 		ctx,
 		repoNames,
+		forceReschedule,
 		r.db,
 		r.repoEmbeddingJobsStore,
 		r.gitserverClient,
@@ -165,22 +163,6 @@ func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args gr
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
-}
-
-func (r *Resolver) ScheduleContextDetectionForEmbedding(ctx context.Context) (*graphqlbackend.EmptyResponse, error) {
-	if !conf.EmbeddingsEnabled() {
-		return nil, errors.New("embeddings are not configured or disabled")
-	}
-
-	// 🚨 SECURITY: Only site admins may schedule embedding jobs.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-	_, err := r.contextDetectionJobsStore.CreateContextDetectionEmbeddingJob(ctx)
-	if err != nil {
-		return nil, err
-	}
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
@@ -221,7 +203,6 @@ func embeddingsSearchResultsToResolvers(
 	gs gitserver.Client,
 	results []embeddings.EmbeddingSearchResult,
 ) ([]graphqlbackend.EmbeddingsSearchResultResolver, error) {
-
 	allContents := make([][]byte, len(results))
 	allErrors := make([]error, len(results))
 	{ // Fetch contents in parallel because fetching them serially can be slow.

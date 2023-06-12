@@ -198,6 +198,12 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "perforceChangelistMapping": {
+          "description": "Allow mapping of Perforce changelists to their commit SHAs in the DB",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
         "goPackages": {
           "description": "Allow adding Go package host connections",
           "type": "string",
@@ -449,7 +455,7 @@
               "group": "Search"
             },
             "documentRanksWeight": {
-              "description": "Controls the impact of document ranks on the final ranking when the 'search-ranking' feature is enabled. This is intended for internal testing purposes only, it's not recommended for users to change this.",
+              "description": "Controls the impact of document ranks on the final ranking. This is intended for internal testing purposes only, it's not recommended for users to change this.",
               "type": "number",
               "default": 4500,
               "group": "Search",
@@ -458,7 +464,7 @@
               }
             },
             "flushWallTimeMS": {
-              "description": "Controls the amount of time that Zoekt shards collect and rank results when the 'search-ranking' feature is enabled. Larger values give a more stable ranking, but searches can take longer to return an initial result.",
+              "description": "Controls the amount of time that Zoekt shards collect and rank results. Larger values give a more stable ranking, but searches can take longer to return an initial result.",
               "type": "integer",
               "default": 500,
               "group": "Search"
@@ -2328,7 +2334,7 @@
     "embeddings": {
       "description": "Configuration for embeddings service.",
       "type": "object",
-      "required": ["enabled", "dimensions", "model", "accessToken", "url"],
+      "required": ["enabled"],
       "properties": {
         "enabled": {
           "description": "Toggles whether embedding service is enabled.",
@@ -2336,20 +2342,30 @@
           "default": false
         },
         "dimensions": {
-          "description": "The dimensionality of the embedding vectors.",
+          "description": "The dimensionality of the embedding vectors. Required field if not using the sourcegraph provider.",
           "type": "integer",
           "minimum": 0
         },
         "model": {
-          "description": "The model used for embedding.",
+          "description": "The model used for embedding. A default model will be used for each provider, if not set.",
           "type": "string"
         },
         "accessToken": {
-          "description": "The access token used to authenticate with the external embedding API service.",
+          "description": "The access token used to authenticate with the external embedding API service. For provider sourcegraph, this is optional.",
           "type": "string"
         },
+        "provider": {
+          "type": "string",
+          "description": "The provider to use for generating embeddings. Defaults to sourcegraph.",
+          "enum": ["openai", "sourcegraph"]
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "The endpoint under which to reach the provider. Sensible default will be used for each provider.",
+          "format": "uri"
+        },
         "url": {
-          "description": "The url to the external embedding API service.",
+          "description": "The url to the external embedding API service. Deprecated, use endpoint instead.",
           "type": "string",
           "format": "uri"
         },
@@ -2395,7 +2411,7 @@
     "completions": {
       "description": "Configuration for the completions service.",
       "type": "object",
-      "required": ["enabled", "model", "accessToken", "provider"],
+      "required": ["enabled"],
       "properties": {
         "enabled": {
           "description": "Toggles whether completions are enabled.",
@@ -2407,20 +2423,20 @@
           "type": "string"
         },
         "chatModel": {
-          "description": "The model used for chat completions.",
+          "description": "The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.",
           "type": "string"
         },
         "completionModel": {
-          "description": "The model used for code completion.",
+          "description": "The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.",
           "type": "string"
         },
         "accessToken": {
-          "description": "The access token used to authenticate with the external completions provider.",
+          "description": "The access token used to authenticate with the external completions provider. If using the default provider 'sourcegraph', and if 'licenseKey' is set, a default access token is generated.",
           "type": "string"
         },
         "provider": {
           "type": "string",
-          "description": "The external completions provider.",
+          "description": "The external completions provider. Defaults to 'sourcegraph'.",
           "default": "anthropic",
           "enum": ["anthropic", "openai", "sourcegraph"]
         },

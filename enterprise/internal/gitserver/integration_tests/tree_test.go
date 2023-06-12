@@ -27,11 +27,11 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 	gitCommands := []string{
 		"touch file1",
 		"git add file1",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m commit1",
 		"mkdir app",
 		"touch app/file2",
 		"git add app",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m commit2",
 	}
 	repo := inttests.MakeGitRepository(t, gitCommands...)
 	commitID := api.CommitID("b1c725720de2bbd0518731b4a61959797ff345f3")

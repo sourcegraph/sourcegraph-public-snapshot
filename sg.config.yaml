@@ -624,8 +624,7 @@ commands:
       - enterprise/internal
       - enterprise/cmd/executor
 
-  executor-kubernetes-template:
-    &executor_kubernetes_template
+  executor-kubernetes-template: &executor_kubernetes_template
     cmd: |
       cd $MANIFEST_PATH
       cleanup() {
@@ -710,6 +709,15 @@ commands:
       - enterprise/cmd/batcheshelper
       - lib/batches
     continueWatchOnExit: true
+
+  multiqueue-executor:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/multiqueue-executor-temp" .bin/executor
+    env:
+      EXECUTOR_QUEUE_NAME: ""
+      EXECUTOR_QUEUE_NAMES: "codeintel,batches"
+      EXECUTOR_MAXIMUM_NUM_JOBS: 8
 
   blobstore:
     cmd: .bin/blobstore
@@ -1021,13 +1029,13 @@ bazelCommands:
     ignoreStderr: true
     env:
       # Environment copied from Dockerfile
-      WORKERS: '1'
-      ROCKET_ENV: 'production'
-      ROCKET_LIMITS: '{json=10485760}'
-      ROCKET_SECRET_KEY: 'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='
-      ROCKET_KEEP_ALIVE: '0'
-      ROCKET_PORT: '9238'
-      QUIET: 'true'
+      WORKERS: "1"
+      ROCKET_ENV: "production"
+      ROCKET_LIMITS: "{json=10485760}"
+      ROCKET_SECRET_KEY: "SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA="
+      ROCKET_KEEP_ALIVE: "0"
+      ROCKET_PORT: "9238"
+      QUIET: "true"
   github-proxy:
     target: //cmd/github-proxy
   frontend:
@@ -1211,7 +1219,6 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - symbols
       - caddy
       - docsite
       - syntax-highlighter
@@ -1221,6 +1228,7 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - blobstore
+      - embeddings
 
   enterprise-e2e:
     <<: *enterprise_set
@@ -1256,6 +1264,7 @@ commandsets:
       - zoekt-web-1
       - blobstore
       - cody-gateway
+      - embeddings
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
@@ -1293,7 +1302,7 @@ commandsets:
       - grafana
       - prometheus
 
-  codeintel: &codeintel_set
+  codeintel:
     requiresDevPrivate: true
     checks:
       - docker
@@ -1358,7 +1367,68 @@ commandsets:
       - prometheus
 
   enterprise-codeintel:
-    <<: *codeintel_set
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+    commands:
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - symbols
+      - caddy
+      - docsite
+      - syntax-highlighter
+      - github-proxy
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
+      - codeintel-worker
+      - codeintel-executor
+      # - otel-collector
+      - jaeger
+      - grafana
+      - prometheus
+  enterprise-codeintel-multi-queue-executor:
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+    commands:
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - symbols
+      - caddy
+      - docsite
+      - syntax-highlighter
+      - github-proxy
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
+      - codeintel-worker
+      - multiqueue-executor
+      # - otel-collector
+      - jaeger
+      - grafana
+      - prometheus
+
   enterprise-codeintel-bazel:
     <<: *codeintel_bazel_set
 
@@ -1468,33 +1538,6 @@ commandsets:
       - blobstore
       - batches-executor-kubernetes
       - batcheshelper-builder
-
-  embeddings:
-    requiresDevPrivate: true
-    checks:
-      - docker
-      - redis
-      - postgres
-      - git
-    commands:
-      - embeddings
-      - frontend
-      - worker
-      - repo-updater
-      - web
-      - gitserver-0
-      - gitserver-1
-      - searcher
-      - symbols
-      - caddy
-      - docsite
-      - syntax-highlighter
-      - github-proxy
-      - zoekt-index-0
-      - zoekt-index-1
-      - zoekt-web-0
-      - zoekt-web-1
-      - blobstore
 
   iam:
     requiresDevPrivate: true

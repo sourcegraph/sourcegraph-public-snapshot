@@ -3,21 +3,22 @@ package shared
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/redigo"
 	"github.com/gomodule/redigo/redis"
+	"github.com/slack-go/slack"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -28,6 +29,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor/anonymous"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor/productsubscription"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi"
@@ -68,14 +70,23 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		}
 	}
 
+	dotcomClient := dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
+
 	// Supported actor/auth sources
 	sources := actor.Sources{
-		anonymous.NewSource(config.AllowAnonymous),
+		anonymous.NewSource(config.AllowAnonymous, config.ActorConcurrencyLimit),
 		productsubscription.NewSource(
 			obctx.Logger,
-			rcache.New("product-subscriptions"),
-			dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken),
-			config.Dotcom.InternalMode),
+			rcache.NewWithTTL("product-subscriptions", int(config.SourcesCacheTTL.Seconds())),
+			dotcomClient,
+			config.Dotcom.InternalMode,
+			config.ActorConcurrencyLimit,
+		),
+		dotcomuser.NewSource(obctx.Logger,
+			rcache.NewWithTTL("dotcom-users", int(config.SourcesCacheTTL.Seconds())),
+			dotcomClient,
+			config.ActorConcurrencyLimit,
+		),
 	}
 
 	authr := &auth.Authenticator{
@@ -86,28 +97,37 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	rs := newRedisStore(redispool.Cache)
 
+	// Ignore the error because it's already validated in the config.
+	dotcomURL, _ := url.Parse(config.Dotcom.URL)
+	dotcomURL.Path = ""
+	rateLimitNotifier := notify.NewSlackRateLimitNotifier(
+		obctx.Logger,
+		redispool.Cache,
+		dotcomURL.String(),
+		config.ActorRateLimitNotify.Thresholds,
+		config.ActorRateLimitNotify.SlackWebhookURL,
+		slack.PostWebhookContext,
+	)
+
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
 	handler := httpapi.NewHandler(obctx.Logger, eventLogger, rs, authr, &httpapi.Config{
-		AnthropicAccessToken:   config.Anthropic.AccessToken,
-		AnthropicAllowedModels: config.Anthropic.AllowedModels,
-		OpenAIAccessToken:      config.OpenAI.AccessToken,
-		OpenAIOrgID:            config.OpenAI.OrgID,
-		OpenAIAllowedModels:    config.OpenAI.AllowedModels,
+		RateLimitNotifier:       rateLimitNotifier,
+		AnthropicAccessToken:    config.Anthropic.AccessToken,
+		AnthropicAllowedModels:  config.Anthropic.AllowedModels,
+		OpenAIAccessToken:       config.OpenAI.AccessToken,
+		OpenAIOrgID:             config.OpenAI.OrgID,
+		OpenAIAllowedModels:     config.OpenAI.AllowedModels,
+		EmbeddingsAllowedModels: config.AllowedEmbeddingsModels,
 	})
 
 	// Diagnostic layers
 	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, config.DiagnosticsSecret)
 
-	// Instrumentation layers
+	// Basic instrumentation. Note that tracing should be added on individual
+	// handlers rather than here at a high level so that we don't collect traces
+	// for random requests to the service.
 	handler = requestLogger(obctx.Logger.Scoped("requests", "HTTP requests"), handler)
-	var otelhttpOpts []otelhttp.Option
-	if !config.InsecureDev {
-		// Outside of dev, we're probably running as a standalone service, so treat
-		// incoming spans as links
-		otelhttpOpts = append(otelhttpOpts, otelhttp.WithPublicEndpoint())
-	}
-	handler = instrumentation.HTTPMiddleware("cody-gateway", handler, otelhttpOpts...)
 
 	// Collect request client for downstream handlers. Outside of dev, we always set up
 	// Cloudflare in from of Cody Gateway. This comes first.
@@ -157,16 +177,20 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 func requestLogger(logger log.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Only requestclient is available at the point, actor middleware is later
-		rc := requestclient.FromContext(r.Context())
-
-		sgtrace.Logger(r.Context(), logger).Debug("Request",
-			log.String("method", r.Method),
-			log.String("path", r.URL.Path),
-			log.String("requestclient.ip", rc.IP),
-			log.String("requestclient.forwardedFor", rc.ForwardedFor))
-
+		start := time.Now()
 		next.ServeHTTP(w, r)
+
+		// Log after everything has been served, all context should be available
+		// now.
+		rc := requestclient.FromContext(r.Context())
+		actor.FromContext(r.Context()).
+			Logger(sgtrace.Logger(r.Context(), logger)).
+			Debug("Request",
+				log.String("method", r.Method),
+				log.String("path", r.URL.Path),
+				log.String("requestclient.ip", rc.IP),
+				log.String("requestclient.forwardedFor", rc.ForwardedFor),
+				log.Duration("duration", time.Since(start)))
 	})
 }
 
@@ -180,8 +204,8 @@ type redisStore struct {
 	store redispool.KeyValue
 }
 
-func (s *redisStore) Incr(key string) (int, error) {
-	return s.store.Incr(key)
+func (s *redisStore) Incrby(key string, val int) (int, error) {
+	return s.store.Incrby(key, val)
 }
 
 func (s *redisStore) GetInt(key string) (int, error) {

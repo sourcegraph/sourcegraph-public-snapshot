@@ -10,10 +10,11 @@ ts_project(
     srcs = [
         "auth.test.ts",
         "common.ts",
+        "fixup-decorator.test.ts",
         "helpers.ts",
         "history.test.ts",
         "inline-assist.test.ts",
-        "inline-assist-file-flow.test.ts",
+        "inline-assist-file-touch.test.ts",
         "task-controller.test.ts",
     ],
     tsconfig = "//client/cody:tsconfig",

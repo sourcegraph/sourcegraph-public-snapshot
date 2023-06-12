@@ -132,6 +132,15 @@ func (r *Cache) GetHashItem(key string, hashKey string) (string, error) {
 	return kv().HGet(r.rkeyPrefix()+key, hashKey).String()
 }
 
+// DeleteHashItem deletes a key in a HASH.
+// It returns an integer representing the amount of deleted hash keys:
+// If the key exists and the hash key exists, it will return 1.
+// If the key exists but the hash key does not, it will return 0.
+// If the key does not exist, it will return 0.
+func (r *Cache) DeleteHashItem(key string, hashKey string) (int, error) {
+	return kv().HDel(r.rkeyPrefix()+key, hashKey).Int()
+}
+
 // GetHashAll returns the members of the HASH stored at `key`, in no particular order.
 func (r *Cache) GetHashAll(key string) (map[string]string, error) {
 	return kv().HGetAll(r.rkeyPrefix() + key).StringMap()

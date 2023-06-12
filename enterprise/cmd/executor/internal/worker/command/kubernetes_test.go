@@ -337,6 +337,91 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 			},
 			expectedErr: errors.New("deleted by scheduler: pod could not be scheduled"),
 		},
+		{
+			name: "Watch Error",
+			mockFunc: func(clientset *fake.Clientset) {
+				watcher := watch.NewFakeWithChanSize(10, false)
+				watcher.Error(&metav1.Status{
+					Status:  metav1.StatusFailure,
+					Message: "failed",
+					Reason:  "InternalError",
+					Code:    1,
+				})
+				watcher.Add(&corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "my-pod",
+						Labels: map[string]string{
+							"job-name": "my-job",
+						},
+					},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodSucceeded,
+					},
+				})
+				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
+			},
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
+				require.Len(t, actions, 1)
+				assert.Equal(t, "watch", actions[0].GetVerb())
+				assert.Equal(t, "pods", actions[0].GetResource().Resource)
+				assert.Equal(t, "job-name=my-job", actions[0].(k8stesting.WatchActionImpl).GetWatchRestrictions().Labels.String())
+			},
+		},
+		{
+			name: "Unexpected Watch Error",
+			mockFunc: func(clientset *fake.Clientset) {
+				watcher := watch.NewFakeWithChanSize(10, false)
+				watcher.Error(&corev1.Pod{})
+				watcher.Add(&corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "my-pod",
+						Labels: map[string]string{
+							"job-name": "my-job",
+						},
+					},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodSucceeded,
+					},
+				})
+				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
+			},
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
+				require.Len(t, actions, 1)
+				assert.Equal(t, "watch", actions[0].GetVerb())
+				assert.Equal(t, "pods", actions[0].GetResource().Resource)
+				assert.Equal(t, "job-name=my-job", actions[0].(k8stesting.WatchActionImpl).GetWatchRestrictions().Labels.String())
+			},
+		},
+		{
+			name: "Unexpected Watch Object",
+			mockFunc: func(clientset *fake.Clientset) {
+				watcher := watch.NewFakeWithChanSize(10, false)
+				watcher.Add(&metav1.Status{
+					Status:  metav1.StatusFailure,
+					Message: "failed",
+					Reason:  "InternalError",
+					Code:    1,
+				})
+				watcher.Add(&corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "my-pod",
+						Labels: map[string]string{
+							"job-name": "my-job",
+						},
+					},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodSucceeded,
+					},
+				})
+				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
+			},
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
+				require.Len(t, actions, 1)
+				assert.Equal(t, "watch", actions[0].GetVerb())
+				assert.Equal(t, "pods", actions[0].GetResource().Resource)
+				assert.Equal(t, "job-name=my-job", actions[0].(k8stesting.WatchActionImpl).GetWatchRestrictions().Labels.String())
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

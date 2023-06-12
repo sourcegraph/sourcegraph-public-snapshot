@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -24,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -37,8 +39,6 @@ type SearchClient interface {
 		searchQuery string,
 		searchMode search.Mode,
 		protocol search.Protocol,
-		settings *schema.Settings,
-		sourcegraphDotComMode bool,
 	) (*search.Inputs, error)
 
 	Execute(
@@ -50,14 +50,30 @@ type SearchClient interface {
 	JobClients() job.RuntimeClients
 }
 
-func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map, searcherGRPCConnectionCache *defaults.ConnectionCache, enterpriseJobs jobutil.EnterpriseJobs) SearchClient {
+// New will create a search client with a zoekt and searcher backed by conf.
+func New(logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs) SearchClient {
 	return &searchClient{
 		logger:                      logger,
 		db:                          db,
-		zoekt:                       zoektStreamer,
-		searcherURLs:                searcherURLs,
-		searcherGRPCConnectionCache: searcherGRPCConnectionCache,
+		zoekt:                       search.Indexed(),
+		searcherURLs:                search.SearcherURLs(),
+		searcherGRPCConnectionCache: search.SearcherGRPCConnectionCache(),
+		settingsService:             settings.NewService(db),
+		sourcegraphDotComMode:       envvar.SourcegraphDotComMode(),
 		enterpriseJobs:              enterpriseJobs,
+	}
+}
+
+// MockedZoekt will return a search client for tests which uses the mocked
+// zoektStreamer.
+func MockedZoekt(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer) SearchClient {
+	return &searchClient{
+		logger:                logger,
+		db:                    db,
+		zoekt:                 zoektStreamer,
+		settingsService:       settings.Mock(&schema.Settings{}),
+		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		enterpriseJobs:        jobutil.NewUnimplementedEnterpriseJobs(),
 	}
 }
 
@@ -67,6 +83,8 @@ type searchClient struct {
 	zoekt                       zoekt.Streamer
 	searcherURLs                *endpoint.Map
 	searcherGRPCConnectionCache *defaults.ConnectionCache
+	settingsService             settings.Service
+	sourcegraphDotComMode       bool
 	enterpriseJobs              jobutil.EnterpriseJobs
 }
 
@@ -77,8 +95,6 @@ func (s *searchClient) Plan(
 	searchQuery string,
 	searchMode search.Mode,
 	protocol search.Protocol,
-	settings *schema.Settings,
-	sourcegraphDotComMode bool,
 ) (_ *search.Inputs, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchInputs", searchQuery)
 	defer tr.FinishWithErr(&err)
@@ -91,6 +107,11 @@ func (s *searchClient) Plan(
 
 	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
 		return nil, errors.New("Structural search is disabled in the site configuration.")
+	}
+
+	settings, err := s.settingsService.UserFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to resolve user settings")
 	}
 
 	// Beta: create a step to replace each context in the query with its repository query if any.
@@ -120,7 +141,7 @@ func (s *searchClient) Plan(
 		OriginalQuery:          searchQuery,
 		SearchMode:             searchMode,
 		UserSettings:           settings,
-		OnSourcegraphDotCom:    sourcegraphDotComMode,
+		OnSourcegraphDotCom:    s.sourcegraphDotComMode,
 		Features:               ToFeatures(featureflag.FromContext(ctx), s.logger),
 		PatternType:            searchType,
 		Protocol:               protocol,
@@ -292,7 +313,7 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
 		CodeOwnershipSearch:     flagSet.GetBoolOr("search-ownership", false),
 		HybridSearch:            flagSet.GetBoolOr("search-hybrid", true), // can remove flag in 4.5
-		Ranking:                 flagSet.GetBoolOr("search-ranking", false),
+		Ranking:                 flagSet.GetBoolOr("search-ranking", true),
 		Debug:                   flagSet.GetBoolOr("search-debug", false),
 	}
 }

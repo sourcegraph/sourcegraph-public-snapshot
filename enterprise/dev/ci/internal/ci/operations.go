@@ -22,10 +22,9 @@ import (
 // e.g. by adding flags, and not as a condition for adding steps or commands.
 type CoreTestOperationsOptions struct {
 	// for clientChromaticTests
-	ChromaticShouldAutoAccept  bool
-	MinimumUpgradeableVersion  string
-	ClientLintOnlyChangedFiles bool
-	ForceReadyForReview        bool
+	ChromaticShouldAutoAccept bool
+	MinimumUpgradeableVersion string
+	ForceReadyForReview       bool
 	// for addWebAppOSSBuild
 	CacheBundleSize      bool
 	CreateBundleSizeDiff bool
@@ -78,8 +77,11 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 				// addBrowserExtensionUnitTests, // ~4.5m
 				addJetBrainsUnitTests, // ~2.5m
 				// addTypescriptCheck is now covered by Bazel
-				addVsceTests,          // ~3.0m
-				addCodyExtensionTests, // ~2.5m
+				addVsceTests, // ~3.0m
+				addCodyUnitIntegrationTests,
+				addCodyE2ETests,
+				// addESLint,
+				addStylelint,
 			)
 		} else {
 			// If there are any Graphql changes, they are impacting the client as well.
@@ -93,14 +95,11 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 				addJetBrainsUnitTests,        // ~2.5m
 				addTypescriptCheck,           // ~4m
 				addVsceTests,                 // ~3.0m
-				addCodyExtensionTests,        // ~2.5m
+				addCodyUnitIntegrationTests,
+				addCodyE2ETests,
+				addESLint,
+				addStylelint,
 			)
-		}
-
-		if opts.ClientLintOnlyChangedFiles {
-			clientChecks.Append(addClientLintersForChangedFiles)
-		} else {
-			clientChecks.Append(addClientLintersForAllFiles)
 		}
 
 		ops.Merge(clientChecks)
@@ -169,8 +168,13 @@ func addTypescriptCheck(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/pnpm-run.sh build-ts"))
 }
 
-// Adds client linters to check all files.
-func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
+func addStylelint(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":stylelint: Stylelint (all)",
+		withPnpmCache(),
+		bk.Cmd("dev/ci/pnpm-run.sh lint:css:all"))
+}
+
+func addESLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":eslint: ESLint (all)",
 		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:js:all"))
@@ -178,21 +182,11 @@ func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":eslint: ESLint (web)",
 		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:js:web"))
-
-	pipeline.AddStep(":stylelint: Stylelint (all)",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:css:all"))
 }
 
-// Adds client linters to check changed in PR files.
-func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":eslint: ESLint (changed)",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:js:changed"))
-
-	pipeline.AddStep(":stylelint: Stylelint (changed)",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:css:changed"))
+func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
+	addStylelint(pipeline)
+	addESLint(pipeline)
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
@@ -268,17 +262,28 @@ func addVsceTests(pipeline *bk.Pipeline) {
 	)
 }
 
-func addCodyExtensionTests(pipeline *bk.Pipeline) {
+func addCodyUnitIntegrationTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
-		":vscode::robot_face: Unit, integration, and E2E tests for the Cody VS Code extension",
+		":vscode::robot_face: Unit and integration tests for the Cody VS Code extension",
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("client/cody/scripts/download-rg.sh x86_64-unknown-linux"),
 		bk.Cmd("pnpm --filter cody-ai run test:unit"),
 		bk.Cmd("pnpm --filter cody-shared run test"),
 		bk.Cmd("pnpm --filter cody-ai run test:integration"),
+	)
+}
+
+// Cody E2E tests are extracted into a separate step to auto-retry them on flaky failures.
+func addCodyE2ETests(pipeline *bk.Pipeline) {
+	pipeline.AddStep(
+		":vscode::robot_face: E2E tests for the Cody VS Code extension",
+		withPnpmCache(),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+		bk.Cmd("client/cody/scripts/download-rg.sh x86_64-unknown-linux"),
 		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
 		bk.ArtifactPaths("./playwright/**/*"),
+		bk.AutomaticRetry(3),
 	)
 }
 
@@ -900,12 +905,25 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 	// this step.
 	vulnerabilityExitCode := 27
 
+	// For most images, waiting on the server is fine. But with the recent migration to Bazel,
+	// this can lead to confusing failures. This will be completely refactored soon.
+	//
+	// See https://github.com/sourcegraph/sourcegraph/issues/52833 for the ticket tracking
+	// the cleanup once we're out of the dual building process.
+	dependsOnImage := candidateImageStepKey("server")
+	if app == "syntax-highlighter" {
+		dependsOnImage = candidateImageStepKey("syntax-highlighter")
+	}
+	if app == "symbols" {
+		dependsOnImage = candidateImageStepKey("symbols")
+	}
+
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: Scan %s", app),
 			// These are the first images in the arrays we use to build images
 			bk.DependsOn(candidateImageStepKey("alpine-3.14")),
-			bk.DependsOn(candidateImageStepKey("server")),
 			bk.DependsOn(candidateImageStepKey("batcheshelper")),
+			bk.DependsOn(dependsOnImage),
 			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
 
 			// have trivy use a shorter name in its output

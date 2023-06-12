@@ -66,6 +66,19 @@ func ParseAuthorizationHeader(headerValue string) (token, sudoUser string, err e
 	return token, sudoUser, nil
 }
 
+// ParseBearerHeader parses the HTTP Authorization request header for a bearer token.
+func ParseBearerHeader(authHeader string) (string, error) {
+	typ := strings.SplitN(authHeader, " ", 2)
+	if len(typ) != 2 {
+		return "", errors.New("token type missing in Authorization header")
+	}
+	if strings.ToLower(typ[0]) != "bearer" {
+		return "", errors.Newf("invalid token type %s", typ[0])
+	}
+
+	return typ[1], nil
+}
+
 // parseHTTPCredentials parses the "credentials" token as defined in [RFC 7235 Appendix
 // C](https://tools.ietf.org/html/rfc7235#appendix-C).
 func parseHTTPCredentials(credentials string) (scheme, token68 string, params map[string]string, err error) {

@@ -1,7 +1,10 @@
 import { bestJaccardMatch, getWords } from './context'
 
+const targetSnippet = `
+import { bestJaccardMatch, getWords } from './context'
+
 describe('getWords', () => {
-    it('', () => {
+    it('works with regular text', () => {
         expect(getWords('foo bar baz')).toEqual(
             new Map<string, number>([
                 ['foo', 1],
@@ -14,6 +17,68 @@ describe('getWords', () => {
                 ['run', 1],
                 ['rock', 1],
                 ['slip', 1],
+            ])
+        )
+    })
+})
+`
+
+const matchSnippet = `
+describe('bestJaccardMatch', () => {
+    it('should return the best match', () => {
+        const matchText = [
+            'foo',
+            'bar',
+            'baz',
+            'qux',
+            'quux',
+        ].join('\n')
+    })
+})
+`
+
+describe('getWords', () => {
+    it('works with regular text', () => {
+        expect(getWords('foo bar baz')).toEqual(
+            new Map<string, number>([
+                ['foo', 1],
+                ['bar', 1],
+                ['baz', 1],
+            ])
+        )
+        expect(getWords('running rocks slipped over')).toEqual(
+            new Map<string, number>([
+                ['run', 1],
+                ['rock', 1],
+                ['slip', 1],
+            ])
+        )
+    })
+
+    it('works with code snippets', () => {
+        expect(getWords(targetSnippet)).toEqual(
+            new Map<string, number>([
+                ['import', 1],
+                ['bestjaccardmatch', 1],
+                ['getword', 4],
+                ['context', 1],
+                ['describ', 1],
+                ['work', 1],
+                ['regular', 1],
+                ['text', 1],
+                ['expect', 2],
+                ['foo', 2],
+                ['bar', 2],
+                ['baz', 2],
+                ['toequal', 2],
+                ['new', 2],
+                ['map', 2],
+                ['string', 2],
+                ['number', 2],
+                ['1', 6],
+                ['run', 2],
+                ['rock', 2],
+                ['slip', 2],
             ])
         )
     })
@@ -55,5 +120,18 @@ describe('bestJaccardMatch', () => {
             score: 0.3,
             text: ['quux', 'quuz', 'corge', 'grault', 'garply', 'waldo'].join('\n'),
         })
+    })
+
+    it('works with code snippets', () => {
+        expect(bestJaccardMatch(targetSnippet, matchSnippet, 5)).toMatchInlineSnapshot(`
+            Object {
+              "score": 0.08695652173913043,
+              "text": "describe('bestJaccardMatch', () => {
+                it('should return the best match', () => {
+                    const matchText = [
+                        'foo',
+                        'bar',",
+            }
+        `)
     })
 })

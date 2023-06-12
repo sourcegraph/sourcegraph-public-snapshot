@@ -10,6 +10,7 @@ export const OWNER_FIELDS = gql`
             email
             avatarURL
             user {
+                id
                 username
                 displayName
                 url
@@ -19,10 +20,12 @@ export const OWNER_FIELDS = gql`
             }
         }
         ... on Team {
+            id
             name
             teamDisplayName: displayName
             avatarURL
             url
+            external
         }
     }
 `
@@ -45,6 +48,7 @@ export const ASSIGNED_OWNER_FIELDS = gql`
     fragment AssignedOwnerFields on AssignedOwner {
         title
         description
+        isDirectMatch
     }
 `
 
@@ -86,6 +90,13 @@ export const FETCH_OWNERS = gql`
                 }
             }
         }
+        currentUser {
+            permissions {
+                nodes {
+                    displayName
+                }
+            }
+        }
     }
 `
 
@@ -123,11 +134,18 @@ export const FETCH_TREE_OWNERS = gql`
         node(id: $repo) {
             ... on Repository {
                 commit(rev: $revision) {
-                    blob(path: $currentPath) {
+                    tree(path: $currentPath) {
                         ownership {
                             ...OwnershipConnectionFields
                         }
                     }
+                }
+            }
+        }
+        currentUser {
+            permissions {
+                nodes {
+                    displayName
                 }
             }
         }
@@ -163,6 +181,30 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
                     }
                 }
             }
+        }
+    }
+`
+
+export const ASSIGN_OWNER = gql`
+    mutation AssignOwner($input: AssignOwnerOrTeamInput!) {
+        assignOwner(input: $input) {
+            alwaysNil
+        }
+    }
+`
+
+export const REMOVE_ASSIGNED_OWNER = gql`
+    mutation RemoveAssignedOwner($input: AssignOwnerOrTeamInput!) {
+        removeAssignedOwner(input: $input) {
+            alwaysNil
+        }
+    }
+`
+
+export const REMOVE_ASSIGNED_TEAM = gql`
+    mutation RemoveAssignedTeam($input: AssignOwnerOrTeamInput!) {
+        removeAssignedTeam(input: $input) {
+            alwaysNil
         }
     }
 `
