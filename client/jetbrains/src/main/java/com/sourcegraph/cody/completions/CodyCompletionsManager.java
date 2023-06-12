@@ -175,7 +175,7 @@ public class CodyCompletionsManager {
     String accessToken =
         isEnterprise
             ? ConfigUtil.getEnterpriseAccessToken(project)
-            : ConfigUtil.getDotcomAccessToken(project);
+            : ConfigUtil.getDotComAccessToken(project);
     if (!instanceUrl.endsWith("/")) {
       instanceUrl = instanceUrl + "/";
     }

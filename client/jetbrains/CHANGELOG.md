@@ -16,9 +16,9 @@
 
 ## [3.0.0-alpha.2]
 
-<!-- Document changes here -->
-
 ### Added
+
+- A separate setting for the (optional) dotcom access token. [pull/53018](https://github.com/sourcegraph/sourcegraph/pull/53018)
 
 ### Changed
 

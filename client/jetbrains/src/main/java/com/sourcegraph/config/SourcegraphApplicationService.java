@@ -5,6 +5,7 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.sourcegraph.find.Search;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,7 +16,13 @@ public class SourcegraphApplicationService
     implements PersistentStateComponent<SourcegraphApplicationService>, SourcegraphService {
   @Nullable public String instanceType;
   @Nullable public String url;
-  @Nullable public String accessToken;
+
+  @Nullable
+  @Deprecated(since = "3.0.0-alpha.2", forRemoval = true)
+  public String accessToken; // kept for backwards compatibility
+
+  @Nullable public String dotComAccessToken;
+  @Nullable public String enterpriseAccessToken;
   @Nullable public String customRequestHeaders;
   @Nullable public String defaultBranch;
   @Nullable public String remoteUrlReplacements;
@@ -47,8 +54,8 @@ public class SourcegraphApplicationService
   }
 
   @Nullable
-  public String getAccessToken() {
-    return accessToken;
+  public String getDotComAccessToken() {
+    return dotComAccessToken;
   }
 
   @Nullable
@@ -75,9 +82,15 @@ public class SourcegraphApplicationService
   }
 
   @Override
+  @Nullable
   public String getEnterpriseAccessToken() {
-    // TODO
-    return null;
+    // configuring enterpriseAccessToken overrides the deprecated accessToken field
+    String configuredEnterpriseAccessToken =
+        StringUtils.isEmpty(enterpriseAccessToken) ? accessToken : enterpriseAccessToken;
+    // defaulting to SRC_ACCESS_TOKEN env if nothing else was configured
+    return configuredEnterpriseAccessToken == null
+        ? System.getenv("SRC_ACCESS_TOKEN")
+        : configuredEnterpriseAccessToken;
   }
 
   @Override
@@ -129,6 +142,8 @@ public class SourcegraphApplicationService
     this.instanceType = settings.instanceType;
     this.url = settings.url;
     this.accessToken = settings.accessToken;
+    this.dotComAccessToken = settings.dotComAccessToken;
+    this.enterpriseAccessToken = settings.enterpriseAccessToken;
     this.customRequestHeaders = settings.customRequestHeaders;
     this.defaultBranch = settings.defaultBranch;
     this.remoteUrlReplacements = settings.remoteUrlReplacements;

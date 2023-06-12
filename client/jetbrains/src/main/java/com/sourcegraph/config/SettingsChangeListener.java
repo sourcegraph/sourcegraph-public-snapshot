@@ -53,16 +53,22 @@ public class SettingsChangeListener implements Disposable {
             // Log install events
             if (!Objects.equals(context.oldUrl, context.newUrl)) {
               GraphQlLogger.logInstallEvent(project, ConfigUtil::setInstallEventLogged);
-            } else if (!Objects.equals(context.oldAccessToken, context.newAccessToken)
+            } else if ((!Objects.equals(context.oldDotComAccessToken, context.newDotComAccessToken)
+                    || !Objects.equals(
+                        context.oldEnterpriseAccessToken, context.newEnterpriseAccessToken))
                 && !ConfigUtil.isInstallEventLogged()) {
               GraphQlLogger.logInstallEvent(project, ConfigUtil::setInstallEventLogged);
             }
 
             // Notify user about a successful connection
             if (context.newUrl != null) {
+              final String accessToken =
+                  ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.DOTCOM
+                      ? context.newDotComAccessToken
+                      : context.newEnterpriseAccessToken;
               ApiAuthenticator.testConnection(
                   context.newUrl,
-                  context.newAccessToken,
+                  accessToken,
                   context.newCustomRequestHeaders,
                   (status) -> {
                     if (ConfigUtil.didAuthenticationFailLastTime()

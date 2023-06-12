@@ -41,8 +41,8 @@ public class GraphQlLogger {
     String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
     String accessToken =
         ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.ENTERPRISE
-            ? ConfigUtil.getAccessToken(project)
-            : null;
+            ? ConfigUtil.getEnterpriseAccessToken(project)
+            : ConfigUtil.getDotComAccessToken(project);
     String customRequestHeaders = ConfigUtil.getCustomRequestHeaders(project);
     new Thread(
             () -> {

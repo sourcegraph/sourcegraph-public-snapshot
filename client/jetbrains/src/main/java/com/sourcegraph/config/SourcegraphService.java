@@ -18,7 +18,7 @@ public interface SourcegraphService {
   String getSourcegraphUrl();
 
   @Nullable
-  String getAccessToken();
+  String getDotComAccessToken();
 
   @Nullable
   String getCustomRequestHeaders();
