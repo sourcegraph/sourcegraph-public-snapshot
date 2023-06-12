@@ -48,10 +48,8 @@ function getGuardrailsFromConfig(config: vscode.WorkspaceConfiguration): boolean
     return config.get<boolean>('cody.experimental.guardrails', false)
 }
 
-const config = vscode.workspace.getConfiguration()
-
 export class EventLogger {
-    private serverEndpoint = getServerEndpointFromConfig(config)
+    private serverEndpoint = getServerEndpointFromConfig(vscode.workspace.getConfiguration())
     private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
     private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient) {}
 
@@ -60,12 +58,12 @@ export class EventLogger {
     }
 
     public configurationDetails = {
-        contextSelection: getUseContextFromConfig(config),
-        chatPredictions: getChatPredictionsFromConfig(config),
-        inline: getInlineFromConfig(config),
-        nonStop: getNonStopFromConfig(config),
-        suggestions: getSuggestionsFromConfig(config),
-        guardrails: getGuardrailsFromConfig(config),
+        contextSelection: getUseContextFromConfig(vscode.workspace.getConfiguration()),
+        chatPredictions: getChatPredictionsFromConfig(vscode.workspace.getConfiguration()),
+        inline: getInlineFromConfig(vscode.workspace.getConfiguration()),
+        nonStop: getNonStopFromConfig(vscode.workspace.getConfiguration()),
+        suggestions: getSuggestionsFromConfig(vscode.workspace.getConfiguration()),
+        guardrails: getGuardrailsFromConfig(vscode.workspace.getConfiguration()),
     }
 
     onConfigurationChange(newconfig: any): void {
