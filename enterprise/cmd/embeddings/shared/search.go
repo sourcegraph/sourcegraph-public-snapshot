@@ -58,7 +58,7 @@ func searchRepoEmbeddingIndexes(
 		if !embeddingIndex.IsModelCompatible(queryModel) {
 			return nil, errors.Newf("embeddings model in config (%s) does not match the embeddings model for the"+
 				" index (%s). Embedding index for repo %q must be reindexed with the new model",
-				embeddingIndex.EmbeddingsModel, queryModel, repoName)
+				queryModel, embeddingIndex.EmbeddingsModel, repoName)
 		}
 
 		codeResults := embeddingIndex.CodeIndex.SimilaritySearch(embeddedQuery, params.CodeResultsCount, workerOpts, searchOpts, embeddingIndex.RepoName, embeddingIndex.Revision)

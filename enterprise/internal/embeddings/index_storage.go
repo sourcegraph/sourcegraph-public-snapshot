@@ -13,14 +13,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// IndexFormatVersion is a version number that's increased every time the on-disk index format is
-// changed. Make sure to update CurrentFormatVersion whenever you add a new version.
+// IndexFormatVersion is a number representing the on-disk index format. Whenever the index format is changed in way
+// that affects how it's decoded, we add a new format version and update CurrentFormatVersion to the latest.
 type IndexFormatVersion int
 
 const CurrentFormatVersion = EmbeddingModelVersion
 const (
-	InitialVersion        IndexFormatVersion = iota
-	EmbeddingModelVersion                    // Added the model name used to create embeddings
+	InitialVersion        IndexFormatVersion = iota // The initial format, before we started tracking format versions
+	EmbeddingModelVersion                           // Added the model name used to create embeddings
 )
 
 func DownloadIndex[T any](ctx context.Context, uploadStore uploadstore.Store, key string) (_ *T, err error) {
@@ -55,12 +55,8 @@ func UploadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store
 	eg.Go(func() error {
 		defer pw.Close()
 
-		encoder := indexEncoder{
-			enc:           gob.NewEncoder(pw),
-			formatVersion: CurrentFormatVersion,
-			chunkSize:     embeddingsChunkSize,
-		}
-		return encoder.encodeIndex(index)
+		enc := newEncoder(gob.NewEncoder(pw), CurrentFormatVersion, embeddingsChunkSize)
+		return enc.encode(index)
 	})
 
 	eg.Go(func() error {
@@ -104,15 +100,15 @@ func UpdateRepoEmbeddingIndex(
 }
 
 func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string) (*RepoEmbeddingIndex, error) {
-	decoder, err := createIndexDecoder(ctx, uploadStore, key)
+	dec, err := newDecoder(ctx, uploadStore, key)
 	if err != nil {
 		return nil, err
 	}
-	defer decoder.close()
+	defer dec.close()
 
-	rei, err := decoder.decodeIndex()
+	rei, err := dec.decode()
 
-	// If decoding fails, assume it is an old index and decode with a generic decoder.
+	// If decoding fails, assume it is an old index and decode with a generic dec.
 	if err != nil {
 		oldRei, err2 := DownloadIndex[OldRepoEmbeddingIndex](ctx, uploadStore, key)
 		if err2 != nil {
@@ -124,13 +120,13 @@ func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 	return rei, nil
 }
 
-type indexDecoder struct {
+type decoder struct {
 	file          io.ReadCloser
 	dec           *gob.Decoder
 	formatVersion IndexFormatVersion
 }
 
-func createIndexDecoder(ctx context.Context, uploadStore uploadstore.Store, key string) (*indexDecoder, error) {
+func newDecoder(ctx context.Context, uploadStore uploadstore.Store, key string) (*decoder, error) {
 	f, err := uploadStore.Get(ctx, key)
 	if err != nil {
 		return nil, err
@@ -150,16 +146,16 @@ func createIndexDecoder(ctx context.Context, uploadStore uploadstore.Store, key 
 			return nil, err
 		}
 		dec = gob.NewDecoder(f)
-		return &indexDecoder{f, dec, InitialVersion}, nil
+		return &decoder{f, dec, InitialVersion}, nil
 	}
 
 	if formatVersion > CurrentFormatVersion {
 		return nil, errors.Newf("unrecognized index format version: %d", formatVersion)
 	}
-	return &indexDecoder{f, dec, formatVersion}, nil
+	return &decoder{f, dec, formatVersion}, nil
 }
 
-func (d *indexDecoder) decodeIndex() (*RepoEmbeddingIndex, error) {
+func (d *decoder) decode() (*RepoEmbeddingIndex, error) {
 	rei := &RepoEmbeddingIndex{}
 
 	if err := d.dec.Decode(&rei.RepoName); err != nil {
@@ -207,22 +203,28 @@ func (d *indexDecoder) decodeIndex() (*RepoEmbeddingIndex, error) {
 	return rei, nil
 }
 
-func (d *indexDecoder) close() {
+func (d *decoder) close() {
 	d.file.Close()
 }
 
 const embeddingsChunkSize = 10_000
 
-// indexEncoder is a specialized encoder for repo embedding indexes. Instead of GOB-encoding
+// encoder is a specialized encoder for repo embedding indexes. Instead of GOB-encoding
 // the entire RepoEmbeddingIndex, we encode each field separately, and we encode the embeddings array by chunks.
 // This way we avoid allocating a separate very large slice for the embeddings.
-type indexEncoder struct {
-	enc           *gob.Encoder
+type encoder struct {
+	enc *gob.Encoder
+	// In production usage, formatVersion will always be equal to CurrentFormatVersion. But it's still
+	// a parameter here since it's helpful for unit tests to be able to change it.
 	formatVersion IndexFormatVersion
 	chunkSize     int
 }
 
-func (e *indexEncoder) encodeIndex(rei *RepoEmbeddingIndex) error {
+func newEncoder(enc *gob.Encoder, formatVersion IndexFormatVersion, chunkSize int) *encoder {
+	return &encoder{enc, formatVersion, chunkSize}
+}
+
+func (e *encoder) encode(rei *RepoEmbeddingIndex) error {
 	// Always encode index format version first, as part of 'file header'
 	if err := e.enc.Encode(e.formatVersion); err != nil {
 		return err

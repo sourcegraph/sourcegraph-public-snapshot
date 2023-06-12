@@ -151,12 +151,12 @@ func TestIndexFormatVersion(t *testing.T) {
 
 	// Use a non-existent format version, and check we catch the error.
 	formatVersion := CurrentFormatVersion + 42
-	encoder := indexEncoder{
+	encoder := encoder{
 		enc:           gob.NewEncoder(&buf),
 		formatVersion: formatVersion,
 		chunkSize:     embeddingsChunkSize,
 	}
-	err := encoder.encodeIndex(index)
+	err := encoder.encode(index)
 	require.NoError(t, err)
 
 	_, err = uploadStore.Upload(ctx, "index", &buf)
