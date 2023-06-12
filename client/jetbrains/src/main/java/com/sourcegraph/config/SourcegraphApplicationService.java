@@ -29,6 +29,7 @@ public class SourcegraphApplicationService
   @Nullable public String anonymousUserId;
   public boolean isInstallEventLogged;
   public boolean isUrlNotificationDismissed;
+  @Nullable public Boolean areCodyCompletionsEnabled;
   public boolean isAccessTokenNotificationDismissed;
   @Nullable public Boolean authenticationFailedLastTime;
 
@@ -118,6 +119,13 @@ public class SourcegraphApplicationService
     return isUrlNotificationDismissed;
   }
 
+  public boolean areCodyCompletionsEnabled() {
+    boolean enabledViaEnv = "true".equals(System.getenv("CODY_COMPLETIONS_ENABLED"));
+    boolean enabledViaProperty = "true".equals(System.getProperty("cody.completions.enabled"));
+    return enabledViaEnv
+        || (areCodyCompletionsEnabled == null ? enabledViaProperty : areCodyCompletionsEnabled);
+  }
+
   public boolean isAccessTokenNotificationDismissed() {
     return isAccessTokenNotificationDismissed;
   }
@@ -149,6 +157,7 @@ public class SourcegraphApplicationService
     this.remoteUrlReplacements = settings.remoteUrlReplacements;
     this.anonymousUserId = settings.anonymousUserId;
     this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
+    this.areCodyCompletionsEnabled = settings.areCodyCompletionsEnabled;
     this.isAccessTokenNotificationDismissed = settings.isAccessTokenNotificationDismissed;
     this.authenticationFailedLastTime = settings.authenticationFailedLastTime;
     this.lastUpdateNotificationPluginVersion = settings.lastUpdateNotificationPluginVersion;

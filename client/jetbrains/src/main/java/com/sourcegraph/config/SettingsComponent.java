@@ -37,6 +37,7 @@ public class SettingsComponent {
   private JBTextField defaultBranchNameTextField;
   private JBTextField remoteUrlReplacementsTextField;
   private JBCheckBox isUrlNotificationDismissedCheckBox;
+  private JBCheckBox areCompletionsEnabledCheckBox;
 
   public JComponent getPreferredFocusedComponent() {
     return defaultBranchNameTextField;
@@ -46,11 +47,13 @@ public class SettingsComponent {
     this.project = project;
     JPanel userAuthenticationPanel = createAuthenticationPanel();
     JPanel navigationSettingsPanel = createNavigationSettingsPanel();
+    JPanel codySettingsPanel = createCodySettingsPanel();
 
     panel =
         FormBuilder.createFormBuilder()
             .addComponent(userAuthenticationPanel)
             .addComponent(navigationSettingsPanel)
+            .addComponent(codySettingsPanel)
             .addComponentFillVertically(new JPanel(), 0)
             .getPanel();
   }
@@ -296,6 +299,14 @@ public class SettingsComponent {
     isUrlNotificationDismissedCheckBox.setSelected(value);
   }
 
+  public boolean areCodyCompletionsEnabled() {
+    return areCompletionsEnabledCheckBox.isSelected();
+  }
+
+  public void setCodyCompletionsEnabled(boolean value) {
+    areCompletionsEnabledCheckBox.setSelected(value);
+  }
+
   private void setEnterpriseSettingsEnabled(boolean enable) {
     urlTextField.setEnabled(enable);
     enterpriseAccessTokenTextField.setEnabled(enable);
@@ -409,5 +420,15 @@ public class SettingsComponent {
     navigationSettingsPanel.setBorder(
         IdeBorderFactory.createTitledBorder("Navigation Settings", true, JBUI.insetsTop(8)));
     return navigationSettingsPanel;
+  }
+
+  @NotNull
+  private JPanel createCodySettingsPanel() {
+    areCompletionsEnabledCheckBox = new JBCheckBox("Enable Cody completions");
+    JPanel codySettingsPanel =
+        FormBuilder.createFormBuilder().addComponent(areCompletionsEnabledCheckBox, 10).getPanel();
+    codySettingsPanel.setBorder(
+        IdeBorderFactory.createTitledBorder("Cody Settings", true, JBUI.insetsTop(8)));
+    return codySettingsPanel;
   }
 }

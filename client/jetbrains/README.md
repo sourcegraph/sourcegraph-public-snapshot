@@ -85,6 +85,10 @@ The plugin works with all JetBrains IDEs, including:
       pair for _each repo_ or _each depot_ you may have. If none of these solutions work for you, please raise this
       at [support@sourcegraph.com](mailto:support@sourcegraph.com), and we'll prioritize making this more convenient.
 - **Globbing**: Determines whether you can specify sets of filenames with wildcard characters.
+- **Cody completions**: Enables/disables Cody completions in the editor.
+  - The completions are disabled by default.
+  - It is possible to override this setting with the `CODY_COMPLETIONS_ENABLED` environment variable.
+  - If initially unset, it defaults to the `cody.completions.enabled` property value.
 
 ### Git remote setting
 

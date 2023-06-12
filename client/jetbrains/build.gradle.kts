@@ -97,7 +97,7 @@ tasks {
 
     runIde {
         jvmArgs("-Djdk.module.illegalAccess.silent=true")
-        systemProperty("cody.completions.enabled", "true")
+        // systemProperty("cody.completions.enabled", "true")
     }
 
     // Configure UI tests plugin
