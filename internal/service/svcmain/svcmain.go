@@ -145,6 +145,7 @@ type OutOfBandConfiguration struct {
 // that are not part of the core Sourcegraph deployment, such as executors and managed
 // services. Use with care!
 func SingleServiceMainWithoutConf(svc sgservice.Service, config Config, oobConfig OutOfBandConfiguration) {
+	// keep oob copypaste in cmd/frontend/internal/cli/serve_cmd.go up-to-date with this
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
@@ -274,5 +275,4 @@ func run(
 
 	// wait for all services to stop
 	allDoneWG.Wait()
-
 }

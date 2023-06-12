@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	gcontext "github.com/gorilla/context"
@@ -45,8 +44,6 @@ import (
 )
 
 const appName = "frontend-autoupgrader"
-
-var buffer strings.Builder // :)
 
 var shouldAutoUpgade = env.MustGetBool("SRC_AUTOUPGRADE", false, "If you forgot to set intent to autoupgrade before shutting down the instance, set this env var.")
 

@@ -27,6 +27,8 @@ func main() {
 		assets.UseDevAssetsProvider()
 	}
 	svcmain.SingleServiceMainWithoutConf(shared.Service, svcmain.Config{}, svcmain.OutOfBandConfiguration{
+		// Initialize a basic logger here, and no tracing. Everthing will be initialized properly
+		// after auto-upgrading has been completed, as we can't have internal/conf used beforehand.
 		Logging: conf.NewStaticLogsSinksSource(log.SinksConfig{}),
 	})
 }
