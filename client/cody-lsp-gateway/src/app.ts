@@ -1,5 +1,5 @@
 #! /usr/bin/env node
 
-import { startServer } from "./server";
+import { startServer } from './server';
 
 startServer();
