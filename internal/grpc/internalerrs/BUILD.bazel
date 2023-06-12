@@ -19,6 +19,7 @@ go_library(
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",
+        "@org_golang_google_protobuf//encoding/prototext",
         "@org_golang_google_protobuf//proto",
         "@org_golang_google_protobuf//reflect/protopath",
         "@org_golang_google_protobuf//reflect/protorange",
@@ -30,7 +31,7 @@ go_test(
     srcs = ["common_test.go"],
     embed = [":internalerrs"],
     deps = [
-        "//internal/grpc/testprotos/news",
+        "//internal/grpc/testprotos/news/v1:news",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
         "@io_bazel_rules_go//proto/wkt:timestamp_go_proto",

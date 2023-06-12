@@ -18,7 +18,14 @@ go_proto_library(
 
 go_library(
     name = "news",
-    embed = [":news_go_proto"],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news",
+    embed = [":v1_go_proto"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news/v1",
+    visibility = ["//:__subpackages__"],
+)
+
+go_proto_library(
+    name = "v1_go_proto",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news/v1",
+    proto = ":news_proto",
     visibility = ["//:__subpackages__"],
 )

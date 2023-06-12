@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	newspb "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news"
+	newspb "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news/v1"
 	"google.golang.org/protobuf/proto"
 	"sort"
 	"strings"
@@ -256,7 +256,7 @@ func TestFindNonUTF8StringFields(t *testing.T) {
 		Date:    &timestamp.Timestamp{Seconds: 1234567890},
 		Title:   "valid_title",
 		Content: "valid_content",
-		Status:  newspb.Article_PUBLISHED,
+		Status:  newspb.Article_STATUS_PUBLISHED,
 		Attachments: []*newspb.Attachment{
 			{Contents: &newspb.Attachment_BinaryAttachment{BinaryAttachment: invalidBinaryAttachment}},
 			{Contents: &newspb.Attachment_KeyValueAttachment{KeyValueAttachment: invalidKeyValueAttachment}},
