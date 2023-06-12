@@ -21,14 +21,8 @@ func (s *store) InsertReferencesForRanking(
 
 	return s.withTransaction(ctx, func(tx *store) error {
 		inserter := func(inserter *batch.Inserter) error {
-			for symbols := range batchChannel(references, batchSize) {
-				var v [][]byte
-				for _, s := range symbols {
-					rx := s
-					v = append(v, rx[:])
-				}
-
-				if err := inserter.Insert(ctx, exportedUploadID, pq.Array([]string{}), pq.Array(v), rankingGraphKey); err != nil {
+			for checksums := range batchChannel(references, batchSize) {
+				if err := inserter.Insert(ctx, exportedUploadID, pq.Array([]string{}), pq.Array(derefChecksums(checksums)), rankingGraphKey); err != nil {
 					return err
 				}
 			}
@@ -54,4 +48,25 @@ func (s *store) InsertReferencesForRanking(
 
 		return nil
 	})
+}
+
+// DO NOT INLINE, the output of these functions are used by background routines
+// in the batch inserter. Inlining these methods may cause a hard-to-find alias
+// unless it's done very carefully.
+func derefChecksums(arrs [][16]byte) [][]byte {
+	cs := make([][]byte, 0, len(arrs))
+	for _, arr := range arrs {
+		cs = append(cs, derefChecksum(arr))
+	}
+
+	return cs
+}
+
+// DO NOT INLINE, the output of these functions are used by background routines
+// in the batch inserter. Inlining these methods may cause a hard-to-find alias
+// unless it's done very carefully.
+func derefChecksum(arr [16]byte) []byte {
+	c := make([]byte, 16)
+	copy(c, arr[:])
+	return c
 }

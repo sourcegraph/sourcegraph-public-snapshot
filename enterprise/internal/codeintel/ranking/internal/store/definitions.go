@@ -19,12 +19,7 @@ func (s *store) InsertDefinitionsForRanking(
 	return s.withTransaction(ctx, func(tx *store) error {
 		inserter := func(inserter *batch.Inserter) error {
 			for definition := range definitions {
-				// DANGER: DO NOT remove this re-assignment as we need to have
-				// a local copy of the underlying array BEFORE we take a slice
-				// over it (via `arr[:]` below).
-				checksum := definition.SymbolChecksum
-
-				if err := inserter.Insert(ctx, definition.ExportedUploadID, "", checksum[:], definition.DocumentPath, rankingGraphKey); err != nil {
+				if err := inserter.Insert(ctx, definition.ExportedUploadID, "", derefChecksum(definition.SymbolChecksum), definition.DocumentPath, rankingGraphKey); err != nil {
 					return err
 				}
 			}
