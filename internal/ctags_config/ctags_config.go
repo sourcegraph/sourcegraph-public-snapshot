@@ -64,7 +64,7 @@ var supportedLanguages = map[string]struct{}{
 	"zig":     {},
 }
 
-var defaultEngines = map[string]ParserType{
+var DefaultEngines = map[string]ParserType{
 	// Add the languages we want to turn on by default (you'll need to
 	// update the ctags_config module for supported languages as well)
 	"zig": ScipCtags,
@@ -81,7 +81,7 @@ var defaultEngines = map[string]ParserType{
 func CreateEngineMap(siteConfig schema.SiteConfiguration) map[string]ParserType {
 	// Set the defaults
 	engines := make(map[string]ParserType)
-	for lang, engine := range defaultEngines {
+	for lang, engine := range DefaultEngines {
 		lang = languages.NormalizeLanguage(lang)
 		engines[lang] = engine
 	}

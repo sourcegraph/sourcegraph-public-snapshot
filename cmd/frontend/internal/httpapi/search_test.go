@@ -24,6 +24,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	citypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -103,14 +104,20 @@ func TestServeConfiguration(t *testing.T) {
 			t.Errorf("expected to find repo not found error in repo 1: %v", responseRepo1)
 		}
 
+		languageMap := make([]*proto.LanguageMapping, 0)
+		for language, engine := range ctags_config.DefaultEngines {
+			languageMap = append(languageMap, &proto.LanguageMapping{Language: language, Ctags: proto.CTagsParserType(engine)})
+		}
+
 		// Verify: Check to see that the response the expected repos 5 and 6
 		expectedRepo5 := &proto.ZoektIndexOptions{
-			RepoId:   5,
-			Name:     "5",
-			Priority: 5,
-			Public:   true,
-			Symbols:  true,
-			Branches: []*proto.ZoektRepositoryBranch{{Name: "HEAD", Version: "!HEAD"}},
+			RepoId:      5,
+			Name:        "5",
+			Priority:    5,
+			Public:      true,
+			Symbols:     true,
+			Branches:    []*proto.ZoektRepositoryBranch{{Name: "HEAD", Version: "!HEAD"}},
+			LanguageMap: languageMap,
 		}
 
 		expectedRepo6 := &proto.ZoektIndexOptions{
@@ -124,6 +131,7 @@ func TestServeConfiguration(t *testing.T) {
 				{Name: "a", Version: "!a"},
 				{Name: "b", Version: "!b"},
 			},
+			LanguageMap: languageMap,
 		}
 
 		expectedRepos := []*proto.ZoektIndexOptions{
