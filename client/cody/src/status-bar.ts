@@ -37,7 +37,8 @@ export function createStatusBar(): CodyStatusBar {
         const option = await vscode.window.showQuickPick(
             [
                 createFeatureToggle('Code Completions (Beta)', 'cody.completions', c => c.completions),
-                createFeatureToggle('Code Fixups (Beta)', 'cody.experimental.inline', c => c.experimentalInline),
+                createFeatureToggle('Code Inline Assist (Beta)', 'cody.experimental.inline', c => c.experimentalInline),
+                createFeatureToggle('Code Fixups (Experimental)', 'cody.experimental.nonStop', c => c.experimentalNonStop),
                 createFeatureToggle(
                     'Chat Suggestions (Experimental)',
                     'cody.experimental.chatPredictions',
