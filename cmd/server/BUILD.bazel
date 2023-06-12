@@ -93,8 +93,11 @@ pkg_tar(
 )
 
 pkg_tar(
-    name = "tar_postgres_optimize",
-    srcs = ["//cmd/server/rootfs:postgres-optimize.sh"],
+    name = "tar_postgres_scripts",
+    srcs = [
+        "//cmd/server/rootfs:postgres-optimize.sh",
+        "//cmd/server/rootfs:reindex.sh",
+    ],
 )
 
 # TODO(@jhchabran) prom-wrapper has to be in /bin while we're still
@@ -128,7 +131,7 @@ oci_image(
         ":tar_monitoring_config",
         ":tar_syntax-highlighter",
         ":tar_scip-ctags",
-        ":tar_postgres_optimize",
+        ":tar_postgres_scripts",
         ":tar_prom-wrapper",
         "//cmd/gitserver:tar_p4_fusion_wrappers",
     ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),

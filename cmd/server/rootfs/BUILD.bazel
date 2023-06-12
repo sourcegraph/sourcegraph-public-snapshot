@@ -1,3 +1,4 @@
 exports_files([
     "postgres-optimize.sh",
+    "reindex.sh",
 ])
