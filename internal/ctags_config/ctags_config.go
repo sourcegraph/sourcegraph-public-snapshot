@@ -62,6 +62,7 @@ var supportedLanguages = map[string]struct{}{
 	"java":    {},
 	"python":  {},
 	"zig":     {},
+	"scala":   {},
 }
 
 var DefaultEngines = map[string]ParserType{
