@@ -139,6 +139,24 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 	}
 }
 
+func TestCodyGatewayDotcomUserResolverUserNotFound(t *testing.T) {
+	ctx := context.Background()
+	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(logtest.Scoped(t), t))
+
+	// admin user to make request
+	adminUser, err := db.Users().Create(ctx, database.NewUser{Username: "admin", EmailIsVerified: true, Email: "admin@test.com"})
+	require.NoError(t, err)
+
+	// Create an admin context to use for the request
+	adminContext := actor.WithActor(context.Background(), actor.FromActualUser(adminUser))
+
+	r := productsubscription.CodyGatewayDotcomUserResolver{DB: db}
+	_, err = r.CodyGatewayDotcomUserByToken(adminContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: "NOT_A_TOKEN"})
+
+	_, got := err.(productsubscription.ErrDotcomUserNotFound)
+	assert.True(t, got, "should have error type ErrDotcomUserNotFound")
+}
+
 func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(logtest.Scoped(t), t))

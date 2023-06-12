@@ -9,6 +9,7 @@ import (
 	"github.com/Khan/genqlient/graphql"
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
@@ -21,7 +22,7 @@ import (
 const tokenLength = 4 + 64
 
 var (
-	defaultUpdateInterval = 24 * time.Hour
+	defaultUpdateInterval = 15 * time.Minute
 )
 
 type Source struct {
@@ -80,7 +81,7 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 // fetchAndCache fetches the dotcom user data for the given user token and caches it
 func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor, error) {
 	var act *actor.Actor
-	resp, checkErr := dotcom.CheckDotcomUserAccessToken(ctx, s.dotcom, token)
+	resp, checkErr := s.checkAccessToken(ctx, token)
 	if checkErr != nil {
 		// Generate a stateless actor so that we aren't constantly hitting the dotcom API
 		act = newActor(s, token, dotcom.DotcomUserState{}, s.concurrencyConfig)
@@ -100,6 +101,26 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 		return nil, errors.Wrap(checkErr, "failed to validate access token")
 	}
 	return act, nil
+}
+
+func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.CheckDotcomUserAccessTokenResponse, error) {
+	resp, err := dotcom.CheckDotcomUserAccessToken(ctx, s.dotcom, token)
+	if err == nil {
+		return resp, nil
+	}
+
+	// Inspect the error to see if it's a list of GraphQL errors.
+	gqlerrs, ok := err.(gqlerror.List)
+	if !ok {
+		return nil, err
+	}
+
+	for _, gqlerr := range gqlerrs {
+		if gqlerr.Extensions != nil && gqlerr.Extensions["code"] == codygateway.GQLErrCodeDotcomUserNotFound {
+			return nil, actor.ErrAccessTokenDenied{Reason: "associated dotcom user not found"}
+		}
+	}
+	return nil, err
 }
 
 // newActor creates an actor from Sourcegraph.com user.

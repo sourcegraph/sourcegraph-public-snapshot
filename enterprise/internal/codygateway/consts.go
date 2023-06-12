@@ -27,3 +27,7 @@ const FeatureHeaderName = "X-Sourcegraph-Feature"
 // GQLErrCodeProductSubscriptionNotFound is the GraphQL error code returned when
 // attempting to look up a product subscription failed by any means.
 const GQLErrCodeProductSubscriptionNotFound = "ErrProductSubscriptionNotFound"
+
+// GQLErrCodeDotcomUserNotFound is the GraphQL error code returned when
+// attempting to look up a dotcom user failed.
+const GQLErrCodeDotcomUserNotFound = "ErrDotcomUserNotFound"

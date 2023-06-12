@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/productsubscription"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type dbTokens struct {
@@ -67,6 +66,18 @@ WHERE
 	return subID, nil
 }
 
+type dotcomUserNotFoundError struct {
+	reason string
+}
+
+func (e dotcomUserNotFoundError) Error() string {
+	return "dotcom user not found because " + e.reason
+}
+
+func (e dotcomUserNotFoundError) NotFound() bool {
+	return true
+}
+
 // dotcomUserGatewayAccessTokenPrefix is the prefix used for identifying tokens
 // generated for dotcom users to access the cody-gateway.
 const dotcomUserGatewayAccessTokenPrefix = "sgd_"
@@ -75,11 +86,11 @@ const dotcomUserGatewayAccessTokenPrefix = "sgd_"
 // corresponding to a token, trimming token prefixes if there are any.
 func (t dbTokens) LookupDotcomUserIDByAccessToken(ctx context.Context, token string) (int, error) {
 	if !strings.HasPrefix(token, dotcomUserGatewayAccessTokenPrefix) {
-		return 0, errors.New("invalid token with unknown prefix")
+		return 0, dotcomUserNotFoundError{reason: "invalid token with unknown prefix"}
 	}
 	decoded, err := hex.DecodeString(strings.TrimPrefix(token, dotcomUserGatewayAccessTokenPrefix))
 	if err != nil {
-		return 0, errors.New("invalid token decoding")
+		return 0, dotcomUserNotFoundError{reason: "invalid token encoding"}
 	}
 
 	query := sqlf.Sprintf(`
@@ -97,7 +108,7 @@ RETURNING t.subject_user_id`,
 	if err != nil {
 		return 0, err
 	} else if !found {
-		return 0, errors.New("no associated token")
+		return 0, dotcomUserNotFoundError{reason: "no associated token"}
 	}
 	return userID, nil
 }
