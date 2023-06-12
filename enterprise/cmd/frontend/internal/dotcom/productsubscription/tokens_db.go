@@ -54,7 +54,10 @@ SELECT product_subscription_id
 FROM product_licenses
 WHERE
 	access_token_enabled=true
-	AND digest(license_key, 'sha256')=%s`,
+	AND ( digest(digest(license_key, 'sha256'), 'sha256')=%s OR digest(license_key, 'sha256')=%s )`,
+		decoded,
+		// retain backcompat for now, see 'legacy token format' test case
+		// needs migration: sourcegraph.com, k8s.sgdev.org, cody-dev, S2
 		decoded,
 	)
 	subID, found, err := basestore.ScanFirstString(t.store.Query(ctx, query))
@@ -99,7 +102,7 @@ WHERE t.id IN (
 	SELECT t2.id FROM access_tokens t2
 	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
 	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
-	WHERE digest(value_sha256, 'sha256')=%s AND t2.deleted_at IS NULL 	
+	WHERE digest(value_sha256, 'sha256')=%s AND t2.deleted_at IS NULL
 )
 RETURNING t.subject_user_id`,
 		decoded,

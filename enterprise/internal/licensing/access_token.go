@@ -13,8 +13,16 @@ const LicenseKeyBasedAccessTokenPrefix = "slk_" // "(S)ourcegraph (L)icense (K)e
 
 // GenerateLicenseKeyBasedAccessToken creates a prefixed, encoded token based on a
 // Sourcegraph license key.
+//
+// More specifically, the format goes:
+//
+//	slk_$hex($sha256($sha256(licenseKey)))
+//	└─┬┘
+//	  └──> licensing.LicenseKeyBasedAccessTokenPrefix
 func GenerateLicenseKeyBasedAccessToken(licenseKey string) string {
-	return LicenseKeyBasedAccessTokenPrefix + hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(licenseKey)))
+	return LicenseKeyBasedAccessTokenPrefix + hex.EncodeToString(
+		hashutil.ToSHA256Bytes(hashutil.ToSHA256Bytes([]byte(licenseKey))),
+	)
 }
 
 func GenerateHashedLicenseKeyAccessToken(licenseKey string) []byte {

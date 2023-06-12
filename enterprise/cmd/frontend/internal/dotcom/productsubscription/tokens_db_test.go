@@ -2,6 +2,7 @@ package productsubscription
 
 import (
 	"context"
+	"encoding/hex"
 	"testing"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/productsubscription"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -48,12 +50,26 @@ func TestLookupProductSubscriptionIDByAccessToken(t *testing.T) {
 		assert.Equal(t, gotPS, ps)
 	})
 
+	// Prefix was changed from 'sgs_' to 'slk_'
 	t.Run("legacy token prefix", func(t *testing.T) {
 		license, err := dbLicenses{db: db}.GetByID(ctx, pl)
 		require.NoError(t, err)
 
 		accessToken := licensing.GenerateLicenseKeyBasedAccessToken(license.LicenseKey)
 		accessToken = productsubscription.AccessTokenPrefix + accessToken[len(licensing.LicenseKeyBasedAccessTokenPrefix):]
+
+		gotPS, err := newDBTokens(db).LookupProductSubscriptionIDByAccessToken(ctx, accessToken)
+		require.NoError(t, err)
+		assert.Equal(t, gotPS, ps)
+	})
+
+	// Format was changed from 'slk_$hex($sha256(licenseKey))' to 'slk_$hex($sha256($sha256(licenseKey)))'
+	t.Run("legacy token format", func(t *testing.T) {
+		license, err := dbLicenses{db: db}.GetByID(ctx, pl)
+		require.NoError(t, err)
+
+		accessToken := licensing.LicenseKeyBasedAccessTokenPrefix +
+			hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(license.LicenseKey)))
 
 		gotPS, err := newDBTokens(db).LookupProductSubscriptionIDByAccessToken(ctx, accessToken)
 		require.NoError(t, err)
