@@ -47,19 +47,19 @@ func TestInsertPathRanks(t *testing.T) {
 	mockDefinitions <- shared.RankingDefinitions{
 		UploadID:         4,
 		ExportedUploadID: 104,
-		SymbolName:       "foo",
+		SymbolChecksum:   hash("foo"),
 		DocumentPath:     "foo.go",
 	}
 	mockDefinitions <- shared.RankingDefinitions{
 		UploadID:         4,
 		ExportedUploadID: 104,
-		SymbolName:       "bar",
+		SymbolChecksum:   hash("bar"),
 		DocumentPath:     "bar.go",
 	}
 	mockDefinitions <- shared.RankingDefinitions{
 		UploadID:         4,
 		ExportedUploadID: 104,
-		SymbolName:       "foo",
+		SymbolChecksum:   hash("foo"),
 		DocumentPath:     "foo.go",
 	}
 	close(mockDefinitions)
@@ -68,10 +68,10 @@ func TestInsertPathRanks(t *testing.T) {
 	}
 
 	// Insert references
-	mockReferences := make(chan string, 3)
-	mockReferences <- "foo"
-	mockReferences <- "bar"
-	mockReferences <- "baz"
+	mockReferences := make(chan [16]byte, 3)
+	mockReferences <- hash("foo")
+	mockReferences <- hash("bar")
+	mockReferences <- hash("baz")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 104, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)

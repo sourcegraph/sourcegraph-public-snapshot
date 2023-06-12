@@ -52,7 +52,8 @@ export class PrDescription implements Recipe {
                     prefix: emptyGitCommitMessage,
                     text: emptyGitCommitMessage,
                 },
-                Promise.resolve([])
+                Promise.resolve([]),
+                []
             )
         }
 
@@ -71,7 +72,8 @@ export class PrDescription implements Recipe {
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
             },
-            Promise.resolve([])
+            Promise.resolve([]),
+            []
         )
     }
 }
