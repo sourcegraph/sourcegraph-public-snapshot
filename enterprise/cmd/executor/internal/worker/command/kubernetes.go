@@ -326,7 +326,6 @@ func kubernetesConditions(key string, conditions []corev1.PodCondition) log.Fiel
 	)
 }
 
-
 func normalizeKey(key string) string {
 	// Since '.' are not allowed in container names, we need to convert the key to have '.' to make our logging
 	// happy.
@@ -334,6 +333,9 @@ func normalizeKey(key string) string {
 }
 
 func getCommand(key string, spec Spec) []string {
+	if spec.Key == key {
+		return spec.Command
+	}
 	for _, step := range spec.Steps {
 		if step.Key == key {
 			return step.Command
