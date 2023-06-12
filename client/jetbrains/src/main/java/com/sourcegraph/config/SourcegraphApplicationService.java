@@ -5,6 +5,7 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.sourcegraph.find.Search;
+import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -121,9 +122,7 @@ public class SourcegraphApplicationService
 
   public boolean areCodyCompletionsEnabled() {
     boolean enabledViaEnv = "true".equals(System.getenv("CODY_COMPLETIONS_ENABLED"));
-    boolean enabledViaProperty = "true".equals(System.getProperty("cody.completions.enabled"));
-    return enabledViaEnv
-        || (areCodyCompletionsEnabled == null ? enabledViaProperty : areCodyCompletionsEnabled);
+    return enabledViaEnv || Optional.ofNullable(areCodyCompletionsEnabled).orElse(false);
   }
 
   public boolean isAccessTokenNotificationDismissed() {

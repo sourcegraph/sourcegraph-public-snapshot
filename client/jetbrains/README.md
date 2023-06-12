@@ -88,7 +88,6 @@ The plugin works with all JetBrains IDEs, including:
 - **Cody completions**: Enables/disables Cody completions in the editor.
   - The completions are disabled by default.
   - It is possible to override this setting with the `CODY_COMPLETIONS_ENABLED` environment variable.
-  - If initially unset, it defaults to the `cody.completions.enabled` property value.
 
 ### Git remote setting
 
