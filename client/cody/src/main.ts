@@ -223,28 +223,52 @@ const register = async (
         })
     )
 
-    if (initialConfig.experimentalSuggest) {
-        // TODO(sqs): make this listen to config and not just use initialConfig
-        const docprovider = new CompletionsDocumentProvider()
-        disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))
+    vscode.workspace.onDidChangeConfiguration(async event => {
+        if (event.affectsConfiguration('cody.experimental.suggestions')) {
+            const docprovider = new CompletionsDocumentProvider()
+            disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))
 
-        const history = new History()
-        const completionsProvider = new CodyCompletionItemProvider(
-            webviewErrorMessager,
-            completionsClient,
-            docprovider,
-            history
-        )
-        disposables.push(
-            vscode.commands.registerCommand('cody.manual-completions', async () => {
-                await completionsProvider.fetchAndShowManualCompletions()
-            }),
-            vscode.commands.registerCommand('cody.completions.inline.accepted', ({ codyLogId }) => {
-                CompletionsLogger.accept(codyLogId)
-            }),
-            vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
-        )
-    }
+            const history = new History()
+            const completionsProvider = new CodyCompletionItemProvider(
+                webviewErrorMessager,
+                completionsClient,
+                docprovider,
+                history
+            )
+            disposables.push(
+                vscode.commands.registerCommand('cody.manual-completions', async () => {
+                    await completionsProvider.fetchAndShowManualCompletions()
+                }),
+                vscode.commands.registerCommand('cody.completions.inline.accepted', ({ codyLogId }) => {
+                    CompletionsLogger.accept(codyLogId)
+                }),
+                vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
+            )
+        }
+    })
+
+    // if (initialConfig.experimentalSuggest) {
+    //     // TODO(sqs): make this listen to config and not just use initialConfig
+    //     const docprovider = new CompletionsDocumentProvider()
+    //     disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))
+
+    //     const history = new History()
+    //     const completionsProvider = new CodyCompletionItemProvider(
+    //         webviewErrorMessager,
+    //         completionsClient,
+    //         docprovider,
+    //         history
+    //     )
+    //     disposables.push(
+    //         vscode.commands.registerCommand('cody.manual-completions', async () => {
+    //             await completionsProvider.fetchAndShowManualCompletions()
+    //         }),
+    //         vscode.commands.registerCommand('cody.completions.inline.accepted', ({ codyLogId }) => {
+    //             CompletionsLogger.accept(codyLogId)
+    //         }),
+    //         vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
+    //     )
+    // }
 
     // Initiate inline assist when feature flag is on
     if (initialConfig.experimentalInline) {
