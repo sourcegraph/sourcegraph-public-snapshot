@@ -3,11 +3,13 @@ package httpapi
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/response"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -20,7 +22,7 @@ import (
 func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret string) http.Handler {
 	baseLogger = baseLogger.Scoped("diagnostics", "healthz checks")
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		// For service liveness and readiness probes
 		case "/-/healthz":
@@ -56,10 +58,20 @@ func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret stri
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(version.Version()))
 
-		// Next handler in the middleware
+		// Unknown "/-/..." endpoint
 		default:
-			next.ServeHTTP(w, r)
+			w.WriteHeader(http.StatusNotFound)
 		}
+	})
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/-/") {
+			instrumentation.HTTPMiddleware("diagnostics", handler).ServeHTTP(w, r)
+			return
+		}
+
+		// Next handler, we don't care about this request
+		next.ServeHTTP(w, r)
 	})
 }
 

@@ -145,7 +145,12 @@ export const useClient = ({
     )
 
     const toggleIncludeInferredRepository = useCallback(
-        () => setScopeState(scope => ({ ...scope, includeInferredRepository: !scope.includeInferredRepository })),
+        () =>
+            setScopeState(scope => ({
+                ...scope,
+                includeInferredRepository: !scope.includeInferredRepository,
+                includeInferredFile: !scope.includeInferredRepository,
+            })),
         [setScopeState]
     )
 
@@ -266,9 +271,7 @@ export const useClient = ({
                     },
                     onError(error) {
                         // Display error message as assistant response
-                        transcript.addErrorAsAssistantResponse(
-                            `<div class="cody-chat-error"><span>Request failed: </span>${error}</div>`
-                        )
+                        transcript.addErrorAsAssistantResponse(error)
 
                         console.error(`Completion request failed: ${error}`)
 
