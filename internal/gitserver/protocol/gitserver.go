@@ -873,7 +873,7 @@ type PerforceChangelist struct {
 	State        PerforceChangelistState
 	Author       string
 	Title        string
-	Level        string
+	Message      string
 }
 
 type PerforceChangelistState string
@@ -885,3 +885,18 @@ const (
 	// Perforce doesn't actually return a state for closed changelists, so this is one we use to indicate the changelist is closed.
 	PerforceChangelistStateClosed PerforceChangelistState = "closed"
 )
+
+func ParsePerforceChangelistState(state string) (PerforceChangelistState, error) {
+	switch strings.ToLower(strings.TrimSpace(state)) {
+	case "submitted":
+		return PerforceChangelistStateSubmitted, nil
+	case "pending":
+		return PerforceChangelistStatePending, nil
+	case "shelved":
+		return PerforceChangelistStateShelved, nil
+	case "closed":
+		return PerforceChangelistStateClosed, nil
+	default:
+		return "", errors.Newf("invalid Perforce changelist state: %s", state)
+	}
+}
