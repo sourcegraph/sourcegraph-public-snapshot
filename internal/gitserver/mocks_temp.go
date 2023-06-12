@@ -376,7 +376,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		P4GetChangelistFunc: &ClientP4GetChangelistFunc{
-			defaultHook: func(context.Context, string, PerforceCredentials) (r0 protocol.PerforceChangelist, r1 error) {
+			defaultHook: func(context.Context, string, PerforceCredentials) (r0 *protocol.PerforceChangelist, r1 error) {
 				return
 			},
 		},
@@ -648,7 +648,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		P4GetChangelistFunc: &ClientP4GetChangelistFunc{
-			defaultHook: func(context.Context, string, PerforceCredentials) (protocol.PerforceChangelist, error) {
+			defaultHook: func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error) {
 				panic("unexpected invocation of MockClient.P4GetChangelist")
 			},
 		},
@@ -5079,15 +5079,15 @@ func (c ClientP4ExecFuncCall) Results() []interface{} {
 // ClientP4GetChangelistFunc describes the behavior when the P4GetChangelist
 // method of the parent MockClient instance is invoked.
 type ClientP4GetChangelistFunc struct {
-	defaultHook func(context.Context, string, PerforceCredentials) (protocol.PerforceChangelist, error)
-	hooks       []func(context.Context, string, PerforceCredentials) (protocol.PerforceChangelist, error)
+	defaultHook func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error)
+	hooks       []func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error)
 	history     []ClientP4GetChangelistFuncCall
 	mutex       sync.Mutex
 }
 
 // P4GetChangelist delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockClient) P4GetChangelist(v0 context.Context, v1 string, v2 PerforceCredentials) (protocol.PerforceChangelist, error) {
+func (m *MockClient) P4GetChangelist(v0 context.Context, v1 string, v2 PerforceCredentials) (*protocol.PerforceChangelist, error) {
 	r0, r1 := m.P4GetChangelistFunc.nextHook()(v0, v1, v2)
 	m.P4GetChangelistFunc.appendCall(ClientP4GetChangelistFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -5096,7 +5096,7 @@ func (m *MockClient) P4GetChangelist(v0 context.Context, v1 string, v2 PerforceC
 // SetDefaultHook sets function that is called when the P4GetChangelist
 // method of the parent MockClient instance is invoked and the hook queue is
 // empty.
-func (f *ClientP4GetChangelistFunc) SetDefaultHook(hook func(context.Context, string, PerforceCredentials) (protocol.PerforceChangelist, error)) {
+func (f *ClientP4GetChangelistFunc) SetDefaultHook(hook func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error)) {
 	f.defaultHook = hook
 }
 
@@ -5104,7 +5104,7 @@ func (f *ClientP4GetChangelistFunc) SetDefaultHook(hook func(context.Context, st
 // P4GetChangelist method of the parent MockClient instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientP4GetChangelistFunc) PushHook(hook func(context.Context, string, PerforceCredentials) (protocol.PerforceChangelist, error)) {
+func (f *ClientP4GetChangelistFunc) PushHook(hook func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5112,20 +5112,20 @@ func (f *ClientP4GetChangelistFunc) PushHook(hook func(context.Context, string, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientP4GetChangelistFunc) SetDefaultReturn(r0 protocol.PerforceChangelist, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, PerforceCredentials) (protocol.PerforceChangelist, error) {
+func (f *ClientP4GetChangelistFunc) SetDefaultReturn(r0 *protocol.PerforceChangelist, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientP4GetChangelistFunc) PushReturn(r0 protocol.PerforceChangelist, r1 error) {
-	f.PushHook(func(context.Context, string, PerforceCredentials) (protocol.PerforceChangelist, error) {
+func (f *ClientP4GetChangelistFunc) PushReturn(r0 *protocol.PerforceChangelist, r1 error) {
+	f.PushHook(func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientP4GetChangelistFunc) nextHook() func(context.Context, string, PerforceCredentials) (protocol.PerforceChangelist, error) {
+func (f *ClientP4GetChangelistFunc) nextHook() func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5169,7 +5169,7 @@ type ClientP4GetChangelistFuncCall struct {
 	Arg2 PerforceCredentials
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 protocol.PerforceChangelist
+	Result0 *protocol.PerforceChangelist
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

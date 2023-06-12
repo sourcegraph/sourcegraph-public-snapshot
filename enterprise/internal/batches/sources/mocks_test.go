@@ -10476,7 +10476,7 @@ func NewMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		P4GetChangelistFunc: &GitserverClientP4GetChangelistFunc{
-			defaultHook: func(context.Context, string, gitserver.PerforceCredentials) (r0 protocol.PerforceChangelist, r1 error) {
+			defaultHook: func(context.Context, string, gitserver.PerforceCredentials) (r0 *protocol.PerforceChangelist, r1 error) {
 				return
 			},
 		},
@@ -10748,7 +10748,7 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		P4GetChangelistFunc: &GitserverClientP4GetChangelistFunc{
-			defaultHook: func(context.Context, string, gitserver.PerforceCredentials) (protocol.PerforceChangelist, error) {
+			defaultHook: func(context.Context, string, gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
 				panic("unexpected invocation of MockGitserverClient.P4GetChangelist")
 			},
 		},
@@ -15240,15 +15240,15 @@ func (c GitserverClientP4ExecFuncCall) Results() []interface{} {
 // P4GetChangelist method of the parent MockGitserverClient instance is
 // invoked.
 type GitserverClientP4GetChangelistFunc struct {
-	defaultHook func(context.Context, string, gitserver.PerforceCredentials) (protocol.PerforceChangelist, error)
-	hooks       []func(context.Context, string, gitserver.PerforceCredentials) (protocol.PerforceChangelist, error)
+	defaultHook func(context.Context, string, gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error)
+	hooks       []func(context.Context, string, gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error)
 	history     []GitserverClientP4GetChangelistFuncCall
 	mutex       sync.Mutex
 }
 
 // P4GetChangelist delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockGitserverClient) P4GetChangelist(v0 context.Context, v1 string, v2 gitserver.PerforceCredentials) (protocol.PerforceChangelist, error) {
+func (m *MockGitserverClient) P4GetChangelist(v0 context.Context, v1 string, v2 gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
 	r0, r1 := m.P4GetChangelistFunc.nextHook()(v0, v1, v2)
 	m.P4GetChangelistFunc.appendCall(GitserverClientP4GetChangelistFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -15257,7 +15257,7 @@ func (m *MockGitserverClient) P4GetChangelist(v0 context.Context, v1 string, v2 
 // SetDefaultHook sets function that is called when the P4GetChangelist
 // method of the parent MockGitserverClient instance is invoked and the hook
 // queue is empty.
-func (f *GitserverClientP4GetChangelistFunc) SetDefaultHook(hook func(context.Context, string, gitserver.PerforceCredentials) (protocol.PerforceChangelist, error)) {
+func (f *GitserverClientP4GetChangelistFunc) SetDefaultHook(hook func(context.Context, string, gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error)) {
 	f.defaultHook = hook
 }
 
@@ -15265,7 +15265,7 @@ func (f *GitserverClientP4GetChangelistFunc) SetDefaultHook(hook func(context.Co
 // P4GetChangelist method of the parent MockGitserverClient instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *GitserverClientP4GetChangelistFunc) PushHook(hook func(context.Context, string, gitserver.PerforceCredentials) (protocol.PerforceChangelist, error)) {
+func (f *GitserverClientP4GetChangelistFunc) PushHook(hook func(context.Context, string, gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -15273,20 +15273,20 @@ func (f *GitserverClientP4GetChangelistFunc) PushHook(hook func(context.Context,
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitserverClientP4GetChangelistFunc) SetDefaultReturn(r0 protocol.PerforceChangelist, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, gitserver.PerforceCredentials) (protocol.PerforceChangelist, error) {
+func (f *GitserverClientP4GetChangelistFunc) SetDefaultReturn(r0 *protocol.PerforceChangelist, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientP4GetChangelistFunc) PushReturn(r0 protocol.PerforceChangelist, r1 error) {
-	f.PushHook(func(context.Context, string, gitserver.PerforceCredentials) (protocol.PerforceChangelist, error) {
+func (f *GitserverClientP4GetChangelistFunc) PushReturn(r0 *protocol.PerforceChangelist, r1 error) {
+	f.PushHook(func(context.Context, string, gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientP4GetChangelistFunc) nextHook() func(context.Context, string, gitserver.PerforceCredentials) (protocol.PerforceChangelist, error) {
+func (f *GitserverClientP4GetChangelistFunc) nextHook() func(context.Context, string, gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -15331,7 +15331,7 @@ type GitserverClientP4GetChangelistFuncCall struct {
 	Arg2 gitserver.PerforceCredentials
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 protocol.PerforceChangelist
+	Result0 *protocol.PerforceChangelist
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

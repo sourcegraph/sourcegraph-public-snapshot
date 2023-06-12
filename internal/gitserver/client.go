@@ -40,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	p4tools "github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -277,7 +278,7 @@ type Client interface {
 	P4Exec(_ context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error)
 
 	// P4GetChangelist gets the changelist specified by changelistID.
-	P4GetChangelist(_ context.Context, changelistID string, creds PerforceCredentials) (protocol.PerforceChangelist, error)
+	P4GetChangelist(_ context.Context, changelistID string, creds PerforceCredentials) (*protocol.PerforceChangelist, error)
 
 	// Remove removes the repository clone from gitserver.
 	Remove(context.Context, api.RepoName) error
@@ -925,9 +926,31 @@ var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "Times that Client.sendExec() returned context.DeadlineExceeded",
 })
 
-func (c *clientImplementor) P4GetChangelist(_ context.Context, changelistID string, creds PerforceCredentials) (protocol.PerforceChangelist, error) {
-	//TODO: @peterguy implement function.
-	return protocol.PerforceChangelist{}, nil
+func (c *clientImplementor) P4GetChangelist(ctx context.Context, changelistID string, creds PerforceCredentials) (*protocol.PerforceChangelist, error) {
+	reader, _, err := c.P4Exec(ctx, creds.Host, creds.Username, creds.Password,
+		"changes",
+		"-r",      // list in reverse order, which means that the given changelist id will be the first one listed
+		"-m", "1", // limit output to one record, so that the given changelist is the only one listed
+		"-e", changelistID, // start from this changelist and go up
+		"-l", // use a long listing, which includes the whole commit message
+	)
+	if err != nil {
+		return nil, err
+	}
+	body, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read the output of p4 changes")
+	}
+	output := strings.TrimSpace(string(body))
+	if output == "" {
+		return nil, errors.New("invalid changelist " + changelistID)
+	}
+
+	pcl, err := p4tools.ParseChangelistOutput(output)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse change output")
+	}
+	return pcl, nil
 }
 
 type PerforceCredentials struct {
