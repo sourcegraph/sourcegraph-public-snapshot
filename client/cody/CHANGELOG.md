@@ -10,7 +10,8 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Fixed
 
-- Open file paths from Cody's responses in a workspace with the correct protocol. [pull/](https://github.com/sourcegraph/sourcegraph/pull/)
+- Open file paths from Cody's responses in a workspace with the correct protocol. [pull/53103](https://github.com/sourcegraph/sourcegraph/pull/53103)
+- Cody completions: Fixes an issue where completions would often start in the next line. [pull/53246](https://github.com/sourcegraph/sourcegraph/pull/53246)
 
 ### Changed
 
