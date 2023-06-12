@@ -28,7 +28,7 @@ export type WebviewMessage =
  */
 export type ExtensionMessage =
     | { type: 'showTab'; tab: string }
-    | { type: 'config'; config: ConfigurationSubsetForWebview; authStatus: AuthStatus }
+    | { type: 'config'; config: ConfigurationSubsetForWebview & LocalEnv; authStatus: AuthStatus }
     | { type: 'login'; authStatus: AuthStatus }
     | { type: 'history'; messages: UserLocalHistory | null }
     | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean }
