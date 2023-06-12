@@ -36,6 +36,15 @@ export interface CompletionParameters {
 
 export interface CompletionCallbacks {
     onChange: (text: string) => void
+    /**
+     * Only called when a stream successfully completes. If an error is
+     * encountered, this is never called.
+     */
     onComplete: () => void
+    /**
+     * Only called when a stream fails or encounteres an error. This should be
+     * assumed to be a "complete" event, and no other callbacks will be called
+     * afterwards.
+     */
     onError: (message: string, statusCode?: number) => void
 }
