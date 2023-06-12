@@ -191,24 +191,7 @@ func getIndexOptions(
 	}
 
 	languageMap := make([]*proto.LanguageMapping, 0)
-
-	realEngine := make(map[string]uint8)
-
-	for k, v := range ctags_config.BaseParserConfig.Engine {
-		realEngine[k] = v
-	}
-
-	if c.SyntaxHighlighting != nil {
-		for k, v := range c.SyntaxHighlighting.Symbols.Engine {
-			parser, err := ctags_config.ParserNameToParserType(v)
-			if err == nil {
-				realEngine[k] = parser
-			} else {
-				continue
-			}
-		}
-	}
-
+	realEngine := ctags_config.CreateEngineMap(*c)
 	for language, engine := range realEngine {
 		languageMap = append(languageMap, &proto.LanguageMapping{Language: language, Ctags: proto.CTagsParserType(engine)})
 	}

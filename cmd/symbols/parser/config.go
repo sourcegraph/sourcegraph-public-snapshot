@@ -16,25 +16,9 @@ type ParserConfiguration struct {
 	Engine  map[string]ParserType
 }
 
-var parserConfig = ParserConfiguration{
+var ParserConfig = ParserConfiguration{
 	Default: ctags_config.UniversalCtags,
-	Engine:  map[string]ctags_config.ParserType{},
-}
-
-var defaultParserConfig = ParserConfiguration{
-	Engine: map[string]ParserType{
-		// Add the languages we want to turn on by default (you'll need to
-		// update the ctags_config module for supported languages as well)
-		"zig": ctags_config.ScipCtags,
-
-		// TODO: Turn these on in the next PR, so there is no runtime differences for this PR.
-		// "c_sharp": ctags_config.ScipCtags,
-		// "python":  ctags_config.ScipCtags,
-
-		// TODO: Not ready to turn on java yet. Worried about not handling enough cases.
-		// May wait until after next release
-		// "Java":   ScipCtags,
-	},
+	Engine:  map[string]ParserType{},
 }
 
 func init() {
@@ -64,25 +48,7 @@ func init() {
 	// Update parserConfig here
 	go func() {
 		conf.Watch(func() {
-			// Set the defaults
-			parserConfig.Engine = make(map[string]ctags_config.ParserType)
-			for lang, engine := range defaultParserConfig.Engine {
-				lang = languages.NormalizeLanguage(lang)
-				parserConfig.Engine[lang] = engine
-			}
-
-			// Set any relevant overrides
-			c := conf.Get()
-			configuration := c.SiteConfig().SyntaxHighlighting
-			if configuration != nil {
-				for lang, engine := range configuration.Symbols.Engine {
-					lang = languages.NormalizeLanguage(lang)
-
-					if engine, err := ctags_config.ParserNameToParserType(engine); err != nil {
-						parserConfig.Engine[lang] = engine
-					}
-				}
-			}
+			ParserConfig.Engine = ctags_config.CreateEngineMap(conf.Get().SiteConfig())
 		})
 	}()
 }
@@ -90,9 +56,9 @@ func init() {
 func GetParserType(language string) ctags_config.ParserType {
 	language = languages.NormalizeLanguage(language)
 
-	parserType, ok := parserConfig.Engine[language]
+	parserType, ok := ParserConfig.Engine[language]
 	if !ok {
-		parserType = parserConfig.Default
+		parserType = ParserConfig.Default
 	}
 
 	// Default back to UniversalCtags if somehow we've got an unsupported
