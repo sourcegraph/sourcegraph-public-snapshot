@@ -7,7 +7,7 @@ import { version as packageVersion } from '../package.json'
 import { LocalStorage } from './services/LocalStorageProvider'
 
 let eventLoggerGQLClient: SourcegraphGraphQLAPIClient
-let eventLogger: EventLogger | null = null
+export let eventLogger: EventLogger | null = null
 let anonymousUserID: string
 
 export async function updateEventLogger(

@@ -50,47 +50,33 @@ function getGuardrailsFromConfig(config: vscode.WorkspaceConfiguration): boolean
 
 const config = vscode.workspace.getConfiguration()
 
-let configurationDetails = {
-    contextSelection: getUseContextFromConfig(config),
-    chatPredictions: getChatPredictionsFromConfig(config),
-    inline: getInlineFromConfig(config),
-    nonStop: getNonStopFromConfig(config),
-    suggestions: getSuggestionsFromConfig(config),
-    guardrails: getGuardrailsFromConfig(config),
-}
-
-export function onConfigurationChange(newconfig: any): any {
-    newconfig = vscode.workspace.getConfiguration()
-    configurationDetails = {
-        contextSelection: getUseContextFromConfig(newconfig),
-        chatPredictions: getChatPredictionsFromConfig(newconfig),
-        inline: getInlineFromConfig(newconfig),
-        nonStop: getNonStopFromConfig(newconfig),
-        suggestions: getSuggestionsFromConfig(newconfig),
-        guardrails: getGuardrailsFromConfig(newconfig),
-    }
-    EventLogger.setConfigurationDetails(configurationDetails)
-}
-
 export class EventLogger {
     private serverEndpoint = getServerEndpointFromConfig(config)
     private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
-    public configurationDetails = configurationDetails
     private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient) {}
 
     public static create(gqlAPIClient: SourcegraphGraphQLAPIClient): EventLogger {
         return new EventLogger(gqlAPIClient)
     }
 
-    public static setConfigurationDetails(newConfigurationDetails: {
-        contextSelection: string
-        chatPredictions: boolean
-        inline: boolean
-        nonStop: boolean
-        suggestions: boolean
-        guardrails: boolean
-    }): any {
-        configurationDetails = newConfigurationDetails
+    public configurationDetails = {
+        contextSelection: getUseContextFromConfig(config),
+        chatPredictions: getChatPredictionsFromConfig(config),
+        inline: getInlineFromConfig(config),
+        nonStop: getNonStopFromConfig(config),
+        suggestions: getSuggestionsFromConfig(config),
+        guardrails: getGuardrailsFromConfig(config),
+    }
+
+    onConfigurationChange(newconfig: any): void {
+        this.configurationDetails = {
+            contextSelection: getUseContextFromConfig(newconfig),
+            chatPredictions: getChatPredictionsFromConfig(newconfig),
+            inline: getInlineFromConfig(newconfig),
+            nonStop: getNonStopFromConfig(newconfig),
+            suggestions: getSuggestionsFromConfig(newconfig),
+            guardrails: getGuardrailsFromConfig(newconfig),
+        }
     }
 
     /**
@@ -111,13 +97,13 @@ export class EventLogger {
             ...eventProperties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
-            configurationDetails,
+            configurationDetails: this.configurationDetails,
         }
         const publicArgument = {
             ...publicProperties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
-            configurationDetails,
+            configurationDetails: this.configurationDetails,
         }
         try {
             this.gqlAPIClient
