@@ -79,6 +79,17 @@ func Init(
 		return errors.Wrap(err, "Failed to createe sub-repo client")
 	}
 
+	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
+		if licensing.IsLicenseValid() {
+			return nil
+		}
+
+		return []*graphqlbackend.Alert{{
+			TypeValue:    graphqlbackend.AlertTypeError,
+			MessageValue: "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Free features). Update the license key in the [**site configuration**](/site-admin/configuration).",
+		}}
+	})
+
 	// Warn about usage of authz providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
 		// Only site admins can act on this alert, so only show it to site admins.

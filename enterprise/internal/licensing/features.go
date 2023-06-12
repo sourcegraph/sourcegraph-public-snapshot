@@ -141,6 +141,11 @@ func Check(feature Feature) error {
 	if err != nil {
 		return errors.WithMessage(err, fmt.Sprintf("checking feature %q activation", feature))
 	}
+
+	if !IsLicenseValid() {
+		return errors.New("Sourcegraph license is no longer valid")
+	}
+
 	return feature.Check(info)
 }
 
