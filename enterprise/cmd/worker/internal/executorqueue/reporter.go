@@ -54,8 +54,11 @@ func NewMultiqueueMetricReporter(queueNames []string, metricsConfig *Config, cou
 			queueName:  queueStr,
 			countFuncs: countFuncs,
 			reporters:  reporters,
-			// TODO: this needs refactoring but isn't even documented, so ignoring for now
-			//allocation: metricsConfig.Allocations[queueStr],
+			// TODO this is
+			allocation: QueueAllocation{
+				PercentageAWS: 1,
+				PercentageGCP: 1,
+			},
 		},
 		goroutine.WithName("multiqueue-executors.autoscaler-metrics"),
 		goroutine.WithDescription("emits multiqueue metrics to GCP/AWS for auto-scaling"),
