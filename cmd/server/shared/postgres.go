@@ -55,6 +55,15 @@ func maybePostgresProcFile() (string, error) {
 	return procfile, nil
 }
 
+func postgresDataPath() string {
+	dataDir := os.Getenv("DATA_DIR")
+	return filepath.Join(dataDir, "postgresql")
+}
+
+func postgresReindexMarkerFile() string {
+	return filepath.Join(postgresDataPath(), "5.1-reindex.completed")
+}
+
 func postgresProcfile() (string, error) {
 	// Postgres needs to be able to write to run
 	var output bytes.Buffer
@@ -67,7 +76,7 @@ func postgresProcfile() (string, error) {
 	}
 
 	dataDir := os.Getenv("DATA_DIR")
-	path := filepath.Join(dataDir, "postgresql")
+	path := postgresDataPath()
 	markersPath := filepath.Join(dataDir, "postgresql-markers")
 
 	if ok, err := fileExists(markersPath); err != nil {
@@ -113,8 +122,7 @@ func postgresProcfile() (string, error) {
 		}
 
 		// Create the 5.1-reindex file; DB was initialized by Sourcegraph >=5.1 so reindexing is not required
-		postgresReindexMarkerFile := postgresReindexMarkerFile(path)
-		f, err := os.Create(postgresReindexMarkerFile)
+		f, err := os.Create(postgresReindexMarkerFile())
 		if err != nil {
 			return "", err
 		}

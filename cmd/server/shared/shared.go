@@ -237,13 +237,9 @@ func run(procfile, postgresProcfile []string, runMigrations bool, procDiedAction
 
 	group, _ := errgroup.WithContext(context.Background())
 
-	// TODO: This is duplicated from postgres.go, so not ideal if it ever changes
 	// Check whether database reindex is required, and run it if so
-	dataDir := os.Getenv("DATA_DIR")
-	postgresDataPath := filepath.Join(dataDir, "postgresql")
-	shouldReindex := checkPostgresReindex(postgresDataPath)
-	if shouldReindex {
-		runPostgresReindex(postgresDataPath)
+	if shouldPostgresReindex() {
+		runPostgresReindex()
 	}
 
 	options := goreman.Options{
@@ -295,11 +291,11 @@ func runMigrator() {
 	log.Println("Migrated postgres schemas.")
 }
 
-func checkPostgresReindex(postgresDataPath string) (shouldReindex bool) {
-	fmt.Printf("Checking whether a Postgres reindex is required\n")
+func shouldPostgresReindex() (shouldReindex bool) {
+	fmt.Printf("Checking whether a Postgres reindex is required...\n")
 
-	postgresReindexMarkerFile := postgresReindexMarkerFile(postgresDataPath)
 	// Check for presence of the reindex marker file
+	postgresReindexMarkerFile := postgresReindexMarkerFile()
 	_, err := os.Stat(postgresReindexMarkerFile)
 	if err == nil {
 		fmt.Printf("5.1 reindex marker file '%s' found\n", postgresReindexMarkerFile)
@@ -314,13 +310,12 @@ func checkPostgresReindex(postgresDataPath string) (shouldReindex bool) {
 		fmt.Printf("Using a non-local Postgres database '%s', reindexing not required\n", pgHost)
 		return false
 	}
-	fmt.Printf("Using a local Postgres database '%s'\n", pgHost)
+	fmt.Printf("Using a local Postgres database '%s', reindexing required\n", pgHost)
 
-	fmt.Printf("Postgres reindex required\n")
 	return true
 }
 
-func runPostgresReindex(postgresDataPath string) {
+func runPostgresReindex() {
 	fmt.Printf("Starting Postgres reindex process\n")
 
 	performMigration := os.Getenv("SOURCEGRAPH_5_1_DB_MIGRATION")
@@ -341,10 +336,10 @@ func runPostgresReindex(postgresDataPath string) {
 	cmd := exec.Command("bash", "/reindex.sh")
 	cmd.Env = append(
 		os.Environ(),
-		fmt.Sprintf("REINDEX_COMPLETED_FILE=%s", postgresReindexMarkerFile(postgresDataPath)),
+		fmt.Sprintf("REINDEX_COMPLETED_FILE=%s", postgresReindexMarkerFile()),
 		// PGDATA is set as an ENVAR in standalone container
-		fmt.Sprintf("PGDATA=%s", postgresDataPath),
-		// Unset PGHOST so connections go over unix socket
+		fmt.Sprintf("PGDATA=%s", postgresDataPath()),
+		// Unset PGHOST so connections go over unix socket; we've already confirmed the database being reindexed is local
 		"PGHOST=",
 	)
 	cmd.Stdout = os.Stdout
@@ -354,11 +349,4 @@ func runPostgresReindex(postgresDataPath string) {
 		fmt.Printf("Error running database migration: %s\n", err)
 		os.Exit(1)
 	}
-
-	fmt.Printf("Exiting after reindex process...\n")
-	os.Exit(1)
-}
-
-func postgresReindexMarkerFile(postgresDataPath string) string {
-	return filepath.Join(postgresDataPath, "5.1-reindex.completed")
 }
