@@ -119,7 +119,7 @@ refs AS (
 		eu.deleted_at AS exported_upload_deleted_at,
 		eu.id AS exported_upload_id,
 		eu.upload_key,
-		rr.symbol_names
+		rr.symbol_checksums
 	FROM codeintel_ranking_references rr
 	JOIN exported_uploads eu ON eu.id = rr.exported_upload_id
 	WHERE
@@ -165,7 +165,7 @@ processed_upload_keys AS (
 		cre2.upload_key IN (SELECT upload_key FROM referenced_upload_keys)
 ),
 processable_symbols AS (
-	SELECT r.symbol_names
+	SELECT r.symbol_checksums
 	FROM locked_refs lr
 	JOIN refs r ON r.id = lr.codeintel_ranking_reference_id
 	WHERE
@@ -193,7 +193,7 @@ processable_symbols AS (
 		)
 ),
 referenced_symbols AS (
-	SELECT DISTINCT unnest(r.symbol_names) AS symbol_name
+	SELECT DISTINCT unnest(r.symbol_checksums) AS symbol_checksum
 	FROM processable_symbols r
 ),
 ranked_referenced_definitions AS (
@@ -205,7 +205,7 @@ ranked_referenced_definitions AS (
 		-- to break ties when shadowed definitions are present.
 		RANK() OVER (PARTITION BY cre.upload_key ORDER BY cre.upload_id DESC) AS rank
 	FROM codeintel_ranking_definitions rd
-	JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
+	JOIN referenced_symbols rs ON rs.symbol_checksum = rd.symbol_checksum
 	JOIN codeintel_ranking_exports cre ON cre.id = rd.exported_upload_id
 	JOIN progress p ON TRUE
 	WHERE
@@ -426,7 +426,8 @@ ins AS (
 		rd.document_path = eupc.document_path
 	WHERE
 		rd.graph_key = %s AND
-		rd.symbol_name = '$'
+		-- See definition of sentinelPathDefinitionName
+		rd.symbol_checksum = '\xc3e97dd6e97fb5125688c97f36720cbe'::bytea
 	ON CONFLICT DO NOTHING
 	RETURNING 1
 ),

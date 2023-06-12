@@ -14,7 +14,7 @@ func (s *store) InsertReferencesForRanking(
 	rankingGraphKey string,
 	batchSize int,
 	exportedUploadID int,
-	references chan string,
+	references chan [16]byte,
 ) (err error) {
 	ctx, _, endObservation := s.operations.insertReferencesForRanking.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -22,7 +22,13 @@ func (s *store) InsertReferencesForRanking(
 	return s.withTransaction(ctx, func(tx *store) error {
 		inserter := func(inserter *batch.Inserter) error {
 			for symbols := range batchChannel(references, batchSize) {
-				if err := inserter.Insert(ctx, exportedUploadID, pq.Array(symbols), rankingGraphKey); err != nil {
+				var v [][]byte
+				for _, s := range symbols {
+					rx := s
+					v = append(v, rx[:])
+				}
+
+				if err := inserter.Insert(ctx, exportedUploadID, pq.Array([]string{}), pq.Array(v), rankingGraphKey); err != nil {
 					return err
 				}
 			}
@@ -38,6 +44,7 @@ func (s *store) InsertReferencesForRanking(
 			[]string{
 				"exported_upload_id",
 				"symbol_names",
+				"symbol_checksums",
 				"graph_key",
 			},
 			inserter,

@@ -2,6 +2,7 @@ package exporter
 
 import (
 	"context"
+	"crypto/md5"
 	"path/filepath"
 	"strings"
 
@@ -139,7 +140,7 @@ func setDefinitionsAndReferencesForUpload(
 		return 0, 0, err
 	}
 
-	references := make(chan string)
+	references := make(chan [16]byte)
 	referencesCount := 0
 
 	go func() {
@@ -154,7 +155,7 @@ func setDefinitionsAndReferencesForUpload(
 				continue
 			}
 			if !scip.SymbolRole_Definition.Matches(occ) {
-				references <- occ.Symbol
+				references <- canonicalizeSymbol(occ.Symbol)
 				referencesCount++
 			}
 		}
@@ -193,7 +194,7 @@ func setDefinitionsForUpload(
 				definitions <- shared.RankingDefinitions{
 					UploadID:         upload.UploadID,
 					ExportedUploadID: upload.ExportedUploadID,
-					SymbolName:       occ.Symbol,
+					SymbolChecksum:   canonicalizeSymbol(occ.Symbol),
 					DocumentPath:     filepath.Join(upload.Root, path),
 				}
 				seenDefinitions[occ.Symbol] = struct{}{}
@@ -210,4 +211,31 @@ func setDefinitionsForUpload(
 	}
 
 	return seenDefinitions, nil
+}
+
+// canonicalizeSymbol transforms a symbol name into an opaque string that
+// can be matched internally by the ranking machinery.
+//
+// Canonicalization of a symbol name for ranking makes two transformations:
+//
+//   - The package version is removed so that we don't need to match SCIP
+//     uploads exactly to get a reference count.
+//   - We then hash the simplified symbol name into a fixed-sized block that
+//     can be matched in constant time against other symbols in Postgres.
+func canonicalizeSymbol(symbolName string) [16]byte {
+	symbol, err := noVersionFormatter.Format(symbolName)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return md5.Sum([]byte(symbol))
+}
+
+var noVersionFormatter = scip.SymbolFormatter{
+	OnError:               func(err error) error { return err },
+	IncludeScheme:         func(_ string) bool { return true },
+	IncludePackageManager: func(_ string) bool { return true },
+	IncludePackageName:    func(_ string) bool { return true },
+	IncludePackageVersion: func(_ string) bool { return false },
+	IncludeDescriptor:     func(_ string) bool { return true },
 }
