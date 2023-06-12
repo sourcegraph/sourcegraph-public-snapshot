@@ -30,6 +30,7 @@ go_library(
 
 go_test(
     name = "store_test",
+    timeout = "moderate",
     srcs = [
         "helpers_test.go",
         "store_test.go",

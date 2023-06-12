@@ -40,7 +40,7 @@ go_library(
 
 go_test(
     name = "webhooks_test",
-    timeout = "short",
+    timeout = "moderate",
     srcs = [
         "github_webhooks_test.go",
         "middleware_test.go",

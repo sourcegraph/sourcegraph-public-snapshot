@@ -37,6 +37,7 @@ go_library(
 
 go_test(
     name = "store_test",
+    timeout = "moderate",
     srcs = [
         "dashboard_store_test.go",
         "insight_store_test.go",

@@ -28,6 +28,7 @@ go_library(
 
 go_test(
     name = "telemetry_test",
+    timeout = "moderate",
     srcs = [
         "mocks_test.go",
         "telemetry_job_test.go",

@@ -39,6 +39,7 @@ go_library(
 
 go_test(
     name = "repoupdater_test",
+    timeout = "moderate",
     srcs = [
         "main_test.go",
         "server_test.go",

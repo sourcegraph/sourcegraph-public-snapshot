@@ -24,6 +24,7 @@ go_library(
 
 go_test(
     name = "batch_test",
+    timeout = "moderate",
     srcs = ["batch_test.go"],
     embed = [":batch"],
     tags = [

@@ -42,6 +42,7 @@ go_library(
 
 go_test(
     name = "store_test",
+    timeout = "moderate",
     srcs = [
         "coordinator_test.go",
         "definitions_test.go",

@@ -50,6 +50,7 @@ oci_tarball(
 
 container_structure_test(
     name = "image_test",
+    timeout = "short",
     configs = ["image_test.yaml"],
     driver = "docker",
     image = ":image",

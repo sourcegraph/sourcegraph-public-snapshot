@@ -46,6 +46,7 @@ go_library(
 
 go_test(
     name = "queryrunner_test",
+    timeout = "moderate",
     srcs = [
         "main_test.go",
         "search_test.go",

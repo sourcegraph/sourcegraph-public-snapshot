@@ -35,6 +35,7 @@ go_library(
 
 go_test(
     name = "bg_test",
+    timeout = "moderate",
     srcs = ["update_permissions_test.go"],
     embed = [":bg"],
     tags = [

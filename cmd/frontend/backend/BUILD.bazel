@@ -73,6 +73,7 @@ go_library(
 
 go_test(
     name = "backend_test",
+    timeout = "moderate",
     srcs = [
         "external_services_test.go",
         "repos_test.go",

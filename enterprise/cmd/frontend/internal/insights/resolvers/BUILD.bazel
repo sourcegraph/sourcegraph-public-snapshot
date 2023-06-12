@@ -62,6 +62,7 @@ go_library(
 
 go_test(
     name = "resolvers_test",
+    timeout = "moderate",
     srcs = [
         "aggregates_resolvers_test.go",
         "dashboard_resolvers_test.go",

@@ -155,6 +155,7 @@ go_library(
 go_test(
     name = "database_test",
     size = "large",
+    timeout = "moderate",
     srcs = [
         "access_requests_test.go",
         "access_tokens_test.go",

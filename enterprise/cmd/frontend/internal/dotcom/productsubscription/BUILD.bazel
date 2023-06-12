@@ -60,6 +60,7 @@ go_library(
 
 go_test(
     name = "productsubscription_test",
+    timeout = "moderate",
     srcs = [
         "codygateway_dotcom_user_test.go",
         "codygateway_graphql_test.go",
