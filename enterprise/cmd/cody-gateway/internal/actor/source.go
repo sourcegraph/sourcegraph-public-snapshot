@@ -134,7 +134,12 @@ func (s *Sources) SyncAll(ctx context.Context, logger log.Logger) error {
 			})
 		}
 	}
-	return p.Wait()
+	if err := p.Wait(); err != nil {
+		return err
+	}
+
+	logger.Info("All sources synced")
+	return nil
 }
 
 // Worker is a goroutine.BackgroundRoutine that runs any SourceSyncer implementations
