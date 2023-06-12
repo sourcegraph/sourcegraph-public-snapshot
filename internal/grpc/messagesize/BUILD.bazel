@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "messagesize",
+    srcs = ["messagesize.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/messagesize",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/env",
+        "@com_github_dustin_go_humanize//:go-humanize",
+        "@org_golang_google_grpc//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "messagesize_test",
+    srcs = ["messagesize_test.go"],
+    embed = [":messagesize"],
+    deps = ["@com_github_google_go_cmp//cmp"],
+)
