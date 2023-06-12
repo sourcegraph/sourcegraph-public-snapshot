@@ -1,12 +1,25 @@
 package languages
 
 import (
+	"strings"
+
 	"github.com/go-enry/go-enry/v2"
 	"golang.org/x/exp/slices"
 )
 
-// TODO: We probably want to move the config for language detection into here from the syntax highlighting part
-// I didn't add that yet.
+// Make sure all names are lowercase here, since they are normalized
+var enryLanguageMappings = map[string]string{
+	"c#": "c_sharp",
+}
+
+func NormalizeLanguage(filetype string) string {
+	normalized := strings.ToLower(filetype)
+	if mapped, ok := enryLanguageMappings[normalized]; ok {
+		normalized = mapped
+	}
+
+	return normalized
+}
 
 // GetLanguage returns the language for the given path and contents.
 func GetLanguage(path, contents string) (lang string, found bool) {
@@ -18,10 +31,10 @@ func GetLanguage(path, contents string) (lang string, found bool) {
 	// Lastly, fall back to whatever enry decides is a useful algorithm for calculating.
 	lang = enry.GetLanguage(path, []byte(contents))
 	if lang != "" {
-		return lang, true
+		return NormalizeLanguage(lang), true
 	}
 
-	return lang, false
+	return NormalizeLanguage(lang), false
 }
 
 // overrideViaShebang handles explicitly using the shebang whenever possible.

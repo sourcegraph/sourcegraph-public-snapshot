@@ -52,7 +52,7 @@ func NewParserPool(newParser ParserFactory, numParserProcesses int, parserTypes 
 //
 // This method blocks until a parser is available or the given context is canceled.
 func (p *parserPool) Get(ctx context.Context, source ctags_config.ParserType) (ctags.Parser, error) {
-	if source == ctags_config.NoCtags || source == ctags_config.UnknownCtags {
+	if ctags_config.ParserIsNoop(source) {
 		return nil, errors.New("NoCtags is not a valid ParserType")
 	}
 

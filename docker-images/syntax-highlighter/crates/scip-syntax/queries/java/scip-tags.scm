@@ -1,9 +1,7 @@
 (program
     (package_declaration
-        (scoped_identifier)
-        @descriptor.namespace
-    )
-) @scope
+        (_)
+        @descriptor.namespace)) @scope
 
 (class_declaration name: (_) @descriptor.type) @scope
 (interface_declaration name: (_) @descriptor.type) @scope

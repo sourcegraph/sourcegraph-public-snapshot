@@ -1,6 +1,5 @@
 ---
 source: crates/scip-syntax/src/locals.rs
-assertion_line: 509
 expression: dumped
 ---
   sub add {
