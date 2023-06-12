@@ -3,6 +3,8 @@ package search
 import (
 	"context"
 
+	oteltrace "go.opentelemetry.io/otel/trace"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 )
@@ -39,5 +41,11 @@ func SearchEvent(ctx context.Context, args SearchEventArgs) honey.Event {
 	if args.Error != nil {
 		ev.AddField("error", args.Error.Error())
 	}
+	if span := oteltrace.SpanFromContext(ctx); span != nil {
+		spanContext := span.SpanContext()
+		ev.AddField("trace_id", spanContext.TraceID())
+		ev.AddField("span_id", spanContext.SpanID())
+	}
+
 	return ev
 }
