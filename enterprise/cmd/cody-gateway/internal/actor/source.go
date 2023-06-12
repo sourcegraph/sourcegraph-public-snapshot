@@ -87,6 +87,45 @@ func (s Sources) Get(ctx context.Context, token string) (_ *Actor, err error) {
 	return nil, errors.New("no source found for token")
 }
 
+// SyncAll immediately runs a sync on all sources implementing SourceSyncer.
+// If multiple implementations are present, they will be run concurrently.
+// Errors are aggregated.
+//
+// By default, this is only used by (Sources).Worker(), which ensures only
+// a primary worker instance is running these in the background.
+func (s Sources) SyncAll(ctx context.Context, logger log.Logger) error {
+	p := pool.New().WithErrors().WithContext(ctx)
+	for _, src := range s {
+		if src, ok := src.(SourceSyncer); ok {
+			p.Go(func(ctx context.Context) (err error) {
+				var span trace.Span
+				ctx, span = tracer.Start(ctx, src.Name()+".Sync")
+				defer func() {
+					if err != nil {
+						span.RecordError(err)
+						span.SetStatus(codes.Error, "sync failed")
+					}
+					span.End()
+				}()
+
+				syncLogger := sgtrace.Logger(ctx, logger).
+					With(log.String("source", src.Name()))
+
+				start := time.Now()
+
+				syncLogger.Info("Starting a new sync")
+				seen, err := src.Sync(ctx)
+				if err != nil {
+					return errors.Wrapf(err, "failed to sync %s", src.Name())
+				}
+				syncLogger.Info("Completed sync", log.Duration("sync_duration", time.Since(start)), log.Int("seen", seen))
+				return nil
+			})
+		}
+	}
+	return p.Wait()
+}
+
 // Worker is a goroutine.BackgroundRoutine that runs any SourceSyncer implementations
 // at a regular interval. It uses a redsync.Mutex to ensure only one worker is running
 // at a time.
@@ -189,34 +228,5 @@ func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 	// Annotate span to indicate we're actually doing work today!
 	trace.SpanFromContext(ctx).SetAttributes(attribute.Bool("skipped", false))
 
-	p := pool.New().WithErrors().WithContext(ctx)
-	for _, src := range s.sources {
-		if src, ok := src.(SourceSyncer); ok {
-			p.Go(func(ctx context.Context) error {
-				var span trace.Span
-				ctx, span = tracer.Start(ctx, src.Name()+".Sync")
-				defer func() {
-					if err != nil {
-						span.RecordError(err)
-						span.SetStatus(codes.Error, "sync failed")
-					}
-					span.End()
-				}()
-
-				syncLogger := sgtrace.Logger(ctx, handleLogger).
-					With(log.String("source", src.Name()))
-
-				start := time.Now()
-
-				syncLogger.Info("Starting a new sync")
-				seen, err := src.Sync(ctx)
-				if err != nil {
-					return errors.Wrapf(err, "failed to sync %s", src.Name())
-				}
-				syncLogger.Info("Completed sync", log.Duration("sync_duration", time.Since(start)), log.Int("seen", seen))
-				return nil
-			})
-		}
-	}
-	return p.Wait()
+	return s.sources.SyncAll(ctx, handleLogger)
 }
