@@ -18,7 +18,7 @@ export type Config = Pick<
 >
 
 export abstract class SourcegraphCompletionsClient {
-    private errorEncountered: boolean = false
+    private errorEncountered = false
 
     constructor(protected config: Config, protected logger?: CompletionLogger) {}
 
