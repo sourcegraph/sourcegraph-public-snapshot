@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"math"
 	"net/http"
@@ -29,7 +30,7 @@ func getModel(config *schema.Embeddings) string {
 	if config.Model == "" {
 		return "text-embedding-ada-002"
 	}
-	return config.Model
+	return strings.ToLower(config.Model)
 }
 
 const defaultAPIURL = "https://api.openai.com/v1/embeddings"
@@ -65,8 +66,8 @@ func (c *openaiEmbeddingsClient) GetDimensions() (int, error) {
 	return c.dimensions, nil
 }
 
-func (c *openaiEmbeddingsClient) GetModel() string {
-	return c.model
+func (c *openaiEmbeddingsClient) GetModelIdentifier() string {
+	return fmt.Sprintf("openai/%s", c.model)
 }
 
 // GetEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.

@@ -74,7 +74,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	if conf.Get().Embeddings.Incremental {
 		lastSuccessfulJobRevision, previousIndex = h.getPreviousEmbeddingIndex(ctx, logger, repo)
 
-		if previousIndex != nil && !previousIndex.IsModelCompatible(embeddingsClient.GetModel()) {
+		if previousIndex != nil && !previousIndex.IsModelCompatible(embeddingsClient.GetModelIdentifier()) {
 			logger.Info("Embeddings model has changed in config. Performing a full index")
 			lastSuccessfulJobRevision, previousIndex = "", nil
 		}

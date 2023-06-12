@@ -104,7 +104,7 @@ func EmbedRepo(
 		return nil, nil, nil, err
 	}
 
-	embeddingsModel := client.GetModel()
+	embeddingsModel := client.GetModelIdentifier()
 	index := &embeddings.RepoEmbeddingIndex{
 		RepoName:        opts.RepoName,
 		Revision:        opts.Revision,
