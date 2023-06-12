@@ -236,6 +236,7 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 				FSGroup:    fsGroup,
 			},
 			SingleJobPod: c.KubernetesSingleJobPod,
+			StepImage:    c.KubernetesSingleJobStepImage,
 			JobVolume: command.KubernetesJobVolume{
 				Type:    command.KubernetesVolumeType(c.KubernetesJobVolumeType),
 				Size:    resource.MustParse(c.KubernetesJobVolumeSize),

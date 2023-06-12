@@ -58,6 +58,7 @@ type KubernetesContainerOptions struct {
 	KeepJobs              bool
 	SecurityContext       KubernetesSecurityContext
 	SingleJobPod          bool
+	StepImage             string
 	JobVolume             KubernetesJobVolume
 }
 
@@ -671,7 +672,7 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 
 	stepInitContainers[0] = corev1.Container{
 		Name:            "setup-workspace",
-		Image:           "sourcegraph/batcheshelper:insiders",
+		Image:           options.StepImage,
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command:         []string{"sh", "-c"},
 		Args:            setupArgs,
@@ -731,7 +732,7 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 					Containers: []corev1.Container{
 						{
 							Name:            "main",
-							Image:           "sourcegraph/batcheshelper:insiders",
+							Image:           options.StepImage,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Command:         []string{"sh", "-c"},
 							Args: []string{
