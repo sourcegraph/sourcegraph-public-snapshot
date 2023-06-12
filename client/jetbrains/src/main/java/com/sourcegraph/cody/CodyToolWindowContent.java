@@ -69,7 +69,8 @@ class CodyToolWindowContent implements UpdatableChat {
     generateDocstringButton.addActionListener(
         e -> recipeRunner.runRecipe(new GenerateDocStringPromptProvider()));
     JButton improveVariableNamesButton = createWideButton("Improve variable names");
-    improveVariableNamesButton.addActionListener(e -> recipeRunner.runImproveVariableNames());
+    improveVariableNamesButton.addActionListener(
+        e -> recipeRunner.runRecipe(new ImproveVariableNamesPromptProvider()));
     JButton translateToLanguageButton = createWideButton("Translate to different language");
     translateToLanguageButton.addActionListener(e -> recipeRunner.runTranslateToLanguage());
     JButton gitHistoryButton = createWideButton("Summarize recent code changes");

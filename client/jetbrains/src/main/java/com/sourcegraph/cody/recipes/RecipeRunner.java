@@ -60,8 +60,6 @@ public class RecipeRunner {
     chat.respondToMessage(humanMessage, promptContext.getResponsePrefix());
   }
 
-  public void runImproveVariableNames() {}
-
   public void runTranslateToLanguage() {}
 
   public void runGitHistory() {}
