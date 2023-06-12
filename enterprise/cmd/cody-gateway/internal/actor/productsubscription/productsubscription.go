@@ -189,9 +189,6 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 		)
 	}
 
-	trace.SpanFromContext(ctx).AddEvent("fetchAndCache.checkAccessToken",
-		trace.WithAttributes(attribute.String("actor.ID", act.ID)))
-
 	if data, err := json.Marshal(act); err != nil {
 		sgtrace.Logger(ctx, s.log).Error("failed to marshal actor",
 			log.Error(err))

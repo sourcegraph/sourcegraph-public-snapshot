@@ -2,6 +2,7 @@ package actor
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -87,7 +88,14 @@ func (s *Sources) Get(ctx context.Context, token string) (_ *Actor, err error) {
 
 		// Otherwise we continue with the first result we get. We also return
 		// the error here, anything that's not ErrNotFromSource is a hard error.
-		span.SetAttributes(attribute.String("matched_source", src.Name()))
+		// Best-effort add attribute summarizing rate limits
+		span.SetAttributes(
+			attribute.String("matched_source", src.Name()),
+			attribute.String("actor.id", actor.ID),
+			attribute.String("actor.lastUpdated", actor.LastUpdated.String()))
+		if rateLimitsJSON, err := json.Marshal(actor.RateLimits); err == nil {
+			span.SetAttributes(attribute.String("actor.rateLimits", string(rateLimitsJSON)))
+		}
 		return actor, errors.Wrap(err, src.Name())
 	}
 
