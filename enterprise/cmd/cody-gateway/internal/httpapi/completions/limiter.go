@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
@@ -20,6 +21,7 @@ func rateLimit(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	cache limiter.RedisStore,
+	rateLimitNotifier notify.RateLimitNotifier,
 	next http.Handler,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped("rateLimit", "rate limit handler")
@@ -34,7 +36,7 @@ func rateLimit(
 			return
 		}
 
-		l, ok := act.Limiter(logger, cache, feature)
+		l, ok := act.Limiter(logger, cache, feature, rateLimitNotifier)
 		if !ok {
 			response.JSONError(logger, w, http.StatusForbidden, errors.Newf("no access to feature %s", feature))
 			return

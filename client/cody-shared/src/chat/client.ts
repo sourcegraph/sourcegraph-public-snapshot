@@ -69,7 +69,7 @@ export async function createClient({
 
     const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, true) : null
 
-    const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null)
+    const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null)
 
     const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient)
 
@@ -116,10 +116,11 @@ export async function createClient({
 
         sendTranscript()
 
-        const prompt = await transcript.toPrompt(getPreamble(config.codebase))
+        const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(getPreamble(config.codebase))
+        transcript.setUsedContextFilesForLastInteraction(contextFiles)
+
         const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
         let rawText = ''
-
         chatClient.chat(prompt, {
             onChange(_rawText) {
                 rawText = _rawText
