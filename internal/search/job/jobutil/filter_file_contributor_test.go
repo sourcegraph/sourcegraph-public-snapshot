@@ -15,9 +15,6 @@ import (
 )
 
 func TestFileHasContributorsJob(t *testing.T) {
-	type ContributorSet struct {
-		contributors []*gitdomain.ContributorCount
-	}
 	r := func(ms ...result.Match) (res result.Matches) {
 		for _, m := range ms {
 			res = append(res, m)
@@ -25,39 +22,65 @@ func TestFileHasContributorsJob(t *testing.T) {
 		return res
 	}
 
+	fm := func() *result.FileMatch {
+		return &result.FileMatch{
+			File: result.File{
+				Path:     "path",
+				CommitID: "commitID",
+			},
+		}
+	}
+
+	ccs := func(nameAndEmail ...[]string) (contributorCounts []*gitdomain.ContributorCount) {
+		cc := gitdomain.ContributorCount{}
+		for _, nae := range nameAndEmail {
+			if len(nameAndEmail) == 2 {
+				cc.Name = nae[0]
+				cc.Email = nae[1]
+			}
+			contributorCounts = append(contributorCounts, &cc)
+		}
+		return contributorCounts
+	}
+
 	tests := []struct {
 		name                string
 		ignoreCase          bool
 		includeContributors []string
 		excludeContributors []string
-		matches             []result.Match
-		contributorSets        []ContributorSet
+		matches             result.Match
+		contributors        []*gitdomain.ContributorCount
 		outputEvent         streaming.SearchEvent
 	}{{
+		name:                "include contributor matches name",
+		ignoreCase:          true,
+		includeContributors: []string{"Author"},
+		excludeContributors: []string{},
+		matches:             fm(),
+		contributors:        ccs([]string{"Author", ""}),
+		outputEvent:         streaming.SearchEvent{Results: result.Matches{}},
+	}, {
+		name:                "include contributor matches email",
+		ignoreCase:          true,
+		includeContributors: []string{"Author"},
+		excludeContributors: []string{},
+		matches:             fm(),
+		contributors:        ccs([]string{"", "Author"}),
+		outputEvent:         streaming.SearchEvent{Results: result.Matches{}},
+	}, {
 		name:                "no matches are files",
 		ignoreCase:          true,
 		includeContributors: []string{},
 		excludeContributors: []string{},
-		matches: []result.Match{
-			&result.CommitMatch{},
-		}
-		contributorSets: []ContributorSet{
-			{contributors: []*gitdomain.ContributorCount{}},
-		},
-		outputEvent: streaming.SearchEvent{Results: result.Matches{}},
+		matches:             &result.CommitMatch{},
+		contributors:        ccs(),
+		outputEvent:         streaming.SearchEvent{Results: result.Matches{}},
 	}, {
 		name:                "not all matches are files",
 		ignoreCase:          true,
 		includeContributors: []string{},
 		excludeContributors: []string{},
-		matches: []result.Match{
-			&result.FileMatch{
-				File: result.File{
-					Path: "path",
-				},
-			},
-			&result.CommitMatch{},
-		},
+		matches:             fm(),
 		outputEvent: streaming.SearchEvent{
 			Results: r(&result.FileMatch{
 				File: result.File{
@@ -70,14 +93,7 @@ func TestFileHasContributorsJob(t *testing.T) {
 		ignoreCase:          true,
 		includeContributors: []string{},
 		excludeContributors: []string{},
-		matches: []result.Match{
-			&result.FileMatch{
-				File: result.File{
-					Path: "path",
-				},
-			},
-			&result.CommitMatch{},
-		},
+		matches:             fm(),
 		outputEvent: streaming.SearchEvent{
 			Results: r(&result.FileMatch{
 				File: result.File{
@@ -86,19 +102,15 @@ func TestFileHasContributorsJob(t *testing.T) {
 			}),
 		},
 	}}
-	//}, {}}
-
 	for _, tc := range tests {
 		childJob := mockjob.NewMockJob()
 		childJob.RunFunc.SetDefaultHook(func(_ context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
-			s.Send(streaming.SearchEvent{Results: tc.matches})
+			s.Send(streaming.SearchEvent{Results: r(tc.matches)})
 			return nil, nil
 		})
 
-		gitserverClient := gitserver.NewMockClient()
-		for _, contributorsForMatch := range tc.contributors {
-			gitserverClient.ContributorCountFunc.PushReturn(contributorsForMatch.contributors, nil)
-		}
+		gitServerClient := gitserver.NewMockClient()
+		gitServerClient.ContributorCountFunc.PushReturn(tc.contributors, nil)
 
 		var resultEvent streaming.SearchEvent
 		streamCollector := streaming.StreamFunc(func(ev streaming.SearchEvent) {
@@ -106,7 +118,7 @@ func TestFileHasContributorsJob(t *testing.T) {
 		})
 
 		j := NewFileHasContributorsJob(childJob, tc.ignoreCase, tc.includeContributors, tc.excludeContributors)
-		alert, err := j.Run(context.Background(), job.RuntimeClients{Gitserver: gitserverClient}, streamCollector)
+		alert, err := j.Run(context.Background(), job.RuntimeClients{Gitserver: gitServerClient}, streamCollector)
 		require.Nil(t, alert)
 		require.NoError(t, err)
 		require.Equal(t, tc.outputEvent, resultEvent)
