@@ -11,7 +11,6 @@ import {
     CopyButtonProps,
     ChatUISubmitButtonProps,
 } from '../Chat'
-import { CodySvg } from '../utils/icons'
 
 import { BlinkingCursor } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
