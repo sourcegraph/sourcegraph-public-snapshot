@@ -2,7 +2,6 @@ package productsubscription
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/hex"
 	"time"
 
@@ -65,8 +64,6 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		return "", errors.Wrap(err, "new UUID")
 	}
 
-	keyHash := sha256.Sum256([]byte(licenseKey))
-
 	var expiresAt *time.Time
 	if !info.ExpiresAt.IsZero() {
 		expiresAt = &info.ExpiresAt
@@ -79,7 +76,7 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		pq.Array(info.Tags),
 		dbutil.NewNullInt64(int64(info.UserCount)),
 		dbutil.NullTime{Time: expiresAt},
-		hashutil.ToSHA256Bytes(keyHash[:]),
+		hashutil.ToSHA256Bytes(hashutil.ToSHA256Bytes([]byte(licenseKey))),
 		info.SalesforceSubscriptionID,
 		info.SalesforceOpportunityID,
 	).Scan(&id); err != nil {
