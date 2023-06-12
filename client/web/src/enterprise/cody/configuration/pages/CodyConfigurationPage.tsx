@@ -10,7 +10,7 @@ import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Container, ErrorAlert, Link, PageHeader } from '@sourcegraph/wildcard'
 
-import { CodyColorIcon, CodyPageIcon } from '../../../../cody/chat/CodyPageIcon'
+import { CodyColorIcon } from '../../../../cody/chat/CodyPageIcon'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
