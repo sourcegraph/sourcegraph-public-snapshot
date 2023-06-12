@@ -52,6 +52,14 @@
     color: var(--input-focus-border-color);
 }
 
+.input-container {
+    position: relative;
+
+    input {
+        padding-right: 2rem;
+    }
+}
+
 .repository-selector-content {
     width: 20rem;
     height: 100%;
@@ -93,7 +101,7 @@
         visibility: hidden;
     }
     &:hover {
-        background-color: var(--gray-01);
+        background-color: var(--body-bg);
 
         .remove-repo-icon {
             visibility: visible;

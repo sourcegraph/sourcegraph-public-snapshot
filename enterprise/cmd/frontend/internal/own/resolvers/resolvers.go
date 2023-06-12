@@ -794,6 +794,7 @@ func (r *ownResolver) computeAssignedTeams(ctx context.Context, db edb.Enterpris
 
 	fetchedTeams := make(map[int32]*types.Team)
 
+	isDirectMatch := false
 	for _, summary := range assignedTeamSummaries {
 		var team *types.Team
 		teamID := summary.OwnerTeamID
@@ -807,6 +808,9 @@ func (r *ownResolver) computeAssignedTeams(ctx context.Context, db edb.Enterpris
 			team = teamFromDB
 			fetchedTeams[teamID] = teamFromDB
 		}
+		if blob.Path() == summary.FilePath {
+			isDirectMatch = true
+		}
 		res := ownershipResolver{
 			db: db,
 			resolvedOwner: &codeowners.Team{
@@ -814,7 +818,7 @@ func (r *ownResolver) computeAssignedTeams(ctx context.Context, db edb.Enterpris
 			},
 			reasons: []*ownershipReasonResolver{
 				{
-					&assignedOwner{},
+					&assignedOwner{directMatch: isDirectMatch},
 				},
 			},
 		}

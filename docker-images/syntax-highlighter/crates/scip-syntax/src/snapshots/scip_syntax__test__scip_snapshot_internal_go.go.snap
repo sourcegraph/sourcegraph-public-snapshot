@@ -1,5 +1,5 @@
 ---
-source: crates/scip-syntax/src/globals.rs
+source: crates/scip-syntax/src/lib.rs
 expression: dumped
 ---
   package memo

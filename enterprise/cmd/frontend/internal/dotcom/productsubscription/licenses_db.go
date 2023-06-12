@@ -271,7 +271,17 @@ func (s dbLicenses) Revoke(ctx context.Context, id, reason string) error {
 		reason,
 		id,
 	)
-	_, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	res, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nrows == 0 {
+		return errLicenseNotFound
+	}
 	return err
 }
 

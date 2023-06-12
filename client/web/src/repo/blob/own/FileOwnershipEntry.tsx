@@ -26,7 +26,6 @@ interface Props {
     makeOwnerButton?: React.ReactElement
     repoID: string
     filePath: string
-    userID?: string
     setRemoveOwnerError: any
     refetch: any
 }
@@ -43,7 +42,6 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
     makeOwnerButton,
     repoID,
     filePath,
-    userID,
     refetch,
     setRemoveOwnerError,
 }) => {
@@ -56,6 +54,9 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
         }
         return owner.email
     }
+
+    const userID = owner.__typename === 'Person' && owner.user?.__typename === 'User' ? owner.user.id : undefined
+    const teamID = owner.__typename === 'Team' ? owner.id : undefined
 
     const email = findEmail()
 
@@ -119,7 +120,8 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
                                 onError={setRemoveOwnerError}
                                 repoId={repoID}
                                 path={filePath}
-                                userId={userID}
+                                userID={userID}
+                                teamID={teamID}
                                 isDirectAssigned={isDirectAssigned}
                             />
                         ))}

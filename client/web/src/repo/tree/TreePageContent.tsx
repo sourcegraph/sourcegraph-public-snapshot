@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { mdiCog, mdiGlasses, mdiInformationOutline, mdiPencil } from '@mdi/js'
+import { mdiCog, mdiFileOutline, mdiGlasses, mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { formatISO, subYears } from 'date-fns'
 import { capitalize, escapeRegExp } from 'lodash'
@@ -348,7 +348,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                     <div className={styles.contributors}>
                         {ownSignalsEnabled && (
                             <Card>
-                                <CardHeader className={panelStyles.cardColHeaderWrapper}>Ownership</CardHeader>
+                                <CardHeader className={panelStyles.cardColHeaderWrapper}>Own</CardHeader>
                                 <Ownership {...props} />
                             </Card>
                         )}
@@ -618,6 +618,10 @@ interface OwnerNodeProps {
 }
 const OwnerNode: React.FC<OwnerNodeProps> = ({ node }) => {
     const owner = node?.owner
+    const primaryReason =
+        node.reasons.find(reason => reason.__typename === 'AssignedOwner') ||
+        node.reasons.find(reason => reason.__typename === 'RecentContributorOwnershipSignal') ||
+        node.reasons[0]
     return (
         <tr className={classNames('list-group-item', contributorsStyles.repositoryContributorNode)}>
             <td className={contributorsStyles.person}>
@@ -640,28 +644,25 @@ const OwnerNode: React.FC<OwnerNodeProps> = ({ node }) => {
                 )}
             </td>
             <td className={contributorsStyles.commits}>
-                {node.reasons.map(reason =>
-                    reason?.__typename === 'RecentContributorOwnershipSignal' ? (
-                        <Badge
-                            key={reason.title}
-                            tooltip={reason.description}
-                            className={styles.badge}
-                            variant="secondary"
-                        >
-                            <Icon aria-label={reason.title} svgPath={mdiPencil} />
-                        </Badge>
-                    ) : reason?.__typename === 'RecentViewOwnershipSignal' ? (
-                        <Badge
-                            key={reason.title}
-                            tooltip={reason.description}
-                            className={styles.badge}
-                            variant="secondary"
-                        >
-                            <Icon aria-label={reason.title} svgPath={mdiGlasses} />
-                        </Badge>
-                    ) : (
-                        <></>
-                    )
+                {primaryReason?.__typename === 'AssignedOwner' && (
+                    <Badge tooltip="Owner assigned through sourcegraph" className={styles.badge} variant="merged">
+                        owner
+                    </Badge>
+                )}
+                {primaryReason?.__typename === 'RecentContributorOwnershipSignal' && (
+                    <Badge tooltip={primaryReason.description} className={styles.badge} variant="secondary">
+                        <Icon aria-label={primaryReason.title} svgPath={mdiFileOutline} /> changes
+                    </Badge>
+                )}
+                {primaryReason?.__typename === 'RecentViewOwnershipSignal' && (
+                    <Badge tooltip={primaryReason.description} className={styles.badge} variant="secondary">
+                        <Icon aria-label={primaryReason.title} svgPath={mdiGlasses} /> views
+                    </Badge>
+                )}
+                {node.reasons.length > 1 && (
+                    <Badge tooltip="Multiple ownership inference signals" className={styles.badge} variant="secondary">
+                        +{node.reasons.length - 1}
+                    </Badge>
                 )}
             </td>
         </tr>

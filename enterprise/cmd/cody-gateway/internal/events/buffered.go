@@ -73,8 +73,16 @@ func (l *BufferedLogger) LogEvent(spanCtx context.Context, event Event) error {
 		return nil
 
 	case <-time.After(l.timeout):
-		return errors.Newf("failed to insert event in %s: buffer full: %d items pending",
-			l.timeout.String(), len(l.bufferC))
+		// The buffer is full, which is indicative of a problem. We try to
+		// submit the event immediately anyway, because we don't want to
+		// silently drop anything, and log an error so that we ge notified.
+		trace.Logger(spanCtx, l.log).
+			Error("failed to queue event within timeout, submitting event directly",
+				log.Error(errors.New("buffer is full")), // real error needed for Sentry
+				log.Int("buffer.capacity", cap(l.bufferC)),
+				log.Int("buffer.backlog", len(l.bufferC)),
+				log.Duration("timeout", l.timeout))
+		return l.handler.LogEvent(spanCtx, event)
 	}
 }
 

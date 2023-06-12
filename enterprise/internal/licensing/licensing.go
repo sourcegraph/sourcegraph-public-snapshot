@@ -98,7 +98,7 @@ func GetConfiguredProductLicenseInfo() (*Info, error) {
 	return info, err
 }
 
-func isLicenseValid() bool {
+func IsLicenseValid() bool {
 	val := store.Get(licenseValidityStoreKey)
 	if val.IsNil() {
 		return true
@@ -139,10 +139,6 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 
 			if err = info.hasUnknownPlan(); err != nil {
 				return nil, "", err
-			}
-
-			if !isLicenseValid() {
-				return nil, "", errors.New("license is not valid")
 			}
 
 			lastKeyText = keyText
