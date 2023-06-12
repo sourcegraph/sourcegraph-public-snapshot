@@ -119,19 +119,10 @@ export const TranscriptItem: React.FunctionComponent<
             className={classNames(
                 styles.row,
                 transcriptItemClassName,
-                message.speaker === 'human' ? humanTranscriptItemClassName : null
+                message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow
             )}
         >
             <header className={classNames(styles.participant, transcriptItemParticipantClassName)}>
-                <h2 className={styles.participantName}>
-                    {message.speaker === 'assistant' ? (
-                        <>
-                            <CodySvg className={styles.participantAvatar} /> Cody
-                        </>
-                    ) : (
-                        'Me'
-                    )}
-                </h2>
                 {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
                 <div className={styles.participantName}>
                     {showEditButton &&
@@ -156,15 +147,6 @@ export const TranscriptItem: React.FunctionComponent<
                         )}
                 </div>
             </header>
-            {message.contextFiles && message.contextFiles.length > 0 && (
-                <div className={styles.actions}>
-                    <ContextFiles
-                        contextFiles={message.contextFiles}
-                        fileLinkComponent={fileLinkComponent}
-                        className={transcriptActionClassName}
-                    />
-                </div>
-            )}
             <div className={classNames(styles.contentPadding, textarea ? undefined : styles.content)}>
                 {message.displayText ? (
                     textarea ?? (
@@ -179,6 +161,15 @@ export const TranscriptItem: React.FunctionComponent<
                     <BlinkingCursor />
                 ) : null}
             </div>
+            {message.contextFiles && message.contextFiles.length > 0 && (
+                <div className={styles.actions}>
+                    <ContextFiles
+                        contextFiles={message.contextFiles}
+                        fileLinkComponent={fileLinkComponent}
+                        className={transcriptActionClassName}
+                    />
+                </div>
+            )}
         </div>
     )
 })

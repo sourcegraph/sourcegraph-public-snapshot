@@ -3,12 +3,26 @@
 }
 
 .row {
+    position: relative;
     border-bottom-width: 1px;
     border-bottom-style: solid;
 
     display: flex;
     flex-direction: column;
     gap: var(--spacing);
+}
+
+.assistant-row:before {
+    position: absolute;
+
+    top: 0;
+    left: 0;
+
+    width: 2px;
+    height: 100%;
+
+    content: '';
+    background-image: linear-gradient(to bottom, #b200f8, #ff5543, #00cbec);
 }
 
 .row:last-child {
@@ -21,9 +35,7 @@
 }
 
 .row:only-child {
-    /* For the welcome message, make it visually consume the entire height instead of being a
-    discrete message. */
-    flex: 1;
+    /* For the welcome message */
     border-bottom: none;
 }
 
@@ -34,6 +46,10 @@
 }
 
 .participant-name {
+    position: absolute;
+    top: 0;
+    right: 0;
+
     display: flex;
     gap: 0.25rem;
     align-items: center;
@@ -43,7 +59,6 @@
 
     font-size: 0.8rem;
     font-weight: bold;
-    height: 2rem;
 }
 
 .participant-avatar {
@@ -55,7 +70,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 var(--spacing);
+    padding: 0 var(--spacing) var(--spacing) var(--spacing);
 }
 
 .content-padding {
