@@ -4,8 +4,8 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "gitresolvers",
     srcs = [
-        "cached_resolver.go",
         "cached_resolver_factory.go",
+        "cached_resolvers.go",
         "commit.go",
         "external_repo.go",
         "repo.go",
@@ -31,7 +31,10 @@ go_library(
 
 go_test(
     name = "gitresolvers_test",
-    srcs = ["cached_resolver_test.go"],
+    srcs = [
+        "cached_resolvers_test.go",
+        "commit_test.go",
+    ],
     embed = [":gitresolvers"],
     deps = [
         "//internal/api",
@@ -42,5 +45,6 @@ go_test(
         "//internal/types",
         "//lib/errors",
         "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_google_go_cmp//cmp",
     ],
 )
