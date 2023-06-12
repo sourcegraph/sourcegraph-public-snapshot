@@ -28,8 +28,11 @@ export class Transcript {
     public static fromJSON(json: TranscriptJSON): Transcript {
         return new Transcript(
             json.interactions.map(
-                ({ humanMessage, assistantMessage, fullContext, usedContextFiles, timestamp }) =>
-                    new Interaction(
+                ({ humanMessage, assistantMessage, context, fullContext, usedContextFiles, timestamp }) => {
+                    if (!fullContext) {
+                        fullContext = context || []
+                    }
+                    return new Interaction(
                         humanMessage,
                         assistantMessage,
                         Promise.resolve(
@@ -46,9 +49,10 @@ export class Transcript {
                                 return message
                             })
                         ),
-                        usedContextFiles,
+                        usedContextFiles || [],
                         timestamp || new Date().toISOString()
                     )
+                }
             ),
             json.id
         )
