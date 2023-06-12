@@ -9,10 +9,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewKeywordSearchJob(b query.Basic, newJob func(query.Basic) (job.Job, error)) (job.Job, error) {
-	keywordQuery, err := basicQueryToKeywordQuery(b)
+func NewKeywordSearchJob(plan query.Plan, newJob func(query.Basic) (job.Job, error)) (job.Job, error) {
+	if len(plan) > 1 {
+		return nil, errors.New("The 'keyword' patterntype does not support multiple clauses")
+	}
+
+	keywordQuery, err := basicQueryToKeywordQuery(plan[0])
 	if err != nil || keywordQuery == nil {
 		return nil, err
 	}
