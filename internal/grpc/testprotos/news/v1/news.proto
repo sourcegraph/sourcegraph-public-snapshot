@@ -1,6 +1,9 @@
 // Copyright 2020 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
+//
+// Note (@Sourcegraph): This file was copied / adapted from
+// https://github.com/protocolbuffers/protobuf-go/blob/v1.30.0/internal/testprotos/news/news.proto to aid our testing.
 
 syntax = "proto3";
 
