@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -61,7 +60,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 	db := database.NewDB(obsvCtx.Logger, sqlDB)
 	upgradestore := upgradestore.New(db)
 
-	_, doAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
+	currentVersionStr, doAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
 	// fresh instance
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
@@ -70,6 +69,11 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 	}
 	if !doAutoUpgrade && !shouldAutoUpgade {
 		return nil
+	}
+
+	currentVersion, ok := oobmigration.NewVersionFromString(currentVersionStr)
+	if !ok {
+		return errors.Newf("unexpected string for desired instance schema version, skipping auto-upgrade (%s)", currentVersionStr)
 	}
 
 	stopFunc, err := serveInternalServer(obsvCtx)
@@ -90,11 +94,6 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 		return errors.Wrap(err, "error blocking on postgres client disconnects")
 	}
 
-	var (
-		currentVersion oobmigration.Version
-		success        bool
-	)
-
 	toVersion, ok := oobmigration.NewVersionFromString(version.Version())
 	if !ok {
 		obsvCtx.Logger.Warn("unexpected string for desired instance schema version, skipping auto-upgrade", log.String("version", version.Version()))
@@ -113,6 +112,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 		return nil
 	}
 
+	var success bool
 	defer func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 		defer cancel()
@@ -167,8 +167,8 @@ func runMigration(ctx context.Context,
 		enterpriseMigratorsHook,
 	)
 
-	tee := io.MultiWriter(&buffer, os.Stdout)
-	out := output.NewOutput(tee, output.OutputOpts{})
+	// tee := io.MultiWriter(&buffer, os.Stdout)
+	out := output.NewOutput(os.Stdout, output.OutputOpts{})
 
 	runnerFactory := func(schemaNames []string, schemas []*schemas.Schema) (*runner.Runner, error) {
 		return migration.NewRunnerWithSchemas(
