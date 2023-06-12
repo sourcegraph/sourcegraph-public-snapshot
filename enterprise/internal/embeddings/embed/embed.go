@@ -171,6 +171,8 @@ func embedFiles(
 		Ranks:           make([]float32, 0, len(files)/2),
 	}
 
+	stats := bgrepo.NewEmbedFilesStats(len(files))
+
 	var batch []codeintelContext.EmbeddableChunk
 
 	flush := func() error {
@@ -196,6 +198,7 @@ func embedFiles(
 		index.Embeddings = append(index.Embeddings, embeddings.Quantize(batchEmbeddings)...)
 
 		batch = batch[:0] // reset batch
+		reportProgress(stats)
 		return nil
 	}
 
@@ -207,8 +210,6 @@ func embedFiles(
 		}
 		return nil
 	}
-
-	stats := bgrepo.NewEmbedFilesStats(len(files))
 
 	for _, file := range files {
 		if ctx.Err() != nil {
@@ -253,7 +254,6 @@ func embedFiles(
 			stats.AddChunk(len(chunk.Content))
 		}
 		stats.AddFile()
-		reportProgress(stats)
 	}
 
 	// Always do a final flush

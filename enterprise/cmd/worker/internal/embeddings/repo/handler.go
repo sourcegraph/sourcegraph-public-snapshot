@@ -2,7 +2,6 @@ package repo
 
 import (
 	"context"
-	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -106,16 +105,6 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		}
 	}
 
-	reportStatsTicker := time.NewTicker(time.Second)
-	defer reportStatsTicker.Stop()
-	reportStatsPeriodically := func(stats *bgrepo.EmbedRepoStats) {
-		select {
-		case <-reportStatsTicker.C:
-			reportStats(stats)
-		default:
-		}
-	}
-
 	repoEmbeddingIndex, toRemove, stats, err := embed.EmbedRepo(
 		ctx,
 		embeddingsClient,
@@ -124,7 +113,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		ranks,
 		opts,
 		logger,
-		reportStatsPeriodically,
+		reportStats,
 	)
 	if err != nil {
 		return err

@@ -288,7 +288,29 @@ func (s *repoEmbeddingJobsStore) CreateRepoEmbeddingJob(ctx context.Context, rep
 
 func (s *repoEmbeddingJobsStore) UpdateRepoEmbeddingJobStats(ctx context.Context, jobID int, stats *EmbedRepoStats) error {
 	const updateRepoEmbeddingJobStats = `
-	UPDATE repo_embedding_jobs
+	INSERT INTO repo_embedding_jobs (
+		job_id,
+		stat_has_ranks,
+		stat_is_incremental,
+		stat_code_files_total,
+		stat_code_files_embedded,
+		stat_code_chunks_embedded,
+		stat_code_files_skipped,
+		stat_code_bytes_skipped,
+		stat_code_bytes_embedded,
+		stat_text_files_total,
+		stat_text_files_embedded,
+		stat_text_chunks_embedded,
+		stat_text_files_skipped,
+		stat_text_bytes_skipped,
+		stat_text_bytes_embedded
+	) VALUES (
+		%s, %s, %s, %s,
+		%s, %s, %s, %s,
+		%s, %s, %s, %s,
+		%s, %s, %s
+	)
+	ON CONFLICT (id) DO UPDATE
 	SET
 		stat_has_ranks = %s,
 		stat_is_incremental = %s,
@@ -303,12 +325,13 @@ func (s *repoEmbeddingJobsStore) UpdateRepoEmbeddingJobStats(ctx context.Context
 		stat_text_chunks_embedded = %s,
 		stat_text_files_skipped = %s,
 		stat_text_bytes_skipped = %s,
-		stat_text_bytes_embedded = %s
-	WHERE id = %s
+		stat_text_bytes_embedde = %s
 	`
 
 	q := sqlf.Sprintf(
 		updateRepoEmbeddingJobStats,
+
+		jobID,
 		stats.HasRanks,
 		stats.IsIncremental,
 		stats.CodeIndexStats.FilesScheduled,
@@ -323,7 +346,21 @@ func (s *repoEmbeddingJobsStore) UpdateRepoEmbeddingJobStats(ctx context.Context
 		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
 		dbutil.JSONMessage(&stats.TextIndexStats.BytesSkipped),
 		stats.TextIndexStats.BytesEmbedded,
-		jobID,
+
+		stats.HasRanks,
+		stats.IsIncremental,
+		stats.CodeIndexStats.FilesScheduled,
+		stats.CodeIndexStats.FilesEmbedded,
+		stats.CodeIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&stats.CodeIndexStats.FilesSkipped),
+		dbutil.JSONMessage(&stats.CodeIndexStats.BytesSkipped),
+		stats.CodeIndexStats.BytesEmbedded,
+		stats.TextIndexStats.FilesScheduled,
+		stats.TextIndexStats.FilesEmbedded,
+		stats.TextIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
+		dbutil.JSONMessage(&stats.TextIndexStats.BytesSkipped),
+		stats.TextIndexStats.BytesEmbedded,
 	)
 
 	return s.Exec(ctx, q)
