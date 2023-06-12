@@ -80,8 +80,6 @@ export const unauthenticatedStatus = {
 
 export interface LocalEnv {
     kind: string
-    newInstall: boolean
-    appHost: string
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {

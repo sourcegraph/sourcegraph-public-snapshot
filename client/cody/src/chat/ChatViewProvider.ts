@@ -691,8 +691,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
                 kind: vscode.env.uriScheme,
-                newInstall: vscode.env.isNewAppInstall,
-                appHost: vscode.env.appHost,
             }
             void vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
             void this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
