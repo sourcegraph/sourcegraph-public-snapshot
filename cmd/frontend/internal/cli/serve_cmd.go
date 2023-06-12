@@ -92,7 +92,7 @@ type SetupFunc func(database.DB, conftypes.UnifiedWatchable) enterprise.Services
 func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, enterpriseSetupHook SetupFunc, enterpriseMigratorHook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
 	logger := observationCtx.Logger
 
-	if err := tryAutoUpgrade(ctx, observationCtx, enterpriseMigratorHook); err != nil {
+	if err := tryAutoUpgrade(ctx, observationCtx, ready, enterpriseMigratorHook); err != nil {
 		return errors.Wrap(err, "frontend.tryAutoUpgrade")
 	}
 

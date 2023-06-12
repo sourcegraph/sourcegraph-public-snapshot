@@ -37,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
+	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -50,7 +51,7 @@ var buffer strings.Builder // :)
 
 var shouldAutoUpgade = env.MustGetBool("SRC_AUTOUPGRADE", false, "If you forgot to set intent to autoupgrade before shutting down the instance, set this env var.")
 
-func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, hook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) (err error) {
+func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready service.ReadyFunc, hook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) (err error) {
 	sqlDB, err := connections.RawNewFrontendDB(obsvCtx, "", appName)
 	if err != nil {
 		return errors.Errorf("failed to connect to frontend database: %s", err)
@@ -82,6 +83,8 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, hook stor
 		return errors.Wrap(err, "failed to start UI & healthcheck server")
 	}
 	defer stopFunc()
+
+	ready()
 
 	if err := blockForDisconnects(ctx, obsvCtx.Logger, db); err != nil {
 		return errors.Wrap(err, "error blocking on postgres client disconnects")
