@@ -57,7 +57,7 @@ type ZoektIndexOptions struct {
 	// Error if non-empty indicates the request failed for the repo.
 	Error string `json:",omitempty"`
 
-	LanguageMap []*proto.LanguageMapping
+	LanguageMap map[string]ctags_config.ParserType
 }
 
 func (o *ZoektIndexOptions) FromProto(p *proto.ZoektIndexOptions) {
@@ -81,7 +81,12 @@ func (o *ZoektIndexOptions) FromProto(p *proto.ZoektIndexOptions) {
 	}
 
 	o.Branches = branches
-	o.LanguageMap = p.GetLanguageMap()
+
+	languageMap := make(map[string]ctags_config.ParserType)
+	for _, entry := range p.GetLanguageMap() {
+		languageMap[entry.Language] = uint8(entry.Ctags.Number())
+	}
+	o.LanguageMap = languageMap
 }
 
 func (o *ZoektIndexOptions) ToProto() *proto.ZoektIndexOptions {
@@ -91,6 +96,11 @@ func (o *ZoektIndexOptions) ToProto() *proto.ZoektIndexOptions {
 			Name:    b.Name,
 			Version: b.Version,
 		})
+	}
+
+	languageMap := make([]*proto.LanguageMapping, 0)
+	for language, engine := range o.LanguageMap {
+		languageMap = append(languageMap, &proto.LanguageMapping{Language: language, Ctags: proto.CTagsParserType(engine)})
 	}
 
 	return &proto.ZoektIndexOptions{
@@ -105,7 +115,7 @@ func (o *ZoektIndexOptions) ToProto() *proto.ZoektIndexOptions {
 		Priority:             o.Priority,
 		DocumentRanksVersion: o.DocumentRanksVersion,
 		Error:                o.Error,
-		LanguageMap:          o.LanguageMap,
+		LanguageMap:          languageMap,
 	}
 }
 
@@ -190,12 +200,6 @@ func getIndexOptions(
 		}
 	}
 
-	languageMap := make([]*proto.LanguageMapping, 0)
-	realEngine := ctags_config.CreateEngineMap(*c)
-	for language, engine := range realEngine {
-		languageMap = append(languageMap, &proto.LanguageMapping{Language: language, Ctags: proto.CTagsParserType(engine)})
-	}
-
 	o := ZoektIndexOptions{
 		Name:       opts.Name,
 		RepoID:     opts.RepoID,
@@ -207,7 +211,7 @@ func getIndexOptions(
 		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
 
 		DocumentRanksVersion: opts.DocumentRanksVersion,
-		LanguageMap:          languageMap,
+		LanguageMap:          ctags_config.CreateEngineMap(*c),
 	}
 
 	// Set of branch names. Always index HEAD
