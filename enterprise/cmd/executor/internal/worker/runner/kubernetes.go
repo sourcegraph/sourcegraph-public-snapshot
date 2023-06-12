@@ -115,7 +115,7 @@ func (r *kubernetesRunner) Teardown(ctx context.Context) error {
 func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	var job *batchv1.Job
 	if r.options.SingleJobPod {
-		workspaceFiles, err := files.GetWorkspaceFiles(ctx, r.commandLogger, r.filesStore, spec.CommandSpec.Job, command.KubernetesJobMountPath)
+		workspaceFiles, err := files.GetWorkspaceFiles(ctx, r.filesStore, spec.CommandSpec.Job, command.KubernetesJobMountPath)
 		if err != nil {
 			return err
 		}

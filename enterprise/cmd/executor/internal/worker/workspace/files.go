@@ -27,12 +27,12 @@ func prepareScripts(
 		return nil, errors.Wrap(err, "creating script path")
 	}
 
-	workspaceFiles, err := files.GetWorkspaceFiles(ctx, commandLogger, filesStore, job, workspaceDir)
+	workspaceFiles, err := files.GetWorkspaceFiles(ctx, filesStore, job, workspaceDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get workspace files")
 	}
 
-	if err = writeFiles(ctx, job, workspaceFiles, commandLogger); err != nil {
+	if err = writeFiles(commandLogger, workspaceFiles); err != nil {
 		return nil, errors.Wrap(err, "failed to write virtual machine files")
 	}
 
@@ -47,7 +47,7 @@ func prepareScripts(
 }
 
 // writeFiles writes to the filesystem the content in the given map.
-func writeFiles(ctx context.Context, job types.Job, workspaceFiles []files.WorkspaceFile, logger cmdlogger.Logger) (err error) {
+func writeFiles(logger cmdlogger.Logger, workspaceFiles []files.WorkspaceFile) (err error) {
 	// Bail out early if nothing to do, we don't need to spawn an empty log group.
 	if len(workspaceFiles) == 0 {
 		return nil

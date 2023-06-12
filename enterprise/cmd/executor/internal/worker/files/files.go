@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -26,21 +25,10 @@ type Store interface {
 }
 
 // GetWorkspaceFiles returns the files that should be accessible to jobs within the workspace.
-func GetWorkspaceFiles(ctx context.Context, logger cmdlogger.Logger, store Store, job types.Job, workingDirectory string) (workspaceFiles []WorkspaceFile, err error) {
+func GetWorkspaceFiles(ctx context.Context, store Store, job types.Job, workingDirectory string) (workspaceFiles []WorkspaceFile, err error) {
 	// Construct a map from filenames to file Content that should be accessible to jobs
 	// within the workspace. This consists of files supplied within the job record itself,
 	// as well as file-version of each script step.
-	logEntry := logger.LogEntry("setup.workspace.files", nil)
-	defer func() {
-		if err == nil {
-			logEntry.Finalize(0)
-		} else {
-			logEntry.Finalize(1)
-		}
-
-		logEntry.Close()
-	}()
-
 	for relativePath, machineFile := range job.VirtualMachineFiles {
 		path, err := filepath.Abs(filepath.Join(workingDirectory, relativePath))
 		if err != nil {

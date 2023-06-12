@@ -668,14 +668,15 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 				"fetch --progress --no-recurse-submodules --no-tags --depth=1 origin %s; ", spec.Job.ID, options.ExecutorName, spec.Job.Commit) +
 			fmt.Sprintf("git -C repository checkout --progress --force %s; ", spec.Job.Commit) +
 			"mkdir -p .sourcegraph-executor; " +
-			"mkdir -p workspace-files; " +
 			"echo '" + strings.ReplaceAll(nextIndexScript, "'", "'\"'\"'") + "' > nextIndex.sh; " +
 			"chmod +x nextIndex.sh; ",
 	}
 
 	for _, file := range workspaceFiles {
+		// Get the file path without the ending file name.
+		dir := filepath.Dir(file.Path)
 		// Having single ticks in the content mess things up real quick. Replace ' with '"'"'. This forces ' to be a string.
-		setupArgs[0] += "echo -E '" + strings.ReplaceAll(string(file.Content), "'", "'\"'\"'") + "' > " + file.Path + "; chmod +x " + file.Path + "; "
+		setupArgs[0] += "mkdir -p " + dir + "; echo -E '" + strings.ReplaceAll(string(file.Content), "'", "'\"'\"'") + "' > " + file.Path + "; chmod +x " + file.Path + "; "
 		if !file.ModifiedAt.IsZero() {
 			setupArgs[0] += fmt.Sprintf("touch -m -d '%s' %s; ", file.ModifiedAt.Format(time.RFC3339), file.Path)
 		}
