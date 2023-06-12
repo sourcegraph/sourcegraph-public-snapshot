@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { mdiDelete, mdiLoading, mdiMinus, mdiMinusThick } from '@mdi/js'
+import { mdiLoading, mdiMinusThick } from '@mdi/js'
 
 import { ErrorLike, asError } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
@@ -82,10 +82,7 @@ export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({
                 size="sm"
                 disabled={!isDirectAssigned}
             >
-                <Icon
-                    aria-hidden={true}
-                    svgPath={removeLoading || removeTeamLoading ? mdiLoading : mdiMinusThick}
-                />
+                <Icon aria-hidden={true} svgPath={removeLoading || removeTeamLoading ? mdiLoading : mdiMinusThick} />
             </Button>
         </Tooltip>
     )
