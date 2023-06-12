@@ -77,6 +77,10 @@ func (s *Service) DeleteUploadByID(ctx context.Context, id int) (bool, error) {
 	return s.store.DeleteUploadByID(ctx, id)
 }
 
+func (s *Service) PrioritizeUploadByID(ctx context.Context, id int) (bool, error) {
+	return s.store.PrioritizeUploadByID(ctx, id)
+}
+
 func (s *Service) DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOptions) error {
 	return s.store.DeleteUploads(ctx, opts)
 }
@@ -220,6 +224,10 @@ func (s *Service) DeleteIndexByID(ctx context.Context, id int) (bool, error) {
 	return s.store.DeleteIndexByID(ctx, id)
 }
 
+func (s *Service) PrioritizeIndexByID(ctx context.Context, id int) (bool, error) {
+	return s.store.PrioritizeIndexByID(ctx, id)
+}
+
 func (s *Service) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) error {
 	return s.store.DeleteIndexes(ctx, opts)
 }
@@ -242,12 +250,4 @@ func (s *Service) NumRepositoriesWithCodeIntelligence(ctx context.Context) (int,
 
 func (s *Service) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]uploadsshared.RepositoryWithCount, int, error) {
 	return s.store.RepositoryIDsWithErrors(ctx, offset, limit)
-}
-
-func (s *Service) PrioritizeUploadByID(ctx context.Context, id int) (bool, error) {
-	return s.store.PrioritizeUploadByID(ctx, id)
-}
-
-func (s *Service) PrioritizeIndexByID(ctx context.Context, id int) (bool, error) {
-	return s.store.PrioritizeIndexByID(ctx, id)
 }

@@ -325,6 +325,12 @@ type MockStore struct {
 	// function object controlling the behavior of the method
 	// NumRepositoriesWithCodeIntelligence.
 	NumRepositoriesWithCodeIntelligenceFunc *StoreNumRepositoriesWithCodeIntelligenceFunc
+	// PrioritizeIndexByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method PrioritizeIndexByID.
+	PrioritizeIndexByIDFunc *StorePrioritizeIndexByIDFunc
+	// PrioritizeUploadByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method PrioritizeUploadByID.
+	PrioritizeUploadByIDFunc *StorePrioritizeUploadByIDFunc
 	// ProcessSourcedCommitsFunc is an instance of a mock function object
 	// controlling the behavior of the method ProcessSourcedCommits.
 	ProcessSourcedCommitsFunc *StoreProcessSourcedCommitsFunc
@@ -611,6 +617,16 @@ func NewMockStore() *MockStore {
 		},
 		NumRepositoriesWithCodeIntelligenceFunc: &StoreNumRepositoriesWithCodeIntelligenceFunc{
 			defaultHook: func(context.Context) (r0 int, r1 error) {
+				return
+			},
+		},
+		PrioritizeIndexByIDFunc: &StorePrioritizeIndexByIDFunc{
+			defaultHook: func(context.Context, int) (r0 bool, r1 error) {
+				return
+			},
+		},
+		PrioritizeUploadByIDFunc: &StorePrioritizeUploadByIDFunc{
+			defaultHook: func(context.Context, int) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -941,6 +957,16 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.NumRepositoriesWithCodeIntelligence")
 			},
 		},
+		PrioritizeIndexByIDFunc: &StorePrioritizeIndexByIDFunc{
+			defaultHook: func(context.Context, int) (bool, error) {
+				panic("unexpected invocation of MockStore.PrioritizeIndexByID")
+			},
+		},
+		PrioritizeUploadByIDFunc: &StorePrioritizeUploadByIDFunc{
+			defaultHook: func(context.Context, int) (bool, error) {
+				panic("unexpected invocation of MockStore.PrioritizeUploadByID")
+			},
+		},
 		ProcessSourcedCommitsFunc: &StoreProcessSourcedCommitsFunc{
 			defaultHook: func(context.Context, time.Duration, time.Duration, int, func(ctx context.Context, repositoryID int, repositoryName string, commit string) (bool, error), time.Time) (int, int, error) {
 				panic("unexpected invocation of MockStore.ProcessSourcedCommits")
@@ -1181,6 +1207,12 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		NumRepositoriesWithCodeIntelligenceFunc: &StoreNumRepositoriesWithCodeIntelligenceFunc{
 			defaultHook: i.NumRepositoriesWithCodeIntelligence,
+		},
+		PrioritizeIndexByIDFunc: &StorePrioritizeIndexByIDFunc{
+			defaultHook: i.PrioritizeIndexByID,
+		},
+		PrioritizeUploadByIDFunc: &StorePrioritizeUploadByIDFunc{
+			defaultHook: i.PrioritizeUploadByID,
 		},
 		ProcessSourcedCommitsFunc: &StoreProcessSourcedCommitsFunc{
 			defaultHook: i.ProcessSourcedCommits,
@@ -6051,6 +6083,222 @@ func (c StoreNumRepositoriesWithCodeIntelligenceFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreNumRepositoriesWithCodeIntelligenceFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// StorePrioritizeIndexByIDFunc describes the behavior when the
+// PrioritizeIndexByID method of the parent MockStore instance is invoked.
+type StorePrioritizeIndexByIDFunc struct {
+	defaultHook func(context.Context, int) (bool, error)
+	hooks       []func(context.Context, int) (bool, error)
+	history     []StorePrioritizeIndexByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// PrioritizeIndexByID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) PrioritizeIndexByID(v0 context.Context, v1 int) (bool, error) {
+	r0, r1 := m.PrioritizeIndexByIDFunc.nextHook()(v0, v1)
+	m.PrioritizeIndexByIDFunc.appendCall(StorePrioritizeIndexByIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the PrioritizeIndexByID
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StorePrioritizeIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PrioritizeIndexByID method of the parent MockStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StorePrioritizeIndexByIDFunc) PushHook(hook func(context.Context, int) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StorePrioritizeIndexByIDFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StorePrioritizeIndexByIDFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *StorePrioritizeIndexByIDFunc) nextHook() func(context.Context, int) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StorePrioritizeIndexByIDFunc) appendCall(r0 StorePrioritizeIndexByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StorePrioritizeIndexByIDFuncCall objects
+// describing the invocations of this function.
+func (f *StorePrioritizeIndexByIDFunc) History() []StorePrioritizeIndexByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]StorePrioritizeIndexByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StorePrioritizeIndexByIDFuncCall is an object that describes an
+// invocation of method PrioritizeIndexByID on an instance of MockStore.
+type StorePrioritizeIndexByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StorePrioritizeIndexByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StorePrioritizeIndexByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// StorePrioritizeUploadByIDFunc describes the behavior when the
+// PrioritizeUploadByID method of the parent MockStore instance is invoked.
+type StorePrioritizeUploadByIDFunc struct {
+	defaultHook func(context.Context, int) (bool, error)
+	hooks       []func(context.Context, int) (bool, error)
+	history     []StorePrioritizeUploadByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// PrioritizeUploadByID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) PrioritizeUploadByID(v0 context.Context, v1 int) (bool, error) {
+	r0, r1 := m.PrioritizeUploadByIDFunc.nextHook()(v0, v1)
+	m.PrioritizeUploadByIDFunc.appendCall(StorePrioritizeUploadByIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the PrioritizeUploadByID
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StorePrioritizeUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PrioritizeUploadByID method of the parent MockStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StorePrioritizeUploadByIDFunc) PushHook(hook func(context.Context, int) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StorePrioritizeUploadByIDFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StorePrioritizeUploadByIDFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *StorePrioritizeUploadByIDFunc) nextHook() func(context.Context, int) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StorePrioritizeUploadByIDFunc) appendCall(r0 StorePrioritizeUploadByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StorePrioritizeUploadByIDFuncCall objects
+// describing the invocations of this function.
+func (f *StorePrioritizeUploadByIDFunc) History() []StorePrioritizeUploadByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]StorePrioritizeUploadByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StorePrioritizeUploadByIDFuncCall is an object that describes an
+// invocation of method PrioritizeUploadByID on an instance of MockStore.
+type StorePrioritizeUploadByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StorePrioritizeUploadByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StorePrioritizeUploadByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

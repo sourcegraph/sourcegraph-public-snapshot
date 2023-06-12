@@ -72,6 +72,12 @@ type MockUploadsService struct {
 	// function object controlling the behavior of the method
 	// NumRepositoriesWithCodeIntelligence.
 	NumRepositoriesWithCodeIntelligenceFunc *UploadsServiceNumRepositoriesWithCodeIntelligenceFunc
+	// PrioritizeIndexByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method PrioritizeIndexByID.
+	PrioritizeIndexByIDFunc *UploadsServicePrioritizeIndexByIDFunc
+	// PrioritizeUploadByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method PrioritizeUploadByID.
+	PrioritizeUploadByIDFunc *UploadsServicePrioritizeUploadByIDFunc
 	// ReindexIndexByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method ReindexIndexByID.
 	ReindexIndexByIDFunc *UploadsServiceReindexIndexByIDFunc
@@ -175,6 +181,16 @@ func NewMockUploadsService() *MockUploadsService {
 		},
 		NumRepositoriesWithCodeIntelligenceFunc: &UploadsServiceNumRepositoriesWithCodeIntelligenceFunc{
 			defaultHook: func(context.Context) (r0 int, r1 error) {
+				return
+			},
+		},
+		PrioritizeIndexByIDFunc: &UploadsServicePrioritizeIndexByIDFunc{
+			defaultHook: func(context.Context, int) (r0 bool, r1 error) {
+				return
+			},
+		},
+		PrioritizeUploadByIDFunc: &UploadsServicePrioritizeUploadByIDFunc{
+			defaultHook: func(context.Context, int) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -295,6 +311,16 @@ func NewStrictMockUploadsService() *MockUploadsService {
 				panic("unexpected invocation of MockUploadsService.NumRepositoriesWithCodeIntelligence")
 			},
 		},
+		PrioritizeIndexByIDFunc: &UploadsServicePrioritizeIndexByIDFunc{
+			defaultHook: func(context.Context, int) (bool, error) {
+				panic("unexpected invocation of MockUploadsService.PrioritizeIndexByID")
+			},
+		},
+		PrioritizeUploadByIDFunc: &UploadsServicePrioritizeUploadByIDFunc{
+			defaultHook: func(context.Context, int) (bool, error) {
+				panic("unexpected invocation of MockUploadsService.PrioritizeUploadByID")
+			},
+		},
 		ReindexIndexByIDFunc: &UploadsServiceReindexIndexByIDFunc{
 			defaultHook: func(context.Context, int) error {
 				panic("unexpected invocation of MockUploadsService.ReindexIndexByID")
@@ -378,6 +404,12 @@ func NewMockUploadsServiceFrom(i UploadsService) *MockUploadsService {
 		},
 		NumRepositoriesWithCodeIntelligenceFunc: &UploadsServiceNumRepositoriesWithCodeIntelligenceFunc{
 			defaultHook: i.NumRepositoriesWithCodeIntelligence,
+		},
+		PrioritizeIndexByIDFunc: &UploadsServicePrioritizeIndexByIDFunc{
+			defaultHook: i.PrioritizeIndexByID,
+		},
+		PrioritizeUploadByIDFunc: &UploadsServicePrioritizeUploadByIDFunc{
+			defaultHook: i.PrioritizeUploadByID,
 		},
 		ReindexIndexByIDFunc: &UploadsServiceReindexIndexByIDFunc{
 			defaultHook: i.ReindexIndexByID,
@@ -2287,6 +2319,228 @@ func (c UploadsServiceNumRepositoriesWithCodeIntelligenceFuncCall) Args() []inte
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UploadsServiceNumRepositoriesWithCodeIntelligenceFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadsServicePrioritizeIndexByIDFunc describes the behavior when the
+// PrioritizeIndexByID method of the parent MockUploadsService instance is
+// invoked.
+type UploadsServicePrioritizeIndexByIDFunc struct {
+	defaultHook func(context.Context, int) (bool, error)
+	hooks       []func(context.Context, int) (bool, error)
+	history     []UploadsServicePrioritizeIndexByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// PrioritizeIndexByID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUploadsService) PrioritizeIndexByID(v0 context.Context, v1 int) (bool, error) {
+	r0, r1 := m.PrioritizeIndexByIDFunc.nextHook()(v0, v1)
+	m.PrioritizeIndexByIDFunc.appendCall(UploadsServicePrioritizeIndexByIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the PrioritizeIndexByID
+// method of the parent MockUploadsService instance is invoked and the hook
+// queue is empty.
+func (f *UploadsServicePrioritizeIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PrioritizeIndexByID method of the parent MockUploadsService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UploadsServicePrioritizeIndexByIDFunc) PushHook(hook func(context.Context, int) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServicePrioritizeIndexByIDFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServicePrioritizeIndexByIDFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadsServicePrioritizeIndexByIDFunc) nextHook() func(context.Context, int) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServicePrioritizeIndexByIDFunc) appendCall(r0 UploadsServicePrioritizeIndexByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServicePrioritizeIndexByIDFuncCall
+// objects describing the invocations of this function.
+func (f *UploadsServicePrioritizeIndexByIDFunc) History() []UploadsServicePrioritizeIndexByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServicePrioritizeIndexByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServicePrioritizeIndexByIDFuncCall is an object that describes an
+// invocation of method PrioritizeIndexByID on an instance of
+// MockUploadsService.
+type UploadsServicePrioritizeIndexByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServicePrioritizeIndexByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServicePrioritizeIndexByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadsServicePrioritizeUploadByIDFunc describes the behavior when the
+// PrioritizeUploadByID method of the parent MockUploadsService instance is
+// invoked.
+type UploadsServicePrioritizeUploadByIDFunc struct {
+	defaultHook func(context.Context, int) (bool, error)
+	hooks       []func(context.Context, int) (bool, error)
+	history     []UploadsServicePrioritizeUploadByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// PrioritizeUploadByID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUploadsService) PrioritizeUploadByID(v0 context.Context, v1 int) (bool, error) {
+	r0, r1 := m.PrioritizeUploadByIDFunc.nextHook()(v0, v1)
+	m.PrioritizeUploadByIDFunc.appendCall(UploadsServicePrioritizeUploadByIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the PrioritizeUploadByID
+// method of the parent MockUploadsService instance is invoked and the hook
+// queue is empty.
+func (f *UploadsServicePrioritizeUploadByIDFunc) SetDefaultHook(hook func(context.Context, int) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PrioritizeUploadByID method of the parent MockUploadsService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UploadsServicePrioritizeUploadByIDFunc) PushHook(hook func(context.Context, int) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadsServicePrioritizeUploadByIDFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadsServicePrioritizeUploadByIDFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *UploadsServicePrioritizeUploadByIDFunc) nextHook() func(context.Context, int) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadsServicePrioritizeUploadByIDFunc) appendCall(r0 UploadsServicePrioritizeUploadByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadsServicePrioritizeUploadByIDFuncCall
+// objects describing the invocations of this function.
+func (f *UploadsServicePrioritizeUploadByIDFunc) History() []UploadsServicePrioritizeUploadByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadsServicePrioritizeUploadByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadsServicePrioritizeUploadByIDFuncCall is an object that describes an
+// invocation of method PrioritizeUploadByID on an instance of
+// MockUploadsService.
+type UploadsServicePrioritizeUploadByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadsServicePrioritizeUploadByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadsServicePrioritizeUploadByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

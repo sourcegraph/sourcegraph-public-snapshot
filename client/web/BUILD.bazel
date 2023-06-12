@@ -666,6 +666,7 @@ ts_project(
         "src/enterprise/codeintel/indexes/hooks/useDeletePreciseIndex.tsx",
         "src/enterprise/codeintel/indexes/hooks/useDeletePreciseIndexes.tsx",
         "src/enterprise/codeintel/indexes/hooks/useEnqueueIndexJob.tsx",
+        "src/enterprise/codeintel/indexes/hooks/usePrioritizePreciseIndex.tsx",
         "src/enterprise/codeintel/indexes/hooks/useReindexPreciseIndex.tsx",
         "src/enterprise/codeintel/indexes/hooks/useReindexPreciseIndexes.tsx",
         "src/enterprise/codeintel/indexes/pages/CodeIntelPreciseIndexPage.tsx",
