@@ -3,7 +3,9 @@ package cli
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"fmt"
+	"html/template"
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,6 +18,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
+//go:embed index.html
+var indexHTML string
+
+var _ embed.FS
+
+type migrationStatus struct {
+	Percentage string
+	Applied    []int
+	Pending    []int
+	Failed     []int
+}
+
 func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db database.DB) http.HandlerFunc {
 	// TODO(efritz) - persist plan + progress
 	// TODO(efritz) - query plan and progress for display
@@ -24,11 +38,11 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 	if err != nil {
 		panic(err.Error()) // TODO
 	}
-	codeintelDB, err := connections.RawNewCodeIntelDB(obsvCtx, dsns["codeintel"], "frontend")
+	codeintelDB, err := connections.RawNewCodeIntelDB(obsvCtx, dsns["codeintel"], appName)
 	if err != nil {
 		panic(err.Error()) // TODO
 	}
-	codeinsightsDB, err := connections.RawNewCodeInsightsDB(obsvCtx, dsns["codeinsights"], "frontend")
+	codeinsightsDB, err := connections.RawNewCodeInsightsDB(obsvCtx, dsns["codeinsights"], appName)
 	if err != nil {
 		panic(err.Error()) // TODO
 	}
@@ -54,71 +68,75 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		// TODO (numbers88s): don't know what this is, leaving it for @efritz.
+		_ = value
 
 		ms, err := s.List(ctx)
 		if err != nil {
 			panic(err.Error()) // TODO
 		}
+		// TODO (numbers88s): don't know what this is, leaving it for @efritz.
+		_ = ms
 
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, upgradeProgressHandlerTemplate, value)
-
-		for _, m := range ms {
-			fmt.Fprintf(w, "<p>Migration #%d is at %.2f%%</p>", m.ID, m.Progress*100)
-		}
-
-		fmt.Fprintf(w, `<h1>FRONTEND</h1>`)
+		// FRONTEND
 		applied, pending, failed, err := store.Versions(ctx)
 		if err != nil {
 			panic(err.Error()) // TODO
 		}
+		frontEndData := getMigrationStatus(applied, pending, failed)
 
-		for _, a := range applied {
-			fmt.Fprintf(w, "<p>applied migration %d</p>", a)
-		}
-		for _, p := range pending {
-			fmt.Fprintf(w, "<p>pending migration %d</p>", p)
-		}
-		for _, f := range failed {
-			fmt.Fprintf(w, "<p>failed migration %d</p>", f)
-		}
-
-		fmt.Fprintf(w, `<h1>CODEINTEL</h1>`)
+		// CODEINTEL
 		applied, pending, failed, err = codeintelStore.Versions(ctx)
 		if err != nil {
 			panic(err.Error()) // TODO
 		}
+		codeIntelData := getMigrationStatus(applied, pending, failed)
 
-		for _, a := range applied {
-			fmt.Fprintf(w, "<p>applied migration %d</p>", a)
-		}
-		for _, p := range pending {
-			fmt.Fprintf(w, "<p>pending migration %d</p>", p)
-		}
-		for _, f := range failed {
-			fmt.Fprintf(w, "<p>failed migration %d</p>", f)
-		}
-
-		fmt.Fprintf(w, `<h1>CODEINSIGHTS</h1>`)
+		// CODEINSIGHTS
 		applied, pending, failed, err = codeinsightsStore.Versions(ctx)
 		if err != nil {
 			panic(err.Error()) // TODO
 		}
+		codeInsightsData := getMigrationStatus(applied, pending, failed)
 
-		for _, a := range applied {
-			fmt.Fprintf(w, "<p>applied migration %d</p>", a)
+		data := struct {
+			Frontend     migrationStatus
+			CodeIntel    migrationStatus
+			CodeInsights migrationStatus
+		}{
+			Frontend:     frontEndData,
+			CodeIntel:    codeIntelData,
+			CodeInsights: codeInsightsData,
 		}
-		for _, p := range pending {
-			fmt.Fprintf(w, "<p>pending migration %d</p>", p)
+
+		tmpl, err := template.New("index").Parse(indexHTML)
+		if err != nil {
+			panic(err.Error()) // TODO
 		}
-		for _, f := range failed {
-			fmt.Fprintf(w, "<p>failed migration %d</p>", f)
+
+		err = tmpl.Execute(w, data)
+		if err != nil {
+			panic(err.Error()) // TODO
 		}
 	}
 }
 
-const upgradeProgressHandlerTemplate = `
-<body>
-	<h1>FANCY MIGRATION IN PROGRESS: %d</h1>
-</body>
-`
+func getMigrationStatus(applied, pending, failed []int) migrationStatus {
+	return migrationStatus{
+		Percentage: getProgressPercentage(applied, pending, failed),
+		Applied:    applied,
+		Pending:    pending,
+		Failed:     failed,
+	}
+}
+
+func getProgressPercentage(applied, pending, failed []int) string {
+	total := len(applied) + len(pending) + len(failed)
+	if total == 0 {
+		return "100%"
+	}
+
+	val := int(float64(len(applied)) / float64(total) * 100)
+
+	return fmt.Sprintf("%d%%", val)
+}

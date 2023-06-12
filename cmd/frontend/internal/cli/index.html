@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Migration In Progress...</title>
+        <style>
+            body {
+                margin: 0;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
+                    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+                background-color: #f9fafb;
+            }
+            h2 {
+                margin: 0;
+                padding: 2rem 0 2rem;
+                font-size: 1.85rem;
+            }
+            .tabs {
+                border-radius: 5px;
+                overflow: hidden;
+                border: 2px solid #e5e5e5;
+            }
+            .tab {
+                width: 100%;
+                color: black;
+                overflow: hidden;
+                border-bottom: 1px solid #e5e5e5;
+            }
+            .tab:last-child {
+                border-bottom: none;
+            }
+            .tab-label {
+                justify-content: space-between;
+                padding: 2em 1rem 2rem 1.2rem;
+                cursor: pointer;
+                display: grid;
+                grid-template-columns: 30px 1fr 1fr;
+                font-size: 1.25rem;
+            }
+            .tab-label span:last-child {
+                color: #2fcd66;
+                font-weight: 400;
+                padding-right: 20px;
+                justify-self: end;
+            }
+            .tab-label:hover {
+                background: darken(#2c3e50, 10%);
+            }
+            .tab-label::before {
+                content: '\276F';
+                width: 1em;
+                height: 1em;
+                text-align: center;
+                transition: all 0.35s;
+            }
+            .tab-content {
+                max-height: 0;
+                padding: 0 1em;
+                transition: all 0.35s;
+                transition-timing-function: ease-in-out;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+            .tab-close:hover {
+                background: darken(#2c3e50, 10%);
+            }
+            .tab-close {
+                display: flex;
+                justify-content: flex-end;
+                padding: 1em;
+                font-size: 0.75em;
+                background: #2c3e50;
+                cursor: pointer;
+            }
+            input {
+                position: absolute;
+                opacity: 0;
+                z-index: -1;
+            }
+            input:checked + .tab-label::before {
+                transform: rotate(90deg);
+            }
+            input:checked ~ .tab-content {
+                max-height: 100vh;
+                padding: 1em;
+            }
+            .top-container {
+
+                border-right: 2px solid #e5e5e5;
+                display: grid;
+                align-items: center;
+            }
+
+            .top-container div {
+                text-align: center;
+            }
+
+            .logo-container {
+                padding-top: 8rem;
+                width: 70%;
+                margin: 0 auto;
+                padding-bottom: 4rem;
+            }
+
+            .bottom-container {
+                padding: 3rem;
+                width: 60%;
+                margin: 0 auto;
+            }
+
+            .status-banner {
+                border: 1px solid #2fcd66;
+                padding: 1.5rem;
+                background: #2fcd66;
+                font-weight: 500;
+                border-radius: 5px;
+                color: white;
+                margin: 2rem 0 6rem;
+                font-size: 1.25rem;
+            }
+
+            .title-container {
+                display: grid;
+                grid-template-columns: 320px 20px;
+                align-items: center;
+                justify-content: center;
+                column-gap: 10px;
+            }
+
+            .title-container img {
+                width: 1.5rem;
+                height: 1.5rem;
+            }
+
+            .logo {
+                width: 40%;
+            }
+
+            .tuning {
+                font-size: 1.5rem;
+                margin: 0;
+            }
+
+            .later {
+                font-size: 1.5rem;
+                margin-top: 0.5rem;
+            }
+
+            .progress-title {
+                margin: 0;
+                padding-bottom: 1rem;
+            }
+
+            .progress-row {
+                display: grid;
+                grid-template-columns: 0.5fr 1fr;
+            }
+
+            .progress-row.completed {
+                padding-bottom: 5px;
+            }
+
+            .progress-row-container {
+                max-height: 350px;
+                overflow: scroll;
+            }
+
+            .progress-container {
+                padding-bottom: 2rem;
+            }
+
+            .progress-container.progress {
+                grid-row: 1;
+                grid-column: 1;
+            }
+
+            .progress-container.failed {
+                grid-row: 2;
+                grid-column: 1;
+            }
+
+            .progress-container.applied {
+                grid-row: 1 / span 2;
+                grid-column: 2;
+            }
+
+            .logo-spin {
+                width: 100px;
+                height: 100px;
+                animation-name: spin;
+                animation-duration: 5000ms;
+                animation-iteration-count: infinite;
+                animation-timing-function: linear;
+            }
+
+            @keyframes spin {
+                from {
+                    transform: rotate(0deg);
+                }
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <section>
+            <div class="top-container">
+                <div>
+                    <div class="logo-container">
+                        <img
+                            class="logo"
+                            src="https://sourcegraph.com/.assets/img/sourcegraph-logo-light.svg"
+                            alt="logo"
+                        />
+                    </div>
+                    <div class="title-container">
+                        <h2>Migration in Progress...</h2>
+                        <img
+                            src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg?v2"
+                            alt=""
+                            class="logo-spin"
+                        />
+                    </div>
+                    <p class="tuning">We are tuning your system right now.</p>
+                    <p class="later">Please check back later.</p>
+                </div>
+            </div>
+            <div class="bottom-container">
+                <div class="status-banner">All Systems Operational</div>
+                <div class="row">
+                    <div class="tabs">
+                        <div class="tab">
+                            <input type="checkbox" id="chck1" />
+                            <label class="tab-label" for="chck1">
+                                <span>Frontend</span>
+                                <span>{{ .Frontend.Percentage }}</span>
+                            </label>
+                            <div class="tab-content">
+
+                                <!-- Frontend: Pending -->
+                                <div class="progress-container progress">
+                                    <h3 class="progress-title">In Progress</h3>
+                                    <div class="progress-row-container">
+                                        {{ if (eq .Frontend.Percentage "100%") }}
+                                        <div class="progress-row">All Completed</div>
+                                        {{ else }} {{range .Frontend.Pending}}
+                                        <div class="progress-row">
+                                            <div>ID</div>
+                                            <div>{{ . }}</div>
+                                        </div>
+                                        {{end}} {{end}}
+                                    </div>
+                                </div>
+
+                                <!-- Frontend: Failed -->
+                                <div class="progress-container failed">
+                                    <h3 class="progress-title">Failed Migrations</h3>
+                                    <div class="progress-row-container">
+                                        {{ if not .Frontend.Failed }}
+                                        <div class="progress-row completed">
+                                            <div>None</div>
+                                        </div>
+                                        {{ else }} {{ range .Frontend.Failed }}
+                                        <div class="progress-row completed">
+                                            <div>ID</div>
+                                            <div>{{ . }}</div>
+                                        </div>
+                                        {{end}} {{end}}
+                                    </div>
+                                </div>
+
+                                <!-- Frontend: Completed -->
+                                <div class="progress-container applied">
+                                    <h3 class="progress-title">Applied Migrations</h3>
+                                    <div class="progress-row-container">
+                                        {{ if not .Frontend.Applied }}
+                                        <div class="progress-row completed">
+                                            <div>None yet</div>
+                                        </div>
+                                        {{ else }} {{ range .Frontend.Applied }}
+                                        <div class="progress-row completed">
+                                            <div>ID</div>
+                                            <div>{{ . }}</div>
+                                        </div>
+                                        {{end}} {{end}}
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Code Intel -->
+                        <div class="tab">
+                            <input type="checkbox" id="chck3" />
+                            <label class="tab-label" for="chck3">
+                                <span>Code Intel</span>
+                                <span>{{ .CodeIntel.Percentage }}</span>
+                            </label>
+                            <div class="tab-content">
+                                <!-- Code Intel: Pending -->
+                                <div class="progress-container progress">
+                                    <h3 class="progress-title">In Progress</h3>
+                                    <div class="progress-row-container">
+                                        {{ if (eq .CodeIntel.Percentage "100%") }}
+                                        <div class="progress-row">All Completed</div>
+                                        {{ else }} {{range .CodeIntel.Pending}}
+                                        <div class="progress-row">
+                                            <div>ID</div>
+                                            <div>{{ . }}</div>
+                                        </div>
+                                        {{end}} {{end}}
+                                    </div>
+                                </div>
+
+                                <!-- Code Intel: Failed -->
+                                <div class="progress-container failed">
+                                    <h3 class="progress-title">Failed Migrations</h3>
+                                    <div class="progress-row-container">
+                                        {{ if not .CodeIntel.Failed }}
+                                        <div class="progress-row completed">
+                                            <div>None</div>
+                                        </div>
+                                        {{ else }} {{ range .CodeIntel.Failed }}
+                                        <div class="progress-row completed">
+                                            <div>ID</div>
+                                            <div>{{ . }}</div>
+                                        </div>
+                                        {{end}} {{end}}
+                                    </div>
+                                </div>
+
+                                <!-- Code Intel: Completed -->
+                                <div class="progress-container applied">
+                                    <h3 class="progress-title">Applied Migrations</h3>
+                                    <div class="progress-row-container">
+                                        {{ if not .CodeIntel.Applied }}
+                                        <div class="progress-row completed">
+                                            <div>None yet</div>
+                                        </div>
+                                        {{ else }} {{ range .CodeIntel.Applied }}
+                                        <div class="progress-row completed">
+                                            <div>ID</div>
+                                            <div>{{ . }}</div>
+                                        </div>
+                                        {{end}} {{end}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Code Insights -->
+                        <div class="tab">
+                            <input type="checkbox" id="chck2" />
+                            <label class="tab-label" for="chck2">
+                                <span>Code Insights</span>
+                                <span>{{ .CodeInsights.Percentage }}</span>
+                            </label>
+                            <div class="tab-content">
+                                <!-- Code Insights: Pending -->
+                                <div class="progress-container progress">
+                                    <h3 class="progress-title">In Progress</h3>
+                                    <div class="progress-row-container">
+                                        {{ if (eq .CodeInsights.Percentage "100%") }}
+                                        <div class="progress-row">All Completed</div>
+                                        {{ else }} {{range .CodeInsights.Pending}}
+                                        <div class="progress-row">
+                                            <div>ID</div>
+                                            <div>{{ . }}</div>
+                                        </div>
+                                        {{end}} {{end}}
+                                    </div>
+                                </div>
+
+                                <!-- Code Insights: Failed -->
+                                <div class="progress-container failed">
+                                    <h3 class="progress-title">Failed Migrations</h3>
+                                    <div class="progress-row-container">
+                                        {{ if not .CodeInsights.Failed }}
+                                        <div class="progress-row completed">
+                                            <div>None</div>
+                                        </div>
+                                        {{ else }} {{ range .CodeInsights.Failed }}
+                                        <div class="progress-row completed">
+                                            <div>ID</div>
+                                            <div>{{ . }}</div>
+                                        </div>
+                                        {{end}} {{end}}
+                                    </div>
+                                </div>
+
+                                <!-- Code Insights: Completed -->
+                                <div class="progress-container applied">
+                                    <h3 class="progress-title">Applied Migrations</h3>
+                                    <div class="progress-row-container">
+                                        {{ if not .CodeInsights.Applied }}
+                                        <div class="progress-row completed">
+                                            <div>None yet</div>
+                                        </div>
+                                        {{ else }} {{ range .CodeInsights.Applied }}
+                                        <div class="progress-row completed">
+                                            <div>ID</div>
+                                            <div>{{ . }}</div>
+                                        </div>
+                                        {{end}} {{end}}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </body>
+</html>
