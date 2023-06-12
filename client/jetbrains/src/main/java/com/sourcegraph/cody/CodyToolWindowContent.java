@@ -84,6 +84,9 @@ class CodyToolWindowContent implements UpdatableChat {
     contextSearchButton.addActionListener(e -> recipeRunner.runContextSearch());
     JButton releaseNotesButton = createWideButton("Generate release notes");
     releaseNotesButton.addActionListener(e -> recipeRunner.runReleaseNotes());
+    JButton optimizeCodeButton = createWideButton("Optimize code");
+    optimizeCodeButton.addActionListener(
+        e -> recipeRunner.runRecipe(new OptimizeCodePromptProvider()));
     recipesPanel.add(explainCodeDetailedButton);
     recipesPanel.add(explainCodeHighLevelButton);
     recipesPanel.add(generateUnitTestButton);
@@ -95,6 +98,7 @@ class CodyToolWindowContent implements UpdatableChat {
     recipesPanel.add(fixupButton);
     recipesPanel.add(contextSearchButton);
     recipesPanel.add(releaseNotesButton);
+    recipesPanel.add(optimizeCodeButton);
 
     // Chat panel
     messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true));

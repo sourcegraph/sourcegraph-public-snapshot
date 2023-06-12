@@ -64,8 +64,6 @@ public class RecipeRunner {
 
   public void runGitHistory() {}
 
-  public void runFindCodeSmells() {}
-
   public void runFixup() {}
 
   public void runContextSearch() {}
