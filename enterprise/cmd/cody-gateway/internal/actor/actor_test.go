@@ -182,9 +182,7 @@ func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
-			if test.wantStore != nil {
-				test.wantStore.Equal(t, test.limiter.redis)
-			}
+			test.wantStore.Equal(t, test.limiter.redis)
 		})
 	}
 }

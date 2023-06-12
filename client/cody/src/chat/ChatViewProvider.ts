@@ -157,15 +157,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     /**
      * Restores a session from a chatID
-     * We delete the loaded session from our in-memory chatHistory (to hide it from the history view)
-     * but don't modify the localStorage as no data changes when a session is restored
      */
     public async restoreSession(chatID: string): Promise<void> {
         await this.saveTranscriptToChatHistory()
         this.cancelCompletion()
         this.currentChatID = chatID
         this.transcript = Transcript.fromJSON(this.chatHistory[chatID])
-        delete this.chatHistory[chatID]
+        await this.transcript.toJSON()
         this.sendTranscript()
         this.sendChatHistory()
     }
@@ -179,6 +177,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.publishConfig()
                 this.sendTranscript()
                 this.sendChatHistory()
+                await this.loadRecentChat()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
@@ -216,6 +215,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 break
             case 'restoreHistory':
                 await this.restoreSession(message.chatID)
+                break
+            case 'deleteHistory':
+                await this.deleteHistory(message.chatID)
                 break
             case 'links':
                 void this.openExternalLinks(message.value)
@@ -333,6 +335,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.cancelCompletionCallback = null
         this.sendTranscript()
         void this.saveTranscriptToChatHistory()
+        this.sendChatHistory()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', false)
         this.logEmbeddingsSearchErrors()
     }
@@ -578,6 +581,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
+     * Delete history from current chat history and local storage
+     */
+    private async deleteHistory(chatID: string): Promise<void> {
+        delete this.chatHistory[chatID]
+        await this.localStorage.deleteChatHistory(chatID)
+        this.sendChatHistory()
+    }
+
+    /**
      * Loads chat history from local storage
      */
     private loadChatHistory(): void {
@@ -585,6 +597,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         if (localHistory) {
             this.chatHistory = localHistory?.chat
             this.inputHistory = localHistory.input
+        }
+    }
+
+    /**
+     * Loads the most recent chat
+     */
+    private async loadRecentChat(): Promise<void> {
+        const localHistory = this.localStorage.getChatHistory()
+        if (localHistory) {
+            const chats = localHistory.chat
+            const sortedChats = Object.entries(chats).sort(
+                (a, b) => +new Date(b[1].lastInteractionTimestamp) - +new Date(a[1].lastInteractionTimestamp)
+            )
+            const chatID = sortedChats[0][0]
+            await this.restoreSession(chatID)
         }
     }
 

@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -96,12 +97,24 @@ func FromContext(ctx context.Context) *Actor {
 
 // Logger returns a logger that has metadata about the actor attached to it.
 func (a *Actor) Logger(logger log.Logger) log.Logger {
-	if a == nil {
+	// If there's no ID and no source and no key, this is probably just no
+	// actor available. Possible in actor-less endpoints like diagnostics.
+	if a == nil || (a.ID == "" && a.Source == nil && a.Key == "") {
 		return logger.With(log.String("actor.ID", "<nil>"))
 	}
+
+	// TODO: We shouldn't ever have a nil source, but check just in case, since
+	// we don't want to panic on some instrumentation.
+	var sourceName string
+	if a.Source != nil {
+		sourceName = a.Source.Name()
+	} else {
+		sourceName = "<nil>"
+	}
+
 	return logger.With(
 		log.String("actor.ID", a.ID),
-		log.String("actor.Source", a.Source.Name()),
+		log.String("actor.Source", sourceName),
 		log.Bool("actor.AccessEnabled", a.AccessEnabled),
 		log.Timep("actor.LastUpdated", a.LastUpdated),
 	)
@@ -129,6 +142,7 @@ func (a *Actor) Limiter(
 	logger log.Logger,
 	redis limiter.RedisStore,
 	feature codygateway.Feature,
+	rateLimitNotifier notify.RateLimitNotifier,
 ) (limiter.Limiter, bool) {
 	if a == nil {
 		// Not logged in, no limit applicable.
@@ -160,6 +174,9 @@ func (a *Actor) Limiter(
 			Redis:     limiter.NewPrefixRedisStore(featurePrefix, redis),
 			RateLimit: limit,
 			Actor:     a,
+			rateLimitNotifier: func(usagePercentage float32, ttl time.Duration) {
+				rateLimitNotifier(a.ID, codygateway.ActorSource(a.Source.Name()), feature, usagePercentage, ttl)
+			},
 		},
 		nowFunc: time.Now,
 	}
@@ -241,6 +258,10 @@ type updateOnFailureLimiter struct {
 	Redis     limiter.RedisStore
 	RateLimit RateLimit
 	*Actor
+
+	// rateLimitNotifier is called (when set) whenever the rate limit usage has
+	// changed.
+	rateLimitNotifier func(usagePercentage float32, ttl time.Duration)
 }
 
 func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func(int) error, error) {
@@ -252,12 +273,11 @@ func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func(int) error
 		// Only update rate limit TTL if the actor has been updated recently.
 		UpdateRateLimitTTL: u.LastUpdated != nil && time.Since(*u.LastUpdated) < 5*time.Minute,
 		NowFunc:            time.Now,
+		RateLimitAlerter:   u.rateLimitNotifier,
 	}).TryAcquire(ctx)
-
 	if errors.As(err, &limiter.NoAccessError{}) || errors.As(err, &limiter.RateLimitExceededError{}) {
 		u.Actor.Update(ctx) // TODO: run this in goroutine+background context maybe?
 	}
-
 	return commit, err
 }
 

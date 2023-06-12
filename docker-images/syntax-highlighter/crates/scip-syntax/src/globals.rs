@@ -257,14 +257,14 @@ pub fn parse_tree<'a>(
 }
 
 #[cfg(test)]
-mod test {
+pub mod test {
     use scip::types::Document;
-    use scip_treesitter::snapshot::{dump_document, dump_document_with_config, SnapshotOptions};
+    use scip_treesitter::snapshot::{dump_document_with_config, SnapshotOptions};
     use scip_treesitter_languages::parsers::BundledParser;
 
     use super::*;
 
-    fn parse_file_for_lang(config: &TagConfiguration, source_code: &str) -> Result<Document> {
+    pub fn parse_file_for_lang(config: &TagConfiguration, source_code: &str) -> Result<Document> {
         let source_bytes = source_code.as_bytes();
         let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
@@ -282,58 +282,6 @@ mod test {
             .collect();
 
         Ok(doc)
-    }
-
-    #[test]
-    fn test_can_parse_rust_tree() -> Result<()> {
-        let config =
-            crate::languages::get_tag_configuration(&BundledParser::Rust).expect("to have parser");
-        let source_code = include_str!("../testdata/scopes.rs");
-        let doc = parse_file_for_lang(config, source_code)?;
-
-        let dumped = dump_document(&doc, source_code)?;
-        insta::assert_snapshot!(dumped);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_can_parse_go_tree() -> Result<()> {
-        let config =
-            crate::languages::get_tag_configuration(&BundledParser::Go).expect("to have parser");
-        let source_code = include_str!("../testdata/example.go");
-        let doc = parse_file_for_lang(config, source_code)?;
-
-        let dumped = dump_document(&doc, source_code)?;
-        insta::assert_snapshot!(dumped);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_can_parse_go_internal_tree() -> Result<()> {
-        let config =
-            crate::languages::get_tag_configuration(&BundledParser::Go).expect("to have parser");
-        let source_code = include_str!("../testdata/internal_go.go");
-        let doc = parse_file_for_lang(config, source_code)?;
-
-        let dumped = dump_document(&doc, source_code)?;
-        insta::assert_snapshot!(dumped);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_can_parse_ruby_internal_tree() -> Result<()> {
-        let config =
-            crate::languages::get_tag_configuration(&BundledParser::Ruby).expect("to have parser");
-        let source_code = include_str!("../testdata/ruby-globals.rb");
-        let doc = parse_file_for_lang(config, source_code)?;
-
-        let dumped = dump_document(&doc, source_code)?;
-        insta::assert_snapshot!(dumped);
-
-        Ok(())
     }
 
     #[test]
