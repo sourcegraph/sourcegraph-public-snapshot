@@ -2,13 +2,13 @@ package internalerrs
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/log"
@@ -25,7 +25,7 @@ var (
 	envLoggingEnabled        = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_ENABLED", true, "Enables logging of gRPC internal errors")
 	envLogStackTracesEnabled = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_STACK_TRACES", false, "Enables including stack traces in logs of gRPC internal errors")
 
-	envLogNonUTF8ProtobufMessages        = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES", false, "Enables logging of non-UTF-8 protobuf messages")
+	envLogNonUTF8ProtobufMessages        = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES_ENABLED", false, "Enables logging of non-UTF-8 protobuf messages")
 	envLogNonUTF8ProtobufMessagesMaxSize = env.MustGetUint64("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES_MAX_SIZE_BYTES", 1024, "Maximum size of non-UTF-8 protobuf messages to log, in bytes")
 )
 
@@ -68,6 +68,10 @@ func LoggingStreamClientInterceptor(l log.Logger) grpc.StreamClientInterceptor {
 
 		stream, err := streamer(ctx, desc, cc, fullMethod, opts...)
 		if err != nil {
+			// Note: This is a bit hacky, we provide a nil message here since the message isn't available
+			// until after the stream is created.
+			//
+			// This is fine since the error is already available, and the non-utf8 string check is robust against nil messages.
 			doLog(logger, serviceName, methodName, nil, err)
 			return nil, err
 		}
@@ -80,12 +84,14 @@ func LoggingStreamClientInterceptor(l log.Logger) grpc.StreamClientInterceptor {
 func newLoggingClientStream(s grpc.ClientStream, logger log.Logger, serviceName, methodName string) *callBackClientStream {
 	return &callBackClientStream{
 		ClientStream: s,
-		postMessageSend: func(m interface{}, err error) {
+
+		postMessageSend: func(m any, err error) {
 			if err != nil {
 				doLog(logger, serviceName, methodName, m, err)
 			}
 		},
-		postMessageReceive: func(m interface{}, err error) {
+
+		postMessageReceive: func(m any, err error) {
 			if err != nil && err != io.EOF { // EOF is expected at the end of a stream, so no need to log an error
 				doLog(logger, serviceName, methodName, m, err)
 			}
@@ -93,7 +99,7 @@ func newLoggingClientStream(s grpc.ClientStream, logger log.Logger, serviceName,
 	}
 }
 
-func doLog(logger log.Logger, serviceName, methodName string, message interface{}, err error) {
+func doLog(logger log.Logger, serviceName, methodName string, payload any, err error) {
 	if err == nil {
 		return
 	}
@@ -107,43 +113,69 @@ func doLog(logger log.Logger, serviceName, methodName string, message interface{
 		return
 	}
 
-	fields := []log.Field{
+	allFields := []log.Field{
 		log.String("grpcService", serviceName),
 		log.String("grpcMethod", methodName),
 		log.String("grpcCode", s.Code().String()),
 	}
 
 	if envLogStackTracesEnabled {
-		fields = append(fields, log.String("errWithStack", fmt.Sprintf("%+v", err)))
+		allFields = append(allFields, log.String("errWithStack", fmt.Sprintf("%+v", err)))
 	}
 
 	if isNonUTF8StringError(s) {
-		if m, ok := message.(proto.Message); ok {
-			badStrings, err := findNonUTF8StringFields(m)
-			if err != nil {
-				fields = append(fields, log.Error(errors.Wrapf(err, "failed to find non-UTF8 string fields")))
-			} else {
-				fields = append(fields, log.Strings("nonUTF8StringFields", badStrings))
-			}
-
-			if envLogNonUTF8ProtobufMessages {
-				messageString := prototext.MarshalOptions{AllowPartial: true}.Format(m)
-				messageString = truncate(messageString, int(envLogNonUTF8ProtobufMessagesMaxSize))
-
-				fields = append(fields, log.String("message", messageString))
-			}
+		if m, ok := payload.(proto.Message); ok {
+			allFields = append(
+				allFields,
+				additionalNonUTF8StringDebugFields(m, envLogNonUTF8ProtobufMessages, envLogNonUTF8ProtobufMessagesMaxSize)...,
+			)
 		}
 	}
 
-	logger.Error(s.Message(), fields...)
+	logger.Error(s.Message(), allFields...)
 }
 
-func truncate(s string, max int) string {
-	if max > 0 && len(s) > max {
-		s = s[:max] + "...(truncated)"
+// additionalNonUTF8StringDebugFields returns additional log fields that should be included when logging a non-UTF8 string error.
+//
+// By default, this includes the names of all fields that contain non-UTF8 strings.
+// If shouldLogMessageJSON is true, then the JSON representation of the message is also included. The maxMessageSizeLogBytes parameter
+// controls the maximum size of the message that will be logged, after which it will be truncated.
+func additionalNonUTF8StringDebugFields(message proto.Message, shouldLogMessageJSON bool, maxMessageSizeLogBytes uint64) []log.Field {
+	var allFields []log.Field
+
+	// Add the names of all protobuf fields that contain non-UTF-8 strings to the log.
+
+	badFields, err := findNonUTF8StringFields(message)
+	if err != nil {
+		allFields = append(allFields, log.Error(errors.Wrapf(err, "failed to find non-UTF8 string allFields")))
+		return allFields
 	}
 
-	return s
+	allFields = append(allFields, log.Strings("nonUTF8StringFields", badFields))
+
+	// Add the JSON representation of the message to the log.
+
+	if !shouldLogMessageJSON {
+		return allFields
+	}
+
+	// Note: we can't use the protojson library here since it doesn't support messages with non-UTF8 strings.
+	jsonBytes, err := json.Marshal(message)
+	if err != nil {
+		allFields = append(allFields, log.Error(errors.Wrapf(err, "failed to marshal protobuf message to bytes")))
+		return allFields
+	}
+
+	// Truncate the message if it's too large for logging.
+	max := int(maxMessageSizeLogBytes)
+	if max >= 0 && len(jsonBytes) > max {
+		jsonBytes = jsonBytes[:max]
+		jsonBytes = append(jsonBytes, []byte("...(truncated)")...)
+	}
+
+	allFields = append(allFields, log.String("messageJSON", string(jsonBytes)))
+
+	return allFields
 }
 
 func isNonUTF8StringError(s *status.Status) bool {
