@@ -19,7 +19,32 @@ export class VSCodeEditor implements Editor {
             // model moves from client/cody-shared to client/cody
             task: FixupController
         }
-    ) {}
+    ) {
+        vscode.workspace.onDidChangeConfiguration(e => {
+            const config = vscode.workspace.getConfiguration('cody')
+            if (e.affectsConfiguration('cody')) {
+                // Non-Stop Cody
+                const enableNonStop = config.get('experimental.nonStop') as boolean
+                const taskView = this.controllers.task.getTaskView()
+                void vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', enableNonStop)
+                if (enableNonStop) {
+                    vscode.window.registerTreeDataProvider('cody.fixup.tree.view', taskView)
+                } else {
+                    taskView.dispose()
+                }
+                // Inline Assist
+                const enableInlineAssist = config.get('experimental.inline') as boolean
+                const inlineController = this.controllers.inline
+                void vscode.commands.executeCommand('setContext', 'cody.inline-assist.enabled', enableInlineAssist)
+                inlineController.get().commentingRangeProvider = {
+                    provideCommentingRanges: (document: vscode.TextDocument) => {
+                        const lineCount = document.lineCount
+                        return enableInlineAssist ? [new vscode.Range(0, 0, lineCount - 1, 0)] : []
+                    },
+                }
+            }
+        })
+    }
 
     public get fileName(): string {
         return vscode.window.activeTextEditor?.document.fileName ?? ''
