@@ -3,7 +3,7 @@ import React, { FC, useState, useCallback, useRef, useEffect } from 'react'
 import { noop } from 'lodash'
 import { Link } from 'react-router-dom'
 
-import { Alert, Container, Button, Input, Label, Text, PageHeader, ButtonLink } from '@sourcegraph/wildcard'
+import { Alert, Container, Button, Input, Label, Text, PageHeader, ButtonLink, Checkbox } from '@sourcegraph/wildcard'
 
 import { GitHubAppDomain } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -72,6 +72,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     const [url, setUrl] = useState<string>(baseURL || 'https://github.com')
     const [urlError, setUrlError] = useState<string>()
     const [org, setOrg] = useState<string>('')
+    const [isPublic, setIsPublic] = useState<boolean>(false)
     const [error, setError] = useState<string>()
 
     useEffect(() => eventLogger.logPageView('SiteAdminCreateGiHubApp'), [])
@@ -87,11 +88,11 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                 setup_url: new URL('/.auth/githubapp/setup', originURL).href,
                 callback_urls: [new URL('/.auth/github/callback', originURL).href],
                 setup_on_update: true,
-                public: false,
+                public: isPublic,
                 default_permissions: defaultPermissions,
                 default_events: defaultEvents,
             }),
-        [originURL, defaultEvents, defaultPermissions]
+        [originURL, defaultEvents, defaultPermissions, isPublic]
     )
 
     const createActionUrl = useCallback(
@@ -187,6 +188,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     )
 
     const handleOrgChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setOrg(event.target.value), [])
+    const toggleIsPublic = useCallback(() => setIsPublic(isPublic => !isPublic), [])
 
     return (
         <>
@@ -210,9 +212,8 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                     Provide the details for a new GitHub App with the form below. Once you click "Create GitHub App",
                     you will be routed to {baseURL || 'GitHub'} to create the App and choose which repositories to grant
                     it access to. Once created on {baseURL || 'GitHub'}, you'll be redirected back here to finish
-                    installing it on Sourcegraph.
+                    connecting it to Sourcegraph.
                 </Text>
-
                 <Label className="w-100">
                     <Text alignment="left" className="mb-2">
                         GitHub App Name
@@ -258,7 +259,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                                 <Link
                                     to="https://docs.github.com/en/organizations/managing-peoples-access-to-your-organization-with-roles/roles-in-an-organization#organization-owners"
                                     target="_blank"
-                                    rel="noopener"
+                                    rel="noopener noreferrer"
                                 >
                                     organization owners
                                 </Link>{' '}
@@ -267,7 +268,31 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                         }
                     />
                 </Label>
-                <div className="mt-3">
+                <Checkbox
+                    wrapperClassName="mt-2"
+                    id="app-is-public"
+                    onChange={toggleIsPublic}
+                    checked={isPublic}
+                    label={
+                        <>
+                            Make App public <span className="text-muted">(optional)</span>
+                        </>
+                    }
+                    message={
+                        <>
+                            Your GitHub App must be public if you want to install it on multiple organizations or user
+                            accounts.{' '}
+                            <Link
+                                to="/help/admin/external_service/github#mutliple-installations"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Learn more about public vs. private GitHub Apps.
+                            </Link>
+                        </>
+                    }
+                />
+                <div className="mt-4">
                     <Button variant="primary" onClick={createState} disabled={!!nameError || !!urlError}>
                         Create Github App
                     </Button>

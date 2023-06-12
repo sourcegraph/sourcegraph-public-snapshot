@@ -153,12 +153,31 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService }) => {
                     <hr className="mt-4 mb-4" />
 
                     <div>
-                        <H2 className="d-flex align-items-center">
+                        <H2 className="d-flex align-items-center mb-3">
                             Installations
                             <Button className="ml-auto" onClick={() => onAddInstallation(app)} variant="primary">
                                 <Icon svgPath={mdiPlus} aria-hidden={true} /> Add installation
                             </Button>
                         </H2>
+                        <Text>
+                            An installation is a connection between a GitHub App and a user or organization on GitHub.
+                            An installation allows the GitHub App to access resources owned by that account and perform
+                            actions on behalf of it.
+                        </Text>
+                        <Text>
+                            A GitHub App can only be installed in multiple accounts if it is{' '}
+                            <AnchorLink to="https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/making-a-github-app-public-or-private">
+                                public
+                            </AnchorLink>
+                            . A private GitHub App can only be installed on the account that originally created it.{' '}
+                            <Link
+                                to="/help/admin/external_service/github#mutliple-installations"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Learn more about public vs. private GitHub Apps.
+                            </Link>
+                        </Text>
                         <div className="list-group mb-3" aria-label="GitHub App Installations">
                             {app.installations?.length === 0 ? (
                                 <Text>
