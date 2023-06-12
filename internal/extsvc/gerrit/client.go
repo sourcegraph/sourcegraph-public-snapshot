@@ -46,6 +46,7 @@ type Client interface {
 	GetChangeReviews(ctx context.Context, changeID string) (*[]Reviewer, error)
 	SetWIP(ctx context.Context, changeID string) error
 	SetReadyForReview(ctx context.Context, changeID string) error
+	// DeleteChange(ctx context.Context, changeID string) (*Change, error)
 }
 
 // NewClient returns an authenticated Gerrit API client with
@@ -124,6 +125,15 @@ func (c *client) GetGroup(ctx context.Context, groupName string) (Group, error) 
 		return respGetGroup, err
 	}
 	return respGetGroup, nil
+}
+
+func (c *client) DeleteChange(ctx context.Context, changeID string) error {
+	req, err := http.NewRequest("DELETE", "a/changes/%s", changeID)
+	if err != nil {
+		return err
+	}
+
+	return err
 }
 
 func (c *client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) { //nolint:unparam // http.Response is never used, but it makes sense API wise.

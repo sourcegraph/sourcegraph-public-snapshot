@@ -10,6 +10,7 @@ import (
 
 	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
@@ -163,9 +164,19 @@ func (s GerritSource) UndraftChangeset(ctx context.Context, cs *Changeset) error
 // means the appropriate final state on the codehost (e.g. "abandoned" on
 // Gerrit).
 func (s GerritSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
+	changeID := GenerateGerritChangeID(*cs.Changeset)
+
 	updated, err := s.client.AbandonChange(ctx, cs.ExternalID)
 	if err != nil {
 		return errors.Wrap(err, "abandoning change")
+	}
+
+	deleteChange := conf.Get().BatchChangesAutoDeleteBranch
+	if deleteChange {
+		err := s.client.DeleteChange(ctx, changeID)
+		if err != nil {
+			return err
+		}
 	}
 
 	return errors.Wrap(s.setChangesetMetadata(ctx, updated, cs), "setting Gerrit changeset metadata")
