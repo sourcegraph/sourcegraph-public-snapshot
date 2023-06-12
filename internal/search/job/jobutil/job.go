@@ -53,9 +53,8 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan, enterpriseJobs Enterpris
 		if err != nil {
 			return nil, err
 		}
-		if newJobTree != nil {
-			jobTree = newJobTree
-		}
+
+		jobTree = newJobTree
 	}
 
 	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky {
