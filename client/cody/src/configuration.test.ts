@@ -8,7 +8,7 @@ describe('getConfiguration', () => {
             get: <T>(_key: string, defaultValue?: T): typeof defaultValue | undefined => defaultValue,
         }
         expect(getConfiguration(config)).toEqual({
-            serverEndpoint: '',
+            serverEndpoint: 'https://sourcegraph.com',
             codebase: '',
             useContext: 'embeddings',
             completions: false,
