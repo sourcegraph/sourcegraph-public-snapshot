@@ -160,7 +160,7 @@ func (c *Config) Load() {
 	c.KubernetesJobVolumeSize = c.Get("KUBERNETES_JOB_VOLUME_SIZE", "5Gi", "Determines the size of the job volume.")
 	c.kubernetesJobVolumes = c.GetOptional("KUBERNETES_JOB_VOLUMES", "Addtional volumes to associate with the Jobs. e.g. [{\"name\": \"my-volume\", \"configMap\": {\name\": \"cluser-volume\"}}]")
 	c.kubernetesJobVolumeMounts = c.GetOptional("KUBERNETES_JOB_VOLUME_MOUNTS", "Volumes to mount to the Jobs. e.g. [{\"name\":\"my-volume\", \"mountPath\":\"/foo/bar\"}]")
-	c.KubernetesSingleJobStepImage = c.Get("KUBERNETES_SINGLE_JOB_STEP_IMAGE", "sourcegraph/batcheshelper:latest", "The image to use for intermediate steps in the single job. Defaults to sourcegraph/batcheshelper:latest.")
+	c.KubernetesSingleJobStepImage = c.Get("KUBERNETES_SINGLE_JOB_STEP_IMAGE", "sourcegraph/batcheshelper:insiders", "The image to use for intermediate steps in the single job. Defaults to sourcegraph/batcheshelper:latest.")
 
 	if c.QueueNamesStr != "" {
 		c.QueueNames = strings.Split(c.QueueNamesStr, ",")
