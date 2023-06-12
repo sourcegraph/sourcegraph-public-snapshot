@@ -61,7 +61,10 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, hook stor
 	upgradestore := upgradestore.New(db)
 
 	_, doAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
-	if err != nil {
+	// fresh instance
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	} else if err != nil {
 		return errors.Wrap(err, "autoupgradestore.GetAutoUpgrade")
 	}
 	if !doAutoUpgrade && !shouldAutoUpgade {
