@@ -281,16 +281,14 @@ func (c *KubernetesCommand) handleContainers(
 			containerLoggers[status.Name] = containerLogger{logEntry: logger.LogEntry(normalizeKey(status.Name), getCommand(status.Name, spec))}
 			l = containerLoggers[status.Name]
 		}
-		if status.State.Terminated != nil {
-			// We only want to read the logs once. If the log entry is already completed, we can skip it.
-			// Waiting for the container to complete also gives us access to the exit code.
-			if !l.completed {
-				if err := c.ReadLogs(ctx, namespace, pod, status.Name, containerStatus, l.logEntry); err != nil {
-					return err
-				}
-				l.completed = true
-				containerLoggers[status.Name] = l
+		// We only want to read the logs once. If the log entry is already completed, we can skip it.
+		// Waiting for the container to complete also gives us access to the exit code.
+		if status.State.Terminated != nil && !l.completed {
+			if err := c.ReadLogs(ctx, namespace, pod, status.Name, containerStatus, l.logEntry); err != nil {
+				return err
 			}
+			l.completed = true
+			containerLoggers[status.Name] = l
 		}
 	}
 	return nil
