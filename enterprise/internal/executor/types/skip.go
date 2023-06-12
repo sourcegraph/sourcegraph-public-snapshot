@@ -7,6 +7,4 @@ const SkipFile = "skip.json"
 type Skip struct {
 	// NextStep is the key of the next step to run.
 	NextStep string `json:"nextStep"`
-	// NextIndex is the index of the next step to run.
-	NextIndex int `json:"nextIndex"`
 }

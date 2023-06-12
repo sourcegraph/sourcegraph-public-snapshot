@@ -668,7 +668,7 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 				"fetch --progress --no-recurse-submodules --no-tags --depth=1 origin %s; ", spec.Job.ID, options.ExecutorName, spec.Job.Commit) +
 			fmt.Sprintf("git -C repository checkout --progress --force %s; ", spec.Job.Commit) +
 			"mkdir -p .sourcegraph-executor; " +
-			"echo '" + nextIndexScript + "' > nextIndex.sh; " +
+			"echo '" + strings.ReplaceAll(nextIndexScript, "'", "'\"'\"'") + "' > nextIndex.sh; " +
 			"chmod +x nextIndex.sh; ",
 	}
 
@@ -711,7 +711,7 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 			}
 		}
 
-		nextIndexCommand := fmt.Sprintf("if [ \"$(%s %d)\" = \"%d\" ]; then ", filepath.Join(KubernetesJobMountPath, "nextIndex.sh"), stepIndex, stepIndex)
+		nextIndexCommand := fmt.Sprintf("if [ \"$(%s /job/skip.json %s)\" != \"skip\" ]; then ", filepath.Join(KubernetesJobMountPath, "nextIndex.sh"), normalizeKey(step.Key))
 		stepInitContainers[stepIndex+1] = corev1.Container{
 			Name:            step.Key,
 			Image:           step.Image,
@@ -771,14 +771,18 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 
 const nextIndexScript = `#!/bin/sh
 
-file="skip.json"
+file="$1"
 
 if [ ! -f "$file" ]; then
-  echo "$1"
   exit 0
 fi
 
-grep -o '"nextIndex":[^,]*' $file | sed 's/"nextIndex"://' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+nextStep=$(grep -o '"nextStep":[^,]*' $file | sed 's/"nextStep"://' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/"//g' -e 's/}//g')
+
+if [ "${2%$nextStep}" = "$2" ]; then
+  echo "skip"
+  exit 0
+fi
 `
 
 type JobSecret struct {

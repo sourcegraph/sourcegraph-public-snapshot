@@ -23,7 +23,7 @@ func FilesMountPath(workingDirectory string, step int) string {
 
 // WriteSkipFile writes the skip file to the working directory.
 func WriteSkipFile(workingDirectory string, nextStep int) error {
-	s := types.Skip{NextStep: executorutil.FormatPreKey(nextStep), NextIndex: nextStep}
+	s := types.Skip{NextStep: executorutil.FormatPreKey(nextStep)}
 	b, err := json.Marshal(s)
 	if err != nil {
 		return errors.Wrap(err, "marshalling skip file")
