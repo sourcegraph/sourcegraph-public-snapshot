@@ -54,7 +54,7 @@ go_library(
 
 go_test(
     name = "embeddings_test",
-    timeout = "short",
+    timeout = "moderate",
     srcs = [
         "dot_test.go",
         "index_storage_test.go",
