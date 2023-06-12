@@ -319,7 +319,7 @@ const register = async (
     } else {
         // User hasn't configured Cody, let's prompt them
         await showActionNotification({
-            message: 'Continue setting up Cody',
+            message: 'Continue Setting up Cody',
             actions: [
                 {
                     label: 'Setup',
