@@ -21,13 +21,14 @@ import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.editor.EditorContextGetter;
-import com.sourcegraph.cody.recipes.RecipeRunner;
+import com.sourcegraph.cody.recipes.*;
 import com.sourcegraph.cody.ui.RoundedJBTextArea;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
 import java.awt.*;
 import java.awt.event.AdjustmentListener;
 import java.util.ArrayList;
+import java.util.Collections;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.ButtonUI;
@@ -56,13 +57,17 @@ class CodyToolWindowContent implements UpdatableChat {
     // Recipes panel
     RecipeRunner recipeRunner = new RecipeRunner(this.project, this);
     JButton explainCodeDetailedButton = createWideButton("Explain selected code (detailed)");
-    explainCodeDetailedButton.addActionListener(e -> recipeRunner.runExplainCodeDetailed());
+    explainCodeDetailedButton.addActionListener(
+        e -> recipeRunner.runRecipe(new ExplainCodeDetailedPromptProvider()));
     JButton explainCodeHighLevelButton = createWideButton("Explain selected code (high level)");
-    explainCodeHighLevelButton.addActionListener(e -> recipeRunner.runExplainCodeHighLevel());
+    explainCodeHighLevelButton.addActionListener(
+        e -> recipeRunner.runRecipe(new ExplainCodeHighLevelPromptProvider()));
     JButton generateUnitTestButton = createWideButton("Generate a unit test");
-    generateUnitTestButton.addActionListener(e -> recipeRunner.runGenerateUnitTest());
+    generateUnitTestButton.addActionListener(
+        e -> recipeRunner.runRecipe(new GenerateUnitTestPromptProvider()));
     JButton generateDocstringButton = createWideButton("Generate a docstring");
-    generateDocstringButton.addActionListener(e -> recipeRunner.runGenerateDocstring());
+    generateDocstringButton.addActionListener(
+        e -> recipeRunner.runRecipe(new GenerateDocStringPromptProvider()));
     JButton improveVariableNamesButton = createWideButton("Improve variable names");
     improveVariableNamesButton.addActionListener(e -> recipeRunner.runImproveVariableNames());
     JButton translateToLanguageButton = createWideButton("Translate to different language");
@@ -214,7 +219,7 @@ class CodyToolWindowContent implements UpdatableChat {
   @Override
   public void respondToMessage(@NotNull ChatMessage message) {
     activateChatTab();
-    sendMessage(this.project, message.getDisplayText());
+    sendMessage(this.project, message);
   }
 
   public synchronized void updateLastMessage(@NotNull ChatMessage message) {
@@ -255,10 +260,11 @@ class CodyToolWindowContent implements UpdatableChat {
 
   private void sendMessage(@NotNull Project project) {
     String messageText = promptInput.getText();
-    sendMessage(project, messageText);
+    sendMessage(
+        project, ChatMessage.createHumanMessage(messageText, messageText, Collections.emptyList()));
   }
 
-  private void sendMessage(@NotNull Project project, String messageText) {
+  private void sendMessage(@NotNull Project project, ChatMessage message) {
     if (!sendButton.isEnabled()) return;
     startMessageProcessing();
     // Build message
@@ -275,7 +281,8 @@ class CodyToolWindowContent implements UpdatableChat {
     var chat = new Chat("", instanceUrl, accessToken != null ? accessToken : "");
     ArrayList<String> contextFiles =
         EditorContextGetter.getEditorContext(project).getCurrentFileContentAsArrayList();
-    ChatMessage humanMessage = ChatMessage.createHumanMessage(messageText, contextFiles);
+    ChatMessage humanMessage =
+        ChatMessage.createHumanMessage(message.prompt(), message.getDisplayText(), contextFiles);
     addMessageToChat(humanMessage);
 
     // Get assistant message

@@ -7,7 +7,7 @@ import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.editor.EditorContext;
 import com.sourcegraph.cody.editor.EditorContextGetter;
 import com.sourcegraph.cody.prompts.LanguageUtils;
-import java.util.ArrayList;
+import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 
 public class RecipeRunner {
@@ -20,13 +20,10 @@ public class RecipeRunner {
     this.chat = chat;
   }
 
-  private String getMarkdownFormatPrompt() {
-    return "Enclose code snippets with three backticks like so: ```.";
-  }
-
-  public void runExplainCodeDetailed() {
+  public void runRecipe(PromptProvider promptProvider) {
     EditorContext editorContext = EditorContextGetter.getEditorContext(project);
-    if (editorContext.getSelection() == null) {
+    String selectedText = editorContext.getSelection();
+    if (selectedText == null) {
       chat.activateChatTab();
       chat.addMessageToChat(
           ChatMessage.createAssistantMessage(
@@ -37,8 +34,7 @@ public class RecipeRunner {
         LanguageUtils.getNormalizedLanguageName(editorContext.getCurrentFileExtension());
 
     String truncatedSelectedText =
-        TruncationUtils.truncateText(
-            editorContext.getSelection(), TruncationUtils.MAX_RECIPE_INPUT_TOKENS);
+        TruncationUtils.truncateText(selectedText, TruncationUtils.MAX_RECIPE_INPUT_TOKENS);
     String truncatedPrecedingText =
         editorContext.getPrecedingText() != null
             ? TruncationUtils.truncateTextStart(
@@ -50,44 +46,15 @@ public class RecipeRunner {
                 editorContext.getFollowingText(), TruncationUtils.MAX_RECIPE_SURROUNDING_TOKENS)
             : "";
 
-    String promptMessage =
-        String.format(
-            "Please explain the following %s code. Be very detailed and specific, and indicate when it is not clear to you what is going on. Format your response as an ordered list.\n```%s\n%s\n```\n%s",
-            languageName,
-            languageName.toLowerCase(),
-            truncatedSelectedText,
-            getMarkdownFormatPrompt());
+    PromptContext promptContext =
+        promptProvider.getPromptContext(languageName, selectedText, truncatedSelectedText);
 
-    String displayText =
-        String.format(
-            "Explain the following code:\n```%s\n%s\n```",
-            languageName, editorContext.getSelection());
-
-    //        return new Interaction(
-    //            { speaker: 'human', text: promptMessage, displayText },
-    //        { speaker: 'assistant' },
-    //        getContextMessagesFromSelection(
-    //            truncatedSelectedText,
-    //            truncatedPrecedingText,
-    //            truncatedFollowingText,
-    //            selection.fileName,
-    //            context.codebaseContext
-    //        )
-    ChatMessage humanMessage = ChatMessage.createHumanMessage(promptMessage, new ArrayList<>());
+    ChatMessage humanMessage =
+        ChatMessage.createHumanMessage(
+            promptContext.getPrompt(), promptContext.getDisplayText(), Collections.emptyList());
 
     chat.respondToMessage(humanMessage);
   }
-
-  //    private ArrayList<ChatMessage> getContextMessagesFromSelection(EditorContext editorContext)
-  // {
-  //        return ChatMessage.createHumanMessage(editorContext, new ArrayList<String>());
-  //    }
-
-  public void runExplainCodeHighLevel() {}
-
-  public void runGenerateUnitTest() {}
-
-  public void runGenerateDocstring() {}
 
   public void runImproveVariableNames() {}
 
