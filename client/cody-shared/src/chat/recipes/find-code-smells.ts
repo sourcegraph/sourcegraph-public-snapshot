@@ -36,7 +36,8 @@ If you have no ideas because the code looks fine, feel free to say that it alrea
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
             },
-            new Promise(resolve => resolve([]))
+            new Promise(resolve => resolve([])),
+            []
         )
     }
 }

@@ -24,6 +24,7 @@ export interface CompletionResponse {
 }
 
 export interface CompletionParameters {
+    fast?: boolean
     messages: Message[]
     maxTokensToSample: number
     temperature?: number

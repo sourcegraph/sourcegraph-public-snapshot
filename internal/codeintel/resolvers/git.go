@@ -29,7 +29,8 @@ type GitCommitResolver interface {
 	OID() GitObjectID
 	AbbreviatedOID() string
 	URL() string
-	URI() string // exposed for internal URL construction
+	URI() string                                // exposed for internal URL construction
+	Tags(ctx context.Context) ([]string, error) // exposed for internal memoization of gitserver requests
 }
 
 type GitObjectID string
