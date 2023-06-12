@@ -1,10 +1,10 @@
 # Licensing
 
-Sourcegraph Enterprise requires a valid license key to enable many of the Enterprise-specific features.
+[Sourcegraph Enterprise](getting-started/oss-enterprise.md) requires a valid license key to enable many of the Enterprise-specific features.
 
-In order to ensure that a valid license is configured, Sourcegraph periodically does a verification check to Sourcegraph.com. This check sends no information other than what's necessary to verify your Sourcegraph license. If this check fails, or if the check does not occur, Sourcegraph will disable all Enterprise features until a successful license check is completed.
+Sourcegraph will periodically perform a license validation check by contacting sourcegraph.com. This check sends no information other than a unique site ID and information about the configured Sourcegraph license. This check is mandatory, and if the check fails, or if the check does not occur, Sourcegraph will disable all Enterprise features until a successful license check is completed.
 
-If this behaviour is undesired, or Sourcegraph has to operate in an environment without an external internet connection, contact customer support for a special license key.
+If Sourcegraph needs to operate in a sandboxed environment without an external internet connection, contact customer support for a special license key.
 
 ## Troubleshooting
 
