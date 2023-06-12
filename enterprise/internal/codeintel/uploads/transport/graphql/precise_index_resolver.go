@@ -301,8 +301,6 @@ func (r *preciseIndexResolver) State() string {
 //
 
 func (r *preciseIndexResolver) ProjectRoot(ctx context.Context) (_ resolverstubs.GitTreeEntryResolver, err error) {
-	// defer r.traceErrs.Collect(&err, log.String("uploadResolver.field", "projectRoot"))
-
 	repoID, commit, root := r.projectRootMetadata()
 	resolver, err := r.locationResolver.Path(ctx, repoID, commit, root, true)
 	if err != nil || resolver == nil {
@@ -314,8 +312,6 @@ func (r *preciseIndexResolver) ProjectRoot(ctx context.Context) (_ resolverstubs
 }
 
 func (r *preciseIndexResolver) Tags(ctx context.Context) ([]string, error) {
-	// defer r.traceErrs.Collect(&err, log.String("uploadResolver.field", "tags"))
-
 	repoID, commit, _ := r.projectRootMetadata()
 	resolver, err := r.locationResolver.Commit(ctx, repoID, commit)
 	if err != nil || resolver == nil {
