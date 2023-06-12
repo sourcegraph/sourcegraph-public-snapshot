@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -78,6 +79,7 @@ func TestGetIndexOptions(t *testing.T) {
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
 			},
+			LanguageMap: ctags_config.DefaultEngines,
 		},
 	}, {
 		name: "public",
@@ -91,6 +93,7 @@ func TestGetIndexOptions(t *testing.T) {
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
 			},
+			LanguageMap: ctags_config.DefaultEngines,
 		},
 	}, {
 		name: "fork",
@@ -104,6 +107,7 @@ func TestGetIndexOptions(t *testing.T) {
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
 			},
+			LanguageMap: ctags_config.DefaultEngines,
 		},
 	}, {
 		name: "archived",
@@ -117,6 +121,7 @@ func TestGetIndexOptions(t *testing.T) {
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
 			},
+			LanguageMap: ctags_config.DefaultEngines,
 		},
 	}, {
 		name: "nosymbols",
@@ -130,6 +135,7 @@ func TestGetIndexOptions(t *testing.T) {
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
 			},
+			LanguageMap: ctags_config.DefaultEngines,
 		},
 	}, {
 		name: "largefiles",
@@ -145,6 +151,7 @@ func TestGetIndexOptions(t *testing.T) {
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
 			},
+			LanguageMap: ctags_config.DefaultEngines,
 		},
 	}, {
 		name: "conf index branches",
@@ -159,6 +166,7 @@ func TestGetIndexOptions(t *testing.T) {
 				{Name: "a", Version: "!a"},
 				{Name: "b", Version: "!b"},
 			},
+			LanguageMap: ctags_config.DefaultEngines,
 		},
 	}, {
 		name: "conf index revisions",
@@ -176,6 +184,7 @@ func TestGetIndexOptions(t *testing.T) {
 				{Name: "HEAD", Version: "!HEAD"},
 				{Name: "a", Version: "!a"},
 			},
+			LanguageMap: ctags_config.DefaultEngines,
 		},
 	}, {
 		name: "conf index revisions and branches",
@@ -198,6 +207,7 @@ func TestGetIndexOptions(t *testing.T) {
 				{Name: "b", Version: "!b"},
 				{Name: "c", Version: "!c"},
 			},
+			LanguageMap: ctags_config.DefaultEngines,
 		},
 	}, {
 		name:              "with search context revisions",
@@ -213,6 +223,7 @@ func TestGetIndexOptions(t *testing.T) {
 				{Name: "rev1", Version: "!rev1"},
 				{Name: "rev2", Version: "!rev2"},
 			},
+			LanguageMap: ctags_config.DefaultEngines,
 		},
 	}, {
 		name: "with a priority value",
@@ -225,7 +236,8 @@ func TestGetIndexOptions(t *testing.T) {
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
 			},
-			Priority: 10,
+			Priority:    10,
+			LanguageMap: ctags_config.DefaultEngines,
 		},
 	}, {
 		name: "with rank",
@@ -239,6 +251,7 @@ func TestGetIndexOptions(t *testing.T) {
 				{Name: "HEAD", Version: "!HEAD"},
 			},
 			DocumentRanksVersion: "ranked",
+			LanguageMap:          ctags_config.DefaultEngines,
 		},
 	}}
 
@@ -260,10 +273,11 @@ func TestGetIndexOptions(t *testing.T) {
 			conf: withBranches(schema.SiteConfiguration{}, REPO, branches...),
 			repo: REPO,
 			want: ZoektIndexOptions{
-				RepoID:   1,
-				Name:     "repo-01",
-				Symbols:  true,
-				Branches: want,
+				RepoID:      1,
+				Name:        "repo-01",
+				Symbols:     true,
+				Branches:    want,
+				LanguageMap: ctags_config.DefaultEngines,
 			},
 		})
 	}
@@ -402,6 +416,7 @@ func TestGetIndexOptions_batch(t *testing.T) {
 				Branches: []zoekt.RepositoryBranch{
 					{Name: "HEAD", Version: fmt.Sprintf("!HEAD-%d", repo)},
 				},
+				LanguageMap: ctags_config.DefaultEngines,
 			})
 		}
 	}
