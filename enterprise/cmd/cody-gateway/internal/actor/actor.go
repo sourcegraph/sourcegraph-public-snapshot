@@ -124,10 +124,11 @@ func (a *Actor) Limiter(
 	// rate limits. This will get wrapped in various other layers of limiter
 	// behaviour.
 	baseLimiter := limiter.StaticLimiter{
-		Identifier: a.ID,
-		Redis:      limiter.NewPrefixRedisStore(featurePrefix, redis),
-		Limit:      limit.Limit,
-		Interval:   limit.Interval,
+		LimiterName: "actor.Limiter",
+		Identifier:  a.ID,
+		Redis:       limiter.NewPrefixRedisStore(featurePrefix, redis),
+		Limit:       limit.Limit,
+		Interval:    limit.Interval,
 		// Only update rate limit TTL if the actor has been updated recently.
 		UpdateRateLimitTTL: a.LastUpdated != nil && time.Since(*a.LastUpdated) < 5*time.Minute,
 		NowFunc:            time.Now,
@@ -144,7 +145,7 @@ func (a *Actor) Limiter(
 		concurrentRequests: limit.ConcurrentRequests,
 		concurrentInterval: limit.ConcurrentRequestsInterval,
 
-		nextLimiter: updateOnFailureLimiter{
+		nextLimiter: updateOnErrorLimiter{
 			actor: a,
 
 			nextLimiter: baseLimiter,

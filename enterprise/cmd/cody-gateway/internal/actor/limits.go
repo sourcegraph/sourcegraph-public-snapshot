@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
+	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
@@ -72,8 +74,9 @@ type concurrencyLimiter struct {
 	nowFunc func() time.Time
 }
 
-func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func(int) error, error) {
+func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func(context.Context, int) error, error) {
 	commit, err := (limiter.StaticLimiter{
+		LimiterName:        "actor.concurrencyLimiter",
 		Identifier:         l.actor.ID,
 		Redis:              l.redis,
 		Limit:              l.concurrentRequests,
@@ -95,7 +98,7 @@ func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func(int) error, e
 		}
 		return nil, errors.Wrap(err, "check concurrent limit")
 	}
-	if err = commit(1); err != nil {
+	if err = commit(ctx, 1); err != nil {
 		trace.Logger(ctx, l.logger).Error("failed to commit concurrency limit consumption", log.Error(err))
 	}
 
@@ -128,17 +131,19 @@ func (e ErrConcurrencyLimitExceeded) WriteResponse(w http.ResponseWriter) {
 	http.Error(w, e.Summary(), http.StatusTooManyRequests)
 }
 
-// updateOnFailureLimiter calls Actor.Update if nextLimiter responds with certain
+// updateOnErrorLimiter calls Actor.Update if nextLimiter responds with certain
 // access errors.
-type updateOnFailureLimiter struct {
+type updateOnErrorLimiter struct {
 	actor *Actor
 
 	nextLimiter limiter.Limiter
 }
 
-func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func(int) error, error) {
+func (u updateOnErrorLimiter) TryAcquire(ctx context.Context) (func(context.Context, int) error, error) {
 	commit, err := u.nextLimiter.TryAcquire(ctx)
 	if errors.As(err, &limiter.NoAccessError{}) || errors.As(err, &limiter.RateLimitExceededError{}) {
+		oteltrace.SpanFromContext(ctx).
+			SetAttributes(attribute.Bool("update-on-error", true))
 		u.actor.Update(ctx) // TODO: run this in goroutine+background context maybe?
 	}
 	return commit, err
