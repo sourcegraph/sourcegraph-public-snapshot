@@ -1,4 +1,7 @@
 {
+  "name": "cody-icons-font",
+  "private": true,
+  "version": "0.0.0",
   "scripts": {
     "font": "svgtofont --sources ./svg --output ./font && rm font/*.{eot,svg}"
   },
