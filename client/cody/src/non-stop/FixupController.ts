@@ -444,7 +444,6 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         // TODO: Something is abusing this method to refresh code lenses. Find
         // the state 2->2 (and maybe more) callers, work out what they are
         // actually notifying, and just notify about that.
-        console.log(task.id, 'changing state from', task.state, 'to', state)
         switch (state) {
             case CodyTaskState.queued:
                 task.queue()
@@ -468,7 +467,6 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
                 task.apply()
                 break
         }
-        console.log(task.id, 'current state', task.state)
         if (task.state === CodyTaskState.fixed) {
             this.discard(task.id)
             return Promise.resolve(null)
