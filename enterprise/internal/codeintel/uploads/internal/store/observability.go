@@ -55,6 +55,7 @@ type operations struct {
 	softDeleteExpiredUploads             *observation.Operation
 	hardDeleteUploadsByIDs               *observation.Operation
 	deleteUploadByID                     *observation.Operation
+	prioritizeUploadByID                 *observation.Operation
 	insertUpload                         *observation.Operation
 	addUploadPart                        *observation.Operation
 	markQueued                           *observation.Operation
@@ -89,6 +90,7 @@ type operations struct {
 	getIndexByID               *observation.Operation
 	getIndexesByIDs            *observation.Operation
 	deleteIndexByID            *observation.Operation
+	prioritizeIndexByID        *observation.Operation
 	deleteIndexes              *observation.Operation
 	reindexIndexByID           *observation.Operation
 	reindexIndexes             *observation.Operation
@@ -157,6 +159,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		softDeleteExpiredUploads:             op("SoftDeleteExpiredUploads"),
 		hardDeleteUploadsByIDs:               op("HardDeleteUploadsByIDs"),
 		deleteUploadByID:                     op("DeleteUploadByID"),
+		prioritizeUploadByID:                 op("PrioritizeUploadByID"),
 		insertUpload:                         op("InsertUpload"),
 		addUploadPart:                        op("AddUploadPart"),
 		markQueued:                           op("MarkQueued"),
@@ -196,6 +199,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getIndexByID:                        op("GetIndexByID"),
 		getIndexesByIDs:                     op("GetIndexesByIDs"),
 		deleteIndexByID:                     op("DeleteIndexByID"),
+		prioritizeIndexByID:                 op("PrioritizeIndexByID"),
 		deleteIndexes:                       op("DeleteIndexes"),
 		reindexIndexByID:                    op("ReindexIndexByID"),
 		reindexIndexes:                      op("ReindexIndexes"),

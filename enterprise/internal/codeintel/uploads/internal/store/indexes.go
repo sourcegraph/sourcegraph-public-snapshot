@@ -302,6 +302,24 @@ const deleteIndexByIDQuery = `
 DELETE FROM lsif_indexes WHERE id = %s RETURNING repository_id
 `
 
+// TODO -  test
+func (s *store) PrioritizeIndexByID(ctx context.Context, id int) (_ bool, err error) {
+	ctx, _, endObservation := s.operations.prioritizeIndexByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	_, prioritized, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(prioritizeIndexByIDQuery, id)))
+	return prioritized, err
+}
+
+const prioritizeIndexByIDQuery = `
+UPDATE lsif_indexes u
+SET queued_at = NOW() - '1 year'::interval, process_after = NULL
+WHERE id = %s AND state = 'queued'
+RETURNING 1
+`
+
 // DeleteIndexes deletes indexes matching the given filter criteria.
 func (s *store) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error) {
 	ctx, _, endObservation := s.operations.deleteIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{

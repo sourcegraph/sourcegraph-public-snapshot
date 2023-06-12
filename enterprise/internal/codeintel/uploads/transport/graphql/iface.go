@@ -34,6 +34,8 @@ type UploadsService interface {
 	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadshared.IndexesWithRepositoryNamespace, error)
 	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
 	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) (_ []uploadshared.RepositoryWithCount, totalCount int, err error)
+	PrioritizeUploadByID(ctx context.Context, id int) (_ bool, err error)
+	PrioritizeIndexByID(ctx context.Context, id int) (_ bool, err error)
 }
 
 type AutoIndexingService interface {

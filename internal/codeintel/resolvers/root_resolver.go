@@ -129,6 +129,10 @@ func (r *Resolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID grap
 	return r.uploadsRootResolver.DeletePreciseIndex(ctx, args)
 }
 
+func (r *Resolver) PrioritizePreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
+	return r.uploadsRootResolver.PrioritizePreciseIndex(ctx, args)
+}
+
 func (r *Resolver) DeletePreciseIndexes(ctx context.Context, args *DeletePreciseIndexesArgs) (*EmptyResponse, error) {
 	return r.uploadsRootResolver.DeletePreciseIndexes(ctx, args)
 }

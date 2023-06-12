@@ -91,6 +91,11 @@ extend type Mutation {
     deletePreciseIndex(id: ID!): EmptyResponse
 
     """
+    Jumps this precise index to the front of its current queue.
+    """
+    prioritizePreciseIndex(id: ID!): EmptyResponse
+
+    """
     Deletes precise indexes by filter criteria.
     """
     deletePreciseIndexes(

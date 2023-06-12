@@ -8,15 +8,16 @@ import (
 )
 
 type operations struct {
-	codeIntelSummary      *observation.Operation
-	commitGraph           *observation.Operation
-	deletePreciseIndex    *observation.Operation
-	deletePreciseIndexes  *observation.Operation
-	preciseIndexByID      *observation.Operation
-	preciseIndexes        *observation.Operation
-	reindexPreciseIndex   *observation.Operation
-	reindexPreciseIndexes *observation.Operation
-	repositorySummary     *observation.Operation
+	codeIntelSummary       *observation.Operation
+	commitGraph            *observation.Operation
+	deletePreciseIndex     *observation.Operation
+	prioritizePreciseIndex *observation.Operation
+	deletePreciseIndexes   *observation.Operation
+	preciseIndexByID       *observation.Operation
+	preciseIndexes         *observation.Operation
+	reindexPreciseIndex    *observation.Operation
+	reindexPreciseIndexes  *observation.Operation
+	repositorySummary      *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -36,14 +37,15 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		codeIntelSummary:      op("CodeIntelSummary"),
-		commitGraph:           op("CommitGraph"),
-		deletePreciseIndex:    op("DeletePreciseIndex"),
-		deletePreciseIndexes:  op("DeletePreciseIndexes"),
-		preciseIndexByID:      op("PreciseIndexByID"),
-		preciseIndexes:        op("PreciseIndexes"),
-		reindexPreciseIndex:   op("ReindexPreciseIndex"),
-		reindexPreciseIndexes: op("ReindexPreciseIndexes"),
-		repositorySummary:     op("RepositorySummary"),
+		codeIntelSummary:       op("CodeIntelSummary"),
+		commitGraph:            op("CommitGraph"),
+		deletePreciseIndex:     op("DeletePreciseIndex"),
+		prioritizePreciseIndex: op("PrioritizePreciseIndex"),
+		deletePreciseIndexes:   op("DeletePreciseIndexes"),
+		preciseIndexByID:       op("PreciseIndexByID"),
+		preciseIndexes:         op("PreciseIndexes"),
+		reindexPreciseIndex:    op("ReindexPreciseIndex"),
+		reindexPreciseIndexes:  op("ReindexPreciseIndexes"),
+		repositorySummary:      op("RepositorySummary"),
 	}
 }

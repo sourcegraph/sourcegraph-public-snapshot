@@ -804,6 +804,24 @@ WHERE id = %s
 RETURNING repository_id
 `
 
+// TODO - test
+func (s *store) PrioritizeUploadByID(ctx context.Context, id int) (_ bool, err error) {
+	ctx, _, endObservation := s.operations.prioritizeUploadByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	_, prioritized, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(prioritizeUploadByIDQuery, id)))
+	return prioritized, err
+}
+
+const prioritizeUploadByIDQuery = `
+UPDATE lsif_uploads u
+SET uploaded_at = NOW() - '1 year'::interval, process_after = NULL
+WHERE id = %s AND state = 'queued'
+RETURNING 1
+`
+
 // ReindexUploads reindexes uploads matching the given filter criteria.
 func (s *store) ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) (err error) {
 	ctx, _, endObservation := s.operations.reindexUploads.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{

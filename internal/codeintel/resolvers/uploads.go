@@ -16,6 +16,7 @@ type UploadsServiceResolver interface {
 
 	// Modify precise indexes
 	DeletePreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
+	PrioritizePreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
 	DeletePreciseIndexes(ctx context.Context, args *DeletePreciseIndexesArgs) (*EmptyResponse, error)
 	ReindexPreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
 	ReindexPreciseIndexes(ctx context.Context, args *ReindexPreciseIndexesArgs) (*EmptyResponse, error)

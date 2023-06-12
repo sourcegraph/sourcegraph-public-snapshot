@@ -1,7 +1,7 @@
 import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import { mdiDelete, mdiGraph, mdiHistory, mdiRecycle, mdiRedo, mdiTimerSand } from '@mdi/js'
+import { mdiDelete, mdiGraph, mdiHistory, mdiJumpRope, mdiRecycle, mdiRedo, mdiRocket, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
 import { Navigate, useLocation, useParams, useNavigate } from 'react-router-dom'
 import { takeWhile } from 'rxjs/operators'
@@ -44,6 +44,7 @@ import { RetentionList } from '../components/RetentionList'
 import { queryDependencyGraph as defaultQueryDependencyGraph } from '../hooks/queryDependencyGraph'
 import { queryPreciseIndex as defaultQueryPreciseIndex } from '../hooks/queryPreciseIndex'
 import { useDeletePreciseIndex as defaultUseDeletePreciseIndex } from '../hooks/useDeletePreciseIndex'
+import { usePrioritizePreciseIndex as defaultUseprioritizePreciseIndex } from '../hooks/usePrioritizePreciseIndex'
 import { useReindexPreciseIndex as defaultUseReindexPreciseIndex } from '../hooks/useReindexPreciseIndex'
 
 import styles from './CodeIntelPreciseIndexPage.module.scss'
@@ -55,6 +56,7 @@ export interface CodeIntelPreciseIndexPageProps extends TelemetryProps {
     queryPreciseIndex?: typeof defaultQueryPreciseIndex
     useDeletePreciseIndex?: typeof defaultUseDeletePreciseIndex
     useReindexPreciseIndex?: typeof defaultUseReindexPreciseIndex
+    useprioritizePreciseIndex?: typeof defaultUseprioritizePreciseIndex
     indexingEnabled?: boolean
 }
 
@@ -69,6 +71,7 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     queryPreciseIndex = defaultQueryPreciseIndex,
     useDeletePreciseIndex = defaultUseDeletePreciseIndex,
     useReindexPreciseIndex = defaultUseReindexPreciseIndex,
+    useprioritizePreciseIndex = defaultUseprioritizePreciseIndex,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     telemetryService,
 }) => {
@@ -81,14 +84,17 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
     const apolloClient = useApolloClient()
     const { handleReindexPreciseIndex, reindexError } = useReindexPreciseIndex()
     const { handleDeletePreciseIndex, deleteError } = useDeletePreciseIndex()
+    const { handlePrioritizePreciseIndex, prioritizeError } = useprioritizePreciseIndex()
 
     // State to track reindex/delete operations
     const [reindexOrError, setReindexOrError] = useState<'loading' | 'reindexed' | ErrorLike>()
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
+    const [prioritizedOrError, setPrioritizedOrError] = useState<'loading' | 'prioritized' | ErrorLike>()
 
     // Seed initial state
     useEffect(() => setDeletionOrError(deleteError), [deleteError])
     useEffect(() => setReindexOrError(reindexError), [reindexError])
+    useEffect(() => setPrioritizedOrError(prioritizeError), [prioritizeError])
 
     const indexOrError = useObservable(
         useMemo(
@@ -133,6 +139,25 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
             )
         }
     }, [id, indexOrError, handleDeletePreciseIndex, navigate])
+
+    const prioritizeUpload = useCallback(async (): Promise<void> => {
+        if (!indexOrError || isErrorLike(indexOrError)) {
+            return
+        }
+
+        setPrioritizedOrError('loading')
+
+        try {
+            await handlePrioritizePreciseIndex({
+                variables: { id: id! },
+                update: cache => cache.modify({ fields: { node: () => {} } }),
+            })
+
+            setPrioritizedOrError('prioritized')
+        } catch (error) {
+            setPrioritizedOrError(error)
+        }
+    }, [id, indexOrError, handlePrioritizePreciseIndex])
 
     const reindexUpload = useCallback(async (): Promise<void> => {
         if (!indexOrError || isErrorLike(indexOrError)) {
@@ -220,7 +245,11 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                                             {indexOrError.placeInQueue
                                                 ? `There are ${
                                                       indexOrError.placeInQueue - 1
-                                                  } indexes ahead of this one in the indexing queue.`
+                                                  } indexes ahead of this one in the indexing queue.${
+                                                      prioritizedOrError === 'prioritized'
+                                                          ? ' This index has been prioritized for indexing.'
+                                                          : ''
+                                                  }`
                                                 : ''}
                                         </>
                                     )}
@@ -234,7 +263,11 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                                             {indexOrError.placeInQueue
                                                 ? `There are ${
                                                       indexOrError.placeInQueue - 1
-                                                  } indexes ahead of this one in the processing queue.`
+                                                  } indexes ahead of this one in the processing queue.${
+                                                      prioritizedOrError === 'prioritized'
+                                                          ? ' This index has been prioritized for processing.'
+                                                          : ''
+                                                  }`
                                                 : ''}
                                         </>
                                     )}
@@ -275,6 +308,12 @@ export const CodeIntelPreciseIndexPage: FunctionComponent<CodeIntelPreciseIndexP
                             state={indexOrError.state}
                             deleteUpload={deleteUpload}
                             deletionOrError={deletionOrError}
+                        />
+
+                        <CodeIntelPrioritizeUpload
+                            state={indexOrError.state}
+                            prioritizeUpload={prioritizeUpload}
+                            prioritizedOrError={prioritizedOrError}
                         />
 
                         {indexingEnabled && (
@@ -459,6 +498,34 @@ const CodeIntelDeleteUpload: FunctionComponent<CodeIntelDeleteUploadProps> = ({
                 disabled={deletionOrError === 'loading'}
             >
                 <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete index
+            </Button>
+        </Tooltip>
+    )
+
+interface CodeIntelPrioritizeUploadProps {
+    state: PreciseIndexState
+    prioritizeUpload: () => Promise<void>
+    prioritizedOrError?: 'loading' | 'prioritized' | ErrorLike
+}
+
+const CodeIntelPrioritizeUpload: FunctionComponent<CodeIntelPrioritizeUploadProps> = ({
+    state,
+    prioritizeUpload,
+    prioritizedOrError,
+}) =>
+    prioritizedOrError === 'prioritized' ||
+    (state !== PreciseIndexState.QUEUED_FOR_INDEXING && state !== PreciseIndexState.QUEUED_FOR_PROCESSING) ? (
+        <></>
+    ) : (
+        <Tooltip content={'Prioritize this job'}>
+            <Button
+                type="button"
+                className="float-right mr-2"
+                variant="secondary"
+                onClick={prioritizeUpload}
+                disabled={prioritizedOrError === 'loading'}
+            >
+                <Icon aria-hidden={true} svgPath={mdiRocket} /> Prioritize index
             </Button>
         </Tooltip>
     )

@@ -243,3 +243,11 @@ func (s *Service) NumRepositoriesWithCodeIntelligence(ctx context.Context) (int,
 func (s *Service) RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]uploadsshared.RepositoryWithCount, int, error) {
 	return s.store.RepositoryIDsWithErrors(ctx, offset, limit)
 }
+
+func (s *Service) PrioritizeUploadByID(ctx context.Context, id int) (bool, error) {
+	return s.store.PrioritizeUploadByID(ctx, id)
+}
+
+func (s *Service) PrioritizeIndexByID(ctx context.Context, id int) (bool, error) {
+	return s.store.PrioritizeIndexByID(ctx, id)
+}

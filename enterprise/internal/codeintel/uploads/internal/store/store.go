@@ -32,6 +32,7 @@ type Store interface {
 	GetAuditLogsForUpload(ctx context.Context, uploadID int) ([]shared.UploadLog, error)
 	DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOptions) error
 	DeleteUploadByID(ctx context.Context, id int) (bool, error)
+	PrioritizeUploadByID(ctx context.Context, id int) (bool, error)
 	ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) error
 	ReindexUploadByID(ctx context.Context, id int) error
 
@@ -40,6 +41,7 @@ type Store interface {
 	GetIndexByID(ctx context.Context, id int) (uploadsshared.Index, bool, error)
 	GetIndexesByIDs(ctx context.Context, ids ...int) ([]uploadsshared.Index, error)
 	DeleteIndexByID(ctx context.Context, id int) (bool, error)
+	PrioritizeIndexByID(ctx context.Context, id int) (bool, error)
 	DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) error
 	ReindexIndexByID(ctx context.Context, id int) error
 	ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) error

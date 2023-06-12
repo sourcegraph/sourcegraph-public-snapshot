@@ -36,6 +36,29 @@ func (r *rootResolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID 
 	return resolverstubs.Empty, nil
 }
 
+// NOTE: Unguarded, users can re-prioritize their own indexes over machine-scheduled
+// ones on Sourcegraph.com.
+func (r *rootResolver) PrioritizePreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.prioritizePreciseIndex.With(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	uploadID, indexID, err := UnmarshalPreciseIndexGQLID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+	if uploadID != 0 {
+		if _, err := r.uploadSvc.PrioritizeUploadByID(ctx, uploadID); err != nil {
+			return nil, err
+		}
+	} else if indexID != 0 {
+		if _, err := r.uploadSvc.PrioritizeIndexByID(ctx, indexID); err != nil {
+			return nil, err
+		}
+	}
+
+	return resolverstubs.Empty, nil
+}
+
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
 func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolverstubs.DeletePreciseIndexesArgs) (_ *resolverstubs.EmptyResponse, err error) {
 	ctx, _, endObservation := r.operations.deletePreciseIndexes.With(ctx, &err, observation.Args{})
