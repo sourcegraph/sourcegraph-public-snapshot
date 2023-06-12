@@ -5,21 +5,20 @@ public class ExplainCodeHighLevelPromptProvider implements PromptProvider {
   public PromptContext getPromptContext(
       Language language, SelectedText selectedText, TruncatedText truncatedSelectedText) {
     String promptMessage =
-        String.format(
-            "Explain the following %s code at a high level. Only include details that are essential to an overall understanding of what's happening in the code.\n"
-                + PromptMessages.CODE_SNIPPET_IN_LANGUAGE_FORMAT
-                + "\n%s",
-            language.getValue(),
-            language.getValue().toLowerCase(),
-            truncatedSelectedText.getValue(),
-            PromptMessages.MARKDOWN_FORMAT_PROMPT);
+        new MessageBuilder(language)
+            .appendText(
+                "Please explain the following "
+                    + language.getValue()
+                    + " code at a high level. Only include details that are essential to an overall understanding of what's happening in the code.")
+            .appendCodeSnippet(truncatedSelectedText)
+            .appendText(PromptMessages.MARKDOWN_FORMAT_PROMPT)
+            .build();
 
     String displayText =
-        String.format(
-            "Explain the following code at a high level:\n"
-                + PromptMessages.CODE_SNIPPET_IN_LANGUAGE_FORMAT,
-            language.getValue(),
-            selectedText.getValue());
+        new MessageBuilder(language)
+            .appendText("Explain the following code at a high level:")
+            .appendCodeSnippet(selectedText)
+            .build();
 
     return new PromptContext(promptMessage, displayText);
   }

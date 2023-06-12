@@ -5,20 +5,20 @@ public class ExplainCodeDetailedPromptProvider implements PromptProvider {
   public PromptContext getPromptContext(
       Language language, SelectedText selectedText, TruncatedText truncatedSelectedText) {
     String promptMessage =
-        String.format(
-            "Please explain the following %s code. Be very detailed and specific, and indicate when it is not clear to you what is going on. Format your response as an ordered list.\n"
-                + PromptMessages.CODE_SNIPPET_IN_LANGUAGE_FORMAT
-                + "\n%s",
-            language.getValue(),
-            language.getValue().toLowerCase(),
-            truncatedSelectedText.getValue(),
-            PromptMessages.MARKDOWN_FORMAT_PROMPT);
+        new MessageBuilder(language)
+            .appendText(
+                "Please explain the following "
+                    + language.getValue()
+                    + " code. Be very detailed and specific, and indicate when it is not clear to you what is going on. Format your response as an ordered list.")
+            .appendCodeSnippet(truncatedSelectedText)
+            .appendText(PromptMessages.MARKDOWN_FORMAT_PROMPT)
+            .build();
 
     String displayText =
-        String.format(
-            "Explain the following code:\n" + PromptMessages.CODE_SNIPPET_IN_LANGUAGE_FORMAT,
-            language.getValue(),
-            selectedText.getValue());
+        new MessageBuilder(language)
+            .appendText("Explain the following code:")
+            .appendCodeSnippet(selectedText)
+            .build();
 
     return new PromptContext(promptMessage, displayText);
   }

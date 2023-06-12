@@ -5,21 +5,18 @@ public class GenerateUnitTestPromptProvider implements PromptProvider {
   public PromptContext getPromptContext(
       Language language, SelectedText selectedText, TruncatedText truncatedSelectedText) {
     String promptMessage =
-        String.format(
-            "Generate a unit test in %s for the following code:\n"
-                + PromptMessages.CODE_SNIPPET_IN_LANGUAGE_FORMAT
-                + "\n%s",
-            language.getValue(),
-            language.getValue().toLowerCase(),
-            truncatedSelectedText.getValue(),
-            PromptMessages.MARKDOWN_FORMAT_PROMPT);
+        new MessageBuilder(language)
+            .appendText(
+                "Generate a unit test in " + language.getValue() + " for the following code:")
+            .appendCodeSnippet(truncatedSelectedText)
+            .appendText(PromptMessages.MARKDOWN_FORMAT_PROMPT)
+            .build();
 
     String displayText =
-        String.format(
-            "Generate a unit test for the following code:\n"
-                + PromptMessages.CODE_SNIPPET_IN_LANGUAGE_FORMAT,
-            language.getValue(),
-            selectedText.getValue());
+        new MessageBuilder(language)
+            .appendText("Generate a unit test for the following code:")
+            .appendCodeSnippet(selectedText)
+            .build();
 
     return new PromptContext(promptMessage, displayText);
   }
