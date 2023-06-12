@@ -133,9 +133,12 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}
 
+	var latency *time.Duration
 	logLatency := func() {
+		elapsed := time.Since(start)
 		metricLatency.WithLabelValues(string(GuessSource(r))).
-			Observe(time.Since(start).Seconds())
+			Observe(elapsed.Seconds())
+		latency = &elapsed
 	}
 
 	// HACK: We awkwardly call an inline function here so that we can defer the
@@ -170,11 +173,11 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 	if alert != nil {
 		eventWriter.Alert(alert)
 	}
-	logSearch(ctx, h.logger, alert, err, start, inputs.OriginalQuery, progress)
+	logSearch(ctx, h.logger, alert, err, time.Since(start), latency, inputs.OriginalQuery, progress)
 	return err
 }
 
-func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err error, start time.Time, originalQuery string, progress *streamclient.ProgressAggregator) {
+func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err error, duration time.Duration, latency *time.Duration, originalQuery string, progress *streamclient.ProgressAggregator) {
 	status := graphqlbackend.DetermineStatusForLogs(alert, progress.Stats, err)
 
 	var alertType string
@@ -182,7 +185,13 @@ func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err 
 		alertType = alert.PrometheusType
 	}
 
-	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
+	var latencyMs *int64
+	if latency != nil {
+		ms := latency.Milliseconds()
+		latencyMs = &ms
+	}
+
+	isSlow := duration > searchlogs.LogSlowSearchesThreshold()
 	if honey.Enabled() || isSlow {
 		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
 			OriginalQuery: originalQuery,
@@ -190,7 +199,8 @@ func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err 
 			Source:        string(trace.RequestSource(ctx)),
 			Status:        status,
 			AlertType:     alertType,
-			DurationMs:    time.Since(start).Milliseconds(),
+			DurationMs:    duration.Milliseconds(),
+			LatencyMs:     latencyMs,
 			ResultSize:    progress.MatchCount,
 			Error:         err,
 		})

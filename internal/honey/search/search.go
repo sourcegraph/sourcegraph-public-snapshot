@@ -14,6 +14,7 @@ type SearchEventArgs struct {
 	Status        string
 	AlertType     string
 	DurationMs    int64
+	LatencyMs     *int64
 	ResultSize    int
 	Error         error
 }
@@ -33,6 +34,7 @@ func SearchEvent(ctx context.Context, args SearchEventArgs) honey.Event {
 	ev.AddField("status", args.Status)
 	ev.AddField("alert_type", args.AlertType)
 	ev.AddField("duration_ms", args.DurationMs)
+	ev.AddField("latency_ms", args.LatencyMs)
 	ev.AddField("result_size", args.ResultSize)
 	if args.Error != nil {
 		ev.AddField("error", args.Error.Error())
