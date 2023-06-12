@@ -105,12 +105,9 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	require.Equal(t, id2, jobs[0].ID)
 
 	t.Run("update stats", func(t *testing.T) {
-		jobs, err := store.ListRepoEmbeddingJobs(ctx, ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}})
+		stats, err := store.GetRepoEmbeddingJobStats(ctx, jobs[0].ID)
 		require.NoError(t, err)
-
-		emptyFileStats := EmbedFilesStats{FilesSkipped: map[string]int{}, BytesSkipped: map[string]int{}}
-		emptyStats := EmbedRepoStats{CodeIndexStats: emptyFileStats, TextIndexStats: emptyFileStats}
-		require.Equal(t, emptyStats, jobs[0].Stats)
+		require.Equal(t, EmbedRepoStats{}, stats, "expected empty stats")
 
 		updatedStats := EmbedRepoStats{
 			HasRanks:      true,
@@ -135,11 +132,9 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 		err = store.UpdateRepoEmbeddingJobStats(ctx, jobs[0].ID, &updatedStats)
 		require.NoError(t, err)
 
-		first := 1
-		jobs, err = store.ListRepoEmbeddingJobs(ctx, ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}})
+		stats, err = store.GetRepoEmbeddingJobStats(ctx, jobs[0].ID)
 		require.NoError(t, err)
-
-		require.Equal(t, updatedStats, jobs[0].Stats)
+		require.Equal(t, updatedStats, stats)
 	})
 }
 

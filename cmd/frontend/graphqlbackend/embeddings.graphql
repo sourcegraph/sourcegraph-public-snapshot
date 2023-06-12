@@ -219,6 +219,14 @@ type RepoEmbeddingJob implements Node {
     revision: GitCommit
 
     """
+    Statistics about the embeddings run.
+    This will be updated periodically while the embeddings job is processing.
+    """
+    stats: RepoEmbeddingsStats!
+}
+
+type RepoEmbeddingsStats {
+    """
     The number of files scheduled to be embedded.
     """
     filesScheduled: Int!

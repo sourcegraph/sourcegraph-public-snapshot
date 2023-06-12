@@ -26,7 +26,6 @@ type RepoEmbeddingJob struct {
 
 	RepoID   api.RepoID
 	Revision api.CommitID
-	Stats    EmbedRepoStats
 }
 
 func (j *RepoEmbeddingJob) RecordID() int {
