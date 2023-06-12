@@ -668,6 +668,7 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 				"fetch --progress --no-recurse-submodules --no-tags --depth=1 origin %s; ", spec.Job.ID, options.ExecutorName, spec.Job.Commit) +
 			fmt.Sprintf("git -C repository checkout --progress --force %s; ", spec.Job.Commit) +
 			"mkdir -p .sourcegraph-executor; " +
+			"mkdir -p workspace-files; " +
 			"echo '" + strings.ReplaceAll(nextIndexScript, "'", "'\"'\"'") + "' > nextIndex.sh; " +
 			"chmod +x nextIndex.sh; ",
 	}
