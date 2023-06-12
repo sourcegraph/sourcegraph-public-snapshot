@@ -242,11 +242,13 @@ WITH claim_attempt AS (
 			FROM upgrade_logs
 		)
 		-- that is currently running
-		AND finished_at IS NULL
-		-- or that succeeded to the expected version
-		OR (
-			success = true
-			AND to_version = %s
+		AND (
+			finished_at IS NULL
+			-- or that succeeded to the expected version
+			OR (
+				success = true
+				AND to_version = %s
+			)
 		)
 	)
 	RETURNING true AS claimed
