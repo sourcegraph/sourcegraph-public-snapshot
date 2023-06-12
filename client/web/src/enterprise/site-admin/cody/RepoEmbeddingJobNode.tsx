@@ -36,9 +36,7 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
     queuedAt,
     startedAt,
     failureMessage,
-    filesScheduled,
-    filesEmbedded,
-    filesSkipped,
+    stats,
     onCancel,
 }) => (
     <li className="list-group-item p-2">
@@ -63,9 +61,7 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
                             queuedAt={queuedAt}
                             startedAt={startedAt}
                             failureMessage={failureMessage}
-                            filesScheduled={filesScheduled}
-                            filesEmbedded={filesEmbedded}
-                            filesSkipped={filesSkipped}
+                            stats={stats}
                         />
                     </div>
                 </div>
@@ -98,9 +94,7 @@ const RepoEmbeddingJobExecutionInfo: FC<
         | 'failureMessage'
         | 'queuedAt'
         | 'startedAt'
-        | 'filesScheduled'
-        | 'filesEmbedded'
-        | 'filesSkipped'
+        | 'stats'
     >
 > = ({
     state,
@@ -109,70 +103,68 @@ const RepoEmbeddingJobExecutionInfo: FC<
     queuedAt,
     startedAt,
     failureMessage,
-    filesScheduled,
-    filesEmbedded,
-    filesSkipped,
+    stats,
 }) => {
-    const [isPopoverOpen, setIsPopoverOpen] = useState(false)
-    const estimatedFinish = calculateEstimatedFinish(startedAt, filesScheduled, filesEmbedded, filesSkipped)
+        const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+        const estimatedFinish = calculateEstimatedFinish(startedAt, stats.filesScheduled, stats.filesEmbedded, stats.filesSkipped)
 
-    return (
-        <>
-            {state === RepoEmbeddingJobState.COMPLETED && finishedAt && (
-                <small>
-                    Completed embedding {filesEmbedded} files ({filesSkipped} skipped) <Timestamp date={finishedAt} />
-                </small>
-            )}
-            {state === RepoEmbeddingJobState.CANCELED && finishedAt && (
-                <small>
-                    Stopped <Timestamp date={finishedAt} />
-                </small>
-            )}
-            {state === RepoEmbeddingJobState.QUEUED && (
-                <small>
-                    {cancel ? (
-                        'Cancelling ...'
-                    ) : (
-                        <>
-                            Queued <Timestamp date={queuedAt} />
-                        </>
-                    )}
-                </small>
-            )}
-            {state === RepoEmbeddingJobState.PROCESSING && startedAt && (
-                <small>
-                    {cancel ? (
-                        'Cancelling ...'
-                    ) : estimatedFinish ? (
-                        <>
-                            Expected to finish <Timestamp date={estimatedFinish} /> ({filesSkipped + filesEmbedded}/
-                            {filesScheduled} files)
-                        </>
-                    ) : (
-                        <>
-                            Started processing <Timestamp date={startedAt} />
-                        </>
-                    )}
-                </small>
-            )}
-            {(state === RepoEmbeddingJobState.ERRORED || state === RepoEmbeddingJobState.FAILED) && failureMessage && (
-                <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
-                    <PopoverTrigger as={Button} variant="secondary" size="sm" aria-label="See errors">
-                        See errors
-                    </PopoverTrigger>
+        return (
+            <>
+                {state === RepoEmbeddingJobState.COMPLETED && finishedAt && (
+                    <small>
+                        Completed embedding {stats.filesEmbedded} files ({stats.filesSkipped} skipped) <Timestamp date={finishedAt} />
+                    </small>
+                )}
+                {state === RepoEmbeddingJobState.CANCELED && finishedAt && (
+                    <small>
+                        Stopped <Timestamp date={finishedAt} />
+                    </small>
+                )}
+                {state === RepoEmbeddingJobState.QUEUED && (
+                    <small>
+                        {cancel ? (
+                            'Cancelling ...'
+                        ) : (
+                            <>
+                                Queued <Timestamp date={queuedAt} />
+                            </>
+                        )}
+                    </small>
+                )}
+                {state === RepoEmbeddingJobState.PROCESSING && startedAt && (
+                    <small>
+                        {cancel ? (
+                            'Cancelling ...'
+                        ) : estimatedFinish ? (
+                            <>
+                                Expected to finish <Timestamp date={estimatedFinish} /> ({stats.filesSkipped + stats.filesEmbedded}/
+                                {stats.filesScheduled} files)
+                            </>
+                        ) : (
+                            <>
+                                Started processing <Timestamp date={startedAt} />
+                            </>
+                        )}
+                    </small>
+                )}
+                {(state === RepoEmbeddingJobState.ERRORED || state === RepoEmbeddingJobState.FAILED) && failureMessage && (
+                    <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
+                        <PopoverTrigger as={Button} variant="secondary" size="sm" aria-label="See errors">
+                            See errors
+                        </PopoverTrigger>
 
-                    <PopoverContent position={Position.right} className={styles.errorContent}>
-                        <Alert variant="danger" className={classNames('m-2', styles.alertOverflow)}>
-                            <H4>Error embedding repository:</H4>
-                            <div>{failureMessage}</div>
-                        </Alert>
-                    </PopoverContent>
-                    <PopoverTail size="sm" />
-                </Popover>
-            )}
-        </>
-    )
-}
+                        <PopoverContent position={Position.right} className={styles.errorContent}>
+                            <Alert variant="danger" className={classNames('m-2', styles.alertOverflow)}>
+                                <H4>Error embedding repository:</H4>
+                                <div>{failureMessage}</div>
+                            </Alert>
+                        </PopoverContent>
+                        <PopoverTail size="sm" />
+                    </Popover>
+                )}
+            </>
+        )
+    }
 
 function calculateEstimatedFinish(
     startedAt: string | null,

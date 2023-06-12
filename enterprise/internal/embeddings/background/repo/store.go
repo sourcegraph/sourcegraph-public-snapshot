@@ -324,14 +324,28 @@ func (s *repoEmbeddingJobsStore) GetRepoEmbeddingJobStats(ctx context.Context, j
 func (s *repoEmbeddingJobsStore) UpdateRepoEmbeddingJobStats(ctx context.Context, jobID int, stats *EmbedRepoStats) error {
 	const updateRepoEmbeddingJobStats = `
 	INSERT INTO repo_embedding_job_stats (
-		%s
+		job_id,
+		has_ranks,
+		is_incremental,
+		code_files_total,
+		code_files_embedded,
+		code_chunks_embedded,
+		code_files_skipped,
+		code_bytes_skipped,
+		code_bytes_embedded,
+		text_files_total,
+		text_files_embedded,
+		text_chunks_embedded,
+		text_files_skipped,
+		text_bytes_skipped,
+		text_bytes_embedded
 	) VALUES (
 		%s, %s, %s, %s,
 		%s, %s, %s, %s,
 		%s, %s, %s, %s,
 		%s, %s, %s
 	)
-	ON CONFLICT (id) DO UPDATE
+	ON CONFLICT (job_id) DO UPDATE
 	SET
 		has_ranks = %s,
 		is_incremental = %s,
@@ -346,13 +360,11 @@ func (s *repoEmbeddingJobsStore) UpdateRepoEmbeddingJobStats(ctx context.Context
 		text_chunks_embedded = %s,
 		text_files_skipped = %s,
 		text_bytes_skipped = %s,
-		text_bytes_embedde = %s
+		text_bytes_embedded = %s
 	`
 
 	q := sqlf.Sprintf(
 		updateRepoEmbeddingJobStats,
-
-		sqlf.Join(repoEmbeddingJobStatsColumns, ","),
 
 		jobID,
 		stats.HasRanks,
