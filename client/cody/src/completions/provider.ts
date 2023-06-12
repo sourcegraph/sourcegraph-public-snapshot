@@ -308,17 +308,17 @@ export class InlineCompletionProvider extends CompletionProvider {
             hasOddIndentation = true
         }
 
+        // Insert the injected prefix back in
+        if (this.injectPrefix.length > 0) {
+            completion = this.injectPrefix + completion
+        }
+
         // Experimental: Trim start of the completion to remove all trailing whitespace nonsense
         completion = completion.trimStart()
 
         // Detect bad completion start
         if (BAD_COMPLETION_START.test(completion)) {
             completion = completion.replace(BAD_COMPLETION_START, '')
-        }
-
-        // Insert the injected prefix back in
-        if (this.injectPrefix.length > 0) {
-            completion = this.injectPrefix + completion
         }
 
         // Strip out trailing markdown block and trim trailing whitespace
