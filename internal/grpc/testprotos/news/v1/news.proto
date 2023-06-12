@@ -12,7 +12,7 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos
 
 message Article {
   enum Status {
-    STATUS_DRAFT = 0;
+    STATUS_DRAFT_UNSPECIFIED = 0;
     STATUS_PUBLISHED = 1;
     STATUS_REVOKED = 2;
   }
