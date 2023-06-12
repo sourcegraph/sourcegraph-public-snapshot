@@ -307,9 +307,10 @@ func checkPostgresReindex(postgresDataPath string) (shouldReindex bool) {
 	}
 	fmt.Printf("5.1 reindex marker file '%s' not found\n", postgresReindexMarkerFile)
 
-	// Check PGHOST variable to see whether it's the default value - if not then we should be able to skip
+	// Check PGHOST variable to see whether it refers to a local address or path
+	// If an external database is used, reindexing can be skipped
 	pgHost := os.Getenv("PGHOST")
-	if !(pgHost == "" || pgHost == "127.0.0.1" || pgHost == "localhost") {
+	if !(pgHost == "" || pgHost == "127.0.0.1" || pgHost == "localhost" || string(pgHost[0]) == "/") {
 		fmt.Printf("Using a non-local Postgres database '%s', reindexing not required\n", pgHost)
 		return false
 	}
