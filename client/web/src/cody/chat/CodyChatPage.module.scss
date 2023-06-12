@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .chat-main-wrapper {
     filter: none;
     border: 1px solid var(--border-color-2);
@@ -5,9 +7,21 @@
     padding: 0;
 }
 
+.page {
+    @media (--xs-breakpoint-down) {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+}
+
 .page-wrapper {
     padding-top: 0.625rem;
     height: 93%;
+
+    @media (--xs-breakpoint-down) {
+        padding-top: 0;
+        height: 100%;
+    }
 }
 
 .sidebar {

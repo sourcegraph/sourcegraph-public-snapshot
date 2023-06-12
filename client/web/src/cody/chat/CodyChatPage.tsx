@@ -39,6 +39,7 @@ import styles from './CodyChatPage.module.scss'
 
 interface CodyChatPageProps {
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphApp: boolean
 }
 
 const onDownloadVSCodeClick = (): void => eventLogger.log(EventName.CODY_CHAT_DOWNLOAD_VSCODE)
@@ -75,7 +76,7 @@ const onTranscriptHistoryLoad = (
     }
 }
 
-export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authenticatedUser }) => {
+export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authenticatedUser, isSourcegraphApp }) => {
     const { pathname } = useLocation()
     const navigate = useNavigate()
 
@@ -130,7 +131,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
     }
 
     return (
-        <Page className="overflow-hidden">
+        <Page className={classNames('overflow-hidden d-flex flex-column', styles.page)}>
             <PageTitle title="Cody AI Chat" />
             <PageHeader
                 actions={
@@ -147,23 +148,25 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
                         graph.
                     </>
                 }
-                className="mb-3"
+                className="mb-3 d-none d-sm-flex"
             >
                 <PageHeader.Heading as="h2" styleAs="h1">
                     <PageHeader.Breadcrumb icon={CodyColorIcon}>
                         <div className="d-inline-flex align-items-center">
                             Cody Chat
-                            <Badge variant="info" className="ml-2">
-                                Beta
-                            </Badge>
+                            {!isSourcegraphApp && (
+                                <Badge variant="info" className="ml-2">
+                                    Beta
+                                </Badge>
+                            )}
                         </div>
                     </PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
 
             {/* Page content */}
-            <div className={classNames('row mb-5', styles.pageWrapper)}>
-                <div className="d-flex flex-column col-sm-3 h-100">
+            <div className={classNames('row flex-1', styles.pageWrapper)}>
+                <div className="d-none d-sm-flex flex-column col-sm-3 h-100">
                     <div className={styles.sidebarHeader}>
                         <H4>
                             <b>Chats</b>
@@ -279,6 +282,13 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
                 </div>
 
                 <div className={classNames('d-flex flex-column col-sm-9 h-100', styles.chatMainWrapper)}>
+                    <div className="d-sm-none">
+                        <Button>All chats</Button>
+                        <Button onClick={initializeNewChat}>
+                            <Icon aria-hidden={true} svgPath={mdiPlus} />
+                            New chat
+                        </Button>
+                    </div>
                     <ChatUI codyChatStore={codyChatStore} />
                 </div>
             </div>
