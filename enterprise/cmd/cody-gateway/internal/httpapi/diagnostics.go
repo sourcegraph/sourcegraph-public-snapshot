@@ -25,18 +25,15 @@ func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret stri
 	baseLogger = baseLogger.Scoped("diagnostics", "healthz checks")
 
 	mustHaveSecret := func(l log.Logger, w http.ResponseWriter, r *http.Request) {
-		if secret != "" {
-			token, err := auth.ExtractBearer(r.Header)
-			if err != nil {
-				response.JSONError(l, w, http.StatusBadRequest, err)
-				return
-			}
+		token, err := auth.ExtractBearer(r.Header)
+		if err != nil {
+			response.JSONError(l, w, http.StatusBadRequest, err)
+			return
+		}
 
-			if token != secret {
-				w.WriteHeader(http.StatusUnauthorized)
-				_, _ = w.Write([]byte("healthz: unauthorized"))
-				return
-			}
+		if token != secret {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
 		}
 	}
 
