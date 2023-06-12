@@ -378,7 +378,7 @@ func logBatch(ctx context.Context, searchInputs *search.Inputs, srr *SearchResul
 			Status:        status,
 			AlertType:     alertType,
 			DurationMs:    srr.elapsed.Milliseconds(),
-			LatencyMs:     nil,
+			LatencyMs:     nil, // no latency for batch requests
 			ResultSize:    n,
 			Error:         err,
 		})
