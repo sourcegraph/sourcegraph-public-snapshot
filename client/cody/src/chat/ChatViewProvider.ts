@@ -36,6 +36,7 @@ import {
     WebviewMessage,
     defaultAuthStatus,
     isLoggedIn,
+    LocalEnv,
 } from './protocol'
 import { getRecipe } from './recipes'
 import { getAuthStatus, getCodebaseContext } from './utils'
@@ -686,9 +687,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.localAppDetector.stop()
             }
 
-            const configForWebview: ConfigurationSubsetForWebview = {
+            const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
+                kind: vscode.env.uriScheme,
+                newInstall: vscode.env.isNewAppInstall,
+                appHost: vscode.env.appHost,
             }
             void vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
             void this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })

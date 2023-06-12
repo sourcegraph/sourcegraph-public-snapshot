@@ -78,6 +78,12 @@ export const unauthenticatedStatus = {
     siteVersion: '',
 }
 
+export interface LocalEnv {
+    kind: string
+    newInstall: boolean
+    appHost: string
+}
+
 export function isLoggedIn(authStatus: AuthStatus): boolean {
     if (!authStatus.siteHasCodyEnabled) {
         return false

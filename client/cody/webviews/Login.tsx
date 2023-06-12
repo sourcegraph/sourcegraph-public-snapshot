@@ -19,6 +19,7 @@ interface LoginProps {
     serverEndpoint?: string
     isAppInstalled: boolean
     vscodeAPI: VSCodeWrapper
+    callbackScheme?: string
 }
 
 export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
@@ -27,9 +28,11 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     serverEndpoint,
     isAppInstalled,
     vscodeAPI,
+    callbackScheme,
 }) => {
     const [token, setToken] = useState<string>('')
     const [endpoint, setEndpoint] = useState(serverEndpoint)
+    const authUri = `https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=CODY#${callbackScheme}`
 
     const onSubmit = useCallback<React.FormEventHandler>(
         event => {
@@ -79,7 +82,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                 <p className={styles.openMessage}>
                     Cody for open source code is available to all users with a Sourcegraph.com account
                 </p>
-                <a href="https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=CODY">
+                <a href={authUri}>
                     <VSCodeButton
                         className={styles.button}
                         type="button"

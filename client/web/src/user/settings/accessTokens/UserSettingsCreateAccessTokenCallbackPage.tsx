@@ -35,6 +35,8 @@ interface TokenRequester {
     /** The URL where the token should be added to */
     /** SECURITY: Local context only! Do not send token to non-local servers*/
     redirectURL: string
+    /** The URL scheme registered by the requester registered to the operating system */
+    customURLScheme?: string
     /** The message to show users when the token has been created successfully */
     successMessage?: string
     /** The message to show users in case the token cannot be imported automatically */
@@ -56,6 +58,7 @@ const REQUESTERS: Record<string, TokenRequester> = {
         infoMessage:
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
+        customURLScheme: 'vscode',
     },
     APP: {
         name: 'Sourcegraph App',
@@ -67,12 +70,13 @@ const REQUESTERS: Record<string, TokenRequester> = {
         forwardDestination: true,
     },
     CODY: {
-        name: 'Sourcegraph Cody - VS Code Extension',
+        name: 'Cody AI by Sourcegraph - VS Code Extension',
         redirectURL: 'vscode://sourcegraph.cody-ai?code=$TOKEN',
         successMessage: 'Now opening VS Code...',
         infoMessage:
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
+        customURLScheme: 'vscode',
     },
 }
 
@@ -149,9 +153,19 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
             nextRequester.redirectURL = redirectURL.toString()
         }
 
+        // Different VS Code clients have different custom URL schemes used as URL protocols
+        // Example: 'vscode-insider://' for VS Code Insider or
+        // Get the fragment from the location URL and use it as the custom URL scheme
+        if (nextRequester.customURLScheme === 'vscode') {
+            const customURLScheme = location.hash || nextRequester.customURLScheme
+            const redirectURL = new URL(nextRequester.redirectURL)
+            redirectURL.protocol = customURLScheme
+            nextRequester.redirectURL = redirectURL.toString()
+        }
+
         setRequester(nextRequester)
         setNote(REQUESTERS[requestFrom].name)
-    }, [isSourcegraphDotCom, isSourcegraphApp, location.search, navigate, requestFrom, requester])
+    }, [isSourcegraphDotCom, isSourcegraphApp, location.search, navigate, requestFrom, requester, location.hash])
 
     /**
      * We use this to handle token creation request from redirections.
