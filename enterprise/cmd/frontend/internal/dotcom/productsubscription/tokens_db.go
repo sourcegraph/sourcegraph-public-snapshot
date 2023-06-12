@@ -56,8 +56,8 @@ WHERE
 	access_token_enabled=true
 	AND ( digest(digest(license_key, 'sha256'), 'sha256')=%s OR digest(license_key, 'sha256')=%s )`,
 		decoded,
-		// retain backcompat for now, see 'legacy token format' test case
-		// needs migration: sourcegraph.com, k8s.sgdev.org, cody-dev, S2
+		// TODO(@bobheadxi): retain backcompat for now, see 'legacy token format' test case
+		// needs migration: sourcegraph.com, k8s.sgdev.org, cody-dev, S2, dev-private
 		decoded,
 	)
 	subID, found, err := basestore.ScanFirstString(t.store.Query(ctx, query))
