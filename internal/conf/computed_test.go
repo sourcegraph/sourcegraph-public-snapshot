@@ -327,3 +327,57 @@ func boolPtr(b bool) *bool {
 func intPtr(i int) *int {
 	return &i
 }
+
+func TestCodyEnabled(t *testing.T) {
+	tests := []struct {
+		name string
+		sc   schema.SiteConfiguration
+		want bool
+	}{
+		{
+			name: "nothing set",
+			sc:   schema.SiteConfiguration{},
+			want: false,
+		},
+		{
+			name: "cody enabled",
+			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(true)},
+			want: true,
+		},
+		{
+			name: "cody disabled",
+			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(false)},
+			want: false,
+		},
+		{
+			name: "cody enabled, completions configured",
+			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(true), Completions: &schema.Completions{Model: "foobar"}},
+			want: true,
+		},
+		{
+			name: "cody disabled, completions configured",
+			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(false), Completions: &schema.Completions{Model: "foobar"}},
+			want: false,
+		},
+		{
+			// Legacy support: remove this once completions.enabled is removed
+			name: "cody.enabled not set, completions configured but not enabled",
+			sc:   schema.SiteConfiguration{Completions: &schema.Completions{Model: "foobar"}},
+			want: false,
+		},
+		{
+			// Legacy support: remove this once completions.enabled is removed
+			name: "cody.enabled not set, completions configured and enabled",
+			sc:   schema.SiteConfiguration{Completions: &schema.Completions{Enabled: true, Model: "foobar"}},
+			want: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			Mock(&Unified{SiteConfiguration: test.sc})
+			have := CodyEnabled()
+			assert.Equal(t, test.want, have)
+		})
+	}
+}

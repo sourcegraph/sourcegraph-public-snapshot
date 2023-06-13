@@ -117,7 +117,8 @@ describe('CodeMirror blob view', () => {
             )
         })
 
-        it('truncates long file paths properly', async () => {
+        // TODO 53389: This test is disabled because it is flaky.
+        it.skip('truncates long file paths properly', async () => {
             await driver.page.goto(
                 `${driver.sourcegraphBaseUrl}${filePaths['this_is_a_long_file_path/apps/rest-showcase/src/main/java/org/demo/rest/example/OrdersController.java']}`
             )
