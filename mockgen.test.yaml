@@ -67,6 +67,9 @@
       interfaces:
         - Logger
         - LogEntry
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files
+      interfaces:
+        - Store
 - filename: enterprise/cmd/executor/internal/worker/command/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command
