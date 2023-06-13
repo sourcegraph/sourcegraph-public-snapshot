@@ -75,27 +75,32 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                                 (a, b) =>
                                     +new Date(b[1].lastInteractionTimestamp) - +new Date(a[1].lastInteractionTimestamp)
                             )
-                            .map(chat => {
-                                const lastMessage = chat[1].interactions[chat[1].interactions.length - 1].humanMessage
+                            .filter(
+                                ([, transcriptJSON]) =>
+                                    transcriptJSON.interactions && transcriptJSON.interactions.length > 0
+                            )
+                            .map(([id, transcriptJSON]) => {
+                                const lastMessage =
+                                    transcriptJSON.interactions[transcriptJSON.interactions.length - 1].humanMessage
                                 if (!lastMessage?.displayText) {
                                     return null
                                 }
 
                                 return (
                                     <VSCodeButton
-                                        key={chat[0]}
+                                        key={id}
                                         className={styles.itemButton}
-                                        onClick={() => restoreMetadata(chat[0])}
+                                        onClick={() => restoreMetadata(id)}
                                         type="button"
                                     >
                                         <div className={styles.itemButtonInnerContainer}>
-                                            <div className={styles.itemDate}>{new Date(chat[0]).toLocaleString()}</div>
+                                            <div className={styles.itemDate}>{new Date(id).toLocaleString()}</div>
                                             <div className={styles.itemDelete}>
                                                 <VSCodeButton
                                                     appearance="icon"
                                                     type="button"
                                                     onClick={event => {
-                                                        onDeleteHistoryItemClick(event, chat[0])
+                                                        onDeleteHistoryItemClick(event, id)
                                                     }}
                                                 >
                                                     <i className="codicon codicon-trash" />
