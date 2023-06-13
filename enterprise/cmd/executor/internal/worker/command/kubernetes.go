@@ -534,19 +534,23 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 		}
 	}
 
+	repoDir := "."
+	if spec.Job.RepositoryDirectory != "" {
+		repoDir = spec.Job.RepositoryDirectory
+	}
 	setupArgs := []string{
-		"mkdir -p repository; " +
-			"git -C repository init; " +
-			fmt.Sprintf("git -C repository remote add origin http://host.docker.internal:3082/.executors/git/%s; ", spec.Job.RepositoryName) +
-			"git -C /repository config --local gc.auto 0; " +
-			fmt.Sprintf("git -C repository "+
+		fmt.Sprintf("mkdir -p %s; ", repoDir) +
+			fmt.Sprintf("git -C %s init; ", repoDir) +
+			fmt.Sprintf("git -C %s remote add origin http://host.docker.internal:3082/.executors/git/%s; ", repoDir, spec.Job.RepositoryName) +
+			fmt.Sprintf("git -C %s config --local gc.auto 0; ", repoDir) +
+			fmt.Sprintf("git -C %s "+
 				"-c http.extraHeader=\"Authorization:Bearer $TOKEN\" "+
 				"-c http.extraHeader=X-Sourcegraph-Actor-UID:internal "+
 				"-c http.extraHeader=X-Sourcegraph-Job-ID:%d "+
 				"-c http.extraHeader=X-Sourcegraph-Executor-Name:%s "+
 				"-c protocol.version=2 "+
-				"fetch --progress --no-recurse-submodules --no-tags --depth=1 origin %s; ", spec.Job.ID, options.ExecutorName, spec.Job.Commit) +
-			fmt.Sprintf("git -C repository checkout --progress --force %s; ", spec.Job.Commit) +
+				"fetch --progress --no-recurse-submodules --no-tags --depth=1 origin %s; ", repoDir, spec.Job.ID, options.ExecutorName, spec.Job.Commit) +
+			fmt.Sprintf("git -C %s checkout --progress --force %s; ", repoDir, spec.Job.Commit) +
 			"mkdir -p .sourcegraph-executor; " +
 			"echo '" + formatContent(nextIndexScript) + "' > nextIndex.sh; " +
 			"chmod +x nextIndex.sh; ",
@@ -587,6 +591,7 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 	}
 
 	for stepIndex, step := range spec.Steps {
+		fmt.Println("dir: ", step.Dir)
 		jobEnvs := newEnvVars(step.Env)
 
 		nextIndexCommand := fmt.Sprintf("if [ \"$(%s /job/skip.json %s)\" != \"skip\" ]; then ", filepath.Join(KubernetesJobMountPath, "nextIndex.sh"), step.Key)
