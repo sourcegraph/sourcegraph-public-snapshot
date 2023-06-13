@@ -14,16 +14,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func NewEmbeddingsClient(siteConfig *schema.SiteConfiguration) (client.EmbeddingsClient, error) {
-	c := siteConfig.Embeddings
-	if c == nil || !c.Enabled {
+	if !isEmbeddingsEnabled(siteConfig) {
 		return nil, errors.New("embeddings are not configured or disabled")
 	}
-
+	c := siteConfig.Embeddings
 	switch c.Provider {
 	case "sourcegraph":
 		// TODO(eseliger): Readd empty string defaulting to sourcegraph.
@@ -35,6 +35,22 @@ func NewEmbeddingsClient(siteConfig *schema.SiteConfiguration) (client.Embedding
 	default:
 		return nil, errors.Newf("invalid provider %q", c.Provider)
 	}
+}
+
+func isEmbeddingsEnabled(siteConfig *schema.SiteConfiguration) bool {
+	c := siteConfig.Embeddings
+	if c == nil || !c.Enabled {
+		return false
+	}
+
+	// Additionally Embeddings in App are disabled if there is no dotcom auth token
+	// and the user hasn't provided their own api token
+	if deploy.IsApp() {
+		if (siteConfig.App == nil || len(siteConfig.App.DotcomAuthToken) == 0) && c.AccessToken == "" {
+			return false
+		}
+	}
+	return true
 }
 
 const (
