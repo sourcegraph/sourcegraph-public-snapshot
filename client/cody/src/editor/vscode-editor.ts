@@ -24,15 +24,6 @@ export class VSCodeEditor implements Editor {
             const config = vscode.workspace.getConfiguration('cody')
             const isTesting = process.env.CODY_TESTING === 'true'
             if (e.affectsConfiguration('cody')) {
-                // Non-Stop Cody
-                const enableNonStop = (config.get('experimental.nonStop') as boolean) || isTesting
-                const taskView = this.controllers.task.getTaskView()
-                void vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', enableNonStop)
-                if (enableNonStop) {
-                    vscode.window.registerTreeDataProvider('cody.fixup.tree.view', taskView)
-                } else {
-                    taskView.dispose()
-                }
                 // Inline Assist
                 const enableInlineAssist = (config.get('experimental.inline') as boolean) || isTesting
                 const inlineController = this.controllers.inline

@@ -143,9 +143,8 @@ function getLenses(id: string, codeLensRange: vscode.Range, isPending: boolean):
         command: 'cody.focus',
     }
     const undo = getInlineUndoLens(id, codeLensRange)
-    const revert = getInlineRevertLens(id, codeLensRange)
     const close = getInlineCloseLens(id, codeLensRange)
-    return isPending ? [title, close] : [title, undo, close, revert]
+    return isPending ? [title, close] : [title, undo, close]
 }
 
 function getErrorLenses(id: string, codeLensRange: vscode.Range): vscode.CodeLens[] {
@@ -165,17 +164,6 @@ function getInlineCloseLens(id: string, codeLensRange: vscode.Range): vscode.Cod
         title: 'Close',
         tooltip: 'Click to remove decorations',
         command: 'cody.inline.decorations.remove',
-        arguments: [id],
-    }
-    return lens
-}
-
-function getInlineRevertLens(id: string, codeLensRange: vscode.Range): vscode.CodeLens {
-    const lens = new vscode.CodeLens(codeLensRange)
-    lens.command = {
-        title: 'Revert File',
-        tooltip: 'Revert file to last saved state',
-        command: 'cody.inline.file.revert',
         arguments: [id],
     }
     return lens
