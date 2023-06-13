@@ -76,7 +76,7 @@ const REQUESTERS: Record<string, TokenRequester> = {
     },
     CODY_INSIDER: {
         name: 'Cody AI by Sourcegraph - VS Code Insider Extension',
-        redirectURL: 'vscode-insider://sourcegraph.cody-ai?code=$TOKEN',
+        redirectURL: 'vscode-insiders://sourcegraph.cody-ai?code=$TOKEN',
         successMessage: 'Now opening VS Code...',
         infoMessage:
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
