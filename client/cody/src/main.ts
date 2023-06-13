@@ -272,14 +272,14 @@ const register = async (
 
     disposables.push(disposeCompletions)
 
-    vscode.workspace.onDidChangeConfiguration(async event => {
+    vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('cody.experimental.suggestions')) {
             const config = getConfiguration(vscode.workspace.getConfiguration())
 
             if (!config.experimentalSuggest) {
                 completionsProvider?.dispose()
                 completionsProvider = null
-            } else if (completionsProvider == null) {
+            } else if (completionsProvider === null) {
                 completionsProvider = createCompletionsProvider(webviewErrorMessager, completionsClient)
             }
         }
@@ -332,7 +332,7 @@ const register = async (
 function createCompletionsProvider(
     webviewErrorMessager: (error: string) => Promise<void>,
     completionsClient: SourcegraphNodeCompletionsClient
-) {
+): vscode.Disposable {
     const disposables: vscode.Disposable[] = []
 
     const docprovider = new CompletionsDocumentProvider()
@@ -357,7 +357,9 @@ function createCompletionsProvider(
 
     return {
         dispose: () => {
-            disposables.forEach(disposable => disposable.dispose())
+            for (const disposable of disposables) {
+                disposable.dispose()
+            }
         },
     }
 }
