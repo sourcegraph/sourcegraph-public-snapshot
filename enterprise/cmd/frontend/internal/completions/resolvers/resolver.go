@@ -45,7 +45,14 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", errors.New("completions are not configured or disabled")
 	}
 
-	ctx, done := httpapi.Trace(ctx, "resolver", completionsConfig.ChatModel).
+	var chatModel string
+	if args.Fast {
+		chatModel = completionsConfig.FastChatModel
+	} else {
+		chatModel = completionsConfig.ChatModel
+	}
+
+	ctx, done := httpapi.Trace(ctx, "resolver", chatModel).
 		WithErrorP(&err).
 		Build()
 	defer done()
@@ -66,7 +73,7 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 
 	params := convertParams(args)
 	// No way to configure the model through the request, we hard code to chat.
-	params.Model = completionsConfig.ChatModel
+	params.Model = chatModel
 	resp, err := client.Complete(ctx, types.CompletionsFeatureChat, params)
 	if err != nil {
 		return "", errors.Wrap(err, "client.Complete")

@@ -40,6 +40,7 @@ var Service service.Service = svc{}
 
 // Reexported to get around `internal` package.
 var (
-	CLILoadConfig = cli.LoadConfig
-	CLIMain       = cli.Main
+	CLILoadConfig   = cli.LoadConfig
+	CLIMain         = cli.Main
+	AutoUpgradeDone = cli.AutoUpgradeDone
 )

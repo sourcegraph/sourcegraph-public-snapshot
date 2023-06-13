@@ -13,6 +13,7 @@ go_library(
         "serve_cmd.go",
         "sysreq.go",
     ],
+    embedsrcs = ["index.html"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [

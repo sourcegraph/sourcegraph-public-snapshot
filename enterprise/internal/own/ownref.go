@@ -7,6 +7,8 @@ import (
 	"net/mail"
 	"strings"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -18,6 +20,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+var extSvcProviderNotFound = promauto.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Name:      "own_bag_service_type_not_found_total",
+}, []string{"service_type"})
 
 // RepoContext allows us to anchor an author reference to a repo where it stems from.
 // For instance a handle from a CODEOWNERS file comes from github.com/sourcegraph/sourcegraph.
@@ -385,9 +392,12 @@ func fetchCodeHostHandles(ctx context.Context, db edb.EnterpriseDB, userID int32
 	}
 	codeHostHandles := make([]string, 0, len(accounts))
 	for _, account := range accounts {
-		p := providers.GetProviderbyServiceType(account.ServiceType)
+		serviceType := account.ServiceType
+		p := providers.GetProviderbyServiceType(serviceType)
+		// If the provider is not found, we skip it.
 		if p == nil {
-			return nil, errors.Errorf("cannot find authorization provider for the external account, service type: %s", account.ServiceType)
+			extSvcProviderNotFound.WithLabelValues(serviceType).Inc()
+			continue
 		}
 		data, err := p.ExternalAccountInfo(ctx, *account)
 		if err != nil || data == nil {

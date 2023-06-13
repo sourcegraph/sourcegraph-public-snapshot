@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -11,9 +12,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestRepoEmbeddingJobsStore(t *testing.T) {
@@ -204,6 +207,90 @@ func TestGetEmbeddableRepos(t *testing.T) {
 	repos, err = store.GetEmbeddableRepos(ctx, EmbeddableRepoOpts{MinimumInterval: 1 * time.Hour})
 	require.NoError(t, err)
 	require.Equal(t, 1, len(repos))
+}
+
+func TestGetEmbeddableReposLimit(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	repoStore := db.Repos()
+	ctx := context.Background()
+
+	// Create two repositories
+	firstRepo := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
+	err := repoStore.Create(ctx, firstRepo)
+	require.NoError(t, err)
+
+	secondRepo := &types.Repo{Name: "github.com/sourcegraph/zoekt", URI: "github.com/sourcegraph/zoekt", ExternalRepo: api.ExternalRepoSpec{}}
+	err = repoStore.Create(ctx, secondRepo)
+	require.NoError(t, err)
+
+	// Clone the repos
+	gitserverStore := db.GitserverRepos()
+	err = gitserverStore.SetCloneStatus(ctx, firstRepo.Name, types.CloneStatusCloned, "test")
+	require.NoError(t, err)
+
+	err = gitserverStore.SetCloneStatus(ctx, secondRepo.Name, types.CloneStatusCloned, "test")
+	require.NoError(t, err)
+
+	// Create an embeddings policy that applies to all repos
+	store := NewRepoEmbeddingJobsStore(db)
+	err = createGlobalPolicy(ctx, store)
+	require.NoError(t, err)
+
+	cases := []struct {
+		policyRepositoryMatchLimit int
+		wantMatches                int
+	}{
+		{
+			policyRepositoryMatchLimit: -1, // unlimited
+			wantMatches:                2,
+		},
+		{
+			policyRepositoryMatchLimit: 0,
+			wantMatches:                0,
+		},
+		{
+			policyRepositoryMatchLimit: 1,
+			wantMatches:                1,
+		},
+		{
+			policyRepositoryMatchLimit: 2,
+			wantMatches:                2,
+		},
+		{
+			policyRepositoryMatchLimit: 3,
+			wantMatches:                2,
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(fmt.Sprintf("policyRepositoryMatchLimit=%d", tt.policyRepositoryMatchLimit), func(t *testing.T) {
+			repos, err := store.GetEmbeddableRepos(ctx, EmbeddableRepoOpts{MinimumInterval: 1 * time.Hour, PolicyRepositoryMatchLimit: &tt.policyRepositoryMatchLimit})
+			require.NoError(t, err)
+			require.Equal(t, tt.wantMatches, len(repos))
+		})
+	}
+}
+
+func TestGetEmbeddableRepoOpts(t *testing.T) {
+	conf.Mock(&conf.Unified{})
+	defer conf.Mock(nil)
+
+	opts := GetEmbeddableRepoOpts()
+	require.Equal(t, defaultOpts.MinimumInterval, opts.MinimumInterval)
+	require.Equal(t, *defaultOpts.PolicyRepositoryMatchLimit, *opts.PolicyRepositoryMatchLimit)
+
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{Embeddings: &schema.Embeddings{}}})
+	opts = GetEmbeddableRepoOpts()
+	require.Equal(t, defaultOpts.MinimumInterval, opts.MinimumInterval)
+	require.Equal(t, *defaultOpts.PolicyRepositoryMatchLimit, *opts.PolicyRepositoryMatchLimit)
+
+	limit := 5
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{Embeddings: &schema.Embeddings{MinimumInterval: "1h", PolicyRepositoryMatchLimit: &limit}}})
+
+	opts = GetEmbeddableRepoOpts()
+	require.Equal(t, 1*time.Hour, opts.MinimumInterval)
+	require.Equal(t, 5, *opts.PolicyRepositoryMatchLimit)
 }
 
 func setJobState(t *testing.T, ctx context.Context, store RepoEmbeddingJobsStore, jobID int, state string) {

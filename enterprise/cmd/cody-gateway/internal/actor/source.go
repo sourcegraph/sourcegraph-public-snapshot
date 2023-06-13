@@ -3,6 +3,7 @@ package actor
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/go-redsync/redsync/v4"
@@ -60,9 +61,15 @@ type SourceSyncer interface {
 	Sync(ctx context.Context) (int, error)
 }
 
-type Sources []Source
+type Sources struct {
+	sources []Source
 
-func (s Sources) Get(ctx context.Context, token string) (_ *Actor, err error) {
+	syncRunning atomic.Bool
+}
+
+func NewSources(sources ...Source) *Sources { return &Sources{sources: sources} }
+
+func (s *Sources) Get(ctx context.Context, token string) (_ *Actor, err error) {
 	var span trace.Span
 	ctx, span = tracer.Start(ctx, "Sources.Get")
 	defer func() {
@@ -70,7 +77,7 @@ func (s Sources) Get(ctx context.Context, token string) (_ *Actor, err error) {
 		span.End()
 	}()
 
-	for _, src := range s {
+	for _, src := range s.sources {
 		actor, err := src.Get(ctx, token)
 		// Only if the Source indicates it doesn't know about this token do
 		// we continue to the next Source.
@@ -87,10 +94,58 @@ func (s Sources) Get(ctx context.Context, token string) (_ *Actor, err error) {
 	return nil, errors.New("no source found for token")
 }
 
+// SyncAll immediately runs a sync on all sources implementing SourceSyncer.
+// If multiple implementations are present, they will be run concurrently.
+// Errors are aggregated.
+//
+// By default, this is only used by (Sources).Worker(), which ensures only
+// a primary worker instance is running these in the background.
+func (s *Sources) SyncAll(ctx context.Context, logger log.Logger) error {
+	if !s.syncRunning.CompareAndSwap(s.syncRunning.Load(), true) {
+		return errors.New("sources.SyncAll already running")
+	}
+
+	p := pool.New().WithErrors().WithContext(ctx)
+	for _, src := range s.sources {
+		if src, ok := src.(SourceSyncer); ok {
+			p.Go(func(ctx context.Context) (err error) {
+				var span trace.Span
+				ctx, span = tracer.Start(ctx, src.Name()+".Sync")
+				defer func() {
+					if err != nil {
+						span.RecordError(err)
+						span.SetStatus(codes.Error, "sync failed")
+					}
+					span.End()
+				}()
+
+				syncLogger := sgtrace.Logger(ctx, logger).
+					With(log.String("source", src.Name()))
+
+				start := time.Now()
+
+				syncLogger.Info("Starting a new sync")
+				seen, err := src.Sync(ctx)
+				if err != nil {
+					return errors.Wrapf(err, "failed to sync %s", src.Name())
+				}
+				syncLogger.Info("Completed sync", log.Duration("sync_duration", time.Since(start)), log.Int("seen", seen))
+				return nil
+			})
+		}
+	}
+	if err := p.Wait(); err != nil {
+		return err
+	}
+
+	logger.Info("All sources synced")
+	return nil
+}
+
 // Worker is a goroutine.BackgroundRoutine that runs any SourceSyncer implementations
 // at a regular interval. It uses a redsync.Mutex to ensure only one worker is running
 // at a time.
-func (s Sources) Worker(obCtx *observation.Context, rmux *redsync.Mutex, rootInterval time.Duration) goroutine.BackgroundRoutine {
+func (s *Sources) Worker(obCtx *observation.Context, rmux *redsync.Mutex, rootInterval time.Duration) goroutine.BackgroundRoutine {
 	logger := obCtx.Logger.Scoped("sources.worker", "sources background routie")
 
 	return &redisLockedBackgroundRoutine{
@@ -156,7 +211,7 @@ func (s *redisLockedBackgroundRoutine) Stop() {
 type sourcesSyncHandler struct {
 	logger  log.Logger
 	rmux    *redsync.Mutex
-	sources Sources
+	sources *Sources
 }
 
 var _ goroutine.Handler = &sourcesSyncHandler{}
@@ -189,34 +244,5 @@ func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 	// Annotate span to indicate we're actually doing work today!
 	trace.SpanFromContext(ctx).SetAttributes(attribute.Bool("skipped", false))
 
-	p := pool.New().WithErrors().WithContext(ctx)
-	for _, src := range s.sources {
-		if src, ok := src.(SourceSyncer); ok {
-			p.Go(func(ctx context.Context) error {
-				var span trace.Span
-				ctx, span = tracer.Start(ctx, src.Name()+".Sync")
-				defer func() {
-					if err != nil {
-						span.RecordError(err)
-						span.SetStatus(codes.Error, "sync failed")
-					}
-					span.End()
-				}()
-
-				syncLogger := sgtrace.Logger(ctx, handleLogger).
-					With(log.String("source", src.Name()))
-
-				start := time.Now()
-
-				syncLogger.Info("Starting a new sync")
-				seen, err := src.Sync(ctx)
-				if err != nil {
-					return errors.Wrapf(err, "failed to sync %s", src.Name())
-				}
-				syncLogger.Info("Completed sync", log.Duration("sync_duration", time.Since(start)), log.Int("seen", seen))
-				return nil
-			})
-		}
-	}
-	return p.Wait()
+	return s.sources.SyncAll(ctx, handleLogger)
 }
