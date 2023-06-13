@@ -40,6 +40,9 @@ func initExternalMetricReporters[T workerutil.Record](queueName string, store st
 	), nil
 }
 
+// NewMultiqueueMetricReporter returns a periodic background routine that reports the sum of the lengths all configured queues.
+// This does not reinitialise Prometheus metrics as is done in NewMetricReporter, as this only needs to be done once and is
+// already done for the single queue metrics.
 func NewMultiqueueMetricReporter(queueNames []string, metricsConfig *Config, countFuncs ...func(ctx context.Context, includeProcessing bool) (int, error)) (goroutine.BackgroundRoutine, error) {
 	reporters, err := configureReporters(metricsConfig)
 	if err != nil {
