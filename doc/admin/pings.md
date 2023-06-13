@@ -229,7 +229,7 @@ Sourcegraph only connects to Sourcegraph.com for three purposes:
    - Check for new product updates.
    - Send [anonymous, non-specific, aggregate metrics](#pings) back to Sourcegraph.com (see the full list above).
 1. Legacy Sourcegraph extensions are fetched from Sourcegraph.com`s extension registry.
-1. [Verify](admin/licensing/index.md) the validity of the configured Sourcegraph license.
+1. [Verify](./licensing/index.md) the validity of the configured Sourcegraph license.
 
 There are no other automatic external connections to Sourcegraph.com (or any other site on the internet).
 
