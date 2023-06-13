@@ -132,7 +132,7 @@ func (c *Client) listLanguageMappingsGRPC(ctx context.Context, repository api.Re
 	client := proto.NewSymbolsServiceClient(conn)
 	resp, err := client.ListLanguages(ctx, &proto.ListLanguagesRequest{})
 	if err != nil {
-		return nil, err
+		return nil, translateGRPCError(err)
 	}
 
 	mappings := make(map[string][]string, len(resp.LanguageFileNameMap))
@@ -235,7 +235,7 @@ func (c *Client) searchGRPC(ctx context.Context, args search.SymbolsParameters) 
 
 	protoResponse, err := grpcClient.Search(ctx, &protoArgs)
 	if err != nil {
-		return search.SymbolsResponse{}, err
+		return search.SymbolsResponse{}, translateGRPCError(err)
 	}
 
 	response := protoResponse.ToInternal()
@@ -305,7 +305,7 @@ func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPa
 			// This is weird, and maybe not intentional, but things break if we return an error.
 			return nil, nil
 		}
-		return nil, err
+		return nil, translateGRPCError(err)
 	}
 
 	return protoResponse.ToInternal(), nil
@@ -405,7 +405,7 @@ func (c *Client) symbolInfoGRPC(ctx context.Context, args types.RepoCommitPathPo
 			// https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b039aa70fbd155b5b1eddc4b5deede739626a978/-/blob/cmd/symbols/squirrel/http_handlers.go?L114-114
 			return nil, nil
 		}
-		return nil, err
+		return nil, translateGRPCError(err)
 	}
 
 	return protoResponse.ToInternal(), nil
@@ -490,4 +490,21 @@ func (c *Client) url(repo api.RepoName) (string, error) {
 		return "", errors.New("a symbols service has not been configured")
 	}
 	return c.Endpoints.Get(string(repo))
+}
+
+// translateGRPCError translates gRPC errors to their corresponding context errors, if applicable.
+func translateGRPCError(err error) error {
+	st, ok := status.FromError(err)
+	if !ok {
+		return err
+	}
+
+	switch st.Code() {
+	case codes.Canceled:
+		return context.Canceled
+	case codes.DeadlineExceeded:
+		return context.DeadlineExceeded
+	default:
+		return err
+	}
 }
