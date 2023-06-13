@@ -45,6 +45,7 @@ import (
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -896,7 +897,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 			return &server.GitRepoSyncer{}, nil
 		},
 		DB:       db,
-		Perforce: perforce.NewService(ctx, logger, db, list.New()),
+		Perforce: perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
@@ -1398,7 +1399,7 @@ func TestGitserverClient_RepoClone(t *testing.T) {
 			return &server.GitRepoSyncer{}, nil
 		},
 		DB:         db,
-		CloneQueue: server.NewCloneQueue(list.New()),
+		CloneQueue: server.NewCloneQueue(observation.TestContextTB(t), list.New()),
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))

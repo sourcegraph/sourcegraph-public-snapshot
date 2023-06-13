@@ -147,9 +147,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		},
 		Hostname:                externalAddress(),
 		DB:                      db,
-		CloneQueue:              server.NewCloneQueue(list.New()),
+		CloneQueue:              server.NewCloneQueue(observationCtx, list.New()),
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
-		Perforce:                perforce.NewService(ctx, logger, db, list.New()),
+		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 	}
 
 	configurationWatcher := conf.DefaultClient()
