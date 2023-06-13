@@ -180,7 +180,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                                 drift is detected. Please resolve schema drift before attempting an upgrade.
                                 <br />
                                 <br /> Learn more about the migrator{' '}
-                                <Link to="https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#upgrade">
+                                <Link to="https://docs.sourcegraph.com/admin/updates/migrator/migrator-operations">
                                     upgrade command
                                 </Link>
                                 .
@@ -196,7 +196,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                                 for clarifications.
                                 <br />
                                 <br /> Learn more about the migrator{' '}
-                                <Link to="https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#upgrade">
+                                <Link to="https://docs.sourcegraph.com/admin/updates/migrator/migrator-operations">
                                     upgrade command
                                 </Link>
                                 .
@@ -208,7 +208,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                                 <br />
                                 <br />
                                 Learn more about the migrator{' '}
-                                <Link to="https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#upgrade">
+                                <Link to="https://docs.sourcegraph.com/admin/updates/migrator/migrator-operations">
                                     upgrade command
                                 </Link>
                                 .

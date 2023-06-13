@@ -36,8 +36,6 @@ import {
     ScheduleRepositoryPermissionsSyncVariables,
     SetUserIsSiteAdminResult,
     SetUserIsSiteAdminVariables,
-    SetAutoUpgradeResult,
-    SetAutoUpgradeVariables,
     SiteAdminAccessTokenConnectionFields,
     SiteAdminAccessTokensResult,
     SiteAdminAccessTokensVariables,
