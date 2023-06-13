@@ -27,7 +27,7 @@ var (
 )
 
 const (
-	licenseCheckInterval    = 12 * time.Hour
+	LicenseCheckInterval    = 12 * time.Hour
 	lastCalledAtStoreKey    = "licensing:last_called_at"
 	licenseValidityStoreKey = "licensing:is_license_valid"
 	prevLicenseTokenKey     = "licensing:prev_license_hash"
@@ -133,7 +133,7 @@ func StartLicenseCheck(ctx context.Context, logger log.Logger, siteID string) {
 			&licenseChecker{siteID: siteID, token: licenseToken, doer: httpcli.ExternalDoer, logger: logger.Scoped("licenseChecker", "Periodically checks license validity")},
 			goroutine.WithName("licensing.check-license-validity"),
 			goroutine.WithDescription("check if license is valid from sourcegraph.com"),
-			goroutine.WithInterval(licenseCheckInterval),
+			goroutine.WithInterval(LicenseCheckInterval),
 		)
 		go goroutine.MonitorBackgroundRoutines(ctx, routine)
 	})

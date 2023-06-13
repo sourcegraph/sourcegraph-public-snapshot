@@ -3,6 +3,7 @@ package productsubscription
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -143,6 +144,9 @@ func (s dbLicenses) GetByLicenseKey(ctx context.Context, licenseKey string) (*db
 type dbLicensesListOptions struct {
 	LicenseKeySubstring   string
 	ProductSubscriptionID string // only list product licenses for this subscription (by UUID)
+	WithSiteIDsOnly       bool   // only list licenses that have a site id assigned
+	Revoked               *bool  // only return revoked or non-revoked licenses
+	Expired               *bool  // only return expired or non-expired licenses
 	*database.LimitOffset
 }
 
@@ -153,6 +157,23 @@ func (o dbLicensesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.ProductSubscriptionID != "" {
 		conds = append(conds, sqlf.Sprintf("product_subscription_id=%s", o.ProductSubscriptionID))
+	}
+	if o.WithSiteIDsOnly {
+		conds = append(conds, sqlf.Sprintf("site_id IS NOT NULL"))
+	}
+	if o.Revoked != nil {
+		not := ""
+		if *o.Revoked {
+			not = "NOT"
+		}
+		conds = append(conds, sqlf.Sprintf(fmt.Sprintf("revoked_at IS %s NULL", not)))
+	}
+	if o.Expired != nil {
+		op := ">"
+		if *o.Expired {
+			op = "<="
+		}
+		conds = append(conds, sqlf.Sprintf(fmt.Sprintf("license_expires_at %s now()", op)))
 	}
 	return conds
 }
