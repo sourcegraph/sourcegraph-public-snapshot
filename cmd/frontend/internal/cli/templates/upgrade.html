@@ -82,7 +82,6 @@
             }
             input:checked ~ .tab-content {
                 max-height: 100vh;
-                padding: 1em;
                 overflow-x: scroll;
             }
             .top-container {
@@ -163,11 +162,11 @@
             .header-applied {
                 color: #2FCD66;
             }
-            .header-pending {
-                color: #FFDE82;
+            .header-in-progress {
+                color: #f4c134;
             }
             .header-failed {
-                color: #FA2543;
+                color: #f81434;
             }
 
             .migration-list {
@@ -188,16 +187,20 @@
                 justify-self: end;
             }
             .migration-item-applied {
-                background-color: #2FCD66;
+                border: 1px solid #2FCD66;
+                border-radius: 5px;
             }
-            .migration-item-pending {
-                background-color: #FFDE82;
+            .migration-item-in-progress {
+                border: 1px solid #f4c134;
+                border-radius: 5px;
             }
             .migration-item-failed {
-                background-color: #FA2543;
+                border: 1px solid #f81434;
+                border-radius: 5px;
             }
-            .migration-item-required {
-                background-color: #98AFBA;
+            .migration-item-queued {
+                border: 1px solid #98AFBA;
+                border-radius: 5px;
             }
 
             .oobmigration-list {
@@ -218,13 +221,24 @@
                 justify-self: end;
             }
             .oobmigration-item-applied {
-                background-color: #2FCD66;
+                border: 1px solid #2FCD66;
+                border-radius: 5px;
             }
-            .oobmigration-item-pending {
-                background-color: #FFDE82;
+            .oobmigration-item-in-progress {
+                border: 1px solid #FFDE82;
+                border-radius: 5px;
             }
             .oobmigration-item-failed {
-                background-color: #FA2543;
+                border: 1px solid #FA2543;
+                border-radius: 5px;
+            }
+
+            .expected {
+                padding: 0 1rem;
+            }
+            .explanation {
+                padding: 0 1rem;
+                font-style: italic;
             }
         </style>
     </head>
@@ -254,6 +268,8 @@
             <div class="bottom-container">
                 <div class="status-banner">Upgrading from v{{ .Upgrade.FromVersion }} to v{{ .Upgrade.ToVersion }}</div>
 
+                <p class="explanation">If you are a Sourcegraph administrator, see the frontend logs for additional upgrade progress reporting.</p>
+
                 <div class="row">
                     <div class="tabs">
                         <!-- Frontend -->
@@ -261,12 +277,14 @@
                             <input type="checkbox" id="chck1" />
                             <label class="tab-label" for="chck1">
                                 <span>Frontend</span>
-                                <span class="header-{{if .Frontend.HasFailure}}failed{{else}}{{if .Frontend.NumMigrationsRequired}}pending{{else}}applied{{end}}{{end}}">
-                                    {{ .Frontend.NumMigrationsRequired }} migrations need application
+                                <span class="header-{{if .Frontend.HasFailure}}failed{{else}}{{if .Frontend.NumMigrationsRequired}}in-progress{{else}}applied{{end}}{{end}}">
+                                    {{ .Frontend.NumMigrationsRequired }} migrations need to be applied
                                 </span>
                             </label>
                             <div class="tab-content">
                                 {{if .Frontend.Migrations}}
+                                <p class="explanation">The following schema migrations will be applied sequentially.</p>
+
                                 <ul class="migration-list">
                                     {{range .Frontend.Migrations}}
                                     <li class="migration-item-{{ .State }}">
@@ -275,7 +293,7 @@
                                     {{end}}
                                 </ul>
                                 {{else}}
-                                <p>No migrations to display.</p>
+                                <p class="expected">This schema is in the expected state.</p>
                                 {{end}}
                             </div>
                         </div>
@@ -285,12 +303,14 @@
                             <input type="checkbox" id="chck3" />
                             <label class="tab-label" for="chck3">
                                 <span>Code Intel</span>
-                                <span class="header-{{if .CodeIntel.HasFailure}}failed{{else}}{{if .CodeIntel.NumMigrationsRequired}}pending{{else}}applied{{end}}{{end}}">
-                                    {{ .CodeIntel.NumMigrationsRequired }} migrations need application
+                                <span class="header-{{if .CodeIntel.HasFailure}}failed{{else}}{{if .CodeIntel.NumMigrationsRequired}}in-progress{{else}}applied{{end}}{{end}}">
+                                    {{ .CodeIntel.NumMigrationsRequired }} migrations need to be applied
                                 </span>
                             </label>
                             <div class="tab-content">
                                 {{if .CodeIntel.Migrations}}
+                                <p class="explanation">The following schema migrations will be applied sequentially.</p>
+
                                 <ul class="migration-list">
                                     {{range .CodeIntel.Migrations}}
                                     <li class="migration-item-{{ .State }}">
@@ -299,7 +319,7 @@
                                     {{end}}
                                 </ul>
                                 {{else}}
-                                <p>No migrations to display.</p>
+                                <p class="expected">This schema is in the expected state.</p>
                                 {{end}}
                             </div>
                         </div>
@@ -309,12 +329,14 @@
                             <input type="checkbox" id="chck2" />
                             <label class="tab-label" for="chck2">
                                 <span>Code Insights</span>
-                                <span class="header-{{if .CodeInsights.HasFailure}}failed{{else}}{{if .CodeInsights.NumMigrationsRequired}}pending{{else}}applied{{end}}{{end}}">
-                                    {{ .CodeInsights.NumMigrationsRequired }} migrations need application
+                                <span class="header-{{if .CodeInsights.HasFailure}}failed{{else}}{{if .CodeInsights.NumMigrationsRequired}}in-progress{{else}}applied{{end}}{{end}}">
+                                    {{ .CodeInsights.NumMigrationsRequired }} migrations need to be applied
                                 </span>
                             </label>
                             <div class="tab-content">
                                 {{if .CodeInsights.Migrations}}
+                                <p class="explanation">The following schema migrations will be applied sequentially.</p>
+
                                 <ul class="migration-list">
                                     {{range .CodeInsights.Migrations}}
                                     <li class="migration-item-{{ .State }}">
@@ -323,7 +345,7 @@
                                     {{end}}
                                 </ul>
                                 {{else}}
-                                <p>No migrations to display.</p>
+                                <p class="expected">This schema is in the expected state.</p>
                                 {{end}}
                             </div>
                         </div>
@@ -333,22 +355,24 @@
                             <input type="checkbox" id="chck4" />
                             <label class="tab-label" for="chck4">
                                 <span>Out of band migrations</span>
-                                <span class="header-pending">
+                                <span class="header-in-progress">
                                     {{ .NumUnfinishedOutOfBandMigrations }} migrations need to complete
                                 </span>
                             </label>
                             <div class="tab-content">
                                 {{if .OutOfBandMigrations}}
+                                <p class="explanation">The following out of band migrations must complete before the upgrade can complete.</p>
+
                                 <ul class="oobmigration-list">
                                     {{range .OutOfBandMigrations}}
-                                    <li class="oobmigration-item-{{if eq .Progress 1.0}}applied{{else}}{{if .Errors}}failed{{else}}pending{{end}}{{end}}">
+                                    <li class="oobmigration-item-{{if .Errors}}failed{{else}}in-progress{{end}}">
                                         {{ .ID }}: {{ .Description }}
                                         <span>{{FormatPercentage .Progress}}</span>
                                     </li>
                                     {{end}}
                                 </ul>
                                 {{else}}
-                                <p>No out of band migrations to display.</p>
+                                <p class=""expected>No out of band migrations need to be performed.</p>
                                 {{end}}
                             </div>
                         </div>

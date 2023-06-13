@@ -204,13 +204,13 @@ func getMigrationStatus(migrationNames map[int]string, expected, applied, pendin
 		if _, ok := appliedMap[id]; ok {
 			state = "applied"
 		} else if _, ok := pendingMap[id]; ok {
-			state = "pending"
+			state = "in-progress"
 		} else if _, ok := failedMap[id]; ok {
 			state = "failed"
 			hasFailure = true
 			numMigrationsRequired++
 		} else {
-			state = "required"
+			state = "queued"
 			numMigrationsRequired++
 		}
 

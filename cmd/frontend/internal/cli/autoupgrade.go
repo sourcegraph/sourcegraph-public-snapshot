@@ -130,7 +130,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 	if err != nil {
 		return errors.Wrap(err, "error planning auto-upgrade")
 	}
-	if err := upgradestore.SetUpgradePlan(ctx, multiversion.SerializeableUpgradePlan(plan)); err != nil {
+	if err := upgradestore.SetUpgradePlan(ctx, multiversion.SerializeUpgradePlan(plan)); err != nil {
 		return errors.Wrap(err, "error updating auto-upgrade plan")
 	}
 	if err := runMigration(ctx, obsvCtx, plan, db, hook); err != nil {

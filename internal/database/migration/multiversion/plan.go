@@ -22,9 +22,9 @@ type MigrationPlan struct {
 	steps []MigrationStep
 }
 
-// SerializeableUpgradePlan converts a MigrationPlan into a relevant UpgradePlan for display in
+// SerializeUpgradePlan converts a MigrationPlan into a relevant UpgradePlan for display in
 // the "hobbled" UI displayed during a multi-version upgrade.
-func SerializeableUpgradePlan(plan MigrationPlan) upgradestore.UpgradePlan {
+func SerializeUpgradePlan(plan MigrationPlan) upgradestore.UpgradePlan {
 	if len(plan.steps) == 0 {
 		return upgradestore.UpgradePlan{}
 	}
