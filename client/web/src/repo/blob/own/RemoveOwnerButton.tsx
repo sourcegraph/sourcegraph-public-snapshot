@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { mdiDelete, mdiLoading } from '@mdi/js'
+import { mdiLoading, mdiMinusThick } from '@mdi/js'
 
 import { ErrorLike, asError } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
@@ -14,6 +14,8 @@ import {
 } from '../../../graphql-operations'
 
 import { REMOVE_ASSIGNED_OWNER, REMOVE_ASSIGNED_TEAM } from './grapqlQueries'
+
+import styles from './RemoveOwnerButton.module.scss'
 
 export interface RemoveOwnerButtonProps {
     onSuccess: () => Promise<any>
@@ -74,8 +76,7 @@ export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({
     return (
         <Tooltip content={tooltipContent}>
             <Button
-                variant="danger"
-                className="ml-2"
+                variant="icon"
                 aria-label="Remove this ownership"
                 onClick={removeOwner}
                 outline={false}
@@ -83,11 +84,10 @@ export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({
                 disabled={!isDirectAssigned}
             >
                 <Icon
-                    color="white"
+                    className={styles.minusIcon}
                     aria-hidden={true}
-                    svgPath={removeLoading || removeTeamLoading ? mdiLoading : mdiDelete}
+                    svgPath={removeLoading || removeTeamLoading ? mdiLoading : mdiMinusThick}
                 />
-                Remove owner
             </Button>
         </Tooltip>
     )
