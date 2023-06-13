@@ -43,11 +43,11 @@ func SerializeableUpgradePlan(plan MigrationPlan) upgradestore.UpgradePlan {
 	for schema, leafIDs := range leafIDsBySchemaName {
 		migrationNames[schema] = map[int]string{}
 
-		// TODO - handle error?
-		definitions, _ := plan.stitchedDefinitionsBySchemaName[schema].Up(nil, leafIDs)
-		for _, definition := range definitions {
-			migrations[schema] = append(migrations[schema], definition.ID)
-			migrationNames[schema][definition.ID] = definition.Name
+		if definitions, err := plan.stitchedDefinitionsBySchemaName[schema].Up(nil, leafIDs); err == nil {
+			for _, definition := range definitions {
+				migrations[schema] = append(migrations[schema], definition.ID)
+				migrationNames[schema][definition.ID] = definition.Name
+			}
 		}
 	}
 
