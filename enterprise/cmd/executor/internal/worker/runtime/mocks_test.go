@@ -14,7 +14,9 @@ import (
 	"sync"
 
 	util "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
+	cmdlogger "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	command "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	files "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	workspace "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	executor "github.com/sourcegraph/sourcegraph/internal/executor"
@@ -173,7 +175,7 @@ func (c CommandRunFuncCall) Results() []interface{} {
 
 // MockLogEntry is a mock implementation of the LogEntry interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger)
 // used for unit testing.
 type MockLogEntry struct {
 	// CloseFunc is an instance of a mock function object controlling the
@@ -664,7 +666,7 @@ func (c LogEntryWriteFuncCall) Results() []interface{} {
 
 // MockLogger is a mock implementation of the Logger interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger)
 // used for unit testing.
 type MockLogger struct {
 	// FlushFunc is an instance of a mock function object controlling the
@@ -924,29 +926,29 @@ func (c LoggerLogEntryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// MockFilesStore is a mock implementation of the FilesStore interface (from
-// the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace)
+// MockStore is a mock implementation of the Store interface (from the
+// package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files)
 // used for unit testing.
-type MockFilesStore struct {
+type MockStore struct {
 	// ExistsFunc is an instance of a mock function object controlling the
 	// behavior of the method Exists.
-	ExistsFunc *FilesStoreExistsFunc
+	ExistsFunc *StoreExistsFunc
 	// GetFunc is an instance of a mock function object controlling the
 	// behavior of the method Get.
-	GetFunc *FilesStoreGetFunc
+	GetFunc *StoreGetFunc
 }
 
-// NewMockFilesStore creates a new mock of the FilesStore interface. All
-// methods return zero values for all results, unless overwritten.
-func NewMockFilesStore() *MockFilesStore {
-	return &MockFilesStore{
-		ExistsFunc: &FilesStoreExistsFunc{
+// NewMockStore creates a new mock of the Store interface. All methods
+// return zero values for all results, unless overwritten.
+func NewMockStore() *MockStore {
+	return &MockStore{
+		ExistsFunc: &StoreExistsFunc{
 			defaultHook: func(context.Context, types.Job, string, string) (r0 bool, r1 error) {
 				return
 			},
 		},
-		GetFunc: &FilesStoreGetFunc{
+		GetFunc: &StoreGetFunc{
 			defaultHook: func(context.Context, types.Job, string, string) (r0 io.ReadCloser, r1 error) {
 				return
 			},
@@ -954,64 +956,64 @@ func NewMockFilesStore() *MockFilesStore {
 	}
 }
 
-// NewStrictMockFilesStore creates a new mock of the FilesStore interface.
-// All methods panic on invocation, unless overwritten.
-func NewStrictMockFilesStore() *MockFilesStore {
-	return &MockFilesStore{
-		ExistsFunc: &FilesStoreExistsFunc{
+// NewStrictMockStore creates a new mock of the Store interface. All methods
+// panic on invocation, unless overwritten.
+func NewStrictMockStore() *MockStore {
+	return &MockStore{
+		ExistsFunc: &StoreExistsFunc{
 			defaultHook: func(context.Context, types.Job, string, string) (bool, error) {
-				panic("unexpected invocation of MockFilesStore.Exists")
+				panic("unexpected invocation of MockStore.Exists")
 			},
 		},
-		GetFunc: &FilesStoreGetFunc{
+		GetFunc: &StoreGetFunc{
 			defaultHook: func(context.Context, types.Job, string, string) (io.ReadCloser, error) {
-				panic("unexpected invocation of MockFilesStore.Get")
+				panic("unexpected invocation of MockStore.Get")
 			},
 		},
 	}
 }
 
-// NewMockFilesStoreFrom creates a new mock of the MockFilesStore interface.
-// All methods delegate to the given implementation, unless overwritten.
-func NewMockFilesStoreFrom(i files.Store) *MockFilesStore {
-	return &MockFilesStore{
-		ExistsFunc: &FilesStoreExistsFunc{
+// NewMockStoreFrom creates a new mock of the MockStore interface. All
+// methods delegate to the given implementation, unless overwritten.
+func NewMockStoreFrom(i files.Store) *MockStore {
+	return &MockStore{
+		ExistsFunc: &StoreExistsFunc{
 			defaultHook: i.Exists,
 		},
-		GetFunc: &FilesStoreGetFunc{
+		GetFunc: &StoreGetFunc{
 			defaultHook: i.Get,
 		},
 	}
 }
 
-// FilesStoreExistsFunc describes the behavior when the Exists method of the
-// parent MockFilesStore instance is invoked.
-type FilesStoreExistsFunc struct {
+// StoreExistsFunc describes the behavior when the Exists method of the
+// parent MockStore instance is invoked.
+type StoreExistsFunc struct {
 	defaultHook func(context.Context, types.Job, string, string) (bool, error)
 	hooks       []func(context.Context, types.Job, string, string) (bool, error)
-	history     []FilesStoreExistsFuncCall
+	history     []StoreExistsFuncCall
 	mutex       sync.Mutex
 }
 
 // Exists delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockFilesStore) Exists(v0 context.Context, v1 types.Job, v2 string, v3 string) (bool, error) {
+func (m *MockStore) Exists(v0 context.Context, v1 types.Job, v2 string, v3 string) (bool, error) {
 	r0, r1 := m.ExistsFunc.nextHook()(v0, v1, v2, v3)
-	m.ExistsFunc.appendCall(FilesStoreExistsFuncCall{v0, v1, v2, v3, r0, r1})
+	m.ExistsFunc.appendCall(StoreExistsFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Exists method of the
-// parent MockFilesStore instance is invoked and the hook queue is empty.
-func (f *FilesStoreExistsFunc) SetDefaultHook(hook func(context.Context, types.Job, string, string) (bool, error)) {
+// parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreExistsFunc) SetDefaultHook(hook func(context.Context, types.Job, string, string) (bool, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Exists method of the parent MockFilesStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *FilesStoreExistsFunc) PushHook(hook func(context.Context, types.Job, string, string) (bool, error)) {
+// Exists method of the parent MockStore instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *StoreExistsFunc) PushHook(hook func(context.Context, types.Job, string, string) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1019,20 +1021,20 @@ func (f *FilesStoreExistsFunc) PushHook(hook func(context.Context, types.Job, st
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *FilesStoreExistsFunc) SetDefaultReturn(r0 bool, r1 error) {
+func (f *StoreExistsFunc) SetDefaultReturn(r0 bool, r1 error) {
 	f.SetDefaultHook(func(context.Context, types.Job, string, string) (bool, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *FilesStoreExistsFunc) PushReturn(r0 bool, r1 error) {
+func (f *StoreExistsFunc) PushReturn(r0 bool, r1 error) {
 	f.PushHook(func(context.Context, types.Job, string, string) (bool, error) {
 		return r0, r1
 	})
 }
 
-func (f *FilesStoreExistsFunc) nextHook() func(context.Context, types.Job, string, string) (bool, error) {
+func (f *StoreExistsFunc) nextHook() func(context.Context, types.Job, string, string) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1045,26 +1047,26 @@ func (f *FilesStoreExistsFunc) nextHook() func(context.Context, types.Job, strin
 	return hook
 }
 
-func (f *FilesStoreExistsFunc) appendCall(r0 FilesStoreExistsFuncCall) {
+func (f *StoreExistsFunc) appendCall(r0 StoreExistsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of FilesStoreExistsFuncCall objects describing
-// the invocations of this function.
-func (f *FilesStoreExistsFunc) History() []FilesStoreExistsFuncCall {
+// History returns a sequence of StoreExistsFuncCall objects describing the
+// invocations of this function.
+func (f *StoreExistsFunc) History() []StoreExistsFuncCall {
 	f.mutex.Lock()
-	history := make([]FilesStoreExistsFuncCall, len(f.history))
+	history := make([]StoreExistsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// FilesStoreExistsFuncCall is an object that describes an invocation of
-// method Exists on an instance of MockFilesStore.
-type FilesStoreExistsFuncCall struct {
+// StoreExistsFuncCall is an object that describes an invocation of method
+// Exists on an instance of MockStore.
+type StoreExistsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1087,44 +1089,44 @@ type FilesStoreExistsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c FilesStoreExistsFuncCall) Args() []interface{} {
+func (c StoreExistsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c FilesStoreExistsFuncCall) Results() []interface{} {
+func (c StoreExistsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// FilesStoreGetFunc describes the behavior when the Get method of the
-// parent MockFilesStore instance is invoked.
-type FilesStoreGetFunc struct {
+// StoreGetFunc describes the behavior when the Get method of the parent
+// MockStore instance is invoked.
+type StoreGetFunc struct {
 	defaultHook func(context.Context, types.Job, string, string) (io.ReadCloser, error)
 	hooks       []func(context.Context, types.Job, string, string) (io.ReadCloser, error)
-	history     []FilesStoreGetFuncCall
+	history     []StoreGetFuncCall
 	mutex       sync.Mutex
 }
 
 // Get delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockFilesStore) Get(v0 context.Context, v1 types.Job, v2 string, v3 string) (io.ReadCloser, error) {
+func (m *MockStore) Get(v0 context.Context, v1 types.Job, v2 string, v3 string) (io.ReadCloser, error) {
 	r0, r1 := m.GetFunc.nextHook()(v0, v1, v2, v3)
-	m.GetFunc.appendCall(FilesStoreGetFuncCall{v0, v1, v2, v3, r0, r1})
+	m.GetFunc.appendCall(StoreGetFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Get method of the
-// parent MockFilesStore instance is invoked and the hook queue is empty.
-func (f *FilesStoreGetFunc) SetDefaultHook(hook func(context.Context, types.Job, string, string) (io.ReadCloser, error)) {
+// parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreGetFunc) SetDefaultHook(hook func(context.Context, types.Job, string, string) (io.ReadCloser, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Get method of the parent MockFilesStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *FilesStoreGetFunc) PushHook(hook func(context.Context, types.Job, string, string) (io.ReadCloser, error)) {
+// Get method of the parent MockStore instance invokes the hook at the front
+// of the queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *StoreGetFunc) PushHook(hook func(context.Context, types.Job, string, string) (io.ReadCloser, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1132,20 +1134,20 @@ func (f *FilesStoreGetFunc) PushHook(hook func(context.Context, types.Job, strin
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *FilesStoreGetFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
+func (f *StoreGetFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
 	f.SetDefaultHook(func(context.Context, types.Job, string, string) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *FilesStoreGetFunc) PushReturn(r0 io.ReadCloser, r1 error) {
+func (f *StoreGetFunc) PushReturn(r0 io.ReadCloser, r1 error) {
 	f.PushHook(func(context.Context, types.Job, string, string) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
-func (f *FilesStoreGetFunc) nextHook() func(context.Context, types.Job, string, string) (io.ReadCloser, error) {
+func (f *StoreGetFunc) nextHook() func(context.Context, types.Job, string, string) (io.ReadCloser, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1158,26 +1160,26 @@ func (f *FilesStoreGetFunc) nextHook() func(context.Context, types.Job, string, 
 	return hook
 }
 
-func (f *FilesStoreGetFunc) appendCall(r0 FilesStoreGetFuncCall) {
+func (f *StoreGetFunc) appendCall(r0 StoreGetFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of FilesStoreGetFuncCall objects describing
-// the invocations of this function.
-func (f *FilesStoreGetFunc) History() []FilesStoreGetFuncCall {
+// History returns a sequence of StoreGetFuncCall objects describing the
+// invocations of this function.
+func (f *StoreGetFunc) History() []StoreGetFuncCall {
 	f.mutex.Lock()
-	history := make([]FilesStoreGetFuncCall, len(f.history))
+	history := make([]StoreGetFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// FilesStoreGetFuncCall is an object that describes an invocation of method
-// Get on an instance of MockFilesStore.
-type FilesStoreGetFuncCall struct {
+// StoreGetFuncCall is an object that describes an invocation of method Get
+// on an instance of MockStore.
+type StoreGetFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1200,13 +1202,13 @@ type FilesStoreGetFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c FilesStoreGetFuncCall) Args() []interface{} {
+func (c StoreGetFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c FilesStoreGetFuncCall) Results() []interface{} {
+func (c StoreGetFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
