@@ -10,6 +10,8 @@ import (
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
 	"github.com/vektah/gqlparser/v2/gqlerror"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
@@ -78,14 +80,18 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 		return nil, errors.New("invalid token format")
 	}
 
+	span := trace.SpanFromContext(ctx)
+
 	data, hit := s.cache.Get(token)
 	if !hit {
+		span.SetAttributes(attribute.Bool("actor-cache-miss", true))
 		return s.fetchAndCache(ctx, token)
 	}
 
 	var act *actor.Actor
 	if err := json.Unmarshal(data, &act); err != nil {
-		s.log.Error("failed to unmarshal subscription", log.Error(err))
+		span.SetAttributes(attribute.Bool("actor-corrupted", true))
+		sgtrace.Logger(ctx, s.log).Error("failed to unmarshal subscription", log.Error(err))
 
 		// Delete the corrupted record.
 		s.cache.Delete(token)
@@ -94,6 +100,7 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	}
 
 	if act.LastUpdated != nil && time.Since(*act.LastUpdated) > defaultUpdateInterval {
+		span.SetAttributes(attribute.Bool("actor-expired", true))
 		return s.fetchAndCache(ctx, token)
 	}
 
@@ -108,7 +115,7 @@ func (s *Source) Update(ctx context.Context, actor *actor.Actor) {
 	}
 
 	if _, err := s.fetchAndCache(ctx, actor.Key); err != nil {
-		s.log.Info("failed to update actor", log.Error(err))
+		sgtrace.Logger(ctx, s.log).Info("failed to update actor", log.Error(err))
 	}
 }
 
@@ -183,7 +190,7 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 	}
 
 	if data, err := json.Marshal(act); err != nil {
-		s.log.Error("failed to marshal actor",
+		sgtrace.Logger(ctx, s.log).Error("failed to marshal actor",
 			log.Error(err))
 	} else {
 		s.cache.Set(token, data)
