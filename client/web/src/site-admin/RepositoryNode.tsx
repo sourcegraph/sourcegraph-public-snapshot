@@ -10,7 +10,6 @@ import {
     mdiRefresh,
     mdiSecurity,
     mdiVectorPolyline,
-    mdiFileDocumentOutline,
     mdiListStatus,
 } from '@mdi/js'
 import classNames from 'classnames'
