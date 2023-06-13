@@ -15,6 +15,8 @@ interface ExternalsAuthProps {
     gitlabLabel: string
     onClick: (type: AuthProvider['serviceType']) => void
     withCenteredText?: boolean
+    ctaClassName?: string
+    iconClassName?: string
 }
 
 const GitlabColorIcon: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({ className }) => (
@@ -54,6 +56,8 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
     gitlabLabel,
     onClick,
     withCenteredText,
+    ctaClassName,
+    iconClassName,
 }) => {
     // Since this component is only intended for use on Sourcegraph.com, it's OK to hardcode
     // GitHub and GitLab auth providers here as they are the only ones used on Sourcegraph.com.
@@ -78,11 +82,18 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',
                         styles.signUpButton,
-                        styles.githubButton
+                        styles.githubButton,
+                        ctaClassName
                     )}
                     onClick={() => onClick('github')}
                 >
-                    <Icon className="mr-3" svgPath={mdiGithub} inline={false} aria-hidden={true} /> {githubLabel}
+                    <Icon
+                        className={classNames('mr-3', iconClassName)}
+                        svgPath={mdiGithub}
+                        inline={false}
+                        aria-hidden={true}
+                    />{' '}
+                    {githubLabel}
                 </Link>
             )}
 
@@ -95,11 +106,12 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',
                         styles.signUpButton,
-                        styles.gitlabButton
+                        styles.gitlabButton,
+                        ctaClassName
                     )}
                     onClick={() => onClick('gitlab')}
                 >
-                    <GitlabColorIcon className="mr-3" /> {gitlabLabel}
+                    <GitlabColorIcon className={classNames('mr-3', iconClassName)} /> {gitlabLabel}
                 </Link>
             )}
         </>

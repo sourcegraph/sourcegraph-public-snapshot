@@ -12,4 +12,6 @@ export const enum EventName {
     TRY_CODY_MARKETPLACE = 'VSCodeMarketplace',
     TRY_CODY_WEB = 'TryCodyWeb',
     TRY_CODY_WEB_ONBOARDING_DISPLAYED = 'TryCodyWebOnboardingDisplayed',
+    TRY_CODY_SIGNUP_INITIATED = 'CodySignUpInitiated',
+    SPEAK_TO_AN_ENGINEER_CTA = 'SpeakToACodyEngineerCTA',
 }

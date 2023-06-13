@@ -37,7 +37,7 @@ export function createRepoRevisionContainerRoutes(
             path: routePath,
             render: props => (
                 <TraceSpanProvider name="RepositoryFileTreePage" attributes={{ objectType }}>
-                    <PageComponent {...props} objectType={objectType} />
+                    <PageComponent {...props} objectType={objectType} globalContext={window.context} />
                 </TraceSpanProvider>
             ),
         })),

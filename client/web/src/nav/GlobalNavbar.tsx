@@ -237,7 +237,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 </NavLink>
                             </NavItem>
                         ))}
-                    {codyEnabled.chat && (
+                    {(codyEnabled.chat || isSourcegraphDotCom) && (
                         <NavItem icon={CodyLogo}>
                             <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Cody}>
                                 Cody AI
