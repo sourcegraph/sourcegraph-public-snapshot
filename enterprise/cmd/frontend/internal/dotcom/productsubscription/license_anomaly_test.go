@@ -84,6 +84,7 @@ func TestCheckAnomalies(t *testing.T) {
 	}
 
 	clock := glock.NewMockClock()
+	clock.SetCurrent(time.Unix(1686666666, 0)) // 2023-06-13T14:31:06Z
 
 	siteID := "02a5a9e6-b45e-4e1a-b2a0-f812620e6dff"
 	licenseID := "22e0cc8e-57ad-4dd9-be54-0f94d6e9964d"

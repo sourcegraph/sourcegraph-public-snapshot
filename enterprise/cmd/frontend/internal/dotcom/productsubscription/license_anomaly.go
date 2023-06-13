@@ -66,7 +66,7 @@ func maybeCheckAnomalies(logger log.Logger, db database.DB, client slackClient, 
 			logger.Error("error SET last license anomaly check time", log.Error(err))
 			return
 		}
-		checkAnomalies(logger, db, glock.NewRealClock(), client)
+		checkAnomalies(logger, db, clock, client)
 	}
 }
 
@@ -121,7 +121,7 @@ WITH time_diffs AS (
 	FROM event_logs
 	WHERE
 		name = 'license.check.api.success'
-		AND timestamp > now() - INTERVAL '48 hours'
+		AND timestamp > %s::timestamptz - INTERVAL '48 hours'
 		AND argument->>'site_id' = %s
 ),
 percentiles AS (
@@ -150,7 +150,7 @@ func checkP50CallTimeForLicense(ctx context.Context, logger log.Logger, db datab
 		return
 	}
 
-	q := sqlf.Sprintf(percentileTimeDiffQuery, *license.SiteID)
+	q := sqlf.Sprintf(percentileTimeDiffQuery, clock.Now().UTC(), *license.SiteID)
 	timeDiff, ok, err := basestore.ScanFirstNullInt64(db.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
 	if err != nil {
 		logger.Error("error getting time difference from event_logs", log.Error(err))
