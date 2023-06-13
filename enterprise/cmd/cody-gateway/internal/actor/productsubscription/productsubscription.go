@@ -23,6 +23,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// SourceVersion should be bumped whenever the format of any cached data in this
+// actor source implementation is changed. This effectively expires all entries.
+const SourceVersion = "v1"
+
 // product subscription tokens are always a prefix of 4 characters (sgs_ or slk_)
 // followed by a 64-character hex-encoded SHA256 hash
 const tokenLength = 4 + 64
