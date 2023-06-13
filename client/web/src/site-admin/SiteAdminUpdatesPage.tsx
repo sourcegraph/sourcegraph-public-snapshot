@@ -180,10 +180,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                                 drift is detected. Please resolve schema drift before attempting an upgrade.
                                 <br />
                                 <br /> Learn more about the migrator{' '}
-                                <Link to="https://docs.sourcegraph.com/admin/updates/migrator/migrator-operations">
-                                    upgrade command
-                                </Link>
-                                .
+                                <Link to="/help/admin/updates/migrator/migrator-operations">upgrade command</Link>.
                             </span>
                         ) : data?.site.upgradeReadiness.requiredOutOfBandMigrations.length > 0 ? (
                             <span>
@@ -196,10 +193,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                                 for clarifications.
                                 <br />
                                 <br /> Learn more about the migrator{' '}
-                                <Link to="https://docs.sourcegraph.com/admin/updates/migrator/migrator-operations">
-                                    upgrade command
-                                </Link>
-                                .
+                                <Link to="/help/admin/updates/migrator/migrator-operations">upgrade command</Link>.
                             </span>
                         ) : (
                             <span>
@@ -208,10 +202,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                                 <br />
                                 <br />
                                 Learn more about the migrator{' '}
-                                <Link to="https://docs.sourcegraph.com/admin/updates/migrator/migrator-operations">
-                                    upgrade command
-                                </Link>
-                                .
+                                <Link to="/help/admin/updates/migrator/migrator-operations">upgrade command</Link>.
                             </span>
                         )}
                     </div>
