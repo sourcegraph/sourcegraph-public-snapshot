@@ -10,29 +10,26 @@ import (
 )
 
 var (
+	metricLabels = []string{"queue"}
+
 	queueLength = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_gitserver_generic_queue_length",
 		Help: "The number of items currently in the queue.",
-	}, []string{"queue"})
+	}, metricLabels)
 
 	queueEnqueuedTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_gitserver_generic_queue_enqueued_total",
 		Help: "The total number of items enqueued.",
-	}, []string{"queue"})
-
-	queueDequeuedTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_gitserver_generic_queue_dequeued_total",
-		Help: "The total number of items dequeued.",
-	}, []string{"queue"})
+	}, metricLabels)
 
 	queueWaitTime = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "src_gitserver_generic_queue_wait_time",
+		Name: "src_gitserver_generic_queue_wait_time_seconds",
 		Help: "Time spent in queue waiting to be processed",
-	}, []string{"queue", "job_name"})
+	}, metricLabels)
 
 	queueProcessingTime = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "src_gitserver_generic_queue_processing_time",
-	}, []string{"queue", "job_name"})
+		Name: "src_gitserver_generic_queue_processing_time_seconds",
+	}, metricLabels)
 )
 
 var registerMetricsOnce = new(sync.Once)
@@ -42,7 +39,6 @@ func registerMetrics(observationCtx *observation.Context) {
 		observationCtx.Registerer.MustRegister(
 			queueLength,
 			queueEnqueuedTotal,
-			queueDequeuedTotal,
 			queueWaitTime,
 			queueProcessingTime,
 		)
@@ -88,11 +84,8 @@ func (jm *JobMetadata) SetPushedAt() {
 
 // Queue is a threadsafe FIFO queue.
 type Queue[T Jobber] struct {
-	// A name that uniquely identifies this queue. This is used in generating names for in-built
-	// metrics supported by the queue.
-	//
-	// Hyphens will be replaced by underscores because hyphens are not allowed in the metric names.
-	name string
+	*metrics
+
 	jobs *list.List
 
 	mu sync.Mutex
@@ -105,13 +98,19 @@ type Queue[T Jobber] struct {
 
 // NewQueue initializes a new Queue.
 func NewQueue[T Jobber](obctx *observation.Context, name string, jobs *list.List) *Queue[T] {
-	q := Queue[T]{
-		name: name,
-		jobs: jobs,
-	}
+	q := Queue[T]{jobs: jobs}
 	q.Cond = sync.NewCond(&q.Mutex)
 
+	// Register the metrics the first time this queue is used.
 	registerMetrics(obctx)
+
+	// Setup the metrics for this specific instance of the queue.
+	q.metrics = &metrics{
+		length:         queueLength.WithLabelValues(name),
+		enqueuedTotal:  queueEnqueuedTotal.WithLabelValues(name),
+		waitTime:       queueWaitTime.WithLabelValues(name),
+		processingTime: queueProcessingTime.WithLabelValues(name),
+	}
 
 	return &q
 }
@@ -127,8 +126,8 @@ func (q *Queue[T]) Push(job T) {
 	// Set the push time on the job's metadata. This will be used to observe the total wait time in
 	// queue when this job is eventually popped.
 	job.SetPushedAt()
-	queueLength.WithLabelValues(q.name).Inc()
-	queueEnqueuedTotal.WithLabelValues(q.name).Inc()
+	q.length.Inc()
+	q.enqueuedTotal.Inc()
 }
 
 // Pop will return the next job. If there's no next job available, it returns nil.
@@ -143,12 +142,8 @@ func (q *Queue[T]) Pop() *T {
 
 	job := q.jobs.Remove(next).(T)
 
-	queueWaitTime.WithLabelValues(q.name, job.Identifier()).Observe(
-		time.Since(job.GetPushedAt()).Seconds(),
-	)
-
-	queueLength.WithLabelValues(q.name).Dec()
-	queueDequeuedTotal.WithLabelValues(q.name).Inc()
+	q.waitTime.Observe(time.Since(job.GetPushedAt()).Seconds())
+	q.length.Dec()
 
 	return &job
 }
@@ -161,5 +156,12 @@ func (q *Queue[T]) Empty() bool {
 }
 
 func (q *Queue[T]) RecordProcessingTime(job T, start time.Time) {
-	queueProcessingTime.WithLabelValues(q.name, job.Identifier()).Observe(time.Since(start).Seconds())
+	q.processingTime.Observe(time.Since(start).Seconds())
+}
+
+type metrics struct {
+	length         prometheus.Gauge
+	enqueuedTotal  prometheus.Counter
+	waitTime       prometheus.Observer
+	processingTime prometheus.Observer
 }
