@@ -83,7 +83,11 @@ export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({
                 size="sm"
                 disabled={!isDirectAssigned}
             >
-                <Icon className={styles.minusIcon} aria-hidden={true} svgPath={removeLoading || removeTeamLoading ? mdiLoading : mdiMinusThick} />
+                <Icon
+                    className={styles.minusIcon}
+                    aria-hidden={true}
+                    svgPath={removeLoading || removeTeamLoading ? mdiLoading : mdiMinusThick}
+                />
             </Button>
         </Tooltip>
     )
