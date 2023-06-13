@@ -31,6 +31,7 @@ import {
     CollapseHeader,
     CollapsePanel,
     H3,
+    H4,
     Label,
 } from '@sourcegraph/wildcard'
 
@@ -292,9 +293,8 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                     <div>
                         {data?.site.upgradeReadiness.schemaDrift.length > 0 ? (
                             <span>
-                                <Icon aria-hidden={true} svgPath={mdiAlertOctagram} className="text-danger" /> Upgrades
-                                will fail if schema drift is detected. Please resolve schema drift before attempting an
-                                upgrade.
+                                <Icon aria-hidden={true} svgPath={mdiAlertOctagram} className="text-danger" /> Schema
+                                drift is detected. Please resolve schema drift before attempting an upgrade.
                                 <br />
                                 <br /> Learn more about the migrator{' '}
                                 <Link to="https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#upgrade">
