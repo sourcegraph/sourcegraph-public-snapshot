@@ -5,19 +5,13 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/stretchr/testify/require"
 )
 
 type testJob struct {
-	*JobMetadata
 	Value string
 }
-
-func (t *testJob) Identifier() string { return t.Value }
-
-func (t *testJob) UUID() string { return t.Value }
 
 func TestQueue(t *testing.T) {
 	queue := NewQueue[*testJob](observation.TestContextTB(t), "test-foo", list.New())
@@ -27,9 +21,9 @@ func TestQueue(t *testing.T) {
 	}
 
 	jobs := []testJob{
-		{Value: "1", JobMetadata: &JobMetadata{}},
-		{Value: "2", JobMetadata: &JobMetadata{}},
-		{Value: "3", JobMetadata: &JobMetadata{}},
+		{Value: "1"},
+		{Value: "2"},
+		{Value: "3"},
 	}
 
 	// Push 1, 2 and 3 into the queue.
@@ -49,7 +43,7 @@ func TestQueue(t *testing.T) {
 
 		require.NotNil(t, doneFunc)
 
-		if diff := cmp.Diff(expected, **gotJob, cmpopts.IgnoreUnexported(JobMetadata{})); diff != "" {
+		if diff := cmp.Diff(expected, **gotJob); diff != "" {
 			t.Errorf("mismatch in job, (-want, +got)\n%s", diff)
 		}
 

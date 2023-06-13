@@ -26,25 +26,16 @@ import (
 )
 
 type changelistMappingJob struct {
-	*common.JobMetadata
-
 	RepoName api.RepoName
 	RepoDir  common.GitDir
 }
 
 func NewChangelistMappingJob(repoName api.RepoName, repoDir common.GitDir) *changelistMappingJob {
 	return &changelistMappingJob{
-		JobMetadata: &common.JobMetadata{},
-		RepoName:    repoName,
-		RepoDir:     repoDir,
+		RepoName: repoName,
+		RepoDir:  repoDir,
 	}
 }
-
-func (j *changelistMappingJob) Identifier() string {
-	return string(j.RepoName)
-}
-
-var _ common.Jobber = &changelistMappingJob{}
 
 // Service is used to manage perforce depot related interactions from gitserver.
 //

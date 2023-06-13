@@ -183,8 +183,6 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd wrexec.Cmder
 // possible to simplify this, but to do that, doClone will need to do a lot less than it does at the
 // moment.
 type cloneJob struct {
-	*common.JobMetadata
-
 	repo   api.RepoName
 	dir    common.GitDir
 	syncer VCSSyncer
@@ -197,13 +195,6 @@ type cloneJob struct {
 	remoteURL *vcs.URL
 	options   *cloneOptions
 }
-
-func (c *cloneJob) Identifier() string {
-	return string(c.repo)
-}
-
-// Ensure that cloneJob implements common.Job.
-var _ common.Jobber = &cloneJob{}
 
 // cloneTask is a thin wrapper around a cloneJob to associate the doneFunc with each job.
 type cloneTask struct {
@@ -2244,17 +2235,14 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// We push the cloneJob to a queue and let the producer-consumer pipeline take over from this
 	// point. See definitions of cloneJobProducer and cloneJobConsumer to understand how these jobs
 	// are processed.
-	job := &cloneJob{
-		JobMetadata: &common.JobMetadata{},
-
+	s.CloneQueue.Push(&cloneJob{
 		repo:      repo,
 		dir:       dir,
 		syncer:    syncer,
 		lock:      lock,
 		remoteURL: remoteURL,
 		options:   opts,
-	}
-	s.CloneQueue.Push(job)
+	})
 
 	return "", nil
 }
