@@ -77,7 +77,10 @@ const config: Meta = {
     parameters: {
         chromatic: {
             disableSnapshot: false,
-            viewports: [320, 576, 978],
+            viewports: [
+                // 320, // TODO: Mobile size detection is not working in Storybook
+                576, 978,
+            ],
         },
     },
 }
