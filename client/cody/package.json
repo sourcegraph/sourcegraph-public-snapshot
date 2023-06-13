@@ -318,6 +318,16 @@
         "icon": "$(gear)"
       },
       {
+        "command": "cody.switch-account",
+        "title": "Switch Account",
+        "icon": "$(account)"
+      },
+      {
+        "command": "cody.menu.switch-account",
+        "title": "Switch Account",
+        "icon": "$(account)"
+      },
+      {
         "command": "cody.focus",
         "category": "Cody",
         "title": "Sign In"
@@ -365,6 +375,10 @@
         "command": "cody.walkthrough.enableCodeCompletions",
         "category": "Cody Walkthrough",
         "title": "Enable Code Completions"
+      },
+      {
+        "command": "cody.menu.switch-account",
+        "title": "Switch Account"
       },
       {
         "command": "cody.comment.add",
@@ -681,6 +695,21 @@
           "command": "cody.fixup.apply-all",
           "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated",
           "group": "navigation"
+        },
+        {
+          "command": "cody.settings",
+          "group": "menu-group1",
+          "when": "view == cody.chat"
+        },
+        {
+          "command": "cody.switch-account",
+          "group": "menu-group2-@1",
+          "when": "view == cody.chat && cody.activated"
+        },
+        {
+          "command": "cody.delete-access-token",
+          "group": "menu-group2-@2",
+          "when": "view == cody.chat && cody.activated"
         }
       ],
       "editor/title": [

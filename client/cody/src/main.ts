@@ -193,8 +193,13 @@ const register = async (
             vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(CODY_FEEDBACK_URL.href))
         ),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
-        vscode.commands.registerCommand('cody.settings', () => chatProvider.setWebviewView('settings')),
+        vscode.commands.registerCommand('cody.settings', () =>
+            vscode.commands.executeCommand('workbench.action.openSettings', { query: 'Cody:' })
+        ),
         vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
+        vscode.commands.registerCommand('cody.switch-account', () =>
+            vscode.commands.executeCommand('cody.status-bar.interacted')
+        ),
         vscode.commands.registerCommand('cody.walkthrough.showLogin', () =>
             vscode.commands.executeCommand('workbench.view.extension.cody')
         ),
