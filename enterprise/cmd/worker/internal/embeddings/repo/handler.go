@@ -72,7 +72,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 	// otherwise we fall back to a full index.
 	var lastSuccessfulJobRevision api.CommitID
 	var previousIndex *embeddings.RepoEmbeddingIndex
-	if 	if conf.Get().Embeddings.Incremental == nil || *conf.Get().Embeddings.Incremental {
+	if conf.Get().Embeddings.Incremental == nil || *conf.Get().Embeddings.Incremental {
 		lastSuccessfulJobRevision, previousIndex = h.getPreviousEmbeddingIndex(ctx, logger, repo)
 
 		if previousIndex != nil && !previousIndex.IsModelCompatible(embeddingsClient.GetModelIdentifier()) {
