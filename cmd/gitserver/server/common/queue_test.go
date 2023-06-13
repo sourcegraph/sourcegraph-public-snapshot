@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/stretchr/testify/require"
 )
 
 type testJob struct {
@@ -44,11 +45,14 @@ func TestQueue(t *testing.T) {
 	// Pop and expect 1, 2 and 3 in that order (FIFO queue).
 	for _, j := range jobs {
 		expected := j
-		gotJob := queue.Pop()
+		gotJob, doneFunc := queue.Pop()
+
+		require.NotNil(t, doneFunc)
 
 		if diff := cmp.Diff(expected, **gotJob, cmpopts.IgnoreUnexported(JobMetadata{})); diff != "" {
 			t.Errorf("mismatch in job, (-want, +got)\n%s", diff)
 		}
+
 	}
 
 	if !queue.Empty() {

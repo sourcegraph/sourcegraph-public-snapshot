@@ -92,17 +92,17 @@ func (s *Service) EnqueueChangelistMappingJob(job *changelistMappingJob) {
 }
 
 func (s *Service) startPerforceChangelistMappingPipeline(ctx context.Context) {
-	jobs := make(chan *changelistMappingJob)
+	tasks := make(chan *changelistMappingTask)
 
 	// Protect against panics.
-	goroutine.Go(func() { s.changelistMappingConsumer(ctx, jobs) })
-	goroutine.Go(func() { s.changelistMappingProducer(ctx, jobs) })
+	goroutine.Go(func() { s.changelistMappingConsumer(ctx, tasks) })
+	goroutine.Go(func() { s.changelistMappingProducer(ctx, tasks) })
 }
 
 // changelistMappingProducer "pops" jobs from the FIFO queue of the "Service" and produce them
 // for "consumption".
-func (s *Service) changelistMappingProducer(ctx context.Context, jobs chan<- *changelistMappingJob) {
-	defer close(jobs)
+func (s *Service) changelistMappingProducer(ctx context.Context, tasks chan<- *changelistMappingTask) {
+	defer close(tasks)
 
 	for {
 		s.changelistMappingQueue.Mutex.Lock()
@@ -113,13 +113,16 @@ func (s *Service) changelistMappingProducer(ctx context.Context, jobs chan<- *ch
 		s.changelistMappingQueue.Mutex.Unlock()
 
 		for {
-			job := s.changelistMappingQueue.Pop()
+			job, doneFunc := s.changelistMappingQueue.Pop()
 			if job == nil {
 				break
 			}
 
 			select {
-			case jobs <- *job:
+			case tasks <- &changelistMappingTask{
+				changelistMappingJob: *job,
+				done:                 doneFunc,
+			}:
 			case <-ctx.Done():
 				s.Logger.Error("changelistMappingProducer: ", log.Error(ctx.Err()))
 				return
@@ -129,12 +132,12 @@ func (s *Service) changelistMappingProducer(ctx context.Context, jobs chan<- *ch
 }
 
 // changelistMappingConsumer "consumes" jobs "produced" by the producer.
-func (s *Service) changelistMappingConsumer(ctx context.Context, jobs <-chan *changelistMappingJob) {
+func (s *Service) changelistMappingConsumer(ctx context.Context, tasks <-chan *changelistMappingTask) {
 	logger := s.Logger.Scoped("changelistMappingConsumer", "process perforce changelist mapping jobs")
 
 	// Process only one job at a time for a simpler pipeline at the moment.
-	for j := range jobs {
-		logger := logger.With(log.String("job.repo", string(j.RepoName)))
+	for task := range tasks {
+		logger := logger.With(log.String("job.repo", string(task.RepoName)))
 
 		select {
 		case <-ctx.Done():
@@ -144,11 +147,18 @@ func (s *Service) changelistMappingConsumer(ctx context.Context, jobs <-chan *ch
 		}
 
 		start := time.Now()
-		err := s.doChangelistMapping(ctx, j)
+		err := s.doChangelistMapping(ctx, task.changelistMappingJob)
 		if err != nil {
 			logger.Error("failed to map perforce changelists", log.Error(err))
 		}
-		s.changelistMappingQueue.RecordProcessingTime(start)
+
+		duration := time.Since(start)
+		task.done(duration.Seconds())
+		// NOTE: Hardcoded to log for tasks that run longer than 1 minute. Will revisit this if it
+		// becomes noisy under production loads.
+		if duration > time.Duration(time.Second*60) {
+			s.Logger.Warn("mapping job took long to complete", log.Float64("seconds", duration.Seconds()))
+		}
 	}
 }
 
@@ -330,4 +340,11 @@ func parseGitLogLine(line string) (*types.PerforceChangelist, error) {
 		CommitSHA:    api.CommitID(parts[0]),
 		ChangelistID: cid,
 	}, nil
+}
+
+// changelistMappingTask is a thin wrapper around a changelistMappingJob to associate the
+// doneFunc with each job.
+type changelistMappingTask struct {
+	*changelistMappingJob
+	done func(float64)
 }

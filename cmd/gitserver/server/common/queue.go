@@ -130,14 +130,15 @@ func (q *Queue[T]) Push(job T) {
 	q.enqueuedTotal.Inc()
 }
 
-// Pop will return the next job. If there's no next job available, it returns nil.
-func (q *Queue[T]) Pop() *T {
+// Pop returns the next job and a function that consumers of this job may use to record some
+// metrics. If there's no next job available, it returns nil, nil.
+func (q *Queue[T]) Pop() (*T, func(float64)) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
 	next := q.jobs.Front()
 	if next == nil {
-		return nil
+		return nil, nil
 	}
 
 	job := q.jobs.Remove(next).(T)
@@ -145,7 +146,11 @@ func (q *Queue[T]) Pop() *T {
 	q.waitTime.Observe(time.Since(job.GetPushedAt()).Seconds())
 	q.length.Dec()
 
-	return &job
+	// NOTE: The function being returned is hardcoded at the moment. In the future this may be a
+	// property of the queue if implementations need it. For now this is all we need.
+	return &job, func(val float64) {
+		q.processingTime.Observe(val)
+	}
 }
 
 func (q *Queue[T]) Empty() bool {
@@ -153,10 +158,6 @@ func (q *Queue[T]) Empty() bool {
 	defer q.mu.Unlock()
 
 	return q.jobs.Len() == 0
-}
-
-func (q *Queue[T]) RecordProcessingTime(start time.Time) {
-	q.processingTime.Observe(time.Since(start).Seconds())
 }
 
 type metrics struct {

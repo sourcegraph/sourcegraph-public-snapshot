@@ -205,6 +205,12 @@ func (c *cloneJob) Identifier() string {
 // Ensure that cloneJob implements common.Job.
 var _ common.Jobber = &cloneJob{}
 
+// cloneTask is a thin wrapper around a cloneJob to associate the doneFunc with each job.
+type cloneTask struct {
+	*cloneJob
+	done func(float64)
+}
+
 // NewCloneQueue initializes a new cloneQueue.
 func NewCloneQueue(obctx *observation.Context, jobs *list.List) *common.Queue[*cloneJob] {
 	return common.NewQueue[*cloneJob](obctx, "clone-queue", jobs)
@@ -610,14 +616,14 @@ func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.Git
 // StartClonePipeline clones repos asynchronously. It creates a producer-consumer
 // pipeline.
 func (s *Server) StartClonePipeline(ctx context.Context) {
-	jobs := make(chan *cloneJob)
+	tasks := make(chan *cloneTask)
 
-	go s.cloneJobConsumer(ctx, jobs)
-	go s.cloneJobProducer(ctx, jobs)
+	go s.cloneJobConsumer(ctx, tasks)
+	go s.cloneJobProducer(ctx, tasks)
 }
 
-func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
-	defer close(jobs)
+func (s *Server) cloneJobProducer(ctx context.Context, tasks chan<- *cloneTask) {
+	defer close(tasks)
 
 	for {
 		// Acquire the cond mutex lock and wait for a signal if the queue is empty.
@@ -633,13 +639,16 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 		// Keep popping from the queue until the queue is empty again, in which case we start all
 		// over again from the top.
 		for {
-			job := s.CloneQueue.Pop()
+			job, doneFunc := s.CloneQueue.Pop()
 			if job == nil {
 				break
 			}
 
 			select {
-			case jobs <- *job:
+			case tasks <- &cloneTask{
+				cloneJob: *job,
+				done:     doneFunc,
+			}:
 			case <-ctx.Done():
 				s.Logger.Error("cloneJobProducer: ", log.Error(ctx.Err()))
 				return
@@ -648,11 +657,11 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 	}
 }
 
-func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
+func (s *Server) cloneJobConsumer(ctx context.Context, tasks <-chan *cloneTask) {
 	logger := s.Logger.Scoped("cloneJobConsumer", "process clone jobs")
 
-	for j := range jobs {
-		logger := logger.With(log.String("job.repo", string(j.repo)))
+	for task := range tasks {
+		logger := logger.With(log.String("job.repo", string(task.repo)))
 
 		select {
 		case <-ctx.Done():
@@ -667,19 +676,18 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 			continue
 		}
 
-		go func(job *cloneJob) {
+		go func(task *cloneTask) {
 			start := time.Now()
-			defer s.CloneQueue.RecordProcessingTime(start)
-
 			defer cancel()
 
-			err := s.doClone(ctx, job.repo, job.dir, job.syncer, job.lock, job.remoteURL, job.options)
+			err := s.doClone(ctx, task.repo, task.dir, task.syncer, task.lock, task.remoteURL, task.options)
 			if err != nil {
 				logger.Error("failed to clone repo", log.Error(err))
 			}
 			// Use a different context in case we failed because the original context failed.
-			s.setLastErrorNonFatal(s.ctx, job.repo, err)
-		}(j)
+			s.setLastErrorNonFatal(s.ctx, task.repo, err)
+			task.done(time.Since(start).Seconds())
+		}(task)
 	}
 }
 
