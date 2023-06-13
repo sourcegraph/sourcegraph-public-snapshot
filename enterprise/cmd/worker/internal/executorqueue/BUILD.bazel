@@ -16,6 +16,8 @@ go_library(
     visibility = ["//enterprise/cmd/worker:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/uploads/shared",
+        "//enterprise/internal/executor/types",
+        "//enterprise/internal/executor/util",
         "//internal/env",
         "//internal/goroutine",
         "//internal/memo",
