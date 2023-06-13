@@ -8,7 +8,7 @@ If Sourcegraph needs to operate in a sandboxed environment without an external i
 
 License keys also need to be unique to a single instance of Sourcegraph. If the same license key is used across multiple instances, subsequent license checks will fail. If multiple license keys are required for dev/staging instances, contact customer support for additional license keys for these instances.
 
-## Troubleshooting
+## FAQ
 
 ### We have set up a new Sourcegraph instance by replicating an existing instance, how can we generate a new site ID to ensure the instances are unique?
 
