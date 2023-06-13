@@ -37,10 +37,10 @@ func TestInsertReferences(t *testing.T) {
 	}
 
 	// Insert references
-	mockReferences := make(chan string, 3)
-	mockReferences <- "foo"
-	mockReferences <- "bar"
-	mockReferences <- "baz"
+	mockReferences := make(chan [16]byte, 3)
+	mockReferences <- hash("foo")
+	mockReferences <- hash("bar")
+	mockReferences <- hash("baz")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 104, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
@@ -56,7 +56,7 @@ func TestInsertReferences(t *testing.T) {
 		{
 			UploadID:         4,
 			ExportedUploadID: 104,
-			SymbolNames:      []string{"foo", "bar", "baz"},
+			SymbolChecksums:  [][16]byte{hash("foo"), hash("bar"), hash("baz")},
 		},
 	}
 	if diff := cmp.Diff(expectedReferences, references); diff != "" {
@@ -74,7 +74,7 @@ func getRankingReferences(
 	graphKey string,
 ) (_ []shared.RankingReferences, err error) {
 	query := fmt.Sprintf(`
-		SELECT cre.upload_id, cre.id, rd.symbol_names
+		SELECT cre.upload_id, cre.id, rd.symbol_checksums
 		FROM codeintel_ranking_references rd
 		JOIN codeintel_ranking_exports cre ON cre.id = rd.exported_upload_id
 		WHERE rd.graph_key = '%s'
@@ -91,15 +91,16 @@ func getRankingReferences(
 	for rows.Next() {
 		var uploadID int
 		var exportedUploadID int
-		var symbolNames []string
-		err = rows.Scan(&uploadID, &exportedUploadID, pq.Array(&symbolNames))
+		var symbolChecksums [][]byte
+		err = rows.Scan(&uploadID, &exportedUploadID, pq.Array(&symbolChecksums))
 		if err != nil {
 			return nil, err
 		}
+
 		references = append(references, shared.RankingReferences{
 			UploadID:         uploadID,
 			ExportedUploadID: exportedUploadID,
-			SymbolNames:      symbolNames,
+			SymbolChecksums:  castToChecksums(symbolChecksums),
 		})
 	}
 

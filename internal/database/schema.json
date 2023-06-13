@@ -7910,6 +7910,19 @@
           "Comment": ""
         },
         {
+          "Name": "symbol_checksum",
+          "Index": 10,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "'\\x'::bytea",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "symbol_name",
           "Index": 3,
           "TypeName": "text",
@@ -7945,12 +7958,12 @@
           "ConstraintDefinition": ""
         },
         {
-          "Name": "codeintel_ranking_definitions_graph_key_symbol_search",
+          "Name": "codeintel_ranking_definitions_graph_key_symbol_checksum_search",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_name, exported_upload_id, document_path)",
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_checksum_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_checksum, exported_upload_id, document_path)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -8579,6 +8592,19 @@
           "TypeName": "bigint",
           "IsNullable": false,
           "Default": "nextval('codeintel_ranking_references_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "symbol_checksums",
+          "Index": 9,
+          "TypeName": "bytea[]",
+          "IsNullable": false,
+          "Default": "'{}'::bytea[]",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
