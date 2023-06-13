@@ -8,6 +8,9 @@ export interface InteractionJSON {
     fullContext: ContextMessage[]
     usedContextFiles: ContextFile[]
     timestamp: string
+
+    // DEPRECATED: Legacy field for backcompat, renamed to `fullContext`
+    context?: ContextMessage[]
 }
 
 export class Interaction {
