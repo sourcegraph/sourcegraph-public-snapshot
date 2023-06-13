@@ -2,16 +2,20 @@ import * as vscode from 'vscode'
 
 import type { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
-import { getConfiguration } from './configuration'
+import { getConfiguration } from '../configuration'
 
 export interface CodyStatusBar {
     dispose(): void
     startLoading(label: string): () => void
 }
 
+const DEFAULT_TEXT = '$(cody-logo)'
+const DEFAULT_TOOLTIP = 'Cody Features Toggle'
+
 export function createStatusBar(): CodyStatusBar {
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
-    statusBarItem.text = '$(cody-logo)'
+    statusBarItem.text = DEFAULT_TEXT
+    statusBarItem.tooltip = DEFAULT_TOOLTIP
     statusBarItem.command = 'cody.status-bar.interacted'
     statusBarItem.show()
 
@@ -38,7 +42,11 @@ export function createStatusBar(): CodyStatusBar {
             [
                 createFeatureToggle('Code Completions (Beta)', 'cody.completions', c => c.completions),
                 createFeatureToggle('Code Inline Assist (Beta)', 'cody.experimental.inline', c => c.experimentalInline),
-                createFeatureToggle('Code Fixups (Experimental)', 'cody.experimental.nonStop', c => c.experimentalNonStop),
+                createFeatureToggle(
+                    'Code Fixups (Experimental)',
+                    'cody.experimental.nonStop',
+                    c => c.experimentalNonStop
+                ),
                 createFeatureToggle(
                     'Chat Suggestions (Experimental)',
                     'cody.experimental.chatPredictions',
@@ -87,8 +95,8 @@ export function createStatusBar(): CodyStatusBar {
 
                 openLoadingLeases--
                 if (openLoadingLeases === 0) {
-                    statusBarItem.text = '$(cody-logo)'
-                    statusBarItem.tooltip = undefined
+                    statusBarItem.text = DEFAULT_TEXT
+                    statusBarItem.tooltip = DEFAULT_TOOLTIP
                 }
             }
         },

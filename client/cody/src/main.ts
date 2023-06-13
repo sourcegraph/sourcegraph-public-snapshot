@@ -25,7 +25,7 @@ import {
     SecretStorage,
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
-import { createStatusBar } from './status-bar'
+import { createStatusBar } from './services/StatusBar'
 
 const CODY_FEEDBACK_URL =
     'https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode'
@@ -150,6 +150,8 @@ const register = async (
         chatProvider.sendErrorToWebview(error)
     }
 
+    const statusBar = createStatusBar()
+
     disposables.push(
         vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
             // Insert copiedText to the current cursor position
@@ -255,12 +257,11 @@ const register = async (
                     }
                 }
             },
-        })
+        }),
+        statusBar
     )
 
     if (initialConfig.completions) {
-        const statusBar = createStatusBar()
-
         // TODO(sqs): make this listen to config and not just use initialConfig
         const docprovider = new CompletionsDocumentProvider()
         disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))
@@ -274,7 +275,6 @@ const register = async (
             statusBar
         )
         disposables.push(
-            statusBar,
             vscode.commands.registerCommand('cody.manual-completions', async () => {
                 await completionsProvider.fetchAndShowManualCompletions()
             }),

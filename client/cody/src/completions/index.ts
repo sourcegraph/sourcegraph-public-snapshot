@@ -6,7 +6,7 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 
 import { logEvent } from '../event-logger'
 import { debug } from '../log'
-import { CodyStatusBar } from '../status-bar'
+import { CodyStatusBar } from '../services/StatusBar'
 
 import { CompletionsCache } from './cache'
 import { getContext } from './context'
