@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Khan/genqlient/graphql"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -18,15 +20,19 @@ func TestAttribution(t *testing.T) {
 	ctx := context.Background()
 
 	// inputs
-	count := 5
-	limit := count + 1
-	localNames := genRepoNames("localrepo-", count)
+	localCount, dotcomCount := 5, 5
+	limit := localCount + dotcomCount + 1
+	localNames := genRepoNames("localrepo-", localCount)
+	dotcomNames := genRepoNames("dotcomrepo-", dotcomCount)
 
-	// we want the localNames back
-	wantNames := genRepoNames("localrepo-", count)
+	// we want the localNames back followed by dotcomNames
+	wantCount := localCount + dotcomCount
+	wantNames := append(genRepoNames("localrepo-", localCount), genRepoNames("dotcomrepo-", dotcomCount)...)
 
 	svc := &Service{
-		SearchClient: mockSearchClient(t, localNames),
+		SearchClient:              mockSearchClient(t, localNames),
+		SourcegraphDotComClient:   mockDotComClient(t, dotcomNames),
+		SourcegraphDotComFederate: true,
 	}
 
 	result, err := svc.SnippetAttribution(ctx, "test", limit)
@@ -35,7 +41,7 @@ func TestAttribution(t *testing.T) {
 	}
 
 	want := &SnippetAttributions{
-		TotalCount:      count,
+		TotalCount:      wantCount,
 		LimitHit:        false,
 		RepositoryNames: wantNames,
 	}
@@ -47,7 +53,7 @@ func TestAttribution(t *testing.T) {
 func genRepoNames(prefix string, count int) []string {
 	var names []string
 	for i := 1; i <= count; i++ {
-		names = append(names, fmt.Sprintf("%s-%d", prefix, i))
+		names = append(names, fmt.Sprintf("%s%d", prefix, i))
 	}
 	return names
 }
@@ -78,4 +84,33 @@ func mockSearchClient(t testing.TB, repoNames []string) client.SearchClient {
 	}
 
 	return client.MockedZoekt(logtest.Scoped(t), db, mockZoekt)
+}
+
+func mockDotComClient(t testing.TB, repoNames []string) dotcom.Client {
+	return makeRequester(func(ctx context.Context, req *graphql.Request, resp *graphql.Response) error {
+		// :O :O generated type names :O :O
+		var nodes []dotcom.SnippetAttributionSnippetAttributionSnippetAttributionConnectionNodesSnippetAttribution
+		for _, name := range repoNames {
+			nodes = append(nodes, dotcom.SnippetAttributionSnippetAttributionSnippetAttributionConnectionNodesSnippetAttribution{
+				RepositoryName: name,
+			})
+		}
+
+		data := resp.Data.(*dotcom.SnippetAttributionResponse)
+		*data = dotcom.SnippetAttributionResponse{
+			// :O
+			SnippetAttribution: dotcom.SnippetAttributionSnippetAttributionSnippetAttributionConnection{
+				TotalCount: len(repoNames),
+				Nodes:      nodes,
+			},
+		}
+
+		return nil
+	})
+}
+
+type makeRequester func(ctx context.Context, req *graphql.Request, resp *graphql.Response) error
+
+func (f makeRequester) MakeRequest(ctx context.Context, req *graphql.Request, resp *graphql.Response) error {
+	return f(ctx, req, resp)
 }

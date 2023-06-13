@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails/attribution"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -24,9 +25,12 @@ func Init(
 ) error {
 	attributionService := &attribution.Service{
 		SearchClient: client.New(observationCtx.Logger, db, enterpriseServices.EnterpriseSearchJobs),
+	}
 
-		// TODO(keegancsmith) make this configurable
-		SourcegraphDotComFederate: !envvar.SourcegraphDotComMode(),
+	// TODO(keegancsmith) configuration for access token and enabling.
+	if !envvar.SourcegraphDotComMode() {
+		attributionService.SourcegraphDotComFederate = true
+		attributionService.SourcegraphDotComClient = dotcom.NewClient(nil, "https://sourcegraph.com/.api/graphql", "")
 	}
 
 	enterpriseServices.GuardrailsResolver = &resolvers.GuardrailsResolver{
