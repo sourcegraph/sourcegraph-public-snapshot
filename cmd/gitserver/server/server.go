@@ -25,7 +25,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
@@ -184,7 +183,7 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd wrexec.Cmder
 // possible to simplify this, but to do that, doClone will need to do a lot less than it does at the
 // moment.
 type cloneJob struct {
-	uuid uuid.UUID
+	*common.JobMetadata
 
 	repo   api.RepoName
 	dir    common.GitDir
@@ -203,23 +202,12 @@ func (c *cloneJob) Identifier() string {
 	return string(c.repo)
 }
 
-// UUID is idempotent.
-func (c *cloneJob) UUID() string {
-	// Safeguard against unset uuids, ensuring that the first time this is called we always return a
-	// UUID and subsequent calls returns the same UUID.
-	if c.uuid == uuid.Nil {
-		c.uuid = uuid.New()
-	}
-
-	return c.uuid.String()
-}
-
 // Ensure that cloneJob implements common.Job.
 var _ common.Jobber = &cloneJob{}
 
 // NewCloneQueue initializes a new cloneQueue.
-func NewCloneQueue(ctx *observation.Context, jobs *list.List) *common.Queue[*cloneJob] {
-	return common.NewQueue[*cloneJob](ctx, "clone-queue", jobs)
+func NewCloneQueue(obctx *observation.Context, jobs *list.List) *common.Queue[*cloneJob] {
+	return common.NewQueue[*cloneJob](obctx, "clone-queue", jobs)
 }
 
 // Server is a gitserver server.
@@ -681,7 +669,7 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 
 		go func(job *cloneJob) {
 			start := time.Now()
-			defer s.CloneQueue.RecordProcessingTime(job.Identifier(), start)
+			defer s.CloneQueue.RecordProcessingTime(job, start)
 
 			defer cancel()
 
@@ -1114,10 +1102,7 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 		if updateErr != nil {
 			resp.Error = updateErr.Error()
 		} else {
-			s.Perforce.EnqueueChangelistMappingJob(&perforce.ChangelistMappingJob{
-				RepoName: req.Repo,
-				RepoDir:  dir,
-			})
+			s.Perforce.EnqueueChangelistMappingJob(perforce.NewChangelistMappingJob(req.Repo, dir))
 		}
 	}
 
@@ -2252,7 +2237,8 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// point. See definitions of cloneJobProducer and cloneJobConsumer to understand how these jobs
 	// are processed.
 	job := &cloneJob{
-		uuid:      uuid.New(),
+		JobMetadata: &common.JobMetadata{},
+
 		repo:      repo,
 		dir:       dir,
 		syncer:    syncer,
@@ -2392,10 +2378,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	repoClonedCounter.Inc()
 
 	if err == nil {
-		s.Perforce.EnqueueChangelistMappingJob(&perforce.ChangelistMappingJob{
-			RepoName: repo,
-			RepoDir:  dir,
-		})
+		s.Perforce.EnqueueChangelistMappingJob(perforce.NewChangelistMappingJob(repo, dir))
 	}
 
 	return nil

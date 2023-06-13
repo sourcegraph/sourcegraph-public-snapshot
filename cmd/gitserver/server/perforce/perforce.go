@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -26,29 +25,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type ChangelistMappingJob struct {
-	uuid uuid.UUID
+type changelistMappingJob struct {
+	*common.JobMetadata
 
 	RepoName api.RepoName
 	RepoDir  common.GitDir
 }
 
-func (j *ChangelistMappingJob) Identifier() string {
+func NewChangelistMappingJob(repoName api.RepoName, repoDir common.GitDir) *changelistMappingJob {
+	return &changelistMappingJob{
+		JobMetadata: &common.JobMetadata{},
+		RepoName:    repoName,
+		RepoDir:     repoDir,
+	}
+}
+
+func (j *changelistMappingJob) Identifier() string {
 	return string(j.RepoName)
 }
 
-// UUID is idempotent.
-func (j *ChangelistMappingJob) UUID() string {
-	// Safeguard against unset uuids, ensuring that the first time this is called we always return a
-	// UUID and subsequent calls returns the same UUID.
-	if j.uuid == uuid.Nil {
-		j.uuid = uuid.New()
-	}
-
-	return j.uuid.String()
-}
-
-var _ common.Jobber = &ChangelistMappingJob{}
+var _ common.Jobber = &changelistMappingJob{}
 
 // Service is used to manage perforce depot related interactions from gitserver.
 //
@@ -59,13 +55,13 @@ type Service struct {
 	DB     database.DB
 
 	ctx                    context.Context
-	changelistMappingQueue *common.Queue[*ChangelistMappingJob]
+	changelistMappingQueue *common.Queue[*changelistMappingJob]
 }
 
 // NewService initializes a new service with a queue and starts a producer-consumer pipeline that
 // will read jobs from the queue and "produce" them for "consumption".
 func NewService(ctx context.Context, obctx *observation.Context, logger log.Logger, db database.DB, jobs *list.List) *Service {
-	queue := common.NewQueue[*ChangelistMappingJob](obctx, "perforce-changelist-mapper", jobs)
+	queue := common.NewQueue[*changelistMappingJob](obctx, "perforce-changelist-mapper", jobs)
 
 	s := &Service{
 		Logger: logger,
@@ -83,7 +79,7 @@ func NewService(ctx context.Context, obctx *observation.Context, logger log.Logg
 // EnqueueChangelistMappingJob will push the ChangelistMappingJob onto the queue iff the
 // experimental config for PerforceChangelistMapping is enabled and if the repo belongs to a code
 // host of type PERFORCE.
-func (s *Service) EnqueueChangelistMappingJob(job *ChangelistMappingJob) {
+func (s *Service) EnqueueChangelistMappingJob(job *changelistMappingJob) {
 	if conf.Get().ExperimentalFeatures.PerforceChangelistMapping != "enabled" {
 		return
 	}
@@ -96,7 +92,7 @@ func (s *Service) EnqueueChangelistMappingJob(job *ChangelistMappingJob) {
 }
 
 func (s *Service) startPerforceChangelistMappingPipeline(ctx context.Context) {
-	jobs := make(chan *ChangelistMappingJob)
+	jobs := make(chan *changelistMappingJob)
 
 	// Protect against panics.
 	goroutine.Go(func() { s.changelistMappingConsumer(ctx, jobs) })
@@ -105,7 +101,7 @@ func (s *Service) startPerforceChangelistMappingPipeline(ctx context.Context) {
 
 // changelistMappingProducer "pops" jobs from the FIFO queue of the "Service" and produce them
 // for "consumption".
-func (s *Service) changelistMappingProducer(ctx context.Context, jobs chan<- *ChangelistMappingJob) {
+func (s *Service) changelistMappingProducer(ctx context.Context, jobs chan<- *changelistMappingJob) {
 	defer close(jobs)
 
 	for {
@@ -133,7 +129,7 @@ func (s *Service) changelistMappingProducer(ctx context.Context, jobs chan<- *Ch
 }
 
 // changelistMappingConsumer "consumes" jobs "produced" by the producer.
-func (s *Service) changelistMappingConsumer(ctx context.Context, jobs <-chan *ChangelistMappingJob) {
+func (s *Service) changelistMappingConsumer(ctx context.Context, jobs <-chan *changelistMappingJob) {
 	logger := s.Logger.Scoped("changelistMappingConsumer", "process perforce changelist mapping jobs")
 
 	// Process only one job at a time for a simpler pipeline at the moment.
@@ -152,12 +148,12 @@ func (s *Service) changelistMappingConsumer(ctx context.Context, jobs <-chan *Ch
 		if err != nil {
 			logger.Error("failed to map perforce changelists", log.Error(err))
 		}
-		s.changelistMappingQueue.RecordProcessingTime(j.Identifier(), start)
+		s.changelistMappingQueue.RecordProcessingTime(j, start)
 	}
 }
 
 // doChangelistMapping performs the commits -> changelist ID mapping for a new or existing repo.
-func (s *Service) doChangelistMapping(ctx context.Context, job *ChangelistMappingJob) error {
+func (s *Service) doChangelistMapping(ctx context.Context, job *changelistMappingJob) error {
 	logger := s.Logger.Scoped("doChangelistMapping", "").With(
 		log.String("repo", string(job.RepoName)),
 	)

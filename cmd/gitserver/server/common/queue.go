@@ -2,14 +2,52 @@ package common
 
 import (
 	"container/list"
-	"fmt"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
+
+var (
+	queueLength = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "src_gitserver_generic_queue_length",
+		Help: "The number of items currently in the queue.",
+	}, []string{"queue"})
+
+	queueEnqueuedTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_gitserver_generic_queue_enqueued_total",
+		Help: "The total number of items enqueued.",
+	}, []string{"queue"})
+
+	queueDequeuedTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_gitserver_generic_queue_dequeued_total",
+		Help: "The total number of items dequeued.",
+	}, []string{"queue"})
+
+	queueWaitTime = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "src_gitserver_generic_queue_wait_time",
+		Help: "Time spent in queue waiting to be processed",
+	}, []string{"queue", "job_name"})
+
+	queueProcessingTime = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "src_gitserver_generic_queue_processing_time",
+	}, []string{"queue", "job_name"})
+)
+
+var registerMetricsOnce = new(sync.Once)
+
+func registerMetrics(observationCtx *observation.Context) {
+	registerMetricsOnce.Do(func() {
+		observationCtx.Registerer.MustRegister(
+			queueLength,
+			queueEnqueuedTotal,
+			queueDequeuedTotal,
+			queueWaitTime,
+			queueProcessingTime,
+		)
+	})
+}
 
 type Jobber interface {
 	// Identifier returns a string that will help identify the job. It is **NOT** a unique ID for
@@ -19,16 +57,37 @@ type Jobber interface {
 	// This is required in tracking metrics like wait time and processing time of a job.
 	Identifier() string
 
-	// UUID returns a unique identifier for the job. If the same job is pushed twice to the queue,
-	// this will return a unique string for each of those jobs.
-	UUID() string
+	// GetPushedAt returns the pushedAt time from the JobMetadata.
+	//
+	// If it is invoked before SetPushedAt (see below), it will return the zero value of time.Time.
+	GetPushedAt() time.Time
+
+	// SetPushedAt sets the pushedAt time on the JobMetadata. It is idempotent.
+	//
+	// Invoking this the first time will set the current time and subsequent calls to this method
+	// will be a NOOP.
+	SetPushedAt()
+}
+
+// JobMetadata provides an API for managing metadata of a job. This is useful in metrics collection.
+//
+// Implementations of Jobber should embed this struct.
+type JobMetadata struct {
+	pushedAt     time.Time
+	pushedAtOnce sync.Once
+}
+
+func (jm *JobMetadata) GetPushedAt() time.Time {
+	return jm.pushedAt
+}
+func (jm *JobMetadata) SetPushedAt() {
+	jm.pushedAtOnce.Do(func() {
+		jm.pushedAt = time.Now()
+	})
 }
 
 // Queue is a threadsafe FIFO queue.
 type Queue[T Jobber] struct {
-	// metrics provides in-built support for observability of the queue.
-	*metrics
-
 	// A name that uniquely identifies this queue. This is used in generating names for in-built
 	// metrics supported by the queue.
 	//
@@ -45,18 +104,14 @@ type Queue[T Jobber] struct {
 }
 
 // NewQueue initializes a new Queue.
-//
-// IMPORTANT: name must be unique or else setting up metrics will panic
-// due to a duplicate name.
-func NewQueue[T Jobber](ctx *observation.Context, name string, jobs *list.List) *Queue[T] {
+func NewQueue[T Jobber](obctx *observation.Context, name string, jobs *list.List) *Queue[T] {
 	q := Queue[T]{
-		// In case a consumer uses hyphens in the name, replace them with underscores because this
-		// name is used to generate metric names and we want to generate consistent name in our metrics.
-		name: strings.Replace(name, "-", "_", -1),
+		name: name,
 		jobs: jobs,
 	}
 	q.Cond = sync.NewCond(&q.Mutex)
-	q.registerMetrics(ctx)
+
+	registerMetrics(obctx)
 
 	return &q
 }
@@ -69,9 +124,11 @@ func (q *Queue[T]) Push(job T) {
 	q.jobs.PushBack(job)
 	q.Cond.Signal()
 
-	q.length.Inc()
-	q.waitTime.WithLabelValues(job.UUID(), job.Identifier(), "push").Observe(float64(time.Now().Unix()))
-	q.enqueuedTotal.Inc()
+	// Set the push time on the job's metadata. This will be used to observe the total wait time in
+	// queue when this job is eventually popped.
+	job.SetPushedAt()
+	queueLength.WithLabelValues(q.name).Inc()
+	queueEnqueuedTotal.WithLabelValues(q.name).Inc()
 }
 
 // Pop will return the next job. If there's no next job available, it returns nil.
@@ -86,9 +143,12 @@ func (q *Queue[T]) Pop() *T {
 
 	job := q.jobs.Remove(next).(T)
 
-	q.length.Dec()
-	q.waitTime.WithLabelValues(job.UUID(), job.Identifier(), "pop").Observe(float64(time.Now().Unix()))
-	q.dequeuedTotal.Inc()
+	queueWaitTime.WithLabelValues(q.name, job.Identifier()).Observe(
+		time.Since(job.GetPushedAt()).Seconds(),
+	)
+
+	queueLength.WithLabelValues(q.name).Dec()
+	queueDequeuedTotal.WithLabelValues(q.name).Inc()
 
 	return &job
 }
@@ -100,60 +160,6 @@ func (q *Queue[T]) Empty() bool {
 	return q.jobs.Len() == 0
 }
 
-func (q *Queue[T]) RecordProcessingTime(jobIdentifier string, start time.Time) {
-	q.processingTime.WithLabelValues(jobIdentifier).Observe(
-		time.Since(start).Seconds(),
-	)
-}
-
-func (q *Queue[T]) metricName(name string) string {
-	return fmt.Sprintf("src_%s_%s", q.name, name)
-}
-
-type metrics struct {
-	length        prometheus.Gauge
-	enqueuedTotal prometheus.Counter
-	dequeuedTotal prometheus.Counter
-
-	waitTime       *prometheus.HistogramVec
-	processingTime *prometheus.HistogramVec
-}
-
-func (q *Queue[T]) registerMetrics(observationCtx *observation.Context) {
-	length := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: q.metricName("length"),
-		Help: "The number of items currently in the queue.",
-	})
-	observationCtx.Registerer.MustRegister(length)
-
-	enqueuedTotal := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: q.metricName("enqueued_total"),
-		Help: "The total number of items enqueued.",
-	})
-	observationCtx.Registerer.MustRegister(enqueuedTotal)
-
-	dequeuedTotal := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: q.metricName("dequeued_total"),
-		Help: "The total number of items dequeued.",
-	})
-	observationCtx.Registerer.MustRegister(dequeuedTotal)
-
-	waitTime := prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Name: q.metricName("wait_time"),
-		Help: "Time spent in queue waiting to be processed",
-	}, []string{"job_uuid", "job_identifier", "event_type"})
-	observationCtx.Registerer.MustRegister(waitTime)
-
-	processingTime := prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Name: q.metricName("processing_time"),
-	}, []string{"job_identifier"})
-	observationCtx.Registerer.MustRegister(processingTime)
-
-	q.metrics = &metrics{
-		length:         length,
-		enqueuedTotal:  enqueuedTotal,
-		dequeuedTotal:  dequeuedTotal,
-		waitTime:       waitTime,
-		processingTime: processingTime,
-	}
+func (q *Queue[T]) RecordProcessingTime(job T, start time.Time) {
+	queueProcessingTime.WithLabelValues(q.name, job.Identifier()).Observe(time.Since(start).Seconds())
 }
