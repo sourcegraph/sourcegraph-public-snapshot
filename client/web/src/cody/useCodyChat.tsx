@@ -31,6 +31,7 @@ export interface CodyChatStore
         | 'setEditorScope'
         | 'toggleIncludeInferredRepository'
         | 'toggleIncludeInferredFile'
+        | 'abortMessageInProgress'
     > {
     readonly transcriptHistory: TranscriptJSON[]
     readonly loaded: boolean
@@ -65,6 +66,7 @@ export const codyChatStoreMock: CodyChatStore = {
     loadTranscriptFromHistory: () => Promise.resolve(),
     toggleIncludeInferredRepository: () => {},
     toggleIncludeInferredFile: () => {},
+    abortMessageInProgress: () => {},
 }
 
 interface CodyChatProps {
@@ -106,6 +108,7 @@ export const useCodyChat = ({
         setScope: setScopeInternal,
         setEditorScope,
         setTranscript,
+        abortMessageInProgress,
         toggleIncludeInferredRepository: toggleIncludeInferredRepositoryInternal,
         toggleIncludeInferredFile: toggleIncludeInferredFileInternal,
         initializeNewChat: initializeNewChatInternal,
@@ -364,6 +367,7 @@ export const useCodyChat = ({
         setEditorScope,
         toggleIncludeInferredRepository,
         toggleIncludeInferredFile,
+        abortMessageInProgress,
     }
 }
 
