@@ -27,6 +27,7 @@
   - Improve variable names
   - Smell code
   - Optimize code
+- A separate setting for enabling/disabling Cody completions. [pull/53302](https://github.com/sourcegraph/sourcegraph/pull/53302)
 
 ### Changed
 

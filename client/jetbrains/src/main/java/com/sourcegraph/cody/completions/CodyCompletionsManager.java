@@ -32,13 +32,6 @@ public class CodyCompletionsManager {
   private final ConcurrentLinkedQueue<Future<CompletableFuture<Void>>> jobs =
       new ConcurrentLinkedQueue<>();
 
-  // We don't want casual users to turn on completions by discovering a setting in the UI so
-  // we only allow enabling completions via a system property. This property is automatically
-  // configured when running `./gradle :runIde`, and we'll need to document internally for
-  // Sourcegraph team members how to use "Edit Custom VM Options..." to enable completions.
-  private static final boolean IS_COMPLETIONS_ENABLED =
-      "true".equals(System.getProperty("cody.completions.enabled"));
-
   public static @NotNull CodyCompletionsManager getInstance() {
     return ApplicationManager.getApplication().getService(CodyCompletionsManager.class);
   }
@@ -57,14 +50,14 @@ public class CodyCompletionsManager {
 
   @RequiresEdt
   public boolean isEnabledForEditor(Editor editor) {
-    return IS_COMPLETIONS_ENABLED
+    return ConfigUtil.areCodyCompletionsEnabled()
         && editor != null
         && isProjectAvailable(editor.getProject())
         && isEditorSupported(editor);
   }
 
   public void triggerCompletion(Editor editor, int offset) {
-    if (!IS_COMPLETIONS_ENABLED) {
+    if (!ConfigUtil.areCodyCompletionsEnabled()) {
       return;
     }
     CancellationToken token = new CancellationToken();

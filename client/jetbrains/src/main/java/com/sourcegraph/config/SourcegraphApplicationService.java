@@ -5,6 +5,7 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.sourcegraph.find.Search;
+import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +30,7 @@ public class SourcegraphApplicationService
   @Nullable public String anonymousUserId;
   public boolean isInstallEventLogged;
   public boolean isUrlNotificationDismissed;
+  @Nullable public Boolean areCodyCompletionsEnabled;
   public boolean isAccessTokenNotificationDismissed;
   @Nullable public Boolean authenticationFailedLastTime;
 
@@ -118,6 +120,10 @@ public class SourcegraphApplicationService
     return isUrlNotificationDismissed;
   }
 
+  public boolean areCodyCompletionsEnabled() {
+    return Optional.ofNullable(areCodyCompletionsEnabled).orElse(false);
+  }
+
   public boolean isAccessTokenNotificationDismissed() {
     return isAccessTokenNotificationDismissed;
   }
@@ -149,6 +155,7 @@ public class SourcegraphApplicationService
     this.remoteUrlReplacements = settings.remoteUrlReplacements;
     this.anonymousUserId = settings.anonymousUserId;
     this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
+    this.areCodyCompletionsEnabled = settings.areCodyCompletionsEnabled;
     this.isAccessTokenNotificationDismissed = settings.isAccessTokenNotificationDismissed;
     this.authenticationFailedLastTime = settings.authenticationFailedLastTime;
     this.lastUpdateNotificationPluginVersion = settings.lastUpdateNotificationPluginVersion;
