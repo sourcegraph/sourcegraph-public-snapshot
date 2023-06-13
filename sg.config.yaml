@@ -272,6 +272,21 @@ commands:
       - internal
       - enterprise/cmd/embeddings
       - enterprise/internal/embeddings
+  worker:
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/worker
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
+    watch:
+      - lib
+      - internal
+      - enterprise/internal
+      - cmd/worker
+      - enterprise/cmd/worker
 
   cody-gateway:
     cmd: |
