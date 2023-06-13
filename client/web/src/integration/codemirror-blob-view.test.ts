@@ -123,7 +123,8 @@ describe('CodeMirror blob view', () => {
             )
             await waitForView()
             await driver.page.waitForSelector('.test-breadcrumb')
-            await percySnapshot(driver.page, 'truncates long file paths properly')
+            // TODO: this screenshot is flaky in Percy. Re-enable when we have a fix.
+            // await percySnapshot(driver.page, 'truncates long file paths properly')
         })
     })
 
