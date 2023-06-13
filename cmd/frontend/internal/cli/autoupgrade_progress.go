@@ -116,6 +116,14 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 		unfinishedOutOfBandMigrations := oobmigrations[:0]
 		for _, migration := range oobmigrations {
 			if migration.Progress != 1 {
+				filteredErrs := migration.Errors[:0]
+				for _, err := range migration.Errors {
+					if err.Created.After(upgrade.StartedAt) {
+						filteredErrs = append(filteredErrs, err)
+					}
+				}
+				migration.Errors = filteredErrs
+
 				unfinishedOutOfBandMigrations = append(unfinishedOutOfBandMigrations, migration)
 			}
 		}
@@ -166,6 +174,7 @@ type migrationState struct {
 
 type migrationStatus struct {
 	NumMigrationsRequired int
+	HasFailure            bool
 	Migrations            []migrationState
 }
 
@@ -187,6 +196,7 @@ func getMigrationStatus(expected, applied, pending, failed []int) migrationStatu
 		failedMap[id] = struct{}{}
 	}
 
+	hasFailure := false
 	numMigrationsRequired := 0
 	migrations := make([]migrationState, 0, len(expected))
 
@@ -198,6 +208,7 @@ func getMigrationStatus(expected, applied, pending, failed []int) migrationStatu
 			state = "pending"
 		} else if _, ok := failedMap[id]; ok {
 			state = "failed"
+			hasFailure = true
 			numMigrationsRequired++
 		} else {
 			state = "required"
@@ -232,6 +243,7 @@ func getMigrationStatus(expected, applied, pending, failed []int) migrationStatu
 
 	return migrationStatus{
 		NumMigrationsRequired: numMigrationsRequired,
+		HasFailure:            hasFailure,
 		Migrations:            migrations[strip:],
 	}
 }

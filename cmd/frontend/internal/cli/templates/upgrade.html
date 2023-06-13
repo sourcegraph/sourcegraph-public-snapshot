@@ -40,7 +40,6 @@
                 font-size: 1.25rem;
             }
             .tab-label span:last-child {
-                color: #2fcd66;
                 font-weight: 400;
                 padding-right: 20px;
                 justify-self: end;
@@ -161,6 +160,16 @@
                 font-size: 1.25rem;
             }
 
+            .header-applied {
+                color: #2FCD66;
+            }
+            .header-pending {
+                color: #FFDE82;
+            }
+            .header-failed {
+                color: #FA2543;
+            }
+
             .migration-list {
                 padding: 0;
                 list-style-type: none;
@@ -170,6 +179,13 @@
             .migration-list li {
                 margin: 1em;
                 padding: 1em;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+            .migration-list li span:last-child {
+                font-weight: 400;
+                padding-right: 20px;
+                justify-self: end;
             }
             .migration-item-applied {
                 background-color: #2FCD66;
@@ -193,6 +209,13 @@
             .oobmigration-list li {
                 margin: 1em;
                 padding: 1em;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+            .oobmigration-list li span:last-child {
+                font-weight: 400;
+                padding-right: 20px;
+                justify-self: end;
             }
             .oobmigration-item-applied {
                 background-color: #2FCD66;
@@ -229,7 +252,7 @@
                 </div>
             </div>
             <div class="bottom-container">
-                <div class="status-banner">Upgrading from v{{ .Upgrade.FromVersion }} to v{{ .Upgrade.ToVersion }}...</div>
+                <div class="status-banner">Upgrading from v{{ .Upgrade.FromVersion }} to v{{ .Upgrade.ToVersion }}</div>
 
                 <div class="row">
                     <div class="tabs">
@@ -238,12 +261,16 @@
                             <input type="checkbox" id="chck1" />
                             <label class="tab-label" for="chck1">
                                 <span>Frontend</span>
-                                <span>{{ .Frontend.NumMigrationsRequired }} migrations need application</span>
+                                <span class="header-{{if .Frontend.HasFailure}}failed{{else}}{{if .Frontend.NumMigrationsRequired}}pending{{else}}applied{{end}}{{end}}">
+                                    {{ .Frontend.NumMigrationsRequired }} migrations need application
+                                </span>
                             </label>
                             <div class="tab-content">
                                 <ul class="migration-list">
                                     {{range .Frontend.Migrations}}
-                                    <li class="migration-item-{{ .State }}">{{.ID}}: {{.State}}</li>
+                                    <li class="migration-item-{{ .State }}">
+                                        {{.ID}}: SOMETHING HERE
+                                        <span>{{.State}}</span></li>
                                     {{end}}
                                 </ul>
                             </div>
@@ -254,12 +281,16 @@
                             <input type="checkbox" id="chck3" />
                             <label class="tab-label" for="chck3">
                                 <span>Code Intel</span>
-                                <span>{{ .CodeIntel.NumMigrationsRequired }} migrations need application</span>
+                                <span class="header-{{if .CodeIntel.HasFailure}}failed{{else}}{{if .CodeIntel.NumMigrationsRequired}}pending{{else}}applied{{end}}{{end}}">
+                                    {{ .CodeIntel.NumMigrationsRequired }} migrations need application
+                                </span>
                             </label>
                             <div class="tab-content">
                                 <ul class="migration-list">
                                     {{range .CodeIntel.Migrations}}
-                                    <li class="migration-item-{{ .State }}">{{.ID}}: {{.State}}</li>
+                                    <li class="migration-item-{{ .State }}">
+                                        {{.ID}}: SOMETHING HERE
+                                        <span>{{.State}}</span></li>
                                     {{end}}
                                 </ul>
                             </div>
@@ -270,32 +301,43 @@
                             <input type="checkbox" id="chck2" />
                             <label class="tab-label" for="chck2">
                                 <span>Code Insights</span>
-                                <span>{{ .CodeInsights.NumMigrationsRequired }} migrations need application</span>
+                                <span class="header-{{if .CodeInsights.HasFailure}}failed{{else}}{{if .CodeInsights.NumMigrationsRequired}}pending{{else}}applied{{end}}{{end}}">
+                                    {{ .CodeInsights.NumMigrationsRequired }} migrations need application
+                                </span>
                             </label>
                             <div class="tab-content">
                                 <ul class="migration-list">
                                     {{range .CodeInsights.Migrations}}
-                                    <li class="migration-item-{{ .State }}">{{.ID}}: {{.State}}</li>
+                                    <li class="migration-item-{{ .State }}">
+                                        {{.ID}}: SOMETHING HERE
+                                        <span>{{.State}}</span></li>
                                     {{end}}
                                 </ul>
                             </div>
                         </div>
 
                         <!-- Out of band migrations -->
+                        {{if .NumUnfinishedOutOfBandMigrations}}
                         <div class="tab">
                             <input type="checkbox" id="chck4" />
                             <label class="tab-label" for="chck4">
                                 <span>Out of band migrations</span>
-                                <span>{{ .NumUnfinishedOutOfBandMigrations }} migrations need to complete</span>
+                                <span class="header-pending">
+                                    {{ .NumUnfinishedOutOfBandMigrations }} migrations need to complete
+                                </span>
                             </label>
                             <div class="tab-content">
                                 <ul class="oobmigration-list">
                                     {{range .OutOfBandMigrations}}
-                                    <li class="oobmigration-item{{if eq .Progress 1.0}}-applied{{else}}-pending{{end}}">{{ .ID }}: {{ .Description }} {{FormatPercentage .Progress}}</li>
+                                    <li class="oobmigration-item-{{if eq .Progress 1.0}}applied{{else}}{{if .Errors}}failed{{else}}pending{{end}}{{end}}">
+                                        {{ .ID }}: {{ .Description }}
+                                        <span>{{FormatPercentage .Progress}}</span>
+                                    </li>
                                     {{end}}
                                 </ul>
                             </div>
                         </div>
+                        {{end}}
                     </div>
                 </div>
             </div>
