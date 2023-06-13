@@ -27,6 +27,7 @@ export class InlineController {
     // Constroller State
     private commentController: vscode.CommentController
     public thread: vscode.CommentThread | null = null // a thread is a comment
+    private threads = new Map<string, vscode.CommentThread>()
     private currentTaskId = ''
     // Workspace State
     private workspacePath = vscode.workspace.workspaceFolders?.[0].uri
@@ -39,6 +40,7 @@ export class InlineController {
     constructor(private extensionPath: string) {
         this.commentController = vscode.comments.createCommentController(this.id, this.label)
         this.commentController.options = this.options
+
         // Track last selection range in valid doc before an action is called
         vscode.window.onDidChangeTextEditorSelection(e => {
             if (
@@ -72,10 +74,22 @@ export class InlineController {
                 this.selectionRange = updateRangeOnDocChange(this.selectionRange, change.range, change.text)
             }
         })
+        // Remove all the threads from current file on file close
+        vscode.workspace.onDidCloseTextDocument(doc => {
+            if (doc.uri.scheme !== 'file') {
+                return
+            }
+            const threadsInDoc = [...this.threads.values()].filter(thread => thread.uri.fsPath === doc.uri.fsPath)
+            for (const thread of threadsInDoc) {
+                this.delete(thread)
+            }
+        })
         this._disposables.push(
-            vscode.commands.registerCommand('cody.inline.decorations.remove', id => this.removeLens(id))
+            vscode.commands.registerCommand('cody.inline.decorations.remove', id => this.removeLens(id)),
+            vscode.commands.registerCommand('cody.inline.fix.undo', id => this.undo(id))
         )
     }
+
     /**
      * Getter to return instance
      */
@@ -91,6 +105,7 @@ export class InlineController {
             return null
         }
         this.thread = this.commentController.createCommentThread(editor?.document.uri, editor.selection, [])
+        this.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
         const threads = {
             text: humanInput,
             thread: this.thread,
@@ -107,11 +122,16 @@ export class InlineController {
         // disable reply until the task is completed
         thread.canReply = false
         thread.label = this.threadLabel
+        thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
         const comment = new Comment(humanInput, 'Me', this.userIcon, isFixMode, thread, 'loading')
         thread.comments = [...thread.comments, comment]
         await this.runFixMode(isFixMode, comment, thread)
         this.thread = thread
         this.selection = await this.makeSelection(isFixMode)
+        const firstCommentId = thread.comments[0].label
+        if (firstCommentId) {
+            this.threads.set(firstCommentId, thread)
+        }
         void vscode.commands.executeCommand('setContext', 'cody.replied', false)
     }
     /**
@@ -121,10 +141,19 @@ export class InlineController {
         if (!this.thread) {
             return
         }
-        const codyReply = new Comment(replyText, 'Cody', this.codyIcon, false, this.thread, undefined)
-        this.thread.comments = [...this.thread.comments, codyReply]
+        const comment = new Comment(replyText, 'Cody', this.codyIcon, false, this.thread, undefined)
+        this.thread.comments = [...this.thread.comments, comment]
         this.thread.canReply = true
+        const firstCommentId = this.thread.comments[0].label
+        if (firstCommentId) {
+            this.threads.set(firstCommentId, this.thread)
+        }
         void vscode.commands.executeCommand('setContext', 'cody.replied', true)
+    }
+
+    private undo(id: string): void {
+        void this.codeLenses.get(id)?.undo(id)
+        this.codeLenses.delete(id)
     }
     /**
      * Remove a comment thread / conversation
@@ -161,7 +190,7 @@ export class InlineController {
         if (!isFixMode) {
             return
         }
-        const lens = await this.makeCodeLenses(comment.id, thread.uri, this.extensionPath)
+        const lens = await this.makeCodeLenses(comment.id, this.extensionPath, thread)
         lens.updateState(CodyTaskState.asking, thread.range)
         lens.decorator.setState(CodyTaskState.asking, thread.range)
         await lens.decorator.decorate(thread.range)
@@ -179,7 +208,7 @@ export class InlineController {
             return
         }
         const range = newRange || this.selectionRange
-        const status = error ? CodyTaskState.error : CodyTaskState.ready
+        const status = error ? CodyTaskState.error : CodyTaskState.fixed
         const lens = this.codeLenses.get(this.currentTaskId)
         lens?.updateState(status, range)
         lens?.decorator.setState(status, range)
@@ -231,9 +260,13 @@ export class InlineController {
      * When a comment thread is open, the Editor will be switched to the comment input editor.
      * Get the current editor using the comment thread uri instead
      */
-    public async makeCodeLenses(taskID: string, uri: vscode.Uri, extPath: string): Promise<CodeLensProvider> {
-        const lens = new CodeLensProvider(taskID, extPath, uri)
-        const activeDocument = await vscode.workspace.openTextDocument(uri)
+    public async makeCodeLenses(
+        taskID: string,
+        extPath: string,
+        thread: vscode.CommentThread
+    ): Promise<CodeLensProvider> {
+        const lens = new CodeLensProvider(taskID, extPath, thread)
+        const activeDocument = await vscode.workspace.openTextDocument(thread.uri)
         await lens.provideCodeLenses(activeDocument, new vscode.CancellationTokenSource().token)
         vscode.languages.registerCodeLensProvider('*', lens)
         return lens
@@ -256,9 +289,12 @@ export class InlineController {
         this.isInProgress = false
         const chatSelection = this.getSelectionRange()
         const documentUri = vscode.Uri.joinPath(this.workspacePath, fileName)
-        // const documentUri = vscode.Uri.file(docFsPath)
         const range = new vscode.Selection(chatSelection.start, new vscode.Position(chatSelection.end.line + 1, 0))
         const newRange = await editDocByUri(documentUri, { start: range.start.line, end: range.end.line }, replacement)
+
+        const lens = this.codeLenses.get(this.currentTaskId)
+        lens?.storeContext(this.currentTaskId, documentUri, original, replacement)
+
         await this.stopFixMode(false, newRange)
         logEvent('CodyVSCodeExtension:inline-assist:replaced')
     }

@@ -62,7 +62,7 @@ export class DecorationProvider {
             await vscode.window.showTextDocument(this.fileUri, { selection: rangeStartLine })
             return
         }
-        if (this.status === CodyTaskState.ready) {
+        if (this.status === CodyTaskState.fixed) {
             this.decorationTypePending.dispose()
             this.decorations.push({ range, hoverMessage: 'Cody Assist #' + this.id })
             this.decorationsForIcon.push({ range: rangeStartLine })

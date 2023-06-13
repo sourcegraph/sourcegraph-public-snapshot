@@ -343,12 +343,14 @@
         "command": "cody.comment.add",
         "title": "Ask Cody",
         "category": "Cody Inline Assist",
+        "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentIsEmpty"
       },
       {
         "command": "cody.comment.delete",
         "title": "Cody Inline Assist: Remove Comment",
         "category": "Cody Inline Assist",
+        "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(trash)"
       },
@@ -356,6 +358,7 @@
         "command": "cody.comment.load",
         "title": "Cody Inline Assist: Loading",
         "category": "Cody Inline Assist",
+        "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(sync~spin)"
       },
@@ -376,35 +379,41 @@
         "command": "cody.recipe.non-stop",
         "title": "Cody: Fixup (Experimental)",
         "icon": "resources/cody.png",
+        "when": "cody.nonstop.fixups.enabled",
         "enablement": "cody.nonstop.fixups.enabled && editorHasSelection"
       },
       {
         "command": "cody.fixup.open",
         "title": "Cody: Go to Fixup",
+        "when": "cody.nonstop.fixups.enabled",
         "enablement": "cody.nonstop.fixups.enabled",
         "icon": "$(file-code)"
       },
       {
         "command": "cody.fixup.apply",
         "title": "Cody: Apply fixup",
+        "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check)"
       },
       {
         "command": "cody.fixup.apply-all",
         "title": "Cody: Apply all fixups",
+        "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check-all)"
       },
       {
         "command": "cody.fixup.apply-by-file",
         "title": "Cody: Apply fixups to selected directory",
+        "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check-all)"
       },
       {
         "command": "cody.fixup.diff",
         "title": "Cody: Show diff for fixup",
+        "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(diff)"
       }
@@ -575,7 +584,7 @@
         },
         {
           "command": "cody.recipe.file-touch",
-          "when": "cody.activated"
+          "when": "cody.activated && cody.inline-assist.enabled"
         },
         {
           "command": "cody.recipe.generate-unit-test",
@@ -650,24 +659,24 @@
         {
           "command": "cody.comment.add",
           "group": "inline",
-          "when": "cody.activated && commentController =~ /^cody-inline/"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.inline-assist.enabled"
         },
         {
           "command": "cody.focus",
           "group": "inline",
-          "when": "!cody.activated && commentController =~ /^cody-inline/"
+          "when": "!cody.activated && commentController =~ /^cody-inline/ && cody.inline-assist.enabled"
         }
       ],
       "comments/commentThread/title": [
         {
           "command": "cody.comment.delete",
           "group": "inline@1",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty && cody.inline-assist.enabled"
         },
         {
           "command": "cody.comment.load",
           "group": "inline@2",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending && cody.inline-assist.enabled"
         }
       ],
       "view/item/context": [
