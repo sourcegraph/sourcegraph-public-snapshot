@@ -71,11 +71,11 @@ func isExcludedFilePath(filePath string, excludedFilePathPatterns []*paths.GlobP
 	return false
 }
 
-type SkipReason string
+type SkipReason = string
 
 const (
 	// File was not skipped
-	SkipReasonNone SkipReason = "none"
+	SkipReasonNone SkipReason = ""
 
 	// File is binary
 	SkipReasonBinary SkipReason = "binary"
@@ -98,39 +98,6 @@ const (
 	// File was excluded because we hit the max embedding limit for the repo
 	SkipReasonMaxEmbeddings SkipReason = "maxEmbeddings"
 )
-
-type SkipStats struct {
-	reasons    map[SkipReason]int
-	byteCounts map[SkipReason]int
-}
-
-func (s *SkipStats) Add(r SkipReason, byteCount int) {
-	if s.reasons == nil {
-		s.reasons = make(map[SkipReason]int)
-	}
-	s.reasons[r] += 1
-
-	if s.byteCounts == nil {
-		s.byteCounts = make(map[SkipReason]int)
-	}
-	s.byteCounts[r] += byteCount
-}
-
-func (s *SkipStats) Counts() map[string]int {
-	m := make(map[string]int, len(s.reasons))
-	for k, v := range s.reasons {
-		m[string(k)] = v
-	}
-	return m
-}
-
-func (s *SkipStats) ByteCounts() map[string]int {
-	m := make(map[string]int, len(s.byteCounts))
-	for k, v := range s.byteCounts {
-		m[string(k)] = v
-	}
-	return m
-}
 
 func isEmbeddableFileContent(content []byte) (embeddable bool, reason SkipReason) {
 	if binary.IsBinary(content) {

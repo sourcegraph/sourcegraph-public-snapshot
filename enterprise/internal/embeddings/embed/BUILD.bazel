@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//enterprise/internal/codeintel/context",
         "//enterprise/internal/embeddings",
+        "//enterprise/internal/embeddings/background/repo",
         "//enterprise/internal/embeddings/embed/client",
         "//enterprise/internal/embeddings/embed/client/openai",
         "//enterprise/internal/embeddings/embed/client/sourcegraph",
@@ -37,7 +38,7 @@ go_test(
     embed = [":embed"],
     deps = [
         "//enterprise/internal/codeintel/context",
-        "//enterprise/internal/embeddings",
+        "//enterprise/internal/embeddings/background/repo",
         "//enterprise/internal/embeddings/embed/client",
         "//internal/api",
         "//internal/codeintel/types",
