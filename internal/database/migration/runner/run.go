@@ -100,6 +100,7 @@ func (r *Runner) runSchema(
 		return err
 	}
 
+	// TODO(efritz) - remove, for debugging
 	for i := 0; i < 3000; i++ {
 		fmt.Printf("TICK!!!\n")
 		time.Sleep(time.Second)
