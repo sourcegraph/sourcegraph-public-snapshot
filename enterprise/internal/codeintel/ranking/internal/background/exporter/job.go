@@ -2,6 +2,8 @@ package exporter
 
 import (
 	"context"
+	"crypto/md5"
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -139,7 +141,7 @@ func setDefinitionsAndReferencesForUpload(
 		return 0, 0, err
 	}
 
-	references := make(chan string)
+	references := make(chan [16]byte)
 	referencesCount := 0
 
 	go func() {
@@ -149,12 +151,16 @@ func setDefinitionsAndReferencesForUpload(
 			if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) || strings.HasPrefix(occ.Symbol, skipPrefix) {
 				continue
 			}
-
-			if _, ok := seenDefinitions[occ.Symbol]; ok {
+			checksum, ok := canonicalizeSymbol(occ.Symbol)
+			if !ok {
 				continue
 			}
+			if _, ok := seenDefinitions[checksum]; ok {
+				continue
+			}
+
 			if !scip.SymbolRole_Definition.Matches(occ) {
-				references <- occ.Symbol
+				references <- checksum
 				referencesCount++
 			}
 		}
@@ -177,8 +183,8 @@ func setDefinitionsForUpload(
 	upload uploadsshared.ExportedUpload,
 	rankingGraphKey, path string,
 	document *scip.Document,
-) (map[string]struct{}, error) {
-	seenDefinitions := map[string]struct{}{}
+) (map[[16]byte]struct{}, error) {
+	seenDefinitions := map[[16]byte]struct{}{}
 	definitions := make(chan shared.RankingDefinitions)
 
 	go func() {
@@ -188,15 +194,19 @@ func setDefinitionsForUpload(
 			if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) || strings.HasPrefix(occ.Symbol, skipPrefix) {
 				continue
 			}
+			checksum, ok := canonicalizeSymbol(occ.Symbol)
+			if !ok {
+				continue
+			}
 
 			if scip.SymbolRole_Definition.Matches(occ) {
 				definitions <- shared.RankingDefinitions{
 					UploadID:         upload.UploadID,
 					ExportedUploadID: upload.ExportedUploadID,
-					SymbolName:       occ.Symbol,
+					SymbolChecksum:   checksum,
 					DocumentPath:     filepath.Join(upload.Root, path),
 				}
-				seenDefinitions[occ.Symbol] = struct{}{}
+				seenDefinitions[checksum] = struct{}{}
 			}
 		}
 	}()
@@ -210,4 +220,32 @@ func setDefinitionsForUpload(
 	}
 
 	return seenDefinitions, nil
+}
+
+// canonicalizeSymbol transforms a symbol name into an opaque string that
+// can be matched internally by the ranking machinery.
+//
+// Canonicalization of a symbol name for ranking makes two transformations:
+//
+//   - The package version is removed so that we don't need to match SCIP
+//     uploads exactly to get a reference count.
+//   - We then hash the simplified symbol name into a fixed-sized block that
+//     can be matched in constant time against other symbols in Postgres.
+func canonicalizeSymbol(symbolName string) ([16]byte, bool) {
+	symbol, err := noVersionFormatter.Format(symbolName)
+	if err != nil {
+		fmt.Printf("HUH: %q\n", symbolName)
+		return [16]byte{}, false
+	}
+
+	return md5.Sum([]byte(symbol)), true
+}
+
+var noVersionFormatter = scip.SymbolFormatter{
+	OnError:               func(err error) error { return err },
+	IncludeScheme:         func(_ string) bool { return true },
+	IncludePackageManager: func(_ string) bool { return true },
+	IncludePackageName:    func(_ string) bool { return true },
+	IncludePackageVersion: func(_ string) bool { return false },
+	IncludeDescriptor:     func(_ string) bool { return true },
 }

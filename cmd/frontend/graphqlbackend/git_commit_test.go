@@ -389,6 +389,7 @@ func TestGitCommitAncestors(t *testing.T) {
 						  abbreviatedOID
 						  perforceChangelist {
 							cid
+                            canonicalURL
 						  }
 						}
 						pageInfo {
@@ -654,6 +655,7 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 									oid
 									perforceChangelist {
 										cid
+                                        canonicalURL
 									}
 								}
 							}
@@ -680,16 +682,14 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 	})
 
 	t.Run("perforce depot", func(t *testing.T) {
-		repos.GetFunc.SetDefaultReturn(
-			&types.Repo{
-				ID:   2,
-				Name: "github.com/gorilla/mux",
-				ExternalRepo: api.ExternalRepoSpec{
-					ServiceType: extsvc.TypePerforce,
-				},
-			},
-			nil,
-		)
+		repo := &types.Repo{
+			ID:           2,
+			Name:         "github.com/gorilla/mux",
+			ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce},
+		}
+
+		repos.GetFunc.SetDefaultReturn(repo, nil)
+		repos.GetByNameFunc.SetDefaultReturn(repo, nil)
 
 		// git-p4 commit.
 		c1 := gitdomain.Commit{
@@ -719,6 +719,7 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 									oid
 									perforceChangelist {
 										cid
+                                        canonicalURL
 									}
 								}
 							}
@@ -732,17 +733,19 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 							"ancestors": {
 								"nodes": [
 									{
-										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiYWFiYmMxMjM0NSJ9",
+										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3kiLCJjIjoiYWFiYmMxMjM0NSJ9",
 										"oid": "aabbc12345",
 										"perforceChangelist": {
-											"cid": "87654"
+											"cid": "87654",
+											"canonicalURL": "/github.com/gorilla/mux/-/changelist/87654"
 										}
 									},
 									{
-										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiY2NkZGUxMjM0NSJ9",
+										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3kiLCJjIjoiY2NkZGUxMjM0NSJ9",
 										"oid": "ccdde12345",
 										"perforceChangelist": {
-											"cid": "87655"
+											"cid": "87655",
+											"canonicalURL": "/github.com/gorilla/mux/-/changelist/87655"
 										}
 									}
 								]

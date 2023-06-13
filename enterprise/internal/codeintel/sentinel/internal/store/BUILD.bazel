@@ -29,6 +29,7 @@ go_library(
 
 go_test(
     name = "store_test",
+    timeout = "moderate",
     srcs = [
         "matches_test.go",
         "vulnerabilities_test.go",
