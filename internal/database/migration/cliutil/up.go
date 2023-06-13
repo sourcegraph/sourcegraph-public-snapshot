@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgerrcode"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -117,7 +119,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 		upgradestore := upgradestore.New(db)
 
 		_, dbShouldAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
-		if err != nil {
+		if err != nil && !errors.HasPostgresCode(err, pgerrcode.UndefinedTable) {
 			return err
 		}
 
