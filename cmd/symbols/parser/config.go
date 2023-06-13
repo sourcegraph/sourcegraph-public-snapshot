@@ -17,8 +17,8 @@ type ParserConfiguration struct {
 	Engine  map[string]ParserType
 }
 
-var ParserConfigMutex sync.Mutex
-var ParserConfig = ParserConfiguration{
+var parserConfigMutex sync.Mutex
+var parserConfig = ParserConfiguration{
 	Default: ctags_config.UniversalCtags,
 	Engine:  map[string]ParserType{},
 }
@@ -50,9 +50,10 @@ func init() {
 	// Update parserConfig here
 	go func() {
 		conf.Watch(func() {
-			ParserConfigMutex.Lock()
-			ParserConfig.Engine = ctags_config.CreateEngineMap(conf.Get().SiteConfig())
-			ParserConfigMutex.Unlock()
+			parserConfigMutex.Lock()
+			defer parserConfigMutex.Unlock()
+
+			parserConfig.Engine = ctags_config.CreateEngineMap(conf.Get().SiteConfig())
 		})
 	}()
 }
@@ -60,11 +61,12 @@ func init() {
 func GetParserType(language string) ctags_config.ParserType {
 	language = languages.NormalizeLanguage(language)
 
-	ParserConfigMutex.Lock()
-	parserType, ok := ParserConfig.Engine[language]
-	ParserConfigMutex.Unlock()
+	parserConfigMutex.Lock()
+	defer parserConfigMutex.Unlock()
+
+	parserType, ok := parserConfig.Engine[language]
 	if !ok {
-		parserType = ParserConfig.Default
+		parserType = parserConfig.Default
 	}
 
 	// Default back to UniversalCtags if somehow we've got an unsupported
