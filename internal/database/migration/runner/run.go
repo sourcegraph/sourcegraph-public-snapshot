@@ -137,7 +137,7 @@ func (r *Runner) runSchema(
 
 	for {
 		fmt.Printf("Being a sloooow mannnnn internally...\n")
-		time.Sleep(time.Second * 30)
+		select {}
 
 		// Attempt to apply as many migrations as possible. We do this iteratively in chunks as we are unable
 		// to hold a consistent advisory lock in the presence of migrations utilizing concurrent index creation.

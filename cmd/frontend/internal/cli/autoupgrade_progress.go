@@ -30,6 +30,8 @@ type migrationStatus struct {
 }
 
 func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db database.DB) (http.HandlerFunc, error) {
+	fmt.Printf("HANDLER!\n")
+
 	dsns, err := postgresdsn.DSNsBySchema(schemas.SchemaNames)
 	if err != nil {
 		return nil, err
@@ -54,6 +56,8 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 	}
 
 	handleTemplate := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		fmt.Printf("HI???\n")
+
 		frontendApplied, frontendPending, frontendFailed, err := store.Versions(ctx)
 		if err != nil {
 			return err
@@ -90,6 +94,8 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("HI!!!\n")
+
 		if err := handleTemplate(r.Context(), w, r); err != nil {
 			obsvCtx.Logger.Error("failed to handle upgrade UI request", log.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)

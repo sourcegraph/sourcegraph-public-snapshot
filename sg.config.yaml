@@ -1322,7 +1322,7 @@ commandsets:
       # - gitserver-1
       # - searcher
       # - symbols
-      - caddy
+      # - caddy
       # - docsite
       # - syntax-highlighter
       # - github-proxy
