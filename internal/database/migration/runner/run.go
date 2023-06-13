@@ -100,6 +100,11 @@ func (r *Runner) runSchema(
 		return err
 	}
 
+	for i := 0; i < 3000; i++ {
+		fmt.Printf("TICK!!!\n")
+		time.Sleep(time.Second)
+	}
+
 	// Filter out any unlisted migrations (most likely future upgrades) and group them by status.
 	byState := groupByState(schemaContext.initialSchemaVersion, definitions)
 
@@ -136,9 +141,6 @@ func (r *Runner) runSchema(
 	)
 
 	for {
-		fmt.Printf("Being a sloooow mannnnn internally...\n")
-		select {}
-
 		// Attempt to apply as many migrations as possible. We do this iteratively in chunks as we are unable
 		// to hold a consistent advisory lock in the presence of migrations utilizing concurrent index creation.
 		// Therefore, some invocations of this method will return with a flag to request re-invocation under a
