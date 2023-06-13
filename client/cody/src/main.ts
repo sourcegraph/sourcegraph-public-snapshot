@@ -15,7 +15,7 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
-import { showActionNotification } from './notifications'
+import { showSetupNotification } from './notifications/setup-notification'
 import { getRgPath } from './rg'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
@@ -316,18 +316,9 @@ const register = async (
     if (initialConfig.serverEndpoint && initialConfig.accessToken) {
         const authStatus = await getAuthStatus(initialConfig)
         await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
-    } else {
-        // User hasn't configured Cody, let's prompt them
-        await showActionNotification({
-            message: 'Continue setting up Cody',
-            actions: [
-                {
-                    label: 'Setup',
-                    onClick: () => vscode.commands.executeCommand('cody.focus'),
-                },
-            ],
-        })
     }
+
+    await showSetupNotification(initialConfig, localStorage)
 
     return {
         disposable: vscode.Disposable.from(...disposables),
