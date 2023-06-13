@@ -20,14 +20,7 @@ import (
 )
 
 //go:embed templates/upgrade.html
-var indexHTML string
-
-type migrationStatus struct {
-	Percentage string
-	Applied    []int
-	Pending    []int
-	Failed     []int
-}
+var rawTemplate string
 
 func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db database.DB) (http.HandlerFunc, error) {
 	dsns, err := postgresdsn.DSNsBySchema(schemas.SchemaNames)
@@ -71,7 +64,7 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 			return err
 		}
 
-		tmpl, err := template.New("index").Parse(indexHTML)
+		tmpl, err := template.New("index").Parse(rawTemplate)
 		if err != nil {
 			return err
 		}
@@ -95,6 +88,13 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}, nil
+}
+
+type migrationStatus struct {
+	Percentage string
+	Applied    []int
+	Pending    []int
+	Failed     []int
 }
 
 func getMigrationStatus(applied, pending, failed []int) migrationStatus {
