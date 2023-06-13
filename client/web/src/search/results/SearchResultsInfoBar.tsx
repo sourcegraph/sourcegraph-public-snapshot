@@ -14,6 +14,7 @@ import { Button, Icon, Alert, useSessionStorage, Link, Text } from '@sourcegraph
 import { AuthenticatedUser } from '../../auth'
 import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../../batches/utils'
 import { eventLogger } from '../../tracking/eventLogger'
+import { DOTCOM_URL } from '../../tracking/util'
 
 import {
     CreateAction,
@@ -135,6 +136,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     }
 
     const location = useLocation()
+    const dotcomHost = DOTCOM_URL.href
+    const isPrivateInstance = window.location.host !== dotcomHost
     const refFromCodySearch = new URLSearchParams(location.search).get('ref') === 'cody-search'
     const [codySearchInputString] = useSessionStorage<string>('cody-search-input', '')
     const codySearchInput: { input?: string; translatedQuery?: string } = JSON.parse(codySearchInputString || '{}')
@@ -147,8 +150,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
         eventLogger.log(
             'web:codySearch:feedbackSubmitted',
-            { ...codySearchInput, positive },
-            { ...codySearchInput, positive }
+            !isPrivateInstance ? { ...codySearchInput, positive } : null,
+            !isPrivateInstance ? { ...codySearchInput, positive } : null
         )
         setCodyFeedback(positive)
     }

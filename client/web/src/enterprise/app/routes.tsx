@@ -30,7 +30,7 @@ export const APP_ROUTES: RouteObject[] = [
     },
     {
         path: EnterprisePageRoutes.Cody + '/*',
-        element: <LegacyRoute render={props => <CodyChatPage {...props} />} />,
+        element: <LegacyRoute render={props => <CodyChatPage context={window.context} {...props} />} />,
     },
     {
         path: `${EnterprisePageRoutes.AppSetup}/*`,
