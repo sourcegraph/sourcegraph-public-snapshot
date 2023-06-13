@@ -33,7 +33,6 @@ const UserArea = lazyComponent(() => import('./user/area/UserArea'), 'UserArea')
 const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage')
 const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
 const TeamsArea = lazyComponent(() => import('./team/TeamsArea'), 'TeamsArea')
-const CodyStandalonePage = lazyComponent(() => import('./cody/CodyStandalonePage'), 'CodyStandalonePage')
 const CodySidebarStoreProvider = lazyComponent(() => import('./cody/sidebar/Provider'), 'CodySidebarStoreProvider')
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
@@ -165,14 +164,6 @@ export const routes: RouteObject[] = [
         // expose this information in the handle object instead.
         handle: { isRepoContainer: true },
     },
-    ...(window.context.sourcegraphAppMode
-        ? [
-              {
-                  path: PageRoutes.CodyStandalone,
-                  element: <CodyStandalonePage />,
-              },
-          ]
-        : []),
 ]
 
 function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Element {
