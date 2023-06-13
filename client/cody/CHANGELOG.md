@@ -10,6 +10,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 - Add delete button for removing individual history [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
 - Load the recent ongoing chat on reload of window [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
+- Handle URL requests from `vscode-insiders`. [pull/53313](https://github.com/sourcegraph/sourcegraph/pull/53313)
 
 ### Fixed
 

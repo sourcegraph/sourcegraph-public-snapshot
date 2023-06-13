@@ -78,8 +78,12 @@ export const unauthenticatedStatus = {
     siteVersion: '',
 }
 
+/** The local environment of the editor. */
 export interface LocalEnv {
-    kind: string
+    // The application name of the editor
+    appName: string
+    // The URL scheme the editor is registered to in the operating system
+    appScheme: string
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {
