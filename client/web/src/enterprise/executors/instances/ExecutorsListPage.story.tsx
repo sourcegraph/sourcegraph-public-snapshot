@@ -37,6 +37,7 @@ const listExecutorsQuery: () => Observable<ExecutorConnectionFields> = () =>
                 os: 'linux',
                 queueName: 'batches',
                 srcCliVersion: '4.1.0',
+                queueNames: [],
             },
             {
                 __typename: 'Executor',
@@ -54,6 +55,7 @@ const listExecutorsQuery: () => Observable<ExecutorConnectionFields> = () =>
                 os: 'linux',
                 queueName: 'batches',
                 srcCliVersion: '4.1.0',
+                queueNames: [],
             },
         ],
     })
