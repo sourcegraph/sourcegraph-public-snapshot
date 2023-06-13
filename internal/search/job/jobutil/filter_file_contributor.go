@@ -2,6 +2,7 @@ package jobutil
 
 import (
 	"context"
+	"regexp"
 	"sync"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -9,38 +10,40 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewFileHasContributorsJob(child job.Job, ignoreCase bool, includeContributors, excludeContributors []string) job.Job {
+func NewFileHasContributorsJob(child job.Job, caseSensitive bool, include, exclude []string) (job.Job, error) {
+	includeContributors, excludeContributors, err := compileRegexps(include, exclude, caseSensitive)
+	if err != nil {
+		return nil, err
+	}
+
 	return &fileHasContributorsJob{
 		child:               child,
-		ignoreCase:          ignoreCase,
 		includeContributors: includeContributors,
 		excludeContributors: excludeContributors,
-	}
+		includeTerms:        include,
+		excludeTerms:        exclude,
+	}, nil
 }
 
 type fileHasContributorsJob struct {
 	child job.Job
 
-	ignoreCase          bool
-	includeContributors []string
-	excludeContributors []string
+	includeContributors []*regexp.Regexp
+	excludeContributors []*regexp.Regexp
+
+	includeTerms []string
+	excludeTerms []string
 }
 
 func (j *fileHasContributorsJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer finish(alert, err)
-
-	includeContributors, excludeContributors, err := j.compileRegexps()
-	if err != nil {
-		return nil, err
-	}
 
 	var (
 		mu   sync.Mutex
@@ -52,8 +55,13 @@ func (j *fileHasContributorsJob) Run(ctx context.Context, clients job.RuntimeCli
 		for _, res := range event.Results {
 			// Filter out any result that is not a file
 			if fm, ok := res.(*result.FileMatch); ok {
-				buf := make([]byte, 1024)
-				fileMatchContributors, err := getFileContributors(ctx, clients, fm, buf)
+				// We send one fetch contributors request per file path.
+				// We should quit early on context deadline exceeded.
+				if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+					errs = errors.Append(errs, ctx.Err())
+					break
+				}
+				fileMatchContributors, err := getFileContributors(ctx, clients.Gitserver, fm)
 				if err != nil {
 					mu.Lock()
 					errs = errors.Append(errs, err)
@@ -61,8 +69,13 @@ func (j *fileHasContributorsJob) Run(ctx context.Context, clients job.RuntimeCli
 					continue
 				}
 
-				if !fileMatchContributors.Filtered(excludeContributors, true) ||
-					!fileMatchContributors.Filtered(includeContributors, false) {
+				// ensure match passes all exclusion filters
+				excludeFilters := j.Filtered(fileMatchContributors, true)
+
+				// ensure match passes all inclusion filters
+				includeFilters := j.Filtered(fileMatchContributors, false)
+
+				if !excludeFilters || !includeFilters {
 					continue
 				}
 
@@ -75,7 +88,11 @@ func (j *fileHasContributorsJob) Run(ctx context.Context, clients job.RuntimeCli
 		stream.Send(event)
 	})
 
-	return j.child.Run(ctx, clients, filteredStream)
+	alert, err = j.child.Run(ctx, clients, filteredStream)
+	if err != nil {
+		errs = errors.Append(errs, err)
+	}
+	return alert, errs
 }
 
 func (j *fileHasContributorsJob) MapChildren(fn job.MapFunc) job.Job {
@@ -98,31 +115,34 @@ func (j *fileHasContributorsJob) Attributes(v job.Verbosity) (res []attribute.Ke
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			attribute.StringSlice("includeContributors", j.includeContributors),
-			attribute.StringSlice("excludeContributors", j.excludeContributors),
+			attribute.StringSlice("includeContributors", j.includeTerms),
+			attribute.StringSlice("excludeContributors", j.excludeTerms),
 		)
 	}
 	return res
 }
 
-func (j *fileHasContributorsJob) compileRegexps() (include, exclude []*casetransform.Regexp, err error) {
-	include, err = j.regexps(j.includeContributors)
+func compileRegexps(include, exclude []string, caseSensitive bool) (includeRegexp, excludeRegexp []*regexp.Regexp, err error) {
+	includeRegexp, err = regexps(include, caseSensitive)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	exclude, err = j.regexps(j.excludeContributors)
+	excludeRegexp, err = regexps(exclude, caseSensitive)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return include, exclude, nil
+	return includeRegexp, excludeRegexp, nil
 }
 
-func (j *fileHasContributorsJob) regexps(filters []string) ([]*casetransform.Regexp, error) {
-	var compiledFilters []*casetransform.Regexp
+func regexps(filters []string, caseSensitive bool) ([]*regexp.Regexp, error) {
+	var compiledFilters []*regexp.Regexp
 	for _, contributorExpression := range filters {
-		re, err := casetransform.CompileRegexp(contributorExpression, j.ignoreCase)
+		if !caseSensitive {
+			contributorExpression = "(?i)" + contributorExpression
+		}
+		re, err := regexp.Compile(contributorExpression)
 		if err != nil {
 			return nil, err
 		}
@@ -131,33 +151,29 @@ func (j *fileHasContributorsJob) regexps(filters []string) ([]*casetransform.Reg
 	return compiledFilters, nil
 }
 
-func getFileContributors(ctx context.Context, clients job.RuntimeClients, fm *result.FileMatch, buf []byte) (*FilterableContributors, error) {
+func getFileContributors(ctx context.Context, client gitserver.Client, fm *result.FileMatch) ([]*gitdomain.ContributorCount, error) {
 	opts := gitserver.ContributorOptions{
 		Range: string(fm.CommitID),
 		Path:  fm.Path,
 	}
-	contributors, err := clients.Gitserver.ContributorCount(ctx, fm.Repo.Name, opts)
+	contributors, err := client.ContributorCount(ctx, fm.Repo.Name, opts)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &FilterableContributors{
-		Contributors: contributors,
-		LowerBuf:     buf,
-	}, nil
+	return contributors, nil
 }
 
-type FilterableContributors struct {
-	Contributors []*gitdomain.ContributorCount
-	LowerBuf     []byte
-}
-
-// Filtered returns true if the match should be returned based on filter validation.
+// Filtered returns true if the match passes filter validation and should be returned with results page.
 // Filters are AND'ed together. Filters are negation filters if excludeContributors is true.
-func (f *FilterableContributors) Filtered(filters []*casetransform.Regexp, excludeContributors bool) bool {
+func (j *fileHasContributorsJob) Filtered(contributors []*gitdomain.ContributorCount, excludeContributors bool) bool {
+	filters := j.includeContributors
+	if excludeContributors {
+		filters = j.excludeContributors
+	}
 	for _, filter := range filters {
-		if f.Match(filter) == excludeContributors {
+		if match(contributors, filter) == excludeContributors {
 			// Result needs to be filtered out
 			return false
 		}
@@ -167,9 +183,9 @@ func (f *FilterableContributors) Filtered(filters []*casetransform.Regexp, exclu
 	return true
 }
 
-func (f *FilterableContributors) Match(regexp *casetransform.Regexp) bool {
-	for _, contributor := range f.Contributors {
-		if regexp.Match([]byte(contributor.Name), &f.LowerBuf) || regexp.Match([]byte(contributor.Email), &f.LowerBuf) {
+func match(contributors []*gitdomain.ContributorCount, regexp *regexp.Regexp) bool {
+	for _, contributor := range contributors {
+		if regexp.Match([]byte(contributor.Name)) || regexp.Match([]byte(contributor.Email)) {
 			return true
 		}
 	}

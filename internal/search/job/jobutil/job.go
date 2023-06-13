@@ -198,7 +198,11 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 
 	{ // Apply file:has.contributor() post-search filter
 		if includeContributors, excludeContributors, ok := isContributorSearch(b); ok {
-			basicJob = NewFileHasContributorsJob(basicJob, b.IsCaseSensitive(), includeContributors, excludeContributors)
+			var err error
+			basicJob, err = NewFileHasContributorsJob(basicJob, b.IsCaseSensitive(), includeContributors, excludeContributors)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -520,7 +524,7 @@ func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo) (pat
 
 func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 	// Temporary fix:
-	// If doing ownership search, we post-filter results so we may need more than
+	// If doing ownership or contributor search, we post-filter results so we may need more than
 	// b.Count() results from the search backends to end up with enough results
 	// sent down the stream.
 	//
@@ -530,6 +534,10 @@ func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 	// the stream once enough results have been consumed. We will revisit this
 	// post-Starship March 2023 as part of search performance improvements for
 	// ownership search.
+	if _, _, ok := isContributorSearch(b); ok {
+		// This is the int equivalent of count:all.
+		return query.CountAllLimit
+	}
 	if _, _, ok := isOwnershipSearch(b); ok {
 		// This is the int equivalent of count:all.
 		return query.CountAllLimit

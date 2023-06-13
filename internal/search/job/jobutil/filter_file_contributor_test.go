@@ -173,7 +173,7 @@ func TestFileHasContributorsJob(t *testing.T) {
 				resultEvent = ev
 			})
 
-			j := NewFileHasContributorsJob(childJob, !tc.caseSensitive, tc.include, tc.exclude)
+			j, err := NewFileHasContributorsJob(childJob, tc.caseSensitive, tc.include, tc.exclude)
 			alert, err := j.Run(context.Background(), job.RuntimeClients{Gitserver: gitServerClient}, streamCollector)
 			require.Nil(t, alert)
 			require.NoError(t, err)
