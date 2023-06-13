@@ -16,6 +16,8 @@ jobs:
         root:
           - ''
           - lib
+          - monitoring
+          - enterprise/dev/ci/images
     steps:
       # Setup
       - name: Checkout
