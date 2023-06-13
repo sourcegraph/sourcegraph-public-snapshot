@@ -69,7 +69,7 @@ Congratulations on making it to the end of the quickstart guide!
 
 ### Running Sourcegraph in different configurations
 
-If you want to run Sourcegraph in different configurations (with the monitoring stack, with code insights enabled, Sourcegraph OSS, ...), run the following:
+If you want to run Sourcegraph in different configurations (with the monitoring stack, with code insights enabled...), run the following:
 
 ```sh
 sg start -help

@@ -120,14 +120,6 @@ Available commands in `sg.config.yaml`:
 * loki
 * monitoring-generator
 * multiqueue-executor
-* oss-frontend
-* oss-gitserver-0
-* oss-gitserver-1
-* oss-gitserver-template
-* oss-repo-updater
-* oss-symbols
-* oss-web: Open source version of the web app
-* oss-worker
 * otel-collector: OpenTelemetry collector
 * postgres_exporter
 * prometheus
@@ -135,7 +127,6 @@ Available commands in `sg.config.yaml`:
 * repo-updater
 * searcher
 * server: Run an all-in-one sourcegraph/server image
-* sourcegraph-oss: Single program (Go static binary) distribution, OSS variant
 * sourcegraph: Single program (Go static binary) distribution
 * storybook
 * symbols
@@ -146,7 +137,6 @@ Available commands in `sg.config.yaml`:
 * web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL
 * web-standalone-http: Standalone web frontend (dev) with API proxy to a configurable URL
 * web: Enterprise version of the web app
-* worker
 * zoekt-index-0
 * zoekt-index-1
 * zoekt-indexserver-template

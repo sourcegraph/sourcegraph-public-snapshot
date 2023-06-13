@@ -487,7 +487,7 @@ If `sg` exits with errors or outputs errors, take a look at [Troubleshooting](tr
 
 ### Running the server in different configurations
 
-If you want to run the server in different configurations (with the monitoring stack, with code insights enabled, Sourcegraph OSS, ...), run the following:
+If you want to run the server in different configurations (with the monitoring stack, with code insights enabled, ...), run the following:
 
 ```
 sg start -help
