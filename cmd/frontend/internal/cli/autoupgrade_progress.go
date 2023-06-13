@@ -3,13 +3,14 @@ package cli
 import (
 	"context"
 	"database/sql"
-	"embed"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	migrationstore "github.com/sourcegraph/sourcegraph/internal/database/migration/store"
@@ -18,10 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-//go:embed index.html
+//go:embed templates/upgrade.html
 var indexHTML string
-
-var _ embed.FS
 
 type migrationStatus struct {
 	Percentage string
@@ -30,21 +29,18 @@ type migrationStatus struct {
 	Failed     []int
 }
 
-func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db database.DB) http.HandlerFunc {
-	// TODO(efritz) - persist plan + progress
-	// TODO(efritz) - query plan and progress for display
-
+func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db database.DB) (http.HandlerFunc, error) {
 	dsns, err := postgresdsn.DSNsBySchema(schemas.SchemaNames)
 	if err != nil {
-		panic(err.Error()) // TODO
+		return nil, err
 	}
 	codeintelDB, err := connections.RawNewCodeIntelDB(obsvCtx, dsns["codeintel"], appName)
 	if err != nil {
-		panic(err.Error()) // TODO
+		return nil, err
 	}
 	codeinsightsDB, err := connections.RawNewCodeInsightsDB(obsvCtx, dsns["codeinsights"], appName)
 	if err != nil {
-		panic(err.Error()) // TODO
+		return nil, err
 	}
 
 	store := migrationstore.NewWithDB(obsvCtx, sqlDB, schemas.Frontend.MigrationsTableName)
@@ -52,73 +48,53 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 	codeinsightsStore := migrationstore.NewWithDB(obsvCtx, codeinsightsDB, schemas.CodeInsights.MigrationsTableName)
 
 	ctx := context.Background()
-	s := oobmigration.NewStoreWithDB(db)
-	if err := s.SynchronizeMetadata(ctx); err != nil {
-		panic(err.Error()) // TODO
+	oobmigrationStore := oobmigration.NewStoreWithDB(db)
+	if err := oobmigrationStore.SynchronizeMetadata(ctx); err != nil {
+		return nil, err
 	}
 
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		var value int
-		if err := func() (err error) {
-			value, _, err = basestore.ScanFirstInt(db.QueryContext(ctx, `SELECT 4`))
+	handleTemplate := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		frontendApplied, frontendPending, frontendFailed, err := store.Versions(ctx)
+		if err != nil {
 			return err
-		}(); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
 		}
-		// TODO (numbers88s): don't know what this is, leaving it for @efritz.
-		_ = value
-
-		ms, err := s.List(ctx)
+		codeintelApplied, codeintelPending, codeIntelFailed, err := codeintelStore.Versions(ctx)
 		if err != nil {
-			panic(err.Error()) // TODO
+			return err
 		}
-		// TODO (numbers88s): don't know what this is, leaving it for @efritz.
-		_ = ms
-
-		// FRONTEND
-		applied, pending, failed, err := store.Versions(ctx)
+		codeinsightsApplied, codeinsightsPending, codeinsightsFailed, err := codeinsightsStore.Versions(ctx)
 		if err != nil {
-			panic(err.Error()) // TODO
+			return err
 		}
-		frontEndData := getMigrationStatus(applied, pending, failed)
-
-		// CODEINTEL
-		applied, pending, failed, err = codeintelStore.Versions(ctx)
+		oobmigrations, err := oobmigrationStore.List(ctx)
 		if err != nil {
-			panic(err.Error()) // TODO
-		}
-		codeIntelData := getMigrationStatus(applied, pending, failed)
-
-		// CODEINSIGHTS
-		applied, pending, failed, err = codeinsightsStore.Versions(ctx)
-		if err != nil {
-			panic(err.Error()) // TODO
-		}
-		codeInsightsData := getMigrationStatus(applied, pending, failed)
-
-		data := struct {
-			Frontend     migrationStatus
-			CodeIntel    migrationStatus
-			CodeInsights migrationStatus
-		}{
-			Frontend:     frontEndData,
-			CodeIntel:    codeIntelData,
-			CodeInsights: codeInsightsData,
+			return err
 		}
 
 		tmpl, err := template.New("index").Parse(indexHTML)
 		if err != nil {
-			panic(err.Error()) // TODO
+			return err
 		}
 
-		err = tmpl.Execute(w, data)
-		if err != nil {
-			panic(err.Error()) // TODO
-		}
+		return tmpl.Execute(w, struct {
+			Frontend            migrationStatus
+			CodeIntel           migrationStatus
+			CodeInsights        migrationStatus
+			OutOfBandMigrations []oobmigration.Migration
+		}{
+			Frontend:            getMigrationStatus(frontendApplied, frontendPending, frontendFailed),
+			CodeIntel:           getMigrationStatus(codeintelApplied, codeintelPending, codeIntelFailed),
+			CodeInsights:        getMigrationStatus(codeinsightsApplied, codeinsightsPending, codeinsightsFailed),
+			OutOfBandMigrations: oobmigrations,
+		})
 	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := handleTemplate(r.Context(), w, r); err != nil {
+			obsvCtx.Logger.Error("failed to handle upgrade UI request", log.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}, nil
 }
 
 func getMigrationStatus(applied, pending, failed []int) migrationStatus {
@@ -136,7 +112,5 @@ func getProgressPercentage(applied, pending, failed []int) string {
 		return "100%"
 	}
 
-	val := int(float64(len(applied)) / float64(total) * 100)
-
-	return fmt.Sprintf("%d%%", val)
+	return fmt.Sprintf("%d%%", float64(len(applied))/float64(total)*100)
 }

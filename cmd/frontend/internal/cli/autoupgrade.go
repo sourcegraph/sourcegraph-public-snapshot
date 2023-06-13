@@ -76,8 +76,6 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 		// TODO(efritz) - remove, for debugging
 		fmt.Printf("FAKING AN UPGRADE\n")
 		// return nil
-
-		return nil
 	}
 
 	currentVersion, ok := oobmigration.NewVersionFromString(currentVersionStr)
@@ -319,10 +317,14 @@ func serveInternalServer(obsvCtx *observation.Context) (context.CancelFunc, erro
 }
 
 func serveExternalServer(obsvCtx *observation.Context, sqlDB *sql.DB, db database.DB) (context.CancelFunc, error) {
-	serveMux := http.NewServeMux()
+	progressHandler, err := makeUpgradeProgressHandler(obsvCtx, sqlDB, db)
+	if err != nil {
+		return nil, err
+	}
 
+	serveMux := http.NewServeMux()
 	serveMux.Handle("/.assets/", http.StripPrefix("/.assets", secureHeadersMiddleware(assetsutil.NewAssetHandler(serveMux), crossOriginPolicyAssets)))
-	serveMux.HandleFunc("/", makeUpgradeProgressHandler(obsvCtx, sqlDB, db))
+	serveMux.HandleFunc("/", progressHandler)
 	h := gcontext.ClearHandler(serveMux)
 	h = healthCheckMiddleware(h)
 
