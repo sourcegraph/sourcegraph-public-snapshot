@@ -8,7 +8,6 @@ import (
 	"math"
 	"net/http"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -121,9 +120,6 @@ func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []stri
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
-	if len(texts) > 1 {
-		req.Header.Set("X-Cody-Embed-Batch-Size", strconv.Itoa(len(texts)))
-	}
 
 	resp, err := httpcli.ExternalDoer.Do(req)
 	if err != nil {
