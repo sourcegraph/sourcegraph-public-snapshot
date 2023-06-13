@@ -301,7 +301,7 @@ export const TreePage: FC<Props> = ({
                             </Button>
                         </Tooltip>
                     )}
-                    {window.context?.embeddingsEnabled && (
+                    {window.context?.codyEnabled && window.context?.embeddingsEnabled && (
                         <Tooltip content="Embeddings">
                             <Button
                                 className="flex-shrink-0"
