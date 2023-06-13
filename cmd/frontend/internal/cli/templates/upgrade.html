@@ -240,6 +240,11 @@
                 padding: 0 1rem;
                 font-style: italic;
             }
+            .admin {
+                padding: 1rem;
+                font-style: italic;
+                text-align: center;
+            }
         </style>
     </head>
     <body>
@@ -268,7 +273,7 @@
             <div class="bottom-container">
                 <div class="status-banner">Upgrading from v{{ .Upgrade.FromVersion }} to v{{ .Upgrade.ToVersion }}</div>
 
-                <p class="explanation">If you are a Sourcegraph administrator, see the frontend logs for additional upgrade progress reporting.</p>
+
 
                 <div class="row">
                     <div class="tabs">
@@ -378,6 +383,8 @@
                         </div>
                     </div>
                 </div>
+
+                <p class="admin">If you are a Sourcegraph administrator, see the frontend logs for additional upgrade progress reporting.</p>
             </div>
         </section>
     </body>
