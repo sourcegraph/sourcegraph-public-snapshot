@@ -15,8 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-// TODO: move after https://github.com/sourcegraph/sourcegraph/pull/52242 lands
-var shouldAutoUpgrade = env.MustGetBool("SRC_AUTOUPGRADE", false, "If you forgot to set intent to autoupgrade before shutting down the instance, set this env var.")
+var EnvShouldAutoUpgrade = env.MustGetBool("SRC_AUTOUPGRADE", false, "If you forgot to set intent to autoupgrade before shutting down the instance, set this env var.")
 
 func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, development bool) *cli.Command {
 	schemaNamesFlag := &cli.StringSliceFlag{
@@ -117,12 +116,12 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 
 		upgradestore := upgradestore.New(db)
 
-		_, autoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
+		_, dbShouldAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
 		if err != nil {
 			return err
 		}
 
-		if shouldAutoUpgrade || autoUpgrade {
+		if EnvShouldAutoUpgrade || dbShouldAutoUpgrade {
 			out.WriteLine(output.Emoji(output.EmojiInfo, "Auto-upgrade flag is set, delegating upgrade to frontend instance"))
 			return nil
 		}
