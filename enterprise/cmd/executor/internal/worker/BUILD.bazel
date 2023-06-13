@@ -39,13 +39,22 @@ go_library(
 go_test(
     name = "worker_test",
     timeout = "short",
-    srcs = ["handler_test.go"],
+    srcs = [
+        "handler_test.go",
+        "mocks_test.go",
+    ],
     embed = [":worker"],
     deps = [
         "//enterprise/cmd/executor/internal/janitor",
+        "//enterprise/cmd/executor/internal/util",
+        "//enterprise/cmd/executor/internal/worker/cmdlogger",
         "//enterprise/cmd/executor/internal/worker/command",
+        "//enterprise/cmd/executor/internal/worker/files",
         "//enterprise/cmd/executor/internal/worker/runner",
+        "//enterprise/cmd/executor/internal/worker/runtime",
+        "//enterprise/cmd/executor/internal/worker/workspace",
         "//enterprise/internal/executor/types",
+        "//internal/executor",
         "//internal/observation",
         "//internal/workerutil",
         "//lib/errors",

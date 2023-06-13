@@ -36,7 +36,9 @@ go_test(
     embed = [":workspace"],
     deps = [
         "//enterprise/cmd/executor/internal/util",
+        "//enterprise/cmd/executor/internal/worker/cmdlogger",
         "//enterprise/cmd/executor/internal/worker/command",
+        "//enterprise/cmd/executor/internal/worker/files",
         "//enterprise/internal/executor/types",
         "//internal/executor",
         "//internal/observation",

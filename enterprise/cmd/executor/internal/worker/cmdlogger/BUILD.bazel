@@ -16,6 +16,15 @@ go_library(
 
 go_test(
     name = "cmdlogger_test",
-    srcs = ["logger_test.go"],
+    srcs = [
+        "logger_test.go",
+        "mocks_test.go",
+    ],
     embed = [":cmdlogger"],
+    deps = [
+        "//enterprise/internal/executor/types",
+        "//internal/executor",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//logtest",
+    ],
 )
