@@ -46,6 +46,10 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 		return nil, err
 	}
 
+	funcs := template.FuncMap{
+		"FormatPercentage": func(v float64) string { return fmt.Sprintf("%.2f%%", v*100) },
+	}
+
 	handleTemplate := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		frontendApplied, frontendPending, frontendFailed, err := store.Versions(ctx)
 		if err != nil {
@@ -64,7 +68,7 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 			return err
 		}
 
-		tmpl, err := template.New("index").Parse(rawTemplate)
+		tmpl, err := template.New("index").Funcs(funcs).Parse(rawTemplate)
 		if err != nil {
 			return err
 		}

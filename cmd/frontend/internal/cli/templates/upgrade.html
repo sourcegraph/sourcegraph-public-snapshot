@@ -232,6 +232,7 @@
                 <div class="status-banner">All Systems Operational</div>
                 <div class="row">
                     <div class="tabs">
+                        <!-- Frontend -->
                         <div class="tab">
                             <input type="checkbox" id="chck1" />
                             <label class="tab-label" for="chck1">
@@ -239,7 +240,6 @@
                                 <span>{{ .Frontend.Percentage }}</span>
                             </label>
                             <div class="tab-content">
-
                                 <!-- Frontend: Pending -->
                                 <div class="progress-container progress">
                                     <h3 class="progress-title">In Progress</h3>
@@ -407,6 +407,20 @@
                                         {{end}} {{end}}
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Out of band migrations -->
+                        <div class="tab">
+                            <input type="checkbox" id="chck4" />
+                            <label class="tab-label" for="chck4">
+                                <span>Out of band migrations</span>
+                                <span>???</span>
+                            </label>
+                            <div class="tab-content">
+                                {{range .OutOfBandMigrations}}
+                                <p>{{ .ID }}: {{ .Description }} {{FormatPercentage .Progress}}</p>
+                                {{end}}
                             </div>
                         </div>
                     </div>
