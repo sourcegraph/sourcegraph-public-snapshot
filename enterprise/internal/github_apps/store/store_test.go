@@ -517,7 +517,6 @@ func TestInstallGitHubApp(t *testing.T) {
 	}
 
 	id, err := store.Create(ctx, app)
-	fmt.Printf("github app id: %v\n", id)
 	require.NoError(t, err)
 
 	installationID := 42

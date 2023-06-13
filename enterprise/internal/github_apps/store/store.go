@@ -481,11 +481,6 @@ func (s *gitHubAppsStore) SyncInstallations(ctx context.Context, app ghtypes.Git
 		return errs
 	}
 
-	var remoteInstallsMap = make(map[int]struct{}, len(remoteInstallations))
-	for _, in := range remoteInstallations {
-		remoteInstallsMap[int(*in.ID)] = struct{}{}
-	}
-
 	var dbInstallsMap = make(map[int]struct{}, len(dbInstallations))
 	for _, in := range dbInstallations {
 		dbInstallsMap[in.InstallationID] = struct{}{}
