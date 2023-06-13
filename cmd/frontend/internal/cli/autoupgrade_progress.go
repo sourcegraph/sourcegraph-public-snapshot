@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 //go:embed templates/upgrade.html
@@ -76,7 +75,7 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 
 			return u, nil
 		})
-		upgrade, ok, err := scan(db.QueryContext(ctx, `
+		upgrade, _, err := scan(db.QueryContext(ctx, `
 			SELECT
 				from_version,
 				to_version,
@@ -90,10 +89,6 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 		`))
 		if err != nil {
 			return err
-		}
-		if !ok {
-			// TODO - make user visible?
-			return errors.New("no upgrade in progress")
 		}
 
 		frontendApplied, frontendPending, frontendFailed, err := store.Versions(ctx)
