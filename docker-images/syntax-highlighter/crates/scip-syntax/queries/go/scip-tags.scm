@@ -34,3 +34,4 @@
 (const_spec name: (_) @descriptor.term) @enclosing
 (import_spec name: (_) @descriptor.term) @enclosing
 (method_spec name: (_) @descriptor.method) @enclosing
+(var_spec name: (_) @descriptor.term) @enclosing

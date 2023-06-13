@@ -66,4 +66,11 @@ expression: dumped
    defer g.mutex.Unlock()
    return g.err
   }
+  
+  var (
+   diffPath = flag.String("f", stdin, "filename of diff (default: stdin)")
+// ^^^^^^^^ definition scip-ctags multierror/diffPath.
+   fileIdx  = flag.Int("i", -1, "if >= 0, only print and report errors from the i'th file (0-indexed)")
+// ^^^^^^^ definition scip-ctags multierror/fileIdx.
+  )
 
