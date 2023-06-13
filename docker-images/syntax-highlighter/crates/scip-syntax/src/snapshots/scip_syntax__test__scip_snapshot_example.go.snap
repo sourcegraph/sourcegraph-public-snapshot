@@ -3,7 +3,7 @@ source: crates/scip-syntax/src/lib.rs
 expression: dumped
 ---
   package example
-//        ^^^^^^^ definition scip-ctags example/
+//        ^^^^^^^ definition(Package) scip-ctags example/
   
   import (
    f "fmt"
@@ -11,13 +11,13 @@ expression: dumped
   )
   
   func Something() {
-//     ^^^^^^^^^ definition scip-ctags example/Something().
+//     ^^^^^^^^^ definition(Function) scip-ctags example/Something().
    x := true
    f.Println(x)
   }
   
   func Another() float64 { return 5 / 3 }
-//     ^^^^^^^ definition scip-ctags example/Another().
+//     ^^^^^^^ definition(Function) scip-ctags example/Another().
   
   type MyThing struct{}
 //     ^^^^^^^ definition scip-ctags example/MyThing#

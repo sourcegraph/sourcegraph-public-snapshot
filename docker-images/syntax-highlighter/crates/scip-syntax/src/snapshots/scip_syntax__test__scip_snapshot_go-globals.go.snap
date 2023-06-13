@@ -3,7 +3,7 @@ source: crates/scip-syntax/src/lib.rs
 expression: dumped
 ---
   package multierror
-//        ^^^^^^^^^^ definition scip-ctags multierror/
+//        ^^^^^^^^^^ definition(Package) scip-ctags multierror/
   
   import "sync"
   
@@ -73,4 +73,7 @@ expression: dumped
    fileIdx  = flag.Int("i", -1, "if >= 0, only print and report errors from the i'th file (0-indexed)")
 // ^^^^^^^ definition scip-ctags multierror/fileIdx.
   )
+  
+  func RegularFunc() {}
+//     ^^^^^^^^^^^ definition(Function) scip-ctags multierror/RegularFunc().
 

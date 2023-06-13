@@ -1,7 +1,7 @@
-(source_file (package_clause (package_identifier) @descriptor.namespace)) @scope
+(source_file (package_clause (package_identifier) @descriptor.namespace @kind.package)) @scope
 
 (function_declaration
- name: (identifier) @descriptor.method) @enclosing
+ name: (identifier) @descriptor.method @kind.function) @enclosing
 
 ;; Function bodies are local
 (function_declaration body: (block) @local)
@@ -29,7 +29,7 @@
     name: (_) @descriptor.type
     type: [(interface_type) (struct_type)] @scope))
 
-(const_spec name: (_) @descriptor.term) @enclosing
+(const_spec name: (_) @descriptor.term) @kind.constant @enclosing
 (import_spec name: (_) @descriptor.term) @enclosing
 (method_spec name: (_) @descriptor.method) @enclosing
 (var_spec name: (_) @descriptor.term) @enclosing

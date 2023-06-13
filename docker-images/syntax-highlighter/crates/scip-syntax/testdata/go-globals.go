@@ -53,3 +53,5 @@ var (
 	diffPath = flag.String("f", stdin, "filename of diff (default: stdin)")
 	fileIdx  = flag.Int("i", -1, "if >= 0, only print and report errors from the i'th file (0-indexed)")
 )
+
+func RegularFunc() {}

@@ -3,7 +3,7 @@ source: crates/scip-syntax/src/lib.rs
 expression: dumped
 ---
   package main
-//        ^^^^ definition scip-ctags main/
+//        ^^^^ definition(Package) scip-ctags main/
   
   import (
    "flag"
@@ -18,7 +18,7 @@ expression: dumped
   // errors.
   
   const stdin = "<stdin>"
-//      ^^^^^ definition scip-ctags main/stdin.
+//      ^^^^^ definition(Constant) scip-ctags main/stdin.
   
   var (
    diffPath = flag.String("f", stdin, "filename of diff (default: stdin)")
@@ -28,7 +28,7 @@ expression: dumped
   )
   
   func main() {
-//     ^^^^ definition scip-ctags main/main().
+//     ^^^^ definition(Function) scip-ctags main/main().
    flag.Parse()
   
    var diffFile *os.File
