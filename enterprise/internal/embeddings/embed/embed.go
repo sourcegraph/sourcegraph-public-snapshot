@@ -46,7 +46,7 @@ func isEmbeddingsEnabled(siteConfig *schema.SiteConfiguration) bool {
 	// Additionally Embeddings in App are disabled if there is no dotcom auth token
 	// and the user hasn't provided their own api token
 	if deploy.IsApp() {
-		if siteConfig.App == nil || len(siteConfig.App.DotcomAuthToken) == 0 {
+		if (siteConfig.App == nil || len(siteConfig.App.DotcomAuthToken) == 0) && c.AccessToken == "" {
 			return false
 		}
 	}
