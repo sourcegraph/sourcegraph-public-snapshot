@@ -19,7 +19,12 @@ import (
 // being cancelled.
 const maxRequestDuration = time.Minute
 
-func newCompletionsHandler(rl RateLimiter, traceFamily string, getModel func(types.CompletionRequestParameters, *schema.Completions) string, handle func(context.Context, types.CompletionRequestParameters, types.CompletionsClient, http.ResponseWriter)) http.Handler {
+func newCompletionsHandler(
+	rl RateLimiter,
+	traceFamily string,
+	getModel func(types.CodyCompletionRequestParameters, *schema.Completions) string,
+	handle func(context.Context, types.CompletionRequestParameters, types.CompletionsClient, http.ResponseWriter),
+) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusMethodNotAllowed)
@@ -29,24 +34,27 @@ func newCompletionsHandler(rl RateLimiter, traceFamily string, getModel func(typ
 		ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
 		defer cancel()
 
-		completionsConfig := client.GetCompletionsConfig(conf.Get().SiteConfig())
-		if completionsConfig == nil || !completionsConfig.Enabled {
-			http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
-			return
-		}
-
 		if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
 			http.Error(w, "cody experimental feature flag is not enabled for current user", http.StatusUnauthorized)
 			return
 		}
 
-		var requestParams types.CompletionRequestParameters
+		completionsConfig := client.GetCompletionsConfig(conf.Get().SiteConfig())
+		if completionsConfig == nil {
+			http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
+		}
+
+		var requestParams types.CodyCompletionRequestParameters
 		if err := json.NewDecoder(r.Body).Decode(&requestParams); err != nil {
 			http.Error(w, "could not decode request body", http.StatusBadRequest)
 			return
 		}
 
 		// TODO: Model is not configurable but technically allowed in the request body right now.
+		if requestParams.Model != "" {
+			http.Error(w, "user-specified models are not allowed", http.StatusBadRequest)
+			return
+		}
 		requestParams.Model = getModel(requestParams, completionsConfig)
 
 		var err error
@@ -77,7 +85,7 @@ func newCompletionsHandler(rl RateLimiter, traceFamily string, getModel func(typ
 			return
 		}
 
-		handle(ctx, requestParams, completionClient, w)
+		handle(ctx, requestParams.CompletionRequestParameters, completionClient, w)
 	})
 }
 

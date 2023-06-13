@@ -66,8 +66,8 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 			{
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_grpc_request_rate_all_methods", opts.HumanServiceName),
-					Description: "request rate across all methods over 1m",
-					Query:       fmt.Sprintf(`sum(rate(%s[1m]))`, metric("grpc_server_started_total", instanceLabelFilter)),
+					Description: "request rate across all methods over 2m",
+					Query:       fmt.Sprintf(`sum(rate(%s[2m]))`, metric("grpc_server_started_total", instanceLabelFilter)),
 					Panel: monitoring.Panel().
 						Unit(monitoring.RequestsPerSecond).
 						With(monitoring.PanelOptions.LegendOnRight()),
@@ -77,8 +77,8 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				},
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_grpc_request_rate_per_method", opts.HumanServiceName),
-					Description: "request rate per-method over 1m",
-					Query:       fmt.Sprintf("sum(rate(%s[1m])) by (grpc_method)", metric("grpc_server_started_total", methodLabelFilter, instanceLabelFilter)),
+					Description: "request rate per-method over 2m",
+					Query:       fmt.Sprintf("sum(rate(%s[2m])) by (grpc_method)", metric("grpc_server_started_total", methodLabelFilter, instanceLabelFilter)),
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
 						Unit(monitoring.RequestsPerSecond).
 						With(monitoring.PanelOptions.LegendOnRight()),
@@ -92,10 +92,10 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 			{
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_error_percentage_all_methods", opts.HumanServiceName),
-					Description: "error percentage across all methods over 1m",
+					Description: "error percentage across all methods over 2m",
 					Query: percentageQuery(
-						fmt.Sprintf("sum(rate(%s[1m]))", metric("grpc_server_handled_total", failingCodeFilter, instanceLabelFilter)),
-						fmt.Sprintf("sum(rate(%s[1m]))", metric("grpc_server_handled_total", instanceLabelFilter)),
+						fmt.Sprintf("sum(rate(%s[2m]))", metric("grpc_server_handled_total", failingCodeFilter, instanceLabelFilter)),
+						fmt.Sprintf("sum(rate(%s[2m]))", metric("grpc_server_handled_total", instanceLabelFilter)),
 					),
 					Panel: monitoring.Panel().
 						Unit(monitoring.Percentage).
@@ -107,10 +107,10 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_grpc_error_percentage_per_method", opts.HumanServiceName),
-					Description: "error percentage per-method over 1m",
+					Description: "error percentage per-method over 2m",
 					Query: percentageQuery(
-						fmt.Sprintf("sum(rate(%s[1m])) by (grpc_method)", metric("grpc_server_handled_total", methodLabelFilter, failingCodeFilter, instanceLabelFilter)),
-						fmt.Sprintf("sum(rate(%s[1m])) by (grpc_method)", metric("grpc_server_handled_total", methodLabelFilter, instanceLabelFilter)),
+						fmt.Sprintf("sum(rate(%s[2m])) by (grpc_method)", metric("grpc_server_handled_total", methodLabelFilter, failingCodeFilter, instanceLabelFilter)),
+						fmt.Sprintf("sum(rate(%s[2m])) by (grpc_method)", metric("grpc_server_handled_total", methodLabelFilter, instanceLabelFilter)),
 					),
 
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
@@ -127,8 +127,8 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_p99_response_time_per_method", opts.HumanServiceName),
-					Description: "99th percentile response time per method over 1m",
-					Query:       fmt.Sprintf("histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(%s[1m])))", metric("grpc_server_handling_seconds_bucket", methodLabelFilter, instanceLabelFilter)),
+					Description: "99th percentile response time per method over 2m",
+					Query:       fmt.Sprintf("histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("grpc_server_handling_seconds_bucket", methodLabelFilter, instanceLabelFilter)),
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
 						Unit(monitoring.Seconds).
 						With(monitoring.PanelOptions.LegendOnRight()),
@@ -139,8 +139,8 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_p90_response_time_per_method", opts.HumanServiceName),
-					Description: "90th percentile response time per method over 1m",
-					Query:       fmt.Sprintf("histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(%s[1m])))", metric("grpc_server_handling_seconds_bucket", methodLabelFilter, instanceLabelFilter)),
+					Description: "90th percentile response time per method over 2m",
+					Query:       fmt.Sprintf("histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("grpc_server_handling_seconds_bucket", methodLabelFilter, instanceLabelFilter)),
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
 						Unit(monitoring.Seconds).
 						With(monitoring.PanelOptions.LegendOnRight()),
@@ -151,8 +151,8 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_p75_response_time_per_method", opts.HumanServiceName),
-					Description: "75th percentile response time per method over 1m",
-					Query:       fmt.Sprintf("histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(%s[1m])))", metric("grpc_server_handling_seconds_bucket", methodLabelFilter, instanceLabelFilter)),
+					Description: "75th percentile response time per method over 2m",
+					Query:       fmt.Sprintf("histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("grpc_server_handling_seconds_bucket", methodLabelFilter, instanceLabelFilter)),
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
 						Unit(monitoring.Seconds).
 						With(monitoring.PanelOptions.LegendOnRight()),
@@ -166,10 +166,10 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 			{
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_grpc_response_stream_message_count_per_method", opts.HumanServiceName),
-					Description: "average streaming response message count per-method over 1m",
+					Description: "average streaming response message count per-method over 2m",
 					Query: fmt.Sprintf(`((%s)/(%s))`,
-						fmt.Sprintf("sum(rate(%s[1m])) by (grpc_method)", metric("grpc_server_msg_sent_total", grpcStreamTypeFilter, instanceLabelFilter)),
-						fmt.Sprintf("sum(rate(%s[1m])) by (grpc_method)", metric("grpc_server_started_total", grpcStreamTypeFilter, instanceLabelFilter)),
+						fmt.Sprintf("sum(rate(%s[2m])) by (grpc_method)", metric("grpc_server_msg_sent_total", grpcStreamTypeFilter, instanceLabelFilter)),
+						fmt.Sprintf("sum(rate(%s[2m])) by (grpc_method)", metric("grpc_server_started_total", grpcStreamTypeFilter, instanceLabelFilter)),
 					),
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
 						Unit(monitoring.Number).
@@ -184,8 +184,8 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 			{
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_grpc_all_codes_per_method", opts.HumanServiceName),
-					Description: "response codes rate per-method over 1m",
-					Query:       fmt.Sprintf(`sum(rate(%s[1m])) by (grpc_method, grpc_code)`, metric("grpc_server_handled_total", methodLabelFilter, instanceLabelFilter)),
+					Description: "response codes rate per-method over 2m",
+					Query:       fmt.Sprintf(`sum(rate(%s[2m])) by (grpc_method, grpc_code)`, metric("grpc_server_handled_total", methodLabelFilter, instanceLabelFilter)),
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}: {{grpc_code}}").
 						Unit(monitoring.RequestsPerSecond).
 						With(monitoring.PanelOptions.LegendOnRight()),
@@ -272,10 +272,10 @@ func NewGRPCInternalErrorMetricsGroup(opts GRPCInternalErrorMetricsOptions, owne
 			{
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_grpc_clients_error_percentage_all_methods", opts.HumanServiceName),
-					Description: "client baseline error percentage across all methods over 1m",
+					Description: "client baseline error percentage across all methods over 2m",
 					Query: percentageQuery(
-						sum(metric("src_grpc_method_status", serviceLabelFilter, failingCodeFilter), "1m"),
-						sum(metric("src_grpc_method_status", serviceLabelFilter), "1m"),
+						sum(metric("src_grpc_method_status", serviceLabelFilter, failingCodeFilter), "2m"),
+						sum(metric("src_grpc_method_status", serviceLabelFilter), "2m"),
 					),
 					Panel: monitoring.Panel().
 						Unit(monitoring.Percentage).
@@ -288,10 +288,10 @@ func NewGRPCInternalErrorMetricsGroup(opts GRPCInternalErrorMetricsOptions, owne
 
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_grpc_clients_error_percentage_per_method", opts.HumanServiceName),
-					Description: "client baseline error percentage per-method over 1m",
+					Description: "client baseline error percentage per-method over 2m",
 					Query: percentageQuery(
-						sum(metric("src_grpc_method_status", serviceLabelFilter, methodLabelFilter, failingCodeFilter), "1m", "grpc_method"),
-						sum(metric("src_grpc_method_status", serviceLabelFilter, methodLabelFilter), "1m", "grpc_method"),
+						sum(metric("src_grpc_method_status", serviceLabelFilter, methodLabelFilter, failingCodeFilter), "2m", "grpc_method"),
+						sum(metric("src_grpc_method_status", serviceLabelFilter, methodLabelFilter), "2m", "grpc_method"),
 					),
 
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
@@ -306,8 +306,8 @@ func NewGRPCInternalErrorMetricsGroup(opts GRPCInternalErrorMetricsOptions, owne
 
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_grpc_clients_all_codes_per_method", opts.HumanServiceName),
-					Description: "client baseline response codes rate per-method over 1m",
-					Query:       sum(metric("src_grpc_method_status", serviceLabelFilter, methodLabelFilter), "1m", "grpc_method", "grpc_code"),
+					Description: "client baseline response codes rate per-method over 2m",
+					Query:       sum(metric("src_grpc_method_status", serviceLabelFilter, methodLabelFilter), "2m", "grpc_method", "grpc_code"),
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}: {{grpc_code}}").
 						Unit(monitoring.RequestsPerSecond).
 						With(monitoring.PanelOptions.LegendOnRight()).
@@ -320,10 +320,10 @@ func NewGRPCInternalErrorMetricsGroup(opts GRPCInternalErrorMetricsOptions, owne
 			{
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_grpc_clients_internal_error_percentage_all_methods", opts.HumanServiceName),
-					Description: "client-observed gRPC internal error percentage across all methods over 1m",
+					Description: "client-observed gRPC internal error percentage across all methods over 2m",
 					Query: percentageQuery(
-						sum(metric("src_grpc_method_status", serviceLabelFilter, failingCodeFilter, isInternalErrorFilter), "1m"),
-						sum(metric("src_grpc_method_status", serviceLabelFilter), "1m"),
+						sum(metric("src_grpc_method_status", serviceLabelFilter, failingCodeFilter, isInternalErrorFilter), "2m"),
+						sum(metric("src_grpc_method_status", serviceLabelFilter), "2m"),
 					),
 					Panel: monitoring.Panel().
 						Unit(monitoring.Percentage).
@@ -336,10 +336,10 @@ func NewGRPCInternalErrorMetricsGroup(opts GRPCInternalErrorMetricsOptions, owne
 
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_grpc_clients_internal_error_percentage_per_method", opts.HumanServiceName),
-					Description: "client-observed gRPC internal error percentage per-method over 1m",
+					Description: "client-observed gRPC internal error percentage per-method over 2m",
 					Query: percentageQuery(
-						sum(metric("src_grpc_method_status", serviceLabelFilter, methodLabelFilter, failingCodeFilter, isInternalErrorFilter), "1m", "grpc_method"),
-						sum(metric("src_grpc_method_status", serviceLabelFilter, methodLabelFilter), "1m", "grpc_method"),
+						sum(metric("src_grpc_method_status", serviceLabelFilter, methodLabelFilter, failingCodeFilter, isInternalErrorFilter), "2m", "grpc_method"),
+						sum(metric("src_grpc_method_status", serviceLabelFilter, methodLabelFilter), "2m", "grpc_method"),
 					),
 
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
@@ -353,8 +353,8 @@ func NewGRPCInternalErrorMetricsGroup(opts GRPCInternalErrorMetricsOptions, owne
 
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_grpc_clients_internal_error_all_codes_per_method", opts.HumanServiceName),
-					Description: "client-observed gRPC internal error response code rate per-method over 1m",
-					Query:       sum(metric("src_grpc_method_status", serviceLabelFilter, isInternalErrorFilter, methodLabelFilter), "1m", "grpc_method", "grpc_code"),
+					Description: "client-observed gRPC internal error response code rate per-method over 2m",
+					Query:       sum(metric("src_grpc_method_status", serviceLabelFilter, isInternalErrorFilter, methodLabelFilter), "2m", "grpc_method", "grpc_code"),
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}: {{grpc_code}}").
 						Unit(monitoring.RequestsPerSecond).
 						With(monitoring.PanelOptions.LegendOnRight()).

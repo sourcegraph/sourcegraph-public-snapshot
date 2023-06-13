@@ -1,15 +1,7 @@
-import { spawnSync } from 'child_process'
-
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { Editor } from '@sourcegraph/cody-shared/src/editor'
-import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
-import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
-
-import { Config } from './ChatViewProvider'
 import { AuthStatus, defaultAuthStatus, isLocalApp, unauthenticatedStatus } from './protocol'
 
 // Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
@@ -50,38 +42,9 @@ export function convertGitCloneURLToCodebaseName(cloneURL: string): string | nul
         }
         return null
     } catch (error) {
-        console.log(`Cody could not extract repo name from clone URL ${cloneURL}:`, error)
+        console.error(`Cody could not extract repo name from clone URL ${cloneURL}:`, error)
         return null
     }
-}
-
-export async function getCodebaseContext(
-    config: Config,
-    rgPath: string,
-    editor: Editor
-): Promise<CodebaseContext | null> {
-    const client = new SourcegraphGraphQLAPIClient(config)
-    const workspaceRoot = editor.getWorkspaceRootPath()
-    if (!workspaceRoot) {
-        return null
-    }
-    const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
-    const gitOutput = gitCommand.stdout.toString().trim()
-    // Get codebase from config or fallback to getting repository name from git clone URL
-    const codebase = config.codebase || convertGitCloneURLToCodebaseName(gitOutput)
-    if (!codebase) {
-        return null
-    }
-    // Check if repo is embedded in endpoint
-    const repoId = await client.getRepoIdIfEmbeddingExists(codebase)
-    if (isError(repoId)) {
-        const infoMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
-        console.info(infoMessage)
-        return null
-    }
-
-    const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
-    return new CodebaseContext(config, codebase, embeddingsSearch, new LocalKeywordContextFetcher(rgPath, editor))
 }
 
 let client: SourcegraphGraphQLAPIClient
