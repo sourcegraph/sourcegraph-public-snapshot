@@ -132,6 +132,14 @@ func (s *store) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (_ map[
 }
 
 const lastUpdatedAtQuery = `
+WITH
+progress AS (
+	SELECT pl.id
+	FROM codeintel_ranking_progress pl
+	WHERE pl.reducer_completed_at IS NOT NULL
+	ORDER BY pl.reducer_completed_at DESC
+	LIMIT 1
+)
 SELECT
 	pr.repository_id,
 	crp.reducer_completed_at
@@ -139,14 +147,7 @@ FROM codeintel_path_ranks pr
 JOIN codeintel_ranking_progress crp ON crp.graph_key = pr.graph_key
 WHERE
 	pr.repository_id = ANY(%s) AND
-
-	crp.id = (
-		SELECT pl.id
-		FROM codeintel_ranking_progress pl
-		WHERE pl.reducer_completed_at IS NOT NULL
-		ORDER BY pl.reducer_completed_at DESC
-		LIMIT 1
-	)
+	crp.id = (SELECT id FROM progress)
 `
 
 var scanLastUpdatedAtPairs = basestore.NewMapScanner(func(s dbutil.Scanner) (repoID api.RepoID, t time.Time, _ error) {
