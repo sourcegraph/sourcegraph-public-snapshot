@@ -133,11 +133,10 @@ percentiles AS (
 SELECT EXTRACT(EPOCH FROM p50)::int AS p50_seconds FROM percentiles
 `
 
-// TODO: @milan to provide proper link to handbook page here...
 const slackMessageFmt = `
 The license key ID: ` + "`%s`" + ` for <%s/site-admin/dotcom/product/subscriptions/%s|subscription %s> seems to be used on multiple customer instances with the same site ID: ` + "`%s`" + `.
 
-To fix it, <https://handbook.sourcegraph.com/TODO|create a new siteID and license key for all customer instances>.
+To fix it, <https://app.golinks.io/internal-licensing-faq-slack-multiple|follow the guide to update the siteID and license key for all customer instances>.
 `
 
 // checkP50CallTimeForLicense checks the p50 time difference between license-check calls for a specific license.
