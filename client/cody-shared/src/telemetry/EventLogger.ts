@@ -66,7 +66,7 @@ export class EventLogger {
         guardrails: getGuardrailsFromConfig(vscode.workspace.getConfiguration()),
     }
 
-    public onConfigurationChange(newconfig: any): void {
+    public onConfigurationChange(newconfig: vscode.WorkspaceConfiguration): void {
         this.configurationDetails = {
             contextSelection: getUseContextFromConfig(newconfig),
             chatPredictions: getChatPredictionsFromConfig(newconfig),
