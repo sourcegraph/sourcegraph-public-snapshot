@@ -155,7 +155,7 @@ func (q *Queue[T]) Empty() bool {
 	return q.jobs.Len() == 0
 }
 
-func (q *Queue[T]) RecordProcessingTime(job T, start time.Time) {
+func (q *Queue[T]) RecordProcessingTime(start time.Time) {
 	q.processingTime.Observe(time.Since(start).Seconds())
 }
 

@@ -148,7 +148,7 @@ func (s *Service) changelistMappingConsumer(ctx context.Context, jobs <-chan *ch
 		if err != nil {
 			logger.Error("failed to map perforce changelists", log.Error(err))
 		}
-		s.changelistMappingQueue.RecordProcessingTime(j, start)
+		s.changelistMappingQueue.RecordProcessingTime(start)
 	}
 }
 

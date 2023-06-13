@@ -669,7 +669,7 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 
 		go func(job *cloneJob) {
 			start := time.Now()
-			defer s.CloneQueue.RecordProcessingTime(job, start)
+			defer s.CloneQueue.RecordProcessingTime(start)
 
 			defer cancel()
 
