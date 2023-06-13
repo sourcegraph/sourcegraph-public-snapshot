@@ -801,6 +801,13 @@
           "fontPath": "dist/assets/cody-icons.woff",
           "fontCharacter": "\\0041"
         }
+      },
+      "cody-logo-heavy": {
+        "description": "Cody logo heavy",
+        "default": {
+          "fontPath": "dist/assets/cody-icons.woff",
+          "fontCharacter": "\\0042"
+        }
       }
     }
   },

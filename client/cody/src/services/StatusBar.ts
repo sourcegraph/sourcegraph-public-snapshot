@@ -9,7 +9,7 @@ export interface CodyStatusBar {
     startLoading(label: string): () => void
 }
 
-const DEFAULT_TEXT = '$(cody-logo)'
+const DEFAULT_TEXT = '$(cody-logo-heavy)'
 const DEFAULT_TOOLTIP = 'Cody Features Toggle'
 
 export function createStatusBar(): CodyStatusBar {
