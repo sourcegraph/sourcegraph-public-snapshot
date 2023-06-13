@@ -11,6 +11,7 @@ go_library(
         "//enterprise/cmd/worker/internal/batches",
         "//enterprise/cmd/worker/internal/executorqueue",
         "//enterprise/internal/codeintel/autoindexing",
+        "//enterprise/internal/executor/types",
         "//internal/env",
         "//internal/goroutine",
         "//internal/observation",

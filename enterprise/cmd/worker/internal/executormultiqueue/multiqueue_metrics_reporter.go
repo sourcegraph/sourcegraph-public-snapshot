@@ -8,6 +8,7 @@ import (
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
+	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -44,7 +45,7 @@ func (j *multiqueueMetricsReporterJob) Routines(_ context.Context, observationCt
 	}
 
 	multiqueueMetricsReporter, err := executorqueue.NewMultiqueueMetricReporter(
-		[]string{"codeintel", "batches"},
+		executortypes.ValidQueueNames,
 		configInst.MetricsConfig,
 		codeIntelStore.QueuedCount,
 		batchesStore.QueuedCount,
