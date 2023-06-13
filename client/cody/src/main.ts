@@ -259,7 +259,12 @@ const register = async (
                     })
                     await chatProvider.sendLogin(authStatus)
                     if (isLoggedIn(authStatus)) {
-                        void vscode.window.showInformationMessage(successMessage)
+                        const actionButtonLabel = 'Get Started'
+                        void vscode.window.showInformationMessage(successMessage, actionButtonLabel).then(action => {
+                            if (action === actionButtonLabel) {
+                                void vscode.commands.executeCommand('cody.chat.focus')
+                            }
+                        })
                     } else {
                         void vscode.window.showInformationMessage('Error logging into Cody')
                     }
