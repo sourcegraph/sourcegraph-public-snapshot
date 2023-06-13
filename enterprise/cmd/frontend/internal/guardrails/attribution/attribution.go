@@ -95,6 +95,7 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 				agg.TotalCount--
 				continue
 			}
+			seen[name] = struct{}{}
 			agg.RepositoryNames = append(agg.RepositoryNames, name)
 		}
 	}
