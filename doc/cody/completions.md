@@ -19,7 +19,7 @@ While in experimental state, Cody completions need to be enabled manually. To do
 1. Make sure your [Cody AI by Sourcegraph](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) extension is on the latest version
    - <kbd>shift</kbd>+<kbd>cmd</kbd>+<kbd>x</kbd> to see all extensions, select Cody, confirm the version
 1. Go to the Cody Extension Settings and enable completions
-   - Click to check the box for: `Cody > Completions`
+   - Click to check the box for: `Cody > Experimental Suggestions`
 1. Finally, restart or reload VS Code and test it out!
 
 ### Configuring on Sourcegraph Enterprise
