@@ -2398,6 +2398,14 @@
           "description": "The time to wait between runs. Valid time units are \"s\", \"m\", \"h\". Example values: \"30s\", \"5m\", \"1h\".",
           "type": "string",
           "default": "24h"
+        },
+        "policyRepositoryMatchLimit": {
+          "description": "The maximum number of repositories that can be matched by a global embeddings policy",
+          "type": "integer",
+          "!go": {
+            "pointer": true
+          },
+          "default": "5000"
         }
       },
       "examples": [
