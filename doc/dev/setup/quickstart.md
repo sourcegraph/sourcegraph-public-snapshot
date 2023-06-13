@@ -61,12 +61,6 @@ Keep this process running and follow the rest of the instructions in another ter
 sg start
 ```
 
-**If you are not a Sourcegraph employee and don't have access to [the `dev-private` repository](https://github.com/sourcegraph/dev-private)**, you want to start Sourcegraph OSS instead:
-
-```sh
-sg start oss
-```
-
 This will continuously compile your code and live reload your locally running instance of Sourcegraph.
 
 Navigate your browser to https://sourcegraph.test:3443 to see if everything worked.

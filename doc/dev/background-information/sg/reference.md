@@ -48,10 +48,6 @@ Available comamndsets in `sg.config.yaml`:
 * iam
 * monitoring
 * monitoring-alerts
-* oss
-* oss-bazel
-* oss-web-standalone
-* oss-web-standalone-prod
 * otel
 * web-standalone
 * web-standalone-prod
