@@ -333,7 +333,7 @@ func runPostgresReindex() {
 	// TODO: Check index for corruption before running
 
 	// TODO: Ideally use execer, but no way to set envars?
-	cmd := exec.Command("bash", "/reindex.sh")
+	cmd := exec.Command("/bin/bash", "/reindex.sh")
 	cmd.Env = append(
 		os.Environ(),
 		fmt.Sprintf("REINDEX_COMPLETED_FILE=%s", postgresReindexMarkerFile()),
