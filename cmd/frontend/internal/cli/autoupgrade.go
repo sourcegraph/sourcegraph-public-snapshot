@@ -228,7 +228,7 @@ func finalMileMigrations(obsvCtx *observation.Context) error {
 	for schema, migrateLastMile := range migratorsBySchema {
 		obsvCtx.Logger.Info("Running last-mile migrations", log.String("schema", schema))
 
-		sqlDB, err := migrateLastMile(obsvCtx, dsns[schema], "frontend")
+		sqlDB, err := migrateLastMile(obsvCtx, dsns[schema], appName)
 		if err != nil {
 			return errors.Wrapf(err, "failed to perform last-mile migration for %s schema", schema)
 		}
