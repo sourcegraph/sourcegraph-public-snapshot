@@ -154,6 +154,69 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
             {data && !loading && (
                 <>
                     <div className="d-flex flex-row justify-content-between">
+                        <H3>Automatic Upgrade State</H3>
+                        <div>
+                            <Label>
+                                <Toggle
+                                    title="Enable Auto Upgrade"
+                                    value={autoUpgradeEnabled}
+                                    onToggle={handleToggle}
+                                    className="mr-2"
+                                    aria-describedby="auto-upgrade-toggle-description"
+                                />
+                                {autoUpgradeEnabled &&
+                                (data.site.upgradeReadiness.requiredOutOfBandMigrations.length > 0 ||
+                                    data.site.upgradeReadiness.schemaDrift.length > 0) ? (
+                                    <Icon aria-hidden={true} svgPath={mdiAlertOctagram} className="text-danger" />
+                                ) : null}
+                                {autoUpgradeEnabled ? 'Enabled' : 'Disabled'}
+                            </Label>
+                        </div>
+                    </div>
+                    <div>
+                        {data?.site.upgradeReadiness.schemaDrift.length > 0 ? (
+                            <span>
+                                <Icon aria-hidden={true} svgPath={mdiAlertOctagram} className="text-danger" /> Schema
+                                drift is detected. Please resolve schema drift before attempting an upgrade.
+                                <br />
+                                <br /> Learn more about the migrator{' '}
+                                <Link to="https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#upgrade">
+                                    upgrade command
+                                </Link>
+                                .
+                            </span>
+                        ) : data?.site.upgradeReadiness.requiredOutOfBandMigrations.length > 0 ? (
+                            <span>
+                                Some oob migrations must complete before a multi version upgrade can finish. Learn more
+                                at the <Link to="/site-admin/migrations?filters=pending">migrations</Link> page, and
+                                reach out to{' '}
+                                <Link to="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
+                                    Sourcegraph support
+                                </Link>{' '}
+                                for clarifications.
+                                <br />
+                                <br /> Learn more about the migrator{' '}
+                                <Link to="https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#upgrade">
+                                    upgrade command
+                                </Link>
+                                .
+                            </span>
+                        ) : (
+                            <span>
+                                This instance is prepared for a multiversion upgrade. If automatic upgrades are enabled
+                                the migrator upgrade command will now infer to and from versions.
+                                <br />
+                                <br />
+                                Learn more about the migrator{' '}
+                                <Link to="https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#upgrade">
+                                    upgrade command
+                                </Link>
+                                .
+                            </span>
+                        )}
+                    </div>
+                    <hr className="my-3" />
+                    <div className="d-flex flex-row justify-content-between">
                         <H3>Schema drift</H3>
                         <Button onClick={() => refetch()} variant="primary" size="sm">
                             {' '}
@@ -270,68 +333,6 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                         </Text>
                     )}
                     <hr className="my-3" />
-                    <div className="d-flex flex-row justify-content-between">
-                        <H3>Automatic Upgrade State</H3>
-                        <div>
-                            <Label>
-                                <Toggle
-                                    title="Enable Auto Upgrade"
-                                    value={autoUpgradeEnabled}
-                                    onToggle={handleToggle}
-                                    className="mr-2"
-                                    aria-describedby="auto-upgrade-toggle-description"
-                                />
-                                {autoUpgradeEnabled &&
-                                (data.site.upgradeReadiness.requiredOutOfBandMigrations.length > 0 ||
-                                    data.site.upgradeReadiness.schemaDrift.length > 0) ? (
-                                    <Icon aria-hidden={true} svgPath={mdiAlertOctagram} className="text-danger" />
-                                ) : null}
-                                {autoUpgradeEnabled ? 'Enabled' : 'Disabled'}
-                            </Label>
-                        </div>
-                    </div>
-                    <div>
-                        {data?.site.upgradeReadiness.schemaDrift.length > 0 ? (
-                            <span>
-                                <Icon aria-hidden={true} svgPath={mdiAlertOctagram} className="text-danger" /> Schema
-                                drift is detected. Please resolve schema drift before attempting an upgrade.
-                                <br />
-                                <br /> Learn more about the migrator{' '}
-                                <Link to="https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#upgrade">
-                                    upgrade command
-                                </Link>
-                                .
-                            </span>
-                        ) : data?.site.upgradeReadiness.requiredOutOfBandMigrations.length > 0 ? (
-                            <span>
-                                Some oob migrations must complete before a multi version upgrade can finish. Learn more
-                                at the <Link to="/site-admin/migrations?filters=pending">migrations</Link> page, and
-                                reach out to{' '}
-                                <Link to="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
-                                    Sourcegraph support
-                                </Link>{' '}
-                                for clarifications.
-                                <br />
-                                <br /> Learn more about the migrator{' '}
-                                <Link to="https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#upgrade">
-                                    upgrade command
-                                </Link>
-                                .
-                            </span>
-                        ) : (
-                            <span>
-                                This instance is prepared for a multiversion upgrade. If automatic upgrades are enabled
-                                the migrator upgrade command will now infer to and from versions.
-                                <br />
-                                <br />
-                                Learn more about the migrator{' '}
-                                <Link to="https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#upgrade">
-                                    upgrade command
-                                </Link>
-                                .
-                            </span>
-                        )}
-                    </div>
                 </>
             )}
         </>
