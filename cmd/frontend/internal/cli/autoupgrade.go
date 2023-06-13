@@ -126,7 +126,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 		}
 	}()
 
-	plan, err := planMigration(ctx, currentVersion, toVersion)
+	plan, err := planMigration(currentVersion, toVersion)
 	if err != nil {
 		return errors.Wrap(err, "error planning auto-upgrade")
 	}
@@ -150,7 +150,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 	return nil
 }
 
-func planMigration(ctx context.Context, from, to oobmigration.Version) (multiversion.MigrationPlan, error) {
+func planMigration(from, to oobmigration.Version) (multiversion.MigrationPlan, error) {
 	versionRange, err := oobmigration.UpgradeRange(from, to)
 	if err != nil {
 		return multiversion.MigrationPlan{}, err

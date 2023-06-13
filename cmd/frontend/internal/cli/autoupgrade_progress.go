@@ -55,7 +55,7 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 		"FormatPercentage": func(v float64) string { return fmt.Sprintf("%.2f%%", v*100) },
 	}
 
-	handleTemplate := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	handleTemplate := func(ctx context.Context, w http.ResponseWriter) error {
 		scan := basestore.NewFirstScanner(func(s dbutil.Scanner) (u upgradeStatus, _ error) {
 			var rawPlan []byte
 			if err := s.Scan(
@@ -146,7 +146,7 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := handleTemplate(r.Context(), w, r); err != nil {
+		if err := handleTemplate(r.Context(), w); err != nil {
 			obsvCtx.Logger.Error("failed to handle upgrade UI request", log.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
 		}
