@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -16,6 +17,7 @@ type ParserConfiguration struct {
 	Engine  map[string]ParserType
 }
 
+var ParserConfigMutex sync.Mutex
 var ParserConfig = ParserConfiguration{
 	Default: ctags_config.UniversalCtags,
 	Engine:  map[string]ParserType{},
@@ -48,7 +50,9 @@ func init() {
 	// Update parserConfig here
 	go func() {
 		conf.Watch(func() {
+			ParserConfigMutex.Lock()
 			ParserConfig.Engine = ctags_config.CreateEngineMap(conf.Get().SiteConfig())
+			ParserConfigMutex.Unlock()
 		})
 	}()
 }
@@ -56,7 +60,9 @@ func init() {
 func GetParserType(language string) ctags_config.ParserType {
 	language = languages.NormalizeLanguage(language)
 
+	ParserConfigMutex.Lock()
 	parserType, ok := ParserConfig.Engine[language]
+	ParserConfigMutex.Unlock()
 	if !ok {
 		parserType = ParserConfig.Default
 	}
