@@ -143,6 +143,30 @@ func TestGetCompletionsConfig(t *testing.T) {
 				Provider:        "sourcegraph",
 			}),
 		},
+		{
+			name:       "app with custom configuration",
+			deployType: deploy.App,
+			config: schema.SiteConfiguration{
+				Completions: &schema.Completions{
+					Enabled:         true,
+					AccessToken:     "CUSTOM_TOKEN",
+					Provider:        "anthropic",
+					ChatModel:       "claude-v1",
+					FastChatModel:   "claude-instant-v1",
+					CompletionModel: "claude-instant-v1",
+				},
+				App: &schema.App{
+					DotcomAuthToken: "TOKEN",
+				},
+			},
+			want: autogold.Expect(&schema.Completions{
+				AccessToken: "CUSTOM_TOKEN", ChatModel: "claude-v1",
+				CompletionModel: "claude-instant-v1",
+				Enabled:         true,
+				FastChatModel:   "claude-instant-v1",
+				Provider:        "anthropic",
+			}),
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			defaultDeploy := deploy.Type()
