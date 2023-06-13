@@ -17,26 +17,23 @@ const (
 
 type CodehostCapabilities map[CodehostCapability]bool
 
-// SupportedExternalServices are the external service types currently supported
+// GetSupportedExternalServices returns the external service types currently supported
 // by the batch changes feature. Repos that are associated with external services
 // whose type is not in this list will simply be filtered out from the search
 // results.
-var supportedExternalServices = map[string]CodehostCapabilities{
-	extsvc.TypeGitHub:          {CodehostCapabilityLabels: true, CodehostCapabilityDraftChangesets: true},
-	extsvc.TypeBitbucketServer: {},
-	extsvc.TypeGitLab:          {CodehostCapabilityLabels: true, CodehostCapabilityDraftChangesets: true},
-	extsvc.TypeBitbucketCloud:  {},
-	extsvc.TypeAzureDevOps:     {CodehostCapabilityDraftChangesets: true},
-	extsvc.TypeGerrit:          {CodehostCapabilityDraftChangesets: true},
-	extsvc.TypePerforce:        {},
-}
-
 func GetSupportedExternalServices() map[string]CodehostCapabilities {
-	supported := supportedExternalServices
-	if !conf.Get().ExperimentalFeatures.BatchChangesEnablePerforce {
-		delete(supported, extsvc.TypePerforce)
+	supportedExternalServices := map[string]CodehostCapabilities{
+		extsvc.TypeGitHub:          {CodehostCapabilityLabels: true, CodehostCapabilityDraftChangesets: true},
+		extsvc.TypeBitbucketServer: {},
+		extsvc.TypeGitLab:          {CodehostCapabilityLabels: true, CodehostCapabilityDraftChangesets: true},
+		extsvc.TypeBitbucketCloud:  {},
+		extsvc.TypeAzureDevOps:     {CodehostCapabilityDraftChangesets: true},
+		extsvc.TypeGerrit:          {CodehostCapabilityDraftChangesets: true},
 	}
-	return supported
+	if conf.Get().ExperimentalFeatures.BatchChangesEnablePerforce {
+		supportedExternalServices[extsvc.TypePerforce] = CodehostCapabilities{}
+	}
+	return supportedExternalServices
 }
 
 // IsRepoSupported returns whether the given ExternalRepoSpec is supported by
