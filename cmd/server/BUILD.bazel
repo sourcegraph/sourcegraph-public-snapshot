@@ -104,6 +104,7 @@ pkg_tar(
     srcs = [
         "//docker-images/postgres-12-alpine/rootfs:reindex.sh",
     ],
+    package_dir = "/",
 )
 
 # TODO(@jhchabran) prom-wrapper has to be in /bin while we're still
