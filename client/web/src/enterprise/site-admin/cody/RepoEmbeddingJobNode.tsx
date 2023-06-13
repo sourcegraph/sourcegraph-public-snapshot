@@ -88,83 +88,75 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
 const RepoEmbeddingJobExecutionInfo: FC<
     Pick<
         RepoEmbeddingJobFields,
-        | 'state'
-        | 'cancel'
-        | 'finishedAt'
-        | 'failureMessage'
-        | 'queuedAt'
-        | 'startedAt'
-        | 'stats'
+        'state' | 'cancel' | 'finishedAt' | 'failureMessage' | 'queuedAt' | 'startedAt' | 'stats'
     >
-> = ({
-    state,
-    cancel,
-    finishedAt,
-    queuedAt,
-    startedAt,
-    failureMessage,
-    stats,
-}) => {
-        const [isPopoverOpen, setIsPopoverOpen] = useState(false)
-        const estimatedFinish = calculateEstimatedFinish(startedAt, stats.filesScheduled, stats.filesEmbedded, stats.filesSkipped)
+> = ({ state, cancel, finishedAt, queuedAt, startedAt, failureMessage, stats }) => {
+    const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+    const estimatedFinish = calculateEstimatedFinish(
+        startedAt,
+        stats.filesScheduled,
+        stats.filesEmbedded,
+        stats.filesSkipped
+    )
 
-        return (
-            <>
-                {state === RepoEmbeddingJobState.COMPLETED && finishedAt && (
-                    <small>
-                        Completed embedding {stats.filesEmbedded} files ({stats.filesSkipped} skipped) <Timestamp date={finishedAt} />
-                    </small>
-                )}
-                {state === RepoEmbeddingJobState.CANCELED && finishedAt && (
-                    <small>
-                        Stopped <Timestamp date={finishedAt} />
-                    </small>
-                )}
-                {state === RepoEmbeddingJobState.QUEUED && (
-                    <small>
-                        {cancel ? (
-                            'Cancelling ...'
-                        ) : (
-                            <>
-                                Queued <Timestamp date={queuedAt} />
-                            </>
-                        )}
-                    </small>
-                )}
-                {state === RepoEmbeddingJobState.PROCESSING && startedAt && (
-                    <small>
-                        {cancel ? (
-                            'Cancelling ...'
-                        ) : estimatedFinish ? (
-                            <>
-                                Expected to finish <Timestamp date={estimatedFinish} /> ({stats.filesSkipped + stats.filesEmbedded}/
-                                {stats.filesScheduled} files)
-                            </>
-                        ) : (
-                            <>
-                                Started processing <Timestamp date={startedAt} />
-                            </>
-                        )}
-                    </small>
-                )}
-                {(state === RepoEmbeddingJobState.ERRORED || state === RepoEmbeddingJobState.FAILED) && failureMessage && (
-                    <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
-                        <PopoverTrigger as={Button} variant="secondary" size="sm" aria-label="See errors">
-                            See errors
-                        </PopoverTrigger>
+    return (
+        <>
+            {state === RepoEmbeddingJobState.COMPLETED && finishedAt && (
+                <small>
+                    Completed embedding {stats.filesEmbedded} files ({stats.filesSkipped} skipped){' '}
+                    <Timestamp date={finishedAt} />
+                </small>
+            )}
+            {state === RepoEmbeddingJobState.CANCELED && finishedAt && (
+                <small>
+                    Stopped <Timestamp date={finishedAt} />
+                </small>
+            )}
+            {state === RepoEmbeddingJobState.QUEUED && (
+                <small>
+                    {cancel ? (
+                        'Cancelling ...'
+                    ) : (
+                        <>
+                            Queued <Timestamp date={queuedAt} />
+                        </>
+                    )}
+                </small>
+            )}
+            {state === RepoEmbeddingJobState.PROCESSING && startedAt && (
+                <small>
+                    {cancel ? (
+                        'Cancelling ...'
+                    ) : estimatedFinish ? (
+                        <>
+                            Expected to finish <Timestamp date={estimatedFinish} /> (
+                            {stats.filesSkipped + stats.filesEmbedded}/{stats.filesScheduled} files)
+                        </>
+                    ) : (
+                        <>
+                            Started processing <Timestamp date={startedAt} />
+                        </>
+                    )}
+                </small>
+            )}
+            {(state === RepoEmbeddingJobState.ERRORED || state === RepoEmbeddingJobState.FAILED) && failureMessage && (
+                <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
+                    <PopoverTrigger as={Button} variant="secondary" size="sm" aria-label="See errors">
+                        See errors
+                    </PopoverTrigger>
 
-                        <PopoverContent position={Position.right} className={styles.errorContent}>
-                            <Alert variant="danger" className={classNames('m-2', styles.alertOverflow)}>
-                                <H4>Error embedding repository:</H4>
-                                <div>{failureMessage}</div>
-                            </Alert>
-                        </PopoverContent>
-                        <PopoverTail size="sm" />
-                    </Popover>
-                )}
-            </>
-        )
-    }
+                    <PopoverContent position={Position.right} className={styles.errorContent}>
+                        <Alert variant="danger" className={classNames('m-2', styles.alertOverflow)}>
+                            <H4>Error embedding repository:</H4>
+                            <div>{failureMessage}</div>
+                        </Alert>
+                    </PopoverContent>
+                    <PopoverTail size="sm" />
+                </Popover>
+            )}
+        </>
+    )
+}
 
 function calculateEstimatedFinish(
     startedAt: string | null,
