@@ -116,6 +116,80 @@ WHERE
    AND css.descriptor_id IN (SELECT id FROM codeintel_scip_symbols_lookup ssl WHERE ssl.name = %s AND ssl.scip_name_type = 'DESCRIPTOR' AND ssl.upload_id = css.upload_id);
 `
 
+// func (s *store) GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*contextshared.SCIPNames, err error) {
+// 	// TODO: CHANGE operations
+// 	ctx, _, endObservation := s.operations.getFullSCIPNameByDescriptor.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{}})
+// 	defer endObservation(1, observation.Args{})
+
+// 	symbolNamesIlike, err := formatSymbolNamesToLikeClause(symbolNames)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	// fmt.Println("This is my symbolNamesIlike >>>", symbolNamesIlike)
+
+// 	query := sqlf.Sprintf(getFullSCIPNameByDescriptorQuery, pq.Array(symbolNamesIlike), pq.Array(uploadID))
+// 	rows, err := s.db.Query(ctx, query)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer func() { err = basestore.CloseRows(rows, err) }()
+
+// 	// fmt.Println("This is my query >>>", query.Query(sqlf.PostgresBindVar), query.Args())
+
+// 	for rows.Next() {
+// 		var n contextshared.SCIPNames
+// 		if err := rows.Scan(&n.Scheme, &n.PackageManager, &n.PackageName, &n.PackageVersion, &n.Descriptor); err != nil {
+// 			return nil, err
+// 		}
+
+// 		names = append(names, &n)
+// 	}
+
+// 	return names, nil
+// }
+
+// const getFullSCIPNameByDescriptorQuery = `
+// SELECT DISTINCT
+//     ssl2.name AS scheme,
+//     ssl3.name AS package_manager,
+//     ssl4.name AS package_name,
+//     ssl5.name AS package_version,
+//     ssl6.name AS descriptor
+// FROM codeintel_scip_symbols ss
+// JOIN codeintel_scip_symbols_lookup ssl1 ON ssl1.upload_id = ss.upload_id AND ssl1.id = ss.descriptor_id
+// JOIN codeintel_scip_symbols_lookup ssl2 ON ssl2.upload_id = ss.upload_id AND ssl2.id = ss.scheme_id
+// JOIN codeintel_scip_symbols_lookup ssl3 ON ssl3.upload_id = ss.upload_id AND ssl3.id = ss.package_manager_id
+// JOIN codeintel_scip_symbols_lookup ssl4 ON ssl4.upload_id = ss.upload_id AND ssl4.id = ss.package_name_id
+// JOIN codeintel_scip_symbols_lookup ssl5 ON ssl5.upload_id = ss.upload_id AND ssl5.id = ss.package_version_id
+// JOIN codeintel_scip_symbols_lookup ssl6 ON ssl6.upload_id = ss.upload_id AND ssl6.id = ss.descriptor_id
+// WHERE
+//     ssl1.name ILIKE ANY(%s) AND
+//     ssl1.scip_name_type = 'DESCRIPTOR' AND
+//     ssl2.scip_name_type = 'SCHEME' AND
+//     ssl3.scip_name_type = 'PACKAGE_MANAGER' AND
+//     ssl4.scip_name_type = 'PACKAGE_NAME' AND
+//     ssl5.scip_name_type = 'PACKAGE_VERSION' AND
+//     ssl6.scip_name_type = 'DESCRIPTOR' AND
+// 	ssl1.upload_id = ANY(%s);
+// `
+
+// func formatSymbolNamesToLikeClause(symbolNames []string) ([]string, error) {
+// 	explodedSymbols := make([]string, 0, len(symbolNames))
+// 	for _, symbolName := range symbolNames {
+// 		ex, err := symbols.NewExplodedSymbol(symbolName)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		explodedSymbols = append(
+// 			explodedSymbols,
+// 			"%"+ex.Descriptor+"%",
+// 		)
+// 	}
+
+// 	return explodedSymbols, nil
+// }
+
 // func (s *store) GetSCIPDocumentsBySymbolNames(ctx context.Context, uploadID int, symbolNames []string) (documents []*scip.Document, err error) {
 // 	ctx, _, endObservation := s.operations.getSCIPDocumentsByPreciseSelector.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 // 		attribute.Int("uploadID", uploadID),
@@ -181,3 +255,22 @@ WHERE
 
 // 	return explodedSymbols
 // }
+
+/*
+
+context: [
+	{
+
+		symbol: "New()."
+		repository: "github.com/sourcegraph/sourcegraph",
+		type: DEFINITION,
+		text: "func New() *Hello {\n\tm := world.New()\n\treturn &Hello{World: m}\n}",
+	},
+	{
+		repository: "github.com/sourcegraph/sourcegraph",
+		type: DEFINITION,
+		text: "func World",
+	},
+]
+
+*/

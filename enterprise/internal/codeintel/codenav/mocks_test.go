@@ -14,6 +14,7 @@ import (
 	lsifstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/lsifstore"
 	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	shared1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	types "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -31,6 +32,10 @@ type MockLsifStore struct {
 	// GetDiagnosticsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDiagnostics.
 	GetDiagnosticsFunc *LsifStoreGetDiagnosticsFunc
+	// GetFullSCIPNameByDescriptorFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// GetFullSCIPNameByDescriptor.
+	GetFullSCIPNameByDescriptorFunc *LsifStoreGetFullSCIPNameByDescriptorFunc
 	// GetHoverFunc is an instance of a mock function object controlling the
 	// behavior of the method GetHover.
 	GetHoverFunc *LsifStoreGetHoverFunc
@@ -60,6 +65,10 @@ type MockLsifStore struct {
 	// object controlling the behavior of the method
 	// GetSCIPDocumentsBySymbolNames.
 	GetSCIPDocumentsBySymbolNamesFunc *LsifStoreGetSCIPDocumentsBySymbolNamesFunc
+	// GetScipDefinitionsLocationFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// GetScipDefinitionsLocation.
+	GetScipDefinitionsLocationFunc *LsifStoreGetScipDefinitionsLocationFunc
 	// GetStencilFunc is an instance of a mock function object controlling
 	// the behavior of the method GetStencil.
 	GetStencilFunc *LsifStoreGetStencilFunc
@@ -84,6 +93,11 @@ func NewMockLsifStore() *MockLsifStore {
 		},
 		GetDiagnosticsFunc: &LsifStoreGetDiagnosticsFunc{
 			defaultHook: func(context.Context, int, string, int, int) (r0 []shared.Diagnostic, r1 int, r2 error) {
+				return
+			},
+		},
+		GetFullSCIPNameByDescriptorFunc: &LsifStoreGetFullSCIPNameByDescriptorFunc{
+			defaultHook: func(context.Context, []int, []string) (r0 []*types.SCIPNames, r1 error) {
 				return
 			},
 		},
@@ -132,6 +146,11 @@ func NewMockLsifStore() *MockLsifStore {
 				return
 			},
 		},
+		GetScipDefinitionsLocationFunc: &LsifStoreGetScipDefinitionsLocationFunc{
+			defaultHook: func(context.Context, *scip.Document, *scip.Occurrence, int, string, int, int) (r0 []shared.Location, r1 int, r2 error) {
+				return
+			},
+		},
 		GetStencilFunc: &LsifStoreGetStencilFunc{
 			defaultHook: func(context.Context, int, string) (r0 []shared.Range, r1 error) {
 				return
@@ -162,6 +181,11 @@ func NewStrictMockLsifStore() *MockLsifStore {
 		GetDiagnosticsFunc: &LsifStoreGetDiagnosticsFunc{
 			defaultHook: func(context.Context, int, string, int, int) ([]shared.Diagnostic, int, error) {
 				panic("unexpected invocation of MockLsifStore.GetDiagnostics")
+			},
+		},
+		GetFullSCIPNameByDescriptorFunc: &LsifStoreGetFullSCIPNameByDescriptorFunc{
+			defaultHook: func(context.Context, []int, []string) ([]*types.SCIPNames, error) {
+				panic("unexpected invocation of MockLsifStore.GetFullSCIPNameByDescriptor")
 			},
 		},
 		GetHoverFunc: &LsifStoreGetHoverFunc{
@@ -209,6 +233,11 @@ func NewStrictMockLsifStore() *MockLsifStore {
 				panic("unexpected invocation of MockLsifStore.GetSCIPDocumentsBySymbolNames")
 			},
 		},
+		GetScipDefinitionsLocationFunc: &LsifStoreGetScipDefinitionsLocationFunc{
+			defaultHook: func(context.Context, *scip.Document, *scip.Occurrence, int, string, int, int) ([]shared.Location, int, error) {
+				panic("unexpected invocation of MockLsifStore.GetScipDefinitionsLocation")
+			},
+		},
 		GetStencilFunc: &LsifStoreGetStencilFunc{
 			defaultHook: func(context.Context, int, string) ([]shared.Range, error) {
 				panic("unexpected invocation of MockLsifStore.GetStencil")
@@ -234,6 +263,9 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		},
 		GetDiagnosticsFunc: &LsifStoreGetDiagnosticsFunc{
 			defaultHook: i.GetDiagnostics,
+		},
+		GetFullSCIPNameByDescriptorFunc: &LsifStoreGetFullSCIPNameByDescriptorFunc{
+			defaultHook: i.GetFullSCIPNameByDescriptor,
 		},
 		GetHoverFunc: &LsifStoreGetHoverFunc{
 			defaultHook: i.GetHover,
@@ -261,6 +293,9 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		},
 		GetSCIPDocumentsBySymbolNamesFunc: &LsifStoreGetSCIPDocumentsBySymbolNamesFunc{
 			defaultHook: i.GetSCIPDocumentsBySymbolNames,
+		},
+		GetScipDefinitionsLocationFunc: &LsifStoreGetScipDefinitionsLocationFunc{
+			defaultHook: i.GetScipDefinitionsLocation,
 		},
 		GetStencilFunc: &LsifStoreGetStencilFunc{
 			defaultHook: i.GetStencil,
@@ -644,6 +679,121 @@ func (c LsifStoreGetDiagnosticsFuncCall) Args() []interface{} {
 // invocation.
 func (c LsifStoreGetDiagnosticsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// LsifStoreGetFullSCIPNameByDescriptorFunc describes the behavior when the
+// GetFullSCIPNameByDescriptor method of the parent MockLsifStore instance
+// is invoked.
+type LsifStoreGetFullSCIPNameByDescriptorFunc struct {
+	defaultHook func(context.Context, []int, []string) ([]*types.SCIPNames, error)
+	hooks       []func(context.Context, []int, []string) ([]*types.SCIPNames, error)
+	history     []LsifStoreGetFullSCIPNameByDescriptorFuncCall
+	mutex       sync.Mutex
+}
+
+// GetFullSCIPNameByDescriptor delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockLsifStore) GetFullSCIPNameByDescriptor(v0 context.Context, v1 []int, v2 []string) ([]*types.SCIPNames, error) {
+	r0, r1 := m.GetFullSCIPNameByDescriptorFunc.nextHook()(v0, v1, v2)
+	m.GetFullSCIPNameByDescriptorFunc.appendCall(LsifStoreGetFullSCIPNameByDescriptorFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetFullSCIPNameByDescriptor method of the parent MockLsifStore instance
+// is invoked and the hook queue is empty.
+func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) SetDefaultHook(hook func(context.Context, []int, []string) ([]*types.SCIPNames, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetFullSCIPNameByDescriptor method of the parent MockLsifStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) PushHook(hook func(context.Context, []int, []string) ([]*types.SCIPNames, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) SetDefaultReturn(r0 []*types.SCIPNames, r1 error) {
+	f.SetDefaultHook(func(context.Context, []int, []string) ([]*types.SCIPNames, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) PushReturn(r0 []*types.SCIPNames, r1 error) {
+	f.PushHook(func(context.Context, []int, []string) ([]*types.SCIPNames, error) {
+		return r0, r1
+	})
+}
+
+func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) nextHook() func(context.Context, []int, []string) ([]*types.SCIPNames, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) appendCall(r0 LsifStoreGetFullSCIPNameByDescriptorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// LsifStoreGetFullSCIPNameByDescriptorFuncCall objects describing the
+// invocations of this function.
+func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) History() []LsifStoreGetFullSCIPNameByDescriptorFuncCall {
+	f.mutex.Lock()
+	history := make([]LsifStoreGetFullSCIPNameByDescriptorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LsifStoreGetFullSCIPNameByDescriptorFuncCall is an object that describes
+// an invocation of method GetFullSCIPNameByDescriptor on an instance of
+// MockLsifStore.
+type LsifStoreGetFullSCIPNameByDescriptorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.SCIPNames
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LsifStoreGetFullSCIPNameByDescriptorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LsifStoreGetFullSCIPNameByDescriptorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // LsifStoreGetHoverFunc describes the behavior when the GetHover method of
@@ -1731,6 +1881,135 @@ func (c LsifStoreGetSCIPDocumentsBySymbolNamesFuncCall) Args() []interface{} {
 // invocation.
 func (c LsifStoreGetSCIPDocumentsBySymbolNamesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// LsifStoreGetScipDefinitionsLocationFunc describes the behavior when the
+// GetScipDefinitionsLocation method of the parent MockLsifStore instance is
+// invoked.
+type LsifStoreGetScipDefinitionsLocationFunc struct {
+	defaultHook func(context.Context, *scip.Document, *scip.Occurrence, int, string, int, int) ([]shared.Location, int, error)
+	hooks       []func(context.Context, *scip.Document, *scip.Occurrence, int, string, int, int) ([]shared.Location, int, error)
+	history     []LsifStoreGetScipDefinitionsLocationFuncCall
+	mutex       sync.Mutex
+}
+
+// GetScipDefinitionsLocation delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockLsifStore) GetScipDefinitionsLocation(v0 context.Context, v1 *scip.Document, v2 *scip.Occurrence, v3 int, v4 string, v5 int, v6 int) ([]shared.Location, int, error) {
+	r0, r1, r2 := m.GetScipDefinitionsLocationFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
+	m.GetScipDefinitionsLocationFunc.appendCall(LsifStoreGetScipDefinitionsLocationFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// GetScipDefinitionsLocation method of the parent MockLsifStore instance is
+// invoked and the hook queue is empty.
+func (f *LsifStoreGetScipDefinitionsLocationFunc) SetDefaultHook(hook func(context.Context, *scip.Document, *scip.Occurrence, int, string, int, int) ([]shared.Location, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetScipDefinitionsLocation method of the parent MockLsifStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *LsifStoreGetScipDefinitionsLocationFunc) PushHook(hook func(context.Context, *scip.Document, *scip.Occurrence, int, string, int, int) ([]shared.Location, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LsifStoreGetScipDefinitionsLocationFunc) SetDefaultReturn(r0 []shared.Location, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, *scip.Document, *scip.Occurrence, int, string, int, int) ([]shared.Location, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LsifStoreGetScipDefinitionsLocationFunc) PushReturn(r0 []shared.Location, r1 int, r2 error) {
+	f.PushHook(func(context.Context, *scip.Document, *scip.Occurrence, int, string, int, int) ([]shared.Location, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *LsifStoreGetScipDefinitionsLocationFunc) nextHook() func(context.Context, *scip.Document, *scip.Occurrence, int, string, int, int) ([]shared.Location, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LsifStoreGetScipDefinitionsLocationFunc) appendCall(r0 LsifStoreGetScipDefinitionsLocationFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LsifStoreGetScipDefinitionsLocationFuncCall
+// objects describing the invocations of this function.
+func (f *LsifStoreGetScipDefinitionsLocationFunc) History() []LsifStoreGetScipDefinitionsLocationFuncCall {
+	f.mutex.Lock()
+	history := make([]LsifStoreGetScipDefinitionsLocationFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LsifStoreGetScipDefinitionsLocationFuncCall is an object that describes
+// an invocation of method GetScipDefinitionsLocation on an instance of
+// MockLsifStore.
+type LsifStoreGetScipDefinitionsLocationFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *scip.Document
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *scip.Occurrence
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 string
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 int
+	// Arg6 is the value of the 7th argument passed to this method
+	// invocation.
+	Arg6 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.Location
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LsifStoreGetScipDefinitionsLocationFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LsifStoreGetScipDefinitionsLocationFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // LsifStoreGetStencilFunc describes the behavior when the GetStencil method

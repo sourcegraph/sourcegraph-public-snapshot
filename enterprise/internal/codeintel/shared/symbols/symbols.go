@@ -13,10 +13,10 @@ type ExplodedSymbol struct {
 	DescriptorNoSuffix string
 }
 
-func NewExplodedSymbol(symbol string) *ExplodedSymbol {
+func NewExplodedSymbol(symbol string) (*ExplodedSymbol, error) {
 	p, err := scip.ParseSymbol(symbol)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	return &ExplodedSymbol{
@@ -26,7 +26,7 @@ func NewExplodedSymbol(symbol string) *ExplodedSymbol {
 		PackageVersion:     p.Package.Version,
 		Descriptor:         scip.DescriptorOnlyFormatter.FormatSymbol(p),
 		DescriptorNoSuffix: ReducedDescriptorOnlyFormatter.FormatSymbol(p),
-	}
+	}, nil
 }
 
 // ReducedDescriptorOnlyFormatter formats a reduced descriptor omitting suffixes outside

@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -36,6 +37,9 @@ type LsifStore interface {
 
 	// Fetch document by symbol name
 	GetSCIPDocumentsBySymbolNames(ctx context.Context, uploadID int, symbolNames []string) (documents []*scip.Document, err error)
+	GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*types.SCIPNames, err error)
+	// GetDefinitions(ctx context.Context, document *scip.Document, symbolName string, uploadID int, path string, limit, offset int) (_ []shared.Location, _ int, err error)
+	GetScipDefinitionsLocation(ctx context.Context, document *scip.Document, occ *scip.Occurrence, uploadID int, path string, limit, offset int) (_ []shared.Location, _ int, err error)
 }
 
 type store struct {

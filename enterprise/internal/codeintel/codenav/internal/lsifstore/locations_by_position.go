@@ -19,22 +19,90 @@ import (
 
 // GetDefinitionLocations returns the set of locations defining the symbol at the given position.
 func (s *store) GetDefinitionLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
-	return s.getLocations(ctx, "definition_ranges", extractDefinitionRanges, s.operations.getDefinitionLocations, bundleID, path, line, character, limit, offset)
+	ctx, trace, endObservation := s.operations.getDefinitionLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("bundleID", bundleID),
+		attribute.String("path", path),
+		attribute.Int("line", line),
+		attribute.Int("character", character),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(locationsDocumentQuery, bundleID, path)))
+	if err != nil || !exists {
+		return nil, 0, err
+	}
+	trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
+
+	occurrences := scip.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
+	trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
+
+	return s.getLocations(ctx, "definition_ranges", extractDefinitionRanges, documentData, occurrences, bundleID, path, limit, offset)
 }
 
 // GetReferenceLocations returns the set of locations referencing the symbol at the given position.
 func (s *store) GetReferenceLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
-	return s.getLocations(ctx, "reference_ranges", extractReferenceRanges, s.operations.getReferenceLocations, bundleID, path, line, character, limit, offset)
+	ctx, trace, endObservation := s.operations.getReferenceLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("bundleID", bundleID),
+		attribute.String("path", path),
+		attribute.Int("line", line),
+		attribute.Int("character", character),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(locationsDocumentQuery, bundleID, path)))
+	if err != nil || !exists {
+		return nil, 0, err
+	}
+	trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
+
+	occurrences := scip.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
+	trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
+
+	return s.getLocations(ctx, "reference_ranges", extractReferenceRanges, documentData, occurrences, bundleID, path, limit, offset)
 }
 
 // GetImplementationLocations returns the set of locations implementing the symbol at the given position.
 func (s *store) GetImplementationLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
-	return s.getLocations(ctx, "implementation_ranges", extractImplementationRanges, s.operations.getImplementationLocations, bundleID, path, line, character, limit, offset)
+	ctx, trace, endObservation := s.operations.getImplementationLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("bundleID", bundleID),
+		attribute.String("path", path),
+		attribute.Int("line", line),
+		attribute.Int("character", character),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(locationsDocumentQuery, bundleID, path)))
+	if err != nil || !exists {
+		return nil, 0, err
+	}
+	trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
+
+	occurrences := scip.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
+	trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
+
+	return s.getLocations(ctx, "implementation_ranges", extractImplementationRanges, documentData, occurrences, bundleID, path, limit, offset)
 }
 
 // GetPrototypeLocations returns the set of locations that are the prototypes of the symbol at the given position.
 func (s *store) GetPrototypeLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
-	return s.getLocations(ctx, "implementation_ranges", extractPrototypesRanges, s.operations.getPrototypesLocations, bundleID, path, line, character, limit, offset)
+	ctx, trace, endObservation := s.operations.getPrototypesLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("bundleID", bundleID),
+		attribute.String("path", path),
+		attribute.Int("line", line),
+		attribute.Int("character", character),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(locationsDocumentQuery, bundleID, path)))
+	if err != nil || !exists {
+		return nil, 0, err
+	}
+	trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
+
+	occurrences := scip.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
+	trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
+
+	return s.getLocations(ctx, "implementation_ranges", extractPrototypesRanges, documentData, occurrences, bundleID, path, limit, offset)
 }
 
 // GetBulkMonikerLocations returns the locations (within one of the given uploads) with an attached moniker
@@ -61,7 +129,11 @@ func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, u
 	for _, arg := range monikers {
 		symbolNames = append(symbolNames, arg.Identifier)
 
-		s := symbols.NewExplodedSymbol(arg.Identifier)
+		// fmt.Println("args.Identifier: ", arg.Identifier)
+		s, err := symbols.NewExplodedSymbol(arg.Identifier)
+		if err != nil {
+			return nil, 0, err
+		}
 		explodedSymbols = append(
 			explodedSymbols,
 			fmt.Sprintf(
@@ -142,35 +214,61 @@ JOIN codeintel_scip_document_lookup dl ON dl.id = ss.document_lookup_id
 ORDER BY ss.upload_id, msn.symbol_name
 `
 
+func (s *store) GetScipDefinitionsLocation(ctx context.Context, document *scip.Document, occ *scip.Occurrence, uploadID int, path string, limit, offset int) (_ []shared.Location, _ int, err error) {
+	qdd := qualifiedDocumentData{UploadID: uploadID, Path: path, SCIPData: document}
+	ocs := []*scip.Occurrence{occ}
+	return s.getLocations(ctx, "definition_ranges", extractDefinitionRanges, qdd, ocs, uploadID, path, 100, 0)
+}
+
+// WORKS
+// TODO: call getLocations in here, then use this method from the context api
+// func (s *store) GetDefinitions(ctx context.Context, document *scip.Document, symbolName string, uploadID int, path string, limit, offset int) (_ []shared.Location, _ int, err error) {
+// 	// documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(locationsDocumentQuery, uploadID, path)))
+// 	// if err != nil || !exists {
+// 	// 	return nil, 0, err
+// 	// }
+
+// 	dd := qualifiedDocumentData{
+// 		UploadID: uploadID,
+// 		Path:     path,
+// 		SCIPData: document,
+// 	}
+// 	occ := scip.FindOccurrencesBySymbolName(document.Occurrences, symbolName)
+// 	fmt.Println("These are the UPDATED occurrences >>> ", occ)
+// 	return s.getLocations(ctx, "definition_ranges", extractDefinitionRanges, dd, occ, uploadID, path, 100, 0)
+// }
+
 func (s *store) getLocations(
 	ctx context.Context,
 	scipFieldName string,
 	scipExtractor func(*scip.Document, *scip.Occurrence) []*scip.Range,
-	operation *observation.Operation,
+	// operation *observation.Operation,
+	documentData qualifiedDocumentData,
+	occurrences []*scip.Occurrence,
 	bundleID int,
 	path string,
-	line, character, limit, offset int,
+	limit, offset int,
 ) (_ []shared.Location, _ int, err error) {
-	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("bundleID", bundleID),
-		attribute.String("path", path),
-		attribute.Int("line", line),
-		attribute.Int("character", character),
-	}})
-	defer endObservation(1, observation.Args{})
+	// ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	// 	attribute.Int("bundleID", bundleID),
+	// 	attribute.String("path", path),
+	// 	attribute.Int("line", line),
+	// 	attribute.Int("character", character),
+	// }})
+	// defer endObservation(1, observation.Args{})
 
-	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
-		locationsDocumentQuery,
-		bundleID,
-		path,
-	)))
-	if err != nil || !exists {
-		return nil, 0, err
-	}
+	// documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
+	// 	locationsDocumentQuery,
+	// 	bundleID,
+	// 	path,
+	// )))
+	// if err != nil || !exists {
+	// 	return nil, 0, err
+	// }
 
-	trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
-	occurrences := scip.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
-	trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
+	// trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
+	// occurrences := scip.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
+	// trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
 
 	for _, occurrence := range occurrences {
 		var locations []shared.Location
@@ -179,7 +277,10 @@ func (s *store) getLocations(
 		}
 
 		if occurrence.Symbol != "" && !scip.IsLocalSymbol(occurrence.Symbol) {
-			ex := symbols.NewExplodedSymbol(occurrence.Symbol)
+			ex, err := symbols.NewExplodedSymbol(occurrence.Symbol)
+			if err != nil {
+				return nil, 0, err
+			}
 			explodedSymbols := fmt.Sprintf(
 				"%s$%s$%s$%s$%s",
 				base64.StdEncoding.EncodeToString([]byte(ex.Scheme)),

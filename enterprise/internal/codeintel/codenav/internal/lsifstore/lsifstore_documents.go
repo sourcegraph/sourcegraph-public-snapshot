@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/symbols"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -60,13 +61,12 @@ func (s *store) GetSCIPDocumentsBySymbolNames(ctx context.Context, uploadID int,
 	}})
 	defer endObservation(1, observation.Args{})
 
-	q := sqlf.Sprintf(
-		getDocumentsBySymbolNameQuery,
-		pq.Array(formatSymbolNamesToLikeClause(symbolNames)),
-		uploadID,
-	)
+	symbolNameIlike, err := formatSymbolNamesToLikeClause(symbolNames)
+	if err != nil {
+		return nil, err
+	}
 
-	rows, err := s.db.Query(ctx, q)
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(getDocumentsBySymbolNameQuery, pq.Array(symbolNameIlike), uploadID))
 	if err != nil {
 		return nil, err
 	}
@@ -124,15 +124,73 @@ WHERE
     AND ssl.upload_id = %s;
 `
 
-func formatSymbolNamesToLikeClause(symbolNames []string) []string {
+func (s *store) GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*types.SCIPNames, err error) {
+	ctx, _, endObservation := s.operations.getFullSCIPNameByDescriptor.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{}})
+	defer endObservation(1, observation.Args{})
+
+	symbolNamesIlike, err := formatSymbolNamesToLikeClause(symbolNames)
+	if err != nil {
+		return nil, err
+	}
+
+	query := sqlf.Sprintf(getFullSCIPNameByDescriptorQuery, pq.Array(symbolNamesIlike), pq.Array(uploadID))
+	rows, err := s.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	// fmt.Println("This is my query >>>", query.Query(sqlf.PostgresBindVar), query.Args())
+
+	for rows.Next() {
+		var n types.SCIPNames
+		if err := rows.Scan(&n.Scheme, &n.PackageManager, &n.PackageName, &n.PackageVersion, &n.Descriptor); err != nil {
+			return nil, err
+		}
+
+		names = append(names, &n)
+	}
+
+	return names, nil
+}
+
+const getFullSCIPNameByDescriptorQuery = `
+SELECT DISTINCT
+    ssl2.name AS scheme,
+    ssl3.name AS package_manager,
+    ssl4.name AS package_name,
+    ssl5.name AS package_version,
+    ssl6.name AS descriptor
+FROM codeintel_scip_symbols ss
+JOIN codeintel_scip_symbols_lookup ssl1 ON ssl1.upload_id = ss.upload_id AND ssl1.id = ss.descriptor_id
+JOIN codeintel_scip_symbols_lookup ssl2 ON ssl2.upload_id = ss.upload_id AND ssl2.id = ss.scheme_id
+JOIN codeintel_scip_symbols_lookup ssl3 ON ssl3.upload_id = ss.upload_id AND ssl3.id = ss.package_manager_id
+JOIN codeintel_scip_symbols_lookup ssl4 ON ssl4.upload_id = ss.upload_id AND ssl4.id = ss.package_name_id
+JOIN codeintel_scip_symbols_lookup ssl5 ON ssl5.upload_id = ss.upload_id AND ssl5.id = ss.package_version_id
+JOIN codeintel_scip_symbols_lookup ssl6 ON ssl6.upload_id = ss.upload_id AND ssl6.id = ss.descriptor_id
+WHERE
+    ssl1.name ILIKE ANY(%s) AND
+    ssl1.scip_name_type = 'DESCRIPTOR' AND
+    ssl2.scip_name_type = 'SCHEME' AND
+    ssl3.scip_name_type = 'PACKAGE_MANAGER' AND
+    ssl4.scip_name_type = 'PACKAGE_NAME' AND
+    ssl5.scip_name_type = 'PACKAGE_VERSION' AND
+    ssl6.scip_name_type = 'DESCRIPTOR' AND
+	ssl1.upload_id = ANY(%s);
+`
+
+func formatSymbolNamesToLikeClause(symbolNames []string) ([]string, error) {
 	explodedSymbols := make([]string, 0, len(symbolNames))
 	for _, symbolName := range symbolNames {
-		ex := symbols.NewExplodedSymbol(symbolName)
+		ex, err := symbols.NewExplodedSymbol(symbolName)
+		if err != nil {
+			return nil, err
+		}
 		explodedSymbols = append(
 			explodedSymbols,
 			"%"+ex.Descriptor+"%",
 		)
 	}
 
-	return explodedSymbols
+	return explodedSymbols, nil
 }

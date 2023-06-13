@@ -16,6 +16,7 @@ type ScipStore interface {
 	GetSCIPDocumentsByPreciseSelector(ctx context.Context, uploadID int, schemeID, packageManagerID, packageManagerName, packageVersionID, descriptorID int) (documents []*scip.Document, err error)
 
 	// GetSCIPDocumentsBySymbolNames(ctx context.Context, uploadID int, symbolNames []string) (documents []*scip.Document, err error)
+	// GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*contextshared.SCIPNames, err error)
 }
 
 type store struct {

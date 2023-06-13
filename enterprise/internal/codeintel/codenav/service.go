@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -279,7 +280,7 @@ func (s *Service) GetReferences(ctx context.Context, args RequestArgs, requestSt
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
 	// locations within the repository the user is browsing so that it appears all references
 	// are occurring at the same commit they are looking at.
-	referenceLocations, err := s.getUploadLocations(ctx, args, requestState, locations, true)
+	referenceLocations, err := s.GetUploadLocations(ctx, args, requestState, locations, true)
 	if err != nil {
 		return nil, cursor, err
 	}
@@ -493,10 +494,10 @@ func (s *Service) getPageRemoteLocations(
 	return filtered, hasAnotherPage, nil
 }
 
-// getUploadLocations translates a set of locations into an equivalent set of locations in the requested
+// GetUploadLocations translates a set of locations into an equivalent set of locations in the requested
 // commit. If includeFallbackLocations is true, then any range in the indexed commit that cannot be translated
 // will use the indexed location. Otherwise, such location are dropped.
-func (s *Service) getUploadLocations(ctx context.Context, args RequestArgs, requestState RequestState, locations []shared.Location, includeFallbackLocations bool) ([]shared.UploadLocation, error) {
+func (s *Service) GetUploadLocations(ctx context.Context, args RequestArgs, requestState RequestState, locations []shared.Location, includeFallbackLocations bool) ([]shared.UploadLocation, error) {
 	uploadLocations := make([]shared.UploadLocation, 0, len(locations))
 
 	checkerEnabled := authz.SubRepoEnabled(requestState.authChecker)
@@ -735,7 +736,7 @@ func (s *Service) GetImplementations(ctx context.Context, args RequestArgs, requ
 	// locations within the repository the user is browsing so that it appears all implementations
 	// are occurring at the same commit they are looking at.
 
-	implementationLocations, err := s.getUploadLocations(ctx, args, requestState, locations, true)
+	implementationLocations, err := s.GetUploadLocations(ctx, args, requestState, locations, true)
 	if err != nil {
 		return nil, cursor, err
 	}
@@ -813,7 +814,7 @@ func (s *Service) GetPrototypes(ctx context.Context, args RequestArgs, requestSt
 	// locations within the repository the user is browsing so that it appears all implementations
 	// are occurring at the same commit they are looking at.
 
-	prototypeLocations, err := s.getUploadLocations(ctx, args, requestState, locations, true)
+	prototypeLocations, err := s.GetUploadLocations(ctx, args, requestState, locations, true)
 	if err != nil {
 		return nil, cursor, err
 	}
@@ -860,9 +861,12 @@ func (s *Service) GetDefinitions(ctx context.Context, args RequestArgs, requestS
 		if err != nil {
 			return nil, errors.Wrap(err, "lsifStore.Definitions")
 		}
+
+		// fmt.Println("These are the locations on location path >>> ", locations)
+
 		if len(locations) > 0 {
 			// If we have a local definition, we won't find a better one and can exit early
-			return s.getUploadLocations(ctx, args, requestState, locations, true)
+			return s.GetUploadLocations(ctx, args, requestState, locations, true)
 		}
 	}
 
@@ -871,9 +875,41 @@ func (s *Service) GetDefinitions(ctx context.Context, args RequestArgs, requestS
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("LALALALALLALALALALALALALLALALA", orderedMonikers)
 	trace.AddEvent("TODO Domain Owner",
 		attribute.Int("numMonikers", len(orderedMonikers)),
 		attribute.String("monikers", monikersToString(orderedMonikers)))
+
+	location, err := s.GetDefinitionBySymbolName(ctx, orderedMonikers, requestState, args)
+	if err != nil {
+		return nil, err
+	}
+
+	return location, nil
+}
+
+func (s *Service) GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*types.SCIPNames, err error) {
+	return s.lsifstore.GetFullSCIPNameByDescriptor(ctx, uploadID, symbolNames)
+}
+
+func (s *Service) GetScipDefinitionsLocation(ctx context.Context, document *scip.Document, occurrence *scip.Occurrence, uploadID int, path string, limit, offset int) (_ []shared.Location, _ int, err error) {
+	// ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getDefinitions, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{}})
+	// defer endObservation()
+
+	// same as s.lsifstore.GetDefinitionLocations but with scip.Document
+	return s.lsifstore.GetScipDefinitionsLocation(ctx, document, occurrence, uploadID, path, limit, offset)
+}
+
+func (s *Service) GetDefinitionBySymbolName(
+	ctx context.Context,
+	orderedMonikers []precise.QualifiedMonikerData,
+	requestState RequestState,
+	args RequestArgs,
+) (_ []shared.UploadLocation, err error) {
+	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getDefinitions, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{}})
+	defer endObservation()
+
+	// fmt.Println("PASSSSSES GetDefinitionBySymbolName 1")
 
 	// TODO: START HERE
 	// Determine the set of uploads over which we need to perform a moniker search. This will
@@ -883,6 +919,8 @@ func (s *Service) GetDefinitions(ctx context.Context, args RequestArgs, requestS
 	if err != nil {
 		return nil, err
 	}
+
+	// fmt.Println("PASSSSSES GetDefinitionBySymbolName 2")
 	trace.AddEvent("TODO Domain Owner",
 		attribute.Int("numXrepoDefinitionUploads", len(uploads)),
 		attribute.String("xrepoDefinitionUploads", uploadIDsToString(uploads)))
@@ -892,13 +930,16 @@ func (s *Service) GetDefinitions(ctx context.Context, args RequestArgs, requestS
 	if err != nil {
 		return nil, err
 	}
+
+	// fmt.Println("PASSSSSES GetDefinitionBySymbolName 3")
+
 	trace.AddEvent("TODO Domain Owner", attribute.Int("numXrepoLocations", len(locations)))
 
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
 	// locations within the repository the user is browsing so that it appears all definitions
 	// are occurring at the same commit they are looking at.
 
-	adjustedLocations, err := s.getUploadLocations(ctx, args, requestState, locations, true)
+	adjustedLocations, err := s.GetUploadLocations(ctx, args, requestState, locations, true)
 	if err != nil {
 		return nil, err
 	}
@@ -1120,17 +1161,17 @@ func (s *Service) getCodeIntelligenceRange(ctx context.Context, args RequestArgs
 		return AdjustedCodeIntelligenceRange{}, false, err
 	}
 
-	definitions, err := s.getUploadLocations(ctx, args, requestState, rn.Definitions, false)
+	definitions, err := s.GetUploadLocations(ctx, args, requestState, rn.Definitions, false)
 	if err != nil {
 		return AdjustedCodeIntelligenceRange{}, false, err
 	}
 
-	references, err := s.getUploadLocations(ctx, args, requestState, rn.References, false)
+	references, err := s.GetUploadLocations(ctx, args, requestState, rn.References, false)
 	if err != nil {
 		return AdjustedCodeIntelligenceRange{}, false, err
 	}
 
-	implementations, err := s.getUploadLocations(ctx, args, requestState, rn.Implementations, false)
+	implementations, err := s.GetUploadLocations(ctx, args, requestState, rn.Implementations, false)
 	if err != nil {
 		return AdjustedCodeIntelligenceRange{}, false, err
 	}

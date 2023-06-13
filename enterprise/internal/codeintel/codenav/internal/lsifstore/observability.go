@@ -19,6 +19,7 @@ type operations struct {
 	getReferenceLocations         *observation.Operation
 	getBulkMonikerLocations       *observation.Operation
 	getSCIPDocumentsBySymbolNames *observation.Operation
+	getFullSCIPNameByDescriptor   *observation.Operation
 	getHover                      *observation.Operation
 	getDiagnostics                *observation.Operation
 	scipDocument                  *observation.Operation
@@ -56,6 +57,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getReferenceLocations:         op("GetReferenceLocations"),
 		getBulkMonikerLocations:       op("GetBulkMonikerLocations"),
 		getSCIPDocumentsBySymbolNames: op("GetSCIPDocumentsBySymbolNames"),
+		getFullSCIPNameByDescriptor:   op("GetFullSCIPNameByDescriptor"),
 		getHover:                      op("GetHover"),
 		getDiagnostics:                op("GetDiagnostics"),
 		scipDocument:                  op("SCIPDocument"),
