@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
 
-	owntypes "github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 
@@ -297,51 +296,6 @@ type reasonAndReference struct {
 	reference own.Reference
 }
 
-// computeCodeowners evaluates the codeowners file (if any) against given file (blob)
-// and returns resolvers for identified owners.
-func (r *ownResolver) computeCodeowners(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver) ([]reasonAndReference, error) {
-	repo := blob.Repository()
-	repoID, repoName := repo.IDInt32(), repo.RepoName()
-	commitID := api.CommitID(blob.Commit().OID())
-	// Find ruleset which represents CODEOWNERS file at given revision.
-	ruleset, err := r.ownService().RulesetForRepo(ctx, repoName, repoID, commitID)
-	if err != nil {
-		return nil, err
-	}
-	var rule *codeownerspb.Rule
-	if ruleset != nil {
-		rule = ruleset.Match(blob.Path())
-	}
-	// Compute repo context if possible to allow better unification of references.
-	var repoContext *own.RepoContext
-	if len(rule.GetOwner()) > 0 {
-		spec, err := repo.ExternalRepo(ctx)
-		// Best effort resolution. We still want to serve the reason if external service cannot be resolved here.
-		if err == nil {
-			repoContext = &own.RepoContext{
-				Name:         repoName,
-				CodeHostKind: spec.ServiceType,
-			}
-		}
-	}
-	// Return references
-	var rrs []reasonAndReference
-	for _, o := range rule.GetOwner() {
-		rrs = append(rrs, reasonAndReference{
-			reason: ownershipReason{
-				codeownersRule:   rule,
-				codeownersSource: ruleset.GetSource(),
-			},
-			reference: own.Reference{
-				RepoContext: repoContext,
-				Handle:      o.Handle,
-				Email:       o.Email,
-			},
-		})
-	}
-	return rrs, nil
-}
-
 type reasonsAndOwner struct {
 	reasons []ownershipReason
 	owner   codeowners.ResolvedOwner
@@ -352,16 +306,16 @@ func (ro reasonsAndOwner) String() string {
 	fmt.Fprint(&b, ro.owner.Identifier())
 	for _, r := range ro.reasons {
 		if r.codeownersRule != nil {
-			fmt.Fprint(&b, " CODEOWNERS")
+			fmt.Fprint(&b, " codeowners")
 		}
 		if len(r.assignedOwnerPath) > 0 {
-			fmt.Fprint(&b, " ASSIGNED OWNER")
+			fmt.Fprint(&b, " assigned-owner")
 		}
 		if r.recentContributionsCount > 0 {
-			fmt.Fprint(&b, " RECENT CONTRIBUTOR")
+			fmt.Fprint(&b, " recent-contributor")
 		}
 		if r.recentViewsCount > 0 {
-			fmt.Fprint(&b, " RECENT VIEWER")
+			fmt.Fprint(&b, " recent-viewer")
 		}
 	}
 	return b.String()
@@ -634,186 +588,11 @@ func (r *ownerResolver) ToTeam() (*graphqlbackend.TeamResolver, bool) {
 	}), true
 }
 
-type codeownersFileEntryResolver struct {
-	db              edb.EnterpriseDB
-	source          codeowners.RulesetSource
-	matchLineNumber int32
-	repo            *graphqlbackend.RepositoryResolver
-	gitserverClient gitserver.Client
-}
-
-func (r *codeownersFileEntryResolver) Title() (string, error) {
-	return "codeowners", nil
-}
-
-func (r *codeownersFileEntryResolver) Description() (string, error) {
-	return "Owner is associated with a rule in a CODEOWNERS file.", nil
-}
-
-func (r *codeownersFileEntryResolver) CodeownersFile(ctx context.Context) (graphqlbackend.FileResolver, error) {
-	switch src := r.source.(type) {
-	case codeowners.IngestedRulesetSource:
-		// For ingested, create a virtual file resolver that loads the raw contents
-		// on demand.
-		stat := graphqlbackend.CreateFileInfo("CODEOWNERS", false)
-		return graphqlbackend.NewVirtualFileResolver(stat, func(ctx context.Context) (string, error) {
-			f, err := r.db.Codeowners().GetCodeownersForRepo(ctx, api.RepoID(src.ID))
-			if err != nil {
-				return "", err
-			}
-			return f.Contents, nil
-		}, graphqlbackend.VirtualFileResolverOptions{
-			URL: fmt.Sprintf("%s/-/own", r.repo.URL()),
-		}), nil
-	case codeowners.GitRulesetSource:
-		// For committed, we can return a GitTreeEntry, as it implements File2.
-		c := graphqlbackend.NewGitCommitResolver(r.db, r.gitserverClient, r.repo, src.Commit, nil)
-		return c.File(ctx, &struct{ Path string }{Path: src.Path})
-	default:
-		return nil, errors.New("unknown ownership file source")
-	}
-}
-
-func (r *codeownersFileEntryResolver) RuleLineMatch(_ context.Context) (int32, error) {
-	return r.matchLineNumber, nil
-}
-
 func areOwnEndpointsAvailable(ctx context.Context) error {
 	if !featureflag.FromContext(ctx).GetBoolOr("search-ownership", false) {
 		return errors.New("own is not available yet")
 	}
 	return nil
-}
-
-type recentContributorOwnershipSignal struct {
-	total int32
-}
-
-func (g *recentContributorOwnershipSignal) Title() (string, error) {
-	return "recent contributor", nil
-}
-
-func (g *recentContributorOwnershipSignal) Description() (string, error) {
-	return "Owner is associated because they have contributed to this file in the last 90 days.", nil
-}
-
-func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) ([]reasonAndReference, error) {
-	enabled, err := db.OwnSignalConfigurations().IsEnabled(ctx, owntypes.SignalRecentContributors)
-	if err != nil {
-		return nil, errors.Wrap(err, "IsEnabled")
-	}
-	if !enabled {
-		return nil, nil
-	}
-
-	recentAuthors, err := db.RecentContributionSignals().FindRecentAuthors(ctx, repoID, path)
-	if err != nil {
-		return nil, errors.Wrap(err, "FindRecentAuthors")
-	}
-
-	var rrs []reasonAndReference
-	for _, a := range recentAuthors {
-		rrs = append(rrs, reasonAndReference{
-			reason: ownershipReason{recentContributionsCount: a.ContributionCount},
-			reference: own.Reference{
-				// Just use the email.
-				Email: a.AuthorEmail,
-			},
-		})
-	}
-	return rrs, nil
-}
-
-type recentViewOwnershipSignal struct {
-	total int32
-}
-
-func (v *recentViewOwnershipSignal) Title() (string, error) {
-	return "recent view", nil
-}
-
-func (v *recentViewOwnershipSignal) Description() (string, error) {
-	return "Owner is associated because they have viewed this file in the last 90 days.", nil
-}
-
-func computeRecentViewSignals(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) ([]reasonAndReference, error) {
-	enabled, err := db.OwnSignalConfigurations().IsEnabled(ctx, owntypes.SignalRecentViews)
-	if err != nil {
-		return nil, errors.Wrap(err, "IsEnabled")
-	}
-	if !enabled {
-		return nil, nil
-	}
-
-	summaries, err := db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{Path: path, RepoID: repoID})
-	if err != nil {
-		return nil, errors.Wrap(err, "list recent view signals")
-	}
-
-	var rrs []reasonAndReference
-	for _, s := range summaries {
-		rrs = append(rrs, reasonAndReference{
-			reason: ownershipReason{recentViewsCount: s.ViewsCount},
-			reference: own.Reference{
-				UserID: s.UserID,
-			},
-		})
-	}
-	return rrs, nil
-}
-
-type assignedOwner struct {
-	directMatch bool
-}
-
-func (a *assignedOwner) Title() (string, error) {
-	return "assigned owner", nil
-}
-
-func (a *assignedOwner) Description() (string, error) {
-	return "Owner is manually assigned.", nil
-}
-
-func (a *assignedOwner) IsDirectMatch() bool {
-	return a.directMatch
-}
-
-func (r *ownResolver) computeAssignedOwners(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, repoID api.RepoID) ([]reasonAndReference, error) {
-	assignedOwnership, err := r.ownService().AssignedOwnership(ctx, repoID, api.CommitID(blob.Commit().OID()))
-	if err != nil {
-		return nil, errors.Wrap(err, "computing assigned ownership")
-	}
-	var rrs []reasonAndReference
-	for _, o := range assignedOwnership.Match(blob.Path()) {
-		rrs = append(rrs, reasonAndReference{
-			reason: ownershipReason{
-				assignedOwnerPath: []string{o.FilePath},
-			},
-			reference: own.Reference{
-				UserID: o.OwnerUserID,
-			},
-		})
-	}
-	return rrs, nil
-}
-
-func (r *ownResolver) computeAssignedTeams(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, repoID api.RepoID) ([]reasonAndReference, error) {
-	assignedTeams, err := r.ownService().AssignedTeams(ctx, repoID, api.CommitID(blob.Commit().OID()))
-	if err != nil {
-		return nil, errors.Wrap(err, "computing assigned ownership")
-	}
-	var rrs []reasonAndReference
-	for _, summary := range assignedTeams.Match(blob.Path()) {
-		rrs = append(rrs, reasonAndReference{
-			reason: ownershipReason{
-				assignedOwnerPath: []string{summary.FilePath},
-			},
-			reference: own.Reference{
-				TeamID: summary.OwnerTeamID,
-			},
-		})
-	}
-	return rrs, nil
 }
 
 func (r *ownResolver) OwnSignalConfigurations(ctx context.Context) ([]graphqlbackend.SignalConfigurationResolver, error) {
