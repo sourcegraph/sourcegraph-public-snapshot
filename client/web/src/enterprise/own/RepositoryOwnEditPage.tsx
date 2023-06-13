@@ -24,7 +24,7 @@ export interface RepositoryOwnAreaPageProps extends Pick<BreadcrumbSetters, 'use
     repo: RepositoryFields
     authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'> | null
 }
-const BREADCRUMB = { key: 'edit-own', element: 'Edit ownership' }
+const EDIT_PAGE_BREADCRUMB = { key: 'edit-own', element: 'Edit ownership' }
 
 export const RepositoryOwnEditPage: React.FunctionComponent<RepositoryOwnAreaPageProps> = ({
     useBreadcrumb,
@@ -32,7 +32,8 @@ export const RepositoryOwnEditPage: React.FunctionComponent<RepositoryOwnAreaPag
     authenticatedUser,
     telemetryService,
 }) => {
-    useBreadcrumb(BREADCRUMB)
+    const breadcrumbSetters = useBreadcrumb({ key: 'own', element: <Link to={`/${repo.name}/-/own`}>Ownership</Link> })
+    breadcrumbSetters.useBreadcrumb(EDIT_PAGE_BREADCRUMB)
 
     const [ownEnabled, status] = useFeatureFlag('search-ownership')
 
