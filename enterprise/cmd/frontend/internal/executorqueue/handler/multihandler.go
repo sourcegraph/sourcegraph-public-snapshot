@@ -99,25 +99,9 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	}
 
 	// discard empty queues
-	var nonEmptyQueues []string
-	for _, queue := range req.Queues {
-		var err error
-		var count int
-		switch queue {
-		case m.BatchesQueueHandler.Name:
-			count, err = m.BatchesQueueHandler.Store.QueuedCount(ctx, false)
-			//m.logger.Info("batches", log.Int("length", count))
-		case m.CodeIntelQueueHandler.Name:
-			count, err = m.CodeIntelQueueHandler.Store.QueuedCount(ctx, false)
-			//m.logger.Info("codeintel", log.Int("length", count))
-		}
-		if err != nil {
-			m.logger.Error("fetching queue size", log.Error(err), log.String("queue", queue))
-			return executortypes.Job{}, false, err
-		}
-		if count != 0 {
-			nonEmptyQueues = append(nonEmptyQueues, queue)
-		}
+	nonEmptyQueues, err := m.filterNonEmptyQueues(ctx, req.Queues)
+	if err != nil {
+		return executortypes.Job{}, false, err
 	}
 	//m.logger.Info("non empty queues", log.Strings("queues", nonEmptyQueues))
 
@@ -132,19 +116,9 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 		selectedQueue = nonEmptyQueues[0]
 	} else {
 		// multiple populated queues, discard queues at dequeue limit
-		var candidateQueues []string
-		for _, queue := range nonEmptyQueues {
-			dequeues, err := m.dequeueCache.GetHashAll(queue)
-			//for key := range dequeues {
-			//	m.logger.Info("dequeues in cache", log.String("queue", queue), log.String("timestamp", key), log.String("job ID", dequeues[key]))
-			//}
-			if err != nil {
-				return executortypes.Job{}, false, errors.Wrapf(err, "failed to check dequeue count for queue '%s'", queue)
-			}
-			if len(dequeues) < executortypes.DequeuePropertiesPerQueue[queue].Limit {
-				//m.logger.Info("adding to candidate queues", log.String("queue", queue), log.Int("dequeues", len(dequeues)), log.Int("limit", dequeuePropertiesPerQueue[queue].limit))
-				candidateQueues = append(candidateQueues, queue)
-			}
+		candidateQueues, err := m.discardQueuesAtLimit(nonEmptyQueues)
+		if err != nil {
+			return executortypes.Job{}, false, err
 		}
 		if len(candidateQueues) == 1 {
 			//m.logger.Info("dequeuing only non empty queue", log.String("queue", candidateQueues[0]))
@@ -156,16 +130,10 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 				candidateQueues = nonEmptyQueues
 			}
 			// final list of candidates: multiple not at limit or all at limit.
-			// pick a queue based on the defined weights
-			var choices []weightedrand.Choice[string, int]
-			for _, queue := range candidateQueues {
-				choices = append(choices, weightedrand.NewChoice(queue, executortypes.DequeuePropertiesPerQueue[queue].Weight))
-			}
-			chooser, err := weightedrand.NewChooser(choices...)
+			selectedQueue, err = m.selectQueueForDequeueing(candidateQueues)
 			if err != nil {
-				return executortypes.Job{}, false, errors.Wrap(err, "failed to randomly select candidate queue to dequeue")
+				return executortypes.Job{}, false, err
 			}
-			selectedQueue = chooser.Pick()
 			//m.logger.Info("selected queue", log.String("queue", selectedQueue))
 		}
 	}
@@ -254,6 +222,61 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	}
 
 	return job, true, nil
+}
+
+func (m *MultiHandler) selectQueueForDequeueing(candidateQueues []string) (string, error) {
+	// pick a queue based on the defined weights
+	var choices []weightedrand.Choice[string, int]
+	for _, queue := range candidateQueues {
+		choices = append(choices, weightedrand.NewChoice(queue, executortypes.DequeuePropertiesPerQueue[queue].Weight))
+	}
+	chooser, err := weightedrand.NewChooser(choices...)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to randomly select candidate queue to dequeue")
+	}
+	return chooser.Pick(), nil
+}
+
+func (m *MultiHandler) discardQueuesAtLimit(queues []string) ([]string, error) {
+	var candidateQueues []string
+	for _, queue := range queues {
+		dequeues, err := m.dequeueCache.GetHashAll(queue)
+		//for key := range dequeues {
+		//	m.logger.Info("dequeues in cache", log.String("queue", queue), log.String("timestamp", key), log.String("job ID", dequeues[key]))
+		//}
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to check dequeue count for queue '%s'", queue)
+		}
+		if len(dequeues) < executortypes.DequeuePropertiesPerQueue[queue].Limit {
+			//m.logger.Info("adding to candidate queues", log.String("queue", queue), log.Int("dequeues", len(dequeues)), log.Int("limit", dequeuePropertiesPerQueue[queue].limit))
+			candidateQueues = append(candidateQueues, queue)
+		}
+	}
+	return candidateQueues, nil
+}
+
+func (m *MultiHandler) filterNonEmptyQueues(ctx context.Context, queueNames []string) ([]string, error) {
+	var nonEmptyQueues []string
+	for _, queue := range queueNames {
+		var err error
+		var count int
+		switch queue {
+		case m.BatchesQueueHandler.Name:
+			count, err = m.BatchesQueueHandler.Store.QueuedCount(ctx, false)
+			//m.logger.Info("batches", log.Int("length", count))
+		case m.CodeIntelQueueHandler.Name:
+			count, err = m.CodeIntelQueueHandler.Store.QueuedCount(ctx, false)
+			//m.logger.Info("codeintel", log.Int("length", count))
+		}
+		if err != nil {
+			m.logger.Error("fetching queue size", log.Error(err), log.String("queue", queue))
+			return nil, err
+		}
+		if count != 0 {
+			nonEmptyQueues = append(nonEmptyQueues, queue)
+		}
+	}
+	return nonEmptyQueues, nil
 }
 
 // HandleHeartbeat processes a heartbeat from a multi-queue executor.
