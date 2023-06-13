@@ -1308,35 +1308,35 @@ commandsets:
 
   codeintel:
     requiresDevPrivate: true
-    checks:
-      - docker
-      - redis
-      - postgres
-      - git
+    # checks:
+    #   - docker
+    #   - redis
+    #   - postgres
+    #   - git
     commands:
       - frontend
-      - worker
-      - repo-updater
-      - web
-      - gitserver-0
-      - gitserver-1
-      - searcher
-      - symbols
-      - caddy
-      - docsite
-      - syntax-highlighter
-      - github-proxy
-      - zoekt-index-0
-      - zoekt-index-1
-      - zoekt-web-0
-      - zoekt-web-1
-      - blobstore
-      - codeintel-worker
-      - codeintel-executor
-      # - otel-collector
-      - jaeger
-      - grafana
-      - prometheus
+      # - worker
+      # - repo-updater
+      # - web
+      # - gitserver-0
+      # - gitserver-1
+      # - searcher
+      # - symbols
+      # - caddy
+      # - docsite
+      # - syntax-highlighter
+      # - github-proxy
+      # - zoekt-index-0
+      # - zoekt-index-1
+      # - zoekt-web-0
+      # - zoekt-web-1
+      # - blobstore
+      # - codeintel-worker
+      # - codeintel-executor
+      # # - otel-collector
+      # - jaeger
+      # - grafana
+      # - prometheus
 
   codeintel-kubernetes:
     requiresDevPrivate: true

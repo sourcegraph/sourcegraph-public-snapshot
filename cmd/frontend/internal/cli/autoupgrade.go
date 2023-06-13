@@ -208,10 +208,13 @@ func finalMileMigrations(obsvCtx *observation.Context) error {
 	if err != nil {
 		return err
 	}
+
 	schemas := []string{"frontend", "codeintel", "codeinsights"}
 	for i, fn := range []func(_ *observation.Context, dsn string, appName string) (*sql.DB, error){
 		connections.MigrateNewFrontendDB, connections.MigrateNewCodeIntelDB, connections.MigrateNewCodeInsightsDB,
 	} {
+		obsvCtx.Logger.Info("Running last-mile migrations", log.String("schema", schemas[i]))
+
 		sqlDB, err := fn(obsvCtx, dsns[schemas[i]], "frontend")
 		if err != nil {
 			return errors.Wrapf(err, "failed to perform last-mile migration for %s schema", schemas[i])
@@ -342,6 +345,12 @@ func serveExternalServer(obsvCtx *observation.Context, sqlDB *sql.DB, db databas
 	goroutine.Go(func() {
 		progressServer.Start()
 	})
+
+	// TODO(efritz) - remove, for debugging
+	for i := 0; i < 3000; i++ {
+		fmt.Printf("TICK!!!\n")
+		time.Sleep(time.Second)
+	}
 
 	return progressServer.Stop, nil
 }

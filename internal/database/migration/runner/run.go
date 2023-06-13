@@ -100,12 +100,6 @@ func (r *Runner) runSchema(
 		return err
 	}
 
-	// TODO(efritz) - remove, for debugging
-	for i := 0; i < 3000; i++ {
-		fmt.Printf("TICK!!!\n")
-		time.Sleep(time.Second)
-	}
-
 	// Filter out any unlisted migrations (most likely future upgrades) and group them by status.
 	byState := groupByState(schemaContext.initialSchemaVersion, definitions)
 

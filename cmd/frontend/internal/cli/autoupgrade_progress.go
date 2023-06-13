@@ -112,5 +112,5 @@ func getProgressPercentage(applied, pending, failed []int) string {
 		return "100%"
 	}
 
-	return fmt.Sprintf("%d%%", float64(len(applied))/float64(total)*100)
+	return fmt.Sprintf("%d%%", int(float64(len(applied))/float64(total)*100))
 }
