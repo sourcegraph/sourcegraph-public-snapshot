@@ -4,8 +4,15 @@ import (
 	"context"
 	"time"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var tracer = otel.Tracer("internal/limiter")
 
 type Limiter interface {
 	// TryAcquire checks if the rate limit has been exceeded and returns no error
@@ -17,10 +24,14 @@ type Limiter interface {
 	//
 	// The commit callback accepts a parameter that dictates how much rate
 	// limit to consume for this request.
-	TryAcquire(ctx context.Context) (commit func(int) error, err error)
+	TryAcquire(ctx context.Context) (commit func(context.Context, int) error, err error)
 }
 
 type StaticLimiter struct {
+	// LimiterName optionally identifies the limiter for instrumentation. If not
+	// provided, 'StaticLimiter' is used.
+	LimiterName string
+
 	// Identifier is the key used to identify the rate limit counter.
 	Identifier string
 
@@ -46,7 +57,23 @@ func RetryAfterWithTTL(redis RedisStore, nowFunc func() time.Time, identifier st
 	return nowFunc().Add(time.Duration(ttl) * time.Second), nil
 }
 
-func (l StaticLimiter) TryAcquire(ctx context.Context) (commit func(int) error, _ error) {
+func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, int) error, err error) {
+	if l.LimiterName == "" {
+		l.LimiterName = "StaticLimiter"
+	}
+	intervalSeconds := l.Interval.Seconds()
+
+	// TODO: ctx is unused after this, but if a usage is added, we need
+	// to update this assignment - removed for now because of ineffassign
+	_, span := tracer.Start(ctx, l.LimiterName+".TryAcquire",
+		trace.WithAttributes(
+			attribute.Int("limit", l.Limit),
+			attribute.Float64("intervalSeconds", intervalSeconds)))
+	defer func() {
+		span.RecordError(err)
+		span.End()
+	}()
+
 	// Zero values implies no access - this is a fallback check, callers should
 	// be checking independently if access is granted.
 	if l.Identifier == "" || l.Limit <= 0 || l.Interval <= 0 {
@@ -99,8 +126,25 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (commit func(int) error, 
 	// yet have a deadline set. This means if the user comes back later we wouldn't of expired
 	// just one token. This seems fine. Note: this isn't an issue on subsequent requests in the
 	// same time block since the TTL would have been set.
-	return func(usage int) error {
-		if _, err := l.Redis.Incrby(l.Identifier, usage); err != nil {
+	return func(ctx context.Context, usage int) (err error) {
+		var incrementedTo, ttlSeconds int
+		// We need to start a new span because the previous one has ended
+		// TODO: ctx is unused after this, but if a usage is added, we need
+		// to update this assignment - removed for now because of ineffassign
+		_, span = tracer.Start(ctx, l.LimiterName+".commit",
+			trace.WithAttributes(attribute.Int("usage", usage)))
+		defer func() {
+			span.SetAttributes(
+				attribute.Int("incrementedTo", incrementedTo),
+				attribute.Int("ttlSeconds", ttlSeconds))
+			if err != nil {
+				span.RecordError(err)
+				span.SetStatus(codes.Error, "failed to commit rate limit usage")
+			}
+			span.End()
+		}()
+
+		if incrementedTo, err = l.Redis.Incrby(l.Identifier, usage); err != nil {
 			return errors.Wrap(err, "failed to increment rate limit counter")
 		}
 
@@ -112,15 +156,16 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (commit func(int) error, 
 		if err != nil {
 			return errors.Wrap(err, "failed to get TTL for rate limit counter")
 		}
-		intervalSeconds := int(l.Interval / time.Second)
 		var alertTTL time.Duration
-		if ttl < 0 || (l.UpdateRateLimitTTL && ttl > intervalSeconds) {
-			if err := l.Redis.Expire(l.Identifier, intervalSeconds); err != nil {
+		if ttl < 0 || (l.UpdateRateLimitTTL && ttl > int(intervalSeconds)) {
+			if err := l.Redis.Expire(l.Identifier, int(intervalSeconds)); err != nil {
 				return errors.Wrap(err, "failed to set expiry for rate limit counter")
 			}
 			alertTTL = time.Duration(intervalSeconds) * time.Second
+			ttlSeconds = int(intervalSeconds)
 		} else {
 			alertTTL = time.Duration(ttl) * time.Second
+			ttlSeconds = ttl
 		}
 
 		if l.RateLimitAlerter != nil {

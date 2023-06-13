@@ -2851,7 +2851,7 @@ Query: `sum(increase(src_oobmigration_errors_total{op="down",job=~"^(frontend|so
 
 #### frontend: frontend_grpc_request_rate_all_methods
 
-<p class="subtitle">Request rate across all methods over 1m</p>
+<p class="subtitle">Request rate across all methods over 2m</p>
 
 The number of gRPC requests received per second across all methods, aggregated across all instances.
 
@@ -2864,7 +2864,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102100`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(frontend_grpc_server_started_total{instance=~`${internalInstance:regex}`}[1m]))`
+Query: `sum(rate(frontend_grpc_server_started_total{instance=~`${internalInstance:regex}`}[2m]))`
 
 </details>
 
@@ -2872,7 +2872,7 @@ Query: `sum(rate(frontend_grpc_server_started_total{instance=~`${internalInstanc
 
 #### frontend: frontend_grpc_request_rate_per_method
 
-<p class="subtitle">Request rate per-method over 1m</p>
+<p class="subtitle">Request rate per-method over 2m</p>
 
 The number of gRPC requests received per second broken out per method, aggregated across all instances.
 
@@ -2885,7 +2885,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102101`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(frontend_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[1m])) by (grpc_method)`
+Query: `sum(rate(frontend_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])) by (grpc_method)`
 
 </details>
 
@@ -2893,7 +2893,7 @@ Query: `sum(rate(frontend_grpc_server_started_total{grpc_method=~`${method:regex
 
 #### frontend: frontend_error_percentage_all_methods
 
-<p class="subtitle">Error percentage across all methods over 1m</p>
+<p class="subtitle">Error percentage across all methods over 2m</p>
 
 The percentage of gRPC requests that fail across all methods, aggregated across all instances.
 
@@ -2906,7 +2906,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102110`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(frontend_grpc_server_handled_total{grpc_code!="OK",instance=~`${internalInstance:regex}`}[1m]))) / (sum(rate(frontend_grpc_server_handled_total{instance=~`${internalInstance:regex}`}[1m]))) ))`
+Query: `(100.0 * ( (sum(rate(frontend_grpc_server_handled_total{grpc_code!="OK",instance=~`${internalInstance:regex}`}[2m]))) / (sum(rate(frontend_grpc_server_handled_total{instance=~`${internalInstance:regex}`}[2m]))) ))`
 
 </details>
 
@@ -2914,7 +2914,7 @@ Query: `(100.0 * ( (sum(rate(frontend_grpc_server_handled_total{grpc_code!="OK",
 
 #### frontend: frontend_grpc_error_percentage_per_method
 
-<p class="subtitle">Error percentage per-method over 1m</p>
+<p class="subtitle">Error percentage per-method over 2m</p>
 
 The percentage of gRPC requests that fail per method, aggregated across all instances.
 
@@ -2927,7 +2927,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102111`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(frontend_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${internalInstance:regex}`}[1m])) by (grpc_method)) / (sum(rate(frontend_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[1m])) by (grpc_method)) ))`
+Query: `(100.0 * ( (sum(rate(frontend_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${internalInstance:regex}`}[2m])) by (grpc_method)) / (sum(rate(frontend_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])) by (grpc_method)) ))`
 
 </details>
 
@@ -2935,7 +2935,7 @@ Query: `(100.0 * ( (sum(rate(frontend_grpc_server_handled_total{grpc_method=~`${
 
 #### frontend: frontend_p99_response_time_per_method
 
-<p class="subtitle">99th percentile response time per method over 1m</p>
+<p class="subtitle">99th percentile response time per method over 2m</p>
 
 The 99th percentile response time per method, aggregated across all instances.
 
@@ -2948,7 +2948,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102120`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(frontend_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[1m])))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(frontend_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])))`
 
 </details>
 
@@ -2956,7 +2956,7 @@ Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(frontend_gr
 
 #### frontend: frontend_p90_response_time_per_method
 
-<p class="subtitle">90th percentile response time per method over 1m</p>
+<p class="subtitle">90th percentile response time per method over 2m</p>
 
 The 90th percentile response time per method, aggregated across all instances.
 
@@ -2969,7 +2969,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102121`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(frontend_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[1m])))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(frontend_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])))`
 
 </details>
 
@@ -2977,7 +2977,7 @@ Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(frontend_gr
 
 #### frontend: frontend_p75_response_time_per_method
 
-<p class="subtitle">75th percentile response time per method over 1m</p>
+<p class="subtitle">75th percentile response time per method over 2m</p>
 
 The 75th percentile response time per method, aggregated across all instances.
 
@@ -2990,7 +2990,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102122`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(frontend_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[1m])))`
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(frontend_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])))`
 
 </details>
 
@@ -2998,7 +2998,7 @@ Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(frontend_gr
 
 #### frontend: frontend_grpc_response_stream_message_count_per_method
 
-<p class="subtitle">Average streaming response message count per-method over 1m</p>
+<p class="subtitle">Average streaming response message count per-method over 2m</p>
 
 The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
 
@@ -3011,7 +3011,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102130`
 <details>
 <summary>Technical details</summary>
 
-Query: `((sum(rate(frontend_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${internalInstance:regex}`}[1m])) by (grpc_method))/(sum(rate(frontend_grpc_server_started_total{grpc_type="server_stream",instance=~`${internalInstance:regex}`}[1m])) by (grpc_method)))`
+Query: `((sum(rate(frontend_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${internalInstance:regex}`}[2m])) by (grpc_method))/(sum(rate(frontend_grpc_server_started_total{grpc_type="server_stream",instance=~`${internalInstance:regex}`}[2m])) by (grpc_method)))`
 
 </details>
 
@@ -3019,7 +3019,7 @@ Query: `((sum(rate(frontend_grpc_server_msg_sent_total{grpc_type="server_stream"
 
 #### frontend: frontend_grpc_all_codes_per_method
 
-<p class="subtitle">Response codes rate per-method over 1m</p>
+<p class="subtitle">Response codes rate per-method over 2m</p>
 
 The rate of all generated gRPC response codes per method, aggregated across all instances.
 
@@ -3032,7 +3032,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102140`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(frontend_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[1m])) by (grpc_method, grpc_code)`
+Query: `sum(rate(frontend_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])) by (grpc_method, grpc_code)`
 
 </details>
 
@@ -3042,7 +3042,7 @@ Query: `sum(rate(frontend_grpc_server_handled_total{grpc_method=~`${method:regex
 
 #### frontend: frontend_grpc_clients_error_percentage_all_methods
 
-<p class="subtitle">Client baseline error percentage across all methods over 1m</p>
+<p class="subtitle">Client baseline error percentage across all methods over 2m</p>
 
 The percentage of gRPC requests that fail across all methods (regardless of whether or not there was an internal error), aggregated across all "frontend" clients.
 
@@ -3055,7 +3055,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102200`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_code!="OK"}[1m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[1m])))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_code!="OK"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))))))`
 
 </details>
 
@@ -3063,7 +3063,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.
 
 #### frontend: frontend_grpc_clients_error_percentage_per_method
 
-<p class="subtitle">Client baseline error percentage per-method over 1m</p>
+<p class="subtitle">Client baseline error percentage per-method over 2m</p>
 
 The percentage of gRPC requests that fail per method (regardless of whether or not there was an internal error), aggregated across all "frontend" clients.
 
@@ -3076,7 +3076,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102201`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${method:regex}",grpc_code!="OK"}[1m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${method:regex}"}[1m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -3084,7 +3084,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.
 
 #### frontend: frontend_grpc_clients_all_codes_per_method
 
-<p class="subtitle">Client baseline response codes rate per-method over 1m</p>
+<p class="subtitle">Client baseline response codes rate per-method over 2m</p>
 
 The rate of all generated gRPC response codes per method (regardless of whether or not there was an internal error), aggregated across all "frontend" clients.
 
@@ -3097,7 +3097,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102202`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${method:regex}"}[1m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -3105,7 +3105,7 @@ Query: `(sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.config
 
 #### frontend: frontend_grpc_clients_internal_error_percentage_all_methods
 
-<p class="subtitle">Client-observed gRPC internal error percentage across all methods over 1m</p>
+<p class="subtitle">Client-observed gRPC internal error percentage across all methods over 2m</p>
 
 The percentage of gRPC requests that appear to fail due to gRPC internal errors across all methods, aggregated across all "frontend" clients.
 
@@ -3124,7 +3124,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102210`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_code!="OK",is_internal_error="true"}[1m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[1m])))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_code!="OK",is_internal_error="true"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))))))`
 
 </details>
 
@@ -3132,7 +3132,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.
 
 #### frontend: frontend_grpc_clients_internal_error_percentage_per_method
 
-<p class="subtitle">Client-observed gRPC internal error percentage per-method over 1m</p>
+<p class="subtitle">Client-observed gRPC internal error percentage per-method over 2m</p>
 
 The percentage of gRPC requests that appear to fail to due to gRPC internal errors per method, aggregated across all "frontend" clients.
 
@@ -3151,7 +3151,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102211`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${method:regex}",grpc_code!="OK",is_internal_error="true"}[1m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${method:regex}"}[1m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -3159,7 +3159,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.
 
 #### frontend: frontend_grpc_clients_internal_error_all_codes_per_method
 
-<p class="subtitle">Client-observed gRPC internal error response code rate per-method over 1m</p>
+<p class="subtitle">Client-observed gRPC internal error response code rate per-method over 2m</p>
 
 The rate of gRPC internal-error response codes per method, aggregated across all "frontend" clients.
 
@@ -3178,7 +3178,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102212`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",is_internal_error="true",grpc_method=~"${method:regex}"}[1m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",is_internal_error="true",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -6319,7 +6319,7 @@ Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",ins
 
 #### gitserver: gitserver_grpc_request_rate_all_methods
 
-<p class="subtitle">Request rate across all methods over 1m</p>
+<p class="subtitle">Request rate across all methods over 2m</p>
 
 The number of gRPC requests received per second across all methods, aggregated across all instances.
 
@@ -6332,7 +6332,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10070
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(gitserver_grpc_server_started_total{instance=~`${shard:regex}`}[1m]))`
+Query: `sum(rate(gitserver_grpc_server_started_total{instance=~`${shard:regex}`}[2m]))`
 
 </details>
 
@@ -6340,7 +6340,7 @@ Query: `sum(rate(gitserver_grpc_server_started_total{instance=~`${shard:regex}`}
 
 #### gitserver: gitserver_grpc_request_rate_per_method
 
-<p class="subtitle">Request rate per-method over 1m</p>
+<p class="subtitle">Request rate per-method over 2m</p>
 
 The number of gRPC requests received per second broken out per method, aggregated across all instances.
 
@@ -6353,7 +6353,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10070
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(gitserver_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])) by (grpc_method)`
+Query: `sum(rate(gitserver_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])) by (grpc_method)`
 
 </details>
 
@@ -6361,7 +6361,7 @@ Query: `sum(rate(gitserver_grpc_server_started_total{grpc_method=~`${method:rege
 
 #### gitserver: gitserver_error_percentage_all_methods
 
-<p class="subtitle">Error percentage across all methods over 1m</p>
+<p class="subtitle">Error percentage across all methods over 2m</p>
 
 The percentage of gRPC requests that fail across all methods, aggregated across all instances.
 
@@ -6374,7 +6374,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10071
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_code!="OK",instance=~`${shard:regex}`}[1m]))) / (sum(rate(gitserver_grpc_server_handled_total{instance=~`${shard:regex}`}[1m]))) ))`
+Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_code!="OK",instance=~`${shard:regex}`}[2m]))) / (sum(rate(gitserver_grpc_server_handled_total{instance=~`${shard:regex}`}[2m]))) ))`
 
 </details>
 
@@ -6382,7 +6382,7 @@ Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_code!="OK"
 
 #### gitserver: gitserver_grpc_error_percentage_per_method
 
-<p class="subtitle">Error percentage per-method over 1m</p>
+<p class="subtitle">Error percentage per-method over 2m</p>
 
 The percentage of gRPC requests that fail per method, aggregated across all instances.
 
@@ -6395,7 +6395,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10071
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${shard:regex}`}[1m])) by (grpc_method)) / (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])) by (grpc_method)) ))`
+Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${shard:regex}`}[2m])) by (grpc_method)) / (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])) by (grpc_method)) ))`
 
 </details>
 
@@ -6403,7 +6403,7 @@ Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`$
 
 #### gitserver: gitserver_p99_response_time_per_method
 
-<p class="subtitle">99th percentile response time per method over 1m</p>
+<p class="subtitle">99th percentile response time per method over 2m</p>
 
 The 99th percentile response time per method, aggregated across all instances.
 
@@ -6416,7 +6416,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10072
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])))`
 
 </details>
 
@@ -6424,7 +6424,7 @@ Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(gitserver_g
 
 #### gitserver: gitserver_p90_response_time_per_method
 
-<p class="subtitle">90th percentile response time per method over 1m</p>
+<p class="subtitle">90th percentile response time per method over 2m</p>
 
 The 90th percentile response time per method, aggregated across all instances.
 
@@ -6437,7 +6437,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10072
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])))`
 
 </details>
 
@@ -6445,7 +6445,7 @@ Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(gitserver_g
 
 #### gitserver: gitserver_p75_response_time_per_method
 
-<p class="subtitle">75th percentile response time per method over 1m</p>
+<p class="subtitle">75th percentile response time per method over 2m</p>
 
 The 75th percentile response time per method, aggregated across all instances.
 
@@ -6458,7 +6458,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10072
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])))`
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])))`
 
 </details>
 
@@ -6466,7 +6466,7 @@ Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(gitserver_g
 
 #### gitserver: gitserver_grpc_response_stream_message_count_per_method
 
-<p class="subtitle">Average streaming response message count per-method over 1m</p>
+<p class="subtitle">Average streaming response message count per-method over 2m</p>
 
 The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
 
@@ -6479,7 +6479,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10073
 <details>
 <summary>Technical details</summary>
 
-Query: `((sum(rate(gitserver_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${shard:regex}`}[1m])) by (grpc_method))/(sum(rate(gitserver_grpc_server_started_total{grpc_type="server_stream",instance=~`${shard:regex}`}[1m])) by (grpc_method)))`
+Query: `((sum(rate(gitserver_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${shard:regex}`}[2m])) by (grpc_method))/(sum(rate(gitserver_grpc_server_started_total{grpc_type="server_stream",instance=~`${shard:regex}`}[2m])) by (grpc_method)))`
 
 </details>
 
@@ -6487,7 +6487,7 @@ Query: `((sum(rate(gitserver_grpc_server_msg_sent_total{grpc_type="server_stream
 
 #### gitserver: gitserver_grpc_all_codes_per_method
 
-<p class="subtitle">Response codes rate per-method over 1m</p>
+<p class="subtitle">Response codes rate per-method over 2m</p>
 
 The rate of all generated gRPC response codes per method, aggregated across all instances.
 
@@ -6500,7 +6500,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10074
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[1m])) by (grpc_method, grpc_code)`
+Query: `sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])) by (grpc_method, grpc_code)`
 
 </details>
 
@@ -6510,7 +6510,7 @@ Query: `sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:rege
 
 #### gitserver: gitserver_grpc_clients_error_percentage_all_methods
 
-<p class="subtitle">Client baseline error percentage across all methods over 1m</p>
+<p class="subtitle">Client baseline error percentage across all methods over 2m</p>
 
 The percentage of gRPC requests that fail across all methods (regardless of whether or not there was an internal error), aggregated across all "gitserver" clients.
 
@@ -6523,7 +6523,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10080
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_code!="OK"}[1m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService"}[1m])))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_code!="OK"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService"}[2m])))))))`
 
 </details>
 
@@ -6531,7 +6531,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1
 
 #### gitserver: gitserver_grpc_clients_error_percentage_per_method
 
-<p class="subtitle">Client baseline error percentage per-method over 1m</p>
+<p class="subtitle">Client baseline error percentage per-method over 2m</p>
 
 The percentage of gRPC requests that fail per method (regardless of whether or not there was an internal error), aggregated across all "gitserver" clients.
 
@@ -6544,7 +6544,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10080
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${method:regex}",grpc_code!="OK"}[1m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${method:regex}"}[1m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -6552,7 +6552,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1
 
 #### gitserver: gitserver_grpc_clients_all_codes_per_method
 
-<p class="subtitle">Client baseline response codes rate per-method over 1m</p>
+<p class="subtitle">Client baseline response codes rate per-method over 2m</p>
 
 The rate of all generated gRPC response codes per method (regardless of whether or not there was an internal error), aggregated across all "gitserver" clients.
 
@@ -6565,7 +6565,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10080
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${method:regex}"}[1m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -6573,7 +6573,7 @@ Query: `(sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverSe
 
 #### gitserver: gitserver_grpc_clients_internal_error_percentage_all_methods
 
-<p class="subtitle">Client-observed gRPC internal error percentage across all methods over 1m</p>
+<p class="subtitle">Client-observed gRPC internal error percentage across all methods over 2m</p>
 
 The percentage of gRPC requests that appear to fail due to gRPC internal errors across all methods, aggregated across all "gitserver" clients.
 
@@ -6592,7 +6592,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10081
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_code!="OK",is_internal_error="true"}[1m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService"}[1m])))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_code!="OK",is_internal_error="true"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService"}[2m])))))))`
 
 </details>
 
@@ -6600,7 +6600,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1
 
 #### gitserver: gitserver_grpc_clients_internal_error_percentage_per_method
 
-<p class="subtitle">Client-observed gRPC internal error percentage per-method over 1m</p>
+<p class="subtitle">Client-observed gRPC internal error percentage per-method over 2m</p>
 
 The percentage of gRPC requests that appear to fail to due to gRPC internal errors per method, aggregated across all "gitserver" clients.
 
@@ -6619,7 +6619,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10081
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${method:regex}",grpc_code!="OK",is_internal_error="true"}[1m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${method:regex}"}[1m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -6627,7 +6627,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1
 
 #### gitserver: gitserver_grpc_clients_internal_error_all_codes_per_method
 
-<p class="subtitle">Client-observed gRPC internal error response code rate per-method over 1m</p>
+<p class="subtitle">Client-observed gRPC internal error response code rate per-method over 2m</p>
 
 The rate of gRPC internal-error response codes per method, aggregated across all "gitserver" clients.
 
@@ -6646,7 +6646,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10081
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",is_internal_error="true",grpc_method=~"${method:regex}"}[1m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverService",is_internal_error="true",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -14578,7 +14578,7 @@ Query: `sum by (op)(increase(src_codeintel_npm_errors_total{op!="RunCommand",job
 
 #### repo-updater: repo_updater_grpc_request_rate_all_methods
 
-<p class="subtitle">Request rate across all methods over 1m</p>
+<p class="subtitle">Request rate across all methods over 2m</p>
 
 The number of gRPC requests received per second across all methods, aggregated across all instances.
 
@@ -14591,7 +14591,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(repo_updater_grpc_server_started_total{instance=~`${instance:regex}`}[1m]))`
+Query: `sum(rate(repo_updater_grpc_server_started_total{instance=~`${instance:regex}`}[2m]))`
 
 </details>
 
@@ -14599,7 +14599,7 @@ Query: `sum(rate(repo_updater_grpc_server_started_total{instance=~`${instance:re
 
 #### repo-updater: repo_updater_grpc_request_rate_per_method
 
-<p class="subtitle">Request rate per-method over 1m</p>
+<p class="subtitle">Request rate per-method over 2m</p>
 
 The number of gRPC requests received per second broken out per method, aggregated across all instances.
 
@@ -14612,7 +14612,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(repo_updater_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method)`
+Query: `sum(rate(repo_updater_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)`
 
 </details>
 
@@ -14620,7 +14620,7 @@ Query: `sum(rate(repo_updater_grpc_server_started_total{grpc_method=~`${method:r
 
 #### repo-updater: repo_updater_error_percentage_all_methods
 
-<p class="subtitle">Error percentage across all methods over 1m</p>
+<p class="subtitle">Error percentage across all methods over 2m</p>
 
 The percentage of gRPC requests that fail across all methods, aggregated across all instances.
 
@@ -14633,7 +14633,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(repo_updater_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[1m]))) / (sum(rate(repo_updater_grpc_server_handled_total{instance=~`${instance:regex}`}[1m]))) ))`
+Query: `(100.0 * ( (sum(rate(repo_updater_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[2m]))) / (sum(rate(repo_updater_grpc_server_handled_total{instance=~`${instance:regex}`}[2m]))) ))`
 
 </details>
 
@@ -14641,7 +14641,7 @@ Query: `(100.0 * ( (sum(rate(repo_updater_grpc_server_handled_total{grpc_code!="
 
 #### repo-updater: repo_updater_grpc_error_percentage_per_method
 
-<p class="subtitle">Error percentage per-method over 1m</p>
+<p class="subtitle">Error percentage per-method over 2m</p>
 
 The percentage of gRPC requests that fail per method, aggregated across all instances.
 
@@ -14654,7 +14654,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(repo_updater_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`}[1m])) by (grpc_method)) / (sum(rate(repo_updater_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method)) ))`
+Query: `(100.0 * ( (sum(rate(repo_updater_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`}[2m])) by (grpc_method)) / (sum(rate(repo_updater_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)) ))`
 
 </details>
 
@@ -14662,7 +14662,7 @@ Query: `(100.0 * ( (sum(rate(repo_updater_grpc_server_handled_total{grpc_method=
 
 #### repo-updater: repo_updater_p99_response_time_per_method
 
-<p class="subtitle">99th percentile response time per method over 1m</p>
+<p class="subtitle">99th percentile response time per method over 2m</p>
 
 The 99th percentile response time per method, aggregated across all instances.
 
@@ -14675,7 +14675,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(repo_updater_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(repo_updater_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
 
 </details>
 
@@ -14683,7 +14683,7 @@ Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(repo_update
 
 #### repo-updater: repo_updater_p90_response_time_per_method
 
-<p class="subtitle">90th percentile response time per method over 1m</p>
+<p class="subtitle">90th percentile response time per method over 2m</p>
 
 The 90th percentile response time per method, aggregated across all instances.
 
@@ -14696,7 +14696,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(repo_updater_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(repo_updater_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
 
 </details>
 
@@ -14704,7 +14704,7 @@ Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(repo_update
 
 #### repo-updater: repo_updater_p75_response_time_per_method
 
-<p class="subtitle">75th percentile response time per method over 1m</p>
+<p class="subtitle">75th percentile response time per method over 2m</p>
 
 The 75th percentile response time per method, aggregated across all instances.
 
@@ -14717,7 +14717,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(repo_updater_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(repo_updater_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
 
 </details>
 
@@ -14725,7 +14725,7 @@ Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(repo_update
 
 #### repo-updater: repo_updater_grpc_response_stream_message_count_per_method
 
-<p class="subtitle">Average streaming response message count per-method over 1m</p>
+<p class="subtitle">Average streaming response message count per-method over 2m</p>
 
 The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
 
@@ -14738,7 +14738,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `((sum(rate(repo_updater_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method))/(sum(rate(repo_updater_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method)))`
+Query: `((sum(rate(repo_updater_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method))/(sum(rate(repo_updater_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method)))`
 
 </details>
 
@@ -14746,7 +14746,7 @@ Query: `((sum(rate(repo_updater_grpc_server_msg_sent_total{grpc_type="server_str
 
 #### repo-updater: repo_updater_grpc_all_codes_per_method
 
-<p class="subtitle">Response codes rate per-method over 1m</p>
+<p class="subtitle">Response codes rate per-method over 2m</p>
 
 The rate of all generated gRPC response codes per method, aggregated across all instances.
 
@@ -14759,7 +14759,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(repo_updater_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, grpc_code)`
+Query: `sum(rate(repo_updater_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method, grpc_code)`
 
 </details>
 
@@ -14769,7 +14769,7 @@ Query: `sum(rate(repo_updater_grpc_server_handled_total{grpc_method=~`${method:r
 
 #### repo-updater: repo_updater_grpc_clients_error_percentage_all_methods
 
-<p class="subtitle">Client baseline error percentage across all methods over 1m</p>
+<p class="subtitle">Client baseline error percentage across all methods over 2m</p>
 
 The percentage of gRPC requests that fail across all methods (regardless of whether or not there was an internal error), aggregated across all "repo_updater" clients.
 
@@ -14782,7 +14782,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_code!="OK"}[1m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService"}[1m])))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_code!="OK"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))))))`
 
 </details>
 
@@ -14790,7 +14790,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.
 
 #### repo-updater: repo_updater_grpc_clients_error_percentage_per_method
 
-<p class="subtitle">Client baseline error percentage per-method over 1m</p>
+<p class="subtitle">Client baseline error percentage per-method over 2m</p>
 
 The percentage of gRPC requests that fail per method (regardless of whether or not there was an internal error), aggregated across all "repo_updater" clients.
 
@@ -14803,7 +14803,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${method:regex}",grpc_code!="OK"}[1m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${method:regex}"}[1m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -14811,7 +14811,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.
 
 #### repo-updater: repo_updater_grpc_clients_all_codes_per_method
 
-<p class="subtitle">Client baseline response codes rate per-method over 1m</p>
+<p class="subtitle">Client baseline response codes rate per-method over 2m</p>
 
 The rate of all generated gRPC response codes per method (regardless of whether or not there was an internal error), aggregated across all "repo_updater" clients.
 
@@ -14824,7 +14824,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${method:regex}"}[1m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -14832,7 +14832,7 @@ Query: `(sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdat
 
 #### repo-updater: repo_updater_grpc_clients_internal_error_percentage_all_methods
 
-<p class="subtitle">Client-observed gRPC internal error percentage across all methods over 1m</p>
+<p class="subtitle">Client-observed gRPC internal error percentage across all methods over 2m</p>
 
 The percentage of gRPC requests that appear to fail due to gRPC internal errors across all methods, aggregated across all "repo_updater" clients.
 
@@ -14851,7 +14851,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_code!="OK",is_internal_error="true"}[1m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService"}[1m])))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_code!="OK",is_internal_error="true"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))))))`
 
 </details>
 
@@ -14859,7 +14859,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.
 
 #### repo-updater: repo_updater_grpc_clients_internal_error_percentage_per_method
 
-<p class="subtitle">Client-observed gRPC internal error percentage per-method over 1m</p>
+<p class="subtitle">Client-observed gRPC internal error percentage per-method over 2m</p>
 
 The percentage of gRPC requests that appear to fail to due to gRPC internal errors per method, aggregated across all "repo_updater" clients.
 
@@ -14878,7 +14878,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${method:regex}",grpc_code!="OK",is_internal_error="true"}[1m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${method:regex}"}[1m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -14886,7 +14886,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.
 
 #### repo-updater: repo_updater_grpc_clients_internal_error_all_codes_per_method
 
-<p class="subtitle">Client-observed gRPC internal error response code rate per-method over 1m</p>
+<p class="subtitle">Client-observed gRPC internal error response code rate per-method over 2m</p>
 
 The rate of gRPC internal-error response codes per method, aggregated across all "repo_updater" clients.
 
@@ -14905,7 +14905,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",is_internal_error="true",grpc_method=~"${method:regex}"}[1m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdaterService",is_internal_error="true",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -15952,7 +15952,7 @@ Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",inst
 
 #### searcher: searcher_grpc_request_rate_all_methods
 
-<p class="subtitle">Request rate across all methods over 1m</p>
+<p class="subtitle">Request rate across all methods over 2m</p>
 
 The number of gRPC requests received per second across all methods, aggregated across all instances.
 
@@ -15965,7 +15965,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100400`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(searcher_grpc_server_started_total{instance=~`${instance:regex}`}[1m]))`
+Query: `sum(rate(searcher_grpc_server_started_total{instance=~`${instance:regex}`}[2m]))`
 
 </details>
 
@@ -15973,7 +15973,7 @@ Query: `sum(rate(searcher_grpc_server_started_total{instance=~`${instance:regex}
 
 #### searcher: searcher_grpc_request_rate_per_method
 
-<p class="subtitle">Request rate per-method over 1m</p>
+<p class="subtitle">Request rate per-method over 2m</p>
 
 The number of gRPC requests received per second broken out per method, aggregated across all instances.
 
@@ -15986,7 +15986,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100401`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(searcher_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method)`
+Query: `sum(rate(searcher_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)`
 
 </details>
 
@@ -15994,7 +15994,7 @@ Query: `sum(rate(searcher_grpc_server_started_total{grpc_method=~`${method:regex
 
 #### searcher: searcher_error_percentage_all_methods
 
-<p class="subtitle">Error percentage across all methods over 1m</p>
+<p class="subtitle">Error percentage across all methods over 2m</p>
 
 The percentage of gRPC requests that fail across all methods, aggregated across all instances.
 
@@ -16007,7 +16007,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100410`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[1m]))) / (sum(rate(searcher_grpc_server_handled_total{instance=~`${instance:regex}`}[1m]))) ))`
+Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[2m]))) / (sum(rate(searcher_grpc_server_handled_total{instance=~`${instance:regex}`}[2m]))) ))`
 
 </details>
 
@@ -16015,7 +16015,7 @@ Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_code!="OK",
 
 #### searcher: searcher_grpc_error_percentage_per_method
 
-<p class="subtitle">Error percentage per-method over 1m</p>
+<p class="subtitle">Error percentage per-method over 2m</p>
 
 The percentage of gRPC requests that fail per method, aggregated across all instances.
 
@@ -16028,7 +16028,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100411`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`}[1m])) by (grpc_method)) / (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method)) ))`
+Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`}[2m])) by (grpc_method)) / (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)) ))`
 
 </details>
 
@@ -16036,7 +16036,7 @@ Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${
 
 #### searcher: searcher_p99_response_time_per_method
 
-<p class="subtitle">99th percentile response time per method over 1m</p>
+<p class="subtitle">99th percentile response time per method over 2m</p>
 
 The 99th percentile response time per method, aggregated across all instances.
 
@@ -16049,7 +16049,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100420`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
 
 </details>
 
@@ -16057,7 +16057,7 @@ Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(searcher_gr
 
 #### searcher: searcher_p90_response_time_per_method
 
-<p class="subtitle">90th percentile response time per method over 1m</p>
+<p class="subtitle">90th percentile response time per method over 2m</p>
 
 The 90th percentile response time per method, aggregated across all instances.
 
@@ -16070,7 +16070,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100421`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
 
 </details>
 
@@ -16078,7 +16078,7 @@ Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(searcher_gr
 
 #### searcher: searcher_p75_response_time_per_method
 
-<p class="subtitle">75th percentile response time per method over 1m</p>
+<p class="subtitle">75th percentile response time per method over 2m</p>
 
 The 75th percentile response time per method, aggregated across all instances.
 
@@ -16091,7 +16091,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100422`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
 
 </details>
 
@@ -16099,7 +16099,7 @@ Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(searcher_gr
 
 #### searcher: searcher_grpc_response_stream_message_count_per_method
 
-<p class="subtitle">Average streaming response message count per-method over 1m</p>
+<p class="subtitle">Average streaming response message count per-method over 2m</p>
 
 The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
 
@@ -16112,7 +16112,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100430`
 <details>
 <summary>Technical details</summary>
 
-Query: `((sum(rate(searcher_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method))/(sum(rate(searcher_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method)))`
+Query: `((sum(rate(searcher_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method))/(sum(rate(searcher_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method)))`
 
 </details>
 
@@ -16120,7 +16120,7 @@ Query: `((sum(rate(searcher_grpc_server_msg_sent_total{grpc_type="server_stream"
 
 #### searcher: searcher_grpc_all_codes_per_method
 
-<p class="subtitle">Response codes rate per-method over 1m</p>
+<p class="subtitle">Response codes rate per-method over 2m</p>
 
 The rate of all generated gRPC response codes per method, aggregated across all instances.
 
@@ -16133,7 +16133,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100440`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, grpc_code)`
+Query: `sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method, grpc_code)`
 
 </details>
 
@@ -16143,7 +16143,7 @@ Query: `sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex
 
 #### searcher: searcher_grpc_clients_error_percentage_all_methods
 
-<p class="subtitle">Client baseline error percentage across all methods over 1m</p>
+<p class="subtitle">Client baseline error percentage across all methods over 2m</p>
 
 The percentage of gRPC requests that fail across all methods (regardless of whether or not there was an internal error), aggregated across all "searcher" clients.
 
@@ -16156,7 +16156,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100500`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_code!="OK"}[1m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService"}[1m])))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_code!="OK"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService"}[2m])))))))`
 
 </details>
 
@@ -16164,7 +16164,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.
 
 #### searcher: searcher_grpc_clients_error_percentage_per_method
 
-<p class="subtitle">Client baseline error percentage per-method over 1m</p>
+<p class="subtitle">Client baseline error percentage per-method over 2m</p>
 
 The percentage of gRPC requests that fail per method (regardless of whether or not there was an internal error), aggregated across all "searcher" clients.
 
@@ -16177,7 +16177,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100501`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${method:regex}",grpc_code!="OK"}[1m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${method:regex}"}[1m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -16185,7 +16185,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.
 
 #### searcher: searcher_grpc_clients_all_codes_per_method
 
-<p class="subtitle">Client baseline response codes rate per-method over 1m</p>
+<p class="subtitle">Client baseline response codes rate per-method over 2m</p>
 
 The rate of all generated gRPC response codes per method (regardless of whether or not there was an internal error), aggregated across all "searcher" clients.
 
@@ -16198,7 +16198,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100502`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${method:regex}"}[1m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -16206,7 +16206,7 @@ Query: `(sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherServ
 
 #### searcher: searcher_grpc_clients_internal_error_percentage_all_methods
 
-<p class="subtitle">Client-observed gRPC internal error percentage across all methods over 1m</p>
+<p class="subtitle">Client-observed gRPC internal error percentage across all methods over 2m</p>
 
 The percentage of gRPC requests that appear to fail due to gRPC internal errors across all methods, aggregated across all "searcher" clients.
 
@@ -16225,7 +16225,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100510`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_code!="OK",is_internal_error="true"}[1m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService"}[1m])))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_code!="OK",is_internal_error="true"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService"}[2m])))))))`
 
 </details>
 
@@ -16233,7 +16233,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.
 
 #### searcher: searcher_grpc_clients_internal_error_percentage_per_method
 
-<p class="subtitle">Client-observed gRPC internal error percentage per-method over 1m</p>
+<p class="subtitle">Client-observed gRPC internal error percentage per-method over 2m</p>
 
 The percentage of gRPC requests that appear to fail to due to gRPC internal errors per method, aggregated across all "searcher" clients.
 
@@ -16252,7 +16252,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100511`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${method:regex}",grpc_code!="OK",is_internal_error="true"}[1m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${method:regex}"}[1m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -16260,7 +16260,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.
 
 #### searcher: searcher_grpc_clients_internal_error_all_codes_per_method
 
-<p class="subtitle">Client-observed gRPC internal error response code rate per-method over 1m</p>
+<p class="subtitle">Client-observed gRPC internal error response code rate per-method over 2m</p>
 
 The rate of gRPC internal-error response codes per method, aggregated across all "searcher" clients.
 
@@ -16279,7 +16279,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100512`
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",is_internal_error="true",grpc_method=~"${method:regex}"}[1m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherService",is_internal_error="true",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -17519,7 +17519,7 @@ Query: `sum by (op)(increase(src_codeintel_symbols_gitserver_errors_total{job=~"
 
 #### symbols: symbols_grpc_request_rate_all_methods
 
-<p class="subtitle">Request rate across all methods over 1m</p>
+<p class="subtitle">Request rate across all methods over 2m</p>
 
 The number of gRPC requests received per second across all methods, aggregated across all instances.
 
@@ -17532,7 +17532,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100500` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(symbols_grpc_server_started_total{instance=~`${instance:regex}`}[1m]))`
+Query: `sum(rate(symbols_grpc_server_started_total{instance=~`${instance:regex}`}[2m]))`
 
 </details>
 
@@ -17540,7 +17540,7 @@ Query: `sum(rate(symbols_grpc_server_started_total{instance=~`${instance:regex}`
 
 #### symbols: symbols_grpc_request_rate_per_method
 
-<p class="subtitle">Request rate per-method over 1m</p>
+<p class="subtitle">Request rate per-method over 2m</p>
 
 The number of gRPC requests received per second broken out per method, aggregated across all instances.
 
@@ -17553,7 +17553,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100501` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(symbols_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method)`
+Query: `sum(rate(symbols_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)`
 
 </details>
 
@@ -17561,7 +17561,7 @@ Query: `sum(rate(symbols_grpc_server_started_total{grpc_method=~`${method:regex}
 
 #### symbols: symbols_error_percentage_all_methods
 
-<p class="subtitle">Error percentage across all methods over 1m</p>
+<p class="subtitle">Error percentage across all methods over 2m</p>
 
 The percentage of gRPC requests that fail across all methods, aggregated across all instances.
 
@@ -17574,7 +17574,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100510` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[1m]))) / (sum(rate(symbols_grpc_server_handled_total{instance=~`${instance:regex}`}[1m]))) ))`
+Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[2m]))) / (sum(rate(symbols_grpc_server_handled_total{instance=~`${instance:regex}`}[2m]))) ))`
 
 </details>
 
@@ -17582,7 +17582,7 @@ Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_code!="OK",i
 
 #### symbols: symbols_grpc_error_percentage_per_method
 
-<p class="subtitle">Error percentage per-method over 1m</p>
+<p class="subtitle">Error percentage per-method over 2m</p>
 
 The percentage of gRPC requests that fail per method, aggregated across all instances.
 
@@ -17595,7 +17595,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100511` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`}[1m])) by (grpc_method)) / (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method)) ))`
+Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`}[2m])) by (grpc_method)) / (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)) ))`
 
 </details>
 
@@ -17603,7 +17603,7 @@ Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${m
 
 #### symbols: symbols_p99_response_time_per_method
 
-<p class="subtitle">99th percentile response time per method over 1m</p>
+<p class="subtitle">99th percentile response time per method over 2m</p>
 
 The 99th percentile response time per method, aggregated across all instances.
 
@@ -17616,7 +17616,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100520` o
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
 
 </details>
 
@@ -17624,7 +17624,7 @@ Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(symbols_grp
 
 #### symbols: symbols_p90_response_time_per_method
 
-<p class="subtitle">90th percentile response time per method over 1m</p>
+<p class="subtitle">90th percentile response time per method over 2m</p>
 
 The 90th percentile response time per method, aggregated across all instances.
 
@@ -17637,7 +17637,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100521` o
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
 
 </details>
 
@@ -17645,7 +17645,7 @@ Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(symbols_grp
 
 #### symbols: symbols_p75_response_time_per_method
 
-<p class="subtitle">75th percentile response time per method over 1m</p>
+<p class="subtitle">75th percentile response time per method over 2m</p>
 
 The 75th percentile response time per method, aggregated across all instances.
 
@@ -17658,7 +17658,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100522` o
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])))`
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
 
 </details>
 
@@ -17666,7 +17666,7 @@ Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(symbols_grp
 
 #### symbols: symbols_grpc_response_stream_message_count_per_method
 
-<p class="subtitle">Average streaming response message count per-method over 1m</p>
+<p class="subtitle">Average streaming response message count per-method over 2m</p>
 
 The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.
 
@@ -17679,7 +17679,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100530` o
 <details>
 <summary>Technical details</summary>
 
-Query: `((sum(rate(symbols_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method))/(sum(rate(symbols_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[1m])) by (grpc_method)))`
+Query: `((sum(rate(symbols_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method))/(sum(rate(symbols_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method)))`
 
 </details>
 
@@ -17687,7 +17687,7 @@ Query: `((sum(rate(symbols_grpc_server_msg_sent_total{grpc_type="server_stream",
 
 #### symbols: symbols_grpc_all_codes_per_method
 
-<p class="subtitle">Response codes rate per-method over 1m</p>
+<p class="subtitle">Response codes rate per-method over 2m</p>
 
 The rate of all generated gRPC response codes per method, aggregated across all instances.
 
@@ -17700,7 +17700,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100540` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[1m])) by (grpc_method, grpc_code)`
+Query: `sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method, grpc_code)`
 
 </details>
 
@@ -17710,7 +17710,7 @@ Query: `sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}
 
 #### symbols: symbols_grpc_clients_error_percentage_all_methods
 
-<p class="subtitle">Client baseline error percentage across all methods over 1m</p>
+<p class="subtitle">Client baseline error percentage across all methods over 2m</p>
 
 The percentage of gRPC requests that fail across all methods (regardless of whether or not there was an internal error), aggregated across all "symbols" clients.
 
@@ -17723,7 +17723,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100600` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_code!="OK"}[1m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService"}[1m])))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_code!="OK"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService"}[2m])))))))`
 
 </details>
 
@@ -17731,7 +17731,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.S
 
 #### symbols: symbols_grpc_clients_error_percentage_per_method
 
-<p class="subtitle">Client baseline error percentage per-method over 1m</p>
+<p class="subtitle">Client baseline error percentage per-method over 2m</p>
 
 The percentage of gRPC requests that fail per method (regardless of whether or not there was an internal error), aggregated across all "symbols" clients.
 
@@ -17744,7 +17744,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100601` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${method:regex}",grpc_code!="OK"}[1m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${method:regex}"}[1m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${method:regex}",grpc_code!="OK"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -17752,7 +17752,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.S
 
 #### symbols: symbols_grpc_clients_all_codes_per_method
 
-<p class="subtitle">Client baseline response codes rate per-method over 1m</p>
+<p class="subtitle">Client baseline response codes rate per-method over 2m</p>
 
 The rate of all generated gRPC response codes per method (regardless of whether or not there was an internal error), aggregated across all "symbols" clients.
 
@@ -17765,7 +17765,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100602` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${method:regex}"}[1m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
@@ -17773,7 +17773,7 @@ Query: `(sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsServic
 
 #### symbols: symbols_grpc_clients_internal_error_percentage_all_methods
 
-<p class="subtitle">Client-observed gRPC internal error percentage across all methods over 1m</p>
+<p class="subtitle">Client-observed gRPC internal error percentage across all methods over 2m</p>
 
 The percentage of gRPC requests that appear to fail due to gRPC internal errors across all methods, aggregated across all "symbols" clients.
 
@@ -17792,7 +17792,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100610` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_code!="OK",is_internal_error="true"}[1m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService"}[1m])))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_code!="OK",is_internal_error="true"}[2m])))) / ((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService"}[2m])))))))`
 
 </details>
 
@@ -17800,7 +17800,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.S
 
 #### symbols: symbols_grpc_clients_internal_error_percentage_per_method
 
-<p class="subtitle">Client-observed gRPC internal error percentage per-method over 1m</p>
+<p class="subtitle">Client-observed gRPC internal error percentage per-method over 2m</p>
 
 The percentage of gRPC requests that appear to fail to due to gRPC internal errors per method, aggregated across all "symbols" clients.
 
@@ -17819,7 +17819,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100611` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${method:regex}",grpc_code!="OK",is_internal_error="true"}[1m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${method:regex}"}[1m])) by (grpc_method))))))`
+Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${method:regex}",grpc_code!="OK",is_internal_error="true"}[2m])) by (grpc_method))) / ((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",grpc_method=~"${method:regex}"}[2m])) by (grpc_method))))))`
 
 </details>
 
@@ -17827,7 +17827,7 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.S
 
 #### symbols: symbols_grpc_clients_internal_error_all_codes_per_method
 
-<p class="subtitle">Client-observed gRPC internal error response code rate per-method over 1m</p>
+<p class="subtitle">Client-observed gRPC internal error response code rate per-method over 2m</p>
 
 The rate of gRPC internal-error response codes per method, aggregated across all "symbols" clients.
 
@@ -17846,7 +17846,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100612` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",is_internal_error="true",grpc_method=~"${method:regex}"}[1m])) by (grpc_method, grpc_code))`
+Query: `(sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsService",is_internal_error="true",grpc_method=~"${method:regex}"}[2m])) by (grpc_method, grpc_code))`
 
 </details>
 
