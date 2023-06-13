@@ -5,6 +5,7 @@ import (
 
 	"github.com/hexops/autogold/v2"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -12,9 +13,10 @@ func TestGetCompletionsConfig(t *testing.T) {
 	truePtr := true
 
 	for _, tc := range []struct {
-		name   string
-		config schema.SiteConfiguration
-		want   autogold.Value
+		name       string
+		deployType string
+		config     schema.SiteConfiguration
+		want       autogold.Value
 	}{
 		{
 			name: "cody not enabled",
@@ -55,10 +57,9 @@ func TestGetCompletionsConfig(t *testing.T) {
 				},
 			},
 			want: autogold.Expect(&schema.Completions{
-				Enabled:         true,
-				ChatModel:       "claude-v1",
-				CompletionModel: "claude-instant-v1",
-				Provider:        "anthropic",
+				ChatModel: "claude-v1", CompletionModel: "claude-instant-v1",
+				Enabled:  true,
+				Provider: "anthropic",
 			}),
 		},
 		{
@@ -121,8 +122,55 @@ func TestGetCompletionsConfig(t *testing.T) {
 				Provider:        "sourcegraph",
 			}),
 		},
+		{
+			name:       "app zero-config cody gateway completions with dotcom token",
+			deployType: deploy.App,
+			config: schema.SiteConfiguration{
+				CodyEnabled: &truePtr,
+				App: &schema.App{
+					DotcomAuthToken: "TOKEN",
+				},
+			},
+			want: autogold.Expect(&schema.Completions{
+				AccessToken:     "sgd_5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
+				ChatModel:       "anthropic/claude-v1",
+				CompletionModel: "anthropic/claude-instant-v1",
+				Enabled:         true,
+				Endpoint:        "https://cody-gateway.sourcegraph.com",
+				Provider:        "sourcegraph",
+			}),
+		},
+		{
+			name:       "app with custom configuration",
+			deployType: deploy.App,
+			config: schema.SiteConfiguration{
+				CodyEnabled: &truePtr,
+				Completions: &schema.Completions{
+					AccessToken:     "CUSTOM_TOKEN",
+					Provider:        "anthropic",
+					ChatModel:       "claude-v1",
+					FastChatModel:   "claude-instant-v1",
+					CompletionModel: "claude-instant-v1",
+				},
+				App: &schema.App{
+					DotcomAuthToken: "TOKEN",
+				},
+			},
+			want: autogold.Expect(&schema.Completions{
+				AccessToken: "CUSTOM_TOKEN", ChatModel: "claude-v1",
+				CompletionModel: "claude-instant-v1",
+				Enabled:         true,
+				FastChatModel:   "claude-instant-v1",
+				Provider:        "anthropic",
+			}),
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			defaultDeploy := deploy.Type()
+			if tc.deployType != "" {
+				deploy.Mock(tc.deployType)
+			}
+			defer deploy.Mock(defaultDeploy)
 			got := GetCompletionsConfig(tc.config)
 			tc.want.Equal(t, got)
 		})
