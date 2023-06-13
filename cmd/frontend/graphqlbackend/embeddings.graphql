@@ -217,6 +217,35 @@ type RepoEmbeddingJob implements Node {
     The revision at which the repo was embedded.
     """
     revision: GitCommit
+
+    """
+    Statistics about the embeddings index job.
+    This will be updated periodically while the embeddings job is processing.
+    """
+    stats: RepoEmbeddingsStats!
+}
+
+"""
+Statistics about an embeddings index job.
+This will be updated periodically while the embeddings job is processing.
+"""
+type RepoEmbeddingsStats {
+    """
+    The number of files scheduled to be embedded.
+    """
+    filesScheduled: Int!
+
+    """
+    The number of files we generated embeddings for.
+    This will be updated periodically while the embeddings job is processing.
+    """
+    filesEmbedded: Int!
+
+    """
+    The number of files skipped.
+    This will be updated periodically while the embeddings job is processing.
+    """
+    filesSkipped: Int!
 }
 
 """

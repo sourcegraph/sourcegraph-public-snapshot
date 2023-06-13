@@ -3,9 +3,6 @@ package embeddings
 import (
 	"fmt"
 	"sort"
-	"time"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
@@ -160,66 +157,5 @@ func (o *OldEmbeddingIndex) ToNewIndex() EmbeddingIndex {
 		ColumnDimension: o.ColumnDimension,
 		RowMetadata:     o.RowMetadata,
 		Ranks:           o.Ranks,
-	}
-}
-
-type EmbedRepoStats struct {
-	Duration       time.Duration
-	HasRanks       bool
-	CodeIndexStats EmbedFilesStats
-	TextIndexStats EmbedFilesStats
-
-	// IsIncremental indicates whether the embedding job should reindex changed files
-	IsIncremental bool
-}
-
-func (e *EmbedRepoStats) ToFields() []log.Field {
-	return []log.Field{
-		log.Duration("duration", e.Duration),
-		log.Bool("hasRanks", e.HasRanks),
-		log.Object("codeIndex", e.CodeIndexStats.ToFields()...),
-		log.Object("textIndex", e.TextIndexStats.ToFields()...),
-		log.Bool("isIncremental", e.IsIncremental),
-	}
-}
-
-type EmbedFilesStats struct {
-	// The time it took to generate these embeddings
-	Duration time.Duration
-
-	// The number of files embedded
-	EmbeddedFileCount int
-
-	// The number of chunks we generated embeddings for.
-	// Equivalent to the number of embeddings generated.
-	EmbeddedChunkCount int
-
-	// The sum of the size of the contents of successful embeddings
-	EmbeddedBytes int
-
-	// Summed byte counts for each of the reasons files were skipped
-	SkippedByteCounts map[string]int
-
-	// Counts of reasons files were skipped
-	SkippedCounts map[string]int
-}
-
-func (e *EmbedFilesStats) ToFields() []log.Field {
-	var skippedByteCounts []log.Field
-	for reason, count := range e.SkippedByteCounts {
-		skippedByteCounts = append(skippedByteCounts, log.Int(reason, count))
-	}
-
-	var skippedCounts []log.Field
-	for reason, count := range e.SkippedCounts {
-		skippedCounts = append(skippedCounts, log.Int(reason, count))
-	}
-	return []log.Field{
-		log.Duration("duration", e.Duration),
-		log.Int("embeddedFileCount", e.EmbeddedFileCount),
-		log.Int("embeddedChunkCount", e.EmbeddedChunkCount),
-		log.Int("embeddedBytes", e.EmbeddedBytes),
-		log.Object("skippedCounts", skippedCounts...),
-		log.Object("skippedByteCounts", skippedByteCounts...),
 	}
 }
