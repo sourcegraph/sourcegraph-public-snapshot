@@ -47,6 +47,8 @@ const dummyVSCodeAPI: VSCodeWrapper = {
             config: {
                 debugEnable: true,
                 serverEndpoint: 'https://example.com',
+                appName: 'VS Code',
+                appScheme: 'vscode',
             },
             authStatus: {
                 ...defaultAuthStatus,
