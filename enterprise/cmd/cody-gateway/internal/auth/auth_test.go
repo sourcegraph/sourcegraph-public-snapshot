@@ -38,7 +38,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.Sources{anonymous.NewSource(true, concurrencyConfig)},
+			Sources:     actor.NewSources(anonymous.NewSource(true, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
@@ -49,7 +49,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.Sources{anonymous.NewSource(false, concurrencyConfig)},
+			Sources:     actor.NewSources(anonymous.NewSource(false, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
@@ -97,7 +97,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)},
+			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockrequire.Called(t, client.MakeRequestFunc)
@@ -121,7 +121,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)},
+			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockrequire.NotCalled(t, client.MakeRequestFunc)
@@ -141,7 +141,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)},
+			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
@@ -164,7 +164,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)},
+			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 	})
@@ -182,7 +182,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)},
+			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusServiceUnavailable, w.Code)
 	})
@@ -231,7 +231,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)},
+			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
@@ -280,7 +280,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)},
+			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
@@ -329,7 +329,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)},
+			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)),
 		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 	})

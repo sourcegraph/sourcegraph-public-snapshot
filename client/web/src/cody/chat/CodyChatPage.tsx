@@ -36,9 +36,11 @@ import {
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
+import { SourcegraphContext } from '../../jscontext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { ChatUI } from '../components/ChatUI'
+import { CodyMarketingPage } from '../components/CodyMarketingPage'
 import { HistoryList } from '../components/HistoryList'
 import { CodyChatStore, useCodyChat } from '../useCodyChat'
 
@@ -49,6 +51,7 @@ import styles from './CodyChatPage.module.scss'
 interface CodyChatPageProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphApp: boolean
+    context: Pick<SourcegraphContext, 'authProviders'>
 }
 
 const onDownloadVSCodeClick = (): void => eventLogger.log(EventName.CODY_CHAT_DOWNLOAD_VSCODE)
@@ -85,7 +88,11 @@ const onTranscriptHistoryLoad = (
     }
 }
 
-export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authenticatedUser, isSourcegraphApp }) => {
+export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
+    authenticatedUser,
+    context,
+    isSourcegraphApp,
+}) => {
     const { pathname } = useLocation()
     const navigate = useNavigate()
 
@@ -130,6 +137,10 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
 
     if (!loaded) {
         return null
+    }
+
+    if (!authenticatedUser) {
+        return <CodyMarketingPage context={context} />
     }
 
     if (!isCodyEnabled.chat) {
