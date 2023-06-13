@@ -45,6 +45,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore }): JSX.Element =
         setScope,
         toggleIncludeInferredRepository,
         toggleIncludeInferredFile,
+        abortMessageInProgress,
     } = codyChatStore
 
     const [formInput, setFormInput] = useState('')
@@ -102,10 +103,28 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore }): JSX.Element =
                 needsEmailVerificationNotice={NeedsEmailVerificationNotice}
                 contextStatusComponent={ScopeSelector}
                 contextStatusComponentProps={scopeSelectorProps}
+                abortMessageInProgressComponent={AbortMessageInProgress}
+                onAbortMessageInProgress={abortMessageInProgress}
             />
         </>
     )
 }
+
+interface IAbortMessageInProgressProps {
+    onAbortMessageInProgress: () => void
+}
+
+const AbortMessageInProgress: React.FunctionComponent<IAbortMessageInProgressProps> = React.memo(
+    function AbortMessageInProgressButton({ onAbortMessageInProgress }) {
+        return (
+            <div className="d-flex justify-content-center w-100 mt-4 mb-2">
+                <Button onClick={onAbortMessageInProgress} variant="secondary" outline={true} size="sm">
+                    Stop generating
+                </Button>
+            </div>
+        )
+    }
+)
 
 export const ScrollDownButton = React.memo(function ScrollDownButtonContent({
     onClick,

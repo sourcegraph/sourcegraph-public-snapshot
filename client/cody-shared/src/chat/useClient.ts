@@ -68,6 +68,7 @@ export interface CodyClient {
     setEditorScope: (editor: Editor) => void
     toggleIncludeInferredRepository: () => void
     toggleIncludeInferredFile: () => void
+    abortMessageInProgress: () => void
 }
 
 interface CodyClientProps {
@@ -91,6 +92,7 @@ export const useClient = ({
     const [transcript, setTranscriptState] = useState<Transcript | null>(initialTranscript)
     const [chatMessages, setChatMessagesState] = useState<ChatMessage[]>([])
     const [isMessageInProgress, setIsMessageInProgressState] = useState<boolean>(false)
+    const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
     const messageInProgress: ChatMessage | null = useMemo(() => {
         if (isMessageInProgress) {
@@ -103,6 +105,18 @@ export const useClient = ({
 
         return null
     }, [chatMessages, isMessageInProgress])
+
+    const abortMessageInProgress = useCallback(() => {
+        abortMessageInProgressInternal()
+
+        transcript
+            ?.toChatPromise()
+            .then(messages => {
+                setChatMessagesState(messages)
+                setIsMessageInProgressState(false)
+            })
+            .catch(error => console.error(`aborting in progress message failed: ${error}`))
+    }, [abortMessageInProgressInternal, transcript, setChatMessagesState, setIsMessageInProgressState])
 
     const setTranscript = useCallback(async (transcript: Transcript): Promise<void> => {
         const messages = await transcript.toChatPromise()
@@ -256,8 +270,9 @@ export const useClient = ({
 
             const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
             let rawText = ''
-            return new Promise(resolve => {
-                chatClient.chat(prompt, {
+
+            const updatedTranscript = await new Promise<Transcript | null>(resolve => {
+                const abort = chatClient.chat(prompt, {
                     onChange(_rawText) {
                         rawText = _rawText
 
@@ -297,7 +312,16 @@ export const useClient = ({
                         resolve(transcript)
                     },
                 })
+
+                setAbortMessageInProgress(() => () => {
+                    abort()
+                    resolve(transcript)
+                })
             })
+
+            setAbortMessageInProgress(() => () => undefined)
+
+            return updatedTranscript
         },
         [
             config,
@@ -310,6 +334,7 @@ export const useClient = ({
             chatClient,
             isMessageInProgress,
             onEvent,
+            setAbortMessageInProgress,
         ]
     )
 
@@ -363,6 +388,7 @@ export const useClient = ({
             editMessage,
             toggleIncludeInferredRepository,
             toggleIncludeInferredFile,
+            abortMessageInProgress,
         }),
         [
             transcript,
@@ -381,6 +407,7 @@ export const useClient = ({
             editMessage,
             toggleIncludeInferredRepository,
             toggleIncludeInferredFile,
+            abortMessageInProgress,
         ]
     )
 }

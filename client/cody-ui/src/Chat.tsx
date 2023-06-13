@@ -41,6 +41,8 @@ interface ChatProps extends ChatClassNames {
     setSuggestions?: (suggestions: undefined | []) => void
     needsEmailVerification?: boolean
     needsEmailVerificationNotice?: React.FunctionComponent
+    abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
+    onAbortMessageInProgress?: () => void
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -128,6 +130,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     needsEmailVerificationNotice: NeedsEmailVerificationNotice,
     contextStatusComponent: ContextStatusComponent,
     contextStatusComponentProps = {},
+    abortMessageInProgressComponent,
+    onAbortMessageInProgress,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -254,6 +258,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     submitButtonComponent={SubmitButton}
                     chatInputClassName={chatInputClassName}
+                    abortMessageInProgressComponent={abortMessageInProgressComponent}
+                    onAbortMessageInProgress={onAbortMessageInProgress}
                 />
             )}
 
