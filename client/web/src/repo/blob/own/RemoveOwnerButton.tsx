@@ -15,6 +15,8 @@ import {
 
 import { REMOVE_ASSIGNED_OWNER, REMOVE_ASSIGNED_TEAM } from './grapqlQueries'
 
+import styles from './RemoveOwnerButton.module.scss'
+
 export interface RemoveOwnerButtonProps {
     onSuccess: () => Promise<any>
     onError: (e: Error) => void
@@ -75,14 +77,13 @@ export const RemoveOwnerButton: React.FC<RemoveOwnerButtonProps> = ({
         <Tooltip content={tooltipContent}>
             <Button
                 variant="icon"
-                className="ml-2"
                 aria-label="Remove this ownership"
                 onClick={removeOwner}
                 outline={false}
                 size="sm"
                 disabled={!isDirectAssigned}
             >
-                <Icon aria-hidden={true} svgPath={removeLoading || removeTeamLoading ? mdiLoading : mdiMinusThick} />
+                <Icon className={styles.minusIcon} aria-hidden={true} svgPath={removeLoading || removeTeamLoading ? mdiLoading : mdiMinusThick} />
             </Button>
         </Tooltip>
     )
