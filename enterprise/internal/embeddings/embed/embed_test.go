@@ -13,8 +13,107 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestNewEmbeddingsClient(t *testing.T) {
+	testCases := []struct {
+		name       string
+		siteConfig *schema.SiteConfiguration
+		deployType string
+		wantErr    bool
+	}{
+		{
+			name: "Embeddings disabled",
+			siteConfig: &schema.SiteConfiguration{
+				Embeddings: &schema.Embeddings{
+					Enabled: false,
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Invalid provider",
+			siteConfig: &schema.SiteConfiguration{
+				Embeddings: &schema.Embeddings{
+					Enabled:  true,
+					Provider: "invalid",
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Sourcegraph provider",
+			siteConfig: &schema.SiteConfiguration{
+				Embeddings: &schema.Embeddings{
+					Enabled:  true,
+					Provider: "sourcegraph",
+				},
+			},
+		},
+		{
+			name:       "App with dotcom token",
+			deployType: deploy.App,
+			siteConfig: &schema.SiteConfiguration{
+				Embeddings: &schema.Embeddings{
+					Enabled:  true,
+					Provider: "sourcegraph",
+				},
+				App: &schema.App{
+					DotcomAuthToken: "TOKEN",
+				},
+			},
+		},
+		{
+			name:       "App with user token",
+			deployType: deploy.App,
+			siteConfig: &schema.SiteConfiguration{
+				Embeddings: &schema.Embeddings{
+					Enabled:     true,
+					Provider:    "sourcegraph",
+					AccessToken: "TOKEN",
+				},
+			},
+		},
+		{
+			name:       "App without dotcom or user token",
+			deployType: deploy.App,
+			siteConfig: &schema.SiteConfiguration{
+				Embeddings: &schema.Embeddings{
+					Enabled:  true,
+					Provider: "sourcegraph",
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			defaultDeploy := deploy.Type()
+			if tc.deployType != "" {
+				deploy.Mock(tc.deployType)
+			}
+			defer deploy.Mock(defaultDeploy)
+			client, err := NewEmbeddingsClient(tc.siteConfig)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatal("expected error but got nil")
+				}
+			} else {
+				if err != nil {
+					t.Fatal(err)
+				}
+				if client == nil {
+					t.Fatal("expected client but got nil")
+				}
+
+			}
+		})
+	}
+}
 
 func mockFile(lines ...string) []byte {
 	return []byte(strings.Join(lines, "\n"))
