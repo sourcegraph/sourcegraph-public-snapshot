@@ -3,7 +3,6 @@ package productsubscription
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -33,7 +32,6 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 			})
 			return
 		}
-		tokenHexEncoded := strings.TrimPrefix(token, licensing.LicenseKeyBasedAccessTokenPrefix)
 
 		var args licensing.LicenseCheckRequestParams
 		if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
@@ -44,13 +42,12 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 		}
 
 		logger := baseLogger.With(
-			log.String("token", tokenHexEncoded),
 			log.String("siteID", args.ClientSiteID))
 
-		logger.Debug("starting license validity check", log.String("token", tokenHexEncoded))
+		logger.Debug("starting license validity check")
 
 		lStore := dbLicenses{db: db}
-		license, err := lStore.GetByToken(r.Context(), tokenHexEncoded)
+		license, err := lStore.GetByAccessToken(r.Context(), token)
 		if err != nil || license == nil {
 			logger.Warn("could not find license for provided token")
 			replyWithJSON(w, http.StatusUnauthorized, licensing.LicenseCheckResponse{
