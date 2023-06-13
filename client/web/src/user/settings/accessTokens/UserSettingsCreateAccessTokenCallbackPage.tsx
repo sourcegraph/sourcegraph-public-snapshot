@@ -35,8 +35,6 @@ interface TokenRequester {
     /** The URL where the token should be added to */
     /** SECURITY: Local context only! Do not send token to non-local servers*/
     redirectURL: string
-    /** The URL scheme registered by the requester registered to the operating system */
-    customURLScheme?: string
     /** The message to show users when the token has been created successfully */
     successMessage?: string
     /** The message to show users in case the token cannot be imported automatically */
@@ -58,7 +56,6 @@ const REQUESTERS: Record<string, TokenRequester> = {
         infoMessage:
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
-        customURLScheme: 'vscode',
     },
     APP: {
         name: 'Sourcegraph App',
@@ -76,7 +73,14 @@ const REQUESTERS: Record<string, TokenRequester> = {
         infoMessage:
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
-        customURLScheme: 'vscode',
+    },
+    CODY_INSIDER: {
+        name: 'Cody AI by Sourcegraph - VS Code Insider Extension',
+        redirectURL: 'vscode-insider://sourcegraph.cody-ai?code=$TOKEN',
+        successMessage: 'Now opening VS Code...',
+        infoMessage:
+            'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
+        callbackType: 'new-tab',
     },
 }
 
@@ -108,8 +112,6 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     }, [telemetryService])
     /** Get the requester from the url parameters if any */
     const requestFrom = new URLSearchParams(location.search).get('requestFrom')
-    /** Get the client info for VS Code from the url parameters if any */
-    const clientURLScheme = new URLSearchParams(location.search).get('client')
     /** The validated requester where the callback request originally comes from. */
     const [requester, setRequester] = useState<TokenRequester | null | undefined>(undefined)
     /** The contents of the note input field. */
@@ -155,17 +157,9 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
             nextRequester.redirectURL = redirectURL.toString()
         }
 
-        // Different VS Code clients have different custom URL schemes used as URL protocols
-        // Example: 'vscode-insider://' for VS Code Insider
-        if (clientURLScheme && nextRequester.customURLScheme === 'vscode') {
-            const redirectURL = new URL(nextRequester.redirectURL)
-            redirectURL.protocol = clientURLScheme
-            nextRequester.redirectURL = redirectURL.toString()
-        }
-
         setRequester(nextRequester)
         setNote(REQUESTERS[requestFrom].name)
-    }, [isSourcegraphDotCom, isSourcegraphApp, location.search, navigate, requestFrom, requester, clientURLScheme])
+    }, [isSourcegraphDotCom, isSourcegraphApp, location.search, navigate, requestFrom, requester])
 
     /**
      * We use this to handle token creation request from redirections.
