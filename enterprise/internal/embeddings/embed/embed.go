@@ -20,15 +20,10 @@ import (
 )
 
 func NewEmbeddingsClient(siteConfig *schema.SiteConfiguration) (client.EmbeddingsClient, error) {
-	if deploy.IsApp() {
-		return newAppEmbeddingsClient(siteConfig)
-	}
-
-	c := siteConfig.Embeddings
-	if c == nil || !c.Enabled {
+	if !isEmbeddingsEnabled(siteConfig) {
 		return nil, errors.New("embeddings are not configured or disabled")
 	}
-
+	c := siteConfig.Embeddings
 	switch c.Provider {
 	case "sourcegraph":
 		// TODO(eseliger): Readd empty string defaulting to sourcegraph.
@@ -42,21 +37,20 @@ func NewEmbeddingsClient(siteConfig *schema.SiteConfiguration) (client.Embedding
 	}
 }
 
-func newAppEmbeddingsClient(siteConfig *schema.SiteConfiguration) (client.EmbeddingsClient, error) {
-	if siteConfig.App != nil && len(siteConfig.App.DotcomAuthToken) > 0 {
-		// Ensure that the embeddings config isn't nil because it is expected to exist
-		// App is the Cody app so if the user has a dotcom access token embeddings are on
-		embeddingsConfig := siteConfig.Embeddings
-		if embeddingsConfig == nil {
-			embeddingsConfig = &schema.Embeddings{}
-		}
-		tmpConfig := &schema.SiteConfiguration{
-			App:        siteConfig.App,
-			Embeddings: embeddingsConfig,
-		}
-		return sourcegraph.NewClient(tmpConfig), nil
+func isEmbeddingsEnabled(siteConfig *schema.SiteConfiguration) bool {
+	c := siteConfig.Embeddings
+	if c == nil || !c.Enabled {
+		return false
 	}
-	return nil, errors.New("embeddings are not configured or disabled")
+
+	// Additionally Embeddings in App are disabled if there is no dotcom auth token
+	// and the user hasn't provided their own api token
+	if deploy.IsApp() {
+		if siteConfig.App == nil || len(siteConfig.App.DotcomAuthToken) == 0 {
+			return false
+		}
+	}
+	return true
 }
 
 const (
