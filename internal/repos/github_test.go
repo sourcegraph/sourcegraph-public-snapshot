@@ -125,7 +125,10 @@ func TestGitHub_stripDateRange(t *testing.T) {
 }
 
 func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
-	setUpRcache(t)
+	// The GitHubSource uses the github.Client under the hood, which
+	// uses rcache, a caching layer that uses Redis.
+	// We need to clear the cache before we run the tests
+	rcache.SetupForTest(t)
 
 	fixtureName := "GITHUB-ENTERPRISE/list-public-repos"
 	gheToken := prepareGheToken(t, fixtureName)
@@ -249,7 +252,10 @@ func TestGithubSource_GetRepo(t *testing.T) {
 		tc.name = "GITHUB-DOT-COM/" + tc.name
 
 		t.Run(tc.name, func(t *testing.T) {
-			setUpRcache(t)
+			// The GitHubSource uses the github.Client under the hood, which
+			// uses rcache, a caching layer that uses Redis.
+			// We need to clear the cache before we run the tests
+			rcache.SetupForTest(t)
 
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
@@ -277,13 +283,6 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			}
 		})
 	}
-}
-
-func setUpRcache(t *testing.T) {
-	// The GitHubSource uses the github.Client under the hood, which
-	// uses rcache, a caching layer that uses Redis.
-	// We need to clear the cache before we run the tests
-	rcache.SetupForTest(t)
 }
 
 func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
@@ -351,7 +350,11 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 				},
 			})
 
-			setUpRcache(t)
+			// The GitHubSource uses the github.Client under the hood, which
+			// uses rcache, a caching layer that uses Redis.
+			// We need to clear the cache before we run the tests
+			rcache.SetupForTest(t)
+
 			fixtureName := "githubenterprise-getrepo"
 			gheToken := os.Getenv("GHE_TOKEN")
 			fmt.Println(gheToken)
@@ -394,6 +397,11 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 }
 
 func TestMakeRepo_NullCharacter(t *testing.T) {
+	// The GitHubSource uses the github.Client under the hood, which
+	// uses rcache, a caching layer that uses Redis.
+	// We need to clear the cache before we run the tests
+	rcache.SetupForTest(t)
+
 	r := &github.Repository{
 		Description: "Fun nulls \x00\x00\x00",
 	}
@@ -461,6 +469,11 @@ func TestGithubSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "GithubSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
+			// The GitHubSource uses the github.Client under the hood, which
+			// uses rcache, a caching layer that uses Redis.
+			// We need to clear the cache before we run the tests
+			rcache.SetupForTest(t)
+
 			s, err := newGitHubSource(context.Background(), logtest.Scoped(t), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
@@ -503,7 +516,7 @@ func TestMatchOrg(t *testing.T) {
 }
 
 func TestGitHubSource_doRecursively(t *testing.T) {
-	rcache.SetupForTest(t)
+
 	ctx := context.Background()
 
 	testCases := map[string]struct {
@@ -522,6 +535,11 @@ func TestGitHubSource_doRecursively(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
+			// The GitHubSource uses the github.Client under the hood, which
+			// uses rcache, a caching layer that uses Redis.
+			// We need to clear the cache before we run the tests
+			rcache.SetupForTest(t)
+
 			requestCounter := 0
 			// We create a server that returns a repository count of 5, but only returns 4 repositories.
 			// After the server has been hit two times, a fifth repository is added to the result set.
@@ -715,7 +733,10 @@ func TestGithubSource_ListRepos(t *testing.T) {
 		tc := tc
 		tc.name = "GITHUB-LIST-REPOS/" + tc.name
 		t.Run(tc.name, func(t *testing.T) {
-			setUpRcache(t)
+			// The GitHubSource uses the github.Client under the hood, which
+			// uses rcache, a caching layer that uses Redis.
+			// We need to clear the cache before we run the tests
+			rcache.SetupForTest(t)
 
 			var (
 				cf   *httpcli.Factory
@@ -762,6 +783,11 @@ func githubGraphQLFailureMiddleware(cli httpcli.Doer) httpcli.Doer {
 }
 
 func TestGithubSource_WithAuthenticator(t *testing.T) {
+	// The GitHubSource uses the github.Client under the hood, which
+	// uses rcache, a caching layer that uses Redis.
+	// We need to clear the cache before we run the tests
+	rcache.SetupForTest(t)
+
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
 		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
@@ -791,6 +817,11 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 }
 
 func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
+	// The GitHubSource uses the github.Client under the hood, which
+	// uses rcache, a caching layer that uses Redis.
+	// We need to clear the cache before we run the tests
+	rcache.SetupForTest(t)
+
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
 		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
@@ -819,6 +850,11 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 func TestGithubSource_GetVersion(t *testing.T) {
 	logger := logtest.Scoped(t)
 	t.Run("github.com", func(t *testing.T) {
+		// The GitHubSource uses the github.Client under the hood, which
+		// uses rcache, a caching layer that uses Redis.
+		// We need to clear the cache before we run the tests
+		rcache.SetupForTest(t)
+
 		svc := &types.ExternalService{
 			Kind: extsvc.KindGitHub,
 			Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
@@ -843,7 +879,10 @@ func TestGithubSource_GetVersion(t *testing.T) {
 	})
 
 	t.Run("github enterprise", func(t *testing.T) {
-		setUpRcache(t)
+		// The GitHubSource uses the github.Client under the hood, which
+		// uses rcache, a caching layer that uses Redis.
+		// We need to clear the cache before we run the tests
+		rcache.SetupForTest(t)
 
 		fixtureName := "githubenterprise-version"
 		gheToken := os.Getenv("GHE_TOKEN")
@@ -969,6 +1008,11 @@ func TestRepositoryQuery_DoSingleRequest(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			// The GitHubSource uses the github.Client under the hood, which
+			// uses rcache, a caching layer that uses Redis.
+			// We need to clear the cache before we run the tests
+			rcache.SetupForTest(t)
+
 			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(t.Name()), t.Name())
 			t.Cleanup(save)
 
@@ -1166,7 +1210,10 @@ func TestGithubSource_SearchRepositories(t *testing.T) {
 		tc := tc
 		tc.name = "GITHUB-SEARCH-REPOS/" + tc.name
 		t.Run(tc.name, func(t *testing.T) {
-			setUpRcache(t)
+			// The GitHubSource uses the github.Client under the hood, which
+			// uses rcache, a caching layer that uses Redis.
+			// We need to clear the cache before we run the tests
+			rcache.SetupForTest(t)
 
 			var (
 				cf   *httpcli.Factory

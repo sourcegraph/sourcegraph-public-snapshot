@@ -165,6 +165,10 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 }
 
 func TestGitLabSource_makeRepo(t *testing.T) {
+	// The GitLabSource uses the gitlab.Client under the hood, which
+	// uses rcache, a caching layer that uses Redis.
+	// We need to clear the cache before we run the tests
+	rcache.SetupForTest(t)
 	b, err := os.ReadFile(filepath.Join("testdata", "gitlab-repos.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -223,6 +227,10 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 }
 
 func TestGitLabSource_WithAuthenticator(t *testing.T) {
+	// The GitLabSource uses the gitlab.Client under the hood, which
+	// uses rcache, a caching layer that uses Redis.
+	// We need to clear the cache before we run the tests
+	rcache.SetupForTest(t)
 	logger := logtest.Scoped(t)
 	t.Run("supported", func(t *testing.T) {
 		var src Source
@@ -271,6 +279,10 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 }
 
 func TestGitlabSource_ListRepos(t *testing.T) {
+	// The GitLabSource uses the gitlab.Client under the hood, which
+	// uses rcache, a caching layer that uses Redis.
+	// We need to clear the cache before we run the tests
+	rcache.SetupForTest(t)
 	conf := &schema.GitLabConnection{
 		Url:   "https://gitlab.sgdev.org",
 		Token: os.Getenv("GITLAB_TOKEN"),

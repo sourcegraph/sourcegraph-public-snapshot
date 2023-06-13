@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -58,6 +59,9 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
+			// httpcli uses rcache, so we need to prepare the redis connection.
+			rcache.SetupForTest(t)
+
 			s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
 			if err != nil {
 				t.Fatal(err)
@@ -135,6 +139,9 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
+			// httpcli uses rcache, so we need to prepare the redis connection.
+			rcache.SetupForTest(t)
+
 			s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
 			if err != nil {
 				t.Fatal(err)
@@ -164,6 +171,9 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 }
 
 func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
+	// httpcli uses rcache, so we need to prepare the redis connection.
+	rcache.SetupForTest(t)
+
 	svc := &types.ExternalService{
 		Kind: extsvc.KindBitbucketServer,
 		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
@@ -243,6 +253,9 @@ func TestBitbucketServerSource_ListByReposOnly(t *testing.T) {
 	cases, svc := GetConfig(t, server.URL, "secret")
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
+			// httpcli uses rcache, so we need to prepare the redis connection.
+			rcache.SetupForTest(t)
+
 			s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
 			if err != nil {
 				t.Fatal(err)
@@ -346,6 +359,9 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 		tc := tc
 		for name, config := range cases {
 			t.Run(name, func(t *testing.T) {
+				// httpcli uses rcache, so we need to prepare the redis connection.
+				rcache.SetupForTest(t)
+
 				s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
 				if err != nil {
 					t.Fatal(err)
@@ -408,6 +424,9 @@ func TestBitbucketServerSource_ListByProjectKeyMock(t *testing.T) {
 	cases, svc := GetConfig(t, server.URL, "secret")
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
+			// httpcli uses rcache, so we need to prepare the redis connection.
+			rcache.SetupForTest(t)
+
 			s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
 			if err != nil {
 				t.Fatal(err)
@@ -438,6 +457,9 @@ func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
+			// httpcli uses rcache, so we need to prepare the redis connection.
+			rcache.SetupForTest(t)
+
 			s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
 			if err != nil {
 				t.Fatal(err)
