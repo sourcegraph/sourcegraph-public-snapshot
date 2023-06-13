@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"math"
 	"net/http"
@@ -22,6 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+const defaultModel = "openai/text-embedding-ada-002"
+
 func NewClient(config *schema.SiteConfiguration) *sourcegraphEmbeddingsClient {
 	return &sourcegraphEmbeddingsClient{
 		model:       getModel(config),
@@ -35,9 +38,9 @@ const defaultAPIURL = "https://cody-gateway.sourcegraph.com/v1/embeddings"
 
 func getModel(config *schema.SiteConfiguration) string {
 	if config.Embeddings == nil || config.Embeddings.Model == "" {
-		return "openai/text-embedding-ada-002"
+		return defaultModel
 	}
-	return config.Embeddings.Model
+	return strings.ToLower(config.Embeddings.Model)
 }
 
 func getAccessToken(config *schema.SiteConfiguration) string {
@@ -74,7 +77,7 @@ type sourcegraphEmbeddingsClient struct {
 }
 
 func (c *sourcegraphEmbeddingsClient) GetDimensions() (int, error) {
-	if c.dimensions <= 0 && strings.EqualFold(c.model, "openai/text-embedding-ada-002") {
+	if c.dimensions <= 0 && strings.EqualFold(c.model, defaultModel) {
 		return 1536, nil
 	}
 
@@ -86,6 +89,14 @@ func (c *sourcegraphEmbeddingsClient) GetDimensions() (int, error) {
 	}
 
 	return c.dimensions, nil
+}
+
+func (c *sourcegraphEmbeddingsClient) GetModelIdentifier() string {
+	// Special-case the default model, since it already includes the provider name
+	if strings.EqualFold(c.model, defaultModel) {
+		return defaultModel
+	}
+	return fmt.Sprintf("sourcegraph/%s", c.model)
 }
 
 // GetEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.

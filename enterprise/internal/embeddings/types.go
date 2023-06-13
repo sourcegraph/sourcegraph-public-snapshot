@@ -64,14 +64,19 @@ type RepoEmbeddingRowMetadata struct {
 }
 
 type RepoEmbeddingIndex struct {
-	RepoName  api.RepoName
-	Revision  api.CommitID
-	CodeIndex EmbeddingIndex
-	TextIndex EmbeddingIndex
+	RepoName        api.RepoName
+	Revision        api.CommitID
+	EmbeddingsModel string
+	CodeIndex       EmbeddingIndex
+	TextIndex       EmbeddingIndex
 }
 
 func (i *RepoEmbeddingIndex) EstimateSize() int64 {
 	return i.CodeIndex.EstimateSize() + i.TextIndex.EstimateSize()
+}
+
+func (i *RepoEmbeddingIndex) IsModelCompatible(model string) bool {
+	return i.EmbeddingsModel == "" || i.EmbeddingsModel == model
 }
 
 type ContextDetectionEmbeddingIndex struct {

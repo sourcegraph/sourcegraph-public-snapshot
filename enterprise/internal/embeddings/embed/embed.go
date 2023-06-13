@@ -137,11 +137,13 @@ func EmbedRepo(
 	}
 	stats.TextIndexStats = textIndexStats
 
+	embeddingsModel := client.GetModelIdentifier()
 	index := &embeddings.RepoEmbeddingIndex{
-		RepoName:  opts.RepoName,
-		Revision:  opts.Revision,
-		CodeIndex: codeIndex,
-		TextIndex: textIndex,
+		RepoName:        opts.RepoName,
+		Revision:        opts.Revision,
+		EmbeddingsModel: embeddingsModel,
+		CodeIndex:       codeIndex,
+		TextIndex:       textIndex,
 	}
 
 	return index, toRemove, &stats, nil

@@ -19,20 +19,21 @@ func getCachedQueryEmbeddingFn() (getQueryEmbeddingFn, error) {
 		return nil, errors.Wrap(err, "creating query embeddings cache")
 	}
 
-	return func(ctx context.Context, query string) (queryEmbedding []float32, err error) {
+	return func(ctx context.Context, query string) (queryEmbedding []float32, model string, err error) {
+		config := &conf.Get().SiteConfiguration
 		if cachedQueryEmbedding, ok := cache.Get(query); ok {
 			queryEmbedding = cachedQueryEmbedding
 		} else {
-			client, err := embed.NewEmbeddingsClient(&conf.Get().SiteConfiguration)
+			client, err := embed.NewEmbeddingsClient(config)
 			if err != nil {
-				return nil, err
+				return nil, "", err
 			}
 			queryEmbedding, err = client.GetEmbeddingsWithRetries(ctx, []string{query}, QUERY_EMBEDDING_RETRIES)
 			if err != nil {
-				return nil, err
+				return nil, "", err
 			}
 			cache.Add(query, queryEmbedding)
 		}
-		return queryEmbedding, err
+		return queryEmbedding, config.Embeddings.Model, err
 	}, nil
 }
