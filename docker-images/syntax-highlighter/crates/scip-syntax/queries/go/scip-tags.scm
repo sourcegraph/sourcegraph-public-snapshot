@@ -3,18 +3,16 @@
 (function_declaration
  name: (identifier) @descriptor.method) @enclosing
 
+;; Function bodies are local
+(function_declaration body: (block) @local)
+
 (method_declaration
  receiver: (parameter_list
             (parameter_declaration
-             type: (pointer_type
-                     (type_identifier) @descriptor.type)))
- name: (field_identifier) @descriptor.method) @enclosing
-
-(method_declaration
-  receiver: (parameter_list
-             (parameter_declaration
-               type: (type_identifier) @descriptor.type))
-  name: (field_identifier) @descriptor.method) @enclosing
+             type: [(pointer_type (type_identifier) @descriptor.type)
+                    (type_identifier) @descriptor.type]))
+ name: (field_identifier) @descriptor.method @enclosing
+ body: (_) @local)
 
 (type_declaration (type_spec name: (type_identifier) @descriptor.type)) @scope
 

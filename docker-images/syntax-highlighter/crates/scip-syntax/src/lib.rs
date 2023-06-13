@@ -93,6 +93,7 @@ mod test {
 
     generate_tags_and_snapshot!(Scip, test_scip_go_internal, "internal_go.go");
     generate_tags_and_snapshot!(Scip, test_scip_go_example, "example.go");
+    generate_tags_and_snapshot!(Scip, test_scip_go_diff, "go-diff.go");
 
     generate_tags_and_snapshot!(Scip, test_scip_rust_scopes, "scopes.rs");
 

@@ -169,6 +169,16 @@ pub fn parse_tree<'a>(
 
         match node {
             Some(node) => {
+                // TODO: I think we may need to consider something like this at some point
+                // but for now it's fine. Just something I was thinking of while debugging
+                // an issue with go locals
+                //
+                // match scope {
+                //     Some(scope) if local_ranges[scope.node.start_byte()] => continue,
+                //     None if local_ranges[node.start_byte()] => continue,
+                //     _ => {}
+                // };
+
                 if local_ranges[node.start_byte()] {
                     continue;
                 }
