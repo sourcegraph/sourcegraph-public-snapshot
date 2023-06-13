@@ -5,9 +5,21 @@ import "sync"
 // Group is a collection of goroutines which return errors that need to be
 // coalesced.
 type Group struct {
-	mutex sync.Mutex
-	err   *Error
-	wg    sync.WaitGroup
+	mutex  sync.Mutex
+	err    *Error
+	wg     sync.WaitGroup
+	nested struct {
+		inner bool
+	}
+
+	innerface interface {
+		Another() bool
+	}
+}
+
+type SomeInterface interface {
+	Something() bool
+	Incredible() int
 }
 
 // Go calls the given function in a new goroutine.
