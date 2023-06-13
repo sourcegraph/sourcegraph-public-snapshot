@@ -11,6 +11,7 @@ go_library(
         "//enterprise/internal/completions/client/codygateway",
         "//enterprise/internal/completions/client/openai",
         "//enterprise/internal/completions/types",
+        "//enterprise/internal/dotcomuser",
         "//enterprise/internal/licensing",
         "//internal/conf/deploy",
         "//internal/httpcli",

@@ -7,6 +7,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codygateway",
+        "//enterprise/internal/dotcomuser",
         "//enterprise/internal/embeddings/embed/client",
         "//enterprise/internal/licensing",
         "//internal/conf/deploy",
