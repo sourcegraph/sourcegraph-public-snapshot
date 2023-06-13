@@ -12,15 +12,24 @@ import * as path from 'path'
 export async function fastFilesExist(
     rgPath: string,
     rootPath: string,
-    filePaths: string[]
+    filePaths: string[],
+    maxDepth?: number
 ): Promise<{ [filePath: string]: boolean }> {
     const searchPattern = constructSearchPattern(filePaths)
-    const rgOutput = await executeRg(rgPath, rootPath, searchPattern)
+    const rgOutput = await executeRg(rgPath, rootPath, searchPattern, maxDepth)
     return processRgOutput(rgOutput, filePaths)
 }
 
+export function makeTrimRegex(sep: string): RegExp {
+    if (sep === '\\') {
+        sep = '\\\\' // Regex escape this character
+    }
+    return new RegExp(`(^[*${sep}]+)|([*${sep}]+$)`, 'g')
+}
+
 // Regex to match '**', '*' or path.sep at the start (^) or end ($) of the string.
-const trimRegex = new RegExp(`^([*${path.sep}]*)|([*${path.sep}]*)$`, 'g')
+const trimRegex = makeTrimRegex(path.sep)
+
 /**
  * Constructs a search pattern for the 'rg' tool.
  *
@@ -35,6 +44,7 @@ function constructSearchPattern(filePaths: string[]): string {
     })
     return `{${searchPatternParts.join(',')}}`
 }
+
 /**
  * Executes the 'rg' tool and returns the output.
  *
@@ -43,11 +53,15 @@ function constructSearchPattern(filePaths: string[]): string {
  * @param searchPattern - The search pattern to use.
  * @returns The output from the 'rg' tool.
  */
-async function executeRg(rgPath: string, rootPath: string, searchPattern: string): Promise<string> {
+async function executeRg(rgPath: string, rootPath: string, searchPattern: string, maxDepth?: number): Promise<string> {
+    const args = ['--files', '-g', searchPattern, '--crlf', '--fixed-strings', '--no-config', '--no-ignore-global']
+    if (maxDepth !== undefined) {
+        args.push('--max-depth', `${maxDepth}`)
+    }
     return new Promise((resolve, reject) => {
         execFile(
             rgPath,
-            ['--files', '-g', searchPattern, '--crlf', '--fixed-strings', '--no-config', '--no-ignore-global'],
+            args,
             {
                 cwd: rootPath,
                 maxBuffer: 1024 * 1024 * 1024,

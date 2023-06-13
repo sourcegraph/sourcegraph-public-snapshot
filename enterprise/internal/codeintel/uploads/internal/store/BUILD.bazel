@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "store",
@@ -46,6 +47,7 @@ go_library(
 go_test(
     name = "store_test",
     size = "large",
+    timeout = "moderate",
     srcs = [
         "cleanup_test.go",
         "commitdate_test.go",

@@ -322,7 +322,7 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	query := `foobar index:only count:350`
 	literalPatternType := "literal"
-	cli := client.NewSearchClient(logtest.Scoped(t), db, z, nil, nil, jobutil.NewUnimplementedEnterpriseJobs())
+	cli := client.MockedZoekt(logtest.Scoped(t), db, z)
 	searchInputs, err := cli.Plan(
 		ctx,
 		"V2",
@@ -330,8 +330,6 @@ func TestSearchResultsHydration(t *testing.T) {
 		query,
 		search.Precise,
 		search.Batch,
-		&schema.Settings{},
-		false,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -560,7 +558,7 @@ func TestEvaluateAnd(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			literalPatternType := "literal"
-			cli := client.NewSearchClient(logtest.Scoped(t), db, z, nil, nil, jobutil.NewUnimplementedEnterpriseJobs())
+			cli := client.MockedZoekt(logtest.Scoped(t), db, z)
 			searchInputs, err := cli.Plan(
 				context.Background(),
 				"V2",
@@ -568,8 +566,6 @@ func TestEvaluateAnd(t *testing.T) {
 				tt.query,
 				search.Precise,
 				search.Batch,
-				&schema.Settings{},
-				false,
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -633,6 +629,9 @@ func TestSubRepoFiltering(t *testing.T) {
 					}
 					return authz.Read, nil
 				})
+				checker.EnabledForRepoFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName) (bool, error) {
+					return true, nil
+				})
 				return checker
 			},
 		},
@@ -665,7 +664,7 @@ func TestSubRepoFiltering(t *testing.T) {
 			})
 
 			literalPatternType := "literal"
-			cli := client.NewSearchClient(logtest.Scoped(t), db, mockZoekt, nil, nil, jobutil.NewUnimplementedEnterpriseJobs())
+			cli := client.MockedZoekt(logtest.Scoped(t), db, mockZoekt)
 			searchInputs, err := cli.Plan(
 				context.Background(),
 				"V2",
@@ -673,8 +672,6 @@ func TestSubRepoFiltering(t *testing.T) {
 				tt.searchQuery,
 				search.Precise,
 				search.Batch,
-				&schema.Settings{},
-				false,
 			)
 			if err != nil {
 				t.Fatal(err)

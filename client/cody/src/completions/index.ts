@@ -12,9 +12,11 @@ import { getContext } from './context'
 import { CompletionsDocumentProvider } from './docprovider'
 import { History } from './history'
 import * as CompletionLogger from './logger'
+import { detectMultilineMode } from './multiline'
 import { CompletionProvider, InlineCompletionProvider, ManualCompletionProvider } from './provider'
 
 const LOG_MANUAL = { type: 'manual' }
+const WINDOW_SIZE = 50
 
 function lastNLines(text: string, n: number): string {
     const lines = text.split('\n')
@@ -112,7 +114,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        const { prefix, suffix, prevLine: sameLinePrefix } = docContext
+        const { prefix, suffix, prevLine: sameLinePrefix, prevNonEmptyLine } = docContext
         const sameLineSuffix = suffix.slice(0, suffix.indexOf('\n'))
 
         // Avoid showing completions when we're deleting code (Cody can only insert code at the
@@ -144,29 +146,24 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             [],
             prefix,
             suffix,
-            '\n'
+            '\n',
+            document.languageId
         )
         const emptyPromptLength = completionNoSnippets.emptyPromptLength()
 
         const contextChars = this.tokToChar(this.promptTokens) - emptyPromptLength
 
-        const windowSize = 20
         const similarCode = await getContext(
             currentEditor,
             this.history,
-            lastNLines(prefix, windowSize),
-            windowSize,
+            lastNLines(prefix, WINDOW_SIZE),
+            WINDOW_SIZE,
             contextChars
         )
 
         const completers: CompletionProvider[] = []
         let timeout: number
         let multilineMode: null | 'block' = null
-        // TODO(philipp-spiess): Add a better detection for start-of-block and don't require C like
-        // languages.
-        const multilineEnabledLanguage =
-            document.languageId === 'typescript' || document.languageId === 'javascript' || document.languageId === 'go'
-
         // VS Code does not show completions if we are in the process of writing a word or if a
         // selected completion info is present (so something is selected from the completions
         // dropdown list based on the lang server) and the returned completion range does not
@@ -190,30 +187,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
 
         if (
-            multilineEnabledLanguage &&
-            // Only trigger multiline inline suggestions for empty lines
-            sameLinePrefix.trim() === '' &&
-            sameLineSuffix.trim() === '' &&
-            // Only trigger multiline inline suggestions for the beginning of blocks
-            prefix.trim().at(prefix.trim().length - 1) === '{'
+            (multilineMode = detectMultilineMode(
+                prefix,
+                prevNonEmptyLine,
+                sameLinePrefix,
+                sameLineSuffix,
+                document.languageId
+            ))
         ) {
-            timeout = 500
-            multilineMode = 'block'
-            completers.push(
-                new InlineCompletionProvider(
-                    this.completionsClient,
-                    remainingChars,
-                    this.responseTokens,
-                    similarCode,
-                    prefix,
-                    suffix,
-                    '',
-                    3,
-                    multilineMode
-                )
-            )
-        } else if (sameLinePrefix.trim() === '') {
-            // Start of line: medium debounce
             timeout = 200
             completers.push(
                 new InlineCompletionProvider(
@@ -224,12 +205,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     prefix,
                     suffix,
                     '',
-                    2 // tries
+                    document.languageId,
+                    3,
+                    multilineMode
                 )
             )
-        } else {
-            // End of line: long debounce, complete until newline
-            timeout = 500
+        } else if (sameLinePrefix.trim() === '') {
+            // The current line is empty
+            timeout = 20
             completers.push(
                 new InlineCompletionProvider(
                     this.completionsClient,
@@ -239,6 +222,23 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     prefix,
                     suffix,
                     '',
+                    document.languageId,
+                    3 // tries
+                )
+            )
+        } else {
+            // The current line has a suffix
+            timeout = 200
+            completers.push(
+                new InlineCompletionProvider(
+                    this.completionsClient,
+                    remainingChars,
+                    this.responseTokens,
+                    similarCode,
+                    prefix,
+                    suffix,
+                    '',
+                    document.languageId,
                     2 // tries
                 ),
                 // Create a completion request for the current prefix with a new line added. This
@@ -251,6 +251,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     prefix,
                     suffix,
                     '\n', // force a new line in the case we are at end of line
+                    document.languageId,
                     1 // tries
                 )
             )
@@ -272,11 +273,15 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             (await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))).flat()
         )
 
-        if (hasVisibleCompletions(results)) {
+        const visibleResults = filterCompletions(results)
+
+        if (visibleResults.length > 0) {
             CompletionLogger.suggest(logId)
-            inlineCompletionsCache.add(logId, results)
-            return toInlineCompletionItems(logId, results)
+            inlineCompletionsCache.add(logId, visibleResults)
+            return toInlineCompletionItems(logId, visibleResults)
         }
+
+        CompletionLogger.noResponse(logId)
         return []
     }
 
@@ -322,18 +327,18 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             [],
             prefix,
             suffix,
-            ''
+            '',
+            currentEditor.document.languageId
         )
         const emptyPromptLength = completionNoSnippets.emptyPromptLength()
 
         const contextChars = this.tokToChar(this.promptTokens) - emptyPromptLength
 
-        const windowSize = 20
         const similarCode = await getContext(
             currentEditor,
             this.history,
-            lastNLines(prefix, windowSize),
-            windowSize,
+            lastNLines(prefix, WINDOW_SIZE),
+            WINDOW_SIZE,
             contextChars
         )
 
@@ -344,7 +349,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             similarCode,
             prefix,
             suffix,
-            ''
+            '',
+            currentEditor.document.languageId
         )
 
         try {
@@ -468,6 +474,6 @@ function rankCompletions(completions: Completion[]): Completion[] {
     return completions.sort((a, b) => b.content.split('\n').length - a.content.split('\n').length)
 }
 
-function hasVisibleCompletions(completions: Completion[]): boolean {
-    return completions.length > 0 && !!completions.find(c => c.content.trim() !== '')
+function filterCompletions(completions: Completion[]): Completion[] {
+    return completions.filter(c => c.content.trim() !== '')
 }

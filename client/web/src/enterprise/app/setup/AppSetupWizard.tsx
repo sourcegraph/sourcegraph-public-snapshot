@@ -10,6 +10,7 @@ import { AppAllSetSetupStep } from './steps/AppAllSetSetupStep'
 import { AppInstallExtensionsSetupStep } from './steps/AppInstallExtensionsSetupStep'
 import { AddLocalRepositoriesSetupPage } from './steps/AppLocalRepositoriesSetupStep'
 import { AppWelcomeSetupStep } from './steps/AppWelcomeSetupStep'
+import { AppEmbeddingsSetupStep } from './steps/embeddings-step/AppEmbeddingsSetupStep'
 
 import styles from './AppSetupWizard.module.scss'
 
@@ -25,6 +26,12 @@ const APP_SETUP_STEPS: StepConfiguration[] = [
         name: 'Add local repositories',
         path: 'local-repositories',
         component: AddLocalRepositoriesSetupPage,
+    },
+    {
+        id: 'embeddings',
+        name: 'Pick repositories for embeddings',
+        path: 'embeddings',
+        component: AppEmbeddingsSetupStep,
     },
     {
         id: 'install-extensions',
@@ -53,7 +60,12 @@ export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService }) => {
 
     const handleStepChange = useCallback(
         (nextStep: StepConfiguration): void => {
-            setStepId(nextStep.id)
+            const currentStepIndex = APP_SETUP_STEPS.findIndex(step => step.id === nextStep.id)
+            const isLastStep = currentStepIndex === APP_SETUP_STEPS.length - 1
+
+            // Reset the last visited step if you're on the last step in the
+            // setup pipeline
+            setStepId(!isLastStep ? nextStep.id : '')
         },
         [setStepId]
     )

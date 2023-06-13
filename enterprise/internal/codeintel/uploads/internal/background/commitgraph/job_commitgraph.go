@@ -28,11 +28,12 @@ func NewCommitGraphUpdater(
 
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(context.Background()),
-		"codeintel.commitgraph-updater", "updates the visibility commit graph for dirty repos",
-		config.Interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return updater.UpdateAllDirtyCommitGraphs(ctx, config.MaxAgeForNonStaleBranches, config.MaxAgeForNonStaleTags)
 		}),
+		goroutine.WithName("codeintel.commitgraph-updater"),
+		goroutine.WithDescription("updates the visibility commit graph for dirty repos"),
+		goroutine.WithInterval(config.Interval),
 	)
 }
 

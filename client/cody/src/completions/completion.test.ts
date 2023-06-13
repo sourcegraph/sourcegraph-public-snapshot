@@ -213,8 +213,7 @@ describe('Cody completions', () => {
         expect(messages[messages.length - 1]).toMatchInlineSnapshot(`
             Object {
               "speaker": "assistant",
-              "text": "Here is the completion of the file:
-            \`\`\`
+              "text": "\`\`\`
                 public start: Position
                 public end: Position
 
@@ -278,7 +277,7 @@ describe('Cody completions', () => {
         expect(requests).toHaveLength(0)
     })
 
-    it('filters out completions that start with whitespace', async () => {
+    it('trims completions that start with whitespace', async () => {
         const { completions } = await complete(`function bubbleSort(${CURSOR_MARKER})`, [
             createCompletionResponse('\t\t\tarray) {'),
             createCompletionResponse('items) {'),
@@ -286,6 +285,9 @@ describe('Cody completions', () => {
 
         expect(completions).toMatchInlineSnapshot(`
             Array [
+              InlineCompletionItem {
+                "insertText": "array) {",
+              },
               InlineCompletionItem {
                 "insertText": "items) {",
               },
@@ -303,6 +305,42 @@ describe('Cody completions', () => {
         expect(requests).toHaveLength(3)
     })
 
+    it('filters out known-bad completion starts', async () => {
+        const { completions } = await complete(`one:\n${CURSOR_MARKER}`, [
+            createCompletionResponse('➕     1'),
+            createCompletionResponse('\u200B   2'),
+            createCompletionResponse('.      3'),
+        ])
+        expect(completions).toMatchInlineSnapshot(`
+            Array [
+              InlineCompletionItem {
+                "insertText": "1",
+              },
+              InlineCompletionItem {
+                "insertText": "2",
+              },
+              InlineCompletionItem {
+                "insertText": "3",
+              },
+            ]
+        `)
+
+        const { completions: completions2 } = await complete(`two:\n${CURSOR_MARKER}`, [
+            createCompletionResponse('+  1'),
+            createCompletionResponse('-  2'),
+        ])
+        expect(completions2).toMatchInlineSnapshot(`
+            Array [
+              InlineCompletionItem {
+                "insertText": "1",
+              },
+              InlineCompletionItem {
+                "insertText": "2",
+              },
+            ]
+        `)
+    })
+
     describe('odd indentation', () => {
         it('filters our odd indentation in single-line completions', async () => {
             const { completions } = await complete(`const foo = ${CURSOR_MARKER}`, [createCompletionResponse(' 1')])
@@ -311,9 +349,6 @@ describe('Cody completions', () => {
                 Array [
                   InlineCompletionItem {
                     "insertText": "1",
-                  },
-                  InlineCompletionItem {
-                    "insertText": "",
                   },
                 ]
             `)
@@ -390,10 +425,52 @@ describe('Cody completions', () => {
                   InlineCompletionItem {
                     "insertText": "console.log('foo')",
                   },
-                  InlineCompletionItem {
-                    "insertText": "",
-                  },
                 ]
+            `)
+        })
+
+        it('does not support multi-line completion on unsupported languages', async () => {
+            const { requests } = await complete(`function looksLegit() {\n  ${CURSOR_MARKER}`, undefined, 'elixir')
+
+            expect(requests).toHaveLength(3)
+            expect(requests[0]!.stopSequences).toContain('\n')
+        })
+
+        it('requires an indentation to start a block', async () => {
+            const { requests } = await complete(`function bubbleSort() {\n${CURSOR_MARKER}`)
+
+            expect(requests).toHaveLength(3)
+            expect(requests[0]!.stopSequences).toContain('\n')
+        })
+
+        it('works with python', async () => {
+            const { completions, requests } = await complete(
+                `
+                for i in range(11):
+                    if i % 2 == 0:
+                        ${CURSOR_MARKER}`,
+                [
+                    createCompletionResponse(`
+                    print(i)
+                        elif i % 3 == 0:
+                            print(f"Multiple of 3: {i}")
+                        else:
+                            print(f"ODD {i}")
+
+                    for i in range(12):
+                        print("unrelated")`),
+                ],
+                'python'
+            )
+
+            expect(requests).toHaveLength(3)
+            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+                "print(i)
+                    elif i % 3 == 0:
+                        print(f\\"Multiple of 3: {i}\\")
+                    else:
+                        print(f\\"ODD {i}\\")"
             `)
         })
 

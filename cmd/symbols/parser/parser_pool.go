@@ -16,11 +16,17 @@ type parserPool struct {
 	pool      map[ctags_config.ParserType]chan ctags.Parser
 }
 
-func NewParserPool(newParser ParserFactory, numParserProcesses int) (*parserPool, error) {
+var DefaultParserTypes = []ctags_config.ParserType{ctags_config.UniversalCtags, ctags_config.ScipCtags}
+
+func NewParserPool(newParser ParserFactory, numParserProcesses int, parserTypes []ctags_config.ParserType) (*parserPool, error) {
 	pool := make(map[ctags_config.ParserType]chan ctags.Parser)
 
+	if len(parserTypes) == 0 {
+		parserTypes = DefaultParserTypes
+	}
+
 	// NOTE: We obviously don't make `NoCtags` available in the pool.
-	for _, parserType := range []ctags_config.ParserType{ctags_config.UniversalCtags, ctags_config.ScipCtags} {
+	for _, parserType := range parserTypes {
 		pool[parserType] = make(chan ctags.Parser, numParserProcesses)
 		for i := 0; i < numParserProcesses; i++ {
 			parser, err := newParser(parserType)
@@ -46,7 +52,7 @@ func NewParserPool(newParser ParserFactory, numParserProcesses int) (*parserPool
 //
 // This method blocks until a parser is available or the given context is canceled.
 func (p *parserPool) Get(ctx context.Context, source ctags_config.ParserType) (ctags.Parser, error) {
-	if source == ctags_config.NoCtags || source == ctags_config.UnknownCtags {
+	if ctags_config.ParserIsNoop(source) {
 		return nil, errors.New("NoCtags is not a valid ParserType")
 	}
 

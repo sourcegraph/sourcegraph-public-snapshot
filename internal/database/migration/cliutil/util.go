@@ -2,9 +2,7 @@ package cliutil
 
 import (
 	"context"
-	"database/sql"
 	"flag"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,10 +10,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -46,7 +41,7 @@ func flagHelp(out *output.Output, message string, args ...any) error {
 }
 
 // setupRunner initializes and returns the runner associated witht the given schema.
-func setupRunner(factory RunnerFactory, schemaNames ...string) (Runner, error) {
+func setupRunner(factory RunnerFactory, schemaNames ...string) (*runner.Runner, error) {
 	r, err := factory(schemaNames)
 	if err != nil {
 		return nil, err
@@ -56,7 +51,7 @@ func setupRunner(factory RunnerFactory, schemaNames ...string) (Runner, error) {
 }
 
 // setupStore initializes and returns the store associated witht the given schema.
-func setupStore(ctx context.Context, factory RunnerFactory, schemaName string) (Store, error) {
+func setupStore(ctx context.Context, factory RunnerFactory, schemaName string) (runner.Store, error) {
 	r, err := setupRunner(factory, schemaName)
 	if err != nil {
 		return nil, err
@@ -144,33 +139,6 @@ func getPivilegedModeFromFlags(cmd *cli.Context, out *output.Output, unprivilege
 	return runner.ApplyPrivilegedMigrations, nil
 }
 
-func extractDatabase(ctx context.Context, r Runner) (database.DB, error) {
-	db, err := extractDB(ctx, r, "frontend")
-	if err != nil {
-		return nil, err
-	}
-
-	return database.NewDB(log.Scoped("migrator", ""), db), nil
-}
-
-func extractDB(ctx context.Context, r Runner, schemaName string) (*sql.DB, error) {
-	store, err := r.Store(ctx, schemaName)
-	if err != nil {
-		return nil, err
-	}
-
-	// NOTE: The migration runner package cannot import basestore without
-	// creating a cyclic import in db connection packages. Hence, we cannot
-	// embed basestore.ShareableStore here and must "backdoor" extract the
-	// database connection.
-	shareableStore, ok := basestore.Raw(store)
-	if !ok {
-		return nil, errors.New("store does not support direct database handle access")
-	}
-
-	return shareableStore, nil
-}
-
 var migratorObservationCtx = &observation.TestContext
 
 func outOfBandMigrationRunner(db database.DB) *oobmigration.Runner {
@@ -185,12 +153,12 @@ func outOfBandMigrationRunnerWithStore(store *oobmigration.Store) *oobmigration.
 // or GCS, to report whether the migrator may be operating in an airgapped environment.
 func isAirgapped(ctx context.Context) (err error) {
 	// known good version and filename in both GCS and Github
-	filename, _ := getSchemaJSONFilename("frontend")
+	filename, _ := schemas.GetSchemaJSONFilename("frontend")
 	const version = "v3.41.1"
 
 	timedCtx, cancel := context.WithTimeout(ctx, time.Second*3)
 	defer cancel()
-	url := githubExpectedSchemaPath(filename, version)
+	url := schemas.GithubExpectedSchemaPath(filename, version)
 	req, _ := http.NewRequestWithContext(timedCtx, http.MethodHead, url, nil)
 	resp, gherr := http.DefaultClient.Do(req)
 	if resp != nil {
@@ -200,7 +168,7 @@ func isAirgapped(ctx context.Context) (err error) {
 
 	timedCtx, cancel = context.WithTimeout(ctx, time.Second*3)
 	defer cancel()
-	url = gcsExpectedSchemaPath(filename, version)
+	url = schemas.GcsExpectedSchemaPath(filename, version)
 	req, _ = http.NewRequestWithContext(timedCtx, http.MethodHead, url, nil)
 	resp, gcserr := http.DefaultClient.Do(req)
 	if resp != nil {
@@ -218,20 +186,6 @@ func isAirgapped(ctx context.Context) (err error) {
 	}
 
 	return err
-}
-
-// getSchemaJSONFilename returns the basename of the JSON-serialized schema in the sg/sg repository.
-func getSchemaJSONFilename(schemaName string) (string, error) {
-	switch schemaName {
-	case "frontend":
-		return "internal/database/schema.json", nil
-	case "codeintel":
-		fallthrough
-	case "codeinsights":
-		return fmt.Sprintf("internal/database/schema.%s.json", schemaName), nil
-	}
-
-	return "", errors.Newf("unknown schema name %q", schemaName)
 }
 
 func checkForMigratorUpdate(ctx context.Context) (latest string, hasUpdate bool, err error) {

@@ -7,7 +7,10 @@ import (
 	"net/mail"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -17,6 +20,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+var extSvcProviderNotFound = promauto.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Name:      "own_bag_service_type_not_found_total",
+}, []string{"service_type"})
 
 // RepoContext allows us to anchor an author reference to a repo where it stems from.
 // For instance a handle from a CODEOWNERS file comes from github.com/sourcegraph/sourcegraph.
@@ -47,9 +55,20 @@ type Reference struct {
 	Email string
 }
 
-func (r Reference) ResolutionGuess() *codeowners.Person {
+func (r Reference) ResolutionGuess() codeowners.ResolvedOwner {
 	if r.Handle == "" && r.Email == "" {
 		return nil
+	}
+	// If this is a GitHub repo and the handle contains a "/", then we can tell that this is a team.
+	if r.RepoContext != nil && strings.ToLower(r.RepoContext.CodeHostKind) == extsvc.VariantGitHub.AsType() && strings.Contains(r.Handle, "/") {
+		return &codeowners.Team{
+			Handle: r.Handle,
+			Email:  r.Email,
+			Team: &types.Team{
+				Name:        r.Handle,
+				DisplayName: r.Handle,
+			},
+		}
 	}
 	return &codeowners.Person{
 		Handle: r.Handle,
@@ -112,7 +131,7 @@ type Bag interface {
 	// Resolve retrieves all users it can find that are associated
 	// with references that are in the Bag by means of Add or ByTextReference
 	// constructor.
-	Resolve(context.Context, edb.EnterpriseDB) error
+	Resolve(context.Context, edb.EnterpriseDB)
 }
 
 func EmptyBag() *bag {
@@ -129,7 +148,7 @@ func EmptyBag() *bag {
 // that the database reveals.
 // TODO(#52141): Search by code host handle.
 // TODO(#52246): ByTextReference uses fewer queries.
-func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (Bag, error) {
+func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) Bag {
 	b := EmptyBag()
 	for _, t := range text {
 		// Empty text does not resolve at all.
@@ -142,10 +161,8 @@ func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (
 			b.add(refKey{handle: strings.TrimPrefix(t, "@")})
 		}
 	}
-	if err := b.Resolve(ctx, db); err != nil {
-		return nil, err
-	}
-	return b, nil
+	b.Resolve(ctx, db)
+	return b
 }
 
 // bag is implemented as a map of resolved users and map of references.
@@ -211,6 +228,9 @@ func (b bag) FindResolved(ref Reference) (codeowners.ResolvedOwner, bool) {
 		if refCtx, ok := b.references[k]; ok {
 			if id := refCtx.resolvedUserID; id != 0 {
 				userRefs := b.resolvedUsers[id]
+				if userRefs == nil {
+					continue
+				}
 				// TODO: Email resolution here is best effort,
 				// we do not know if this is primary email.
 				var email *string
@@ -276,38 +296,35 @@ func (b *bag) add(k refKey) {
 // Fetched users are augmented with all the other references that
 // can point to them (also from the database), and the newly fetched
 // references are then linked back to the bag.
-func (b *bag) Resolve(ctx context.Context, db edb.EnterpriseDB) error {
+func (b *bag) Resolve(ctx context.Context, db edb.EnterpriseDB) {
 	for k, refCtx := range b.references {
 		if !refCtx.resolutionDone {
 			userRefs, teamRefs, err := k.fetch(ctx, db)
 			refCtx.resolutionDone = true
 			if err != nil {
-				return err
+				refCtx.appendErr(err)
 			}
 			// User resolved
 			if userRefs != nil {
-				refCtx.resolvedUserID = userRefs.id
 				if _, ok := b.resolvedUsers[userRefs.id]; !ok {
-					if err := userRefs.augment(ctx, db); err != nil {
-						return err
-					}
+					userRefs.augment(ctx, db)
 					b.resolvedUsers[userRefs.id] = userRefs
 					userRefs.linkBack(b)
 				}
+				refCtx.resolvedUserID = userRefs.id
 			}
 			// Team resolved
 			if teamRefs != nil {
 				id := teamRefs.team.ID
-				refCtx.resolvedTeamID = id
 				if _, ok := b.resolvedTeams[id]; !ok {
 					b.resolvedTeams[id] = teamRefs
 				}
 				// Team was referred to either by ID or by name, need to link back.
 				teamRefs.linkBack(b)
+				refCtx.resolvedTeamID = id
 			}
 		}
 	}
-	return nil
 }
 
 // userReferences represents all the references found for a given user in the database.
@@ -319,35 +336,41 @@ type userReferences struct {
 	// codeHostHandles are handles on the code-host that are linked with the user
 	codeHostHandles []string
 	verifiedEmails  []string
+	errs            []error
+}
+
+func (r *userReferences) appendErr(err error) {
+	r.errs = append(r.errs, err)
 }
 
 // augment fetches all the references for this user that are missing.
 // These can then be linked back into the bag using `linkBack`.
 // In order to call augment, `id`
-func (r *userReferences) augment(ctx context.Context, db edb.EnterpriseDB) error {
+func (r *userReferences) augment(ctx context.Context, db edb.EnterpriseDB) {
+	// User references has to have an ID
 	if r.id == 0 {
-		return errors.New("userReferences needs id set for augmenting")
+		r.appendErr(errors.New("userReferences needs id set for augmenting"))
+		return
 	}
 	var err error
 	if r.user == nil {
 		r.user, err = db.Users().GetByID(ctx, r.id)
 		if err != nil {
-			return errors.Wrap(err, "augmenting user")
+			r.appendErr(errors.Wrap(err, "augmenting user"))
 		}
 	}
 	if len(r.codeHostHandles) == 0 {
 		r.codeHostHandles, err = fetchCodeHostHandles(ctx, db, r.id)
 		if err != nil {
-			return errors.Wrap(err, "augmenting code host handles")
+			r.appendErr(errors.Wrap(err, "augmenting code host handles"))
 		}
 	}
 	if len(r.verifiedEmails) == 0 {
 		r.verifiedEmails, err = fetchVerifiedEmails(ctx, db, r.id)
 		if err != nil {
-			return errors.Wrap(err, "augmenting verified emails")
+			r.appendErr(errors.Wrap(err, "augmenting verified emails"))
 		}
 	}
-	return nil
 }
 
 func fetchVerifiedEmails(ctx context.Context, db edb.EnterpriseDB, userID int32) ([]string, error) {
@@ -369,9 +392,12 @@ func fetchCodeHostHandles(ctx context.Context, db edb.EnterpriseDB, userID int32
 	}
 	codeHostHandles := make([]string, 0, len(accounts))
 	for _, account := range accounts {
-		p := providers.GetProviderbyServiceType(account.ServiceType)
+		serviceType := account.ServiceType
+		p := providers.GetProviderbyServiceType(serviceType)
+		// If the provider is not found, we skip it.
 		if p == nil {
-			return nil, errors.Errorf("cannot find authorization provider for the external account, service type: %s", account.ServiceType)
+			extSvcProviderNotFound.WithLabelValues(serviceType).Inc()
+			continue
 		}
 		data, err := p.ExternalAccountInfo(ctx, *account)
 		if err != nil || data == nil {
@@ -564,11 +590,16 @@ type refContext struct {
 	// resolutionDone is set to true after the reference pointing at this refContext
 	// has been attempted to be resolved.
 	resolutionDone bool
+	resolutionErrs []error
 }
 
 // successfullyResolved context either points to a team or to a user.
 func (c refContext) successfullyResolved() bool {
 	return c.resolvedUserID != 0 || c.resolvedTeamID != 0
+}
+
+func (c *refContext) appendErr(err error) {
+	c.resolutionErrs = append(c.resolutionErrs, err)
 }
 
 func (c refContext) resolvedIDForDebugging() string {

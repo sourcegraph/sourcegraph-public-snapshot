@@ -1,15 +1,27 @@
-import { FunctionComponent, useEffect } from 'react'
+import { FunctionComponent, useCallback, useEffect } from 'react'
 
+import { mdiTrashCan } from '@mdi/js'
 import classNames from 'classnames'
-import { formatDistance, format, parseISO } from 'date-fns'
+import { format, formatDistance, parseISO } from 'date-fns'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, ErrorAlert, LoadingSpinner, PageHeader, H4, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Code, Container, ErrorAlert, H4, Icon, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
+import {
+    BumpDerivativeGraphKeyResult,
+    BumpDerivativeGraphKeyVariables,
+    DeleteRankingProgressResult,
+    DeleteRankingProgressVariables,
+} from '../../../../graphql-operations'
 
-import { useRankingSummary as defaultUseRankingSummary } from './backend'
+import {
+    BUMP_DERIVATIVE_GRAPH_KEY,
+    DELETE_RANKING_PROGRESS,
+    useRankingSummary as defaultUseRankingSummary,
+} from './backend'
 
 import styles from './CodeIntelRankingPage.module.scss'
 
@@ -24,9 +36,42 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelRankingPage'), [telemetryService])
 
-    const { data, loading, error } = useRankingSummary({})
+    const { data, loading, error, refetch } = useRankingSummary({})
 
-    if (loading && !data) {
+    const [bumpDerivativeGraphKey, { loading: bumping }] = useMutation<
+        BumpDerivativeGraphKeyResult,
+        BumpDerivativeGraphKeyVariables
+    >(BUMP_DERIVATIVE_GRAPH_KEY)
+
+    const [deleteProgressEntry, { loading: deleting }] = useMutation<
+        DeleteRankingProgressResult,
+        DeleteRankingProgressVariables
+    >(DELETE_RANKING_PROGRESS)
+
+    const onEnqueue = useCallback(async () => {
+        try {
+            await bumpDerivativeGraphKey()
+        } finally {
+            window.alert('A new job will begin on the next invocation.')
+        }
+    }, [bumpDerivativeGraphKey])
+
+    const onDelete = useCallback(
+        async (graphKey: string) => {
+            if (!window.confirm('Delete progress record?')) {
+                return
+            }
+
+            try {
+                await deleteProgressEntry({ variables: { graphKey } })
+            } finally {
+                await refetch()
+            }
+        },
+        [deleteProgressEntry, refetch]
+    )
+
+    if (loading) {
         return <LoadingSpinner />
     }
 
@@ -45,35 +90,37 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                 ]}
                 description="View the history of ranking calculation."
                 className="mb-3"
+                actions={
+                    <Button onClick={() => onEnqueue()} disabled={bumping || deleting} variant="secondary">
+                        Start new ranking map/reduce job
+                    </Button>
+                }
             />
 
-            <Container className="mb-3">
-                {data &&
-                    (data.rankingSummary.length === 0 ? (
-                        <>No data.</>
+            {data?.rankingSummary && (
+                <>
+                    {data.rankingSummary.nextJobStartsAt && (
+                        <Text size="small" className="text-right">
+                            Next job will begin <Timestamp date={data.rankingSummary.nextJobStartsAt} />.
+                        </Text>
+                    )}
+
+                    {data.rankingSummary.rankingSummary.length === 0 ? (
+                        <Container>
+                            <>No data.</>
+                        </Container>
                     ) : (
-                        <>
-                            <H3>Current ranking calculation ({data.rankingSummary[0].graphKey})</H3>
-
-                            <div className="p-2">
-                                <Summary
-                                    key={data.rankingSummary[0].graphKey}
-                                    summary={data.rankingSummary[0]}
-                                    displayGraphKey={false}
-                                />
-                            </div>
-                        </>
-                    ))}
-            </Container>
-
-            {data && data.rankingSummary.length > 1 && (
-                <Container>
-                    <Collapsible title="Historic ranking calculations" titleAtStart={true} titleClassName="h3">
-                        {data.rankingSummary.slice(1).map(summary => (
-                            <Summary key={summary.graphKey} summary={summary} displayGraphKey={true} />
-                        ))}
-                    </Collapsible>
-                </Container>
+                        data.rankingSummary.rankingSummary.map((summary, index) => (
+                            <Summary
+                                key={summary.graphKey}
+                                summary={summary}
+                                onDelete={index > 0 ? () => onDelete(summary.graphKey) : undefined}
+                                expanded={index === 0}
+                                className="mb-3"
+                            />
+                        ))
+                    )}
+                </>
             )}
         </>
     )
@@ -95,37 +142,53 @@ interface Progress {
 
 interface SummaryProps {
     summary: Summary
-    displayGraphKey: boolean
+    onDelete?: () => Promise<void>
+    expanded?: boolean
+    className?: string
 }
 
-const Summary: FunctionComponent<SummaryProps> = ({ summary, displayGraphKey }) => (
-    <div className="py-2">
-        {displayGraphKey && <H4>Historic ranking calculation ({summary.graphKey})</H4>}
-
-        <div className={displayGraphKey ? 'px-4' : ''}>
-            <Progress
-                title="Path mapper"
-                subtitle="Reads the paths of SCIP indexes exported for ranking and produce path/zero-count pairs consumed by the ranking phase."
-                progress={summary.pathMapperProgress}
-            />
-
-            <Progress
-                title="Reference count mapper"
-                subtitle="Reads the symbol references of SCIP indexes exported for ranking, join them to exported definitions, and produce definition path/count pairs consumed by the ranking phase."
-                progress={summary.referenceMapperProgress}
-                className="mt-4"
-            />
-
-            {summary.reducerProgress && (
+const Summary: FunctionComponent<SummaryProps> = ({ summary, onDelete, expanded = true, className = '' }) => (
+    <Container className={className}>
+        <Collapsible
+            title={
+                <>
+                    <Code>{summary.graphKey}</Code>
+                </>
+            }
+            titleAtStart={true}
+            defaultExpanded={expanded}
+        >
+            <div className="pt-4">
                 <Progress
-                    title="Reference count reducer"
-                    subtitle="Sums the references for each definition path produced by the mapping phases and groups them by repository."
-                    progress={summary.reducerProgress}
+                    title="Path mapper"
+                    subtitle="Reads the paths of SCIP indexes exported for ranking and produce path/zero-count pairs consumed by the ranking phase."
+                    progress={summary.pathMapperProgress}
+                />
+
+                <Progress
+                    title="Reference count mapper"
+                    subtitle="Reads the symbol references of SCIP indexes exported for ranking, join them to exported definitions, and produce definition path/count pairs consumed by the ranking phase."
+                    progress={summary.referenceMapperProgress}
                     className="mt-4"
                 />
-            )}
-        </div>
-    </div>
+
+                {summary.reducerProgress && (
+                    <Progress
+                        title="Reference count reducer"
+                        subtitle="Sums the references for each definition path produced by the mapping phases and groups them by repository."
+                        progress={summary.reducerProgress}
+                        className="mt-4"
+                    />
+                )}
+
+                {onDelete && (
+                    <Button variant="danger" className="p-2 mt-4" onClick={() => onDelete()}>
+                        <Icon aria-hidden={true} svgPath={mdiTrashCan} /> Delete
+                    </Button>
+                )}
+            </div>
+        </Collapsible>
+    </Container>
 )
 
 interface ProgressProps {
@@ -138,7 +201,7 @@ interface ProgressProps {
 const Progress: FunctionComponent<ProgressProps> = ({ title, subtitle, progress, className }) => (
     <div>
         <div className={classNames(styles.tableContainer, className)}>
-            <H4 className="p-0 m-0">{title}</H4>
+            <H4 className="m-0">{title}</H4>
             {subtitle && <Text size="small">{subtitle}</Text>}
 
             <div className={styles.row}>

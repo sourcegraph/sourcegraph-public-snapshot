@@ -43,16 +43,22 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan, enterpriseJobs Enterpris
 	newJob := func(b query.Basic) (job.Job, error) {
 		return NewBasicJob(inputs, b, enterpriseJobs)
 	}
-	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky {
-		jobTree = smartsearch.NewSmartSearchJob(jobTree, newJob, plan)
-	} else if inputs.PatternType == query.SearchTypeKeyword && len(plan) == 1 {
-		newJobTree, err := keyword.NewKeywordSearchJob(plan[0], newJob)
+
+	if inputs.PatternType == query.SearchTypeKeyword {
+		if inputs.SearchMode == search.SmartSearch {
+			return nil, errors.New("The 'keyword' patterntype is not compatible with Smart Search")
+		}
+
+		newJobTree, err := keyword.NewKeywordSearchJob(plan, newJob)
 		if err != nil {
 			return nil, err
 		}
-		if newJobTree != nil {
-			jobTree = newJobTree
-		}
+
+		jobTree = newJobTree
+	}
+
+	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky {
+		jobTree = smartsearch.NewSmartSearchJob(jobTree, newJob, plan)
 	}
 
 	alertJob := NewAlertJob(inputs, jobTree)
@@ -93,6 +99,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 
 		builder := &jobBuilder{
 			query:          b,
+			patternType:    inputs.PatternType,
 			resultTypes:    resultTypes,
 			repoOptions:    repoOptions,
 			features:       inputs.Features,
@@ -180,7 +187,11 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 
 	{ // Apply file:contains.content() post-filter
 		if len(fileContainsPatterns) > 0 {
-			basicJob = NewFileContainsFilterJob(fileContainsPatterns, originalQuery.Pattern, b.IsCaseSensitive(), basicJob)
+			var err error
+			basicJob, err = NewFileContainsFilterJob(fileContainsPatterns, originalQuery.Pattern, b.IsCaseSensitive(), basicJob)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -747,6 +758,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 // If in doubt, ask the search team.
 type jobBuilder struct {
 	query          query.Basic
+	patternType    query.SearchType
 	resultTypes    result.Types
 	repoOptions    search.RepoOptions
 	features       *search.Features
@@ -768,7 +780,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 	includePrivate := b.repoOptions.Visibility == query.Private || b.repoOptions.Visibility == query.Any
 	globalZoektQuery := zoekt.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
 
-	zoektArgs := &search.ZoektParameters{
+	zoektParams := &search.ZoektParameters{
 		// TODO(rvantonder): the Query value is set when the global zoekt query is
 		// enriched with private repository data in the search job's Run method, and
 		// is therefore set to `nil` below.
@@ -779,19 +791,20 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 		FileMatchLimit: b.fileMatchLimit,
 		Select:         b.selector,
 		Features:       *b.features,
+		KeywordScoring: b.patternType == query.SearchTypeKeyword,
 	}
 
 	switch typ {
 	case search.SymbolRequest:
 		return &zoekt.GlobalSymbolSearchJob{
 			GlobalZoektQuery: globalZoektQuery,
-			ZoektArgs:        zoektArgs,
+			ZoektParams:      zoektParams,
 			RepoOpts:         b.repoOptions,
 		}, nil
 	case search.TextRequest:
 		return &zoekt.GlobalTextSearchJob{
 			GlobalZoektQuery:        globalZoektQuery,
-			ZoektArgs:               zoektArgs,
+			ZoektParams:             zoektParams,
 			RepoOpts:                b.repoOptions,
 			GlobalZoektQueryRegexps: zoektQueryPatternsAsRegexps(globalZoektQuery.Query),
 		}, nil
@@ -805,22 +818,25 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 		return nil, err
 	}
 
+	zoektParams := &search.ZoektParameters{
+		FileMatchLimit: b.fileMatchLimit,
+		Select:         b.selector,
+		Features:       *b.features,
+		KeywordScoring: b.patternType == query.SearchTypeKeyword,
+	}
+
 	switch typ {
 	case search.SymbolRequest:
 		return &zoekt.SymbolSearchJob{
-			Query:          zoektQuery,
-			FileMatchLimit: b.fileMatchLimit,
-			Select:         b.selector,
-			Features:       *b.features,
+			Query:       zoektQuery,
+			ZoektParams: zoektParams,
 		}, nil
 	case search.TextRequest:
 		return &zoekt.RepoSubsetTextSearchJob{
 			Query:             zoektQuery,
 			ZoektQueryRegexps: zoektQueryPatternsAsRegexps(zoektQuery),
 			Typ:               typ,
-			FileMatchLimit:    b.fileMatchLimit,
-			Select:            b.selector,
-			Features:          *b.features,
+			ZoektParams:       zoektParams,
 		}, nil
 	}
 	return nil, errors.Errorf("attempt to create unrecognized zoekt search with value %v", typ)

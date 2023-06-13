@@ -5,6 +5,7 @@ import (
 
 	frontend_shared "github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -25,7 +26,7 @@ func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 }
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {
-	return frontend_shared.CLIMain(ctx, observationCtx, ready, EnterpriseSetupHook)
+	return frontend_shared.CLIMain(ctx, observationCtx, ready, EnterpriseSetupHook, migrations.RegisterEnterpriseMigratorsUsingConfAndStoreFactory)
 }
 
 var Service service.Service = svc{}

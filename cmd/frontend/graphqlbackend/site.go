@@ -22,13 +22,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/drift"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/multiversion"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -267,7 +272,8 @@ func (r *siteConfigurationResolver) History(ctx context.Context, args *graphqlut
 func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *struct {
 	LastID int32
 	Input  string
-}) (bool, error) {
+},
+) (bool, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -300,31 +306,6 @@ func canUpdateSiteConfiguration() bool {
 	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits || deploy.IsApp()
 }
 
-// IsCodeInsightsEnabled tells if code insights are enabled or not.
-func IsCodeInsightsEnabled() bool {
-	if envvar.SourcegraphDotComMode() {
-		return false
-	}
-	if v, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS")); v {
-		// Code insights can always be disabled. This can be a helpful escape hatch if e.g. there
-		// are issues with (or connecting to) the codeinsights-db deployment and it is preventing
-		// the Sourcegraph frontend or repo-updater from starting.
-		//
-		// It is also useful in dev environments if you do not wish to spend resources running Code
-		// Insights.
-		return false
-	}
-	if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
-		// Code insights is not supported in single-container Docker demo deployments unless
-		// explicity allowed, (for example by backend integration tests.)
-		if v, _ := strconv.ParseBool(os.Getenv("ALLOW_SINGLE_DOCKER_CODE_INSIGHTS")); v {
-			return true
-		}
-		return false
-	}
-	return true
-}
-
 func (r *siteResolver) UpgradeReadiness(ctx context.Context) (*upgradeReadinessResolver, error) {
 	// 🚨 SECURITY: Only site admins may view upgrade readiness information.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -343,16 +324,16 @@ type upgradeReadinessResolver struct {
 
 	initOnce    sync.Once
 	initErr     error
-	runner      cliutil.Runner
+	runner      *runner.Runner
 	version     string
 	schemaNames []string
 }
 
-var devSchemaFactory = cliutil.NewExpectedSchemaFactory(
+var devSchemaFactory = schemas.NewExpectedSchemaFactory(
 	"Local file",
-	[]cliutil.NamedRegexp{{Regexp: lazyregexp.New(`^dev$`)}},
+	[]schemas.NamedRegexp{{Regexp: lazyregexp.New(`^dev$`)}},
 	func(filename, _ string) string { return filename },
-	cliutil.ReadSchemaFromFile,
+	schemas.ReadSchemaFromFile,
 )
 
 var schemaFactories = append(
@@ -363,17 +344,17 @@ var schemaFactories = append(
 
 var insidersVersionPattern = lazyregexp.New(`^[\w-]+_\d{4}-\d{2}-\d{2}_\d+\.\d+-(\w+)$`)
 
-func (r *upgradeReadinessResolver) init(ctx context.Context) (_ cliutil.Runner, version string, schemaNames []string, _ error) {
+func (r *upgradeReadinessResolver) init(ctx context.Context) (_ *runner.Runner, version string, schemaNames []string, _ error) {
 	r.initOnce.Do(func() {
-		r.runner, r.version, r.schemaNames, r.initErr = func() (cliutil.Runner, string, []string, error) {
+		r.runner, r.version, r.schemaNames, r.initErr = func() (*runner.Runner, string, []string, error) {
 			schemaNames := []string{schemas.Frontend.Name, schemas.CodeIntel.Name}
 			schemaList := []*schemas.Schema{schemas.Frontend, schemas.CodeIntel}
-			if IsCodeInsightsEnabled() {
+			if insights.IsCodeInsightsEnabled() {
 				schemaNames = append(schemaNames, schemas.CodeInsights.Name)
 				schemaList = append(schemaList, schemas.CodeInsights)
 			}
 			observationCtx := observation.NewContext(r.logger)
-			runner, err := migratorshared.NewRunnerWithSchemas(observationCtx, r.logger, schemaNames, schemaList)
+			runner, err := migration.NewRunnerWithSchemas(observationCtx, output.OutputFromLogger(r.logger), "frontend-upgradereadiness", schemaNames, schemaList)
 			if err != nil {
 				return nil, "", nil, errors.Wrap(err, "new runner")
 			}
@@ -469,12 +450,12 @@ func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) ([]*schemaDr
 		var buf bytes.Buffer
 		driftOut := output.NewOutput(&buf, output.OutputOpts{})
 
-		expectedSchema, err := cliutil.FetchExpectedSchema(ctx, schemaName, version, driftOut, schemaFactories)
+		expectedSchema, err := multiversion.FetchExpectedSchema(ctx, schemaName, version, driftOut, schemaFactories)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, summary := range drift.CompareSchemaDescriptions(schemaName, version, cliutil.Canonicalize(schema), cliutil.Canonicalize(expectedSchema)) {
+		for _, summary := range drift.CompareSchemaDescriptions(schemaName, version, multiversion.Canonicalize(schema), multiversion.Canonicalize(expectedSchema)) {
 			resolvers = append(resolvers, &schemaDriftResolver{
 				summary: summary,
 			})
@@ -535,7 +516,8 @@ func (r *siteResolver) AutoUpgradeEnabled(ctx context.Context) (bool, error) {
 
 func (r *schemaResolver) SetAutoUpgrade(ctx context.Context, args *struct {
 	Enable bool
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can set auto_upgrade readiness
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
@@ -580,3 +562,5 @@ func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
 	isAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
 	return !isAdmin
 }
+
+func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool { return cody.IsCodyEnabled(ctx) }

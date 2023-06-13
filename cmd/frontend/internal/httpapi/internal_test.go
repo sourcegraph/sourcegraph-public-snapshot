@@ -25,7 +25,7 @@ func TestGitServiceHandlers(t *testing.T) {
 	gitService := &gitServiceHandler{
 		Gitserver: mockAddrForRepo{},
 	}
-	handler := jsonMiddleware(&errorHandler{
+	handler := JsonMiddleware(&ErrorHandler{
 		Logger: logtest.Scoped(t),
 		// Internal endpoints can expose sensitive errors
 		WriteErrBody: true,

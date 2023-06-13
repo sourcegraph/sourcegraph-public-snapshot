@@ -46,7 +46,8 @@ export class ContextSearch implements Recipe {
                 text: '',
                 displayText: await this.displaySearchResults(truncatedText, context.codebaseContext, wsRootPath),
             },
-            new Promise(resolve => resolve([]))
+            new Promise(resolve => resolve([])),
+            []
         )
     }
 
@@ -71,11 +72,9 @@ export class ContextSearch implements Recipe {
             }
             let uri = new URL(`/search?q=context:global+file:${file.fileName}`, endpointUri).href
 
-            // TODO: Open file in editor (the uri is currently being stripped by the chat component)
-            // This current does not work hence the wsRootPath === uri
-            if (wsRootPath === uri) {
-                const vsceUri = vscode.Uri.parse('vscode://file:' + wsRootPath + '/' + file.fileName).toString()
-                uri = new URL(vsceUri).href
+            if (wsRootPath) {
+                const fileUri = vscode.Uri.joinPath(vscode.Uri.file(wsRootPath), file.fileName)
+                uri = vscode.Uri.parse(`vscode://file${fileUri.path}`).toString()
             }
 
             snippets +=

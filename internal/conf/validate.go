@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tidwall/gjson"
 	"github.com/xeipuuv/gojsonschema"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -282,12 +281,25 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 	}
 
 	for _, secret := range siteConfigSecrets {
-		v := gjson.Get(unredactedSite, secret.readPath).String()
-		if v != redactedSecret {
+		v, err := jsonc.ReadProperty(unredactedSite, secret.editPaths...)
+		if err != nil {
+			continue
+		}
+		val, ok := v.(string)
+		if ok && val != redactedSecret {
 			continue
 		}
 
-		unredactedSite, err = jsonc.Edit(unredactedSite, gjson.Get(raw.Site, secret.readPath).String(), secret.editPaths...)
+		v, err = jsonc.ReadProperty(raw.Site, secret.editPaths...)
+		if err != nil {
+			continue
+		}
+		val, ok = v.(string)
+		if !ok {
+			continue
+		}
+
+		unredactedSite, err = jsonc.Edit(unredactedSite, val, secret.editPaths...)
 		if err != nil {
 			return input, errors.Wrapf(err, `unredact %q`, strings.Join(secret.editPaths, " > "))
 		}
@@ -355,8 +367,21 @@ func redactConfSecrets(raw conftypes.RawUnified, hashSecrets bool) (empty confty
 	}
 
 	for _, secret := range siteConfigSecrets {
-		val := gjson.Get(redactedSite, secret.readPath).String()
-		if val == "" {
+		v, err := jsonc.ReadProperty(redactedSite, secret.editPaths...)
+		if err != nil {
+			continue
+		}
+		val, ok := v.(string)
+		if ok && val == "" {
+			continue
+		}
+
+		v, err = jsonc.ReadProperty(raw.Site, secret.editPaths...)
+		if err != nil {
+			continue
+		}
+		val, ok = v.(string)
+		if !ok {
 			continue
 		}
 

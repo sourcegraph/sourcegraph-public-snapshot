@@ -944,6 +944,26 @@ CREATE SEQUENCE assigned_owners_id_seq
 
 ALTER SEQUENCE assigned_owners_id_seq OWNED BY assigned_owners.id;
 
+CREATE TABLE assigned_teams (
+    id integer NOT NULL,
+    owner_team_id integer NOT NULL,
+    file_path_id integer NOT NULL,
+    who_assigned_team_id integer,
+    assigned_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE assigned_teams IS 'Table for team ownership assignments, one entry contains an assigned team ID, which repo_path is assigned and the date and user who assigned the owner team.';
+
+CREATE SEQUENCE assigned_teams_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE assigned_teams_id_seq OWNED BY assigned_teams.id;
+
 CREATE TABLE batch_changes (
     id bigint NOT NULL,
     name text NOT NULL,
@@ -1833,7 +1853,8 @@ CREATE TABLE codeintel_ranking_definitions (
     symbol_name text NOT NULL,
     document_path text NOT NULL,
     graph_key text NOT NULL,
-    exported_upload_id integer NOT NULL
+    exported_upload_id integer NOT NULL,
+    symbol_checksum bytea DEFAULT '\x'::bytea NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_definitions_id_seq
@@ -1864,6 +1885,22 @@ CREATE SEQUENCE codeintel_ranking_exports_id_seq
     CACHE 1;
 
 ALTER SEQUENCE codeintel_ranking_exports_id_seq OWNED BY codeintel_ranking_exports.id;
+
+CREATE TABLE codeintel_ranking_graph_keys (
+    id integer NOT NULL,
+    graph_key text NOT NULL,
+    created_at timestamp with time zone DEFAULT now()
+);
+
+CREATE SEQUENCE codeintel_ranking_graph_keys_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_ranking_graph_keys_id_seq OWNED BY codeintel_ranking_graph_keys.id;
 
 CREATE TABLE codeintel_ranking_path_counts_inputs (
     id bigint NOT NULL,
@@ -1896,7 +1933,11 @@ CREATE TABLE codeintel_ranking_progress (
     num_path_records_processed integer,
     num_reference_records_processed integer,
     num_count_records_processed integer,
-    max_export_id bigint NOT NULL
+    max_export_id bigint NOT NULL,
+    reference_cursor_export_deleted_at timestamp with time zone,
+    reference_cursor_export_id integer,
+    path_cursor_deleted_export_at timestamp with time zone,
+    path_cursor_export_id integer
 );
 
 CREATE SEQUENCE codeintel_ranking_progress_id_seq
@@ -1912,7 +1953,8 @@ CREATE TABLE codeintel_ranking_references (
     id bigint NOT NULL,
     symbol_names text[] NOT NULL,
     graph_key text NOT NULL,
-    exported_upload_id integer NOT NULL
+    exported_upload_id integer NOT NULL,
+    symbol_checksums bytea[] DEFAULT '{}'::bytea[] NOT NULL
 );
 
 COMMENT ON TABLE codeintel_ranking_references IS 'References for a given upload proceduced by background job consuming SCIP indexes.';
@@ -1959,6 +2001,43 @@ CREATE SEQUENCE codeowners_id_seq
     CACHE 1;
 
 ALTER SEQUENCE codeowners_id_seq OWNED BY codeowners.id;
+
+CREATE TABLE codeowners_individual_stats (
+    file_path_id integer NOT NULL,
+    owner_id integer NOT NULL,
+    tree_owned_files_count integer NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+COMMENT ON TABLE codeowners_individual_stats IS 'Data on how many files in given tree are owned by given owner.
+
+As opposed to ownership-general `ownership_path_stats` table, the individual <path x owner> stats
+are stored in CODEOWNERS-specific table `codeowners_individual_stats`. The reason for that is that
+we are also indexing on owner_id which is CODEOWNERS-specific.';
+
+COMMENT ON COLUMN codeowners_individual_stats.tree_owned_files_count IS 'Total owned file count by given owner at given file tree.';
+
+COMMENT ON COLUMN codeowners_individual_stats.updated_at IS 'When the last background job updating counts run.';
+
+CREATE TABLE codeowners_owners (
+    id integer NOT NULL,
+    reference text NOT NULL
+);
+
+COMMENT ON TABLE codeowners_owners IS 'Text reference in CODEOWNERS entry to use in codeowners_individual_stats. Reference is either email or handle without @ in front.';
+
+COMMENT ON COLUMN codeowners_owners.reference IS 'We just keep the reference as opposed to splitting it to handle or email
+since the distinction is not relevant for query, and this makes indexing way easier.';
+
+CREATE SEQUENCE codeowners_owners_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeowners_owners_id_seq OWNED BY codeowners_owners.id;
 
 CREATE TABLE commit_authors (
     id integer NOT NULL,
@@ -2215,7 +2294,7 @@ ALTER SEQUENCE event_logs_scrape_state_own_id_seq OWNED BY event_logs_scrape_sta
 CREATE TABLE executor_heartbeats (
     id integer NOT NULL,
     hostname text NOT NULL,
-    queue_name text NOT NULL,
+    queue_name text,
     os text NOT NULL,
     architecture text NOT NULL,
     docker_version text NOT NULL,
@@ -2224,7 +2303,9 @@ CREATE TABLE executor_heartbeats (
     ignite_version text NOT NULL,
     src_cli_version text NOT NULL,
     first_seen_at timestamp with time zone DEFAULT now() NOT NULL,
-    last_seen_at timestamp with time zone DEFAULT now() NOT NULL
+    last_seen_at timestamp with time zone DEFAULT now() NOT NULL,
+    queue_names text[],
+    CONSTRAINT one_of_queue_name_queue_names CHECK ((((queue_name IS NOT NULL) AND (queue_names IS NULL)) OR ((queue_names IS NOT NULL) AND (queue_name IS NULL))))
 );
 
 COMMENT ON TABLE executor_heartbeats IS 'Tracks the most recent activity of executors attached to this Sourcegraph instance.';
@@ -2250,6 +2331,8 @@ COMMENT ON COLUMN executor_heartbeats.src_cli_version IS 'The version of src-cli
 COMMENT ON COLUMN executor_heartbeats.first_seen_at IS 'The first time a heartbeat from the executor was received.';
 
 COMMENT ON COLUMN executor_heartbeats.last_seen_at IS 'The last time a heartbeat from the executor was received.';
+
+COMMENT ON COLUMN executor_heartbeats.queue_names IS 'The list of queue names that the executor polls for work.';
 
 CREATE SEQUENCE executor_heartbeats_id_seq
     AS integer
@@ -3748,6 +3831,21 @@ CREATE SEQUENCE own_signal_recent_contribution_id_seq
 
 ALTER SEQUENCE own_signal_recent_contribution_id_seq OWNED BY own_signal_recent_contribution.id;
 
+CREATE TABLE ownership_path_stats (
+    file_path_id integer NOT NULL,
+    tree_codeowned_files_count integer,
+    last_updated_at timestamp without time zone NOT NULL
+);
+
+COMMENT ON TABLE ownership_path_stats IS 'Data on how many files in given tree are owned by anyone.
+
+We choose to have a table for `ownership_path_stats` - more general than for CODEOWNERS,
+with a specific tree_codeowned_files_count CODEOWNERS column. The reason for that
+is that we aim at expanding path stats by including total owned files (via CODEOWNERS
+or assigned ownership), and perhaps files count by assigned ownership only.';
+
+COMMENT ON COLUMN ownership_path_stats.last_updated_at IS 'When the last background job updating counts run.';
+
 CREATE TABLE package_repo_filters (
     id integer NOT NULL,
     behaviour text NOT NULL,
@@ -3882,7 +3980,13 @@ CREATE TABLE product_licenses (
     license_tags text[],
     license_user_count integer,
     license_expires_at timestamp with time zone,
-    access_token_enabled boolean DEFAULT true NOT NULL
+    access_token_enabled boolean DEFAULT true NOT NULL,
+    site_id uuid,
+    license_check_token bytea,
+    revoked_at timestamp with time zone,
+    salesforce_sub_id text,
+    salesforce_opp_id text,
+    revoke_reason text
 );
 
 COMMENT ON COLUMN product_licenses.access_token_enabled IS 'Whether this license key can be used as an access token to authenticate API requests';
@@ -3895,20 +3999,23 @@ CREATE TABLE product_subscriptions (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     archived_at timestamp with time zone,
     account_number text,
-    llm_proxy_enabled boolean DEFAULT false NOT NULL,
-    llm_proxy_chat_rate_limit integer,
-    llm_proxy_chat_rate_interval_seconds integer,
-    llm_proxy_chat_rate_limit_allowed_models text[],
-    llm_proxy_code_rate_limit integer,
-    llm_proxy_code_rate_interval_seconds integer,
-    llm_proxy_code_rate_limit_allowed_models text[]
+    cody_gateway_enabled boolean DEFAULT false NOT NULL,
+    cody_gateway_chat_rate_limit integer,
+    cody_gateway_chat_rate_interval_seconds integer,
+    cody_gateway_embeddings_api_rate_limit integer,
+    cody_gateway_embeddings_api_rate_interval_seconds integer,
+    cody_gateway_embeddings_api_allowed_models text[],
+    cody_gateway_chat_rate_limit_allowed_models text[],
+    cody_gateway_code_rate_limit integer,
+    cody_gateway_code_rate_interval_seconds integer,
+    cody_gateway_code_rate_limit_allowed_models text[]
 );
 
-COMMENT ON COLUMN product_subscriptions.llm_proxy_enabled IS 'Whether or not this subscription has access to LLM-proxy';
+COMMENT ON COLUMN product_subscriptions.cody_gateway_embeddings_api_rate_limit IS 'Custom requests per time interval allowed for embeddings';
 
-COMMENT ON COLUMN product_subscriptions.llm_proxy_chat_rate_limit IS 'Custom requests per time interval allowed for LLM-proxy';
+COMMENT ON COLUMN product_subscriptions.cody_gateway_embeddings_api_rate_interval_seconds IS 'Custom time interval over which the embeddings rate limit is applied';
 
-COMMENT ON COLUMN product_subscriptions.llm_proxy_chat_rate_interval_seconds IS 'Custom time interval over which the for LLM-proxy rate limit is applied';
+COMMENT ON COLUMN product_subscriptions.cody_gateway_embeddings_api_allowed_models IS 'Custom override for the set of models allowed for embedding';
 
 CREATE TABLE query_runner_state (
     query text,
@@ -4112,10 +4219,16 @@ CREATE TABLE repo_paths (
     id integer NOT NULL,
     repo_id integer NOT NULL,
     absolute_path text NOT NULL,
-    parent_id integer
+    parent_id integer,
+    tree_files_count integer,
+    tree_files_counts_updated_at timestamp without time zone
 );
 
 COMMENT ON COLUMN repo_paths.absolute_path IS 'Absolute path does not start or end with forward slash. Example: "a/b/c". Root directory is empty path "".';
+
+COMMENT ON COLUMN repo_paths.tree_files_count IS 'Total count of files in the file tree rooted at the path. 1 for files.';
+
+COMMENT ON COLUMN repo_paths.tree_files_counts_updated_at IS 'Timestamp of the job that updated the file counts';
 
 CREATE SEQUENCE repo_paths_id_seq
     AS integer
@@ -4724,6 +4837,8 @@ ALTER TABLE ONLY access_tokens ALTER COLUMN id SET DEFAULT nextval('access_token
 
 ALTER TABLE ONLY assigned_owners ALTER COLUMN id SET DEFAULT nextval('assigned_owners_id_seq'::regclass);
 
+ALTER TABLE ONLY assigned_teams ALTER COLUMN id SET DEFAULT nextval('assigned_teams_id_seq'::regclass);
+
 ALTER TABLE ONLY batch_changes ALTER COLUMN id SET DEFAULT nextval('batch_changes_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_changes_site_credentials ALTER COLUMN id SET DEFAULT nextval('batch_changes_site_credentials_id_seq'::regclass);
@@ -4782,6 +4897,8 @@ ALTER TABLE ONLY codeintel_ranking_definitions ALTER COLUMN id SET DEFAULT nextv
 
 ALTER TABLE ONLY codeintel_ranking_exports ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_exports_id_seq'::regclass);
 
+ALTER TABLE ONLY codeintel_ranking_graph_keys ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_graph_keys_id_seq'::regclass);
+
 ALTER TABLE ONLY codeintel_ranking_path_counts_inputs ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_ranking_progress ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_progress_id_seq'::regclass);
@@ -4791,6 +4908,8 @@ ALTER TABLE ONLY codeintel_ranking_references ALTER COLUMN id SET DEFAULT nextva
 ALTER TABLE ONLY codeintel_ranking_references_processed ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_references_processed_id_seq'::regclass);
 
 ALTER TABLE ONLY codeowners ALTER COLUMN id SET DEFAULT nextval('codeowners_id_seq'::regclass);
+
+ALTER TABLE ONLY codeowners_owners ALTER COLUMN id SET DEFAULT nextval('codeowners_owners_id_seq'::regclass);
 
 ALTER TABLE ONLY commit_authors ALTER COLUMN id SET DEFAULT nextval('commit_authors_id_seq'::regclass);
 
@@ -4970,6 +5089,9 @@ ALTER TABLE ONLY aggregated_user_statistics
 ALTER TABLE ONLY assigned_owners
     ADD CONSTRAINT assigned_owners_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY assigned_teams
+    ADD CONSTRAINT assigned_teams_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY batch_changes
     ADD CONSTRAINT batch_changes_pkey PRIMARY KEY (id);
 
@@ -5078,6 +5200,9 @@ ALTER TABLE ONLY codeintel_ranking_definitions
 ALTER TABLE ONLY codeintel_ranking_exports
     ADD CONSTRAINT codeintel_ranking_exports_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY codeintel_ranking_graph_keys
+    ADD CONSTRAINT codeintel_ranking_graph_keys_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY codeintel_ranking_path_counts_inputs
     ADD CONSTRAINT codeintel_ranking_path_counts_inputs_pkey PRIMARY KEY (id);
 
@@ -5092,6 +5217,12 @@ ALTER TABLE ONLY codeintel_ranking_references
 
 ALTER TABLE ONLY codeintel_ranking_references_processed
     ADD CONSTRAINT codeintel_ranking_references_processed_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeowners_individual_stats
+    ADD CONSTRAINT codeowners_individual_stats_pkey PRIMARY KEY (file_path_id, owner_id);
+
+ALTER TABLE ONLY codeowners_owners
+    ADD CONSTRAINT codeowners_owners_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeowners
     ADD CONSTRAINT codeowners_pkey PRIMARY KEY (id);
@@ -5309,6 +5440,9 @@ ALTER TABLE ONLY own_signal_configurations
 ALTER TABLE ONLY own_signal_recent_contribution
     ADD CONSTRAINT own_signal_recent_contribution_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY ownership_path_stats
+    ADD CONSTRAINT ownership_path_stats_pkey PRIMARY KEY (file_path_id);
+
 ALTER TABLE ONLY package_repo_filters
     ADD CONSTRAINT package_repo_filters_pkey PRIMARY KEY (id);
 
@@ -5474,7 +5608,9 @@ CREATE INDEX access_requests_status ON access_requests USING btree (status);
 
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
 
-CREATE INDEX assigned_owners_file_path ON assigned_owners USING btree (file_path_id);
+CREATE UNIQUE INDEX assigned_owners_file_path_owner ON assigned_owners USING btree (file_path_id, owner_user_id);
+
+CREATE UNIQUE INDEX assigned_teams_file_path_owner ON assigned_teams USING btree (file_path_id, owner_team_id);
 
 CREATE INDEX batch_changes_namespace_org_id ON batch_changes USING btree (namespace_org_id);
 
@@ -5566,6 +5702,8 @@ CREATE INDEX codeintel_initial_path_ranks_graph_key_id ON codeintel_initial_path
 
 CREATE UNIQUE INDEX codeintel_initial_path_ranks_processed_cgraph_key_codeintel_ini ON codeintel_initial_path_ranks_processed USING btree (graph_key, codeintel_initial_path_ranks_id);
 
+CREATE INDEX codeintel_initial_path_ranks_processed_codeintel_initial_path_r ON codeintel_initial_path_ranks_processed USING btree (codeintel_initial_path_ranks_id);
+
 CREATE UNIQUE INDEX codeintel_langugage_support_requests_user_id_language ON codeintel_langugage_support_requests USING btree (user_id, language_id);
 
 CREATE INDEX codeintel_path_ranks_graph_key ON codeintel_path_ranks USING btree (graph_key, updated_at NULLS FIRST, id);
@@ -5576,7 +5714,7 @@ CREATE INDEX codeintel_path_ranks_repository_id_updated_at_id ON codeintel_path_
 
 CREATE INDEX codeintel_ranking_definitions_exported_upload_id ON codeintel_ranking_definitions USING btree (exported_upload_id);
 
-CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_name, exported_upload_id, document_path);
+CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_checksum_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_checksum, exported_upload_id, document_path);
 
 CREATE INDEX codeintel_ranking_exports_graph_key_deleted_at_id ON codeintel_ranking_exports USING btree (graph_key, deleted_at DESC, id);
 
@@ -5584,9 +5722,9 @@ CREATE INDEX codeintel_ranking_exports_graph_key_last_scanned_at ON codeintel_ra
 
 CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id);
 
-CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_definition_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, definition_id, id) WHERE (NOT processed);
-
 CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, id);
+
+CREATE UNIQUE INDEX codeintel_ranking_path_counts_inputs_graph_key_unique_definitio ON codeintel_ranking_path_counts_inputs USING btree (graph_key, definition_id) WHERE (NOT processed);
 
 CREATE INDEX codeintel_ranking_references_exported_upload_id ON codeintel_ranking_references USING btree (exported_upload_id);
 
@@ -5595,6 +5733,8 @@ CREATE INDEX codeintel_ranking_references_graph_key_id ON codeintel_ranking_refe
 CREATE UNIQUE INDEX codeintel_ranking_references_processed_graph_key_codeintel_rank ON codeintel_ranking_references_processed USING btree (graph_key, codeintel_ranking_reference_id);
 
 CREATE INDEX codeintel_ranking_references_processed_reference_id ON codeintel_ranking_references_processed USING btree (codeintel_ranking_reference_id);
+
+CREATE INDEX codeowners_owners_reference ON codeowners_owners USING btree (reference);
 
 CREATE UNIQUE INDEX commit_authors_email_name ON commit_authors USING btree (email, name);
 
@@ -5834,6 +5974,8 @@ CREATE UNIQUE INDEX permissions_unique_namespace_action ON permissions USING btr
 
 CREATE INDEX process_after_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (process_after);
 
+CREATE UNIQUE INDEX product_licenses_license_check_token_idx ON product_licenses USING btree (license_check_token);
+
 CREATE INDEX registry_extension_releases_registry_extension_id ON registry_extension_releases USING btree (registry_extension_id, release_tag, created_at DESC) WHERE (deleted_at IS NULL);
 
 CREATE INDEX registry_extension_releases_registry_extension_id_created_at ON registry_extension_releases USING btree (registry_extension_id, created_at) WHERE (deleted_at IS NULL);
@@ -6037,6 +6179,15 @@ ALTER TABLE ONLY assigned_owners
 ALTER TABLE ONLY assigned_owners
     ADD CONSTRAINT assigned_owners_who_assigned_user_id_fkey FOREIGN KEY (who_assigned_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
 
+ALTER TABLE ONLY assigned_teams
+    ADD CONSTRAINT assigned_teams_file_path_id_fkey FOREIGN KEY (file_path_id) REFERENCES repo_paths(id);
+
+ALTER TABLE ONLY assigned_teams
+    ADD CONSTRAINT assigned_teams_owner_team_id_fkey FOREIGN KEY (owner_team_id) REFERENCES teams(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY assigned_teams
+    ADD CONSTRAINT assigned_teams_who_assigned_team_id_fkey FOREIGN KEY (who_assigned_team_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
+
 ALTER TABLE ONLY batch_changes
     ADD CONSTRAINT batch_changes_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE;
 
@@ -6207,6 +6358,12 @@ ALTER TABLE ONLY codeintel_ranking_exports
 
 ALTER TABLE ONLY codeintel_ranking_references
     ADD CONSTRAINT codeintel_ranking_references_exported_upload_id_fkey FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY codeowners_individual_stats
+    ADD CONSTRAINT codeowners_individual_stats_file_path_id_fkey FOREIGN KEY (file_path_id) REFERENCES repo_paths(id);
+
+ALTER TABLE ONLY codeowners_individual_stats
+    ADD CONSTRAINT codeowners_individual_stats_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES codeowners_owners(id);
 
 ALTER TABLE ONLY codeowners
     ADD CONSTRAINT codeowners_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
@@ -6414,6 +6571,9 @@ ALTER TABLE ONLY own_signal_recent_contribution
 
 ALTER TABLE ONLY own_signal_recent_contribution
     ADD CONSTRAINT own_signal_recent_contribution_commit_author_id_fkey FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id);
+
+ALTER TABLE ONLY ownership_path_stats
+    ADD CONSTRAINT ownership_path_stats_file_path_id_fkey FOREIGN KEY (file_path_id) REFERENCES repo_paths(id);
 
 ALTER TABLE ONLY package_repo_versions
     ADD CONSTRAINT package_id_fk FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE;

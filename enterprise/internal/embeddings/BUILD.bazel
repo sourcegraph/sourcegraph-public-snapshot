@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "embeddings",
@@ -53,21 +54,32 @@ go_library(
 
 go_test(
     name = "embeddings_test",
-    timeout = "short",
+    timeout = "moderate",
     srcs = [
         "dot_test.go",
         "index_storage_test.go",
+        "schedule_test.go",
         "similarity_search_test.go",
         "types_test.go",
     ],
     data = glob(["testdata/**"]),
     embed = [":embeddings"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
+        "//enterprise/internal/embeddings/background/repo",
         "//internal/api",
         "//internal/codeintel/types",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/gitserver",
+        "//internal/types",
         "//internal/uploadstore",
         "//lib/errors",
         "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
     ],
 )

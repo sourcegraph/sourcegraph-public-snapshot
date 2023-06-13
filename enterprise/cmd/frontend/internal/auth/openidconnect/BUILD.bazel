@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "openidconnect",
@@ -13,11 +14,11 @@ go_library(
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
-        "//cmd/frontend/auth/providers",
         "//cmd/frontend/external/globals",
         "//cmd/frontend/external/session",
         "//enterprise/internal/licensing",
         "//internal/actor",
+        "//internal/auth/providers",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
@@ -46,10 +47,10 @@ go_test(
     embed = [":openidconnect"],
     deps = [
         "//cmd/frontend/auth",
-        "//cmd/frontend/auth/providers",
         "//cmd/frontend/external/session",
         "//enterprise/internal/licensing",
         "//internal/actor",
+        "//internal/auth/providers",
         "//internal/conf",
         "//internal/database",
         "//internal/types",

@@ -129,8 +129,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"blobstore",
 				"bundled-executor",
 				"cadvisor",
-				"codeinsights-db",
-				"codeintel-db",
+				// "codeinsights-db",
+				// "codeintel-db",
 				"embeddings",
 				"executor",
 				"executor-kubernetes",
@@ -145,7 +145,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"migrator",
 				"node-exporter",
 				"opentelemetry-collector",
-				"postgres-12-alpine",
+				// "postgres-12-alpine",
 				"postgres_exporter",
 				"precise-code-intel-worker",
 				"prometheus",
@@ -173,15 +173,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
-			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
-			ClientLintOnlyChangedFiles: false,
-			CreateBundleSizeDiff:       true,
-			ForceBazel:                 !c.MessageFlags.NoBazel,
+			CreateBundleSizeDiff:      true,
+			ForceBazel:                !c.MessageFlags.NoBazel,
 		}))
-
-		// At this stage, we don't break builds because of a Bazel failure.
-		// TODO(JH) Disabled until re-enabled with flag
-		// ops.Merge(BazelOperations(true))
 
 		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
@@ -223,7 +217,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is the Cody VS Code extension release branch, run the Cody tests and release
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			addCodyExtensionTests,
+			addCodyUnitIntegrationTests,
+			addCodyE2ETests,
 			wait,
 			addCodyReleaseSteps("stable"))
 
@@ -231,7 +226,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a Cody VS Code extension nightly build, run the Cody tests and release
 		ops = operations.NewSet(
 			addClientLintersForAllFiles,
-			addCodyExtensionTests,
+			addCodyUnitIntegrationTests,
+			addCodyE2ETests,
 			wait,
 			addCodyReleaseSteps("nightly"))
 
@@ -404,7 +400,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Temporary: on main branches, we build images with bazel binaries based on their toolchain and/or purpose. This step key is the first image in the array.
 		// This will be removed once we build images with wolfi.
 		ops.Merge(operations.NewNamedSet("Integration tests",
-			backendIntegrationTests(c.candidateImageTag(), "symbols"),
+			backendIntegrationTests(c.candidateImageTag(), "server"),
 			codeIntelQA(c.candidateImageTag()),
 		))
 		// End-to-end tests
@@ -431,6 +427,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				publishOps.Append(publishExecutorDockerMirror(c))
 			}
 		}
+		publishOps.Append(bazelPushImagesCmd(c.Version))
 		ops.Merge(publishOps)
 	}
 

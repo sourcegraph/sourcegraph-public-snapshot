@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -34,7 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -46,7 +44,7 @@ func StreamHandler(db database.DB, enterpriseJobs jobutil.EnterpriseJobs) http.H
 	return &streamHandler{
 		logger:              logger,
 		db:                  db,
-		searchClient:        client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), search.SearcherGRPCConnectionCache(), enterpriseJobs),
+		searchClient:        client.New(logger, db, enterpriseJobs),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
 	}
@@ -100,11 +98,6 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		attribute.Int("search_mode", args.SearchMode),
 	)
 
-	settings, err := settings.CurrentUserFinal(ctx, h.db)
-	if err != nil {
-		return err
-	}
-
 	inputs, err := h.searchClient.Plan(
 		ctx,
 		args.Version,
@@ -112,8 +105,6 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		args.Query,
 		search.Mode(args.SearchMode),
 		search.Streaming,
-		settings,
-		envvar.SourcegraphDotComMode(),
 	)
 	if err != nil {
 		var queryErr *client.QueryError
@@ -142,9 +133,12 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}
 
+	var latency *time.Duration
 	logLatency := func() {
+		elapsed := time.Since(start)
 		metricLatency.WithLabelValues(string(GuessSource(r))).
-			Observe(time.Since(start).Seconds())
+			Observe(elapsed.Seconds())
+		latency = &elapsed
 	}
 
 	// HACK: We awkwardly call an inline function here so that we can defer the
@@ -179,38 +173,40 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 	if alert != nil {
 		eventWriter.Alert(alert)
 	}
-	logSearch(ctx, h.logger, alert, err, start, inputs.OriginalQuery, progress)
+	logSearch(ctx, h.logger, alert, err, time.Since(start), latency, inputs.OriginalQuery, progress)
 	return err
 }
 
-func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err error, start time.Time, originalQuery string, progress *streamclient.ProgressAggregator) {
-	status := graphqlbackend.DetermineStatusForLogs(alert, progress.Stats, err)
+func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err error, duration time.Duration, latency *time.Duration, originalQuery string, progress *streamclient.ProgressAggregator) {
+	if honey.Enabled() {
+		status := graphqlbackend.DetermineStatusForLogs(alert, progress.Stats, err)
+		var alertType string
+		if alert != nil {
+			alertType = alert.PrometheusType
+		}
 
-	var alertType string
-	if alert != nil {
-		alertType = alert.PrometheusType
-	}
+		var latencyMs *int64
+		if latency != nil {
+			ms := latency.Milliseconds()
+			latencyMs = &ms
+		}
 
-	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
-	if honey.Enabled() || isSlow {
-		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
+		_ = searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
 			OriginalQuery: originalQuery,
 			Typ:           "stream",
 			Source:        string(trace.RequestSource(ctx)),
 			Status:        status,
 			AlertType:     alertType,
-			DurationMs:    time.Since(start).Milliseconds(),
+			DurationMs:    duration.Milliseconds(),
+			LatencyMs:     latencyMs,
 			ResultSize:    progress.MatchCount,
 			Error:         err,
-		})
+		}).Send()
+	}
 
-		if honey.Enabled() {
-			_ = ev.Send()
-		}
-
-		if isSlow {
-			logger.Warn("streaming: slow search request", log.String("query", originalQuery))
-		}
+	isSlow := duration > searchlogs.LogSlowSearchesThreshold()
+	if isSlow {
+		logger.Warn("streaming: slow search request", log.String("query", originalQuery))
 	}
 }
 
@@ -677,7 +673,9 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 
 	repoMetadata, err := getEventRepoMetadata(h.ctx, h.db, event)
 	if err != nil {
-		h.logger.Error("failed to get repo metadata", log.Error(err))
+		if !errors.IsContextCanceled(err) {
+			h.logger.Error("failed to get repo metadata", log.Error(err))
+		}
 		return
 	}
 

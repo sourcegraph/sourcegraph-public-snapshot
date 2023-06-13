@@ -22,9 +22,9 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_js",
-    sha256 = "08061ba5e5e7f4b1074538323576dac819f9337a0c7d75aee43afc8ae7cb6e18",
-    strip_prefix = "rules_js-1.26.1",
-    url = "https://github.com/aspect-build/rules_js/releases/download/v1.26.1/rules_js-v1.26.1.tar.gz",
+    sha256 = "0b69e0967f8eb61de60801d6c8654843076bf7ef7512894a692a47f86e84a5c2",
+    strip_prefix = "rules_js-1.27.1",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v1.27.1/rules_js-v1.27.1.tar.gz",
 )
 
 http_archive(
@@ -72,6 +72,57 @@ http_archive(
     name = "rules_rust",
     sha256 = "dc8d79fe9a5beb79d93e482eb807266a0e066e97a7b8c48d43ecf91f32a3a8f3",
     urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.19.0/rules_rust-v0.19.0.tar.gz"],
+)
+
+# Container rules
+http_archive(
+    name = "rules_oci",
+    sha256 = "db57efd706f01eb3ce771468366baa1614b5b25f4cce99757e2b8d942155b8ec",
+    strip_prefix = "rules_oci-1.0.0",
+    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.0.0/rules_oci-v1.0.0.tar.gz",
+)
+
+http_archive(
+    name = "rules_pkg",
+    sha256 = "8c20f74bca25d2d442b327ae26768c02cf3c99e93fad0381f32be9aab1967675",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.8.1/rules_pkg-0.8.1.tar.gz",
+        "https://github.com/bazelbuild/rules_pkg/releases/download/0.8.1/rules_pkg-0.8.1.tar.gz",
+    ],
+)
+
+SRC_CLI_VERSION = "5.0.3"
+
+http_archive(
+    name = "src-cli-linux-amd64",
+    build_file_content = """
+filegroup(
+    name = "src-cli-linux-amd64",
+    srcs = ["src"],
+    visibility = ["//visibility:public"],
+)
+    """,
+    sha256 = "d125d732ad4c47ae6977c49574b01cc1b3c943b2a2108142267438e829538aa3",
+    url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_linux_amd64.tar.gz".format(SRC_CLI_VERSION),
+)
+
+http_archive(
+    name = "container_structure_test",
+    sha256 = "42edb647b51710cb917b5850380cc18a6c925ad195986f16e3b716887267a2d7",
+    strip_prefix = "container-structure-test-104a53ede5f78fff72172639781ac52df9f5b18f",
+    urls = ["https://github.com/GoogleContainerTools/container-structure-test/archive/104a53ede5f78fff72172639781ac52df9f5b18f.zip"],
+)
+
+# hermetic_cc_toolchain setup ================================
+HERMETIC_CC_TOOLCHAIN_VERSION = "v2.0.0-rc2"
+
+http_archive(
+    name = "hermetic_cc_toolchain",
+    sha256 = "40dff82816735e631e8bd51ede3af1c4ed1ad4646928ffb6a0e53e228e55738c",
+    urls = [
+        "https://mirror.bazel.build/github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
+        "https://github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
+    ],
 )
 
 # rules_js setup ================================
@@ -292,17 +343,6 @@ load("@crate_index//:defs.bzl", "crate_repositories")
 
 crate_repositories()
 
-BAZEL_ZIG_CC_VERSION = "v2.0.0-rc2"
-
-http_archive(
-    name = "hermetic_cc_toolchain",
-    sha256 = "40dff82816735e631e8bd51ede3af1c4ed1ad4646928ffb6a0e53e228e55738c",
-    urls = [
-        "https://mirror.bazel.build/github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(BAZEL_ZIG_CC_VERSION),
-        "https://github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(BAZEL_ZIG_CC_VERSION),
-    ],
-)
-
 load("@hermetic_cc_toolchain//toolchain:defs.bzl", zig_toolchains = "toolchains")
 
 zig_toolchains()
@@ -311,6 +351,34 @@ load("//dev/backcompat:defs.bzl", "back_compat_defs")
 
 back_compat_defs()
 
+# containers steup       ===============================
+load("@rules_oci//oci:dependencies.bzl", "rules_oci_dependencies")
+
+rules_oci_dependencies()
+
+load("@rules_oci//oci:repositories.bzl", "LATEST_CRANE_VERSION", "LATEST_ZOT_VERSION", "oci_register_toolchains")
+
+oci_register_toolchains(
+    name = "oci",
+    crane_version = LATEST_CRANE_VERSION,
+    # Uncommenting the zot toolchain will cause it to be used instead of crane for some tasks.
+    # Note that it does not support docker-format images.
+    # zot_version = LATEST_ZOT_VERSION,
+)
+
+# Optional, for oci_tarball rule
+load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
+
+rules_pkg_dependencies()
+
+load("//dev:oci_deps.bzl", "oci_deps")
+
+oci_deps()
+
 load("//enterprise/cmd/embeddings/shared:assets.bzl", "embbedings_assets_deps")
 
 embbedings_assets_deps()
+
+load("@container_structure_test//:repositories.bzl", "container_structure_test_register_toolchain")
+
+container_structure_test_register_toolchain(name = "cst")

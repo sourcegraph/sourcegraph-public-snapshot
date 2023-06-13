@@ -29,7 +29,7 @@ func TestInsertPathRanks(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
 
 	// Insert and export upload
 	insertUploads(t, db, uploadsshared.Upload{ID: 4})
@@ -47,19 +47,19 @@ func TestInsertPathRanks(t *testing.T) {
 	mockDefinitions <- shared.RankingDefinitions{
 		UploadID:         4,
 		ExportedUploadID: 104,
-		SymbolName:       "foo",
+		SymbolChecksum:   hash("foo"),
 		DocumentPath:     "foo.go",
 	}
 	mockDefinitions <- shared.RankingDefinitions{
 		UploadID:         4,
 		ExportedUploadID: 104,
-		SymbolName:       "bar",
+		SymbolChecksum:   hash("bar"),
 		DocumentPath:     "bar.go",
 	}
 	mockDefinitions <- shared.RankingDefinitions{
 		UploadID:         4,
 		ExportedUploadID: 104,
-		SymbolName:       "foo",
+		SymbolChecksum:   hash("foo"),
 		DocumentPath:     "foo.go",
 	}
 	close(mockDefinitions)
@@ -68,10 +68,10 @@ func TestInsertPathRanks(t *testing.T) {
 	}
 
 	// Insert references
-	mockReferences := make(chan string, 3)
-	mockReferences <- "foo"
-	mockReferences <- "bar"
-	mockReferences <- "baz"
+	mockReferences := make(chan [16]byte, 3)
+	mockReferences <- hash("foo")
+	mockReferences <- hash("bar")
+	mockReferences <- hash("baz")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 104, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
@@ -144,10 +144,10 @@ func TestVacuumStaleRanks(t *testing.T) {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
 
-	key1 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
-	key2 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 234)
-	key3 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 345)
-	key4 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456)
+	key1 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
+	key2 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "234")
+	key3 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "345")
+	key4 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "456")
 
 	// Insert metadata to rank progress by completion date
 	if _, err := db.ExecContext(ctx, `

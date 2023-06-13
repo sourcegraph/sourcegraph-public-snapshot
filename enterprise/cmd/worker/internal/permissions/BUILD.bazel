@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "permissions",
@@ -14,11 +15,11 @@ go_library(
         "//cmd/frontend/globals",
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
-        "//enterprise/cmd/worker/shared/permissions",
         "//enterprise/internal/authz",
         "//enterprise/internal/database",
         "//internal/actor",
         "//internal/api",
+        "//internal/auth",
         "//internal/authz",
         "//internal/conf",
         "//internal/database",
@@ -61,9 +62,9 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//enterprise/cmd/worker/shared/permissions",
         "//enterprise/internal/database",
         "//internal/api",
+        "//internal/auth",
         "//internal/authz",
         "//internal/collections",
         "//internal/conf",

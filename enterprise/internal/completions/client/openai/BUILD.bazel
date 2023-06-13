@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "openai",
@@ -17,7 +18,15 @@ go_library(
 
 go_test(
     name = "openai_test",
-    srcs = ["decoder_test.go"],
+    srcs = [
+        "decoder_test.go",
+        "openai_test.go",
+    ],
     embed = [":openai"],
-    deps = ["@com_github_stretchr_testify//require"],
+    deps = [
+        "//enterprise/internal/completions/types",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
 )

@@ -9,9 +9,7 @@ import { View } from '../../webviews/NavBar'
  * A message sent from the webview to the extension host.
  */
 export type WebviewMessage =
-    | {
-          command: 'initialized'
-      }
+    | { command: 'initialized' }
     | { command: 'event'; event: string; value: string }
     | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }
     | { command: 'executeRecipe'; recipe: RecipeID }
@@ -19,6 +17,7 @@ export type WebviewMessage =
     | { command: 'removeToken' }
     | { command: 'removeHistory' }
     | { command: 'restoreHistory'; chatID: string }
+    | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
@@ -57,9 +56,32 @@ export interface AuthStatus {
     authenticated: boolean
     hasVerifiedEmail: boolean
     requiresVerifiedEmail: boolean
+    siteHasCodyEnabled: boolean
+    siteVersion: string
+}
+
+export const defaultAuthStatus = {
+    showInvalidAccessTokenError: false,
+    authenticated: false,
+    hasVerifiedEmail: false,
+    requiresVerifiedEmail: false,
+    siteHasCodyEnabled: false,
+    siteVersion: '',
+}
+
+export const unauthenticatedStatus = {
+    showInvalidAccessTokenError: true,
+    authenticated: false,
+    hasVerifiedEmail: false,
+    requiresVerifiedEmail: false,
+    siteHasCodyEnabled: false,
+    siteVersion: '',
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {
+    if (!authStatus.siteHasCodyEnabled) {
+        return false
+    }
     return authStatus.authenticated && (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
 }
 

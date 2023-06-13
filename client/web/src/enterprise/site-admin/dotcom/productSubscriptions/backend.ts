@@ -1,7 +1,6 @@
-import { Observable, of } from 'rxjs'
+import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { createAggregateError } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { queryGraphQL } from '../../../../backend/graphql'
@@ -58,6 +57,9 @@ export const CODY_GATEWAY_ACCESS_FIELDS_FRAGMENT = gql`
         chatCompletionsRateLimit {
             ...CodyGatewayRateLimitFields
         }
+        embeddingsRateLimit {
+            ...CodyGatewayRateLimitFields
+        }
     }
 
     fragment CodyGatewayRateLimitFields on CodyGatewayRateLimit {
@@ -68,16 +70,7 @@ export const CODY_GATEWAY_ACCESS_FIELDS_FRAGMENT = gql`
     }
 `
 
-export const CODY_GATEWAY_ACCESS_USAGE_FIELDS_FRAGMENT = gql`
-    fragment CodyGatewayAccessUsageFields on CodyGatewayAccess {
-        codeCompletionsRateLimit {
-            ...CodyGatewayRateLimitUsageFields
-        }
-        chatCompletionsRateLimit {
-            ...CodyGatewayRateLimitUsageFields
-        }
-    }
-
+const CODY_GATEWAY_RATE_LIMIT_USAGE_FIELDS = gql`
     fragment CodyGatewayRateLimitUsageFields on CodyGatewayRateLimit {
         usage {
             ...CodyGatewayRateLimitUsageDatapoint
@@ -91,19 +84,57 @@ export const CODY_GATEWAY_ACCESS_USAGE_FIELDS_FRAGMENT = gql`
     }
 `
 
-export const DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_USAGE = gql`
-    query DotComProductSubscriptionCodyGatewayUsage($uuid: String!) {
+export const CODY_GATEWAY_ACCESS_COMPLETIONS_USAGE_FIELDS_FRAGMENT = gql`
+    fragment CodyGatewayAccessCompletionsUsageFields on CodyGatewayAccess {
+        codeCompletionsRateLimit {
+            ...CodyGatewayRateLimitUsageFields
+        }
+        chatCompletionsRateLimit {
+            ...CodyGatewayRateLimitUsageFields
+        }
+    }
+
+    ${CODY_GATEWAY_RATE_LIMIT_USAGE_FIELDS}
+`
+
+export const DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_COMPLETIONS_USAGE = gql`
+    query DotComProductSubscriptionCodyGatewayCompletionsUsage($uuid: String!) {
         dotcom {
             productSubscription(uuid: $uuid) {
                 id
                 codyGatewayAccess {
-                    ...CodyGatewayAccessUsageFields
+                    ...CodyGatewayAccessCompletionsUsageFields
                 }
             }
         }
     }
 
-    ${CODY_GATEWAY_ACCESS_USAGE_FIELDS_FRAGMENT}
+    ${CODY_GATEWAY_ACCESS_COMPLETIONS_USAGE_FIELDS_FRAGMENT}
+`
+
+export const CODY_GATEWAY_ACCESS_EMBEDDINGS_USAGE_FIELDS_FRAGMENT = gql`
+    fragment CodyGatewayAccessEmbeddingsUsageFields on CodyGatewayAccess {
+        embeddingsRateLimit {
+            ...CodyGatewayRateLimitUsageFields
+        }
+    }
+
+    ${CODY_GATEWAY_RATE_LIMIT_USAGE_FIELDS}
+`
+
+export const DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_EMBEDDINGS_USAGE = gql`
+    query DotComProductSubscriptionCodyGatewayEmbeddingsUsage($uuid: String!) {
+        dotcom {
+            productSubscription(uuid: $uuid) {
+                id
+                codyGatewayAccess {
+                    ...CodyGatewayAccessEmbeddingsUsageFields
+                }
+            }
+        }
+    }
+
+    ${CODY_GATEWAY_ACCESS_EMBEDDINGS_USAGE_FIELDS_FRAGMENT}
 `
 
 export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
@@ -122,9 +153,15 @@ export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
                             tags
                             userCount
                             expiresAt
+                            salesforceSubscriptionID
+                            salesforceOpportunityID
                         }
                         licenseKey
                         createdAt
+                        revokedAt
+                        revokeReason
+                        siteID
+                        version
                     }
                     totalCount
                     pageInfo {
@@ -211,10 +248,14 @@ const siteAdminProductLicenseFragment = gql`
             urlForSiteAdmin
         }
         licenseKey
+        siteID
         info {
             ...ProductLicenseInfoFields
         }
         createdAt
+        revokedAt
+        revokeReason
+        version
     }
 
     fragment ProductLicenseInfoFields on ProductLicenseInfo {
@@ -222,6 +263,8 @@ const siteAdminProductLicenseFragment = gql`
         tags
         userCount
         expiresAt
+        salesforceSubscriptionID
+        salesforceOpportunityID
     }
 
     fragment ProductLicenseSubscriptionAccount on User {
@@ -301,45 +344,50 @@ export function queryProductSubscriptions(args: {
     )
 }
 
-export function queryLicenses(args: {
-    first?: number
-    query?: string
-}): Observable<DotComProductLicensesResult['dotcom']['productLicenses']> {
-    const variables: Partial<DotComProductLicensesVariables> = {
-        first: args.first,
-        licenseKeySubstring: args.query,
+const QUERY_PRODUCT_LICENSES = gql`
+    query DotComProductLicenses($first: Int, $licenseKeySubstring: String) {
+        dotcom {
+            productLicenses(first: $first, licenseKeySubstring: $licenseKeySubstring) {
+                nodes {
+                    ...ProductLicenseFields
+                }
+                totalCount
+                pageInfo {
+                    hasNextPage
+                }
+            }
+        }
     }
-    return args.query
-        ? queryGraphQL<DotComProductLicensesResult>(
-              gql`
-                  query DotComProductLicenses($first: Int, $licenseKeySubstring: String) {
-                      dotcom {
-                          productLicenses(first: $first, licenseKeySubstring: $licenseKeySubstring) {
-                              nodes {
-                                  ...ProductLicenseFields
-                              }
-                              totalCount
-                              pageInfo {
-                                  hasNextPage
-                              }
-                          }
-                      }
-                  }
-                  ${siteAdminProductLicenseFragment}
-              `,
-              variables
-          ).pipe(
-              map(({ data, errors }) => {
-                  if (!data?.dotcom?.productLicenses || (errors && errors.length > 0)) {
-                      throw createAggregateError(errors)
-                  }
-                  return data.dotcom.productLicenses
-              })
-          )
-        : of({
-              __typename: 'ProductLicenseConnection' as const,
-              nodes: [],
-              totalCount: 0,
-              pageInfo: { __typename: 'PageInfo' as const, hasNextPage: false, endCursor: null },
-          })
-}
+    ${siteAdminProductLicenseFragment}
+`
+
+export const useQueryProductLicensesConnection = (
+    licenseKeySubstring: string,
+    first: number
+): UseShowMorePaginationResult<DotComProductLicensesResult, ProductLicenseFields> =>
+    useShowMorePagination<DotComProductLicensesResult, DotComProductLicensesVariables, ProductLicenseFields>({
+        query: QUERY_PRODUCT_LICENSES,
+        variables: {
+            first: first ?? 20,
+            after: null,
+            licenseKeySubstring,
+        },
+        getConnection: result => {
+            const { dotcom } = dataOrThrowErrors(result)
+            return dotcom.productLicenses
+        },
+        options: {
+            fetchPolicy: 'cache-and-network',
+            skip: !licenseKeySubstring,
+        },
+    })
+
+export const REVOKE_LICENSE = gql`
+    mutation RevokeLicense($id: ID!, $reason: String!) {
+        dotcom {
+            revokeLicense(id: $id, reason: $reason) {
+                alwaysNil
+            }
+        }
+    }
+`

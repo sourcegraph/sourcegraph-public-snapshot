@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -199,7 +200,7 @@ func TestExecRequest(t *testing.T) {
 	}
 	t.Cleanup(func() { testGitRepoExists = nil })
 
-	common.RunCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
+	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
 		switch cmd.Args[1] {
 		case "testcommand":
 			_, _ = cmd.Stdout.Write([]byte("teststdout"))
@@ -220,14 +221,14 @@ func TestExecRequest(t *testing.T) {
 			cmd.Dir = "" // the test doesn't setup the dir
 
 			// We run the real codepath cause we can in this case.
-			m := common.RunCommandMock
-			common.RunCommandMock = nil
-			defer func() { common.RunCommandMock = m }()
-			return common.RunCommand(ctx, wrexec.Wrap(ctx, logtest.Scoped(t), cmd))
+			m := runCommandMock
+			runCommandMock = nil
+			defer func() { runCommandMock = m }()
+			return runCommand(ctx, wrexec.Wrap(ctx, logtest.Scoped(t), cmd))
 		}
 		return 0, nil
 	}
-	t.Cleanup(func() { common.RunCommandMock = nil })
+	t.Cleanup(func() { runCommandMock = nil })
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
@@ -297,7 +298,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 	}
 	h := s.Handler()
 
-	common.RunCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
+	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
 		switch cmd.Args[1] {
 		case "users":
 			_, _ = cmd.Stdout.Write([]byte("admin <admin@joe-perforce-server> (admin) accessed 2021/01/31"))
@@ -306,7 +307,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 		}
 		return 0, nil
 	}
-	t.Cleanup(func() { common.RunCommandMock = nil })
+	t.Cleanup(func() { runCommandMock = nil })
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
@@ -547,10 +548,19 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		mDB := database.NewMockDB()
 		mDB.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
 		mDB.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
+
+		repoStore := database.NewMockRepoStore()
+		repoStore.GetByNameFunc.SetDefaultReturn(nil, &database.RepoNotFoundErr{})
+
+		mDB.ReposFunc.SetDefaultReturn(repoStore)
+
 		db = mDB
 	}
+
+	logger := logtest.Scoped(t)
+
 	s := &Server{
-		Logger:           logtest.Scoped(t),
+		Logger:           logger,
 		ObservationCtx:   observation.TestContextTB(t),
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
@@ -565,6 +575,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		cloneableLimiter:        limiter.NewMutable(1),
 		rpsLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		recordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
+		Perforce:                perforce.NewService(ctx, logger, db, list.New()),
 	}
 
 	s.StartClonePipeline(ctx)
@@ -1470,7 +1481,7 @@ func TestHandleBatchLog(t *testing.T) {
 	}
 	t.Cleanup(func() { repoCloned = originalRepoCloned })
 
-	common.RunCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
+	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
 		for _, v := range cmd.Args {
 			if strings.HasPrefix(v, "dumbmilk") {
 				return 128, errors.New("test error")
@@ -1480,7 +1491,7 @@ func TestHandleBatchLog(t *testing.T) {
 		cmd.Stdout.Write([]byte(fmt.Sprintf("stdout<%s:%s>", cmd.Dir, strings.Join(cmd.Args, " "))))
 		return 0, nil
 	}
-	t.Cleanup(func() { common.RunCommandMock = nil })
+	t.Cleanup(func() { runCommandMock = nil })
 
 	tests := []BatchLogTest{
 		{

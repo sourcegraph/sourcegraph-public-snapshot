@@ -19,10 +19,8 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     // Expand the task tree view
     await page.getByRole('button', { name: 'Fixups Section' }).click()
 
-    // Open the command palette by clicking on the Cody Icon
-    // Expect to see fail to start because no text was selected
-    await page.getByRole('button', { name: /Cody: Fixup.*/ }).click()
-    await expect(page.getByText(/^Cody Fixups: Failed to start.*/)).toBeVisible()
+    // Cody Fixup button should not be enabled if no text is selected.
+    await expect(page.getByRole('button', { name: /Cody: Fixup.*/, disabled: true })).toBeVisible()
 
     // Find the text hello cody, and then highlight the text
     await page.getByText('<title>Hello Cody</title>').click()
@@ -45,25 +43,36 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     await expect(page.getByText('1 fixup, 1 ready')).toBeVisible()
     await expect(page.getByText('No pending Cody fixups')).not.toBeVisible()
 
+    // Close the file tab and then clicking on the tree item again should open the file again
+    // TODO: Re-enable this when FixupContentStore can provide virtual documents
+    // for files which have been closed and reopened.
+    // await page.getByRole('button', { name: /^Close.*/ }).click()
+    // await expect(page.getByText('<title>Hello Cody</title>')).not.toBeVisible()
+    // await page.locator('a').filter({ hasText: 'replace hello with goodbye' }).click()
+    // await expect(page.getByText('<title>Hello Cody</title>')).toBeVisible()
+
     // Diff view button
     await page.locator('a').filter({ hasText: 'replace hello with goodbye' }).click()
     await page.getByRole('button', { name: 'Cody: Show diff for fixup' }).click()
-    await expect(page.getByText(/^Diff view for task.*/)).toBeVisible()
+    await expect(page.getByText(/^Cody Fixup Diff View.*/)).toBeVisible()
 
     // Apply fixup button on Click
     await page.locator('a').filter({ hasText: 'replace hello with goodbye' }).click()
-    await page.getByRole('button', { name: 'Cody: Apply fixup' }).click()
-    await expect(page.getByText(/^Applying fixup for task.*/)).toBeVisible()
-
-    // Close the file tab and then clicking on the tree item again should open the file again
-    await page.getByRole('button', { name: /^Close.*/ }).click()
-    await expect(page.getByText('<title>Hello Cody</title>')).not.toBeVisible()
-    await page.locator('a').filter({ hasText: 'replace hello with goodbye' }).click()
     await expect(page.getByText('<title>Hello Cody</title>')).toBeVisible()
+    await page.getByRole('button', { name: 'Cody: Apply fixup' }).click()
+    await expect(page.getByText('No pending Cody fixups')).toBeVisible()
+
+    // Close the diff view
+    await page
+        .getByRole('tab', { name: 'index.html, preview' })
+        .getByRole('button', { name: /^Close.*/ })
+        .click()
+    await expect(page.getByText('<title>Hello Cody</title>')).not.toBeVisible()
+    await expect(page.locator('a').filter({ hasText: 'replace hello with goodbye' })).not.toBeVisible()
 
     // Collapse the task tree view
     await page.getByRole('button', { name: 'Fixups Section' }).click()
-    await expect(page.getByText('replace hello with good bye')).not.toBeVisible()
+    await expect(page.getByText('No pending Cody fixups')).not.toBeVisible()
 
     // The chat view should be visible again
     await expect(sidebar.getByText(/^Check your doc.*/)).toBeVisible()

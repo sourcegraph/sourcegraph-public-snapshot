@@ -51,7 +51,8 @@ However if no optimization is possible; just say the code is already optimized. 
                 truncatedFollowingText,
                 selection,
                 context.codebaseContext
-            )
+            ),
+            []
         )
     }
 }

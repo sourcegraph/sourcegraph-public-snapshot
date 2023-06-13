@@ -195,6 +195,8 @@ pub fn generate_tags<W: std::io::Write>(
                 panic!("Could not parse file: {}", err);
             }
 
+            let _ = err;
+
             return None;
         }
     };

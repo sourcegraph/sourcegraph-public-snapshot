@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "gitolite",
@@ -11,6 +12,7 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/extsvc",
+        "//internal/gitserver/v1:gitserver",
         "@com_github_inconshreveable_log15//:log15",
     ],
 )

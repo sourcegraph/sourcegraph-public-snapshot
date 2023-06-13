@@ -9,8 +9,10 @@ import (
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/redigo"
 	"github.com/gomodule/redigo/redis"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/log/logtest"
@@ -21,7 +23,7 @@ import (
 )
 
 type mockSourceSyncer struct {
-	syncCount int
+	syncCount atomic.Int32
 }
 
 var _ SourceSyncer = &mockSourceSyncer{}
@@ -33,7 +35,7 @@ func (m *mockSourceSyncer) Get(context.Context, string) (*Actor, error) {
 }
 
 func (m *mockSourceSyncer) Sync(context.Context) (int, error) {
-	m.syncCount++
+	m.syncCount.Inc()
 	return 10, nil
 }
 
@@ -61,7 +63,7 @@ func TestSourcesWorkers(t *testing.T) {
 	s1 := &mockSourceSyncer{}
 	stop1 := make(chan struct{})
 	g.Go(func() {
-		w := (Sources{s1}).Worker(observation.NewContext(logger), sourceWorkerMutex1, time.Millisecond)
+		w := (NewSources(s1)).Worker(observation.NewContext(logger), sourceWorkerMutex1, time.Millisecond)
 		go func() {
 			<-stop1
 			w.Stop()
@@ -76,7 +78,7 @@ func TestSourcesWorkers(t *testing.T) {
 		sourceWorkerMutex := rs.NewMutex(lockName,
 			// Competing worker should only try once to avoid getting stuck
 			redsync.WithTries(1))
-		w := (Sources{s2}).Worker(observation.NewContext(logger), sourceWorkerMutex, time.Millisecond)
+		w := (NewSources(s2)).Worker(observation.NewContext(logger), sourceWorkerMutex, time.Millisecond)
 		go func() {
 			<-stop2
 			w.Stop()
@@ -88,24 +90,24 @@ func TestSourcesWorkers(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	t.Run("only the first worker should be doing work", func(t *testing.T) {
-		assert.NotZero(t, s1.syncCount)
-		assert.Zero(t, s2.syncCount)
+		assert.NotZero(t, s1.syncCount.Load())
+		assert.Zero(t, s2.syncCount.Load())
 	})
 
 	// Stop the first worker and wait a bit
 	close(stop1)
-	count1 := s1.syncCount // Save the count to assert later
+	count1 := s1.syncCount.Load() // Save the count to assert later
 	time.Sleep(100 * time.Millisecond)
 
 	t.Run("first worker does no work after stop", func(t *testing.T) {
 		// Bounded range assertion to avoid flakiness
-		assert.GreaterOrEqual(t, count1, s1.syncCount-1)
-		assert.LessOrEqual(t, count1, s1.syncCount+1)
+		assert.GreaterOrEqual(t, count1, s1.syncCount.Load()-1)
+		assert.LessOrEqual(t, count1, s1.syncCount.Load()+1)
 	})
 
 	// Worker 2 should pick up work
 	t.Run("second worker does work after first worker stops", func(t *testing.T) {
-		assert.NotZero(t, s2.syncCount)
+		assert.NotZero(t, s2.syncCount.Load())
 	})
 
 	// Stop worker 2
@@ -113,4 +115,18 @@ func TestSourcesWorkers(t *testing.T) {
 
 	// Wait for everyone to go home for the weekend
 	g.Wait()
+}
+
+func TestIsErrNotFromSource(t *testing.T) {
+	var err error
+	err = ErrNotFromSource{Reason: "foo"}
+	assert.True(t, IsErrNotFromSource(err))
+	autogold.Expect("token not from source: foo").Equal(t, err.Error())
+
+	err = errors.Wrap(err, "wrap")
+	assert.True(t, IsErrNotFromSource(err))
+	autogold.Expect("wrap: token not from source: foo").Equal(t, err.Error())
+
+	err = errors.New("foo")
+	assert.False(t, IsErrNotFromSource(err))
 }

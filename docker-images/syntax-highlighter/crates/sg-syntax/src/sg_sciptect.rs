@@ -1,7 +1,7 @@
 use std::{collections::HashSet, fmt::Debug};
 
 use once_cell::sync::OnceCell;
-use protobuf::{EnumOrUnknown, SpecialFields};
+use protobuf::EnumOrUnknown;
 use scip::types::{Document, Occurrence, SyntaxKind};
 use syntect::{
     parsing::{BasicScopeStackOp, ParseState, Scope, ScopeStack, SyntaxReference, SyntaxSet},
@@ -519,7 +519,7 @@ fn new_occurence(range: Vec<i32>, syntax_kind: SyntaxKind, scope: Scope) -> Occu
         symbol,
         override_documentation: vec![],
         diagnostics: vec![],
-        special_fields: SpecialFields::default(),
+        ..Default::default()
     }
 }
 

@@ -18,6 +18,7 @@ pub struct Scope {
 #[derive(Debug)]
 pub struct Global {
     pub range: PackedRange,
+    pub enclosing: Option<PackedRange>,
     pub descriptors: Vec<Descriptor>,
 }
 
@@ -70,14 +71,12 @@ impl Scope {
                 range: self.ident_range.to_vec(),
                 symbol: scip::symbol::format_symbol(scip::types::Symbol {
                     scheme: "scip-ctags".into(),
-                    // TODO: Package?
                     package: None.into(),
                     descriptors: descriptor_stack.clone(),
                     ..Default::default()
                 }),
                 symbol_roles: scip::types::SymbolRole::Definition.value(),
-                // TODO:
-                // syntax_kind: todo!(),
+                enclosing_range: self.scope_range.to_vec(),
                 ..Default::default()
             });
         }
@@ -88,7 +87,6 @@ impl Scope {
 
             let symbol = scip::symbol::format_symbol(scip::types::Symbol {
                 scheme: "scip-ctags".into(),
-                // TODO: Package?
                 package: None.into(),
                 descriptors: global_descriptors,
                 ..Default::default()
@@ -99,8 +97,10 @@ impl Scope {
                 range: global.range.to_vec(),
                 symbol,
                 symbol_roles,
-                // TODO:
-                // syntax_kind: todo!(),
+                enclosing_range: match &global.enclosing {
+                    Some(enclosing) => enclosing.to_vec(),
+                    None => vec![],
+                },
                 ..Default::default()
             });
         }
@@ -131,11 +131,13 @@ pub fn parse_tree<'a>(
     let mut local_ranges = BitVec::<u8, Msb0>::repeat(false, source_bytes.len());
 
     let matches = cursor.matches(&config.query, root_node, source_bytes);
-
     for m in matches {
-        // eprintln!("\n==== NEW MATCH ====");
+        if config.is_filtered(&m) {
+            continue;
+        }
 
         let mut node = None;
+        let mut enclosing_node = None;
         let mut scope = None;
         let mut local_range = None;
         let mut descriptors = vec![];
@@ -155,15 +157,14 @@ pub fn parse_tree<'a>(
                 scope = Some(capture);
             }
 
+            if capture_name.starts_with("enclosing") {
+                assert!(enclosing_node.is_none(), "declare only one scope per match");
+                enclosing_node = Some(capture.node);
+            }
+
             if capture_name.starts_with("local") {
                 local_range = Some(capture.node.byte_range());
             }
-
-            // eprintln!(
-            //     "{}: {}",
-            //     capture_name,
-            //     capture.node.utf8_text(source_bytes).unwrap()
-            // );
         }
 
         match node {
@@ -179,8 +180,6 @@ pub fn parse_tree<'a>(
                     })
                     .collect();
 
-                // dbg!(node);
-
                 match scope {
                     Some(scope_ident) => scopes.push(Scope {
                         ident_range: node.into(),
@@ -189,10 +188,36 @@ pub fn parse_tree<'a>(
                         children: vec![],
                         descriptors,
                     }),
-                    None => globals.push(Global {
-                        range: node.into(),
-                        descriptors,
-                    }),
+                    None => {
+                        let (last, rest) = match descriptors.split_last() {
+                            Some(res) => res,
+                            None => continue,
+                        };
+
+                        match config.transform(m.pattern_index, last) {
+                            Some(transformed) => {
+                                for transform in transformed {
+                                    globals.push(Global {
+                                        range: node.into(),
+                                        enclosing: enclosing_node.map(|n| n.into()),
+                                        descriptors: {
+                                            let mut descriptors = rest
+                                                .iter()
+                                                .map(|d| (*d).clone())
+                                                .collect::<Vec<_>>();
+                                            descriptors.push(transform);
+                                            descriptors
+                                        },
+                                    });
+                                }
+                            }
+                            None => globals.push(Global {
+                                range: node.into(),
+                                enclosing: enclosing_node.map(|n| n.into()),
+                                descriptors,
+                            }),
+                        }
+                    }
                 }
             }
             None => {
@@ -236,18 +261,16 @@ pub fn parse_tree<'a>(
 }
 
 #[cfg(test)]
-mod test {
+pub mod test {
     use scip::types::Document;
-    use scip_treesitter::snapshot::dump_document;
-    use tree_sitter::Parser;
+    use scip_treesitter::snapshot::{dump_document_with_config, SnapshotOptions};
+    use scip_treesitter_languages::parsers::BundledParser;
 
     use super::*;
 
-    fn parse_file_for_lang(config: &TagConfiguration, source_code: &str) -> Result<Document> {
+    pub fn parse_file_for_lang(config: &TagConfiguration, source_code: &str) -> Result<Document> {
         let source_bytes = source_code.as_bytes();
-
-        let mut parser = Parser::new();
-        parser.set_language(config.language).unwrap();
+        let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
 
         let mut occ = parse_tree(config, &tree, source_bytes)?;
@@ -266,38 +289,23 @@ mod test {
     }
 
     #[test]
-    fn test_can_parse_rust_tree() -> Result<()> {
-        let config = crate::languages::rust();
-        let source_code = include_str!("../testdata/scopes.rs");
+    fn test_enclosing_range() -> Result<()> {
+        let config =
+            crate::languages::get_tag_configuration(&BundledParser::Go).expect("to have parser");
+        let source_code = include_str!("../testdata/scopes_of_go.go");
         let doc = parse_file_for_lang(config, source_code)?;
 
-        let dumped = dump_document(&doc, source_code)?;
-        insta::assert_snapshot!(dumped);
+        // let dumped = dump_document(&doc, source_code)?;
+        let dumped = dump_document_with_config(
+            &doc,
+            source_code,
+            SnapshotOptions {
+                snapshot_range: None,
+                emit_syntax: scip_treesitter::snapshot::EmitSyntax::None,
+                emit_symbol: scip_treesitter::snapshot::EmitSymbol::Enclosing,
+            },
+        )?;
 
-        Ok(())
-    }
-
-    #[test]
-    fn test_can_parse_go_tree() -> Result<()> {
-        let config = crate::languages::go();
-        let source_code = include_str!("../testdata/example.go");
-        let doc = parse_file_for_lang(config, source_code)?;
-        // dbg!(doc);
-
-        let dumped = dump_document(&doc, source_code)?;
-        insta::assert_snapshot!(dumped);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_can_parse_go_internal_tree() -> Result<()> {
-        let config = crate::languages::go();
-        let source_code = include_str!("../testdata/internal_go.go");
-        let doc = parse_file_for_lang(config, source_code)?;
-        // dbg!(doc);
-
-        let dumped = dump_document(&doc, source_code)?;
         insta::assert_snapshot!(dumped);
 
         Ok(())

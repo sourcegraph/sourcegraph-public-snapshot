@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -101,8 +102,8 @@ type RepoEmbeddingJobsStore interface {
 	CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID) (int, error)
 	GetLastCompletedRepoEmbeddingJob(ctx context.Context, repoID api.RepoID) (*RepoEmbeddingJob, error)
 	GetLastRepoEmbeddingJobForRevision(ctx context.Context, repoID api.RepoID, revision api.CommitID) (*RepoEmbeddingJob, error)
-	ListRepoEmbeddingJobs(ctx context.Context, args *database.PaginationArgs) ([]*RepoEmbeddingJob, error)
-	CountRepoEmbeddingJobs(ctx context.Context) (int, error)
+	ListRepoEmbeddingJobs(ctx context.Context, args ListOpts) ([]*RepoEmbeddingJob, error)
+	CountRepoEmbeddingJobs(ctx context.Context, args ListOpts) (int, error)
 	GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error)
 	CancelRepoEmbeddingJob(ctx context.Context, job int) error
 }
@@ -134,13 +135,10 @@ global_policy_descriptor AS MATERIALIZED (
 		p.repository_patterns IS NULL
 	LIMIT 1
 ),
-last_successful_jobs AS (
-	SELECT DISTINCT ON (repo_id) repo_id, finished_at
+last_queued_jobs AS (
+	SELECT DISTINCT ON (repo_id) repo_id, queued_at
 	FROM repo_embedding_jobs
-	WHERE
-		state = 'completed' AND
-		failure_message IS NULL
-	ORDER BY repo_id, finished_at DESC
+	ORDER BY repo_id, queued_at DESC
 ),
 repositories_matching_policy AS (
     (
@@ -153,7 +151,7 @@ repositories_matching_policy AS (
             r.blocked IS NULL AND
             gr.clone_status = 'cloned'
         ORDER BY stars DESC NULLS LAST, id
-        LIMIT 5000 -- Some repository match limit to stop you from returning all of dotcom
+        %s -- limit clause
     ) UNION ALL (
         SELECT r.id, gr.last_changed
         FROM repo r
@@ -180,14 +178,25 @@ repositories_matching_policy AS (
 --
 SELECT DISTINCT ON (rmp.id) rmp.id, rmp.last_changed
 FROM repositories_matching_policy rmp
-LEFT JOIN last_successful_jobs lsj ON lsj.repo_id = rmp.id
-WHERE lsj.finished_at IS NULL OR lsj.finished_at < current_timestamp - (%s * '1 second'::interval);
+LEFT JOIN last_queued_jobs lqj ON lqj.repo_id = rmp.id
+WHERE lqj.queued_at IS NULL OR lqj.queued_at < current_timestamp - (%s * '1 second'::interval);
 `
 
 type EmbeddableRepoOpts struct {
 	// MinimumInterval is the minimum amount of time that must have passed since the last
 	// successful embedding job.
 	MinimumInterval time.Duration
+
+	// PolicyRepositoryMatchLimit limits the maximum number of repositories that can
+	// be matched by a global policy. If set to nil or a negative value, the policy
+	// is unlimited.
+	PolicyRepositoryMatchLimit *int
+}
+
+type ListOpts struct {
+	*database.PaginationArgs
+	Query *string
+	State *string
 }
 
 func init() {
@@ -209,25 +218,48 @@ func embeddingConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
 	return nil
 }
 
+var defaultPolicyRepositoryMatchLimit = 5000
+
+var defaultOpts = EmbeddableRepoOpts{
+	MinimumInterval:            24 * time.Hour,
+	PolicyRepositoryMatchLimit: &defaultPolicyRepositoryMatchLimit,
+}
+
 func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
-	defaultMinimumInterval := 24 * time.Hour
+	opts := defaultOpts
 
 	embeddingsConf := conf.Get().Embeddings
 	if embeddingsConf == nil {
-		return EmbeddableRepoOpts{MinimumInterval: defaultMinimumInterval}
+		return opts
 	}
 
 	minimumIntervalString := embeddingsConf.MinimumInterval
 	d, err := time.ParseDuration(minimumIntervalString)
-	if err != nil {
-		return EmbeddableRepoOpts{MinimumInterval: defaultMinimumInterval}
+	if err == nil {
+		opts.MinimumInterval = d
 	}
 
-	return EmbeddableRepoOpts{MinimumInterval: d}
+	if embeddingsConf.PolicyRepositoryMatchLimit != nil {
+		opts.PolicyRepositoryMatchLimit = embeddingsConf.PolicyRepositoryMatchLimit
+	}
+
+	return opts
 }
 
 func (s *repoEmbeddingJobsStore) GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error) {
-	q := sqlf.Sprintf(getEmbeddableReposFmtStr, opts.MinimumInterval.Seconds())
+	var limitClause *sqlf.Query
+	if opts.PolicyRepositoryMatchLimit != nil && *opts.PolicyRepositoryMatchLimit >= 0 {
+		limitClause = sqlf.Sprintf("LIMIT %d", *opts.PolicyRepositoryMatchLimit)
+	} else {
+		limitClause = sqlf.Sprintf("")
+	}
+
+	q := sqlf.Sprintf(
+		getEmbeddableReposFmtStr,
+		limitClause,
+		opts.MinimumInterval.Seconds(),
+	)
+
 	return scanEmbeddableRepos(s.Query(ctx, q))
 }
 
@@ -288,10 +320,35 @@ func (s *repoEmbeddingJobsStore) GetLastRepoEmbeddingJobForRevision(ctx context.
 const countRepoEmbeddingJobsQuery = `
 SELECT COUNT(*)
 FROM repo_embedding_jobs
+%s -- joinClause
+%s -- whereClause
 `
 
-func (s *repoEmbeddingJobsStore) CountRepoEmbeddingJobs(ctx context.Context) (int, error) {
-	q := sqlf.Sprintf(countRepoEmbeddingJobsQuery)
+// CountRepoEmbeddingJobs returns the number of repo embedding jobs that match
+// the query. If there is no query, all repo embedding jobs are counted.
+func (s *repoEmbeddingJobsStore) CountRepoEmbeddingJobs(ctx context.Context, opts ListOpts) (int, error) {
+	var conds []*sqlf.Query
+
+	var joinClause *sqlf.Query
+	if opts.Query != nil && *opts.Query != "" {
+		conds = append(conds, sqlf.Sprintf("repo.name LIKE %s", "%"+*opts.Query+"%"))
+		joinClause = sqlf.Sprintf("JOIN repo ON repo.id = repo_embedding_jobs.repo_id")
+	} else {
+		joinClause = sqlf.Sprintf("")
+	}
+
+	if opts.State != nil && *opts.State != "" {
+		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.state = %s", strings.ToLower(*opts.State)))
+	}
+
+	var whereClause *sqlf.Query
+	if len(conds) != 0 {
+		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
+	} else {
+		whereClause = sqlf.Sprintf("")
+	}
+
+	q := sqlf.Sprintf(countRepoEmbeddingJobsQuery, joinClause, whereClause)
 	var count int
 	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
 		return 0, err
@@ -302,15 +359,28 @@ func (s *repoEmbeddingJobsStore) CountRepoEmbeddingJobs(ctx context.Context) (in
 const listRepoEmbeddingJobsQueryFmtstr = `
 SELECT %s
 FROM repo_embedding_jobs
+%s -- joinClause
 %s -- whereClause
 `
 
-func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, paginationArgs *database.PaginationArgs) ([]*RepoEmbeddingJob, error) {
-	pagination := paginationArgs.SQL()
+func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, opts ListOpts) ([]*RepoEmbeddingJob, error) {
+	pagination := opts.PaginationArgs.SQL()
 
 	var conds []*sqlf.Query
 	if pagination.Where != nil {
 		conds = append(conds, pagination.Where)
+	}
+
+	var joinClause *sqlf.Query
+	if opts.Query != nil && *opts.Query != "" {
+		conds = append(conds, sqlf.Sprintf("repo.name LIKE %s", "%"+*opts.Query+"%"))
+		joinClause = sqlf.Sprintf("JOIN repo ON repo.id = repo_embedding_jobs.repo_id")
+	} else {
+		joinClause = sqlf.Sprintf("")
+	}
+
+	if opts.State != nil && *opts.State != "" {
+		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.state = %s", strings.ToLower(*opts.State)))
 	}
 
 	var whereClause *sqlf.Query
@@ -320,7 +390,7 @@ func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, pagi
 		whereClause = sqlf.Sprintf("")
 	}
 
-	q := sqlf.Sprintf(listRepoEmbeddingJobsQueryFmtstr, sqlf.Join(repoEmbeddingJobsColumns, ", "), whereClause)
+	q := sqlf.Sprintf(listRepoEmbeddingJobsQueryFmtstr, sqlf.Join(repoEmbeddingJobsColumns, ", "), joinClause, whereClause)
 	q = pagination.AppendOrderToQuery(q)
 	q = pagination.AppendLimitToQuery(q)
 
