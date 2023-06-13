@@ -322,7 +322,7 @@ export const externalChangesetFieldsFragment = gql`
         commitVerification {
             ... on GitHubCommitVerification {
                 verified
-                Reason
+                reason
             }
         }
         currentSpec {

@@ -503,15 +503,15 @@ type GitHubCommitVerification {
     """
     The reason for the verified value
     """
-    Reason: String!
+    reason: String!
     """
     The signature extracted from the commit
     """
-    Signature: String!
+    signature: String!
     """
     The value that was signed
     """
-    Payload: String!
+    payload: String!
 }
 
 """

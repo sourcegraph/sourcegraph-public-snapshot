@@ -366,3 +366,71 @@ export const SyncFailed: Story = args => {
 }
 
 SyncFailed.storyName = 'Sync failed'
+
+export const SignedCommitBatchChange: Story = args => {
+    const now = new Date()
+    return (
+        <WebStory>
+            {props => (
+                <ExternalChangesetNode
+                    {...props}
+                    node={{
+                        id: 'somechangeset',
+                        updatedAt: now.toISOString(),
+                        nextSyncAt: addHours(now, 1).toISOString(),
+                        state: ChangesetState.OPEN,
+                        __typename: 'ExternalChangeset',
+                        title: 'Changeset title on code host',
+                        error: null,
+                        syncerError: null,
+                        body: 'This changeset does the following things:\nIs awesome\nIs useful',
+                        checkState: ChangesetCheckState.PENDING,
+                        createdAt: now.toISOString(),
+                        externalID: '123',
+                        externalURL: {
+                            url: 'http://test.test/pr/123',
+                        },
+                        forkNamespace: 'user',
+                        diffStat: {
+                            __typename: 'DiffStat',
+                            added: 30,
+                            deleted: 28,
+                        },
+                        labels: [],
+                        repository: {
+                            id: 'repoid',
+                            name: 'github.com/sourcegraph/sourcegraph',
+                            url: 'http://test.test/sourcegraph/sourcegraph',
+                        },
+                        reviewState: ChangesetReviewState.COMMENTED,
+                        currentSpec: {
+                            id: 'spec-rand-id-1',
+                            type: ChangesetSpecType.BRANCH,
+                            description: {
+                                __typename: 'GitBranchChangesetDescription',
+                                baseRef: 'my-branch',
+                                headRef: 'my-branch',
+                            },
+                            forkTarget: {
+                                pushUser: true,
+                                namespace: null,
+                            },
+                        },
+                        commitVerification: {
+                            verified: true,
+                            reason: 'valid',
+                        },
+                    }}
+                    viewerCanAdminister={args.viewerCanAdminister}
+                    queryExternalChangesetWithFileDiffs={() =>
+                        of({
+                            diff: null,
+                        })
+                    }
+                />
+            )}
+        </WebStory>
+    )
+}
+
+SignedCommitBatchChange.storyName = 'Signed commit batch change'
