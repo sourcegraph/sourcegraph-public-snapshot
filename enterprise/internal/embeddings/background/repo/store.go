@@ -261,19 +261,16 @@ func (s *repoEmbeddingJobsStore) CreateRepoEmbeddingJob(ctx context.Context, rep
 
 var repoEmbeddingJobStatsColumns = []*sqlf.Query{
 	sqlf.Sprintf("repo_embedding_job_stats.job_id"),
-	sqlf.Sprintf("repo_embedding_job_stats.has_ranks"),
 	sqlf.Sprintf("repo_embedding_job_stats.is_incremental"),
 	sqlf.Sprintf("repo_embedding_job_stats.code_files_total"),
 	sqlf.Sprintf("repo_embedding_job_stats.code_files_embedded"),
 	sqlf.Sprintf("repo_embedding_job_stats.code_chunks_embedded"),
 	sqlf.Sprintf("repo_embedding_job_stats.code_files_skipped"),
-	sqlf.Sprintf("repo_embedding_job_stats.code_bytes_skipped"),
 	sqlf.Sprintf("repo_embedding_job_stats.code_bytes_embedded"),
 	sqlf.Sprintf("repo_embedding_job_stats.text_files_total"),
 	sqlf.Sprintf("repo_embedding_job_stats.text_files_embedded"),
 	sqlf.Sprintf("repo_embedding_job_stats.text_chunks_embedded"),
 	sqlf.Sprintf("repo_embedding_job_stats.text_files_skipped"),
-	sqlf.Sprintf("repo_embedding_job_stats.text_bytes_skipped"),
 	sqlf.Sprintf("repo_embedding_job_stats.text_bytes_embedded"),
 }
 
@@ -282,19 +279,16 @@ func scanRepoEmbeddingStats(s dbutil.Scanner) (EmbedRepoStats, error) {
 	var jobID int
 	err := s.Scan(
 		&jobID,
-		&stats.HasRanks,
 		&stats.IsIncremental,
 		&stats.CodeIndexStats.FilesScheduled,
 		&stats.CodeIndexStats.FilesEmbedded,
 		&stats.CodeIndexStats.ChunksEmbedded,
 		dbutil.JSONMessage(&stats.CodeIndexStats.FilesSkipped),
-		dbutil.JSONMessage(&stats.CodeIndexStats.BytesSkipped),
 		&stats.CodeIndexStats.BytesEmbedded,
 		&stats.TextIndexStats.FilesScheduled,
 		&stats.TextIndexStats.FilesEmbedded,
 		&stats.TextIndexStats.ChunksEmbedded,
 		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
-		dbutil.JSONMessage(&stats.TextIndexStats.BytesSkipped),
 		&stats.TextIndexStats.BytesEmbedded,
 	)
 	return stats, err
@@ -325,41 +319,34 @@ func (s *repoEmbeddingJobsStore) UpdateRepoEmbeddingJobStats(ctx context.Context
 	const updateRepoEmbeddingJobStats = `
 	INSERT INTO repo_embedding_job_stats (
 		job_id,
-		has_ranks,
 		is_incremental,
 		code_files_total,
 		code_files_embedded,
 		code_chunks_embedded,
 		code_files_skipped,
-		code_bytes_skipped,
 		code_bytes_embedded,
 		text_files_total,
 		text_files_embedded,
 		text_chunks_embedded,
 		text_files_skipped,
-		text_bytes_skipped,
 		text_bytes_embedded
 	) VALUES (
 		%s, %s, %s, %s,
 		%s, %s, %s, %s,
-		%s, %s, %s, %s,
-		%s, %s, %s
+		%s, %s, %s, %s
 	)
 	ON CONFLICT (job_id) DO UPDATE
 	SET
-		has_ranks = %s,
 		is_incremental = %s,
 		code_files_total = %s,
 		code_files_embedded = %s,
 		code_chunks_embedded = %s,
 		code_files_skipped = %s,
-		code_bytes_skipped = %s,
 		code_bytes_embedded = %s,
 		text_files_total = %s,
 		text_files_embedded = %s,
 		text_chunks_embedded = %s,
 		text_files_skipped = %s,
-		text_bytes_skipped = %s,
 		text_bytes_embedded = %s
 	`
 
@@ -367,34 +354,28 @@ func (s *repoEmbeddingJobsStore) UpdateRepoEmbeddingJobStats(ctx context.Context
 		updateRepoEmbeddingJobStats,
 
 		jobID,
-		stats.HasRanks,
 		stats.IsIncremental,
 		stats.CodeIndexStats.FilesScheduled,
 		stats.CodeIndexStats.FilesEmbedded,
 		stats.CodeIndexStats.ChunksEmbedded,
 		dbutil.JSONMessage(&stats.CodeIndexStats.FilesSkipped),
-		dbutil.JSONMessage(&stats.CodeIndexStats.BytesSkipped),
 		stats.CodeIndexStats.BytesEmbedded,
 		stats.TextIndexStats.FilesScheduled,
 		stats.TextIndexStats.FilesEmbedded,
 		stats.TextIndexStats.ChunksEmbedded,
 		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
-		dbutil.JSONMessage(&stats.TextIndexStats.BytesSkipped),
 		stats.TextIndexStats.BytesEmbedded,
 
-		stats.HasRanks,
 		stats.IsIncremental,
 		stats.CodeIndexStats.FilesScheduled,
 		stats.CodeIndexStats.FilesEmbedded,
 		stats.CodeIndexStats.ChunksEmbedded,
 		dbutil.JSONMessage(&stats.CodeIndexStats.FilesSkipped),
-		dbutil.JSONMessage(&stats.CodeIndexStats.BytesSkipped),
 		stats.CodeIndexStats.BytesEmbedded,
 		stats.TextIndexStats.FilesScheduled,
 		stats.TextIndexStats.FilesEmbedded,
 		stats.TextIndexStats.ChunksEmbedded,
 		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
-		dbutil.JSONMessage(&stats.TextIndexStats.BytesSkipped),
 		stats.TextIndexStats.BytesEmbedded,
 	)
 

@@ -69,6 +69,9 @@ export const useRepoEmbeddingJobsConnection = (
             const { repoEmbeddingJobs } = dataOrThrowErrors(result)
             return repoEmbeddingJobs
         },
+        options: {
+            pollInterval: 5000,
+        },
     })
 
 export const SCHEDULE_REPO_EMBEDDING_JOBS = gql`

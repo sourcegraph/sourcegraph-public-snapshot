@@ -94,7 +94,6 @@ func EmbedRepo(
 	}
 
 	stats := bgrepo.EmbedRepoStats{
-		HasRanks:       len(ranks.Paths) > 0,
 		CodeIndexStats: bgrepo.NewEmbedFilesStats(len(codeFileNames)),
 		TextIndexStats: bgrepo.NewEmbedFilesStats(len(textFileNames)),
 		IsIncremental:  isIncremental,

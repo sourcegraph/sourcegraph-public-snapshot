@@ -41,7 +41,6 @@ func (j *RepoEmbeddingJob) IsRepoEmbeddingJobScheduledOrCompleted() bool {
 }
 
 type EmbedRepoStats struct {
-	HasRanks       bool
 	CodeIndexStats EmbedFilesStats
 	TextIndexStats EmbedFilesStats
 
@@ -51,7 +50,6 @@ type EmbedRepoStats struct {
 
 func (e *EmbedRepoStats) ToFields() []log.Field {
 	return []log.Field{
-		log.Bool("hasRanks", e.HasRanks),
 		log.Object("codeIndex", e.CodeIndexStats.ToFields()...),
 		log.Object("textIndex", e.TextIndexStats.ToFields()...),
 		log.Bool("isIncremental", e.IsIncremental),
@@ -65,7 +63,6 @@ func NewEmbedFilesStats(filesTotal int) EmbedFilesStats {
 		FilesSkipped:   map[string]int{},
 		ChunksEmbedded: 0,
 		BytesEmbedded:  0,
-		BytesSkipped:   map[string]int{},
 	}
 }
 
@@ -86,14 +83,10 @@ type EmbedFilesStats struct {
 
 	// The sum of the size of the contents of successful embeddings
 	BytesEmbedded int
-
-	// Summed byte counts for each of the reasons files were skipped
-	BytesSkipped map[string]int
 }
 
 func (e *EmbedFilesStats) Skip(reason string, size int) {
 	e.FilesSkipped[reason] += 1
-	e.BytesSkipped[reason] += size
 }
 
 func (e *EmbedFilesStats) AddChunk(size int) {
@@ -106,11 +99,6 @@ func (e *EmbedFilesStats) AddFile() {
 }
 
 func (e *EmbedFilesStats) ToFields() []log.Field {
-	var skippedByteCounts []log.Field
-	for reason, count := range e.BytesSkipped {
-		skippedByteCounts = append(skippedByteCounts, log.Int(reason, count))
-	}
-
 	var skippedCounts []log.Field
 	for reason, count := range e.FilesSkipped {
 		skippedCounts = append(skippedCounts, log.Int(reason, count))
@@ -121,6 +109,5 @@ func (e *EmbedFilesStats) ToFields() []log.Field {
 		log.Int("chunksEmbedded", e.ChunksEmbedded),
 		log.Int("bytesEmbedded", e.BytesEmbedded),
 		log.Object("filesSkipped", skippedCounts...),
-		log.Object("bytesSkipped", skippedByteCounts...),
 	}
 }

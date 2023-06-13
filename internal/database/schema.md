@@ -3445,41 +3445,55 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.repo_embedding_job_stats"
+```
+        Column        |  Type   | Collation | Nullable |   Default   
+----------------------+---------+-----------+----------+-------------
+ job_id               | integer |           | not null | 
+ has_ranks            | boolean |           | not null | false
+ is_incremental       | boolean |           | not null | false
+ code_files_total     | integer |           | not null | 0
+ code_files_embedded  | integer |           | not null | 0
+ code_chunks_embedded | integer |           | not null | 0
+ code_files_skipped   | jsonb   |           | not null | '{}'::jsonb
+ code_bytes_skipped   | jsonb   |           | not null | '{}'::jsonb
+ code_bytes_embedded  | integer |           | not null | 0
+ text_files_total     | integer |           | not null | 0
+ text_files_embedded  | integer |           | not null | 0
+ text_chunks_embedded | integer |           | not null | 0
+ text_files_skipped   | jsonb   |           | not null | '{}'::jsonb
+ text_bytes_skipped   | jsonb   |           | not null | '{}'::jsonb
+ text_bytes_embedded  | integer |           | not null | 0
+Indexes:
+    "repo_embedding_job_stats_pkey" PRIMARY KEY, btree (job_id)
+Foreign-key constraints:
+    "repo_embedding_job_stats_job_id_fkey" FOREIGN KEY (job_id) REFERENCES repo_embedding_jobs(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.repo_embedding_jobs"
 ```
-          Column           |           Type           | Collation | Nullable |                     Default                     
----------------------------+--------------------------+-----------+----------+-------------------------------------------------
- id                        | integer                  |           | not null | nextval('repo_embedding_jobs_id_seq'::regclass)
- state                     | text                     |           |          | 'queued'::text
- failure_message           | text                     |           |          | 
- queued_at                 | timestamp with time zone |           |          | now()
- started_at                | timestamp with time zone |           |          | 
- finished_at               | timestamp with time zone |           |          | 
- process_after             | timestamp with time zone |           |          | 
- num_resets                | integer                  |           | not null | 0
- num_failures              | integer                  |           | not null | 0
- last_heartbeat_at         | timestamp with time zone |           |          | 
- execution_logs            | json[]                   |           |          | 
- worker_hostname           | text                     |           | not null | ''::text
- cancel                    | boolean                  |           | not null | false
- repo_id                   | integer                  |           | not null | 
- revision                  | text                     |           | not null | 
- stat_has_ranks            | boolean                  |           | not null | false
- stat_is_incremental       | boolean                  |           | not null | false
- stat_code_files_total     | integer                  |           | not null | 0
- stat_code_files_embedded  | integer                  |           | not null | 0
- stat_code_chunks_embedded | integer                  |           | not null | 0
- stat_code_files_skipped   | jsonb                    |           | not null | '{}'::jsonb
- stat_code_bytes_skipped   | jsonb                    |           | not null | '{}'::jsonb
- stat_code_bytes_embedded  | integer                  |           | not null | 0
- stat_text_files_total     | integer                  |           | not null | 0
- stat_text_files_embedded  | integer                  |           | not null | 0
- stat_text_chunks_embedded | integer                  |           | not null | 0
- stat_text_files_skipped   | jsonb                    |           | not null | '{}'::jsonb
- stat_text_bytes_skipped   | jsonb                    |           | not null | '{}'::jsonb
- stat_text_bytes_embedded  | integer                  |           | not null | 0
+      Column       |           Type           | Collation | Nullable |                     Default                     
+-------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id                | integer                  |           | not null | nextval('repo_embedding_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+ repo_id           | integer                  |           | not null | 
+ revision          | text                     |           | not null | 
 Indexes:
     "repo_embedding_jobs_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "repo_embedding_job_stats" CONSTRAINT "repo_embedding_job_stats_job_id_fkey" FOREIGN KEY (job_id) REFERENCES repo_embedding_jobs(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
