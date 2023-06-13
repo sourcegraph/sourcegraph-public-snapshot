@@ -1,21 +1,16 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
-:root {
-    --email-icon-color: #dadada;
-}
-
 :global(.theme-dark) {
-    --cody-bg-gradient: linear-gradient(45deg, #15171e 0%, #49169d 100%, #1e212e 100%, #ffffff 100%);
-    --cody-auth-bg-gradient: var(--cody-bg-gradient);
-    --cody-link-color: var(--white);
-    --cody-border-color: var(--gray-09);
+    --cody-blob-bg-gradient: linear-gradient(339.95deg, #15171e -44.65%, #49169d 15.56%, #5e398c 88.23%);
+    --cody-repo-bg-gradient: linear-gradient(339.95deg, #15171e -44.65%, #49169d -16.82%, #1e212e 88.23%), #ffffff;
+    --cody-repo-border: var(--gray-09);
 }
 
 :global(.theme-light) {
-    --cody-bg-gradient: linear-gradient(90deg, #ffffff 50%, #c7adf16f);
-    --cody-auth-bg-gradient: linear-gradient(0deg, #ebe1fa, #ffffff 64.6%);
-    --cody-link-color: var(--gray-08);
-    --cody-border-color: #d7c0f6;
+    --cody-blob-bg-gradient: linear-gradient(339.95deg, #ffffff -44.65%, #d0b9f5 -16.82%, rgba(255, 255, 255, 0) 88.23%),
+        #ffffff;
+    --cody-repo-bg-gradient: var(--cody-blob-bg-gradient);
+    --cody-repo-border: var(--gray-03);
 }
 
 .close-button {
@@ -23,18 +18,26 @@
     right: 0;
 }
 
-.card-wrapper {
+.repo-card-wrapper {
     padding: 0.065rem !important;
-    background: var(--cody-border-color);
+    background: var(--cody-repo-border);
+
+    .card {
+        background: var(--cody-repo-bg-gradient);
+    }
+}
+
+.blob-card-wrapper {
+    padding: 0.065rem !important;
+
+    .card {
+        background: var(--cody-blob-bg-gradient);
+    }
 }
 
 .card {
     padding-top: 2.9375rem;
-    padding-bottom: 0;
     gap: 1rem;
-    overflow-x: auto;
-    justify-content: space-between;
-    background: var(--cody-auth-bg-gradient);
 }
 
 .card-title {
@@ -43,7 +46,7 @@
     font-size: 1.25rem;
     line-height: 1.5rem;
     letter-spacing: -0.25px;
-    margin-bottom: 0;
+    margin-bottom: 0.6875rem;
 }
 
 .card-list {
@@ -51,7 +54,6 @@
     line-height: 1.25rem;
     color: var(--body-color);
     width: max-content;
-    margin-top: 0.688rem !important;
 }
 
 .card-images {

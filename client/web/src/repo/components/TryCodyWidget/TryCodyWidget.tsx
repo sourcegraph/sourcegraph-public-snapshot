@@ -176,11 +176,11 @@ interface TryCodyWidgetProps extends TelemetryProps {
 }
 
 export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
-    className = 'mb-4',
+    className,
     telemetryService,
-    type,
     authenticatedUser,
     context,
+    type,
 }) => {
     const isLightTheme = useIsLightTheme()
     const { isDismissed, onDismiss } = useTryCodyWidget(telemetryService)
@@ -198,9 +198,9 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
 
     return (
         <MarketingBlock
-            wrapperClassName={classNames(className, styles.cardWrapper)}
+            wrapperClassName={classNames(className, type === 'blob' ? styles.blobCardWrapper : styles.repoCardWrapper)}
             contentClassName={classNames(
-                'd-flex position-relative',
+                'd-flex position-relative pb-0 overflow-auto justify-content-between',
                 styles.card,
                 !authenticatedUser && styles.noAuthCard
             )}

@@ -363,6 +363,7 @@ export const TreePage: FC<Props> = ({
         <div className={classNames(styles.treePage, className)}>
             {isSourcegraphDotCom && (
                 <TryCodyWidget
+                    className="mb-2"
                     telemetryService={props.telemetryService}
                     type="repo"
                     authenticatedUser={authenticatedUser}
