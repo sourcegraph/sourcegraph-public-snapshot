@@ -47,7 +47,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/users"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
@@ -73,8 +72,8 @@ var (
 
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
-func InitDB(logger sglog.Logger) (sqlDB *sql.DB, err error) {
-	sqlDB, err = connections.EnsureNewFrontendDB(observation.ContextWithLogger(logger, &observation.TestContext), "", "frontend")
+func InitDB(logger sglog.Logger) (*sql.DB, error) {
+	sqlDB, err := connections.EnsureNewFrontendDB(observation.ContextWithLogger(logger, &observation.TestContext), "", "frontend")
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
@@ -92,12 +91,9 @@ type SetupFunc func(database.DB, conftypes.UnifiedWatchable) enterprise.Services
 func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, enterpriseSetupHook SetupFunc, enterpriseMigratorHook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
 	logger := observationCtx.Logger
 
-	if err := tryAutoUpgrade(ctx, observationCtx, enterpriseMigratorHook); err != nil {
+	if err := tryAutoUpgrade(ctx, observationCtx, ready, enterpriseMigratorHook); err != nil {
 		return errors.Wrap(err, "frontend.tryAutoUpgrade")
 	}
-
-	go conf.NewLogsSinksSource(conf.DefaultClient())
-	tracer.Init(sglog.Scoped("tracer", "internal tracer package"), tracer.ConfConfigurationSource{WatchableSiteConfig: conf.DefaultClient()})
 
 	sqlDB, err := InitDB(logger)
 	if err != nil {

@@ -5,10 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	gcontext "github.com/gorilla/context"
@@ -38,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
+	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -47,11 +46,16 @@ import (
 
 const appName = "frontend-autoupgrader"
 
-var buffer strings.Builder // :)
+var (
+	AutoUpgradeDone  = make(chan struct{})
+	shouldAutoUpgade = env.MustGetBool("SRC_AUTOUPGRADE", false, "If you forgot to set intent to autoupgrade before shutting down the instance, set this env var.")
+)
 
-var shouldAutoUpgade = env.MustGetBool("SRC_AUTOUPGRADE", false, "If you forgot to set intent to autoupgrade before shutting down the instance, set this env var.")
+func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready service.ReadyFunc, hook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) (err error) {
+	defer func() {
+		close(AutoUpgradeDone)
+	}()
 
-func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, hook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) (err error) {
 	sqlDB, err := connections.RawNewFrontendDB(obsvCtx, "", appName)
 	if err != nil {
 		return errors.Errorf("failed to connect to frontend database: %s", err)
@@ -61,14 +65,24 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, hook stor
 	db := database.NewDB(obsvCtx.Logger, sqlDB)
 	upgradestore := upgradestore.New(db)
 
-	_, doAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
-	if err != nil {
+	currentVersionStr, doAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
+	// fresh instance
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	} else if err != nil {
 		return errors.Wrap(err, "autoupgradestore.GetAutoUpgrade")
 	}
 	if !doAutoUpgrade && !shouldAutoUpgade {
 		// TODO(efritz) - remove, for debugging
 		fmt.Printf("FAKING AN UPGRADE\n")
 		// return nil
+
+		return nil
+	}
+
+	currentVersion, ok := oobmigration.NewVersionFromString(currentVersionStr)
+	if !ok {
+		return errors.Newf("unexpected string for desired instance schema version, skipping auto-upgrade (%s)", currentVersionStr)
 	}
 
 	stopFunc, err := serveInternalServer(obsvCtx)
@@ -83,24 +97,15 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, hook stor
 	}
 	defer stopFunc()
 
+	ready()
+
 	if err := blockForDisconnects(ctx, obsvCtx.Logger, db); err != nil {
 		return errors.Wrap(err, "error blocking on postgres client disconnects")
 	}
 
-	var (
-		currentVersion oobmigration.Version
-		success        bool
-	)
-
-	// TODO(efritz) - remove, for debugging
-	for i := 0; i < 300; i++ {
-		fmt.Printf("FAKING AN UPGRADE.....\n")
-		time.Sleep(time.Second)
-	}
-
 	toVersion, ok := oobmigration.NewVersionFromString(version.Version())
 	if !ok {
-		obsvCtx.Logger.Warn("unexpected stirng for desired instance schema version, skipping auto-upgrade", log.String("version", version.Version()))
+		obsvCtx.Logger.Warn("unexpected string for desired instance schema version, skipping auto-upgrade", log.String("version", version.Version()))
 		return nil
 	}
 
@@ -108,45 +113,22 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, hook stor
 		return errors.Wrap(err, "autoupgradestore.EnsureUpgradeTable")
 	}
 
-	// try to claim
-	for {
-		obsvCtx.Logger.Info("attempting to claim autoupgrade lock")
-
-		currentVersionStr, _, err := upgradestore.GetServiceVersion(ctx)
-		if err != nil {
-			return errors.Wrap(err, "autoupgradestore.GetServiceVersion")
-		}
-
-		currentVersion, ok = oobmigration.NewVersionFromString(currentVersionStr)
-		if !ok {
-			return errors.Newf("unexpected string for current instance schema version: %q", currentVersion)
-		}
-
-		if cmp := oobmigration.CompareVersions(currentVersion, toVersion); cmp == oobmigration.VersionOrderAfter || cmp == oobmigration.VersionOrderEqual {
-			obsvCtx.Logger.Info("installation is up-to-date, nothing to do!")
-			return nil
-		}
-
-		claimed, err := upgradestore.ClaimAutoUpgrade(ctx, currentVersionStr, version.Version())
-		if err != nil {
-			return errors.Wrap(err, "autoupgradstore.ClaimAutoUpgrade")
-		}
-
-		if claimed {
-			defer func() {
-				ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-				defer cancel()
-				if err := upgradestore.SetUpgradeStatus(ctx, success); err != nil {
-					obsvCtx.Logger.Error("failed to set auto-upgrade status", log.Error(err))
-				}
-			}()
-			break
-		}
-
-		obsvCtx.Logger.Warn("unable to claim autoupgrade lock, sleeping...")
-
-		time.Sleep(time.Second * 10)
+	stillNeedsUpgrade, err := claimAutoUpgradeLock(ctx, obsvCtx, upgradestore, toVersion)
+	if err != nil {
+		return err
 	}
+	if !stillNeedsUpgrade {
+		return nil
+	}
+
+	var success bool
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		defer cancel()
+		if err := upgradestore.SetUpgradeStatus(ctx, success); err != nil {
+			obsvCtx.Logger.Error("failed to set auto-upgrade status", log.Error(err))
+		}
+	}()
 
 	if err := runMigration(ctx, obsvCtx, currentVersion, toVersion, db, hook); err != nil {
 		return errors.Wrap(err, "error during auto-upgrade")
@@ -156,25 +138,12 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, hook stor
 		return errors.Wrap(err, "autoupgradestore.SetAutoUpgrade")
 	}
 
-	dsns, err := postgresdsn.DSNsBySchema(schemas.SchemaNames)
-	if err != nil {
+	if err := finalMileMigrations(obsvCtx); err != nil {
 		return err
-	}
-	schemas := []string{"frontend", "codeintel", "codeinsights"}
-	for i, fn := range []func(_ *observation.Context, dsn string, appName string) (*sql.DB, error){
-		connections.MigrateNewFrontendDB, connections.MigrateNewCodeIntelDB, connections.MigrateNewCodeInsightsDB,
-	} {
-		sqlDB, err := fn(obsvCtx, dsns[schemas[i]], "frontend")
-		if err != nil {
-			return errors.Wrapf(err, "failed to perform last-mile migration for %s schema", schemas[i])
-		}
-		sqlDB.Close()
 	}
 
 	success = true
-
-	obsvCtx.Logger.Info("MIGRATION SUCCESSFUL")
-
+	obsvCtx.Logger.Info("Upgrade successful")
 	return nil
 }
 
@@ -205,8 +174,8 @@ func runMigration(ctx context.Context,
 		enterpriseMigratorsHook,
 	)
 
-	tee := io.MultiWriter(&buffer, os.Stdout)
-	out := output.NewOutput(tee, output.OutputOpts{})
+	// tee := io.MultiWriter(&buffer, os.Stdout)
+	out := output.NewOutput(os.Stdout, output.OutputOpts{})
 
 	runnerFactory := func(schemaNames []string, schemas []*schemas.Schema) (*runner.Runner, error) {
 		return migration.NewRunnerWithSchemas(
@@ -232,6 +201,70 @@ func runMigration(ctx context.Context,
 		nil, // only needed for drift
 		out,
 	)
+}
+
+// performs the role of `migrator up`, applying any migrations in the patch versions between the minor version we're at (that `upgrade` brings you to)
+// and the patch version we desire to be at.
+func finalMileMigrations(obsvCtx *observation.Context) error {
+	dsns, err := postgresdsn.DSNsBySchema(schemas.SchemaNames)
+	if err != nil {
+		return err
+	}
+	schemas := []string{"frontend", "codeintel", "codeinsights"}
+	for i, fn := range []func(_ *observation.Context, dsn string, appName string) (*sql.DB, error){
+		connections.MigrateNewFrontendDB, connections.MigrateNewCodeIntelDB, connections.MigrateNewCodeInsightsDB,
+	} {
+		sqlDB, err := fn(obsvCtx, dsns[schemas[i]], "frontend")
+		if err != nil {
+			return errors.Wrapf(err, "failed to perform last-mile migration for %s schema", schemas[i])
+		}
+		sqlDB.Close()
+	}
+
+	return nil
+}
+
+type UpgradeStore interface {
+	GetServiceVersion(ctx context.Context) (string, bool, error)
+	ClaimAutoUpgrade(ctx context.Context, from, to string) (claimed bool, err error)
+}
+
+// claims a "lock" to prevent other frontends from attempting to autoupgrade concurrently, looping while the lock couldn't be claimed until either
+// 1) the version is where we want to be at or
+// 2) the lock was claimed by us
+func claimAutoUpgradeLock(ctx context.Context, obsvCtx *observation.Context, upgradestore UpgradeStore, toVersion oobmigration.Version) (stillNeedsUpgrade bool, err error) {
+	// try to claim
+	for {
+		obsvCtx.Logger.Info("attempting to claim autoupgrade lock")
+
+		currentVersionStr, _, err := upgradestore.GetServiceVersion(ctx)
+		if err != nil {
+			return false, errors.Wrap(err, "autoupgradestore.GetServiceVersion")
+		}
+
+		currentVersion, ok := oobmigration.NewVersionFromString(currentVersionStr)
+		if !ok {
+			return false, errors.Newf("unexpected string for current instance schema version: %q", currentVersion)
+		}
+
+		if cmp := oobmigration.CompareVersions(currentVersion, toVersion); cmp == oobmigration.VersionOrderAfter || cmp == oobmigration.VersionOrderEqual {
+			obsvCtx.Logger.Info("installation is up-to-date, nothing to do!")
+			return false, nil
+		}
+
+		claimed, err := upgradestore.ClaimAutoUpgrade(ctx, currentVersionStr, version.Version())
+		if err != nil {
+			return false, errors.Wrap(err, "autoupgradstore.ClaimAutoUpgrade")
+		}
+
+		if claimed {
+			return true, nil
+		}
+
+		obsvCtx.Logger.Warn("unable to claim autoupgrade lock, sleeping...")
+
+		time.Sleep(time.Second * 10)
+	}
 }
 
 func serveInternalServer(obsvCtx *observation.Context) (context.CancelFunc, error) {
