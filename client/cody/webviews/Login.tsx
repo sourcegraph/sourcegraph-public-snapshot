@@ -33,7 +33,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     const [token, setToken] = useState<string>('')
     const [endpoint, setEndpoint] = useState(serverEndpoint)
     const authUri = new URL('https://sourcegraph/user/settings/tokens/new/callback')
-    authUri.searchParams.append('requestFrom', callbackScheme === 'vscode-insider' ? 'CODY_INSIDER' : 'CODY')
+    authUri.searchParams.append('requestFrom', callbackScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY')
 
     const onSubmit = useCallback<React.FormEventHandler>(
         event => {
