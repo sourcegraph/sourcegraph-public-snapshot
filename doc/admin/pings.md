@@ -2,6 +2,8 @@
 
 Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It sends only the high-level data below. It never sends code, repository names, usernames, or any other specific data. To learn more, go to the **Site admin > Pings** page on your instance (the URL is `https://sourcegraph.example.com/site-admin/pings`) or, for users of the Sourcegraph app, see [Sourcegraph app telemetry](#sourcegraph-app-telemetry). 
 
+Sourcegraph will also periodically perform a license verification check, to verify the validity of the configured Sourcegraph license. Tampering with these checks, or preventing them from occuring, will cause Sourcegraph to disable many features until a successful check is completed. Certain Enterprise licenses can request to be exempt from these license verification checks.
+
 ## Telemetry
 
 Sourcegraph aggregates usage and performance metrics for some product features in our enterprise deployments. No personal or specific information is ever included.
@@ -221,11 +223,12 @@ The environment variable `TELEMETRY_HTTP_PROXY` can be set on the `sourcegraph-f
 
 ## Connections to Sourcegraph.com
 
-Sourcegraph only connects to Sourcegraph.com for two purposes:
+Sourcegraph only connects to Sourcegraph.com for three purposes:
 
 1. The pings described above are sent, in order to:
    - Check for new product updates.
    - Send [anonymous, non-specific, aggregate metrics](#pings) back to Sourcegraph.com (see the full list above).
+1. [Verify](./licensing/index.md) the validity of the configured Sourcegraph license.
 1. Legacy Sourcegraph extensions are fetched from Sourcegraph.com`s extension registry.
 
 There are no other automatic external connections to Sourcegraph.com (or any other site on the internet).
