@@ -171,7 +171,7 @@ func (r *ownResolver) GitBlobOwnership(
 	}
 	rrs = append(rrs, assignedTeams...)
 
-	return r.ownershipConnection(ctx, args, rrs, blob.Repository())
+	return r.ownershipConnection(ctx, args, rrs, blob.Repository(), blob.Path())
 }
 
 // repoRootPath is the path that designates all the aggregate signals
@@ -208,7 +208,7 @@ func (r *ownResolver) GitCommitOwnership(
 	}
 	rrs = append(rrs, viewerResolvers...)
 
-	return r.ownershipConnection(ctx, args, rrs, commit.Repository())
+	return r.ownershipConnection(ctx, args, rrs, commit.Repository(), "")
 }
 
 func (r *ownResolver) GitTreeOwnership(
@@ -248,7 +248,7 @@ func (r *ownResolver) GitTreeOwnership(
 	}
 	rrs = append(rrs, assignedTeams...)
 
-	return r.ownershipConnection(ctx, args, rrs, tree.Repository())
+	return r.ownershipConnection(ctx, args, rrs, tree.Repository(), tree.Path())
 }
 
 func (r *ownResolver) GitTreeOwnershipStats(ctx context.Context, tree *graphqlbackend.GitTreeEntryResolver) (graphqlbackend.OwnershipStatsResolver, error) {
@@ -429,6 +429,7 @@ func (r *ownResolver) ownershipConnection(
 	args graphqlbackend.ListOwnershipArgs,
 	ownerships []reasonAndReference,
 	repo *graphqlbackend.RepositoryResolver,
+	path string,
 ) (*ownershipConnectionResolver, error) {
 	// 1. Resolve ownership references
 	bag := own.EmptyBag()
@@ -505,6 +506,7 @@ func (r *ownResolver) ownershipConnection(
 		owners:      owners,
 		gitserver:   r.gitserver,
 		repo:        repo,
+		path:        path,
 	}, nil
 }
 
@@ -533,6 +535,7 @@ type ownershipConnectionResolver struct {
 	owners      []reasonsAndOwner
 	gitserver   gitserver.Client
 	repo        *graphqlbackend.RepositoryResolver
+	path        string
 }
 
 func (r *ownershipConnectionResolver) TotalCount(_ context.Context) (int32, error) {
@@ -556,6 +559,7 @@ func (r *ownershipConnectionResolver) Nodes(_ context.Context) ([]graphqlbackend
 			repo:          r.repo,
 			resolvedOwner: o.owner,
 			reasons:       o.reasons,
+			path:          r.path,
 		})
 	}
 	return rs, nil
@@ -565,6 +569,7 @@ type ownershipResolver struct {
 	db            edb.EnterpriseDB
 	gitserver     gitserver.Client
 	resolvedOwner codeowners.ResolvedOwner
+	path          string
 	repo          *graphqlbackend.RepositoryResolver
 	reasons       []ownershipReason
 }
@@ -594,7 +599,27 @@ func (r *ownershipResolver) Reasons(_ context.Context) ([]graphqlbackend.Ownersh
 			})
 
 		}
-		/// TODO continue with making other reason-resolvers
+		for _, p := range reason.assignedOwnerPath {
+			rs = append(rs, &ownershipReasonResolver{
+				resolver: &assignedOwner{
+					directMatch: r.path == p,
+				},
+			})
+		}
+		if reason.recentContributionsCount > 0 {
+			rs = append(rs, &ownershipReasonResolver{
+				resolver: &recentContributorOwnershipSignal{
+					total: int32(reason.recentContributionsCount),
+				},
+			})
+		}
+		if reason.recentViewsCount > 0 {
+			rs = append(rs, &ownershipReasonResolver{
+				resolver: &recentViewOwnershipSignal{
+					total: int32(reason.recentViewsCount),
+				},
+			})
+		}
 	}
 	return rs, nil
 }
@@ -835,7 +860,6 @@ func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.Ent
 }
 
 type assignedOwner struct {
-	total       int32
 	directMatch bool
 }
 
