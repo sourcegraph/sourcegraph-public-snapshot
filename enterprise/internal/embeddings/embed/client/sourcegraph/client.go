@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-
 	"io"
 	"math"
 	"net/http"
