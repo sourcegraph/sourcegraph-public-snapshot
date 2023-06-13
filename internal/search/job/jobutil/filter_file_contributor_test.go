@@ -2,6 +2,7 @@ package jobutil
 
 import (
 	"context"
+	"github.com/grafana/regexp"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -173,11 +174,24 @@ func TestFileHasContributorsJob(t *testing.T) {
 				resultEvent = ev
 			})
 
-			j, err := NewFileHasContributorsJob(childJob, tc.caseSensitive, tc.include, tc.exclude)
+			includeRegexp := toRe(tc.include, tc.caseSensitive)
+			excludeRegexp := toRe(tc.exclude, tc.caseSensitive)
+			j := NewFileHasContributorsJob(childJob, includeRegexp, excludeRegexp)
 			alert, err := j.Run(context.Background(), job.RuntimeClients{Gitserver: gitServerClient}, streamCollector)
 			require.Nil(t, alert)
 			require.NoError(t, err)
 			require.Equal(t, tc.outputEvent, resultEvent)
 		})
 	}
+}
+
+func toRe(contributors []string, isCaseSensitive bool) (res []*regexp.Regexp) {
+	for _, pattern := range contributors {
+		if isCaseSensitive {
+			res = append(res, regexp.MustCompile(pattern))
+		} else {
+			res = append(res, regexp.MustCompile(`(?i)`+pattern))
+		}
+	}
+	return res
 }
