@@ -67,3 +67,33 @@
         cursor: pointer;
     }
 }
+
+.mobile-top-bar {
+    display: none;
+
+    @media (--xs-breakpoint-down) {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        border-bottom: 1px solid var(--border-color-2);
+    }
+}
+
+.mobile-top-bar-button {
+    color: var(--text-muted);
+    padding: 0.5rem 2rem;
+    justify-content: center;
+
+    &:active {
+        background-color: var(--color-bg-1);
+    }
+}
+
+.mobile-top-bar-divider {
+    height: 1.25rem;
+}
+
+.mobile-history {
+    overflow-y: auto;
+}

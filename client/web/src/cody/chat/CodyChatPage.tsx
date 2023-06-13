@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from 'react'
 
-import { mdiClose, mdiCogOutline, mdiDelete, mdiDotsVertical, mdiOpenInNew, mdiPlus, mdiChevronRight } from '@mdi/js'
+import {
+    mdiClose,
+    mdiCogOutline,
+    mdiDelete,
+    mdiDotsVertical,
+    mdiOpenInNew,
+    mdiPlus,
+    mdiChevronRight,
+    mdiViewList,
+} from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -117,6 +126,8 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
         }
     }, [transcriptId, loaded, pathname, navigate])
 
+    const [showMobileHistory, setShowMobileHistory] = useState<boolean>(false)
+
     if (!loaded) {
         return null
     }
@@ -131,7 +142,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
     }
 
     return (
-        <Page className={classNames('overflow-hidden d-flex flex-column', styles.page)}>
+        <Page className={classNames('d-flex flex-column', styles.page)}>
             <PageTitle title="Cody AI Chat" />
             <PageHeader
                 actions={
@@ -165,7 +176,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
             </PageHeader>
 
             {/* Page content */}
-            <div className={classNames('row flex-1', styles.pageWrapper)}>
+            <div className={classNames('row flex-1 overflow-hidden', styles.pageWrapper)}>
                 <div className="d-none d-sm-flex flex-column col-sm-3 h-100">
                     <div className={styles.sidebarHeader}>
                         <H4>
@@ -281,16 +292,54 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
                         ))}
                 </div>
 
-                <div className={classNames('d-flex flex-column col-sm-9 h-100', styles.chatMainWrapper)}>
-                    <div className="d-sm-none">
-                        <Button>All chats</Button>
-                        <Button onClick={initializeNewChat}>
+                <div
+                    className={classNames(
+                        'd-sm-flex flex-column col-sm-9 h-100',
+                        showMobileHistory ? 'd-none' : 'd-flex',
+                        styles.chatMainWrapper
+                    )}
+                >
+                    <div className={styles.mobileTopBar}>
+                        <Button
+                            variant="icon"
+                            className={styles.mobileTopBarButton}
+                            onClick={() => setShowMobileHistory(true)}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiViewList} />
+                            All chats
+                        </Button>
+                        <div className={classNames('border-right', styles.mobileTopBarDivider)} />
+                        <Button variant="icon" className={styles.mobileTopBarButton} onClick={initializeNewChat}>
                             <Icon aria-hidden={true} svgPath={mdiPlus} />
                             New chat
                         </Button>
                     </div>
                     <ChatUI codyChatStore={codyChatStore} />
                 </div>
+
+                {showMobileHistory && (
+                    <div className="d-flex flex-column d-sm-none h-100">
+                        <div className={styles.mobileTopBar}>
+                            <Button
+                                variant="icon"
+                                className={classNames('w-100', styles.mobileTopBarButton)}
+                                onClick={() => setShowMobileHistory(false)}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiClose} />
+                                Close
+                            </Button>
+                        </div>
+                        <div className={styles.mobileHistory}>
+                            <HistoryList
+                                currentTranscript={transcript}
+                                transcriptHistory={transcriptHistory}
+                                truncateMessageLength={60}
+                                loadTranscriptFromHistory={loadTranscriptFromHistory}
+                                deleteHistoryItem={deleteHistoryItem}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
         </Page>
     )
