@@ -95,4 +95,7 @@ mod test {
     generate_tags_and_snapshot!(Scip, test_scip_go_example, "example.go");
 
     generate_tags_and_snapshot!(Scip, test_scip_rust_scopes, "scopes.rs");
+
+    generate_tags_and_snapshot!(Scip, test_scip_javascript, "globals.js");
+    generate_tags_and_snapshot!(Scip, test_scip_javascript_object, "javascript-object.js");
 }
