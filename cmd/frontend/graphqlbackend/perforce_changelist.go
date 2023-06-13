@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -39,7 +40,9 @@ type PerforceChangelistResolver struct {
 
 func newPerforceChangelistResolver(r *RepositoryResolver, changelistID, commitSHA string) *PerforceChangelistResolver {
 	repoURL := r.url()
-	canonicalURL := repoURL.Path + "/-/changelist/" + changelistID
+
+	// Example: /perforce.sgdev.org/foobar/-/changelist/99999
+	canonicalURL := filepath.Join(repoURL.Path, "-", "changelist", changelistID)
 
 	return &PerforceChangelistResolver{
 		logger:             r.logger.Scoped("PerforceChangelistResolver", "resolve a specific changelist"),
