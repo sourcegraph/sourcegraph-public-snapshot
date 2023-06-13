@@ -33,14 +33,19 @@ const REPO_EMBEDDING_JOB_FRAGMENT = gql`
             oid
             abbreviatedOID
         }
+        stats {
+            filesScheduled
+            filesEmbedded
+            filesSkipped
+        }
     }
 `
 
 export const REPO_EMBEDDING_JOBS_LIST_QUERY = gql`
     ${REPO_EMBEDDING_JOB_FRAGMENT}
 
-    query RepoEmbeddingJobsList($first: Int, $after: String, $query: String) {
-        repoEmbeddingJobs(first: $first, after: $after, query: $query) {
+    query RepoEmbeddingJobsList($first: Int, $after: String, $query: String, $state: String) {
+        repoEmbeddingJobs(first: $first, after: $after, query: $query, state: $state) {
             nodes {
                 ...RepoEmbeddingJobFields
             }
@@ -54,14 +59,18 @@ export const REPO_EMBEDDING_JOBS_LIST_QUERY = gql`
 `
 
 export const useRepoEmbeddingJobsConnection = (
-    query: string
+    query: string,
+    state: string | null
 ): UseShowMorePaginationResult<RepoEmbeddingJobsListResult, RepoEmbeddingJobFields> =>
     useShowMorePagination<RepoEmbeddingJobsListResult, RepoEmbeddingJobsListVariables, RepoEmbeddingJobFields>({
         query: REPO_EMBEDDING_JOBS_LIST_QUERY,
-        variables: { after: null, first: 10, query },
+        variables: { after: null, first: 10, query, state },
         getConnection: result => {
             const { repoEmbeddingJobs } = dataOrThrowErrors(result)
             return repoEmbeddingJobs
+        },
+        options: {
+            pollInterval: 5000,
         },
     })
 

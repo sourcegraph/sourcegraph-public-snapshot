@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
-	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -151,14 +150,9 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 		}
 
 		if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
-			settings, err := settings.CurrentUserFinal(ctx, tx.db)
-			if err != nil {
-				return err
-			}
-
 			// Snapshot the state of the searched repos when the monitor is created so that
 			// we can distinguish new repos.
-			err = codemonitors.Snapshot(ctx, r.logger, tx.db, r.enterpriseJobs, args.Trigger.Query, m.ID, settings)
+			err = codemonitors.Snapshot(ctx, r.logger, tx.db, r.enterpriseJobs, args.Trigger.Query, m.ID)
 			if err != nil {
 				return err
 			}
@@ -551,14 +545,9 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		// When the query is changed, take a new snapshot of the commits that currently
 		// exist so we know where to start.
 		if currentTrigger.QueryString != args.Trigger.Update.Query {
-			settings, err := settings.CurrentUserFinal(ctx, r.db)
-			if err != nil {
-				return nil, err
-			}
-
 			// Snapshot the state of the searched repos when the monitor is created so that
 			// we can distinguish new repos.
-			err = codemonitors.Snapshot(ctx, r.logger, r.db, r.enterpriseJobs, args.Trigger.Update.Query, monitorID, settings)
+			err = codemonitors.Snapshot(ctx, r.logger, r.db, r.enterpriseJobs, args.Trigger.Update.Query, monitorID)
 			if err != nil {
 				return nil, err
 			}

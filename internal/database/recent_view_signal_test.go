@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
 	"sort"
 	"testing"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -117,7 +117,7 @@ func TestRecentViewSignalStore_BuildAggregateFromEvents(t *testing.T) {
 
 	// Getting all RecentViewSummary entries from the DB and checking their
 	// correctness.
-	summaries, err := store.List(ctx, ListRecentViewSignalOpts{})
+	summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
 	require.NoError(t, err)
 
 	assert.Contains(t, summaries, RecentViewSummary{UserID: 1, FilePathID: repo1PathToID["cmd/gitserver/server/lock.go"], ViewsCount: 2})
@@ -235,7 +235,7 @@ func TestRecentViewSignalStore_BuildAggregateFromEvents_WithExcludedRepos(t *tes
 
 	// Getting all RecentViewSummary entries from the DB and checking their
 	// correctness.
-	summaries, err := store.List(ctx, ListRecentViewSignalOpts{})
+	summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
 	require.NoError(t, err)
 
 	assert.Contains(t, summaries, RecentViewSummary{UserID: 1, FilePathID: repo1PathToID["cmd/gitserver/server/lock.go"], ViewsCount: 2})
@@ -283,7 +283,7 @@ func TestRecentViewSignalStore_Insert(t *testing.T) {
 	t.Run("inserting initial signal", func(t *testing.T) {
 		err = store.Insert(ctx, 1, 2, 10)
 		require.NoError(t, err)
-		summaries, err := store.List(ctx, ListRecentViewSignalOpts{})
+		summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
 		require.NoError(t, err)
 		assert.Len(t, summaries, 1)
 		assert.Equal(t, 2, summaries[0].FilePathID)
@@ -295,20 +295,20 @@ func TestRecentViewSignalStore_Insert(t *testing.T) {
 		err = store.Insert(ctx, 1, 2, 10)
 		err = store.Insert(ctx, 1, 3, 20)
 		require.NoError(t, err)
-		summaries, err := store.List(ctx, ListRecentViewSignalOpts{})
+		summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
 		require.NoError(t, err)
 		assert.Len(t, summaries, 2)
-		assert.Equal(t, 2, summaries[0].FilePathID)
-		assert.Equal(t, 10, summaries[0].ViewsCount)
-		assert.Equal(t, 3, summaries[1].FilePathID)
-		assert.Equal(t, 20, summaries[1].ViewsCount)
+		assert.Equal(t, 3, summaries[0].FilePathID)
+		assert.Equal(t, 20, summaries[0].ViewsCount)
+		assert.Equal(t, 2, summaries[1].FilePathID)
+		assert.Equal(t, 10, summaries[1].ViewsCount)
 		clearTable(ctx, db)
 	})
 
 	t.Run("inserting conflicting entry will update it", func(t *testing.T) {
 		err = store.Insert(ctx, 1, 2, 10)
 		require.NoError(t, err)
-		summaries, err := store.List(ctx, ListRecentViewSignalOpts{})
+		summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
 		require.NoError(t, err)
 		assert.Len(t, summaries, 1)
 		assert.Equal(t, 2, summaries[0].FilePathID)
@@ -317,7 +317,7 @@ func TestRecentViewSignalStore_Insert(t *testing.T) {
 		// Inserting a conflicting entry.
 		err = store.Insert(ctx, 1, 2, 100)
 		require.NoError(t, err)
-		summaries, err = store.List(ctx, ListRecentViewSignalOpts{})
+		summaries, err = store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
 		require.NoError(t, err)
 		assert.Len(t, summaries, 1)
 		assert.Equal(t, 2, summaries[0].FilePathID)
@@ -370,7 +370,7 @@ func TestRecentViewSignalStore_InsertPaths(t *testing.T) {
 		pathIDs[1]: 1000, // file src/cde
 	})
 	require.NoError(t, err)
-	got, err := store.List(ctx, ListRecentViewSignalOpts{})
+	got, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
 	require.NoError(t, err)
 	want := []RecentViewSummary{
 		{
@@ -434,7 +434,7 @@ func TestRecentViewSignalStore_InsertPaths_OverBatchSize(t *testing.T) {
 
 	err = store.InsertPaths(ctx, 1, counts)
 	require.NoError(t, err)
-	summaries, err := store.List(ctx, ListRecentViewSignalOpts{})
+	summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
 	require.NoError(t, err)
 	require.Len(t, summaries, 5502) // Two extra entries - repo root and 'src' directory
 }
@@ -446,52 +446,78 @@ func TestRecentViewSignalStore_List(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	d := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	// Creating a user.
-	_, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	// Creating 2 users.
+	user1, err := d.Users().Create(ctx, NewUser{Username: "user1"})
+	require.NoError(t, err)
+	user2, err := d.Users().Create(ctx, NewUser{Username: "user2"})
 	require.NoError(t, err)
 
 	// Creating a repo.
-	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
+	var repoID api.RepoID = 1
+	err = d.Repos().Create(ctx, &types.Repo{ID: repoID, Name: "github.com/sourcegraph/sourcegraph"})
 	require.NoError(t, err)
 
 	// Creating some paths.
-	_, err = db.QueryContext(ctx, "INSERT INTO repo_paths (repo_id, absolute_path, parent_id) VALUES (1, '', NULL), (1, 'src', 1), (1, 'src/abc', 2), (1, 'src/cde', 2)")
+	paths := []string{"", "src", "src/abc", "src/cde", "src/def"}
+	ids, err := ensureRepoPaths(ctx, d.(*db).Store, paths, repoID)
 	require.NoError(t, err)
+	pathIDs := map[string]int{}
+	for i, p := range paths {
+		pathIDs[p] = ids[i]
+	}
 
-	store := RecentViewSignalStoreWith(db, logger)
-
-	// We need a determined order of inserted signals, hence using a singular insert.
-	for _, path := range []int{1, 2, 3, 4} {
-		// count = 10^path
-		require.NoError(t, store.Insert(ctx, 1, path, int(math.Pow(float64(10), float64(path)))))
+	viewCounts1 := map[string]int{
+		"":        10000,
+		"src":     1000,
+		"src/abc": 100,
+		"src/cde": 10, // different path than in viewCounts2
+	}
+	viewCounts2 := map[string]int{
+		"":        20000,
+		"src":     2000,
+		"src/abc": 200,
+		"src/def": 20, // different path than in viewCounts1
+	}
+	for path, count := range viewCounts1 {
+		require.NoError(t, d.RecentViewSignal().Insert(ctx, user1.ID, pathIDs[path], count))
+	}
+	for path, count := range viewCounts2 {
+		require.NoError(t, d.RecentViewSignal().Insert(ctx, user2.ID, pathIDs[path], count))
 	}
 
 	// As IDs of signals aren't returned, we can rely on counts because of strict
 	// mapping.
-	allCounts := []int{10, 100, 1000, 10000}
 	testCases := map[string]struct {
 		opts              ListRecentViewSignalOpts
 		expectedCounts    []int
 		expectedNoEntries bool
 	}{
-		"listing everything without opts": {
+		"list values for the whole table": {
+			opts:           ListRecentViewSignalOpts{IncludeAllPaths: true},
+			expectedCounts: []int{20000, 10000, 2000, 1000, 200, 100, 20, 10},
+		},
+		"list values for root path": {
 			opts:           ListRecentViewSignalOpts{},
-			expectedCounts: allCounts,
+			expectedCounts: []int{viewCounts2[""], viewCounts1[""]},
+		},
+		"list values for root path with min threashold": {
+			opts:           ListRecentViewSignalOpts{MinThreshold: 15000},
+			expectedCounts: []int{viewCounts2[""]},
 		},
 		"filter by viewer ID": {
 			opts:           ListRecentViewSignalOpts{ViewerUserID: 1},
-			expectedCounts: allCounts,
+			expectedCounts: []int{viewCounts1[""]},
 		},
 		"filter by viewer ID which isn't present": {
-			opts:              ListRecentViewSignalOpts{ViewerUserID: 2},
+			opts:              ListRecentViewSignalOpts{ViewerUserID: -1},
 			expectedNoEntries: true,
 		},
 		"filter by repo ID": {
 			opts:           ListRecentViewSignalOpts{RepoID: 1},
-			expectedCounts: allCounts,
+			expectedCounts: []int{viewCounts2[""], viewCounts1[""]},
 		},
 		"filter by repo ID which isn't present": {
 			opts:              ListRecentViewSignalOpts{RepoID: 2},
@@ -499,33 +525,35 @@ func TestRecentViewSignalStore_List(t *testing.T) {
 		},
 		"filter by path": {
 			opts:           ListRecentViewSignalOpts{Path: "src/cde"},
-			expectedCounts: allCounts[len(allCounts)-1:],
+			expectedCounts: []int{viewCounts1["src/cde"]},
 		},
 		"filter by path which isn't present": {
 			opts:              ListRecentViewSignalOpts{Path: "lol"},
 			expectedNoEntries: true,
 		},
 		"limit, offset": {
-			opts:           ListRecentViewSignalOpts{LimitOffset: &LimitOffset{Limit: 2, Offset: 1}},
-			expectedCounts: allCounts[1:4],
+			opts:           ListRecentViewSignalOpts{LimitOffset: &LimitOffset{Limit: 1, Offset: 1}},
+			expectedCounts: []int{viewCounts1[""]},
 		},
-		"all options": {
-			opts:           ListRecentViewSignalOpts{ViewerUserID: 1, RepoID: 1, Path: "src", LimitOffset: &LimitOffset{Limit: 1}},
-			expectedCounts: allCounts[1:2],
+		"limit": {
+			opts:           ListRecentViewSignalOpts{LimitOffset: &LimitOffset{Limit: 1}},
+			expectedCounts: []int{viewCounts2[""]},
 		},
 	}
 
 	for testName, test := range testCases {
 		t.Run(testName, func(t *testing.T) {
-			gotSummaries, err := store.List(ctx, test.opts)
+			gotSummaries, err := d.RecentViewSignal().List(ctx, test.opts)
 			require.NoError(t, err)
 			if test.expectedNoEntries {
 				assert.Empty(t, gotSummaries)
 				return
 			}
-			for idx, summary := range gotSummaries {
-				assert.Equal(t, test.expectedCounts[idx], summary.ViewsCount)
+			var gotCounts []int
+			for _, s := range gotSummaries {
+				gotCounts = append(gotCounts, s.ViewsCount)
 			}
+			assert.Equal(t, test.expectedCounts, gotCounts)
 		})
 	}
 }

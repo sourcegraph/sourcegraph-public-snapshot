@@ -21,8 +21,8 @@ public class ConfigUtil {
     configAsJson.addProperty(
         "accessToken",
         ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.ENTERPRISE
-            ? ConfigUtil.getAccessToken(project)
-            : null);
+            ? ConfigUtil.getDotComAccessToken(project)
+            : ConfigUtil.getEnterpriseAccessToken(project));
     configAsJson.addProperty(
         "customRequestHeadersAsString", ConfigUtil.getCustomRequestHeaders(project));
     configAsJson.addProperty("pluginVersion", ConfigUtil.getPluginVersion());
@@ -82,15 +82,6 @@ public class ConfigUtil {
     // User level or default
     String userLevelUrl = UserLevelConfig.getSourcegraphUrl();
     return !userLevelUrl.equals("") ? addSlashIfNeeded(userLevelUrl) : "";
-  }
-
-  @Nullable
-  public static String getAccessToken(Project project) {
-    // Project level → application level
-    String projectLevelAccessToken = getProjectLevelConfig(project).getAccessToken();
-    return projectLevelAccessToken != null
-        ? projectLevelAccessToken
-        : getApplicationLevelConfig().getAccessToken();
   }
 
   @NotNull
@@ -202,6 +193,10 @@ public class ConfigUtil {
     return getApplicationLevelConfig().isUrlNotificationDismissed();
   }
 
+  public static boolean areCodyCompletionsEnabled() {
+    return getApplicationLevelConfig().areCodyCompletionsEnabled();
+  }
+
   public static boolean isAccessTokenNotificationDismissed() {
     return getApplicationLevelConfig().isAccessTokenNotificationDismissed();
   }
@@ -248,10 +243,18 @@ public class ConfigUtil {
   }
 
   public static String getEnterpriseAccessToken(Project project) {
-    return getAccessToken(project);
+    // Project level → application level
+    String projectLevelAccessToken = getProjectLevelConfig(project).getEnterpriseAccessToken();
+    return projectLevelAccessToken != null
+        ? projectLevelAccessToken
+        : getApplicationLevelConfig().getEnterpriseAccessToken();
   }
 
-  public static String getDotcomAccessToken(Project project) {
-    return getAccessToken(project);
+  public static String getDotComAccessToken(Project project) {
+    // Project level → application level
+    String projectLevelAccessToken = getProjectLevelConfig(project).getDotComAccessToken();
+    return projectLevelAccessToken != null
+        ? projectLevelAccessToken
+        : getApplicationLevelConfig().getDotComAccessToken();
   }
 }

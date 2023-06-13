@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	executorutil "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/util"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -19,6 +20,53 @@ func NewMetricReporter[T workerutil.Record](observationCtx *observation.Context,
 }
 
 func initExternalMetricReporters[T workerutil.Record](queueName string, store store.Store[T], metricsConfig *Config) (goroutine.BackgroundRoutine, error) {
+	reporters, err := configureReporters(metricsConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := context.Background()
+	return goroutine.NewPeriodicGoroutine(
+		ctx,
+		&externalEmitter[T]{
+			queueName:  queueName,
+			countFuncs: []func(ctx context.Context, includeProcessing bool) (int, error){store.QueuedCount},
+			reporters:  reporters,
+			allocation: metricsConfig.Allocations[queueName],
+		},
+		goroutine.WithName("executors.autoscaler-metrics"),
+		goroutine.WithDescription("emits metrics to GCP/AWS for auto-scaling"),
+		goroutine.WithInterval(5*time.Second),
+	), nil
+}
+
+// NewMultiqueueMetricReporter returns a periodic background routine that reports the sum of the lengths all configured queues.
+// This does not reinitialise Prometheus metrics as is done in NewMetricReporter, as this only needs to be done once and is
+// already done for the single queue metrics.
+func NewMultiqueueMetricReporter(queueNames []string, metricsConfig *Config, countFuncs ...func(ctx context.Context, includeProcessing bool) (int, error)) (goroutine.BackgroundRoutine, error) {
+	reporters, err := configureReporters(metricsConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	queueStr := executorutil.FormatQueueNamesForMetrics("", queueNames)
+	ctx := context.Background()
+	return goroutine.NewPeriodicGoroutine(
+		ctx,
+		&externalEmitter[workerutil.Record]{
+			queueName:  queueStr,
+			countFuncs: countFuncs,
+			reporters:  reporters,
+			// TODO this is a temp fix to get an allocation for both
+			allocation: metricsConfig.Allocations[queueNames[0]],
+		},
+		goroutine.WithName("multiqueue-executors.autoscaler-metrics"),
+		goroutine.WithDescription("emits multiqueue metrics to GCP/AWS for auto-scaling"),
+		goroutine.WithInterval(5*time.Second),
+	), nil
+}
+
+func configureReporters(metricsConfig *Config) ([]reporter, error) {
 	awsReporter, err := newAWSReporter(metricsConfig)
 	if err != nil {
 		return nil, err
@@ -36,18 +84,5 @@ func initExternalMetricReporters[T workerutil.Record](queueName string, store st
 	if gcsReporter != nil {
 		reporters = append(reporters, gcsReporter)
 	}
-
-	ctx := context.Background()
-	return goroutine.NewPeriodicGoroutine(
-		ctx,
-		&externalEmitter[T]{
-			queueName:  queueName,
-			store:      store,
-			reporters:  reporters,
-			allocation: metricsConfig.Allocations[queueName],
-		},
-		goroutine.WithName("executors.autoscaler-metrics"),
-		goroutine.WithDescription("emits metrics to GCP/AWS for auto-scaling"),
-		goroutine.WithInterval(5*time.Second),
-	), nil
+	return reporters, nil
 }

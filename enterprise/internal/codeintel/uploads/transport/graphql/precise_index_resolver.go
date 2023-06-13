@@ -19,10 +19,8 @@ import (
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type preciseIndexResolver struct {
@@ -303,19 +301,7 @@ func (r *preciseIndexResolver) State() string {
 //
 
 func (r *preciseIndexResolver) ProjectRoot(ctx context.Context) (_ resolverstubs.GitTreeEntryResolver, err error) {
-	// defer r.traceErrs.Collect(&err, log.String("uploadResolver.field", "projectRoot"))
-
-	var (
-		repoID api.RepoID
-		commit string
-		root   string
-	)
-	if r.upload != nil {
-		repoID, commit, root = api.RepoID(r.upload.RepositoryID), r.upload.Commit, r.upload.Root
-	} else if r.index != nil {
-		repoID, commit, root = api.RepoID(r.index.RepositoryID), r.index.Commit, r.index.Root
-	}
-
+	repoID, commit, root := r.projectRootMetadata()
 	resolver, err := r.locationResolver.Path(ctx, repoID, commit, root, true)
 	if err != nil || resolver == nil {
 		// Do not return typed nil interface
@@ -326,31 +312,25 @@ func (r *preciseIndexResolver) ProjectRoot(ctx context.Context) (_ resolverstubs
 }
 
 func (r *preciseIndexResolver) Tags(ctx context.Context) ([]string, error) {
-	var (
-		repoName api.RepoName
-		commit   string
-	)
+	repoID, commit, _ := r.projectRootMetadata()
+	resolver, err := r.locationResolver.Commit(ctx, repoID, commit)
+	if err != nil || resolver == nil {
+		return nil, err
+	}
+
+	return resolver.Tags(ctx)
+}
+
+func (r *preciseIndexResolver) projectRootMetadata() (
+	repoID api.RepoID,
+	commit string,
+	root string,
+) {
 	if r.upload != nil {
-		repoName, commit = api.RepoName(r.upload.RepositoryName), r.upload.Commit
-	} else if r.index != nil {
-		repoName, commit = api.RepoName(r.index.RepositoryName), r.index.Commit
+		return api.RepoID(r.upload.RepositoryID), r.upload.Commit, r.upload.Root
 	}
 
-	tags, err := r.gitserverClient.ListTags(ctx, repoName, commit)
-	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
-			return nil, nil
-		}
-
-		return nil, errors.New("unable to return list of tags in the repository.")
-	}
-
-	tagNames := make([]string, 0, len(tags))
-	for _, tag := range tags {
-		tagNames = append(tagNames, tag.Name)
-	}
-
-	return tagNames, nil
+	return api.RepoID(r.index.RepositoryID), r.index.Commit, r.index.Root
 }
 
 //

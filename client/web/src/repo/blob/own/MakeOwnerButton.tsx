@@ -46,7 +46,7 @@ export const MakeOwnerButton: React.FC<MakeOwnerButtonProps> = ({ onSuccess, onE
 
     return (
         <Tooltip content={tooltipContent}>
-            <Button onClick={assignOwner} variant="primary" outline={true} size="sm" disabled={userId === undefined}>
+            <Button onClick={assignOwner} variant="secondary" outline={true} size="sm" disabled={userId === undefined}>
                 <Icon aria-hidden={true} svgPath={loading ? mdiLoading : mdiPlus} />
                 Make owner
             </Button>
