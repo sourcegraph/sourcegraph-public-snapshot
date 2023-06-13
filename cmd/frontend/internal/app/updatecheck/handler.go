@@ -1,7 +1,6 @@
 package updatecheck
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,9 +19,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -475,7 +474,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		EverFindRefs:                  strconv.FormatBool(pr.EverFindRefs),
 		ActiveToday:                   strconv.FormatBool(pr.ActiveToday),
 		Timestamp:                     now.UTC().Format(time.RFC3339),
-		HasCodyEnabled:                strconv.FormatBool(codyFeatureFlag()),
+		HasCodyEnabled:                strconv.FormatBool(conf.CodyEnabled()),
 		CodyUsage:                     codyUsage,
 		RepoMetadataUsage:             pr.RepoMetadataUsage,
 	})
@@ -770,17 +769,6 @@ func reserializeCodyUsage(payload json.RawMessage) (json.RawMessage, error) {
 	}
 
 	return json.Marshal(singlePeriodUsage)
-}
-
-func codyFeatureFlag() bool {
-	ctx := context.Background()
-	flags := featureflag.FromContext(ctx)
-	codyExperimental, err := flags.GetBool("cody-experimental")
-	if !err {
-		return false
-	}
-
-	return codyExperimental
 }
 
 var (

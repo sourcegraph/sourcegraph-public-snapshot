@@ -12,7 +12,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/internal/highlight",
         "//cmd/frontend/internal/search/logs",
@@ -32,7 +31,6 @@ go_library(
         "//internal/search/streaming/api",
         "//internal/search/streaming/client",
         "//internal/search/streaming/http",
-        "//internal/settings",
         "//internal/trace",
         "//internal/types",
         "//lib/errors",

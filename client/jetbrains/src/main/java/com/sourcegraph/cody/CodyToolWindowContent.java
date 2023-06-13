@@ -21,13 +21,14 @@ import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.editor.EditorContextGetter;
-import com.sourcegraph.cody.recipes.RecipeRunner;
+import com.sourcegraph.cody.recipes.*;
 import com.sourcegraph.cody.ui.RoundedJBTextArea;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
 import java.awt.*;
 import java.awt.event.AdjustmentListener;
 import java.util.ArrayList;
+import java.util.Collections;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.ButtonUI;
@@ -35,43 +36,57 @@ import javax.swing.plaf.basic.BasicTextAreaUI;
 import org.jetbrains.annotations.NotNull;
 
 class CodyToolWindowContent implements UpdatableChat {
+  private static final int CHAT_TAB_INDEX = 0;
+  private static final int RECIPES_TAB_INDEX = 1;
   private final @NotNull JBTabbedPane tabbedPane = new JBTabbedPane();
   private final @NotNull JPanel messagesPanel = new JPanel();
   private final @NotNull JBTextArea promptInput;
   private final @NotNull JButton sendButton;
+  private final @NotNull Project project;
   private boolean needScrollingDown = true;
 
   public CodyToolWindowContent(@NotNull Project project) {
+    this.project = project;
     // Tabs
     @NotNull JPanel contentPanel = new JPanel();
-    tabbedPane.insertTab("Chat", null, contentPanel, null, 0);
-    @NotNull JPanel recipesPanel = new JPanel();
-    tabbedPane.insertTab("Recipes", null, recipesPanel, null, 1);
+    tabbedPane.insertTab("Chat", null, contentPanel, null, CHAT_TAB_INDEX);
+    @NotNull JPanel recipesPanel = new JPanel(new GridLayout(0, 1));
+    recipesPanel.setLayout(new BoxLayout(recipesPanel, BoxLayout.Y_AXIS));
+    tabbedPane.insertTab("Recipes", null, recipesPanel, null, RECIPES_TAB_INDEX);
 
     // Recipes panel
-    RecipeRunner recipeRunner = new RecipeRunner(project, this);
-    JButton explainCodeDetailedButton = new JButton("Explain selected code (detailed)");
-    explainCodeDetailedButton.addActionListener(e -> recipeRunner.runExplainCodeDetailed());
-    JButton explainCodeHighLevelButton = new JButton("Explain selected code (high level)");
-    explainCodeHighLevelButton.addActionListener(e -> recipeRunner.runExplainCodeHighLevel());
-    JButton generateUnitTestButton = new JButton("Generate a unit test");
-    generateUnitTestButton.addActionListener(e -> recipeRunner.runGenerateUnitTest());
-    JButton generateDocstringButton = new JButton("Generate a docstring");
-    generateDocstringButton.addActionListener(e -> recipeRunner.runGenerateDocstring());
-    JButton improveVariableNamesButton = new JButton("Improve variable names");
-    improveVariableNamesButton.addActionListener(e -> recipeRunner.runImproveVariableNames());
-    JButton translateToLanguageButton = new JButton("Translate to different language");
+    RecipeRunner recipeRunner = new RecipeRunner(this.project, this);
+    JButton explainCodeDetailedButton = createWideButton("Explain selected code (detailed)");
+    explainCodeDetailedButton.addActionListener(
+        e -> recipeRunner.runRecipe(new ExplainCodeDetailedPromptProvider()));
+    JButton explainCodeHighLevelButton = createWideButton("Explain selected code (high level)");
+    explainCodeHighLevelButton.addActionListener(
+        e -> recipeRunner.runRecipe(new ExplainCodeHighLevelPromptProvider()));
+    JButton generateUnitTestButton = createWideButton("Generate a unit test");
+    generateUnitTestButton.addActionListener(
+        e -> recipeRunner.runRecipe(new GenerateUnitTestPromptProvider()));
+    JButton generateDocstringButton = createWideButton("Generate a docstring");
+    generateDocstringButton.addActionListener(
+        e -> recipeRunner.runRecipe(new GenerateDocStringPromptProvider()));
+    JButton improveVariableNamesButton = createWideButton("Improve variable names");
+    improveVariableNamesButton.addActionListener(
+        e -> recipeRunner.runRecipe(new ImproveVariableNamesPromptProvider()));
+    JButton translateToLanguageButton = createWideButton("Translate to different language");
     translateToLanguageButton.addActionListener(e -> recipeRunner.runTranslateToLanguage());
-    JButton gitHistoryButton = new JButton("Summarize recent code changes");
+    JButton gitHistoryButton = createWideButton("Summarize recent code changes");
     gitHistoryButton.addActionListener(e -> recipeRunner.runGitHistory());
-    JButton findCodeSmellsButton = new JButton("Smell code");
-    findCodeSmellsButton.addActionListener(e -> recipeRunner.runFindCodeSmells());
-    JButton fixupButton = new JButton("Fixup code from inline instructions");
+    JButton findCodeSmellsButton = createWideButton("Smell code");
+    findCodeSmellsButton.addActionListener(
+        e -> recipeRunner.runRecipe(new FindCodeSmellsPromptProvider()));
+    JButton fixupButton = createWideButton("Fixup code from inline instructions");
     fixupButton.addActionListener(e -> recipeRunner.runFixup());
-    JButton contextSearchButton = new JButton("Codebase context search");
+    JButton contextSearchButton = createWideButton("Codebase context search");
     contextSearchButton.addActionListener(e -> recipeRunner.runContextSearch());
-    JButton releaseNotesButton = new JButton("Generate release notes");
+    JButton releaseNotesButton = createWideButton("Generate release notes");
     releaseNotesButton.addActionListener(e -> recipeRunner.runReleaseNotes());
+    JButton optimizeCodeButton = createWideButton("Optimize code");
+    optimizeCodeButton.addActionListener(
+        e -> recipeRunner.runRecipe(new OptimizeCodePromptProvider()));
     recipesPanel.add(explainCodeDetailedButton);
     recipesPanel.add(explainCodeHighLevelButton);
     recipesPanel.add(generateUnitTestButton);
@@ -83,6 +98,7 @@ class CodyToolWindowContent implements UpdatableChat {
     recipesPanel.add(fixupButton);
     recipesPanel.add(contextSearchButton);
     recipesPanel.add(releaseNotesButton);
+    recipesPanel.add(optimizeCodeButton);
 
     // Chat panel
     messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true));
@@ -106,8 +122,8 @@ class CodyToolWindowContent implements UpdatableChat {
     JPanel controlsPanel = new JPanel();
     controlsPanel.setLayout(new BorderLayout());
     controlsPanel.setBorder(new EmptyBorder(JBUI.insets(14)));
-    sendButton = createSendButton(project);
-    promptInput = createPromptInput(project);
+    sendButton = createSendButton(this.project);
+    promptInput = createPromptInput(this.project);
 
     JPanel messagePanel = new JPanel(new BorderLayout());
     messagePanel.add(promptInput, BorderLayout.CENTER);
@@ -123,9 +139,23 @@ class CodyToolWindowContent implements UpdatableChat {
     contentPanel.add(controlsPanel, BorderLayout.SOUTH);
 
     // Add welcome message
+    addWelcomeMessage();
+  }
+
+  @NotNull
+  private static JButton createWideButton(@NotNull String text) {
+    JButton button = new JButton(text);
+    button.setAlignmentX(Component.CENTER_ALIGNMENT);
+    button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getPreferredSize().height));
+    ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(button);
+    button.setUI(buttonUI);
+    return button;
+  }
+
+  private void addWelcomeMessage() {
     var welcomeText =
         "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.";
-    addMessage(ChatMessage.createAssistantMessage(welcomeText));
+    addMessageToChat(ChatMessage.createAssistantMessage(welcomeText));
   }
 
   @NotNull
@@ -161,7 +191,7 @@ class CodyToolWindowContent implements UpdatableChat {
     return promptInput;
   }
 
-  public synchronized void addMessage(@NotNull ChatMessage message) {
+  public synchronized void addMessageToChat(@NotNull ChatMessage message) {
     ApplicationManager.getApplication()
         .invokeLater(
             () -> {
@@ -185,6 +215,17 @@ class CodyToolWindowContent implements UpdatableChat {
                         messagesPanel.repaint();
                       });
             });
+  }
+
+  @Override
+  public void activateChatTab() {
+    this.tabbedPane.setSelectedIndex(CHAT_TAB_INDEX);
+  }
+
+  @Override
+  public void respondToMessage(@NotNull ChatMessage message, @NotNull String responsePrefix) {
+    activateChatTab();
+    sendMessage(this.project, message, responsePrefix);
   }
 
   public synchronized void updateLastMessage(@NotNull ChatMessage message) {
@@ -211,7 +252,27 @@ class CodyToolWindowContent implements UpdatableChat {
     ApplicationManager.getApplication().invokeLater(() -> sendButton.setEnabled(true));
   }
 
+  @Override
+  public void resetConversation() {
+    ApplicationManager.getApplication()
+        .invokeLater(
+            () -> {
+              messagesPanel.removeAll();
+              addWelcomeMessage();
+              messagesPanel.revalidate();
+              messagesPanel.repaint();
+            });
+  }
+
   private void sendMessage(@NotNull Project project) {
+    String messageText = promptInput.getText();
+    sendMessage(
+        project,
+        ChatMessage.createHumanMessage(messageText, messageText, Collections.emptyList()),
+        "");
+  }
+
+  private void sendMessage(@NotNull Project project, ChatMessage message, String responsePrefix) {
     if (!sendButton.isEnabled()) return;
     startMessageProcessing();
     // Build message
@@ -222,14 +283,15 @@ class CodyToolWindowContent implements UpdatableChat {
     String accessToken =
         isEnterprise
             ? ConfigUtil.getEnterpriseAccessToken(project)
-            : ConfigUtil.getDotcomAccessToken(project);
+            : ConfigUtil.getDotComAccessToken(project);
     System.out.println("isEnterprise: " + isEnterprise);
 
     var chat = new Chat("", instanceUrl, accessToken != null ? accessToken : "");
     ArrayList<String> contextFiles =
         EditorContextGetter.getEditorContext(project).getCurrentFileContentAsArrayList();
-    ChatMessage humanMessage = ChatMessage.createHumanMessage(promptInput.getText(), contextFiles);
-    addMessage(humanMessage);
+    ChatMessage humanMessage =
+        ChatMessage.createHumanMessage(message.prompt(), message.getDisplayText(), contextFiles);
+    addMessageToChat(humanMessage);
 
     // Get assistant message
     // Note: A separate thread is needed because it's a long-running task. If we did the back-end
@@ -237,7 +299,7 @@ class CodyToolWindowContent implements UpdatableChat {
     //       in the main thread and then waited, we wouldn't see the messages streamed back to us.
     new Thread(
             () -> {
-              chat.sendMessage(humanMessage, "", this); // TODO: Use prefix
+              chat.sendMessage(humanMessage, responsePrefix, this); // TODO: Use prefix
             })
         .start();
   }

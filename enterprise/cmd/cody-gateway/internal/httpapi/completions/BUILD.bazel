@@ -4,7 +4,6 @@ go_library(
     name = "completions",
     srcs = [
         "anthropic.go",
-        "limiter.go",
         "openai.go",
         "upstream.go",
     ],
@@ -13,16 +12,18 @@ go_library(
     deps = [
         "//enterprise/cmd/cody-gateway/internal/actor",
         "//enterprise/cmd/cody-gateway/internal/events",
+        "//enterprise/cmd/cody-gateway/internal/httpapi/featurelimiter",
         "//enterprise/cmd/cody-gateway/internal/limiter",
+        "//enterprise/cmd/cody-gateway/internal/notify",
         "//enterprise/cmd/cody-gateway/internal/response",
         "//enterprise/internal/codygateway",
         "//enterprise/internal/completions/client/anthropic",
         "//enterprise/internal/completions/client/openai",
-        "//enterprise/internal/completions/types",
         "//internal/httpcli",
         "//internal/trace",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel_trace//:trace",
         "@org_golang_x_exp//slices",
     ],
 )

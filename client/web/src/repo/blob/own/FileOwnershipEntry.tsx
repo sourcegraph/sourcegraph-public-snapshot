@@ -16,6 +16,7 @@ import {
 import { PersonLink } from '../../../person/PersonLink'
 
 import { OwnershipBadge } from './OwnershipBadge'
+import { RemoveOwnerButton } from './RemoveOwnerButton'
 
 import containerStyles from './OwnerList.module.scss'
 
@@ -23,6 +24,10 @@ interface Props {
     owner: OwnerFields
     reasons: OwnershipReason[]
     makeOwnerButton?: React.ReactElement
+    repoID: string
+    filePath: string
+    setRemoveOwnerError: any
+    refetch: any
 }
 
 type OwnershipReason =
@@ -31,7 +36,15 @@ type OwnershipReason =
     | RecentViewOwnershipSignalFields
     | AssignedOwnerFields
 
-export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons, makeOwnerButton }) => {
+export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
+    owner,
+    reasons,
+    makeOwnerButton,
+    repoID,
+    filePath,
+    refetch,
+    setRemoveOwnerError,
+}) => {
     const findEmail = (): string | undefined => {
         if (owner.__typename !== 'Person') {
             return undefined
@@ -42,7 +55,16 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
         return owner.email
     }
 
+    const userID = owner.__typename === 'Person' && owner.user?.__typename === 'User' ? owner.user.id : undefined
+    const teamID = owner.__typename === 'Team' ? owner.id : undefined
+
     const email = findEmail()
+
+    const assignedOwnerReasons: AssignedOwnerFields[] = reasons
+        .filter(value => value.__typename === 'AssignedOwner')
+        .map(val => val as AssignedOwnerFields)
+    const isDirectAssigned = assignedOwnerReasons.some(value => value.isDirectMatch)
+    const hasAssigned = assignedOwnerReasons.length > 0
 
     return (
         <tr>
@@ -89,7 +111,22 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                     <OwnershipBadge key={reason.title} reason={reason} />
                 ))}
             </td>
-            <td className={containerStyles.fitting}>{makeOwnerButton}</td>
+            <td className={containerStyles.fitting}>
+                <span className={containerStyles.editButton}>
+                    {makeOwnerButton ||
+                        (hasAssigned && (
+                            <RemoveOwnerButton
+                                onSuccess={refetch}
+                                onError={setRemoveOwnerError}
+                                repoId={repoID}
+                                path={filePath}
+                                userID={userID}
+                                teamID={teamID}
+                                isDirectAssigned={isDirectAssigned}
+                            />
+                        ))}
+                </span>
+            </td>
         </tr>
     )
 }

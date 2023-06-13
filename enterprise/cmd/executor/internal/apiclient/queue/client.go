@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -187,16 +188,17 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 		}
 		endpoint = "/heartbeat"
 		payload = types.HeartbeatRequest{
-			ExecutorName:    c.options.ExecutorName,
-			QueueNames:      c.options.QueueNames,
-			JobIDsByQueue:   queueJobIDs,
-			OS:              c.options.TelemetryOptions.OS,
-			Architecture:    c.options.TelemetryOptions.Architecture,
-			DockerVersion:   c.options.TelemetryOptions.DockerVersion,
-			ExecutorVersion: c.options.TelemetryOptions.ExecutorVersion,
-			GitVersion:      c.options.TelemetryOptions.GitVersion,
-			IgniteVersion:   c.options.TelemetryOptions.IgniteVersion,
-			SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
+			ExecutorName:      c.options.ExecutorName,
+			QueueNames:        c.options.QueueNames,
+			JobIDsByQueue:     queueJobIDs,
+			OS:                c.options.TelemetryOptions.OS,
+			Architecture:      c.options.TelemetryOptions.Architecture,
+			DockerVersion:     c.options.TelemetryOptions.DockerVersion,
+			ExecutorVersion:   c.options.TelemetryOptions.ExecutorVersion,
+			GitVersion:        c.options.TelemetryOptions.GitVersion,
+			IgniteVersion:     c.options.TelemetryOptions.IgniteVersion,
+			SrcCliVersion:     c.options.TelemetryOptions.SrcCliVersion,
+			PrometheusMetrics: metrics,
 		}
 	} else {
 		// If queueName is set, then we cannot be sure whether Sourcegraph is new enough (since Heartbeat can't provide
@@ -216,6 +218,8 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 		queueAttr = attribute.String("queueName", c.options.QueueName)
 		endpoint = fmt.Sprintf("%s/heartbeat", c.options.QueueName)
 		payload = types.HeartbeatRequestV1{
+			// TODO: This field is set to become unnecessary in Sourcegraph 5.2.
+			Version:      types.ExecutorAPIVersion2,
 			ExecutorName: c.options.ExecutorName,
 			JobIDs:       jobIDsInt,
 
@@ -258,12 +262,11 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 	}
 
 	// First, try to unmarshal the response into a V2 response object.
-	var respV2 types.HeartbeatResponse
-	if unmarshalErr := json.Unmarshal(bodyBytes, &respV2); unmarshalErr == nil {
-		// If that works, we can return the data.
-		return respV2.KnownIDs, respV2.CancelIDs, nil
+	var resp types.HeartbeatResponse
+	if unmarshalErr := json.Unmarshal(bodyBytes, &resp); unmarshalErr != nil {
+		return nil, nil, unmarshalErr
 	}
-	return nil, nil, err
+	return resp.KnownIDs, resp.CancelIDs, nil
 }
 
 type JobIDsParseError struct {
@@ -297,6 +300,9 @@ func ParseJobIDs(jobIDs []string) ([]types.QueueJobIDs, error) {
 	for q, ids := range queueIds {
 		queueJobIDs = append(queueJobIDs, types.QueueJobIDs{QueueName: q, JobIDs: ids})
 	}
+	sort.Slice(queueJobIDs, func(i, j int) bool {
+		return queueJobIDs[i].QueueName < queueJobIDs[j].QueueName
+	})
 	return queueJobIDs, nil
 }
 

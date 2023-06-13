@@ -9,6 +9,7 @@ import (
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/redigo"
 	"github.com/gomodule/redigo/redis"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
@@ -62,7 +63,7 @@ func TestSourcesWorkers(t *testing.T) {
 	s1 := &mockSourceSyncer{}
 	stop1 := make(chan struct{})
 	g.Go(func() {
-		w := (Sources{s1}).Worker(observation.NewContext(logger), sourceWorkerMutex1, time.Millisecond)
+		w := (NewSources(s1)).Worker(observation.NewContext(logger), sourceWorkerMutex1, time.Millisecond)
 		go func() {
 			<-stop1
 			w.Stop()
@@ -77,7 +78,7 @@ func TestSourcesWorkers(t *testing.T) {
 		sourceWorkerMutex := rs.NewMutex(lockName,
 			// Competing worker should only try once to avoid getting stuck
 			redsync.WithTries(1))
-		w := (Sources{s2}).Worker(observation.NewContext(logger), sourceWorkerMutex, time.Millisecond)
+		w := (NewSources(s2)).Worker(observation.NewContext(logger), sourceWorkerMutex, time.Millisecond)
 		go func() {
 			<-stop2
 			w.Stop()
@@ -114,4 +115,18 @@ func TestSourcesWorkers(t *testing.T) {
 
 	// Wait for everyone to go home for the weekend
 	g.Wait()
+}
+
+func TestIsErrNotFromSource(t *testing.T) {
+	var err error
+	err = ErrNotFromSource{Reason: "foo"}
+	assert.True(t, IsErrNotFromSource(err))
+	autogold.Expect("token not from source: foo").Equal(t, err.Error())
+
+	err = errors.Wrap(err, "wrap")
+	assert.True(t, IsErrNotFromSource(err))
+	autogold.Expect("wrap: token not from source: foo").Equal(t, err.Error())
+
+	err = errors.New("foo")
+	assert.False(t, IsErrNotFromSource(err))
 }

@@ -7,6 +7,7 @@ go_library(
         "cache.go",
         "http.go",
         "job.go",
+        "queues.go",
         "skip.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types",

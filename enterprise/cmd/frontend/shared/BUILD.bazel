@@ -24,6 +24,7 @@ go_library(
         "//enterprise/cmd/frontend/internal/dotcom",
         "//enterprise/cmd/frontend/internal/embeddings",
         "//enterprise/cmd/frontend/internal/executorqueue",
+        "//enterprise/cmd/frontend/internal/guardrails",
         "//enterprise/cmd/frontend/internal/insights",
         "//enterprise/cmd/frontend/internal/licensing/init",
         "//enterprise/cmd/frontend/internal/notebooks",
@@ -36,6 +37,7 @@ go_library(
         "//enterprise/internal/codeintel",
         "//enterprise/internal/codeintel/shared",
         "//enterprise/internal/cody",
+        "//enterprise/internal/oobmigration/migrations",
         "//enterprise/internal/scim",
         "//internal/cody",
         "//internal/conf",
@@ -46,6 +48,7 @@ go_library(
         "//internal/env",
         "//internal/observation",
         "//internal/service",
+        "//schema",
         "@com_github_sourcegraph_log//:log",
     ],
 )

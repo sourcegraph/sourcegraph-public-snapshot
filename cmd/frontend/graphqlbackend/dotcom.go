@@ -22,6 +22,7 @@ type DotcomResolver interface {
 	UpdateProductSubscription(context.Context, *UpdateProductSubscriptionArgs) (*EmptyResponse, error)
 	GenerateProductLicenseForSubscription(context.Context, *GenerateProductLicenseForSubscriptionArgs) (ProductLicense, error)
 	ArchiveProductSubscription(context.Context, *ArchiveProductSubscriptionArgs) (*EmptyResponse, error)
+	RevokeLicense(context.Context, *RevokeLicenseArgs) (*EmptyResponse, error)
 
 	// DotcomQuery
 	ProductSubscription(context.Context, *ProductSubscriptionArgs) (ProductSubscription, error)
@@ -30,6 +31,7 @@ type DotcomResolver interface {
 	ProductLicenses(context.Context, *ProductLicensesArgs) (ProductLicenseConnection, error)
 	ProductLicenseByID(ctx context.Context, id graphql.ID) (ProductLicense, error)
 	ProductSubscriptionByID(ctx context.Context, id graphql.ID) (ProductSubscription, error)
+	CodyGatewayDotcomUserByToken(context.Context, *CodyGatewayUsersByAccessTokenArgs) (CodyGatewayUser, error)
 }
 
 // ProductSubscription is the interface for the GraphQL type ProductSubscription.
@@ -96,6 +98,7 @@ type ProductLicense interface {
 	SiteID() *string
 	CreatedAt() gqlutil.DateTime
 	RevokedAt() *gqlutil.DateTime
+	RevokeReason() *string
 	Version() int32
 }
 
@@ -130,6 +133,11 @@ type UpdateProductSubscriptionArgs struct {
 	Update UpdateProductSubscriptionInput
 }
 
+type RevokeLicenseArgs struct {
+	ID     graphql.ID
+	Reason string
+}
+
 type UpdateProductSubscriptionInput struct {
 	CodyGatewayAccess *UpdateCodyGatewayAccessInput
 }
@@ -145,6 +153,15 @@ type UpdateCodyGatewayAccessInput struct {
 	EmbeddingsRateLimit                     *int32
 	EmbeddingsRateLimitIntervalSeconds      *int32
 	EmbeddingsAllowedModels                 *[]string
+}
+
+type CodyGatewayUsersByAccessTokenArgs struct {
+	Token string
+}
+
+type CodyGatewayUser interface {
+	Username() string
+	CodyGatewayAccess() CodyGatewayAccess
 }
 
 type CodyGatewayAccess interface {

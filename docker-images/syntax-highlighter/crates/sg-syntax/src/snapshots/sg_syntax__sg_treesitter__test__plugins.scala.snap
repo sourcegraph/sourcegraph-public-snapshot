@@ -1,6 +1,5 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 362
 expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
   scalacOptions ++= Seq("-unchecked", "-feature", "-deprecation",
@@ -33,7 +32,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                                              ^^^^^^^ StringLiteral
   
   enablePlugins(BuildInfoPlugin)
-//^^^^^^^^^^^^^ Identifier
+//^^^^^^^^^^^^^ IdentifierFunction
 //              ^^^^^^^^^^^^^^^ IdentifierConstant
   
   // configure sbt-buildinfo to send the externalDependencyClasspath to the main build, which allows using it for the IntelliJ project config
@@ -75,7 +74,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                    ^^^^^^^^^^^^ StringLiteral
   
   addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "1.1.1")
-//^^^^^^^^^^^^ Identifier
+//^^^^^^^^^^^^ IdentifierFunction
 //             ^^^^^^^^^^^^^^ StringLiteral
 //                            ^ Identifier
 //                              ^^^^^^^^^^^^^^^^^ StringLiteral
@@ -85,7 +84,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   libraryDependencies ++= Seq(
 //^^^^^^^^^^^^^^^^^^^ Identifier
 //                    ^^^ Identifier
-//                        ^^^ IdentifierConstant
+//                        ^^^ IdentifierFunction
     "org.eclipse.jgit" % "org.eclipse.jgit" % "4.11.9.201909030838-r",
 //  ^^^^^^^^^^^^^^^^^^ StringLiteral
 //                     ^ Identifier
@@ -111,7 +110,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //       ^ Identifier
 //         ^^^^^^^^^^^^^^^^^^^^^^ Identifier
 //                                ^^ Identifier
-//                                   ^^^ IdentifierConstant
+//                                   ^^^ IdentifierFunction
     Tags.limitAll(1) // workaround for https://github.com/sbt/sbt/issues/2970
 //  ^^^^ IdentifierConstant
 //       ^^^^^^^^ IdentifierFunction
@@ -120,7 +119,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   )
   
   addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.9.0")
-//^^^^^^^^^^^^ Identifier
+//^^^^^^^^^^^^ IdentifierFunction
 //             ^^^^^^^^^^^^^^^^^^^ StringLiteral
 //                                 ^ Identifier
 //                                   ^^^^^^^^^^^^ StringLiteral
@@ -128,7 +127,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //                                                  ^^^^^^^ StringLiteral
   
   addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.3")
-//^^^^^^^^^^^^ Identifier
+//^^^^^^^^^^^^ IdentifierFunction
 //             ^^^^^^^^^^^^^^^^^^^^ StringLiteral
 //                                  ^ Identifier
 //                                    ^^^^^^^^^ StringLiteral

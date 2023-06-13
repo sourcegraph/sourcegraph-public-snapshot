@@ -124,6 +124,10 @@ env:
   # OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
   # OTEL_EXPORTER_OTLP_PROTOCOL: http/json
 
+  # Enable full protobuf message logging when a non-utf8 string error occurs
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES_ENABLED: "true"
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES_MAX_SIZE_BYTES: 1024
+
 commands:
   server:
     description: Run an all-in-one sourcegraph/server image
@@ -1220,7 +1224,6 @@ commandsets:
       - gitserver-1
       - searcher
       - caddy
-      - symbols
       - docsite
       - syntax-highlighter
       - github-proxy
@@ -1229,6 +1232,7 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - blobstore
+      - embeddings
 
   enterprise-e2e:
     <<: *enterprise_set
@@ -1264,6 +1268,7 @@ commandsets:
       - zoekt-web-1
       - blobstore
       - cody-gateway
+      - embeddings
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
@@ -1537,33 +1542,6 @@ commandsets:
       - blobstore
       - batches-executor-kubernetes
       - batcheshelper-builder
-
-  embeddings:
-    requiresDevPrivate: true
-    checks:
-      - docker
-      - redis
-      - postgres
-      - git
-    commands:
-      - embeddings
-      - frontend
-      - worker
-      - repo-updater
-      - web
-      - gitserver-0
-      - gitserver-1
-      - searcher
-      - symbols
-      - caddy
-      - docsite
-      - syntax-highlighter
-      - github-proxy
-      - zoekt-index-0
-      - zoekt-index-1
-      - zoekt-web-0
-      - zoekt-web-1
-      - blobstore
 
   iam:
     requiresDevPrivate: true

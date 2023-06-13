@@ -20,6 +20,7 @@ export const OWNER_FIELDS = gql`
             }
         }
         ... on Team {
+            id
             name
             teamDisplayName: displayName
             avatarURL
@@ -47,6 +48,7 @@ export const ASSIGNED_OWNER_FIELDS = gql`
     fragment AssignedOwnerFields on AssignedOwner {
         title
         description
+        isDirectMatch
     }
 `
 
@@ -184,8 +186,24 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
 `
 
 export const ASSIGN_OWNER = gql`
-    mutation AssignOwner($input: AssignOwnerInput!) {
+    mutation AssignOwner($input: AssignOwnerOrTeamInput!) {
         assignOwner(input: $input) {
+            alwaysNil
+        }
+    }
+`
+
+export const REMOVE_ASSIGNED_OWNER = gql`
+    mutation RemoveAssignedOwner($input: AssignOwnerOrTeamInput!) {
+        removeAssignedOwner(input: $input) {
+            alwaysNil
+        }
+    }
+`
+
+export const REMOVE_ASSIGNED_TEAM = gql`
+    mutation RemoveAssignedTeam($input: AssignOwnerOrTeamInput!) {
+        removeAssignedTeam(input: $input) {
             alwaysNil
         }
     }

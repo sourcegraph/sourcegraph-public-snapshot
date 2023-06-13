@@ -220,7 +220,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
 				0: {
 					expectedStatusCode:   http.StatusInternalServerError,
-					expectedResponseBody: `{"error":"Invalid queue name(s) 'invalidqueue' found. Supported queue names are 'codeintel, batches'."}`,
+					expectedResponseBody: `{"error":"Invalid queue name(s) 'invalidqueue' found. Supported queue names are 'batches, codeintel'."}`,
 				},
 			},
 		},

@@ -176,7 +176,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		InsertReferencesForRankingFunc: &StoreInsertReferencesForRankingFunc{
-			defaultHook: func(context.Context, string, int, int, chan string) (r0 error) {
+			defaultHook: func(context.Context, string, int, int, chan [16]byte) (r0 error) {
 				return
 			},
 		},
@@ -303,7 +303,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		InsertReferencesForRankingFunc: &StoreInsertReferencesForRankingFunc{
-			defaultHook: func(context.Context, string, int, int, chan string) error {
+			defaultHook: func(context.Context, string, int, int, chan [16]byte) error {
 				panic("unexpected invocation of MockStore.InsertReferencesForRanking")
 			},
 		},
@@ -1875,15 +1875,15 @@ func (c StoreInsertPathRanksFuncCall) Results() []interface{} {
 // InsertReferencesForRanking method of the parent MockStore instance is
 // invoked.
 type StoreInsertReferencesForRankingFunc struct {
-	defaultHook func(context.Context, string, int, int, chan string) error
-	hooks       []func(context.Context, string, int, int, chan string) error
+	defaultHook func(context.Context, string, int, int, chan [16]byte) error
+	hooks       []func(context.Context, string, int, int, chan [16]byte) error
 	history     []StoreInsertReferencesForRankingFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertReferencesForRanking delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) InsertReferencesForRanking(v0 context.Context, v1 string, v2 int, v3 int, v4 chan string) error {
+func (m *MockStore) InsertReferencesForRanking(v0 context.Context, v1 string, v2 int, v3 int, v4 chan [16]byte) error {
 	r0 := m.InsertReferencesForRankingFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.InsertReferencesForRankingFunc.appendCall(StoreInsertReferencesForRankingFuncCall{v0, v1, v2, v3, v4, r0})
 	return r0
@@ -1892,7 +1892,7 @@ func (m *MockStore) InsertReferencesForRanking(v0 context.Context, v1 string, v2
 // SetDefaultHook sets function that is called when the
 // InsertReferencesForRanking method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreInsertReferencesForRankingFunc) SetDefaultHook(hook func(context.Context, string, int, int, chan string) error) {
+func (f *StoreInsertReferencesForRankingFunc) SetDefaultHook(hook func(context.Context, string, int, int, chan [16]byte) error) {
 	f.defaultHook = hook
 }
 
@@ -1901,7 +1901,7 @@ func (f *StoreInsertReferencesForRankingFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreInsertReferencesForRankingFunc) PushHook(hook func(context.Context, string, int, int, chan string) error) {
+func (f *StoreInsertReferencesForRankingFunc) PushHook(hook func(context.Context, string, int, int, chan [16]byte) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1910,19 +1910,19 @@ func (f *StoreInsertReferencesForRankingFunc) PushHook(hook func(context.Context
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreInsertReferencesForRankingFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, int, int, chan string) error {
+	f.SetDefaultHook(func(context.Context, string, int, int, chan [16]byte) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreInsertReferencesForRankingFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, int, int, chan string) error {
+	f.PushHook(func(context.Context, string, int, int, chan [16]byte) error {
 		return r0
 	})
 }
 
-func (f *StoreInsertReferencesForRankingFunc) nextHook() func(context.Context, string, int, int, chan string) error {
+func (f *StoreInsertReferencesForRankingFunc) nextHook() func(context.Context, string, int, int, chan [16]byte) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1970,7 +1970,7 @@ type StoreInsertReferencesForRankingFuncCall struct {
 	Arg3 int
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
-	Arg4 chan string
+	Arg4 chan [16]byte
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error

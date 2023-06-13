@@ -39,6 +39,7 @@ go_library(
         "//cmd/gitserver/server/accesslog",
         "//cmd/gitserver/server/common",
         "//cmd/gitserver/server/internal/cacert",
+        "//cmd/gitserver/server/perforce",
         "//internal/actor",
         "//internal/api",
         "//internal/codeintel/dependencies",
@@ -104,6 +105,7 @@ go_library(
 
 go_test(
     name = "server_test",
+    timeout = "moderate",
     srcs = [
         "cleanup_test.go",
         "customfetch_test.go",
@@ -131,6 +133,7 @@ go_test(
     ],
     deps = [
         "//cmd/gitserver/server/common",
+        "//cmd/gitserver/server/perforce",
         "//internal/actor",
         "//internal/api",
         "//internal/codeintel/dependencies",

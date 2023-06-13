@@ -10,6 +10,7 @@ import { EditorView } from '@codemirror/view'
 import { isEqual } from 'lodash'
 import { createPath, NavigateFunction, useLocation, useNavigate, Location } from 'react-router-dom'
 
+import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
 import {
     addLineRangeQueryParameter,
     formatSearchParameters,
@@ -276,6 +277,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     // Added fallback to take care of ReferencesPanel/Simple storybook
     const { isCodyEnabled, setEditorScope } = useCodySidebar()
 
+    const editorRef = useRef<EditorView | null>(null)
+
     const extensions = useMemo(
         () => [
             // Log uncaught errors that happen in callbacks that we pass to
@@ -292,7 +295,19 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             }),
             scipSnapshot(blobInfo.snapshotData),
             codeFoldingExtension(),
-            isCodyEnabled.editorRecipes ? codyWidgetExtension() : [],
+            isCodyEnabled.editorRecipes
+                ? codyWidgetExtension(
+                      editorRef.current
+                          ? new CodeMirrorEditor({
+                                view: editorRef.current,
+                                repo: props.blobInfo.repoName,
+                                revision: props.blobInfo.revision,
+                                filename: props.blobInfo.filePath,
+                                content: props.blobInfo.content,
+                            })
+                          : undefined
+                  )
+                : [],
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
@@ -322,10 +337,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController, isCodyEnabled]
+        [onSelection, blobInfo, extensionsController, isCodyEnabled, editorRef.current]
     )
-
-    const editorRef = useRef<EditorView | null>(null)
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
@@ -453,7 +466,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                     : undefined
             )
         )
-        return () => setEditorScope(new CodeMirrorEditor())
+        return () => setEditorScope(new NoopEditor())
     }, [
         props.blobInfo.content,
         props.blobInfo.filePath,

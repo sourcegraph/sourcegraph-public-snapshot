@@ -81,8 +81,8 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const [wasAppSetupFinished] = useLocalStorage('app.setup.finished', false)
 
     const { fuzzyFinder } = useExperimentalFeatures(features => ({
-        // enable fuzzy finder by default unless it's explicitly disabled in settings
-        fuzzyFinder: features.fuzzyFinder ?? true,
+        // enable fuzzy finder by default unless it's explicitly disabled in settings, or it's the Cody app
+        fuzzyFinder: features.fuzzyFinder ?? !props.isSourcegraphApp,
     }))
     const isSetupWizardPage = location.pathname.startsWith(PageRoutes.SetupWizard)
 
