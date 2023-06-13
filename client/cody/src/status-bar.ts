@@ -46,7 +46,7 @@ export function createStatusBar(): CodyStatusBar {
                 ),
                 { label: '', kind: vscode.QuickPickItemKind.Separator },
                 {
-                    label: '$(cody-logo) Share Feedback',
+                    label: '$(feedback) Share Feedback',
                     async onSelect(): Promise<void> {
                         await vscode.env.openExternal(
                             vscode.Uri.parse(
