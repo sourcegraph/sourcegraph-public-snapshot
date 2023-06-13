@@ -7,65 +7,135 @@ use scip_macros::include_scip_query;
 use scip_treesitter_languages::parsers::BundledParser;
 use tree_sitter::{Language, Parser, Query};
 
+#[derive(Debug)]
 pub struct Transform {
     pattern: Regex,
     replace: String,
 }
 
+#[derive(Debug)]
+pub struct NodeFilter {
+    capture: u32,
+    names: Vec<String>,
+}
+
 pub struct TagConfiguration {
     language: Language,
+    query_text: String,
     pub query: Query,
 
     // Handles #transform! predicates in queries
     transforms: HashMap<usize, Vec<Transform>>,
+
+    // Handles #filter! predicates in queries
+    filters: HashMap<usize, Vec<NodeFilter>>,
 }
 
 impl TagConfiguration {
-    fn new(language: Language, query: Query) -> Self {
+    fn new(language: Language, query_text: &str) -> Self {
+        let first_line = query_text.lines().next();
+        let query_text = match first_line {
+            Some(line) if line.starts_with(";;include") => {
+                let (_, included_lang) =
+                    line.split_once(";;include").expect("must have ;; include");
+                let included_lang = included_lang.trim();
+
+                let parser = BundledParser::get_parser(included_lang).expect("valid language");
+                let configuration = get_tag_configuration(&parser).expect("valid config");
+
+                format!("{}\n{}", configuration.query_text, query_text)
+            }
+            _ => query_text.to_string(),
+        };
+
+        let query = Query::new(language, &query_text).expect("to parse query");
+
         let mut transforms = HashMap::new();
+        let mut filters = HashMap::new();
 
         for index in 0..query.pattern_count() {
             let predicate = query.general_predicates(index);
 
             if !predicate.is_empty() {
-                let pattern_transforms = predicate
-                    .iter()
-                    .filter_map(|pred| match pred.operator.as_ref() {
-                        "transform!" => {
-                            let args = &pred.args;
-                            if args.len() != 2 {
-                                panic!("bad transform!??!");
-                            }
+                // Collect #transform! predicates
+                transforms.insert(
+                    index,
+                    predicate
+                        .iter()
+                        .filter_map(|pred| match pred.operator.as_ref() {
+                            "transform!" => {
+                                let args = &pred.args;
+                                if args.len() != 2 {
+                                    panic!("bad transform!??!");
+                                }
 
-                            let pattern = {
-                                let replace_str = match &args[0] {
-                                    tree_sitter::QueryPredicateArg::String(str) => str,
-                                    _ => panic!("pattern for #transform! should be a string"),
+                                let pattern = {
+                                    let replace_str = match &args[0] {
+                                        tree_sitter::QueryPredicateArg::String(str) => str,
+                                        _ => panic!("pattern for #transform! should be a string"),
+                                    };
+
+                                    Regex::new(replace_str)
+                                        .expect("pattern for #transform! should be a valid regex")
                                 };
 
-                                Regex::new(replace_str)
-                                    .expect("pattern for #transform! should be a valid regex")
-                            };
+                                let replace = match &args[1] {
+                                    tree_sitter::QueryPredicateArg::String(str) => str.to_string(),
+                                    _ => panic!("replace to #transform! should be a string"),
+                                };
 
-                            let replace = match &args[1] {
-                                tree_sitter::QueryPredicateArg::String(str) => str.to_string(),
-                                _ => panic!("replace to #transform! should be a string"),
-                            };
+                                Some(Transform { pattern, replace })
+                            }
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>(),
+                );
 
-                            Some(Transform { pattern, replace })
-                        }
-                        _ => None,
-                    })
-                    .collect::<Vec<_>>();
+                // Collect #filter! predicates
+                filters.insert(
+                    index,
+                    predicate
+                        .iter()
+                        .filter_map(|pred| match pred.operator.as_ref() {
+                            "filter!" => {
+                                let args = &pred.args;
 
-                transforms.insert(index, pattern_transforms);
+                                if args.len() < 2 {
+                                    panic!("should have at least two arguments for filter");
+                                }
+
+                                let capture = match &args[0] {
+                                    tree_sitter::QueryPredicateArg::Capture(capture) => *capture,
+                                    _ => panic!("filter! first arg should be a  capture"),
+                                };
+
+                                let names = args[1..]
+                                    .iter()
+                                    .map(|arg| {
+                                        let name = match arg {
+                                            tree_sitter::QueryPredicateArg::String(name) => name,
+                                            _ => panic!("filter! 1.. args should be string names"),
+                                        };
+
+                                        name.to_string()
+                                    })
+                                    .collect();
+
+                                Some(NodeFilter { capture, names })
+                            }
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>(),
+                );
             }
         }
 
         Self {
             language,
+            query_text,
             query,
             transforms,
+            filters,
         }
     }
 
@@ -76,20 +146,33 @@ impl TagConfiguration {
     }
 
     pub fn transform(&self, index: usize, captured: &Descriptor) -> Option<Vec<Descriptor>> {
-        self.transforms.get(&index).map(|transforms| {
-            transforms
-                .iter()
-                .map(|t| Descriptor {
-                    name: t
-                        .pattern
-                        .replace_all(&captured.name, &t.replace)
-                        .to_string(),
-                    suffix: captured.suffix,
-                    disambiguator: captured.disambiguator.clone(),
-                    ..Default::default()
-                })
-                .collect::<Vec<_>>()
-        })
+        match self.transforms.get(&index) {
+            Some(transforms) if !transforms.is_empty() => Some(
+                transforms
+                    .iter()
+                    .map(|t| Descriptor {
+                        name: t
+                            .pattern
+                            .replace_all(&captured.name, &t.replace)
+                            .to_string(),
+                        suffix: captured.suffix,
+                        disambiguator: captured.disambiguator.clone(),
+                        ..Default::default()
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        }
+    }
+
+    pub fn is_filtered(&self, m: &tree_sitter::QueryMatch) -> bool {
+        match self.filters.get(&m.pattern_index) {
+            Some(filters) if !filters.is_empty() => filters.iter().any(|filter| {
+                m.nodes_for_capture_index(filter.capture)
+                    .any(|node| filter.names.iter().any(|name| name == node.kind()))
+            }),
+            _ => false,
+        }
     }
 }
 
@@ -117,8 +200,6 @@ mod tags {
                 INSTANCE.get_or_init(|| {
                     let language = $parser.get_language();
                     let query = include_scip_query!($file, "scip-tags");
-                    let query = Query::new(language, query).expect("to parse query");
-
                     TagConfiguration::new(language, query)
                 })
             }

@@ -31,8 +31,8 @@ You have to configure the model used for Cody completions via the `completionMod
 ```json
 {
   // [...]
+  "cody.enabled": true,
   "completions": {
-    "enabled": true,
     "provider": "anthropic",
     "completionModel": "claude-instant-v1.0",
     "accessToken": "<key>"
