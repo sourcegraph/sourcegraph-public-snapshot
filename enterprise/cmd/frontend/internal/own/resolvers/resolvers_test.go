@@ -737,6 +737,8 @@ func TestOwnership_WithSignals(t *testing.T) {
 	userEmails.GetPrimaryEmailFunc.SetDefaultReturn(santaEmail, true, nil)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
+	db.UserExternalAccountsFunc.SetDefaultReturn(database.NewMockUserExternalAccountsStore())
+
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
 	own := fakeOwnService{
@@ -842,25 +844,25 @@ func TestOwnership_WithSignals(t *testing.T) {
 								},
 								{
 									"owner": {
-										"displayName": "santa claus",
-										"email": "santa@northpole.com"
-									},
-									"reasons": [
-										{
-											"title": "recent view",
-											"description": "Owner is associated because they have viewed this file in the last 90 days."
-										}
-									]
-								},
-								{
-									"owner": {
-										"displayName": "santa claus",
+										"displayName": "santa@northpole.com",
 										"email": "santa@northpole.com"
 									},
 									"reasons": [
 										{
 											"title": "recent contributor",
 											"description": "Owner is associated because they have contributed to this file in the last 90 days."
+										}
+									]
+								},
+								{
+									"owner": {
+										"displayName": "santa claus",
+										"email": ""
+									},
+									"reasons": [
+										{
+											"title": "recent view",
+											"description": "Owner is associated because they have viewed this file in the last 90 days."
 										}
 									]
 								}
