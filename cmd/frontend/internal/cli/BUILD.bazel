@@ -46,6 +46,7 @@ go_library(
         "//internal/database/connections/live",
         "//internal/database/dbconn",
         "//internal/database/migration",
+        "//internal/database/migration/cliutil",
         "//internal/database/migration/multiversion",
         "//internal/database/migration/runner",
         "//internal/database/migration/schemas",
