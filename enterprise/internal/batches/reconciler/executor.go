@@ -667,7 +667,6 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 				return errors.Wrap(err, "failed to duplicate commit")
 			}
 			if newCommit.Verification.Verified == true {
-				// https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#create-a-commit
 				e.tx.UpdateChangesetSpecCommitVerification(ctx, e.spec.ID, newCommit)
 			}
 		}
