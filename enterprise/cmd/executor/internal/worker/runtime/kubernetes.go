@@ -58,7 +58,8 @@ func (r *kubernetesRuntime) NewRunnerSpecs(ws workspace.Workspace, job types.Job
 			JobID: job.ID,
 			Queue: job.Queue,
 			CommandSpec: command.Spec{
-				Key: "kubernetes.single.job",
+				Key:  "kubernetes.single.job",
+				Name: "kubernetes.single.job",
 				CloneOptions: command.CloneOptions{
 					ExecutorName:   r.cloneOptions.ExecutorName,
 					EndpointURL:    r.cloneOptions.EndpointURL,
@@ -73,8 +74,10 @@ func (r *kubernetesRuntime) NewRunnerSpecs(ws workspace.Workspace, job types.Job
 		for i, step := range job.DockerSteps {
 			scriptName := files.ScriptNameFromJobStep(job, i)
 
+			key := kubernetesKey(step.Key, i)
 			steps[i] = command.Step{
-				Key: kubernetesKey(step.Key, i),
+				Key:  key,
+				Name: strings.ReplaceAll(key, ".", "-"),
 				Command: []string{
 					"/bin/sh -c " +
 						filepath.Join(command.KubernetesJobMountPath, files.ScriptsPath, scriptName),
@@ -90,9 +93,11 @@ func (r *kubernetesRuntime) NewRunnerSpecs(ws workspace.Workspace, job types.Job
 	} else {
 		runnerSpecs := make([]runner.Spec, len(job.DockerSteps))
 		for i, step := range job.DockerSteps {
+			key := kubernetesKey(step.Key, i)
 			runnerSpecs[i] = runner.Spec{
 				CommandSpec: command.Spec{
-					Key: kubernetesKey(step.Key, i),
+					Key:  key,
+					Name: strings.ReplaceAll(key, ".", "-"),
 					Command: []string{
 						"/bin/sh",
 						"-c",
@@ -112,7 +117,7 @@ func (r *kubernetesRuntime) NewRunnerSpecs(ws workspace.Workspace, job types.Job
 
 func kubernetesKey(stepKey string, index int) string {
 	if len(stepKey) > 0 {
-		return "step-kubernetes-" + strings.ReplaceAll(stepKey, ".", "-")
+		return "step.kubernetes." + stepKey
 	}
-	return fmt.Sprintf("step-kubernetes-%d", index)
+	return fmt.Sprintf("step.kubernetes.%d", index)
 }

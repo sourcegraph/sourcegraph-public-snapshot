@@ -158,18 +158,12 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	}
 	r.jobNames = append(r.jobNames, job.Name)
 
-	// Start the log entry for the main command.
-	logEntry := r.commandLogger.LogEntry(spec.CommandSpec.Key, spec.CommandSpec.Command)
-	defer logEntry.Close()
-
 	// Wait for the job to complete before reading the logs. This lets us get also get exit codes.
 	r.internalLogger.Debug("Waiting for pod to succeed", log.Int("jobID", spec.CommandSpec.Job.ID), log.String("jobName", job.Name))
 
 	pod, podWaitErr := r.cmd.WaitForPodToSucceed(ctx, r.commandLogger, r.options.Namespace, job.Name, spec.CommandSpec)
 	// Handle when the wait failed to do the things.
 	if podWaitErr != nil && pod == nil {
-		// There is no pod to read the logs of. Finalize the log entry and return the error.
-		logEntry.Finalize(1)
 		return errors.Wrapf(podWaitErr, "waiting for job %s to complete", job.Name)
 	}
 

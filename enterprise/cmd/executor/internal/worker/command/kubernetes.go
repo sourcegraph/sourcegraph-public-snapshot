@@ -278,7 +278,8 @@ func (c *KubernetesCommand) handleContainers(
 		l, ok := containerLoggers[status.Name]
 		if !ok {
 			// Potentially the container completed too quickly, so we may not have started the log entry yet.
-			containerLoggers[status.Name] = containerLogger{logEntry: logger.LogEntry(normalizeKey(status.Name), getCommand(status.Name, spec))}
+			key, command := getLogMetadata(status.Name, spec)
+			containerLoggers[status.Name] = containerLogger{logEntry: logger.LogEntry(key, command)}
 			l = containerLoggers[status.Name]
 		}
 		// We only want to read the logs once. If the log entry is already completed, we can skip it.
@@ -324,22 +325,22 @@ func kubernetesConditions(key string, conditions []corev1.PodCondition) log.Fiel
 	)
 }
 
+func getLogMetadata(key string, spec Spec) (string, []string) {
+	if spec.Name == key {
+		return spec.Key, spec.Command
+	}
+	for _, step := range spec.Steps {
+		if step.Name == key {
+			return step.Key, step.Command
+		}
+	}
+	return normalizeKey(key), nil
+}
+
 func normalizeKey(key string) string {
 	// Since '.' are not allowed in container names, we need to convert the key to have '.' to make our logging
 	// happy.
 	return strings.ReplaceAll(key, "-", ".")
-}
-
-func getCommand(key string, spec Spec) []string {
-	if spec.Key == key {
-		return spec.Command
-	}
-	for _, step := range spec.Steps {
-		if step.Key == key {
-			return step.Command
-		}
-	}
-	return nil
 }
 
 type containerLogger struct {
@@ -449,7 +450,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 					ActiveDeadlineSeconds: options.Deadline,
 					Containers: []corev1.Container{
 						{
-							Name:            spec.Key,
+							Name:            spec.Name,
 							Image:           image,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Command:         spec.Command,
@@ -588,9 +589,9 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 	for stepIndex, step := range spec.Steps {
 		jobEnvs := newEnvVars(step.Env)
 
-		nextIndexCommand := fmt.Sprintf("if [ \"$(%s /job/skip.json %s)\" != \"skip\" ]; then ", filepath.Join(KubernetesJobMountPath, "nextIndex.sh"), normalizeKey(step.Key))
+		nextIndexCommand := fmt.Sprintf("if [ \"$(%s /job/skip.json %s)\" != \"skip\" ]; then ", filepath.Join(KubernetesJobMountPath, "nextIndex.sh"), step.Key)
 		stepInitContainers[stepIndex+1] = corev1.Container{
-			Name:            step.Key,
+			Name:            step.Name,
 			Image:           step.Image,
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command:         []string{"sh", "-c"},
