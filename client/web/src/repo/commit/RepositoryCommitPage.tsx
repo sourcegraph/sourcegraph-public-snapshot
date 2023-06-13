@@ -91,7 +91,7 @@ export const RepositoryChangelistPage: React.FunctionComponent<RepositoryCommitP
     )
 
     const commit = useMemo(
-        () => (data?.node && data?.node?.__typename === 'Repository' ? data?.node?.changelist?.commit : undefined),
+        () => (data?.node?.__typename === 'Repository' ? data?.node?.changelist?.commit : undefined),
         [data]
     )
 
@@ -108,7 +108,7 @@ export const RepositoryChangelistPage: React.FunctionComponent<RepositoryCommitP
 }
 
 interface RepositoryRevisionNodesProps extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
-    error: ApolloError | undefined
+    error?: ApolloError
     loading: boolean
 
     revspec: String
@@ -154,7 +154,7 @@ const RepositoryRevisionNodes: React.FunctionComponent<RepositoryRevisionNodesPr
 
     const pageTitle = commit
         ? commit.subject
-        : repo.sourceType == RepositoryType.PERFORCE_DEPOT
+        : repo.sourceType === RepositoryType.PERFORCE_DEPOT
         ? `Changelist ${props.changelistID}`
         : `Commit ${props.revspec}`
 

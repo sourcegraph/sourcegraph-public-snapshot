@@ -9,7 +9,7 @@ export const COMMIT_QUERY = gql`
             ... on Repository {
                 sourceType
                 commit(rev: $revspec) {
-                    __typename # Necessary for error handling to check if commit exists
+                    __typename
                     ...GitCommitFields
                 }
             }
@@ -37,7 +37,7 @@ export const CHANGELIST_QUERY = gql`
             ... on Repository {
                 sourceType
                 changelist(cid: $changelistID) {
-                    __typename # Necessary for error handling to check if commit exists
+                    __typename
                     ...PerforceChangelistFields
                 }
             }
