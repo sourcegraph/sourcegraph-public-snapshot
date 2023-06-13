@@ -26,7 +26,6 @@ export const isEmailVerificationNeeded = (): boolean =>
 export const useIsCodyEnabled = (): IsCodyEnabled => {
     const [chatEnabled, chatEnabledStatus] = useFeatureFlag('cody-web-chat')
     const [searchEnabled, searchEnabledStatus] = useFeatureFlag('cody-web-search')
-    const [sidebarEnabled, sidebarEnabledStatus] = useFeatureFlag('cody-web-sidebar')
     const [editorRecipesEnabled, editorRecipesEnabledStatus] = useFeatureFlag('cody-web-editor-recipes')
     let [allEnabled, allEnabledStatus] = useFeatureFlag('cody-web-all')
 
@@ -42,24 +41,21 @@ export const useIsCodyEnabled = (): IsCodyEnabled => {
                 window.context?.sourcegraphAppMode ||
                 (chatEnabledStatus === 'loaded' &&
                     searchEnabledStatus === 'loaded' &&
-                    sidebarEnabledStatus === 'loaded' &&
                     editorRecipesEnabledStatus === 'loaded' &&
                     allEnabledStatus === 'loaded'),
             chat: chatEnabled || allEnabled,
-            sidebar: sidebarEnabled || allEnabled,
+            sidebar: true, // Cody sidebar is enabled for all.
             search: searchEnabled || allEnabled,
-            editorRecipes: (editorRecipesEnabled && sidebarEnabled) || allEnabled,
+            editorRecipes: editorRecipesEnabled || allEnabled,
             needsEmailVerification: isEmailVerificationNeeded(),
         }),
         [
             chatEnabled,
-            sidebarEnabled,
             searchEnabled,
             editorRecipesEnabled,
             allEnabled,
             chatEnabledStatus,
             searchEnabledStatus,
-            sidebarEnabledStatus,
             editorRecipesEnabledStatus,
             allEnabledStatus,
         ]

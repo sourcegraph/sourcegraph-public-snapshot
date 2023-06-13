@@ -67,16 +67,21 @@ const MeetCodySVG: React.FC = () => (
     </svg>
 )
 
-export const TryCodyCtaSection: React.FC<TelemetryProps & { className?: string }> = ({
+interface TryCodyCtaSectionProps extends TelemetryProps {
+    isSourcegraphDotCom: boolean
+    className?: string
+}
+
+export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
     className,
     telemetryService,
+    isSourcegraphDotCom,
 }) => {
     const [isDismissed = true, setIsDismissed] = useTemporarySetting('cody.searchPageCta.dismissed', false)
     const onDismiss = (): void => setIsDismissed(true)
     const logEvent = (eventName: EventName): void =>
         telemetryService.log(eventName, { type: 'ComHome' }, { type: 'ComHome' })
-    const onInstallClick = (): void => logEvent(EventName.TRY_CODY_VSCODE)
-    const onMarketplaceClick = (): void => logEvent(EventName.TRY_CODY_MARKETPLACE)
+    const onViewEditorExtensionsClick = (): void => logEvent(EventName.VIEW_EDITOR_EXTENSIONS)
     const onTryWebClick = (): void => logEvent(EventName.TRY_CODY_WEB)
 
     if (isDismissed) {
@@ -100,61 +105,55 @@ export const TryCodyCtaSection: React.FC<TelemetryProps & { className?: string }
                         className={classNames(styles.vscodeIcon, 'mr-1')}
                         size="md"
                     />
-                    Install Cody for VS Code
+                    Install Cody for your IDE
                 </H3>
                 <Text>
-                    Cody for VS Code provides the power of LLMs to help you generate and fix code, right where you
+                    Cody for your IDE provides the power of LLMs to help you generate and fix code, right where you
                     commit.
                 </Text>
                 <div className="mb-2">
                     <ButtonLink
-                        to="vscode:extension/sourcegraph.cody-ai"
-                        variant="merged"
+                        to="/help/cody#get-cody"
+                        variant="primary"
                         className="d-inline-flex align-items-center"
-                        onClick={onInstallClick}
+                        onClick={onViewEditorExtensionsClick}
                     >
-                        Install Cody for VS Code <Icon svgPath={mdiArrowRight} aria-hidden={true} size="md" />
+                        View editor extensions <Icon svgPath={mdiArrowRight} aria-hidden={true} size="md" />
                     </ButtonLink>
                 </div>
-                <Text
-                    size="small"
-                    as={Link}
-                    to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai"
-                    target="_blank"
-                    rel="noopener"
-                    onClick={onMarketplaceClick}
-                >
-                    or download on the VS Code marketplace
-                </Text>
             </MarketingBlock>
-            <div className="d-flex flex-column justify-content-center p-4">
-                <H3>Cody for Sourcegraph.com</H3>
-                <Text>
-                    A free, helpful AI assistant, that explains, generates, and transpiles code, in the Sourcegraph web
-                    interface.
-                </Text>
-                <Text
-                    as={Link}
-                    to="/cody"
-                    className={classNames('d-flex align-items-center mb-2', styles.tryCodyLink)}
-                    onClick={onTryWebClick}
-                >
-                    Try Cody chat
-                    <Icon svgPath={mdiArrowRight} aria-hidden={true} size="sm" className="ml-1" />
-                </Text>
-                <Text
-                    as={Link}
-                    to="https://sourcegraph.com/github.com/openai/openai-cookbook/-/blob/apps/file-q-and-a/nextjs-with-flask-server/server/answer_question.py"
-                    className={classNames('d-flex align-items-center', styles.tryCodyLink)}
-                    onClick={onTryWebClick}
-                >
-                    Try Cody on a file
-                    <Icon svgPath={mdiArrowRight} aria-hidden={true} size="sm" className="ml-1" />
-                </Text>
-            </div>
-            <Button className={classNames(styles.closeButton, 'position-absolute m-0')} onClick={onDismiss}>
-                <Icon svgPath={mdiClose} aria-label="Close try Cody widget" />
-            </Button>
+            {isSourcegraphDotCom && (
+                <>
+                    <div className="d-flex flex-column justify-content-center p-4">
+                        <H3>Cody for Sourcegraph.com</H3>
+                        <Text>
+                            A free, helpful AI assistant, that explains, generates, and transpiles code, in the
+                            Sourcegraph web interface.
+                        </Text>
+                        <Text
+                            as={Link}
+                            to="/cody"
+                            className={classNames('d-flex align-items-center mb-2', styles.tryCodyLink)}
+                            onClick={onTryWebClick}
+                        >
+                            Try Cody chat
+                            <Icon svgPath={mdiArrowRight} aria-hidden={true} size="sm" className="ml-1" />
+                        </Text>
+                        <Text
+                            as={Link}
+                            to="https://sourcegraph.com/github.com/openai/openai-cookbook/-/blob/apps/file-q-and-a/nextjs-with-flask-server/server/answer_question.py"
+                            className={classNames('d-flex align-items-center', styles.tryCodyLink)}
+                            onClick={onTryWebClick}
+                        >
+                            Try Cody on a file
+                            <Icon svgPath={mdiArrowRight} aria-hidden={true} size="sm" className="ml-1" />
+                        </Text>
+                    </div>
+                    <Button className={classNames(styles.closeButton, 'position-absolute m-0')} onClick={onDismiss}>
+                        <Icon svgPath={mdiClose} aria-label="Close try Cody widget" />
+                    </Button>
+                </>
+            )}
         </div>
     )
 }

@@ -41,6 +41,7 @@ interface ChatProps extends ChatClassNames {
     setSuggestions?: (suggestions: undefined | []) => void
     needsEmailVerification?: boolean
     needsEmailVerificationNotice?: React.FunctionComponent
+    codyNotEnabledNotice?: React.FunctionComponent
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -125,6 +126,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     suggestions,
     setSuggestions,
     needsEmailVerification = false,
+    codyNotEnabledNotice: CodyNotEnabledNotice,
     needsEmailVerificationNotice: NeedsEmailVerificationNotice,
     contextStatusComponent: ContextStatusComponent,
     contextStatusComponentProps = {},
@@ -226,9 +228,15 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [afterTips, transcript]
     )
 
+    const isCodyEnabled = false
+
     return (
         <div className={classNames(className, styles.innerContainer)}>
-            {needsEmailVerification && NeedsEmailVerificationNotice ? (
+            {!isCodyEnabled && CodyNotEnabledNotice ? (
+                <div className="flex-1">
+                    <CodyNotEnabledNotice />
+                </div>
+            ) : needsEmailVerification && NeedsEmailVerificationNotice ? (
                 <div className="flex-1">
                     <NeedsEmailVerificationNotice />
                 </div>
@@ -278,14 +286,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         value={formInput}
                         autoFocus={true}
                         required={true}
-                        disabled={needsEmailVerification}
+                        disabled={needsEmailVerification || !isCodyEnabled}
                         onInput={onChatInput}
                         onKeyDown={onChatKeyDown}
                     />
                     <SubmitButton
                         className={styles.submitButton}
                         onClick={onChatSubmit}
-                        disabled={!!messageInProgress || needsEmailVerification}
+                        disabled={!!messageInProgress || needsEmailVerification || !isCodyEnabled}
                     />
                 </div>
                 {ContextStatusComponent ? (

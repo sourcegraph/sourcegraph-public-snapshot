@@ -40,6 +40,7 @@ import { CodyColorIcon } from './CodyPageIcon'
 import styles from './CodyChatPage.module.scss'
 
 interface CodyChatPageProps {
+    isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
     context: Pick<SourcegraphContext, 'authProviders'>
 }
@@ -78,7 +79,11 @@ const onTranscriptHistoryLoad = (
     }
 }
 
-export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authenticatedUser, context }) => {
+export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
+    authenticatedUser,
+    context,
+    isSourcegraphDotCom,
+}) => {
     const { pathname } = useLocation()
     const navigate = useNavigate()
 
@@ -124,7 +129,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
     }
 
     if (!authenticatedUser) {
-        return <CodyMarketingPage context={context} />
+        return <CodyMarketingPage isSourcegraphDotCom={isSourcegraphDotCom} context={context} />
     }
 
     if (!isCodyEnabled.chat) {

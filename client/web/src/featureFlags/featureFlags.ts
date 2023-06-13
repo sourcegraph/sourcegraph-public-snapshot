@@ -30,7 +30,6 @@ export type FeatureFlagName =
     | 'cody-gateway-management-ui'
     | 'cody-web-chat'
     | 'cody-web-search'
-    | 'cody-web-sidebar'
     | 'cody-web-all'
     | 'cody-web-editor-recipes'
     | 'own-promote'

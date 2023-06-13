@@ -8,6 +8,7 @@ export const enum EventName {
     CODY_SIDEBAR_RECIPE_EXECUTED = 'web:codySidebar:recipe:executed',
     CODY_SIDEBAR_CLIENT_ERROR = 'web:codySidebar:clientError',
     CODY_SIGNUP = 'CodySignup',
+    VIEW_EDITOR_EXTENSIONS = 'CodyClickViewEditorExtensions',
     TRY_CODY_VSCODE = 'VSCodeInstall',
     TRY_CODY_MARKETPLACE = 'VSCodeMarketplace',
     TRY_CODY_WEB = 'TryCodyWeb',
