@@ -86,7 +86,6 @@ export class InlineController {
         })
         this._disposables.push(
             vscode.commands.registerCommand('cody.inline.decorations.remove', id => this.removeLens(id)),
-            vscode.commands.registerCommand('cody.inline.file.revert', id => this.revert(id)),
             vscode.commands.registerCommand('cody.inline.fix.undo', id => this.undo(id))
         )
     }
@@ -150,12 +149,6 @@ export class InlineController {
             this.threads.set(firstCommentId, this.thread)
         }
         void vscode.commands.executeCommand('setContext', 'cody.replied', true)
-    }
-
-    private revert(id: string): void {
-        void vscode.commands.executeCommand('workbench.action.files.revert')
-        this.codeLenses.get(id)?.remove()
-        this.codeLenses.delete(id)
     }
 
     private undo(id: string): void {
