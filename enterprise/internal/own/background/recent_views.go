@@ -62,12 +62,12 @@ func (r *recentViewsIndexer) handle(ctx context.Context, checker authz.SubRepoPe
 			continue
 		}
 		ok, err := authz.SubRepoEnabledForRepo(ctx, checker, api.RepoName(vb.RepoName))
-		if err == nil && !ok {
-			filteredEvents = append(filteredEvents, event)
-		} else if err != nil {
+		if err != nil {
 			r.logger.Info("encountered error checking subrepo permissions for repo", log.String("repo name", vb.RepoName), log.Error(err))
-		} else {
+		} else if ok {
 			r.logger.Debug("view event skipped due to repo having subrepo permissions on", log.String("repo name", vb.RepoName))
+		} else {
+			filteredEvents = append(filteredEvents, event)
 		}
 	}
 	numberOfEvents := len(filteredEvents)

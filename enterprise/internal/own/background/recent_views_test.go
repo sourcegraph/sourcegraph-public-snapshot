@@ -179,20 +179,3 @@ func insertEvents(ctx context.Context, t *testing.T, db database.DB) {
 
 	require.NoError(t, db.EventLogs().BulkInsert(ctx, events))
 }
-
-// get a test sub-repo permissions checker which allows access to all files (so should be a no-op)
-func getTestSubRepoPermsChecker(noAccessPaths ...string) authz.SubRepoPermissionChecker {
-	checker := authz.NewMockSubRepoPermissionChecker()
-	checker.EnabledFunc.SetDefaultHook(func() bool {
-		return true
-	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-		for _, noAccessPath := range noAccessPaths {
-			if content.Path == noAccessPath {
-				return authz.None, nil
-			}
-		}
-		return authz.Read, nil
-	})
-	return checker
-}
