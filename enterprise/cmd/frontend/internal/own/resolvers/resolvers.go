@@ -76,13 +76,7 @@ type ownershipReason struct {
 	codeownersRule           *codeownerspb.Rule
 	recentContributionsCount int
 	recentViewsCount         int
-	assignedOwner            bool
-}
-
-func (r ownershipReason) resolver() *ownershipReasonResolver {
-	if r.codeownersRule != nil {
-		return &ownershipReasonResolver{&codeownersFileEntryResolver{}}
-	}
+	assignedOwnerPath        []string
 }
 
 type ownershipReasonResolver struct {
@@ -177,7 +171,7 @@ func (r *ownResolver) GitBlobOwnership(
 	}
 	rrs = append(rrs, assignedTeams...)
 
-	return r.ownershipConnection(ctx, args, rrs)
+	return r.ownershipConnection(ctx, args, rrs, blob.Repository())
 }
 
 // repoRootPath is the path that designates all the aggregate signals
@@ -214,7 +208,7 @@ func (r *ownResolver) GitCommitOwnership(
 	}
 	rrs = append(rrs, viewerResolvers...)
 
-	return r.ownershipConnection(ctx, args, rrs)
+	return r.ownershipConnection(ctx, args, rrs, commit.Repository())
 }
 
 func (r *ownResolver) GitTreeOwnership(
@@ -254,7 +248,7 @@ func (r *ownResolver) GitTreeOwnership(
 	}
 	rrs = append(rrs, assignedTeams...)
 
-	return r.ownershipConnection(ctx, args, rrs)
+	return r.ownershipConnection(ctx, args, rrs, tree.Repository())
 }
 
 func (r *ownResolver) GitTreeOwnershipStats(ctx context.Context, tree *graphqlbackend.GitTreeEntryResolver) (graphqlbackend.OwnershipStatsResolver, error) {
@@ -406,7 +400,7 @@ type reasonsAndOwner struct {
 func (ro reasonsAndOwner) order() int {
 	var ownershipReasons, reasons, contributions, views int
 	for _, r := range ro.reasons {
-		if r.assignedOwner || r.codeownersRule != nil {
+		if len(r.assignedOwnerPath) > 0 || r.codeownersRule != nil {
 			ownershipReasons++
 		}
 		reasons++
@@ -422,7 +416,7 @@ func (ro reasonsAndOwner) order() int {
 
 func (ro reasonsAndOwner) isOwner() bool {
 	for _, r := range ro.reasons {
-		if r.assignedOwner || r.codeownersRule != nil {
+		if len(r.assignedOwnerPath) > 0 || r.codeownersRule != nil {
 			return true
 		}
 	}
@@ -434,6 +428,7 @@ func (r *ownResolver) ownershipConnection(
 	ctx context.Context,
 	args graphqlbackend.ListOwnershipArgs,
 	ownerships []reasonAndReference,
+	repo *graphqlbackend.RepositoryResolver,
 ) (*ownershipConnectionResolver, error) {
 	// 1. Resolve ownership references
 	bag := own.EmptyBag()
@@ -508,6 +503,8 @@ func (r *ownResolver) ownershipConnection(
 		totalOwners: totalOwners,
 		next:        next,
 		owners:      owners,
+		gitserver:   r.gitserver,
+		repo:        repo,
 	}, nil
 }
 
@@ -534,6 +531,8 @@ type ownershipConnectionResolver struct {
 	totalOwners int
 	next        *string
 	owners      []reasonsAndOwner
+	gitserver   gitserver.Client
+	repo        *graphqlbackend.RepositoryResolver
 }
 
 func (r *ownershipConnectionResolver) TotalCount(_ context.Context) (int32, error) {
@@ -553,6 +552,8 @@ func (r *ownershipConnectionResolver) Nodes(_ context.Context) ([]graphqlbackend
 	for _, o := range r.owners {
 		rs = append(rs, &ownershipResolver{
 			db:            r.db,
+			gitserver:     r.gitserver,
+			repo:          r.repo,
 			resolvedOwner: o.owner,
 			reasons:       o.reasons,
 		})
@@ -562,7 +563,9 @@ func (r *ownershipConnectionResolver) Nodes(_ context.Context) ([]graphqlbackend
 
 type ownershipResolver struct {
 	db            edb.EnterpriseDB
+	gitserver     gitserver.Client
 	resolvedOwner codeowners.ResolvedOwner
+	repo          *graphqlbackend.RepositoryResolver
 	reasons       []ownershipReason
 }
 
@@ -585,38 +588,15 @@ func (r *ownershipResolver) Reasons(_ context.Context) ([]graphqlbackend.Ownersh
 					db:              r.db,
 					gitserverClient: r.gitserver,
 					source:          nil,
-					repo:            blob.Repository(),
+					repo:            r.repo,
 					matchLineNumber: reason.codeownersRule.GetLineNumber(),
 				},
 			})
 
 		}
+		/// TODO continue with making other reason-resolvers
 	}
 	return rs, nil
-}
-
-func (r *ownershipResolver) order() int {
-	reasonsCount := 0
-	codeownersCount := 0
-	for _, r := range r.reasons {
-		reasonsCount++
-		if r.makesAnOwner() {
-			codeownersCount++
-		}
-	}
-	// Smaller numbers are ordered in front, so take negative score.
-	return -10*codeownersCount - reasonsCount
-}
-
-// isOwner is true if this assigns an actual owner (for instance through CODEOWNERS file)
-// and false otherwise (for instance if it is a recent-contribution signal).
-func (r *ownershipResolver) isOwner() bool {
-	for _, reason := range r.reasons {
-		if reason.makesAnOwner() {
-			return true
-		}
-	}
-	return false
 }
 
 type ownerResolver struct {
@@ -879,7 +859,9 @@ func (r *ownResolver) computeAssignedOwners(ctx context.Context, logger log.Logg
 	var rrs []reasonAndReference
 	for _, o := range assignedOwnership.Match(blob.Path()) {
 		rrs = append(rrs, reasonAndReference{
-			reason: ownershipReason{assignedOwner: true},
+			reason: ownershipReason{
+				assignedOwnerPath: []string{o.FilePath},
+			},
 			reference: own.Reference{
 				UserID: o.OwnerUserID,
 			},
@@ -943,45 +925,17 @@ func (r *ownResolver) computeAssignedTeams(ctx context.Context, db edb.Enterpris
 		return nil, errors.Wrap(err, "computing assigned ownership")
 	}
 	var rrs []reasonAndReference
-	for _, t := range assignedTeams.Match(blob.Path()) {
+	for _, summary := range assignedTeams.Match(blob.Path()) {
 		rrs = append(rrs, reasonAndReference{
-			reason: ownershipReason{assignedOwner: true},
+			reason: ownershipReason{
+				assignedOwnerPath: []string{summary.FilePath},
+			},
 			reference: own.Reference{
-				TeamID: t.OwnerTeamID,
+				TeamID: summary.OwnerTeamID,
 			},
 		})
 	}
 	return rrs, nil
-
-	// fetchedTeams := make(map[int32]*types.Team)
-
-	// for _, summary := range assignedTeamSummaries {
-	// 	var team *types.Team
-	// 	teamID := summary.OwnerTeamID
-	// 	if fetchedUser, found := fetchedTeams[teamID]; found {
-	// 		team = fetchedUser
-	// 	} else {
-	// 		teamFromDB, err := db.Teams().GetTeamByID(ctx, teamID)
-	// 		if err != nil {
-	// 			return nil, errors.Wrap(err, "getting team")
-	// 		}
-	// 		team = teamFromDB
-	// 		fetchedTeams[teamID] = teamFromDB
-	// 	}
-	// 	res := ownershipResolver{
-	// 		db: db,
-	// 		resolvedOwner: &codeowners.Team{
-	// 			Team: team,
-	// 		},
-	// 		reasons: []*ownershipReasonResolver{
-	// 			{
-	// 				&assignedOwner{},
-	// 			},
-	// 		},
-	// 	}
-	// 	results = append(results, &res)
-	// }
-	// return results, nil
 }
 
 func (r *ownResolver) OwnSignalConfigurations(ctx context.Context) ([]graphqlbackend.SignalConfigurationResolver, error) {

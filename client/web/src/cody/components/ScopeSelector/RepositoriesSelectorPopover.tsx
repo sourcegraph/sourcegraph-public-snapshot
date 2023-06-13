@@ -4,6 +4,7 @@ import {
     mdiChevronUp,
     mdiMinusCircleOutline,
     mdiCheck,
+    mdiCloseCircle,
     mdiDatabaseOutline,
     mdiDatabaseCheckOutline,
     mdiDatabaseRemoveOutline,
@@ -29,7 +30,6 @@ import { ReposSelectorSearchResult, ReposSelectorSearchVariables } from '../../.
 import { ExternalRepositoryIcon } from '../../../site-admin/components/ExternalRepositoryIcon'
 
 import { ReposSelectorSearchQuery } from './backend'
-import { CodyHighQualityIcon } from './CodyHighQualityIcon'
 
 import styles from './ScopeSelector.module.scss'
 
@@ -84,6 +84,8 @@ export const RepositoriesSelectorPopover: React.FC<{
         },
         [setSearchText]
     )
+
+    const clearSearchText = useCallback(() => setSearchText(''), [setSearchText])
 
     useEffect(() => {
         if (searchTextDebounced) {
@@ -186,35 +188,6 @@ export const RepositoriesSelectorPopover: React.FC<{
                                 <div className={classNames('d-flex flex-column', styles.contextItemsContainer)}>
                                     {inferredRepository && (
                                         <div className="d-flex flex-column">
-                                            <button
-                                                type="button"
-                                                className={classNames(
-                                                    'd-flex justify-content-between flex-row text-truncate px-2 py-1',
-                                                    styles.repositoryListItem,
-                                                    {
-                                                        [styles.notIncludedInContext]: !includeInferredRepository,
-                                                    }
-                                                )}
-                                                onClick={toggleIncludeInferredRepository}
-                                            >
-                                                <div className="d-flex align-items-center text-truncate">
-                                                    <Icon
-                                                        aria-hidden={true}
-                                                        className={classNames('mr-1 text-muted', {
-                                                            [styles.visibilityHidden]: !includeInferredRepository,
-                                                        })}
-                                                        svgPath={mdiCheck}
-                                                    />
-                                                    <ExternalRepositoryIcon
-                                                        externalRepo={inferredRepository.externalRepository}
-                                                        className={styles.repoIcon}
-                                                    />
-                                                    <span className="text-truncate">
-                                                        {getRepoName(inferredRepository.name)}
-                                                    </span>
-                                                </div>
-                                                <EmbeddingExistsIcon repo={inferredRepository} />
-                                            </button>
                                             {inferredFilePath && (
                                                 <button
                                                     type="button"
@@ -246,6 +219,35 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                     <EmbeddingExistsIcon repo={inferredRepository} />
                                                 </button>
                                             )}
+                                            <button
+                                                type="button"
+                                                className={classNames(
+                                                    'd-flex justify-content-between flex-row text-truncate px-2 py-1',
+                                                    styles.repositoryListItem,
+                                                    {
+                                                        [styles.notIncludedInContext]: !includeInferredRepository,
+                                                    }
+                                                )}
+                                                onClick={toggleIncludeInferredRepository}
+                                            >
+                                                <div className="d-flex align-items-center text-truncate">
+                                                    <Icon
+                                                        aria-hidden={true}
+                                                        className={classNames('mr-1 text-muted', {
+                                                            [styles.visibilityHidden]: !includeInferredRepository,
+                                                        })}
+                                                        svgPath={mdiCheck}
+                                                    />
+                                                    <ExternalRepositoryIcon
+                                                        externalRepo={inferredRepository.externalRepository}
+                                                        className={styles.repoIcon}
+                                                    />
+                                                    <span className="text-truncate">
+                                                        {getRepoName(inferredRepository.name)}
+                                                    </span>
+                                                </div>
+                                                <EmbeddingExistsIcon repo={inferredRepository} />
+                                            </button>
                                         </div>
                                     )}
                                     {!!additionalRepositories.length && (
@@ -316,7 +318,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                             </>
                         )}
                     </div>
-                    <div className="p-2 border-top mt-auto">
+                    <div className={classNames('relative p-2 border-top mt-auto', styles.inputContainer)}>
                         <Input
                             role="combobox"
                             autoFocus={true}
@@ -333,8 +335,20 @@ export const RepositoriesSelectorPopover: React.FC<{
                             disabled={!searchText && !additionalRepositoriesLeft}
                             value={searchText}
                             onChange={onSearch}
-                            type="search"
                         />
+                        {!!searchText && (
+                            <Button
+                                className={classNames(
+                                    'd-flex p-1 align-items-center justify-content-center',
+                                    styles.clearButton
+                                )}
+                                variant="icon"
+                                onClick={clearSearchText}
+                                aria-label="Clear"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiCloseCircle} />
+                            </Button>
+                        )}
                     </div>
                 </Card>
             </PopoverContent>
@@ -510,7 +524,11 @@ const EmbeddingStatusIndicator: React.FC<{ reposWithoutEmbeddingsCount: number; 
 
         return (
             <Tooltip content="Embeddings enabled">
-                <Icon as={CodyHighQualityIcon} aria-label="Database icon with a check mark" className="align-center" />
+                <Icon
+                    aria-label="Database icon with a check mark"
+                    className="align-center"
+                    svgPath={mdiDatabaseCheckOutline}
+                />
             </Tooltip>
         )
     }

@@ -65,7 +65,8 @@ export class GitHistory implements Recipe {
                     prefix: emptyGitLogMessage,
                     text: emptyGitLogMessage,
                 },
-                Promise.resolve([])
+                Promise.resolve([]),
+                []
             )
         }
 
@@ -84,7 +85,8 @@ export class GitHistory implements Recipe {
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
             },
-            Promise.resolve([])
+            Promise.resolve([]),
+            []
         )
     }
 }

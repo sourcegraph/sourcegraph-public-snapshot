@@ -29,6 +29,9 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
         debugRegex = new RegExp('.*')
     }
 
+    const completions = config.get('cody.completions', isTesting)
+    const deprecatedExperimentalSuggestions = config.get('cody.experimental.suggestions', isTesting)
+
     return {
         serverEndpoint: sanitizeServerEndpoint(config.get('cody.serverEndpoint', '')),
         codebase: sanitizeCodebase(config.get('cody.codebase')),
@@ -37,7 +40,7 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
         debugEnable: config.get<boolean>('cody.debug.enable', false),
         debugVerbose: config.get<boolean>('cody.debug.verbose', false),
         debugFilter: debugRegex,
-        experimentalSuggest: config.get('cody.experimental.suggestions', isTesting),
+        completions: completions || deprecatedExperimentalSuggestions,
         experimentalChatPredictions: config.get('cody.experimental.chatPredictions', isTesting),
         experimentalInline: config.get('cody.experimental.inline', isTesting),
         experimentalGuardrails: config.get('cody.experimental.guardrails', isTesting),

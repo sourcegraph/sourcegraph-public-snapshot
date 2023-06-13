@@ -33,7 +33,7 @@ var (
 
 type Source struct {
 	log    log.Logger
-	cache  httpcache.Cache // TODO: add something to regularly clean up the cache
+	cache  httpcache.Cache // cache is expected to be something with automatic TTL
 	dotcom graphql.Client
 
 	// internalMode, if true, indicates only dev and internal licenses may use
@@ -65,8 +65,12 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	if token == "" {
 		return nil, actor.ErrNotFromSource{}
 	}
-	if !strings.HasPrefix(token, productsubscription.AccessTokenPrefix) &&
-		!strings.HasPrefix(token, licensing.LicenseKeyBasedAccessTokenPrefix) {
+
+	// NOTE: For back-compat, we support both the old and new token prefixes.
+	// However, as we use the token as part of the cache key, we need to be
+	// consistent with the prefix we use.
+	token = strings.Replace(token, productsubscription.AccessTokenPrefix, licensing.LicenseKeyBasedAccessTokenPrefix, 1)
+	if !strings.HasPrefix(token, licensing.LicenseKeyBasedAccessTokenPrefix) {
 		return nil, actor.ErrNotFromSource{Reason: "unknown token prefix"}
 	}
 

@@ -31,7 +31,8 @@ export class ChatQuestion implements Recipe {
                     context.intentDetector,
                     context.codebaseContext,
                     context.editor.getActiveTextEditorSelection() || null
-                )
+                ),
+                []
             )
         )
     }

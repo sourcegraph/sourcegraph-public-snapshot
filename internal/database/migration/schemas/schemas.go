@@ -86,3 +86,17 @@ func FilterSchemasByName(schemas []*Schema, targetNames []string) []*Schema {
 
 	return filtered
 }
+
+// getSchemaJSONFilename returns the basename of the JSON-serialized schema in the sg/sg repository.
+func GetSchemaJSONFilename(schemaName string) (string, error) {
+	switch schemaName {
+	case "frontend":
+		return "internal/database/schema.json", nil
+	case "codeintel":
+		fallthrough
+	case "codeinsights":
+		return fmt.Sprintf("internal/database/schema.%s.json", schemaName), nil
+	}
+
+	return "", errors.Newf("unknown schema name %q", schemaName)
+}

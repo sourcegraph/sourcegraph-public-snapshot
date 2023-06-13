@@ -563,7 +563,7 @@ npm_package(
 
 jest_test(
     name = "test",
-    timeout = "moderate",
+    timeout = "short",
     data = [
         ":wildcard_tests",
     ],

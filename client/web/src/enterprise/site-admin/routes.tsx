@@ -32,9 +32,9 @@ const SiteAdminProductSubscriptionsPage = lazyComponent(
     () => import('./dotcom/productSubscriptions/SiteAdminProductSubscriptionsPage'),
     'SiteAdminProductSubscriptionsPage'
 )
-const SiteAdminProductLicensesPage = lazyComponent(
-    () => import('./dotcom/productSubscriptions/SiteAdminProductLicensesPage'),
-    'SiteAdminProductLicensesPage'
+const SiteAdminLicenseKeyLookupPage = lazyComponent(
+    () => import('./dotcom/productSubscriptions/SiteAdminLicenseKeyLookupPage'),
+    'SiteAdminLicenseKeyLookupPage'
 )
 const SiteAdminAuthenticationProvidersPage = lazyComponent(
     () => import('./SiteAdminAuthenticationProvidersPage'),
@@ -121,7 +121,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
         {
             path: '/dotcom/product/licenses',
-            render: () => <SiteAdminProductLicensesPage />,
+            render: () => <SiteAdminLicenseKeyLookupPage />,
             condition: () => SHOW_BUSINESS_FEATURES,
         },
         {

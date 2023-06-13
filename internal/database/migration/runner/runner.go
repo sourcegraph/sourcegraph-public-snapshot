@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type RunnerFactoryWithSchemas func(schemaNames []string, schemas []*schemas.Schema) (*Runner, error)
+
 type Runner struct {
 	logger             log.Logger
 	storeFactoryCaches map[string]*storeFactoryCache

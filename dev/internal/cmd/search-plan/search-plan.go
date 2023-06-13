@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -17,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/printer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func run(w io.Writer, args []string) error {
@@ -39,10 +39,10 @@ func run(w io.Writer, args []string) error {
 	if *smartSearch {
 		mode = search.SmartSearch
 	}
-	settings := &schema.Settings{}
 
 	// Sourcegraph infra we need
 	conf.Mock(&conf.Unified{})
+	envvar.MockSourcegraphDotComMode(*dotCom)
 	logger := log.Scoped("search-plan", "")
 
 	cli := client.MockedZoekt(logger, nil, nil)
@@ -54,8 +54,6 @@ func run(w io.Writer, args []string) error {
 		query,
 		mode,
 		search.Streaming,
-		settings,
-		*dotCom,
 	)
 	if err != nil {
 		return errors.Wrap(err, "failed to plan")
