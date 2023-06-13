@@ -1,4 +1,4 @@
-import { gql, useQuery } from '@sourcegraph/http-client'
+import { gql } from '@sourcegraph/http-client'
 
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 

@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
 
-import { mdiDotsHorizontal, mdiContentCopy, mdiFileDocument, mdiConsoleNetworkOutline } from '@mdi/js'
+import { mdiDotsHorizontal, mdiContentCopy, mdiFileDocument } from '@mdi/js'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import { capitalize } from 'lodash'
