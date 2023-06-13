@@ -767,7 +767,6 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
     const connection = node?.commit?.ancestors
 
     const revisionType = node?.sourceType == RepositoryType.PERFORCE_DEPOT ? '/-/changelists' : '/-/commits'
-    console.log(revisionType)
 
     let revisionURL = tree.url
     if (tree.url.includes('/-/tree')) {
