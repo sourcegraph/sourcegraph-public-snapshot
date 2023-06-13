@@ -1,74 +1,66 @@
-import { FC, useContext } from 'react'
+import { FC } from 'react'
 
 import classNames from 'classnames'
 
 import { Button, H1, H2, H3, Link, Text } from '@sourcegraph/wildcard'
 
 import { EnterprisePageRoutes } from '../../../../routes.constants'
-import { SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
+import { StepComponentProps } from '../../../../setup-wizard/components'
 
 import styles from './AppWelcomeSetupStep.module.scss'
 
-export const AppWelcomeSetupStep: FC<StepComponentProps> = ({ className }) => {
-    const { onNextStep } = useContext(SetupStepsContext)
-
-    return (
-        <div className={classNames(styles.root, className)}>
-            <div className={styles.content}>
-                <div className={styles.description}>
-                    <H1 className={styles.descriptionHeading}>Welcome</H1>
-                    <Text className={styles.descriptionText}>
-                        Cody is an AI coding assistant that helps you read, write, and understand code 10x faster.
-                    </Text>
-                </div>
-
-                <div className={styles.actions}>
-                    <div className={styles.actionsCard}>
-                        <H3 as={H2}>You’ll need a Sourcegraph.com account in order to connect Cody.</H3>
-
-                        <div className={styles.actionsButtonsGroup}>
-                            <Button
-                                as={Link}
-                                to={`https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=APP&destination=${EnterprisePageRoutes.AppSetup}/local-repositories`}
-                                variant="primary"
-                                size="lg"
-                                className={styles.actionsButton}
-                                target="_blank"
-                            >
-                                <SourcegraphLogo />
-                                Connect to Sourcegraph.com
-                            </Button>
-
-                            <Button variant="secondary" size="lg" className={styles.actionsButton} onClick={onNextStep}>
-                                Skip, I want code search without Cody →
-                            </Button>
-                        </div>
-
-                        <Text className={styles.actionsFooter}>
-                            <Text>
-                                Cody will send your code to Sourcegraph servers and our LLM provider, but we won’t
-                                retain your code and we won’t use it to train Cody either.
-                            </Text>
-                            By signing in, you’re connecting Cody to your app and agreeing to Sourcegraph’s Cody Usage
-                            Privacy Notice.{' '}
-                            <Link
-                                to="https://about.sourcegraph.com/terms/cody-notice"
-                                target="_blank"
-                                rel="noopener"
-                                className={styles.actionsTermLink}
-                            >
-                                Sourcegraph’s Cody Usage Privacy Notice
-                            </Link>
-                            .
-                        </Text>
-                    </div>
-                </div>
+export const AppWelcomeSetupStep: FC<StepComponentProps> = ({ className }) => (
+    <div className={classNames(styles.root, className)}>
+        <div className={styles.content}>
+            <div className={styles.description}>
+                <H1 className={styles.descriptionHeading}>Welcome</H1>
+                <Text className={styles.descriptionText}>
+                    Cody is an AI coding assistant that helps you read, write, and understand code 10x faster.
+                </Text>
             </div>
 
-            <img src="https://storage.googleapis.com/sourcegraph-assets/welcome.png" alt="" className={styles.image} />
+            <div className={styles.actions}>
+                <div className={styles.actionsCard}>
+                    <H3 as={H2}>You’ll need a Sourcegraph.com account in order to connect Cody.</H3>
+
+                    <div className={styles.actionsButtonsGroup}>
+                        <Button
+                            as={Link}
+                            to={`https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=APP&destination=${EnterprisePageRoutes.AppSetup}/local-repositories`}
+                            variant="primary"
+                            size="lg"
+                            className={styles.actionsButton}
+                            target="_blank"
+                        >
+                            <SourcegraphLogo />
+                            Connect to Sourcegraph.com
+                        </Button>
+                    </div>
+
+                    <Text className={styles.actionsFooter}>
+                        <Text>
+                            Cody will send your code to Sourcegraph servers and our LLM provider, but we won’t retain
+                            your code and we won’t use it to train Cody either.
+                        </Text>
+                        By signing in, you’re connecting Cody to your app and agreeing to Sourcegraph’s Cody Usage
+                        Privacy Notice.{' '}
+                        <Link
+                            to="https://about.sourcegraph.com/terms/cody-notice"
+                            target="_blank"
+                            rel="noopener"
+                            className={styles.actionsTermLink}
+                        >
+                            Sourcegraph’s Cody Usage Privacy Notice
+                        </Link>
+                        .
+                    </Text>
+                </div>
+            </div>
         </div>
-    )
-}
+
+        <img src="https://storage.googleapis.com/sourcegraph-assets/welcome.png" alt="" className={styles.image} />
+    </div>
+)
 
 const SourcegraphLogo: FC = () => (
     <svg width="21" height="20" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
