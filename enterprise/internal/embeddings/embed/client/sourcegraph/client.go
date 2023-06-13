@@ -45,7 +45,7 @@ func getAccessToken(config *schema.SiteConfiguration) string {
 		return config.Embeddings.AccessToken
 	}
 	// App generates a token from the api token the user used to connect app to dotcom.
-	if deploy.IsApp() {
+	if deploy.IsApp() && config.App != nil {
 		return licensing.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
 	}
 	// Otherwise, use the current license key to compute an access token.
