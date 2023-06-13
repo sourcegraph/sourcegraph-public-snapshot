@@ -302,7 +302,7 @@ export const TreePage: FC<Props> = ({
                         </Tooltip>
                     )}
                     {window.context?.embeddingsEnabled && (
-                        <Tooltip content="Embeddings settings">
+                        <Tooltip content="Embeddings">
                             <Button
                                 className="flex-shrink-0"
                                 to={`/${encodeURIPathComponent(repoName)}/-/embeddings`}
@@ -311,7 +311,7 @@ export const TreePage: FC<Props> = ({
                                 as={Link}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiVectorPolyline} />{' '}
-                                <span className={styles.text}>Embeddings settings</span>
+                                <span className={styles.text}>Embeddings</span>
                             </Button>
                         </Tooltip>
                     )}
