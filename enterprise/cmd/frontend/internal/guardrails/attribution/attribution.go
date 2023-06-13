@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -18,6 +19,10 @@ import (
 type Service struct {
 	// SearchClient is used to find attribution on the local instance.
 	SearchClient client.SearchClient
+
+	// SourcegraphDotComClient is a graphql client that is queried if
+	// federating out to sourcegraph.com is enabled.
+	SourcegraphDotComClient dotcom.Client
 
 	// SourcegraphDotComFederate is true if this instance should also federate
 	// to sourcegraph.com.
@@ -173,5 +178,19 @@ func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, l
 }
 
 func (c *Service) snippetAttributionDotCom(ctx context.Context, snippet string, limit int) (*SnippetAttributions, error) {
-	return &SnippetAttributions{}, nil
+	resp, err := dotcom.SnippetAttribution(ctx, c.SourcegraphDotComClient, snippet, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	var repoNames []string
+	for _, node := range resp.SnippetAttribution.Nodes {
+		repoNames = append(repoNames, node.RepositoryName)
+	}
+
+	return &SnippetAttributions{
+		RepositoryNames: repoNames,
+		TotalCount:      resp.SnippetAttribution.TotalCount,
+		LimitHit:        resp.SnippetAttribution.LimitHit,
+	}, nil
 }
