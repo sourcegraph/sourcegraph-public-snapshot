@@ -52,11 +52,9 @@ func (r Reference) ResolutionGuess() codeowners.ResolvedOwner {
 	if r.Handle == "" && r.Email == "" {
 		return nil
 	}
-	fmt.Println("GUESS", r)
 	// If this is a GitHub repo and the handle contains a "/", then we can tell that this is a team.
 	// TODO this does not work well with team resolver which expects team to be in the DB.
 	if r.RepoContext != nil && strings.ToLower(r.RepoContext.CodeHostKind) == extsvc.VariantGitHub.AsType() && strings.Contains(r.Handle, "/") {
-		// 	fmt.Println("GUESS TEAM", r)
 		return &codeowners.Team{
 			Handle: r.Handle,
 			Email:  r.Email,
@@ -299,7 +297,6 @@ func (b *bag) Resolve(ctx context.Context, db edb.EnterpriseDB) {
 	for k, refCtx := range b.references {
 		if !refCtx.resolutionDone {
 			userRefs, teamRefs, err := k.fetch(ctx, db)
-			fmt.Println("FETCH", k, userRefs, teamRefs, err)
 			refCtx.resolutionDone = true
 			if err != nil {
 				refCtx.appendErr(err)
@@ -507,7 +504,6 @@ func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences
 	}
 	if k.teamID != 0 {
 		t, err := findTeamByID(ctx, db, k.teamID)
-		fmt.Println("FIND TEAM BY ID", t, err)
 		if err != nil {
 			return nil, nil, err
 		}
