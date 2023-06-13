@@ -262,6 +262,7 @@ SELECT COALESCE((
 type UpgradePlan struct {
 	OutOfBandMigrationIDs []int
 	Migrations            map[string][]int
+	MigrationNames        map[string]map[int]string
 }
 
 // TODO(efritz) - probably want to pass a claim id here as well instead of just hitting the max from upgrade logs

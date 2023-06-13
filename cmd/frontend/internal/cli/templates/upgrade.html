@@ -266,13 +266,17 @@
                                 </span>
                             </label>
                             <div class="tab-content">
+                                {{if .Frontend.Migrations}}
                                 <ul class="migration-list">
                                     {{range .Frontend.Migrations}}
                                     <li class="migration-item-{{ .State }}">
-                                        {{.ID}}: SOMETHING HERE
+                                        {{.ID}}: {{.Name}}
                                         <span>{{.State}}</span></li>
                                     {{end}}
                                 </ul>
+                                {{else}}
+                                <p>No migrations to display.</p>
+                                {{end}}
                             </div>
                         </div>
 
@@ -286,13 +290,17 @@
                                 </span>
                             </label>
                             <div class="tab-content">
+                                {{if .CodeIntel.Migrations}}
                                 <ul class="migration-list">
                                     {{range .CodeIntel.Migrations}}
                                     <li class="migration-item-{{ .State }}">
-                                        {{.ID}}: SOMETHING HERE
+                                        {{.ID}}: {{.Name}}
                                         <span>{{.State}}</span></li>
                                     {{end}}
                                 </ul>
+                                {{else}}
+                                <p>No migrations to display.</p>
+                                {{end}}
                             </div>
                         </div>
 
@@ -306,18 +314,21 @@
                                 </span>
                             </label>
                             <div class="tab-content">
+                                {{if .CodeInsights.Migrations}}
                                 <ul class="migration-list">
                                     {{range .CodeInsights.Migrations}}
                                     <li class="migration-item-{{ .State }}">
-                                        {{.ID}}: SOMETHING HERE
+                                        {{.ID}}: {{.Name}}
                                         <span>{{.State}}</span></li>
                                     {{end}}
                                 </ul>
+                                {{else}}
+                                <p>No migrations to display.</p>
+                                {{end}}
                             </div>
                         </div>
 
                         <!-- Out of band migrations -->
-                        {{if .NumUnfinishedOutOfBandMigrations}}
                         <div class="tab">
                             <input type="checkbox" id="chck4" />
                             <label class="tab-label" for="chck4">
@@ -327,6 +338,7 @@
                                 </span>
                             </label>
                             <div class="tab-content">
+                                {{if .OutOfBandMigrations}}
                                 <ul class="oobmigration-list">
                                     {{range .OutOfBandMigrations}}
                                     <li class="oobmigration-item-{{if eq .Progress 1.0}}applied{{else}}{{if .Errors}}failed{{else}}pending{{end}}{{end}}">
@@ -335,9 +347,11 @@
                                     </li>
                                     {{end}}
                                 </ul>
+                                {{else}}
+                                <p>No out of band migrations to display.</p>
+                                {{end}}
                             </div>
                         </div>
-                        {{end}}
                     </div>
                 </div>
             </div>

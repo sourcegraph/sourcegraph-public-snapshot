@@ -142,9 +142,9 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 			OutOfBandMigrations              []oobmigration.Migration
 		}{
 			Upgrade:                          upgrade,
-			Frontend:                         getMigrationStatus(upgrade.Plan.Migrations["frontend"], frontendApplied, frontendPending, frontendFailed),
-			CodeIntel:                        getMigrationStatus(upgrade.Plan.Migrations["codeintel"], codeintelApplied, codeintelPending, codeIntelFailed),
-			CodeInsights:                     getMigrationStatus(upgrade.Plan.Migrations["codeinsights"], codeinsightsApplied, codeinsightsPending, codeinsightsFailed),
+			Frontend:                         getMigrationStatus(upgrade.Plan.MigrationNames["frontend"], upgrade.Plan.Migrations["frontend"], frontendApplied, frontendPending, frontendFailed),
+			CodeIntel:                        getMigrationStatus(upgrade.Plan.MigrationNames["codeintel"], upgrade.Plan.Migrations["codeintel"], codeintelApplied, codeintelPending, codeIntelFailed),
+			CodeInsights:                     getMigrationStatus(upgrade.Plan.MigrationNames["codeinsights"], upgrade.Plan.Migrations["codeinsights"], codeinsightsApplied, codeinsightsPending, codeinsightsFailed),
 			NumUnfinishedOutOfBandMigrations: len(unfinishedOutOfBandMigrations),
 			OutOfBandMigrations:              unfinishedOutOfBandMigrations,
 		})
@@ -169,6 +169,7 @@ type upgradeStatus struct {
 
 type migrationState struct {
 	ID    int
+	Name  string
 	State string
 }
 
@@ -178,7 +179,10 @@ type migrationStatus struct {
 	Migrations            []migrationState
 }
 
-func getMigrationStatus(expected, applied, pending, failed []int) migrationStatus {
+// adjust this to show some leading applied migrations
+const numLeadingAppliedMigrations = 0
+
+func getMigrationStatus(migrationNames map[int]string, expected, applied, pending, failed []int) migrationStatus {
 	expectedMap := map[int]struct{}{}
 	for _, id := range expected {
 		expectedMap[id] = struct{}{}
@@ -215,17 +219,17 @@ func getMigrationStatus(expected, applied, pending, failed []int) migrationStatu
 			numMigrationsRequired++
 		}
 
-		migrations = append(migrations, migrationState{ID: id, State: state})
+		migrations = append(migrations, migrationState{ID: id, Name: migrationNames[id], State: state})
 	}
 
 	for id := range pendingMap {
 		if _, ok := expectedMap[id]; !ok {
-			migrations = append(migrations, migrationState{ID: id, State: "pending"})
+			migrations = append(migrations, migrationState{ID: id, Name: migrationNames[id], State: "pending"})
 		}
 	}
 	for id := range failedMap {
 		if _, ok := expectedMap[id]; !ok {
-			migrations = append(migrations, migrationState{ID: id, State: "failed"})
+			migrations = append(migrations, migrationState{ID: id, Name: migrationNames[id], State: "failed"})
 		}
 	}
 
@@ -236,7 +240,7 @@ func getMigrationStatus(expected, applied, pending, failed []int) migrationStatu
 		}
 		numLeadingApplied++
 	}
-	strip := numLeadingApplied - 5
+	strip := numLeadingApplied - numLeadingAppliedMigrations
 	if strip < 0 {
 		strip = 0
 	}
