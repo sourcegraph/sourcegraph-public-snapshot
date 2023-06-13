@@ -27,6 +27,7 @@ export class InlineController {
     // Constroller State
     private commentController: vscode.CommentController
     public thread: vscode.CommentThread | null = null // a thread is a comment
+    private threads = new Map<string, vscode.CommentThread>()
     private currentTaskId = ''
     // Workspace State
     private workspacePath = vscode.workspace.workspaceFolders?.[0].uri
@@ -71,6 +72,16 @@ export class InlineController {
             }
             for (const change of e.contentChanges) {
                 this.selectionRange = updateRangeOnDocChange(this.selectionRange, change.range, change.text)
+            }
+        })
+        // Remove all the threads from current file on file close
+        vscode.workspace.onDidCloseTextDocument(doc => {
+            if (doc.uri.scheme !== 'file') {
+                return
+            }
+            const threadsInDoc = [...this.threads.values()].filter(thread => thread.uri.fsPath === doc.uri.fsPath)
+            for (const thread of threadsInDoc) {
+                this.delete(thread)
             }
         })
         this._disposables.push(
@@ -118,6 +129,10 @@ export class InlineController {
         await this.runFixMode(isFixMode, comment, thread)
         this.thread = thread
         this.selection = await this.makeSelection(isFixMode)
+        const firstCommentId = thread.comments[0].label
+        if (firstCommentId) {
+            this.threads.set(firstCommentId, thread)
+        }
         void vscode.commands.executeCommand('setContext', 'cody.replied', false)
     }
     /**
@@ -127,9 +142,13 @@ export class InlineController {
         if (!this.thread) {
             return
         }
-        const codyReply = new Comment(replyText, 'Cody', this.codyIcon, false, this.thread, undefined)
-        this.thread.comments = [...this.thread.comments, codyReply]
+        const comment = new Comment(replyText, 'Cody', this.codyIcon, false, this.thread, undefined)
+        this.thread.comments = [...this.thread.comments, comment]
         this.thread.canReply = true
+        const firstCommentId = this.thread.comments[0].label
+        if (firstCommentId) {
+            this.threads.set(firstCommentId, this.thread)
+        }
         void vscode.commands.executeCommand('setContext', 'cody.replied', true)
     }
 
@@ -281,7 +300,7 @@ export class InlineController {
         const newRange = await editDocByUri(documentUri, { start: range.start.line, end: range.end.line }, replacement)
 
         const lens = this.codeLenses.get(this.currentTaskId)
-        lens?.storeContext(this.currentTaskId, documentUri, original, replacement, newRange)
+        lens?.storeContext(this.currentTaskId, documentUri, original, replacement)
 
         await this.stopFixMode(false, newRange)
         logEvent('CodyVSCodeExtension:inline-assist:replaced')

@@ -7,10 +7,7 @@ import { editDocByUri, getSingleLineRange, updateRangeOnDocChange } from './Inli
 
 export class CodeLensProvider implements vscode.CodeLensProvider {
     private selectionRange: vscode.Range | null = null
-    private contextStore = new Map<
-        string,
-        { docUri: vscode.Uri; original: string; replacement: string; range: vscode.Range }
-    >()
+    private contextStore = new Map<string, { docUri: vscode.Uri; original: string; replacement: string }>()
 
     private status = CodyTaskState.idle
     public decorator: DecorationProvider
@@ -57,24 +54,18 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         this._onDidChangeCodeLenses.fire()
     }
 
-    public storeContext(
-        id: string,
-        docUri: vscode.Uri,
-        original: string,
-        replacement: string,
-        range: vscode.Range
-    ): void {
-        this.contextStore.set(id, { docUri, original, replacement, range })
+    public storeContext(id: string, docUri: vscode.Uri, original: string, replacement: string): void {
+        this.contextStore.set(id, { docUri, original, replacement })
     }
 
     public async undo(id: string): Promise<void> {
         const context = this.contextStore.get(id)
-        if (!context) {
+        const chatSelection = this.selectionRange
+        if (!context || !chatSelection) {
             return
         }
-        const chatSelection = context.range
         const range = new vscode.Selection(chatSelection.start, new vscode.Position(chatSelection.end.line + 1, 0))
-        await editDocByUri(context.docUri, { start: range.start.line, end: range.end.line }, context.original)
+        await editDocByUri(context.docUri, { start: range.start.line, end: range.end.line }, context.original + '\n')
         this.remove()
     }
     /**
@@ -194,7 +185,7 @@ function getInlineUndoLens(id: string, codeLensRange: vscode.Range): vscode.Code
     const lens = new vscode.CodeLens(codeLensRange)
     lens.command = {
         title: '$(undo) Undo',
-        tooltip: 'Undo last change',
+        tooltip: 'Undo this change',
         command: 'cody.inline.fix.undo',
         arguments: [id],
     }
