@@ -9,7 +9,6 @@ import {
     Icon,
     H1,
     ForwardReferenceComponent,
-    useWindowSize,
     VIEWPORT_SM,
     Menu,
     MenuList,
