@@ -65,16 +65,12 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 	upgradestore := upgradestore.New(db)
 
 	currentVersionStr, doAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
-	// TODO(efritz) - pro gamer move
-	currentVersionStr = "3.38.0"
 	// fresh instance
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	} else if err != nil {
 		return errors.Wrap(err, "autoupgradestore.GetAutoUpgrade")
 	}
-	// TODO(efritz) - pro gamer move
-	doAutoUpgrade = true
 	if !doAutoUpgrade && !shouldAutoUpgade {
 		return nil
 	}
@@ -103,7 +99,6 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 	}
 
 	toVersionStr := version.Version()
-	toVersionStr = "5.0.5" // TODO(efritz) - pro gamber
 	toVersion, ok := oobmigration.NewVersionFromString(toVersionStr)
 	if !ok {
 		obsvCtx.Logger.Warn("unexpected string for desired instance schema version, skipping auto-upgrade", log.String("version", toVersionStr))
@@ -260,9 +255,6 @@ func claimAutoUpgradeLock(ctx context.Context, obsvCtx *observation.Context, upg
 		if err != nil {
 			return false, errors.Wrap(err, "autoupgradestore.GetServiceVersion")
 		}
-
-		//  TODO(efritz) - pro gamer move
-		currentVersionStr = "3.38.0"
 
 		currentVersion, ok := oobmigration.NewVersionFromString(currentVersionStr)
 		if !ok {
