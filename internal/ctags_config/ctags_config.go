@@ -56,9 +56,11 @@ func LanguageSupportsParserType(language string, parserType ParserType) bool {
 }
 
 var supportedLanguages = map[string]struct{}{
-	"c_sharp": {},
-	"java":    {},
-	"python":  {},
-	"zig":     {},
-	"scala":   {},
+	"c_sharp":    {},
+	"java":       {},
+	"javascript": {},
+	"python":     {},
+	"scala":      {},
+	"typescript": {},
+	"zig":        {},
 }

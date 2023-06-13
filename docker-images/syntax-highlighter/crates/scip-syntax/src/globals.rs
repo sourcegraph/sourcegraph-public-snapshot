@@ -132,6 +132,10 @@ pub fn parse_tree<'a>(
 
     let matches = cursor.matches(&config.query, root_node, source_bytes);
     for m in matches {
+        if config.is_filtered(&m) {
+            continue;
+        }
+
         let mut node = None;
         let mut enclosing_node = None;
         let mut scope = None;

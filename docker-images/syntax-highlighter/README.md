@@ -8,6 +8,10 @@ Crates:
 - `crates/scip-syntax/`: local navigation calculation (and some other utilities) live here.
 - `crates/sg-syntax/`: Sourcegraph code to glue together whatever from the above crates to be used for our purposes.
 
+# scip-ctags
+
+See [queries](./docs/queries.md)
+
 # Syntect Server
 
 This is an HTTP server that exposes the Rust [Syntect](https://github.com/trishume/syntect) syntax highlighting library for use by other services. Send it some code, and it'll send you syntax-highlighted code in response. This service is horizontally scalable, but please give [#21942](https://github.com/sourcegraph/sourcegraph/issues/21942) and [#32359](https://github.com/sourcegraph/sourcegraph/pull/32359#issuecomment-1063310638) a read before scaling it up.
