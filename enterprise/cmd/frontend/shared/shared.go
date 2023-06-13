@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
 	githubapp "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/githubappauth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
@@ -45,6 +46,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type EnterpriseInitializer = func(context.Context, *observation.Context, database.DB, codeintel.Services, conftypes.UnifiedWatchable, *enterprise.Services) error
@@ -129,4 +131,42 @@ func mustInitializeCodeIntelDB(logger log.Logger) codeintelshared.CodeIntelDB {
 	}
 
 	return codeintelshared.NewCodeIntelDB(logger, db)
+}
+
+func SwitchableSiteConfig() conftypes.WatchableSiteConfig {
+	confClient := conf.DefaultClient()
+	switchable := &switchingSiteConfig{
+		watchers:            make([]func(), 0),
+		WatchableSiteConfig: &noopSiteConfig{},
+	}
+	switchable.WatchableSiteConfig.(*noopSiteConfig).switcher = switchable
+
+	go func() {
+		<-shared.AutoUpgradeDone
+		switchable.WatchableSiteConfig = confClient
+		for _, watcher := range switchable.watchers {
+			confClient.Watch(watcher)
+		}
+		switchable.watchers = nil
+	}()
+
+	return switchable
+}
+
+type switchingSiteConfig struct {
+	watchers []func()
+	conftypes.WatchableSiteConfig
+}
+
+type noopSiteConfig struct {
+	switcher *switchingSiteConfig
+}
+
+func (n *noopSiteConfig) SiteConfig() schema.SiteConfiguration {
+	return schema.SiteConfiguration{}
+}
+
+func (n *noopSiteConfig) Watch(f func()) {
+	f()
+	n.switcher.watchers = append(n.switcher.watchers, f)
 }
