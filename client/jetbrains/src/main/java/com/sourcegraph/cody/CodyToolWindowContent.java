@@ -21,8 +21,10 @@ import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.editor.EditorContextGetter;
+import com.sourcegraph.cody.prompts.SupportedLanguages;
 import com.sourcegraph.cody.recipes.*;
 import com.sourcegraph.cody.ui.RoundedJBTextArea;
+import com.sourcegraph.cody.ui.SelectOptionManager;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
 import java.awt.*;
@@ -72,7 +74,16 @@ class CodyToolWindowContent implements UpdatableChat {
     improveVariableNamesButton.addActionListener(
         e -> recipeRunner.runRecipe(new ImproveVariableNamesPromptProvider()));
     JButton translateToLanguageButton = createWideButton("Translate to different language");
-    translateToLanguageButton.addActionListener(e -> recipeRunner.runTranslateToLanguage());
+    translateToLanguageButton.addActionListener(
+        e -> {
+          SelectOptionManager selectOptionManager = SelectOptionManager.getInstance(project);
+          selectOptionManager.show(
+              project,
+              SupportedLanguages.LANGUAGE_NAMES,
+              (selectedLanguage) ->
+                  recipeRunner.runRecipe(
+                      new TranslateToLanguagePromptProvider(new Language(selectedLanguage))));
+        });
     JButton gitHistoryButton = createWideButton("Summarize recent code changes");
     gitHistoryButton.addActionListener(e -> recipeRunner.runGitHistory());
     JButton findCodeSmellsButton = createWideButton("Smell code");
