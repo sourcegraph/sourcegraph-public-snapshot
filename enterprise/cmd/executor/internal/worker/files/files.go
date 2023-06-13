@@ -88,7 +88,7 @@ func getContent(ctx context.Context, job types.Job, store Store, machineFile typ
 	return content, nil
 }
 
-// scriptPreamble contains a script that checks at runtime if bash is available.
+// ScriptPreamble contains a script that checks at runtime if bash is available.
 // If it is, we want to be using bash, to support a more natural scripting.
 // If not, then we just run with sh.
 // This works roughly like the following:
@@ -97,7 +97,7 @@ func getContent(ctx context.Context, job types.Job, store Store, machineFile typ
 // - If so, we invoke this exact script again, but with the bash on the path, and pass an argument so that this check doesn't happen again.
 // - If not, it might be that PATH is not set correctly, but bash is still available at /bin/bash. If that's the case we do the same as above.
 // Otherwise we just continue and best effort run the script in sh.
-var scriptPreamble = `
+var ScriptPreamble = `
 # Only on the first run, check if we can upgrade to bash.
 if [ -z "$1" ]; then
   bash_path=$(command -p -v bash)
@@ -119,8 +119,10 @@ set +e
 set -x
 `
 
+var preambleSlice = []string{ScriptPreamble, ""}
+
 func buildScript(commands []string) string {
-	return strings.Join(append([]string{scriptPreamble, ""}, commands...), "\n") + "\n"
+	return strings.Join(append(preambleSlice, commands...), "\n") + "\n"
 }
 
 // ScriptNameFromJobStep returns the name of the script file for the given job step.
