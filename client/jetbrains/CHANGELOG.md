@@ -16,9 +16,18 @@
 
 ## [3.0.0-alpha.2]
 
-<!-- Document changes here -->
-
 ### Added
+
+- A separate setting for the (optional) dotcom access token. [pull/53018](https://github.com/sourcegraph/sourcegraph/pull/53018)
+- Enabled "Explain selected code (detailed)" recipe [#53080](https://github.com/sourcegraph/sourcegraph/pull/53080)
+- Enabled multiple recipes [#53299](https://github.com/sourcegraph/sourcegraph/pull/53299)
+  - Explain selected code (high level)
+  - Generate a unit test
+  - Generate a docstring
+  - Improve variable names
+  - Smell code
+  - Optimize code
+- A separate setting for enabling/disabling Cody completions. [pull/53302](https://github.com/sourcegraph/sourcegraph/pull/53302)
 
 ### Changed
 

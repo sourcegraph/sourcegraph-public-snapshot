@@ -10,10 +10,12 @@ go_library(
         "//enterprise/cmd/cody-gateway/internal/actor",
         "//enterprise/cmd/cody-gateway/internal/dotcom",
         "//enterprise/internal/codygateway",
+        "//internal/trace",
         "//lib/errors",
         "@com_github_gregjones_httpcache//:httpcache",
         "@com_github_khan_genqlient//graphql",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_vektah_gqlparser_v2//gqlerror",
     ],
 )
 
@@ -23,6 +25,7 @@ go_test(
     embed = [":dotcomuser"],
     deps = [
         "//enterprise/cmd/cody-gateway/internal/dotcom",
+        "//enterprise/internal/codygateway",
         "@com_github_stretchr_testify//assert",
     ],
 )

@@ -166,6 +166,7 @@ const register = async (
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             commentController.delete(thread)
         }),
+        vscode.commands.registerCommand('cody.recipe.file-touch', () => executeRecipe('file-touch', false)),
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.set-access-token', async (args: any[]) => {
             if (args?.length && (args[0] as string)) {
@@ -174,6 +175,9 @@ const register = async (
         }),
         vscode.commands.registerCommand('cody.delete-access-token', async () => {
             await chatProvider.logout()
+        }),
+        vscode.commands.registerCommand('cody.clear-chat-history', async () => {
+            await chatProvider.clearHistory()
         }),
         // Commands
         vscode.commands.registerCommand('cody.welcome', () =>
@@ -200,10 +204,10 @@ const register = async (
             })
         }),
         vscode.commands.registerCommand('cody.walkthrough.enableCodeCompletions', async () => {
-            await workspaceConfig.update('cody.completions', true, vscode.ConfigurationTarget.Global)
+            await workspaceConfig.update('cody.experimental.suggestions', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openSettings', {
-                query: 'cody.completions',
+                query: 'cody.experimental.suggestions',
                 openToSide: true,
             })
         }),
@@ -254,7 +258,7 @@ const register = async (
         })
     )
 
-    if (initialConfig.completions) {
+    if (initialConfig.experimentalSuggest) {
         // TODO(sqs): make this listen to config and not just use initialConfig
         const docprovider = new CompletionsDocumentProvider()
         disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))
@@ -285,9 +289,7 @@ const register = async (
                 return [new vscode.Range(0, 0, lineCount - 1, 0)]
             },
         }
-        disposables.push(
-            vscode.commands.registerCommand('cody.recipe.file-touch', () => executeRecipe('file-touch', false))
-        )
+        void vscode.commands.executeCommand('setContext', 'cody.inline-assist.enabled', true)
     }
 
     if (initialConfig.experimentalGuardrails) {

@@ -17,7 +17,7 @@ describe('SiteAdminProductLicenseNode', () => {
     test('active', () => {
         expect(
             renderWithBrandedContext(
-                <MockedTestProvider mocks={[]}>
+                <MockedTestProvider>
                     <SiteAdminProductLicenseNode
                         node={{
                             createdAt: '2020-01-01',
@@ -25,6 +25,7 @@ describe('SiteAdminProductLicenseNode', () => {
                             licenseKey: 'lk1',
                             version: 1,
                             revokedAt: null,
+                            revokeReason: null,
                             siteID: null,
                             info: {
                                 __typename: 'ProductLicenseInfo',
@@ -44,6 +45,9 @@ describe('SiteAdminProductLicenseNode', () => {
                             },
                         }}
                         showSubscription={true}
+                        onRevokeCompleted={function (): void {
+                            throw new Error('Function not implemented.')
+                        }}
                     />
                 </MockedTestProvider>
             ).asFragment()
@@ -53,33 +57,39 @@ describe('SiteAdminProductLicenseNode', () => {
     test('inactive', () => {
         expect(
             renderWithBrandedContext(
-                <SiteAdminProductLicenseNode
-                    node={{
-                        createdAt: '2020-01-01',
-                        id: 'l1',
-                        licenseKey: 'lk1',
-                        version: 1,
-                        revokedAt: null,
-                        siteID: null,
-                        info: {
-                            __typename: 'ProductLicenseInfo',
-                            expiresAt: '2021-01-01',
-                            productNameWithBrand: 'NB',
-                            tags: ['a'],
-                            userCount: 123,
-                            salesforceSubscriptionID: null,
-                            salesforceOpportunityID: null,
-                        },
-                        subscription: {
-                            id: 'id1',
-                            account: null,
-                            name: 's',
-                            activeLicense: { id: 'l0' },
-                            urlForSiteAdmin: '/s',
-                        },
-                    }}
-                    showSubscription={true}
-                />
+                <MockedTestProvider>
+                    <SiteAdminProductLicenseNode
+                        node={{
+                            createdAt: '2020-01-01',
+                            id: 'l1',
+                            licenseKey: 'lk1',
+                            version: 1,
+                            revokedAt: null,
+                            revokeReason: null,
+                            siteID: null,
+                            info: {
+                                __typename: 'ProductLicenseInfo',
+                                expiresAt: '2021-01-01',
+                                productNameWithBrand: 'NB',
+                                tags: ['a'],
+                                userCount: 123,
+                                salesforceSubscriptionID: null,
+                                salesforceOpportunityID: null,
+                            },
+                            subscription: {
+                                id: 'id1',
+                                account: null,
+                                name: 's',
+                                activeLicense: { id: 'l0' },
+                                urlForSiteAdmin: '/s',
+                            },
+                        }}
+                        showSubscription={true}
+                        onRevokeCompleted={function (): void {
+                            throw new Error('Function not implemented.')
+                        }}
+                    />
+                </MockedTestProvider>
             ).asFragment()
         ).toMatchSnapshot()
     })

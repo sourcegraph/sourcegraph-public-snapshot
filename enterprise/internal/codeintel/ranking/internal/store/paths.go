@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"crypto/md5"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -11,6 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
+
+var sentinelPathDefinitionName = func() [16]byte {
+	// This value is represented in the `insertInitialPathCountsInputsQuery`
+	// Postgres query by `'\xc3e97dd6e97fb5125688c97f36720cbe'::bytea`.
+	return md5.Sum([]byte("$"))
+}()
 
 func (s *store) InsertInitialPathRanks(ctx context.Context, exportedUploadID int, documentPaths []string, batchSize int, graphKey string) (err error) {
 	ctx, _, endObservation := s.operations.insertInitialPathRanks.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
@@ -32,7 +39,7 @@ func (s *store) InsertInitialPathRanks(ctx context.Context, exportedUploadID int
 					for _, path := range paths {
 						pathDefinitions <- shared.RankingDefinitions{
 							ExportedUploadID: exportedUploadID,
-							SymbolName:       "$",
+							SymbolChecksum:   sentinelPathDefinitionName,
 							DocumentPath:     path,
 						}
 					}

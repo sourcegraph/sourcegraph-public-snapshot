@@ -4,7 +4,7 @@ This page outlines the process for adding or changing the data collected from So
 
 ## Ping philosophy
 
-Pings are the only data Sourcegraph receives from installations. Our users and customers trust us with their most sensitive data. We must preserve and build this trust through only careful additions and changes to pings.
+Pings, alongside [license verification checks](../../admin/licensing/index.md), are the only data Sourcegraph receives from installations. Our users and customers trust us with their most sensitive data. We must preserve and build this trust through only careful additions and changes to pings.
 
 All ping data must be:
 

@@ -32,9 +32,9 @@ const SiteAdminProductSubscriptionsPage = lazyComponent(
     () => import('./dotcom/productSubscriptions/SiteAdminProductSubscriptionsPage'),
     'SiteAdminProductSubscriptionsPage'
 )
-const SiteAdminProductLicensesPage = lazyComponent(
-    () => import('./dotcom/productSubscriptions/SiteAdminProductLicensesPage'),
-    'SiteAdminProductLicensesPage'
+const SiteAdminLicenseKeyLookupPage = lazyComponent(
+    () => import('./dotcom/productSubscriptions/SiteAdminLicenseKeyLookupPage'),
+    'SiteAdminLicenseKeyLookupPage'
 )
 const SiteAdminAuthenticationProvidersPage = lazyComponent(
     () => import('./SiteAdminAuthenticationProvidersPage'),
@@ -81,6 +81,8 @@ const CodyConfigurationPage = lazyComponent(
     'CodyConfigurationPage'
 )
 
+const codyIsEnabled = (): boolean => Boolean(window.context?.codyEnabled && window.context?.embeddingsEnabled)
+
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
     [
         ...otherSiteAdminRoutes,
@@ -121,7 +123,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
         {
             path: '/dotcom/product/licenses',
-            render: () => <SiteAdminProductLicensesPage />,
+            render: () => <SiteAdminLicenseKeyLookupPage />,
             condition: () => SHOW_BUSINESS_FEATURES,
         },
         {
@@ -193,24 +195,24 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             exact: true,
             path: '/cody',
             render: () => <Navigate to="/site-admin/embeddings" />,
-            condition: () => Boolean(window.context?.embeddingsEnabled),
+            condition: codyIsEnabled,
         },
         {
             exact: true,
             path: '/embeddings',
             render: props => <SiteAdminCodyPage {...props} />,
-            condition: () => Boolean(window.context?.embeddingsEnabled),
+            condition: codyIsEnabled,
         },
         {
             exact: true,
             path: '/embeddings/configuration',
             render: props => <CodyConfigurationPage {...props} />,
-            condition: () => Boolean(window.context?.embeddingsEnabled),
+            condition: codyIsEnabled,
         },
         {
             path: '/embeddings/configuration/:id',
             render: props => <CodeIntelConfigurationPolicyPage {...props} domain="embeddings" />,
-            condition: () => Boolean(window.context?.embeddingsEnabled),
+            condition: codyIsEnabled,
         },
 
         // rbac-related routes

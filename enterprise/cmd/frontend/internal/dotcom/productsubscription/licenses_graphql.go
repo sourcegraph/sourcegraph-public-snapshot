@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -33,11 +32,11 @@ func (p ProductSubscriptionLicensingResolver) ProductLicenseByID(ctx context.Con
 // productLicenseByID looks up and returns the ProductLicense with the given GraphQL ID. If no such
 // ProductLicense exists, it returns a non-nil error.
 func productLicenseByID(ctx context.Context, db database.DB, id graphql.ID) (*productLicense, error) {
-	idInt32, err := unmarshalProductLicenseID(id)
+	lid, err := unmarshalProductLicenseID(id)
 	if err != nil {
 		return nil, err
 	}
-	return productLicenseByDBID(ctx, db, idInt32)
+	return productLicenseByDBID(ctx, db, lid)
 }
 
 // productLicenseByDBID looks up and returns the ProductLicense with the given database ID. If no
@@ -185,12 +184,12 @@ func (r ProductSubscriptionLicensingResolver) RevokeLicense(ctx context.Context,
 	}
 
 	// check if the UUID is valid
-	id, err := uuid.Parse(args.ID)
+	id, err := unmarshalProductLicenseID(args.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	err = dbLicenses{db: r.DB}.Revoke(ctx, id.String(), args.Reason)
+	err = dbLicenses{db: r.DB}.Revoke(ctx, id, args.Reason)
 	if err != nil {
 		return nil, err
 	}

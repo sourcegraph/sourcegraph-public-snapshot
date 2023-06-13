@@ -87,6 +87,7 @@ go_library(
 
 go_test(
     name = "resolvers_test",
+    timeout = "moderate",
     srcs = [
         "batch_change_connection_test.go",
         "batch_change_test.go",

@@ -3,11 +3,10 @@ package client
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/codygateway"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -20,8 +19,6 @@ func Get(endpoint, provider, accessToken string) (types.CompletionsClient, error
 		return anthropic.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
 	case openai.ProviderName:
 		return openai.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
-	case dotcom.ProviderName:
-		return dotcom.NewClient(httpcli.ExternalDoer, accessToken), nil
 	case codygateway.ProviderName:
 		return codygateway.NewClient(httpcli.ExternalDoer, endpoint, accessToken)
 	default:
@@ -32,7 +29,22 @@ func Get(endpoint, provider, accessToken string) (types.CompletionsClient, error
 // GetCompletionsConfig evaluates a complete completions configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
 func GetCompletionsConfig(siteConfig schema.SiteConfiguration) *schema.Completions {
+	codyEnabled := siteConfig.CodyEnabled
 	completionsConfig := siteConfig.Completions
+
+	// If `cody.enabled` is used but no completions config, we assume defaults
+	if codyEnabled != nil && *codyEnabled {
+		if completionsConfig == nil {
+			completionsConfig = &schema.Completions{}
+		}
+		// Since `cody.enabled` is true, we override the `completions.enabled` value
+		completionsConfig.Enabled = true
+	}
+
+	// Otherwise, if we don't have a config, or it's disabled, we return nil
+	if completionsConfig == nil || (completionsConfig != nil && !completionsConfig.Enabled) {
+		return nil
+	}
 
 	// When the Completions is present always use it
 	if completionsConfig != nil {
@@ -45,8 +57,18 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) *schema.Completio
 
 			// Configure accessToken. We don't validate the license here because
 			// Cody Gateway will check and reject the request.
-			if completionsConfig.AccessToken == "" && siteConfig.LicenseKey != "" {
-				completionsConfig.AccessToken = licensing.GenerateLicenseKeyBasedAccessToken(siteConfig.LicenseKey)
+			if completionsConfig.AccessToken == "" {
+				switch deploy.Type() {
+				case deploy.App:
+					if siteConfig.App != nil && siteConfig.App.DotcomAuthToken != "" {
+						completionsConfig.AccessToken = dotcomuser.GenerateDotcomUserGatewayAccessToken(siteConfig.App.DotcomAuthToken)
+					}
+				default:
+					if siteConfig.LicenseKey != "" {
+						completionsConfig.AccessToken = licensing.GenerateLicenseKeyBasedAccessToken(siteConfig.LicenseKey)
+					}
+				}
+
 			}
 
 			// Configure endpoint
@@ -87,23 +109,5 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) *schema.Completio
 		return completionsConfig
 	}
 
-	// If App is running and there wasn't a completions config
-	// use a provider that sends the request to dotcom
-	if deploy.IsApp() {
-		appConfig := conf.Get().App
-		if appConfig == nil {
-			return nil
-		}
-		// Only the Provider, Access Token and Enabled required to forward the request to dotcom
-		return &schema.Completions{
-			AccessToken: appConfig.DotcomAuthToken,
-			Enabled:     len(appConfig.DotcomAuthToken) > 0,
-			Provider:    dotcom.ProviderName,
-			// TODO: These are not required right now as upstream overwrites this,
-			// but should we switch to Cody Gateway they will be.
-			ChatModel:       "claude-v1",
-			CompletionModel: "claude-instant-v1",
-		}
-	}
 	return nil
 }

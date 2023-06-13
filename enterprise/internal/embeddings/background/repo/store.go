@@ -48,6 +48,7 @@ var repoEmbeddingJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("repo_embedding_jobs.execution_logs"),
 	sqlf.Sprintf("repo_embedding_jobs.worker_hostname"),
 	sqlf.Sprintf("repo_embedding_jobs.cancel"),
+
 	sqlf.Sprintf("repo_embedding_jobs.repo_id"),
 	sqlf.Sprintf("repo_embedding_jobs.revision"),
 }
@@ -106,6 +107,9 @@ type RepoEmbeddingJobsStore interface {
 	CountRepoEmbeddingJobs(ctx context.Context, args ListOpts) (int, error)
 	GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error)
 	CancelRepoEmbeddingJob(ctx context.Context, job int) error
+
+	UpdateRepoEmbeddingJobStats(ctx context.Context, jobID int, stats *EmbedRepoStats) error
+	GetRepoEmbeddingJobStats(ctx context.Context, jobID int) (EmbedRepoStats, error)
 }
 
 var _ basestore.ShareableStore = &repoEmbeddingJobsStore{}
@@ -151,7 +155,7 @@ repositories_matching_policy AS (
             r.blocked IS NULL AND
             gr.clone_status = 'cloned'
         ORDER BY stars DESC NULLS LAST, id
-        LIMIT 5000 -- Some repository match limit to stop you from returning all of dotcom
+        %s -- limit clause
     ) UNION ALL (
         SELECT r.id, gr.last_changed
         FROM repo r
@@ -186,6 +190,11 @@ type EmbeddableRepoOpts struct {
 	// MinimumInterval is the minimum amount of time that must have passed since the last
 	// successful embedding job.
 	MinimumInterval time.Duration
+
+	// PolicyRepositoryMatchLimit limits the maximum number of repositories that can
+	// be matched by a global policy. If set to nil or a negative value, the policy
+	// is unlimited.
+	PolicyRepositoryMatchLimit *int
 }
 
 type ListOpts struct {
@@ -213,25 +222,48 @@ func embeddingConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
 	return nil
 }
 
+var defaultPolicyRepositoryMatchLimit = 5000
+
+var defaultOpts = EmbeddableRepoOpts{
+	MinimumInterval:            24 * time.Hour,
+	PolicyRepositoryMatchLimit: &defaultPolicyRepositoryMatchLimit,
+}
+
 func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
-	defaultMinimumInterval := 24 * time.Hour
+	opts := defaultOpts
 
 	embeddingsConf := conf.Get().Embeddings
 	if embeddingsConf == nil {
-		return EmbeddableRepoOpts{MinimumInterval: defaultMinimumInterval}
+		return opts
 	}
 
 	minimumIntervalString := embeddingsConf.MinimumInterval
 	d, err := time.ParseDuration(minimumIntervalString)
-	if err != nil {
-		return EmbeddableRepoOpts{MinimumInterval: defaultMinimumInterval}
+	if err == nil {
+		opts.MinimumInterval = d
 	}
 
-	return EmbeddableRepoOpts{MinimumInterval: d}
+	if embeddingsConf.PolicyRepositoryMatchLimit != nil {
+		opts.PolicyRepositoryMatchLimit = embeddingsConf.PolicyRepositoryMatchLimit
+	}
+
+	return opts
 }
 
 func (s *repoEmbeddingJobsStore) GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error) {
-	q := sqlf.Sprintf(getEmbeddableReposFmtStr, opts.MinimumInterval.Seconds())
+	var limitClause *sqlf.Query
+	if opts.PolicyRepositoryMatchLimit != nil && *opts.PolicyRepositoryMatchLimit >= 0 {
+		limitClause = sqlf.Sprintf("LIMIT %d", *opts.PolicyRepositoryMatchLimit)
+	} else {
+		limitClause = sqlf.Sprintf("")
+	}
+
+	q := sqlf.Sprintf(
+		getEmbeddableReposFmtStr,
+		limitClause,
+		opts.MinimumInterval.Seconds(),
+	)
+
 	return scanEmbeddableRepos(s.Query(ctx, q))
 }
 
@@ -253,6 +285,129 @@ func (s *repoEmbeddingJobsStore) CreateRepoEmbeddingJob(ctx context.Context, rep
 	q := sqlf.Sprintf(createRepoEmbeddingJobFmtStr, repoID, revision)
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return id, err
+}
+
+var repoEmbeddingJobStatsColumns = []*sqlf.Query{
+	sqlf.Sprintf("repo_embedding_job_stats.job_id"),
+	sqlf.Sprintf("repo_embedding_job_stats.is_incremental"),
+	sqlf.Sprintf("repo_embedding_job_stats.code_files_total"),
+	sqlf.Sprintf("repo_embedding_job_stats.code_files_embedded"),
+	sqlf.Sprintf("repo_embedding_job_stats.code_chunks_embedded"),
+	sqlf.Sprintf("repo_embedding_job_stats.code_files_skipped"),
+	sqlf.Sprintf("repo_embedding_job_stats.code_bytes_embedded"),
+	sqlf.Sprintf("repo_embedding_job_stats.text_files_total"),
+	sqlf.Sprintf("repo_embedding_job_stats.text_files_embedded"),
+	sqlf.Sprintf("repo_embedding_job_stats.text_chunks_embedded"),
+	sqlf.Sprintf("repo_embedding_job_stats.text_files_skipped"),
+	sqlf.Sprintf("repo_embedding_job_stats.text_bytes_embedded"),
+}
+
+func scanRepoEmbeddingStats(s dbutil.Scanner) (EmbedRepoStats, error) {
+	var stats EmbedRepoStats
+	var jobID int
+	err := s.Scan(
+		&jobID,
+		&stats.IsIncremental,
+		&stats.CodeIndexStats.FilesScheduled,
+		&stats.CodeIndexStats.FilesEmbedded,
+		&stats.CodeIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&stats.CodeIndexStats.FilesSkipped),
+		&stats.CodeIndexStats.BytesEmbedded,
+		&stats.TextIndexStats.FilesScheduled,
+		&stats.TextIndexStats.FilesEmbedded,
+		&stats.TextIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
+		&stats.TextIndexStats.BytesEmbedded,
+	)
+	return stats, err
+}
+
+func (s *repoEmbeddingJobsStore) GetRepoEmbeddingJobStats(ctx context.Context, jobID int) (EmbedRepoStats, error) {
+	const getRepoEmbeddingJobStats = `SELECT %s FROM repo_embedding_job_stats WHERE job_id = %s`
+	q := sqlf.Sprintf(
+		getRepoEmbeddingJobStats,
+		sqlf.Join(repoEmbeddingJobStatsColumns, ","),
+		jobID,
+	)
+
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return EmbedRepoStats{}, err
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return EmbedRepoStats{}, nil // not an error condition, just no progress
+	}
+
+	return scanRepoEmbeddingStats(rows)
+}
+
+func (s *repoEmbeddingJobsStore) UpdateRepoEmbeddingJobStats(ctx context.Context, jobID int, stats *EmbedRepoStats) error {
+	const updateRepoEmbeddingJobStats = `
+	INSERT INTO repo_embedding_job_stats (
+		job_id,
+		is_incremental,
+		code_files_total,
+		code_files_embedded,
+		code_chunks_embedded,
+		code_files_skipped,
+		code_bytes_embedded,
+		text_files_total,
+		text_files_embedded,
+		text_chunks_embedded,
+		text_files_skipped,
+		text_bytes_embedded
+	) VALUES (
+		%s, %s, %s, %s,
+		%s, %s, %s, %s,
+		%s, %s, %s, %s
+	)
+	ON CONFLICT (job_id) DO UPDATE
+	SET
+		is_incremental = %s,
+		code_files_total = %s,
+		code_files_embedded = %s,
+		code_chunks_embedded = %s,
+		code_files_skipped = %s,
+		code_bytes_embedded = %s,
+		text_files_total = %s,
+		text_files_embedded = %s,
+		text_chunks_embedded = %s,
+		text_files_skipped = %s,
+		text_bytes_embedded = %s
+	`
+
+	q := sqlf.Sprintf(
+		updateRepoEmbeddingJobStats,
+
+		jobID,
+		stats.IsIncremental,
+		stats.CodeIndexStats.FilesScheduled,
+		stats.CodeIndexStats.FilesEmbedded,
+		stats.CodeIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&stats.CodeIndexStats.FilesSkipped),
+		stats.CodeIndexStats.BytesEmbedded,
+		stats.TextIndexStats.FilesScheduled,
+		stats.TextIndexStats.FilesEmbedded,
+		stats.TextIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
+		stats.TextIndexStats.BytesEmbedded,
+
+		stats.IsIncremental,
+		stats.CodeIndexStats.FilesScheduled,
+		stats.CodeIndexStats.FilesEmbedded,
+		stats.CodeIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&stats.CodeIndexStats.FilesSkipped),
+		stats.CodeIndexStats.BytesEmbedded,
+		stats.TextIndexStats.FilesScheduled,
+		stats.TextIndexStats.FilesEmbedded,
+		stats.TextIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
+		stats.TextIndexStats.BytesEmbedded,
+	)
+
+	return s.Exec(ctx, q)
 }
 
 const getLastFinishedRepoEmbeddingJob = `

@@ -25,8 +25,6 @@ import { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
 
 import styles from './RepositoryOwnPageContents.module.scss'
 
-const BREADCRUMB = { key: 'own', element: 'Ownership' }
-
 export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPageProps> = ({
     useBreadcrumb,
     repo,
@@ -35,7 +33,7 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
     const queryParameters = new URLSearchParams(location.search)
     const path = queryParameters.get('path') ?? ''
 
-    useBreadcrumb(BREADCRUMB)
+    useBreadcrumb({ key: 'own', element: 'Ownership' })
 
     const [ownEnabled, status] = useFeatureFlag('search-ownership')
     const [openAddOwnerModal, setOpenAddOwnerModal] = useState<boolean>(false)
