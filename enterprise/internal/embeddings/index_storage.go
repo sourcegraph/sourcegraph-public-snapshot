@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// IndexFormatVersion is a number representing the on-disk index format. Whenever the index format is changed in way
-// that affects how it's decoded, we add a new format version and update CurrentFormatVersion to the latest.
+// IndexFormatVersion is a number representing the on-disk index format. Whenever the index format is changed in a
+// way that affects how it's decoded, we add a new format version and update CurrentFormatVersion to the latest.
 type IndexFormatVersion int
 
 const CurrentFormatVersion = EmbeddingModelVersion
