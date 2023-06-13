@@ -229,7 +229,11 @@ func TestEmbedRepo(t *testing.T) {
 		}
 		_, _, _, err := EmbedRepo(ctx, client, contextService, rl, mockRepoPathRanks, opts, logger, countingReporter)
 		require.NoError(t, err)
-		require.Equal(t, 3, statReports, "expected one update for each embedded file")
+		require.Equal(t, 2, statReports, `
+			Expected one update for flush. This is subject to change if the
+			test changes, so a failure should be considered a notification of a
+			change rather than a signal that something is wrong.
+		`)
 	})
 
 	t.Run("embeddings limited", func(t *testing.T) {
