@@ -1,4 +1,4 @@
-# Bazel
+# Bazel at Sourcegraph
 
 Sourcegraph uses [Bazel](https://bazel.build) as its build system. Reach out on [#ask-dev-experience](https://sourcegraph.slack.com/archives/C04MYFW01NV) for questions and support.
 

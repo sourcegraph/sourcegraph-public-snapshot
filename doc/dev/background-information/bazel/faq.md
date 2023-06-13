@@ -143,7 +143,7 @@ ERROR: An error occurred during the fetch of repository 'wolfi_redis_base_single
                 mf, mf_len = downloader.download_manifest(rctx.attr.identifier, "manifest.json")
 ```
 
-This query requires to analyse external dependencies for the [base images](bazel_containers.md), which are not yet publicly available.  
+This query requires to analyse external dependencies for the [base images](containers.md), which are not yet publicly available.  
 
 Solution: `gcloud auth configure-docker us.gcr.io` to get access to the registry. 
 

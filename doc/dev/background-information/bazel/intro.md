@@ -97,4 +97,4 @@ Bazel ships with a tool named `Gazelle` whose purpose is to take a look at your 
 
 Gazelle and Go: It works almost transparently with Go, it will find all your Go code and infer your dependencies from inspecting your imports. Similarly, it will inspect the `go.mod` to lock down the third parties dependencies required. Because of how well Gazelle-go works, it means that most of the time, you can still rely on your normal Go commands to work. But it's recommended to use Bazel because that's what will be used in CI to build the app and ultimately have the final word in saying if yes or no a PR can be merged. See the [cheat sheet section](#bazel-cheat-sheet) for the commands.
 
-Gazelle and the frontend: see [Bazel for Web bundle](./bazel_web.md).
+Gazelle and the frontend: see [Bazel for Web bundle](./web.md).
