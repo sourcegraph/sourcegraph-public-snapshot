@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -46,7 +47,7 @@ func getAccessToken(config *schema.SiteConfiguration) string {
 	}
 	// App generates a token from the api token the user used to connect app to dotcom.
 	if deploy.IsApp() && config.App != nil {
-		return licensing.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
+		return dotcomuser.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
 	}
 	// Otherwise, use the current license key to compute an access token.
 	return licensing.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)

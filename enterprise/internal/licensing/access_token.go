@@ -3,7 +3,6 @@ package licensing
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 )
@@ -21,15 +20,4 @@ func GenerateLicenseKeyBasedAccessToken(licenseKey string) string {
 func GenerateHashedLicenseKeyAccessToken(licenseKey string) []byte {
 	keyHash := sha256.Sum256([]byte(licenseKey))
 	return hashutil.ToSHA256Bytes(keyHash[:])
-}
-
-// DotcomUserGatewayAccessTokenPrefix is the prefix used for identifying tokens
-// generated for a dotcom api token .
-const DotcomUserGatewayAccessTokenPrefix = "sgd_" // "(S)ource(g)raph (d)otcom user key"
-
-// GenerateLicenseKeyBasedAccessToken creates a prefixed, encoded token based on a
-// Sourcegraph license key.
-func GenerateDotcomUserGatewayAccessToken(apiToken string) string {
-	tokenBytes, _ := hex.DecodeString(strings.TrimPrefix(apiToken, "sgp_"))
-	return "sgd_" + hex.EncodeToString(hashutil.ToSHA256Bytes(hashutil.ToSHA256Bytes(tokenBytes)))
 }

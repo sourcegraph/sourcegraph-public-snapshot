@@ -5,6 +5,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -60,7 +61,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) *schema.Completio
 				switch deploy.Type() {
 				case deploy.App:
 					if siteConfig.App != nil && siteConfig.App.DotcomAuthToken != "" {
-						completionsConfig.AccessToken = licensing.GenerateDotcomUserGatewayAccessToken(siteConfig.App.DotcomAuthToken)
+						completionsConfig.AccessToken = dotcomuser.GenerateDotcomUserGatewayAccessToken(siteConfig.App.DotcomAuthToken)
 					}
 				default:
 					if siteConfig.LicenseKey != "" {
