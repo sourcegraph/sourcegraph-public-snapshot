@@ -61,7 +61,6 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		return err
 	}
 
-
 	embeddingsClient, err := embed.NewEmbeddingsClient(&conf.Get().SiteConfiguration)
 	if err != nil {
 		return err
