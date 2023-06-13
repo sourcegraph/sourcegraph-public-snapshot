@@ -22674,23 +22674,10 @@
       "Columns": [
         {
           "Name": "code_bytes_embedded",
-          "Index": 9,
+          "Index": 7,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "code_bytes_skipped",
-          "Index": 8,
-          "TypeName": "jsonb",
-          "IsNullable": false,
-          "Default": "'{}'::jsonb",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -22700,19 +22687,6 @@
         },
         {
           "Name": "code_chunks_embedded",
-          "Index": 6,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "0",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "code_files_embedded",
           "Index": 5,
           "TypeName": "integer",
           "IsNullable": false,
@@ -22725,20 +22699,7 @@
           "Comment": ""
         },
         {
-          "Name": "code_files_skipped",
-          "Index": 7,
-          "TypeName": "jsonb",
-          "IsNullable": false,
-          "Default": "'{}'::jsonb",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "code_files_total",
+          "Name": "code_files_embedded",
           "Index": 4,
           "TypeName": "integer",
           "IsNullable": false,
@@ -22751,11 +22712,24 @@
           "Comment": ""
         },
         {
-          "Name": "has_ranks",
-          "Index": 2,
-          "TypeName": "boolean",
+          "Name": "code_files_skipped",
+          "Index": 6,
+          "TypeName": "jsonb",
           "IsNullable": false,
-          "Default": "false",
+          "Default": "'{}'::jsonb",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "code_files_total",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -22765,7 +22739,7 @@
         },
         {
           "Name": "is_incremental",
-          "Index": 3,
+          "Index": 2,
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
@@ -22791,32 +22765,6 @@
         },
         {
           "Name": "text_bytes_embedded",
-          "Index": 15,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "0",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "text_bytes_skipped",
-          "Index": 14,
-          "TypeName": "jsonb",
-          "IsNullable": false,
-          "Default": "'{}'::jsonb",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "text_chunks_embedded",
           "Index": 12,
           "TypeName": "integer",
           "IsNullable": false,
@@ -22829,8 +22777,21 @@
           "Comment": ""
         },
         {
+          "Name": "text_chunks_embedded",
+          "Index": 10,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "text_files_embedded",
-          "Index": 11,
+          "Index": 9,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
@@ -22843,7 +22804,7 @@
         },
         {
           "Name": "text_files_skipped",
-          "Index": 13,
+          "Index": 11,
           "TypeName": "jsonb",
           "IsNullable": false,
           "Default": "'{}'::jsonb",
@@ -22856,7 +22817,7 @@
         },
         {
           "Name": "text_files_total",
-          "Index": 10,
+          "Index": 8,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",

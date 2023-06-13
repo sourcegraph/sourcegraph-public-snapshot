@@ -4172,19 +4172,16 @@ ALTER SEQUENCE repo_commits_changelists_id_seq OWNED BY repo_commits_changelists
 
 CREATE TABLE repo_embedding_job_stats (
     job_id integer NOT NULL,
-    has_ranks boolean DEFAULT false NOT NULL,
     is_incremental boolean DEFAULT false NOT NULL,
     code_files_total integer DEFAULT 0 NOT NULL,
     code_files_embedded integer DEFAULT 0 NOT NULL,
     code_chunks_embedded integer DEFAULT 0 NOT NULL,
     code_files_skipped jsonb DEFAULT '{}'::jsonb NOT NULL,
-    code_bytes_skipped jsonb DEFAULT '{}'::jsonb NOT NULL,
     code_bytes_embedded integer DEFAULT 0 NOT NULL,
     text_files_total integer DEFAULT 0 NOT NULL,
     text_files_embedded integer DEFAULT 0 NOT NULL,
     text_chunks_embedded integer DEFAULT 0 NOT NULL,
     text_files_skipped jsonb DEFAULT '{}'::jsonb NOT NULL,
-    text_bytes_skipped jsonb DEFAULT '{}'::jsonb NOT NULL,
     text_bytes_embedded integer DEFAULT 0 NOT NULL
 );
 

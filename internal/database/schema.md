@@ -3450,19 +3450,16 @@ Foreign-key constraints:
         Column        |  Type   | Collation | Nullable |   Default   
 ----------------------+---------+-----------+----------+-------------
  job_id               | integer |           | not null | 
- has_ranks            | boolean |           | not null | false
  is_incremental       | boolean |           | not null | false
  code_files_total     | integer |           | not null | 0
  code_files_embedded  | integer |           | not null | 0
  code_chunks_embedded | integer |           | not null | 0
  code_files_skipped   | jsonb   |           | not null | '{}'::jsonb
- code_bytes_skipped   | jsonb   |           | not null | '{}'::jsonb
  code_bytes_embedded  | integer |           | not null | 0
  text_files_total     | integer |           | not null | 0
  text_files_embedded  | integer |           | not null | 0
  text_chunks_embedded | integer |           | not null | 0
  text_files_skipped   | jsonb   |           | not null | '{}'::jsonb
- text_bytes_skipped   | jsonb   |           | not null | '{}'::jsonb
  text_bytes_embedded  | integer |           | not null | 0
 Indexes:
     "repo_embedding_job_stats_pkey" PRIMARY KEY, btree (job_id)
