@@ -5,7 +5,6 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { RepoRevisionContainerRoute } from './RepoRevisionContainer'
 
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
-// const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
 const RepositoryFileTreePage = lazyComponent(() => import('./RepositoryFileTreePage'), 'RepositoryFileTreePage')
 
 // Work around the issue that react router can not match nested splats when the URL contains spaces

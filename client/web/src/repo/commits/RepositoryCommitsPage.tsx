@@ -132,12 +132,9 @@ export interface RepositoryCommitsPageProps extends RevisionSpec, BreadcrumbSett
 export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
     const { useBreadcrumb, repo } = props
     const location = useLocation()
-    console.log(location)
     const { filePath = '' } = parseBrowserRepoURL(location.pathname)
 
     let sourceType = RepositoryType.GIT_REPOSITORY
-
-    console.log('props.revision:', props.revision)
 
     const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
         RepositoryGitCommitsResult,

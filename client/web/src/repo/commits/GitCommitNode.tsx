@@ -89,9 +89,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     const isPerforceDepot = isPerforceDepotSource(sourceType)
     const abbreviatedRefID = node.perforceChangelist?.cid ?? node.abbreviatedOID
     const refID = node.perforceChangelist?.cid ?? node.oid
-    console.log(sourceType)
     const canonicalURL = getCanonicalURL(sourceType, node)
-    // console.log('canonicalURL: ', canonicalURL)
 
     const toggleShowCommitMessageBody = useCallback((): void => {
         eventLogger.log('CommitBodyToggled')

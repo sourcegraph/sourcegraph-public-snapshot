@@ -45,7 +45,7 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
     const params = useParams<{ revspec: string }>()
 
     if (!params.revspec) {
-        throw new Error('Missing `revspec` and `changelistID` param! At least one should be set.')
+        throw new Error('Missing `revspec` param!')
     }
 
     const { data, error, loading } = useQuery<RepositoryCommitResult, RepositoryCommitVariables>(COMMIT_QUERY, {
@@ -122,7 +122,7 @@ interface RepositoryRevisionNodesProps extends TelemetryProps, PlatformContextPr
 const RepositoryRevisionNodes: React.FunctionComponent<RepositoryRevisionNodesProps> = props => {
     const [diffMode, setDiffMode] = useTemporarySetting('repo.commitPage.diffMode', 'unified')
 
-    const { error, loading, commit, repo } = { ...props }
+    const { error, loading, commit, repo } = props
 
     useEffect(() => {
         props.telemetryService.logViewEvent('RepositoryCommit')
