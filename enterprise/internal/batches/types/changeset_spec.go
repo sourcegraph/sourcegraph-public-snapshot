@@ -120,10 +120,10 @@ type ChangesetSpec struct {
 }
 
 type CommitVerification struct {
-	Verified  bool
-	Reason    string
-	Signature string
-	Payload   string
+	Verified  bool   `json:"verified,omitempty"`
+	Reason    string `json:"reason,omitempty"`
+	Signature string `json:"signature,omitempty"`
+	Payload   string `json:"payload,omitempty"`
 }
 
 // Clone returns a clone of a ChangesetSpec.

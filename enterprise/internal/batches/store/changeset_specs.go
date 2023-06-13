@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/keegancsmith/sqlf"
@@ -72,6 +73,7 @@ var changesetSpecColumns = SQLColumns{
 	"changeset_specs.commit_message",
 	"changeset_specs.commit_author_name",
 	"changeset_specs.commit_author_email",
+	"changeset_specs.commit_verification",
 	"changeset_specs.type",
 }
 
@@ -186,6 +188,10 @@ func (s *Store) UpdateChangesetSpecCommitVerification(ctx context.Context, batch
 
 	if err != nil {
 		return err
+	}
+
+	if commit.Verification.Verified == false {
+		cv, err = jsonbColumn(nil)
 	}
 
 	q := sqlf.Sprintf(`
@@ -565,6 +571,8 @@ func deleteChangesetSpecsQuery(opts *DeleteChangesetSpecsOpts) *sqlf.Query {
 func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 	var published []byte
 	var typ string
+	var commitVerification json.RawMessage
+
 	err := s.Scan(
 		&c.ID,
 		&c.RandID,
@@ -587,6 +595,7 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 		&dbutil.NullString{S: &c.CommitMessage},
 		&dbutil.NullString{S: &c.CommitAuthorName},
 		&dbutil.NullString{S: &c.CommitAuthorEmail},
+		&commitVerification,
 		&typ,
 	)
 	if err != nil {
@@ -595,11 +604,21 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 
 	c.Type = btypes.ChangesetSpecType(typ)
 
+	// var cv any
+	fmt.Print("COMMIT V!!", commitVerification)
+	if err = json.Unmarshal(commitVerification, c.CommitVerification); err != nil {
+		return errors.Wrapf(err, "scanChangesetSpecs: failed to unmarshal commitVerification: %s", commitVerification)
+	}
+	// if cv.Verified == true {
+	// 	c.CommitVerification = cv
+	// }
+
 	if len(published) != 0 {
 		if err := json.Unmarshal(published, &c.Published); err != nil {
 			return err
 		}
 	}
+	fmt.Print("COMMIT V>>>", c.CommitVerification)
 
 	return nil
 }
