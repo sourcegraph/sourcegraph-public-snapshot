@@ -102,7 +102,7 @@ func NewHandler(
 	}
 	m.StrictSlash(true)
 
-	handler := jsonMiddleware(&errorHandler{
+	handler := JsonMiddleware(&ErrorHandler{
 		Logger: logger,
 		// Only display error message to admins when in debug mode, since it
 		// may contain sensitive info (like API keys in net/http error
@@ -211,7 +211,7 @@ func RegisterInternalServices(
 	logger := sglog.Scoped("InternalHandler", "frontend internal HTTP API handler")
 	m.StrictSlash(true)
 
-	handler := jsonMiddleware(&errorHandler{
+	handler := JsonMiddleware(&ErrorHandler{
 		Logger: logger,
 		// Internal endpoints can expose sensitive errors
 		WriteErrBody: true,
@@ -282,14 +282,14 @@ func init() {
 	})
 }
 
-type errorHandler struct {
+type ErrorHandler struct {
 	// Logger is required
 	Logger sglog.Logger
 
 	WriteErrBody bool
 }
 
-func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int, err error) {
+func (h *ErrorHandler) Handle(w http.ResponseWriter, r *http.Request, status int, err error) {
 	logger := trace.Logger(r.Context(), h.Logger)
 
 	trace.SetRequestErrorCause(r.Context(), err)
@@ -326,7 +326,7 @@ func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 	}
 }
 
-func jsonMiddleware(errorHandler *errorHandler) func(func(http.ResponseWriter, *http.Request) error) http.Handler {
+func JsonMiddleware(errorHandler *ErrorHandler) func(func(http.ResponseWriter, *http.Request) error) http.Handler {
 	return func(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 		return handlerutil.HandlerWithErrorReturn{
 			Handler: func(w http.ResponseWriter, r *http.Request) error {
