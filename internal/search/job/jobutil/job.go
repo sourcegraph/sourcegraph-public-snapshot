@@ -198,11 +198,9 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 
 	{ // Apply file:has.contributor() post-search filter
 		if includeContributors, excludeContributors, ok := isContributorSearch(b); ok {
-			var err error
-			basicJob, err = NewFileHasContributorsJob(basicJob, b.IsCaseSensitive(), includeContributors, excludeContributors)
-			if err != nil {
-				return nil, err
-			}
+			includeRe := contributorsAsRegexp(includeContributors, b.IsCaseSensitive())
+			excludeRe := contributorsAsRegexp(excludeContributors, b.IsCaseSensitive())
+			basicJob = NewFileHasContributorsJob(basicJob, includeRe, excludeRe)
 		}
 	}
 
@@ -580,6 +578,17 @@ func isContributorSearch(b query.Basic) (include, exclude []string, ok bool) {
 		return includeContributors, excludeContributors, true
 	}
 	return nil, nil, false
+}
+
+func contributorsAsRegexp(contributors []string, isCaseSensitive bool) (res []*regexp.Regexp) {
+	for _, pattern := range contributors {
+		if isCaseSensitive {
+			res = append(res, regexp.MustCompile(pattern))
+		} else {
+			res = append(res, regexp.MustCompile(`(?i)`+pattern))
+		}
+	}
+	return res
 }
 
 func timeoutDuration(b query.Basic) time.Duration {

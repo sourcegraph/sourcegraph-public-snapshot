@@ -2,7 +2,7 @@ package jobutil
 
 import (
 	"context"
-	"regexp"
+	"github.com/grafana/regexp"
 	"sync"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -16,29 +16,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewFileHasContributorsJob(child job.Job, caseSensitive bool, include, exclude []string) (job.Job, error) {
-	includeContributors, excludeContributors, err := compileRegexps(include, exclude, caseSensitive)
-	if err != nil {
-		return nil, err
-	}
-
+// NewFileHasContributorsJob creates a filter job to post-filter results for the file:has.contributor() predicate.
+//
+// has.contributor() predicates are grouped together by inclusivity vs. exclusivity before being passed to constructor.
+// All predicates are AND'ed together i.e. result will be filtered out and not returned in result page if any predicate
+// does not pass.
+func NewFileHasContributorsJob(child job.Job, include, exclude []*regexp.Regexp) job.Job {
 	return &fileHasContributorsJob{
-		child:               child,
-		includeContributors: includeContributors,
-		excludeContributors: excludeContributors,
-		includeTerms:        include,
-		excludeTerms:        exclude,
-	}, nil
+		child:   child,
+		include: include,
+		exclude: exclude,
+	}
 }
 
 type fileHasContributorsJob struct {
 	child job.Job
 
-	includeContributors []*regexp.Regexp
-	excludeContributors []*regexp.Regexp
-
-	includeTerms []string
-	excludeTerms []string
+	include []*regexp.Regexp
+	exclude []*regexp.Regexp
 }
 
 func (j *fileHasContributorsJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -114,41 +109,25 @@ func (j *fileHasContributorsJob) Attributes(v job.Verbosity) (res []attribute.Ke
 	case job.VerbosityMax:
 		fallthrough
 	case job.VerbosityBasic:
+		include, exclude := j.regexpToStr()
 		res = append(res,
-			attribute.StringSlice("includeContributors", j.includeTerms),
-			attribute.StringSlice("excludeContributors", j.excludeTerms),
+			attribute.StringSlice("includeContributors", include),
+			attribute.StringSlice("excludeContributors", exclude),
 		)
 	}
 	return res
 }
 
-func compileRegexps(include, exclude []string, caseSensitive bool) (includeRegexp, excludeRegexp []*regexp.Regexp, err error) {
-	includeRegexp, err = regexps(include, caseSensitive)
-	if err != nil {
-		return nil, nil, err
+func (j *fileHasContributorsJob) regexpToStr() (includeStr, excludeStr []string) {
+	for _, re := range j.include {
+		includeStr = append(includeStr, re.String())
 	}
 
-	excludeRegexp, err = regexps(exclude, caseSensitive)
-	if err != nil {
-		return nil, nil, err
+	for _, re := range j.exclude {
+		excludeStr = append(excludeStr, re.String())
 	}
 
-	return includeRegexp, excludeRegexp, nil
-}
-
-func regexps(filters []string, caseSensitive bool) ([]*regexp.Regexp, error) {
-	var compiledFilters []*regexp.Regexp
-	for _, contributorExpression := range filters {
-		if !caseSensitive {
-			contributorExpression = "(?i)" + contributorExpression
-		}
-		re, err := regexp.Compile(contributorExpression)
-		if err != nil {
-			return nil, err
-		}
-		compiledFilters = append(compiledFilters, re)
-	}
-	return compiledFilters, nil
+	return includeStr, excludeStr
 }
 
 func getFileContributors(ctx context.Context, client gitserver.Client, fm *result.FileMatch) ([]*gitdomain.ContributorCount, error) {
@@ -168,9 +147,9 @@ func getFileContributors(ctx context.Context, client gitserver.Client, fm *resul
 // Filtered returns true if the match passes filter validation and should be returned with results page.
 // Filters are AND'ed together. Filters are negation filters if excludeContributors is true.
 func (j *fileHasContributorsJob) Filtered(contributors []*gitdomain.ContributorCount, excludeContributors bool) bool {
-	filters := j.includeContributors
+	filters := j.include
 	if excludeContributors {
-		filters = j.excludeContributors
+		filters = j.exclude
 	}
 	for _, filter := range filters {
 		if match(contributors, filter) == excludeContributors {
