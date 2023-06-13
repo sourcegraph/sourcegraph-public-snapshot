@@ -46,6 +46,7 @@ var _ Command = &RealCommand{}
 
 type Spec struct {
 	Key       string
+	Name      string
 	Command   []string
 	Dir       string
 	Env       []string
@@ -59,6 +60,7 @@ type Spec struct {
 
 type Step struct {
 	Key     string
+	Name    string
 	Command []string
 	Dir     string
 	Env     []string
