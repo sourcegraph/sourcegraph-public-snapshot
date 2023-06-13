@@ -25,7 +25,7 @@ const licenseAnomalyCheckKey = "license_anomaly_check"
 var licenseAnomalyCheckers uint32
 
 // StartCheckForAnomalousLicenseUsage checks for anomalous license usage.
-func StartCheckForAnomalousLicenseUsage(logger log.Logger, db database.DB, maybeCheckAnomaliesFunc func(log.Logger, database.DB, slackClient, glock.Clock, redispool.KeyValue)) {
+func StartCheckForAnomalousLicenseUsage(logger log.Logger, db database.DB) {
 	if atomic.AddUint32(&licenseAnomalyCheckers, 1) != 1 {
 		panic("StartCheckForAnomalousLicenseUsage called more than once")
 	}
@@ -40,17 +40,12 @@ func StartCheckForAnomalousLicenseUsage(logger log.Logger, db database.DB, maybe
 	t := time.NewTicker(1 * time.Hour)
 	logger = logger.Scoped("StartCheckForAnomalousLicenseUsage", "starts the checks for anomalous license usage")
 
-	maybeCheck := maybeCheckAnomalies
-	if maybeCheckAnomaliesFunc != nil {
-		maybeCheck = maybeCheckAnomaliesFunc
-	}
-
 	for range t.C {
-		maybeCheck(logger, db, client, glock.NewRealClock(), redispool.Store)
+		maybeCheckAnomalies(logger, db, client, glock.NewRealClock(), redispool.Store)
 	}
 }
 
-// checkLicensesIfNeeded checks whether a day has passed since the last license check, and if so, initiates one.
+// maybeCheckAnomalies checks whether a day has passed since the last license check, and if so, initiates a new check
 func maybeCheckAnomalies(logger log.Logger, db database.DB, client slackClient, clock glock.Clock, rs redispool.KeyValue) {
 	now := clock.Now().UTC()
 	nowStr := now.Format(time.RFC3339)
@@ -79,6 +74,7 @@ func boolPtr(b bool) *bool {
 	return &b
 }
 
+// checkAnomalies loops through all current subscriptions and triggers a check for each subscription
 func checkAnomalies(logger log.Logger, db database.DB, clock glock.Clock, client slackClient) {
 	if conf.Get().Dotcom == nil || conf.Get().Dotcom.SlackLicenseAnomallyWebhook == "" {
 		return
@@ -99,6 +95,7 @@ func checkAnomalies(logger log.Logger, db database.DB, clock glock.Clock, client
 	}
 }
 
+// checkSubscriptionAnomalies loops over all valid licenses with site_id attached and triggers a check for each license
 func checkSubscriptionAnomalies(ctx context.Context, logger log.Logger, db database.DB, sub *dbSubscription, clock glock.Clock, client slackClient) {
 	licenses, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{
 		ProductSubscriptionID: sub.ID,
@@ -143,6 +140,11 @@ The license key ID: ` + "`%s`" + ` for <%s/site-admin/dotcom/product/subscriptio
 To fix it, <https://handbook.sourcegraph.com/TODO|create a new siteID and license key for all customer instances>.
 `
 
+// checkP50CallTimeForLicense checks the p50 time difference between license-check calls for a specific license.
+// It takes 48 hour interval into account, see the `percentileTimeDiffQuery` above.
+// If the p50 interval between calls is lower than ~10 hours, it is suspicious and might mean that there
+// is more than one instance with the same site_id and license key calling the license-check endpoint.
+// In such cases, post a slack message to the webhook defined in site config `slackLicenseAnomallyWebhook`.
 func checkP50CallTimeForLicense(ctx context.Context, logger log.Logger, db database.DB, license *dbLicense, clock glock.Clock, client slackClient) {
 	// ignore nil or version 1 of licenses
 	if license == nil || license.LicenseVersion == nil || *license.LicenseVersion == int32(1) {

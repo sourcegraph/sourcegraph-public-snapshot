@@ -167,7 +167,7 @@ func Init(
 			productsubscription.StartCheckForUpcomingLicenseExpirations(logger, db)
 		})
 		goroutine.Go(func() {
-			productsubscription.StartCheckForAnomalousLicenseUsage(logger, db, nil)
+			productsubscription.StartCheckForAnomalousLicenseUsage(logger, db)
 		})
 	} else {
 		gs, err := db.GlobalState().Get(ctx)
