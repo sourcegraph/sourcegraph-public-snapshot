@@ -86,10 +86,7 @@ fn symbols(q: Json<SymbolQuery>) -> JsonValue {
         }
     };
 
-    let document = Document {
-        occurrences: scope.into_occurrences(hint, vec![]),
-        ..Default::default()
-    };
+    let document = scope.into_document(hint, vec![]);
 
     let encoded = match document.write_to_bytes() {
         Ok(vals) => vals,

@@ -2,7 +2,9 @@ use std::{collections::VecDeque, fmt::Write};
 
 use anyhow::Result;
 use protobuf::Enum;
-use scip::types::{Document, Occurrence, SymbolRole, SyntaxKind};
+use scip::types::{
+    symbol_information, Document, Occurrence, SymbolInformation, SymbolRole, SyntaxKind,
+};
 
 use crate::types::PackedRange;
 
@@ -110,7 +112,7 @@ pub fn dump_document_with_config(
 
                     let syntax =
                         format_syntax(&occ.syntax_kind.enum_value_or_default(), &opts.emit_syntax);
-                    let symbol = format_symbol(&occ, &opts.emit_symbol);
+                    let symbol = format_symbol(&occ, &opts.emit_symbol, &doc.symbols);
 
                     if syntax.is_some() || symbol.is_some() {
                         let syntax = syntax.unwrap_or_default();
@@ -142,7 +144,11 @@ fn format_syntax(kind: &SyntaxKind, emit_syntax: &EmitSyntax) -> Option<String> 
     }
 }
 
-fn format_symbol(occ: &Occurrence, emit_symbol: &EmitSymbol) -> Option<String> {
+fn format_symbol(
+    occ: &Occurrence,
+    emit_symbol: &EmitSymbol,
+    symbols: &[SymbolInformation],
+) -> Option<String> {
     if occ.symbol.is_empty() {
         return None;
     }
@@ -175,7 +181,15 @@ fn format_symbol(occ: &Occurrence, emit_symbol: &EmitSymbol) -> Option<String> {
                 "reference"
             };
 
-            Some(format!(" {} {}", kind, symbol))
+            let mut kind_info = String::new();
+            if let Some(info) = symbols.iter().find(|sym| sym.symbol == occ.symbol) {
+                let symbol_kind = info.kind.enum_value().expect("to be a valid kind");
+                if symbol_kind != symbol_information::Kind::UnspecifiedKind {
+                    kind_info = format!("({:?})", symbol_kind);
+                }
+            }
+
+            Some(format!(" {kind}{kind_info} {symbol}"))
         }
     }
 }

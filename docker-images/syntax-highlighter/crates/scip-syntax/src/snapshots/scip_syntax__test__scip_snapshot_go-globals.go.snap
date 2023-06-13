@@ -3,7 +3,7 @@ source: crates/scip-syntax/src/lib.rs
 expression: dumped
 ---
   package multierror
-//        ^^^^^^^^^^ definition scip-ctags multierror/
+//        ^^^^^^^^^^ definition(Package) scip-ctags multierror/
   
   import "sync"
   
@@ -11,12 +11,31 @@ expression: dumped
   // coalesced.
   type Group struct {
 //     ^^^^^ definition scip-ctags multierror/Group#
-   mutex sync.Mutex
+   mutex  sync.Mutex
 // ^^^^^ definition scip-ctags multierror/Group#mutex.
-   err   *Error
+   err    *Error
 // ^^^ definition scip-ctags multierror/Group#err.
-   wg    sync.WaitGroup
+   wg     sync.WaitGroup
 // ^^ definition scip-ctags multierror/Group#wg.
+   nested struct {
+// ^^^^^^ definition scip-ctags multierror/Group#nested#
+    inner bool
+//  ^^^^^ definition scip-ctags multierror/Group#nested#inner.
+   }
+  
+   innerface interface {
+// ^^^^^^^^^ definition scip-ctags multierror/Group#innerface#
+    Another() bool
+//  ^^^^^^^ definition scip-ctags multierror/Group#innerface#Another().
+   }
+  }
+  
+  type SomeInterface interface {
+//     ^^^^^^^^^^^^^ definition scip-ctags multierror/SomeInterface#
+   Something() bool
+// ^^^^^^^^^ definition scip-ctags multierror/SomeInterface#Something().
+   Incredible() int
+// ^^^^^^^^^^ definition scip-ctags multierror/SomeInterface#Incredible().
   }
   
   // Go calls the given function in a new goroutine.
@@ -47,4 +66,14 @@ expression: dumped
    defer g.mutex.Unlock()
    return g.err
   }
+  
+  var (
+   diffPath = flag.String("f", stdin, "filename of diff (default: stdin)")
+// ^^^^^^^^ definition scip-ctags multierror/diffPath.
+   fileIdx  = flag.Int("i", -1, "if >= 0, only print and report errors from the i'th file (0-indexed)")
+// ^^^^^^^ definition scip-ctags multierror/fileIdx.
+  )
+  
+  func RegularFunc() {}
+//     ^^^^^^^^^^^ definition(Function) scip-ctags multierror/RegularFunc().
 

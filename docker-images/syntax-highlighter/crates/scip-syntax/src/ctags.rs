@@ -7,7 +7,7 @@ use std::{
 
 use anyhow::{Context, Result};
 use itertools::intersperse;
-use scip::types::{descriptor::Suffix, Descriptor};
+use scip::types::{descriptor::Suffix, symbol_information, Descriptor};
 use scip_treesitter_languages::parsers::BundledParser;
 use serde::{Deserialize, Serialize};
 
@@ -83,7 +83,7 @@ impl<'a> Reply<'a> {
             path,
             language,
             line: scope.scope_range.start_line as usize + 1,
-            kind: descriptors_to_kind(&scope.descriptors),
+            kind: descriptors_to_kind(&scope.descriptors, &scope.kind),
             scope: tag_scope,
         };
 
@@ -91,7 +91,15 @@ impl<'a> Reply<'a> {
     }
 }
 
-fn descriptors_to_kind(descriptors: &[Descriptor]) -> &'static str {
+fn descriptors_to_kind(
+    descriptors: &[Descriptor],
+    symbol_kind: &symbol_information::Kind,
+) -> &'static str {
+    // Override using kind when we have more information
+    if let Some(kind) = crate::ts_scip::symbol_kind_to_ctags_kind(symbol_kind) {
+        return kind;
+    }
+
     match descriptors
         .last()
         .unwrap_or_default()
@@ -165,7 +173,7 @@ fn emit_tags_for_scope<W: std::io::Write>(
             path,
             language,
             line: global.range.start_line as usize + 1,
-            kind: descriptors_to_kind(&global.descriptors),
+            kind: descriptors_to_kind(&global.descriptors, &global.kind),
             scope: scope_name
                 .is_empty()
                 .not()

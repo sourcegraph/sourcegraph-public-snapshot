@@ -25,6 +25,7 @@ var defaultParserConfig = ParserConfiguration{
 	Engine: map[string]ParserType{
 		// Add the languages we want to turn on by default (you'll need to
 		// update the ctags_config module for supported languages as well)
+		"go":  ctags_config.ScipCtags,
 		"zig": ctags_config.ScipCtags,
 
 		// TODO: Turn these on in the next PR, so there is no runtime differences for this PR.

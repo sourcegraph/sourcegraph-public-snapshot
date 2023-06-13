@@ -93,9 +93,18 @@ mod test {
 
     generate_tags_and_snapshot!(Scip, test_scip_go_internal, "internal_go.go");
     generate_tags_and_snapshot!(Scip, test_scip_go_example, "example.go");
+    generate_tags_and_snapshot!(Scip, test_scip_go_diff, "go-diff.go");
 
     generate_tags_and_snapshot!(Scip, test_scip_rust_scopes, "scopes.rs");
 
     generate_tags_and_snapshot!(Scip, test_scip_javascript, "globals.js");
     generate_tags_and_snapshot!(Scip, test_scip_javascript_object, "javascript-object.js");
+
+    // Test to make sure that kinds are the override behavior
+    generate_tags_and_snapshot!(
+        All,
+        test_tags_go_constant,
+        test_scip_tags_go_constant,
+        "go-const.go"
+    );
 }
