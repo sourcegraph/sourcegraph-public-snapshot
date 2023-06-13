@@ -342,61 +342,6 @@ func (r *ownResolver) computeCodeowners(ctx context.Context, blob *graphqlbacken
 		fmt.Println("RRS", rrs[len(rrs)-1].reference.String())
 	}
 	return rrs, nil
-	// bag := own.EmptyBag()
-	// ruleToRefs := make(map[*codeownerspb.Rule][]own.Reference, 0)
-	// if rule != nil {
-	// 	owners := rule.GetOwner()
-	// 	externalRepo, err := repo.ExternalRepo(ctx)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	// For each owner from CODEOWNERS file, we create a reference and put it into the
-	// 	// bag.
-	// 	for _, owner := range owners {
-	// 		ref := own.Reference{
-	// 			RepoContext: &own.RepoContext{
-	// 				Name:         repoName,
-	// 				CodeHostKind: externalRepo.ServiceType,
-	// 			},
-	// 			Handle: owner.Handle,
-	// 			Email:  owner.Email,
-	// 		}
-	// 		bag.Add(ref)
-	// 		if _, ok := ruleToRefs[rule]; !ok {
-	// 			ruleToRefs[rule] = make([]own.Reference, 0)
-	// 		}
-	// 		ruleToRefs[rule] = append(ruleToRefs[rule], ref)
-	// 	}
-	// }
-	// bag.Resolve(ctx, r.db)
-	// for rule, refs := range ruleToRefs {
-	// 	for _, ref := range refs {
-	// 		resolvedOwner, found := bag.FindResolved(ref)
-	// 		if !found {
-	// 			if guess := ref.ResolutionGuess(); guess != nil {
-	// 				resolvedOwner = guess
-	// 			}
-	// 		}
-	// 		if resolvedOwner != nil {
-	// 			res := &codeownersFileEntryResolver{
-	// 				db:              r.db,
-	// 				gitserverClient: r.gitserver,
-	// 				source:          rs.GetSource(),
-	// 				repo:            blob.Repository(),
-	// 				matchLineNumber: rule.GetLineNumber(),
-	// 			}
-	// 			ownerships = append(ownerships, &ownershipResolver{
-	// 				db:            r.db,
-	// 				resolvedOwner: resolvedOwner,
-	// 				reasons: []*ownershipReasonResolver{
-	// 					{
-	// 						res,
-	// 					},
-	// 				},
-	// 			})
-	// 		}
-	// 	}
-	// }
 }
 
 type reasonsAndOwner struct {
@@ -791,34 +736,6 @@ func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, p
 		})
 	}
 	return rrs, nil
-
-	// for _, author := range recentAuthors {
-	// 	res := ownershipResolver{
-	// 		db: db,
-	// 		resolvedOwner: &codeowners.Person{
-	// 			Handle: author.AuthorName,
-	// 			Email:  author.AuthorEmail,
-	// 		},
-	// 		reasons: []*ownershipReasonResolver{
-	// 			{
-	// 				&recentContributorOwnershipSignal{},
-	// 			},
-	// 		},
-	// 	}
-	// 	user, err := db.Users().GetByVerifiedEmail(ctx, author.AuthorEmail)
-	// 	if err == nil {
-	// 		// if we don't get an error (meaning we can match) we will add it to the resolver, otherwise use the contributor data
-	// 		em := author.AuthorEmail
-	// 		res.resolvedOwner = &codeowners.Person{
-	// 			User:         user,
-	// 			Email:        em,
-	// 			PrimaryEmail: &em,
-	// 			Handle:       author.AuthorName,
-	// 		}
-	// 	}
-	// 	results = append(results, &res)
-	// }
-	// return ors, nil
 }
 
 type recentViewOwnershipSignal struct {
@@ -857,52 +774,6 @@ func computeRecentViewSignals(ctx context.Context, db edb.EnterpriseDB, path str
 		})
 	}
 	return rrs, nil
-
-	// fetchedUsers := make(map[int32]*types.User)
-	// userEmails := make(map[int32]string)
-
-	// for _, summary := range summaries {
-	// 	var user *types.User
-	// 	var email string
-	// 	userID := summary.UserID
-	// 	if fetchedUser, found := fetchedUsers[userID]; found {
-	// 		user = fetchedUser
-	// 		email = userEmails[userID]
-	// 	} else {
-	// 		userFromDB, err := db.Users().GetByID(ctx, userID)
-	// 		if err != nil {
-	// 			return nil, errors.Wrap(err, "getting user")
-	// 		}
-	// 		primaryEmail, _, err := db.UserEmails().GetPrimaryEmail(ctx, userID)
-	// 		if err != nil {
-	// 			if errcode.IsNotFound(err) {
-	// 				logger.Warn("Cannot find a primary email", log.Int32("userID", userID))
-	// 			} else {
-	// 				return nil, errors.Wrap(err, "getting user primary email")
-	// 			}
-	// 		}
-	// 		user = userFromDB
-	// 		email = primaryEmail
-	// 		fetchedUsers[userID] = userFromDB
-	// 		userEmails[userID] = primaryEmail
-	// 	}
-	// 	// TODO(sashaostrikov): what to do if email here is empty
-	// 	res := ownershipResolver{
-	// 		db: db,
-	// 		resolvedOwner: &codeowners.Person{
-	// 			User:         user,
-	// 			PrimaryEmail: &email,
-	// 			Handle:       user.Username,
-	// 		},
-	// 		reasons: []*ownershipReasonResolver{
-	// 			{
-	// 				&recentViewOwnershipSignal{},
-	// 			},
-	// 		},
-	// 	}
-	// 	results = append(results, &res)
-	// }
-	// return results, nil
 }
 
 type assignedOwner struct {
@@ -938,55 +809,6 @@ func (r *ownResolver) computeAssignedOwners(ctx context.Context, blob *graphqlba
 		})
 	}
 	return rrs, nil
-
-	// fetchedUsers := make(map[int32]*types.User)
-	// userEmails := make(map[int32]string)
-
-	// isDirectMatch := false
-	// for _, summary := range assignedOwnerSummaries {
-	// 	var user *types.User
-	// 	var email string
-	// 	userID := summary.OwnerUserID
-	// 	if fetchedUser, found := fetchedUsers[userID]; found {
-	// 		user = fetchedUser
-	// 		email = userEmails[userID]
-	// 	} else {
-	// 		userFromDB, err := db.Users().GetByID(ctx, userID)
-	// 		if err != nil {
-	// 			return nil, errors.Wrap(err, "getting user")
-	// 		}
-	// 		primaryEmail, _, err := db.UserEmails().GetPrimaryEmail(ctx, userID)
-	// 		if err != nil {
-	// 			if errcode.IsNotFound(err) {
-	// 				logger.Warn("Cannot find a primary email", log.Int32("userID", userID))
-	// 			} else {
-	// 				return nil, errors.Wrap(err, "getting user primary email")
-	// 			}
-	// 		}
-	// 		user = userFromDB
-	// 		email = primaryEmail
-	// 		fetchedUsers[userID] = userFromDB
-	// 		userEmails[userID] = primaryEmail
-	// 	}
-	// 	if blob.Path() == summary.FilePath {
-	// 		isDirectMatch = true
-	// 	}
-	// 	res := ownershipResolver{
-	// 		db: db,
-	// 		resolvedOwner: &codeowners.Person{
-	// 			User:         user,
-	// 			PrimaryEmail: &email,
-	// 			Handle:       user.Username,
-	// 		},
-	// 		reasons: []*ownershipReasonResolver{
-	// 			{
-	// 				&assignedOwner{directMatch: isDirectMatch},
-	// 			},
-	// 		},
-	// 	}
-	// 	results = append(results, &res)
-	// }
-	// return results, nil
 }
 
 func (r *ownResolver) computeAssignedTeams(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, repoID api.RepoID) ([]reasonAndReference, error) {
