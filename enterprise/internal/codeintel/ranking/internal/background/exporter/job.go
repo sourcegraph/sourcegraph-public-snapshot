@@ -3,7 +3,6 @@ package exporter
 import (
 	"context"
 	"crypto/md5"
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -126,8 +125,6 @@ func exportRankingGraph(
 	return numUploads, numDefinitionsInserted, numReferencesInserted, err
 }
 
-const skipPrefix = "lsif ."
-
 func setDefinitionsAndReferencesForUpload(
 	ctx context.Context,
 	store store.Store,
@@ -148,18 +145,18 @@ func setDefinitionsAndReferencesForUpload(
 		defer close(references)
 
 		for _, occ := range document.Occurrences {
-			if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) || strings.HasPrefix(occ.Symbol, skipPrefix) {
-				continue
-			}
-			checksum, ok := canonicalizeSymbol(occ.Symbol)
-			if !ok {
-				continue
-			}
-			if _, ok := seenDefinitions[checksum]; ok {
+			if scip.SymbolRole_Definition.Matches(occ) {
+				// We've already handled definitions
 				continue
 			}
 
-			if !scip.SymbolRole_Definition.Matches(occ) {
+			// We've already emitted this symbol as a definition
+			if _, ok := seenDefinitions[occ.Symbol]; ok {
+				continue
+			}
+
+			// Parse and format symbol into an opaque string for ranking calculations
+			if checksum, ok := canonicalizeSymbol(occ.Symbol); ok {
 				references <- checksum
 				referencesCount++
 			}
@@ -183,30 +180,37 @@ func setDefinitionsForUpload(
 	upload uploadsshared.ExportedUpload,
 	rankingGraphKey, path string,
 	document *scip.Document,
-) (map[[16]byte]struct{}, error) {
-	seenDefinitions := map[[16]byte]struct{}{}
+) (map[string]struct{}, error) {
+	uploadID := upload.UploadID
+	exportedUploadID := upload.ExportedUploadID
+	documentPath := filepath.Join(upload.Root, path)
+
+	seenDefinitions := map[string]struct{}{}
 	definitions := make(chan shared.RankingDefinitions)
 
 	go func() {
 		defer close(definitions)
 
 		for _, occ := range document.Occurrences {
-			if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) || strings.HasPrefix(occ.Symbol, skipPrefix) {
-				continue
-			}
-			checksum, ok := canonicalizeSymbol(occ.Symbol)
-			if !ok {
+			if !scip.SymbolRole_Definition.Matches(occ) {
+				// We only care about definitions
 				continue
 			}
 
-			if scip.SymbolRole_Definition.Matches(occ) {
+			if _, ok := seenDefinitions[occ.Symbol]; ok {
+				// We've already emitted a definition for this symbol/file
+				continue
+			}
+
+			// Parse and format symbol into an opaque string for ranking calculations
+			if checksum, ok := canonicalizeSymbol(occ.Symbol); ok {
 				definitions <- shared.RankingDefinitions{
-					UploadID:         upload.UploadID,
-					ExportedUploadID: upload.ExportedUploadID,
+					UploadID:         uploadID,
+					ExportedUploadID: exportedUploadID,
 					SymbolChecksum:   checksum,
-					DocumentPath:     filepath.Join(upload.Root, path),
+					DocumentPath:     documentPath,
 				}
-				seenDefinitions[checksum] = struct{}{}
+				seenDefinitions[occ.Symbol] = struct{}{}
 			}
 		}
 	}()
@@ -222,6 +226,10 @@ func setDefinitionsForUpload(
 	return seenDefinitions, nil
 }
 
+const skipPrefix = "lsif ."
+
+var emptyChecksum = [16]byte{}
+
 // canonicalizeSymbol transforms a symbol name into an opaque string that
 // can be matched internally by the ranking machinery.
 //
@@ -232,10 +240,13 @@ func setDefinitionsForUpload(
 //   - We then hash the simplified symbol name into a fixed-sized block that
 //     can be matched in constant time against other symbols in Postgres.
 func canonicalizeSymbol(symbolName string) ([16]byte, bool) {
+	if symbolName == "" || scip.IsLocalSymbol(symbolName) || strings.HasPrefix(symbolName, skipPrefix) {
+		return emptyChecksum, false
+	}
+
 	symbol, err := noVersionFormatter.Format(symbolName)
 	if err != nil {
-		fmt.Printf("HUH: %q\n", symbolName)
-		return [16]byte{}, false
+		return emptyChecksum, false
 	}
 
 	return md5.Sum([]byte(symbol)), true
