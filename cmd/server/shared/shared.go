@@ -318,6 +318,13 @@ func shouldPostgresReindex() (shouldReindex bool) {
 func runPostgresReindex() {
 	fmt.Printf("Starting Postgres reindex process\n")
 
+	// TODO: Remove before merging
+	skipMigration := os.Getenv("SKIP_DB_MIGRATION")
+	if skipMigration == "true" {
+		fmt.Printf("Skipping reindex process - DO NOT MERGE")
+		return
+	}
+
 	performMigration := os.Getenv("SOURCEGRAPH_5_1_DB_MIGRATION")
 	if performMigration != "true" {
 		fmt.Printf("\n**************** MIGRATION REQUIRED **************\n\n")
