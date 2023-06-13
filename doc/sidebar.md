@@ -59,6 +59,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Deploy](admin/deploy/index.md)
   - [Upgrade](admin/updates/index.md)
   - [Configuration](admin/config/index.md)
+  - [Licensing](admin/licensing/index.md)
   - [Code hosts](admin/external_service/index.md)
   - [User authentication](admin/auth/index.md)
   - [Access control](admin/access_control/index.md)
