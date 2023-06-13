@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI by Sourcegraph",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -537,7 +537,7 @@
         {
           "command": "cody.inline.insert",
           "when": "false"
-	      },
+        },
         {
           "command": "cody.walkthrough.showLogin",
           "when": "false"
