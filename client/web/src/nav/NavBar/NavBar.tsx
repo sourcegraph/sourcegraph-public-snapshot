@@ -15,6 +15,7 @@ import {
     MenuList,
     MenuButton,
     MenuLink,
+    useMatchMedia,
 } from '@sourcegraph/wildcard'
 
 import { PageRoutes } from '../../routes.constants'
@@ -66,11 +67,11 @@ export const NavBar = forwardRef(function NavBar({ children, logo }, reference):
 export const MobileNavGroupContext = React.createContext(false)
 
 export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
-    const { width } = useWindowSize()
+    const isMobileSize = useMatchMedia(`(max-width: ${VIEWPORT_SM}px)`)
 
     return (
-        <MobileNavGroupContext.Provider value={width < VIEWPORT_SM}>
-            {width < VIEWPORT_SM ? (
+        <MobileNavGroupContext.Provider value={isMobileSize}>
+            {isMobileSize ? (
                 <Menu>
                     <MenuButton aria-label="Sections Navigation">
                         <Icon aria-hidden={true} svgPath={mdiMenu} />
