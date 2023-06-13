@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails/attribution"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
@@ -23,6 +24,9 @@ func Init(
 ) error {
 	attributionService := &attribution.Service{
 		SearchClient: client.New(observationCtx.Logger, db, enterpriseServices.EnterpriseSearchJobs),
+
+		// TODO(keegancsmith) make this configurable
+		SourcegraphDotComFederate: !envvar.SourcegraphDotComMode(),
 	}
 
 	enterpriseServices.GuardrailsResolver = &resolvers.GuardrailsResolver{

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -17,6 +18,10 @@ import (
 type Service struct {
 	// SearchClient is used to find attribution on the local instance.
 	SearchClient client.SearchClient
+
+	// SourcegraphDotComFederate is true if this instance should also federate
+	// to sourcegraph.com.
+	SourcegraphDotComFederate bool
 }
 
 // SnippetAttributions is holds the collection of attributions for a snippet.
@@ -48,6 +53,57 @@ type SnippetAttributions struct {
 // SnippetAttribution will search the instances indexed code for code matching
 // snippet and return the attribution results.
 func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit int) (*SnippetAttributions, error) {
+	// TODO(keegancsmith) how should we handle partial errors?
+	p := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
+
+	//  We don't use NewWithResults since we want local results to come before dotcom
+	var local, dotcom *SnippetAttributions
+
+	p.Go(func(ctx context.Context) error {
+		var err error
+		local, err = c.snippetAttributionLocal(ctx, snippet, limit)
+		return err
+	})
+
+	if c.SourcegraphDotComFederate {
+		p.Go(func(ctx context.Context) error {
+			var err error
+			dotcom, err = c.snippetAttributionDotCom(ctx, snippet, limit)
+			return err
+		})
+	}
+
+	if err := p.Wait(); err != nil {
+		return nil, err
+	}
+
+	var agg SnippetAttributions
+	seen := map[string]struct{}{}
+	for _, result := range []*SnippetAttributions{local, dotcom} {
+		if result == nil {
+			continue
+		}
+
+		// Limitation: We just add to TotalCount even though that may mean we
+		// overcount (both dotcom and local instance have the repo)
+		agg.TotalCount += result.TotalCount
+		agg.LimitHit = agg.LimitHit || result.LimitHit
+		for _, name := range result.RepositoryNames {
+			if _, ok := seen[name]; ok {
+				// We have already counted this repo in the above TotalCount
+				// increment, so undo that.
+				agg.TotalCount--
+				continue
+			}
+			seen[name] = struct{}{}
+			agg.RepositoryNames = append(agg.RepositoryNames, name)
+		}
+	}
+
+	return &agg, nil
+}
+
+func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, limit int) (*SnippetAttributions, error) {
 	const (
 		version    = "V3"
 		searchMode = search.Precise
@@ -114,4 +170,8 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 		TotalCount:      totalCount,
 		LimitHit:        limitHit,
 	}, nil
+}
+
+func (c *Service) snippetAttributionDotCom(ctx context.Context, snippet string, limit int) (*SnippetAttributions, error) {
+	return &SnippetAttributions{}, nil
 }
