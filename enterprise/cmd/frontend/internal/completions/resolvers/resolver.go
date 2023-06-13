@@ -41,8 +41,8 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 	}
 
 	completionsConfig := client.GetCompletionsConfig(conf.Get().SiteConfig())
-	if completionsConfig == nil || !completionsConfig.Enabled {
-		return "", errors.New("completions are not configured or disabled")
+	if completionsConfig == nil {
+		return "", errors.New("completions are not configured")
 	}
 
 	var chatModel string

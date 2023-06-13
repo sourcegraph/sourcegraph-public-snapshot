@@ -65,7 +65,7 @@ export const useIsCodyEnabled = (): IsCodyEnabled => {
         ]
     )
 
-    if (!window.context?.codyEnabled) {
+    if (!window.context?.codyEnabled || !window.context?.codyEnabledForCurrentUser) {
         return notEnabled
     }
 

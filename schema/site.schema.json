@@ -125,11 +125,6 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "codyRestrictUsersFeatureFlag": {
-          "description": "Restrict Cody to only be enabled for users that have a feature flag labeled \"cody-experimental\" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag.",
-          "type": "boolean",
-          "default": false
-        },
         "rateLimitAnonymous": {
           "description": "Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.",
           "type": "integer",
@@ -2331,6 +2326,24 @@
         }
       ]
     },
+    "cody.enabled": {
+      "description": "Enable or disable Cody instance-wide. When Cody is disabled, all Cody endpoints and GraphQL queries will return errors, Cody will not show up in the site-admin sidebar, and Cody in the global navbar will only show a call-to-action for site-admins to enable Cody.",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      },
+      "group": "Cody"
+    },
+    "cody.restrictUsersFeatureFlag": {
+      "description": "Restrict Cody to only be enabled for users that have a feature flag labeled \"cody\" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      },
+      "group": "Cody"
+    },
     "embeddings": {
       "description": "Configuration for embeddings service.",
       "type": "object",
@@ -2422,10 +2435,9 @@
     "completions": {
       "description": "Configuration for the completions service.",
       "type": "object",
-      "required": ["enabled"],
       "properties": {
         "enabled": {
-          "description": "Toggles whether completions are enabled.",
+          "description": "DEPRECATED. Use cody.enabled instead to turn Cody on/off.",
           "type": "boolean",
           "default": false
         },

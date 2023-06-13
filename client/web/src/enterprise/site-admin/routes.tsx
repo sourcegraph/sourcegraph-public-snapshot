@@ -81,6 +81,8 @@ const CodyConfigurationPage = lazyComponent(
     'CodyConfigurationPage'
 )
 
+const codyIsEnabled = (): boolean => Boolean(window.context?.codyEnabled && window.context?.embeddingsEnabled)
+
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
     [
         ...otherSiteAdminRoutes,
@@ -193,24 +195,24 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             exact: true,
             path: '/cody',
             render: () => <Navigate to="/site-admin/embeddings" />,
-            condition: () => Boolean(window.context?.embeddingsEnabled),
+            condition: codyIsEnabled,
         },
         {
             exact: true,
             path: '/embeddings',
             render: props => <SiteAdminCodyPage {...props} />,
-            condition: () => Boolean(window.context?.embeddingsEnabled),
+            condition: codyIsEnabled,
         },
         {
             exact: true,
             path: '/embeddings/configuration',
             render: props => <CodyConfigurationPage {...props} />,
-            condition: () => Boolean(window.context?.embeddingsEnabled),
+            condition: codyIsEnabled,
         },
         {
             path: '/embeddings/configuration/:id',
             render: props => <CodeIntelConfigurationPolicyPage {...props} domain="embeddings" />,
-            condition: () => Boolean(window.context?.embeddingsEnabled),
+            condition: codyIsEnabled,
         },
 
         // rbac-related routes

@@ -125,11 +125,11 @@ GROUP BY my_flag;
 
 ## Show usernames using a specific feature flag
 
-If you ever need a list of users that have a feature flag enabled (for example `cody-experimental`), you could use a query like the following:
+If you ever need a list of users that have a feature flag enabled (for example `cody`), you could use a query like the following:
 
 ```graphql
 query {
-  featureFlag(name:"cody-experimental") {
+  featureFlag(name:"cody") {
     __typename
     ...  on FeatureFlagBoolean {
       overrides {
