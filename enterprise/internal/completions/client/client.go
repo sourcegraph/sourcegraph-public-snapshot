@@ -56,6 +56,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) *schema.Completio
 				// TODO: These are not required right now as upstream overwrites this,
 				// but should we switch to Cody Gateway they will be.
 				ChatModel:       "claude-v1",
+				FastChatModel:   "claude-instant-v1",
 				CompletionModel: "claude-instant-v1",
 			}
 		}

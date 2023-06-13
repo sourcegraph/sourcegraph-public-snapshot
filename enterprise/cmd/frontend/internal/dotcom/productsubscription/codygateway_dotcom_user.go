@@ -2,6 +2,7 @@ package productsubscription
 
 import (
 	"context"
+	"fmt"
 	"math"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -10,9 +11,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type ErrDotcomUserNotFound struct {
+	err error
+}
+
+func (e ErrDotcomUserNotFound) Error() string {
+	if e.err == nil {
+		return "dotcom user not found"
+	}
+	return fmt.Sprintf("dotcom user not found: %v", e.err)
+}
+
+func (e ErrDotcomUserNotFound) Extensions() map[string]any {
+	return map[string]any{"code": codygateway.GQLErrCodeDotcomUserNotFound}
+}
 
 // CodyGatewayDotcomUserResolver implements the GraphQL Query and Mutation fields related to Cody gateway users.
 type CodyGatewayDotcomUserResolver struct {
@@ -21,17 +38,23 @@ type CodyGatewayDotcomUserResolver struct {
 
 func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.Context, args *graphqlbackend.CodyGatewayUsersByAccessTokenArgs) (graphqlbackend.CodyGatewayUser, error) {
 	// 🚨 SECURITY: Only site admins or the service accounts may check users.
-	if err := serviceAccountOrSiteAdmin(ctx, r.DB, true); err != nil {
+	if err := serviceAccountOrSiteAdmin(ctx, r.DB, false); err != nil {
 		return nil, err
 	}
 	dbTokens := newDBTokens(r.DB)
 	userID, err := dbTokens.LookupDotcomUserIDByAccessToken(ctx, args.Token)
 	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, ErrDotcomUserNotFound{err}
+		}
 		return nil, err
 	}
 
 	user, err := r.DB.Users().GetByID(ctx, int32(userID))
 	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, ErrDotcomUserNotFound{err}
+		}
 		return nil, err
 	}
 	verified, err := r.DB.UserEmails().HasVerifiedEmail(ctx, user.ID)

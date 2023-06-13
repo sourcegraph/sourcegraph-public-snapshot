@@ -73,7 +73,7 @@ type OwnershipStatsStore interface {
 
 	// QueryAggregateCounts looks up ownership aggregate data for a file tree.
 	// At this point these include total count of files that are owned via CODEOWNERS.
-	QueryAggregateCounts(context.Context, TreeLocationOpts) ([]PathAggregateCounts, error)
+	QueryAggregateCounts(context.Context, TreeLocationOpts) (PathAggregateCounts, error)
 }
 
 var _ OwnershipStatsStore = &ownershipStats{}
@@ -208,16 +208,13 @@ var treeAggregateCountsFmtstr = `
 	INNER JOIN repo_paths AS p ON s.file_path_id = p.id
 	WHERE p.absolute_path = %s
 `
-var treeAggregateCountsScanner = basestore.NewSliceScanner(func(s dbutil.Scanner) (PathAggregateCounts, error) {
-	var cs PathAggregateCounts
-	err := s.Scan(&dbutil.NullInt{&cs.CodeownedFileCount})
-	return cs, err
-})
 
-func (s *ownershipStats) QueryAggregateCounts(ctx context.Context, opts TreeLocationOpts) ([]PathAggregateCounts, error) {
+func (s *ownershipStats) QueryAggregateCounts(ctx context.Context, opts TreeLocationOpts) (PathAggregateCounts, error) {
 	qs := []*sqlf.Query{sqlf.Sprintf(treeAggregateCountsFmtstr, opts.Path)}
 	if repoID := opts.RepoID; repoID != 0 {
 		qs = append(qs, sqlf.Sprintf("AND p.repo_id = %s", repoID))
 	}
-	return treeAggregateCountsScanner(s.Store.Query(ctx, sqlf.Join(qs, "\n")))
+	var cs PathAggregateCounts
+	err := s.Store.QueryRow(ctx, sqlf.Join(qs, "\n")).Scan(&dbutil.NullInt{N: &cs.CodeownedFileCount})
+	return cs, err
 }

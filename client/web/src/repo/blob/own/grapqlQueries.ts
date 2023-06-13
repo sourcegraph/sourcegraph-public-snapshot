@@ -20,6 +20,7 @@ export const OWNER_FIELDS = gql`
             }
         }
         ... on Team {
+            id
             name
             teamDisplayName: displayName
             avatarURL
@@ -195,6 +196,14 @@ export const ASSIGN_OWNER = gql`
 export const REMOVE_ASSIGNED_OWNER = gql`
     mutation RemoveAssignedOwner($input: AssignOwnerOrTeamInput!) {
         removeAssignedOwner(input: $input) {
+            alwaysNil
+        }
+    }
+`
+
+export const REMOVE_ASSIGNED_TEAM = gql`
+    mutation RemoveAssignedTeam($input: AssignOwnerOrTeamInput!) {
+        removeAssignedTeam(input: $input) {
             alwaysNil
         }
     }
