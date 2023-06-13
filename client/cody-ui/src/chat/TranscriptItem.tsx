@@ -121,6 +121,29 @@ export const TranscriptItem: React.FunctionComponent<
                 message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow
             )}
         >
+            {message.contextFiles && message.contextFiles.length > 0 && (
+                <div className={styles.actions}>
+                    <ContextFiles
+                        contextFiles={message.contextFiles}
+                        fileLinkComponent={fileLinkComponent}
+                        className={transcriptActionClassName}
+                    />
+                </div>
+            )}
+            <div className={classNames(styles.contentPadding, textarea ? undefined : styles.content)}>
+                {message.displayText ? (
+                    textarea ?? (
+                        <CodeBlocks
+                            displayText={message.displayText}
+                            copyButtonClassName={codeBlocksCopyButtonClassName}
+                            CopyButtonProps={copyButtonOnSubmit}
+                            insertButtonClassName={codeBlocksInsertButtonClassName}
+                        />
+                    )
+                ) : inProgress ? (
+                    <BlinkingCursor />
+                ) : null}
+            </div>
             <header className={classNames(styles.participant, transcriptItemParticipantClassName)}>
                 {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
                 <div className={styles.participantName}>
@@ -146,29 +169,6 @@ export const TranscriptItem: React.FunctionComponent<
                         )}
                 </div>
             </header>
-            <div className={classNames(styles.contentPadding, textarea ? undefined : styles.content)}>
-                {message.displayText ? (
-                    textarea ?? (
-                        <CodeBlocks
-                            displayText={message.displayText}
-                            copyButtonClassName={codeBlocksCopyButtonClassName}
-                            CopyButtonProps={copyButtonOnSubmit}
-                            insertButtonClassName={codeBlocksInsertButtonClassName}
-                        />
-                    )
-                ) : inProgress ? (
-                    <BlinkingCursor />
-                ) : null}
-            </div>
-            {message.contextFiles && message.contextFiles.length > 0 && (
-                <div className={styles.actions}>
-                    <ContextFiles
-                        contextFiles={message.contextFiles}
-                        fileLinkComponent={fileLinkComponent}
-                        className={transcriptActionClassName}
-                    />
-                </div>
-            )}
         </div>
     )
 })
