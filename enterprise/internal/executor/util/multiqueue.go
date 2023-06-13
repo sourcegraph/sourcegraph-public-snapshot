@@ -5,6 +5,9 @@ import (
 	"strings"
 )
 
+// FormatQueueNamesForMetrics returns a single string that is used to publish autoscaling metrics.
+// When queueName is not empty, the same value is returned ("batches" -> "batches").
+// When queueNames is not empty, the elements are alphabetically sorted and concatenated with underscores (["codeintel", "batches'] -> "batches_codeintel")
 func FormatQueueNamesForMetrics(queueName string, queueNames []string) string {
 	var formatted string
 	if len(queueNames) > 0 {
