@@ -900,7 +900,13 @@ func TestTreeOwnershipSignals(t *testing.T) {
 	db.RecentViewSignalFunc.SetDefaultReturn(recentViewStore)
 
 	userEmails := database.NewMockUserEmailsStore()
-	userEmails.GetPrimaryEmailFunc.SetDefaultReturn(santaEmail, true, nil)
+	userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{
+		{
+			UserID:  1,
+			Email:   santaEmail,
+			Primary: true,
+		},
+	}, nil)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
 	db.UserExternalAccountsFunc.SetDefaultReturn(database.NewMockUserExternalAccountsStore())
@@ -988,13 +994,13 @@ func TestTreeOwnershipSignals(t *testing.T) {
 							"nodes": [
 								{
 									"owner": {
-										"displayName": "santa claus",
+										"displayName": "santa@northpole.com",
 										"email": "santa@northpole.com"
 									},
 									"reasons": [
 										{
-											"title": "recent view",
-											"description": "Owner is associated because they have viewed this file in the last 90 days."
+											"title": "recent contributor",
+											"description": "Owner is associated because they have contributed to this file in the last 90 days."
 										}
 									]
 								},
@@ -1005,8 +1011,8 @@ func TestTreeOwnershipSignals(t *testing.T) {
 									},
 									"reasons": [
 										{
-											"title": "recent contributor",
-											"description": "Owner is associated because they have contributed to this file in the last 90 days."
+											"title": "recent view",
+											"description": "Owner is associated because they have viewed this file in the last 90 days."
 										}
 									]
 								}
@@ -1081,7 +1087,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 							"nodes": [
 								{
 									"owner": {
-										"displayName": "santa claus",
+										"displayName": "santa@northpole.com",
 										"email": "santa@northpole.com"
 									},
 									"reasons": [
