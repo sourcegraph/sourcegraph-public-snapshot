@@ -1,7 +1,8 @@
-import { FC, ReactNode, useMemo } from 'react'
+import { FC, ReactNode, useLayoutEffect, useMemo } from 'react'
 
 import { mdiFolderMultipleOutline, mdiFolderMultiplePlusOutline, mdiGit, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
+import { noop } from 'lodash'
 
 import { pluralize } from '@sourcegraph/common'
 import {
@@ -46,10 +47,11 @@ export const LocalRepositoriesTab: FC = () => (
 interface LocalRepositoriesWidgetProps {
     children: (api: { addNewPaths: (paths: Path[]) => Promise<void> }) => ReactNode
     className?: string
+    onRepositoriesChange?: (repositories: LocalRepository[]) => void
 }
 
 export const LocalRepositoriesWidget: FC<LocalRepositoriesWidgetProps> = props => {
-    const { children, className } = props
+    const { children, className, onRepositoriesChange = noop } = props
 
     const {
         paths,
@@ -66,6 +68,10 @@ export const LocalRepositoriesWidget: FC<LocalRepositoriesWidgetProps> = props =
         loaded: repositoriesLoaded,
         error: repositoriesError,
     } = useLocalRepositories({ paths, skip: paths.length === 0 })
+
+    useLayoutEffect(() => {
+        onRepositoriesChange(repositories)
+    }, [repositories, onRepositoriesChange])
 
     const handleRepositoriesDelete = async (pathToDelete: Path): Promise<void> => {
         await deletePath(pathToDelete)

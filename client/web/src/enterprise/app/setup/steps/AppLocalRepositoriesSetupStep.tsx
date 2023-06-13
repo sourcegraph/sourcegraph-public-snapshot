@@ -1,12 +1,12 @@
-import { FC, useContext } from 'react'
+import { FC, useContext, useState } from 'react'
 
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { useQuery, gql } from '@sourcegraph/http-client'
-import { Button, H1, Text } from '@sourcegraph/wildcard'
+import { Button, H1, Text, Tooltip } from '@sourcegraph/wildcard'
 
-import { AppUserConnectDotComAccountResult } from '../../../../graphql-operations'
+import { AppUserConnectDotComAccountResult, LocalRepository } from '../../../../graphql-operations'
 import { EnterprisePageRoutes } from '../../../../routes.constants'
 import { SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
 import { LocalRepositoriesWidget, PathsPickerActions } from '../../settings/local-repositories/LocalRepositoriesTab'
@@ -25,6 +25,8 @@ const SITE_GQL = gql`
 export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ className }) => {
     const navigate = useNavigate()
     const { onNextStep } = useContext(SetupStepsContext)
+
+    const [repositories, setRepositories] = useState<LocalRepository[]>([])
 
     const { data, loading } = useQuery<AppUserConnectDotComAccountResult, AppUserConnectDotComAccountResult>(SITE_GQL, {
         nextFetchPolicy: 'cache-first',
@@ -54,18 +56,23 @@ export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ classNam
                     more later.
                 </Text>
 
-                <Button
-                    size="lg"
-                    variant="primary"
-                    disabled={loading}
-                    className={styles.descriptionNext}
-                    onClick={handleNext}
-                >
-                    Next →
-                </Button>
+                <Tooltip content={repositories.length === 0 ? 'Select one repo to continue' : undefined}>
+                    <Button
+                        size="lg"
+                        variant="primary"
+                        disabled={loading || repositories.length === 0}
+                        className={styles.descriptionNext}
+                        onClick={handleNext}
+                    >
+                        Next →
+                    </Button>
+                </Tooltip>
             </div>
             <div className={styles.localRepositories}>
-                <LocalRepositoriesWidget className={styles.localRepositoriesWidget}>
+                <LocalRepositoriesWidget
+                    className={styles.localRepositoriesWidget}
+                    onRepositoriesChange={setRepositories}
+                >
                     {api => (
                         <PathsPickerActions
                             className={styles.localRepositoriesButtonsGroup}
