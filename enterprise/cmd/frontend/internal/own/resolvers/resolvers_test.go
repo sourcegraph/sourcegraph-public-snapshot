@@ -903,6 +903,8 @@ func TestTreeOwnershipSignals(t *testing.T) {
 	userEmails.GetPrimaryEmailFunc.SetDefaultReturn(santaEmail, true, nil)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
+	db.UserExternalAccountsFunc.SetDefaultReturn(database.NewMockUserExternalAccountsStore())
+
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
 	own := fakeOwnService{
@@ -1165,7 +1167,7 @@ func TestCommitOwnershipSignals(t *testing.T) {
 						"nodes": [
 							{
 								"owner": {
-									"displayName": "santa claus",
+									"displayName": "santa@northpole.com",
 									"email": "santa@northpole.com"
 								},
 								"reasons": [
