@@ -110,7 +110,11 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore }): JSX.Element =
     )
 }
 
-const AbortMessageInProgress: React.FunctionComponent<{ onAbortMessageInProgress: () => void }> = React.memo(
+interface IAbortMessageInProgressProps {
+    onAbortMessageInProgress: () => void
+}
+
+const AbortMessageInProgress: React.FunctionComponent<IAbortMessageInProgressProps> = React.memo(
     function AbortMessageInProgressButton({ onAbortMessageInProgress }) {
         return (
             <div className="d-flex justify-content-center w-100 mt-4 mb-2">
