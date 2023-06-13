@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -20,7 +21,7 @@ type CodehostCapabilities map[CodehostCapability]bool
 // by the batch changes feature. Repos that are associated with external services
 // whose type is not in this list will simply be filtered out from the search
 // results.
-var SupportedExternalServices = map[string]CodehostCapabilities{
+var supportedExternalServices = map[string]CodehostCapabilities{
 	extsvc.TypeGitHub:          {CodehostCapabilityLabels: true, CodehostCapabilityDraftChangesets: true},
 	extsvc.TypeBitbucketServer: {},
 	extsvc.TypeGitLab:          {CodehostCapabilityLabels: true, CodehostCapabilityDraftChangesets: true},
@@ -30,22 +31,30 @@ var SupportedExternalServices = map[string]CodehostCapabilities{
 	extsvc.TypePerforce:        {},
 }
 
+func GetSupportedExternalServices() map[string]CodehostCapabilities {
+	supported := supportedExternalServices
+	if !conf.Get().ExperimentalFeatures.BatchChangesEnablePerforce {
+		delete(supported, extsvc.TypePerforce)
+	}
+	return supported
+}
+
 // IsRepoSupported returns whether the given ExternalRepoSpec is supported by
 // the batch changes feature, based on the external service type.
 func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
-	_, ok := SupportedExternalServices[spec.ServiceType]
+	_, ok := GetSupportedExternalServices()[spec.ServiceType]
 	return ok
 }
 
 // IsKindSupported returns whether the given extsvc Kind is supported by
 // batch changes.
 func IsKindSupported(extSvcKind string) bool {
-	_, ok := SupportedExternalServices[extsvc.KindToType(extSvcKind)]
+	_, ok := GetSupportedExternalServices()[extsvc.KindToType(extSvcKind)]
 	return ok
 }
 
 func ExternalServiceSupports(extSvcType string, capability CodehostCapability) bool {
-	if es, ok := SupportedExternalServices[extSvcType]; ok {
+	if es, ok := GetSupportedExternalServices()[extSvcType]; ok {
 		val, ok := es[capability]
 		return ok && val
 	}
