@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Link, H3 } from '@sourcegraph/wildcard'
+import { Link, H3, Badge } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, ChangesetState } from '../../../../graphql-operations'
 import { BranchMerge } from '../../Branch'
@@ -71,6 +71,12 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<
                     ChangesetState.SCHEDULED,
                 ].includes(node.state) && (
                     <ChangesetLastSynced changeset={node} viewerCanAdminister={viewerCanAdminister} />
+                )}
+                {/* TODO: Add tooltip */}
+                {!!node?.commitVerification?.verified && (
+                    <Badge pill={true} className="mx-2">
+                        Verified
+                    </Badge>
                 )}
             </div>
         </div>

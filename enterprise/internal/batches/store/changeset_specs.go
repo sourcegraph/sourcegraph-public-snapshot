@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strconv"
 
 	"github.com/keegancsmith/sqlf"
@@ -604,21 +603,21 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 
 	c.Type = btypes.ChangesetSpecType(typ)
 
-	// var cv any
-	fmt.Print("COMMIT V!!", commitVerification)
-	if err = json.Unmarshal(commitVerification, c.CommitVerification); err != nil {
+	var cv *btypes.CommitVerification
+
+	if err = json.Unmarshal(commitVerification, &cv); err != nil {
 		return errors.Wrapf(err, "scanChangesetSpecs: failed to unmarshal commitVerification: %s", commitVerification)
 	}
-	// if cv.Verified == true {
-	// 	c.CommitVerification = cv
-	// }
+
+	if cv.Verified == true {
+		c.CommitVerification = cv
+	}
 
 	if len(published) != 0 {
 		if err := json.Unmarshal(published, &c.Published); err != nil {
 			return err
 		}
 	}
-	fmt.Print("COMMIT V>>>", c.CommitVerification)
 
 	return nil
 }
