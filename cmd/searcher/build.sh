@@ -10,21 +10,17 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if [[ "$DOCKER_BAZEL" == "true" ]]; then
-   bazel build //cmd/searcher \
-     --stamp \
-     --workspace_status_command=./dev/bazel_stamp_vars.sh \
-     --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64
+if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
+  ./dev/ci/bazel.sh build //cmd/searcher
+  out=$(./dev/ci/bazel.sh cquery //cmd/searcher --output=files)
+  cp "$out" "$OUTPUT"
 
-   out=$(bazel cquery //cmd/searcher --output=files)
-   cp "$out" "$OUTPUT"
-
-   docker build -f cmd/searcher/Dockerfile -t "$IMAGE" "$OUTPUT" \
-     --progress=plain \
-     --build-arg COMMIT_SHA \
-     --build-arg DATE \
-     --build-arg VERSION
-   exit $?
+  docker build -f cmd/searcher/Dockerfile -t "$IMAGE" "$OUTPUT" \
+    --progress=plain \
+    --build-arg COMMIT_SHA \
+    --build-arg DATE \
+    --build-arg VERSION
+  exit $?
 fi
 
 # Environment for building linux binaries

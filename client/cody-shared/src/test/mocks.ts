@@ -1,7 +1,10 @@
+import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
+import { RecipeContext } from '../chat/recipes/recipe'
+import { CodebaseContext } from '../codebase-context'
 import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../editor'
 import { EmbeddingsSearch } from '../embeddings'
 import { IntentDetector } from '../intent-detector'
-import { KeywordContextFetcher, KeywordContextFetcherResult } from '../keyword-context'
+import { KeywordContextFetcher, ContextResult } from '../local-context'
 import { EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
 
 export class MockEmbeddingsClient implements EmbeddingsSearch {
@@ -34,19 +37,29 @@ export class MockIntentDetector implements IntentDetector {
 export class MockKeywordContextFetcher implements KeywordContextFetcher {
     constructor(private mocks: Partial<KeywordContextFetcher> = {}) {}
 
-    public getContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
+    public getContext(query: string, numResults: number): Promise<ContextResult[]> {
         return this.mocks.getContext?.(query, numResults) ?? Promise.resolve([])
+    }
+
+    public getSearchContext(query: string, numResults: number): Promise<ContextResult[]> {
+        return this.mocks.getSearchContext?.(query, numResults) ?? Promise.resolve([])
     }
 }
 
 export class MockEditor implements Editor {
     constructor(private mocks: Partial<Editor> = {}) {}
 
+    public fileName = ''
+
     public getWorkspaceRootPath(): string | null {
         return this.mocks.getWorkspaceRootPath?.() ?? null
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
+        return this.mocks.getActiveTextEditorSelection?.() ?? null
+    }
+
+    public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
         return this.mocks.getActiveTextEditorSelection?.() ?? null
     }
 
@@ -58,12 +71,24 @@ export class MockEditor implements Editor {
         return this.mocks.getActiveTextEditorVisibleContent?.() ?? null
     }
 
+    public replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
+        return this.mocks.replaceSelection?.(fileName, selectedText, replacement) ?? Promise.resolve()
+    }
+
     public showQuickPick(labels: string[]): Promise<string | undefined> {
         return this.mocks.showQuickPick?.(labels) ?? Promise.resolve(undefined)
     }
 
     public showWarningMessage(message: string): Promise<void> {
         return this.mocks.showWarningMessage?.(message) ?? Promise.resolve()
+    }
+
+    public showInputBox(prompt?: string): Promise<string | undefined> {
+        return this.mocks.showInputBox?.(prompt) ?? Promise.resolve(undefined)
+    }
+
+    public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
+        return this.mocks.didReceiveFixupText?.(id, text, state) ?? Promise.resolve(undefined)
     }
 }
 
@@ -74,3 +99,22 @@ export const defaultIntentDetector = new MockIntentDetector()
 export const defaultKeywordContextFetcher = new MockKeywordContextFetcher()
 
 export const defaultEditor = new MockEditor()
+
+export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
+    args = args || {}
+    return {
+        editor: args.editor || defaultEditor,
+        intentDetector: args.intentDetector || defaultIntentDetector,
+        codebaseContext:
+            args.codebaseContext ||
+            new CodebaseContext(
+                { useContext: 'none', serverEndpoint: 'https://example.com' },
+                'dummy-codebase',
+                defaultEmbeddingsClient,
+                defaultKeywordContextFetcher,
+                null
+            ),
+        responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),
+        firstInteraction: args.firstInteraction ?? false,
+    }
+}

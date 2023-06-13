@@ -43,10 +43,24 @@ func (r *Reconciler) HandlerFunc() workerutil.HandlerFunc[*btypes.Changeset] {
 		if err != nil {
 			return err
 		}
-		defer func() { err = tx.Done(err) }()
 
 		ctx = metrics.ContextWithTask(ctx, "Batches.Reconciler")
-		return r.process(ctx, logger, tx, job)
+		afterDone, err := r.process(ctx, logger, tx, job)
+
+		defer func() {
+			err = tx.Done(err)
+			// If afterDone is provided, it is enqueuing a new webhook. We call afterDone
+			// regardless of whether or not the transaction succeeds because the webhook
+			// should represent the interaction with the code host, not the database
+			// transaction. The worst case is that the transaction actually did fail and
+			// thus the changeset in the webhook payload is out-of-date. But we will still
+			// have enqueued the appropriate webhook.
+			if afterDone != nil {
+				afterDone(r.store)
+			}
+		}()
+
+		return err
 	}
 }
 
@@ -64,7 +78,7 @@ func (r *Reconciler) HandlerFunc() workerutil.HandlerFunc[*btypes.Changeset] {
 // If an error is returned, the workerutil.Worker that called this function
 // (through the HandlerFunc) will set the changeset's ReconcilerState to
 // errored and set its FailureMessage to the error.
-func (r *Reconciler) process(ctx context.Context, logger log.Logger, tx *store.Store, ch *btypes.Changeset) error {
+func (r *Reconciler) process(ctx context.Context, logger log.Logger, tx *store.Store, ch *btypes.Changeset) (afterDone func(store *store.Store), err error) {
 	// Copy over and reset the previous error message.
 	if ch.FailureMessage != nil {
 		ch.PreviousFailureMessage = ch.FailureMessage
@@ -73,14 +87,14 @@ func (r *Reconciler) process(ctx context.Context, logger log.Logger, tx *store.S
 
 	prev, curr, err := loadChangesetSpecs(ctx, tx, ch)
 	if err != nil {
-		return nil
+		return nil, nil
 	}
 
 	// Pass nil since there is no "current" changeset. The changeset has already been updated in the DB to the wanted
 	// state. Current changeset is only (at the moment) used for previewing.
 	plan, err := DeterminePlan(prev, curr, nil, ch)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	logger.Info("Reconciler processing changeset", log.Int64("changeset", ch.ID), log.String("operations", fmt.Sprintf("%+v", plan.Ops)))

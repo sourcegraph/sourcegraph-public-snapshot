@@ -49,12 +49,8 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 				result.Repo.Name,
 				result.Commit.ID.Short(),
 			)))
-			var contentRaw string
-			if result.DiffPreview != nil {
-				contentRaw = truncateString(result.DiffPreview.Content)
-			} else {
-				contentRaw = truncateString(result.MessagePreview.Content)
-			}
+
+			contentRaw := truncateMatchContent(result)
 			blocks = append(blocks, newMarkdownSection(formatCodeBlock(contentRaw)))
 		}
 		if truncatedCount > 0 {
@@ -85,13 +81,42 @@ func formatCodeBlock(s string) string {
 	return fmt.Sprintf("```%s```", strings.ReplaceAll(s, "```", "\\`\\`\\`"))
 }
 
-// truncateString truncates the input to 10 lines.
-func truncateString(input string) string {
-	const lines = 10
+// truncateMatchContent truncates the match to at most 10 lines, and also
+// truncates lines once the content length exceeds 2500 bytes.
+//
+// We limit the bytes to ensure we don't hit Slack's max block size of 3000
+// characters. To be conservative, we truncate to 2500 bytes. We also limit
+// the number of lines to 10 to ensure the content is easy to read.
+func truncateMatchContent(result *searchresult.CommitMatch) string {
+	const maxBytes = 2500
+	const maxLines = 10
 
-	splitLines := strings.SplitAfter(input, "\n")
-	if len(splitLines) > lines {
-		splitLines = splitLines[:lines]
+	var matchedString *searchresult.MatchedString
+	switch {
+	case result.DiffPreview != nil:
+		matchedString = result.DiffPreview
+	case result.MessagePreview != nil:
+		matchedString = result.MessagePreview
+	default:
+		panic("exactly one of DiffPreview or MessagePreview must be set")
+	}
+
+	splitLines := strings.SplitAfter(matchedString.Content, "\n")
+	limit := len(splitLines)
+	if limit > maxLines {
+		limit = maxLines
+	}
+
+	chars, index := 0, 0
+	for ; index < limit; index++ {
+		chars += len(splitLines[index])
+		if chars > maxBytes {
+			break
+		}
+	}
+
+	if len(splitLines) > index {
+		splitLines = splitLines[:index]
 		splitLines = append(splitLines, "...\n")
 	}
 	return strings.Join(splitLines, "")

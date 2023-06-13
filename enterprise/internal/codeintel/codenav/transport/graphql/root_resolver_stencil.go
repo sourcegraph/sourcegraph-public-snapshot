@@ -4,13 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *gitBlobLSIFDataResolver) Stencil(ctx context.Context) (_ []resolverstubs.RangeResolver, err error) {
-	args := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path}
+	args := codenav.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path}
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.stencil, time.Second, getObservationArgs(args))
 	defer endObservation()
 

@@ -12,9 +12,11 @@ import (
 const (
 	// DefaultIgniteVersion is the sourcegraph/ignite version to be used by this
 	// executor build.
+	// If this is changed, update the documentation in doc/admin/executors/deploy_executors_binary_offline.md.
 	DefaultIgniteVersion = "v0.10.5"
 	// DefaultFirecrackerKernelImage is the kernel source image to extract the vmlinux
 	// image from.
+	// If this is changed, update the documentation in doc/admin/executors/deploy_executors_binary_offline.md.
 	DefaultFirecrackerKernelImage = "sourcegraph/ignite-kernel:5.10.135-amd64"
 	// CNIBinDir is the dir where ignite expects the CNI plugins to be installed to.
 	CNIBinDir = "/opt/cni/bin"
@@ -76,7 +78,7 @@ var (
 	// default and chosen so that it doesn't interfere with other common applications
 	// such as docker. It also provides room for a large number of VMs.
 	CNISubnetCIDR = mustParseCIDR("10.61.0.0/16")
-	// MitGitVersionConstraint is the minimum version of git required by the executor.
+	// MinGitVersionConstraint is the minimum version of git required by the executor.
 	MinGitVersionConstraint = mustParseConstraint(">= 2.26")
 )
 

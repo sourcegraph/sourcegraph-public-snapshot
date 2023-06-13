@@ -5,9 +5,11 @@ fun properties(key: String) = project.findProperty(key).toString()
 
 plugins {
     id("java")
+    // Dependencies are locked at this version to work with JDK 11 on CI.
     id("org.jetbrains.kotlin.jvm") version "1.7.0"
-    id("org.jetbrains.intellij") version "1.11.0"
+    id("org.jetbrains.intellij") version "1.13.3"
     id("org.jetbrains.changelog") version "1.3.1"
+    id("com.diffplug.spotless") version "6.19.0"
 }
 
 group = properties("pluginGroup")
@@ -24,11 +26,33 @@ intellij {
 
     // Plugin Dependencies. Uses `platformPlugins` property from the gradle.properties file.
     plugins.set(properties("platformPlugins").split(',').map(String::trim).filter(String::isNotEmpty))
+
+    updateSinceUntilBuild.set(false)
 }
 
 dependencies {
+    implementation("org.commonmark:commonmark:0.21.0")
+    implementation("org.commonmark:commonmark-ext-gfm-tables:0.21.0")
     testImplementation(platform("org.junit:junit-bom:5.7.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+}
+
+spotless {
+    java {
+        target("src/*/java/**/*.java")
+        importOrder()
+        removeUnusedImports()
+        googleJavaFormat()
+    }
+}
+
+java {
+    toolchain {
+        // Always compile the codebase with Java 11 regardless of what Java
+        // version is installed on the computer. Gradle will download Java 11
+        // even if you already have it installed on your computer.
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
 }
 
 tasks {
@@ -49,7 +73,6 @@ tasks {
 
     patchPluginXml {
         version.set(properties("pluginVersion"))
-        sinceBuild.set(properties("pluginSinceBuild"))
 
         // Extract the <!-- Plugin description --> section from README.md and provide for the plugin's manifest
         pluginDescription.set(

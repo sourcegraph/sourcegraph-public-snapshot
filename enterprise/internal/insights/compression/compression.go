@@ -130,10 +130,10 @@ func (n *NoopFilter) Filter(ctx context.Context, sampleTimes []time.Time, name a
 
 // uncompressedPlan returns a query plan that is completely uncompressed given an initial set of seed frames.
 // This is primarily useful when there are scenarios in which compression cannot be used.
-func uncompressedPlan(frames []time.Time) BackfillPlan {
-	executions := make([]QueryExecution, 0, len(frames))
-	for _, frame := range frames {
-		executions = append(executions, QueryExecution{RecordingTime: frame})
+func uncompressedPlan(sampleTimes []time.Time) BackfillPlan {
+	executions := make([]QueryExecution, 0, len(sampleTimes))
+	for _, sampleTime := range sampleTimes {
+		executions = append(executions, QueryExecution{RecordingTime: sampleTime})
 	}
 
 	return BackfillPlan{

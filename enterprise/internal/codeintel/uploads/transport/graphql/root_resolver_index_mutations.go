@@ -5,7 +5,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -20,7 +19,7 @@ func (r *rootResolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID 
 		return nil, err
 	}
 
-	uploadID, indexID, err := unmarshalPreciseIndexGQLID(args.ID)
+	uploadID, indexID, err := UnmarshalPreciseIndexGQLID(args.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +57,7 @@ func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolvers
 
 	var indexerNames []string
 	if args.IndexerKey != nil {
-		indexerNames = types.NamesForKey(*args.IndexerKey)
+		indexerNames = uploadsshared.NamesForKey(*args.IndexerKey)
 	}
 
 	repositoryID := 0
@@ -111,7 +110,7 @@ func (r *rootResolver) ReindexPreciseIndex(ctx context.Context, args *struct{ ID
 		return nil, err
 	}
 
-	uploadID, indexID, err := unmarshalPreciseIndexGQLID(args.ID)
+	uploadID, indexID, err := UnmarshalPreciseIndexGQLID(args.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +148,7 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 
 	var indexerNames []string
 	if args.IndexerKey != nil {
-		indexerNames = types.NamesForKey(*args.IndexerKey)
+		indexerNames = uploadsshared.NamesForKey(*args.IndexerKey)
 	}
 
 	repositoryID := 0

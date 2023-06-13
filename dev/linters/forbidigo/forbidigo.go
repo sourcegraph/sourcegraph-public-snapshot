@@ -6,10 +6,12 @@ import (
 	"github.com/ashanbrown/forbidigo/forbidigo"
 	"github.com/ashanbrown/forbidigo/pkg/analyzer"
 	"golang.org/x/tools/go/analysis"
+
+	"github.com/sourcegraph/sourcegraph/dev/linters/nolint"
 )
 
 // Analyzer is the analyzer nogo should use
-var Analyzer = analyzer.NewAnalyzer()
+var Analyzer = nolint.Wrap(analyzer.NewAnalyzer())
 
 // defaultPatterns the patterns forbigigo should ban if they match
 var defaultPatterns = []string{

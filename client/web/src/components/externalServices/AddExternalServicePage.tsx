@@ -1,17 +1,17 @@
 import { FC, useEffect, useCallback, useState } from 'react'
 
-import { useApolloClient } from '@apollo/client'
+import { FetchResult } from '@apollo/client'
 import { useNavigate } from 'react-router-dom'
 
-import { asError, isErrorLike, logger, renderMarkdown } from '@sourcegraph/common'
+import { logger, renderMarkdown } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Container, H2, H3, H4, Markdown } from '@sourcegraph/wildcard'
 
-import { ExternalServiceFields, AddExternalServiceInput } from '../../graphql-operations'
+import { AddExternalServiceInput, AddExternalServiceResult } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
 import { PageTitle } from '../PageTitle'
 
-import { addExternalService } from './backend'
+import { useAddExternalService } from './backend'
 import { ExternalServiceCard } from './ExternalServiceCard'
 import { ExternalServiceForm } from './ExternalServiceForm'
 import { AddExternalServiceOptions } from './externalServices'
@@ -38,10 +38,15 @@ export const AddExternalServicePage: FC<Props> = ({
     const [config, setConfig] = useState(externalService.defaultConfig)
     const [displayName, setDisplayName] = useState(externalService.defaultDisplayName)
     const navigate = useNavigate()
+    const { Instructions } = externalService
 
     useEffect(() => {
         telemetryService.logPageView('AddExternalService')
     }, [telemetryService])
+
+    useEffect(() => {
+        setConfig(externalService.defaultConfig)
+    }, [externalService.defaultConfig])
 
     const getExternalServiceInput = useCallback(
         (): AddExternalServiceInput => ({
@@ -60,39 +65,36 @@ export const AddExternalServicePage: FC<Props> = ({
         [setDisplayName, setConfig]
     )
 
-    const [isCreating, setIsCreating] = useState<boolean | Error>(false)
-    const [createdExternalService, setCreatedExternalService] = useState<ExternalServiceFields>()
+    const [addExternalService, { data: addExternalServiceResult, loading: isCreating, error, client }] =
+        useAddExternalService()
+
     const onSubmit = useCallback(
-        async (event?: React.FormEvent<HTMLFormElement>): Promise<void> => {
+        async (event?: React.FormEvent<HTMLFormElement>): Promise<FetchResult<AddExternalServiceResult>> => {
             if (event) {
                 event.preventDefault()
             }
-            setIsCreating(true)
-            try {
-                const service = await addExternalService({ input: { ...getExternalServiceInput() } }, telemetryService)
-                setIsCreating(false)
-                setCreatedExternalService(service)
-            } catch (error) {
-                setIsCreating(asError(error))
-            }
+            return addExternalService({
+                variables: {
+                    input: { ...getExternalServiceInput() },
+                },
+                onCompleted: data => {
+                    telemetryService.log('AddExternalServiceSucceeded')
+                    refreshSiteFlags(client).catch((error: Error) => logger.error(error))
+                    navigate(`/site-admin/external-services/${data.addExternalService.id}`)
+                },
+                onError: () => {
+                    telemetryService.log('AddExternalServiceFailed')
+                },
+            })
         },
-        [getExternalServiceInput, telemetryService]
+        [addExternalService, telemetryService, getExternalServiceInput, client, navigate]
     )
-
-    const client = useApolloClient()
-    useEffect(() => {
-        if (createdExternalService && !isErrorLike(createdExternalService)) {
-            // Refresh site flags so that global site alerts
-            // reflect the latest configuration.
-            refreshSiteFlags(client).catch((error: Error) => logger.error(error))
-            navigate(`/site-admin/external-services/${createdExternalService.id}`)
-        }
-    }, [client, createdExternalService, navigate])
+    const createdExternalService = addExternalServiceResult?.addExternalService
 
     return (
         <>
-            <PageTitle title="Add repositories" />
-            <H2>Add repositories</H2>
+            <PageTitle title="Add code host connection" />
+            <H2>Add code host connection</H2>
             <Container>
                 {createdExternalService?.warning ? (
                     <div>
@@ -101,7 +103,9 @@ export const AddExternalServicePage: FC<Props> = ({
                                 {...externalService}
                                 title={createdExternalService.displayName}
                                 shortDescription="Update this external service configuration to manage repository mirroring."
-                                to={`/site-admin/external-services/${createdExternalService.id}/edit`}
+                                to={`/site-admin/external-services/${encodeURIComponent(
+                                    createdExternalService.id
+                                )}/edit`}
                             />
                         </div>
                         <Alert variant="warning">
@@ -114,11 +118,17 @@ export const AddExternalServicePage: FC<Props> = ({
                         <div className="mb-3">
                             <ExternalServiceCard {...externalService} />
                         </div>
-                        <H3>Instructions:</H3>
-                        <div className="mb-4">{externalService.instructions}</div>
+                        {Instructions && (
+                            <>
+                                <H3>Instructions:</H3>
+                                <div className="mb-4">
+                                    <Instructions />
+                                </div>
+                            </>
+                        )}
                         <ExternalServiceForm
                             telemetryService={telemetryService}
-                            error={isErrorLike(isCreating) ? isCreating : undefined}
+                            error={error}
                             input={getExternalServiceInput()}
                             editorActions={externalService.editorActions}
                             jsonSchema={externalService.jsonSchema}
@@ -129,6 +139,7 @@ export const AddExternalServicePage: FC<Props> = ({
                             autoFocus={autoFocusForm}
                             externalServicesFromFile={externalServicesFromFile}
                             allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
+                            additionalFormComponent={externalService.additionalFormComponent}
                         />
                     </>
                 )}

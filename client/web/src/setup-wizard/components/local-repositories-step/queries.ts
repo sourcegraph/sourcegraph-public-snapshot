@@ -1,23 +1,19 @@
 import { gql } from '@apollo/client'
 
-export const GET_LOCAL_DIRECTORY_PATH = gql`
-    query GetLocalDirectoryPath {
-        localDirectoryPicker {
-            path
-        }
-    }
-`
-
 export const DISCOVER_LOCAL_REPOSITORIES = gql`
-    query DiscoverLocalRepositories($dir: String!) {
-        localDirectory(dir: $dir) {
-            path
+    query DiscoverLocalRepositories($paths: [String!]!) {
+        localDirectories(paths: $paths) {
+            paths
             repositories {
-                __typename
-                path
-                name
+                ...LocalRepository
             }
         }
+    }
+
+    fragment LocalRepository on LocalRepository {
+        __typename
+        path
+        name
     }
 `
 

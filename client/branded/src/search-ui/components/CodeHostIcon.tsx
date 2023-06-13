@@ -4,14 +4,20 @@ import { mdiBitbucket, mdiGithub, mdiGitlab } from '@mdi/js'
 
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
-export function codeHostIcon(repoName: string): { hostName: string; svgPath?: string } {
+const iconMap: { [key: string]: { svgPath: string; color?: string } } = {
+    'github.com': { svgPath: mdiGithub, color: 'var(--body-color)' },
+    'gitlab.com': { svgPath: mdiGitlab, color: '#E24329' },
+    'bitbucket.org': { svgPath: mdiBitbucket, color: '#2584FF' },
+}
+export function codeHostIcon(repoName: string): { hostName: string; svgPath?: string; color?: string } {
     const hostName = repoName.split('/')[0]
-    const iconMap: { [key: string]: string } = {
-        'github.com': mdiGithub,
-        'gitlab.com': mdiGitlab,
-        'bitbucket.org': mdiBitbucket,
-    }
-    return { hostName, svgPath: iconMap[hostName] }
+
+    return { hostName, svgPath: iconMap[hostName]?.svgPath, color: iconMap[hostName]?.color }
+}
+
+export function isValidCodeHost(repoName: string): boolean {
+    const hostName = repoName.split('/')[0]
+    return iconMap[hostName] !== undefined
 }
 
 /**
@@ -20,12 +26,12 @@ export function codeHostIcon(repoName: string): { hostName: string; svgPath?: st
 export const CodeHostIcon: React.FunctionComponent<
     React.PropsWithChildren<{ repoName: string; className?: string }>
 > = ({ repoName, className }) => {
-    const { hostName, svgPath } = codeHostIcon(repoName)
+    const { hostName, svgPath, color } = codeHostIcon(repoName)
 
     if (svgPath) {
         return (
             <Tooltip content={hostName}>
-                <Icon aria-label={hostName} className={className} svgPath={svgPath} />
+                <Icon aria-label={hostName} className={className} svgPath={svgPath} color={color} />
             </Tooltip>
         )
     }

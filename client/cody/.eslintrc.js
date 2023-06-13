@@ -1,11 +1,16 @@
 // @ts-check
 
 const baseConfig = require('../../.eslintrc')
+
 module.exports = {
   extends: '../../.eslintrc.js',
   parserOptions: {
     ...baseConfig.parserOptions,
-    project: [__dirname + '/tsconfig.json'],
+    project: [
+      __dirname + '/tsconfig.json',
+      __dirname + '/test/integration/tsconfig.json',
+      __dirname + '/scripts/tsconfig.json',
+    ],
   },
   overrides: baseConfig.overrides,
   rules: {
@@ -13,6 +18,8 @@ module.exports = {
     'react/jsx-filename-extension': [1, { extensions: ['.ts', '.tsx'] }],
     'id-length': 'off',
     'no-console': 'off',
+    'no-void': ['error', { allowAsStatement: true }],
+    '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: true }],
     'no-restricted-imports': [
       'error',
       {

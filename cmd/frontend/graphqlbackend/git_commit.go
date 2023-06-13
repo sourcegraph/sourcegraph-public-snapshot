@@ -9,6 +9,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 
@@ -20,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -69,11 +70,11 @@ type GitCommitResolver struct {
 // you have batch-loaded a bunch of them and already have them at hand.
 func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
 	repoName := repo.RepoName()
-
 	return &GitCommitResolver{
-		logger: log.Scoped("gitCommitResolver", "resolve a specific commit").
-			With(log.String("repo", string(repoName)),
-				log.String("commitID", string(id))),
+		logger: log.Scoped("gitCommitResolver", "resolve a specific commit").With(
+			log.String("repo", string(repoName)),
+			log.String("commitID", string(id)),
+		),
 		db:              db,
 		gitserverClient: gsClient,
 		repoResolver:    repo,
@@ -127,6 +128,15 @@ func (r *GitCommitResolver) AbbreviatedOID() string {
 	return string(r.oid)[:7]
 }
 
+func (r *GitCommitResolver) PerforceChangelist(ctx context.Context) (*PerforceChangelistResolver, error) {
+	commit, err := r.resolveCommit(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return toPerforceChangelistResolver(ctx, r.repoResolver, commit)
+}
+
 func (r *GitCommitResolver) Author(ctx context.Context) (*signatureResolver, error) {
 	commit, err := r.resolveCommit(ctx)
 	if err != nil {
@@ -156,10 +166,19 @@ func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	if subject := maybeTransformP4Subject(ctx, r.repoResolver, commit); subject != nil {
+		return *subject, nil
+	}
+
 	return commit.Message.Subject(), nil
 }
 
 func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
+	if r.repoResolver.isPerforceDepot(ctx) {
+		return nil, nil
+	}
+
 	commit, err := r.resolveCommit(ctx)
 	if err != nil {
 		return nil, err
@@ -259,10 +278,10 @@ func (r *GitCommitResolver) Path(ctx context.Context, args *struct {
 	return r.path(ctx, args.Path, func(_ fs.FileInfo) error { return nil })
 }
 
-func (r *GitCommitResolver) path(ctx context.Context, path string, validate func(fs.FileInfo) error) (*GitTreeEntryResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "commit.path") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
-	span.SetTag("path", path)
+func (r *GitCommitResolver) path(ctx context.Context, path string, validate func(fs.FileInfo) error) (_ *GitTreeEntryResolver, err error) {
+	tr, ctx := trace.New(ctx, "GitCommitResolver", "path",
+		attribute.String("path", path))
+	defer tr.FinishWithErr(&err)
 
 	stat, err := r.gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), path)
 	if err != nil {
@@ -275,8 +294,8 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 		return nil, err
 	}
 	opts := GitTreeEntryResolverOpts{
-		commit: r,
-		stat:   stat,
+		Commit: r,
+		Stat:   stat,
 	}
 	return NewGitTreeEntryResolver(r.db, r.gitserverClient, opts), nil
 }
@@ -416,4 +435,8 @@ func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
 	repoUrl := *r.repoResolver.RepoMatch.URL()
 	repoUrl.Path += "@" + string(r.oid)
 	return &repoUrl
+}
+
+func (r *GitCommitResolver) Ownership(ctx context.Context, args ListOwnershipArgs) (OwnershipConnectionResolver, error) {
+	return EnterpriseResolvers.ownResolver.GitCommitOwnership(ctx, r, args)
 }

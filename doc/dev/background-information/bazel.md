@@ -2,30 +2,32 @@
 
 Sourcegraph is currently migrating to Bazel as its build system and this page is targeted for early adopters which are helping the [#job-fair-bazel](https://sourcegraph.slack.com/archives/C03LUEB7TJS) team to test their work.
 
-## Early adopters
+## 📅 Timeline
 
-If you are an early adopter, you can already get some benefits from Bazel, while we gradually roll it out.
+- 2023-04-03 Bazel steps are required to pass on all PR builds.
+  - Run `bazel run //:gazelle-update-repos` if you changed the `go.mod`.
+  - Run `bazel configure` after making all your changes in the PR and commit the updated/added `BUILD.bazel`
+  - Add `[no-bazel]` in your commit description if you want to bypass Bazel.
+    - ⚠️  see [what to do after using `[no-bazel]`](#i-just-used-no-bazel-to-merge-my-pr)
+- 2023-04-06 Bazel steps are required to pass on main.
+  - Run `bazel run //:gazelle-update-repos` if you changed the `go.mod`.
+  - Run `bazel configure` after making all your changes in the PR and commit the updated/added `BUILD.bazel`
+  - Add `[no-bazel]` in your commit description if you want to bypass Bazel.
+    - ⚠️  see [what to do after using `[no-bazel]`](#i-just-used-no-bazel-to-merge-my-pr)
+- 2023-04-10 You cannot opt out of Bazel anymore
+- 2023-05-02 Additonally, to normal container building process, container images are now also built with `rules_oci` and Wolfi for as base images.
+  - Those new images are used by the new test targets under `//testing/...` that run the E2E tests and Backend Integration tests.
+  - The new images are deployed on S2 (and only S2).
+  - See [Slack thread](https://sourcegraph.slack.com/archives/C04MYFW01NV/p1685606796918859)
+- **2023-05-07 The new images are deployed on Dotcom.** 
+- 2023-05-14 After the release cut and the beginning of the code freeze, all operations that are now migrated to Bazel will have their legacy counterpart removed. 
 
-:bulb: Please note that this is only applicable in PRs. For the `main` branch we need to ensure we use the same build steps for everyone until Bazel is fully rolled out.
-
-- Before pushing, ensure your changes are refected in the build files (those `BUILD.bazel` files):
-  - If you changed anything to the `go.mod` file, you need to run:
-    - `bazel run :update-gazelle-repos`
-  - Run `bazel configure` to ensure the build files are also properly updated.
-- Run your tests locally, with `bazel test //[PATH]/...` where `PATH` refers to the package containing your changes.
-  - If you changed things in too many places, you can always run `bazel test //...` which will test everything (or reused cached results if applicable).
-- Include the updated build files in your commit! They are relevant to that commit after all.
-- When commiting, add the `[force-bazel]` message flag in the description of your commit (not in the commit title, but in the description - it's nicer this way).
-  - If you commit again, remember to add that message flag again. Only the last commit is checked to determine if we want Bazel on that PR.
-- Push your changes as usual.
-- When browsing the CI (you can use `sg ci status --web` you'll see a `Bazel` set of jobs running both your tests and build.
-
-You may find the build and tests to be slow, either locally or in CI. This is because to be efficient, Bazel cache needs to be warm. So inevitably, as early adopters, that will be less the case
-than when more teammates will be using Bazel.
-
-:warning: It's highly probable that the build files you updated will include changes that you were not responsible for. This is because not everyone is updating buildfiles. Just commit them anyway and move on. This will be get better over time.
-
-:warning: If you find your tests to be passing normally with `go test` and on a normal CI build, but not when Bazel is enabled, please check the [FAQ](#faq) below. If you can't solve the problem, just reach us out on [#job-fair-bazel](https://sourcegraph.slack.com/archives/C03LUEB7TJS).
+- ➡️  [Cheat sheet](#bazel-cheat-sheet)
+- ➡️  [FAQ](#faq)
+- 📽️ [Bazel Status Update](https://go/bazel-status)
+- See also
+  - [Bazel for client/*](./bazel_web.md)
+  - [Building container images with Bazel](./bazel_containers.md)
 
 ## Why do we need a build system?
 
@@ -212,6 +214,12 @@ So when a change is detected, `iBazel` will build the affected target and it wil
 
 ### General
 
+#### I just used `[no-bazel]` to merge my PR
+
+While using `[no-bazel]` will enable you to get your pull request merged, the subsequent builds will be with Bazel unless they also have that flag.
+
+Therefore you need to follow-up quickly with a fix to ensure `main` is not broken.
+
 #### The analysis cache is being busted because of `--action_env`
 
 Typically you'll see this (in CI or locally):
@@ -224,6 +232,91 @@ INFO: Build option --action_env has changed, discarding analysis cache.
   - Use `build --action_env=VAR=123` instead to pin it down if it's not stable in your environment.
 - If you added a `test --action_env=VAR`, running `bazel build [...]` will have a different `--action_env` and because the analysis cache is the same for `build` and `test` that will automatically bust the cache.
   - Use `build --test_env=VAR` instead, so that env is used only in tests, and doesn't affect builds, while avoiding to bust the cache.
+
+#### My JetBrains IDE becomes unresponsive after Bazel builds
+
+By default, JetBrains IDEs such as GoLand will try and index the files in your project workspace. If you run Bazel locally, the resulting artifacts will be indexed, which will likely hog the full heap size that the IDE is allocated.
+
+There is no reason to index these files, so you can just exclude them from indexing by right-clicking artifact directories, then choosing **Mark directory as** &rarr; **Excluded** from the context menu. A restart is required to stop the indexing process.
+
+#### My local `bazel configure` or `./dev/ci/bazel-configure.sh` run has diff with a result of Bazel CI step
+
+This could happen when there are any files which are not tracked by Git. These files affect the run of `bazel configure` and typically add more items to `BUILD.bazel` file.
+
+Solution: run `git clean -ffdx` then run `bazel configure` again.
+
+#### How do I clean up all local Bazel cache?
+
+1. The simplest way to clean up the cache is to use the clean command: `bazel clean`. This command will remove all output files and the cache in the bazel-* directories within your workspace. Use the `--expunge` flag to remove the entire working tree, including the cache directory, and force a full rebuild.
+2. To manually clear the global Bazel cache, you need to remove the respective folders from your machine. On macOS, the global cache is typically located at either `~/.cache/bazel` or `/var/tmp/_bazel_$(whoami)`.
+
+#### Where do I fine Bazel rules locally on disk?
+
+Use `bazel info output_base` to find the output base directory. From there go to the `external` folder to find Bazel rules saved locally.
+
+#### How do I build a container on MacOS 
+
+Our containers are only built for `linux/amd64`, therefore we need to cross-compile on MacOS to produce correct images. To simplify this process, a configuration flag is available: `--config darwin-docker` to swap the toolchains for you. 
+
+Example: 
+
+```
+# Create a tarball that can be loaded in Docker of the worker service:
+bazel build //cmd/worker:image_tarball --config darwin-docker
+
+# Load the image in Docker: 
+docker load --input $(bazel cquery //cmd/worker:image_tarball  --config darwin-docker --output=files)
+```
+
+You can also use the same configuration flag to run the container tests on MacOS: 
+
+```
+bazel test //cmd/worker:image_test --config darwin-docker
+```
+
+#### Can I run integration tests (`bazel test //testing/...`) locally? 
+
+At the time of writing this documentation, it's not possible to do so, because we need to cross compile to produce `linux/amd64` container images, but the test runners need to run against your host architecture. If your host isn't `linux/amd64` you won't be able to run those tests. 
+
+This is caused by the fact that there is no straightforward way of telling Bazel to use a given toolchain for certain targets and another one for others, in a consistent fashion across the various binaries we produce (rust+go).
+
+See [this issue](https://github.com/sourcegraph/sourcegraph/issues/52914) to track progress on this particular problem. 
+
+### Queries 
+
+Bazel queries (`bazel query`, `bazel cquery` and `bazel aqueries`) are powerful tools that can assist you to visualize dependencies and understand how targets are being built or tested. 
+
+#### Errors about not being able to fetch a manifest for an OCI rule 
+
+When running the following query: 
+
+```
+bazel query 'kind("go_binary", rdeps(//..., //internal/database/migration/cliutil))'
+```
+
+We get the following error. 
+
+```
+WARNING: Could not fetch the manifest. Either there was an authentication issue or trying to pull an image with OCI image media types. 
+Falling back to using `curl`. See https://github.com/bazelbuild/bazel/issues/17829 for the context.
+INFO: Repository wolfi_redis_base_single instantiated at:
+  /home/noah/Sourcegraph/sourcegraph/WORKSPACE:376:9: in <toplevel>
+  /home/noah/Sourcegraph/sourcegraph/dev/oci_deps.bzl:73:13: in oci_deps
+  /home/noah/.cache/bazel/_bazel_noah/8fd1d20666a46767e7f29541678514a0/external/rules_oci/oci/pull.bzl:133:18: in oci_pull
+Repository rule oci_pull defined at:
+  /home/noah/.cache/bazel/_bazel_noah/8fd1d20666a46767e7f29541678514a0/external/rules_oci/oci/private/pull.bzl:434:27: in <toplevel>
+WARNING: Download from https://us.gcr.io/v2/sourcegraph-dev/wolfi-redis-base/manifests/sha256:08e80c858fe3ef9b5ffd1c4194a771b6fd45f9831ad40dad3b5f5b53af880582 failed: class com.google.devtools.build.lib.bazel.repository.downloader.UnrecoverableHttpException GET returned 401 Unauthorized
+ERROR: An error occurred during the fetch of repository 'wolfi_redis_base_single':
+   Traceback (most recent call last):
+        File "/home/noah/.cache/bazel/_bazel_noah/8fd1d20666a46767e7f29541678514a0/external/rules_oci/oci/private/pull.bzl", line 357, column 46, in _oci_pull_impl
+                mf, mf_len = downloader.download_manifest(rctx.attr.identifier, "manifest.json")
+```
+
+This query requires to analyse external dependencies for the [base images](bazel_containers.md), which are not yet publicly available.  
+
+Solution: `gcloud auth configure-docker us.gcr.io` to get access to the registry. 
+
+Solution: Pass the `--keep_going` additional flag to your `bazel query` command, so the evaluation doesn't stop at the first error. 
 
 ### Go
 
@@ -334,7 +427,45 @@ ERROR: Error computing the main repository mapping: no such package '@crate_inde
 
 The current `lockfile` is out of date for 'crate_index'. Please re-run bazel using `CARGO_BAZEL_REPIN=true` if this is expected and the lockfile should be updated.
 ```
-Bazel uses a separate lock file to keep track of the dependencies and needs to be updated. To update the `lockfile` run `CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index`. This command takes a while to execute as it fetches all the dependencies specified in `Cargo.lock` and populates `Cargo.Bazel.lock`.
+Bazel uses a separate lock file to keep track of the dependencies and needs to be updated. To update the `lockfile` run `CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_index`. This command takes a while to execute as it fetches all the dependencies specified in `Cargo.lock` and populates `Cargo.Bazel.lock`.
+
+### `syntax-highlighter` fails to build and has the error `failed to resolve: use of undeclared crate or module`
+The error looks something like this:
+```
+error[E0433]: failed to resolve: use of undeclared crate or module `scip_treesitter_languages`
+  --> docker-images/syntax-highlighter/src/main.rs:56:5
+   |
+56 |     scip_treesitter_languages::highlights::CONFIGURATIONS
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^ use of undeclared crate or module `scip_treesitter_languages`
+
+error[E0433]: failed to resolve: use of undeclared crate or module `scip_treesitter_languages`
+  --> docker-images/syntax-highlighter/src/main.rs:57:15
+   |
+57 |         .get(&scip_treesitter_languages::parsers::BundledParser::Go);
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^ use of undeclared crate or module `scip_treesitter_languages`
+
+error: aborting due to 2 previous errors
+```
+Bazel doesn't know about the module/crate being use in the rust code. If you do a git blame `Cargo.toml` you'll probably see that a new dependency has been added, but the build files were not updated. There are two ways to solve this:
+1. Run `bazel configure` and `CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_index`. Once the commands have completed you can check that the dependency has been picked up and syntax-highlighter can be built by running `bazel build //docker-images/syntax-highlighter/...`. **Note** this will usually work if the dependency is an *external* dependency.
+2. You're going to have to update the `BUILD.bazel` file yourself. Which one you might ask? From the above error we can see the file `src/main.rs` is where the error is encountered, so we need to tell *its BUILD.bazel* about the new dependency.
+For the above dependency, the crate is defined in `docker-images/syntax-highlighter/crates`. You'll also see that each of those crates have their own `BUILD.bazel` files in them, which means we can reference them as targets! Take a peak at `scip-treesitter-languages` `BUILD.bazel` file and take note of the name - that is its target. Now that we have the name of the target we can add it as a dep to `docker-images/syntax-highlighter`. In the snippet below the `syntax-highlighter` `rust_binary` rule is updated with the `scip-treesitter-languages` dependency. Note that we need to refer to the full target path when adding it to the dep list in the `BUILD.bazel` file.
+```
+rust_binary(
+    name = "syntect_server",
+    srcs = ["src/main.rs"],
+    aliases = aliases(),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    deps = all_crate_deps(
+        normal = True,
+    ) + [
+        "//docker-images/syntax-highlighter/crates/sg-syntax:sg-syntax",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages:scip-treesitter-languages",
+    ],
+)
+```
 
 ### When using nix, when protobuf gets compiled I get a C/C++ compiler issue `fatal error: 'algorithm' file not found` or some core header files are not found
 Nix sets the CC environment variable to a clang version use by nix which is independent of the host system. You can verify this by running the following commands in your nix shell.
@@ -357,6 +488,27 @@ cat bazel-sourcegraph/external/local_config_cc/cc_wrapper.sh | grep "# Call the 
 # Call the C++ compiler
 /usr/bin/gcc "$@"
 ```
+
+### On MacOS, you get `Bad CPU type for executable` when running Bazel
+
+This typically happens when `bazel` tries to use `protoc` to compile protobuf definitions and you're on an arm64 mac. The full error will look like the following:
+```
+src/main/tools/process-wrapper-legacy.cc:80: "execvp(bazel-out/darwin_arm64-opt-exec-2B5CBBC6/bin/external/com_google_protobuf_protoc_macos_aarch64/protoc.exe, ...)": Bad CPU type in executable
+ERROR: /private/var/tmp/_bazel_ec2-user/c27d26456d2e68ea0aaccfcda2d35b4e/external/go_googleapis/google/api/BUILD.bazel:22:14: Generating Descriptor Set proto_library @go_googleapis//google/api:api_proto failed: (Exit 1): protoc.exe failed: error executing command (from target @go_googleapis//google/api:api_proto) bazel-out/darwin_arm64-opt-exec-2B5CBBC6/bin/external/com_google_protobuf_protoc_macos_aarch64/protoc.exe --direct_dependencies google/api/launch_stage.proto ... (remaining 5 arguments skipped)
+```
+
+If you run the `file` utility on the `protoc` binary you'll see the CPU architecture mismatch.
+```
+file bazel-out/darwin_arm64-opt-exec-2B5CBBC6/bin/external/com_google_protobuf_protoc_macos_aarch64/protoc.exe
+bazel-out/darwin_arm64-opt-exec-2B5CBBC6/bin/external/com_google_protobuf_protoc_macos_aarch64/protoc.exe: Mach-O 64-bit executable x86_64
+```
+
+To fix this, you need to install Rosetta 2. There are various ways of doing that, but below is the CLI way to do it.
+```
+/usr/sbin/softwareupdate --install-rosetta --agree-to-license
+```
+
+__Tested on Darwin 22.3.0 Darwin Kernel Version 22.3.0__
 
 ## Resources
 

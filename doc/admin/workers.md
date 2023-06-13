@@ -40,10 +40,6 @@ This job periodically checks for auto-indexability on repositories in the backgr
 
 This job periodically checks for dependency packages that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_navigation/how-to/enable_auto_indexing.md) and [configure](../code_navigation/how-to/configure_auto_indexing.md) auto-indexing.
 
-#### `codeintel-autoindexing-janitor`
-
-This job periodically removes stale autoindexing records.
-
 #### `codeintel-metrics-reporter`
 
 This job periodically emits metrics to be scraped by Prometheus about code intelligence background jobs.

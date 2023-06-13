@@ -58,22 +58,22 @@ export interface TemporarySettingsSchema {
      */
     'search.input.usedExamples': string[]
     'search.input.usedInlineHistory': boolean
-    // This is a temporary setting to allow users to easily switch
-    // between  having search  results be ranked or not. It's only
-    // used when the feature flag `search-ranking` is enabled.
-    'search.ranking.experimental': boolean
     // This is a temporary (no pun intended) setting to allow users to easily
     // switch been the current and the new search input. It's only used when
     // the feature flag `"searchQueryInput": "experimental"` is set.
     'search.input.experimental': boolean
-    // TODO #41002: Remove this temporary setting.
-    // This temporary setting is now turned on by default with no UI to toggle it off.
-    'coreWorkflowImprovements.enabled_deprecated': boolean
     'batches.minSavedPerChangeset': number
     'search.notebooks.minSavedPerView': number
     'repo.commitPage.diffMode': DiffMode
     'setup.activeStepId': string
+    'app-setup.activeStepId': string
     'own.panelExplanationHidden': boolean
+    'cody.showSidebar': boolean
+    'cody.blobPageCta.dismissed': boolean
+    'cody.searchPageCta.dismissed': boolean
+    'cody.chatPageCta.dismissed': boolean
+    'cody.survey.submitted': boolean
+    'app.codyStandalonePage.selectedRepo': string
 }
 
 /**

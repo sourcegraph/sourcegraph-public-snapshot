@@ -62,11 +62,7 @@ export const AnalyticsUsersPage: FC = () => {
             },
         ]
 
-        const isRequestAccessAllowed = checkRequestAccessAllowed(
-            window.context.sourcegraphDotComMode,
-            window.context.allowSignup,
-            window.context.experimentalFeatures
-        )
+        const isRequestAccessAllowed = checkRequestAccessAllowed(window.context)
         if (isRequestAccessAllowed) {
             legends = [
                 ...legends.slice(0, 1),

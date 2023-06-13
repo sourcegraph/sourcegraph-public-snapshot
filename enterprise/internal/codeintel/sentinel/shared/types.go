@@ -1,11 +1,9 @@
 package shared
 
-import "time"
-
-type GetVulnerabilitiesArgs struct {
-	Limit  int
-	Offset int
-}
+import (
+	"strconv"
+	"time"
+)
 
 type Vulnerability struct {
 	ID               int    // internal ID
@@ -31,6 +29,10 @@ func (v Vulnerability) RecordID() int {
 	return v.ID
 }
 
+func (v Vulnerability) RecordUID() string {
+	return strconv.Itoa(v.ID)
+}
+
 // Data that varies across instances of a vulnerability
 // Need to decide if this will be flat inside Vulnerability (and have multiple duplicate vulns)
 // or a separate struct/table
@@ -49,19 +51,24 @@ type AffectedSymbol struct {
 	Symbols []string `json:"symbols"`
 }
 
+type VulnerabilityMatch struct {
+	ID              int
+	UploadID        int
+	VulnerabilityID int
+	AffectedPackage AffectedPackage
+}
+
+type GetVulnerabilitiesArgs struct {
+	Limit  int
+	Offset int
+}
+
 type GetVulnerabilityMatchesArgs struct {
 	Limit          int
 	Offset         int
 	Severity       string
 	Language       string
 	RepositoryName string
-}
-
-type VulnerabilityMatch struct {
-	ID              int
-	UploadID        int
-	VulnerabilityID int
-	AffectedPackage AffectedPackage
 }
 
 type GetVulnerabilityMatchesSummaryCounts struct {

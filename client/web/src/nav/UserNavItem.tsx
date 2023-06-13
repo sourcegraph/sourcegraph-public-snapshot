@@ -45,7 +45,6 @@ export interface UserNavItemProps extends TelemetryProps {
     authenticatedUser: MinimalAuthenticatedUser
     isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
-    codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
     menuButtonRef?: React.Ref<HTMLButtonElement>
     showFeedbackModal: () => void
     showKeyboardShortcutsHelp: () => void
@@ -60,7 +59,6 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
         authenticatedUser,
         isSourcegraphDotCom,
         isSourcegraphApp,
-        codeHostIntegrationMessaging,
         menuButtonRef,
         showFeedbackModal,
         showKeyboardShortcutsHelp,
@@ -70,7 +68,6 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     const { themeSetting, setThemeSetting } = useTheme()
     const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
     const [enableTeams] = useFeatureFlag('search-ownership')
-    const [enableAppConnectDotCom] = useFeatureFlag('app-connect-dotcom')
 
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
@@ -142,23 +139,18 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     <MenuDivider className={styles.dropdownDivider} />
                                 </>
                             ) : null}
-                            <MenuLink as={Link} to={authenticatedUser.settingsURL!}>
+                            <MenuLink
+                                as={Link}
+                                to={isSourcegraphApp ? '/user/app-settings' : authenticatedUser.settingsURL!}
+                            >
                                 Settings
                             </MenuLink>
-                            <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
-                                Saved searches
-                            </MenuLink>
-                            {isSourcegraphApp && (
-                                <MenuLink as={Link} to="/setup">
-                                    Setup wizard
+                            {!isSourcegraphApp && (
+                                <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
+                                    Saved searches
                                 </MenuLink>
                             )}
-                            {isSourcegraphApp && (
-                                <MenuLink as={Link} to="/site-admin/repositories">
-                                    Repositories
-                                </MenuLink>
-                            )}
-                            {isSourcegraphApp && enableAppConnectDotCom && <AppUserConnectDotComAccount />}
+                            {isSourcegraphApp && <AppUserConnectDotComAccount />}
                             {enableTeams && !isSourcegraphDotCom && (
                                 <MenuLink as={Link} to="/teams">
                                     Teams
@@ -197,7 +189,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     </div>
                                 )}
                             </div>
-                            {searchQueryInputFeature === 'experimental' && (
+                            {!isSourcegraphApp && searchQueryInputFeature === 'experimental' && (
                                 <div className="px-2 py-1">
                                     <div className="d-flex align-items-center justify-content-between">
                                         <div className="mr-2">
@@ -227,35 +219,28 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     )}
                                 </>
                             )}
-                            <MenuDivider className={styles.dropdownDivider} />
-                            {authenticatedUser.siteAdmin && !isSourcegraphApp && (
-                                <MenuLink as={Link} to="/site-admin">
-                                    Site admin
-                                </MenuLink>
+                            {!isSourcegraphApp && (
+                                <>
+                                    <MenuDivider className={styles.dropdownDivider} />
+                                    {authenticatedUser.siteAdmin && (
+                                        <MenuLink as={Link} to="/site-admin">
+                                            Site admin
+                                        </MenuLink>
+                                    )}
+                                    <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
+                                        Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
+                                    </MenuLink>
+                                    <MenuItem onSelect={showFeedbackModal}>Feedback</MenuItem>
+                                    <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
+                                    {authenticatedUser.session?.canSignOut && (
+                                        <MenuLink as={AnchorLink} to="/-/sign-out">
+                                            Sign out
+                                        </MenuLink>
+                                    )}
+                                </>
                             )}
-                            <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
-                                {isSourcegraphApp ? 'Documentation' : 'Help'}{' '}
-                                <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
-                            </MenuLink>
 
-                            {isSourcegraphApp ? (
-                                <MenuLink as={AnchorLink} to="/user/settings/product-research">
-                                    Feedback
-                                </MenuLink>
-                            ) : (
-                                <MenuItem onSelect={showFeedbackModal}>Feedback</MenuItem>
-                            )}
-
-                            <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
-
-                            {authenticatedUser.session?.canSignOut && !isSourcegraphApp && (
-                                <MenuLink as={AnchorLink} to="/-/sign-out">
-                                    Sign out
-                                </MenuLink>
-                            )}
-                            {(isSourcegraphDotCom || codeHostIntegrationMessaging === 'browser-extension') && (
-                                <MenuDivider className={styles.dropdownDivider} />
-                            )}
+                            {isSourcegraphDotCom && <MenuDivider className={styles.dropdownDivider} />}
                             {isSourcegraphDotCom && (
                                 <MenuLink
                                     as={AnchorLink}
@@ -264,16 +249,6 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     rel="noopener"
                                 >
                                     About Sourcegraph <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
-                                </MenuLink>
-                            )}
-                            {codeHostIntegrationMessaging === 'browser-extension' && (
-                                <MenuLink
-                                    as={AnchorLink}
-                                    to="/help/integration/browser_extension"
-                                    target="_blank"
-                                    rel="noopener"
-                                >
-                                    Browser extension <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                                 </MenuLink>
                             )}
                         </MenuList>

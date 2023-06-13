@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -14,8 +14,8 @@ import (
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.CreateCodeIntelligenceConfigurationPolicyArgs) (_ resolverstubs.CodeIntelligenceConfigurationPolicyResolver, err error) {
-	ctx, traceErrs, endObservation := r.operations.createConfigurationPolicy.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repository", string(resolverstubs.Deref(args.Repository, ""))),
+	ctx, traceErrs, endObservation := r.operations.createConfigurationPolicy.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repository", string(resolverstubs.Deref(args.Repository, ""))),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -38,11 +38,11 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		repositoryID = &id
 	}
 
-	opts := types.ConfigurationPolicy{
+	opts := shared.ConfigurationPolicy{
 		RepositoryID:              repositoryID,
 		Name:                      args.Name,
 		RepositoryPatterns:        args.RepositoryPatterns,
-		Type:                      types.GitObjectType(args.Type),
+		Type:                      shared.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
@@ -50,6 +50,7 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
+		EmbeddingEnabled:          args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,
 	}
 	configurationPolicy, err := r.policySvc.CreateConfigurationPolicy(ctx, opts)
 	if err != nil {
@@ -61,8 +62,8 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.UpdateCodeIntelligenceConfigurationPolicyArgs) (_ *resolverstubs.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.updateConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("policyID", string(args.ID)),
+	ctx, _, endObservation := r.operations.updateConfigurationPolicy.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("policyID", string(args.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -79,11 +80,11 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		return nil, err
 	}
 
-	opts := types.ConfigurationPolicy{
+	opts := shared.ConfigurationPolicy{
 		ID:                        id,
 		Name:                      args.Name,
 		RepositoryPatterns:        args.RepositoryPatterns,
-		Type:                      types.GitObjectType(args.Type),
+		Type:                      shared.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
 		RetentionDuration:         toDuration(args.RetentionDurationHours),
@@ -91,6 +92,7 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
+		EmbeddingEnabled:          args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,
 	}
 	if err := r.policySvc.UpdateConfigurationPolicy(ctx, opts); err != nil {
 		return nil, err
@@ -101,8 +103,8 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *rootResolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.DeleteCodeIntelligenceConfigurationPolicyArgs) (_ *resolverstubs.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.deleteConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("policyID", string(args.Policy)),
+	ctx, _, endObservation := r.operations.deleteConfigurationPolicy.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("policyID", string(args.Policy)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -130,10 +132,10 @@ func (r *rootResolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Con
 const maxDurationHours = 87600 // 10 years
 
 func validateConfigurationPolicy(policy resolverstubs.CodeIntelConfigurationPolicy) error {
-	switch types.GitObjectType(policy.Type) {
-	case types.GitObjectTypeCommit:
-	case types.GitObjectTypeTag:
-	case types.GitObjectTypeTree:
+	switch shared.GitObjectType(policy.Type) {
+	case shared.GitObjectTypeCommit:
+	case shared.GitObjectTypeTag:
+	case shared.GitObjectTypeTree:
 	default:
 		return errors.Errorf("illegal git object type '%s', expected 'GIT_COMMIT', 'GIT_TAG', or 'GIT_TREE'", policy.Type)
 	}
@@ -144,14 +146,25 @@ func validateConfigurationPolicy(policy resolverstubs.CodeIntelConfigurationPoli
 	if policy.Pattern == "" {
 		return errors.Errorf("no pattern supplied")
 	}
-	if types.GitObjectType(policy.Type) == types.GitObjectTypeCommit && policy.Pattern != "HEAD" {
+	if shared.GitObjectType(policy.Type) == shared.GitObjectTypeCommit && policy.Pattern != "HEAD" {
 		return errors.Errorf("pattern must be HEAD for policy type 'GIT_COMMIT'")
 	}
-	if policy.RetentionDurationHours != nil && (*policy.RetentionDurationHours < 0 || *policy.RetentionDurationHours > maxDurationHours) {
+
+	if policy.RetentionEnabled && policy.RetentionDurationHours != nil && (*policy.RetentionDurationHours < 0 || *policy.RetentionDurationHours > maxDurationHours) {
 		return errors.Errorf("illegal retention duration '%d'", *policy.RetentionDurationHours)
 	}
 	if policy.IndexingEnabled && policy.IndexCommitMaxAgeHours != nil && (*policy.IndexCommitMaxAgeHours < 0 || *policy.IndexCommitMaxAgeHours > maxDurationHours) {
 		return errors.Errorf("illegal index commit max age '%d'", *policy.IndexCommitMaxAgeHours)
+	}
+
+	if policy.EmbeddingsEnabled != nil && *policy.EmbeddingsEnabled {
+		if policy.RetentionEnabled || policy.IndexingEnabled {
+			return errors.Errorf("configuration policies can apply to SCIP indexes or embeddings, but not both")
+		}
+
+		if shared.GitObjectType(policy.Type) != shared.GitObjectTypeCommit {
+			return errors.Errorf("embeddings policies must have type 'GIT_COMMIT'")
+		}
 	}
 
 	return nil

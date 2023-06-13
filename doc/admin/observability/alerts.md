@@ -4515,100 +4515,6 @@ Generated query for critical alert: `max((max(rate(src_repoupdater_sched_error[1
 
 <br />
 
-## repo-updater: perms_syncer_perms
-
-<p class="subtitle">time gap between least and most up to date permissions</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> repo-updater: 259200s+ time gap between least and most up to date permissions for 5m0s
-
-**Next steps**
-
-- Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-perms).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_perms_syncer_perms"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max by (type) (src_repoupdater_perms_syncer_perms_gap_seconds)) >= 259200)`
-
-</details>
-
-<br />
-
-## repo-updater: perms_syncer_stale_perms
-
-<p class="subtitle">number of entities with stale permissions</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> repo-updater: 100+ number of entities with stale permissions for 5m0s
-
-**Next steps**
-
-- Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-stale-perms).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_perms_syncer_stale_perms"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max by (type) (src_repoupdater_perms_syncer_stale_perms)) >= 100)`
-
-</details>
-
-<br />
-
-## repo-updater: perms_syncer_no_perms
-
-<p class="subtitle">number of entities with no permissions</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> repo-updater: 100+ number of entities with no permissions for 5m0s
-
-**Next steps**
-
-- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-no-perms).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_perms_syncer_no_perms"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max by (type) (src_repoupdater_perms_syncer_no_perms)) >= 100)`
-
-</details>
-
-<br />
-
 ## repo-updater: perms_syncer_outdated_perms
 
 <p class="subtitle">number of entities with outdated permissions</p>
@@ -4667,38 +4573,6 @@ Generated query for warning alert: `max((max by (type) (src_repoupdater_perms_sy
 <summary>Technical details</summary>
 
 Generated query for warning alert: `max((histogram_quantile(0.95, max by (le, type) (rate(src_repoupdater_perms_syncer_sync_duration_seconds_bucket[1m])))) >= 30)`
-
-</details>
-
-<br />
-
-## repo-updater: perms_syncer_queue_size
-
-<p class="subtitle">permissions sync queued items</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> repo-updater: 100+ permissions sync queued items for 5m0s
-
-**Next steps**
-
-- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-queue-size).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_perms_syncer_queue_size"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max(src_repoupdater_perms_syncer_queue_size)) >= 100)`
 
 </details>
 

@@ -12,11 +12,13 @@ import (
 )
 
 type Store interface {
+	// Vulnerabilities
 	VulnerabilityByID(ctx context.Context, id int) (_ shared.Vulnerability, _ bool, err error)
 	GetVulnerabilitiesByIDs(ctx context.Context, ids ...int) (_ []shared.Vulnerability, err error)
 	GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) (_ []shared.Vulnerability, _ int, err error)
 	InsertVulnerabilities(ctx context.Context, vulnerabilities []shared.Vulnerability) (_ int, err error)
 
+	// Vulnerability matches
 	VulnerabilityMatchByID(ctx context.Context, id int) (shared.VulnerabilityMatch, bool, error)
 	GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, int, error)
 	GetVulnerabilityMatchesSummaryCount(ctx context.Context) (counts shared.GetVulnerabilityMatchesSummaryCounts, err error)
@@ -30,7 +32,6 @@ type store struct {
 	operations *operations
 }
 
-// New returns a new sentinel store.
 func New(observationCtx *observation.Context, db database.DB) Store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),

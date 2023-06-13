@@ -270,12 +270,14 @@ var sg = &cli.App{
 		insightsCommand,
 		telemetryCommand,
 		monitoringCommand,
+		contextCommand,
 
 		// Dev environment
 		secretCommand,
 		setupCommand,
 		srcCommand,
 		srcInstanceCommand,
+		appCommand,
 
 		// Company
 		teammateCommand,

@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "bitbucketserver",
@@ -12,7 +13,6 @@ go_library(
         "//enterprise/internal/authz/types",
         "//enterprise/internal/licensing",
         "//internal/authz",
-        "//internal/conf",
         "//internal/encryption",
         "//internal/extsvc",
         "//internal/extsvc/bitbucketserver",

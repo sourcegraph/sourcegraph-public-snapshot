@@ -1,179 +1,144 @@
 package scim
 
 import (
-	"bytes"
 	"context"
-	"io"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
-	"github.com/elimity-com/scim/optional"
-	"github.com/elimity-com/scim/schema"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const (
-	AttrUserName      = "userName"
-	AttrDisplayName   = "displayName"
-	AttrName          = "name"
-	AttrNameFormatted = "formatted"
-	AttrNameGiven     = "givenName"
-	AttrNameMiddle    = "middleName"
-	AttrNameFamily    = "familyName"
-	AttrNickName      = "nickName"
-	AttrEmails        = "emails"
-	AttrExternalId    = "externalId"
-	AttrActive        = "active"
-)
-
-// UserResourceHandler implements the scim.ResourceHandler interface for users.
-type UserResourceHandler struct {
-	ctx              context.Context
-	observationCtx   *observation.Context
-	db               database.DB
-	coreSchema       schema.Schema
-	schemaExtensions []scim.SchemaExtension
+type User struct {
+	types.UserForSCIM
 }
 
-func (h *UserResourceHandler) getLogger() log.Logger {
-	if h.observationCtx != nil && h.observationCtx.Logger != nil {
-		return h.observationCtx.Logger.Scoped("scim.user", "resource handler for scim user")
-	}
-	return log.Scoped("scim.user", "resource handler for scim user")
-}
-
-// NewUserResourceHandler returns a new UserResourceHandler.
-func NewUserResourceHandler(ctx context.Context, observationCtx *observation.Context, db database.DB) *UserResourceHandler {
-	return &UserResourceHandler{
-		ctx:              ctx,
-		observationCtx:   observationCtx,
-		db:               db,
-		coreSchema:       createCoreSchema(),
-		schemaExtensions: []scim.SchemaExtension{},
-	}
-}
-
-// getUserFromDB returns the user with the given ID.
-// When it fails, it returns an error that's safe to return to the client as a SCIM error.
-func getUserFromDB(ctx context.Context, store database.UserStore, idStr string) (*types.UserForSCIM, error) {
-	id, err := strconv.ParseInt(idStr, 10, 32)
+func (u *User) ToResource() scim.Resource {
+	// Convert account data – if it doesn't exist, never mind
+	attributes, err := fromAccountData(u.SCIMAccountData)
 	if err != nil {
-		return nil, scimerrors.ScimErrorResourceNotFound(idStr)
+		first, middle, last := displayNameToPieces(u.DisplayName)
+		// Failed to convert account data to SCIM resource attributes. Fall back to core user data.
+		attributes = scim.ResourceAttributes{
+			AttrActive:      u.Active,
+			AttrUserName:    u.Username,
+			AttrDisplayName: u.DisplayName,
+			AttrName: map[string]interface{}{
+				AttrNameFormatted: u.DisplayName,
+				AttrNameGiven:     first,
+				AttrNameMiddle:    middle,
+				AttrNameFamily:    last,
+			},
+		}
+		if u.SCIMExternalID != "" {
+			attributes[AttrExternalId] = u.SCIMExternalID
+		}
+	}
+	if attributes[AttrName] == nil {
+		attributes[AttrName] = map[string]interface{}{}
 	}
 
-	users, err := store.ListForSCIM(ctx, &database.UsersListOptions{
-		UserIDs: []int32{int32(id)},
-	})
-	if err != nil {
-		return nil, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+	// Fall back to username and primary email in the user object if not set in account data
+	if attributes[AttrUserName] == nil || attributes[AttrUserName].(string) == "" {
+		attributes[AttrUserName] = u.Username
 	}
-	if len(users) == 0 {
-		return nil, scimerrors.ScimErrorResourceNotFound(idStr)
+	if emails, ok := attributes[AttrEmails].([]interface{}); (!ok || len(emails) == 0) && u.Emails != nil && len(u.Emails) > 0 {
+		attributes[AttrEmails] = []interface{}{
+			map[string]interface{}{
+				"value":   u.Emails[0],
+				"primary": true,
+			},
+		}
 	}
 
-	return users[0], nil
-}
-
-// createUserResourceType creates a SCIM resource type for users.
-func createUserResourceType(userResourceHandler *UserResourceHandler) scim.ResourceType {
-	return scim.ResourceType{
-		ID:               optional.NewString("User"),
-		Name:             "User",
-		Endpoint:         "/Users",
-		Description:      optional.NewString("User Account"),
-		Schema:           userResourceHandler.coreSchema,
-		SchemaExtensions: userResourceHandler.schemaExtensions,
-		Handler:          userResourceHandler,
+	return scim.Resource{
+		ID:         strconv.FormatInt(int64(u.ID), 10),
+		ExternalID: getOptionalExternalID(attributes),
+		Attributes: attributes,
+		Meta: scim.Meta{
+			Created:      &u.CreatedAt,
+			LastModified: &u.UpdatedAt,
+		},
 	}
 }
 
-// updateUser updates a user in the database. This is meant to be used in a transaction.
-func updateUser(ctx context.Context, tx database.DB, oldUser *types.UserForSCIM, updatedUserSCIMAttributes scim.ResourceAttributes, emailsModified bool) (err error) {
-	usernameUpdate := ""
-	// Get a copy of the user SCIM resources before updates were applied so we can diff them if needed
-	beforeUpdateUserSCIMResources := convertUserToSCIMResource(oldUser)
+// AccountData stores information about a user that we don't have fields for in the schema.
+type AccountData struct {
+	Username string `json:"username"`
+}
 
-	requestedUsername := extractStringAttribute(updatedUserSCIMAttributes, AttrUserName)
-	if requestedUsername != oldUser.Username {
-		usernameUpdate, err = getUniqueUsername(ctx, tx.Users(), requestedUsername)
-		if err != nil {
-			return scimerrors.ScimError{Status: http.StatusBadRequest, Detail: errors.Wrap(err, "invalid username").Error()}
-		}
-	}
-	var displayNameUpdate *string
-	var avatarURLUpdate *string
-	userUpdate := database.UserUpdate{
-		Username:    usernameUpdate,
-		DisplayName: displayNameUpdate,
-		AvatarURL:   avatarURLUpdate,
-	}
-	err = tx.Users().Update(ctx, oldUser.ID, userUpdate)
+// toAccountData converts the given “SCIM resource attributes” type to an AccountData type.
+func toAccountData(attributes scim.ResourceAttributes) (extsvc.AccountData, error) {
+	serializedAccountData, err := json.Marshal(attributes)
 	if err != nil {
-		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
+		return extsvc.AccountData{}, err
 	}
 
-	accountData, err := toAccountData(updatedUserSCIMAttributes)
-	if err != nil {
-		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+	return extsvc.AccountData{
+		AuthData: nil,
+		Data:     extsvc.NewUnencryptedData(serializedAccountData),
+	}, nil
+}
+
+// fromAccountData converts the given account data JSON to a “SCIM resource attributes” type.
+func fromAccountData(scimAccountData string) (attributes scim.ResourceAttributes, err error) {
+	err = json.Unmarshal([]byte(scimAccountData), &attributes)
+	return
+}
+
+// extractPrimaryEmail extracts the primary email address from the given attributes.
+// Tries to get the (first) email address marked as primary, otherwise uses the first email address it finds.
+func extractPrimaryEmail(attributes scim.ResourceAttributes) (primaryEmail string, otherEmails []string) {
+	if attributes[AttrEmails] == nil {
+		return
 	}
-	err = tx.UserExternalAccounts().UpsertSCIMData(ctx, oldUser.ID, getUniqueExternalID(updatedUserSCIMAttributes), accountData)
-	if err != nil {
-		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
+	emails := attributes[AttrEmails].([]interface{})
+	otherEmails = make([]string, 0, len(emails))
+	for _, emailRaw := range emails {
+		email := emailRaw.(map[string]interface{})
+		if email["primary"] == true && primaryEmail == "" {
+			primaryEmail = email["value"].(string)
+			continue
+		}
+		otherEmails = append(otherEmails, email["value"].(string))
 	}
-
-	if emailsModified {
-		currentEmails, err := tx.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{UserID: oldUser.ID, OnlyVerified: false})
-		if err != nil {
-			return err
-		}
-		diffs := diffEmails(beforeUpdateUserSCIMResources.Attributes, updatedUserSCIMAttributes, currentEmails)
-		// First add any new email address
-		for _, newEmail := range diffs.toAdd {
-			err = tx.UserEmails().Add(ctx, oldUser.ID, newEmail, nil)
-			if err != nil {
-				return err
-			}
-			err = tx.UserEmails().SetVerified(ctx, oldUser.ID, newEmail, true)
-			if err != nil {
-				return err
-			}
-		}
-
-		// Now verify any addresses that already existed but weren't verified
-		for _, email := range diffs.toVerify {
-			err = tx.UserEmails().SetVerified(ctx, oldUser.ID, email, true)
-			if err != nil {
-				return err
-			}
-		}
-
-		// Now that all the new emails are added and verified set the primary email if it changed
-		if diffs.setPrimaryEmailTo != nil {
-			err = tx.UserEmails().SetPrimaryEmail(ctx, oldUser.ID, *diffs.setPrimaryEmailTo)
-			if err != nil {
-				return err
-			}
-		}
-
-		// Finally remove any email addresses that no longer are needed
-		for _, email := range diffs.toRemove {
-			err = tx.UserEmails().Remove(ctx, oldUser.ID, email)
-			if err != nil {
-				return err
-			}
-		}
+	if primaryEmail == "" && len(otherEmails) > 0 {
+		primaryEmail, otherEmails = otherEmails[0], otherEmails[1:]
 	}
+	return
+}
 
+// extractDisplayName extracts the user's display name from the given attributes.
+// Ii defaults to the username if no display name is available.
+func extractDisplayName(attributes scim.ResourceAttributes) (displayName string) {
+	if attributes[AttrDisplayName] != nil {
+		displayName = attributes[AttrDisplayName].(string)
+	} else if attributes[AttrName] != nil {
+		name := attributes[AttrName].(map[string]interface{})
+		if name[AttrNameFormatted] != nil {
+			displayName = name[AttrNameFormatted].(string)
+		} else if name[AttrNameGiven] != nil && name[AttrNameFamily] != nil {
+			if name[AttrNameMiddle] != nil {
+				displayName = name[AttrNameGiven].(string) + " " + name[AttrNameMiddle].(string) + " " + name[AttrNameFamily].(string)
+			} else {
+				displayName = name[AttrNameGiven].(string) + " " + name[AttrNameFamily].(string)
+			}
+		}
+	} else if attributes[AttrNickName] != nil {
+		displayName = attributes[AttrNickName].(string)
+	}
+	// Fallback to username
+	if displayName == "" {
+		displayName = attributes[AttrUserName].(string)
+	}
 	return
 }
 
@@ -258,35 +223,6 @@ func diffEmails(beforeUpdateUserData, afterUpdateUserData scim.ResourceAttribute
 	return result
 }
 
-// getUniqueExternalID extracts the external identifier from the given attributes.
-// If it's not present, it returns a unique identifier based on the primary email address of the user.
-// We need this because the account ID must be unique across all SCIM accounts that we have on file.
-func getUniqueExternalID(attributes scim.ResourceAttributes) string {
-	if attributes[AttrExternalId] != nil {
-		return attributes[AttrExternalId].(string)
-	}
-	primary, _ := extractPrimaryEmail(attributes)
-	return "no-external-id-" + primary
-}
-
-// getOptionalExternalID extracts the external identifier of the given attributes.
-func getOptionalExternalID(attributes scim.ResourceAttributes) optional.String {
-	if eID, ok := attributes[AttrExternalId]; ok {
-		if externalID, ok := eID.(string); ok {
-			return optional.NewString(externalID)
-		}
-	}
-	return optional.String{}
-}
-
-// extractStringAttribute extracts the username from the given attributes.
-func extractStringAttribute(attributes scim.ResourceAttributes, name string) (username string) {
-	if attributes[name] != nil {
-		username = attributes[name].(string)
-	}
-	return
-}
-
 // getUniqueUsername returns a unique username based on the given requested username plus normalization,
 // and adding a random suffix to make it unique in case there one without a suffix already exists in the DB.
 // This is meant to be done inside a transaction so that the user creation/update is guaranteed to be
@@ -313,80 +249,6 @@ func getUniqueUsername(ctx context.Context, tx database.UserStore, requestedUser
 	return normalizedUsername, nil
 }
 
-// checkBodyNotEmpty checks whether the request body is empty. If it is, it returns a SCIM error.
-func checkBodyNotEmpty(r *http.Request) (err error) {
-	data, err := io.ReadAll(r.Body)
-	defer func(Body io.ReadCloser) {
-		closeErr := Body.Close()
-		if closeErr != nil && err == nil {
-			err = closeErr
-		}
-
-		if err == nil {
-			// Restore the original body so that it can be read by a next handler.
-			r.Body = io.NopCloser(bytes.NewBuffer(data))
-		}
-	}(r.Body)
-
-	if err != nil {
-		return
-	}
-	if len(data) == 0 {
-		return scimerrors.ScimErrorBadParams([]string{"request body is empty"})
-	}
-	return
-}
-
-// convertUserToSCIMResource converts a Sourcegraph user to a SCIM resource.
-func convertUserToSCIMResource(user *types.UserForSCIM) scim.Resource {
-	// Convert account data – if it doesn't exist, never mind
-	attributes, err := fromAccountData(user.SCIMAccountData)
-	if err != nil {
-		first, middle, last := displayNameToPieces(user.DisplayName)
-		// Failed to convert account data to SCIM resource attributes. Fall back to core user data.
-		attributes = scim.ResourceAttributes{
-			AttrActive:      true,
-			AttrUserName:    user.Username,
-			AttrDisplayName: user.DisplayName,
-			AttrName: map[string]interface{}{
-				AttrNameFormatted: user.DisplayName,
-				AttrNameGiven:     first,
-				AttrNameMiddle:    middle,
-				AttrNameFamily:    last,
-			},
-		}
-		if user.SCIMExternalID != "" {
-			attributes[AttrExternalId] = user.SCIMExternalID
-		}
-	}
-	if attributes[AttrName] == nil {
-		attributes[AttrName] = map[string]interface{}{}
-	}
-
-	// Fall back to username and primary email in the user object if not set in account data
-	if attributes[AttrUserName] == nil || attributes[AttrUserName].(string) == "" {
-		attributes[AttrUserName] = user.Username
-	}
-	if emails, ok := attributes[AttrEmails].([]interface{}); (!ok || len(emails) == 0) && user.Emails != nil && len(user.Emails) > 0 {
-		attributes[AttrEmails] = []interface{}{
-			map[string]interface{}{
-				"value":   user.Emails[0],
-				"primary": true,
-			},
-		}
-	}
-
-	return scim.Resource{
-		ID:         strconv.FormatInt(int64(user.ID), 10),
-		ExternalID: getOptionalExternalID(attributes),
-		Attributes: attributes,
-		Meta: scim.Meta{
-			Created:      &user.CreatedAt,
-			LastModified: &user.UpdatedAt,
-		},
-	}
-}
-
 // displayNameToPieces splits a display name into first, middle, and last name.
 func displayNameToPieces(displayName string) (first, middle, last string) {
 	pieces := strings.Fields(displayName)
@@ -400,4 +262,28 @@ func displayNameToPieces(displayName string) (first, middle, last string) {
 	default:
 		return pieces[0], strings.Join(pieces[1:len(pieces)-1], " "), pieces[len(pieces)-1]
 	}
+}
+
+// Errors
+
+// containsErrCannotCreateUserError returns true if the given error contains at least one database.ErrCannotCreateUser.
+// It also returns the first such error.
+func containsErrCannotCreateUserError(err error) (database.ErrCannotCreateUser, bool) {
+	if err == nil {
+		return database.ErrCannotCreateUser{}, false
+	}
+	if _, ok := err.(database.ErrCannotCreateUser); ok {
+		return err.(database.ErrCannotCreateUser), true
+	}
+
+	// Handle multiError
+	if multiErr, ok := err.(errors.MultiError); ok {
+		for _, err := range multiErr.Errors() {
+			if _, ok := err.(database.ErrCannotCreateUser); ok {
+				return err.(database.ErrCannotCreateUser), true
+			}
+		}
+	}
+
+	return database.ErrCannotCreateUser{}, false
 }

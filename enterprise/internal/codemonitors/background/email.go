@@ -211,13 +211,7 @@ func toDisplayResult(result *searchresult.CommitMatch, externalURL *url.URL) *Di
 		resultType = "Diff"
 	}
 
-	var content string
-	if result.DiffPreview != nil {
-		content = truncateString(result.DiffPreview.Content)
-	} else {
-		content = truncateString(result.MessagePreview.Content)
-	}
-
+	content := truncateMatchContent(result)
 	return &DisplayResult{
 		ResultType: resultType,
 		CommitURL:  getCommitURL(externalURL, string(result.Repo.Name), string(result.Commit.ID), utmSourceEmail),

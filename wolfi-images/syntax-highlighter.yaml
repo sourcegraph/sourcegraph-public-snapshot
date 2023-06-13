@@ -1,0 +1,13 @@
+include: ./sourcegraph-base.yaml
+
+contents:
+  packages:
+    # Included by existing SG base image
+    - tini
+    - mailcap
+
+    ## syntax-highlighter packages
+    - libstdc++
+    - http-server-stabilizer@sourcegraph
+
+# MANUAL REBUILD: Mon Jun  5 16:47:55 CEST 2023

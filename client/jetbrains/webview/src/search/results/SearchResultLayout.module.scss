@@ -26,8 +26,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    // @TODO: Make configurable, this is copied from the Figma file
-    color: #6e6e6e;
+    color: var(--jb-info-text-color);
     width: 2.85rem;
 }
 

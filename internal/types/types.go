@@ -13,8 +13,10 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 )
 
 // BatchChangeSource represents how a batch change can be created
@@ -80,6 +82,15 @@ type Repo struct {
 	Blocked *RepoBlock `json:",omitempty"`
 	// KeyValuePairs is the set of key-value pairs associated with the repo
 	KeyValuePairs map[string]*string `json:",omitempty"`
+}
+
+// RepoCommit is a record of a repo and a corresponding commit.
+type RepoCommit struct {
+	ID                   int64
+	RepoID               api.RepoID
+	CommitSHA            dbutil.CommitBytea
+	PerforceChangelistID int64
+	CreatedAt            time.Time
 }
 
 // SearchedRepo is a collection of metadata about repos that is used to decorate search results
@@ -485,6 +496,12 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	return fs
 }
 
+// RepoIDName combines a repo name and ID into a single struct
+type RepoIDName struct {
+	ID   api.RepoID
+	Name api.RepoName
+}
+
 // MinimalRepo represents a source code repository name, its ID and number of stars.
 type MinimalRepo struct {
 	ID    api.RepoID
@@ -834,6 +851,7 @@ type UserForSCIM struct {
 	Emails          []string
 	SCIMExternalID  string
 	SCIMAccountData string
+	Active          bool
 }
 
 type SystemRole string
@@ -862,31 +880,10 @@ func (r Role) IsUser() bool {
 	return r.Name == string(UserSystemRole)
 }
 
-// A PermissionNamespace represents a distinct context within which permission policies
-// are defined and enforced.
-type PermissionNamespace string
-
-func (n PermissionNamespace) String() string {
-	return string(n)
-}
-
-// Valid checks if a namespace is valid and supported by the Sourcegraph RBAC system.
-func (n PermissionNamespace) Valid() bool {
-	switch n {
-	case BatchChangesNamespace:
-		return true
-	default:
-		return false
-	}
-}
-
-// BatchChangesNamespace represents the Batch Changes namespace.
-const BatchChangesNamespace PermissionNamespace = "BATCH_CHANGES"
-
 type Permission struct {
 	ID        int32
-	Namespace PermissionNamespace
-	Action    string
+	Namespace rtypes.PermissionNamespace
+	Action    rtypes.NamespaceAction
 	CreatedAt time.Time
 }
 
@@ -911,7 +908,7 @@ type UserRole struct {
 
 type NamespacePermission struct {
 	ID         int64
-	Namespace  PermissionNamespace
+	Namespace  rtypes.PermissionNamespace
 	ResourceID int64
 	UserID     int32
 	CreatedAt  time.Time
@@ -977,6 +974,88 @@ type UserDates struct {
 	UserID    int32
 	CreatedAt time.Time
 	DeletedAt time.Time
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodyUsageStatistics struct {
+	Daily   []*CodyUsagePeriod
+	Weekly  []*CodyUsagePeriod
+	Monthly []*CodyUsagePeriod
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodyUsagePeriod struct {
+	StartTime              time.Time
+	TotalUsers             *CodyCountStatistics
+	TotalRequests          *CodyCountStatistics
+	CodeGenerationRequests *CodyCountStatistics
+	ExplanationRequests    *CodyCountStatistics
+	InvalidRequests        *CodyCountStatistics
+}
+
+type CodyCountStatistics struct {
+	UserCount   *int32
+	EventsCount *int32
+}
+
+// CodyAggregatedEvent represents the total requests, unique users, code
+// generation requests, explanation requests, and invalid requests over
+// the current month, week, and day for a single search event.
+type CodyAggregatedEvent struct {
+	Name                string
+	Month               time.Time
+	Week                time.Time
+	Day                 time.Time
+	TotalMonth          int32
+	TotalWeek           int32
+	TotalDay            int32
+	UniquesMonth        int32
+	UniquesWeek         int32
+	UniquesDay          int32
+	CodeGenerationMonth int32
+	CodeGenerationWeek  int32
+	CodeGenerationDay   int32
+	ExplanationMonth    int32
+	ExplanationWeek     int32
+	ExplanationDay      int32
+	InvalidMonth        int32
+	InvalidWeek         int32
+	InvalidDay          int32
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler.
+// RepoMetadataAggregatedStats represents the total number of repo metadata,
+// number of repositories with any metadata, total and unique number of
+// events for repo metadata usage related events over the current day, week, month.
+type RepoMetadataAggregatedStats struct {
+	Summary *RepoMetadataAggregatedSummary
+	Daily   *RepoMetadataAggregatedEvents
+	Weekly  *RepoMetadataAggregatedEvents
+	Monthly *RepoMetadataAggregatedEvents
+}
+
+type RepoMetadataAggregatedSummary struct {
+	IsEnabled              bool
+	RepoMetadataCount      *int32
+	ReposWithMetadataCount *int32
+}
+
+type RepoMetadataAggregatedEvents struct {
+	StartTime          time.Time
+	CreateRepoMetadata *EventStats
+	UpdateRepoMetadata *EventStats
+	DeleteRepoMetadata *EventStats
+	SearchFilterUsage  *EventStats
+}
+
+type EventStats struct {
+	UsersCount  *int32
+	EventsCount *int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -1757,6 +1836,11 @@ type OwnershipUsageStatistics struct {
 
 	// Opening ownership panel.
 	OwnershipPanelOpened *OwnershipUsageStatisticsActiveUsers `json:"ownership_panel_opened,omitempty"`
+
+	// AssignedOwnersCount is the total number of assigned owners. For instance
+	// if an owner is assigned to a single file - that counts as one,
+	// for the whole repo - also counts as one.
+	AssignedOwnersCount *int32 `json:"assigned_owners_count"`
 }
 
 type OwnershipUsageReposCounts struct {
@@ -1959,3 +2043,8 @@ const (
 	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
 	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
 )
+
+type PerforceChangelist struct {
+	CommitSHA    api.CommitID
+	ChangelistID int64
+}

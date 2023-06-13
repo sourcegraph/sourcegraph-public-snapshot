@@ -8,6 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -32,11 +33,7 @@ type PipelineMetrics struct {
 	numRecordsAltered   *prometheus.CounterVec
 }
 
-func NewPipelineMetrics(
-	observationCtx *observation.Context,
-	name string,
-	recordTypeName string,
-) *PipelineMetrics {
+func NewPipelineMetrics(observationCtx *observation.Context, name string) *PipelineMetrics {
 	replacer := strings.NewReplacer(
 		".", "_",
 		"-", "_",
@@ -80,12 +77,12 @@ func NewPipelineMetrics(
 
 	numRecordsProcessed := counter(
 		fmt.Sprintf("src_%s_records_processed_total", metricName),
-		fmt.Sprintf("The number of %s records processed by %s.", recordTypeName, name),
+		fmt.Sprintf("The number of records processed by %s.", name),
 	)
 
 	numRecordsAltered := counterVec(
 		fmt.Sprintf("src_%s_records_altered_total", metricName),
-		fmt.Sprintf("The number of %s records written/modified by %s.", recordTypeName, name),
+		fmt.Sprintf("The number of records written/modified by %s.", name),
 	)
 
 	return &PipelineMetrics{
@@ -98,13 +95,13 @@ func NewPipelineMetrics(
 func NewPipelineJob(ctx context.Context, opts PipelineOptions) goroutine.BackgroundRoutine {
 	pipeline := &pipeline{opts: opts}
 
-	return goroutine.NewPeriodicGoroutineWithMetricsAndDynamicInterval(
-		ctx,
-		opts.Name,
-		opts.Description,
-		pipeline.interval,
+	return goroutine.NewPeriodicGoroutine(
+		actor.WithInternalActor(ctx),
 		pipeline,
-		opts.Metrics.op,
+		goroutine.WithName(opts.Name),
+		goroutine.WithDescription(opts.Description),
+		goroutine.WithIntervalFunc(pipeline.interval),
+		goroutine.WithOperation(opts.Metrics.op),
 	)
 }
 
@@ -129,7 +126,12 @@ func (j *pipeline) Handle(ctx context.Context) error {
 		j.opts.Metrics.numRecordsAltered.With(prometheus.Labels{"record": name}).Add(float64(count))
 	}
 
-	return nil
+	if numRecordsProcessed == 0 {
+		return nil
+	}
+
+	// There were records to process, so attempt a next batch immediately
+	return goroutine.ErrReinvokeImmediately
 }
 
 //

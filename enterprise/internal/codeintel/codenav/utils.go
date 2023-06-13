@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -29,7 +29,7 @@ func sliceContains(slice []string, str string) bool {
 	return false
 }
 
-func uploadIDsToString(vs []types.Dump) string {
+func uploadIDsToString(vs []uploadsshared.Dump) string {
 	ids := make([]string, 0, len(vs))
 	for _, v := range vs {
 		ids = append(ids, strconv.Itoa(v.ID))
@@ -52,7 +52,7 @@ func isSourceLocation(visibleUploads []visibleUpload, location shared.Location) 
 }
 
 // rangeContainsPosition returns true if the given range encloses the given position.
-func rangeContainsPosition(r types.Range, pos types.Position) bool {
+func rangeContainsPosition(r shared.Range, pos shared.Position) bool {
 	if pos.Line < r.Start.Line {
 		return false
 	}
@@ -72,7 +72,7 @@ func rangeContainsPosition(r types.Range, pos types.Position) bool {
 	return true
 }
 
-func sortRanges(ranges []types.Range) []types.Range {
+func sortRanges(ranges []shared.Range) []shared.Range {
 	sort.Slice(ranges, func(i, j int) bool {
 		iStart := ranges[i].Start
 		jStart := ranges[j].Start
@@ -118,7 +118,7 @@ func sortRanges(ranges []types.Range) []types.Range {
 	return ranges
 }
 
-func dedupeRanges(ranges []types.Range) []types.Range {
+func dedupeRanges(ranges []shared.Range) []shared.Range {
 	if len(ranges) == 0 {
 		return ranges
 	}
@@ -130,4 +130,18 @@ func dedupeRanges(ranges []types.Range) []types.Range {
 		}
 	}
 	return dedup
+}
+
+type linemap struct {
+	positions []int
+}
+
+func newLinemap(source string) linemap {
+	l := linemap{positions: []int{0}}
+	for i, char := range source {
+		if char == '\n' {
+			l.positions = append(l.positions, i+1)
+		}
+	}
+	return l
 }

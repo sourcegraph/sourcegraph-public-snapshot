@@ -9,6 +9,7 @@ import {
     mdiInformation,
     mdiRefresh,
     mdiSecurity,
+    mdiVectorPolyline,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
@@ -124,7 +125,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                 {/* that col-md-8 is a little too large for the two buttons in a row */}
                 <div className="d-flex flex-column justify-content-between flex-md-row col px-0">
                     <div className="d-flex col align-items-center px-0">
-                        <ExternalRepositoryIcon externalRepo={node.externalRepository} />
+                        <ExternalRepositoryIcon externalRepo={node.externalRepository} className={styles.repoIcon} />
                         <RepoLink repoName={node.name} to={node.url} />
                     </div>
 
@@ -211,6 +212,29 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     <Icon aria-hidden={true} svgPath={mdiBrain} className="mr-1" />
                                     Code graph data
                                 </MenuItem>
+
+                                <MenuItem
+                                    as={Button}
+                                    disabled={!repoClonedAndHealthy(node)}
+                                    onSelect={() => navigate(`/${node.name}/-/embeddings/configuration`)}
+                                    className="p-2"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiVectorPolyline} className="mr-1" />
+                                    Embeddings policies
+                                </MenuItem>
+
+                                <MenuItem
+                                    as={Button}
+                                    disabled={!repoClonedAndHealthy(node)}
+                                    onSelect={() =>
+                                        navigate(`/site-admin/embeddings?query=${encodeURIComponent(node.name)}`)
+                                    }
+                                    className="p-2"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiVectorPolyline} className="mr-1" />
+                                    Embeddings jobs
+                                </MenuItem>
+
                                 <MenuItem
                                     as={Button}
                                     disabled={!repoClonedAndHealthy(node)}
@@ -218,7 +242,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     className="p-2"
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiSecurity} className="mr-1" />
-                                    View Permissions
+                                    Permissions
                                 </MenuItem>
                                 <MenuItem
                                     as={Button}

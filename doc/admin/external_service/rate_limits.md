@@ -69,8 +69,8 @@ This entry tells us that a rate limit is configured for a GitHub external servic
 Sourcegraph supports internal rate limit configuration for the following connections:
 - [GitHub](./github.md#rateLimit)
 - [GitLab](./gitlab.md#rateLimit)
-- [Bitbucket Cloud](./bitbucket_cloud#rateLimit)
-- [Bitbucket Server](./bitbucket_server#rateLimit)
+- [Bitbucket Cloud](./bitbucket_cloud.md#rateLimit)
+- [Bitbucket Server](./bitbucket_server.md#rateLimit)
 - [Perforce](../repo/perforce.md#rateLimit)
 - [Go Modules](./go.md#rateLimit)
 - [JVM Packages](./jvm.md#rateLimit)

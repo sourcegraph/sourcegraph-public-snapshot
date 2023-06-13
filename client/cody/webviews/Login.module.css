@@ -1,0 +1,46 @@
+.container {
+    padding: 1.25rem;
+    color: var(--vscode-editor-foreground);
+}
+
+.divider {
+    height: 1px;
+    border-top: 1px solid var(--vscode-activityBar-border);
+    margin-bottom: 1.25rem;
+}
+
+.section {
+    margin-bottom: 1.25rem;
+}
+
+.section-header {
+    font-weight: 600;
+    color: var(--vscode-editor-foreground);
+    font-size: calc(1.15*var(--vscode-editor-font-size));
+    margin: 0 0 0.65rem 0;
+}
+
+.open-message {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+}
+
+.input {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.button {
+    justify-content: center;
+}
+
+.error {
+    border: 1px solid var(--vscode-inputValidation-errorBorder);
+    background-color: var(--vscode-inputValidation-errorBackground);
+    padding: 0.5rem;
+    margin-top: 1rem;
+}
+
+.terms {
+    font-size: 90%;
+}

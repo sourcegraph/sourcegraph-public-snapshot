@@ -10,33 +10,33 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
-	autoindexingShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsShared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (r *rootResolver) CodeIntelSummary(ctx context.Context) (_ resolverstubs.CodeIntelSummaryResolver, err error) {
-	ctx, _, endObservation := r.operations.codeIntelSummary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := r.operations.codeIntelSummary.WithErrors(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	return newSummaryResolver(r.uploadSvc, r.autoindexSvc, r.locationResolverFactory.Create()), nil
 }
 
+// For mocking in tests
+var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
+
 func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.repositorySummary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(repoID)),
+	ctx, errTracer, endObservation := r.operations.repositorySummary.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repoID", string(repoID)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -68,37 +68,41 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 	// Create blocklist for indexes that have already been uploaded.
 	blocklist := map[string]struct{}{}
 	for _, u := range recentUploads {
-		key := shared.GetKeyForLookup(u.Indexer, u.Root)
+		key := uploadsShared.GetKeyForLookup(u.Indexer, u.Root)
 		blocklist[key] = struct{}{}
 	}
 	for _, u := range recentIndexes {
-		key := shared.GetKeyForLookup(u.Indexer, u.Root)
+		key := uploadsShared.GetKeyForLookup(u.Indexer, u.Root)
 		blocklist[key] = struct{}{}
 	}
 
-	commit := "HEAD"
 	var limitErr error
+	inferredAvailableIndexers := map[string]uploadsShared.AvailableIndexer{}
 
-	indexJobs, err := r.autoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, id, commit, "", false)
-	if err != nil {
-		if !autoindexing.IsLimitError(err) {
-			return nil, err
+	if autoIndexingEnabled() {
+		commit := "HEAD"
+
+		result, err := r.autoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, id, commit, "", false)
+		if err != nil {
+			if !autoindexing.IsLimitError(err) {
+				return nil, err
+			}
+
+			limitErr = errors.Append(limitErr, err)
+		} else {
+			// indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
+			// if err != nil {
+			// 	if !errors.As(err, &inference.LimitError{}) {
+			// 		return nil, err
+			// 	}
+
+			// 	limitErr = errors.Append(limitErr, err)
+			// }
+
+			inferredAvailableIndexers = uploadsShared.PopulateInferredAvailableIndexers(result.IndexJobs, blocklist, inferredAvailableIndexers)
+			// inferredAvailableIndexers = uploadsShared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 		}
-
-		limitErr = errors.Append(limitErr, err)
 	}
-	// indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
-	// if err != nil {
-	// 	if !errors.As(err, &inference.LimitError{}) {
-	// 		return nil, err
-	// 	}
-
-	// 	limitErr = errors.Append(limitErr, err)
-	// }
-
-	inferredAvailableIndexers := map[string]shared.AvailableIndexer{}
-	inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
-	// inferredAvailableIndexers = shared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 
 	inferredAvailableIndexersResolver := make([]inferredAvailableIndexers2, 0, len(inferredAvailableIndexers))
 	for _, indexer := range inferredAvailableIndexers {
@@ -117,18 +121,36 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 		LastIndexScan:           lastIndexScan,
 	}
 
+	var allUploads []shared.Upload
+	for _, recentUpload := range recentUploads {
+		allUploads = append(allUploads, recentUpload.Uploads...)
+	}
+
+	var allIndexes []shared.Index
+	for _, recentIndex := range recentIndexes {
+		allIndexes = append(allIndexes, recentIndex.Indexes...)
+	}
+
+	// Create upload loader with data we already have, and pre-submit associated uploads from index records
+	uploadLoader := r.uploadLoaderFactory.CreateWithInitialData(allUploads)
+	PresubmitAssociatedUploads(uploadLoader, allIndexes...)
+
+	// Create index loader with data we already have, and pre-submit associated indexes from upload records
+	indexLoader := r.indexLoaderFactory.CreateWithInitialData(allIndexes)
+	PresubmitAssociatedIndexes(indexLoader, allUploads...)
+
+	// No data to load for git data (yet)
+	locationResolver := r.locationResolverFactory.Create()
+
 	return newRepositorySummaryResolver(
-		r.uploadSvc,
-		r.policySvc,
-		r.gitserverClient,
-		r.siteAdminChecker,
-		r.repoStore,
-		r.locationResolverFactory.Create(),
+		locationResolver,
 		summary,
 		inferredAvailableIndexersResolver,
 		limitErr,
-		r.prefetcherFactory.Create(),
+		uploadLoader,
+		indexLoader,
 		errTracer,
+		r.preciseIndexResolverFactory,
 	), nil
 }
 
@@ -138,10 +160,10 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 type summaryResolver struct {
 	uploadsSvc       UploadsService
 	autoindexingSvc  AutoIndexingService
-	locationResolver *sharedresolvers.CachedLocationResolver
+	locationResolver *gitresolvers.CachedLocationResolver
 }
 
-func newSummaryResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, locationResolver *sharedresolvers.CachedLocationResolver) resolverstubs.CodeIntelSummaryResolver {
+func newSummaryResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, locationResolver *gitresolvers.CachedLocationResolver) resolverstubs.CodeIntelSummaryResolver {
 	return &summaryResolver{
 		uploadsSvc:       uploadsSvc,
 		autoindexingSvc:  autoindexingSvc,
@@ -239,7 +261,7 @@ func (r *summaryResolver) RepositoriesWithConfiguration(ctx context.Context, arg
 
 type codeIntelRepositoryWithConfigurationResolver struct {
 	repositoryResolver resolverstubs.RepositoryResolver
-	availableIndexers  map[string]shared.AvailableIndexer
+	availableIndexers  map[string]uploadsShared.AvailableIndexer
 }
 
 func (r *codeIntelRepositoryWithConfigurationResolver) Repository() resolverstubs.RepositoryResolver {
@@ -250,7 +272,7 @@ func (r *codeIntelRepositoryWithConfigurationResolver) Indexers() []resolverstub
 	var resolvers []resolverstubs.IndexerWithCountResolver
 	for indexer, meta := range r.availableIndexers {
 		resolvers = append(resolvers, &indexerWithCountResolver{
-			indexer: types.NewCodeIntelIndexerResolver(indexer, ""),
+			indexer: NewCodeIntelIndexerResolver(indexer, ""),
 			count:   int32(len(meta.Roots)),
 		})
 	}
@@ -268,7 +290,7 @@ func (r *indexerWithCountResolver) Count() int32                                
 
 type RepositorySummary struct {
 	RecentUploads           []uploadsShared.UploadsWithRepositoryNamespace
-	RecentIndexes           []autoindexingShared.IndexesWithRepositoryNamespace
+	RecentIndexes           []uploadsShared.IndexesWithRepositoryNamespace
 	LastUploadRetentionScan *time.Time
 	LastIndexScan           *time.Time
 }
@@ -293,56 +315,47 @@ func (r *codeIntelRepositoryWithErrorResolver) Count() int32 {
 //
 
 type repositorySummaryResolver struct {
-	uploadsSvc        UploadsService
-	policySvc         PolicyService
-	gitserverClient   gitserver.Client
-	siteAdminChecker  sharedresolvers.SiteAdminChecker
-	repoStore         database.RepoStore
-	summary           RepositorySummary
-	availableIndexers []inferredAvailableIndexers2
-	limitErr          error
-	prefetcher        *sharedresolvers.Prefetcher
-	locationResolver  *sharedresolvers.CachedLocationResolver
-	errTracer         *observation.ErrCollector
+	summary                     RepositorySummary
+	availableIndexers           []inferredAvailableIndexers2
+	limitErr                    error
+	uploadLoader                UploadLoader
+	indexLoader                 IndexLoader
+	locationResolver            *gitresolvers.CachedLocationResolver
+	errTracer                   *observation.ErrCollector
+	preciseIndexResolverFactory *PreciseIndexResolverFactory
 }
 
 type inferredAvailableIndexers2 struct {
-	Indexer types.CodeIntelIndexer
+	Indexer shared.CodeIntelIndexer
 	Roots   []string
 }
 
 func newRepositorySummaryResolver(
-	uploadsSvc UploadsService,
-	policySvc PolicyService,
-	gitserverClient gitserver.Client,
-	siteAdminChecker sharedresolvers.SiteAdminChecker,
-	repoStore database.RepoStore,
-	locationResolver *sharedresolvers.CachedLocationResolver,
+	locationResolver *gitresolvers.CachedLocationResolver,
 	summary RepositorySummary,
 	availableIndexers []inferredAvailableIndexers2,
 	limitErr error,
-	prefetcher *sharedresolvers.Prefetcher,
+	uploadLoader UploadLoader,
+	indexLoader IndexLoader,
 	errTracer *observation.ErrCollector,
+	preciseIndexResolverFactory *PreciseIndexResolverFactory,
 ) resolverstubs.CodeIntelRepositorySummaryResolver {
 	return &repositorySummaryResolver{
-		uploadsSvc:        uploadsSvc,
-		policySvc:         policySvc,
-		gitserverClient:   gitserverClient,
-		siteAdminChecker:  siteAdminChecker,
-		repoStore:         repoStore,
-		summary:           summary,
-		availableIndexers: availableIndexers,
-		limitErr:          limitErr,
-		prefetcher:        prefetcher,
-		locationResolver:  locationResolver,
-		errTracer:         errTracer,
+		summary:                     summary,
+		availableIndexers:           availableIndexers,
+		limitErr:                    limitErr,
+		uploadLoader:                uploadLoader,
+		indexLoader:                 indexLoader,
+		locationResolver:            locationResolver,
+		errTracer:                   errTracer,
+		preciseIndexResolverFactory: preciseIndexResolverFactory,
 	}
 }
 
 func (r *repositorySummaryResolver) AvailableIndexers() []resolverstubs.InferredAvailableIndexersResolver {
 	resolvers := make([]resolverstubs.InferredAvailableIndexersResolver, 0, len(r.availableIndexers))
 	for _, indexer := range r.availableIndexers {
-		resolvers = append(resolvers, newInferredAvailableIndexersResolver(types.NewCodeIntelIndexerResolverFrom(indexer.Indexer, ""), indexer.Roots))
+		resolvers = append(resolvers, newInferredAvailableIndexersResolver(NewCodeIntelIndexerResolverFrom(indexer.Indexer, ""), indexer.Roots))
 	}
 	return resolvers
 }
@@ -354,7 +367,7 @@ func (r *repositorySummaryResolver) RecentActivity(ctx context.Context) ([]resol
 		for _, upload := range recentUploads.Uploads {
 			upload := upload
 
-			resolver, err := NewPreciseIndexResolver(ctx, r.uploadsSvc, r.policySvc, r.gitserverClient, r.prefetcher, r.siteAdminChecker, r.repoStore, r.locationResolver, r.errTracer, &upload, nil)
+			resolver, err := r.preciseIndexResolverFactory.Create(ctx, r.uploadLoader, r.indexLoader, r.locationResolver, r.errTracer, &upload, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -373,7 +386,7 @@ func (r *repositorySummaryResolver) RecentActivity(ctx context.Context) ([]resol
 				}
 			}
 
-			resolver, err := NewPreciseIndexResolver(ctx, r.uploadsSvc, r.policySvc, r.gitserverClient, r.prefetcher, r.siteAdminChecker, r.repoStore, r.locationResolver, r.errTracer, nil, &index)
+			resolver, err := r.preciseIndexResolverFactory.Create(ctx, r.uploadLoader, r.indexLoader, r.locationResolver, r.errTracer, nil, &index)
 			if err != nil {
 				return nil, err
 			}

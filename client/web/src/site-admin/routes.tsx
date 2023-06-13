@@ -3,7 +3,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
-import { PermissionsSyncJobsPage } from './permissions-center/PermissionsSyncJobsPage'
+import { PermissionsSyncJobsTable } from './permissions-center/PermissionsSyncJobsTable'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
 
 const AnalyticsOverviewPage = lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage')
@@ -38,6 +38,7 @@ const SiteAdminExternalServicesArea = lazyComponent(
     () => import('./SiteAdminExternalServicesArea'),
     'SiteAdminExternalServicesArea'
 )
+const SiteAdminGitHubAppsArea = lazyComponent(() => import('./SiteAdminGitHubAppsArea'), 'SiteAdminGitHubAppsArea')
 const SiteAdminRepositoriesPage = lazyComponent(
     () => import('./SiteAdminRepositoriesPage'),
     'SiteAdminRepositoriesPage'
@@ -136,6 +137,10 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
         render: props => <SiteAdminSettingsPage {...props} />,
     },
     {
+        path: '/github-apps/*',
+        render: props => <SiteAdminGitHubAppsArea {...props} />,
+    },
+    {
         path: '/external-services/*',
         render: props => <SiteAdminExternalServicesArea {...props} />,
     },
@@ -150,12 +155,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/account-requests',
         render: () => <AccessRequestsPage />,
-        condition: context =>
-            checkRequestAccessAllowed(
-                context.isSourcegraphDotCom,
-                window.context.allowSignup,
-                window.context.experimentalFeatures
-            ),
+        condition: () => checkRequestAccessAllowed(window.context),
     },
     {
         path: '/users/new',
@@ -240,7 +240,7 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/permissions-syncs',
-        render: props => <PermissionsSyncJobsPage {...props} />,
+        render: props => <PermissionsSyncJobsTable {...props} />,
     },
 ]
 

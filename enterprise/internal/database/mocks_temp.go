@@ -13,6 +13,7 @@ import (
 	"time"
 
 	sqlf "github.com/keegancsmith/sqlf"
+	store "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	authz "github.com/sourcegraph/sourcegraph/internal/authz"
@@ -7843,6 +7844,12 @@ type MockEnterpriseDB struct {
 	// AccessTokensFunc is an instance of a mock function object controlling
 	// the behavior of the method AccessTokens.
 	AccessTokensFunc *EnterpriseDBAccessTokensFunc
+	// AssignedOwnersFunc is an instance of a mock function object
+	// controlling the behavior of the method AssignedOwners.
+	AssignedOwnersFunc *EnterpriseDBAssignedOwnersFunc
+	// AssignedTeamsFunc is an instance of a mock function object
+	// controlling the behavior of the method AssignedTeams.
+	AssignedTeamsFunc *EnterpriseDBAssignedTeamsFunc
 	// AuthzFunc is an instance of a mock function object controlling the
 	// behavior of the method Authz.
 	AuthzFunc *EnterpriseDBAuthzFunc
@@ -7862,6 +7869,9 @@ type MockEnterpriseDB struct {
 	// EventLogsFunc is an instance of a mock function object controlling
 	// the behavior of the method EventLogs.
 	EventLogsFunc *EnterpriseDBEventLogsFunc
+	// EventLogsScrapeStateFunc is an instance of a mock function object
+	// controlling the behavior of the method EventLogsScrapeState.
+	EventLogsScrapeStateFunc *EnterpriseDBEventLogsScrapeStateFunc
 	// ExecContextFunc is an instance of a mock function object controlling
 	// the behavior of the method ExecContext.
 	ExecContextFunc *EnterpriseDBExecContextFunc
@@ -7880,6 +7890,9 @@ type MockEnterpriseDB struct {
 	// FeatureFlagsFunc is an instance of a mock function object controlling
 	// the behavior of the method FeatureFlags.
 	FeatureFlagsFunc *EnterpriseDBFeatureFlagsFunc
+	// GitHubAppsFunc is an instance of a mock function object controlling
+	// the behavior of the method GitHubApps.
+	GitHubAppsFunc *EnterpriseDBGitHubAppsFunc
 	// GitserverLocalCloneFunc is an instance of a mock function object
 	// controlling the behavior of the method GitserverLocalClone.
 	GitserverLocalCloneFunc *EnterpriseDBGitserverLocalCloneFunc
@@ -7916,6 +7929,12 @@ type MockEnterpriseDB struct {
 	// OutboundWebhooksFunc is an instance of a mock function object
 	// controlling the behavior of the method OutboundWebhooks.
 	OutboundWebhooksFunc *EnterpriseDBOutboundWebhooksFunc
+	// OwnSignalConfigurationsFunc is an instance of a mock function object
+	// controlling the behavior of the method OwnSignalConfigurations.
+	OwnSignalConfigurationsFunc *EnterpriseDBOwnSignalConfigurationsFunc
+	// OwnershipStatsFunc is an instance of a mock function object
+	// controlling the behavior of the method OwnershipStats.
+	OwnershipStatsFunc *EnterpriseDBOwnershipStatsFunc
 	// PermissionSyncJobsFunc is an instance of a mock function object
 	// controlling the behavior of the method PermissionSyncJobs.
 	PermissionSyncJobsFunc *EnterpriseDBPermissionSyncJobsFunc
@@ -7934,12 +7953,25 @@ type MockEnterpriseDB struct {
 	// QueryRowContextFunc is an instance of a mock function object
 	// controlling the behavior of the method QueryRowContext.
 	QueryRowContextFunc *EnterpriseDBQueryRowContextFunc
+	// RecentContributionSignalsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// RecentContributionSignals.
+	RecentContributionSignalsFunc *EnterpriseDBRecentContributionSignalsFunc
+	// RecentViewSignalFunc is an instance of a mock function object
+	// controlling the behavior of the method RecentViewSignal.
+	RecentViewSignalFunc *EnterpriseDBRecentViewSignalFunc
 	// RedisKeyValueFunc is an instance of a mock function object
 	// controlling the behavior of the method RedisKeyValue.
 	RedisKeyValueFunc *EnterpriseDBRedisKeyValueFunc
+	// RepoCommitsChangelistsFunc is an instance of a mock function object
+	// controlling the behavior of the method RepoCommitsChangelists.
+	RepoCommitsChangelistsFunc *EnterpriseDBRepoCommitsChangelistsFunc
 	// RepoKVPsFunc is an instance of a mock function object controlling the
 	// behavior of the method RepoKVPs.
 	RepoKVPsFunc *EnterpriseDBRepoKVPsFunc
+	// RepoPathsFunc is an instance of a mock function object controlling
+	// the behavior of the method RepoPaths.
+	RepoPathsFunc *EnterpriseDBRepoPathsFunc
 	// RepoStatisticsFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoStatistics.
 	RepoStatisticsFunc *EnterpriseDBRepoStatisticsFunc
@@ -8016,6 +8048,16 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 				return
 			},
 		},
+		AssignedOwnersFunc: &EnterpriseDBAssignedOwnersFunc{
+			defaultHook: func() (r0 database.AssignedOwnersStore) {
+				return
+			},
+		},
+		AssignedTeamsFunc: &EnterpriseDBAssignedTeamsFunc{
+			defaultHook: func() (r0 database.AssignedTeamsStore) {
+				return
+			},
+		},
 		AuthzFunc: &EnterpriseDBAuthzFunc{
 			defaultHook: func() (r0 database.AuthzStore) {
 				return
@@ -8046,6 +8088,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 				return
 			},
 		},
+		EventLogsScrapeStateFunc: &EnterpriseDBEventLogsScrapeStateFunc{
+			defaultHook: func() (r0 database.EventLogsScrapeStateStore) {
+				return
+			},
+		},
 		ExecContextFunc: &EnterpriseDBExecContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (r0 sql.Result, r1 error) {
 				return
@@ -8073,6 +8120,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		FeatureFlagsFunc: &EnterpriseDBFeatureFlagsFunc{
 			defaultHook: func() (r0 database.FeatureFlagStore) {
+				return
+			},
+		},
+		GitHubAppsFunc: &EnterpriseDBGitHubAppsFunc{
+			defaultHook: func() (r0 store.GitHubAppsStore) {
 				return
 			},
 		},
@@ -8136,6 +8188,16 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 				return
 			},
 		},
+		OwnSignalConfigurationsFunc: &EnterpriseDBOwnSignalConfigurationsFunc{
+			defaultHook: func() (r0 database.SignalConfigurationStore) {
+				return
+			},
+		},
+		OwnershipStatsFunc: &EnterpriseDBOwnershipStatsFunc{
+			defaultHook: func() (r0 database.OwnershipStatsStore) {
+				return
+			},
+		},
 		PermissionSyncJobsFunc: &EnterpriseDBPermissionSyncJobsFunc{
 			defaultHook: func() (r0 database.PermissionSyncJobStore) {
 				return
@@ -8166,13 +8228,33 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 				return
 			},
 		},
+		RecentContributionSignalsFunc: &EnterpriseDBRecentContributionSignalsFunc{
+			defaultHook: func() (r0 database.RecentContributionSignalStore) {
+				return
+			},
+		},
+		RecentViewSignalFunc: &EnterpriseDBRecentViewSignalFunc{
+			defaultHook: func() (r0 database.RecentViewSignalStore) {
+				return
+			},
+		},
 		RedisKeyValueFunc: &EnterpriseDBRedisKeyValueFunc{
 			defaultHook: func() (r0 database.RedisKeyValueStore) {
 				return
 			},
 		},
+		RepoCommitsChangelistsFunc: &EnterpriseDBRepoCommitsChangelistsFunc{
+			defaultHook: func() (r0 database.RepoCommitsChangelistsStore) {
+				return
+			},
+		},
 		RepoKVPsFunc: &EnterpriseDBRepoKVPsFunc{
 			defaultHook: func() (r0 database.RepoKVPStore) {
+				return
+			},
+		},
+		RepoPathsFunc: &EnterpriseDBRepoPathsFunc{
+			defaultHook: func() (r0 database.RepoPathStore) {
 				return
 			},
 		},
@@ -8293,6 +8375,16 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.AccessTokens")
 			},
 		},
+		AssignedOwnersFunc: &EnterpriseDBAssignedOwnersFunc{
+			defaultHook: func() database.AssignedOwnersStore {
+				panic("unexpected invocation of MockEnterpriseDB.AssignedOwners")
+			},
+		},
+		AssignedTeamsFunc: &EnterpriseDBAssignedTeamsFunc{
+			defaultHook: func() database.AssignedTeamsStore {
+				panic("unexpected invocation of MockEnterpriseDB.AssignedTeams")
+			},
+		},
 		AuthzFunc: &EnterpriseDBAuthzFunc{
 			defaultHook: func() database.AuthzStore {
 				panic("unexpected invocation of MockEnterpriseDB.Authz")
@@ -8323,6 +8415,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.EventLogs")
 			},
 		},
+		EventLogsScrapeStateFunc: &EnterpriseDBEventLogsScrapeStateFunc{
+			defaultHook: func() database.EventLogsScrapeStateStore {
+				panic("unexpected invocation of MockEnterpriseDB.EventLogsScrapeState")
+			},
+		},
 		ExecContextFunc: &EnterpriseDBExecContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (sql.Result, error) {
 				panic("unexpected invocation of MockEnterpriseDB.ExecContext")
@@ -8351,6 +8448,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 		FeatureFlagsFunc: &EnterpriseDBFeatureFlagsFunc{
 			defaultHook: func() database.FeatureFlagStore {
 				panic("unexpected invocation of MockEnterpriseDB.FeatureFlags")
+			},
+		},
+		GitHubAppsFunc: &EnterpriseDBGitHubAppsFunc{
+			defaultHook: func() store.GitHubAppsStore {
+				panic("unexpected invocation of MockEnterpriseDB.GitHubApps")
 			},
 		},
 		GitserverLocalCloneFunc: &EnterpriseDBGitserverLocalCloneFunc{
@@ -8413,6 +8515,16 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.OutboundWebhooks")
 			},
 		},
+		OwnSignalConfigurationsFunc: &EnterpriseDBOwnSignalConfigurationsFunc{
+			defaultHook: func() database.SignalConfigurationStore {
+				panic("unexpected invocation of MockEnterpriseDB.OwnSignalConfigurations")
+			},
+		},
+		OwnershipStatsFunc: &EnterpriseDBOwnershipStatsFunc{
+			defaultHook: func() database.OwnershipStatsStore {
+				panic("unexpected invocation of MockEnterpriseDB.OwnershipStats")
+			},
+		},
 		PermissionSyncJobsFunc: &EnterpriseDBPermissionSyncJobsFunc{
 			defaultHook: func() database.PermissionSyncJobStore {
 				panic("unexpected invocation of MockEnterpriseDB.PermissionSyncJobs")
@@ -8443,14 +8555,34 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.QueryRowContext")
 			},
 		},
+		RecentContributionSignalsFunc: &EnterpriseDBRecentContributionSignalsFunc{
+			defaultHook: func() database.RecentContributionSignalStore {
+				panic("unexpected invocation of MockEnterpriseDB.RecentContributionSignals")
+			},
+		},
+		RecentViewSignalFunc: &EnterpriseDBRecentViewSignalFunc{
+			defaultHook: func() database.RecentViewSignalStore {
+				panic("unexpected invocation of MockEnterpriseDB.RecentViewSignal")
+			},
+		},
 		RedisKeyValueFunc: &EnterpriseDBRedisKeyValueFunc{
 			defaultHook: func() database.RedisKeyValueStore {
 				panic("unexpected invocation of MockEnterpriseDB.RedisKeyValue")
 			},
 		},
+		RepoCommitsChangelistsFunc: &EnterpriseDBRepoCommitsChangelistsFunc{
+			defaultHook: func() database.RepoCommitsChangelistsStore {
+				panic("unexpected invocation of MockEnterpriseDB.RepoCommitsChangelists")
+			},
+		},
 		RepoKVPsFunc: &EnterpriseDBRepoKVPsFunc{
 			defaultHook: func() database.RepoKVPStore {
 				panic("unexpected invocation of MockEnterpriseDB.RepoKVPs")
+			},
+		},
+		RepoPathsFunc: &EnterpriseDBRepoPathsFunc{
+			defaultHook: func() database.RepoPathStore {
+				panic("unexpected invocation of MockEnterpriseDB.RepoPaths")
 			},
 		},
 		RepoStatisticsFunc: &EnterpriseDBRepoStatisticsFunc{
@@ -8567,6 +8699,12 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		AccessTokensFunc: &EnterpriseDBAccessTokensFunc{
 			defaultHook: i.AccessTokens,
 		},
+		AssignedOwnersFunc: &EnterpriseDBAssignedOwnersFunc{
+			defaultHook: i.AssignedOwners,
+		},
+		AssignedTeamsFunc: &EnterpriseDBAssignedTeamsFunc{
+			defaultHook: i.AssignedTeams,
+		},
 		AuthzFunc: &EnterpriseDBAuthzFunc{
 			defaultHook: i.Authz,
 		},
@@ -8585,6 +8723,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		EventLogsFunc: &EnterpriseDBEventLogsFunc{
 			defaultHook: i.EventLogs,
 		},
+		EventLogsScrapeStateFunc: &EnterpriseDBEventLogsScrapeStateFunc{
+			defaultHook: i.EventLogsScrapeState,
+		},
 		ExecContextFunc: &EnterpriseDBExecContextFunc{
 			defaultHook: i.ExecContext,
 		},
@@ -8602,6 +8743,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		FeatureFlagsFunc: &EnterpriseDBFeatureFlagsFunc{
 			defaultHook: i.FeatureFlags,
+		},
+		GitHubAppsFunc: &EnterpriseDBGitHubAppsFunc{
+			defaultHook: i.GitHubApps,
 		},
 		GitserverLocalCloneFunc: &EnterpriseDBGitserverLocalCloneFunc{
 			defaultHook: i.GitserverLocalClone,
@@ -8639,6 +8783,12 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		OutboundWebhooksFunc: &EnterpriseDBOutboundWebhooksFunc{
 			defaultHook: i.OutboundWebhooks,
 		},
+		OwnSignalConfigurationsFunc: &EnterpriseDBOwnSignalConfigurationsFunc{
+			defaultHook: i.OwnSignalConfigurations,
+		},
+		OwnershipStatsFunc: &EnterpriseDBOwnershipStatsFunc{
+			defaultHook: i.OwnershipStats,
+		},
 		PermissionSyncJobsFunc: &EnterpriseDBPermissionSyncJobsFunc{
 			defaultHook: i.PermissionSyncJobs,
 		},
@@ -8657,11 +8807,23 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		QueryRowContextFunc: &EnterpriseDBQueryRowContextFunc{
 			defaultHook: i.QueryRowContext,
 		},
+		RecentContributionSignalsFunc: &EnterpriseDBRecentContributionSignalsFunc{
+			defaultHook: i.RecentContributionSignals,
+		},
+		RecentViewSignalFunc: &EnterpriseDBRecentViewSignalFunc{
+			defaultHook: i.RecentViewSignal,
+		},
 		RedisKeyValueFunc: &EnterpriseDBRedisKeyValueFunc{
 			defaultHook: i.RedisKeyValue,
 		},
+		RepoCommitsChangelistsFunc: &EnterpriseDBRepoCommitsChangelistsFunc{
+			defaultHook: i.RepoCommitsChangelists,
+		},
 		RepoKVPsFunc: &EnterpriseDBRepoKVPsFunc{
 			defaultHook: i.RepoKVPs,
+		},
+		RepoPathsFunc: &EnterpriseDBRepoPathsFunc{
+			defaultHook: i.RepoPaths,
 		},
 		RepoStatisticsFunc: &EnterpriseDBRepoStatisticsFunc{
 			defaultHook: i.RepoStatistics,
@@ -8921,6 +9083,204 @@ func (c EnterpriseDBAccessTokensFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBAccessTokensFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBAssignedOwnersFunc describes the behavior when the
+// AssignedOwners method of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBAssignedOwnersFunc struct {
+	defaultHook func() database.AssignedOwnersStore
+	hooks       []func() database.AssignedOwnersStore
+	history     []EnterpriseDBAssignedOwnersFuncCall
+	mutex       sync.Mutex
+}
+
+// AssignedOwners delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) AssignedOwners() database.AssignedOwnersStore {
+	r0 := m.AssignedOwnersFunc.nextHook()()
+	m.AssignedOwnersFunc.appendCall(EnterpriseDBAssignedOwnersFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AssignedOwners
+// method of the parent MockEnterpriseDB instance is invoked and the hook
+// queue is empty.
+func (f *EnterpriseDBAssignedOwnersFunc) SetDefaultHook(hook func() database.AssignedOwnersStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AssignedOwners method of the parent MockEnterpriseDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnterpriseDBAssignedOwnersFunc) PushHook(hook func() database.AssignedOwnersStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBAssignedOwnersFunc) SetDefaultReturn(r0 database.AssignedOwnersStore) {
+	f.SetDefaultHook(func() database.AssignedOwnersStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBAssignedOwnersFunc) PushReturn(r0 database.AssignedOwnersStore) {
+	f.PushHook(func() database.AssignedOwnersStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBAssignedOwnersFunc) nextHook() func() database.AssignedOwnersStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBAssignedOwnersFunc) appendCall(r0 EnterpriseDBAssignedOwnersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBAssignedOwnersFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBAssignedOwnersFunc) History() []EnterpriseDBAssignedOwnersFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBAssignedOwnersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBAssignedOwnersFuncCall is an object that describes an
+// invocation of method AssignedOwners on an instance of MockEnterpriseDB.
+type EnterpriseDBAssignedOwnersFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.AssignedOwnersStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBAssignedOwnersFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBAssignedOwnersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBAssignedTeamsFunc describes the behavior when the
+// AssignedTeams method of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBAssignedTeamsFunc struct {
+	defaultHook func() database.AssignedTeamsStore
+	hooks       []func() database.AssignedTeamsStore
+	history     []EnterpriseDBAssignedTeamsFuncCall
+	mutex       sync.Mutex
+}
+
+// AssignedTeams delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) AssignedTeams() database.AssignedTeamsStore {
+	r0 := m.AssignedTeamsFunc.nextHook()()
+	m.AssignedTeamsFunc.appendCall(EnterpriseDBAssignedTeamsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AssignedTeams method
+// of the parent MockEnterpriseDB instance is invoked and the hook queue is
+// empty.
+func (f *EnterpriseDBAssignedTeamsFunc) SetDefaultHook(hook func() database.AssignedTeamsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AssignedTeams method of the parent MockEnterpriseDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnterpriseDBAssignedTeamsFunc) PushHook(hook func() database.AssignedTeamsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBAssignedTeamsFunc) SetDefaultReturn(r0 database.AssignedTeamsStore) {
+	f.SetDefaultHook(func() database.AssignedTeamsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBAssignedTeamsFunc) PushReturn(r0 database.AssignedTeamsStore) {
+	f.PushHook(func() database.AssignedTeamsStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBAssignedTeamsFunc) nextHook() func() database.AssignedTeamsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBAssignedTeamsFunc) appendCall(r0 EnterpriseDBAssignedTeamsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBAssignedTeamsFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBAssignedTeamsFunc) History() []EnterpriseDBAssignedTeamsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBAssignedTeamsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBAssignedTeamsFuncCall is an object that describes an
+// invocation of method AssignedTeams on an instance of MockEnterpriseDB.
+type EnterpriseDBAssignedTeamsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.AssignedTeamsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBAssignedTeamsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBAssignedTeamsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -9517,6 +9877,108 @@ func (c EnterpriseDBEventLogsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBEventLogsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBEventLogsScrapeStateFunc describes the behavior when the
+// EventLogsScrapeState method of the parent MockEnterpriseDB instance is
+// invoked.
+type EnterpriseDBEventLogsScrapeStateFunc struct {
+	defaultHook func() database.EventLogsScrapeStateStore
+	hooks       []func() database.EventLogsScrapeStateStore
+	history     []EnterpriseDBEventLogsScrapeStateFuncCall
+	mutex       sync.Mutex
+}
+
+// EventLogsScrapeState delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) EventLogsScrapeState() database.EventLogsScrapeStateStore {
+	r0 := m.EventLogsScrapeStateFunc.nextHook()()
+	m.EventLogsScrapeStateFunc.appendCall(EnterpriseDBEventLogsScrapeStateFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the EventLogsScrapeState
+// method of the parent MockEnterpriseDB instance is invoked and the hook
+// queue is empty.
+func (f *EnterpriseDBEventLogsScrapeStateFunc) SetDefaultHook(hook func() database.EventLogsScrapeStateStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// EventLogsScrapeState method of the parent MockEnterpriseDB instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnterpriseDBEventLogsScrapeStateFunc) PushHook(hook func() database.EventLogsScrapeStateStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBEventLogsScrapeStateFunc) SetDefaultReturn(r0 database.EventLogsScrapeStateStore) {
+	f.SetDefaultHook(func() database.EventLogsScrapeStateStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBEventLogsScrapeStateFunc) PushReturn(r0 database.EventLogsScrapeStateStore) {
+	f.PushHook(func() database.EventLogsScrapeStateStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBEventLogsScrapeStateFunc) nextHook() func() database.EventLogsScrapeStateStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBEventLogsScrapeStateFunc) appendCall(r0 EnterpriseDBEventLogsScrapeStateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBEventLogsScrapeStateFuncCall
+// objects describing the invocations of this function.
+func (f *EnterpriseDBEventLogsScrapeStateFunc) History() []EnterpriseDBEventLogsScrapeStateFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBEventLogsScrapeStateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBEventLogsScrapeStateFuncCall is an object that describes an
+// invocation of method EventLogsScrapeState on an instance of
+// MockEnterpriseDB.
+type EnterpriseDBEventLogsScrapeStateFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.EventLogsScrapeStateStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBEventLogsScrapeStateFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBEventLogsScrapeStateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -10139,6 +10601,105 @@ func (c EnterpriseDBFeatureFlagsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBFeatureFlagsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBGitHubAppsFunc describes the behavior when the GitHubApps
+// method of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBGitHubAppsFunc struct {
+	defaultHook func() store.GitHubAppsStore
+	hooks       []func() store.GitHubAppsStore
+	history     []EnterpriseDBGitHubAppsFuncCall
+	mutex       sync.Mutex
+}
+
+// GitHubApps delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) GitHubApps() store.GitHubAppsStore {
+	r0 := m.GitHubAppsFunc.nextHook()()
+	m.GitHubAppsFunc.appendCall(EnterpriseDBGitHubAppsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GitHubApps method of
+// the parent MockEnterpriseDB instance is invoked and the hook queue is
+// empty.
+func (f *EnterpriseDBGitHubAppsFunc) SetDefaultHook(hook func() store.GitHubAppsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GitHubApps method of the parent MockEnterpriseDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnterpriseDBGitHubAppsFunc) PushHook(hook func() store.GitHubAppsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBGitHubAppsFunc) SetDefaultReturn(r0 store.GitHubAppsStore) {
+	f.SetDefaultHook(func() store.GitHubAppsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBGitHubAppsFunc) PushReturn(r0 store.GitHubAppsStore) {
+	f.PushHook(func() store.GitHubAppsStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBGitHubAppsFunc) nextHook() func() store.GitHubAppsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBGitHubAppsFunc) appendCall(r0 EnterpriseDBGitHubAppsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBGitHubAppsFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBGitHubAppsFunc) History() []EnterpriseDBGitHubAppsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBGitHubAppsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBGitHubAppsFuncCall is an object that describes an invocation
+// of method GitHubApps on an instance of MockEnterpriseDB.
+type EnterpriseDBGitHubAppsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 store.GitHubAppsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBGitHubAppsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBGitHubAppsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -11350,6 +11911,207 @@ func (c EnterpriseDBOutboundWebhooksFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// EnterpriseDBOwnSignalConfigurationsFunc describes the behavior when the
+// OwnSignalConfigurations method of the parent MockEnterpriseDB instance is
+// invoked.
+type EnterpriseDBOwnSignalConfigurationsFunc struct {
+	defaultHook func() database.SignalConfigurationStore
+	hooks       []func() database.SignalConfigurationStore
+	history     []EnterpriseDBOwnSignalConfigurationsFuncCall
+	mutex       sync.Mutex
+}
+
+// OwnSignalConfigurations delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) OwnSignalConfigurations() database.SignalConfigurationStore {
+	r0 := m.OwnSignalConfigurationsFunc.nextHook()()
+	m.OwnSignalConfigurationsFunc.appendCall(EnterpriseDBOwnSignalConfigurationsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// OwnSignalConfigurations method of the parent MockEnterpriseDB instance is
+// invoked and the hook queue is empty.
+func (f *EnterpriseDBOwnSignalConfigurationsFunc) SetDefaultHook(hook func() database.SignalConfigurationStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// OwnSignalConfigurations method of the parent MockEnterpriseDB instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnterpriseDBOwnSignalConfigurationsFunc) PushHook(hook func() database.SignalConfigurationStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBOwnSignalConfigurationsFunc) SetDefaultReturn(r0 database.SignalConfigurationStore) {
+	f.SetDefaultHook(func() database.SignalConfigurationStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBOwnSignalConfigurationsFunc) PushReturn(r0 database.SignalConfigurationStore) {
+	f.PushHook(func() database.SignalConfigurationStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBOwnSignalConfigurationsFunc) nextHook() func() database.SignalConfigurationStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBOwnSignalConfigurationsFunc) appendCall(r0 EnterpriseDBOwnSignalConfigurationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBOwnSignalConfigurationsFuncCall
+// objects describing the invocations of this function.
+func (f *EnterpriseDBOwnSignalConfigurationsFunc) History() []EnterpriseDBOwnSignalConfigurationsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBOwnSignalConfigurationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBOwnSignalConfigurationsFuncCall is an object that describes
+// an invocation of method OwnSignalConfigurations on an instance of
+// MockEnterpriseDB.
+type EnterpriseDBOwnSignalConfigurationsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.SignalConfigurationStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBOwnSignalConfigurationsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBOwnSignalConfigurationsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBOwnershipStatsFunc describes the behavior when the
+// OwnershipStats method of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBOwnershipStatsFunc struct {
+	defaultHook func() database.OwnershipStatsStore
+	hooks       []func() database.OwnershipStatsStore
+	history     []EnterpriseDBOwnershipStatsFuncCall
+	mutex       sync.Mutex
+}
+
+// OwnershipStats delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) OwnershipStats() database.OwnershipStatsStore {
+	r0 := m.OwnershipStatsFunc.nextHook()()
+	m.OwnershipStatsFunc.appendCall(EnterpriseDBOwnershipStatsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the OwnershipStats
+// method of the parent MockEnterpriseDB instance is invoked and the hook
+// queue is empty.
+func (f *EnterpriseDBOwnershipStatsFunc) SetDefaultHook(hook func() database.OwnershipStatsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// OwnershipStats method of the parent MockEnterpriseDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnterpriseDBOwnershipStatsFunc) PushHook(hook func() database.OwnershipStatsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBOwnershipStatsFunc) SetDefaultReturn(r0 database.OwnershipStatsStore) {
+	f.SetDefaultHook(func() database.OwnershipStatsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBOwnershipStatsFunc) PushReturn(r0 database.OwnershipStatsStore) {
+	f.PushHook(func() database.OwnershipStatsStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBOwnershipStatsFunc) nextHook() func() database.OwnershipStatsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBOwnershipStatsFunc) appendCall(r0 EnterpriseDBOwnershipStatsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBOwnershipStatsFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBOwnershipStatsFunc) History() []EnterpriseDBOwnershipStatsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBOwnershipStatsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBOwnershipStatsFuncCall is an object that describes an
+// invocation of method OwnershipStats on an instance of MockEnterpriseDB.
+type EnterpriseDBOwnershipStatsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.OwnershipStatsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBOwnershipStatsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBOwnershipStatsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // EnterpriseDBPermissionSyncJobsFunc describes the behavior when the
 // PermissionSyncJobs method of the parent MockEnterpriseDB instance is
 // invoked.
@@ -11981,6 +12743,209 @@ func (c EnterpriseDBQueryRowContextFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// EnterpriseDBRecentContributionSignalsFunc describes the behavior when the
+// RecentContributionSignals method of the parent MockEnterpriseDB instance
+// is invoked.
+type EnterpriseDBRecentContributionSignalsFunc struct {
+	defaultHook func() database.RecentContributionSignalStore
+	hooks       []func() database.RecentContributionSignalStore
+	history     []EnterpriseDBRecentContributionSignalsFuncCall
+	mutex       sync.Mutex
+}
+
+// RecentContributionSignals delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) RecentContributionSignals() database.RecentContributionSignalStore {
+	r0 := m.RecentContributionSignalsFunc.nextHook()()
+	m.RecentContributionSignalsFunc.appendCall(EnterpriseDBRecentContributionSignalsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// RecentContributionSignals method of the parent MockEnterpriseDB instance
+// is invoked and the hook queue is empty.
+func (f *EnterpriseDBRecentContributionSignalsFunc) SetDefaultHook(hook func() database.RecentContributionSignalStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecentContributionSignals method of the parent MockEnterpriseDB instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnterpriseDBRecentContributionSignalsFunc) PushHook(hook func() database.RecentContributionSignalStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBRecentContributionSignalsFunc) SetDefaultReturn(r0 database.RecentContributionSignalStore) {
+	f.SetDefaultHook(func() database.RecentContributionSignalStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBRecentContributionSignalsFunc) PushReturn(r0 database.RecentContributionSignalStore) {
+	f.PushHook(func() database.RecentContributionSignalStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBRecentContributionSignalsFunc) nextHook() func() database.RecentContributionSignalStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBRecentContributionSignalsFunc) appendCall(r0 EnterpriseDBRecentContributionSignalsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// EnterpriseDBRecentContributionSignalsFuncCall objects describing the
+// invocations of this function.
+func (f *EnterpriseDBRecentContributionSignalsFunc) History() []EnterpriseDBRecentContributionSignalsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBRecentContributionSignalsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBRecentContributionSignalsFuncCall is an object that describes
+// an invocation of method RecentContributionSignals on an instance of
+// MockEnterpriseDB.
+type EnterpriseDBRecentContributionSignalsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.RecentContributionSignalStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBRecentContributionSignalsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBRecentContributionSignalsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBRecentViewSignalFunc describes the behavior when the
+// RecentViewSignal method of the parent MockEnterpriseDB instance is
+// invoked.
+type EnterpriseDBRecentViewSignalFunc struct {
+	defaultHook func() database.RecentViewSignalStore
+	hooks       []func() database.RecentViewSignalStore
+	history     []EnterpriseDBRecentViewSignalFuncCall
+	mutex       sync.Mutex
+}
+
+// RecentViewSignal delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) RecentViewSignal() database.RecentViewSignalStore {
+	r0 := m.RecentViewSignalFunc.nextHook()()
+	m.RecentViewSignalFunc.appendCall(EnterpriseDBRecentViewSignalFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RecentViewSignal
+// method of the parent MockEnterpriseDB instance is invoked and the hook
+// queue is empty.
+func (f *EnterpriseDBRecentViewSignalFunc) SetDefaultHook(hook func() database.RecentViewSignalStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RecentViewSignal method of the parent MockEnterpriseDB instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *EnterpriseDBRecentViewSignalFunc) PushHook(hook func() database.RecentViewSignalStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBRecentViewSignalFunc) SetDefaultReturn(r0 database.RecentViewSignalStore) {
+	f.SetDefaultHook(func() database.RecentViewSignalStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBRecentViewSignalFunc) PushReturn(r0 database.RecentViewSignalStore) {
+	f.PushHook(func() database.RecentViewSignalStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBRecentViewSignalFunc) nextHook() func() database.RecentViewSignalStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBRecentViewSignalFunc) appendCall(r0 EnterpriseDBRecentViewSignalFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBRecentViewSignalFuncCall
+// objects describing the invocations of this function.
+func (f *EnterpriseDBRecentViewSignalFunc) History() []EnterpriseDBRecentViewSignalFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBRecentViewSignalFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBRecentViewSignalFuncCall is an object that describes an
+// invocation of method RecentViewSignal on an instance of MockEnterpriseDB.
+type EnterpriseDBRecentViewSignalFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.RecentViewSignalStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBRecentViewSignalFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBRecentViewSignalFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // EnterpriseDBRedisKeyValueFunc describes the behavior when the
 // RedisKeyValue method of the parent MockEnterpriseDB instance is invoked.
 type EnterpriseDBRedisKeyValueFunc struct {
@@ -12080,6 +13045,108 @@ func (c EnterpriseDBRedisKeyValueFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// EnterpriseDBRepoCommitsChangelistsFunc describes the behavior when the
+// RepoCommitsChangelists method of the parent MockEnterpriseDB instance is
+// invoked.
+type EnterpriseDBRepoCommitsChangelistsFunc struct {
+	defaultHook func() database.RepoCommitsChangelistsStore
+	hooks       []func() database.RepoCommitsChangelistsStore
+	history     []EnterpriseDBRepoCommitsChangelistsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoCommitsChangelists delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) RepoCommitsChangelists() database.RepoCommitsChangelistsStore {
+	r0 := m.RepoCommitsChangelistsFunc.nextHook()()
+	m.RepoCommitsChangelistsFunc.appendCall(EnterpriseDBRepoCommitsChangelistsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// RepoCommitsChangelists method of the parent MockEnterpriseDB instance is
+// invoked and the hook queue is empty.
+func (f *EnterpriseDBRepoCommitsChangelistsFunc) SetDefaultHook(hook func() database.RepoCommitsChangelistsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoCommitsChangelists method of the parent MockEnterpriseDB instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnterpriseDBRepoCommitsChangelistsFunc) PushHook(hook func() database.RepoCommitsChangelistsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBRepoCommitsChangelistsFunc) SetDefaultReturn(r0 database.RepoCommitsChangelistsStore) {
+	f.SetDefaultHook(func() database.RepoCommitsChangelistsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBRepoCommitsChangelistsFunc) PushReturn(r0 database.RepoCommitsChangelistsStore) {
+	f.PushHook(func() database.RepoCommitsChangelistsStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBRepoCommitsChangelistsFunc) nextHook() func() database.RepoCommitsChangelistsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBRepoCommitsChangelistsFunc) appendCall(r0 EnterpriseDBRepoCommitsChangelistsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBRepoCommitsChangelistsFuncCall
+// objects describing the invocations of this function.
+func (f *EnterpriseDBRepoCommitsChangelistsFunc) History() []EnterpriseDBRepoCommitsChangelistsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBRepoCommitsChangelistsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBRepoCommitsChangelistsFuncCall is an object that describes an
+// invocation of method RepoCommitsChangelists on an instance of
+// MockEnterpriseDB.
+type EnterpriseDBRepoCommitsChangelistsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.RepoCommitsChangelistsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBRepoCommitsChangelistsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBRepoCommitsChangelistsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // EnterpriseDBRepoKVPsFunc describes the behavior when the RepoKVPs method
 // of the parent MockEnterpriseDB instance is invoked.
 type EnterpriseDBRepoKVPsFunc struct {
@@ -12176,6 +13243,105 @@ func (c EnterpriseDBRepoKVPsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBRepoKVPsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBRepoPathsFunc describes the behavior when the RepoPaths
+// method of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBRepoPathsFunc struct {
+	defaultHook func() database.RepoPathStore
+	hooks       []func() database.RepoPathStore
+	history     []EnterpriseDBRepoPathsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoPaths delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockEnterpriseDB) RepoPaths() database.RepoPathStore {
+	r0 := m.RepoPathsFunc.nextHook()()
+	m.RepoPathsFunc.appendCall(EnterpriseDBRepoPathsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RepoPaths method of
+// the parent MockEnterpriseDB instance is invoked and the hook queue is
+// empty.
+func (f *EnterpriseDBRepoPathsFunc) SetDefaultHook(hook func() database.RepoPathStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoPaths method of the parent MockEnterpriseDB instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *EnterpriseDBRepoPathsFunc) PushHook(hook func() database.RepoPathStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBRepoPathsFunc) SetDefaultReturn(r0 database.RepoPathStore) {
+	f.SetDefaultHook(func() database.RepoPathStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBRepoPathsFunc) PushReturn(r0 database.RepoPathStore) {
+	f.PushHook(func() database.RepoPathStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBRepoPathsFunc) nextHook() func() database.RepoPathStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBRepoPathsFunc) appendCall(r0 EnterpriseDBRepoPathsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBRepoPathsFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBRepoPathsFunc) History() []EnterpriseDBRepoPathsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBRepoPathsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBRepoPathsFuncCall is an object that describes an invocation
+// of method RepoPaths on an instance of MockEnterpriseDB.
+type EnterpriseDBRepoPathsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.RepoPathStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBRepoPathsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBRepoPathsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -14187,17 +15353,15 @@ type MockPermsStore struct {
 	// CountReposWithNoPermsFunc is an instance of a mock function object
 	// controlling the behavior of the method CountReposWithNoPerms.
 	CountReposWithNoPermsFunc *PermsStoreCountReposWithNoPermsFunc
-	// CountReposWithOldestPermsFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// CountReposWithOldestPerms.
-	CountReposWithOldestPermsFunc *PermsStoreCountReposWithOldestPermsFunc
+	// CountReposWithStalePermsFunc is an instance of a mock function object
+	// controlling the behavior of the method CountReposWithStalePerms.
+	CountReposWithStalePermsFunc *PermsStoreCountReposWithStalePermsFunc
 	// CountUsersWithNoPermsFunc is an instance of a mock function object
 	// controlling the behavior of the method CountUsersWithNoPerms.
 	CountUsersWithNoPermsFunc *PermsStoreCountUsersWithNoPermsFunc
-	// CountUsersWithOldestPermsFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// CountUsersWithOldestPerms.
-	CountUsersWithOldestPermsFunc *PermsStoreCountUsersWithOldestPermsFunc
+	// CountUsersWithStalePermsFunc is an instance of a mock function object
+	// controlling the behavior of the method CountUsersWithStalePerms.
+	CountUsersWithStalePermsFunc *PermsStoreCountUsersWithStalePermsFunc
 	// DeleteAllUserPendingPermissionsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// DeleteAllUserPendingPermissions.
@@ -14294,7 +15458,7 @@ func NewMockPermsStore() *MockPermsStore {
 				return
 			},
 		},
-		CountReposWithOldestPermsFunc: &PermsStoreCountReposWithOldestPermsFunc{
+		CountReposWithStalePermsFunc: &PermsStoreCountReposWithStalePermsFunc{
 			defaultHook: func(context.Context, time.Duration) (r0 int, r1 error) {
 				return
 			},
@@ -14304,7 +15468,7 @@ func NewMockPermsStore() *MockPermsStore {
 				return
 			},
 		},
-		CountUsersWithOldestPermsFunc: &PermsStoreCountUsersWithOldestPermsFunc{
+		CountUsersWithStalePermsFunc: &PermsStoreCountUsersWithStalePermsFunc{
 			defaultHook: func(context.Context, time.Duration) (r0 int, r1 error) {
 				return
 			},
@@ -14451,9 +15615,9 @@ func NewStrictMockPermsStore() *MockPermsStore {
 				panic("unexpected invocation of MockPermsStore.CountReposWithNoPerms")
 			},
 		},
-		CountReposWithOldestPermsFunc: &PermsStoreCountReposWithOldestPermsFunc{
+		CountReposWithStalePermsFunc: &PermsStoreCountReposWithStalePermsFunc{
 			defaultHook: func(context.Context, time.Duration) (int, error) {
-				panic("unexpected invocation of MockPermsStore.CountReposWithOldestPerms")
+				panic("unexpected invocation of MockPermsStore.CountReposWithStalePerms")
 			},
 		},
 		CountUsersWithNoPermsFunc: &PermsStoreCountUsersWithNoPermsFunc{
@@ -14461,9 +15625,9 @@ func NewStrictMockPermsStore() *MockPermsStore {
 				panic("unexpected invocation of MockPermsStore.CountUsersWithNoPerms")
 			},
 		},
-		CountUsersWithOldestPermsFunc: &PermsStoreCountUsersWithOldestPermsFunc{
+		CountUsersWithStalePermsFunc: &PermsStoreCountUsersWithStalePermsFunc{
 			defaultHook: func(context.Context, time.Duration) (int, error) {
-				panic("unexpected invocation of MockPermsStore.CountUsersWithOldestPerms")
+				panic("unexpected invocation of MockPermsStore.CountUsersWithStalePerms")
 			},
 		},
 		DeleteAllUserPendingPermissionsFunc: &PermsStoreDeleteAllUserPendingPermissionsFunc{
@@ -14606,14 +15770,14 @@ func NewMockPermsStoreFrom(i PermsStore) *MockPermsStore {
 		CountReposWithNoPermsFunc: &PermsStoreCountReposWithNoPermsFunc{
 			defaultHook: i.CountReposWithNoPerms,
 		},
-		CountReposWithOldestPermsFunc: &PermsStoreCountReposWithOldestPermsFunc{
-			defaultHook: i.CountReposWithOldestPerms,
+		CountReposWithStalePermsFunc: &PermsStoreCountReposWithStalePermsFunc{
+			defaultHook: i.CountReposWithStalePerms,
 		},
 		CountUsersWithNoPermsFunc: &PermsStoreCountUsersWithNoPermsFunc{
 			defaultHook: i.CountUsersWithNoPerms,
 		},
-		CountUsersWithOldestPermsFunc: &PermsStoreCountUsersWithOldestPermsFunc{
-			defaultHook: i.CountUsersWithOldestPerms,
+		CountUsersWithStalePermsFunc: &PermsStoreCountUsersWithStalePermsFunc{
+			defaultHook: i.CountUsersWithStalePerms,
 		},
 		DeleteAllUserPendingPermissionsFunc: &PermsStoreDeleteAllUserPendingPermissionsFunc{
 			defaultHook: i.DeleteAllUserPendingPermissions,
@@ -14804,37 +15968,37 @@ func (c PermsStoreCountReposWithNoPermsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// PermsStoreCountReposWithOldestPermsFunc describes the behavior when the
-// CountReposWithOldestPerms method of the parent MockPermsStore instance is
+// PermsStoreCountReposWithStalePermsFunc describes the behavior when the
+// CountReposWithStalePerms method of the parent MockPermsStore instance is
 // invoked.
-type PermsStoreCountReposWithOldestPermsFunc struct {
+type PermsStoreCountReposWithStalePermsFunc struct {
 	defaultHook func(context.Context, time.Duration) (int, error)
 	hooks       []func(context.Context, time.Duration) (int, error)
-	history     []PermsStoreCountReposWithOldestPermsFuncCall
+	history     []PermsStoreCountReposWithStalePermsFuncCall
 	mutex       sync.Mutex
 }
 
-// CountReposWithOldestPerms delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockPermsStore) CountReposWithOldestPerms(v0 context.Context, v1 time.Duration) (int, error) {
-	r0, r1 := m.CountReposWithOldestPermsFunc.nextHook()(v0, v1)
-	m.CountReposWithOldestPermsFunc.appendCall(PermsStoreCountReposWithOldestPermsFuncCall{v0, v1, r0, r1})
+// CountReposWithStalePerms delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) CountReposWithStalePerms(v0 context.Context, v1 time.Duration) (int, error) {
+	r0, r1 := m.CountReposWithStalePermsFunc.nextHook()(v0, v1)
+	m.CountReposWithStalePermsFunc.appendCall(PermsStoreCountReposWithStalePermsFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// CountReposWithOldestPerms method of the parent MockPermsStore instance is
+// CountReposWithStalePerms method of the parent MockPermsStore instance is
 // invoked and the hook queue is empty.
-func (f *PermsStoreCountReposWithOldestPermsFunc) SetDefaultHook(hook func(context.Context, time.Duration) (int, error)) {
+func (f *PermsStoreCountReposWithStalePermsFunc) SetDefaultHook(hook func(context.Context, time.Duration) (int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// CountReposWithOldestPerms method of the parent MockPermsStore instance
+// CountReposWithStalePerms method of the parent MockPermsStore instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *PermsStoreCountReposWithOldestPermsFunc) PushHook(hook func(context.Context, time.Duration) (int, error)) {
+func (f *PermsStoreCountReposWithStalePermsFunc) PushHook(hook func(context.Context, time.Duration) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -14842,20 +16006,20 @@ func (f *PermsStoreCountReposWithOldestPermsFunc) PushHook(hook func(context.Con
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *PermsStoreCountReposWithOldestPermsFunc) SetDefaultReturn(r0 int, r1 error) {
+func (f *PermsStoreCountReposWithStalePermsFunc) SetDefaultReturn(r0 int, r1 error) {
 	f.SetDefaultHook(func(context.Context, time.Duration) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *PermsStoreCountReposWithOldestPermsFunc) PushReturn(r0 int, r1 error) {
+func (f *PermsStoreCountReposWithStalePermsFunc) PushReturn(r0 int, r1 error) {
 	f.PushHook(func(context.Context, time.Duration) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *PermsStoreCountReposWithOldestPermsFunc) nextHook() func(context.Context, time.Duration) (int, error) {
+func (f *PermsStoreCountReposWithStalePermsFunc) nextHook() func(context.Context, time.Duration) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -14868,27 +16032,27 @@ func (f *PermsStoreCountReposWithOldestPermsFunc) nextHook() func(context.Contex
 	return hook
 }
 
-func (f *PermsStoreCountReposWithOldestPermsFunc) appendCall(r0 PermsStoreCountReposWithOldestPermsFuncCall) {
+func (f *PermsStoreCountReposWithStalePermsFunc) appendCall(r0 PermsStoreCountReposWithStalePermsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of PermsStoreCountReposWithOldestPermsFuncCall
+// History returns a sequence of PermsStoreCountReposWithStalePermsFuncCall
 // objects describing the invocations of this function.
-func (f *PermsStoreCountReposWithOldestPermsFunc) History() []PermsStoreCountReposWithOldestPermsFuncCall {
+func (f *PermsStoreCountReposWithStalePermsFunc) History() []PermsStoreCountReposWithStalePermsFuncCall {
 	f.mutex.Lock()
-	history := make([]PermsStoreCountReposWithOldestPermsFuncCall, len(f.history))
+	history := make([]PermsStoreCountReposWithStalePermsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// PermsStoreCountReposWithOldestPermsFuncCall is an object that describes
-// an invocation of method CountReposWithOldestPerms on an instance of
+// PermsStoreCountReposWithStalePermsFuncCall is an object that describes an
+// invocation of method CountReposWithStalePerms on an instance of
 // MockPermsStore.
-type PermsStoreCountReposWithOldestPermsFuncCall struct {
+type PermsStoreCountReposWithStalePermsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -14905,13 +16069,13 @@ type PermsStoreCountReposWithOldestPermsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c PermsStoreCountReposWithOldestPermsFuncCall) Args() []interface{} {
+func (c PermsStoreCountReposWithStalePermsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c PermsStoreCountReposWithOldestPermsFuncCall) Results() []interface{} {
+func (c PermsStoreCountReposWithStalePermsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -15023,37 +16187,37 @@ func (c PermsStoreCountUsersWithNoPermsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// PermsStoreCountUsersWithOldestPermsFunc describes the behavior when the
-// CountUsersWithOldestPerms method of the parent MockPermsStore instance is
+// PermsStoreCountUsersWithStalePermsFunc describes the behavior when the
+// CountUsersWithStalePerms method of the parent MockPermsStore instance is
 // invoked.
-type PermsStoreCountUsersWithOldestPermsFunc struct {
+type PermsStoreCountUsersWithStalePermsFunc struct {
 	defaultHook func(context.Context, time.Duration) (int, error)
 	hooks       []func(context.Context, time.Duration) (int, error)
-	history     []PermsStoreCountUsersWithOldestPermsFuncCall
+	history     []PermsStoreCountUsersWithStalePermsFuncCall
 	mutex       sync.Mutex
 }
 
-// CountUsersWithOldestPerms delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockPermsStore) CountUsersWithOldestPerms(v0 context.Context, v1 time.Duration) (int, error) {
-	r0, r1 := m.CountUsersWithOldestPermsFunc.nextHook()(v0, v1)
-	m.CountUsersWithOldestPermsFunc.appendCall(PermsStoreCountUsersWithOldestPermsFuncCall{v0, v1, r0, r1})
+// CountUsersWithStalePerms delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) CountUsersWithStalePerms(v0 context.Context, v1 time.Duration) (int, error) {
+	r0, r1 := m.CountUsersWithStalePermsFunc.nextHook()(v0, v1)
+	m.CountUsersWithStalePermsFunc.appendCall(PermsStoreCountUsersWithStalePermsFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// CountUsersWithOldestPerms method of the parent MockPermsStore instance is
+// CountUsersWithStalePerms method of the parent MockPermsStore instance is
 // invoked and the hook queue is empty.
-func (f *PermsStoreCountUsersWithOldestPermsFunc) SetDefaultHook(hook func(context.Context, time.Duration) (int, error)) {
+func (f *PermsStoreCountUsersWithStalePermsFunc) SetDefaultHook(hook func(context.Context, time.Duration) (int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// CountUsersWithOldestPerms method of the parent MockPermsStore instance
+// CountUsersWithStalePerms method of the parent MockPermsStore instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *PermsStoreCountUsersWithOldestPermsFunc) PushHook(hook func(context.Context, time.Duration) (int, error)) {
+func (f *PermsStoreCountUsersWithStalePermsFunc) PushHook(hook func(context.Context, time.Duration) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -15061,20 +16225,20 @@ func (f *PermsStoreCountUsersWithOldestPermsFunc) PushHook(hook func(context.Con
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *PermsStoreCountUsersWithOldestPermsFunc) SetDefaultReturn(r0 int, r1 error) {
+func (f *PermsStoreCountUsersWithStalePermsFunc) SetDefaultReturn(r0 int, r1 error) {
 	f.SetDefaultHook(func(context.Context, time.Duration) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *PermsStoreCountUsersWithOldestPermsFunc) PushReturn(r0 int, r1 error) {
+func (f *PermsStoreCountUsersWithStalePermsFunc) PushReturn(r0 int, r1 error) {
 	f.PushHook(func(context.Context, time.Duration) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *PermsStoreCountUsersWithOldestPermsFunc) nextHook() func(context.Context, time.Duration) (int, error) {
+func (f *PermsStoreCountUsersWithStalePermsFunc) nextHook() func(context.Context, time.Duration) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -15087,27 +16251,27 @@ func (f *PermsStoreCountUsersWithOldestPermsFunc) nextHook() func(context.Contex
 	return hook
 }
 
-func (f *PermsStoreCountUsersWithOldestPermsFunc) appendCall(r0 PermsStoreCountUsersWithOldestPermsFuncCall) {
+func (f *PermsStoreCountUsersWithStalePermsFunc) appendCall(r0 PermsStoreCountUsersWithStalePermsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of PermsStoreCountUsersWithOldestPermsFuncCall
+// History returns a sequence of PermsStoreCountUsersWithStalePermsFuncCall
 // objects describing the invocations of this function.
-func (f *PermsStoreCountUsersWithOldestPermsFunc) History() []PermsStoreCountUsersWithOldestPermsFuncCall {
+func (f *PermsStoreCountUsersWithStalePermsFunc) History() []PermsStoreCountUsersWithStalePermsFuncCall {
 	f.mutex.Lock()
-	history := make([]PermsStoreCountUsersWithOldestPermsFuncCall, len(f.history))
+	history := make([]PermsStoreCountUsersWithStalePermsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// PermsStoreCountUsersWithOldestPermsFuncCall is an object that describes
-// an invocation of method CountUsersWithOldestPerms on an instance of
+// PermsStoreCountUsersWithStalePermsFuncCall is an object that describes an
+// invocation of method CountUsersWithStalePerms on an instance of
 // MockPermsStore.
-type PermsStoreCountUsersWithOldestPermsFuncCall struct {
+type PermsStoreCountUsersWithStalePermsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -15124,13 +16288,13 @@ type PermsStoreCountUsersWithOldestPermsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c PermsStoreCountUsersWithOldestPermsFuncCall) Args() []interface{} {
+func (c PermsStoreCountUsersWithStalePermsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c PermsStoreCountUsersWithOldestPermsFuncCall) Results() []interface{} {
+func (c PermsStoreCountUsersWithStalePermsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

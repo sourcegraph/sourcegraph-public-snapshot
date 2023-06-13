@@ -37,8 +37,6 @@ type Provider struct {
 	// become the default behaviour.
 	enableGithubInternalRepoVisibility bool
 
-	InstallationID *int64
-
 	db database.DB
 }
 
@@ -47,7 +45,7 @@ type ProviderOptions struct {
 	GitHubClient *github.V3Client
 	GitHubURL    *url.URL
 
-	BaseToken      string
+	BaseAuther     auth.Authenticator
 	GroupsCacheTTL time.Duration
 	IsApp          bool
 	DB             database.DB
@@ -57,7 +55,7 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 	if opts.GitHubClient == nil {
 		apiURL, _ := github.APIRoot(opts.GitHubURL)
 		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
-			urn, apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
+			urn, apiURL, opts.BaseAuther, nil)
 	}
 
 	codeHost := extsvc.NewCodeHost(opts.GitHubURL, extsvc.TypeGitHub)
@@ -341,15 +339,11 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}
 
 	oauthToken := &auth.OAuthBearerToken{
-		Token:        tok.AccessToken,
-		RefreshToken: tok.RefreshToken,
-		Expiry:       tok.Expiry,
-	}
-
-	if p.InstallationID != nil && p.db != nil {
-		// Only used if created by newAppProvider
-		oauthToken.RefreshFunc = database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, github.GetOAuthContext(p.codeHost.BaseURL.String()))
-		oauthToken.NeedsRefreshBuffer = 5
+		Token:              tok.AccessToken,
+		RefreshToken:       tok.RefreshToken,
+		Expiry:             tok.Expiry,
+		RefreshFunc:        database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db.UserExternalAccounts(), account.ID, github.GetOAuthContext(strings.TrimSuffix(p.ServiceID(), "/"))),
+		NeedsRefreshBuffer: 5,
 	}
 
 	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), oauthToken, opts)
@@ -439,9 +433,6 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 
 		for _, u := range users {
 			userID := strconv.FormatInt(u.DatabaseID, 10)
-			if p.InstallationID != nil {
-				userID = strconv.FormatInt(*p.InstallationID, 10) + "/" + userID
-			}
 
 			addUserToRepoPerms(extsvc.AccountID(userID))
 		}

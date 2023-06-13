@@ -42,7 +42,7 @@ type repoEmbeddingJobsConnectionStore struct {
 }
 
 func (s *repoEmbeddingJobsConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := s.store.CountRepoEmbeddingJobs(ctx)
+	count, err := s.store.CountRepoEmbeddingJobs(ctx, repobg.ListOpts{Query: s.args.Query, State: s.args.State})
 	if err != nil {
 		return nil, err
 	}
@@ -51,13 +51,17 @@ func (s *repoEmbeddingJobsConnectionStore) ComputeTotal(ctx context.Context) (*i
 }
 
 func (s *repoEmbeddingJobsConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.RepoEmbeddingJobResolver, error) {
-	jobs, err := s.store.ListRepoEmbeddingJobs(ctx, args)
+	jobs, err := s.store.ListRepoEmbeddingJobs(ctx, repobg.ListOpts{PaginationArgs: args, Query: s.args.Query, State: s.args.State})
 	if err != nil {
 		return nil, err
 	}
 	resolvers := make([]graphqlbackend.RepoEmbeddingJobResolver, 0, len(jobs))
 	for _, job := range jobs {
-		resolvers = append(resolvers, &repoEmbeddingJobResolver{db: s.db, gitserverClient: s.gitserverClient, job: job})
+		resolvers = append(resolvers, &repoEmbeddingJobResolver{
+			db:              s.db,
+			gitserverClient: s.gitserverClient,
+			job:             job,
+		})
 	}
 	return resolvers, nil
 }
@@ -149,6 +153,15 @@ func (r *repoEmbeddingJobResolver) Cancel() bool {
 	return r.job.Cancel
 }
 
+func (r *repoEmbeddingJobResolver) Stats(ctx context.Context) (graphqlbackend.RepoEmbeddingJobStatsResolver, error) {
+	store := repobg.NewRepoEmbeddingJobsStore(r.db)
+	stats, err := store.GetRepoEmbeddingJobStats(ctx, r.job.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &repoEmbeddingJobStatsResolver{stats}, nil
+}
+
 func (r *repoEmbeddingJobResolver) compute(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	r.once.Do(func() {
 		repo, err := r.db.Repos().Get(ctx, r.job.RepoID)
@@ -188,4 +201,27 @@ func marshalRepoEmbeddingJobID(id int) graphql.ID {
 func unmarshalRepoEmbeddingJobID(id graphql.ID) (jobID int, err error) {
 	err = relay.UnmarshalSpec(id, &jobID)
 	return
+}
+
+type repoEmbeddingJobStatsResolver struct {
+	stats repobg.EmbedRepoStats
+}
+
+func (r *repoEmbeddingJobStatsResolver) FilesScheduled() int32 {
+	return int32(r.stats.CodeIndexStats.FilesScheduled + r.stats.TextIndexStats.FilesScheduled)
+}
+
+func (r *repoEmbeddingJobStatsResolver) FilesEmbedded() int32 {
+	return int32(r.stats.CodeIndexStats.FilesEmbedded + r.stats.TextIndexStats.FilesEmbedded)
+}
+
+func (r *repoEmbeddingJobStatsResolver) FilesSkipped() int32 {
+	skipped := 0
+	for _, count := range r.stats.CodeIndexStats.FilesSkipped {
+		skipped += count
+	}
+	for _, count := range r.stats.TextIndexStats.FilesSkipped {
+		skipped += count
+	}
+	return int32(skipped)
 }

@@ -47,7 +47,7 @@ Note that getting a trace URL requires `urlTemplate` to be configured.
 ### Trace a GraphQL request
 
 To receive a traceID on a GraphQL request, include the header `X-Sourcegraph-Should-Trace: true` with the request.
-The response headers of the response will now include an `x-trace` entry, which will have a URL the [exported trace](#tracing-backends).
+The response headers of the response will now include an `x-trace-url` entry, which will have a URL the [exported trace](#tracing-backends).
 
 Note that getting a trace URL requires `urlTemplate` to be configured.
 

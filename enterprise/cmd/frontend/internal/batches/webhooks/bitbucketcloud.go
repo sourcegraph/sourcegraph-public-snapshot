@@ -2,6 +2,7 @@ package webhooks
 
 import (
 	"context"
+	"crypto/subtle"
 	"fmt"
 	"io"
 	"net/http"
@@ -159,7 +160,7 @@ func (h *BitbucketCloudWebhook) parseEvent(r *http.Request) (interface{}, *types
 		}
 
 		if secret := con.WebhookSecret; secret != "" {
-			if r.FormValue("secret") == secret {
+			if subtle.ConstantTimeCompare([]byte(r.FormValue("secret")), []byte(secret)) == 1 {
 				extSvc = e
 				break
 			}

@@ -1,16 +1,11 @@
 package linters
 
 import (
-	"bytes"
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/run"
-	"go.bobheadxi.dev/streamline/pipeline"
-
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -18,19 +13,6 @@ var (
 	goFmt          = runScript("Go format", "dev/check/gofmt.sh")
 	goDBConnImport = runScript("Go pkg/database/dbconn", "dev/check/go-dbconn-import.sh")
 )
-
-func goLint() *linter {
-	check := runCheck("Go lint", func(ctx context.Context, out *std.Output, args *repo.State) error {
-		return root.Run(run.Bash(ctx, "dev/check/go-lint.sh")).
-			Pipeline(pipeline.Filter(func(line []byte) bool {
-				// Ignore go mod download stuff
-				return !bytes.HasPrefix(line, []byte("go: downloading "))
-			})).
-			StreamLines(out.Write)
-	})
-	check.LegacyAnnotations = true
-	return check
-}
 
 func lintSGExit() *linter {
 	return runCheck("Lint dev/sg exit signals", func(ctx context.Context, out *std.Output, s *repo.State) error {

@@ -46,8 +46,9 @@ func TestHandleEnqueueAuth(t *testing.T) {
 	})
 	t.Cleanup(func() { conf.Mock(nil) })
 
-	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
-	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(tx uploadhandler.DBStore[uploads.UploadMetadata]) error) error {
+		return f(mockDBStore)
+	})
 	mockDBStore.InsertUploadFunc.SetDefaultReturn(42, nil)
 
 	testURL, err := url.Parse("http://test.com/upload")

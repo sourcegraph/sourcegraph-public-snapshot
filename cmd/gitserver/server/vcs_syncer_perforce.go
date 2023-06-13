@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -150,15 +151,15 @@ func (s *PerforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, usern
 }
 
 // Fetch tries to fetch updates of a Perforce depot as a Git repository.
-func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir, _ string) error {
+func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, _ string) ([]byte, error) {
 	username, password, host, depot, err := decomposePerforceRemoteURL(remoteURL)
 	if err != nil {
-		return errors.Wrap(err, "decompose")
+		return nil, errors.Wrap(err, "decompose")
 	}
 
 	err = p4testWithTrust(ctx, host, username, password)
 	if err != nil {
-		return errors.Wrap(err, "test with trust")
+		return nil, errors.Wrap(err, "test with trust")
 	}
 
 	var cmd *wrexec.Cmd
@@ -174,8 +175,12 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 	cmd.Env = s.p4CommandEnv(host, username, password)
 	dir.Set(cmd.Cmd)
 
-	if output, err := runWith(ctx, cmd, false, nil); err != nil {
-		return errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
+	// TODO(keegancsmith)(indradhanush) This is running a remote command and
+	// we have runRemoteGitCommand which sets TLS settings/etc. Do we need
+	// something for p4?
+	output, err := runCommandCombinedOutput(ctx, cmd)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
 	}
 
 	if !s.FusionConfig.Enabled {
@@ -187,12 +192,12 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 			"P4PASSWD="+password,
 		)
 		dir.Set(cmd.Cmd)
-		if output, err := runWith(ctx, cmd, false, nil); err != nil {
-			return errors.Wrapf(err, "failed to force update branch with output %q", string(output))
+		if output, err := runCommandCombinedOutput(ctx, cmd); err != nil {
+			return nil, errors.Wrapf(err, "failed to force update branch with output %q", string(output))
 		}
 	}
 
-	return nil
+	return output, nil
 }
 
 // RemoteShowCommand returns the command to be executed for showing Git remote of a Perforce depot.
@@ -252,7 +257,7 @@ func p4trust(ctx context.Context, host string) error {
 		"P4PORT="+host,
 	)
 
-	out, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), false, nil)
+	out, err := runCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -281,7 +286,7 @@ func p4test(ctx context.Context, host, username, password string) error {
 		"P4PASSWD="+password,
 	)
 
-	out, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), false, nil)
+	out, err := runCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -313,7 +318,7 @@ func p4depots(ctx context.Context, host, username, password, nameFilter string) 
 		"P4PASSWD="+password,
 	)
 
-	out, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), false, nil)
+	out, err := runCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr

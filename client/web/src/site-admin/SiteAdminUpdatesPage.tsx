@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 
-import { mdiOpenInNew, mdiCheckCircle, mdiChevronUp, mdiChevronDown, mdiCheckBold, mdiAlertOctagram } from '@mdi/js'
+import { mdiOpenInNew, mdiCheckCircle, mdiChevronUp, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
@@ -44,6 +44,7 @@ import styles from './SiteAdminUpdatesPage.module.scss'
 interface Props extends TelemetryProps {
     isSourcegraphApp: boolean
 }
+const capitalize = (text: string): string => (text && text[0].toUpperCase() + text.slice(1)) || ''
 
 const SiteUpdateCheck: React.FC = () => {
     const { data, loading, error } = useQuery<SiteUpdateCheckResult, SiteUpdateCheckVariables>(SITE_UPDATE_CHECK, {})
@@ -175,7 +176,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                                 outline={true}
                                 className="p-0 m-0 mt-2 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
                             >
-                                Click to view the drift output:
+                                <H4 className="m-0">View drift output</H4>
                                 <Icon
                                     aria-hidden={true}
                                     svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
@@ -183,11 +184,57 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                                     size="md"
                                 />
                             </CollapseHeader>
+
                             <CollapsePanel>
-                                <LogOutput
-                                    text={data.site.upgradeReadiness.schemaDrift}
-                                    logDescription="Drift details:"
-                                />
+                                {data.site.upgradeReadiness.schemaDrift.map(summary => (
+                                    <div key={summary.name} className={styles.container}>
+                                        <div className={styles.tableContainer}>
+                                            <div className={styles.table}>
+                                                <div className={styles.label}>Problem:</div>
+                                                <div>{summary.problem}</div>
+                                            </div>
+                                            <div className={styles.table}>
+                                                <div className={styles.label}>Solution:</div>
+                                                <div>{capitalize(summary.solution)}</div>
+                                            </div>
+                                            <div className={styles.table}>
+                                                <div className={styles.label}>Hint:</div>
+                                                <div>
+                                                    {summary.urlHint ? (
+                                                        <Link to={summary.urlHint}>
+                                                            See Sourcegraph query for potential fix
+                                                        </Link>
+                                                    ) : (
+                                                        'Not Applicable'
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className={styles.outputContainer}>
+                                            <div className={styles.infoContainer}>
+                                                <div className={styles.label}>Current Delta:</div>
+                                                <div>
+                                                    <LogOutput
+                                                        text={summary.diff ? summary.diff : 'None'}
+                                                        logDescription="The object diff"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className={styles.infoContainer}>
+                                                <div className={styles.label}>Suggested statements to repair:</div>
+                                                <div>
+                                                    <LogOutput
+                                                        text={
+                                                            summary.statements ? summary.statements.join('\n') : 'None'
+                                                        }
+                                                        logDescription="SQL statements to repair"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </CollapsePanel>
                         </Collapse>
                     ) : (

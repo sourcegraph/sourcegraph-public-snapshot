@@ -3,6 +3,16 @@
     <name>Sourcegraph</name>
     <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
 
+    <!--
+        See https://plugins.jetbrains.com/docs/intellij/build-number-ranges.html
+        for insight into build numbers and IntelliJ Platform versions.
+        - 2020.2 was the first version to have JCEF enabled by default
+            -> https://plugins.jetbrains.com/docs/intellij/jcef.html
+        - Version 2020.2 and 2020.3 have issues with adding custom HTTP headers to requests from within the JCEF view
+             -> https://github.com/sourcegraph/sourcegraph/issues/37475#issuecomment-1171355831
+    -->
+    <idea-version since-build="211.0" />
+
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
     <depends optional="true" config-file="plugin-perforce.xml">PerforceDirectPlugin</depends>
@@ -25,6 +35,22 @@
         <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
         <postStartupActivity implementation="com.sourcegraph.telemetry.PostStartupActivity"/>
         <postStartupActivity implementation="com.sourcegraph.config.NotificationActivity"/>
+
+        <!-- Cody -->
+        <toolWindow
+            id="Cody"
+            icon="/icons/codyLogo.svg"
+            anchor="left"
+            secondary="false"
+            factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
+        <notificationGroup id="Cody Sourcegraph access" displayType="BALLOON"/>
+
+
+        <!-- Code completions -->
+        <applicationService serviceImplementation="com.sourcegraph.cody.completions.CodyCompletionsManager"/>
+        <editorFactoryListener implementation="com.sourcegraph.cody.completions.CodyEditorFactoryListener"/>
+
+        <projectService serviceImplementation="com.sourcegraph.cody.UpdatableChatHolderService"/>
     </extensions>
 
     <actions>
@@ -82,6 +108,21 @@
             description="Log in to Sourcegraph"
             icon="/icons/sourcegraphLogo.svg">
         </action>
+
+        <!-- Code completions -->
+        <action id="cody.acceptCompletion" class="com.sourcegraph.cody.completions.AcceptCodyCompletionAction">
+            <keyboard-shortcut first-keystroke="TAB" keymap="$default"/>
+            <override-text place="MainMenu" text="Accept Completion"/>
+        </action>
+
+        <action id="cody.resetCurrentConversation" icon="AllIcons.Actions.Refresh"
+                text="Reset the Current Conversation with Cody"
+                class="com.sourcegraph.cody.chat.ResetCurrentConversationAction">
+        </action>
+
+        <group id="CodyChatActionsGroup">
+            <reference ref="cody.resetCurrentConversation"/>
+        </group>
 
         <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.svg" popup="true" text="Sourcegraph"
                searchable="false">

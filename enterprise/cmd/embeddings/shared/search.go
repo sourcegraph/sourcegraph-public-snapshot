@@ -3,89 +3,71 @@ package shared
 import (
 	"context"
 	"runtime"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-type readFileFn func(ctx context.Context, repoName api.RepoName, revision api.CommitID, fileName string) ([]byte, error)
-type getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
-type getQueryEmbeddingFn func(query string) ([]float32, error)
-
-func searchRepoEmbeddingIndex(
-	ctx context.Context,
-	params embeddings.EmbeddingsSearchParameters,
-	readFile readFileFn,
-	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
-	getQueryEmbedding getQueryEmbeddingFn,
-	debug bool,
-) (*embeddings.EmbeddingSearchResults, error) {
-	embeddingIndex, err := getRepoEmbeddingIndex(ctx, params.RepoName)
-	if err != nil {
-		return nil, err
-	}
-
-	embeddedQuery, err := getQueryEmbedding(params.Query)
-	if err != nil {
-		return nil, err
-	}
-
-	var codeResults, textResults []embeddings.EmbeddingSearchResult
-	if params.CodeResultsCount > 0 && len(embeddingIndex.CodeIndex.Embeddings) > 0 {
-		codeResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.CodeIndex, readFile, embeddedQuery, params.CodeResultsCount, debug)
-	}
-
-	if params.TextResultsCount > 0 && len(embeddingIndex.TextIndex.Embeddings) > 0 {
-		textResults = searchEmbeddingIndex(ctx, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.TextIndex, readFile, embeddedQuery, params.TextResultsCount, debug)
-	}
-
-	return &embeddings.EmbeddingSearchResults{CodeResults: codeResults, TextResults: textResults}, nil
-}
 
 const SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT = 1000
 
-func searchEmbeddingIndex(
-	ctx context.Context,
-	repoName api.RepoName,
-	revision api.CommitID,
-	index *embeddings.EmbeddingIndex,
-	readFile readFileFn,
-	query []float32,
-	nResults int,
-	debug bool,
-) []embeddings.EmbeddingSearchResult {
-	numWorkers := runtime.GOMAXPROCS(0)
-	rows := index.SimilaritySearch(query, nResults, embeddings.WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT}, debug)
+type getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
+type getQueryEmbeddingFn func(ctx context.Context, model string) ([]float32, string, error)
 
-	// Hydrate content
-	for idx, row := range rows {
-		fileContent, err := readFile(ctx, repoName, revision, row.FileName)
-		if err != nil {
+func searchRepoEmbeddingIndexes(
+	ctx context.Context,
+	params embeddings.EmbeddingsSearchParameters,
+	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
+	getQueryEmbedding getQueryEmbeddingFn,
+	weaviate *weaviateClient,
+) (*embeddings.EmbeddingCombinedSearchResults, error) {
+	floatQuery, queryModel, err := getQueryEmbedding(ctx, params.Query)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting query embedding")
+	}
+	embeddedQuery := embeddings.Quantize(floatQuery)
+
+	workerOpts := embeddings.WorkerOptions{
+		NumWorkers:     runtime.GOMAXPROCS(0),
+		MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT,
+	}
+
+	searchOpts := embeddings.SearchOptions{
+		UseDocumentRanks: params.UseDocumentRanks,
+	}
+
+	var result embeddings.EmbeddingCombinedSearchResults
+
+	for i, repoName := range params.RepoNames {
+		if weaviate.Use(ctx) {
+			codeResults, textResults, err := weaviate.Search(ctx, repoName, params.RepoIDs[i], params.Query, params.CodeResultsCount, params.TextResultsCount)
+			if err != nil {
+				return nil, err
+			}
+
+			result.CodeResults.MergeTruncate(codeResults, params.CodeResultsCount)
+			result.TextResults.MergeTruncate(textResults, params.TextResultsCount)
 			continue
 		}
-		lines := strings.Split(string(fileContent), "\n")
 
-		// Sanity check: check that startLine and endLine are within 0 and len(lines).
-		startLine := max(0, min(len(lines), row.StartLine))
-		endLine := max(0, min(len(lines), row.EndLine))
+		embeddingIndex, err := getRepoEmbeddingIndex(ctx, repoName)
+		if err != nil {
+			return nil, errors.Wrapf(err, "getting repo embedding index for repo %q", repoName)
+		}
 
-		rows[idx].Content = strings.Join(lines[startLine:endLine], "\n")
+		if !embeddingIndex.IsModelCompatible(queryModel) {
+			return nil, errors.Newf("embeddings model in config (%s) does not match the embeddings model for the"+
+				" index (%s). Embedding index for repo %q must be reindexed with the new model",
+				queryModel, embeddingIndex.EmbeddingsModel, repoName)
+		}
+
+		codeResults := embeddingIndex.CodeIndex.SimilaritySearch(embeddedQuery, params.CodeResultsCount, workerOpts, searchOpts, embeddingIndex.RepoName, embeddingIndex.Revision)
+		textResults := embeddingIndex.TextIndex.SimilaritySearch(embeddedQuery, params.TextResultsCount, workerOpts, searchOpts, embeddingIndex.RepoName, embeddingIndex.Revision)
+
+		result.CodeResults.MergeTruncate(codeResults, params.CodeResultsCount)
+		result.TextResults.MergeTruncate(textResults, params.TextResultsCount)
+
 	}
 
-	return rows
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
+	return &result, nil
 }

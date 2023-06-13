@@ -1,28 +1,29 @@
 package autoindexing
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background/dependencies"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background/scheduler"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background/summary"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
 )
 
-type DependenciesService = background.DependenciesService
-
-type PoliciesService = background.PoliciesService
-
-type ReposStore = background.ReposStore
-
-type GitserverRepoStore = background.GitserverRepoStore
-
-type ExternalServiceStore = background.ExternalServiceStore
-
-type PolicyMatcher = background.PolicyMatcher
+type (
+	DependenciesService  = dependencies.DependenciesService
+	PoliciesService      = scheduler.PoliciesService
+	ReposStore           = dependencies.ReposStore
+	GitserverRepoStore   = dependencies.GitserverRepoStore
+	ExternalServiceStore = dependencies.ExternalServiceStore
+	PolicyMatcher        = scheduler.PolicyMatcher
+	InferenceService     = jobselector.InferenceService
+)
 
 type RepoUpdaterClient interface {
-	background.RepoUpdaterClient
+	dependencies.RepoUpdaterClient
 	enqueuer.RepoUpdaterClient
 }
 
-type InferenceService = jobselector.InferenceService
-
-type UploadService = background.UploadService
+type UploadService interface {
+	dependencies.UploadService
+	summary.UploadService
+}

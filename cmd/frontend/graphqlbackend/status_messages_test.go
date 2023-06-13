@@ -25,6 +25,10 @@ func TestStatusMessages(t *testing.T) {
 					message
 				}
 
+				... on NoRepositoriesDetected {
+					message
+				}
+
 				... on CloningProgress {
 					message
 				}
@@ -106,6 +110,11 @@ func TestStatusMessages(t *testing.T) {
 					},
 				},
 				{
+					NoRepositoriesDetected: &repos.NoRepositoriesDetected{
+						Message: "No repositories have been added to Sourcegraph.",
+					},
+				},
+				{
 					Cloning: &repos.CloningProgress{
 						Message: "Currently cloning 5 repositories in parallel...",
 					},
@@ -145,6 +154,10 @@ func TestStatusMessages(t *testing.T) {
 							{
 								"__typename": "GitUpdatesDisabled",
         						"message": "Repositories will not be cloned or updated."
+							},
+							{
+								"__typename": "NoRepositoriesDetected",
+        						"message": "No repositories have been added to Sourcegraph."
 							},
 							{
 								"__typename": "CloningProgress",

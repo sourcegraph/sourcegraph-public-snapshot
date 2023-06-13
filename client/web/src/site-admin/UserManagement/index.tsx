@@ -68,11 +68,7 @@ export const UsersManagement: React.FunctionComponent<UsersManagementProps> = ({
             },
         ]
 
-        const isRequestAccessAllowed = checkRequestAccessAllowed(
-            window.context.sourcegraphDotComMode,
-            window.context.allowSignup,
-            window.context.experimentalFeatures
-        )
+        const isRequestAccessAllowed = checkRequestAccessAllowed(window.context)
 
         if (isRequestAccessAllowed) {
             legends.push({

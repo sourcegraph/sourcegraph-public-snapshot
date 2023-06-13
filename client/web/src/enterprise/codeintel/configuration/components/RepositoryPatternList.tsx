@@ -93,8 +93,16 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
                 </div>
             ))}
 
+            {repositoryPatterns.length === 0 && (
+                <Button variant="secondary" aria-label="Add a repository pattern" onClick={addRepositoryPattern}>
+                    Add Repository Pattern
+                </Button>
+            )}
+
             <div className="d-flex flex-column">
-                <RepositoryList repositoryPatterns={repositoryPatterns} />
+                {repositoryPatterns && repositoryPatterns.length > 0 && (
+                    <RepositoryList repositoryPatterns={repositoryPatterns} />
+                )}
             </div>
         </div>
     )

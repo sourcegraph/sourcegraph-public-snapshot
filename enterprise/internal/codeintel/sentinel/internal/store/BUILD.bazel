@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "store",
@@ -22,11 +23,13 @@ go_library(
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_lib_pq//:pq",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
 go_test(
     name = "store_test",
+    timeout = "moderate",
     srcs = [
         "matches_test.go",
         "vulnerabilities_test.go",
@@ -38,7 +41,7 @@ go_test(
     ],
     deps = [
         "//enterprise/internal/codeintel/sentinel/shared",
-        "//enterprise/internal/codeintel/shared/types",
+        "//enterprise/internal/codeintel/uploads/shared",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",

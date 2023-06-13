@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "resolvers",
@@ -47,6 +48,7 @@ go_test(
         "//internal/database/dbtest",
         "//internal/gqlutil",
         "//internal/search/result",
+        "//internal/settings",
         "//internal/types",
         "//schema",
         "@com_github_google_go_cmp//cmp",

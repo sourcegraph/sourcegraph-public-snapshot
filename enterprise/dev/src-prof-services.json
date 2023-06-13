@@ -6,5 +6,6 @@
   { "Name": "repo-updater", "Host": "127.0.0.1:6074" },
   { "Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088" },
   { "Name": "worker", "Host": "127.0.0.1:6089" },
-  { "Name": "worker-executors", "Host": "127.0.0.1:6969" }
+  { "Name": "worker-executors", "Host": "127.0.0.1:6969" },
+  { "Name": "embeddings", "Host": "127.0.0.1:6099" }
 ]

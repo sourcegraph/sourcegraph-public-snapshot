@@ -26,10 +26,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -47,6 +47,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
+
+var enableHTMLInject = env.Get("ENABLE_INJECT_HTML", "false", "Enable HTML customization")
 
 type InjectedHTML struct {
 	HeadTop    template.HTML
@@ -144,7 +146,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		return mockNewCommon(w, r, title, serveError)
 	}
 
-	manifest, err := assets.LoadWebpackManifest()
+	manifest, err := assets.Provider.LoadWebpackManifest()
 	if err != nil {
 		return nil, errors.Wrap(err, "loading webpack manifest")
 	}
@@ -181,6 +183,10 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 		},
 
 		WebpackDevServer: webpackDevServer,
+	}
+
+	if enableHTMLInject != "true" {
+		common.Injected = InjectedHTML{}
 	}
 
 	if _, ok := mux.Vars(r)["Repo"]; ok {
@@ -362,7 +368,7 @@ func serveSignIn(db database.DB) handlerFunc {
 	}
 
 	// For app we use an extra middleware to handle passwordless signin via a
-	// nonce.
+	// in-memory secret.
 	if deploy.IsApp() {
 		return userpasswd.AppSignInMiddleware(db, handler)
 	}

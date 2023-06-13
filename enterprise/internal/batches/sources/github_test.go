@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -146,7 +147,7 @@ func TestGithubSource_CreateChangeset_CreationLimit(t *testing.T) {
 	apiURL, err := url.Parse("https://fake.api.github.com")
 	require.NoError(t, err)
 	client := github.NewV4Client("extsvc:github:0", apiURL, nil, cli)
-	source := &GithubSource{
+	source := &GitHubSource{
 		client: client,
 	}
 
@@ -216,6 +217,70 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 			ctx := context.Background()
 			src, save := setup(t, ctx, tc.name)
 			defer save(t)
+
+			err := src.CloseChangeset(ctx, tc.cs)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil {
+				return
+			}
+
+			pr := tc.cs.Changeset.Metadata.(*github.PullRequest)
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+		})
+	}
+}
+
+func TestGithubSource_CloseChangeset_DeleteSourceBranch(t *testing.T) {
+	// Repository used: https://github.com/sourcegraph/automation-testing
+	//
+	// This test can be updated with `-update GithubSource_CloseChangeset_DeleteSourceBranch`,
+	// provided this PR is open: https://github.com/sourcegraph/automation-testing/pull/468
+	repo := &types.Repo{
+		Metadata: &github.Repository{
+			ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+			NameWithOwner: "sourcegraph/automation-testing",
+		},
+	}
+
+	testCases := []struct {
+		name string
+		cs   *Changeset
+		err  string
+	}{
+		{
+			name: "success",
+			cs: &Changeset{
+				Changeset: &btypes.Changeset{
+					Metadata: &github.PullRequest{
+						ID:          "PR_kwDODS5xec4waMkR",
+						HeadRefName: "refs/heads/test-pr-10",
+					},
+				},
+				RemoteRepo: repo,
+				TargetRepo: repo,
+			},
+			err: "<nil>",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "GithubSource_CloseChangeset_DeleteSourceBranch_" + strings.ReplaceAll(tc.name, " ", "_")
+
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			src, save := setup(t, ctx, tc.name)
+			defer save(t)
+
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					BatchChangesAutoDeleteBranch: true,
+				},
+			})
+			defer conf.Mock(nil)
 
 			err := src.CloseChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
@@ -426,7 +491,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	githubSrc, err := NewGithubSource(ctx, svc, nil)
+	githubSrc, err := NewGitHubSource(ctx, svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -437,30 +502,10 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
-		if gs, ok := src.(*GithubSource); !ok {
+		if gs, ok := src.(*GitHubSource); !ok {
 			t.Error("cannot coerce Source into GithubSource")
 		} else if gs == nil {
 			t.Error("unexpected nil Source")
-		}
-	})
-
-	t.Run("unsupported", func(t *testing.T) {
-		for name, tc := range map[string]auth.Authenticator{
-			"nil":         nil,
-			"BasicAuth":   &auth.BasicAuth{},
-			"OAuthClient": &auth.OAuthClient{},
-		} {
-			t.Run(name, func(t *testing.T) {
-				src, err := githubSrc.WithAuthenticator(tc)
-				if err == nil {
-					t.Error("unexpected nil error")
-				} else if !errors.HasType(err, UnsupportedAuthenticatorError{}) {
-					t.Errorf("unexpected error of type %T: %v", err, err)
-				}
-				if src != nil {
-					t.Errorf("expected non-nil Source: %v", src)
-				}
-			})
 		}
 	})
 }
@@ -773,7 +818,7 @@ func (mock *mockGithubClientFork) GetRepo(ctx context.Context, owner, repo strin
 	return nil, nil
 }
 
-func setup(t *testing.T, ctx context.Context, tName string) (src *GithubSource, save func(testing.TB)) {
+func setup(t *testing.T, ctx context.Context, tName string) (src *GitHubSource, save func(testing.TB)) {
 	// The GithubSource uses the github.Client under the hood, which uses rcache, a
 	// caching layer that uses Redis. We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
@@ -791,7 +836,7 @@ func setup(t *testing.T, ctx context.Context, tName string) (src *GithubSource, 
 		})),
 	}
 
-	src, err := NewGithubSource(ctx, svc, cf)
+	src, err := NewGitHubSource(ctx, svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

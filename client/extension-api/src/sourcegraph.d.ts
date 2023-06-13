@@ -773,29 +773,6 @@ declare module 'sourcegraph' {
         export const windows: Window[]
 
         /**
-         * Create a panel view for the view contribution with the given {@link id}.
-         *
-         * @todo Consider requiring extensions to specify these statically in package.json's contributions section
-         * to improve the activation experience.
-         *
-         * @param id The ID of the view. This may be shown to the user (e.g., in the URL fragment when the panel is
-         * active).
-         * @returns The panel view.
-         */
-        export function createPanelView(id: string): PanelView
-
-        /**
-         * Register a view provider, which provides the contents of a view.
-         *
-         * This API is experimental and is subject to change or removal without notice.
-         *
-         * @param id The ID of the view.
-         * @param provider A view provider.
-         * @returns An unsubscribable to unregister this provider.
-         */
-        export function registerViewProvider(id: string, provider: ViewProvider): Unsubscribable
-
-        /**
          * Log a message to the console if logs for the extension are enabled in user settings.
          *
          * Messages are automatically prefixed by the extension's ID.

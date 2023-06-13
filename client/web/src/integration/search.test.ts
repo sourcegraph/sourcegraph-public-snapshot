@@ -12,7 +12,7 @@ import {
     highlightFileResult,
     symbolSearchStreamEvents,
     ownerSearchStreamEvents,
-} from '@sourcegraph/shared/src/search/integration'
+} from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'

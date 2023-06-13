@@ -1,16 +1,18 @@
-import { FC } from 'react'
+import { FC, useMemo } from 'react'
 
 import { mdiInformation } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
 
+import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage, Button, Link, Alert, H2, H3, Icon, Text, Container } from '@sourcegraph/wildcard'
 
+import { LimitedAccessBanner } from '../LimitedAccessBanner'
 import { PageTitle } from '../PageTitle'
 
 import { AddExternalServicePage } from './AddExternalServicePage'
 import { ExternalServiceCard } from './ExternalServiceCard'
-import { allExternalServices, AddExternalServiceOptions } from './externalServices'
+import { allExternalServices, AddExternalServiceOptions, gitHubAppConfig } from './externalServices'
 
 import styles from './AddExternalServicesPage.module.scss'
 
@@ -28,6 +30,7 @@ export interface AddExternalServicesPageProps extends TelemetryProps {
 
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
+    isSourcegraphApp: boolean
 
     /** For testing only. */
     autoFocusForm?: boolean
@@ -43,6 +46,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
     autoFocusForm,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
+    isSourcegraphApp,
 }) => {
     const { search } = useLocation()
     const [hasDismissedPrivacyWarning, setHasDismissedPrivacyWarning] = useLocalStorage(
@@ -53,20 +57,35 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
         setHasDismissedPrivacyWarning(true)
     }
 
-    const id = new URLSearchParams(search).get('id')
-    if (id) {
-        const externalService = allExternalServices[id]
-        if (externalService) {
-            return (
-                <AddExternalServicePage
-                    telemetryService={telemetryService}
-                    externalService={externalService}
-                    autoFocusForm={autoFocusForm}
-                    externalServicesFromFile={externalServicesFromFile}
-                    allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
-                />
-            )
+    const externalService = useMemo(() => {
+        const params = new URLSearchParams(search)
+        const id = params.get('id')
+        if (id) {
+            let externalService = allExternalServices[id]
+            if (externalService?.kind === ExternalServiceKind.GITHUB) {
+                const appID = params.get('appID')
+                const installationID = params.get('installationID')
+                const baseURL = params.get('url')
+                const org = params.get('org')
+                if (externalService === codeHostExternalServices.ghapp) {
+                    externalService = gitHubAppConfig(baseURL, appID, installationID, org)
+                }
+            }
+            return externalService
         }
+        return null
+    }, [search, codeHostExternalServices.ghapp])
+
+    if (externalService) {
+        return (
+            <AddExternalServicePage
+                telemetryService={telemetryService}
+                externalService={externalService}
+                autoFocusForm={autoFocusForm}
+                externalServicesFromFile={externalServicesFromFile}
+                allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
+            />
+        )
     }
 
     const licenseInfo = window.context.licenseInfo
@@ -81,10 +100,21 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
 
     return (
         <>
-            <PageTitle title="Add repositories" />
-            <H2>Add repositories</H2>
+            <PageTitle title="Add code host connection" />
+            <H2>Add code host connection</H2>
+
+            {isSourcegraphApp && (
+                <LimitedAccessBanner
+                    storageKey="app.manage-repositories-with-new-settings"
+                    badgeText="Repositories"
+                    className="mb-3"
+                >
+                    Manage your local repositories in your settings. Go to{' '}
+                    <Link to="/user/app-settings">Settings → Repositories → Local/Remote repositories</Link>
+                </LimitedAccessBanner>
+            )}
             <Container>
-                <Text>Add repositories from one of these code hosts.</Text>
+                <Text>Add code host connection to one of the supported code hosts.</Text>
                 {hasDismissedPrivacyWarning && (
                     <Alert variant="info">
                         <Text>

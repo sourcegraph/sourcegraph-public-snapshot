@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -13,26 +12,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Service struct {
 	store           store.Store
 	repoStore       database.RepoStore
-	inferenceSvc    InferenceService
-	repoUpdater     RepoUpdaterClient
 	gitserverClient gitserver.Client
 	indexEnqueuer   *enqueuer.IndexEnqueuer
 	jobSelector     *jobselector.JobSelector
-	logger          log.Logger
 	operations      *operations
 }
 
@@ -71,11 +66,9 @@ func newService(
 	return &Service{
 		store:           store,
 		repoStore:       repoStore,
-		inferenceSvc:    inferenceSvc,
 		gitserverClient: gitserverClient,
 		indexEnqueuer:   indexEnqueuer,
 		jobSelector:     jobSelector,
-		logger:          observationCtx.Logger,
 		operations:      newOperations(observationCtx),
 	}
 }
@@ -86,54 +79,36 @@ func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repos
 
 // InferIndexConfiguration looks at the repository contents at the latest commit on the default branch of the given
 // repository and determines an index configuration that is likely to succeed.
-func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (_ *config.IndexConfiguration, _ []config.IndexJobHint, err error) {
-	ctx, trace, endObservation := s.operations.inferIndexConfiguration.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{
-			otlog.Int("repositoryID", repositoryID),
-		},
-	})
+func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (_ *shared.InferenceResult, err error) {
+	ctx, trace, endObservation := s.operations.inferIndexConfiguration.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if commit == "" {
 		var ok bool
 		commit, ok, err = s.gitserverClient.Head(ctx, authz.DefaultSubRepoPermsChecker, repo.Name)
 		if err != nil || !ok {
-			return nil, nil, errors.Wrapf(err, "gitserver.Head: error resolving HEAD for %d", repositoryID)
+			return nil, errors.Wrapf(err, "gitserver.Head: error resolving HEAD for %d", repositoryID)
 		}
 	} else {
 		exists, err := s.gitserverClient.CommitExists(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, api.CommitID(commit))
 		if err != nil {
-			return nil, nil, errors.Wrapf(err, "gitserver.CommitExists: error checking %s for %d", commit, repositoryID)
+			return nil, errors.Wrapf(err, "gitserver.CommitExists: error checking %s for %d", commit, repositoryID)
 		}
 
 		if !exists {
-			return nil, nil, errors.Newf("revision %s not found for %d", commit, repositoryID)
+			return nil, errors.Newf("revision %s not found for %d", commit, repositoryID)
 		}
 	}
 	trace.AddEvent("found", attribute.String("commit", commit))
 
-	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, localOverrideScript, bypassLimit)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	indexJobHints, err := s.jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, commit)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if len(indexJobs) == 0 {
-		return nil, indexJobHints, nil
-	}
-
-	return &config.IndexConfiguration{
-		IndexJobs: indexJobs,
-	}, indexJobHints, nil
+	return s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, localOverrideScript, bypassLimit)
 }
 
 func (s *Service) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error {
@@ -152,7 +127,7 @@ func (s *Service) GetInferenceScript(ctx context.Context) (string, error) {
 	return s.store.GetInferenceScript(ctx)
 }
 
-func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) ([]types.Index, error) {
+func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) ([]uploadsshared.Index, error) {
 	return s.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, force, bypassLimit)
 }
 
@@ -160,7 +135,7 @@ func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg dependencies.M
 	return s.indexEnqueuer.QueueIndexesForPackage(ctx, pkg, assumeSynced)
 }
 
-func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error) {
+func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (*shared.InferenceResult, error) {
 	return s.jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, localOverrideScript, bypassLimit)
 }
 
@@ -168,11 +143,11 @@ func IsLimitError(err error) bool {
 	return errors.As(err, &inference.LimitError{})
 }
 
-func (s *Service) GetRepositoriesForIndexScan(ctx context.Context, table, column string, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) ([]int, error) {
-	return s.store.GetRepositoriesForIndexScan(ctx, table, column, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, now)
+func (s *Service) GetRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) ([]int, error) {
+	return s.store.GetRepositoriesForIndexScan(ctx, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, now)
 }
 
-func (s *Service) RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) ([]shared.RepositoryWithAvailableIndexers, int, error) {
+func (s *Service) RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) ([]uploadsshared.RepositoryWithAvailableIndexers, int, error) {
 	return s.store.RepositoryIDsWithConfiguration(ctx, offset, limit)
 }
 

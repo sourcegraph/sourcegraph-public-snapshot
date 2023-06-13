@@ -44,15 +44,9 @@ func (s *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node,
 				if program.Type() != "program" {
 					s.breadcrumb(node, "getDefJava: expected parent of import_declaration to be program")
 				}
-				root, err := getProjectRoot(swapNode(node, program))
-				if err != nil {
-					return nil, err
-				}
-				allComponents, err := getPath(swapNode(node, cur))
-				if err != nil {
-					return nil, err
-				}
-				components, err := getPathUpTo(swapNode(node, cur), node.Node)
+				root := getProjectRoot(swapNode(node, program))
+				allComponents := getPath(swapNode(node, cur))
+				components := getPathUpTo(swapNode(node, cur), node.Node)
 				if err != nil {
 					return nil, err
 				}
@@ -133,10 +127,7 @@ func (s *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node,
 						continue outer
 					}
 					query := "(local_variable_declaration declarator: (variable_declarator name: (identifier) @ident))"
-					captures, err := allCaptures(query, swapNode(node, blockChild))
-					if err != nil {
-						return nil, err
-					}
+					captures := allCaptures(query, swapNode(node, blockChild))
 					for _, capture := range captures {
 						if capture.Content(capture.Contents) == ident {
 							return swapNodePtr(node, capture.Node), nil
@@ -149,10 +140,7 @@ func (s *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node,
 					(constructor_declaration parameters: (formal_parameters (formal_parameter name: (identifier) @ident)))
 					(constructor_declaration parameters: (formal_parameters (spread_parameter (variable_declarator name: (identifier) @ident))))
 				]`
-				captures, err := allCaptures(query, swapNode(node, cur))
-				if err != nil {
-					return nil, err
-				}
+				captures := allCaptures(query, swapNode(node, cur))
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
 						return swapNodePtr(node, capture.Node), nil
@@ -166,10 +154,7 @@ func (s *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node,
 					(method_declaration parameters: (formal_parameters (formal_parameter name: (identifier) @ident)))
 					(method_declaration parameters: (formal_parameters (spread_parameter (variable_declarator name: (identifier) @ident))))
 				]`
-				captures, err := allCaptures(query, swapNode(node, cur))
-				if err != nil {
-					return nil, err
-				}
+				captures := allCaptures(query, swapNode(node, cur))
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
 						return swapNodePtr(node, capture.Node), nil
@@ -210,10 +195,7 @@ func (s *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node,
 					(lambda_expression parameters: (formal_parameters (spread_parameter (variable_declarator name: (identifier) @ident))))
 					(lambda_expression parameters: (inferred_parameters (identifier) @ident))
 				]`
-				captures, err := allCaptures(query, swapNode(node, cur))
-				if err != nil {
-					return nil, err
-				}
+				captures := allCaptures(query, swapNode(node, cur))
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
 						return swapNodePtr(node, capture.Node), nil
@@ -223,10 +205,7 @@ func (s *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node,
 
 			case "catch_clause":
 				query := `(catch_clause (catch_formal_parameter name: (identifier) @ident))`
-				captures, err := allCaptures(query, swapNode(node, cur))
-				if err != nil {
-					return nil, err
-				}
+				captures := allCaptures(query, swapNode(node, cur))
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
 						return swapNodePtr(node, capture.Node), nil
@@ -236,10 +215,7 @@ func (s *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node,
 
 			case "for_statement":
 				query := `(for_statement init: (local_variable_declaration declarator: (variable_declarator name: (identifier) @ident)))`
-				captures, err := allCaptures(query, swapNode(node, cur))
-				if err != nil {
-					return nil, err
-				}
+				captures := allCaptures(query, swapNode(node, cur))
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
 						return swapNodePtr(node, capture.Node), nil
@@ -249,10 +225,7 @@ func (s *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node,
 
 			case "enhanced_for_statement":
 				query := `(enhanced_for_statement name: (identifier) @ident)`
-				captures, err := allCaptures(query, swapNode(node, cur))
-				if err != nil {
-					return nil, err
-				}
+				captures := allCaptures(query, swapNode(node, cur))
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
 						return swapNodePtr(node, capture.Node), nil
@@ -299,10 +272,7 @@ func (s *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node,
 					(program (enum_declaration name: (identifier) @ident))
 					(program (interface_declaration name: (identifier) @ident))
 				]`
-				captures, err := allCaptures(query, swapNode(node, cur))
-				if err != nil {
-					return nil, err
-				}
+				captures := allCaptures(query, swapNode(node, cur))
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
 						return swapNodePtr(node, capture.Node), nil
@@ -316,10 +286,7 @@ func (s *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node,
 					(class_declaration body: (class_body (enum_declaration name: (identifier) @ident)))
 					(class_declaration body: (class_body (interface_declaration name: (identifier) @ident)))
 				]`
-				captures, err := allCaptures(query, swapNode(node, cur))
-				if err != nil {
-					return nil, err
-				}
+				captures := allCaptures(query, swapNode(node, cur))
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == ident {
 						return swapNodePtr(node, capture.Node), nil
@@ -429,10 +396,7 @@ func (s *SquirrelService) lookupFieldJava(ctx context.Context, ty TypeJava, fiel
 				}
 			case "field_declaration":
 				query := "(field_declaration declarator: (variable_declarator name: (identifier) @ident))"
-				captures, err := allCaptures(query, swapNode(ty2.def, child))
-				if err != nil {
-					return nil, err
-				}
+				captures := allCaptures(query, swapNode(ty2.def, child))
 				for _, capture := range captures {
 					if capture.Content(capture.Contents) == field {
 						return swapNodePtr(ty2.def, capture.Node), nil
@@ -484,10 +448,7 @@ func (s *SquirrelService) getTypeDefJava(ctx context.Context, node Node) (ret Ty
 			if localVariableDeclaration == nil {
 				return nil, nil
 			}
-			captures, err := allCaptures("(local_variable_declaration declarator: (variable_declarator value: (_) @value))", swapNode(node, localVariableDeclaration))
-			if err != nil {
-				return nil, err
-			}
+			captures := allCaptures("(local_variable_declaration declarator: (variable_declarator value: (_) @value))", swapNode(node, localVariableDeclaration))
 			for _, capture := range captures {
 				return s.getTypeDefJava(ctx, capture)
 			}
@@ -584,21 +545,14 @@ func (s *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context.Contex
 	defer s.onCall(program, &Tuple{String(program.Type()), String(ident)}, lazyNodeStringer(&ret))()
 
 	// Determine project root
-	root, err := getProjectRoot(program)
-	if err != nil {
-		return nil, err
-	}
-
+	root := getProjectRoot(program)
 	// Collect imports
 	imports := [][]string{}
 	for _, importNode := range children(program.Node) {
 		if importNode.Type() != "import_declaration" {
 			continue
 		}
-		path, err := getPath(swapNode(program, importNode))
-		if err != nil {
-			return nil, err
-		}
+		path := getPath(swapNode(program, importNode))
 		for _, child := range children(importNode) {
 			if child.Type() == "asterisk" {
 				path = append(path, "*")
@@ -667,30 +621,23 @@ func (s *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context.Contex
 	return nil, nil
 }
 
-func getProjectRoot(program Node) ([]string, error) {
+func getProjectRoot(program Node) []string {
 	root := strings.Split(filepath.Dir(program.RepoCommitPath.Path), "/")
 	for _, pkgNode := range children(program.Node) {
 		if pkgNode.Type() != "package_declaration" {
 			continue
 		}
-		pkg, err := getPath(swapNode(program, pkgNode))
-		if err != nil {
-			return nil, err
-		}
-
+		pkg := getPath(swapNode(program, pkgNode))
 		if len(root) > len(pkg) {
 			root = root[:len(root)-len(pkg)]
 		}
 	}
-	return root, nil
+	return root
 }
 
-func getPath(node Node) ([]string, error) {
+func getPath(node Node) []string {
 	query := `(identifier) @ident`
-	captures, err := allCaptures(query, node)
-	if err != nil {
-		return nil, err
-	}
+	captures := allCaptures(query, node)
 	sort.Slice(captures, func(i, j int) bool {
 		return captures[i].StartByte() < captures[j].StartByte()
 	})
@@ -698,15 +645,12 @@ func getPath(node Node) ([]string, error) {
 	for _, capture := range captures {
 		components = append(components, capture.Content(capture.Contents))
 	}
-	return components, nil
+	return components
 }
 
-func getPathUpTo(node Node, component *sitter.Node) ([]string, error) {
+func getPathUpTo(node Node, component *sitter.Node) []string {
 	query := `(identifier) @ident`
-	captures, err := allCaptures(query, node)
-	if err != nil {
-		return nil, err
-	}
+	captures := allCaptures(query, node)
 	sort.Slice(captures, func(i, j int) bool {
 		return captures[i].StartByte() < captures[j].StartByte()
 	})
@@ -717,7 +661,7 @@ func getPathUpTo(node Node, component *sitter.Node) ([]string, error) {
 			break
 		}
 	}
-	return components, nil
+	return components
 }
 
 func getSuperclassJava(declaration Node) *Node {

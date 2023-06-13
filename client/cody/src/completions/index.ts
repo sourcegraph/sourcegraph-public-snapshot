@@ -1,24 +1,67 @@
-import { OpenAIApi } from 'openai'
+import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
+import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
+import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+
+import { logEvent } from '../event-logger'
+import { debug } from '../log'
+
+import { CompletionsCache } from './cache'
+import { getContext } from './context'
 import { CompletionsDocumentProvider } from './docprovider'
+import { History } from './history'
+import * as CompletionLogger from './logger'
+import { detectMultilineMode } from './multiline'
+import { CompletionProvider, InlineCompletionProvider, ManualCompletionProvider } from './provider'
+
+const LOG_MANUAL = { type: 'manual' }
+const WINDOW_SIZE = 50
+
+function lastNLines(text: string, n: number): string {
+    const lines = text.split('\n')
+    return lines.slice(Math.max(0, lines.length - n)).join('\n')
+}
+
+export const inlineCompletionsCache = new CompletionsCache()
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
+    private promptTokens: number
     private maxPrefixTokens: number
     private maxSuffixTokens: number
+    private abortOpenInlineCompletions: () => void = () => {}
+    private abortOpenManualCompletion: () => void = () => {}
+    private lastContentChanges: LRUCache<string, 'add' | 'del'> = new LRUCache<string, 'add' | 'del'>({
+        max: 10,
+    })
+
     constructor(
-        private openai: OpenAIApi,
+        private webviewErrorMessager: (error: string) => Promise<void>,
+        private completionsClient: SourcegraphNodeCompletionsClient,
         private documentProvider: CompletionsDocumentProvider,
-        private model = 'gpt-3.5-turbo',
+        private history: History,
         private contextWindowTokens = 2048, // 8001
-        private bytesPerToken = 4,
+        private charsPerToken = 4,
         private responseTokens = 200,
-        private prefixPercentage = 0.9,
-        private suffixPercentage = 0.1
+        private prefixPercentage = 0.6,
+        private suffixPercentage = 0.1,
+        private disableTimeouts = false
     ) {
-        const promptTokens = this.contextWindowTokens - this.responseTokens
-        this.maxPrefixTokens = Math.floor(promptTokens * this.prefixPercentage)
-        this.maxSuffixTokens = Math.floor(promptTokens * this.suffixPercentage)
+        this.promptTokens = this.contextWindowTokens - this.responseTokens
+        this.maxPrefixTokens = Math.floor(this.promptTokens * this.prefixPercentage)
+        this.maxSuffixTokens = Math.floor(this.promptTokens * this.suffixPercentage)
+
+        vscode.workspace.onDidChangeTextDocument(event => {
+            const document = event.document
+            const changes = event.contentChanges
+
+            if (changes.length <= 0) {
+                return
+            }
+
+            const text = changes[0].text
+            this.lastContentChanges.set(document.fileName, text.length > 0 ? 'add' : 'del')
+        })
     }
 
     public async provideInlineCompletionItems(
@@ -30,14 +73,17 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
         } catch (error) {
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            vscode.window.showErrorMessage(error)
+            if (error.message === 'aborted') {
+                return []
+            }
+            console.error(error)
+            debug('CodyCompletionProvider:inline:error', `${error.toString()}\n${error.stack}`)
             return []
         }
     }
 
-    private tokToByte(toks: number): number {
-        return Math.floor(toks * this.bytesPerToken)
+    private tokToChar(toks: number): number {
+        return toks * this.charsPerToken
     }
 
     private async provideInlineCompletionItemsInner(
@@ -46,88 +92,204 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         context: vscode.InlineCompletionContext,
         token: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionItem[]> {
-        // Require manual invocation
-        if (context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic) {
+        this.abortOpenInlineCompletions()
+        const abortController = new AbortController()
+        token.onCancellationRequested(() => abortController.abort())
+        this.abortOpenInlineCompletions = () => abortController.abort()
+
+        CompletionLogger.clear()
+
+        const currentEditor = vscode.window.activeTextEditor
+        if (!currentEditor || currentEditor?.document.uri.scheme === 'cody') {
             return []
         }
 
         const docContext = getCurrentDocContext(
             document,
             position,
-            this.tokToByte(this.maxPrefixTokens),
-            this.tokToByte(this.maxSuffixTokens)
+            this.tokToChar(this.maxPrefixTokens),
+            this.tokToChar(this.maxSuffixTokens)
         )
         if (!docContext) {
             return []
         }
 
-        const { prefix, prevLine: precedingLine } = docContext
-        let waitMs: number
-        let completionPrefix = '' // text to require as the first part of the completion
-        if (precedingLine.trim() === '') {
-            // Start of line: medium debounce, allow multiple lines
-            waitMs = 1000
-        } else if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || precedingLine.endsWith('.')) {
-            // Middle of line: long debounce, next line
-            waitMs = 100
-        } else {
-            // End of line: long debounce, next line
-            completionPrefix = '\n'
-            waitMs = 2000
+        const { prefix, suffix, prevLine: sameLinePrefix, prevNonEmptyLine } = docContext
+        const sameLineSuffix = suffix.slice(0, suffix.indexOf('\n'))
 
-            // TODO(beyang): handle this as a special case, try 2 completions, one with newline inserted, one without
-        }
-
-        const aborter = new AbortController()
-        token.onCancellationRequested(() => aborter.abort())
-
-        const waiter = new Promise<void>(resolve => setTimeout(() => resolve(), waitMs))
-        const completionsPromise = this.openai.createChatCompletion(
-            {
-                model: this.model,
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'Complete whatever code you obtain from the user through the end of the line.',
-                    },
-                    {
-                        role: 'user',
-                        content: prefix + completionPrefix,
-                    },
-                ],
-                max_tokens: Math.min(this.contextWindowTokens - this.maxPrefixTokens, this.responseTokens),
-                n: 1,
-            },
-            {
-                signal: aborter.signal,
+        // Avoid showing completions when we're deleting code (Cody can only insert code at the
+        // moment)
+        const lastChange = this.lastContentChanges.get(document.fileName) ?? 'add'
+        if (lastChange === 'del') {
+            // When a line was deleted, only look up cached items and only include them if the
+            // untruncated prefix matches. This fixes some weird issues where the completion would
+            // render if you insert whitespace but not on the original place when you delete it
+            // again
+            const cachedCompletions = inlineCompletionsCache.get(prefix, false)
+            if (cachedCompletions?.isExactPrefix) {
+                return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
             }
-        )
-        await waiter
-        let completions
-        try {
-            completions = await completionsPromise
-        } catch (error) {
-            throw new Error(`error fetching completions from OpenAI: ${error}`)
-        }
-        if (token.isCancellationRequested) {
             return []
         }
 
-        if (completions.data.choices.length === 0) {
-            throw new Error('no completions')
+        const cachedCompletions = inlineCompletionsCache.get(prefix)
+        if (cachedCompletions) {
+            return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
         }
 
-        const inlineCompletions: vscode.InlineCompletionItem[] = []
-        for (const choice of completions.data.choices) {
-            if (!choice.message?.content) {
-                continue
-            }
-            inlineCompletions.push(new vscode.InlineCompletionItem(completionPrefix + choice.message.content))
+        const remainingChars = this.tokToChar(this.promptTokens)
+
+        const completionNoSnippets = new InlineCompletionProvider(
+            this.completionsClient,
+            remainingChars,
+            this.responseTokens,
+            [],
+            prefix,
+            suffix,
+            '\n',
+            document.languageId
+        )
+        const emptyPromptLength = completionNoSnippets.emptyPromptLength()
+
+        const contextChars = this.tokToChar(this.promptTokens) - emptyPromptLength
+
+        const similarCode = await getContext(
+            currentEditor,
+            this.history,
+            lastNLines(prefix, WINDOW_SIZE),
+            WINDOW_SIZE,
+            contextChars
+        )
+
+        const completers: CompletionProvider[] = []
+        let timeout: number
+        let multilineMode: null | 'block' = null
+        // VS Code does not show completions if we are in the process of writing a word or if a
+        // selected completion info is present (so something is selected from the completions
+        // dropdown list based on the lang server) and the returned completion range does not
+        // contain the same selection.
+        if (context.selectedCompletionInfo || /[A-Za-z]$/.test(sameLinePrefix)) {
+            return []
         }
-        return inlineCompletions
+        // If we have a suffix in the same line as the cursor and the suffix contains any word
+        // characters, do not attempt to make a completion. This means we only make completions if
+        // we have a suffix in the same line for special characters like `)]}` etc.
+        //
+        // VS Code will attempt to merge the remainder of the current line by characters but for
+        // words this will easily get very confusing.
+        if (/\w/.test(sameLineSuffix)) {
+            return []
+        }
+        // In this case, VS Code won't be showing suggestions anyway and we are more likely to want
+        // suggested method names from the language server instead.
+        if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || sameLinePrefix.endsWith('.')) {
+            return []
+        }
+
+        if (
+            (multilineMode = detectMultilineMode(
+                prefix,
+                prevNonEmptyLine,
+                sameLinePrefix,
+                sameLineSuffix,
+                document.languageId
+            ))
+        ) {
+            timeout = 200
+            completers.push(
+                new InlineCompletionProvider(
+                    this.completionsClient,
+                    remainingChars,
+                    this.responseTokens,
+                    similarCode,
+                    prefix,
+                    suffix,
+                    '',
+                    document.languageId,
+                    3,
+                    multilineMode
+                )
+            )
+        } else if (sameLinePrefix.trim() === '') {
+            // The current line is empty
+            timeout = 20
+            completers.push(
+                new InlineCompletionProvider(
+                    this.completionsClient,
+                    remainingChars,
+                    this.responseTokens,
+                    similarCode,
+                    prefix,
+                    suffix,
+                    '',
+                    document.languageId,
+                    3 // tries
+                )
+            )
+        } else {
+            // The current line has a suffix
+            timeout = 200
+            completers.push(
+                new InlineCompletionProvider(
+                    this.completionsClient,
+                    remainingChars,
+                    this.responseTokens,
+                    similarCode,
+                    prefix,
+                    suffix,
+                    '',
+                    document.languageId,
+                    2 // tries
+                ),
+                // Create a completion request for the current prefix with a new line added. This
+                // will make for faster recommendations when the user presses enter.
+                new InlineCompletionProvider(
+                    this.completionsClient,
+                    remainingChars,
+                    this.responseTokens,
+                    similarCode,
+                    prefix,
+                    suffix,
+                    '\n', // force a new line in the case we are at end of line
+                    document.languageId,
+                    1 // tries
+                )
+            )
+        }
+
+        if (!this.disableTimeouts) {
+            await new Promise<void>(resolve => setTimeout(resolve, timeout))
+        }
+
+        // We don't need to make a request at all if the signal is already aborted after the
+        // debounce
+        if (abortController.signal.aborted) {
+            return []
+        }
+
+        const logId = CompletionLogger.start({ type: 'inline', multilineMode })
+
+        const results = rankCompletions(
+            (await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))).flat()
+        )
+
+        const visibleResults = filterCompletions(results)
+
+        if (visibleResults.length > 0) {
+            CompletionLogger.suggest(logId)
+            inlineCompletionsCache.add(logId, visibleResults)
+            return toInlineCompletionItems(logId, visibleResults)
+        }
+
+        CompletionLogger.noResponse(logId)
+        return []
     }
 
-    public async fetchAndShowCompletions(): Promise<void> {
+    public async fetchAndShowManualCompletions(): Promise<void> {
+        this.abortOpenManualCompletion()
+        const abortController = new AbortController()
+        this.abortOpenManualCompletion = () => abortController.abort()
+
         const currentEditor = vscode.window.activeTextEditor
         if (!currentEditor || currentEditor?.document.uri.scheme === 'cody') {
             return
@@ -143,58 +305,69 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             viewColumn: 2,
         })
 
+        // TODO(beyang): make getCurrentDocContext fetch complete line prefix
         const docContext = getCurrentDocContext(
             currentEditor.document,
             currentEditor.selection.start,
-            this.tokToByte(this.maxPrefixTokens),
-            this.tokToByte(this.maxSuffixTokens)
+            this.tokToChar(this.maxPrefixTokens),
+            this.tokToChar(this.maxSuffixTokens)
         )
         if (docContext === null) {
             console.error('not showing completions, no currently open doc')
             return
         }
-        const { prefix, suffix, prevLine, prevNonEmptyLine } = docContext
+        const { prefix, suffix } = docContext
+
+        const remainingChars = this.tokToChar(this.promptTokens)
+
+        const completionNoSnippets = new ManualCompletionProvider(
+            this.completionsClient,
+            remainingChars,
+            this.responseTokens,
+            [],
+            prefix,
+            suffix,
+            '',
+            currentEditor.document.languageId
+        )
+        const emptyPromptLength = completionNoSnippets.emptyPromptLength()
+
+        const contextChars = this.tokToChar(this.promptTokens) - emptyPromptLength
+
+        const similarCode = await getContext(
+            currentEditor,
+            this.history,
+            lastNLines(prefix, WINDOW_SIZE),
+            WINDOW_SIZE,
+            contextChars
+        )
+
+        const completer = new ManualCompletionProvider(
+            this.completionsClient,
+            remainingChars,
+            this.responseTokens,
+            similarCode,
+            prefix,
+            suffix,
+            '',
+            currentEditor.document.languageId
+        )
 
         try {
-            const completion = await this.openai.createChatCompletion({
-                model: this.model,
-                messages: [
-                    {
-                        role: 'system',
-                        content:
-                            'Complete whatever code you obtain from the user up to the end of the function or block scope.',
-                    },
-                    {
-                        role: 'user',
-                        content: prefix,
-                    },
-                ],
-                max_tokens: Math.min(this.contextWindowTokens - this.maxPrefixTokens, this.responseTokens),
-                n: 3,
-            })
-
-            // Trim lines that go past current indent
-            for (const choice of completion.data.choices) {
-                if (!choice.message?.content) {
-                    continue
-                }
-                const indent = getIndent(prevNonEmptyLine)
-                choice.message.content = trimToIndent(choice.message.content, indent)
-            }
-
-            this.documentProvider.addCompletions(completionsUri, ext, prevLine, completion.data, {
-                prompt: prefix,
-                suffix,
+            logEvent('CodyVSCodeExtension:completion:started', LOG_MANUAL, LOG_MANUAL)
+            const completions = await completer.generateCompletions(abortController.signal, 3)
+            this.documentProvider.addCompletions(completionsUri, ext, completions, {
+                suffix: '',
                 elapsedMillis: 0,
                 llmOptions: null,
             })
+            logEvent('CodyVSCodeExtension:completion:suggested', LOG_MANUAL, LOG_MANUAL)
         } catch (error) {
-            if (error.response) {
-                console.error(error.response.status)
-                console.error(error.response.data)
-            } else {
-                console.error(error.message)
+            if (error.message === 'aborted') {
+                return
             }
+
+            await this.webviewErrorMessager(`FetchAndShowCompletions - ${error}`)
         }
     }
 }
@@ -278,25 +451,29 @@ function getCurrentDocContext(
     }
 }
 
-function getIndent(line: string): string {
-    const match = /^(\s*)/.exec(line)
-    if (!match || match.length < 2) {
-        return ''
-    }
-    return match[1]
+export interface Completion {
+    prefix: string
+    messages: Message[]
+    content: string
+    stopReason?: string
 }
 
-function trimToIndent(text: string, indent: string): string {
-    const lines = text.split('\n')
-    // Iterate through the lines starting at the second line (always include the first line)
-    for (let i = 1; i < lines.length; i++) {
-        if (lines[i].trim().length === 0) {
-            continue
-        }
-        const lineIndent = getIndent(lines[i])
-        if (indent.startsWith(lineIndent) && lineIndent.length < indent.length) {
-            return lines.slice(0, i).join('\n')
-        }
-    }
-    return text
+function toInlineCompletionItems(logId: string, completions: Completion[]): vscode.InlineCompletionItem[] {
+    return completions.map(
+        completion =>
+            new vscode.InlineCompletionItem(completion.content, undefined, {
+                title: 'Completion accepted',
+                command: 'cody.completions.inline.accepted',
+                arguments: [{ codyLogId: logId }],
+            })
+    )
+}
+
+function rankCompletions(completions: Completion[]): Completion[] {
+    // TODO(philipp-spiess): Improve ranking to something more complex then just length
+    return completions.sort((a, b) => b.content.split('\n').length - a.content.split('\n').length)
+}
+
+function filterCompletions(completions: Completion[]): Completion[] {
+    return completions.filter(c => c.content.trim() !== '')
 }

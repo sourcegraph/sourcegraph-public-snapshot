@@ -13,7 +13,10 @@ import { ExternalServiceEditPage } from './ExternalServiceEditPage'
 
 const decorator: DecoratorFn = story => (
     <div className="p-3 container">
-        <WebStory path="/:externalServiceID" initialEntries={['service123']}>
+        <WebStory
+            path="/site-admin/external-services/:externalServiceID/edit"
+            initialEntries={['/site-admin/external-services/service123/edit']}
+        >
             {story}
         </WebStory>
     </div>

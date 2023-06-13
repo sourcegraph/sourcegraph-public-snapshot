@@ -12,7 +12,8 @@ import { Optional } from 'utility-types'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
+import { asError, ErrorLike, isErrorLike, basename } from '@sourcegraph/common'
 import {
     createActiveSpan,
     reactManualTracer,
@@ -39,28 +40,31 @@ import {
     Text,
     useEventObservable,
     useObservable,
+    useSessionStorage,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeIntelligenceProps } from '../../codeintel'
+import { FileContentEditor } from '../../cody/components/FileContentEditor'
+import { useCodySidebar } from '../../cody/sidebar/Provider'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { Scalars } from '../../graphql-operations'
-import { render as renderLsifHtml } from '../../lsif/html'
+import { SourcegraphContext } from '../../jscontext'
 import { NotebookProps } from '../../notebooks'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
 import { OwnConfigProps } from '../../own/OwnConfigProps'
 import { SearchStreamingProps } from '../../search'
 import { useNotepad } from '../../stores'
-import { basename } from '../../util/path'
 import { parseBrowserRepoURL, toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
 import { ToggleBlameAction } from '../actions/ToggleBlameAction'
 import { useBlameHunks } from '../blame/useBlameHunks'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
+import { TryCodyWidget } from '../components/TryCodyWidget/TryCodyWidget'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
 import { HoverThresholdProps } from '../RepoContainer'
@@ -75,7 +79,6 @@ import { fetchBlob } from './backend'
 import { BlobLoadingSpinner } from './BlobLoadingSpinner'
 import { CodeMirrorBlob, type BlobInfo } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
-import { LegacyBlob } from './LegacyBlob'
 import { HistoryAndOwnBar } from './own/HistoryAndOwnBar'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
@@ -110,6 +113,7 @@ interface BlobPageProps
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     className?: string
+    context: Pick<SourcegraphContext, 'authProviders'>
 }
 
 /**
@@ -120,7 +124,7 @@ interface BlobPageInfo extends Optional<BlobInfo, 'commitID'> {
     aborted: boolean
 }
 
-export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ...props }) => {
+export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, context, ...props }) => {
     const location = useLocation()
     const navigate = useNavigate()
 
@@ -128,10 +132,9 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(location)
     const { repoID, repoName, repoServiceType, revision, commitID, filePath, useBreadcrumb, mode } = props
-    const { enableCodeMirror, enableLazyBlobSyntaxHighlighting } = useExperimentalFeatures(features => ({
-        enableCodeMirror: features.enableCodeMirrorFileView ?? true,
-        enableLazyBlobSyntaxHighlighting: features.enableLazyBlobSyntaxHighlighting ?? true,
-    }))
+    const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
+        features => features.enableLazyBlobSyntaxHighlighting ?? true
+    )
     const isPackage = useMemo(() => isPackageServiceType(repoServiceType), [repoServiceType])
 
     const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
@@ -188,6 +191,11 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         }, [filePath, revision, repoName, props.telemetryService])
     )
 
+    const [indexIDsForSnapshotData] = useSessionStorage<{ [repoName: string]: string | undefined }>(
+        'blob.preciseIndexIDForSnapshotData',
+        {}
+    )
+
     /**
      * Fetches formatted, but un-highlighted, blob content.
      * Intention is to use this whilst we wait for syntax highlighting,
@@ -203,6 +211,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         revision,
                         filePath,
                         format: HighlightResponseFormat.HTML_PLAINTEXT,
+                        scipSnapshot: indexIDsForSnapshotData[repoName] !== undefined,
+                        visibleIndexID: indexIDsForSnapshotData[repoName],
                     }).pipe(
                         map(blob => {
                             if (blob === null) {
@@ -211,7 +221,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
 
                             const blobInfo: BlobPageInfo = {
                                 content: blob.content,
-                                html: blob.highlight.html ?? '',
                                 repoName,
                                 revision,
                                 filePath,
@@ -229,7 +238,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                         })
                     )
                 ),
-            [filePath, mode, repoName, revision, span]
+            [filePath, mode, repoName, revision, span, indexIDsForSnapshotData]
         )
     )
 
@@ -252,9 +261,9 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                             revision,
                             filePath,
                             disableTimeout,
-                            format: enableCodeMirror
-                                ? HighlightResponseFormat.JSON_SCIP
-                                : HighlightResponseFormat.HTML_HIGHLIGHT,
+                            format: HighlightResponseFormat.JSON_SCIP,
+                            scipSnapshot: indexIDsForSnapshotData[repoName] !== undefined,
+                            visibleIndexID: indexIDsForSnapshotData[repoName],
                         })
                     ),
                     map(blob => {
@@ -262,17 +271,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                             return blob
                         }
 
-                        // Replace html with lsif generated HTML, if available
-                        if (!enableCodeMirror && !blob.highlight.html && blob.highlight.lsif) {
-                            const html = renderLsifHtml({ lsif: blob.highlight.lsif, content: blob.content })
-                            if (html) {
-                                blob.highlight.html = html
-                            }
-                        }
-
                         const blobInfo: BlobPageInfo = {
                             content: blob.content,
-                            html: blob.highlight.html ?? '',
                             lsif: blob.highlight.lsif ?? '',
                             repoName,
                             revision,
@@ -283,12 +283,13 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                             aborted: blob.highlight.aborted,
                             lfs: blob.__typename === 'GitBlob' ? blob.lfs : undefined,
                             externalURLs: blob.__typename === 'GitBlob' ? blob.externalURLs : undefined,
+                            snapshotData: blob.snapshot,
                         }
                         return blobInfo
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, filePath, enableCodeMirror, mode]
+            [repoName, revision, filePath, mode, indexIDsForSnapshotData]
         )
     )
 
@@ -316,10 +317,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     }
 
     const [isBlameVisible] = useBlameVisibility(isPackage)
-    const blameHunks = useBlameHunks(
-        { isPackage, repoName, revision, filePath, enableCodeMirror },
-        props.platformContext.sourcegraphURL
-    )
+    const blameHunks = useBlameHunks({ isPackage, repoName, revision, filePath }, props.platformContext.sourcegraphURL)
 
     const isSearchNotebook = Boolean(
         blobInfoOrError &&
@@ -347,10 +345,31 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                 : 'code'
     }
 
+    const { setEditorScope } = useCodySidebar()
+
+    useEffect(() => {
+        if (!isSearchNotebook && formattedBlobInfoOrError?.richHTML && renderMode === 'rendered') {
+            setEditorScope(new FileContentEditor(formattedBlobInfoOrError))
+        }
+        return () => {
+            if (!isSearchNotebook && formattedBlobInfoOrError?.richHTML && renderMode === 'rendered') {
+                setEditorScope(new NoopEditor())
+            }
+        }
+    }, [isSearchNotebook, formattedBlobInfoOrError, renderMode, setEditorScope])
+
     // Always render these to avoid UI jitter during loading when switching to a new file.
     const alwaysRender = (
         <>
             <PageTitle title={getPageTitle()} />
+            {props.isSourcegraphDotCom && (
+                <TryCodyWidget
+                    telemetryService={props.telemetryService}
+                    type="blob"
+                    authenticatedUser={props.authenticatedUser}
+                    context={context}
+                />
+            )}
             {window.context.isAuthenticatedUser && (
                 <RepoHeaderContributionPortal
                     position="right"
@@ -506,8 +525,6 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
         )
     }
 
-    const BlobComponent = enableCodeMirror ? CodeMirrorBlob : LegacyBlob
-
     return (
         <div className={className}>
             {alwaysRender}
@@ -559,11 +576,10 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     attributes={{
                         isSearchNotebook,
                         renderMode,
-                        enableCodeMirror,
                         enableLazyBlobSyntaxHighlighting,
                     }}
                 >
-                    <BlobComponent
+                    <CodeMirrorBlob
                         data-testid="repo-blob"
                         className={classNames(styles.blob, styles.border)}
                         blobInfo={{ ...blobInfoOrError, commitID }}

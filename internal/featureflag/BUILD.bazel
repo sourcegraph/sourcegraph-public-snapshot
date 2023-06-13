@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "featureflag",
@@ -35,7 +36,7 @@ go_test(
         "@com_github_derision_test_go_mockgen//testutil/require",
         "@com_github_gomodule_redigo//redis",
         "@com_github_google_go_cmp//cmp",
-        "@com_github_rafaeljusto_redigomock//:redigomock",
+        "@com_github_rafaeljusto_redigomock_v3//:redigomock",
         "@com_github_stretchr_testify//require",
     ],
 )

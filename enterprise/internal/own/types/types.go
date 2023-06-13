@@ -15,3 +15,10 @@ type CodeownersFile struct {
 	Contents string
 	Proto    *codeownerspb.File
 }
+
+// These signal constants should match the names in the `own_signal_configurations` table
+const (
+	SignalRecentContributors = "recent-contributors"
+	SignalRecentViews        = "recent-views"
+	Analytics                = "analytics"
+)

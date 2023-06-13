@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -59,7 +59,7 @@ func (s *subRepoPermsFilterJob) Name() string {
 	return "SubRepoPermsFilterJob"
 }
 
-func (s *subRepoPermsFilterJob) Fields(job.Verbosity) []otlog.Field { return nil }
+func (s *subRepoPermsFilterJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
 
 func (s *subRepoPermsFilterJob) Children() []job.Describer {
 	return []job.Describer{s.child}

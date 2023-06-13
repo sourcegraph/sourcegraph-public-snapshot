@@ -10,7 +10,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -66,7 +65,9 @@ func (s *Service) ApplyBatchChange(
 	}
 
 	// 🚨 SECURITY: Only site-admins or the creator of batchSpec can apply it.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchSpec.UserID); err != nil {
+	// If the batch change belongs to an org namespace, org members will be able to access it if
+	// the `orgs.allMembersBatchChangesAdmin` setting is true.
+	if err := s.checkViewerCanAdminister(ctx, batchSpec.NamespaceOrgID, batchSpec.UserID, false); err != nil {
 		return nil, err
 	}
 
@@ -108,7 +109,17 @@ func (s *Service) ApplyBatchChange(
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() {
+		err = tx.Done(err)
+		// We only enqueue the webhook after the transaction succeeds. If it fails and all
+		// the DB changes are rolled back, the batch change will still be in whatever
+		// state it was before ApplyBatchChange was called. This ensures we only send a
+		// webhook when the batch change is *actually* applied, and ensures the batch
+		// change payload in the webhook is up-to-date as well.
+		if err == nil && batchChange.ID != 0 {
+			s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeApply, bgql.MarshalBatchChangeID(batchChange.ID))
+		}
+	}()
 
 	l := locker.NewWith(tx, "batches_apply")
 	locked, err := l.LockInTransaction(ctx, int32(batchChange.ID), false)
@@ -182,7 +193,6 @@ func (s *Service) ApplyBatchChange(
 		}
 	}
 
-	s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeApply, bgql.MarshalBatchChangeID(batchChange.ID))
 	return batchChange, nil
 }
 

@@ -7,8 +7,8 @@ import (
 
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-diff/diff"
+	"go.opentelemetry.io/otel/attribute"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -191,8 +191,8 @@ func (s *Store) createBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 
 // UpdateBatchChange updates the given bach change.
 func (s *Store) UpdateBatchChange(ctx context.Context, c *btypes.BatchChange) (err error) {
-	ctx, _, endObservation := s.operations.updateBatchChange.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(c.ID)),
+	ctx, _, endObservation := s.operations.updateBatchChange.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(c.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -239,8 +239,8 @@ func (s *Store) updateBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 
 // DeleteBatchChange deletes the batch change with the given ID.
 func (s *Store) DeleteBatchChange(ctx context.Context, id int64) (err error) {
-	ctx, _, endObservation := s.operations.deleteBatchChange.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(id)),
+	ctx, _, endObservation := s.operations.deleteBatchChange.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(id)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -378,8 +378,8 @@ type GetBatchChangeOpts struct {
 
 // GetBatchChange gets a batch change matching the given options.
 func (s *Store) GetBatchChange(ctx context.Context, opts GetBatchChangeOpts) (bc *btypes.BatchChange, err error) {
-	ctx, _, endObservation := s.operations.getBatchChange.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(opts.ID)),
+	ctx, _, endObservation := s.operations.getBatchChange.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(opts.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -475,8 +475,8 @@ type GetBatchChangeDiffStatOpts struct {
 }
 
 func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeDiffStatOpts) (stat *diff.Stat, err error) {
-	ctx, _, endObservation := s.operations.getBatchChangeDiffStat.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchChangeID", int(opts.BatchChangeID)),
+	ctx, _, endObservation := s.operations.getBatchChangeDiffStat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("batchChangeID", int(opts.BatchChangeID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -516,8 +516,8 @@ func getBatchChangeDiffStatQuery(opts GetBatchChangeDiffStatOpts, authzConds *sq
 }
 
 func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (stat *diff.Stat, err error) {
-	ctx, _, endObservation := s.operations.getRepoDiffStat.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repoID", int(repoID)),
+	ctx, _, endObservation := s.operations.getRepoDiffStat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repoID", int(repoID)),
 	}})
 	defer endObservation(1, observation.Args{})
 

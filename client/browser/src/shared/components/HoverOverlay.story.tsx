@@ -1,4 +1,3 @@
-import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { BrowserRouter } from 'react-router-dom'
@@ -14,6 +13,7 @@ import {
 
 import browserExtensionStyles from '../../app.scss'
 import bitbucketCodeHostStyles from '../code-hosts/bitbucket/codeHost.module.scss'
+import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
 
 const decorator: DecoratorFn = story => (
     <>

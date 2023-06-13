@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -54,11 +54,11 @@ func TestTransformRecord(t *testing.T) {
 		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			index := types.Index{
+			index := uploadsshared.Index{
 				ID:             42,
 				Commit:         "deadbeef",
 				RepositoryName: "linux",
-				DockerSteps: []types.DockerStep{
+				DockerSteps: []uploadsshared.DockerStep{
 					{
 						Image:    "alpine",
 						Commands: []string{"yarn", "install"},
@@ -150,11 +150,11 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 	db := database.NewMockDB()
 	db.ExecutorSecretsFunc.SetDefaultReturn(database.NewMockExecutorSecretStore())
 
-	index := types.Index{
+	index := uploadsshared.Index{
 		ID:             42,
 		Commit:         "deadbeef",
 		RepositoryName: "linux",
-		DockerSteps: []types.DockerStep{
+		DockerSteps: []uploadsshared.DockerStep{
 			{
 				Image:    "alpine",
 				Commands: []string{"yarn", "install"},
@@ -280,11 +280,11 @@ func TestTransformRecordWithSecrets(t *testing.T) {
 		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			index := types.Index{
+			index := uploadsshared.Index{
 				ID:             42,
 				Commit:         "deadbeef",
 				RepositoryName: "linux",
-				DockerSteps: []types.DockerStep{
+				DockerSteps: []uploadsshared.DockerStep{
 					{
 						Image:    "alpine",
 						Commands: []string{"yarn", "install"},
@@ -391,7 +391,7 @@ func TestTransformRecordDockerAuthConfig(t *testing.T) {
 	}, 0, nil)
 	db.ExecutorSecretAccessLogsFunc.SetDefaultReturn(database.NewMockExecutorSecretAccessLogStore())
 
-	job, err := transformRecord(context.Background(), db, types.Index{ID: 42}, handler.ResourceMetadata{}, "hunter2")
+	job, err := transformRecord(context.Background(), db, uploadsshared.Index{ID: 42}, handler.ResourceMetadata{}, "hunter2")
 	if err != nil {
 		t.Fatal(err)
 	}

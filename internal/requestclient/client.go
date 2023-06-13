@@ -11,6 +11,9 @@ type Client struct {
 	// IP identifies the IP of the client.
 	IP string
 	// ForwardedFor identifies the originating IP address of a client.
+	//
+	// Note: This header can be spoofed and relies on trusted clients/proxies.
+	// For sourcegraph.com we use cloudflare headers to avoid spoofing.
 	ForwardedFor string
 }
 

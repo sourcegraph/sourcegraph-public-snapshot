@@ -54,7 +54,7 @@ function handleRequest(
                 JSON.stringify({
                     instanceURL,
                     accessToken,
-                    customRequestHeadersAsString: 'Client-ID,99999,X-Test-Header,Some value',
+                    customRequestHeadersAsString: '',
                     pluginVersion: '1.2.3',
                     anonymousUserId: 'test',
                 })

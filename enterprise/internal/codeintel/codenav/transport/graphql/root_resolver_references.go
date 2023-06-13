@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -27,7 +27,7 @@ func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolver
 		return nil, err
 	}
 
-	requestArgs := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Line: int(args.Line), Character: int(args.Character), Limit: limit, RawCursor: rawCursor}
+	requestArgs := codenav.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Line: int(args.Line), Character: int(args.Character), Limit: limit, RawCursor: rawCursor}
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.references, time.Second, getObservationArgs(requestArgs))
 	defer endObservation()
 
@@ -68,23 +68,23 @@ func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolver
 
 // decodeReferencesCursor is the inverse of encodeCursor. If the given encoded string is empty, then
 // a fresh cursor is returned.
-func decodeReferencesCursor(rawEncoded string) (shared.ReferencesCursor, error) {
+func decodeReferencesCursor(rawEncoded string) (codenav.ReferencesCursor, error) {
 	if rawEncoded == "" {
-		return shared.ReferencesCursor{Phase: "local"}, nil
+		return codenav.ReferencesCursor{Phase: "local"}, nil
 	}
 
 	raw, err := base64.RawURLEncoding.DecodeString(rawEncoded)
 	if err != nil {
-		return shared.ReferencesCursor{}, err
+		return codenav.ReferencesCursor{}, err
 	}
 
-	var cursor shared.ReferencesCursor
+	var cursor codenav.ReferencesCursor
 	err = json.Unmarshal(raw, &cursor)
 	return cursor, err
 }
 
 // encodeReferencesCursor returns an encoding of the given cursor suitable for a URL or a GraphQL token.
-func encodeReferencesCursor(cursor shared.ReferencesCursor) string {
+func encodeReferencesCursor(cursor codenav.ReferencesCursor) string {
 	rawEncoded, _ := json.Marshal(cursor)
 	return base64.RawURLEncoding.EncodeToString(rawEncoded)
 }

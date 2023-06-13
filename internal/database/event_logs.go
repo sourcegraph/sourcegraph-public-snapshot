@@ -34,6 +34,12 @@ type EventLogStore interface {
 	// AggregatedCodeIntelInvestigationEvents calculates CodeIntelAggregatedInvestigationEvent for each unique investigation type.
 	AggregatedCodeIntelInvestigationEvents(ctx context.Context) ([]types.CodeIntelAggregatedInvestigationEvent, error)
 
+	// AggregatedCodyEvents calculates CodyAggregatedEvent for each every unique event type related to Cody.
+	AggregatedCodyEvents(ctx context.Context, now time.Time) ([]types.CodyAggregatedEvent, error)
+
+	// AggregatedRepoMetadataEvents calculates RepoMetadataAggregatedEvent for each every unique event type related to RepoMetadata.
+	AggregatedRepoMetadataEvents(ctx context.Context, now time.Time, period PeriodType) (*types.RepoMetadataAggregatedEvents, error)
+
 	// AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
 	AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error)
 
@@ -112,7 +118,7 @@ type EventLogStore interface {
 	// ListAll gets all event logs in descending order of timestamp.
 	ListAll(ctx context.Context, opt EventLogsListOptions) ([]*Event, error)
 
-	// ListExportableEvents gets all event logs that are allowed to be exported.
+	// ListExportableEvents gets a batch of event logs that are allowed to be exported.
 	ListExportableEvents(ctx context.Context, after, limit int) ([]*Event, error)
 
 	ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error)
@@ -297,7 +303,7 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 }
 
 func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*Event, error) {
-	q := sqlf.Sprintf("SELECT id, name, url, user_id, anonymous_user_id, source, argument, version, timestamp, feature_flags, cohort_id, first_source_url, last_source_url, referrer, device_id, insert_id FROM event_logs %s", querySuffix)
+	q := sqlf.Sprintf("SELECT id, name, url, user_id, anonymous_user_id, source, argument, public_argument, version, timestamp, feature_flags, cohort_id, first_source_url, last_source_url, referrer, device_id, insert_id FROM event_logs %s", querySuffix)
 	rows, err := l.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -307,7 +313,7 @@ func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (
 	for rows.Next() {
 		r := Event{}
 		var rawFlags []byte
-		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.Version, &r.Timestamp, &rawFlags, &r.CohortID, &r.FirstSourceURL, &r.LastSourceURL, &r.Referrer, &r.DeviceID, &r.InsertID)
+		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.PublicArgument, &r.Version, &r.Timestamp, &rawFlags, &r.CohortID, &r.FirstSourceURL, &r.LastSourceURL, &r.Referrer, &r.DeviceID, &r.InsertID)
 		if err != nil {
 			return nil, err
 		}
@@ -329,21 +335,27 @@ func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (
 type EventLogsListOptions struct {
 	// UserID specifies the user whose events should be included.
 	UserID int32
-
 	*LimitOffset
-
 	EventName *string
+	// AfterID specifies a minimum event ID of listed events.
+	AfterID int
 }
 
 func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) ([]*Event, error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	orderDirection := "DESC"
+	if opt.AfterID > 0 {
+		conds = append(conds, sqlf.Sprintf("id > %d", opt.AfterID))
+		orderDirection = "ASC"
+	}
 	if opt.UserID != 0 {
 		conds = append(conds, sqlf.Sprintf("user_id = %d", opt.UserID))
 	}
 	if opt.EventName != nil {
 		conds = append(conds, sqlf.Sprintf("name = %s", opt.EventName))
 	}
-	return l.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY timestamp DESC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
+	queryTemplate := fmt.Sprintf("WHERE %%s ORDER BY id %s %%s", orderDirection)
+	return l.getBySQL(ctx, sqlf.Sprintf(queryTemplate, sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
 }
 
 func (l *eventLogStore) ListExportableEvents(ctx context.Context, after, limit int) ([]*Event, error) {
@@ -541,7 +553,7 @@ func jsonSettingFragment(setting string, value any) string {
 func buildCountUniqueUserConds(opt *CountUniqueUsersOptions) []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
-		conds = buildCommonUsageConds(&opt.CommonUsageOptions, conds)
+		conds = BuildCommonUsageConds(&opt.CommonUsageOptions, conds)
 
 		if opt.EventFilters != nil {
 			if opt.EventFilters.ByEventNamePrefix != "" {
@@ -565,7 +577,7 @@ func buildCountUniqueUserConds(opt *CountUniqueUsersOptions) []*sqlf.Query {
 	return conds
 }
 
-func buildCommonUsageConds(opt *CommonUsageOptions, conds []*sqlf.Query) []*sqlf.Query {
+func BuildCommonUsageConds(opt *CommonUsageOptions, conds []*sqlf.Query) []*sqlf.Query {
 	if opt != nil {
 		if opt.ExcludeSystemUsers {
 			conds = append(conds, sqlf.Sprintf("event_logs.user_id > 0 OR event_logs.anonymous_user_id <> 'backend'"))
@@ -897,7 +909,7 @@ func (l *eventLogStore) SiteUsageCurrentPeriods(ctx context.Context) (types.Site
 func (l *eventLogStore) siteUsageCurrentPeriods(ctx context.Context, now time.Time, opt *SiteUsageOptions) (summary types.SiteUsageSummary, err error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
-		conds = buildCommonUsageConds(&opt.CommonUsageOptions, conds)
+		conds = BuildCommonUsageConds(&opt.CommonUsageOptions, conds)
 	}
 
 	query := sqlf.Sprintf(siteUsageCurrentPeriodsQuery, now, now, now, now, now, now, sqlf.Join(conds, ") AND ("))
@@ -965,7 +977,7 @@ FROM (
     ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
   LEFT OUTER JOIN users ON users.id = event_logs.user_id
-  WHERE (timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `) AND (%s) AND anonymous_user_id != 'backend'
+  WHERE (timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + `) AND (%s) AND anonymous_user_id != 'backend'
 ) events
 
 GROUP BY current_rolling_month, rolling_month, current_month, current_week, current_day
@@ -1355,6 +1367,151 @@ GROUP BY name, current_week
 ORDER BY name;
 `
 
+func (l *eventLogStore) AggregatedCodyEvents(ctx context.Context, now time.Time) ([]types.CodyAggregatedEvent, error) {
+	codyEvents, err := l.aggregatedCodyEvents(ctx, aggregatedCodyUsageEventsQuery, now)
+	if err != nil {
+		return nil, err
+	}
+	return codyEvents, nil
+}
+
+func (l *eventLogStore) aggregatedCodyEvents(ctx context.Context, queryString string, now time.Time) (events []types.CodyAggregatedEvent, err error) {
+	query := sqlf.Sprintf(queryString, now, now, now, now)
+
+	rows, err := l.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var event types.CodyAggregatedEvent
+		err := rows.Scan(
+			&event.Name,
+			&event.Month,
+			&event.Week,
+			&event.Day,
+			&event.TotalMonth,
+			&event.TotalWeek,
+			&event.TotalDay,
+			&event.UniquesMonth,
+			&event.UniquesWeek,
+			&event.UniquesDay,
+			&event.CodeGenerationMonth,
+			&event.CodeGenerationWeek,
+			&event.CodeGenerationDay,
+			&event.ExplanationMonth,
+			&event.ExplanationWeek,
+			&event.ExplanationDay,
+			&event.InvalidMonth,
+			&event.InvalidWeek,
+			&event.InvalidDay,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		events = append(events, event)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return events, nil
+}
+
+func buildAggregatedRepoMetadataEventsQuery(period PeriodType) (string, error) {
+	unit := ""
+	switch period {
+	case Daily:
+		unit = "day"
+	case Weekly:
+		unit = "week"
+	case Monthly:
+		unit = "month"
+	default:
+		return "", ErrInvalidPeriodType
+	}
+	return `
+	WITH events AS (
+		SELECT
+			name,
+			` + aggregatedUserIDQueryFragment + ` AS user_id,
+			argument
+		FROM event_logs
+		WHERE
+			timestamp >= ` + makeDateTruncExpression(unit, "%s::timestamp") + `
+			AND name IN ('RepoMetadataAdded', 'RepoMetadataUpdated', 'RepoMetadataDeleted', 'SearchSubmitted')
+	)
+	SELECT
+		` + makeDateTruncExpression(unit, "%s::timestamp") + ` as start_time,
+
+		COUNT(*) FILTER (WHERE name IN ('RepoMetadataAdded')) AS added_count,
+		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('RepoMetadataAdded')) AS added_unique_count,
+
+		COUNT(*) FILTER (WHERE name IN ('RepoMetadataUpdated')) AS updated_count,
+		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('RepoMetadataUpdated')) AS updated_unique_count,
+
+		COUNT(*) FILTER (WHERE name IN ('RepoMetadataDeleted')) AS deleted_count,
+		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('RepoMetadataDeleted')) AS deleted_unique_count,
+
+		COUNT(*) FILTER (
+			WHERE name IN ('SearchSubmitted')
+			AND (
+				argument->>'query' ILIKE '%%repo:has(%%'
+				OR argument->>'query' ILIKE '%%repo:has.key(%%'
+				OR argument->>'query' ILIKE '%%repo:has.tag(%%'
+				OR argument->>'query' ILIKE '%%repo:has.meta(%%'
+			)
+		) AS searches_count,
+		COUNT(DISTINCT user_id) FILTER (
+			WHERE name IN ('SearchSubmitted')
+			AND (
+				argument->>'query' ILIKE '%%repo:has(%%'
+				OR argument->>'query' ILIKE '%%repo:has.key(%%'
+				OR argument->>'query' ILIKE '%%repo:has.tag(%%'
+				OR argument->>'query' ILIKE '%%repo:has.meta(%%'
+			)
+		) AS searches_unique_count
+	FROM events;
+	`, nil
+}
+
+func (l *eventLogStore) AggregatedRepoMetadataEvents(ctx context.Context, now time.Time, period PeriodType) (*types.RepoMetadataAggregatedEvents, error) {
+	query, err := buildAggregatedRepoMetadataEventsQuery(period)
+	if err != nil {
+		return nil, err
+	}
+	row := l.QueryRow(ctx, sqlf.Sprintf(query, now, now))
+	var startTime time.Time
+	var createEvent types.EventStats
+	var updateEvent types.EventStats
+	var deleteEvent types.EventStats
+	var searchEvent types.EventStats
+	if err := row.Scan(
+		&startTime,
+		&createEvent.EventsCount,
+		&createEvent.UsersCount,
+		&updateEvent.EventsCount,
+		&updateEvent.UsersCount,
+		&deleteEvent.EventsCount,
+		&deleteEvent.UsersCount,
+		&searchEvent.EventsCount,
+		&searchEvent.UsersCount,
+	); err != nil {
+		return nil, err
+	}
+
+	return &types.RepoMetadataAggregatedEvents{
+		StartTime:          startTime,
+		CreateRepoMetadata: &createEvent,
+		UpdateRepoMetadata: &updateEvent,
+		DeleteRepoMetadata: &deleteEvent,
+		SearchFilterUsage:  &searchEvent,
+	}, nil
+}
+
 func (l *eventLogStore) AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error) {
 	latencyEvents, err := l.aggregatedSearchEvents(ctx, aggregatedSearchLatencyEventsQuery, now)
 	if err != nil {
@@ -1408,6 +1565,76 @@ func (l *eventLogStore) aggregatedSearchEvents(ctx context.Context, queryString 
 	return events, nil
 }
 
+var aggregatedCodyUsageEventsQuery = `
+WITH events AS (
+  SELECT
+    name AS key,
+    ` + aggregatedUserIDQueryFragment + ` AS user_id,
+    ` + makeDateTruncExpression("month", "timestamp") + ` as month,
+    ` + makeDateTruncExpression("week", "timestamp") + ` as week,
+    ` + makeDateTruncExpression("day", "timestamp") + ` as day,
+    ` + makeDateTruncExpression("month", "%s::timestamp") + ` as current_month,
+    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
+    ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
+  FROM event_logs
+  WHERE
+    timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
+    AND lower(name) like '%%cody%%'
+),
+code_generation_keys AS (
+  SELECT * FROM unnest(ARRAY[
+    'CodyVSCodeExtension:recipe:rewrite-to-functional:executed',
+    'CodyVSCodeExtension:recipe:improve-variable-names:executed',
+    'CodyVSCodeExtension:recipe:replace:executed',
+    'CodyVSCodeExtension:recipe:generate-docstring:executed',
+    'CodyVSCodeExtension:recipe:generate-unit-test:executed',
+    'CodyVSCodeExtension:recipe:rewrite-functional:executed',
+    'CodyVSCodeExtension:recipe:code-refactor:executed',
+    'CodyVSCodeExtension:recipe:fixup:executed',
+	'CodyVSCodeExtension:recipe:translate-to-language:executed'
+  ]) AS key
+),
+explanation_keys AS (
+  SELECT * FROM unnest(ARRAY[
+    'CodyVSCodeExtension:recipe:explain-code-high-level:executed',
+    'CodyVSCodeExtension:recipe:explain-code-detailed:executed',
+    'CodyVSCodeExtension:recipe:find-code-smells:executed',
+    'CodyVSCodeExtension:recipe:git-history:executed',
+    'CodyVSCodeExtension:recipe:rate-code:executed'
+  ]) AS key
+)
+SELECT
+  key,
+  current_month,
+  current_week,
+  current_day,
+  SUM(case when month = current_month then 1 else 0 end) AS total_month,
+  SUM(case when week = current_week then 1 else 0 end) AS total_week,
+  SUM(case when day = current_day then 1 else 0 end) AS total_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
+  COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
+  SUM(case when month = current_month and key in
+  	(SELECT * FROM code_generation_keys)
+  	then 1 else 0 end) as code_generation_month,
+  SUM(case when week = current_week and key in
+  	(SELECT * FROM explanation_keys)
+	then 1 else 0 end) as code_generation_week,
+  SUM(case when day = current_day and key in (SELECT * FROM code_generation_keys)
+	then 1 else 0 end) as code_generation_day,
+  SUM(case when month = current_month and key in (SELECT * FROM explanation_keys)
+	then 1 else 0 end) as explanation_month,
+  SUM(case when week = current_week and key in (SELECT * FROM explanation_keys)
+	then 1 else 0 end) as explanation_week,
+  SUM(case when day = current_day and key in (SELECT * FROM explanation_keys)
+	then 1 else 0 end) as explanation_day,
+	0 as invalid_month,
+	0 as invalid_week,
+	0 as invalid_day
+FROM events
+GROUP BY key, current_month, current_week, current_day
+`
+
 var searchLatencyEventNames = []string{
 	"'search.latencies.literal'",
 	"'search.latencies.regexp'",
@@ -1434,7 +1661,7 @@ WITH events AS (
     ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
   WHERE
-    timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
+    timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + `
     AND name IN (` + strings.Join(searchLatencyEventNames, ", ") + `)
 )
 SELECT
@@ -1469,7 +1696,7 @@ WITH events AS (
   FROM event_logs
   CROSS JOIN LATERAL jsonb_each(argument->'code_search'->'query_data'->'query') json
   WHERE
-    timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
+    timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + `
     AND name = 'SearchResultsQueried'
 )
 SELECT
@@ -1533,16 +1760,19 @@ END
 
 // makeDateTruncExpression returns an expression that converts the given
 // SQL expression into the start of the containing date container specified
-// by the unit parameter (e.g. day, week, month, or rolling month [prior 30 days]).
+// by the unit parameter (e.g. day, week, month, or rolling month [prior 1 month]).
+// Note: If unit is 'week', the function will truncate to the preceding Sunday.
+// This is because some locales start the week on Sunday, unlike the Postgres default
+// (and many parts of the world) which start the week on Monday.
 func makeDateTruncExpression(unit, expr string) string {
 	if unit == "week" {
-		return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s) + '1 day'::interval) - '1 day'::interval`, unit, expr)
+		return fmt.Sprintf(`TIMEZONE('UTC', (DATE_TRUNC('week', TIMEZONE('UTC', %s) + '1 day'::interval) - '1 day'::interval))`, expr)
 	}
 	if unit == "rolling_month" {
-		return fmt.Sprintf(`DATE_TRUNC('day', TIMEZONE('UTC', %s)) - '30 day'::interval`, expr)
+		return fmt.Sprintf(`TIMEZONE('UTC', (DATE_TRUNC('day', TIMEZONE('UTC', %s)) - '1 month'::interval))`, expr)
 	}
 
-	return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s))`, unit, expr)
+	return fmt.Sprintf(`TIMEZONE('UTC', DATE_TRUNC('%s', TIMEZONE('UTC', %s)))`, unit, expr)
 }
 
 // RequestsByLanguage returns a map of language names to the number of requests of precise support for that language.

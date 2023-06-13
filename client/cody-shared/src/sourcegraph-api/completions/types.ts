@@ -2,9 +2,8 @@ export interface DoneEvent {
     type: 'done'
 }
 
-export interface CompletionEvent {
+export interface CompletionEvent extends CompletionResponse {
     type: 'completion'
-    completion: string
 }
 
 export interface ErrorEvent {
@@ -16,19 +15,36 @@ export type Event = DoneEvent | CompletionEvent | ErrorEvent
 
 export interface Message {
     speaker: 'human' | 'assistant'
-    text: string
+    text?: string
+}
+
+export interface CompletionResponse {
+    completion: string
+    stopReason: string
 }
 
 export interface CompletionParameters {
+    fast?: boolean
     messages: Message[]
-    temperature: number
     maxTokensToSample: number
-    topK: number
-    topP: number
+    temperature?: number
+    stopSequences?: string[]
+    topK?: number
+    topP?: number
+    model?: string
 }
 
 export interface CompletionCallbacks {
     onChange: (text: string) => void
+    /**
+     * Only called when a stream successfully completes. If an error is
+     * encountered, this is never called.
+     */
     onComplete: () => void
-    onError: (message: string) => void
+    /**
+     * Only called when a stream fails or encounteres an error. This should be
+     * assumed to be a "complete" event, and no other callbacks will be called
+     * afterwards.
+     */
+    onError: (message: string, statusCode?: number) => void
 }

@@ -26,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -200,24 +200,25 @@ func (e *externalServiceStore) Done(err error) error {
 // ExternalServiceKinds contains a map of all supported kinds of
 // external services.
 var ExternalServiceKinds = map[string]ExternalServiceKind{
-	extsvc.KindAWSCodeCommit:   {CodeHost: true, JSONSchema: schema.AWSCodeCommitSchemaJSON},
-	extsvc.KindAzureDevOps:     {CodeHost: true, JSONSchema: schema.AzureDevOpsSchemaJSON},
-	extsvc.KindBitbucketCloud:  {CodeHost: true, JSONSchema: schema.BitbucketCloudSchemaJSON},
-	extsvc.KindBitbucketServer: {CodeHost: true, JSONSchema: schema.BitbucketServerSchemaJSON},
-	extsvc.KindGerrit:          {CodeHost: true, JSONSchema: schema.GerritSchemaJSON},
-	extsvc.KindGitHub:          {CodeHost: true, JSONSchema: schema.GitHubSchemaJSON},
-	extsvc.KindGitLab:          {CodeHost: true, JSONSchema: schema.GitLabSchemaJSON},
-	extsvc.KindGitolite:        {CodeHost: true, JSONSchema: schema.GitoliteSchemaJSON},
-	extsvc.KindGoPackages:      {CodeHost: true, JSONSchema: schema.GoModulesSchemaJSON},
-	extsvc.KindJVMPackages:     {CodeHost: true, JSONSchema: schema.JVMPackagesSchemaJSON},
-	extsvc.KindNpmPackages:     {CodeHost: true, JSONSchema: schema.NpmPackagesSchemaJSON},
-	extsvc.KindOther:           {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
-	extsvc.KindPagure:          {CodeHost: true, JSONSchema: schema.PagureSchemaJSON},
-	extsvc.KindPerforce:        {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
-	extsvc.KindPhabricator:     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
-	extsvc.KindPythonPackages:  {CodeHost: true, JSONSchema: schema.PythonPackagesSchemaJSON},
-	extsvc.KindRustPackages:    {CodeHost: true, JSONSchema: schema.RustPackagesSchemaJSON},
-	extsvc.KindRubyPackages:    {CodeHost: true, JSONSchema: schema.RubyPackagesSchemaJSON},
+	extsvc.KindAWSCodeCommit:        {CodeHost: true, JSONSchema: schema.AWSCodeCommitSchemaJSON},
+	extsvc.KindAzureDevOps:          {CodeHost: true, JSONSchema: schema.AzureDevOpsSchemaJSON},
+	extsvc.KindBitbucketCloud:       {CodeHost: true, JSONSchema: schema.BitbucketCloudSchemaJSON},
+	extsvc.KindBitbucketServer:      {CodeHost: true, JSONSchema: schema.BitbucketServerSchemaJSON},
+	extsvc.KindGerrit:               {CodeHost: true, JSONSchema: schema.GerritSchemaJSON},
+	extsvc.KindGitHub:               {CodeHost: true, JSONSchema: schema.GitHubSchemaJSON},
+	extsvc.KindGitLab:               {CodeHost: true, JSONSchema: schema.GitLabSchemaJSON},
+	extsvc.KindGitolite:             {CodeHost: true, JSONSchema: schema.GitoliteSchemaJSON},
+	extsvc.KindGoPackages:           {CodeHost: true, JSONSchema: schema.GoModulesSchemaJSON},
+	extsvc.KindJVMPackages:          {CodeHost: true, JSONSchema: schema.JVMPackagesSchemaJSON},
+	extsvc.KindNpmPackages:          {CodeHost: true, JSONSchema: schema.NpmPackagesSchemaJSON},
+	extsvc.KindOther:                {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
+	extsvc.VariantLocalGit.AsKind(): {CodeHost: true, JSONSchema: schema.LocalGitExternalServiceSchemaJSON},
+	extsvc.KindPagure:               {CodeHost: true, JSONSchema: schema.PagureSchemaJSON},
+	extsvc.KindPerforce:             {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
+	extsvc.KindPhabricator:          {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
+	extsvc.KindPythonPackages:       {CodeHost: true, JSONSchema: schema.PythonPackagesSchemaJSON},
+	extsvc.KindRustPackages:         {CodeHost: true, JSONSchema: schema.RustPackagesSchemaJSON},
+	extsvc.KindRubyPackages:         {CodeHost: true, JSONSchema: schema.RubyPackagesSchemaJSON},
 }
 
 // ExternalServiceKind describes a kind of external service.
@@ -445,8 +446,8 @@ func validateGitHubConnection(githubValidators []func(*types.GitHubConnection) e
 		)
 	}
 
-	if c.Token == "" && c.GithubAppInstallationID == "" {
-		err = errors.Append(err, errors.New("at least one of token or githubAppInstallationID must be set"))
+	if c.Token == "" && c.GitHubAppDetails == nil {
+		err = errors.Append(err, errors.New("either token or GitHub App Details must be set"))
 	}
 	if c.Repos == nil && c.RepositoryQuery == nil && c.Orgs == nil {
 		err = errors.Append(err, errors.New("at least one of repositoryQuery, repos or orgs must be set"))
@@ -1331,9 +1332,9 @@ ORDER BY es.id, essj.finished_at DESC
 	return scanSyncErrors(e.Query(ctx, q))
 }
 
-func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.list") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) (_ []*types.ExternalService, err error) {
+	tr, ctx := trace.New(ctx, "externalServiceStore", "List")
+	defer tr.FinishWithErr(&err)
 
 	if opt.OrderByDirection != "ASC" {
 		opt.OrderByDirection = "DESC"
@@ -1426,9 +1427,9 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 	return results, nil
 }
 
-func (e *externalServiceStore) ListRepos(ctx context.Context, opt ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error) {
-	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.listRepos") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+func (e *externalServiceStore) ListRepos(ctx context.Context, opt ExternalServiceReposListOptions) (_ []*types.ExternalServiceRepo, err error) {
+	tr, ctx := trace.New(ctx, "externalServiceStore", "ListRepos")
+	defer tr.FinishWithErr(&err)
 
 	predicate := sqlf.Sprintf("TRUE")
 

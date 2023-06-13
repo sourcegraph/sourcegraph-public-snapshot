@@ -112,6 +112,7 @@ const mirrorRepositoryInfoFieldsFragment = gql`
     fragment MirrorRepositoryInfoFields on MirrorRepositoryInfo {
         cloned
         cloneInProgress
+        cloneProgress @include(if: $displayCloneProgress)
         updatedAt
         nextSyncAt
         isCorrupted
@@ -166,6 +167,7 @@ export const REPOSITORIES_QUERY = gql`
         $orderBy: RepositoryOrderBy
         $descending: Boolean
         $externalService: ID
+        $displayCloneProgress: Boolean = false
     ) {
         repositories(
             first: $first
@@ -628,7 +630,14 @@ export const SITE_UPGRADE_READINESS = gql`
     query SiteUpgradeReadiness {
         site {
             upgradeReadiness {
-                schemaDrift
+                schemaDrift {
+                    name
+                    problem
+                    solution
+                    diff
+                    statements
+                    urlHint
+                }
                 requiredOutOfBandMigrations {
                     id
                     description
@@ -710,6 +719,8 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
                     overrides {
                         ...OverrideFields
                     }
+                    createdAt
+                    updatedAt
                 }
                 ... on FeatureFlagRollout {
                     name
@@ -717,6 +728,8 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
                     overrides {
                         ...OverrideFields
                     }
+                    createdAt
+                    updatedAt
                 }
             }
 
@@ -746,6 +759,12 @@ export const STATUS_AND_REPO_STATS = gql`
         }
         statusMessages {
             ... on GitUpdatesDisabled {
+                __typename
+
+                message
+            }
+
+            ... on NoRepositoriesDetected {
                 __typename
 
                 message
@@ -992,7 +1011,13 @@ const siteAdminPackageFieldsFragment = gql`
 `
 
 export const PACKAGES_QUERY = gql`
-    query Packages($kind: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
+    query Packages(
+        $kind: PackageRepoReferenceKind
+        $name: String
+        $first: Int!
+        $after: String
+        $displayCloneProgress: Boolean = false
+    ) {
         packageRepoReferences(kind: $kind, name: $name, first: $first, after: $after) {
             nodes {
                 ...SiteAdminPackageFields

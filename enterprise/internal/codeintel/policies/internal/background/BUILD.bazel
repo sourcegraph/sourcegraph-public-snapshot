@@ -2,17 +2,13 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "background",
-    srcs = [
-        "metrics.go",
-        "repomatcher.go",
-    ],
+    srcs = ["init.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/background",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
+        "//enterprise/internal/codeintel/policies/internal/background/repository_matcher",
         "//enterprise/internal/codeintel/policies/internal/store",
-        "//internal/conf",
         "//internal/goroutine",
         "//internal/observation",
-        "@com_github_prometheus_client_golang//prometheus",
     ],
 )

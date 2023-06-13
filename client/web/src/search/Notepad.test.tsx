@@ -5,6 +5,7 @@ import { spy } from 'sinon'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { NotebookFields } from '../graphql-operations'
@@ -17,9 +18,11 @@ import { NotepadContainer, NotepadProps } from './Notepad'
 describe('Notepad', () => {
     const renderNotepad = (props?: Partial<NotepadProps>, enabled = true): RenderWithBrandedContextResult =>
         renderWithBrandedContext(
-            <MockTemporarySettings settings={{ 'search.notepad.enabled': enabled }}>
-                <NotepadContainer userId="testID" {...props} />
-            </MockTemporarySettings>
+            <MockedTestProvider mocks={[]}>
+                <MockTemporarySettings settings={{ 'search.notepad.enabled': enabled }}>
+                    <NotepadContainer userId="testID" {...props} />
+                </MockTemporarySettings>
+            </MockedTestProvider>
         )
 
     function open() {

@@ -13,4 +13,5 @@ export SERVER_PKG=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/enterprise/cm
   github.com/sourcegraph/sourcegraph/enterprise/cmd/migrator \
   github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater \
   github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols \
-  github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
+  github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker \
+  github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings

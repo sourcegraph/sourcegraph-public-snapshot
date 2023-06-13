@@ -39,6 +39,10 @@ func (r *statusMessageResolver) ToGitUpdatesDisabled() (*statusMessageResolver, 
 	return r, r.message.GitUpdatesDisabled != nil
 }
 
+func (r *statusMessageResolver) ToNoRepositoriesDetected() (*statusMessageResolver, bool) {
+	return r, r.message.NoRepositoriesDetected != nil
+}
+
 func (r *statusMessageResolver) ToCloningProgress() (*statusMessageResolver, bool) {
 	return r, r.message.Cloning != nil
 }
@@ -61,6 +65,9 @@ func (r *statusMessageResolver) ToIndexingProgress() (*indexingProgressMessageRe
 func (r *statusMessageResolver) Message() (string, error) {
 	if r.message.GitUpdatesDisabled != nil {
 		return r.message.GitUpdatesDisabled.Message, nil
+	}
+	if r.message.NoRepositoriesDetected != nil {
+		return r.message.NoRepositoriesDetected.Message, nil
 	}
 	if r.message.Cloning != nil {
 		return r.message.Cloning.Message, nil

@@ -17,13 +17,13 @@ export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
         to: '/settings',
         label: 'Settings',
         icon: CogOutlineIcon,
-        condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
+        condition: ({ user: { viewerCanAdminister }, isSourcegraphApp }) => viewerCanAdminister && !isSourcegraphApp,
     },
     {
         to: '/searches',
         label: 'Saved searches',
         icon: FeatureSearchOutlineIcon,
-        condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
+        condition: ({ user: { viewerCanAdminister }, isSourcegraphApp }) => viewerCanAdminister && !isSourcegraphApp,
     },
     ...namespaceAreaHeaderNavItems,
 ]

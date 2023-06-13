@@ -1,6 +1,10 @@
+import type * as http from 'http'
+import * as zlib from 'zlib'
+
 import { Options, responseInterceptor } from 'http-proxy-middleware'
 
 import { ENVIRONMENT_CONFIG, HTTPS_WEB_SERVER_URL } from './environment-config'
+import { STREAMING_ENDPOINTS } from './should-compress-response'
 
 // One of the API routes: "/-/sign-in".
 const PROXY_ROUTES = ['/.api', '/search/stream', '/-', '/.auth']
@@ -34,7 +38,7 @@ export function getAPIProxySettings(options: GetAPIProxySettingsOptions): ProxyS
         // Prevent automatic call of res.end() in `onProxyRes`. It is handled by `responseInterceptor`.
         selfHandleResponse: true,
         // eslint-disable-next-line @typescript-eslint/no-misused-promises, @typescript-eslint/require-await
-        onProxyRes: responseInterceptor(async (responseBuffer, proxyRes) => {
+        onProxyRes: conditionalResponseInterceptor(STREAMING_ENDPOINTS, async (responseBuffer, proxyRes) => {
             // Propagate cookies to enable authentication on the remote server.
             if (proxyRes.headers['set-cookie']) {
                 // Remove `Secure` and `SameSite` from `set-cookie` headers.
@@ -107,4 +111,79 @@ function getRemoteJsContextScript(remoteIndexHTML: string): string {
     const remoteJsContextEnd = remoteIndexHTML.indexOf('</script>', remoteJsContextStart)
 
     return remoteIndexHTML.slice(remoteJsContextStart, remoteJsContextEnd) + jsContextChanges
+}
+
+type Interceptor = (
+    buffer: Buffer,
+    proxyRes: http.IncomingMessage,
+    req: http.IncomingMessage,
+    res: http.ServerResponse
+) => Promise<Buffer | string>
+
+function conditionalResponseInterceptor(
+    ignoredRoutes: string[],
+    interceptor: Interceptor
+): (proxyRes: http.IncomingMessage, req: http.IncomingMessage, res: http.ServerResponse) => Promise<void> {
+    const unconditionalResponseInterceptor = responseInterceptor(interceptor)
+
+    return async function proxyResResponseInterceptor(
+        proxyRes: http.IncomingMessage,
+        req: http.IncomingMessage,
+        res: http.ServerResponse
+    ): Promise<void> {
+        let shouldStream = false
+        for (const route of ignoredRoutes) {
+            if (req.url?.startsWith(route)) {
+                shouldStream = true
+            }
+        }
+
+        if (shouldStream) {
+            return new Promise(resolve => {
+                res.setHeader('content-type', 'text/event-stream')
+                const _proxyRes = decompress(proxyRes, proxyRes.headers['content-encoding'])
+
+                _proxyRes.on('data', (chunk: any) => res.write(chunk))
+                _proxyRes.on('end', () => {
+                    res.end()
+                    resolve()
+                })
+                _proxyRes.on('error', () => {
+                    res.end()
+                    resolve()
+                })
+            })
+        }
+
+        return unconditionalResponseInterceptor(proxyRes, req, res)
+    }
+}
+
+function decompress<TReq extends http.IncomingMessage = http.IncomingMessage>(
+    proxyRes: TReq,
+    contentEncoding?: string
+): TReq | zlib.Gunzip | zlib.Inflate | zlib.BrotliDecompress {
+    let _proxyRes: TReq | zlib.Gunzip | zlib.Inflate | zlib.BrotliDecompress = proxyRes
+    let decompress
+
+    switch (contentEncoding) {
+        case 'gzip':
+            decompress = zlib.createGunzip()
+            break
+        case 'br':
+            decompress = zlib.createBrotliDecompress()
+            break
+        case 'deflate':
+            decompress = zlib.createInflate()
+            break
+        default:
+            break
+    }
+
+    if (decompress) {
+        _proxyRes.pipe(decompress)
+        _proxyRes = decompress
+    }
+
+    return _proxyRes
 }

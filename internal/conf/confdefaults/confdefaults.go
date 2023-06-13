@@ -90,6 +90,26 @@ var App = conftypes.RawUnified{
 	"codeIntelAutoIndexing.enabled": true,
 	"codeIntelAutoIndexing.allowGlobalPolicies": true,
 	"executors.frontendURL": "http://host.docker.internal:3080",
+	"experimentalFeatures": {		
+		"structuralSearch": "disabled"
+	},
+	"completions": {
+		"enabled": true,
+		"provider": "sourcegraph"
+	},
+	"embeddings": {
+		"enabled": true,
+		"provider": "sourcegraph",
+		"incremental": true,
+		"excludedFilePathPatterns": [
+			"*.svg",
+			"*.png",
+			"*.jpeg",
+			"*.jpg",
+			"**/__mocks__/**",
+			"**/test/**"
+   	 	]
+	}
 }`,
 }
 

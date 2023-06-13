@@ -31,7 +31,7 @@ import { ViewResolver } from '../shared/views'
 
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
-import { getFileContainers, parseURL, getSelectorFor } from './util'
+import { getFileContainers, parseURL, getSelectorFor, isNewGitHubUI, getEmbeddedData } from './util'
 
 import styles from './codeHost.module.scss'
 
@@ -159,16 +159,16 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountElement.style.alignItems = 'center'
     mountElement.className = className
 
-    // new GitHub UI
+    // new GitHub code view: https://docs.github.com/en/repositories/working-with-files/managing-files/navigating-files-with-the-new-code-view
     const container =
         codeViewElement.querySelector('#repos-sticky-header')?.childNodes[0]?.childNodes[0]?.childNodes[1]
-            ?.childNodes[1] // we have to use this level of nesting when selecting a target container because #repos-sticky-header children don't have specific classes or ids
+            ?.childNodes[2] // we have to use this level of nesting when selecting a target container because #repos-sticky-header children don't have specific classes or ids
     if (container instanceof HTMLElement) {
         container.prepend(mountElement)
         return mountElement
     }
 
-    // old GitHub UI (e.g., GHE)
+    // old GitHub code view (aka new code view feature disabled: https://docs.github.com/en/repositories/working-with-files/managing-files/navigating-files-with-the-new-code-view)
     const rawURLLink = codeViewElement.querySelector('#raw-url')
     const buttonGroup = rawURLLink?.closest('.BtnGroup')
     if (buttonGroup?.parentNode) {
@@ -181,7 +181,6 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
 
 /**
  * Matches the modern single-file code view, or snippets embedded in comments.
- *
  */
 const fileLineContainerResolver: ViewResolver<CodeView> = {
     selector: getSelectorFor('blobContainer'),
@@ -299,7 +298,11 @@ export const checkIsGitHub = (): boolean => checkIsGitHubDotCom() || checkIsGitH
 const OPEN_ON_SOURCEGRAPH_ID = 'open-on-sourcegraph'
 
 export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLElement): HTMLElement | null => {
-    const pageheadActions = querySelectorOrSelf(container, '.pagehead-actions')
+    const isGlobalNavigationUpdateFeaturePreviewEnabled = !!querySelectorOrSelf(container, 'header.AppHeader')
+    const pageheadActions = querySelectorOrSelf(
+        container,
+        isGlobalNavigationUpdateFeaturePreviewEnabled ? '.AppHeader-globalBar-end' : '.pagehead-actions'
+    )
     // If ran on page that isn't under a repository namespace.
     if (!pageheadActions || pageheadActions.children.length === 0) {
         return null
@@ -310,7 +313,7 @@ export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLE
         return mount
     }
     // Create new
-    mount = document.createElement('li')
+    mount = document.createElement(isGlobalNavigationUpdateFeaturePreviewEnabled ? 'div' : 'li')
     mount.id = OPEN_ON_SOURCEGRAPH_ID
     pageheadActions.prepend(mount)
     return mount
@@ -380,7 +383,7 @@ const searchEnhancement: GithubCodeHost['searchEnhancement'] = {
 export const isPrivateRepository = async (
     repoName: string,
     fetchCache = background.fetchCache,
-    fallbackSelector = '#repository-container-header h2 span.Label'
+    fallbackSelector = '#repository-container-header span.Label'
 ): Promise<boolean> => {
     if (window.location.hostname !== 'github.com') {
         return Promise.resolve(true)
@@ -694,7 +697,7 @@ export const githubCodeHost: GithubCodeHost = {
         return {
             rawRepoName,
             revision: pageType === 'blob' || pageType === 'tree' ? resolveFileInfo().blob.revision : undefined,
-            privateRepository: await isPrivateRepository(repoName),
+            privateRepository: isNewGitHubUI() ? getEmbeddedData().repo.private : await isPrivateRepository(repoName),
         }
     },
     isLightTheme: defer(() => {
@@ -781,7 +784,7 @@ export const githubCodeHost: GithubCodeHost = {
         return `https://${target.rawRepoName}/blob/${revision}/${target.filePath}${fragment}`
     },
     observeLineSelection: fromEvent(window, 'hashchange').pipe(
-        startWith(undefined), // capture intital value
+        startWith(undefined), // capture initial value
         map(() => parseHash(window.location.hash))
     ),
     codeViewsRequireTokenization: true,

@@ -51,6 +51,11 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/analytics/extensions',
         },
         {
+            label: 'Own',
+            to: '/site-admin/analytics/own',
+            condition: context => context.ownAnalyticsEnabled,
+        },
+        {
             label: 'Feedback survey',
             to: '/site-admin/surveys',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
@@ -87,7 +92,7 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
     },
     items: [
         {
-            label: 'Manage code hosts',
+            label: 'Code host connections',
             to: '/site-admin/external-services',
         },
         {
@@ -117,12 +122,7 @@ export const usersGroup: SiteAdminSideBarGroup = {
         {
             label: 'Account requests',
             to: '/site-admin/account-requests',
-            condition: context =>
-                checkRequestAccessAllowed(
-                    context.isSourcegraphDotCom,
-                    window.context.allowSignup,
-                    window.context.experimentalFeatures
-                ),
+            condition: () => checkRequestAccessAllowed(window.context),
         },
         {
             label: 'Organizations',
@@ -135,14 +135,26 @@ export const usersGroup: SiteAdminSideBarGroup = {
     ],
 }
 
+export const maintenanceGroupHeaderLabel = 'Maintenance'
+
+export const maintenanceGroupMonitoringItemLabel = 'Monitoring'
+
+export const maintenanceGroupInstrumentationItemLabel = 'Instrumentation'
+
+export const maintenanceGroupUpdatesItemLabel = 'Updates'
+
+export const maintenanceGroupMigrationsItemLabel = 'Migrations'
+
+export const maintenanceGroupTracingItemLabel = 'Tracing'
+
 export const maintenanceGroup: SiteAdminSideBarGroup = {
     header: {
-        label: 'Maintenance',
+        label: maintenanceGroupHeaderLabel,
         icon: MonitorStarIcon,
     },
     items: [
         {
-            label: 'Updates',
+            label: maintenanceGroupUpdatesItemLabel,
             to: '/site-admin/updates',
         },
         {
@@ -161,24 +173,24 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
-            label: 'Migrations',
+            label: maintenanceGroupMigrationsItemLabel,
             to: '/site-admin/migrations',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
-            label: 'Instrumentation',
+            label: maintenanceGroupInstrumentationItemLabel,
             to: '/-/debug/',
             source: 'server',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
-            label: 'Monitoring',
+            label: maintenanceGroupMonitoringItemLabel,
             to: '/-/debug/grafana',
             source: 'server',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
-            label: 'Tracing',
+            label: maintenanceGroupTracingItemLabel,
             to: '/-/debug/jaeger',
             source: 'server',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
@@ -186,19 +198,16 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Outbound requests',
             to: '/site-admin/outbound-requests',
-            source: 'server',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Slow requests',
             to: '/site-admin/slow-requests',
-            source: 'server',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Background jobs',
             to: '/site-admin/background-jobs',
-            source: 'server',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
@@ -209,6 +218,7 @@ export const apiConsoleGroup: SiteAdminSideBarGroup = {
         label: 'API Console',
         icon: ConsoleIcon,
     },
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
         {
             label: 'API Console',

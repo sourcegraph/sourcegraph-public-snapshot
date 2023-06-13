@@ -74,7 +74,7 @@ func (r *executorSecretAccessLogResolver) User(ctx context.Context) (*UserResolv
 		if r.preloadedUser == nil {
 			return nil, nil
 		}
-		return NewUserResolver(r.db, r.preloadedUser), nil
+		return NewUserResolver(ctx, r.db, r.preloadedUser), nil
 	}
 
 	if r.log.UserID == nil {

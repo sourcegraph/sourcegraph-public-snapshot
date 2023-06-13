@@ -3,13 +3,26 @@
 # This script builds the worker docker image.
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
-set -eu
+set -ex
 
 OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
 cleanup() {
   rm -rf "$OUTPUT"
 }
 trap cleanup EXIT
+
+if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
+  ./dev/ci/bazel.sh build //cmd/worker
+  out=$(./dev/ci/bazel.sh cquery //cmd/worker --output=files)
+  cp "$out" "$OUTPUT"
+
+  docker build -f cmd/worker/Dockerfile -t "$IMAGE" "$OUTPUT" \
+    --progress=plain \
+    --build-arg COMMIT_SHA \
+    --build-arg DATE \
+    --build-arg VERSION
+  exit $?
+fi
 
 # Environment for building linux binaries
 export GO111MODULE=on

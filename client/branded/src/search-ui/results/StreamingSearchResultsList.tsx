@@ -10,7 +10,13 @@ import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/compon
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { BuildSearchQueryURLParameters, QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
+import {
+    BuildSearchQueryURLParameters,
+    QueryState,
+    SearchContextProps,
+    SearchMode,
+    SubmitSearchParameters,
+} from '@sourcegraph/shared/src/search'
 import {
     AggregateStreamingSearchResults,
     getMatchUrl,
@@ -19,7 +25,6 @@ import {
 } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { CommitSearchResult } from '../components/CommitSearchResult'
 import { FileContentSearchResult } from '../components/FileContentSearchResult'
@@ -48,8 +53,6 @@ export interface StreamingSearchResultsListProps
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     /** Clicking on a match opens the link in a new tab. */
     openMatchesInNewTab?: boolean
-    /** Available to web app through JS Context */
-    assetsRoot?: string
 
     /**
      * Latest run query. Resets scroll visibility state when changed.
@@ -78,6 +81,12 @@ export interface StreamingSearchResultsListProps
     setQueryState?: (queryState: QueryState) => void
     buildSearchURLQueryFromQueryState?: (queryParameters: BuildSearchQueryURLParameters) => string
 
+    searchMode?: SearchMode
+    setSearchMode?: (mode: SearchMode) => void
+    submitSearch?: (parameters: SubmitSearchParameters) => void
+    searchQueryFromURL?: string
+    caseSensitive?: boolean
+
     selectedSearchContextSpec?: string
 
     /**
@@ -85,6 +94,8 @@ export interface StreamingSearchResultsListProps
      * It's passed the index of the result in the list and the result type.
      */
     logSearchResultClicked?: (index: number, type: string) => void
+
+    enableRepositoryMetadata?: boolean
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -98,7 +109,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     isSourcegraphDotCom,
     enableOwnershipSearch,
     searchContextsEnabled,
-    assetsRoot,
     platformContext,
     openMatchesInNewTab,
     executedQuery,
@@ -110,13 +120,18 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     queryState,
     setQueryState,
     buildSearchURLQueryFromQueryState,
+    searchMode,
+    setSearchMode,
+    submitSearch,
+    caseSensitive,
+    searchQueryFromURL,
     logSearchResultClicked,
+    enableRepositoryMetadata,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
     const location = useLocation()
     const [rootRef, setRootRef] = useState<HTMLElement | null>(null)
-    const [rickrolld] = useLocalStorage('rickrolld', false)
 
     const renderResult = useCallback(
         (result: SearchMatch, index: number): JSX.Element => {
@@ -199,6 +214,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 result={result}
                                 onSelect={() => logSearchResultClicked?.(index, 'repo')}
                                 containerClassName={resultClassName}
+                                buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                                queryState={queryState}
+                                enableRepositoryMetadata={enableRepositoryMetadata}
                                 as="li"
                             />
                         )
@@ -243,6 +261,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             resultClassName,
             platformContext,
             queryState,
+            enableRepositoryMetadata,
             buildSearchURLQueryFromQueryState,
             logSearchResultClicked,
         ]
@@ -261,7 +280,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 className={classNames('mt-2 mb-0', styles.list)}
                 itemsToShow={itemsToShow}
                 onShowMoreItems={handleBottomHit}
-                items={results?.results ? addRickRollItem(results.results, rickrolld) : []}
+                items={results?.results || []}
                 itemProps={undefined}
                 itemKey={itemKey}
                 renderItem={renderResult}
@@ -276,7 +295,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             </div>
 
             {itemsToShow >= resultsNumber && (
-                <StreamingSearchResultFooter results={results} telemetryService={telemetryService}>
+                <StreamingSearchResultFooter results={results}>
                     <>
                         {results?.state === 'complete' && resultsNumber === 0 && (
                             <NoResultsPage
@@ -285,9 +304,13 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 enableOwnershipSearch={enableOwnershipSearch}
                                 telemetryService={telemetryService}
                                 showSearchContext={searchContextsEnabled}
-                                assetsRoot={assetsRoot}
                                 showQueryExamples={showQueryExamplesOnNoResultsPage}
                                 setQueryState={setQueryState}
+                                searchMode={searchMode}
+                                setSearchMode={setSearchMode}
+                                submitSearch={submitSearch}
+                                caseSensitive={caseSensitive}
+                                searchQueryFromURL={searchQueryFromURL}
                             />
                         )}
                     </>
@@ -295,27 +318,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             )}
         </>
     )
-}
-
-// To be removed on April 2nd
-function addRickRollItem(results: SearchMatch[], rickrolld: boolean): SearchMatch[] {
-    const isS2OrLocalhost =
-        window.location.host === 'sourcegraph.sourcegraph.com' || window.location.host === 'sourcegraph.test:3443'
-    const isAprilFirst = new Date().getMonth() === 3 && new Date().getDate() === 1
-    if (!isS2OrLocalhost || !isAprilFirst || rickrolld) {
-        return results
-    }
-
-    return [
-        {
-            type: 'content',
-            path: 'pathclient/weird-error-hmmm.tsx',
-            repository: 'sourcegraph/sourcegraph',
-            repoStars: 55000,
-            chunkMatches: [],
-        },
-        ...results,
-    ]
 }
 
 function itemKey(item: SearchMatch): string {

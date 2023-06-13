@@ -20,6 +20,8 @@ type operations struct {
 	getRanges              *observation.Operation
 	getStencil             *observation.Operation
 	getClosestDumpsForBlob *observation.Operation
+	snapshotForDocument    *observation.Operation
+	visibleUploadsForPath  *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -51,6 +53,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getRanges:              op("getRanges"),
 		getStencil:             op("getStencil"),
 		getClosestDumpsForBlob: op("GetClosestDumpsForBlob"),
+		snapshotForDocument:    op("SnapshotForDocument"),
+		visibleUploadsForPath:  op("VisibleUploadsForPath"),
 	}
 }
 

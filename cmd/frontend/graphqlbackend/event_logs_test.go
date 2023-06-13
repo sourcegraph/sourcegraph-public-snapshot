@@ -58,7 +58,7 @@ func TestUser_EventLogs(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := NewUserResolver(db, &types.User{ID: 1}).EventLogs(test.ctx, nil)
+				_, err := NewUserResolver(test.ctx, db, &types.User{ID: 1}).EventLogs(test.ctx, nil)
 				got := fmt.Sprintf("%v", err)
 				want := "must be authenticated as user with id 1"
 				assert.Equal(t, want, got)

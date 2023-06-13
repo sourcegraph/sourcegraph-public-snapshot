@@ -1,5 +1,6 @@
-import * as openai from 'openai'
 import * as vscode from 'vscode'
+
+import { Completion } from '.'
 
 // FIXME: When OpenAI's logit_bias uses a more precise type than 'object',
 // specify JSON-able objects as { [prop: string]: JSONSerialiable | undefined }
@@ -7,24 +8,18 @@ export type JSONSerializable = null | string | number | boolean | object | JSONS
 
 interface Meta {
     elapsedMillis: number
-    prompt: string
     suffix: string
     llmOptions: JSONSerializable
 }
 
 export interface CompletionGroup {
     lang: string
-    prefixText: string
-    completions: openai.CreateChatCompletionResponse
+    completions: Completion[]
     meta?: Meta
 }
 
 export class CompletionsDocumentProvider implements vscode.TextDocumentContentProvider {
     private completionsByUri: { [uri: string]: CompletionGroup[] } = {}
-
-    private isDebug(): boolean {
-        return vscode.workspace.getConfiguration().get<boolean>('cody.debug') === true
-    }
 
     private fireDocumentChanged(uri: vscode.Uri): void {
         this.onDidChangeEmitter.fire(uri)
@@ -35,20 +30,13 @@ export class CompletionsDocumentProvider implements vscode.TextDocumentContentPr
         this.fireDocumentChanged(uri)
     }
 
-    public addCompletions(
-        uri: vscode.Uri,
-        lang: string,
-        prefixText: string,
-        completions: openai.CreateChatCompletionResponse,
-        debug?: Meta
-    ): void {
+    public addCompletions(uri: vscode.Uri, lang: string, completions: Completion[], debug?: Meta): void {
         if (!this.completionsByUri[uri.toString()]) {
             this.completionsByUri[uri.toString()] = []
         }
 
         this.completionsByUri[uri.toString()].push({
             lang,
-            prefixText,
             completions,
             meta: debug,
         })
@@ -65,25 +53,13 @@ export class CompletionsDocumentProvider implements vscode.TextDocumentContentPr
         }
 
         return completionGroups
-            .map(({ completions, lang, prefixText, meta }) =>
-                completions.choices
-                    .map(({ message, finish_reason }, index) => {
-                        if (!message?.content) {
-                            return undefined
-                        }
-
-                        let completionText = `\`\`\`${lang}\n${prefixText}${message.content}\n\`\`\``
-                        if (this.isDebug() && meta) {
-                            completionText =
-                                `\`\`\`\n${meta.prompt}\n\`\`\`` +
-                                '\n' +
-                                completionText +
-                                '\n' +
-                                `\`\`\`\n${meta.suffix}\n\`\`\``
-                        }
-                        const headerComponents = [`${index + 1} / ${completions.choices.length}`]
-                        if (finish_reason) {
-                            headerComponents.push(`finish_reason:${finish_reason}`)
+            .map(({ completions, lang }) =>
+                completions
+                    .map(({ content, stopReason: finishReason }, index) => {
+                        const completionText = `\`\`\`${lang}\n${content}\n\`\`\``
+                        const headerComponents = [`${index + 1} / ${completions.length}`]
+                        if (finishReason) {
+                            headerComponents.push(`finish_reason:${finishReason}`)
                         }
                         return headerize(headerComponents.join(', '), 80) + '\n' + completionText
                     })

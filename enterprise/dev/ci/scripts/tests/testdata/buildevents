@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-args="$*"
-# buildevents cmd [command-name] [label..] -- -> CMD <- what we want to run
-
-# shellcheck disable=SC2001
-cmd="$(echo "$args" | sed 's/.*-- //')" # only keep what's after the "--"
-bash -c "$cmd"

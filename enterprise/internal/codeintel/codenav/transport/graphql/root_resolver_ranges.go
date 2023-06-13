@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -20,16 +20,14 @@ var ErrIllegalBounds = errors.New("illegal bounds")
 // results are partial and do not include references outside the current file, or any location that
 // requires cross-linking of bundles (cross-repo or cross-root).
 func (r *gitBlobLSIFDataResolver) Ranges(ctx context.Context, args *resolverstubs.LSIFRangesArgs) (_ resolverstubs.CodeIntelligenceRangeConnectionResolver, err error) {
-	requestArgs := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.ranges, time.Second, observation.Args{
-		LogFields: []log.Field{
-			log.Int("repositoryID", requestArgs.RepositoryID),
-			log.String("commit", requestArgs.Commit),
-			log.String("path", requestArgs.Path),
-			log.Int("startLine", int(args.StartLine)),
-			log.Int("endLine", int(args.EndLine)),
-		},
-	})
+	requestArgs := codenav.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path}
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.ranges, time.Second, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", requestArgs.RepositoryID),
+		attribute.String("commit", requestArgs.Commit),
+		attribute.String("path", requestArgs.Path),
+		attribute.Int("startLine", int(args.StartLine)),
+		attribute.Int("endLine", int(args.EndLine)),
+	}})
 	defer endObservation()
 
 	if args.StartLine < 0 || args.EndLine < args.StartLine {
@@ -56,8 +54,8 @@ func (r *gitBlobLSIFDataResolver) Ranges(ctx context.Context, args *resolverstub
 //
 
 type codeIntelligenceRangeResolver struct {
-	r                shared.AdjustedCodeIntelligenceRange
-	locationResolver *sharedresolvers.CachedLocationResolver
+	r                codenav.AdjustedCodeIntelligenceRange
+	locationResolver *gitresolvers.CachedLocationResolver
 }
 
 func (r *codeIntelligenceRangeResolver) Range(ctx context.Context) (resolverstubs.RangeResolver, error) {

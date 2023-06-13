@@ -1,8 +1,6 @@
 package conf
 
 import (
-	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -286,28 +284,26 @@ func TestIsAccessRequestEnabled(t *testing.T) {
 			name: "parent object set should return default true",
 			sc: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{},
+					AuthAccessRequest: &schema.AuthAccessRequest{},
 				},
 			},
 			want: true,
 		},
 		{
-			name: "explicitly set true should return true",
+			name: "explicitly set enabled=true should return true",
 			sc: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						AccessRequestEnabled: &trueVal,
-					},
+					AuthAccessRequest: &schema.AuthAccessRequest{Enabled: &trueVal},
 				},
 			},
 			want: true,
 		},
 		{
-			name: "explicitly set false should return false",
+			name: "explicitly set enabled=false should return false",
 			sc: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						AccessRequestEnabled: &falseVal,
+					AuthAccessRequest: &schema.AuthAccessRequest{
+						Enabled: &falseVal,
 					},
 				},
 			},
@@ -324,35 +320,64 @@ func TestIsAccessRequestEnabled(t *testing.T) {
 	}
 }
 
-func setenv(t *testing.T, keyval string) func() {
-	t.Helper()
-
-	parts := strings.SplitN(keyval, "=", 2)
-	key := parts[0]
-	value := parts[1]
-
-	orig, set := os.LookupEnv(key)
-	if err := os.Setenv(key, value); err != nil {
-		t.Fatal(err)
-	}
-	if set {
-		return func() {
-			if err := os.Setenv(key, orig); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-	return func() {
-		if err := os.Unsetenv(key); err != nil {
-			t.Fatal(err)
-		}
-	}
-}
-
 func boolPtr(b bool) *bool {
 	return &b
 }
 
 func intPtr(i int) *int {
 	return &i
+}
+
+func TestCodyEnabled(t *testing.T) {
+	tests := []struct {
+		name string
+		sc   schema.SiteConfiguration
+		want bool
+	}{
+		{
+			name: "nothing set",
+			sc:   schema.SiteConfiguration{},
+			want: false,
+		},
+		{
+			name: "cody enabled",
+			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(true)},
+			want: true,
+		},
+		{
+			name: "cody disabled",
+			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(false)},
+			want: false,
+		},
+		{
+			name: "cody enabled, completions configured",
+			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(true), Completions: &schema.Completions{Model: "foobar"}},
+			want: true,
+		},
+		{
+			name: "cody disabled, completions configured",
+			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(false), Completions: &schema.Completions{Model: "foobar"}},
+			want: false,
+		},
+		{
+			// Legacy support: remove this once completions.enabled is removed
+			name: "cody.enabled not set, completions configured but not enabled",
+			sc:   schema.SiteConfiguration{Completions: &schema.Completions{Model: "foobar"}},
+			want: false,
+		},
+		{
+			// Legacy support: remove this once completions.enabled is removed
+			name: "cody.enabled not set, completions configured and enabled",
+			sc:   schema.SiteConfiguration{Completions: &schema.Completions{Enabled: true, Model: "foobar"}},
+			want: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			Mock(&Unified{SiteConfiguration: test.sc})
+			have := CodyEnabled()
+			assert.Equal(t, test.want, have)
+		})
+	}
 }

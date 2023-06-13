@@ -14,7 +14,6 @@ func SetupRoutes(handler ExecutorHandler, router *mux.Router) {
 	subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}", regexp.QuoteMeta(handler.Name()))).Subrouter()
 	subRouter.Path("/dequeue").Methods(http.MethodPost).HandlerFunc(handler.HandleDequeue)
 	subRouter.Path("/heartbeat").Methods(http.MethodPost).HandlerFunc(handler.HandleHeartbeat)
-	subRouter.Path("/canceledJobs").Methods(http.MethodPost).HandlerFunc(handler.HandleCanceledJobs)
 }
 
 // SetupJobRoutes registers all route handlers required for all configured executor

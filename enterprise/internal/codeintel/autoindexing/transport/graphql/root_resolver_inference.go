@@ -6,10 +6,10 @@ import (
 	"encoding/base64"
 	"strings"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
-	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -18,11 +18,11 @@ import (
 )
 
 // 🚨 SECURITY: Only site admins may infer auto-index jobs
-func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.InferAutoIndexJobsForRepoArgs) (_ []resolverstubs.AutoIndexJobDescriptionResolver, err error) {
-	ctx, _, endObservation := r.operations.inferAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repository", string(args.Repository)),
-		log.String("rev", resolverstubs.Deref(args.Rev, "")),
-		log.String("script", resolverstubs.Deref(args.Script, "")),
+func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.InferAutoIndexJobsForRepoArgs) (_ resolverstubs.InferAutoIndexJobsResultResolver, err error) {
+	ctx, _, endObservation := r.operations.inferAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repository", string(args.Repository)),
+		attribute.String("rev", resolverstubs.Deref(args.Rev, "")),
+		attribute.String("script", resolverstubs.Deref(args.Script, "")),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -48,25 +48,28 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 		localOverrideScript = *args.Script
 	}
 
-	// TODO - expose hints
-	config, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, repositoryID, rev, localOverrideScript, false)
+	result, err := r.autoindexSvc.InferIndexConfiguration(ctx, repositoryID, rev, localOverrideScript, false)
 	if err != nil {
 		return nil, err
 	}
 
-	if config == nil {
-		return nil, nil
+	jobResolvers, err := newDescriptionResolvers(r.siteAdminChecker, &config.IndexConfiguration{IndexJobs: result.IndexJobs})
+	if err != nil {
+		return nil, err
 	}
 
-	return newDescriptionResolvers(r.siteAdminChecker, config)
+	return &inferAutoIndexJobsResultResolver{
+		jobs:            jobResolvers,
+		inferenceOutput: result.InferenceOutput,
+	}, nil
 }
 
 // 🚨 SECURITY: Only site admins may queue auto-index jobs
 func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.QueueAutoIndexJobsForRepoArgs) (_ []resolverstubs.PreciseIndexResolver, err error) {
-	ctx, traceErrs, endObservation := r.operations.queueAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repository", string(args.Repository)),
-		log.String("rev", resolverstubs.Deref(args.Rev, "")),
-		log.String("configuration", resolverstubs.Deref(args.Configuration, "")),
+	ctx, traceErrs, endObservation := r.operations.queueAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repository", string(args.Repository)),
+		attribute.String("rev", resolverstubs.Deref(args.Rev, "")),
+		attribute.String("configuration", resolverstubs.Deref(args.Configuration, "")),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -97,16 +100,20 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 		return nil, err
 	}
 
-	prefetcher := r.prefetcherFactory.Create()
+	// Create index loader with data we already have
+	indexLoader := r.indexLoaderFactory.CreateWithInitialData(indexes)
 
-	for _, index := range indexes {
-		prefetcher.MarkIndex(index.ID)
-	}
+	// Pre-submit associated upload ids for subsequent loading
+	uploadLoader := r.uploadLoaderFactory.Create()
+	uploadsgraphql.PresubmitAssociatedUploads(uploadLoader, indexes...)
+
+	// No data to load for git data (yet)
+	locationResolver := r.locationResolverFactory.Create()
 
 	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(indexes))
 	for _, index := range indexes {
 		index := index
-		resolver, err := uploadsgraphql.NewPreciseIndexResolver(ctx, r.uploadSvc, r.policySvc, r.gitserverClient, prefetcher, r.siteAdminChecker, r.repoStore, r.locationResolverFactory.Create(), traceErrs, nil, &index)
+		resolver, err := r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolver, traceErrs, nil, &index)
 		if err != nil {
 			return nil, err
 		}
@@ -120,18 +127,34 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 //
 //
 
+type inferAutoIndexJobsResultResolver struct {
+	jobs            []resolverstubs.AutoIndexJobDescriptionResolver
+	inferenceOutput string
+}
+
+func (r *inferAutoIndexJobsResultResolver) Jobs() []resolverstubs.AutoIndexJobDescriptionResolver {
+	return r.jobs
+}
+
+func (r *inferAutoIndexJobsResultResolver) InferenceOutput() string {
+	return r.inferenceOutput
+}
+
+//
+//
+
 type autoIndexJobDescriptionResolver struct {
 	siteAdminChecker sharedresolvers.SiteAdminChecker
 	indexJob         config.IndexJob
-	steps            []codeinteltypes.DockerStep
+	steps            []uploadsshared.DockerStep
 }
 
 func newDescriptionResolvers(siteAdminChecker sharedresolvers.SiteAdminChecker, indexConfiguration *config.IndexConfiguration) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
 	var resolvers []resolverstubs.AutoIndexJobDescriptionResolver
 	for _, indexJob := range indexConfiguration.IndexJobs {
-		var steps []codeinteltypes.DockerStep
+		var steps []uploadsshared.DockerStep
 		for _, step := range indexJob.Steps {
-			steps = append(steps, codeinteltypes.DockerStep{
+			steps = append(steps, uploadsshared.DockerStep{
 				Root:     step.Root,
 				Image:    step.Image,
 				Commands: step.Commands,
@@ -153,7 +176,7 @@ func (r *autoIndexJobDescriptionResolver) Root() string {
 }
 
 func (r *autoIndexJobDescriptionResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
-	return codeinteltypes.NewCodeIntelIndexerResolver(r.indexJob.Indexer, r.indexJob.Indexer)
+	return uploadsgraphql.NewCodeIntelIndexerResolver(r.indexJob.Indexer, r.indexJob.Indexer)
 }
 
 func (r *autoIndexJobDescriptionResolver) ComparisonKey() string {
@@ -161,7 +184,7 @@ func (r *autoIndexJobDescriptionResolver) ComparisonKey() string {
 }
 
 func (r *autoIndexJobDescriptionResolver) Steps() resolverstubs.IndexStepsResolver {
-	return uploadsgraphql.NewIndexStepsResolver(r.siteAdminChecker, codeinteltypes.Index{
+	return uploadsgraphql.NewIndexStepsResolver(r.siteAdminChecker, uploadsshared.Index{
 		DockerSteps:      r.steps,
 		LocalSteps:       r.indexJob.LocalSteps,
 		Root:             r.indexJob.Root,

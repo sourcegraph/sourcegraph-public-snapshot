@@ -217,6 +217,11 @@ extend type Query {
     ): PermissionsSyncJobsConnection!
 
     """
+    Returns various permissions syncing statistics.
+    """
+    permissionsSyncingStats: PermissionsSyncingStats!
+
+    """
     Returns a list of Bitbucket Project permissions sync jobs for a given set of parameters.
     """
     bitbucketProjectPermissionJobs(
@@ -750,6 +755,10 @@ type PermissionsSyncJob implements Node {
     Show if the job has finished with a partially successful result.
     """
     partialSuccess: Boolean!
+    """
+    Rank of the permissions syncing job in processing queue.
+    """
+    placeInQueue: Int
 }
 
 """
@@ -822,4 +831,38 @@ type BitbucketProjectPermissionJob {
     Shows that current project is accessible by any user of the project.
     """
     Unrestricted: Boolean!
+}
+
+"""
+Various permissions syncing statistics.
+"""
+type PermissionsSyncingStats {
+    """
+    The number of permissions sync jobs in the queue.
+    """
+    queueSize: Int!
+    """
+    The number of users with latest permissions sync job failing.
+    """
+    usersWithLatestJobFailing: Int!
+    """
+    The number of repositories with latest permissions sync job failing.
+    """
+    reposWithLatestJobFailing: Int!
+    """
+    The number of users with no permissions.
+    """
+    usersWithNoPermissions: Int!
+    """
+    The number of repositories with no permissions.
+    """
+    reposWithNoPermissions: Int!
+    """
+    The number of users with old permissions.
+    """
+    usersWithStalePermissions: Int!
+    """
+    The number of repository with old permissions.
+    """
+    reposWithStalePermissions: Int!
 }

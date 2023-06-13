@@ -13,7 +13,7 @@ import (
 	"github.com/kballard/go-shellquote"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -38,7 +38,7 @@ func (e *accessLogTransformer) Create(ctx context.Context, log *database.Executo
 	return e.ExecutorSecretAccessLogCreator.Create(ctx, log)
 }
 
-func transformRecord(ctx context.Context, db database.DB, index types.Index, resourceMetadata handler.ResourceMetadata, accessToken string) (apiclient.Job, error) {
+func transformRecord(ctx context.Context, db database.DB, index uploadsshared.Index, resourceMetadata handler.ResourceMetadata, accessToken string) (apiclient.Job, error) {
 	resourceEnvironment := makeResourceEnvironment(resourceMetadata)
 
 	var secrets []*database.ExecutorSecret
@@ -110,7 +110,7 @@ func transformRecord(ctx context.Context, db database.DB, index types.Index, res
 	}
 
 	// TODO: Temporary workaround. LSIF-go needs tags, but they make git fetching slower.
-	fetchTags := strings.HasPrefix(index.Indexer, "sourcegraph/lsif-go")
+	fetchTags := strings.HasPrefix(index.Indexer, conf.ExecutorsLsifGoImage())
 
 	dockerSteps = append(dockerSteps, apiclient.DockerStep{
 		Key:   "upload",

@@ -14,8 +14,8 @@ export function reformatBotMessage(text: string, prefix: string): string {
 }
 
 function fixOpenMarkdownCodeBlock(text: string): string {
-    const occurances = text.split('```').length - 1
-    if (occurances % 2 === 1) {
+    const occurrences = text.split('```').length - 1
+    if (occurrences % 2 === 1) {
         return text + '\n```'
     }
     return text

@@ -90,14 +90,14 @@ function linesChanged(diffString: string): [number, number] {
         )
 }
 
-const SiteConfigurationHistoryItem: FC<SiteConfigurationHistoryItemProps> = ({ node }) => {
+export const SiteConfigurationHistoryItem: FC<SiteConfigurationHistoryItemProps> = ({ node }) => {
     const [open, setOpen] = useState<boolean>(false)
     const icon = open ? mdiChevronUp : mdiChevronDown
     const [removedLines, addedLines] = linesChanged(node.diff)
 
     const editedBy = node.author ? (
         <Link to={`/users/${node.author.username}`} className="text-truncate">
-            {node.author.displayName}
+            {node.author.displayName ?? node.author.username}
         </Link>
     ) : (
         'Site configuration file set in SITE_CONFIG_FILE environment variable updated'

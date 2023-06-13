@@ -172,6 +172,7 @@ const STATUS_MESSAGES_POLL_INTERVAL = 10000
 
 interface Props {
     disablePolling?: boolean
+    isSourcegraphApp?: boolean
 }
 /**
  * Displays a status icon in the navbar reflecting the completion of backend
@@ -210,8 +211,8 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
         } else if (data.statusMessages?.some(({ __typename: type }) => type === 'IndexingProgress')) {
             codeHostMessage = 'Indexing repositories...'
             iconProps = { as: CloudSyncIconRefresh }
-        } else if (data.statusMessages.length === 0 && data.repositoryStats.total === 0) {
-            codeHostMessage = 'No repositories detected'
+        } else if (data.statusMessages?.some(({ __typename: type }) => type === 'NoRepositoriesDetected')) {
+            codeHostMessage = 'No repositories'
             iconProps = { as: CloudInfoIconRefresh }
         } else {
             codeHostMessage = 'Repositories up to date'
@@ -236,19 +237,6 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
 
         // no status messages
         if (data.statusMessages.length === 0) {
-            if (data.repositoryStats.total === 0) {
-                return (
-                    <StatusMessagesNavItemEntry
-                        key="no-repositories"
-                        title="No repositories detected"
-                        message="Connect a code host to connect repositories to Sourcegraph."
-                        linkTo="/setup"
-                        linkText="Setup code hosts"
-                        linkOnClick={toggleIsOpen}
-                        entryType="info"
-                    />
-                )
-            }
             return (
                 <StatusMessagesNavItemEntry
                     key="up-to-date"
@@ -276,6 +264,19 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                                 linkText="View site configuration"
                                 linkOnClick={toggleIsOpen}
                                 entryType="warning"
+                            />
+                        )
+                    }
+                    if (status.__typename === 'NoRepositoriesDetected') {
+                        return (
+                            <StatusMessagesNavItemEntry
+                                key="no-repositories"
+                                title="No repositories"
+                                message="Connect a code host to connect repositories to Sourcegraph."
+                                linkTo={props.isSourcegraphApp ? '/user/app-settings/local-repositories' : '/setup'}
+                                linkText="Setup code hosts"
+                                linkOnClick={toggleIsOpen}
+                                entryType="info"
                             />
                         )
                     }
@@ -341,7 +342,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                 })}
             </>
         )
-    }, [data])
+    }, [data, props.isSourcegraphApp])
 
     return (
         <Popover isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)}>

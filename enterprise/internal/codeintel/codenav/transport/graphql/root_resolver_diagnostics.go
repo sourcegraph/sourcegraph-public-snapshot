@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -21,7 +21,7 @@ func (r *gitBlobLSIFDataResolver) Diagnostics(ctx context.Context, args *resolve
 		return nil, ErrIllegalLimit
 	}
 
-	requestArgs := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Limit: limit}
+	requestArgs := codenav.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Limit: limit}
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.diagnostics, time.Second, getObservationArgs(requestArgs))
 	defer endObservation()
 
@@ -42,11 +42,11 @@ func (r *gitBlobLSIFDataResolver) Diagnostics(ctx context.Context, args *resolve
 //
 
 type diagnosticResolver struct {
-	diagnostic       shared.DiagnosticAtUpload
-	locationResolver *sharedresolvers.CachedLocationResolver
+	diagnostic       codenav.DiagnosticAtUpload
+	locationResolver *gitresolvers.CachedLocationResolver
 }
 
-func newDiagnosticResolver(diagnostic shared.DiagnosticAtUpload, locationResolver *sharedresolvers.CachedLocationResolver) resolverstubs.DiagnosticResolver {
+func newDiagnosticResolver(diagnostic codenav.DiagnosticAtUpload, locationResolver *gitresolvers.CachedLocationResolver) resolverstubs.DiagnosticResolver {
 	return &diagnosticResolver{
 		diagnostic:       diagnostic,
 		locationResolver: locationResolver,
@@ -68,7 +68,7 @@ func (r *diagnosticResolver) Location(ctx context.Context) (resolverstubs.Locati
 	return resolveLocation(
 		ctx,
 		r.locationResolver,
-		types.UploadLocation{
+		shared.UploadLocation{
 			Dump:         r.diagnostic.Dump,
 			Path:         r.diagnostic.Path,
 			TargetCommit: r.diagnostic.AdjustedCommit,

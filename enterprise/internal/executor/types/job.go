@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"strconv"
 	"time"
 )
 
@@ -15,6 +16,9 @@ type Job struct {
 	// ID is the unique identifier of a job within the source queue. Note
 	// that different queues can share identifiers.
 	ID int `json:"id"`
+
+	// Queue contains the name of the source queue.
+	Queue string `json:"queue,omitempty"`
 
 	// Token is the authentication token for the specific Job.
 	Token string `json:"Token"`
@@ -47,13 +51,13 @@ type Job struct {
 	VirtualMachineFiles map[string]VirtualMachineFile `json:"files"`
 
 	// DockerSteps describe a series of docker run commands to be invoked in the
-	// workspace. This may be done inside or outside of a Firecracker virtual
+	// workspace. This may be done inside or outside a Firecracker virtual
 	// machine.
 	DockerSteps []DockerStep `json:"dockerSteps"`
 
 	// CliSteps describe a series of src commands to be invoked in the workspace.
 	// These run after all docker commands have been completed successfully. This
-	// may be done inside or outside of a Firecracker virtual machine.
+	// may be done inside or outside a Firecracker virtual machine.
 	CliSteps []CliStep `json:"cliSteps"`
 
 	// RedactedValues is a map from strings to replace to their replacement in the command
@@ -75,6 +79,7 @@ func (j Job) MarshalJSON() ([]byte, error) {
 			Version:             j.Version,
 			ID:                  j.ID,
 			Token:               j.Token,
+			Queue:               j.Queue,
 			RepositoryName:      j.RepositoryName,
 			RepositoryDirectory: j.RepositoryDirectory,
 			Commit:              j.Commit,
@@ -95,6 +100,7 @@ func (j Job) MarshalJSON() ([]byte, error) {
 	v1 := v1Job{
 		ID:                  j.ID,
 		Token:               j.Token,
+		Queue:               j.Queue,
 		RepositoryName:      j.RepositoryName,
 		RepositoryDirectory: j.RepositoryDirectory,
 		Commit:              j.Commit,
@@ -130,6 +136,7 @@ func (j *Job) UnmarshalJSON(data []byte) error {
 		j.Version = v2.Version
 		j.ID = v2.ID
 		j.Token = v2.Token
+		j.Queue = v2.Queue
 		j.RepositoryName = v2.RepositoryName
 		j.RepositoryDirectory = v2.RepositoryDirectory
 		j.Commit = v2.Commit
@@ -152,6 +159,7 @@ func (j *Job) UnmarshalJSON(data []byte) error {
 	}
 	j.ID = v1.ID
 	j.Token = v1.Token
+	j.Queue = v1.Queue
 	j.RepositoryName = v1.RepositoryName
 	j.RepositoryDirectory = v1.RepositoryDirectory
 	j.Commit = v1.Commit
@@ -181,6 +189,7 @@ type v2Job struct {
 	Version             int                             `json:"version,omitempty"`
 	ID                  int                             `json:"id"`
 	Token               string                          `json:"token"`
+	Queue               string                          `json:"queue,omitempty"`
 	RepositoryName      string                          `json:"repositoryName"`
 	RepositoryDirectory string                          `json:"repositoryDirectory"`
 	Commit              string                          `json:"commit"`
@@ -197,6 +206,7 @@ type v2Job struct {
 type v1Job struct {
 	ID                  int                             `json:"id"`
 	Token               string                          `json:"token"`
+	Queue               string                          `json:"queue,omitempty"`
 	RepositoryName      string                          `json:"repositoryName"`
 	RepositoryDirectory string                          `json:"repositoryDirectory"`
 	Commit              string                          `json:"commit"`
@@ -245,6 +255,15 @@ func (j Job) RecordID() int {
 	return j.ID
 }
 
+func (j Job) RecordUID() string {
+	uid := strconv.Itoa(j.ID)
+	// outside of multi-queue executors, jobs aren't guaranteed to have a queue specified
+	if j.Queue != "" {
+		uid += "-" + j.Queue
+	}
+	return uid
+}
+
 type DockerStep struct {
 	// Key is a unique identifier of the step. It can be used to retrieve the
 	// associated log entry.
@@ -263,6 +282,7 @@ type DockerStep struct {
 	Env []string `json:"env"`
 }
 
+// CliStep is a step that runs a src-cli command.
 type CliStep struct {
 	// Key is a unique identifier of the step. It can be used to retrieve the
 	// associated log entry.
@@ -288,7 +308,7 @@ type DockerAuthConfig struct {
 // DockerAuthConfigAuths maps a registry URL to an auth object.
 type DockerAuthConfigAuths map[string]DockerAuthConfigAuth
 
-// DockerAuthConfigAuth is a single registrys auth configuration.
+// DockerAuthConfigAuth is a single registry's auth configuration.
 type DockerAuthConfigAuth struct {
 	// Auth is the base64 encoded credential in the format user:password.
 	Auth []byte `json:"auth"`

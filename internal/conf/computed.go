@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/cronexpr"
+
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -189,6 +191,38 @@ func BatchChangesRestrictedToAdmins() bool {
 	return false
 }
 
+// CodyEnabled returns whether Cody is enabled on this instance.
+//
+// If `cody.enabled` is not set or set to false, it's not enabled.
+// If `cody.enabled` is true but `completions` aren't set, it returns false.
+//
+// Legacy-support for `completions.enabled`:
+// If `cody.enabled` is NOT set, but `completions.enabled` is set, then cody is enabled.
+// If `cody.enabled` is set, but `completions.enabled` is set, then cody is enabled based on value of `cody.enabled`.
+func CodyEnabled() bool {
+	enabled := Get().CodyEnabled
+	completions := Get().Completions
+
+	// Support for Legacy configurations in which `completions` is set to
+	// `enabled`, but `cody.enabled` is not set.
+	if enabled == nil && completions != nil && completions.Enabled {
+		return true
+	}
+
+	if enabled == nil {
+		return false
+	}
+
+	return *enabled
+}
+
+func CodyRestrictUsersFeatureFlag() bool {
+	if restrict := Get().CodyRestrictUsersFeatureFlag; restrict != nil {
+		return *restrict
+	}
+	return false
+}
+
 func ExecutorsEnabled() bool {
 	return Get().ExecutorsAccessToken != ""
 }
@@ -218,6 +252,14 @@ func ExecutorsSrcCLIImageTag() string {
 	}
 
 	return srccli.MinimumVersion
+}
+
+func ExecutorsLsifGoImage() string {
+	current := Get()
+	if current.ExecutorsLsifGoImage != "" {
+		return current.ExecutorsLsifGoImage
+	}
+	return "sourcegraph/lsif-go"
 }
 
 func ExecutorsBatcheshelperImage() string {
@@ -270,6 +312,14 @@ func CodeIntelRankingDocumentReferenceCountsEnabled() bool {
 		return *enabled
 	}
 	return false
+}
+
+func CodeIntelRankingDocumentReferenceCountsCronExpression() (*cronexpr.Expression, error) {
+	if cronExpression := Get().CodeIntelRankingDocumentReferenceCountsCronExpression; cronExpression != nil {
+		return cronexpr.Parse(*cronExpression)
+	}
+
+	return cronexpr.Parse("@weekly")
 }
 
 func CodeIntelRankingDocumentReferenceCountsGraphKey() string {
@@ -330,8 +380,19 @@ func IsBuiltinSignupAllowed() bool {
 
 // IsAccessRequestEnabled returns whether request access experimental feature is enabled or not.
 func IsAccessRequestEnabled() bool {
-	experimentalFeatures := Get().ExperimentalFeatures
-	return experimentalFeatures == nil || experimentalFeatures.AccessRequestEnabled == nil || *experimentalFeatures.AccessRequestEnabled
+	authAccessRequest := Get().AuthAccessRequest
+	return authAccessRequest == nil || authAccessRequest.Enabled == nil || *authAccessRequest.Enabled
+}
+
+// AuthPrimaryLoginProvidersCount returns the number of primary login providers
+// configured, or 3 (the default) if not explicitly configured.
+// This is only used for the UI
+func AuthPrimaryLoginProvidersCount() int {
+	c := Get().AuthPrimaryLoginProvidersCount
+	if c == 0 {
+		return 3 // default to 3
+	}
+	return c
 }
 
 // SearchSymbolsParallelism returns 20, or the site config
@@ -342,11 +403,6 @@ func SearchSymbolsParallelism() int {
 		return 20
 	}
 	return val
-}
-
-func BitbucketServerPluginPerm() bool {
-	val := ExperimentalFeatures().BitbucketServerFastPerm
-	return val == "enabled"
 }
 
 func EventLoggingEnabled() bool {
@@ -378,9 +434,8 @@ func SearchDocumentRanksWeight() float64 {
 	}
 }
 
-// SearchFlushWallTime controls the amount of time that Zoekt shards collect and rank results when
-// the 'search-ranking' feature is enabled. We plan to eventually remove this, once we experiment
-// on real data to find a good default.
+// SearchFlushWallTime controls the amount of time that Zoekt shards collect and rank results. For
+// larger codebases, it can be helpful to increase this to improve the ranking stability and quality.
 func SearchFlushWallTime() time.Duration {
 	ranking := ExperimentalFeatures().Ranking
 	if ranking != nil && ranking.FlushWallTimeMS > 0 {

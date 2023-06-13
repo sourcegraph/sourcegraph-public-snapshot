@@ -80,6 +80,14 @@ func TestSlackWebhook(t *testing.T) {
 		autogold.ExpectFile(t, jsonSlackPayload(actionCopy))
 	})
 
+	t.Run("golden with truncated matches", func(t *testing.T) {
+		actionCopy := action
+		actionCopy.IncludeResults = true
+		// add a commit result with very long lines that exceeds the character limit
+		actionCopy.Results = append(actionCopy.Results, &longCommitResultMock)
+		autogold.ExpectFile(t, jsonSlackPayload(actionCopy))
+	})
+
 	t.Run("golden without results", func(t *testing.T) {
 		autogold.ExpectFile(t, jsonSlackPayload(action))
 	})

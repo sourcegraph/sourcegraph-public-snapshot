@@ -86,7 +86,12 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
 
     return (
         <div className={classNames('container d-flex mt-3 px-3 flex-column flex-sm-row', styles.repoSettingsArea)}>
-            <RepoSettingsSidebar className="flex-0 mr-3" {...props} {...context} />
+            <RepoSettingsSidebar
+                className="flex-0 mr-3"
+                {...props}
+                {...context}
+                repoSettingsSidebarGroups={props.repoSettingsSidebarGroups}
+            />
             <div className="flex-bounded">
                 <Routes>
                     {props.repoSettingsAreaRoutes.map(

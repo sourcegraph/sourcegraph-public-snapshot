@@ -44,7 +44,7 @@ func (r *externalRepositoryResolver) ServiceID(ctx context.Context) (string, err
 
 func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
-}) (*computedExternalServiceConnectionResolver, error) {
+}) (*ComputedExternalServiceConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may read external services (they have secrets).
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct 
 
 	svcIDs := repo.ExternalServiceIDs()
 	if len(svcIDs) == 0 {
-		return &computedExternalServiceConnectionResolver{
+		return &ComputedExternalServiceConnectionResolver{
 			db:               r.db,
 			args:             args.ConnectionArgs,
 			externalServices: []*types.ExternalService{},
@@ -74,7 +74,7 @@ func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	return &computedExternalServiceConnectionResolver{
+	return &ComputedExternalServiceConnectionResolver{
 		db:               r.db,
 		args:             args.ConnectionArgs,
 		externalServices: svcs,

@@ -17,22 +17,25 @@ const EXTENSION_TO_LANGUAGE: { [key: string]: string } = {
     tsx: 'TSX',
 }
 
+export const commandRegex = {
+    chat: new RegExp(/^(?!.*\/n(ew)?\s|.*\/f(ix)?\s)/i), // For now, if the input does not start with /n or /f, it is a chat
+    fix: new RegExp(/^\/f(ix)?\s/i),
+    touch: new RegExp(/^\/t(ouch)?\s/i),
+    touchNeedFileName: new RegExp(/^\/t(ouch)?\s(?!.*test)/i), // Has /touch or /t but no test or tests in the string
+    noTest: new RegExp(/^(?!.*test)/i),
+    search: new RegExp(/^\/s(earch)?\s/i),
+    test: new RegExp(/^\/n(ew)?\s|test(s)?\s/, 'i'),
+}
+
 export function getNormalizedLanguageName(extension: string): string {
-    if (!extension) {
-        return ''
-    }
-    const language = EXTENSION_TO_LANGUAGE[extension]
-    if (language) {
-        return language
-    }
-    return extension.charAt(0).toUpperCase() + extension.slice(1)
+    return extension ? EXTENSION_TO_LANGUAGE[extension] ?? extension.charAt(0).toUpperCase() + extension.slice(1) : ''
 }
 
 export async function getContextMessagesFromSelection(
     selectedText: string,
     precedingText: string,
     followingText: string,
-    fileName: string,
+    { fileName, repoName, revision }: { fileName: string; repoName?: string; revision?: string },
     codebaseContext: CodebaseContext
 ): Promise<ContextMessage[]> {
     const selectedTextContext = await codebaseContext.getContextMessages(selectedText, {
@@ -42,11 +45,28 @@ export async function getContextMessagesFromSelection(
 
     return selectedTextContext.concat(
         [precedingText, followingText].flatMap(text =>
-            getContextMessageWithResponse(populateCodeContextTemplate(text, fileName), fileName)
+            getContextMessageWithResponse(populateCodeContextTemplate(text, fileName), {
+                fileName,
+                repoName,
+                revision,
+            })
         )
     )
 }
 
 export function getFileExtension(fileName: string): string {
     return path.extname(fileName).slice(1).toLowerCase()
+}
+
+// This cleans up the code returned by Cody based on current behavior
+// ex. Remove  `tags:` that Cody sometimes include in the returned content
+// It also removes all spaces before a new line to keep the indentations
+export function contentSanitizer(text: string): string {
+    let output = text + '\n'
+    const tagsIndex = text.indexOf('tags:')
+    if (tagsIndex !== -1) {
+        // NOTE: 6 is the length of `tags:` + 1 space
+        output = output.slice(tagsIndex + 6)
+    }
+    return output.replace(/^\s*\n/, '')
 }

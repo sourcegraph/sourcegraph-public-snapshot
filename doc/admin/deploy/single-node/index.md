@@ -4,9 +4,7 @@ For customers who want to self-host, we recommend one of the single-node deploym
 
 - Cloud
   - [Machine images](../machine-images/index.md)
-  - [Shell Script](../single-node/script.md)
   - [Docker Compose](../docker-compose/index.md)
+  - [Shell Script](../single-node/script.md)
 - Local
   - [Docker](../docker-single-container/index.md)
-  - [K3s](../single-node/k3s.md)
-  - [Minikube](../single-node/minikube.md) 

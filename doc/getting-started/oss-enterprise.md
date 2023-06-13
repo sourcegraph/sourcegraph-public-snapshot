@@ -29,7 +29,7 @@ Sourcegraph OSS is built as a single container which limits scalability.
 Check out our [handbook](https://handbook.sourcegraph.com/departments/engineering/product/process/gtm/licensing/) for additional details on Sourcegraph OSS. 
 
 ## Getting started
-Sourcegraph Enterprise can be run in a variety of environments, from cloud to self-hosted to your local machine. For most customers, we recommend [Sourcegraph Cloud](https://signup.sourcegraph.com/), managed entirely by Sourcegraph. Visit the [get started](https://docs.sourcegraph.com/#get-started) section of the docs for details on every deployment option.
+Sourcegraph Enterprise can be run in a variety of environments, from cloud to self-hosted to your local machine. For most customers, we recommend [Sourcegraph Cloud](https://about.sourcegraph.com/get-started?t=enterprise/), managed entirely by Sourcegraph. Visit the [get started](https://docs.sourcegraph.com/#get-started) section of the docs for details on every deployment option.
 
 Developers can use [Sourcegraph OSS](https://github.com/sourcegraph/sourcegraph) without agreeing to any enterprise licensing terms by building their own server image. If they do so, no code from our enterprise-licensed features will be included in their Sourcegraph deployment.
 
@@ -92,6 +92,18 @@ In practice, Sourcegraph OSS involves:
    </td>
   </tr>
   <tr>
+   <td>Cody (QA or CodeGen)
+   </td>
+   <td>✗
+   </td>
+   <td>✓ (limited)
+   </td>
+   <td>✓
+   </td>
+   <td>✓
+   </td>
+  </tr>
+  <tr>
    <td>Code navigation (go to definition/find references)
    </td>
    <td>✗
@@ -145,6 +157,18 @@ In practice, Sourcegraph OSS involves:
    <td>✗
    </td>
    <td>✗
+   </td>
+   <td>✓
+   </td>
+   <td>✓
+   </td>
+  </tr>
+  <tr>
+   <td>Own
+   </td>
+   <td>✗
+   </td>
+   <td>✓
    </td>
    <td>✓
    </td>

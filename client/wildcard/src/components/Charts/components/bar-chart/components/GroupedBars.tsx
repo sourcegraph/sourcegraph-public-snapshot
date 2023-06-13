@@ -218,9 +218,5 @@ function getActiveBar<Datum>(input: GetActiveBarInput<Datum>): ActiveBarTuple<Da
 }
 
 function getBarId(categoryId: string, datumName: string): string {
-    if (categoryId === datumName) {
-        return categoryId
-    }
-
-    return `${categoryId}${datumName}`
+    return encodeURIComponent(`${categoryId}${datumName}`)
 }

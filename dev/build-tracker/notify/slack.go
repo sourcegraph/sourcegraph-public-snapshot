@@ -146,17 +146,13 @@ func (c *Client) sendUpdatedMessage(info *BuildNotification, previous *SlackNoti
 	logger := c.logger.With(log.Int("buildNumber", info.BuildNumber), log.String("channel", c.channel))
 	logger.Debug("creating slack json")
 
-	blocks, err := c.createMessageBlocks(logger, info, previous.AuthorMention)
-	if err != nil {
-		return previous, err
-	}
-
+	blocks := c.createMessageBlocks(info, previous.AuthorMention)
 	// Slack responds with the message timestamp and a channel, which you have to use when you want to update the message.
 	var id, channel string
 	logger.Debug("sending updated notification")
 	msgOptBlocks := slack.MsgOptionBlocks(blocks...)
 	// Note: for UpdateMessage using the #channel-name format doesn't work, you need the Slack ChannelID.
-	channel, id, _, err = c.slack.UpdateMessage(previous.ChannelID, previous.ID, msgOptBlocks)
+	channel, id, _, err := c.slack.UpdateMessage(previous.ChannelID, previous.ID, msgOptBlocks)
 	if err != nil {
 		logger.Error("failed to update message", log.Error(err))
 		return previous, err
@@ -188,11 +184,7 @@ func (c *Client) sendNewMessage(info *BuildNotification) (*SlackNotification, er
 		author = SlackMention(teammate)
 	}
 
-	blocks, err := c.createMessageBlocks(logger, info, author)
-	if err != nil {
-		return nil, err
-	}
-
+	blocks := c.createMessageBlocks(info, author)
 	// Slack responds with the message timestamp and a channel, which you have to use when you want to update the message.
 	var id, channel string
 
@@ -254,7 +246,7 @@ func (c *Client) GetTeammateForCommit(commit string) (*team.Teammate, error) {
 
 }
 
-func (c *Client) createMessageBlocks(logger log.Logger, info *BuildNotification, author string) ([]slack.Block, error) {
+func (c *Client) createMessageBlocks(info *BuildNotification, author string) []slack.Block {
 	msg, _, _ := strings.Cut(info.Message, "\n")
 	msg += fmt.Sprintf(" (%s)", info.Commit[:7])
 
@@ -312,7 +304,7 @@ _Disable flakes on sight and save your fellow teammate some time!_`,
 		),
 	}
 
-	return blocks, nil
+	return blocks
 }
 
 func generateSlackHeader(info *BuildNotification) string {

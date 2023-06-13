@@ -41,6 +41,7 @@ export interface SearchContextDropdownProps
     className?: string
     menuClassName?: string
     onEscapeMenuClose?: () => void
+    ignoreDefaultContextDoesNotExistError?: boolean
 }
 
 export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {

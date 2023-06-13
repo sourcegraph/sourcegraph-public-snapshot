@@ -14,7 +14,7 @@ import {
 import { DeleteFileButton } from './DeleteFileButton'
 import { GET_INGESTED_CODEOWNERS_QUERY } from './graphqlQueries'
 import { IngestedFileViewer } from './IngestedFileViewer'
-import { RepositoryOwnAreaPageProps } from './RepositoryOwnPage'
+import { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
 import { UploadFileButton } from './UploadFileButton'
 
 import styles from './RepositoryOwnPageContents.module.scss'
@@ -95,8 +95,8 @@ export const RepositoryOwnPageContents: React.FunctionComponent<
                     {codeownersIngestedFile && (
                         <Text className={styles.commitWarning}>
                             <em>
-                                Any commited CODEOWNERS file in this repository will be ignored unless the uploaded file
-                                is deleted.
+                                Any committed CODEOWNERS file in this repository will be ignored unless the uploaded
+                                file is deleted.
                             </em>
                         </Text>
                     )}

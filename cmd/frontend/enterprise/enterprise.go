@@ -42,7 +42,13 @@ type Services struct {
 	CodeInsightsDataExportHandler http.Handler
 
 	// Handler for completions stream.
-	NewCompletionsStreamHandler NewCompletionsStreamHandler
+	NewChatCompletionsStreamHandler NewChatCompletionsStreamHandler
+
+	// Handler for code completions endpoint.
+	NewCodeCompletionsHandler NewCodeCompletionsHandler
+
+	// Handler for license v2 check.
+	NewDotcomLicenseCheckHandler NewDotcomLicenseCheckHandler
 
 	PermissionsGitHubWebhook  webhooks.Registerer
 	NewCodeIntelUploadHandler NewCodeIntelUploadHandler
@@ -77,8 +83,14 @@ type NewGitHubAppSetupHandler func() http.Handler
 // NewComputeStreamHandler creates a new handler for the Sourcegraph Compute streaming endpoint.
 type NewComputeStreamHandler func() http.Handler
 
-// NewCompletionsStreamHandler creates a new handler for the completions streaming endpoint.
-type NewCompletionsStreamHandler func() http.Handler
+// NewChatCompletionsStreamHandler creates a new handler for the completions streaming endpoint.
+type NewChatCompletionsStreamHandler func() http.Handler
+
+// NewCodeCompletionsHandler creates a new handler for the code completions endpoint.
+type NewCodeCompletionsHandler func() http.Handler
+
+// NewDotcomLicenseCheckHandler creates a new handler for the dotcom license check endpoint.
+type NewDotcomLicenseCheckHandler func() http.Handler
 
 // DefaultServices creates a new Services value that has default implementations for all services.
 func DefaultServices() Services {
@@ -103,7 +115,9 @@ func DefaultServices() Services {
 		NewGitHubAppSetupHandler:        func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
 		NewComputeStreamHandler:         func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
 		CodeInsightsDataExportHandler:   makeNotFoundHandler("code insights data export handler"),
-		NewCompletionsStreamHandler:     func() http.Handler { return makeNotFoundHandler("completions streaming endpoint") },
+		NewDotcomLicenseCheckHandler:    func() http.Handler { return makeNotFoundHandler("dotcom license check handler") },
+		NewChatCompletionsStreamHandler: func() http.Handler { return makeNotFoundHandler("chat completions streaming endpoint") },
+		NewCodeCompletionsHandler:       func() http.Handler { return makeNotFoundHandler("code completions streaming endpoint") },
 		EnterpriseSearchJobs:            jobutil.NewUnimplementedEnterpriseJobs(),
 	}
 }

@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
@@ -21,16 +20,14 @@ import (
 	"golang.org/x/net/html/atom"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/sourcegraph/sourcegraph/internal/binary"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
-
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
+	"github.com/sourcegraph/sourcegraph/internal/binary"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -57,7 +54,7 @@ func getHighlightOp() *observation.Operation {
 
 		highlightOp = obsvCtx.Operation(observation.Op{
 			Name:        "codeintel.syntax-highlight.Code",
-			LogFields:   []otlog.Field{},
+			Attrs:       []attribute.KeyValue{},
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour { return observation.EmitForHoney },
 		})
 	})
@@ -336,15 +333,15 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		filetypeQuery.Engine = EngineSyntect
 	}
 
-	ctx, errCollector, trace, endObservation := getHighlightOp().WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("revision", p.Metadata.Revision),
-		otlog.String("repo", p.Metadata.RepoName),
-		otlog.String("fileExtension", filepath.Ext(p.Filepath)),
-		otlog.String("filepath", p.Filepath),
-		otlog.Int("sizeBytes", len(p.Content)),
-		otlog.Bool("highlightLongLines", p.HighlightLongLines),
-		otlog.Bool("disableTimeout", p.DisableTimeout),
-		otlog.String("syntaxEngine", filetypeQuery.Engine.String()),
+	ctx, errCollector, trace, endObservation := getHighlightOp().WithErrorsAndLogger(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("revision", p.Metadata.Revision),
+		attribute.String("repo", p.Metadata.RepoName),
+		attribute.String("fileExtension", filepath.Ext(p.Filepath)),
+		attribute.String("filepath", p.Filepath),
+		attribute.Int("sizeBytes", len(p.Content)),
+		attribute.Bool("highlightLongLines", p.HighlightLongLines),
+		attribute.Bool("disableTimeout", p.DisableTimeout),
+		attribute.Stringer("syntaxEngine", filetypeQuery.Engine),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -420,7 +417,6 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Code:             code,
 		Filepath:         p.Filepath,
 		StabilizeTimeout: stabilizeTimeout,
-		Tracer:           ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
 		LineLengthLimit:  maxLineLength,
 		CSS:              true,
 		Engine:           getEngineParameter(filetypeQuery.Engine),

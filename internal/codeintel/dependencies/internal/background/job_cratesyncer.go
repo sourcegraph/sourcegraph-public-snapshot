@@ -47,12 +47,14 @@ func NewCrateSyncer(
 	gitClient gitserver.Client,
 	extSvcStore ExternalServiceStore,
 ) goroutine.BackgroundRoutine {
+	ctx := actor.WithInternalActor(context.Background())
+
 	// By default, sync crates every 12h, but the user can customize this interval
 	// through site-admin configuration of the RUSTPACKAGES code host.
 	interval := time.Hour * 12
-	_, externalService, _ := singleRustExternalService(context.Background(), extSvcStore)
+	_, externalService, _ := singleRustExternalService(ctx, extSvcStore)
 	if externalService != nil {
-		config, err := rustPackagesConfig(context.Background(), externalService)
+		config, err := rustPackagesConfig(ctx, externalService)
 		if err == nil { // silently ignore config errors.
 			customInterval, err := time.ParseDuration(config.IndexRepositorySyncInterval)
 			if err == nil { // silently ignore duration decoding error.
@@ -74,12 +76,13 @@ func NewCrateSyncer(
 	}
 
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
-		"codeintel.crates-syncer", "syncs the crates list from the index to dependency repos table",
-		interval,
+		ctx,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return job.handleCrateSyncer(ctx, interval)
 		}),
+		goroutine.WithName("codeintel.crates-syncer"),
+		goroutine.WithDescription("syncs the crates list from the index to dependency repos table"),
+		goroutine.WithInterval(interval),
 	)
 }
 

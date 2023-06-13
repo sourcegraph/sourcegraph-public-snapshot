@@ -5,95 +5,237 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/grafana/regexp"
-
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/diff"
+	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	repoembeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
+	bgrepo "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type handler struct {
-	db              edb.EnterpriseDB
-	uploadStore     uploadstore.Store
-	gitserverClient gitserver.Client
+	db                     edb.EnterpriseDB
+	uploadStore            uploadstore.Store
+	gitserverClient        gitserver.Client
+	contextService         embed.ContextService
+	repoEmbeddingJobsStore bgrepo.RepoEmbeddingJobsStore
 }
 
-var _ workerutil.Handler[*repoembeddingsbg.RepoEmbeddingJob] = &handler{}
-
-var matchEverythingRegexp = regexp.MustCompile(``)
-
-const MAX_FILE_SIZE = 1000000 // 1MB
+var _ workerutil.Handler[*bgrepo.RepoEmbeddingJob] = &handler{}
 
 // The threshold to embed the entire file is slightly larger than the chunk threshold to
 // avoid splitting small files unnecessarily.
-const EMBED_ENTIRE_FILE_TOKENS_THRESHOLD = 384
-const EMBEDDING_CHUNK_TOKENS_THRESHOLD = 256
-const EMBEDDING_CHUNK_EARLY_SPLIT_TOKENS_THRESHOLD = EMBEDDING_CHUNK_TOKENS_THRESHOLD - 32
+const (
+	embedEntireFileTokensThreshold          = 384
+	embeddingChunkTokensThreshold           = 256
+	embeddingChunkEarlySplitTokensThreshold = embeddingChunkTokensThreshold - 32
 
-var splitOptions = split.SplitOptions{
-	NoSplitTokensThreshold:         EMBED_ENTIRE_FILE_TOKENS_THRESHOLD,
-	ChunkTokensThreshold:           EMBEDDING_CHUNK_TOKENS_THRESHOLD,
-	ChunkEarlySplitTokensThreshold: EMBEDDING_CHUNK_EARLY_SPLIT_TOKENS_THRESHOLD,
+	defaultMaxCodeEmbeddingsPerRepo = 3_072_000
+	defaultMaxTextEmbeddingsPerRepo = 512_000
+)
+
+var splitOptions = codeintelContext.SplitOptions{
+	NoSplitTokensThreshold:         embedEntireFileTokensThreshold,
+	ChunkTokensThreshold:           embeddingChunkTokensThreshold,
+	ChunkEarlySplitTokensThreshold: embeddingChunkEarlySplitTokensThreshold,
 }
 
-func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoembeddingsbg.RepoEmbeddingJob) error {
+func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.RepoEmbeddingJob) error {
 	if !conf.EmbeddingsEnabled() {
 		return errors.New("embeddings are not configured or disabled")
 	}
+
+	ctx = featureflag.WithFlags(ctx, h.db.FeatureFlags())
 
 	repo, err := h.db.Repos().Get(ctx, record.RepoID)
 	if err != nil {
 		return err
 	}
 
-	files, err := h.gitserverClient.ListFiles(ctx, nil, repo.Name, record.Revision, matchEverythingRegexp)
+	embeddingsClient, err := embed.NewEmbeddingsClient(&conf.Get().SiteConfiguration)
 	if err != nil {
 		return err
 	}
 
-	validFiles := []string{}
-	for _, file := range files {
-		stat, err := h.gitserverClient.Stat(ctx, nil, repo.Name, record.Revision, file)
-		if err != nil {
-			return err
-		}
+	// lastSuccessfulJobRevision is the revision of the last successful embeddings
+	// job for this repo. If we can find one, we'll attempt an incremental index,
+	// otherwise we fall back to a full index.
+	var lastSuccessfulJobRevision api.CommitID
+	var previousIndex *embeddings.RepoEmbeddingIndex
+	if conf.Get().Embeddings.Incremental == nil || *conf.Get().Embeddings.Incremental {
+		lastSuccessfulJobRevision, previousIndex = h.getPreviousEmbeddingIndex(ctx, logger, repo)
 
-		if !stat.IsDir() && stat.Size() <= MAX_FILE_SIZE {
-			validFiles = append(validFiles, file)
+		if previousIndex != nil && !previousIndex.IsModelCompatible(embeddingsClient.GetModelIdentifier()) {
+			logger.Info("Embeddings model has changed in config. Performing a full index")
+			lastSuccessfulJobRevision, previousIndex = "", nil
 		}
 	}
 
-	embeddingsClient := embed.NewEmbeddingsClient()
+	fetcher := &revisionFetcher{
+		repo:      repo.Name,
+		revision:  record.Revision,
+		gitserver: h.gitserverClient,
+	}
 
 	config := conf.Get().Embeddings
 	excludedGlobPatterns := embed.GetDefaultExcludedFilePathPatterns()
 	excludedGlobPatterns = append(excludedGlobPatterns, embed.CompileGlobPatterns(config.ExcludedFilePathPatterns)...)
 
-	repoEmbeddingIndex, err := embed.EmbedRepo(
-		ctx,
-		repo.Name,
-		record.Revision,
-		validFiles,
-		excludedGlobPatterns,
-		embeddingsClient,
-		splitOptions,
-		func(fileName string) ([]byte, error) {
-			return h.gitserverClient.ReadFile(ctx, nil, repo.Name, record.Revision, fileName)
-		},
-		getDocumentRanks,
-	)
+	opts := embed.EmbedRepoOpts{
+		RepoName:          repo.Name,
+		Revision:          record.Revision,
+		ExcludePatterns:   excludedGlobPatterns,
+		SplitOptions:      splitOptions,
+		MaxCodeEmbeddings: defaultTo(config.MaxCodeEmbeddingsPerRepo, defaultMaxCodeEmbeddingsPerRepo),
+		MaxTextEmbeddings: defaultTo(config.MaxTextEmbeddingsPerRepo, defaultMaxTextEmbeddingsPerRepo),
+		IndexedRevision:   lastSuccessfulJobRevision,
+	}
 
+	ranks, err := getDocumentRanks(ctx, string(repo.Name))
 	if err != nil {
 		return err
 	}
 
-	return embeddings.UploadIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex)
+	reportStats := func(stats *bgrepo.EmbedRepoStats) {
+		if err := h.repoEmbeddingJobsStore.UpdateRepoEmbeddingJobStats(ctx, record.ID, stats); err != nil {
+			logger.Error("failed to update embedding stats", log.Error(err))
+		}
+	}
+
+	repoEmbeddingIndex, toRemove, stats, err := embed.EmbedRepo(
+		ctx,
+		embeddingsClient,
+		h.contextService,
+		fetcher,
+		ranks,
+		opts,
+		logger,
+		reportStats,
+	)
+	if err != nil {
+		return err
+	}
+
+	reportStats(stats) // final, complete report
+
+	logger.Info(
+		"finished generating repo embeddings",
+		log.String("repoName", string(repo.Name)),
+		log.String("revision", string(record.Revision)),
+		log.Object("stats", stats.ToFields()...),
+	)
+
+	indexName := string(embeddings.GetRepoEmbeddingIndexName(repo.Name))
+	if stats.IsIncremental {
+		return embeddings.UpdateRepoEmbeddingIndex(ctx, h.uploadStore, indexName, previousIndex, repoEmbeddingIndex, toRemove, ranks)
+	} else {
+		return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, indexName, repoEmbeddingIndex)
+	}
+}
+
+// getPreviousEmbeddingIndex checks the last successfully indexed revision and returns its embeddings index. If there
+// is no previous revision, or if there's a problem downloading the index, then it returns a nil index. This means we
+// need to do a full (non-incremental) reindex.
+func (h *handler) getPreviousEmbeddingIndex(ctx context.Context, logger log.Logger, repo *types.Repo) (api.CommitID, *embeddings.RepoEmbeddingIndex) {
+	lastSuccessfulJob, err := h.repoEmbeddingJobsStore.GetLastCompletedRepoEmbeddingJob(ctx, repo.ID)
+	if err != nil {
+		logger.Info("No previous successful embeddings job found. Falling back to full index")
+		return "", nil
+	}
+
+	indexName := string(embeddings.GetRepoEmbeddingIndexName(repo.Name))
+	index, err := embeddings.DownloadRepoEmbeddingIndex(ctx, h.uploadStore, indexName)
+	if err != nil {
+		logger.Error("Error downloading previous embeddings index. Falling back to full index")
+		return "", nil
+	}
+
+	logger.Info(
+		"Found previous successful embeddings job. Attempting incremental index",
+		log.String("old revision", string(lastSuccessfulJob.Revision)),
+	)
+	return lastSuccessfulJob.Revision, index
+}
+
+func defaultTo(input, def int) int {
+	if input == 0 {
+		return def
+	}
+	return input
+}
+
+type revisionFetcher struct {
+	repo      api.RepoName
+	revision  api.CommitID
+	gitserver gitserver.Client
+}
+
+func (r *revisionFetcher) Read(ctx context.Context, fileName string) ([]byte, error) {
+	return r.gitserver.ReadFile(ctx, nil, r.repo, r.revision, fileName)
+}
+
+func (r *revisionFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {
+	fileInfos, err := r.gitserver.ReadDir(ctx, nil, r.repo, r.revision, "", true)
+	if err != nil {
+		return nil, err
+	}
+
+	entries := make([]embed.FileEntry, 0, len(fileInfos))
+	for _, fileInfo := range fileInfos {
+		if !fileInfo.IsDir() {
+			entries = append(entries, embed.FileEntry{
+				Name: fileInfo.Name(),
+				Size: fileInfo.Size(),
+			})
+		}
+	}
+	return entries, nil
+}
+
+func (r *revisionFetcher) Diff(ctx context.Context, oldCommit api.CommitID) (
+	toIndex []embed.FileEntry,
+	toRemove []string,
+	err error,
+) {
+	ctx = actor.WithInternalActor(ctx)
+	b, err := r.gitserver.DiffSymbols(ctx, r.repo, oldCommit, r.revision)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	toRemove, changedNew, err := diff.ParseGitDiffNameStatus(b)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// toRemove only contains file names, but we also need the file sizes. We could
+	// ask gitserver for the file size of each file, however my intuition tells me
+	// it is cheaper to call r.List(ctx) once. As a downside we have to loop over
+	// allFiles.
+	allFiles, err := r.List(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	changedNewSet := make(map[string]struct{})
+	for _, file := range changedNew {
+		changedNewSet[file] = struct{}{}
+	}
+
+	for _, file := range allFiles {
+		if _, ok := changedNewSet[file.Name]; ok {
+			toIndex = append(toIndex, file)
+		}
+	}
+
+	return
 }

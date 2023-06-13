@@ -14,11 +14,20 @@
 
 ### Security
 
-## [2.1.2]
+## [3.0.0-alpha.2]
 
 ### Added
 
-- Compatibility with IntelliJ 2022.3
+- A separate setting for the (optional) dotcom access token. [pull/53018](https://github.com/sourcegraph/sourcegraph/pull/53018)
+- Enabled "Explain selected code (detailed)" recipe [#53080](https://github.com/sourcegraph/sourcegraph/pull/53080)
+- Enabled multiple recipes [#53299](https://github.com/sourcegraph/sourcegraph/pull/53299)
+  - Explain selected code (high level)
+  - Generate a unit test
+  - Generate a docstring
+  - Improve variable names
+  - Smell code
+  - Optimize code
+- A separate setting for enabling/disabling Cody completions. [pull/53302](https://github.com/sourcegraph/sourcegraph/pull/53302)
 
 ### Changed
 
@@ -29,6 +38,39 @@
 ### Fixed
 
 ### Security
+
+## [3.0.0-alpha.1]
+
+### Added
+
+- Alpha-quality Cody chat, not ready yet for internal dogfooding.
+- Alpha-quality Cody code completions, not ready yet for internal dogfooding.
+
+## [2.1.4]
+
+### Added
+
+- Add `extensionDetails` to `public_argument` on logger [#51321](https://github.com/sourcegraph/sourcegraph/pull/51321)
+
+### Fixed
+
+- Handle case when remote for local branch != sourcegraph remote [#52172](https://github.com/sourcegraph/sourcegraph/pull/52172)
+
+## [2.1.3]
+
+### Added
+
+- Compatibility with IntelliJ 2023.1
+
+### Fixed
+
+- Fixed a backward-compatibility issue with Sourcegraph versions prior to 4.3 [#50080](https://github.com/sourcegraph/sourcegraph/issues/50080)
+
+## [2.1.2]
+
+### Added
+
+- Compatibility with IntelliJ 2022.3
 
 ## [2.1.1]
 

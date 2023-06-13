@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "codeintel",
@@ -11,7 +12,7 @@ go_library(
     deps = [
         "//enterprise/cmd/frontend/internal/executorqueue/handler",
         "//enterprise/internal/codeintel/autoindexing",
-        "//enterprise/internal/codeintel/shared/types",
+        "//enterprise/internal/codeintel/uploads/shared",
         "//enterprise/internal/executor/types",
         "//internal/conf",
         "//internal/database",
@@ -31,7 +32,7 @@ go_test(
     embed = [":codeintel"],
     deps = [
         "//enterprise/cmd/frontend/internal/executorqueue/handler",
-        "//enterprise/internal/codeintel/shared/types",
+        "//enterprise/internal/codeintel/uploads/shared",
         "//enterprise/internal/executor/types",
         "//internal/conf",
         "//internal/database",

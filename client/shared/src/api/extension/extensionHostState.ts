@@ -15,7 +15,7 @@ import { ExtensionCodeEditor } from './api/codeEditor'
 import { ExtensionDocument } from './api/textDocument'
 import { ExtensionWorkspaceRoot } from './api/workspaceRoot'
 import { InitData } from './extensionHost'
-import { RegisteredProvider, RegisteredViewProvider, PanelViewData } from './extensionHostApi'
+import { RegisteredProvider } from './extensionHostApi'
 import { ReferenceCounter } from './utils/ReferenceCounter'
 
 export function createExtensionHostState(
@@ -78,12 +78,6 @@ export function createExtensionHostState(
         activeViewComponentChanges: new BehaviorSubject<ExtensionViewer | undefined>(undefined),
         viewerUpdates: new Subject<ViewerUpdate>(),
 
-        panelViews: new BehaviorSubject<readonly Observable<PanelViewData>[]>([]),
-        insightsPageViewProviders: new BehaviorSubject<readonly RegisteredViewProvider<'insightsPage'>[]>([]),
-        homepageViewProviders: new BehaviorSubject<readonly RegisteredViewProvider<'homepage'>[]>([]),
-        globalPageViewProviders: new BehaviorSubject<readonly RegisteredViewProvider<'global/page'>[]>([]),
-        directoryViewProviders: new BehaviorSubject<readonly RegisteredViewProvider<'directory'>[]>([]),
-
         activeExtensions,
         activeLoggers: new Set<string>(),
     }
@@ -126,13 +120,6 @@ export interface ExtensionHostState {
     viewComponents: Map<string, ExtensionViewer>
     activeViewComponentChanges: BehaviorSubject<ExtensionViewer | undefined>
     viewerUpdates: Subject<ViewerUpdate>
-
-    // Views
-    panelViews: BehaviorSubject<readonly Observable<PanelViewData>[]>
-    insightsPageViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'insightsPage'>[]>
-    homepageViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'homepage'>[]>
-    globalPageViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'global/page'>[]>
-    directoryViewProviders: BehaviorSubject<readonly RegisteredViewProvider<'directory'>[]>
 
     // Extensions
     activeExtensions: Observable<(ConfiguredExtension | ExecutableExtension)[]>

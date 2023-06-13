@@ -29,6 +29,11 @@ import (
 const MAX_CONCURRENT_BUILD_PROCS = 4
 
 func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cmds ...Command) error {
+	if len(cmds) == 0 {
+		// Exit early if there are no commands to run.
+		return nil
+	}
+
 	chs := make([]<-chan struct{}, 0, len(cmds))
 	monitor := &changeMonitor{}
 	for _, cmd := range cmds {
@@ -327,7 +332,7 @@ func (c *cmdRunner) waitForInstallation(ctx context.Context, cmdNames map[string
 		"At this point it could be anything - does your computer still have power?",
 		"Might as well check Slack. %s is taking its time...",
 		"In German there's a saying: ein guter Käse braucht seine Zeit - a good cheese needs its time. Maybe %s is cheese?",
-		"If %s turns out to be cheese I'm gonna lose it. Hey, %s, hurry up, will ya",
+		"If %[1]s turns out to be cheese I'm gonna lose it. Hey, %[1]s, hurry up, will ya",
 		"Still waiting for %s to finish installing...",
 	}
 	messageCount := 0

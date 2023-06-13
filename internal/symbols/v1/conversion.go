@@ -137,10 +137,10 @@ func (x *SymbolInfoResponse) FromInternal(s *types.SymbolInfo) {
 	}
 }
 
-func (x *SymbolInfoResponse) ToInternal() types.SymbolInfo {
+func (x *SymbolInfoResponse) ToInternal() *types.SymbolInfo {
 	maybeResult := x.GetResult()
 	if maybeResult == nil {
-		return types.SymbolInfo{}
+		return nil
 	}
 
 	var definition types.RepoCommitPathMaybeRange
@@ -153,7 +153,7 @@ func (x *SymbolInfoResponse) ToInternal() types.SymbolInfo {
 		definition.Range = &defRange
 	}
 
-	return types.SymbolInfo{
+	return &types.SymbolInfo{
 		Definition: definition,
 		Hover:      maybeResult.Hover, // don't use GetHover() because it returns a string, not a pointer to a string
 	}

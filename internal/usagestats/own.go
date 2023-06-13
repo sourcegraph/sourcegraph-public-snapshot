@@ -29,7 +29,7 @@ func GetOwnershipUsageStats(ctx context.Context, db database.DB) (*types.Ownersh
 	stats.ReposCount = &types.OwnershipUsageReposCounts{
 		Total:                 &totalReposCount,
 		WithIngestedOwnership: &ingestedOwnershipReposCount,
-		// At this poing we do not compute ReposCount.WithOwnership as this is really
+		// At this point we do not compute ReposCount.WithOwnership as this is really
 		// computationally intensive (get all repos and query gitserver for each).
 		// This will become very easy once we have versioned CODEOWNERS in the database.
 	}
@@ -52,5 +52,10 @@ func GetOwnershipUsageStats(ctx context.Context, db database.DB) (*types.Ownersh
 	stats.SelectFileOwnersSearch = activity[selectFileOwnersEventName]
 	stats.FileHasOwnerSearch = activity[fileHasOwnerEventName]
 	stats.OwnershipPanelOpened = activity[ownershipPanelOpenEventName]
+	assignedOwnersCount, err := db.AssignedOwners().CountAssignedOwners(ctx)
+	if err != nil {
+		return nil, err
+	}
+	stats.AssignedOwnersCount = &assignedOwnersCount
 	return &stats, nil
 }

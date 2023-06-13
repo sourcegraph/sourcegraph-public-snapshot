@@ -1,6 +1,5 @@
 import { FC, useEffect, useState } from 'react'
 
-import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
 
 import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
@@ -8,7 +7,7 @@ import { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Icon, Link, Tooltip } from '@sourcegraph/wildcard'
+import { Tooltip } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
@@ -18,6 +17,8 @@ import { useExperimentalQueryInput } from '../../../search/useExperimentalSearch
 import { AddCodeHostWidget } from './AddCodeHostWidget'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
+import { TryCodyCtaSection } from './TryCodyCtaSection'
+import { TryCodySignUpCtaSection } from './TryCodySignUpCtaSection'
 
 import styles from './SearchPageContent.module.scss'
 
@@ -64,20 +65,8 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
             <BrandLogo className={styles.logo} isLightTheme={isLightTheme} variant="logo" />
             {isSourcegraphDotCom && (
-                <div className="d-sm-flex flex-row text-center">
-                    <div className={classNames(styles.slogan, 'text-muted mt-3 mr-sm-2 pr-2')}>
-                        Searching millions of public repositories
-                    </div>
-                    <div className="mt-3">
-                        <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">
-                            <Link
-                                to="https://about.sourcegraph.com/app"
-                                onClick={() => telemetryService.log('ClickedOnAppCTA', { location: 'HomeAboveSearch' })}
-                            >
-                                Download Sourcegraph app <Icon svgPath={mdiArrowRight} aria-hidden={true} />
-                            </Link>
-                        </Tooltip>
-                    </div>
+                <div className="text-muted mt-3 mr-sm-2 pr-2 text-center">
+                    Code search and an AI assistant with the context of the code graph.
                 </div>
             )}
 
@@ -95,7 +84,21 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                         <AddCodeHostWidget className="mb-4" />
                     </>
                 ) : (
-                    <SearchPageInput queryState={queryState} setQueryState={setQueryState} />
+                    <>
+                        <SearchPageInput queryState={queryState} setQueryState={setQueryState} />
+                        {isSourcegraphDotCom && (
+                            <>
+                                {authenticatedUser ? (
+                                    <TryCodyCtaSection className="mx-auto my-5" telemetryService={telemetryService} />
+                                ) : (
+                                    <TryCodySignUpCtaSection
+                                        className="mx-auto my-5"
+                                        telemetryService={telemetryService}
+                                    />
+                                )}
+                            </>
+                        )}
+                    </>
                 )}
             </div>
             <div className={classNames(styles.panelsContainer)}>

@@ -58,7 +58,6 @@ describe('UserNavItem', () => {
                             authenticatedUser={USER}
                             isSourcegraphDotCom={true}
                             isSourcegraphApp={false}
-                            codeHostIntegrationMessaging="browser-extension"
                             showFeedbackModal={() => undefined}
                             telemetryService={NOOP_TELEMETRY_SERVICE}
                         />
@@ -76,7 +75,6 @@ describe('UserNavItem', () => {
                     authenticatedUser={USER}
                     isSourcegraphDotCom={true}
                     isSourcegraphApp={false}
-                    codeHostIntegrationMessaging="browser-extension"
                     showFeedbackModal={() => undefined}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                 />

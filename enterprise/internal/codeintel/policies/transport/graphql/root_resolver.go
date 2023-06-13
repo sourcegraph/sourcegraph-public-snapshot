@@ -11,15 +11,20 @@ import (
 type rootResolver struct {
 	policySvc        PoliciesService
 	repoStore        database.RepoStore
-	operations       *operations
 	siteAdminChecker sharedresolvers.SiteAdminChecker
+	operations       *operations
 }
 
-func NewRootResolver(observationCtx *observation.Context, policySvc *policies.Service, repoStore database.RepoStore, siteAdminChecker sharedresolvers.SiteAdminChecker) resolverstubs.PoliciesServiceResolver {
+func NewRootResolver(
+	observationCtx *observation.Context,
+	policySvc *policies.Service,
+	repoStore database.RepoStore,
+	siteAdminChecker sharedresolvers.SiteAdminChecker,
+) resolverstubs.PoliciesServiceResolver {
 	return &rootResolver{
 		policySvc:        policySvc,
 		repoStore:        repoStore,
-		operations:       newOperations(observationCtx),
 		siteAdminChecker: siteAdminChecker,
+		operations:       newOperations(observationCtx),
 	}
 }

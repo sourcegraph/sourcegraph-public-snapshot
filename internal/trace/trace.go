@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -25,9 +24,9 @@ type Trace struct {
 }
 
 // New returns a new Trace with the specified family and title.
-func New(ctx context.Context, family, title string, tags ...Tag) (*Trace, context.Context) {
+func New(ctx context.Context, family, title string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
 	tr := Tracer{TracerProvider: otel.GetTracerProvider()}
-	return tr.New(ctx, family, title, tags...)
+	return tr.New(ctx, family, title, attrs...)
 }
 
 // SetAttributes sets kv as attributes of the Span.
@@ -63,6 +62,9 @@ func (t *Trace) SetError(err error) {
 		return
 	}
 
+	// Truncate the error string to avoid tracing massive error messages.
+	err = truncateError(err, defaultErrorRuneLimit)
+
 	t.oteltraceSpan.RecordError(err)
 	t.oteltraceSpan.SetStatus(codes.Error, err.Error())
 
@@ -74,6 +76,7 @@ func (t *Trace) SetError(err error) {
 // context.DeadlineExceeded.
 func (t *Trace) SetErrorIfNotContext(err error) {
 	if errors.IsAny(err, context.Canceled, context.DeadlineExceeded) {
+		err = truncateError(err, defaultErrorRuneLimit)
 		t.oteltraceSpan.RecordError(err)
 		t.nettraceTrace.LazyPrintf("error: %v", err)
 		return
@@ -89,19 +92,10 @@ func (t *Trace) Finish() {
 	t.oteltraceSpan.End()
 }
 
-/////////////////////
-// Deprecated APIs //
-/////////////////////
-
-// Deprecated: Use AddEvent(...) instead.
-//
-// LogFields logs fields to the opentracing.Span as well as the nettrace.Trace.
-func (t *Trace) LogFields(fields ...log.Field) {
-	t.AddEvent("LogFields", otLogFieldsToOTelAttrs(fields)...)
+// FinishWithErr finishes the span and sets its error value.
+// It takes a pointer to an error so it can be used directly
+// in a defer statement.
+func (t *Trace) FinishWithErr(err *error) {
+	t.SetError(*err)
+	t.Finish()
 }
-
-// Deprecated: Use SetAttributes(...) instead.
-//
-// TagFields adds fields to the opentracing.Span as tags
-// as well as logs to the nettrace.Trace.
-func (t *Trace) TagFields(fields ...log.Field) { t.SetAttributes(otLogFieldsToOTelAttrs(fields)...) }

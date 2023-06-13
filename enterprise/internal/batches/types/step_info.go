@@ -58,66 +58,15 @@ func ParseLogLines(entry executor.ExecutionLogEntry, lines []*batcheslib.LogEven
 			highestStep = step
 		}
 		if info, ok := infoByStep[step]; !ok {
-			info := &StepInfo{}
-			infoByStep[step] = info
-			cb(info)
+			i := &StepInfo{}
+			infoByStep[step] = i
+			cb(i)
 		} else {
 			cb(info)
 		}
 	}
 
-	for _, l := range lines {
-		switch m := l.Metadata.(type) {
-		case *batcheslib.TaskSkippingStepsMetadata:
-			// Set all steps up until i as skipped.
-			for i := 1; i < m.StartStep; i++ {
-				setSafe(i, func(si *StepInfo) {
-					si.Skipped = true
-				})
-			}
-		case *batcheslib.TaskStepSkippedMetadata:
-			setSafe(m.Step, func(si *StepInfo) {
-				si.Skipped = true
-			})
-		case *batcheslib.TaskPreparingStepMetadata:
-			if l.Status == batcheslib.LogEventStatusStarted {
-				setSafe(m.Step, func(si *StepInfo) {
-					si.StartedAt = l.Timestamp
-				})
-			}
-		case *batcheslib.TaskStepMetadata:
-			if l.Status == batcheslib.LogEventStatusSuccess || l.Status == batcheslib.LogEventStatusFailure {
-				setSafe(m.Step, func(si *StepInfo) {
-					si.FinishedAt = l.Timestamp
-					si.ExitCode = &m.ExitCode
-					if l.Status == batcheslib.LogEventStatusSuccess {
-						outputs := m.Outputs
-						if outputs == nil {
-							outputs = map[string]any{}
-						}
-						si.OutputVariables = outputs
-						si.Diff = m.Diff
-						si.DiffFound = true
-					}
-				})
-			} else if l.Status == batcheslib.LogEventStatusStarted {
-				setSafe(m.Step, func(si *StepInfo) {
-					env := m.Env
-					if env == nil {
-						env = make(map[string]string)
-					}
-					si.Environment = env
-				})
-			} else if l.Status == batcheslib.LogEventStatusProgress {
-				if m.Out != "" {
-					setSafe(m.Step, func(si *StepInfo) {
-						lines := strings.Split(strings.TrimSuffix(m.Out, "\n"), "\n")
-						si.OutputLines = append(si.OutputLines, lines...)
-					})
-				}
-			}
-		}
-	}
+	ParseLines(lines, setSafe)
 
 	if entry.ExitCode == nil {
 		return infoByStep
@@ -140,4 +89,70 @@ func ParseLogLines(entry executor.ExecutionLogEntry, lines []*batcheslib.LogEven
 	}
 
 	return infoByStep
+}
+
+// ParseLines parses the given log lines and calls the given safeFunc for each.
+func ParseLines(lines []*batcheslib.LogEvent, safeFunc SetFunc) {
+	for _, l := range lines {
+		switch m := l.Metadata.(type) {
+		case *batcheslib.TaskSkippingStepsMetadata:
+			// Set all steps up until i as skipped.
+			for i := 1; i < m.StartStep; i++ {
+				safeFunc(i, func(si *StepInfo) {
+					si.Skipped = true
+				})
+			}
+		case *batcheslib.TaskStepSkippedMetadata:
+			safeFunc(m.Step, func(si *StepInfo) {
+				si.Skipped = true
+			})
+		case *batcheslib.TaskPreparingStepMetadata:
+			if l.Status == batcheslib.LogEventStatusStarted {
+				safeFunc(m.Step, func(si *StepInfo) {
+					si.StartedAt = l.Timestamp
+				})
+			}
+		case *batcheslib.TaskStepMetadata:
+			if l.Status == batcheslib.LogEventStatusSuccess || l.Status == batcheslib.LogEventStatusFailure {
+				safeFunc(m.Step, func(si *StepInfo) {
+					si.FinishedAt = l.Timestamp
+					si.ExitCode = &m.ExitCode
+					if l.Status == batcheslib.LogEventStatusSuccess {
+						outputs := m.Outputs
+						if outputs == nil {
+							outputs = map[string]any{}
+						}
+						si.OutputVariables = outputs
+						si.Diff = m.Diff
+						si.DiffFound = true
+					}
+				})
+			} else if l.Status == batcheslib.LogEventStatusStarted {
+				safeFunc(m.Step, func(si *StepInfo) {
+					env := m.Env
+					if env == nil {
+						env = make(map[string]string)
+					}
+					si.Environment = env
+				})
+			} else if l.Status == batcheslib.LogEventStatusProgress {
+				if m.Out != "" {
+					safeFunc(m.Step, func(si *StepInfo) {
+						ln := strings.Split(strings.TrimSuffix(m.Out, "\n"), "\n")
+						si.OutputLines = append(si.OutputLines, ln...)
+					})
+				}
+			}
+		}
+	}
+}
+
+// SetFunc is a function that can be used to set a value on a StepInfo.
+type SetFunc func(step int, cb func(*StepInfo))
+
+// DefaultSetFunc is the default SetFunc that can be used with ParseLines.
+func DefaultSetFunc(info *StepInfo) SetFunc {
+	return func(step int, cb func(*StepInfo)) {
+		cb(info)
+	}
 }

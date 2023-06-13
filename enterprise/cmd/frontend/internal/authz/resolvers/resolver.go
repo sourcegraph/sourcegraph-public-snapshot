@@ -683,3 +683,57 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args graphqlbackend.
 
 	return NewPermissionsSyncJobsResolver(r.db, args)
 }
+
+func (r *Resolver) PermissionsSyncingStats(ctx context.Context) (graphqlbackend.PermissionsSyncingStatsResolver, error) {
+	stats := permissionsSyncingStats{
+		db:    r.db,
+		ossDB: r.ossDB,
+	}
+
+	// 🚨 SECURITY: Only site admins can query permissions syncing stats.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return stats, err
+	}
+
+	return stats, nil
+}
+
+type permissionsSyncingStats struct {
+	db    edb.EnterpriseDB
+	ossDB database.DB
+}
+
+func (s permissionsSyncingStats) QueueSize(ctx context.Context) (int32, error) {
+	count, err := s.ossDB.PermissionSyncJobs().Count(ctx, database.ListPermissionSyncJobOpts{State: database.PermissionsSyncJobStateQueued})
+	return int32(count), err
+}
+
+func (s permissionsSyncingStats) UsersWithLatestJobFailing(ctx context.Context) (int32, error) {
+	return s.ossDB.PermissionSyncJobs().CountUsersWithFailingSyncJob(ctx)
+}
+
+func (s permissionsSyncingStats) ReposWithLatestJobFailing(ctx context.Context) (int32, error) {
+	return s.ossDB.PermissionSyncJobs().CountReposWithFailingSyncJob(ctx)
+}
+
+func (s permissionsSyncingStats) UsersWithNoPermissions(ctx context.Context) (int32, error) {
+	count, err := s.db.Perms().CountUsersWithNoPerms(ctx)
+	return int32(count), err
+}
+
+func (s permissionsSyncingStats) ReposWithNoPermissions(ctx context.Context) (int32, error) {
+	count, err := s.db.Perms().CountReposWithNoPerms(ctx)
+	return int32(count), err
+}
+
+func (s permissionsSyncingStats) UsersWithStalePermissions(ctx context.Context) (int32, error) {
+	count, err := s.db.Perms().CountUsersWithStalePerms(ctx, new(auth.Backoff).SyncUserBackoff())
+
+	return int32(count), err
+}
+
+func (s permissionsSyncingStats) ReposWithStalePermissions(ctx context.Context) (int32, error) {
+	count, err := s.db.Perms().CountReposWithStalePerms(ctx, new(auth.Backoff).SyncRepoBackoff())
+
+	return int32(count), err
+}

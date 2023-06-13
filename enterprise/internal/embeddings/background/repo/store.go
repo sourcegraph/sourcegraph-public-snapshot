@@ -2,19 +2,37 @@ package repo
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type RepoEmbeddingJobNotFoundErr struct {
+	repoID api.RepoID
+}
+
+func (r *RepoEmbeddingJobNotFoundErr) Error() string {
+	return fmt.Sprintf("repo embedding job not found: repoID=%d", r.repoID)
+}
+
+func (r *RepoEmbeddingJobNotFoundErr) NotFound() bool {
+	return true
+}
 
 var repoEmbeddingJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("repo_embedding_jobs.id"),
@@ -30,6 +48,7 @@ var repoEmbeddingJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("repo_embedding_jobs.execution_logs"),
 	sqlf.Sprintf("repo_embedding_jobs.worker_hostname"),
 	sqlf.Sprintf("repo_embedding_jobs.cancel"),
+
 	sqlf.Sprintf("repo_embedding_jobs.repo_id"),
 	sqlf.Sprintf("repo_embedding_jobs.revision"),
 }
@@ -84,14 +103,168 @@ type RepoEmbeddingJobsStore interface {
 	CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID) (int, error)
 	GetLastCompletedRepoEmbeddingJob(ctx context.Context, repoID api.RepoID) (*RepoEmbeddingJob, error)
 	GetLastRepoEmbeddingJobForRevision(ctx context.Context, repoID api.RepoID, revision api.CommitID) (*RepoEmbeddingJob, error)
-	ListRepoEmbeddingJobs(ctx context.Context, args *database.PaginationArgs) ([]*RepoEmbeddingJob, error)
-	CountRepoEmbeddingJobs(ctx context.Context) (int, error)
+	ListRepoEmbeddingJobs(ctx context.Context, args ListOpts) ([]*RepoEmbeddingJob, error)
+	CountRepoEmbeddingJobs(ctx context.Context, args ListOpts) (int, error)
+	GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error)
+	CancelRepoEmbeddingJob(ctx context.Context, job int) error
+
+	UpdateRepoEmbeddingJobStats(ctx context.Context, jobID int, stats *EmbedRepoStats) error
+	GetRepoEmbeddingJobStats(ctx context.Context, jobID int) (EmbedRepoStats, error)
 }
 
 var _ basestore.ShareableStore = &repoEmbeddingJobsStore{}
 
 type repoEmbeddingJobsStore struct {
 	*basestore.Store
+}
+
+type EmbeddableRepo struct {
+	ID          api.RepoID
+	lastChanged time.Time
+}
+
+var scanEmbeddableRepos = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (r EmbeddableRepo, _ error) {
+	err := scanner.Scan(&r.ID, &r.lastChanged)
+	return r, err
+})
+
+const getEmbeddableReposFmtStr = `
+WITH
+global_policy_descriptor AS MATERIALIZED (
+	SELECT 1
+	FROM codeintel_configuration_policies p
+	WHERE
+		p.embeddings_enabled AND
+		p.repository_id IS NULL AND
+		p.repository_patterns IS NULL
+	LIMIT 1
+),
+last_queued_jobs AS (
+	SELECT DISTINCT ON (repo_id) repo_id, queued_at
+	FROM repo_embedding_jobs
+	ORDER BY repo_id, queued_at DESC
+),
+repositories_matching_policy AS (
+    (
+        SELECT r.id, gr.last_changed
+        FROM repo r
+        JOIN gitserver_repos gr ON gr.repo_id = r.id
+        JOIN global_policy_descriptor gpd ON TRUE
+        WHERE
+            r.deleted_at IS NULL AND
+            r.blocked IS NULL AND
+            gr.clone_status = 'cloned'
+        ORDER BY stars DESC NULLS LAST, id
+        %s -- limit clause
+    ) UNION ALL (
+        SELECT r.id, gr.last_changed
+        FROM repo r
+        JOIN gitserver_repos gr ON gr.repo_id = r.id
+        JOIN codeintel_configuration_policies p ON p.repository_id = r.id
+        WHERE
+            r.deleted_at IS NULL AND
+            r.blocked IS NULL AND
+            p.embeddings_enabled AND
+            gr.clone_status = 'cloned'
+    ) UNION ALL (
+        SELECT r.id, gr.last_changed
+        FROM repo r
+        JOIN gitserver_repos gr ON gr.repo_id = r.id
+        JOIN codeintel_configuration_policies_repository_pattern_lookup rpl ON rpl.repo_id = r.id
+        JOIN codeintel_configuration_policies p ON p.id = rpl.policy_id
+        WHERE
+            r.deleted_at IS NULL AND
+            r.blocked IS NULL AND
+            p.embeddings_enabled AND
+            gr.clone_status = 'cloned'
+    )
+)
+--
+SELECT DISTINCT ON (rmp.id) rmp.id, rmp.last_changed
+FROM repositories_matching_policy rmp
+LEFT JOIN last_queued_jobs lqj ON lqj.repo_id = rmp.id
+WHERE lqj.queued_at IS NULL OR lqj.queued_at < current_timestamp - (%s * '1 second'::interval);
+`
+
+type EmbeddableRepoOpts struct {
+	// MinimumInterval is the minimum amount of time that must have passed since the last
+	// successful embedding job.
+	MinimumInterval time.Duration
+
+	// PolicyRepositoryMatchLimit limits the maximum number of repositories that can
+	// be matched by a global policy. If set to nil or a negative value, the policy
+	// is unlimited.
+	PolicyRepositoryMatchLimit *int
+}
+
+type ListOpts struct {
+	*database.PaginationArgs
+	Query *string
+	State *string
+}
+
+func init() {
+	conf.ContributeValidator(embeddingConfigValidator)
+}
+
+func embeddingConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
+	embeddingsConf := q.SiteConfig().Embeddings
+	if embeddingsConf == nil {
+		return nil
+	}
+
+	minimumIntervalString := embeddingsConf.MinimumInterval
+	_, err := time.ParseDuration(minimumIntervalString)
+	if err != nil && minimumIntervalString != "" {
+		return conf.NewSiteProblems(fmt.Sprintf("Could not parse \"embeddings.minimumInterval: %s\". %s", minimumIntervalString, err))
+	}
+
+	return nil
+}
+
+var defaultPolicyRepositoryMatchLimit = 5000
+
+var defaultOpts = EmbeddableRepoOpts{
+	MinimumInterval:            24 * time.Hour,
+	PolicyRepositoryMatchLimit: &defaultPolicyRepositoryMatchLimit,
+}
+
+func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
+	opts := defaultOpts
+
+	embeddingsConf := conf.Get().Embeddings
+	if embeddingsConf == nil {
+		return opts
+	}
+
+	minimumIntervalString := embeddingsConf.MinimumInterval
+	d, err := time.ParseDuration(minimumIntervalString)
+	if err == nil {
+		opts.MinimumInterval = d
+	}
+
+	if embeddingsConf.PolicyRepositoryMatchLimit != nil {
+		opts.PolicyRepositoryMatchLimit = embeddingsConf.PolicyRepositoryMatchLimit
+	}
+
+	return opts
+}
+
+func (s *repoEmbeddingJobsStore) GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error) {
+	var limitClause *sqlf.Query
+	if opts.PolicyRepositoryMatchLimit != nil && *opts.PolicyRepositoryMatchLimit >= 0 {
+		limitClause = sqlf.Sprintf("LIMIT %d", *opts.PolicyRepositoryMatchLimit)
+	} else {
+		limitClause = sqlf.Sprintf("")
+	}
+
+	q := sqlf.Sprintf(
+		getEmbeddableReposFmtStr,
+		limitClause,
+		opts.MinimumInterval.Seconds(),
+	)
+
+	return scanEmbeddableRepos(s.Query(ctx, q))
 }
 
 func NewRepoEmbeddingJobsStore(other basestore.ShareableStore) RepoEmbeddingJobsStore {
@@ -114,6 +287,129 @@ func (s *repoEmbeddingJobsStore) CreateRepoEmbeddingJob(ctx context.Context, rep
 	return id, err
 }
 
+var repoEmbeddingJobStatsColumns = []*sqlf.Query{
+	sqlf.Sprintf("repo_embedding_job_stats.job_id"),
+	sqlf.Sprintf("repo_embedding_job_stats.is_incremental"),
+	sqlf.Sprintf("repo_embedding_job_stats.code_files_total"),
+	sqlf.Sprintf("repo_embedding_job_stats.code_files_embedded"),
+	sqlf.Sprintf("repo_embedding_job_stats.code_chunks_embedded"),
+	sqlf.Sprintf("repo_embedding_job_stats.code_files_skipped"),
+	sqlf.Sprintf("repo_embedding_job_stats.code_bytes_embedded"),
+	sqlf.Sprintf("repo_embedding_job_stats.text_files_total"),
+	sqlf.Sprintf("repo_embedding_job_stats.text_files_embedded"),
+	sqlf.Sprintf("repo_embedding_job_stats.text_chunks_embedded"),
+	sqlf.Sprintf("repo_embedding_job_stats.text_files_skipped"),
+	sqlf.Sprintf("repo_embedding_job_stats.text_bytes_embedded"),
+}
+
+func scanRepoEmbeddingStats(s dbutil.Scanner) (EmbedRepoStats, error) {
+	var stats EmbedRepoStats
+	var jobID int
+	err := s.Scan(
+		&jobID,
+		&stats.IsIncremental,
+		&stats.CodeIndexStats.FilesScheduled,
+		&stats.CodeIndexStats.FilesEmbedded,
+		&stats.CodeIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&stats.CodeIndexStats.FilesSkipped),
+		&stats.CodeIndexStats.BytesEmbedded,
+		&stats.TextIndexStats.FilesScheduled,
+		&stats.TextIndexStats.FilesEmbedded,
+		&stats.TextIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
+		&stats.TextIndexStats.BytesEmbedded,
+	)
+	return stats, err
+}
+
+func (s *repoEmbeddingJobsStore) GetRepoEmbeddingJobStats(ctx context.Context, jobID int) (EmbedRepoStats, error) {
+	const getRepoEmbeddingJobStats = `SELECT %s FROM repo_embedding_job_stats WHERE job_id = %s`
+	q := sqlf.Sprintf(
+		getRepoEmbeddingJobStats,
+		sqlf.Join(repoEmbeddingJobStatsColumns, ","),
+		jobID,
+	)
+
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return EmbedRepoStats{}, err
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return EmbedRepoStats{}, nil // not an error condition, just no progress
+	}
+
+	return scanRepoEmbeddingStats(rows)
+}
+
+func (s *repoEmbeddingJobsStore) UpdateRepoEmbeddingJobStats(ctx context.Context, jobID int, stats *EmbedRepoStats) error {
+	const updateRepoEmbeddingJobStats = `
+	INSERT INTO repo_embedding_job_stats (
+		job_id,
+		is_incremental,
+		code_files_total,
+		code_files_embedded,
+		code_chunks_embedded,
+		code_files_skipped,
+		code_bytes_embedded,
+		text_files_total,
+		text_files_embedded,
+		text_chunks_embedded,
+		text_files_skipped,
+		text_bytes_embedded
+	) VALUES (
+		%s, %s, %s, %s,
+		%s, %s, %s, %s,
+		%s, %s, %s, %s
+	)
+	ON CONFLICT (job_id) DO UPDATE
+	SET
+		is_incremental = %s,
+		code_files_total = %s,
+		code_files_embedded = %s,
+		code_chunks_embedded = %s,
+		code_files_skipped = %s,
+		code_bytes_embedded = %s,
+		text_files_total = %s,
+		text_files_embedded = %s,
+		text_chunks_embedded = %s,
+		text_files_skipped = %s,
+		text_bytes_embedded = %s
+	`
+
+	q := sqlf.Sprintf(
+		updateRepoEmbeddingJobStats,
+
+		jobID,
+		stats.IsIncremental,
+		stats.CodeIndexStats.FilesScheduled,
+		stats.CodeIndexStats.FilesEmbedded,
+		stats.CodeIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&stats.CodeIndexStats.FilesSkipped),
+		stats.CodeIndexStats.BytesEmbedded,
+		stats.TextIndexStats.FilesScheduled,
+		stats.TextIndexStats.FilesEmbedded,
+		stats.TextIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
+		stats.TextIndexStats.BytesEmbedded,
+
+		stats.IsIncremental,
+		stats.CodeIndexStats.FilesScheduled,
+		stats.CodeIndexStats.FilesEmbedded,
+		stats.CodeIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&stats.CodeIndexStats.FilesSkipped),
+		stats.CodeIndexStats.BytesEmbedded,
+		stats.TextIndexStats.FilesScheduled,
+		stats.TextIndexStats.FilesEmbedded,
+		stats.TextIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
+		stats.TextIndexStats.BytesEmbedded,
+	)
+
+	return s.Exec(ctx, q)
+}
+
 const getLastFinishedRepoEmbeddingJob = `
 SELECT %s
 FROM repo_embedding_jobs
@@ -124,7 +420,11 @@ LIMIT 1
 
 func (s *repoEmbeddingJobsStore) GetLastCompletedRepoEmbeddingJob(ctx context.Context, repoID api.RepoID) (*RepoEmbeddingJob, error) {
 	q := sqlf.Sprintf(getLastFinishedRepoEmbeddingJob, sqlf.Join(repoEmbeddingJobsColumns, ", "), repoID)
-	return scanRepoEmbeddingJob(s.QueryRow(ctx, q))
+	job, err := scanRepoEmbeddingJob(s.QueryRow(ctx, q))
+	if err == sql.ErrNoRows {
+		return nil, &RepoEmbeddingJobNotFoundErr{repoID: repoID}
+	}
+	return job, nil
 }
 
 const getLastRepoEmbeddingJobForRevision = `
@@ -137,16 +437,45 @@ LIMIT 1
 
 func (s *repoEmbeddingJobsStore) GetLastRepoEmbeddingJobForRevision(ctx context.Context, repoID api.RepoID, revision api.CommitID) (*RepoEmbeddingJob, error) {
 	q := sqlf.Sprintf(getLastRepoEmbeddingJobForRevision, sqlf.Join(repoEmbeddingJobsColumns, ", "), repoID, revision)
-	return scanRepoEmbeddingJob(s.QueryRow(ctx, q))
+	job, err := scanRepoEmbeddingJob(s.QueryRow(ctx, q))
+	if err == sql.ErrNoRows {
+		return nil, &RepoEmbeddingJobNotFoundErr{repoID: repoID}
+	}
+	return job, nil
 }
 
 const countRepoEmbeddingJobsQuery = `
 SELECT COUNT(*)
 FROM repo_embedding_jobs
+%s -- joinClause
+%s -- whereClause
 `
 
-func (s *repoEmbeddingJobsStore) CountRepoEmbeddingJobs(ctx context.Context) (int, error) {
-	q := sqlf.Sprintf(countRepoEmbeddingJobsQuery)
+// CountRepoEmbeddingJobs returns the number of repo embedding jobs that match
+// the query. If there is no query, all repo embedding jobs are counted.
+func (s *repoEmbeddingJobsStore) CountRepoEmbeddingJobs(ctx context.Context, opts ListOpts) (int, error) {
+	var conds []*sqlf.Query
+
+	var joinClause *sqlf.Query
+	if opts.Query != nil && *opts.Query != "" {
+		conds = append(conds, sqlf.Sprintf("repo.name LIKE %s", "%"+*opts.Query+"%"))
+		joinClause = sqlf.Sprintf("JOIN repo ON repo.id = repo_embedding_jobs.repo_id")
+	} else {
+		joinClause = sqlf.Sprintf("")
+	}
+
+	if opts.State != nil && *opts.State != "" {
+		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.state = %s", strings.ToLower(*opts.State)))
+	}
+
+	var whereClause *sqlf.Query
+	if len(conds) != 0 {
+		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
+	} else {
+		whereClause = sqlf.Sprintf("")
+	}
+
+	q := sqlf.Sprintf(countRepoEmbeddingJobsQuery, joinClause, whereClause)
 	var count int
 	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
 		return 0, err
@@ -157,15 +486,28 @@ func (s *repoEmbeddingJobsStore) CountRepoEmbeddingJobs(ctx context.Context) (in
 const listRepoEmbeddingJobsQueryFmtstr = `
 SELECT %s
 FROM repo_embedding_jobs
+%s -- joinClause
 %s -- whereClause
 `
 
-func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, paginationArgs *database.PaginationArgs) ([]*RepoEmbeddingJob, error) {
-	pagination := paginationArgs.SQL()
+func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, opts ListOpts) ([]*RepoEmbeddingJob, error) {
+	pagination := opts.PaginationArgs.SQL()
 
 	var conds []*sqlf.Query
 	if pagination.Where != nil {
 		conds = append(conds, pagination.Where)
+	}
+
+	var joinClause *sqlf.Query
+	if opts.Query != nil && *opts.Query != "" {
+		conds = append(conds, sqlf.Sprintf("repo.name LIKE %s", "%"+*opts.Query+"%"))
+		joinClause = sqlf.Sprintf("JOIN repo ON repo.id = repo_embedding_jobs.repo_id")
+	} else {
+		joinClause = sqlf.Sprintf("")
+	}
+
+	if opts.State != nil && *opts.State != "" {
+		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.state = %s", strings.ToLower(*opts.State)))
 	}
 
 	var whereClause *sqlf.Query
@@ -175,7 +517,7 @@ func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, pagi
 		whereClause = sqlf.Sprintf("")
 	}
 
-	q := sqlf.Sprintf(listRepoEmbeddingJobsQueryFmtstr, sqlf.Join(repoEmbeddingJobsColumns, ", "), whereClause)
+	q := sqlf.Sprintf(listRepoEmbeddingJobsQueryFmtstr, sqlf.Join(repoEmbeddingJobsColumns, ", "), joinClause, whereClause)
 	q = pagination.AppendOrderToQuery(q)
 	q = pagination.AppendLimitToQuery(q)
 
@@ -195,3 +537,36 @@ func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, pagi
 	}
 	return jobs, nil
 }
+
+func (s *repoEmbeddingJobsStore) CancelRepoEmbeddingJob(ctx context.Context, jobID int) error {
+	now := time.Now()
+	q := sqlf.Sprintf(cancelRepoEmbeddingJobQueryFmtstr, now, jobID)
+
+	res, err := s.ExecResult(ctx, q)
+	if err != nil {
+		return err
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nrows == 0 {
+		return errors.Newf("could not find cancellable embedding job: jobID=%d", jobID)
+	}
+	return nil
+}
+
+const cancelRepoEmbeddingJobQueryFmtstr = `
+UPDATE
+	repo_embedding_jobs
+SET
+    cancel = TRUE,
+    -- If the embeddings job is still queued, we directly abort, otherwise we keep the
+    -- state, so the worker can do teardown and later mark it failed.
+    state = CASE WHEN repo_embedding_jobs.state = 'processing' THEN repo_embedding_jobs.state ELSE 'canceled' END,
+    finished_at = CASE WHEN repo_embedding_jobs.state = 'processing' THEN repo_embedding_jobs.finished_at ELSE %s END
+WHERE
+	id = %d
+	AND
+	state IN ('queued', 'processing')
+`

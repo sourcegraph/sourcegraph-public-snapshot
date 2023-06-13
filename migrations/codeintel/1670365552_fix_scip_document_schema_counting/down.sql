@@ -32,8 +32,6 @@ END $$;
 
 DROP TRIGGER IF EXISTS codeintel_scip_documents_schema_versions_insert ON codeintel_scip_documents;
 DROP TRIGGER IF EXISTS codeintel_scip_documents_schema_versions_insert ON codeintel_scip_documents_schema_versions;
-CREATE TRIGGER codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_documents_schema_versions
-REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert();
 
 -- Restore documents table
 ALTER TABLE codeintel_scip_documents DROP COLUMN IF EXISTS metadata_shard_id;

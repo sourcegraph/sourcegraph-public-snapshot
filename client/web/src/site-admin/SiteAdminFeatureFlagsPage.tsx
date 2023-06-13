@@ -52,10 +52,21 @@ export type FeatureFlagAndReferences = FeatureFlagFields & {
  * @returns git ref
  */
 export function parseProductReference(productVersion: string): string {
-    // Look for format 135331_2022-03-04_2bb6927bb028, where last segment is commit
+    // Look for format 214157_2023-04-19_5.0-89aa613e7e1e, where last segment is
+    // $VERSION-$COMMIT
     const parts = productVersion.split('_')
     if (parts.length === 3) {
-        return parts.pop() || 'main'
+        // We need to split $VERSION-$COMMIT - if any of these step fails, we
+        // fall back to main.
+        const versionAndCommit = parts.pop()?.split('-')
+        if (!versionAndCommit || versionAndCommit.length !== 2) {
+            return 'main'
+        }
+        return versionAndCommit[1]
+    }
+    // Unknown format, fall back to main
+    if (parts.length === 2) {
+        return 'main'
     }
     // Special case for dev tag
     if (productVersion.startsWith('0.0.0')) {
@@ -183,11 +194,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
 
             <PageHeader
                 headingElement="h2"
-                path={[
-                    {
-                        text: <>Feature flags</>,
-                    },
-                ]}
+                path={[{ text: 'Feature flags' }]}
                 description={
                     <>
                         Feature flags, as opposed to experimental features, are intended to be strictly short-lived.
@@ -199,7 +206,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
                         .
                     </>
                 }
-                className="mb-3"
+                className={classNames(styles.pageHeader, 'mb-3')}
                 actions={
                     <ButtonLink variant="primary" to="./configuration/new">
                         Create feature flag
@@ -216,6 +223,7 @@ export const SiteAdminFeatureFlagsPage: React.FunctionComponent<
                     queryConnection={queryFeatureFlags}
                     nodeComponent={FeatureFlagNode}
                     filters={filters}
+                    withCenteredSummary={true}
                 />
             </Container>
         </>

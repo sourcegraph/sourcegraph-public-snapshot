@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -88,6 +89,9 @@ var _ workerutil.Handler[*BaseJob] = &newBackfillHandler{}
 func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job *BaseJob) (err error) {
 	logger.Info("newBackfillHandler called", log.Int("recordId", job.RecordID()))
 
+	// 🚨 SECURITY: we use the internal actor because all of the work is background work and not scoped to users
+	ctx = actor.WithInternalActor(ctx)
+
 	// setup transactions
 	tx, err := h.backfillStore.Transact(ctx)
 	if err != nil {
@@ -134,7 +138,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 		return errors.Wrap(err, "backfill.SetScope")
 	}
 
-	frames := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
+	sampleTimes := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
 		Value: series.SampleIntervalValue,
 	}, series.CreatedAt.Truncate(time.Minute))
@@ -142,7 +146,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 	if err := h.timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{
 		{
 			InsightSeriesID: series.ID,
-			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
+			RecordingTimes:  timeseries.MakeRecordingsFromTimes(sampleTimes, false),
 		},
 	}); err != nil {
 		return errors.Wrap(err, "NewBackfillHandler.SetInsightSeriesRecordingTimes")

@@ -10,8 +10,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/compute/streaming",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
-        "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/compute",
         "//internal/conf",
         "//internal/database",
@@ -24,8 +22,8 @@ go_library(
         "//internal/search/streaming/http",
         "//internal/trace",
         "//lib/errors",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_conc//stream",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )

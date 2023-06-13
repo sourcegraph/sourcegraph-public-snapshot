@@ -625,6 +625,38 @@ func Test_addFileFilter(t *testing.T) {
 	}
 }
 
+func Test_addRepoMetadataFilter(t *testing.T) {
+	tests := []struct {
+		name         string
+		input        string
+		repoMetadata string
+		want         autogold.Value
+	}{
+		{
+			name:         "no repo meta value",
+			input:        "myquery",
+			repoMetadata: "open-source",
+			want:         autogold.Expect(BasicQuery("repo:has.meta(open-source) myquery")),
+		},
+		{
+			name:         "with repo meta value",
+			input:        "myquery repo:supergreat",
+			repoMetadata: "team:backend",
+			want:         autogold.Expect(BasicQuery("repo:supergreat repo:has.meta(team:backend) myquery")),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := AddRepoMetadataFilter(BasicQuery(test.input), test.repoMetadata)
+			if err != nil {
+				test.want.Equal(t, err.Error())
+			} else {
+				test.want.Equal(t, got)
+			}
+		})
+	}
+}
+
 func TestRepositoryScopeQuery(t *testing.T) {
 	tests := []struct {
 		name  string

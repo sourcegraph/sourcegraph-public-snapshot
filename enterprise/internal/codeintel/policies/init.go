@@ -2,7 +2,8 @@ package policies
 
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/background"
-	policiesstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store"
+	repomatcher "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/background/repository_matcher"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -15,27 +16,25 @@ func NewService(
 	uploadSvc UploadService,
 	gitserverClient gitserver.Client,
 ) *Service {
-	store := policiesstore.New(scopedContext("store", observationCtx), db)
-
 	return newService(
-		observationCtx,
-		store,
+		scopedContext("service", observationCtx),
+		store.New(scopedContext("store", observationCtx), db),
 		db.Repos(),
 		uploadSvc,
 		gitserverClient,
 	)
 }
 
-func scopedContext(component string, parent *observation.Context) *observation.Context {
-	return observation.ScopedContext("codeintel", "policies", component, parent)
+var RepositoryMatcherConfigInst = &repomatcher.Config{}
+
+func NewRepositoryMatcherRoutines(observationCtx *observation.Context, service *Service) []goroutine.BackgroundRoutine {
+	return background.PolicyMatcherJobs(
+		scopedContext("repository-matcher", observationCtx),
+		service.store,
+		RepositoryMatcherConfigInst,
+	)
 }
 
-func PolicyMatcherJobs(observationCtx *observation.Context, service *Service) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		background.NewRepositoryMatcher(
-			service.store, observationCtx,
-			PolicyMatcherConfigInst.Interval,
-			PolicyMatcherConfigInst.ConfigurationPolicyMembershipBatchSize,
-		),
-	}
+func scopedContext(component string, parent *observation.Context) *observation.Context {
+	return observation.ScopedContext("codeintel", "policies", component, parent)
 }

@@ -1,7 +1,12 @@
+import { useMemo } from 'react'
+
+import { ApolloError } from '@apollo/client'
+import * as jsonc from 'jsonc-parser'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
+import { BatchChangeRolloutWindow, SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
@@ -11,6 +16,8 @@ import {
     BatchChangeBatchSpecsVariables,
     BatchChangeBatchSpecsResult,
     BatchSpecListConnectionFields,
+    BatchChangesSiteConfigurationResult,
+    BatchChangesSiteConfigurationVariables,
 } from '../../graphql-operations'
 
 export const queryBatchSpecs = ({
@@ -197,4 +204,39 @@ export const generateFileDownloadLink = async (fileUrl: string): Promise<string>
     })
     const fileBlob = await file.blob()
     return URL.createObjectURL(fileBlob)
+}
+
+export const BATCH_CHANGES_SITE_CONFIGURATION = gql`
+    query BatchChangesSiteConfiguration {
+        site {
+            configuration {
+                effectiveContents
+            }
+        }
+    }
+`
+
+interface useGetBatchChangesSiteConfigurationResult {
+    loading: boolean
+    error: ApolloError | undefined
+    rolloutWindowConfig: BatchChangeRolloutWindow[]
+}
+
+export const useBatchChangesRolloutWindowConfig = (): useGetBatchChangesSiteConfigurationResult => {
+    const { loading, error, data } = useQuery<
+        BatchChangesSiteConfigurationResult,
+        BatchChangesSiteConfigurationVariables
+    >(BATCH_CHANGES_SITE_CONFIGURATION, {
+        fetchPolicy: 'cache-first',
+    })
+
+    const rolloutWindowConfig: BatchChangeRolloutWindow[] = useMemo(() => {
+        if (!data) {
+            return []
+        }
+        const siteConfig = jsonc.parse(data.site.configuration.effectiveContents) as SiteConfiguration
+        return siteConfig['batchChanges.rolloutWindows'] || []
+    }, [data])
+
+    return { loading, error, rolloutWindowConfig }
 }

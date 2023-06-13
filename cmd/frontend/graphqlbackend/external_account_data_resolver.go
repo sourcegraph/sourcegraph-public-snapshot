@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -14,7 +14,7 @@ type externalAccountDataResolver struct {
 
 func NewExternalAccountDataResolver(ctx context.Context, account extsvc.Account) (*externalAccountDataResolver, error) {
 	data, err := publicAccountDataFromJSON(ctx, account)
-	if err != nil {
+	if err != nil || data == nil {
 		return nil, err
 	}
 	return &externalAccountDataResolver{

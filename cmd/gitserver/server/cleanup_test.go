@@ -21,6 +21,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -162,6 +163,7 @@ func TestCleanupInactive(t *testing.T) {
 }
 
 func TestCleanupWrongShard(t *testing.T) {
+	logger := logtest.Scoped(t)
 	t.Run("wrongShardName", func(t *testing.T) {
 		root := t.TempDir()
 		// should be allocated to shard gitserver-1
@@ -180,7 +182,7 @@ func TestCleanupWrongShard(t *testing.T) {
 
 		s := &Server{
 			ReposDir:       root,
-			Logger:         logtest.Scoped(t),
+			Logger:         logger,
 			ObservationCtx: observation.TestContextTB(t),
 			DB:             database.NewMockDB(),
 		}
@@ -213,7 +215,7 @@ func TestCleanupWrongShard(t *testing.T) {
 
 		s := &Server{
 			ReposDir:       root,
-			Logger:         logtest.Scoped(t),
+			Logger:         logger,
 			ObservationCtx: observation.TestContextTB(t),
 			DB:             database.NewMockDB(),
 		}
@@ -246,7 +248,7 @@ func TestCleanupWrongShard(t *testing.T) {
 
 		s := &Server{
 			ReposDir:       root,
-			Logger:         logtest.Scoped(t),
+			Logger:         logger,
 			ObservationCtx: observation.TestContextTB(t),
 			DB:             database.NewMockDB(),
 		}
@@ -340,14 +342,12 @@ func TestCleanupExpired(t *testing.T) {
 	repoNonBare := path.Join(root, "repo-non-bare", ".git")
 	repoPerforce := path.Join(root, "repo-perforce", ".git")
 	repoPerforceGCOld := path.Join(root, "repo-perforce-gc-old", ".git")
-	repoRemoteURLScrub := path.Join(root, "repo-remote-url-scrub", ".git")
 	remote := path.Join(root, "remote", ".git")
 	for _, gitDirPath := range []string{
 		repoNew, repoOld,
 		repoGCNew, repoGCOld,
 		repoBoom, repoCorrupt,
 		repoPerforce, repoPerforceGCOld,
-		repoRemoteURLScrub,
 		remote,
 	} {
 		cmd := exec.Command("git", "--bare", "init", gitDirPath)
@@ -377,7 +377,7 @@ func TestCleanupExpired(t *testing.T) {
 	}
 	recloneTime := func(path string) time.Time {
 		t.Helper()
-		ts, err := getRecloneTime(GitDir(path))
+		ts, err := getRecloneTime(common.GitDir(path))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -396,23 +396,20 @@ func TestCleanupExpired(t *testing.T) {
 		repoPerforceGCOld: 2 * repoTTLGC,
 	} {
 		ts := time.Now().Add(-delta)
-		if err := setRecloneTime(GitDir(gitDirPath), ts); err != nil {
+		if err := setRecloneTime(common.GitDir(gitDirPath), ts); err != nil {
 			t.Fatal(err)
 		}
 		if err := os.Chtimes(filepath.Join(gitDirPath, "HEAD"), ts, ts); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := gitConfigSet(GitDir(repoCorrupt), gitConfigMaybeCorrupt, "1"); err != nil {
+	if err := gitConfigSet(common.GitDir(repoCorrupt), gitConfigMaybeCorrupt, "1"); err != nil {
 		t.Fatal(err)
 	}
-	if err := setRepositoryType(GitDir(repoPerforce), "perforce"); err != nil {
+	if err := setRepositoryType(common.GitDir(repoPerforce), "perforce"); err != nil {
 		t.Fatal(err)
 	}
-	if err := setRepositoryType(GitDir(repoPerforceGCOld), "perforce"); err != nil {
-		t.Fatal(err)
-	}
-	if err := exec.Command("git", "-C", repoRemoteURLScrub, "remote", "add", "origin", "http://hello:world@boom.com/").Run(); err != nil {
+	if err := setRepositoryType(common.GitDir(repoPerforceGCOld), "perforce"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -478,13 +475,6 @@ func TestCleanupExpired(t *testing.T) {
 	}
 	if !now.After(recloneTime(repoBoom)) {
 		t.Error("expected repoBoom reclone time to be updated to not now")
-	}
-
-	// we scrubbed remote URL
-	if out, err := exec.Command("git", "-C", repoRemoteURLScrub, "remote", "-v").Output(); len(out) > 0 {
-		t.Fatalf("expected no output from git remote after URL scrubbing, got: %s", out)
-	} else if err != nil {
-		t.Fatal(err)
 	}
 
 	if _, err := os.Stat(repoNonBare); err == nil {
@@ -695,7 +685,7 @@ func TestCleanupOldLocks(t *testing.T) {
 		if err := cmd.Run(); err != nil {
 			t.Fatal(err)
 		}
-		dir := GitDir(filepath.Join(root, c.name, ".git"))
+		dir := common.GitDir(filepath.Join(root, c.name, ".git"))
 		for _, f := range c.files {
 			writeFile(t, dir.Path(f.name), nil)
 			if f.age == 0 {
@@ -719,7 +709,7 @@ func TestCleanupOldLocks(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			dir := GitDir(filepath.Join(root, c.name, ".git"))
+			dir := common.GitDir(filepath.Join(root, c.name, ".git"))
 			for _, f := range c.files {
 				if f.wantRemoved != isRemoved(dir.Path(f.name)) {
 					t.Fatalf("%s should have been removed", f.name)
@@ -861,7 +851,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		"github.com/bam/bam/.git",
 		"example.com/repo/.git",
 	} {
-		if err := s.removeRepoDirectory(GitDir(filepath.Join(root, d)), true); err != nil {
+		if err := s.removeRepoDirectory(common.GitDir(filepath.Join(root, d)), logger, true); err != nil {
 			t.Fatalf("failed to remove %s: %s", d, err)
 		}
 	}
@@ -872,7 +862,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		"github.com/bam/bam/.git",
 		"example.com/repo/.git",
 	} {
-		if err := s.removeRepoDirectory(GitDir(filepath.Join(root, d)), true); err != nil {
+		if err := s.removeRepoDirectory(common.GitDir(filepath.Join(root, d)), logger, true); err != nil {
 			t.Fatalf("failed to remove %s: %s", d, err)
 		}
 	}
@@ -914,14 +904,15 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 	db := database.NewMockDB()
 	gr := database.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
+	logger := logtest.Scoped(t)
 	s := &Server{
-		Logger:         logtest.Scoped(t),
+		Logger:         logger,
 		ObservationCtx: observation.TestContextTB(t),
 		ReposDir:       root,
 		DB:             db,
 	}
 
-	if err := s.removeRepoDirectory(GitDir(filepath.Join(root, "github.com/foo/baz/.git")), true); err != nil {
+	if err := s.removeRepoDirectory(common.GitDir(filepath.Join(root, "github.com/foo/baz/.git")), logger, true); err != nil {
 		t.Fatal(err)
 	}
 
@@ -961,14 +952,14 @@ func TestRemoveRepoDirectory_UpdateCloneStatus(t *testing.T) {
 	root := t.TempDir()
 	mkFiles(t, root, "github.com/foo/baz/.git/HEAD")
 	s := &Server{
-		Logger:         logtest.Scoped(t),
+		Logger:         logger,
 		ObservationCtx: observation.TestContextTB(t),
 		ReposDir:       root,
 		DB:             db,
 		ctx:            ctx,
 	}
 
-	if err := s.removeRepoDirectory(GitDir(filepath.Join(root, "github.com/foo/baz/.git")), false); err != nil {
+	if err := s.removeRepoDirectory(common.GitDir(filepath.Join(root, "github.com/foo/baz/.git")), logger, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -991,8 +982,9 @@ func TestRemoveRepoDirectory_UpdateCloneStatus(t *testing.T) {
 
 func TestHowManyBytesToFree(t *testing.T) {
 	const G = 1024 * 1024 * 1024
+	logger := logtest.Scoped(t)
 	s := &Server{
-		Logger:             logtest.Scoped(t),
+		Logger:             logger,
 		ObservationCtx:     observation.TestContextTB(t),
 		DesiredPercentFree: 10,
 		DB:                 database.NewMockDB(),
@@ -1030,7 +1022,7 @@ func TestHowManyBytesToFree(t *testing.T) {
 				diskSize:  tc.diskSize,
 				bytesFree: tc.bytesFree,
 			}
-			b, err := s.howManyBytesToFree()
+			b, err := s.howManyBytesToFree(logger)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1046,11 +1038,11 @@ type fakeDiskSizer struct {
 	diskSize  uint64
 }
 
-func (f *fakeDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
+func (f *fakeDiskSizer) BytesFreeOnDisk(_ string) (uint64, error) {
 	return f.bytesFree, nil
 }
 
-func (f *fakeDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
+func (f *fakeDiskSizer) DiskSizeBytes(_ string) (uint64, error) {
 	return f.diskSize, nil
 }
 
@@ -1135,15 +1127,16 @@ func isEmptyDir(path string) (bool, error) {
 }
 
 func TestFreeUpSpace(t *testing.T) {
+	logger := logtest.Scoped(t)
 	t.Run("no error if no space requested and no repos", func(t *testing.T) {
-		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
-		if err := s.freeUpSpace(0); err != nil {
+		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logger, ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
+		if err := s.freeUpSpace(logger, 0); err != nil {
 			t.Fatal(err)
 		}
 	})
 	t.Run("error if space requested and no repos", func(t *testing.T) {
-		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
-		if err := s.freeUpSpace(1); err == nil {
+		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logger, ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
+		if err := s.freeUpSpace(logger, 1); err == nil {
 			t.Fatal("want error")
 		}
 	})
@@ -1174,13 +1167,13 @@ func TestFreeUpSpace(t *testing.T) {
 		db.GitserverReposFunc.SetDefaultReturn(gr)
 		// Run.
 		s := Server{
-			Logger:         logtest.Scoped(t),
+			Logger:         logger,
 			ObservationCtx: observation.TestContextTB(t),
 			ReposDir:       rd,
 			DiskSizer:      &fakeDiskSizer{},
 			DB:             db,
 		}
-		if err := s.freeUpSpace(1000); err != nil {
+		if err := s.freeUpSpace(logger, 1000); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1256,7 +1249,7 @@ func TestJitterDuration(t *testing.T) {
 	}
 }
 
-func prepareEmptyGitRepo(t *testing.T, dir string) GitDir {
+func prepareEmptyGitRepo(t *testing.T, dir string) common.GitDir {
 	t.Helper()
 	cmd := exec.Command("git", "init", ".")
 	cmd.Dir = dir
@@ -1268,7 +1261,7 @@ func prepareEmptyGitRepo(t *testing.T, dir string) GitDir {
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("execution error: %v, output %s", err, out)
 	}
-	return GitDir(filepath.Join(dir, ".git"))
+	return common.GitDir(filepath.Join(dir, ".git"))
 }
 
 func TestTooManyLooseObjects(t *testing.T) {
@@ -1564,7 +1557,7 @@ update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 		"ghe.sgdev.org/sourcegraph/gorilla-sessions":  2048,
 	}
 
-	s.setRepoSizes(context.Background(), sizes)
+	_ = s.setRepoSizes(context.Background(), logger, sizes)
 
 	for repoName, wantSize := range sizes {
 		repo, err := s.DB.GitserverRepos().GetByName(context.Background(), repoName)
@@ -1582,7 +1575,7 @@ update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 
 func TestSGMLogFile(t *testing.T) {
 	logger := logtest.Scoped(t)
-	dir := GitDir(t.TempDir())
+	dir := common.GitDir(t.TempDir())
 	cmd := exec.Command("git", "--bare", "init")
 	dir.Set(cmd)
 	if err := cmd.Run(); err != nil {
@@ -1617,7 +1610,7 @@ func TestSGMLogFile(t *testing.T) {
 	}
 
 	// fix the repo
-	os.Remove(fakeRef)
+	_ = os.Remove(fakeRef)
 
 	// fresh sgmLog file => skip execution
 	if err := sgMaintenance(logger, dir); err != nil {
@@ -1716,7 +1709,7 @@ error message
 
 // We test whether the lock set by sg maintenance is respected by git gc.
 func TestGitGCRespectsLock(t *testing.T) {
-	dir := GitDir(t.TempDir())
+	dir := common.GitDir(t.TempDir())
 	cmd := exec.Command("git", "--bare", "init")
 	dir.Set(cmd)
 	if err := cmd.Run(); err != nil {
@@ -1759,7 +1752,7 @@ func TestGitGCRespectsLock(t *testing.T) {
 func TestSGMaintenanceRespectsLock(t *testing.T) {
 	logger, getLogs := logtest.Captured(t)
 
-	dir := GitDir(t.TempDir())
+	dir := common.GitDir(t.TempDir())
 	cmd := exec.Command("git", "--bare", "init")
 	dir.Set(cmd)
 	if err := cmd.Run(); err != nil {
@@ -1789,7 +1782,7 @@ func TestSGMaintenanceRespectsLock(t *testing.T) {
 func TestSGMaintenanceRemovesLock(t *testing.T) {
 	logger := logtest.Scoped(t)
 
-	dir := GitDir(t.TempDir())
+	dir := common.GitDir(t.TempDir())
 	cmd := exec.Command("git", "--bare", "init")
 	dir.Set(cmd)
 	if err := cmd.Run(); err != nil {

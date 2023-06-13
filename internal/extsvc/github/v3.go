@@ -797,6 +797,14 @@ func (c *V3Client) Fork(ctx context.Context, owner, repo string, org *string, fo
 	return convertRestRepo(restRepo), nil
 }
 
+// DeleteBranch deletes the given branch from the given repository.
+func (c *V3Client) DeleteBranch(ctx context.Context, owner, repo, branch string) error {
+	if _, err := c.delete(ctx, "repos/"+owner+"/"+repo+"/git/refs/heads/"+branch); err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetAppInstallation gets information of a GitHub App installation.
 //
 // API docs: https://docs.github.com/en/rest/reference/apps#get-an-installation-for-the-authenticated-app
@@ -806,6 +814,18 @@ func (c *V3Client) GetAppInstallation(ctx context.Context, installationID int64)
 		return nil, err
 	}
 	return &ins, nil
+}
+
+// GetAppInstallations fetches a list of GitHub App instalaltions for the
+// authenticated GitHub App.
+//
+// API docs: https://docs.github.com/en/rest/reference/apps#get-an-installation-for-the-authenticated-app
+func (c *V3Client) GetAppInstallations(ctx context.Context) ([]*github.Installation, error) {
+	var ins []*github.Installation
+	if _, err := c.get(ctx, "app/installations", &ins); err != nil {
+		return nil, err
+	}
+	return ins, nil
 }
 
 // CreateAppInstallationAccessToken creates an access token for the installation.

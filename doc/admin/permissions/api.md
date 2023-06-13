@@ -4,10 +4,16 @@ Sourcegraph's GraphQL API allows users to explicitly set repository permissions.
 
 <span class="virtual-br"></span>
 
-**If the permissions API is enabled, all the other repository permissions mechanisms are disabled.**
+## Permissions mechanisms in parallel
 
-> NOTE: If you're using Sourcegraph with multiple code hosts, it's not possible to use the explicit permissions API for one code host and use other mechanisms for getting permissions for others.
+<span class="badge badge-note">Up to Sourcegraph 5.0</span>
 
+> NOTE: Up to version 5.0, if the Explicit permissions API is enabled, all the other repository permissions mechanisms are disabled. If you're using Sourcegraph with multiple code hosts, it's not possible to use the explicit permissions API for one code host and use other mechanisms for getting permissions for others.
+
+<span class="badge badge-experimental">Experimental</span>
+<span class="badge badge-note">Sourcegraph 5.0+</span>
+
+If you want to use explicit permissions API alongside synced permissions, read section [permission mechanisms in parallel here](index.md#permissions-mechanisms-in-parallel). 
 ## Recommendations
 
 We only recommend to use explicit permissions API in cases, where the other methods are not possible or effective. 

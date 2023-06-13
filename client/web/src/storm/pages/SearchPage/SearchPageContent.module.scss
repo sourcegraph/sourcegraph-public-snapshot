@@ -32,12 +32,6 @@
     }
 }
 
-.slogan {
-    @media (--sm-breakpoint-up) {
-        border-right: var(--border-width) solid var(--border-color);
-    }
-}
-
 .translucent {
     opacity: 0.7;
 }

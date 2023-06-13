@@ -54,8 +54,8 @@ func TestRepository_FileSystem(t *testing.T) {
 			third:  "ba3c51080ed4a5b870952ecd7f0e15f255b24cca",
 		},
 	}
-
-	client := gitserver.NewTestClient(http.DefaultClient, GitserverAddresses)
+	source := gitserver.NewTestClientSource(t, GitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, source)
 	for label, test := range tests {
 		// notafile should not exist.
 		if _, err := client.Stat(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "notafile"); !os.IsNotExist(err) {
@@ -81,7 +81,8 @@ func TestRepository_FileSystem(t *testing.T) {
 		if got, want := "ab771ba54f5571c99ffdae54f44acc7993d9f115", dir1Info.Sys().(gitdomain.ObjectInfo).OID().String(); got != want {
 			t.Errorf("%s: got dir1 OID %q, want %q", label, got, want)
 		}
-		client := gitserver.NewTestClient(http.DefaultClient, GitserverAddresses)
+		source := gitserver.NewTestClientSource(t, GitserverAddresses)
+		client := gitserver.NewTestClient(http.DefaultClient, source)
 
 		// dir1 should contain one entry: file1.
 		dir1Entries, err := client.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir1", false)
@@ -234,7 +235,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 	gitCommands := []string{
 		`touch ⊗.txt '".txt' \\.txt`,
 		`git add ⊗.txt '".txt' \\.txt`,
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m commit1",
 	}
 	tests := map[string]struct {
 		repo api.RepoName
@@ -246,8 +247,8 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 			repo: MakeGitRepository(t, append([]string{"git config core.quotepath off"}, gitCommands...)...),
 		},
 	}
-
-	client := gitserver.NewTestClient(http.DefaultClient, GitserverAddresses)
+	source := gitserver.NewTestClientSource(t, GitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, source)
 	for label, test := range tests {
 		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {
@@ -306,8 +307,8 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 			repo: MakeGitRepository(t, gitCommands...),
 		},
 	}
-
-	client := gitserver.NewTestClient(http.DefaultClient, GitserverAddresses)
+	source := gitserver.NewTestClientSource(t, GitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, source)
 	for label, test := range tests {
 		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
 		if err != nil {

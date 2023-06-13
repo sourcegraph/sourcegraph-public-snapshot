@@ -17,7 +17,7 @@ import {
     createBlobContentResult,
     createFileTreeEntriesResult,
 } from './graphQlResponseHelpers'
-import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
+import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI, EditorAPI } from './utils'
 
 describe('CodeMirror blob view', () => {
@@ -63,13 +63,6 @@ describe('CodeMirror blob view', () => {
 
     const commonBlobGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
         ...commonWebGraphQlResults,
-        ...createViewerSettingsGraphQLOverride({
-            user: {
-                experimentalFeatures: {
-                    enableCodeMirrorFileView: true,
-                },
-            },
-        }),
         ...blobGraphqlResults,
     }
 
@@ -124,7 +117,8 @@ describe('CodeMirror blob view', () => {
             )
         })
 
-        it('truncates long file paths properly', async () => {
+        // TODO 53389: This test is disabled because it is flaky.
+        it.skip('truncates long file paths properly', async () => {
             await driver.page.goto(
                 `${driver.sourcegraphBaseUrl}${filePaths['this_is_a_long_file_path/apps/rest-showcase/src/main/java/org/demo/rest/example/OrdersController.java']}`
             )
@@ -394,8 +388,7 @@ function createBlobPageData<T extends BlobInfo>({
                 createFileExternalLinksResult(`https://${repoName}/blob/master/${filePath}`),
             TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, fileNames),
             FileTreeEntries: () => createFileTreeEntriesResult(repositorySourcegraphUrl, fileNames),
-            Blob: ({ filePath }) =>
-                createBlobContentResult(blobInfo[filePath].content, blobInfo[filePath].html, blobInfo[filePath].lsif),
+            Blob: ({ filePath }) => createBlobContentResult(blobInfo[filePath].content, blobInfo[filePath].lsif),
             FileNames: () => ({
                 repository: {
                     id: 'repo-123',

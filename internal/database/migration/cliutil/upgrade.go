@@ -2,10 +2,14 @@ package cliutil
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/multiversion"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -16,10 +20,10 @@ import (
 
 func Upgrade(
 	commandName string,
-	runnerFactory RunnerFactoryWithSchemas,
+	runnerFactory runner.RunnerFactoryWithSchemas,
 	outFactory OutputFactory,
 	registerMigrators func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
-	expectedSchemaFactories ...ExpectedSchemaFactory,
+	expectedSchemaFactories ...schemas.ExpectedSchemaFactory,
 ) *cli.Command {
 	fromFlag := &cli.StringFlag{
 		Name:     "from",
@@ -56,6 +60,11 @@ func Upgrade(
 		Usage:    "Skip comparison of the instance's current schema against the expected version's schema.",
 		Required: false,
 	}
+	ignoreMigratorUpdateCheckFlag := &cli.BoolFlag{
+		Name:     "ignore-migrator-update",
+		Usage:    "Ignore the running migrator not being the latest version. It is recommended to use the latest migrator version.",
+		Required: false,
+	}
 	dryRunFlag := &cli.BoolFlag{
 		Name:     "dry-run",
 		Usage:    "Print the upgrade plan but do not execute it.",
@@ -68,18 +77,36 @@ func Upgrade(
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+		airgapped := isAirgapped(ctx)
+		if airgapped != nil {
+			out.WriteLine(output.Line(output.EmojiWarningSign, output.StyleYellow, airgapped.Error()))
+		}
+
+		if airgapped == nil {
+			latest, hasUpdate, err := checkForMigratorUpdate(ctx)
+			if err != nil {
+				out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "Failed to check for migrator update: %s. Continuing...", err))
+			} else if hasUpdate {
+				noticeStr := fmt.Sprintf("A newer migrator version is available (%s), please consider using it instead", latest)
+				if ignoreMigratorUpdateCheckFlag.Get(cmd) {
+					out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "%s. Continuing...", noticeStr))
+				} else {
+					return cli.Exit(fmt.Sprintf("%s %s%s or pass -ignore-migrator-update.%s", output.EmojiWarning, output.StyleWarning, noticeStr, output.StyleReset), 1)
+				}
+			}
+		}
+
 		runner, err := runnerFactory(schemas.SchemaNames, schemas.Schemas)
 		if err != nil {
 			return errors.Wrap(err, "new runner")
 		}
 
 		// connect to db and get upgrade readiness state
-		db, err := extractDatabase(ctx, runner)
+		db, err := store.ExtractDatabase(ctx, runner)
 		if err != nil {
 			return errors.Wrap(err, "new db handle")
 		}
-		store := upgradestore.New(db)
-		currentVersion, autoUpgrade, err := store.GetAutoUpgrade(ctx)
+		currentVersion, autoUpgrade, err := upgradestore.New(db).GetAutoUpgrade(ctx)
 		if err != nil {
 			return errors.Wrap(err, "checking auto upgrade")
 		}
@@ -89,11 +116,9 @@ func Upgrade(
 		if fromFlag.Get(cmd) != "" || toFlag.Get(cmd) != "" {
 			fromStr = fromFlag.Get(cmd)
 			toStr = toFlag.Get(cmd)
-		} else {
-			if autoUpgrade {
-				fromStr = currentVersion
-				toStr = version.Version()
-			}
+		} else if autoUpgrade {
+			fromStr = currentVersion
+			toStr = version.Version()
 		}
 		// check for null case
 		if fromStr == "" || toStr == "" {
@@ -128,7 +153,7 @@ func Upgrade(
 
 		// Find the relevant schema and data migrations to perform (and in what order)
 		// for the given version range.
-		plan, err := planMigration(from, to, versionRange, interrupts)
+		plan, err := multiversion.PlanMigration(from, to, versionRange, interrupts)
 		if err != nil {
 			return err
 		}
@@ -139,8 +164,9 @@ func Upgrade(
 		}
 
 		// Perform the upgrade on the configured databases.
-		return runMigration(
+		return multiversion.RunMigration(
 			ctx,
+			db,
 			runnerFactory,
 			plan,
 			privilegedMode,
@@ -169,6 +195,7 @@ func Upgrade(
 			privilegedHashesFlag,
 			skipVersionCheckFlag,
 			skipDriftCheckFlag,
+			ignoreMigratorUpdateCheckFlag,
 			dryRunFlag,
 			disableAnimation,
 		},

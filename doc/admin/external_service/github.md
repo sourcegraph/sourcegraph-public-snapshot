@@ -2,7 +2,52 @@
 
 Site admins can sync Git repositories hosted on [GitHub.com](https://github.com) and [GitHub Enterprise](https://enterprise.github.com) with Sourcegraph so that users can search and navigate the repositories.
 
-To connect GitHub to Sourcegraph:
+There are 2 ways to connect with GitHub:
+1. [Using a GitHub App (recommended)](#using-a-github-app)
+2. [Using an access token](#using-an-access-token)
+
+## Supported versions
+
+- GitHub.com
+- GitHub Enterprise v2.10 and newer
+
+## Using a GitHub App
+
+<span class="badge badge-note">Sourcegraph 5.1+</span>
+
+To create a GitHub app and connect it to Sourcegraph:  
+
+1. Go to **Site admin > Github Apps** in the Sourcegraph app.  
+    ![Github Apps page screenshot](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/github-apps/empty-github-apps-list.png)
+2. Click **Create GitHub App**.  
+3. Enter a name for your app, the URL of your GitHub instance, and optionally an organization that will own the app. If no organization is specified, the app will be owned by the user account that creates it in GitHub.  
+    ![Create Github App form screenshot](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/github-apps/create-app-form.png)
+4. Click **Create GitHub App**. You will be redirected to GitHub to confirm the app creation.  
+    ![Create Github App screenshot](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/github-apps/create-app-page.png)
+5. After creating the app, you will be redirected to the app installation screen on GitHub. Review the app permissions and select which repositories the app can access. The default is **All repositories**. You can change this later.  
+    ![Install Github App screenshot](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/github-apps/installation-page.png)
+6. Click **Install**. You will be redirected back to Sourcegraph, where the GitHub app setup screen will display.  
+7. Sourcegraph needs to map Sourcegraph users to GitHub users. Click **Reveal secret** to get the JSON configuration for the auth provider and copy/paste it into the `"auth.providers"` section of your site configuration.  
+    ![Auth provider JSON screenshot](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/github-apps/auth-provider-json.png)
+8. After setting up the auth provider, go back to the GitHub App setup screen in Sourcegraph. Click **Add connection** under your new installation to create a code host connection to GitHub with this app installation. By default, it will sync all repositories the app can access within the organization it was installed on. Repository permission enforcement will also be turned on by default.
+    ![Add connection button screenshot](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/github-apps/add-connection-button.png)
+
+You can now [select repositories to sync](#selecting-repositories-to-sync) or see more configuration options in the [configuration section](#configuration).
+
+### Mutliple installations
+
+In some cases, having multiple installations is beneficial, especially if you want to sync repositories from multiple organizations.  
+
+By default, Sourcegraph creates a private GitHub app, which allows only one installation on the owner account. To allow multiple installations, the app needs to be made public. For security considerations, see [GitHub's documentation on private vs public apps](https://docs.github.com/en/apps/creating-github-apps/setting-up-a-github-app/making-a-github-app-public-or-private). To make the app public, [follow GitHub's documentation](https://docs.github.com/en/apps/maintaining-github-apps/modifying-a-github-app#changing-the-visibility-of-a-github-app).  
+
+After making the app public, go back to Sourcegraph **Site admin > GitHub Apps > [YOUR APP]** and click **Add installation**. You will be redirected to GitHub to pick which other organization to install the app on and finish the installation process.
+
+To sync repositories from this installation, click **Add connection** in Sourcegraph.  
+
+> NOTE: Each organization that the app needs to access requires its own installation.
+## Using an access token
+
+To connect GitHub to Sourcegraph with an access token:
 
 1. Go to **Site admin > Manage code hosts**
 2. Select **GitHub**.
@@ -22,32 +67,16 @@ In this example, the kubernetes public repository on GitHub is added by selectin
 }
 ```
 
-## Supported versions
+## GitHub API access
 
-- GitHub.com
-- GitHub Enterprise v2.10 and newer
+GitHub requires a `token` in order to access their API. There are different types of tokens that can be supplied. When using GitHub apps, this is handled automatically by Sourcegraph.
 
-## Selecting repositories for code search
-
-There are four fields for configuring which repositories are mirrored/synchronized:
-
-- [`repos`](github.md#repos)<br>A list of repositories in `owner/name` format. The order determines the order in which we sync repository metadata and is safe to change.
-- [`orgs`](github.md#orgs)<br>A list of organizations (every repository belonging to the organization will be cloned).
-- [`repositoryQuery`](github.md#repositoryQuery)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`, none of which are subject to result limitations), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires the latter, GitHub advanced search queries, to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
-- [`exclude`](github.md#exclude)<br>A list of repositories to exclude which takes precedence over the `repos`, `orgs`, and `repositoryQuery` fields.
-
-### Private repositories
-
-A [token that has the prerequisite scopes](#github-api-token-and-access) is required in order to clone private repositories for search, as well as at least read access to the relevant private repositories.
-
-See [GitHub API token and access](#github-api-token-and-access) for more details.
-
-## GitHub API token and access
-
-The GitHub service requires a `token` in order to access their API. There are two different types of tokens you can supply:
-
-- **[Personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)**:<br>This gives Sourcegraph the same level of access to repositories as the account that created the token. If you're not wanting to mix your personal repositories with your organizations repositories, you could add an entry to the `exclude` array, or you can use a machine user token.
+- **[GitHub app installation access token](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-an-installation-access-token-for-a-github-app)**:<br>An installation access token is created automatically when you install a GitHub app. Do not set this token in the code host connection configuration. This token gives Sourcegraph the same level of access to repositories as the GitHub app installation.
+- **[Personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)**:<br>This gives Sourcegraph the same level of access to repositories as the account that created the token. If you don't want to mix your personal repositories with your organizations repositories, you could add an entry to the `exclude` array, or you can use a machine user token or a fine-grained access token.
+- **[Fine-grained access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token#creating-a-fine-grained-personal-access-token)**:<br>Allows scoping access tokens to specific repositories with specific permissions. Consult the [table below](#fine-grained-access-token-permissions) for the required permissions.
 - **[Machine user token](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users)**:<br>Generates a token for a machine user that is affiliated with an organization instead of a user account.
+
+### Personal access token scopes
 
 No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps#available-scopes) are required if you only want to sync public repositories and don't want to use any of the following features. Otherwise, the following token scopes are required for specific features:
 
@@ -55,7 +84,6 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | [Sync private repositories](#private-repositories)    | `repo`                                                                                                         |
 | [Sync repository permissions][permissions]            | `repo`                                                                                                         |
-| [Repository permissions caching][permissions-caching] | `repo`, `write:org`                                                                                            |
 | [Batch changes][batch-changes]                        | `repo`, `read:org`, `user:email`, `read:discussion`, and `workflow` ([learn more][batch-changes-interactions]) |
 
 [permissions]: #repository-permissions
@@ -73,9 +101,36 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 >
 > Learn more about how the GitHub API is used and what level of access is required in the corresponding feature documentation.
 
-### Fine-grained personal access tokens
+### Fine-grained access token permissions
 
-GitHub's fine-grained personal access tokens are not yet supported.
+Fine-grained tokens can access public repositories, but can only access the private repositories of the account they are scoped to.
+
+When creating your fine-grained access token, select the following permissions depending on the purpose of the token:
+
+| Feature                                               | Required token permissions                                  |
+| ----------------------------------------------------- | ------------------------------------------------------ |
+| [Sync private repositories](#private-repositories)    | `Repository permissions: Contents - Access: Read-only` |
+| [Sync repository permissions][permissions]            | `Repository permissions: Contents - Access: Read-only` |
+| [Batch changes][batch-changes]                        | `Unsupported`                                          |
+
+<br>
+
+> WARNING: Fine-grained tokens don't support the `repositoryQuery` code host connection option or batch changes. Both of these features rely on GitHub's GraphQL API, which is [unsupported by fine-grained access tokens](https://docs.github.com/en/graphql/guides/forming-calls-with-graphql#authenticating-with-graphql).
+
+### Private repositories
+
+To clone and search private repositories, we need [a GitHub access token](#github-api-access) with the required scopes and at least read access to the relevant private repositories.
+
+For more details, see [GitHub API access](#github-api-access).
+
+## Selecting repositories to sync
+
+There are four fields for configuring which repositories are mirrored/synchronized:
+
+- [`repos`](github.md#repos)<br>A list of repositories in `owner/name` format. The order determines the order in which we sync repository metadata and is safe to change.
+- [`orgs`](github.md#orgs)<br>A list of organizations (every repository belonging to the organization will be cloned).
+- [`repositoryQuery`](github.md#repositoryQuery)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`, none of which are subject to result limitations), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires the latter, GitHub advanced search queries, to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
+- [`exclude`](github.md#exclude)<br>A list of repositories to exclude which takes precedence over the `repos`, `orgs`, and `repositoryQuery` fields.
 
 ## Rate limits
 
@@ -107,19 +162,16 @@ Then, add or edit the GitHub connection as described above and include the `auth
 
 ```json
 {
-  // The GitHub URL used to set up the GitHub authentication provider must match this URL.
-  "url": "https://github.com",
-  "token": "$PERSONAL_ACCESS_TOKEN",
   // ...
   "authorization": {}
 }
 ```
 
-This needs to be done for every github connection if there is more than one configured.
+This needs to be done for every github code host connection if there is more than one configured.
 
-A [token that has the prerequisite scopes](#github-api-token-and-access) and both read and write access to all relevant repositories is required in order to list collaborators for each repository to perform a complete sync.
+Repo-centric permission syncing is done by calling the [list repository collaborators GitHub API endpoint](https://docs.github.com/en/rest/collaborators/collaborators#list-repository-collaborators). To call this API endpoint correctly, we need a [GitHub access token](#github-api-access) with the required scopes and read and write access to all relevant repositories.
 
-> NOTE: Both read and write access to the associated repos for permissions syncing are strongly suggested due to GitHub's token scope requirements. Without write permissions, sync will rely only on [user-centric sync](#background-permissions-syncing) and continue working as expected, though Sourcegraph may have out-of-date permissions more frequently.
+> IMPORTANT: We strongly recommend configuring both read and write access to associated repositories for permission syncing due to GitHub's token scope requirements. Without write access, there will be a conflict between [user-centric sync](../permissions/syncing.md#troubleshooting) and repo-centric sync. In that case, [disable repo-centric permission sync](../permissions/syncing.md#disable-repo-centric-permission-sync) (supported in <span class="badge badge-note">Sourcegraph 5.0.4+</span>).
 
 <span class="virtual-br"></span>
 
@@ -173,8 +225,8 @@ In the corresponding [authorization provider](../auth/index.md#github) in [site 
 }
 ```
 
-A [token that has the prerequisite scopes](#github-api-token-and-access) and both read and write access to all relevant repositories and organizations is required to fetch repository and team permissions and team memberships is required and cache them across syncs.
-Read-only access will *not* work with cached permissions sync, but will work with [regular GitHub permissions sync](#repository-permissions).
+A [token that has the required scopes](#github-api-access) and both read and write access to all relevant repositories and organizations is needed to fetch repository permissions and team memberships. 
+Read-only access will *not* work with cached permissions sync, but will work with careful configuration for [regular GitHub permissions sync](#repository-permissions).
 
 When enabling this feature, we currently recommend a default `groupsCacheTTL` of `72` (hours, or 3 days). A lower value can be set if your teams and organizations change frequently, though the chosen value must be at least several hours for the cache to be leveraged in the event of being rate-limited (which takes [an hour to recover from](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting)).
 
@@ -227,7 +279,7 @@ When the search rate limit quota is exhausted, an error like `failed to list Git
 
 The  `repositoryQuery` option `"public"` is valuable in that it allows sourcegraph to sync all public repositories, however, it does not return whether or not a repo is archived. This can result in archived repos appearing in normal search. You can see an example of what is returned by the GitHub API for a query to "public" [here](https://docs.github.com/en/rest/reference/repos#list-public-repositories).
 
-If you would like to sync all public repositories while omitting archived repos, consider generating a GitHub token with access to only public repositories, then use `respositoryQuery` with option `affiliated` and an `exclude` argument with option `public` as seen in the example below:
+If you would like to sync all public repositories while omitting archived repos, consider generating a GitHub token with access to only public repositories, then use `repositoryQuery` with option `affiliated` and an `exclude` argument with option `public` as seen in the example below:
 ```
 {
     "url": "https://github.example.com",

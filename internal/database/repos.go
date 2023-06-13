@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -95,6 +93,7 @@ type RepoStore interface {
 	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
 	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
 	StreamMinimalRepos(context.Context, ReposListOptions, func(*types.MinimalRepo)) error
+	RepoEmbeddingExists(ctx context.Context, repoID api.RepoID) (bool, error)
 }
 
 var _ RepoStore = (*repoStore)(nil)
@@ -127,10 +126,7 @@ func (s *repoStore) Transact(ctx context.Context) (RepoStore, error) {
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "repos.Get", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
 		IDs:            []api.RepoID{id},
@@ -156,9 +152,6 @@ var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
 })
 
 func logPrivateRepoAccessGranted(ctx context.Context, db DB, ids []api.RepoID) {
-	if disabled, _ := strconv.ParseBool(os.Getenv("SRC_DISABLE_LOG_PRIVATE_REPO_ACCESS")); disabled {
-		return
-	}
 
 	a := actor.FromContext(ctx)
 	arg, _ := json.Marshal(struct {
@@ -202,10 +195,7 @@ func logPrivateRepoAccessGranted(ctx context.Context, db DB, ids []api.RepoID) {
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "repos.GetByName", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
 		Names:          []string{string(nameOrURI)},
@@ -244,10 +234,7 @@ func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.RepoHashedName) (_ *types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "repos.GetByHashedName", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
 		HashedName:     string(repoHashedName),
@@ -269,10 +256,7 @@ func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.Repo
 // than the candidate list due to no repository is associated with some IDs.
 func (s *repoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) (_ []*types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "repos.GetByIDs", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	// listRepos will return a list of all repos if we pass in an empty ID list,
 	// so it is better to just return here rather than leak repo info.
@@ -300,10 +284,7 @@ func (s *repoStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (ma
 
 func (s *repoStore) GetRepoDescriptionsByIDs(ctx context.Context, ids ...api.RepoID) (_ map[api.RepoID]string, err error) {
 	tr, ctx := trace.New(ctx, "repos.GetRepoDescriptionsByIDs", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	opts := ReposListOptions{
 		Select: []string{"repo.id", "repo.description"},
@@ -330,12 +311,7 @@ func (s *repoStore) GetRepoDescriptionsByIDs(ctx context.Context, ids ...api.Rep
 
 func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, err error) {
 	tr, ctx := trace.New(ctx, "repos.Count", "")
-	defer func() {
-		if err != nil {
-			tr.SetError(err)
-		}
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	opt.Select = []string{"COUNT(*)"}
 	opt.OrderBy = nil
@@ -352,10 +328,7 @@ func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 // number of IDs given if a repo with the given ID does not exist.
 func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types.SearchedRepo, err error) {
 	tr, ctx := trace.New(ctx, "repos.Metadata", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	opts := ReposListOptions{
 		IDs: ids,
@@ -575,6 +548,8 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 	case extsvc.TypeRustPackages:
 		r.Metadata = &struct{}{}
 	case extsvc.TypeRubyPackages:
+		r.Metadata = &struct{}{}
+	case extsvc.VariantLocalGit.AsType():
 		r.Metadata = &struct{}{}
 	default:
 		logger.Warn("unknown service type", log.String("type", typ))
@@ -823,10 +798,7 @@ const (
 // Matching is done with fuzzy matching, i.e. "query" will match any repo name that matches the regexp `q.*u.*e.*r.*y`
 func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "repos.List", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	if len(opt.OrderBy) == 0 {
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
@@ -838,10 +810,7 @@ func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 // StreamMinimalRepos calls the given callback for each of the repositories names and ids that match the given options.
 func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions, cb func(*types.MinimalRepo)) (err error) {
 	tr, ctx := trace.New(ctx, "repos.StreamMinimalRepos", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	opt.Select = minimalRepoColumns
 	if len(opt.OrderBy) == 0 {
@@ -876,6 +845,16 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 	}
 
 	return nil
+}
+
+const repoEmbeddingExists = `SELECT EXISTS(SELECT 1 FROM repo_embedding_jobs WHERE repo_id = %s AND state = 'completed')`
+
+// RepoEmbeddingExists returns boolean indicating whether embeddings are generated for the repo.
+func (s *repoStore) RepoEmbeddingExists(ctx context.Context, repoID api.RepoID) (bool, error) {
+	q := sqlf.Sprintf(repoEmbeddingExists, repoID)
+	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
+
+	return exists, err
 }
 
 // ListMinimalRepos returns a list of repositories names and ids.
@@ -1081,8 +1060,34 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 
 	if !opt.MinLastChanged.IsZero() {
 		conds := []*sqlf.Query{
+			sqlf.Sprintf(`
+				EXISTS (
+					SELECT 1
+					FROM codeintel_path_ranks pr
+					JOIN codeintel_ranking_progress crp ON crp.graph_key = pr.graph_key
+					WHERE
+						pr.repository_id = repo.id AND
+
+						-- Only keep progress rows that are completed, otherwise
+						-- the data that the timestamp applies to will not be
+						-- visible (yet).
+						crp.id = (
+							SELECT pl.id
+							FROM codeintel_ranking_progress pl
+							WHERE pl.reducer_completed_at IS NOT NULL
+							ORDER BY pl.reducer_completed_at DESC
+							LIMIT 1
+						) AND
+
+						-- The ranks became visible when the progres objeect was
+						-- marked as completed. The timestamp on the path ranks
+						-- table is now an insertion date, but inserted records
+						-- may not be visible to active ranking jobs.
+						crp.reducer_completed_at >= %s
+				)
+			`, opt.MinLastChanged),
+
 			sqlf.Sprintf("EXISTS (SELECT 1 FROM gitserver_repos gr WHERE gr.repo_id = repo.id AND gr.last_changed >= %s)", opt.MinLastChanged),
-			sqlf.Sprintf("EXISTS (SELECT 1 FROM codeintel_path_ranks pr WHERE pr.repository_id = repo.id AND pr.updated_at >= %s)", opt.MinLastChanged),
 			sqlf.Sprintf("COALESCE(repo.updated_at, repo.created_at) >= %s", opt.MinLastChanged),
 			sqlf.Sprintf("EXISTS (SELECT 1 FROM search_context_repos scr LEFT JOIN search_contexts sc ON scr.search_context_id = sc.id WHERE scr.repo_id = repo.id AND sc.updated_at >= %s)", opt.MinLastChanged),
 		}
@@ -1285,10 +1290,7 @@ const listSourcegraphDotComIndexableReposMinStars = 5
 
 func (s *repoStore) ListSourcegraphDotComIndexableRepos(ctx context.Context, opts ListSourcegraphDotComIndexableReposOptions) (results []types.MinimalRepo, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	var joins, where []*sqlf.Query
 	if opts.CloneStatus != types.CloneStatusUnknown {
@@ -1366,10 +1368,7 @@ ORDER BY stars DESC NULLS LAST
 // Associated external services must already exist.
 func (s *repoStore) Create(ctx context.Context, repos ...*types.Repo) (err error) {
 	tr, ctx := trace.New(ctx, "repos.Create", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	records := make([]*repoRecord, 0, len(repos))
 

@@ -43,9 +43,21 @@ const getStoriesGlob = (): string[] => {
     // Due to an issue with constant recompiling (https://github.com/storybookjs/storybook/issues/14342)
     // we need to make the globs more specific (`(web|shared..)` also doesn't work). Once the above issue
     // is fixed, this can be removed and watched for `client/**/*.story.tsx` again.
-    const directoriesWithStories = ['branded', 'browser', 'jetbrains/webview', 'shared', 'web', 'wildcard']
+    const directoriesWithStories = [
+        'branded',
+        'browser',
+        'jetbrains/webview',
+        'shared',
+        'web',
+        'wildcard',
+        'cody-ui',
+        'cody',
+    ]
     const storiesGlobs = directoriesWithStories.map(packageDirectory =>
-        path.resolve(ROOT_PATH, `client/${packageDirectory}/src/**/*.story.tsx`)
+        path.resolve(
+            ROOT_PATH,
+            `client/${packageDirectory}/${packageDirectory === 'cody' ? 'webviews' : 'src'}/**/*.story.tsx`
+        )
     )
 
     return [...storiesGlobs]
@@ -184,8 +196,8 @@ const config: Config = {
         })
 
         config.module?.rules.unshift({
-            test: /\.(sass|scss)$/,
-            include: /\.module\.(sass|scss)$/,
+            test: /\.(sass|scss|css)$/,
+            include: /\.module\.(sass|scss|css)$/,
             exclude: storybookPath,
             use: getCSSLoaders(
                 'style-loader',
@@ -206,7 +218,7 @@ const config: Config = {
             // CSS rule for external plain CSS (skip SASS and PostCSS for build perf)
             test: /\.css$/,
             // Make sure Storybook styles get handled by the Storybook config
-            exclude: [storybookPath, monacoEditorPath],
+            exclude: [storybookPath, monacoEditorPath, /\.module\.css$/],
             use: ['@terminus-term/to-string-loader', getBasicCSSLoader()],
         })
 

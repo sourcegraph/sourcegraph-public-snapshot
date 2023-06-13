@@ -56,6 +56,7 @@ export const PERMISSIONS_SYNC_JOBS_QUERY = gql`
         priority
         noPerms
         invalidateCaches
+        placeInQueue
         codeHostStates {
             ...CodeHostState
         }
@@ -121,5 +122,27 @@ export const TRIGGER_REPO_SYNC = gql`
 export const CANCEL_PERMISSIONS_SYNC_JOB = gql`
     mutation CancelPermissionsSyncJob($job: ID!) {
         cancelPermissionsSyncJob(job: $job)
+    }
+`
+
+export const PERMISSIONS_SYNC_JOBS_STATS = gql`
+    query PermissionsSyncJobsStats {
+        permissionsSyncingStats {
+            queueSize
+            usersWithLatestJobFailing
+            reposWithLatestJobFailing
+            usersWithNoPermissions
+            reposWithNoPermissions
+            usersWithStalePermissions
+            reposWithStalePermissions
+        }
+        site {
+            users(deletedAt: { empty: true }) {
+                totalCount
+            }
+        }
+        repositoryStats {
+            total
+        }
     }
 `

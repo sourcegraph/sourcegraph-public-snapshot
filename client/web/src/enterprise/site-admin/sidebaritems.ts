@@ -1,15 +1,15 @@
 import BrainIcon from 'mdi-react/BrainIcon'
 import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
 import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
-import RobotOutlineIcon from 'mdi-react/RobotOutlineIcon'
 
 import { BatchChangesIcon } from '../../batches/icons'
+import { CodyPageIcon } from '../../cody/chat/CodyPageIcon'
 import {
     apiConsoleGroup,
     analyticsGroup,
     configurationGroup as ossConfigurationGroup,
     maintenanceGroup as ossMaintenanceGroup,
-    repositoriesGroup,
+    repositoriesGroup as ossRepositoriesGroup,
     usersGroup as ossUsersGroup,
 } from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
@@ -131,18 +131,34 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
             label: 'Inference',
             condition: () => window.context?.codeIntelAutoIndexingEnabled,
         },
+        {
+            to: '/site-admin/code-graph/ranking',
+            label: 'Ranking',
+        },
+        {
+            label: 'Ownership signals',
+            to: '/site-admin/own-signal-page',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        },
     ],
 }
 
 export const codyGroup: SiteAdminSideBarGroup = {
-    header: { label: 'Cody', icon: RobotOutlineIcon },
+    header: { label: 'Cody', icon: CodyPageIcon },
     items: [
         {
-            label: 'Cody',
-            to: '/site-admin/cody',
+            label: 'Embeddings jobs',
+            to: '/site-admin/embeddings',
+            exact: true,
+            condition: () => window.context?.embeddingsEnabled,
+        },
+        {
+            label: 'Embeddings policies',
+            to: '/site-admin/embeddings/configuration',
+            condition: () => window.context?.embeddingsEnabled,
         },
     ],
-    condition: () => window.context?.embeddingsEnabled,
+    condition: () => window.context?.codyEnabled,
 }
 
 const usersGroup: SiteAdminSideBarGroup = {
@@ -160,16 +176,27 @@ const usersGroup: SiteAdminSideBarGroup = {
     ],
 }
 
+const repositoriesGroup: SiteAdminSideBarGroup = {
+    ...ossRepositoriesGroup,
+    items: [
+        {
+            label: 'GitHub Apps',
+            to: '/site-admin/github-apps',
+        },
+        ...ossRepositoriesGroup.items,
+    ],
+}
+
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     analyticsGroup,
     configurationGroup,
     repositoriesGroup,
     codeIntelGroup,
+    codyGroup,
     usersGroup,
     executorsGroup,
     maintenanceGroup,
     batchChangesGroup,
     businessGroup,
-    codyGroup,
     apiConsoleGroup,
 ].filter(Boolean) as SiteAdminSideBarGroups

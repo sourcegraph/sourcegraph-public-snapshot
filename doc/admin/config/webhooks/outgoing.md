@@ -6,9 +6,11 @@
 </p>
 </aside>
 
+<span class="badge badge-note">Sourcegraph 5.0+</span>
+
 Outgoing webhooks can be configured on a Sourcegraph instance in order to send Sourcegraph events to external tools and services. This allows for deeper integrations between Sourcegraph and other applications.
 
-Currently, webhooks are only implemented for events related to [Batch Changes](../../batch_changes/index.md). They also cannot yet be scoped to specific entities, meaning that they will be triggered for all events of the specified type across Sourcegraph. Expanded support for more event types and scoped events is planned for the future. Please [let us know](mailto:feedback@sourcegraph.com) what types of events you would like to see implemented next, or if you have any other feedback!
+Currently, webhooks are only implemented for events related to [Batch Changes](../../../batch_changes/index.md). They also cannot yet be scoped to specific entities, meaning that they will be triggered for all events of the specified type across Sourcegraph. Expanded support for more event types and scoped events is planned for the future. Please [let us know](mailto:feedback@sourcegraph.com) what types of events you would like to see implemented next, or if you have any other feedback!
 
 > WARNING: Outgoing webhooks have the potential to send sensitive information about your repositories and code to other untrusted services. When configuring outgoing webhooks, be sure to only send events to trusted service URLs and to use the shared secret to verify any requests received.
 
@@ -20,7 +22,7 @@ Currently, webhooks are only implemented for events related to [Batch Changes](.
    ![Adding an outgoing webhook](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/adding-outgoing-webhook.png)
 1. Fill out the form:
    1. **URL**: URL endpoint of the external service that Sourcegraph should send webhook events to.
-   1. **Secret**: An arbitrary shared secret between Sourcegraph and the code host. A default value is provided, but you are free to change it.
+   1. **Secret**: An arbitrary secret to share between Sourcegraph and the external service. A default value is provided, but you are free to change it.
    1. **Event types**: The types of [events](#supported-event-types) that will trigger a webhook event. Currently, only events related to Batch Changes are supported.
 1. Click **Create**
 
@@ -34,8 +36,6 @@ The outgoing webhook will now be created and active. To view or edit its details
 - **batch_change:apply** - Triggered when a batch spec is applied to a batch change.
 - **batch_change:close** - Triggered when a batch change is closed.
 - **batch_change:delete** - Triggered when a batch change is deleted.
-
-> NOTE: There is one notable limitation in the initial release of outgoing webhooks: the payloads of batch changes sent will appear to "lag behind" the events that trigger them slightly. For example, if you close a batch change, the `batch_change:close` event will be sent immediately, but the payload will contain the batch change in the state as it was _just before_ it was closed. This is because the webhook payload is constructed before the batch change is updated in the database. This will be fixed in a future release.
 
 #### Example payload
 
@@ -77,8 +77,6 @@ The batch change webhook event payload mirrors the [GraphQL API](../../../api/gr
 - **changeset:publish_error** - Triggered when an attempt to publish a changeset to the code host fails.
 - **changeset:update** - Triggered when a changeset is updated on the code host by Sourcegraph.
 - **changeset:update_error** - Triggered when an attempt to update a changeset on the code host fails.
-
-> NOTE: There is one notable limitation in the initial release of outgoing webhooks: the payloads of changesets sent will appear to "lag behind" the events that trigger them slightly. For example, if you publish a changeset, the `changeset:publish` event will be sent immediately, but the payload will contain the changeset in the state as it was _just before_ it was published. This is because the webhook payload is constructed before the changeset is updated in the database. This will be fixed in a future release.
 
 #### Example payload
 

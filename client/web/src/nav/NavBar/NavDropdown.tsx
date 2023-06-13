@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import React, { useMemo } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
@@ -13,30 +13,36 @@ import navItemStyles from './NavItem.module.scss'
 
 export interface NavDropdownItem {
     content: React.ReactNode | string
+
+    /** To match against the current path to determine if the item is active */
     path: string
+
     target?: '_blank'
 }
 
 interface NavDropdownProps {
     toggleItem: NavDropdownItem & {
         icon: React.ComponentType<{ className?: string }>
-        // Alternative path to match against if item is active
+        /** Alternative path to match against if item is active */
         altPath?: string
     } & Pick<NavLinkProps, 'variant'>
-    // An extra item on mobile devices in the dropdown menu that serves as the "home" item instead of the toggle item.
-    // It uses the path from the toggleItem.
-    mobileHomeItem: Omit<NavDropdownItem, 'path'>
-    // Items to display in the dropdown.
+    /** The first item in the dropdown menu that serves as the "home" item.
+        It uses the path from the toggleItem. */
+    homeItem?: Omit<NavDropdownItem, 'path'>
+    /** Items to display in the dropdown */
     items: NavDropdownItem[]
-    // A current react router route match
+    /** A current react router route match */
     routeMatch?: string
+    /** The name of the dropdown to use for accessible labels */
+    name: string
 }
 
 export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDropdownProps>> = ({
     toggleItem,
-    mobileHomeItem,
+    homeItem: homeItem,
     items,
     routeMatch,
+    name,
 }) => {
     const location = useLocation()
     const isItemSelected = useMemo(
@@ -47,66 +53,11 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
         [items, location.pathname, toggleItem.path, toggleItem.altPath, routeMatch]
     )
 
-    const menuButtonReference = useRef<HTMLButtonElement>(null)
-    const linkReference = useRef<HTMLAnchorElement>(null)
-
-    const [isOverButton, setIsOverButton] = useState(false)
-    const [isOverList, setIsOverList] = useState(false)
-
-    // Use this func for toggling menu
-    const triggerMenuButtonEvent = useCallback(() => {
-        menuButtonReference.current!.dispatchEvent(new Event('mousedown', { bubbles: true }))
-    }, [])
-
-    useLayoutEffect(() => {
-        const isOpen = menuButtonReference.current!.hasAttribute('aria-expanded')
-
-        if (isOpen && !isOverButton && !isOverList) {
-            triggerMenuButtonEvent()
-
-            return
-        }
-
-        if (!isOpen && (isOverButton || isOverList)) {
-            triggerMenuButtonEvent()
-        }
-    }, [isOverButton, isOverList, triggerMenuButtonEvent])
-
-    useEffect(() => {
-        const currentLink = linkReference.current!
-        const currentMenuButton = menuButtonReference.current!
-
-        const handleMenuButtonTouchEnd = (event: TouchEvent): void => {
-            event.preventDefault()
-            triggerMenuButtonEvent()
-        }
-        const handleLinkTouchEnd = (event: TouchEvent): void => {
-            // preventDefault would help to block navigation when touching on Link
-            event.preventDefault()
-            triggerMenuButtonEvent()
-        }
-
-        // Have to add/remove `touchend` manually like this to prevent
-        // page navigation on touch screen (onTouchEnd binding doesn't work)
-        currentMenuButton.addEventListener('touchend', handleMenuButtonTouchEnd)
-        currentLink.addEventListener('touchend', handleLinkTouchEnd)
-
-        return () => {
-            currentMenuButton.removeEventListener('touchend', handleMenuButtonTouchEnd)
-            currentLink.removeEventListener('touchend', handleLinkTouchEnd)
-        }
-    }, [triggerMenuButtonEvent])
-
     // We render the bigger screen version (dropdown) together with the smaller screen version (list of nav items)
     // and then use CSS @media queries to toggle between them.
     return (
         <>
-            {/*
-                Add `position-relative` here for `absolute` position of `MenuButton` below
-                => `MenuButton` won't change its height when hovering + indicator
-                => `MenuList` won't change its position when opening
-            */}
-            <NavItem className="d-none d-sm-flex position-relative">
+            <NavItem className={classNames('d-none d-sm-flex', styles.wrapper)}>
                 <Menu>
                     {({ isExpanded }) => (
                         <>
@@ -120,70 +71,35 @@ export const NavDropdown: React.FunctionComponent<React.PropsWithChildren<NavDro
                                 )}
                                 data-test-id={toggleItem.path}
                                 data-test-active={isItemSelected}
-                                onMouseEnter={() => setIsOverButton(true)}
-                                onMouseLeave={() => setIsOverButton(false)}
                             >
-                                <div
-                                    className={classNames(
-                                        'h-100 d-flex',
-                                        navItemStyles.linkContent,
-                                        styles.navDropdownWrapper
-                                    )}
+                                <MenuButton
+                                    className={classNames(navItemStyles.itemFocusable, styles.button)}
+                                    aria-label={isExpanded ? `Hide ${name} menu` : `Show ${name} menu`}
                                 >
-                                    <Link
-                                        to={toggleItem.path}
-                                        className={classNames(styles.navDropdownLink, navItemStyles.itemFocusable)}
-                                        ref={linkReference}
-                                    >
-                                        <span className={navItemStyles.itemFocusableContent}>
-                                            <Icon
-                                                className={navItemStyles.icon}
-                                                as={toggleItem.icon}
-                                                aria-hidden={true}
-                                            />
-                                            <span
-                                                className={classNames(navItemStyles.text, navItemStyles.iconIncluded, {
-                                                    [navItemStyles.isCompact]: toggleItem.variant === 'compact',
-                                                })}
-                                            >
-                                                {toggleItem.content}
-                                            </span>
+                                    <span className={navItemStyles.itemFocusableContent}>
+                                        <Icon className={navItemStyles.icon} as={toggleItem.icon} aria-hidden={true} />
+                                        <span
+                                            className={classNames(navItemStyles.text, navItemStyles.iconIncluded, {
+                                                [navItemStyles.isCompact]: toggleItem.variant === 'compact',
+                                            })}
+                                        >
+                                            {toggleItem.content}
                                         </span>
-                                    </Link>
-                                    <MenuButton
-                                        className={classNames(
-                                            styles.navDropdownIconButton,
-                                            navItemStyles.itemFocusable
-                                        )}
-                                        ref={menuButtonReference}
-                                        aria-label={isExpanded ? 'Hide search menu' : 'Show search menu'}
-                                    >
-                                        <span className={navItemStyles.itemFocusableContent}>
-                                            <Icon
-                                                className={navItemStyles.icon}
-                                                svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
-                                                aria-hidden={true}
-                                            />
-                                        </span>
-                                    </MenuButton>
-                                </div>
+                                        <Icon
+                                            className={navItemStyles.icon}
+                                            svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
+                                            aria-hidden={true}
+                                        />
+                                    </span>
+                                </MenuButton>
                             </div>
 
-                            <MenuList
-                                className={styles.navDropdownContainer}
-                                targetPadding={EMPTY_RECTANGLE}
-                                onMouseEnter={() => setIsOverList(true)}
-                                onMouseLeave={() => setIsOverList(false)}
-                            >
-                                <MenuLink
-                                    as={Link}
-                                    key={toggleItem.path}
-                                    to={toggleItem.path}
-                                    className={styles.showOnTouchScreen}
-                                    index={-1}
-                                >
-                                    {mobileHomeItem.content}
-                                </MenuLink>
+                            <MenuList className={styles.menuList} targetPadding={EMPTY_RECTANGLE}>
+                                {homeItem && (
+                                    <MenuLink as={Link} key={toggleItem.path} to={toggleItem.path}>
+                                        {homeItem.content}
+                                    </MenuLink>
+                                )}
                                 {items.map(item => (
                                     <MenuLink as={Link} key={item.path} to={item.path} target={item.target}>
                                         {item.content}

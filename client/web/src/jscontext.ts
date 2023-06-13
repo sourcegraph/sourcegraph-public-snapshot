@@ -1,5 +1,6 @@
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/batches'
 
 import { TemporarySettingsResult } from './graphql-operations'
 
@@ -22,6 +23,7 @@ export interface AuthProvider {
         | 'gerrit'
         | 'azuredevops'
     displayName: string
+    displayPrefix?: string
     isBuiltin: boolean
     authenticationURL: string
     serviceID: string
@@ -54,6 +56,7 @@ export type SourcegraphContextCurrentUser = Pick<
     | 'emails'
     | 'latestSettings'
     | 'permissions'
+    | 'hasVerifiedEmail'
 >
 
 /**
@@ -150,17 +153,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     runningOnMacOS: boolean
 
     /**
-     * Likely running within a Docker container under a Mac host OS.
-     */
-    likelyDockerOnMac: boolean
-
-    /**
-     * Whether the setup wizard supports file picker query, it's used
-     * only for the Sourcegraph App (in all others deploy types it's always false)
-     */
-    localFilePickerAvailable: boolean
-
-    /**
      * Whether or not the server needs to restart in order to apply a pending
      * configuration change.
      */
@@ -182,6 +174,15 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     batchChangesDisableWebhooksWarning: boolean
 
     batchChangesWebhookLogsEnabled: boolean
+
+    /** Whether cody is enabled site-wide. */
+    codyEnabled: boolean
+
+    /** Whether cody is enabled for the user. */
+    codyEnabledForCurrentUser: boolean
+
+    /** Whether the site requires a verified email for cody. */
+    codyRequiresVerifiedEmail: boolean
 
     /** Whether executors are enabled on the site. */
     executorsEnabled: boolean
@@ -210,6 +211,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Authentication provider instances in site config. */
     authProviders: AuthProvider[]
 
+    /** primaryLoginProvidersCount sets the max number of primary login providers on signin page */
+    primaryLoginProvidersCount: number
+
     /** What the minimum length for a password should be. */
     authMinPasswordLength: number
 
@@ -226,6 +230,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         /** Require at least an upper and a lowercase character password */
         requireUpperandLowerCase?: boolean
     }
+
+    authAccessRequest?: SiteConfiguration['auth.accessRequest']
 
     /** Custom branding for the homepage and search icon. */
     branding?: {
@@ -248,11 +254,19 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Contains information about the product license. */
     licenseInfo?: {
-        currentPlan: 'old-starter-0' | 'old-enterprise-0' | 'team-0' | 'enterprise-0' | 'business-0' | 'enterprise-1'
+        currentPlan:
+            | 'old-starter-0'
+            | 'old-enterprise-0'
+            | 'team-0'
+            | 'enterprise-0'
+            | 'business-0'
+            | 'enterprise-1'
+            | 'enterprise-air-gap-0'
 
         codeScaleLimit?: string
         codeScaleCloseToLimit?: boolean
         codeScaleExceededLimit?: boolean
+        batchChanges?: BatchChangesLicenseInfo
         knownLicenseTags?: string[]
     }
 

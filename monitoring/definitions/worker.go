@@ -245,6 +245,12 @@ func Worker() *monitoring.Dashboard {
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+
+			// Sourcegraph Own background jobs
+			shared.SourcegraphOwn.NewOwnRepoIndexerStoreGroup(containerName),
+			shared.SourcegraphOwn.NewOwnRepoIndexerWorkerGroup(containerName),
+			shared.SourcegraphOwn.NewOwnRepoIndexerResetterGroup(containerName),
+			shared.SourcegraphOwn.NewOwnRepoIndexerSchedulerGroup(containerName),
 		},
 	}
 }

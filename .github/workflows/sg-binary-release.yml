@@ -103,15 +103,12 @@ jobs:
         if: startsWith(matrix.os, 'macos-') == true
         run: |
           cd dev/sg
-          export CGO_ENABLED=1
-          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
           GOARCH=${{ matrix.arch }} go build -o "sg_$(go env GOOS)_${{ matrix.arch }}" -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
 
       - name: Build and upload Linux
         if: startsWith(matrix.os, 'ubuntu-') == true
         run: |
           cd dev/sg
-          export CGO_ENABLED=1
           GOARCH=${{ matrix.arch }} go build -o "sg_$(go env GOOS)_${{ matrix.arch }}" -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
 
       - name: Upload release asset

@@ -18,6 +18,7 @@ import {
     UserEventLogsResult,
     UserEventLogsVariables,
 } from '../../../graphql-operations'
+import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
 import { UserSettingsAreaRouteContext } from '../../../user/settings/UserSettingsArea'
 
 import styles from './UserEventLogsPage.module.scss'
@@ -52,15 +53,34 @@ export const UserEventNode: React.FunctionComponent<React.PropsWithChildren<User
     </li>
 )
 
-export interface UserEventLogsPageProps extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryProps {}
+export interface UserEventLogsPageProps
+    extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'isSourcegraphDotCom'>,
+        UserEventLogsPageContentProps {}
+
+export interface UserEventLogsPageContentProps extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryProps {}
 
 /**
  * A page displaying usage statistics for the site.
  */
 export const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<UserEventLogsPageProps>> = ({
+    isSourcegraphDotCom,
+    authenticatedUser,
     telemetryService,
     user,
 }) => {
+    if (isSourcegraphDotCom && authenticatedUser && user.id !== authenticatedUser.id) {
+        return (
+            <SiteAdminAlert className="sidebar__alert" variant="danger">
+                Only the user may access their event logs.
+            </SiteAdminAlert>
+        )
+    }
+    return <UserEventLogsPageContent telemetryService={telemetryService} user={user} />
+}
+
+export const UserEventLogsPageContent: React.FunctionComponent<
+    React.PropsWithChildren<UserEventLogsPageContentProps>
+> = ({ telemetryService, user }) => {
     useMemo(() => {
         telemetryService.logViewEvent('UserEventLogPage')
     }, [telemetryService])

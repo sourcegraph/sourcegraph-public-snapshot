@@ -10,6 +10,7 @@ pub enum BundledParser {
     Java,
     Javascript,
     Jsonnet,
+    Kotlin,
     Nickel,
     Perl,
     Pod,
@@ -19,6 +20,7 @@ pub enum BundledParser {
     Scala,
     Sql,
     Xlsg,
+    Zig,
 
     // These two are special cases
     Typescript,
@@ -35,6 +37,7 @@ impl BundledParser {
             BundledParser::Java => tree_sitter_java::language(),
             BundledParser::Javascript => tree_sitter_javascript::language(),
             BundledParser::Jsonnet => tree_sitter_jsonnet::language(),
+            BundledParser::Kotlin => tree_sitter_kotlin::language(),
             BundledParser::Nickel => tree_sitter_nickel::language(),
             BundledParser::Perl => tree_sitter_perl::language(),
             BundledParser::Pod => tree_sitter_pod::language(),
@@ -46,6 +49,7 @@ impl BundledParser {
             BundledParser::Typescript => tree_sitter_typescript::language_typescript(),
             BundledParser::Tsx => tree_sitter_typescript::language_tsx(),
             BundledParser::Xlsg => tree_sitter_xlsg::language(),
+            BundledParser::Zig => tree_sitter_zig::language(),
         }
     }
 
@@ -58,6 +62,7 @@ impl BundledParser {
             "java" => Some(BundledParser::Java),
             "javascript" => Some(BundledParser::Javascript),
             "jsonnet" => Some(BundledParser::Jsonnet),
+            "kotlin" => Some(BundledParser::Kotlin),
             "nickel" => Some(BundledParser::Nickel),
             "perl" => Some(BundledParser::Perl),
             "pod" => Some(BundledParser::Pod),
@@ -69,6 +74,59 @@ impl BundledParser {
             "typescript" => Some(BundledParser::Typescript),
             "tsx" => Some(BundledParser::Tsx),
             "xlsg" => Some(BundledParser::Xlsg),
+            "zig" => Some(BundledParser::Zig),
+            _ => None,
+        }
+    }
+
+    pub fn get_language_name(&self) -> &str {
+        match self {
+            BundledParser::C => "c",
+            BundledParser::Cpp => "cpp",
+            BundledParser::C_Sharp => "c_sharp",
+            BundledParser::Go => "go",
+            BundledParser::Java => "java",
+            BundledParser::Javascript => "javascript",
+            BundledParser::Jsonnet => "jsonnet",
+            BundledParser::Kotlin => "kotlin",
+            BundledParser::Nickel => "nickel",
+            BundledParser::Perl => "perl",
+            BundledParser::Pod => "pod",
+            BundledParser::Python => "python",
+            BundledParser::Ruby => "ruby",
+            BundledParser::Rust => "rust",
+            BundledParser::Scala => "scala",
+            BundledParser::Sql => "sql",
+            BundledParser::Typescript => "typescript",
+            BundledParser::Tsx => "tsx",
+            BundledParser::Xlsg => "xlsg",
+            BundledParser::Zig => "zig",
+        }
+    }
+
+    // TODO(SuperAuguste): language detection library
+    pub fn get_parser_from_extension(name: &str) -> Option<Self> {
+        match name {
+            "c" => Some(BundledParser::C),
+            "cpp" => Some(BundledParser::Cpp),
+            "cs" => Some(BundledParser::C_Sharp),
+            "go" => Some(BundledParser::Go),
+            "java" => Some(BundledParser::Java),
+            "js" => Some(BundledParser::Javascript),
+            "jsonnet" => Some(BundledParser::Jsonnet),
+            "kt" => Some(BundledParser::Kotlin),
+            "ncl" => Some(BundledParser::Nickel),
+            "pl" => Some(BundledParser::Perl),
+            "pod" => Some(BundledParser::Pod),
+            "py" => Some(BundledParser::Python),
+            "rb" => Some(BundledParser::Ruby),
+            "rs" => Some(BundledParser::Rust),
+            "scala" => Some(BundledParser::Scala),
+            "sql" => Some(BundledParser::Sql),
+            "ts" => Some(BundledParser::Typescript),
+            "tsx" => Some(BundledParser::Tsx),
+            "xlsg" => Some(BundledParser::Xlsg),
+            "zig" => Some(BundledParser::Zig),
             _ => None,
         }
     }

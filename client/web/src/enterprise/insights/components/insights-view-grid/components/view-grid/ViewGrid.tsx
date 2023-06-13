@@ -114,6 +114,7 @@ interface ViewGridCommonProps {
     onResizeStart?: (newItem: ReactGridLayout) => void
     onResizeStop?: (newItem: ReactGridLayout) => void
     onDragStart?: (newItem: ReactGridLayout) => void
+    onDragStop?: (newItem: ReactGridLayout) => void
 }
 
 /** Renders drag and drop and resizable views grid. */
@@ -127,6 +128,7 @@ export const ViewGrid: FC<PropsWithChildren<ViewGridProps & ViewGridCommonProps>
         onResizeStart = noop,
         onResizeStop = noop,
         onDragStart = noop,
+        onDragStop = noop,
     } = props
 
     const gridRef = useRef<HTMLDivElement>(null)
@@ -147,13 +149,18 @@ export const ViewGrid: FC<PropsWithChildren<ViewGridProps & ViewGridCommonProps>
     )
 
     const handleResizeStop: ReactGridLayout.ItemCallback = useCallback(
-        (_layout, item, newItem) => onResizeStop(newItem),
+        (_layout, item, newItem) => requestAnimationFrame(() => onResizeStop(newItem)),
         [onResizeStop]
     )
 
     const handleDragStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item, newItem) => onDragStart(newItem),
         [onDragStart]
+    )
+
+    const handleDragStop: ReactGridLayout.ItemCallback = useCallback(
+        (_layout, item, newItem) => requestAnimationFrame(() => onDragStop(newItem)),
+        [onDragStop]
     )
 
     // For Firefox we can't use css transform/translate to put view grid item in right place.
@@ -188,6 +195,7 @@ export const ViewGrid: FC<PropsWithChildren<ViewGridProps & ViewGridCommonProps>
                 onResizeStart={handleResizeStart}
                 onResizeStop={handleResizeStop}
                 onDragStart={handleDragStart}
+                onDragStop={handleDragStop}
                 onLayoutChange={onLayoutChange}
                 className={classNames(className, styles.viewGrid)}
             >

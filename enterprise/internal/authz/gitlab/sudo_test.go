@@ -14,8 +14,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sergi/go-diff/diffmatchpatch"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -366,10 +366,10 @@ func TestSudoProvider_FetchRepoPerms(t *testing.T) {
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
 
-	p := newOAuthProvider(
-		OAuthProviderOp{
-			BaseURL: mustURL(t, "https://gitlab.com"),
-			Token:   "admin_token",
+	p := newSudoProvider(
+		SudoProviderOp{
+			BaseURL:   mustURL(t, "https://gitlab.com"),
+			SudoToken: "admin_token",
 		},
 		&mockDoer{
 			do: func(r *http.Request) (*http.Response, error) {

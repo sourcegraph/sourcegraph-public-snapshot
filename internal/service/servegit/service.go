@@ -24,8 +24,6 @@ func (c *Config) Load() {
 	// We bypass BaseConfig since it doesn't handle variables being empty.
 	if src, ok := os.LookupEnv("SRC"); ok {
 		c.CWDRoot = src
-	} else if pwd, err := os.Getwd(); err == nil {
-		c.CWDRoot = pwd
 	}
 
 	c.ServeConfig.Load()

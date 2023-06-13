@@ -1,71 +1,58 @@
-import http from 'http'
-import https from 'https'
+import { ConfigurationWithAccessToken } from '../../configuration'
 
-import { isError } from '../../utils'
+import { Event, CompletionCallbacks, CompletionParameters, CompletionResponse } from './types'
 
-import { parseEvents } from './parse'
-import { Event, CompletionParameters, CompletionCallbacks } from './types'
+export interface CompletionLogger {
+    startCompletion(params: CompletionParameters):
+        | undefined
+        | {
+              onError: (error: string) => void
+              onComplete: (response: string | CompletionResponse) => void
+              onEvents: (events: Event[]) => void
+          }
+}
 
-export class SourcegraphCompletionsClient {
-    private completionsEndpoint: string
+export type Config = Pick<
+    ConfigurationWithAccessToken,
+    'serverEndpoint' | 'accessToken' | 'debugEnable' | 'customHeaders'
+>
 
-    constructor(instanceUrl: string, private accessToken: string, private mode: 'development' | 'production') {
-        this.completionsEndpoint = `${instanceUrl}/.api/completions/stream`
+export abstract class SourcegraphCompletionsClient {
+    private errorEncountered = false
+
+    constructor(protected config: Config, protected logger?: CompletionLogger) {}
+
+    public onConfigurationChange(newConfig: Config): void {
+        this.config = newConfig
     }
 
-    private sendEvents(events: Event[], cb: CompletionCallbacks): void {
+    protected get completionsEndpoint(): string {
+        return new URL('/.api/completions/stream', this.config.serverEndpoint).href
+    }
+
+    protected get codeCompletionsEndpoint(): string {
+        return new URL('/.api/completions/code', this.config.serverEndpoint).href
+    }
+
+    protected sendEvents(events: Event[], cb: CompletionCallbacks): void {
         for (const event of events) {
             switch (event.type) {
                 case 'completion':
                     cb.onChange(event.completion)
                     break
                 case 'error':
+                    this.errorEncountered = true
                     cb.onError(event.error)
                     break
                 case 'done':
-                    cb.onComplete()
+                    if (!this.errorEncountered) {
+                        cb.onComplete()
+                    }
                     break
             }
         }
     }
 
-    public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
-        const requestFn = this.completionsEndpoint.startsWith('https://') ? https.request : http.request
-
-        const request = requestFn(
-            this.completionsEndpoint,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `token ${this.accessToken}` },
-                // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
-                rejectUnauthorized: this.mode === 'production',
-            },
-            (res: http.IncomingMessage) => {
-                let buffer = ''
-
-                res.on('data', chunk => {
-                    if (!(chunk instanceof Buffer)) {
-                        throw new TypeError('expected chunk to be a Buffer')
-                    }
-                    buffer += chunk.toString()
-
-                    const parseResult = parseEvents(buffer)
-                    if (isError(parseResult)) {
-                        console.error(parseResult)
-                        return
-                    }
-
-                    this.sendEvents(parseResult.events, cb)
-                    buffer = parseResult.remainingBuffer
-                })
-
-                res.on('error', e => cb.onError(e.message))
-            }
-        )
-
-        request.write(JSON.stringify(params))
-        request.end()
-
-        return () => request.destroy()
-    }
+    public abstract stream(params: CompletionParameters, cb: CompletionCallbacks): () => void
+    public abstract complete(params: CompletionParameters, abortSignal: AbortSignal): Promise<CompletionResponse>
 }
