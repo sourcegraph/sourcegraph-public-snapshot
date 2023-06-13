@@ -254,9 +254,11 @@ func canonicalizeSymbol(symbolName string) ([16]byte, bool) {
 
 var noVersionFormatter = scip.SymbolFormatter{
 	OnError:               func(err error) error { return err },
-	IncludeScheme:         func(_ string) bool { return true },
-	IncludePackageManager: func(_ string) bool { return true },
-	IncludePackageName:    func(_ string) bool { return true },
-	IncludePackageVersion: func(_ string) bool { return false },
-	IncludeDescriptor:     func(_ string) bool { return true },
+	IncludeScheme:         func(scheme string) bool { return true },
+	IncludePackageManager: func(manager string) bool { return true },
+	IncludePackageName:    func(name string) bool { return true },
+	IncludePackageVersion: func(version string) bool { return false },
+	IncludeDescriptor:     func(descriptor string) bool { return true },
+	IncludeRawDescriptor:  func(descriptor *scip.Descriptor) bool { return true },
+	IncludeDisambiguator:  func(disambiguator string) bool { return true },
 }
