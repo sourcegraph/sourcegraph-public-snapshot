@@ -11,7 +11,6 @@
     import Header from './Header.svelte'
     import './styles.scss'
     import type { LayoutData, Snapshot } from './$types'
-    import { setExperimentalFeaturesFromSettings } from '$lib/web'
     import { beforeNavigate } from '$app/navigation'
 
     export let data: LayoutData
@@ -60,8 +59,6 @@
     $: $user = data.user ?? null
     $: $settings = isErrorLike(data.settings) ? null : data.settings.final
     $: $platformContext = data.platformContext
-    // Sync React stores
-    $: setExperimentalFeaturesFromSettings(data.settings)
 
     $: if (browser) {
         document.documentElement.classList.toggle('theme-light', $isLightTheme)
