@@ -318,7 +318,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
                 </div>
 
                 {showMobileHistory && (
-                    <div className="d-flex flex-column d-sm-none h-100">
+                    <div className="d-flex flex-column d-sm-none h-100 w-100">
                         <div className={styles.mobileTopBar}>
                             <Button
                                 variant="icon"
