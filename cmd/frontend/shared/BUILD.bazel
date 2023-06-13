@@ -16,7 +16,6 @@ go_library(
         "//internal/debugserver",
         "//internal/env",
         "//internal/observation",
-        "//internal/oobmigration",
         "//internal/service",
     ],
 )

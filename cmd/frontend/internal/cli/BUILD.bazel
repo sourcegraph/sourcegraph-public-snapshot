@@ -13,7 +13,7 @@ go_library(
         "serve_cmd.go",
         "sysreq.go",
     ],
-    embedsrcs = ["index.html"],
+    embedsrcs = ["templates/upgrade.html"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
@@ -76,7 +76,6 @@ go_library(
         "//internal/symbols",
         "//internal/sysreq",
         "//internal/trace",
-        "//internal/tracer",
         "//internal/types",
         "//internal/users",
         "//internal/version",

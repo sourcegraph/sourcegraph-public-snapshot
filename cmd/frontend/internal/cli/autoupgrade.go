@@ -333,7 +333,6 @@ func serveExternalServer(obsvCtx *observation.Context, sqlDB *sql.DB, db databas
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
-	fmt.Printf("LISTENING ON %v", httpAddr)
 	listener, err := httpserver.NewListener(httpAddr)
 	if err != nil {
 		return nil, err
@@ -341,9 +340,7 @@ func serveExternalServer(obsvCtx *observation.Context, sqlDB *sql.DB, db databas
 	progressServer := httpserver.New(listener, server)
 
 	goroutine.Go(func() {
-		fmt.Printf("Started\n")
 		progressServer.Start()
-		fmt.Printf("Stopped!!\n")
 	})
 
 	return progressServer.Stop, nil
