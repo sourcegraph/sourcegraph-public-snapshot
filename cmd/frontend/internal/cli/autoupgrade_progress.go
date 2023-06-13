@@ -113,10 +113,10 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 			return err
 		}
 
-		numUnfinishedOutOfBandMigrations := 0
-		for _, migrations := range oobmigrations {
-			if migrations.Progress != 1 {
-				numUnfinishedOutOfBandMigrations++
+		unfinishedOutOfBandMigrations := oobmigrations[:0]
+		for _, migration := range oobmigrations {
+			if migration.Progress != 1 {
+				unfinishedOutOfBandMigrations = append(unfinishedOutOfBandMigrations, migration)
 			}
 		}
 
@@ -137,8 +137,8 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 			Frontend:                         getMigrationStatus(upgrade.Plan.Migrations["frontend"], frontendApplied, frontendPending, frontendFailed),
 			CodeIntel:                        getMigrationStatus(upgrade.Plan.Migrations["codeintel"], codeintelApplied, codeintelPending, codeIntelFailed),
 			CodeInsights:                     getMigrationStatus(upgrade.Plan.Migrations["codeinsights"], codeinsightsApplied, codeinsightsPending, codeinsightsFailed),
-			NumUnfinishedOutOfBandMigrations: numUnfinishedOutOfBandMigrations,
-			OutOfBandMigrations:              oobmigrations,
+			NumUnfinishedOutOfBandMigrations: len(unfinishedOutOfBandMigrations),
+			OutOfBandMigrations:              unfinishedOutOfBandMigrations,
 		})
 	}
 
@@ -204,16 +204,34 @@ func getMigrationStatus(expected, applied, pending, failed []int) migrationStatu
 			numMigrationsRequired++
 		}
 
-		migrations = append(migrations, migrationState{
-			ID:    id,
-			State: state,
-		})
+		migrations = append(migrations, migrationState{ID: id, State: state})
 	}
 
-	// TODO - add any additionals
+	for id := range pendingMap {
+		if _, ok := expectedMap[id]; !ok {
+			migrations = append(migrations, migrationState{ID: id, State: "pending"})
+		}
+	}
+	for id := range failedMap {
+		if _, ok := expectedMap[id]; !ok {
+			migrations = append(migrations, migrationState{ID: id, State: "failed"})
+		}
+	}
+
+	numLeadingApplied := 0
+	for _, migration := range migrations {
+		if migration.State != "applied" {
+			break
+		}
+		numLeadingApplied++
+	}
+	strip := numLeadingApplied - 5
+	if strip < 0 {
+		strip = 0
+	}
 
 	return migrationStatus{
 		NumMigrationsRequired: numMigrationsRequired,
-		Migrations:            migrations,
+		Migrations:            migrations[strip:],
 	}
 }
