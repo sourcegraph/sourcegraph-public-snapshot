@@ -120,7 +120,7 @@ func (a *Actor) Limiter(
 	// rate limit by feature.
 	featurePrefix := fmt.Sprintf("%s:", feature)
 
-	// baseLimiter is the core Limiter that naiively applies the specified
+	// baseLimiter is the core Limiter that naively applies the specified
 	// rate limits. This will get wrapped in various other layers of limiter
 	// behaviour.
 	baseLimiter := limiter.StaticLimiter{
