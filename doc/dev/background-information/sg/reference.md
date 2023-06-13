@@ -137,6 +137,7 @@ Available commands in `sg.config.yaml`:
 * web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL
 * web-standalone-http: Standalone web frontend (dev) with API proxy to a configurable URL
 * web: Enterprise version of the web app
+* worker
 * zoekt-index-0
 * zoekt-index-1
 * zoekt-indexserver-template
