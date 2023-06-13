@@ -25,12 +25,16 @@ export function createStatusBar(): CodyStatusBar {
 
         function createFeatureToggle(
             name: string,
+            description: string,
+            detail: string,
             setting: string,
             getValue: (config: Configuration) => boolean
         ): vscode.QuickPickItem & { onSelect: () => Promise<void> } {
             const isEnabled = getValue(config)
             return {
-                label: (isEnabled ? 'Disable' : 'Enable') + ' ' + name,
+                label: (isEnabled ? '$(check) ' : '') + name,
+                description,
+                detail,
                 onSelect: async () => {
                     await workspaceConfig.update(setting, !isEnabled, vscode.ConfigurationTarget.Global)
                     await vscode.window.showInformationMessage(name + ' ' + (isEnabled ? 'disabled' : 'enabled') + '.')
@@ -39,22 +43,34 @@ export function createStatusBar(): CodyStatusBar {
         }
 
         const option = await vscode.window.showQuickPick(
+            // These description should stay in sync with the settings in package.json
             [
-                createFeatureToggle('Code Completions (Beta)', 'cody.completions', c => c.completions),
-                createFeatureToggle('Code Inline Assist (Beta)', 'cody.experimental.inline', c => c.experimentalInline),
                 createFeatureToggle(
-                    'Code Fixups (Experimental)',
-                    'cody.experimental.nonStop',
-                    c => c.experimentalNonStop
+                    'Code Completions',
+                    'Beta',
+                    'Experimental Cody completions in your editor',
+                    'cody.completions',
+                    c => c.completions
                 ),
                 createFeatureToggle(
-                    'Chat Suggestions (Experimental)',
+                    'Inline Assist',
+                    'Beta',
+                    'An inline way to explicitly ask questions and propose modifications to code',
+                    'cody.experimental.inline',
+                    c => c.experimentalInline
+                ),
+
+                createFeatureToggle(
+                    'Chat Suggestions',
+                    'Experimental',
+                    'Adds suggestions of possible relevant messages in the chat window',
                     'cody.experimental.chatPredictions',
                     c => c.experimentalChatPredictions
                 ),
-                { label: '', kind: vscode.QuickPickItemKind.Separator },
+                { label: 'cody feedback', kind: vscode.QuickPickItemKind.Separator },
                 {
-                    label: '$(cody-logo) Share Feedback',
+                    label: '$(feedback) Share Feedback',
+                    detail: 'Ideas or frustrations — we’d love to hear your feedback',
                     async onSelect(): Promise<void> {
                         await vscode.env.openExternal(
                             vscode.Uri.parse(
@@ -66,6 +82,7 @@ export function createStatusBar(): CodyStatusBar {
             ],
             {
                 placeHolder: 'Select an option',
+                matchOnDescription: true,
             }
         )
 
