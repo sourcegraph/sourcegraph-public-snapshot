@@ -791,8 +791,6 @@ type ExpandedGitCommitDescription struct {
 type ExperimentalFeatures struct {
 	// BatchChangesEnablePerforce description: When enabled, batch changes will be executable on Perforce depots.
 	BatchChangesEnablePerforce bool `json:"batchChanges.enablePerforce,omitempty"`
-	// CodyRestrictUsersFeatureFlag description: Restrict Cody to only be enabled for users that have a feature flag labeled "cody-experimental" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag.
-	CodyRestrictUsersFeatureFlag bool `json:"codyRestrictUsersFeatureFlag,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
@@ -886,7 +884,6 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	delete(m, "batchChanges.enablePerforce")
-	delete(m, "codyRestrictUsersFeatureFlag")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
 	delete(m, "enableGRPC")
