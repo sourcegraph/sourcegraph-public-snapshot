@@ -176,13 +176,13 @@
             }
 
             .progress-container.failed {
-                grid-row: 2;
-                grid-column: 1;
-            }
-
-            .progress-container.applied {
                 grid-row: 1 / span 2;
                 grid-column: 2;
+            }
+
+            .progress-container.expected {
+                grid-row: 2;
+                grid-column: 1;
             }
 
             .logo-spin {
@@ -229,6 +229,13 @@
             </div>
             <div class="bottom-container">
                 <div class="status-banner">All Systems Operational</div>
+
+                <p>FromVersion: {{ .Upgrade.FromVersion }}</p>
+                <p>ToVersion: {{ .Upgrade.ToVersion }}</p>
+                <p>StartedAt: {{ .Upgrade.StartedAt }}</p>
+                <p>FinishedAt: {{ .Upgrade.FinishedAt }}</p>
+                <p>Success: {{ .Upgrade.Success }}</p>
+
                 <div class="row">
                     <div class="tabs">
                         <!-- Frontend -->
@@ -236,58 +243,16 @@
                             <input type="checkbox" id="chck1" />
                             <label class="tab-label" for="chck1">
                                 <span>Frontend</span>
-                                <span>{{ .Frontend.Percentage }}</span>
+                                <span>{{ .Frontend.NumMigrationsRequired }} migrations need application</span>
                             </label>
                             <div class="tab-content">
-                                <!-- Frontend: Pending -->
-                                <div class="progress-container progress">
-                                    <h3 class="progress-title">In Progress</h3>
-                                    <div class="progress-row-container">
-                                        {{ if (eq .Frontend.Percentage "100%") }}
-                                        <div class="progress-row">All Completed</div>
-                                        {{ else }} {{range .Frontend.Pending}}
-                                        <div class="progress-row">
-                                            <div>ID</div>
-                                            <div>{{ . }}</div>
-                                        </div>
-                                        {{end}} {{end}}
-                                    </div>
+                                <div class="progress-container expected">
+                                    <ul class="progress-row-container">
+                                        {{range .Frontend.Migrations}}
+                                        <li>{{.ID}}: {{.State}}</li>
+                                        {{end}}
+                                    </ul>
                                 </div>
-
-                                <!-- Frontend: Failed -->
-                                <div class="progress-container failed">
-                                    <h3 class="progress-title">Failed Migrations</h3>
-                                    <div class="progress-row-container">
-                                        {{ if not .Frontend.Failed }}
-                                        <div class="progress-row completed">
-                                            <div>None</div>
-                                        </div>
-                                        {{ else }} {{ range .Frontend.Failed }}
-                                        <div class="progress-row completed">
-                                            <div>ID</div>
-                                            <div>{{ . }}</div>
-                                        </div>
-                                        {{end}} {{end}}
-                                    </div>
-                                </div>
-
-                                <!-- Frontend: Completed -->
-                                <div class="progress-container applied">
-                                    <h3 class="progress-title">Applied Migrations</h3>
-                                    <div class="progress-row-container">
-                                        {{ if not .Frontend.Applied }}
-                                        <div class="progress-row completed">
-                                            <div>None yet</div>
-                                        </div>
-                                        {{ else }} {{ range .Frontend.Applied }}
-                                        <div class="progress-row completed">
-                                            <div>ID</div>
-                                            <div>{{ . }}</div>
-                                        </div>
-                                        {{end}} {{end}}
-                                    </div>
-                                </div>
-
                             </div>
                         </div>
 
@@ -296,56 +261,15 @@
                             <input type="checkbox" id="chck3" />
                             <label class="tab-label" for="chck3">
                                 <span>Code Intel</span>
-                                <span>{{ .CodeIntel.Percentage }}</span>
+                                <span>{{ .CodeIntel.NumMigrationsRequired }} migrations need application</span>
                             </label>
                             <div class="tab-content">
-                                <!-- Code Intel: Pending -->
-                                <div class="progress-container progress">
-                                    <h3 class="progress-title">In Progress</h3>
-                                    <div class="progress-row-container">
-                                        {{ if (eq .CodeIntel.Percentage "100%") }}
-                                        <div class="progress-row">All Completed</div>
-                                        {{ else }} {{range .CodeIntel.Pending}}
-                                        <div class="progress-row">
-                                            <div>ID</div>
-                                            <div>{{ . }}</div>
-                                        </div>
-                                        {{end}} {{end}}
-                                    </div>
-                                </div>
-
-                                <!-- Code Intel: Failed -->
-                                <div class="progress-container failed">
-                                    <h3 class="progress-title">Failed Migrations</h3>
-                                    <div class="progress-row-container">
-                                        {{ if not .CodeIntel.Failed }}
-                                        <div class="progress-row completed">
-                                            <div>None</div>
-                                        </div>
-                                        {{ else }} {{ range .CodeIntel.Failed }}
-                                        <div class="progress-row completed">
-                                            <div>ID</div>
-                                            <div>{{ . }}</div>
-                                        </div>
-                                        {{end}} {{end}}
-                                    </div>
-                                </div>
-
-                                <!-- Code Intel: Completed -->
-                                <div class="progress-container applied">
-                                    <h3 class="progress-title">Applied Migrations</h3>
-                                    <div class="progress-row-container">
-                                        {{ if not .CodeIntel.Applied }}
-                                        <div class="progress-row completed">
-                                            <div>None yet</div>
-                                        </div>
-                                        {{ else }} {{ range .CodeIntel.Applied }}
-                                        <div class="progress-row completed">
-                                            <div>ID</div>
-                                            <div>{{ . }}</div>
-                                        </div>
-                                        {{end}} {{end}}
-                                    </div>
+                                 <div class="progress-container expected">
+                                    <ul class="progress-row-container">
+                                        {{range .CodeIntel.Migrations}}
+                                        <li>{{.ID}}: {{.State}}</li>
+                                        {{end}}
+                                    </ul>
                                 </div>
                             </div>
                         </div>
@@ -355,56 +279,15 @@
                             <input type="checkbox" id="chck2" />
                             <label class="tab-label" for="chck2">
                                 <span>Code Insights</span>
-                                <span>{{ .CodeInsights.Percentage }}</span>
+                                <span>{{ .CodeInsights.NumMigrationsRequired }} migrations need application</span>
                             </label>
                             <div class="tab-content">
-                                <!-- Code Insights: Pending -->
-                                <div class="progress-container progress">
-                                    <h3 class="progress-title">In Progress</h3>
-                                    <div class="progress-row-container">
-                                        {{ if (eq .CodeInsights.Percentage "100%") }}
-                                        <div class="progress-row">All Completed</div>
-                                        {{ else }} {{range .CodeInsights.Pending}}
-                                        <div class="progress-row">
-                                            <div>ID</div>
-                                            <div>{{ . }}</div>
-                                        </div>
-                                        {{end}} {{end}}
-                                    </div>
-                                </div>
-
-                                <!-- Code Insights: Failed -->
-                                <div class="progress-container failed">
-                                    <h3 class="progress-title">Failed Migrations</h3>
-                                    <div class="progress-row-container">
-                                        {{ if not .CodeInsights.Failed }}
-                                        <div class="progress-row completed">
-                                            <div>None</div>
-                                        </div>
-                                        {{ else }} {{ range .CodeInsights.Failed }}
-                                        <div class="progress-row completed">
-                                            <div>ID</div>
-                                            <div>{{ . }}</div>
-                                        </div>
-                                        {{end}} {{end}}
-                                    </div>
-                                </div>
-
-                                <!-- Code Insights: Completed -->
-                                <div class="progress-container applied">
-                                    <h3 class="progress-title">Applied Migrations</h3>
-                                    <div class="progress-row-container">
-                                        {{ if not .CodeInsights.Applied }}
-                                        <div class="progress-row completed">
-                                            <div>None yet</div>
-                                        </div>
-                                        {{ else }} {{ range .CodeInsights.Applied }}
-                                        <div class="progress-row completed">
-                                            <div>ID</div>
-                                            <div>{{ . }}</div>
-                                        </div>
-                                        {{end}} {{end}}
-                                    </div>
+                                 <div class="progress-container expected">
+                                    <ul class="progress-row-container">
+                                        {{range .CodeInsights.Migrations}}
+                                        <li>{{.ID}}: {{.State}}</li>
+                                        {{end}}
+                                    </ul>
                                 </div>
                             </div>
                         </div>
@@ -414,12 +297,14 @@
                             <input type="checkbox" id="chck4" />
                             <label class="tab-label" for="chck4">
                                 <span>Out of band migrations</span>
-                                <span>???</span>
+                                <span>{{ .NumUnfinishedOutOfBandMigrations }} migrations need to complete</span>
                             </label>
                             <div class="tab-content">
-                                {{range .OutOfBandMigrations}}
-                                <p>{{ .ID }}: {{ .Description }} {{FormatPercentage .Progress}}</p>
-                                {{end}}
+                                <ul>
+                                    {{range .OutOfBandMigrations}}
+                                    <li>{{ .ID }}: {{ .Description }} {{FormatPercentage .Progress}}</li>
+                                    {{end}}
+                                </ul>
                             </div>
                         </div>
                     </div>

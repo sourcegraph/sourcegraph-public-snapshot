@@ -58,6 +58,12 @@ func RunMigration(
 
 	registerMigrators := registerMigratorsWithStore(store.BasestoreExtractor{Runner: r})
 
+	// TODO(efritz) - remove, for debugging
+	for i := 0; i < 3000; i++ {
+		fmt.Printf("TICK!!!\n")
+		time.Sleep(time.Second)
+	}
+
 	// Note: Error is correctly checked here; we want to use the return value
 	// `patch` below but only if we can best-effort fetch it. We want to allow
 	// the user to skip erroring here if they are explicitly skipping this

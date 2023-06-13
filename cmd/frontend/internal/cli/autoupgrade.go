@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -66,16 +65,18 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 	upgradestore := upgradestore.New(db)
 
 	currentVersionStr, doAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
+	// TODO(efritz) - pro gamer move
+	currentVersionStr = "3.38.0"
 	// fresh instance
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	} else if err != nil {
 		return errors.Wrap(err, "autoupgradestore.GetAutoUpgrade")
 	}
+	// TODO(efritz) - pro gamer move
+	doAutoUpgrade = true
 	if !doAutoUpgrade && !shouldAutoUpgade {
-		// TODO(efritz) - remove, for debugging
-		fmt.Printf("FAKING AN UPGRADE\n")
-		// return nil
+		return nil
 	}
 
 	currentVersion, ok := oobmigration.NewVersionFromString(currentVersionStr)
@@ -101,9 +102,11 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 		return errors.Wrap(err, "error blocking on postgres client disconnects")
 	}
 
-	toVersion, ok := oobmigration.NewVersionFromString(version.Version())
+	toVersionStr := version.Version()
+	toVersionStr = "5.0.5" // TODO(efritz) - pro gamber
+	toVersion, ok := oobmigration.NewVersionFromString(toVersionStr)
 	if !ok {
-		obsvCtx.Logger.Warn("unexpected string for desired instance schema version, skipping auto-upgrade", log.String("version", version.Version()))
+		obsvCtx.Logger.Warn("unexpected string for desired instance schema version, skipping auto-upgrade", log.String("version", toVersionStr))
 		return nil
 	}
 
@@ -128,7 +131,14 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 		}
 	}()
 
-	if err := runMigration(ctx, obsvCtx, currentVersion, toVersion, db, hook); err != nil {
+	plan, err := planMigration(ctx, currentVersion, toVersion)
+	if err != nil {
+		return errors.Wrap(err, "error planning auto-upgrade")
+	}
+	if err := upgradestore.SetUpgradePlan(ctx, multiversion.SerializeableUpgradePlan(plan)); err != nil {
+		return errors.Wrap(err, "error updating auto-upgrade plan")
+	}
+	if err := runMigration(ctx, obsvCtx, plan, db, hook); err != nil {
 		return errors.Wrap(err, "error during auto-upgrade")
 	}
 
@@ -145,28 +155,32 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 	return nil
 }
 
-func runMigration(ctx context.Context,
-	obsvCtx *observation.Context,
-	from,
-	to oobmigration.Version,
-	db database.DB,
-	enterpriseMigratorsHook store.RegisterMigratorsUsingConfAndStoreFactoryFunc,
-) error {
+func planMigration(ctx context.Context, from, to oobmigration.Version) (multiversion.MigrationPlan, error) {
 	versionRange, err := oobmigration.UpgradeRange(from, to)
 	if err != nil {
-		return err
+		return multiversion.MigrationPlan{}, err
 	}
 
 	interrupts, err := oobmigration.ScheduleMigrationInterrupts(from, to)
 	if err != nil {
-		return err
+		return multiversion.MigrationPlan{}, err
 	}
 
 	plan, err := multiversion.PlanMigration(from, to, versionRange, interrupts)
 	if err != nil {
-		return err
+		return multiversion.MigrationPlan{}, err
 	}
 
+	return plan, nil
+}
+
+func runMigration(
+	ctx context.Context,
+	obsvCtx *observation.Context,
+	plan multiversion.MigrationPlan,
+	db database.DB,
+	enterpriseMigratorsHook store.RegisterMigratorsUsingConfAndStoreFactoryFunc,
+) error {
 	registerMigrators := store.ComposeRegisterMigratorsFuncs(
 		migrations.RegisterOSSMigratorsUsingConfAndStoreFactory,
 		enterpriseMigratorsHook,
@@ -247,6 +261,9 @@ func claimAutoUpgradeLock(ctx context.Context, obsvCtx *observation.Context, upg
 			return false, errors.Wrap(err, "autoupgradestore.GetServiceVersion")
 		}
 
+		//  TODO(efritz) - pro gamer move
+		currentVersionStr = "3.38.0"
+
 		currentVersion, ok := oobmigration.NewVersionFromString(currentVersionStr)
 		if !ok {
 			return false, errors.Newf("unexpected string for current instance schema version: %q", currentVersion)
@@ -257,7 +274,7 @@ func claimAutoUpgradeLock(ctx context.Context, obsvCtx *observation.Context, upg
 			return false, nil
 		}
 
-		claimed, err := upgradestore.ClaimAutoUpgrade(ctx, currentVersionStr, version.Version())
+		claimed, err := upgradestore.ClaimAutoUpgrade(ctx, currentVersionStr, toVersion.String())
 		if err != nil {
 			return false, errors.Wrap(err, "autoupgradstore.ClaimAutoUpgrade")
 		}
@@ -349,12 +366,6 @@ func serveExternalServer(obsvCtx *observation.Context, sqlDB *sql.DB, db databas
 	goroutine.Go(func() {
 		progressServer.Start()
 	})
-
-	// TODO(efritz) - remove, for debugging
-	for i := 0; i < 3000; i++ {
-		fmt.Printf("TICK!!!\n")
-		time.Sleep(time.Second)
-	}
 
 	return progressServer.Stop, nil
 }

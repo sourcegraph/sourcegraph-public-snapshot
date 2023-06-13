@@ -5,6 +5,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -15,10 +16,39 @@ type MigrationPlan struct {
 	// the stitched schema migration definitions over the entire version range by schema name
 	stitchedDefinitionsBySchemaName map[string]*definition.Definitions
 
-	// the sequence of migration steps over the stiched schema migration definitions; we can't
+	// the sequence of migration steps over the stitched schema migration definitions; we can't
 	// simply apply all schema migrations as out-of-band migration can only run within a certain
 	// slice of the schema's definition where that out-of-band migration was defined
 	steps []MigrationStep
+}
+
+// TODO - document
+func SerializeableUpgradePlan(plan MigrationPlan) upgradestore.UpgradePlan {
+	if len(plan.steps) == 0 {
+		return upgradestore.UpgradePlan{}
+	}
+
+	oobMigrationIDs := []int{}
+	for _, step := range plan.steps {
+		oobMigrationIDs = append(oobMigrationIDs, step.outOfBandMigrationIDs...)
+	}
+
+	n := len(plan.steps)
+	lastStep := plan.steps[n-1]
+	leafIDsBySchemaName := lastStep.schemaMigrationLeafIDsBySchemaName
+
+	migrations := map[string][]int{}
+	for schema, leafIDs := range leafIDsBySchemaName {
+		definitions, _ := plan.stitchedDefinitionsBySchemaName[schema].Up(nil, leafIDs)
+		for _, definition := range definitions {
+			migrations[schema] = append(migrations[schema], definition.ID)
+		}
+	}
+
+	return upgradestore.UpgradePlan{
+		OutOfBandMigrationIDs: oobMigrationIDs,
+		Migrations:            migrations,
+	}
 }
 
 type MigrationStep struct {

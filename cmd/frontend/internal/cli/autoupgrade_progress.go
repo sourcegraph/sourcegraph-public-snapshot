@@ -4,19 +4,25 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
+	"time"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	migrationstore "github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 //go:embed templates/upgrade.html
@@ -51,6 +57,45 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 	}
 
 	handleTemplate := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		scan := basestore.NewFirstScanner(func(s dbutil.Scanner) (u upgradeStatus, _ error) {
+			var rawPlan []byte
+			if err := s.Scan(
+				&u.FromVersion,
+				&u.ToVersion,
+				&rawPlan,
+				&u.StartedAt,
+				&dbutil.NullTime{Time: &u.FinishedAt},
+				&dbutil.NullBool{B: &u.Success},
+			); err != nil {
+				return upgradeStatus{}, err
+			}
+
+			if err := json.Unmarshal(rawPlan, &u.Plan); err != nil {
+				return upgradeStatus{}, err
+			}
+
+			return u, nil
+		})
+		upgrade, ok, err := scan(db.QueryContext(ctx, `
+			SELECT
+				from_version,
+				to_version,
+				plan,
+				started_at,
+				finished_at,
+				success
+			FROM upgrade_logs
+			ORDER BY id DESC
+			LIMIT 1
+		`))
+		if err != nil {
+			return err
+		}
+		if !ok {
+			// TODO - make user visible?
+			return errors.New("no upgrade in progress")
+		}
+
 		frontendApplied, frontendPending, frontendFailed, err := store.Versions(ctx)
 		if err != nil {
 			return err
@@ -63,9 +108,16 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 		if err != nil {
 			return err
 		}
-		oobmigrations, err := oobmigrationStore.List(ctx)
+		oobmigrations, err := oobmigrationStore.GetByIDs(ctx, upgrade.Plan.OutOfBandMigrationIDs)
 		if err != nil {
 			return err
+		}
+
+		numUnfinishedOutOfBandMigrations := 0
+		for _, migrations := range oobmigrations {
+			if migrations.Progress != 1 {
+				numUnfinishedOutOfBandMigrations++
+			}
 		}
 
 		tmpl, err := template.New("index").Funcs(funcs).Parse(rawTemplate)
@@ -74,15 +126,19 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 		}
 
 		return tmpl.Execute(w, struct {
-			Frontend            migrationStatus
-			CodeIntel           migrationStatus
-			CodeInsights        migrationStatus
-			OutOfBandMigrations []oobmigration.Migration
+			Upgrade                          upgradeStatus
+			Frontend                         migrationStatus
+			CodeIntel                        migrationStatus
+			CodeInsights                     migrationStatus
+			NumUnfinishedOutOfBandMigrations int
+			OutOfBandMigrations              []oobmigration.Migration
 		}{
-			Frontend:            getMigrationStatus(frontendApplied, frontendPending, frontendFailed),
-			CodeIntel:           getMigrationStatus(codeintelApplied, codeintelPending, codeIntelFailed),
-			CodeInsights:        getMigrationStatus(codeinsightsApplied, codeinsightsPending, codeinsightsFailed),
-			OutOfBandMigrations: oobmigrations,
+			Upgrade:                          upgrade,
+			Frontend:                         getMigrationStatus(upgrade.Plan.Migrations["frontend"], frontendApplied, frontendPending, frontendFailed),
+			CodeIntel:                        getMigrationStatus(upgrade.Plan.Migrations["codeintel"], codeintelApplied, codeintelPending, codeIntelFailed),
+			CodeInsights:                     getMigrationStatus(upgrade.Plan.Migrations["codeinsights"], codeinsightsApplied, codeinsightsPending, codeinsightsFailed),
+			NumUnfinishedOutOfBandMigrations: numUnfinishedOutOfBandMigrations,
+			OutOfBandMigrations:              oobmigrations,
 		})
 	}
 
@@ -94,27 +150,70 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 	}, nil
 }
 
+type upgradeStatus struct {
+	FromVersion string
+	ToVersion   string
+	Plan        upgradestore.UpgradePlan
+	StartedAt   time.Time
+	FinishedAt  time.Time
+	Success     bool
+}
+
+type migrationState struct {
+	ID    int
+	State string
+}
+
 type migrationStatus struct {
-	Percentage string
-	Applied    []int
-	Pending    []int
-	Failed     []int
+	NumMigrationsRequired int
+	Migrations            []migrationState
 }
 
-func getMigrationStatus(applied, pending, failed []int) migrationStatus {
+func getMigrationStatus(expected, applied, pending, failed []int) migrationStatus {
+	expectedMap := map[int]struct{}{}
+	for _, id := range expected {
+		expectedMap[id] = struct{}{}
+	}
+	appliedMap := map[int]struct{}{}
+	for _, id := range applied {
+		appliedMap[id] = struct{}{}
+	}
+	pendingMap := map[int]struct{}{}
+	for _, id := range pending {
+		pendingMap[id] = struct{}{}
+	}
+	failedMap := map[int]struct{}{}
+	for _, id := range failed {
+		failedMap[id] = struct{}{}
+	}
+
+	numMigrationsRequired := 0
+	migrations := make([]migrationState, 0, len(expected))
+
+	for _, id := range expected {
+		state := ""
+		if _, ok := appliedMap[id]; ok {
+			state = "applied"
+		} else if _, ok := pendingMap[id]; ok {
+			state = "pending"
+		} else if _, ok := failedMap[id]; ok {
+			state = "failed"
+			numMigrationsRequired++
+		} else {
+			state = "required"
+			numMigrationsRequired++
+		}
+
+		migrations = append(migrations, migrationState{
+			ID:    id,
+			State: state,
+		})
+	}
+
+	// TODO - add any additionals
+
 	return migrationStatus{
-		Percentage: getProgressPercentage(applied, pending, failed),
-		Applied:    applied,
-		Pending:    pending,
-		Failed:     failed,
+		NumMigrationsRequired: numMigrationsRequired,
+		Migrations:            migrations,
 	}
-}
-
-func getProgressPercentage(applied, pending, failed []int) string {
-	total := len(applied) + len(pending) + len(failed)
-	if total == 0 {
-		return "100%"
-	}
-
-	return fmt.Sprintf("%d%%", int(float64(len(applied))/float64(total)*100))
 }
