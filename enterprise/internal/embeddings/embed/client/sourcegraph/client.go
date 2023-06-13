@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+
 	"io"
 	"math"
 	"net/http"
@@ -137,7 +138,9 @@ func (c *sourcegraphEmbeddingsClient) getEmbeddings(ctx context.Context, texts [
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
-
+	if len(texts) > 1 {
+		req.Header.Set("X-Cody-Embed-Batch-Size", strconv.Itoa(len(texts)))
+	}
 	resp, err := httpcli.ExternalDoer.Do(req)
 	if err != nil {
 		return nil, err
