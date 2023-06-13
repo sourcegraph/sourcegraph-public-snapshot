@@ -16,6 +16,8 @@ import (
 
 type multiqueueMetricsReporterJob struct{}
 
+var _ job.Job = &multiqueueMetricsReporterJob{}
+
 func NewMultiqueueMetricsReporterJob() job.Job {
 	return &multiqueueMetricsReporterJob{}
 }
