@@ -134,6 +134,10 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     }, [transcriptId, loaded, pathname, navigate])
 
     const [showMobileHistory, setShowMobileHistory] = useState<boolean>(false)
+    // Close mobile history list when transcript changes
+    useEffect(() => {
+        setShowMobileHistory(false)
+    }, [transcript])
 
     if (!loaded) {
         return null
@@ -170,7 +174,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                         graph.
                     </>
                 }
-                className="mb-3 d-none d-md-flex"
+                className={styles.pageHeader}
             >
                 <PageHeader.Heading as="h2" styleAs="h1">
                     <PageHeader.Breadcrumb icon={CodyColorIcon}>
@@ -188,7 +192,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
 
             {/* Page content */}
             <div className={classNames('row flex-1 overflow-hidden', styles.pageWrapper)}>
-                <div className="d-none d-md-flex flex-column col-md-3 h-100">
+                <div className={classNames('col-md-3', styles.sidebarWrapper)}>
                     <div className={styles.sidebarHeader}>
                         <H4>
                             <b>Chats</b>
@@ -305,9 +309,9 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
 
                 <div
                     className={classNames(
-                        'd-md-flex flex-column col-md-9 h-100',
-                        showMobileHistory ? 'd-none' : 'd-flex',
-                        styles.chatMainWrapper
+                        'col-md-9 h-100',
+                        styles.chatMainWrapper,
+                        showMobileHistory && styles.chatMainWrapperWithMobileHistory
                     )}
                 >
                     <div className={styles.mobileTopBar}>
@@ -329,7 +333,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                 </div>
 
                 {showMobileHistory && (
-                    <div className="d-flex flex-column d-md-none h-100 w-100">
+                    <div className={styles.mobileHistoryWrapper}>
                         <div className={styles.mobileTopBar}>
                             <Button
                                 variant="icon"

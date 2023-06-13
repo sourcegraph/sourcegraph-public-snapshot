@@ -1,10 +1,27 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
+.page-header {
+    display: flex;
+    margin-bottom: 1rem;
+
+    @media (--sm-breakpoint-down) {
+        display: none;
+    }
+}
+
 .chat-main-wrapper {
+    display: flex;
+    flex-direction: column;
     filter: none;
     border: 1px solid var(--border-color-2);
     border-radius: var(--border-radius);
     padding: 0;
+
+    @media (--sm-breakpoint-down) {
+        &-with-mobile-history {
+            display: none;
+        }
+    }
 }
 
 .page {
@@ -22,6 +39,16 @@
     @media (--sm-breakpoint-down) {
         padding-top: 0;
         height: 100%;
+    }
+}
+
+.sidebar-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    @media (--sm-breakpoint-down) {
+        display: none;
     }
 }
 
@@ -93,6 +120,17 @@
 
 .mobile-top-bar-divider {
     height: 1.25rem;
+}
+
+.mobile-history-wrapper {
+    display: none;
+
+    @media (--sm-breakpoint-down) {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+    }
 }
 
 .mobile-history {
