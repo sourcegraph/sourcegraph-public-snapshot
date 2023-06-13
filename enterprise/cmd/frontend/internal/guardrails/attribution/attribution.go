@@ -79,7 +79,7 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 	// something like sorting by name from the map.
 	var (
 		mu        sync.Mutex
-		seen      map[api.RepoID]struct{}
+		seen      = map[api.RepoID]struct{}{}
 		repoNames []string
 		limitHit  bool
 	)
