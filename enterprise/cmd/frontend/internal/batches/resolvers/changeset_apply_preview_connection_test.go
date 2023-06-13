@@ -7,8 +7,9 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -200,7 +201,8 @@ func TestRewirerMappings(t *testing.T) {
 			publishA = &btypes.RewirerMapping{ChangesetSpecID: 4}
 			publishB = &btypes.RewirerMapping{ChangesetSpecID: 5}
 		)
-		rmf := newRewirerMappingsFacade(nil, gitserver.NewMockClient(), 0, nil)
+		logger := logtest.Scoped(t)
+		rmf := newRewirerMappingsFacade(nil, gitserver.NewMockClient(), logger, 0, nil)
 		rmf.All = btypes.RewirerMappings{detach, hidden, noAction, publishA, publishB}
 		addResolverFixture(rmf, detach, &mockChangesetApplyPreviewResolver{
 			visible: &mockVisibleChangesetApplyPreviewResolver{
@@ -402,7 +404,8 @@ func TestRewirerMappings(t *testing.T) {
 		}
 
 		s := &store.Store{}
-		rmf := newRewirerMappingsFacade(s, gitserver.NewMockClient(), 1, nil)
+		logger := logtest.Scoped(t)
+		rmf := newRewirerMappingsFacade(s, gitserver.NewMockClient(), logger, 1, nil)
 		rmf.batchChange = &btypes.BatchChange{}
 
 		mapping := &btypes.RewirerMapping{}

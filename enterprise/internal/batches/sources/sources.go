@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -33,6 +34,12 @@ var ErrExternalServiceNotGitHub = errors.New("cannot use GitHub App authenticati
 // changeset if the method is invoked with AuthenticationStrategyGitHubApp and the code
 // host is GitHub, but there is no GitHub App configured for it for Batch Changes.
 var ErrNoGitHubAppConfigured = errors.New("no batches GitHub App found that can authenticate to this code host")
+
+// ErrNoGitHubAppInstallation is returned when authenticating a ChangesetSource for a
+// changeset if the method is invoked with AuthenticationStrategyGitHubApp, the code host
+// is GitHub, and a GitHub App is configured for it for Batch Changes, but there is no
+// recorded installation of that app for provided account namepsace.
+var ErrNoGitHubAppInstallation = errors.New("no installations of GitHub App found for this account namespace")
 
 // ErrMissingCredentials is returned when authenticating a ChangesetSource for a changeset
 // or a user, if no user or site credential can be found that can authenticate to the code
@@ -146,7 +153,13 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 	}
 
 	if as == AuthenticationStrategyGitHubApp {
-		return withGitHubAppAuthenticator(ctx, tx, css, extSvc)
+		repoMetadata := repo.Metadata.(*github.Repository)
+		owner, _, err := github.SplitRepositoryNameWithOwner(repoMetadata.NameWithOwner)
+		if err != nil {
+			return nil, errors.Wrap(err, "getting owner from repo name")
+		}
+
+		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, owner)
 	}
 
 	if ch.OwnedByBatchChangeID != 0 {
@@ -294,11 +307,13 @@ func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*btypes
 
 // withGitHubAppAuthenticator authenticates the given ChangesetSource with a GitHub App
 // installation token, if the external service is a GitHub connection and a GitHub App has
-// been configured for it for use with Batch Changes. If the external service is not a
-// GitHub connection, ErrExternalServiceNotGitHub is returned. If the external service is
-// a GitHub connection, but no batches domain GitHub App has been configured for it,
-// ErrNoGitHubAppConfigured is returned.
-func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, extSvc *types.ExternalService) (ChangesetSource, error) {
+// been configured for it for use with Batch Changes in the provided account namespace. If
+// the external service is not a GitHub connection, ErrExternalServiceNotGitHub is
+// returned. If the external service is a GitHub connection, but no batches domain GitHub
+// App has been configured for it, ErrNoGitHubAppConfigured is returned. If a batches
+// domain GitHub App has been configured, but no installation exists for the given
+// account, ErrNoGitHubAppInstallation is returned.
+func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, extSvc *types.ExternalService, account string) (ChangesetSource, error) {
 	if extSvc.Kind != extsvc.KindGitHub {
 		return nil, ErrExternalServiceNotGitHub
 	}
@@ -317,13 +332,15 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 		return nil, errors.Wrap(err, "parsing GitHub connection URL")
 	}
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
+
 	app, err := tx.GitHubAppsStore().GetByDomain(ctx, types.BatchesGitHubAppDomain, baseURL.String())
 	if err != nil {
 		return nil, ErrNoGitHubAppConfigured
 	}
-	installID, err := tx.GitHubAppsStore().GetLatestInstallID(ctx, app.AppID)
-	if err != nil {
-		return nil, ErrNoGitHubAppConfigured
+
+	installID, err := tx.GitHubAppsStore().GetInstallID(ctx, app.AppID, account)
+	if err != nil || installID == 0 {
+		return nil, ErrNoGitHubAppInstallation
 	}
 
 	appAuther, err := ghaauth.NewGitHubAppAuthenticator(app.AppID, []byte(app.PrivateKey))

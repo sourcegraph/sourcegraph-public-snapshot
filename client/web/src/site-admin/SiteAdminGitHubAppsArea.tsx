@@ -82,7 +82,15 @@ export const SiteAdminGitHubAppsArea: FC<Props> = props => {
                     />
                 }
             />
-            <Route path=":appID" element={<GitHubAppPage {...props} />} />
+            <Route
+                path=":appID"
+                element={
+                    <GitHubAppPage
+                        headerParentBreadcrumb={{ to: '/site-admin/github-apps', text: 'GitHub Apps' }}
+                        {...props}
+                    />
+                }
+            />
         </Routes>
     )
 }

@@ -1734,15 +1734,23 @@ Referenced by:
 
 # Table "public.github_app_installs"
 ```
-     Column      |           Type           | Collation | Nullable |                     Default                     
------------------+--------------------------+-----------+----------+-------------------------------------------------
- id              | integer                  |           | not null | nextval('github_app_installs_id_seq'::regclass)
- app_id          | integer                  |           | not null | 
- installation_id | integer                  |           | not null | 
- created_at      | timestamp with time zone |           | not null | now()
+       Column       |           Type           | Collation | Nullable |                     Default                     
+--------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id                 | integer                  |           | not null | nextval('github_app_installs_id_seq'::regclass)
+ app_id             | integer                  |           | not null | 
+ installation_id    | integer                  |           | not null | 
+ created_at         | timestamp with time zone |           | not null | now()
+ url                | text                     |           |          | 
+ account_login      | text                     |           |          | 
+ account_avatar_url | text                     |           |          | 
+ account_url        | text                     |           |          | 
+ account_type       | text                     |           |          | 
+ updated_at         | timestamp with time zone |           | not null | now()
 Indexes:
     "github_app_installs_pkey" PRIMARY KEY, btree (id)
+    "unique_app_install" UNIQUE CONSTRAINT, btree (app_id, installation_id)
     "app_id_idx" btree (app_id)
+    "github_app_installs_account_login" btree (account_login)
     "installation_id_idx" btree (installation_id)
 Foreign-key constraints:
     "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE

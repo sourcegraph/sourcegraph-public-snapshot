@@ -2581,7 +2581,13 @@ CREATE TABLE github_app_installs (
     id integer NOT NULL,
     app_id integer NOT NULL,
     installation_id integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    url text,
+    account_login text,
+    account_avatar_url text,
+    account_url text,
+    account_type text,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE github_app_installs_id_seq
@@ -5563,6 +5569,9 @@ ALTER TABLE ONLY temporary_settings
 ALTER TABLE ONLY temporary_settings
     ADD CONSTRAINT temporary_settings_user_id_key UNIQUE (user_id);
 
+ALTER TABLE ONLY github_app_installs
+    ADD CONSTRAINT unique_app_install UNIQUE (app_id, installation_id);
+
 ALTER TABLE ONLY user_credentials
     ADD CONSTRAINT user_credentials_domain_user_id_external_service_type_exter_key UNIQUE (domain, user_id, external_service_type, external_service_id);
 
@@ -5832,6 +5841,8 @@ CREATE INDEX feature_flag_overrides_org_id ON feature_flag_overrides USING btree
 CREATE INDEX feature_flag_overrides_user_id ON feature_flag_overrides USING btree (namespace_user_id) WHERE (namespace_user_id IS NOT NULL);
 
 CREATE INDEX finished_at_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (finished_at);
+
+CREATE INDEX github_app_installs_account_login ON github_app_installs USING btree (account_login);
 
 CREATE UNIQUE INDEX github_apps_app_id_slug_base_url_unique ON github_apps USING btree (app_id, slug, base_url);
 

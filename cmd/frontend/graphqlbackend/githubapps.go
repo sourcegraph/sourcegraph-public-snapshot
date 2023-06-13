@@ -45,7 +45,7 @@ type GitHubAppResolver interface {
 	Logo() string
 	CreatedAt() gqlutil.DateTime
 	UpdatedAt() gqlutil.DateTime
-	Installations(context.Context) []GitHubAppInstallation
+	Installations(context.Context) ([]GitHubAppInstallation, error)
 	Webhook(context.Context) WebhookResolver
 }
 

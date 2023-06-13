@@ -10,9 +10,11 @@ import (
 	"context"
 	"sync"
 
+	log "github.com/sourcegraph/log"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
 	types1 "github.com/sourcegraph/sourcegraph/internal/types"
+	errors "github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // MockGitHubAppsStore is a mock implementation of the GitHubAppsStore
@@ -20,9 +22,6 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store)
 // used for unit testing.
 type MockGitHubAppsStore struct {
-	// BulkInstallFunc is an instance of a mock function object controlling
-	// the behavior of the method BulkInstall.
-	BulkInstallFunc *GitHubAppsStoreBulkInstallFunc
 	// BulkRemoveInstallationsFunc is an instance of a mock function object
 	// controlling the behavior of the method BulkRemoveInstallations.
 	BulkRemoveInstallationsFunc *GitHubAppsStoreBulkRemoveInstallationsFunc
@@ -44,18 +43,21 @@ type MockGitHubAppsStore struct {
 	// GetBySlugFunc is an instance of a mock function object controlling
 	// the behavior of the method GetBySlug.
 	GetBySlugFunc *GitHubAppsStoreGetBySlugFunc
+	// GetInstallIDFunc is an instance of a mock function object controlling
+	// the behavior of the method GetInstallID.
+	GetInstallIDFunc *GitHubAppsStoreGetInstallIDFunc
 	// GetInstallationsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetInstallations.
 	GetInstallationsFunc *GitHubAppsStoreGetInstallationsFunc
-	// GetLatestInstallIDFunc is an instance of a mock function object
-	// controlling the behavior of the method GetLatestInstallID.
-	GetLatestInstallIDFunc *GitHubAppsStoreGetLatestInstallIDFunc
 	// InstallFunc is an instance of a mock function object controlling the
 	// behavior of the method Install.
 	InstallFunc *GitHubAppsStoreInstallFunc
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *GitHubAppsStoreListFunc
+	// SyncInstallationsFunc is an instance of a mock function object
+	// controlling the behavior of the method SyncInstallations.
+	SyncInstallationsFunc *GitHubAppsStoreSyncInstallationsFunc
 	// UpdateFunc is an instance of a mock function object controlling the
 	// behavior of the method Update.
 	UpdateFunc *GitHubAppsStoreUpdateFunc
@@ -69,11 +71,6 @@ type MockGitHubAppsStore struct {
 // overwritten.
 func NewMockGitHubAppsStore() *MockGitHubAppsStore {
 	return &MockGitHubAppsStore{
-		BulkInstallFunc: &GitHubAppsStoreBulkInstallFunc{
-			defaultHook: func(context.Context, int, []int) (r0 error) {
-				return
-			},
-		},
 		BulkRemoveInstallationsFunc: &GitHubAppsStoreBulkRemoveInstallationsFunc{
 			defaultHook: func(context.Context, int, []int) (r0 error) {
 				return
@@ -109,23 +106,28 @@ func NewMockGitHubAppsStore() *MockGitHubAppsStore {
 				return
 			},
 		},
+		GetInstallIDFunc: &GitHubAppsStoreGetInstallIDFunc{
+			defaultHook: func(context.Context, int, string) (r0 int, r1 error) {
+				return
+			},
+		},
 		GetInstallationsFunc: &GitHubAppsStoreGetInstallationsFunc{
 			defaultHook: func(context.Context, int) (r0 []*types.GitHubAppInstallation, r1 error) {
 				return
 			},
 		},
-		GetLatestInstallIDFunc: &GitHubAppsStoreGetLatestInstallIDFunc{
-			defaultHook: func(context.Context, int) (r0 int, r1 error) {
-				return
-			},
-		},
 		InstallFunc: &GitHubAppsStoreInstallFunc{
-			defaultHook: func(context.Context, int, int) (r0 error) {
+			defaultHook: func(context.Context, types.GitHubAppInstallation) (r0 *types.GitHubAppInstallation, r1 error) {
 				return
 			},
 		},
 		ListFunc: &GitHubAppsStoreListFunc{
 			defaultHook: func(context.Context, *types1.GitHubAppDomain) (r0 []*types.GitHubApp, r1 error) {
+				return
+			},
+		},
+		SyncInstallationsFunc: &GitHubAppsStoreSyncInstallationsFunc{
+			defaultHook: func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) (r0 errors.MultiError) {
 				return
 			},
 		},
@@ -146,11 +148,6 @@ func NewMockGitHubAppsStore() *MockGitHubAppsStore {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockGitHubAppsStore() *MockGitHubAppsStore {
 	return &MockGitHubAppsStore{
-		BulkInstallFunc: &GitHubAppsStoreBulkInstallFunc{
-			defaultHook: func(context.Context, int, []int) error {
-				panic("unexpected invocation of MockGitHubAppsStore.BulkInstall")
-			},
-		},
 		BulkRemoveInstallationsFunc: &GitHubAppsStoreBulkRemoveInstallationsFunc{
 			defaultHook: func(context.Context, int, []int) error {
 				panic("unexpected invocation of MockGitHubAppsStore.BulkRemoveInstallations")
@@ -186,24 +183,29 @@ func NewStrictMockGitHubAppsStore() *MockGitHubAppsStore {
 				panic("unexpected invocation of MockGitHubAppsStore.GetBySlug")
 			},
 		},
+		GetInstallIDFunc: &GitHubAppsStoreGetInstallIDFunc{
+			defaultHook: func(context.Context, int, string) (int, error) {
+				panic("unexpected invocation of MockGitHubAppsStore.GetInstallID")
+			},
+		},
 		GetInstallationsFunc: &GitHubAppsStoreGetInstallationsFunc{
 			defaultHook: func(context.Context, int) ([]*types.GitHubAppInstallation, error) {
 				panic("unexpected invocation of MockGitHubAppsStore.GetInstallations")
 			},
 		},
-		GetLatestInstallIDFunc: &GitHubAppsStoreGetLatestInstallIDFunc{
-			defaultHook: func(context.Context, int) (int, error) {
-				panic("unexpected invocation of MockGitHubAppsStore.GetLatestInstallID")
-			},
-		},
 		InstallFunc: &GitHubAppsStoreInstallFunc{
-			defaultHook: func(context.Context, int, int) error {
+			defaultHook: func(context.Context, types.GitHubAppInstallation) (*types.GitHubAppInstallation, error) {
 				panic("unexpected invocation of MockGitHubAppsStore.Install")
 			},
 		},
 		ListFunc: &GitHubAppsStoreListFunc{
 			defaultHook: func(context.Context, *types1.GitHubAppDomain) ([]*types.GitHubApp, error) {
 				panic("unexpected invocation of MockGitHubAppsStore.List")
+			},
+		},
+		SyncInstallationsFunc: &GitHubAppsStoreSyncInstallationsFunc{
+			defaultHook: func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) errors.MultiError {
+				panic("unexpected invocation of MockGitHubAppsStore.SyncInstallations")
 			},
 		},
 		UpdateFunc: &GitHubAppsStoreUpdateFunc{
@@ -224,9 +226,6 @@ func NewStrictMockGitHubAppsStore() *MockGitHubAppsStore {
 // overwritten.
 func NewMockGitHubAppsStoreFrom(i GitHubAppsStore) *MockGitHubAppsStore {
 	return &MockGitHubAppsStore{
-		BulkInstallFunc: &GitHubAppsStoreBulkInstallFunc{
-			defaultHook: i.BulkInstall,
-		},
 		BulkRemoveInstallationsFunc: &GitHubAppsStoreBulkRemoveInstallationsFunc{
 			defaultHook: i.BulkRemoveInstallations,
 		},
@@ -248,17 +247,20 @@ func NewMockGitHubAppsStoreFrom(i GitHubAppsStore) *MockGitHubAppsStore {
 		GetBySlugFunc: &GitHubAppsStoreGetBySlugFunc{
 			defaultHook: i.GetBySlug,
 		},
+		GetInstallIDFunc: &GitHubAppsStoreGetInstallIDFunc{
+			defaultHook: i.GetInstallID,
+		},
 		GetInstallationsFunc: &GitHubAppsStoreGetInstallationsFunc{
 			defaultHook: i.GetInstallations,
-		},
-		GetLatestInstallIDFunc: &GitHubAppsStoreGetLatestInstallIDFunc{
-			defaultHook: i.GetLatestInstallID,
 		},
 		InstallFunc: &GitHubAppsStoreInstallFunc{
 			defaultHook: i.Install,
 		},
 		ListFunc: &GitHubAppsStoreListFunc{
 			defaultHook: i.List,
+		},
+		SyncInstallationsFunc: &GitHubAppsStoreSyncInstallationsFunc{
+			defaultHook: i.SyncInstallations,
 		},
 		UpdateFunc: &GitHubAppsStoreUpdateFunc{
 			defaultHook: i.Update,
@@ -267,114 +269,6 @@ func NewMockGitHubAppsStoreFrom(i GitHubAppsStore) *MockGitHubAppsStore {
 			defaultHook: i.WithEncryptionKey,
 		},
 	}
-}
-
-// GitHubAppsStoreBulkInstallFunc describes the behavior when the
-// BulkInstall method of the parent MockGitHubAppsStore instance is invoked.
-type GitHubAppsStoreBulkInstallFunc struct {
-	defaultHook func(context.Context, int, []int) error
-	hooks       []func(context.Context, int, []int) error
-	history     []GitHubAppsStoreBulkInstallFuncCall
-	mutex       sync.Mutex
-}
-
-// BulkInstall delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockGitHubAppsStore) BulkInstall(v0 context.Context, v1 int, v2 []int) error {
-	r0 := m.BulkInstallFunc.nextHook()(v0, v1, v2)
-	m.BulkInstallFunc.appendCall(GitHubAppsStoreBulkInstallFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the BulkInstall method
-// of the parent MockGitHubAppsStore instance is invoked and the hook queue
-// is empty.
-func (f *GitHubAppsStoreBulkInstallFunc) SetDefaultHook(hook func(context.Context, int, []int) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// BulkInstall method of the parent MockGitHubAppsStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitHubAppsStoreBulkInstallFunc) PushHook(hook func(context.Context, int, []int) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitHubAppsStoreBulkInstallFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, []int) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitHubAppsStoreBulkInstallFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, []int) error {
-		return r0
-	})
-}
-
-func (f *GitHubAppsStoreBulkInstallFunc) nextHook() func(context.Context, int, []int) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitHubAppsStoreBulkInstallFunc) appendCall(r0 GitHubAppsStoreBulkInstallFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitHubAppsStoreBulkInstallFuncCall objects
-// describing the invocations of this function.
-func (f *GitHubAppsStoreBulkInstallFunc) History() []GitHubAppsStoreBulkInstallFuncCall {
-	f.mutex.Lock()
-	history := make([]GitHubAppsStoreBulkInstallFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitHubAppsStoreBulkInstallFuncCall is an object that describes an
-// invocation of method BulkInstall on an instance of MockGitHubAppsStore.
-type GitHubAppsStoreBulkInstallFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 []int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitHubAppsStoreBulkInstallFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitHubAppsStoreBulkInstallFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // GitHubAppsStoreBulkRemoveInstallationsFunc describes the behavior when
@@ -1143,6 +1037,118 @@ func (c GitHubAppsStoreGetBySlugFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// GitHubAppsStoreGetInstallIDFunc describes the behavior when the
+// GetInstallID method of the parent MockGitHubAppsStore instance is
+// invoked.
+type GitHubAppsStoreGetInstallIDFunc struct {
+	defaultHook func(context.Context, int, string) (int, error)
+	hooks       []func(context.Context, int, string) (int, error)
+	history     []GitHubAppsStoreGetInstallIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetInstallID delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitHubAppsStore) GetInstallID(v0 context.Context, v1 int, v2 string) (int, error) {
+	r0, r1 := m.GetInstallIDFunc.nextHook()(v0, v1, v2)
+	m.GetInstallIDFunc.appendCall(GitHubAppsStoreGetInstallIDFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetInstallID method
+// of the parent MockGitHubAppsStore instance is invoked and the hook queue
+// is empty.
+func (f *GitHubAppsStoreGetInstallIDFunc) SetDefaultHook(hook func(context.Context, int, string) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetInstallID method of the parent MockGitHubAppsStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitHubAppsStoreGetInstallIDFunc) PushHook(hook func(context.Context, int, string) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitHubAppsStoreGetInstallIDFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitHubAppsStoreGetInstallIDFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, int, string) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitHubAppsStoreGetInstallIDFunc) nextHook() func(context.Context, int, string) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitHubAppsStoreGetInstallIDFunc) appendCall(r0 GitHubAppsStoreGetInstallIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitHubAppsStoreGetInstallIDFuncCall objects
+// describing the invocations of this function.
+func (f *GitHubAppsStoreGetInstallIDFunc) History() []GitHubAppsStoreGetInstallIDFuncCall {
+	f.mutex.Lock()
+	history := make([]GitHubAppsStoreGetInstallIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitHubAppsStoreGetInstallIDFuncCall is an object that describes an
+// invocation of method GetInstallID on an instance of MockGitHubAppsStore.
+type GitHubAppsStoreGetInstallIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitHubAppsStoreGetInstallIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitHubAppsStoreGetInstallIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // GitHubAppsStoreGetInstallationsFunc describes the behavior when the
 // GetInstallations method of the parent MockGitHubAppsStore instance is
 // invoked.
@@ -1254,138 +1260,27 @@ func (c GitHubAppsStoreGetInstallationsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitHubAppsStoreGetLatestInstallIDFunc describes the behavior when the
-// GetLatestInstallID method of the parent MockGitHubAppsStore instance is
-// invoked.
-type GitHubAppsStoreGetLatestInstallIDFunc struct {
-	defaultHook func(context.Context, int) (int, error)
-	hooks       []func(context.Context, int) (int, error)
-	history     []GitHubAppsStoreGetLatestInstallIDFuncCall
-	mutex       sync.Mutex
-}
-
-// GetLatestInstallID delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockGitHubAppsStore) GetLatestInstallID(v0 context.Context, v1 int) (int, error) {
-	r0, r1 := m.GetLatestInstallIDFunc.nextHook()(v0, v1)
-	m.GetLatestInstallIDFunc.appendCall(GitHubAppsStoreGetLatestInstallIDFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetLatestInstallID
-// method of the parent MockGitHubAppsStore instance is invoked and the hook
-// queue is empty.
-func (f *GitHubAppsStoreGetLatestInstallIDFunc) SetDefaultHook(hook func(context.Context, int) (int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetLatestInstallID method of the parent MockGitHubAppsStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *GitHubAppsStoreGetLatestInstallIDFunc) PushHook(hook func(context.Context, int) (int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitHubAppsStoreGetLatestInstallIDFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitHubAppsStoreGetLatestInstallIDFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, int) (int, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitHubAppsStoreGetLatestInstallIDFunc) nextHook() func(context.Context, int) (int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitHubAppsStoreGetLatestInstallIDFunc) appendCall(r0 GitHubAppsStoreGetLatestInstallIDFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitHubAppsStoreGetLatestInstallIDFuncCall
-// objects describing the invocations of this function.
-func (f *GitHubAppsStoreGetLatestInstallIDFunc) History() []GitHubAppsStoreGetLatestInstallIDFuncCall {
-	f.mutex.Lock()
-	history := make([]GitHubAppsStoreGetLatestInstallIDFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitHubAppsStoreGetLatestInstallIDFuncCall is an object that describes an
-// invocation of method GetLatestInstallID on an instance of
-// MockGitHubAppsStore.
-type GitHubAppsStoreGetLatestInstallIDFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitHubAppsStoreGetLatestInstallIDFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitHubAppsStoreGetLatestInstallIDFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // GitHubAppsStoreInstallFunc describes the behavior when the Install method
 // of the parent MockGitHubAppsStore instance is invoked.
 type GitHubAppsStoreInstallFunc struct {
-	defaultHook func(context.Context, int, int) error
-	hooks       []func(context.Context, int, int) error
+	defaultHook func(context.Context, types.GitHubAppInstallation) (*types.GitHubAppInstallation, error)
+	hooks       []func(context.Context, types.GitHubAppInstallation) (*types.GitHubAppInstallation, error)
 	history     []GitHubAppsStoreInstallFuncCall
 	mutex       sync.Mutex
 }
 
 // Install delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitHubAppsStore) Install(v0 context.Context, v1 int, v2 int) error {
-	r0 := m.InstallFunc.nextHook()(v0, v1, v2)
-	m.InstallFunc.appendCall(GitHubAppsStoreInstallFuncCall{v0, v1, v2, r0})
-	return r0
+func (m *MockGitHubAppsStore) Install(v0 context.Context, v1 types.GitHubAppInstallation) (*types.GitHubAppInstallation, error) {
+	r0, r1 := m.InstallFunc.nextHook()(v0, v1)
+	m.InstallFunc.appendCall(GitHubAppsStoreInstallFuncCall{v0, v1, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Install method of
 // the parent MockGitHubAppsStore instance is invoked and the hook queue is
 // empty.
-func (f *GitHubAppsStoreInstallFunc) SetDefaultHook(hook func(context.Context, int, int) error) {
+func (f *GitHubAppsStoreInstallFunc) SetDefaultHook(hook func(context.Context, types.GitHubAppInstallation) (*types.GitHubAppInstallation, error)) {
 	f.defaultHook = hook
 }
 
@@ -1393,7 +1288,7 @@ func (f *GitHubAppsStoreInstallFunc) SetDefaultHook(hook func(context.Context, i
 // Install method of the parent MockGitHubAppsStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitHubAppsStoreInstallFunc) PushHook(hook func(context.Context, int, int) error) {
+func (f *GitHubAppsStoreInstallFunc) PushHook(hook func(context.Context, types.GitHubAppInstallation) (*types.GitHubAppInstallation, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1401,20 +1296,20 @@ func (f *GitHubAppsStoreInstallFunc) PushHook(hook func(context.Context, int, in
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitHubAppsStoreInstallFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, int) error {
-		return r0
+func (f *GitHubAppsStoreInstallFunc) SetDefaultReturn(r0 *types.GitHubAppInstallation, r1 error) {
+	f.SetDefaultHook(func(context.Context, types.GitHubAppInstallation) (*types.GitHubAppInstallation, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitHubAppsStoreInstallFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, int) error {
-		return r0
+func (f *GitHubAppsStoreInstallFunc) PushReturn(r0 *types.GitHubAppInstallation, r1 error) {
+	f.PushHook(func(context.Context, types.GitHubAppInstallation) (*types.GitHubAppInstallation, error) {
+		return r0, r1
 	})
 }
 
-func (f *GitHubAppsStoreInstallFunc) nextHook() func(context.Context, int, int) error {
+func (f *GitHubAppsStoreInstallFunc) nextHook() func(context.Context, types.GitHubAppInstallation) (*types.GitHubAppInstallation, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1452,25 +1347,25 @@ type GitHubAppsStoreInstallFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
+	Arg1 types.GitHubAppInstallation
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 *types.GitHubAppInstallation
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitHubAppsStoreInstallFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitHubAppsStoreInstallFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // GitHubAppsStoreListFunc describes the behavior when the List method of
@@ -1579,6 +1474,120 @@ func (c GitHubAppsStoreListFuncCall) Args() []interface{} {
 // invocation.
 func (c GitHubAppsStoreListFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitHubAppsStoreSyncInstallationsFunc describes the behavior when the
+// SyncInstallations method of the parent MockGitHubAppsStore instance is
+// invoked.
+type GitHubAppsStoreSyncInstallationsFunc struct {
+	defaultHook func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) errors.MultiError
+	hooks       []func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) errors.MultiError
+	history     []GitHubAppsStoreSyncInstallationsFuncCall
+	mutex       sync.Mutex
+}
+
+// SyncInstallations delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitHubAppsStore) SyncInstallations(v0 context.Context, v1 types.GitHubApp, v2 log.Logger, v3 types.GitHubAppClient) errors.MultiError {
+	r0 := m.SyncInstallationsFunc.nextHook()(v0, v1, v2, v3)
+	m.SyncInstallationsFunc.appendCall(GitHubAppsStoreSyncInstallationsFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SyncInstallations
+// method of the parent MockGitHubAppsStore instance is invoked and the hook
+// queue is empty.
+func (f *GitHubAppsStoreSyncInstallationsFunc) SetDefaultHook(hook func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) errors.MultiError) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SyncInstallations method of the parent MockGitHubAppsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitHubAppsStoreSyncInstallationsFunc) PushHook(hook func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) errors.MultiError) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitHubAppsStoreSyncInstallationsFunc) SetDefaultReturn(r0 errors.MultiError) {
+	f.SetDefaultHook(func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) errors.MultiError {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitHubAppsStoreSyncInstallationsFunc) PushReturn(r0 errors.MultiError) {
+	f.PushHook(func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) errors.MultiError {
+		return r0
+	})
+}
+
+func (f *GitHubAppsStoreSyncInstallationsFunc) nextHook() func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) errors.MultiError {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitHubAppsStoreSyncInstallationsFunc) appendCall(r0 GitHubAppsStoreSyncInstallationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitHubAppsStoreSyncInstallationsFuncCall
+// objects describing the invocations of this function.
+func (f *GitHubAppsStoreSyncInstallationsFunc) History() []GitHubAppsStoreSyncInstallationsFuncCall {
+	f.mutex.Lock()
+	history := make([]GitHubAppsStoreSyncInstallationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitHubAppsStoreSyncInstallationsFuncCall is an object that describes an
+// invocation of method SyncInstallations on an instance of
+// MockGitHubAppsStore.
+type GitHubAppsStoreSyncInstallationsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 types.GitHubApp
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 log.Logger
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 types.GitHubAppClient
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 errors.MultiError
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitHubAppsStoreSyncInstallationsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitHubAppsStoreSyncInstallationsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // GitHubAppsStoreUpdateFunc describes the behavior when the Update method

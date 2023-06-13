@@ -16,17 +16,20 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	ghaauth "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
 	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	authcheck "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -131,6 +134,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		}
 
 		gqlID := req.URL.Query().Get("id")
+		domain := req.URL.Query().Get("domain")
 		if gqlID == "" {
 			stateDetails := gitHubAppStateDetails{}
 			// we marshal an empty `gitHubAppStateDetails` struct because we want the values saved in the cache
@@ -153,7 +157,8 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		}
 
 		stateDetails := gitHubAppStateDetails{
-			AppID: int(id64),
+			AppID:  int(id64),
+			Domain: domain,
 		}
 		stateDeets, err := json.Marshal(stateDetails)
 		if err != nil {
@@ -370,7 +375,46 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 				return
 			}
 
-			err = db.GitHubApps().Install(ctx, app.ID, installationID)
+			auther, err := ghaauth.NewGitHubAppAuthenticator(app.AppID, []byte(app.PrivateKey))
+			if err != nil {
+				redirectURL := generateRedirectURL(&stateDeets.Domain, &installationID, &stateDeets.AppID, nil, errors.Newf("Unexpected error while creating GitHubAppAuthenticator: %s", err.Error()))
+				http.Redirect(w, req, redirectURL, http.StatusFound)
+				return
+			}
+
+			baseURL, err := url.Parse(app.BaseURL)
+			if err != nil {
+				redirectURL := generateRedirectURL(&stateDeets.Domain, &installationID, &stateDeets.AppID, nil, errors.Newf("Unexpected error while parsing App base URL: %s", err.Error()))
+				http.Redirect(w, req, redirectURL, http.StatusFound)
+				return
+			}
+
+			apiURL, _ := github.APIRoot(baseURL)
+
+			logger := log.NoOp()
+			client := github.NewV3Client(logger, "", apiURL, auther, nil)
+
+			// The installation often takes a few seconds to become available after the
+			// app is first installed, so we sleep for a bit to give it time to load. The exact
+			// length of time to sleep was determined empirically.
+			time.Sleep(3 * time.Second)
+
+			remoteInstall, err := client.GetAppInstallation(ctx, int64(installationID))
+			if err != nil {
+				redirectURL := generateRedirectURL(&stateDeets.Domain, &installationID, &stateDeets.AppID, nil, errors.Newf("Unexpected error while fetching App installation details from GitHub: %s", err.Error()))
+				http.Redirect(w, req, redirectURL, http.StatusFound)
+				return
+			}
+
+			_, err = db.GitHubApps().Install(ctx, ghtypes.GitHubAppInstallation{
+				InstallationID:   installationID,
+				AppID:            app.ID,
+				URL:              remoteInstall.GetHTMLURL(),
+				AccountLogin:     remoteInstall.Account.GetLogin(),
+				AccountAvatarURL: remoteInstall.Account.GetAvatarURL(),
+				AccountURL:       remoteInstall.Account.GetHTMLURL(),
+				AccountType:      remoteInstall.Account.GetType(),
+			})
 			if err != nil {
 				redirectURL := generateRedirectURL(&stateDeets.Domain, &installationID, &stateDeets.AppID, &app.Name, errors.Newf("Unexpected error while creating GitHub App installation: %s", err.Error()))
 				http.Redirect(w, req, redirectURL, http.StatusFound)

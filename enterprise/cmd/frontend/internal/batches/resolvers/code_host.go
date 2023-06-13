@@ -3,12 +3,13 @@ package resolvers
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	githubapp "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/githubappauth"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	ghstore "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -16,9 +17,11 @@ import (
 )
 
 type batchChangesCodeHostResolver struct {
+	db         edb.EnterpriseDB
 	store      *store.Store
 	codeHost   *btypes.CodeHost
 	credential graphqlbackend.BatchChangesCredentialResolver
+	logger     log.Logger
 }
 
 var _ graphqlbackend.BatchChangesCodeHostResolver = &batchChangesCodeHostResolver{}
@@ -49,7 +52,9 @@ func (c *batchChangesCodeHostResolver) CommitSigningConfiguration(ctx context.Co
 			}
 		}
 		return &commitSigningConfigResolver{
+			db:        c.db,
 			githubApp: ghapp,
+			logger:    c.logger,
 		}, nil
 	}
 	return nil, nil
@@ -79,43 +84,15 @@ func (c *batchChangesCodeHostResolver) HasWebhooks() bool {
 var _ graphqlbackend.CommitSigningConfigResolver = &commitSigningConfigResolver{}
 
 type commitSigningConfigResolver struct {
+	logger    log.Logger
+	db        edb.EnterpriseDB
 	githubApp *ghtypes.GitHubApp
 }
 
-func (c *commitSigningConfigResolver) ToGitHubAppConfiguration() (graphqlbackend.GitHubAppConfigResolver, bool) {
+func (c *commitSigningConfigResolver) ToGitHubApp() (graphqlbackend.GitHubAppResolver, bool) {
 	if c.githubApp != nil {
-		return &gitHubAppConfigResolver{ghapp: c.githubApp}, true
+		return githubapp.NewGitHubAppResolver(c.db, c.githubApp, c.logger), true
 	}
 
 	return nil, false
-}
-
-var _ graphqlbackend.GitHubAppConfigResolver = &gitHubAppConfigResolver{}
-
-type gitHubAppConfigResolver struct {
-	ghapp *ghtypes.GitHubApp
-}
-
-func (r *gitHubAppConfigResolver) ID() graphql.ID {
-	return githubapp.MarshalGitHubAppID(int64(r.ghapp.ID))
-}
-
-func (r *gitHubAppConfigResolver) AppID() int32 {
-	return int32(r.ghapp.AppID)
-}
-
-func (r *gitHubAppConfigResolver) Name() string {
-	return r.ghapp.Name
-}
-
-func (r *gitHubAppConfigResolver) BaseURL() string {
-	return r.ghapp.BaseURL
-}
-
-func (r *gitHubAppConfigResolver) AppURL() string {
-	return r.ghapp.AppURL
-}
-
-func (r *gitHubAppConfigResolver) Logo() string {
-	return r.ghapp.Logo
 }

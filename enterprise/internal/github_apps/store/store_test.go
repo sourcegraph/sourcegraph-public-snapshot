@@ -2,13 +2,15 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/google/go-github/v41/github"
 	"github.com/keegancsmith/sqlf"
-	"github.com/stretchr/testify/require"
-
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
 	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -519,8 +521,23 @@ func TestInstallGitHubApp(t *testing.T) {
 
 	installationID := 42
 
-	err = store.Install(ctx, id, installationID)
+	ghai, err := store.Install(ctx, ghtypes.GitHubAppInstallation{
+		AppID:            id,
+		InstallationID:   installationID,
+		URL:              "https://github.com/apps/test-app",
+		AccountLogin:     "test-user",
+		AccountURL:       "https://github.com/test-user",
+		AccountAvatarURL: "https://github.com/test-user.jpg",
+		AccountType:      "User",
+	})
 	require.NoError(t, err)
+	require.Equal(t, id, ghai.AppID)
+	require.Equal(t, installationID, ghai.InstallationID)
+	require.Equal(t, "https://github.com/apps/test-app", ghai.URL)
+	require.Equal(t, "test-user", ghai.AccountLogin)
+	require.Equal(t, "https://github.com/test-user", ghai.AccountURL)
+	require.Equal(t, "https://github.com/test-user.jpg", ghai.AccountAvatarURL)
+	require.Equal(t, "User", ghai.AccountType)
 
 	var fetchedID, fetchedInstallID int
 	var createdAt time.Time
@@ -533,9 +550,24 @@ func TestInstallGitHubApp(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, createdAt)
 
-	// installing with the same ID results in a noop
-	err = store.Install(ctx, id, installationID)
+	// installing with the same ID results in an upsert
+	ghai, err = store.Install(ctx, ghtypes.GitHubAppInstallation{
+		AppID:            id,
+		InstallationID:   installationID,
+		URL:              "https://github.com/apps/test-app",
+		AccountLogin:     "test-user",
+		AccountURL:       "https://github.com/test-user",
+		AccountAvatarURL: "https://github.com/test-user-new.jpg",
+		AccountType:      "User",
+	})
 	require.NoError(t, err)
+	require.Equal(t, id, ghai.AppID)
+	require.Equal(t, installationID, ghai.InstallationID)
+	require.Equal(t, "https://github.com/apps/test-app", ghai.URL)
+	require.Equal(t, "test-user", ghai.AccountLogin)
+	require.Equal(t, "https://github.com/test-user", ghai.AccountURL)
+	require.Equal(t, "https://github.com/test-user-new.jpg", ghai.AccountAvatarURL)
+	require.Equal(t, "User", ghai.AccountType)
 
 	var createdAt2 time.Time
 	err = store.QueryRow(ctx, query).Scan(
@@ -545,55 +577,6 @@ func TestInstallGitHubApp(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.Equal(t, createdAt, createdAt2)
-}
-
-func TestBulkInstallGitHubApp(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
-	ctx := context.Background()
-
-	app := &ghtypes.GitHubApp{
-		AppID:        1234,
-		Name:         "Test App 1",
-		Domain:       "repos",
-		Slug:         "test-app-1",
-		BaseURL:      "https://github.com/",
-		ClientID:     "abc123",
-		ClientSecret: "secret",
-		PrivateKey:   "private-key",
-		Logo:         "logo.png",
-	}
-	appID, err := store.Create(ctx, app)
-	require.NoError(t, err)
-	installationIDs := []int{1, 2, 3}
-
-	err = store.BulkInstall(ctx, appID, installationIDs)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	installations, err := store.GetInstallations(ctx, appID)
-	require.NoError(t, err)
-
-	if len(installations) != 3 {
-		require.Len(t, installations, 3, "expected 3 installations, got %d", len(installations))
-	}
-
-	for _, installationID := range installationIDs {
-		found := false
-		for _, installation := range installations {
-			if installation.InstallationID == installationID {
-				found = true
-				break
-			}
-		}
-
-		require.True(t, found, "installation with ID %d not found", installationID)
-	}
 }
 
 func TestGetInstallationsForGitHubApp(t *testing.T) {
@@ -621,8 +604,14 @@ func TestGetInstallationsForGitHubApp(t *testing.T) {
 	require.NoError(t, err)
 
 	installationIDs := []int{1, 2, 3}
-	err = store.BulkInstall(ctx, appID, installationIDs)
-	require.NoError(t, err)
+	for _, installationID := range installationIDs {
+		_, err := store.Install(ctx, ghtypes.GitHubAppInstallation{
+			AppID:          appID,
+			InstallationID: installationID,
+			AccountLogin:   fmt.Sprintf("test-user-%d", installationID),
+		})
+		require.NoError(t, err)
+	}
 
 	installations, err := store.GetInstallations(ctx, appID)
 	require.NoError(t, err)
@@ -669,8 +658,14 @@ func TestBulkRemoveGitHubAppInstallations(t *testing.T) {
 	require.NoError(t, err)
 
 	installationIDs := []int{1, 2, 3}
-	err = store.BulkInstall(ctx, appID, installationIDs)
-	require.NoError(t, err)
+	for _, installationID := range installationIDs {
+		_, err := store.Install(ctx, ghtypes.GitHubAppInstallation{
+			AppID:          appID,
+			InstallationID: installationID,
+			AccountLogin:   fmt.Sprintf("test-user-%d", installationID),
+		})
+		require.NoError(t, err)
+	}
 
 	installations, err := store.GetInstallations(ctx, appID)
 	require.NoError(t, err)
@@ -684,4 +679,134 @@ func TestBulkRemoveGitHubAppInstallations(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Len(t, installations, 0, "expected 0 installations, got %d", len(installations))
+}
+
+type mockGitHubClient struct {
+	mock.Mock
+}
+
+func (m *mockGitHubClient) GetAppInstallations(ctx context.Context) ([]*github.Installation, error) {
+	args := m.Called(ctx)
+	if args.Get(0) != nil {
+		return args.Get(0).([]*github.Installation), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+func TestSyncInstallations(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
+
+	tcs := []struct {
+		name               string
+		githubClient       *mockGitHubClient
+		expectedInstallIDs []int
+		app                ghtypes.GitHubApp
+	}{
+		{
+			name: "no installations",
+			githubClient: func() *mockGitHubClient {
+				client := &mockGitHubClient{}
+				client.On("GetAppInstallations", ctx).Return([]*github.Installation{}, nil)
+				return client
+			}(),
+			expectedInstallIDs: []int{},
+			app: ghtypes.GitHubApp{
+				AppID:      1,
+				Name:       "Test App With No Installs",
+				BaseURL:    "https://example.com",
+				PrivateKey: "private-key",
+			},
+		},
+		{
+			name: "one installation",
+			githubClient: func() *mockGitHubClient {
+				client := &mockGitHubClient{}
+				client.On("GetAppInstallations", ctx).Return([]*github.Installation{
+					{ID: github.Int64(1)},
+				}, nil)
+				return client
+			}(),
+			expectedInstallIDs: []int{1},
+			app: ghtypes.GitHubApp{
+				AppID:      2,
+				Name:       "Test App With One Install",
+				BaseURL:    "https://example.com",
+				PrivateKey: "private-key",
+			},
+		},
+		{
+			name: "multiple installations",
+			githubClient: func() *mockGitHubClient {
+				client := &mockGitHubClient{}
+				client.On("GetAppInstallations", ctx).Return([]*github.Installation{
+					{ID: github.Int64(2)},
+					{ID: github.Int64(3)},
+					{ID: github.Int64(4)},
+				}, nil)
+				return client
+			}(),
+			expectedInstallIDs: []int{2, 3, 4},
+			app: ghtypes.GitHubApp{
+				AppID:      3,
+				Name:       "Test App With Multiple Installs",
+				BaseURL:    "https://example.com",
+				PrivateKey: "private-key",
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			dbAppID, err := store.Create(ctx, &tc.app)
+			require.NoError(t, err)
+
+			// For the app with multiple installations, we start with a couple to also
+			// test updating and deleting
+			if tc.name == "multiple installations" {
+				_, err := store.Install(ctx, ghtypes.GitHubAppInstallation{
+					AppID:          dbAppID,
+					InstallationID: 2,
+				})
+				require.NoError(t, err)
+				_, err = store.Install(ctx, ghtypes.GitHubAppInstallation{
+					AppID:          dbAppID,
+					InstallationID: 9999,
+				})
+				require.NoError(t, err)
+			}
+
+			app := ghtypes.GitHubApp{
+				ID:         dbAppID,
+				AppID:      tc.app.AppID,
+				Name:       tc.app.Name,
+				BaseURL:    tc.app.BaseURL,
+				PrivateKey: tc.app.PrivateKey,
+			}
+
+			errs := store.SyncInstallations(ctx, app, logger, tc.githubClient)
+			require.NoError(t, errs)
+
+			installations, err := store.GetInstallations(ctx, tc.app.AppID)
+			require.NoError(t, err)
+
+			require.Len(t, installations, len(tc.expectedInstallIDs), "expected %d installations, got %d", len(tc.expectedInstallIDs), len(installations))
+
+			for _, expectedInstallID := range tc.expectedInstallIDs {
+				found := false
+				for _, installation := range installations {
+					if installation.InstallationID == expectedInstallID {
+						found = true
+						break
+					}
+				}
+				require.True(t, found, "expected to find installation with ID %d", expectedInstallID)
+			}
+		})
+	}
 }
