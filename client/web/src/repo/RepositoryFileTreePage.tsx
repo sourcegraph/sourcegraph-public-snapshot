@@ -9,6 +9,7 @@ import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/sha
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
+import { SourcegraphContext } from '../jscontext'
 import { NotebookProps } from '../notebooks'
 import { OwnConfigProps } from '../own/OwnConfigProps'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
@@ -23,6 +24,7 @@ import styles from './RepositoryFileTreePage.module.scss'
 
 export interface RepositoryFileTreePageProps extends RepoRevisionContainerContext, NotebookProps, OwnConfigProps {
     objectType: 'blob' | 'tree' | undefined
+    globalContext: Pick<SourcegraphContext, 'authProviders'>
 }
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
@@ -31,7 +33,7 @@ const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 /** A page that shows a file or a directory (tree view) in a repository at the
  * current revision. */
 export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => {
-    const { repo, resolvedRevision, repoName, objectType: maybeObjectType, ...context } = props
+    const { repo, resolvedRevision, repoName, objectType: maybeObjectType, globalContext, ...context } = props
 
     const location = useLocation()
     const { filePath = '' } = parseBrowserRepoURL(location.pathname) // empty string is root
@@ -105,6 +107,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                                     }
                                     fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                                     className={styles.pageContent}
+                                    context={globalContext}
                                 />
                             </TraceSpanProvider>
                         ) : resolvedRevision ? (
@@ -118,6 +121,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                                 isSourcegraphDotCom={context.isSourcegraphDotCom}
                                 className={styles.pageContent}
                                 authenticatedUser={context.authenticatedUser}
+                                context={globalContext}
                             />
                         ) : (
                             <LoadingSpinner />
