@@ -127,9 +127,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 			name:       "app zero-config cody gateway completions with dotcom token",
 			deployType: deploy.App,
 			config: schema.SiteConfiguration{
-				Completions: &schema.Completions{
-					Enabled: true,
-				},
+				CodyEnabled: &truePtr,
 				App: &schema.App{
 					DotcomAuthToken: "TOKEN",
 				},
@@ -147,8 +145,8 @@ func TestGetCompletionsConfig(t *testing.T) {
 			name:       "app with custom configuration",
 			deployType: deploy.App,
 			config: schema.SiteConfiguration{
+				CodyEnabled: &truePtr,
 				Completions: &schema.Completions{
-					Enabled:         true,
 					AccessToken:     "CUSTOM_TOKEN",
 					Provider:        "anthropic",
 					ChatModel:       "claude-v1",
