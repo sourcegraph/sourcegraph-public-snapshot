@@ -2,6 +2,7 @@ package fakedb
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -73,6 +74,7 @@ func (teams *Teams) GetTeamByID(_ context.Context, id int32) (*types.Team, error
 			return t, nil
 		}
 	}
+	fmt.Println("TEAM NOT FOUND", teams.list, id)
 	return nil, database.TeamNotFoundError{}
 }
 

@@ -1346,9 +1346,9 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 	db := fakeOwnDb()
 
 	userEmails := database.NewMockUserEmailsStore()
-	userEmails.GetPrimaryEmailFunc.SetDefaultHook(func(_ context.Context, id int32) (email string, verified bool, err error) {
-		verified = true
-		switch id {
+	userEmails.ListByUserFunc.SetDefaultHook(func(ctx context.Context, opts database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+		var email string
+		switch opts.UserID {
 		case 1:
 			email = "assigned@owner1.com"
 		case 2:
@@ -1356,7 +1356,12 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 		default:
 			email = santaEmail
 		}
-		return
+		return []*database.UserEmail{
+			{
+				UserID: opts.UserID,
+				Email:  email,
+			},
+		}, nil
 	})
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
@@ -1398,6 +1403,7 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
 		return "deadbeef", nil
 	}
+	db.UserExternalAccountsFunc.SetDefaultReturn(database.NewMockUserExternalAccountsStore())
 	git := fakeGitserver{}
 	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
 	if err != nil {
@@ -1468,28 +1474,6 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 							"nodes": [
 								{
 									"owner": {
-										"name": "assigned team 1"
-									},
-									"reasons": [
-										{
-											"title": "assigned owner",
-											"description": "Owner is manually assigned."
-										}
-									]
-								},
-								{
-									"owner": {
-										"name": "assigned team 2"
-									},
-									"reasons": [
-										{
-											"title": "assigned owner",
-											"description": "Owner is manually assigned."
-										}
-									]
-								},
-								{
-									"owner": {
 										"displayName": "I am an assigned owner #1",
 										"email": "assigned@owner1.com"
 									},
@@ -1504,6 +1488,28 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 									"owner": {
 										"displayName": "I am an assigned owner #2",
 										"email": "assigned@owner2.com"
+									},
+									"reasons": [
+										{
+											"title": "assigned owner",
+											"description": "Owner is manually assigned."
+										}
+									]
+								},
+								{
+									"owner": {
+										"name": "assigned team 1"
+									},
+									"reasons": [
+										{
+											"title": "assigned owner",
+											"description": "Owner is manually assigned."
+										}
+									]
+								},
+								{
+									"owner": {
+										"name": "assigned team 2"
 									},
 									"reasons": [
 										{
@@ -1595,7 +1601,8 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 							"nodes": [
 								{
 									"owner": {
-										"name": "assigned team 2"
+										"displayName": "I am an assigned owner #2",
+										"email": "assigned@owner2.com"
 									},
 									"reasons": [
 										{
@@ -1606,8 +1613,7 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 								},
 								{
 									"owner": {
-										"displayName": "I am an assigned owner #2",
-										"email": "assigned@owner2.com"
+										"name": "assigned team 2"
 									},
 									"reasons": [
 										{

@@ -216,6 +216,9 @@ func (b bag) FindResolved(ref Reference) (codeowners.ResolvedOwner, bool) {
 	if e := ref.Email; e != "" {
 		ks = append(ks, refKey{email: e})
 	}
+	if id := ref.TeamID; id != 0 {
+		ks = append(ks, refKey{teamID: id})
+	}
 	// Attempt to find user by any reference:
 	for _, k := range ks {
 		if refCtx, ok := b.references[k]; ok {
@@ -293,6 +296,7 @@ func (b *bag) Resolve(ctx context.Context, db edb.EnterpriseDB) {
 	for k, refCtx := range b.references {
 		if !refCtx.resolutionDone {
 			userRefs, teamRefs, err := k.fetch(ctx, db)
+			fmt.Println("FETCH", k, userRefs, teamRefs, err)
 			refCtx.resolutionDone = true
 			if err != nil {
 				refCtx.appendErr(err)
@@ -477,7 +481,10 @@ type refKey struct {
 
 func (k refKey) String() string {
 	if id := k.userID; id != 0 {
-		return fmt.Sprintf("#%d", id)
+		return fmt.Sprintf("u%d", id)
+	}
+	if id := k.teamID; id != 0 {
+		return fmt.Sprintf("t%d", id)
 	}
 	if h := k.handle; h != "" {
 		return fmt.Sprintf("@%s", h)
@@ -492,15 +499,12 @@ func (k refKey) String() string {
 // It queries by email, userID, user name or team name based on what information
 // is available.
 func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences, *teamReferences, error) {
-	// refKey must contain at least one reference.
-	if k.handle == "" && k.email == "" && k.userID == 0 {
-		return nil, nil, errors.New("empty refKey is not valid")
-	}
 	if k.userID != 0 {
 		return &userReferences{id: k.userID}, nil, nil
 	}
 	if k.teamID != 0 {
 		t, err := findTeamByID(ctx, db, k.teamID)
+		fmt.Println("FIND TEAM BY ID", t, err)
 		if err != nil {
 			return nil, nil, err
 		}

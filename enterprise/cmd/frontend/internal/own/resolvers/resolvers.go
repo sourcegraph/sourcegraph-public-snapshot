@@ -74,6 +74,7 @@ func (r *ownResolver) ownService() own.Service {
 
 type ownershipReason struct {
 	codeownersRule           *codeownerspb.Rule
+	codeownersSource         codeowners.RulesetSource
 	recentContributionsCount int
 	recentViewsCount         int
 	assignedOwnerPath        []string
@@ -150,7 +151,7 @@ func (r *ownResolver) GitBlobOwnership(
 
 	// Retrieve recent view signals.
 	if args.IncludeReason(graphqlbackend.RecentViewOwnershipSignal) {
-		viewerResolvers, err := computeRecentViewSignals(ctx, r.logger, r.db, blob.Path(), repoID)
+		viewerResolvers, err := computeRecentViewSignals(ctx, r.db, blob.Path(), repoID)
 		if err != nil {
 			return nil, err
 		}
@@ -158,14 +159,14 @@ func (r *ownResolver) GitBlobOwnership(
 	}
 
 	// Retrieve assigned owners.
-	assignedOwners, err := r.computeAssignedOwners(ctx, r.logger, r.db, blob, repoID)
+	assignedOwners, err := r.computeAssignedOwners(ctx, blob, repoID)
 	if err != nil {
 		return nil, err
 	}
 	rrs = append(rrs, assignedOwners...)
 
 	// Retrieve assigned teams.
-	assignedTeams, err := r.computeAssignedTeams(ctx, r.db, blob, repoID)
+	assignedTeams, err := r.computeAssignedTeams(ctx, blob, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +203,7 @@ func (r *ownResolver) GitCommitOwnership(
 	}
 
 	// Retrieve recent view signals.
-	viewerResolvers, err := computeRecentViewSignals(ctx, r.logger, r.db, repoRootPath, repoID)
+	viewerResolvers, err := computeRecentViewSignals(ctx, r.db, repoRootPath, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -228,21 +229,21 @@ func (r *ownResolver) GitTreeOwnership(
 	}
 
 	// Retrieve recent view signals.
-	viewerResolvers, err := computeRecentViewSignals(ctx, r.logger, r.db, tree.Path(), repoID)
+	viewerResolvers, err := computeRecentViewSignals(ctx, r.db, tree.Path(), repoID)
 	if err != nil {
 		return nil, err
 	}
 	rrs = append(rrs, viewerResolvers...)
 
 	// Retrieve assigned owners.
-	assignedOwners, err := r.computeAssignedOwners(ctx, r.logger, r.db, tree, repoID)
+	assignedOwners, err := r.computeAssignedOwners(ctx, tree, repoID)
 	if err != nil {
 		return nil, err
 	}
 	rrs = append(rrs, assignedOwners...)
 
 	// Retrieve assigned teams.
-	assignedTeams, err := r.computeAssignedTeams(ctx, r.db, tree, repoID)
+	assignedTeams, err := r.computeAssignedTeams(ctx, tree, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -326,7 +327,10 @@ func (r *ownResolver) computeCodeowners(ctx context.Context, blob *graphqlbacken
 	var rrs []reasonAndReference
 	for _, o := range rule.GetOwner() {
 		rrs = append(rrs, reasonAndReference{
-			reason: ownershipReason{codeownersRule: rule},
+			reason: ownershipReason{
+				codeownersRule:   rule,
+				codeownersSource: ruleset.GetSource(),
+			},
 			reference: own.Reference{
 				RepoContext: repoContext,
 				Handle:      o.Handle,
@@ -437,11 +441,12 @@ func (r *ownResolver) ownershipConnection(
 		bag.Add(r.reference)
 	}
 	bag.Resolve(ctx, r.db)
-
+	fmt.Println(bag)
 	// 2. Group reasons by resolved owners
 	ownersByKey := map[string]*reasonsAndOwner{}
 	for _, r := range ownerships {
 		resolvedOwner, found := bag.FindResolved(r.reference)
+		fmt.Println("RESOLVED OWNER", r.reference, resolvedOwner, found)
 		if !found {
 			if guess := r.reference.ResolutionGuess(); guess != nil {
 				resolvedOwner = guess
@@ -592,7 +597,7 @@ func (r *ownershipResolver) Reasons(_ context.Context) ([]graphqlbackend.Ownersh
 				resolver: &codeownersFileEntryResolver{
 					db:              r.db,
 					gitserverClient: r.gitserver,
-					source:          nil,
+					source:          reason.codeownersSource,
 					repo:            r.repo,
 					matchLineNumber: reason.codeownersRule.GetLineNumber(),
 				},
@@ -787,7 +792,7 @@ func (v *recentViewOwnershipSignal) Description() (string, error) {
 	return "Owner is associated because they have viewed this file in the last 90 days.", nil
 }
 
-func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.EnterpriseDB, path string, repoID api.RepoID) ([]reasonAndReference, error) {
+func computeRecentViewSignals(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) ([]reasonAndReference, error) {
 	enabled, err := db.OwnSignalConfigurations().IsEnabled(ctx, owntypes.SignalRecentViews)
 	if err != nil {
 		return nil, errors.Wrap(err, "IsEnabled")
@@ -875,7 +880,7 @@ func (a *assignedOwner) IsDirectMatch() bool {
 	return a.directMatch
 }
 
-func (r *ownResolver) computeAssignedOwners(ctx context.Context, logger log.Logger, db edb.EnterpriseDB, blob *graphqlbackend.GitTreeEntryResolver, repoID api.RepoID) ([]reasonAndReference, error) {
+func (r *ownResolver) computeAssignedOwners(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, repoID api.RepoID) ([]reasonAndReference, error) {
 	assignedOwnership, err := r.ownService().AssignedOwnership(ctx, repoID, api.CommitID(blob.Commit().OID()))
 	if err != nil {
 		return nil, errors.Wrap(err, "computing assigned ownership")
@@ -943,7 +948,7 @@ func (r *ownResolver) computeAssignedOwners(ctx context.Context, logger log.Logg
 	// return results, nil
 }
 
-func (r *ownResolver) computeAssignedTeams(ctx context.Context, db edb.EnterpriseDB, blob *graphqlbackend.GitTreeEntryResolver, repoID api.RepoID) ([]reasonAndReference, error) {
+func (r *ownResolver) computeAssignedTeams(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, repoID api.RepoID) ([]reasonAndReference, error) {
 	assignedTeams, err := r.ownService().AssignedTeams(ctx, repoID, api.CommitID(blob.Commit().OID()))
 	if err != nil {
 		return nil, errors.Wrap(err, "computing assigned ownership")
