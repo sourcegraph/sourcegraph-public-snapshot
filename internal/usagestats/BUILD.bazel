@@ -60,6 +60,7 @@ go_library(
 
 go_test(
     name = "usagestats_test",
+    timeout = "moderate",
     srcs = [
         "aggregated_codeintel_test.go",
         "aggregated_repo_metadata_test.go",

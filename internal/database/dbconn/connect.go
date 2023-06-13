@@ -2,13 +2,19 @@ package dbconn
 
 import (
 	"database/sql"
+	"fmt"
+	"os"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
+
+const MigrationInProgressSentinelDSN = "!migrationinprogress!"
 
 // ConnectInternal connects to the given data source and return the handle.
 //
@@ -22,6 +28,14 @@ import (
 // Note: github.com/jackc/pgx parses the environment as well. This function will also use the value
 // of PGDATASOURCE if supplied and dataSource is the empty string.
 func ConnectInternal(logger log.Logger, dsn, appName, dbName string) (_ *sql.DB, err error) {
+	if dsn == MigrationInProgressSentinelDSN {
+		logger.Warn(
+			fmt.Sprintf("%s detected migration connection string sentinel, waiting for 10s then restarting...", output.EmojiWarningSign),
+		)
+		time.Sleep(time.Second * 10)
+		os.Exit(0)
+	}
+
 	cfg, err := buildConfig(logger, dsn, appName)
 	if err != nil {
 		return nil, err

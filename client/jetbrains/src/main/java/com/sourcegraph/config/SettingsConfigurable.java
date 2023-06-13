@@ -58,7 +58,9 @@ public class SettingsConfigurable implements Configurable {
             .getRemoteUrlReplacements()
             .equals(ConfigUtil.getRemoteUrlReplacements(project))
         || mySettingsComponent.isUrlNotificationDismissed()
-            != ConfigUtil.isUrlNotificationDismissed();
+            != ConfigUtil.isUrlNotificationDismissed()
+        || mySettingsComponent.areCodyCompletionsEnabled()
+            != ConfigUtil.areCodyCompletionsEnabled();
   }
 
   @Override
@@ -125,6 +127,7 @@ public class SettingsConfigurable implements Configurable {
       aSettings.remoteUrlReplacements = mySettingsComponent.getRemoteUrlReplacements();
     }
     aSettings.isUrlNotificationDismissed = mySettingsComponent.isUrlNotificationDismissed();
+    aSettings.areCodyCompletionsEnabled = mySettingsComponent.areCodyCompletionsEnabled();
 
     publisher.afterAction(context);
   }
@@ -144,6 +147,7 @@ public class SettingsConfigurable implements Configurable {
     String remoteUrlReplacements = ConfigUtil.getRemoteUrlReplacements(project);
     mySettingsComponent.setRemoteUrlReplacements(remoteUrlReplacements);
     mySettingsComponent.setUrlNotificationDismissedEnabled(ConfigUtil.isUrlNotificationDismissed());
+    mySettingsComponent.setCodyCompletionsEnabled(ConfigUtil.areCodyCompletionsEnabled());
   }
 
   @Override

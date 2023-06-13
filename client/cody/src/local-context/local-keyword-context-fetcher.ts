@@ -1,14 +1,17 @@
 import { execFile, spawn } from 'child_process'
 import * as path from 'path'
 
+import Assembler from 'stream-json/Assembler'
 import StreamValues from 'stream-json/streamers/StreamValues'
 import * as vscode from 'vscode'
 import winkUtils from 'wink-nlp-utils'
 
+import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
-import { KeywordContextFetcher, KeywordContextFetcherResult } from '@sourcegraph/cody-shared/src/keyword-context'
+import { KeywordContextFetcher, ContextResult } from '@sourcegraph/cody-shared/src/local-context'
 
 import { logEvent } from '../event-logger'
+import { debug } from '../log'
 
 /**
  * Exclude files without extensions and hidden files (starts with '.')
@@ -17,6 +20,7 @@ import { logEvent } from '../event-logger'
  * Note: Ripgrep excludes binary files and respects .gitignore by default
  */
 const fileExtRipgrepParams = [
+    '--ignore-case',
     '-g',
     '*.*',
     '-g',
@@ -25,10 +29,10 @@ const fileExtRipgrepParams = [
     '!*.lock',
     '-g',
     '!*.snap',
-    '--threads',
-    '1',
     '--max-filesize',
-    '1M',
+    '10K',
+    '--max-depth',
+    '10',
 ]
 
 interface RipgrepStreamData {
@@ -68,62 +72,34 @@ export function regexForTerms(...terms: Term[]): string {
     return `(?:${inner.join('|')})`
 }
 
-export function userQueryToKeywordQuery(query: string): Term[] {
-    const longestCommonPrefix = (s: string, t: string): string => {
-        let endIdx = 0
-        for (let i = 0; i < s.length && i < t.length; i++) {
-            if (s[i] !== t[i]) {
-                break
-            }
-            endIdx = i + 1
+function longestCommonPrefix(s: string, t: string): string {
+    let endIdx = 0
+    for (let i = 0; i < s.length && i < t.length; i++) {
+        if (s[i] !== t[i]) {
+            break
         }
-        return s.slice(0, endIdx)
+        endIdx = i + 1
     }
-
-    const origWords: string[] = []
-    for (const chunk of query.split(/\W+/)) {
-        if (chunk.trim().length === 0) {
-            continue
-        }
-        origWords.push(...winkUtils.string.tokenize0(chunk))
-    }
-    const filteredWords = winkUtils.tokens.removeWords(origWords)
-    const terms = new Map<string, Term>()
-    for (const word of filteredWords) {
-        // Ignore ASCII-only strings of length 2 or less
-        if (word.length <= 2) {
-            let skip = true
-            for (let i = 0; i < word.length; i++) {
-                if (word.charCodeAt(i) >= 128) {
-                    // non-ASCII
-                    skip = false
-                    break
-                }
-            }
-            if (skip) {
-                continue
-            }
-        }
-
-        const stem = winkUtils.string.stem(word)
-        const term = terms.get(stem) || {
-            stem,
-            originals: [word],
-            prefix: longestCommonPrefix(word.toLowerCase(), stem),
-            count: 0,
-        }
-        term.originals.push(word)
-        term.count++
-        terms.set(stem, term)
-    }
-    return [...terms.values()]
+    return s.slice(0, endIdx)
 }
 
+/**
+ * A local context fetcher that uses a LLM to generate a keyword query, which is then
+ * converted to a regex fed to ripgrep to search for files that are relevant to the
+ * user query.
+ */
 export class LocalKeywordContextFetcher implements KeywordContextFetcher {
-    constructor(private rgPath: string, private editor: Editor) {}
+    constructor(private rgPath: string, private editor: Editor, private chatClient: ChatClient) {}
 
-    public async getContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
-        console.log('fetching keyword matches')
+    /**
+     * Returns pieces of context relevant for the given query. Uses a keyword-search-based
+     * approach.
+     * @param query user query
+     * @param numResults the number of context results to return
+     * @returns a list of context results, sorted in *reverse* order (that is,
+     * the most important result appears at the bottom)
+     */
+    public async getContext(query: string, numResults: number): Promise<ContextResult[]> {
         const startTime = performance.now()
         const rootPath = this.editor.getWorkspaceRootPath()
         if (!rootPath) {
@@ -141,18 +117,89 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         )
         const searchDuration = performance.now() - startTime
         logEvent('CodyVSCodeExtension:keywordContext:searchDuration', searchDuration, searchDuration)
+        debug('LocalKeywordContextFetcher:getContext', JSON.stringify({ searchDuration }))
         return messagePairs.reverse().flat()
     }
 
+    private async userQueryToExpandedKeywords(query: string): Promise<Map<string, Term>> {
+        const start = performance.now()
+        const keywords = await new Promise<string[]>((resolve, reject) => {
+            let responseText = ''
+            this.chatClient.chat(
+                [
+                    {
+                        speaker: 'human',
+                        text: `Write 3-5 keywords that you would use to search for code snippets that are relevant to answering the following user query: <query>${query}</query> Your response should be only a list of space-delimited keywords and nothing else.`,
+                    },
+                ],
+                {
+                    onChange: (text: string) => {
+                        responseText = text
+                    },
+                    onComplete: () => {
+                        resolve(responseText.split(/\s+/).filter(e => e.length > 0))
+                    },
+                    onError: (message: string, statusCode?: number) => {
+                        reject(new Error(message))
+                    },
+                },
+                {
+                    temperature: 0,
+                    fast: true,
+                }
+            )
+        })
+        const terms = new Map<string, Term>()
+        for (const kw of keywords) {
+            const stem = winkUtils.string.stem(kw)
+            if (terms.has(stem)) {
+                continue
+            }
+            terms.set(stem, {
+                count: 1,
+                originals: [kw],
+                prefix: longestCommonPrefix(kw.toLowerCase(), stem),
+                stem,
+            })
+        }
+        debug(
+            'LocalKeywordContextFetcher:userQueryToExpandedKeywords',
+            JSON.stringify({ duration: performance.now() - start })
+        )
+        return terms
+    }
+
+    private async userQueryToKeywordQuery(query: string): Promise<Term[]> {
+        const terms = new Map<string, Term>()
+        const keywordExpansionStartTime = Date.now()
+        const expandedTerms = await this.userQueryToExpandedKeywords(query)
+        const keywordExpansionDuration = Date.now() - keywordExpansionStartTime
+        for (const [stem, term] of expandedTerms) {
+            if (terms.has(stem)) {
+                continue
+            }
+            terms.set(stem, term)
+        }
+        debug(
+            'LocalKeywordContextFetcher:userQueryToKeywordQuery',
+            'keyword expansion',
+            JSON.stringify({
+                duration: keywordExpansionDuration,
+                expandedTerms: [...expandedTerms.values()].map(v => v.prefix),
+            })
+        )
+        const ret = [...terms.values()]
+        return ret
+    }
+
     // Return context results for the Codebase Context Search recipe
-    public async getSearchContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
-        console.log('fetching keyword search context...')
+    public async getSearchContext(query: string, numResults: number): Promise<ContextResult[]> {
         const rootPath = this.editor.getWorkspaceRootPath()
         if (!rootPath) {
             return []
         }
 
-        const stems = userQueryToKeywordQuery(query)
+        const stems = (await this.userQueryToKeywordQuery(query))
             .map(t => (t.prefix.length < 4 ? t.originals[0] : t.prefix))
             .join('|')
         const filesnamesWithScores = await this.fetchKeywordFiles(rootPath, query)
@@ -180,8 +227,10 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         terms: Term[],
         rootPath: string
     ): Promise<{ [filename: string]: { bytesSearched: number } }> {
+        const start = performance.now()
         const regexQuery = `\\b${regexForTerms(...terms)}`
-        const proc = spawn(this.rgPath, ['-i', ...fileExtRipgrepParams, '--json', regexQuery, './'], {
+        const rgArgs = [...fileExtRipgrepParams, '--json', regexQuery, '.']
+        const proc = spawn(this.rgPath, rgArgs, {
             cwd: rootPath,
             stdio: ['ignore', 'pipe', process.stderr],
             windowsHide: true,
@@ -191,21 +240,40 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                 bytesSearched: number
             }
         } = {}
+
+        // Process the ripgrep JSON output to get the file sizes. We use an object filter to
+        // fast-filter out irrelevant lines of output
+        const objectFilter = (assembler: Assembler): boolean | undefined => {
+            // Each ripgrep JSON line begins with the following format:
+            //
+            //   {"type":"begin|match|end","data":"...
+            //
+            // We only care about the "type":"end" lines, which contain the file size in bytes.
+            if (assembler.key === null && assembler.stack.length === 0 && assembler.current.type) {
+                return assembler.current.type === 'end'
+            }
+            // return undefined to indicate our uncertainty at this moment
+            return undefined
+        }
         await new Promise<void>((resolve, reject) => {
             try {
                 proc.stdout
-                    .pipe(StreamValues.withParser())
+                    .pipe(StreamValues.withParser({ objectFilter }))
                     .on('data', data => {
                         try {
                             const typedData = data as RipgrepStreamData
                             switch (typedData.value.type) {
-                                case 'end':
-                                    if (!fileTermCounts[typedData.value.data.path.text]) {
-                                        fileTermCounts[typedData.value.data.path.text] = { bytesSearched: 0 }
+                                case 'end': {
+                                    let filename = typedData.value.data.path.text
+                                    if (filename.startsWith(`.${path.sep}`)) {
+                                        filename = filename.slice(2)
                                     }
-                                    fileTermCounts[typedData.value.data.path.text].bytesSearched =
-                                        typedData.value.data.stats.bytes_searched
+                                    if (!fileTermCounts[filename]) {
+                                        fileTermCounts[filename] = { bytesSearched: 0 }
+                                    }
+                                    fileTermCounts[filename].bytesSearched = typedData.value.data.stats.bytes_searched
                                     break
+                                }
                             }
                         } catch (error) {
                             reject(error)
@@ -216,6 +284,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                 reject(error)
             }
         })
+        debug('fetchFileStats', JSON.stringify({ duration: performance.now() - start }))
         return fileTermCounts
     }
 
@@ -227,20 +296,21 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         fileTermCounts: { [filename: string]: { [stem: string]: number } }
         termTotalFiles: { [stem: string]: number }
     }> {
+        const start = performance.now()
         const termFileCountsArr: { fileCounts: { [filename: string]: number }; filesSearched: number }[] =
             await Promise.all(
                 queryTerms.map(async term => {
+                    const rgArgs = [
+                        ...fileExtRipgrepParams,
+                        '--count-matches',
+                        '--stats',
+                        `\\b${regexForTerms(term)}`,
+                        '.',
+                    ]
                     const out = await new Promise<string>((resolve, reject) => {
                         execFile(
                             this.rgPath,
-                            [
-                                '-i',
-                                ...fileExtRipgrepParams,
-                                '--count-matches',
-                                '--stats',
-                                `\\b${regexForTerms(term)}`,
-                                './',
-                            ],
+                            rgArgs,
                             {
                                 cwd: rootPath,
                                 maxBuffer: 1024 * 1024 * 1024,
@@ -272,8 +342,12 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                             continue
                         }
                         try {
+                            let filename = terms[0]
+                            if (filename.startsWith(`.${path.sep}`)) {
+                                filename = filename.slice(2)
+                            }
                             const count = parseInt(terms[1], 10)
-                            fileCounts[terms[0]] = count
+                            fileCounts[filename] = count
                         } catch {
                             console.error(`could not parse count from ${terms[1]}`)
                         }
@@ -282,6 +356,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                 })
             )
 
+        debug('LocalKeywordContextFetcher.fetchFileMatches', JSON.stringify({ duration: performance.now() - start }))
         let totalFilesSearched = -1
         for (const { filesSearched } of termFileCountsArr) {
             if (totalFilesSearched >= 0 && totalFilesSearched !== filesSearched) {
@@ -316,13 +391,15 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         rootPath: string,
         rawQuery: string
     ): Promise<{ filename: string; score: number }[]> {
-        const query = userQueryToKeywordQuery(rawQuery)
+        const query = await this.userQueryToKeywordQuery(rawQuery)
 
+        const fetchFilesStart = performance.now()
         const fileMatchesPromise = this.fetchFileMatches(query, rootPath)
         const fileStatsPromise = this.fetchFileStats(query, rootPath)
-
         const fileMatches = await fileMatchesPromise
         const fileStats = await fileStatsPromise
+        const fetchFilesDuration = performance.now() - fetchFilesStart
+        debug('LocalKeywordContextFetcher:fetchKeywordFiles', JSON.stringify({ fetchFilesDuration }))
 
         const { fileTermCounts, termTotalFiles, totalFiles } = fileMatches
         const idfDict = idf(termTotalFiles, totalFiles)

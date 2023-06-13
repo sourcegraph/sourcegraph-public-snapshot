@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 public interface UpdatableChat {
   void addMessageToChat(@NotNull ChatMessage message);
 
-  void respondToMessage(@NotNull ChatMessage message);
+  void respondToMessage(@NotNull ChatMessage message, @NotNull String responsePrefix);
 
   void updateLastMessage(@NotNull ChatMessage message);
 

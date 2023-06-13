@@ -25,6 +25,7 @@ go_library(
 
 go_test(
     name = "live_test",
+    timeout = "moderate",
     srcs = ["migration_test.go"],
     embed = [":live"],
     tags = [
