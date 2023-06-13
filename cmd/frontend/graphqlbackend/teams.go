@@ -162,6 +162,7 @@ func (r *TeamResolver) ID() graphql.ID {
 }
 
 func (r *TeamResolver) Name() string {
+	fmt.Println("TEAM NAME OF ", r.team)
 	return r.team.Name
 }
 
@@ -184,6 +185,7 @@ func (r *TeamResolver) Creator(ctx context.Context) (*UserResolver, error) {
 }
 
 func (r *TeamResolver) DisplayName() *string {
+	fmt.Println("TEAM DISPLAY NAME OF ", r.team)
 	if r.team.DisplayName == "" {
 		return nil
 	}

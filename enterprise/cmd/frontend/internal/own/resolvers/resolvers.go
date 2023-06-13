@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"sort"
@@ -315,8 +316,9 @@ func (r *ownResolver) computeCodeowners(ctx context.Context, blob *graphqlbacken
 	var repoContext *own.RepoContext
 	if len(rule.GetOwner()) > 0 {
 		spec, err := repo.ExternalRepo(ctx)
+		fmt.Println("EXTERNAL REPO", spec, spec.ServiceType)
 		// Best effort resolution. We still want to serve the reason if external service cannot be resolved here.
-		if err != nil {
+		if err == nil {
 			repoContext = &own.RepoContext{
 				Name:         repoName,
 				CodeHostKind: spec.ServiceType,
@@ -337,6 +339,7 @@ func (r *ownResolver) computeCodeowners(ctx context.Context, blob *graphqlbacken
 				Email:       o.Email,
 			},
 		})
+		fmt.Println("RRS", rrs[len(rrs)-1].reference.String())
 	}
 	return rrs, nil
 	// bag := own.EmptyBag()
@@ -401,6 +404,26 @@ type reasonsAndOwner struct {
 	owner   codeowners.ResolvedOwner
 }
 
+func (ro reasonsAndOwner) String() string {
+	var b bytes.Buffer
+	fmt.Fprint(&b, ro.owner.Identifier())
+	for _, r := range ro.reasons {
+		if r.codeownersRule != nil {
+			fmt.Fprint(&b, " CODEOWNERS")
+		}
+		if len(r.assignedOwnerPath) > 0 {
+			fmt.Fprint(&b, " ASSIGNED OWNER")
+		}
+		if r.recentContributionsCount > 0 {
+			fmt.Fprint(&b, " RECENT CONTRIBUTOR")
+		}
+		if r.recentViewsCount > 0 {
+			fmt.Fprint(&b, " RECENT VIEWER")
+		}
+	}
+	return b.String()
+}
+
 func (ro reasonsAndOwner) order() int {
 	var ownershipReasons, reasons, contributions, views int
 	for _, r := range ro.reasons {
@@ -435,6 +458,7 @@ func (r *ownResolver) ownershipConnection(
 	repo *graphqlbackend.RepositoryResolver,
 	path string,
 ) (*ownershipConnectionResolver, error) {
+	fmt.Println("REASON & REFERENCE", ownerships)
 	// 1. Resolve ownership references
 	bag := own.EmptyBag()
 	for _, r := range ownerships {
@@ -450,6 +474,9 @@ func (r *ownResolver) ownershipConnection(
 		if !found {
 			if guess := r.reference.ResolutionGuess(); guess != nil {
 				resolvedOwner = guess
+				fmt.Println("GUESSED OWNER", r.reference, resolvedOwner, found)
+			} else {
+				fmt.Println("NOT GUESSED")
 			}
 		}
 		if resolvedOwner == nil {
@@ -477,6 +504,8 @@ func (r *ownResolver) ownershipConnection(
 		}
 		return o.owner.Identifier() < p.owner.Identifier()
 	})
+
+	fmt.Println("OWNERS FINAL", owners)
 
 	// 4. Compute counts
 	total := len(owners)
@@ -653,13 +682,25 @@ func (r *ownerResolver) ToPerson() (*graphqlbackend.PersonResolver, bool) {
 
 func (r *ownerResolver) ToTeam() (*graphqlbackend.TeamResolver, bool) {
 	if r.resolvedOwner.Type() != codeowners.OwnerTypeTeam {
+		fmt.Println("NOT TYPE TEAM")
 		return nil, false
 	}
 	resolvedTeam, ok := r.resolvedOwner.(*codeowners.Team)
 	if !ok {
+		fmt.Println("NOT TEAM", resolvedTeam)
 		return nil, false
 	}
-	return graphqlbackend.NewTeamResolver(r.db, resolvedTeam.Team), true
+	if resolvedTeam.Team != nil {
+		fmt.Println("GOT TEAM", resolvedTeam.Team)
+		return graphqlbackend.NewTeamResolver(r.db, resolvedTeam.Team), true
+	}
+	fmt.Println("GUESSSSS")
+	// The sourcegraph instance does not have that team in the database.
+	// It might be an unimported code-host team, a guess or both.
+	return graphqlbackend.NewTeamResolver(r.db, &types.Team{
+		Name:        resolvedTeam.Identifier(),
+		DisplayName: resolvedTeam.Identifier(),
+	}), true
 }
 
 type codeownersFileEntryResolver struct {

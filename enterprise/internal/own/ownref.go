@@ -52,8 +52,11 @@ func (r Reference) ResolutionGuess() codeowners.ResolvedOwner {
 	if r.Handle == "" && r.Email == "" {
 		return nil
 	}
+	fmt.Println("GUESS", r)
 	// If this is a GitHub repo and the handle contains a "/", then we can tell that this is a team.
+	// TODO this does not work well with team resolver which expects team to be in the DB.
 	if r.RepoContext != nil && strings.ToLower(r.RepoContext.CodeHostKind) == extsvc.VariantGitHub.AsType() && strings.Contains(r.Handle, "/") {
+		// 	fmt.Println("GUESS TEAM", r)
 		return &codeowners.Team{
 			Handle: r.Handle,
 			Email:  r.Email,

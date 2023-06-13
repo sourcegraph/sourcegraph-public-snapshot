@@ -434,6 +434,7 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 
 		var repo *types.Repo
 		repo, r.err = r.db.Repos().Get(ctx, r.IDInt32())
+		fmt.Println("REPO GET ", repo, r.err)
 		if r.err == nil {
 			r.innerRepo = repo
 		}
