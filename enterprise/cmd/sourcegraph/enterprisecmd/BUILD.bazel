@@ -6,7 +6,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph/enterprisecmd",
     visibility = ["//visibility:public"],
     deps = [
-        "//internal/oobmigration",
         "//internal/service",
         "//internal/service/svcmain",
     ],

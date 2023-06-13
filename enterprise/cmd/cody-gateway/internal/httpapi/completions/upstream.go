@@ -2,6 +2,7 @@ package completions
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,11 +11,14 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	oteltrace "go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/featurelimiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -48,7 +52,7 @@ func makeUpstreamHandler[ReqT any](
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
-	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
+	rateLimitNotifier notify.RateLimitNotifier,
 
 	// upstreamName is the name of the upstream provider. It MUST match the
 	// provider names defined clientside, i.e. "anthropic" or "openai".
@@ -76,18 +80,18 @@ func makeUpstreamHandler[ReqT any](
 		allowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, allowedModels[i])
 	}
 
-	return rateLimit(
+	return featurelimiter.Handle(
 		baseLogger,
 		eventLogger,
 		limiter.NewPrefixRedisStore("rate_limit:", rs),
-		concurrencyLimitConfig,
+		rateLimitNotifier,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			act := actor.FromContext(r.Context())
 			logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
 
-			feature, err := extractFeature(r)
-			if err != nil {
-				response.JSONError(logger, w, http.StatusBadRequest, err)
+			feature := featurelimiter.GetFeature(r.Context())
+			if feature == "" {
+				response.JSONError(logger, w, http.StatusBadRequest, errors.New("no feature provided"))
 				return
 			}
 
@@ -194,6 +198,13 @@ func makeUpstreamHandler[ReqT any](
 
 			resp, err := httpcli.ExternalDoer.Do(req)
 			if err != nil {
+				// Ignore reporting errors where client disconnected
+				if req.Context().Err() == context.Canceled && errors.Is(err, context.Canceled) {
+					oteltrace.SpanFromContext(req.Context()).RecordError(err)
+					logger.Info("request canceled", log.Error(err))
+					return
+				}
+
 				response.JSONError(logger, w, http.StatusInternalServerError,
 					errors.Wrapf(err, "failed to make request to upstream provider %s", upstreamName))
 				return
@@ -219,6 +230,7 @@ func makeUpstreamHandler[ReqT any](
 				var headers bytes.Buffer
 				_ = resp.Header.Write(&headers)
 				logger.Error("upstream returned 429, rewriting to 503",
+					log.Error(errors.New(resp.Status)), // real error needed for Sentry reporting
 					log.String("resp.headers", headers.String()))
 				resolvedStatusCode = http.StatusServiceUnavailable
 			}

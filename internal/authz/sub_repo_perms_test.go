@@ -70,6 +70,12 @@ func TestCanReadAllPaths(t *testing.T) {
 			}
 		}, nil
 	})
+	checker.EnabledForRepoFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName) (bool, error) {
+		if rn == repo {
+			return true, nil
+		}
+		return false, nil
+	})
 
 	ok, err := CanReadAllPaths(ctx, checker, repo, testPaths)
 	if err != nil {

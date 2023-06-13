@@ -1,6 +1,47 @@
 import * as vscode from 'vscode'
 
+import { Edit, Position, Range } from './diff'
 import { FixupFileCollection, FixupTextChanged } from './roles'
+import { TextChange, updateRangeMultipleChanges } from './tracked-range'
+
+// This does some thunking to manage the two range types: diff ranges, and
+// text change ranges.
+function updateDiffRange(range: Range, changes: TextChange[]): Range {
+    return toDiffRange(updateRangeMultipleChanges(toVsCodeRange(range), changes))
+}
+
+function toDiffRange(range: vscode.Range): Range {
+    return {
+        start: toDiffPosition(range.start),
+        end: toDiffPosition(range.end),
+    }
+}
+
+function toDiffPosition(position: vscode.Position): Position {
+    return { line: position.line, character: position.character }
+}
+
+function toVsCodeRange(range: Range): vscode.Range {
+    return new vscode.Range(toVsCodePosition(range.start), toVsCodePosition(range.end))
+}
+
+function toVsCodePosition(position: Position): vscode.Position {
+    return new vscode.Position(position.line, position.character)
+}
+
+// Updates the ranges in a diff.
+function updateRanges(ranges: Range[], changes: TextChange[]): void {
+    for (let i = 0; i < ranges.length; i++) {
+        ranges[i] = updateDiffRange(ranges[i], changes)
+    }
+}
+
+// Updates the range in an edit.
+function updateEdits(edits: Edit[], changes: TextChange[]): void {
+    for (const [i, edit] of edits.entries()) {
+        edits[i].range = updateDiffRange(edit.range, changes)
+    }
+}
 
 /**
  * Observes text document changes and updates the regions with active fixups.
@@ -18,7 +59,7 @@ export class FixupDocumentEditObserver {
             return
         }
         const tasks = this.provider_.tasksForFile(file)
-        // Notify which tasks have changed text
+        // Notify which tasks have changed text or the range edits apply to
         for (const task of tasks) {
             for (const edit of event.contentChanges) {
                 if (
@@ -30,14 +71,20 @@ export class FixupDocumentEditObserver {
                 this.provider_.textDidChange(task)
                 break
             }
+            const changes = new Array<TextChange>(...event.contentChanges)
+            const updatedRange = updateRangeMultipleChanges(task.selectionRange, changes)
+            if (task.diff) {
+                updateRanges(task.diff.conflicts, changes)
+                updateEdits(task.diff.edits, changes)
+                updateRanges(task.diff.highlights, changes)
+                // Note, we may not notify the decorator of range changes here
+                // if the gross range has not changed. That is OK because
+                // VScode moves decorations and we can reproduce them lazily.
+            }
+            if (!updatedRange.isEqual(task.selectionRange)) {
+                task.selectionRange = updatedRange
+                this.provider_.rangeDidChange(task)
+            }
         }
-        // TODO: Update the selection ranges which were edited, see
-        // ./tracked-range or consider using simpler line-based
-        // ranges. Until this is implemented adding/deleting lines
-        // before fixups will cause conflicts.
-        //
-        // Need to clarify whether multi-range edits are progressive in the
-        // sense that edit 2 refers to ranges updated after edit 1, or if
-        // all the edits refer to ranges in the original document.
     }
 }

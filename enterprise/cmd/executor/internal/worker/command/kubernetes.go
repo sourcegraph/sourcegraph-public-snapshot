@@ -213,6 +213,7 @@ func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, namespace s
 			log.String("phase", string(pod.Status.Phase)),
 			log.Time("creationTimestamp", pod.CreationTimestamp.Time),
 			kubernetesTimep("deletionTimestamp", pod.DeletionTimestamp),
+			kubernetesConditions("conditions", pod.Status.Conditions),
 		)
 		switch pod.Status.Phase {
 		case corev1.PodFailed:
@@ -233,6 +234,29 @@ func kubernetesTimep(key string, time *metav1.Time) log.Field {
 		return log.Timep(key, nil)
 	}
 	return log.Time(key, time.Time)
+}
+
+func kubernetesConditions(key string, conditions []corev1.PodCondition) log.Field {
+	if len(conditions) == 0 {
+		return log.Stringp(key, nil)
+	}
+	fields := make([]log.Field, len(conditions))
+	for i, condition := range conditions {
+		fields[i] = log.Object(
+			fmt.Sprintf("condition[%d]", i),
+			log.String("type", string(condition.Type)),
+			log.String("status", string(condition.Status)),
+			log.String("reason", condition.Reason),
+			log.String("message", condition.Message),
+		)
+	}
+	if len(fields) == 0 {
+		return log.Stringp(key, nil)
+	}
+	return log.Object(
+		key,
+		fields...,
+	)
 }
 
 // ErrKubernetesPodFailed is returned when a Kubernetes pod fails.

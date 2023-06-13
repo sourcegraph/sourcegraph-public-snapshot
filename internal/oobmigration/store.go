@@ -13,8 +13,10 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -379,6 +381,51 @@ FROM out_of_band_migrations m
 LEFT JOIN out_of_band_migrations_errors e ON e.migration_id = m.id
 WHERE m.id = %s
 ORDER BY e.created desc
+`
+
+func (s *Store) GetByIDs(ctx context.Context, ids []int) (_ []Migration, err error) {
+	migrations, err := scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(getByIDsQuery, pq.Array(ids))))
+	if err != nil {
+		return nil, err
+	}
+
+	wanted := collections.NewSet(ids...)
+	received := collections.NewSet[int]()
+	for _, migration := range migrations {
+		received.Add(migration.ID)
+	}
+	difference := wanted.Difference(received).Values()
+	if len(difference) > 0 {
+		slices.Sort(difference)
+		return nil, errors.Newf("unknown migration id(s) %v", difference)
+	}
+
+	return migrations, nil
+}
+
+const getByIDsQuery = `
+SELECT
+	m.id,
+	m.team,
+	m.component,
+	m.description,
+	m.introduced_version_major,
+	m.introduced_version_minor,
+	m.deprecated_version_major,
+	m.deprecated_version_minor,
+	m.progress,
+	m.created,
+	m.last_updated,
+	m.non_destructive,
+	m.is_enterprise,
+	m.apply_reverse,
+	m.metadata,
+	e.message,
+	e.created
+FROM out_of_band_migrations m
+LEFT JOIN out_of_band_migrations_errors e ON e.migration_id = m.id
+WHERE m.id = ANY(%s)
+ORDER BY m.id ASC, e.created DESC
 `
 
 // ReturnEnterpriseMigrations is set by the enterprise application to enable the

@@ -37,6 +37,14 @@ func (m Message) GetPrompt(humanPromptPrefix, assistantPromptPrefix string) (str
 	return fmt.Sprintf("%s %s", prefix, m.Text), nil
 }
 
+type CodyCompletionRequestParameters struct {
+	CompletionRequestParameters
+
+	// When Fast is true, then it is used as a hint to prefer a model
+	// that is faster (but probably "dumber").
+	Fast bool
+}
+
 type CompletionRequestParameters struct {
 	// Prompt exists only for backwards compatibility. Do not use it in new
 	// implementations. It will be removed once we are reasonably sure 99%

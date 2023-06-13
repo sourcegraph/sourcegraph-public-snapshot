@@ -1064,16 +1064,26 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 				EXISTS (
 					SELECT 1
 					FROM codeintel_path_ranks pr
+					JOIN codeintel_ranking_progress crp ON crp.graph_key = pr.graph_key
 					WHERE
-						pr.graph_key IN (
-							SELECT crp.graph_key
-							FROM codeintel_ranking_progress crp
-							WHERE crp.reducer_completed_at IS NOT NULL
-							ORDER BY crp.reducer_completed_at DESC
+						pr.repository_id = repo.id AND
+
+						-- Only keep progress rows that are completed, otherwise
+						-- the data that the timestamp applies to will not be
+						-- visible (yet).
+						crp.id = (
+							SELECT pl.id
+							FROM codeintel_ranking_progress pl
+							WHERE pl.reducer_completed_at IS NOT NULL
+							ORDER BY pl.reducer_completed_at DESC
 							LIMIT 1
 						) AND
-						pr.repository_id = repo.id AND
-						pr.updated_at >= %s
+
+						-- The ranks became visible when the progres objeect was
+						-- marked as completed. The timestamp on the path ranks
+						-- table is now an insertion date, but inserted records
+						-- may not be visible to active ranking jobs.
+						crp.reducer_completed_at >= %s
 				)
 			`, opt.MinLastChanged),
 

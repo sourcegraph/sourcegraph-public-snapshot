@@ -7,10 +7,9 @@
 }
 
 .separator {
-    background-color: var(--border-color-2);
     height: 100%;
-    min-width: 0.0625rem;
-    width: 0.0625rem;
+    border-left: 1px solid var(--border-color-2);
+    margin-right: 0.675rem;
 }
 
 .footer {
@@ -22,26 +21,23 @@
 .repository-names-text {
     display: flex;
     min-width: 0;
-    flex-grow: 1;
-    max-width: 20rem;
     font-size: 0.8rem;
     font-weight: 400;
+
+    svg {
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
+    }
 }
 
 .filepath-text {
     font-size: 0.8rem;
+    flex: 1;
 }
 
 .tinted-search {
     background-color: var(--mark-bg);
-}
-
-.input-container {
-    position: relative;
-
-    input {
-        padding-right: 2rem;
-    }
 }
 
 .clear-button {
@@ -54,6 +50,14 @@
     outline: none;
     cursor: pointer;
     color: var(--input-focus-border-color);
+}
+
+.input-container {
+    position: relative;
+
+    input {
+        padding-right: 2rem;
+    }
 }
 
 .repository-selector-content {
@@ -78,11 +82,15 @@
 .header {
     font-size: 0.625rem;
     line-height: 1rem;
+    font-weight: 500;
+    text-transform: uppercase;
 }
 
 .repository-list-item {
+    all: unset;
     font-size: 0.8rem;
     line-height: 1rem;
+    display: block;
 
     svg {
         min-width: 1rem;
@@ -93,6 +101,8 @@
         visibility: hidden;
     }
     &:hover {
+        background-color: var(--body-bg);
+
         .remove-repo-icon {
             visibility: visible;
         }
@@ -109,9 +119,19 @@
 }
 
 .not-included-in-context {
-    opacity: 50%;
+    &,
+    .repo-icon {
+        color: var(--text-disabled);
+    }
+    .embedding-icon-no-embeddings {
+        color: var(--gray-05);
+    }
 }
 
 .not-included-in-context:hover {
     opacity: 100%;
+}
+
+.embedding-icon-no-embeddings {
+    color: var(--warning);
 }

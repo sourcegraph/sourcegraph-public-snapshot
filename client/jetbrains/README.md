@@ -52,9 +52,15 @@ The plugin works with all JetBrains IDEs, including:
 
 - **Sourcegraph URL**: The URL of your Sourcegraph instance if you use a private instance.
   - To use Sourcegraph.com and search in public repos, just choose "Use sourcegraph.com".
-- **Access token**: If you want to use your private Sourcegraph instance, you'll need an access token to authorize
-  yourself.
-  - See our [user docs](https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token) for a video guide.
+- **Access token**:
+  - If you want to use your private Sourcegraph instance, you'll need an access token to authorize
+    yourself.
+  - If you use Sourcegraph.com, using an access token is optional (and only necessary to use Cody).
+  - The configuration for an access token to use with Sourcegraph.com & a private instance is separate,
+    you can switch between them on the fly.
+  - You can override the access token with the `SRC_ACCESS_TOKEN` environment variable.
+  - See our [user docs](https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token) for a video guide on how to
+    create an access token.
 - **Custom request headers**: Any custom headers to send with every request to Sourcegraph.
   - Use any number of pairs: `header1, value1, header2, value2, ...`.
   - Example: `Authorization, Bearer 1234567890, X-My-Header, My-Value`.
@@ -110,7 +116,7 @@ These settings have the highest priority. You can set them in a less than intuit
      <component name="Config">
        <option name="instanceType" value="DOTCOM" />
        <option name="url" value="https://company.sourcegraph.com/" />
-       <option name="accessToken" value="" />
+       <option name="enterpriseAccessToken" value="" />
        <option name="defaultBranch" value="main" />
        <option name="remoteUrlReplacements" value="" />
        <option name="isGlobbingEnabled" value="false" />
