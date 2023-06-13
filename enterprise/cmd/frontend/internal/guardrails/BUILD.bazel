@@ -14,7 +14,9 @@ go_library(
         "//enterprise/internal/codeintel",
         "//internal/conf/conftypes",
         "//internal/database",
+        "//internal/httpcli",
         "//internal/observation",
         "//internal/search/client",
+        "//lib/errors",
     ],
 )

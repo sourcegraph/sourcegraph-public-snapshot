@@ -11,8 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func Init(
@@ -29,8 +31,15 @@ func Init(
 
 	// TODO(keegancsmith) configuration for access token and enabling.
 	if !envvar.SourcegraphDotComMode() {
+		httpClient, err := httpcli.UncachedExternalClientFactory.Doer()
+		if err != nil {
+			return errors.Wrap(err, "failed to initialize external http client for guardrails")
+		}
+		endpoint := "https://sourcegraph.com/.api/graphql"
+		accessToken := ""
+
 		attributionService.SourcegraphDotComFederate = true
-		attributionService.SourcegraphDotComClient = dotcom.NewClient(nil, "https://sourcegraph.com/.api/graphql", "")
+		attributionService.SourcegraphDotComClient = dotcom.NewClient(httpClient, endpoint, accessToken)
 	}
 
 	enterpriseServices.GuardrailsResolver = &resolvers.GuardrailsResolver{
