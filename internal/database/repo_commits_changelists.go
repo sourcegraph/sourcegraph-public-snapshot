@@ -18,6 +18,10 @@ type RepoCommitsChangelistsStore interface {
 	BatchInsertCommitSHAsWithPerforceChangelistID(context.Context, api.RepoID, []types.PerforceChangelist) error
 	// GetLatestForRepo will return the latest commit that has been mapped in the database.
 	GetLatestForRepo(ctx context.Context, repoID api.RepoID) (*types.RepoCommit, error)
+
+	// GetRepoCommit will return the mathcing row from the table for the given repo ID and the
+	// given changelsit ID.
+	GetRepoCommitChangelist(ctx context.Context, repoID api.RepoID, changelistID int64) (*types.RepoCommit, error)
 }
 
 type repoCommitsChangelistsStore struct {
@@ -76,11 +80,33 @@ func (s *repoCommitsChangelistsStore) GetLatestForRepo(ctx context.Context, repo
 
 func scanRepoCommitRow(scanner dbutil.Scanner) (*types.RepoCommit, error) {
 	var r types.RepoCommit
-	err := scanner.Scan(
+	if err := scanner.Scan(
 		&r.ID,
 		&r.RepoID,
 		&r.CommitSHA,
 		&r.PerforceChangelistID,
-	)
-	return &r, err
+	); err != nil {
+		return nil, err
+	}
+
+	return &r, nil
+}
+
+var getRepoCommitFmtStr = `
+SELECT
+	id,
+	repo_id,
+	commit_sha,
+	perforce_changelist_id
+FROM
+	repo_commits_changelists
+WHERE
+	repo_id = %s
+	AND perforce_changelist_id = %s;
+`
+
+func (s *repoCommitsChangelistsStore) GetRepoCommitChangelist(ctx context.Context, repoID api.RepoID, changelistID int64) (*types.RepoCommit, error) {
+	q := sqlf.Sprintf(getRepoCommitFmtStr, repoID, changelistID)
+	row := s.QueryRow(ctx, q)
+	return scanRepoCommitRow(row)
 }

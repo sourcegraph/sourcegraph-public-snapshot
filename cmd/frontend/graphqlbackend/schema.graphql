@@ -3553,6 +3553,13 @@ type Repository implements Node & GenericSearchResultInterface {
         """
         inputRevspec: String
     ): GitCommit
+
+    """
+    EXPERIMENTAL: Returns infomration about the given changelist of the perforce depot, or null if
+    no changelist exists with the given cid or it is not a perforce depot.
+    """
+    changelist(cid: String!): PerforceChangelist
+
     """
     The first commit inside the repo
     """
@@ -4983,7 +4990,7 @@ type GitCommit implements Node {
     """
     abbreviatedOID: String!
     """
-    The perforce changelist ID if this git commit was originally converted from a perforce depot.
+    EXPERIMENTAL: The perforce changelist ID if this git commit was originally converted from a perforce depot.
     """
     perforceChangelist: PerforceChangelist
     """
@@ -10232,11 +10239,19 @@ type CodeIntelCommit {
 }
 
 """
-A Perforce changelist.
+EXPERIMENTAL: A Perforce changelist.
 """
 type PerforceChangelist {
     """
     The changelist ID.
     """
     cid: String!
+    """
+    The canonical URL to this changelist.
+    """
+    canonicalURL: String!
+    """
+    The corresponding git commit of this changelist.
+    """
+    commit: GitCommit!
 }

@@ -134,7 +134,7 @@ func (r *GitCommitResolver) PerforceChangelist(ctx context.Context) (*PerforceCh
 		return nil, err
 	}
 
-	return toPerforceChangelistResolver(ctx, r.repoResolver, commit.Message.Body())
+	return toPerforceChangelistResolver(ctx, r.repoResolver, commit)
 }
 
 func (r *GitCommitResolver) Author(ctx context.Context) (*signatureResolver, error) {
