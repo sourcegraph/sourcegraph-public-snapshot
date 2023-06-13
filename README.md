@@ -64,8 +64,6 @@ The `doc` directory has additional documentation for developing and understandin
 
 ## License
 
-This repository contains both OSS-licensed and non-OSS-licensed files. We maintain one repository rather than two separate repositories mainly for development convenience.
+This repository contains primarily non-OSS-licensed files, and some OSS licensed files (for example, IDE extensions). We maintain one repository rather than two separate repositories mainly for development convenience.
 
-All files in the `enterprise` and `client/web/src/enterprise` fall under [LICENSE.enterprise](LICENSE.enterprise).
-
-The remaining files fall under the [Apache 2 license](LICENSE.apache). Sourcegraph OSS is built only from the Apache-licensed files in this repository.
+See the [LICENSE](LICENSE) for an explanation of how files are licensed.
