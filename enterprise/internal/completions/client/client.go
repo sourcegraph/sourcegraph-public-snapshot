@@ -3,7 +3,6 @@ package client
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/codygateway"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
@@ -19,8 +18,6 @@ func Get(endpoint, provider, accessToken string) (types.CompletionsClient, error
 		return anthropic.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
 	case openai.ProviderName:
 		return openai.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
-	case dotcom.ProviderName:
-		return dotcom.NewClient(httpcli.ExternalDoer, accessToken), nil
 	case codygateway.ProviderName:
 		return codygateway.NewClient(httpcli.ExternalDoer, endpoint, accessToken)
 	default:
