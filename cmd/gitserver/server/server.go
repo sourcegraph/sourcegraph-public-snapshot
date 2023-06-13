@@ -199,7 +199,7 @@ type cloneJob struct {
 // cloneTask is a thin wrapper around a cloneJob to associate the doneFunc with each job.
 type cloneTask struct {
 	*cloneJob
-	done func(float64)
+	done func() time.Duration
 }
 
 // NewCloneQueue initializes a new cloneQueue.
@@ -668,7 +668,6 @@ func (s *Server) cloneJobConsumer(ctx context.Context, tasks <-chan *cloneTask) 
 		}
 
 		go func(task *cloneTask) {
-			start := time.Now()
 			defer cancel()
 
 			err := s.doClone(ctx, task.repo, task.dir, task.syncer, task.lock, task.remoteURL, task.options)
@@ -677,7 +676,7 @@ func (s *Server) cloneJobConsumer(ctx context.Context, tasks <-chan *cloneTask) 
 			}
 			// Use a different context in case we failed because the original context failed.
 			s.setLastErrorNonFatal(s.ctx, task.repo, err)
-			task.done(time.Since(start).Seconds())
+			_ = task.done()
 		}(task)
 	}
 }

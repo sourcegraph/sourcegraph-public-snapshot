@@ -102,7 +102,7 @@ func (q *Queue[T]) Push(job T) {
 
 // Pop returns the next job and a function that consumers of this job may use to record some
 // metrics. If there's no next job available, it returns nil, nil.
-func (q *Queue[T]) Pop() (*T, func(float64)) {
+func (q *Queue[T]) Pop() (*T, func() time.Duration) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
@@ -116,10 +116,14 @@ func (q *Queue[T]) Pop() (*T, func(float64)) {
 	q.waitTime.Observe(time.Since(item.pushedAt).Seconds())
 	q.length.Dec()
 
+	processingTime := time.Now()
+
 	// NOTE: The function being returned is hardcoded at the moment. In the future this may be a
 	// property of the queue if implementations need it. For now this is all we need.
-	return &item.job, func(val float64) {
-		q.processingTime.Observe(val)
+	return &item.job, func() time.Duration {
+		duration := time.Since(processingTime)
+		q.processingTime.Observe(duration.Seconds())
+		return duration
 	}
 }
 

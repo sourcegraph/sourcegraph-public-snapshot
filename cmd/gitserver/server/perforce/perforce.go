@@ -137,18 +137,16 @@ func (s *Service) changelistMappingConsumer(ctx context.Context, tasks <-chan *c
 		default:
 		}
 
-		start := time.Now()
 		err := s.doChangelistMapping(ctx, task.changelistMappingJob)
 		if err != nil {
 			logger.Error("failed to map perforce changelists", log.Error(err))
 		}
 
-		duration := time.Since(start)
-		task.done(duration.Seconds())
+		timeTaken := task.done()
 		// NOTE: Hardcoded to log for tasks that run longer than 1 minute. Will revisit this if it
 		// becomes noisy under production loads.
-		if duration > time.Duration(time.Second*60) {
-			s.Logger.Warn("mapping job took long to complete", log.Float64("seconds", duration.Seconds()))
+		if timeTaken > time.Duration(time.Second*60) {
+			s.Logger.Warn("mapping job took long to complete", log.Float64("seconds", timeTaken.Seconds()))
 		}
 	}
 }
@@ -337,5 +335,5 @@ func parseGitLogLine(line string) (*types.PerforceChangelist, error) {
 // doneFunc with each job.
 type changelistMappingTask struct {
 	*changelistMappingJob
-	done func(float64)
+	done func() time.Duration
 }
