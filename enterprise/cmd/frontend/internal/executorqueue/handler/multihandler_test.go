@@ -3,6 +3,7 @@ package handler_test
 import (
 	"context"
 	"io"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -854,5 +855,54 @@ func evaluateEvent(
 		assert.JSONEq(t, expectedResponseBody, string(b))
 	} else {
 		assert.Empty(t, string(b))
+	}
+}
+
+func TestMultiHandler_SelectQueueForDequeueing(t *testing.T) {
+	tests := []struct {
+		name            string
+		candidateQueues []string
+		amountOfruns    int
+		expectedErr     error
+	}{
+		{
+			name:            "acceptable deviation",
+			candidateQueues: []string{"batches", "codeintel"},
+			amountOfruns:    5000,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &handler.MultiHandler{}
+			selectCounts := make(map[string]int, len(tt.candidateQueues))
+			for _, q := range tt.candidateQueues {
+				selectCounts[q] = 0
+			}
+
+			for i := 0; i < tt.amountOfruns; i++ {
+				selectedQueue, err := m.SelectQueueForDequeueing(tt.candidateQueues)
+				if err != nil && err != tt.expectedErr {
+					t.Fatalf("expected err %s, got err %s", tt.expectedErr, err)
+				}
+				selectCounts[selectedQueue]++
+			}
+
+			// calculate the sum of the candidate queue weights
+			var totalWeight int
+			for _, q := range tt.candidateQueues {
+				totalWeight += executortypes.DequeuePropertiesPerQueue[q].Weight
+			}
+			// then calculate how many times each queue is expected to be chosen
+			expectedSelectCounts := make(map[string]float64, len(tt.candidateQueues))
+			for _, q := range tt.candidateQueues {
+				expectedSelectCounts[q] = math.Round((float64(executortypes.DequeuePropertiesPerQueue[q].Weight) / float64(totalWeight)) * float64(tt.amountOfruns))
+			}
+			for key := range selectCounts {
+				// allow a 10% deviation of the expected count of selects per queue
+				lower := int(math.Floor(expectedSelectCounts[key] - expectedSelectCounts[key]*0.1))
+				upper := int(math.Floor(expectedSelectCounts[key] + expectedSelectCounts[key]*0.1))
+				assert.True(t, selectCounts[key] >= lower && selectCounts[key] <= upper, "SelectQueueForDequeueing: %s = %d, lower = %d, upper = %d", key, selectCounts[key], lower, upper)
+			}
+		})
 	}
 }

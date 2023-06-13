@@ -130,7 +130,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 				candidateQueues = nonEmptyQueues
 			}
 			// final list of candidates: multiple not at limit or all at limit.
-			selectedQueue, err = m.selectQueueForDequeueing(candidateQueues)
+			selectedQueue, err = m.SelectQueueForDequeueing(candidateQueues)
 			if err != nil {
 				return executortypes.Job{}, false, err
 			}
@@ -224,7 +224,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	return job, true, nil
 }
 
-func (m *MultiHandler) selectQueueForDequeueing(candidateQueues []string) (string, error) {
+func (m *MultiHandler) SelectQueueForDequeueing(candidateQueues []string) (string, error) {
 	// pick a queue based on the defined weights
 	var choices []weightedrand.Choice[string, int]
 	for _, queue := range candidateQueues {
