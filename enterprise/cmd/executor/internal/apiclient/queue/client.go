@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -298,6 +299,9 @@ func ParseJobIDs(jobIDs []string) ([]types.QueueJobIDs, error) {
 	for q, ids := range queueIds {
 		queueJobIDs = append(queueJobIDs, types.QueueJobIDs{QueueName: q, JobIDs: ids})
 	}
+	sort.Slice(queueJobIDs, func(i, j int) bool {
+		return queueJobIDs[i].QueueName < queueJobIDs[j].QueueName
+	})
 	return queueJobIDs, nil
 }
 
