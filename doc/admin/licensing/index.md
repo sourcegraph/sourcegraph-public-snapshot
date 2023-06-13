@@ -8,6 +8,12 @@ If Sourcegraph needs to operate in a sandboxed environment without an external i
 
 License keys also need to be unique to a single instance of Sourcegraph. If the same license key is used across multiple instances, subsequent license checks will fail. If multiple license keys are required for dev/staging instances, contact customer support for additional license keys for these instances.
 
+## Upgrading to Sourcegraph 5.1
+
+When upgrading to Sourcegraph 5.1 while using the same license key on multiple instances (e.g. dev and prod), the first instance to be upgraded will claim the license key.
+
+When the second instance is upgraded while using the same license key, license verification will fail for that instance. Please make sure to contact customer support and request a new license key, so that different Sourcegraph instances all have unique license keys.
+
 ## FAQ
 
 ### We have set up a new Sourcegraph instance by replicating an existing instance, how can we generate a new site ID to ensure the instances are unique?
