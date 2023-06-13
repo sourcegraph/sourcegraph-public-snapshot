@@ -1,8 +1,9 @@
 <script lang="ts">
-    import type { PageData } from './$types'
     import Commit from '$lib/Commit.svelte'
-    import FileDiff from './FileDiff.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+
+    import type { PageData } from './$types'
+    import FileDiff from './FileDiff.svelte'
 
     export let data: PageData
 

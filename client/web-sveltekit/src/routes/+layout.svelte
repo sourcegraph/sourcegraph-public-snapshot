@@ -3,15 +3,18 @@
     import { readable, writable, type Readable } from 'svelte/store'
 
     import { browser } from '$app/environment'
-    import { KEY, type SourcegraphContext } from '$lib/stores'
     import { isErrorLike } from '$lib/common'
     import { TemporarySettingsStorage } from '$lib/shared'
+    import { KEY, type SourcegraphContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
 
     import Header from './Header.svelte'
+
     import './styles.scss'
-    import type { LayoutData, Snapshot } from './$types'
+
     import { beforeNavigate } from '$app/navigation'
+
+    import type { LayoutData, Snapshot } from './$types'
 
     export let data: LayoutData
 
