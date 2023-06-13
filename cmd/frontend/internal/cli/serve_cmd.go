@@ -34,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -87,8 +88,12 @@ func InitDB(logger sglog.Logger) (*sql.DB, error) {
 type SetupFunc func(database.DB, conftypes.UnifiedWatchable) enterprise.Services
 
 // Main is the main entrypoint for the frontend server program.
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, enterpriseSetupHook SetupFunc) error {
+func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, enterpriseSetupHook SetupFunc, enterpriseMigratorHook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
 	logger := observationCtx.Logger
+
+	if err := tryAutoUpgrade(ctx, observationCtx, ready, enterpriseMigratorHook); err != nil {
+		return errors.Wrap(err, "frontend.tryAutoUpgrade")
+	}
 
 	sqlDB, err := InitDB(logger)
 	if err != nil {

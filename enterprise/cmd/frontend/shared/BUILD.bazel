@@ -37,6 +37,7 @@ go_library(
         "//enterprise/internal/codeintel",
         "//enterprise/internal/codeintel/shared",
         "//enterprise/internal/cody",
+        "//enterprise/internal/oobmigration/migrations",
         "//enterprise/internal/scim",
         "//internal/cody",
         "//internal/conf",
@@ -47,6 +48,7 @@ go_library(
         "//internal/env",
         "//internal/observation",
         "//internal/service",
+        "//schema",
         "@com_github_sourcegraph_log//:log",
     ],
 )

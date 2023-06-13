@@ -219,3 +219,150 @@ func TestValidateUpgrade(t *testing.T) {
 		}
 	})
 }
+
+func TestClaimAutoUpgrade(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("basic", func(t *testing.T) {
+		logger := logtest.Scoped(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		store := New(db)
+
+		if err := store.EnsureUpgradeTable(ctx); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		claimed, err := store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if !claimed {
+			t.Fatal("expected successful autoupgrade claim but failed")
+		}
+	})
+
+	t.Run("basic sequential (first in-progress)", func(t *testing.T) {
+		logger := logtest.Scoped(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		store := New(db)
+
+		if err := store.EnsureUpgradeTable(ctx); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		claimed, err := store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if !claimed {
+			t.Fatal("expected successful autoupgrade claim")
+		}
+
+		claimed, err = store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if claimed {
+			t.Fatal("expected unsuccessful autoupgrade claim")
+		}
+	})
+
+	t.Run("basic sequential (first failed)", func(t *testing.T) {
+		logger := logtest.Scoped(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		store := New(db)
+
+		if err := store.EnsureUpgradeTable(ctx); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		claimed, err := store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if !claimed {
+			t.Fatal("expected successful autoupgrade claim")
+		}
+
+		if err := store.SetUpgradeStatus(ctx, false); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		claimed, err = store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if !claimed {
+			t.Fatal("expected successful autoupgrade claim")
+		}
+	})
+
+	t.Run("basic sequential (first succeeded)", func(t *testing.T) {
+		logger := logtest.Scoped(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		store := New(db)
+
+		if err := store.EnsureUpgradeTable(ctx); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		claimed, err := store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if !claimed {
+			t.Fatal("expected successful autoupgrade claim")
+		}
+
+		if err := store.SetUpgradeStatus(ctx, true); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		claimed, err = store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if claimed {
+			t.Fatal("expected unsuccessful autoupgrade claim")
+		}
+	})
+
+	t.Run("basic sequential (first succeeded, older version)", func(t *testing.T) {
+		logger := logtest.Scoped(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		store := New(db)
+
+		if err := store.EnsureUpgradeTable(ctx); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		claimed, err := store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.1.0")
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if !claimed {
+			t.Fatal("expected successful autoupgrade claim")
+		}
+
+		if err := store.SetUpgradeStatus(ctx, true); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		claimed, err = store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if !claimed {
+			t.Fatal("expected successful autoupgrade claim")
+		}
+	})
+}

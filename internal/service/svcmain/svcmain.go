@@ -274,5 +274,4 @@ func run(
 
 	// wait for all services to stop
 	allDoneWG.Wait()
-
 }
