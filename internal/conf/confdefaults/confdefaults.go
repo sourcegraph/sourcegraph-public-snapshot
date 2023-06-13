@@ -93,14 +93,14 @@ var App = conftypes.RawUnified{
 	"experimentalFeatures": {		
 		"structuralSearch": "disabled"
 	},
-	"completions":{
-		"enabled":true,
-		"provider":"sourcegraph"
+	"completions": {
+		"enabled": true,
+		"provider": "sourcegraph"
 	},
-	"embeddings":{
-		"enabled":true,
-		"provider":"sourcegraph",
-		"incremental":true,
+	"embeddings": {
+		"enabled": true,
+		"provider": "sourcegraph",
+		"incremental": true,
 		"excludedFilePathPatterns": [
 			"*.svg",
 			"*.png",
