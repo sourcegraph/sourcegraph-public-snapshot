@@ -36,6 +36,7 @@ go_library(
 
 go_test(
     name = "lsif_test",
+    timeout = "moderate",
     srcs = [
         "diagnostics_count_test.go",
         "document_column_split_test.go",

@@ -43,17 +43,22 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan, enterpriseJobs Enterpris
 	newJob := func(b query.Basic) (job.Job, error) {
 		return NewBasicJob(inputs, b, enterpriseJobs)
 	}
-	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky {
-		jobTree = smartsearch.NewSmartSearchJob(jobTree, newJob, plan)
-	} else if inputs.PatternType == query.SearchTypeKeyword && len(plan) == 1 {
-		// TODO(camdencheek): we should almost definitely not be doing plan[0] here
-		newJobTree, err := keyword.NewKeywordSearchJob(plan[0], newJob)
+
+	if inputs.PatternType == query.SearchTypeKeyword {
+		if inputs.SearchMode == search.SmartSearch {
+			return nil, errors.New("The 'keyword' patterntype is not compatible with Smart Search")
+		}
+
+		newJobTree, err := keyword.NewKeywordSearchJob(plan, newJob)
 		if err != nil {
 			return nil, err
 		}
-		if newJobTree != nil {
-			jobTree = newJobTree
-		}
+
+		jobTree = newJobTree
+	}
+
+	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky {
+		jobTree = smartsearch.NewSmartSearchJob(jobTree, newJob, plan)
 	}
 
 	alertJob := NewAlertJob(inputs, jobTree)

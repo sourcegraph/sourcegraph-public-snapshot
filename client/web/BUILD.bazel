@@ -212,7 +212,6 @@ ts_project(
         "src/codeintel/useCodeIntel.ts",
         "src/codeintel/useRepoAndBlob.ts",
         "src/codeintel/util/helpers.ts",
-        "src/cody/CodyStandalonePage.tsx",
         "src/cody/chat/CodyChatPage.tsx",
         "src/cody/chat/CodyPageIcon.tsx",
         "src/cody/chat/index.tsx",
@@ -221,6 +220,8 @@ ts_project(
         "src/cody/components/CodeMirrorEditor.ts",
         "src/cody/components/CodyIcon.tsx",
         "src/cody/components/CodyLogo.tsx",
+        "src/cody/components/CodyMarketingPage/CodyMarketingPage.tsx",
+        "src/cody/components/CodyMarketingPage/index.ts",
         "src/cody/components/FileContentEditor.ts",
         "src/cody/components/HistoryList/HistoryList.tsx",
         "src/cody/components/HistoryList/index.tsx",
@@ -1271,7 +1272,6 @@ ts_project(
         "src/repo/blob/GoToRawAction.tsx",
         "src/repo/blob/RenderedFile.tsx",
         "src/repo/blob/RenderedNotebookMarkdown.tsx",
-        "src/repo/blob/TryCodyWidget.tsx",
         "src/repo/blob/actions/ToggleHistoryPanel.tsx",
         "src/repo/blob/actions/ToggleLineWrap.tsx",
         "src/repo/blob/actions/ToggleRenderedFileMode.tsx",
@@ -1341,6 +1341,8 @@ ts_project(
         "src/repo/components/RepoHeaderActions/index.ts",
         "src/repo/components/RepoRevision/RepoRevision.tsx",
         "src/repo/components/RepoRevision/index.ts",
+        "src/repo/components/TryCodyWidget/TryCodyWidget.tsx",
+        "src/repo/components/TryCodyWidget/WidgetIcons.tsx",
         "src/repo/linkifiy/Linkified.tsx",
         "src/repo/linkifiy/get-links.ts",
         "src/repo/packages/isPackageServiceType.ts",
@@ -2171,6 +2173,7 @@ build_test(
 
 bundlesize_bin.bundlesize_test(
     name = "bundlesize-report",
+    timeout = "short",
     args = [
         "--config",
         "$(location bundlesize.config.js)",

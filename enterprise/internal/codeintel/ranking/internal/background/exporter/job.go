@@ -2,6 +2,7 @@ package exporter
 
 import (
 	"context"
+	"crypto/md5"
 	"path/filepath"
 	"strings"
 
@@ -124,8 +125,6 @@ func exportRankingGraph(
 	return numUploads, numDefinitionsInserted, numReferencesInserted, err
 }
 
-const skipPrefix = "lsif ."
-
 func setDefinitionsAndReferencesForUpload(
 	ctx context.Context,
 	store store.Store,
@@ -139,22 +138,26 @@ func setDefinitionsAndReferencesForUpload(
 		return 0, 0, err
 	}
 
-	references := make(chan string)
+	references := make(chan [16]byte)
 	referencesCount := 0
 
 	go func() {
 		defer close(references)
 
 		for _, occ := range document.Occurrences {
-			if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) || strings.HasPrefix(occ.Symbol, skipPrefix) {
+			if scip.SymbolRole_Definition.Matches(occ) {
+				// We've already handled definitions
 				continue
 			}
 
+			// We've already emitted this symbol as a definition
 			if _, ok := seenDefinitions[occ.Symbol]; ok {
 				continue
 			}
-			if !scip.SymbolRole_Definition.Matches(occ) {
-				references <- occ.Symbol
+
+			// Parse and format symbol into an opaque string for ranking calculations
+			if checksum, ok := canonicalizeSymbol(occ.Symbol); ok {
+				references <- checksum
 				referencesCount++
 			}
 		}
@@ -178,6 +181,10 @@ func setDefinitionsForUpload(
 	rankingGraphKey, path string,
 	document *scip.Document,
 ) (map[string]struct{}, error) {
+	uploadID := upload.UploadID
+	exportedUploadID := upload.ExportedUploadID
+	documentPath := filepath.Join(upload.Root, path)
+
 	seenDefinitions := map[string]struct{}{}
 	definitions := make(chan shared.RankingDefinitions)
 
@@ -185,16 +192,23 @@ func setDefinitionsForUpload(
 		defer close(definitions)
 
 		for _, occ := range document.Occurrences {
-			if occ.Symbol == "" || scip.IsLocalSymbol(occ.Symbol) || strings.HasPrefix(occ.Symbol, skipPrefix) {
+			if !scip.SymbolRole_Definition.Matches(occ) {
+				// We only care about definitions
 				continue
 			}
 
-			if scip.SymbolRole_Definition.Matches(occ) {
+			if _, ok := seenDefinitions[occ.Symbol]; ok {
+				// We've already emitted a definition for this symbol/file
+				continue
+			}
+
+			// Parse and format symbol into an opaque string for ranking calculations
+			if checksum, ok := canonicalizeSymbol(occ.Symbol); ok {
 				definitions <- shared.RankingDefinitions{
-					UploadID:         upload.UploadID,
-					ExportedUploadID: upload.ExportedUploadID,
-					SymbolName:       occ.Symbol,
-					DocumentPath:     filepath.Join(upload.Root, path),
+					UploadID:         uploadID,
+					ExportedUploadID: exportedUploadID,
+					SymbolChecksum:   checksum,
+					DocumentPath:     documentPath,
 				}
 				seenDefinitions[occ.Symbol] = struct{}{}
 			}
@@ -210,4 +224,39 @@ func setDefinitionsForUpload(
 	}
 
 	return seenDefinitions, nil
+}
+
+const skipPrefix = "lsif ."
+
+var emptyChecksum = [16]byte{}
+
+// canonicalizeSymbol transforms a symbol name into an opaque string that
+// can be matched internally by the ranking machinery.
+//
+// Canonicalization of a symbol name for ranking makes two transformations:
+//
+//   - The package version is removed so that we don't need to match SCIP
+//     uploads exactly to get a reference count.
+//   - We then hash the simplified symbol name into a fixed-sized block that
+//     can be matched in constant time against other symbols in Postgres.
+func canonicalizeSymbol(symbolName string) ([16]byte, bool) {
+	if symbolName == "" || scip.IsLocalSymbol(symbolName) || strings.HasPrefix(symbolName, skipPrefix) {
+		return emptyChecksum, false
+	}
+
+	symbol, err := noVersionFormatter.Format(symbolName)
+	if err != nil {
+		return emptyChecksum, false
+	}
+
+	return md5.Sum([]byte(symbol)), true
+}
+
+var noVersionFormatter = scip.SymbolFormatter{
+	OnError:               func(err error) error { return err },
+	IncludeScheme:         func(_ string) bool { return true },
+	IncludePackageManager: func(_ string) bool { return true },
+	IncludePackageName:    func(_ string) bool { return true },
+	IncludePackageVersion: func(_ string) bool { return false },
+	IncludeDescriptor:     func(_ string) bool { return true },
 }

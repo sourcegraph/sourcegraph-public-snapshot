@@ -964,10 +964,11 @@ Triggers:
  document_path      | text    |           | not null | 
  graph_key          | text    |           | not null | 
  exported_upload_id | integer |           | not null | 
+ symbol_checksum    | bytea   |           | not null | '\x'::bytea
 Indexes:
     "codeintel_ranking_definitions_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_definitions_exported_upload_id" btree (exported_upload_id)
-    "codeintel_ranking_definitions_graph_key_symbol_search" btree (graph_key, symbol_name, exported_upload_id, document_path)
+    "codeintel_ranking_definitions_graph_key_symbol_checksum_search" btree (graph_key, symbol_checksum, exported_upload_id, document_path)
 Foreign-key constraints:
     "codeintel_ranking_definitions_exported_upload_id_fkey" FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE
 
@@ -1062,6 +1063,7 @@ Indexes:
  symbol_names       | text[]  |           | not null | 
  graph_key          | text    |           | not null | 
  exported_upload_id | integer |           | not null | 
+ symbol_checksums   | bytea[] |           | not null | '{}'::bytea[]
 Indexes:
     "codeintel_ranking_references_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_references_exported_upload_id" btree (exported_upload_id)
