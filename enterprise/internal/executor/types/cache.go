@@ -23,5 +23,3 @@ var DequeuePropertiesPerQueue = map[string]dequeueProperties{
 		Weight: 1,
 	},
 }
-
-var ValidQueues = []string{"codeintel", "batches"}

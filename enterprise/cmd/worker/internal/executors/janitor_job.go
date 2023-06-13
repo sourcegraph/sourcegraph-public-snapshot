@@ -45,7 +45,7 @@ func (j *janitorJob) Routines(_ context.Context, observationCtx *observation.Con
 			goroutine.WithDescription("clean up executor heartbeat records for presumed dead executors"),
 			goroutine.WithInterval(janitorConfigInst.CleanupTaskInterval),
 		),
-		NewMultiqueueCacheCleaner(executortypes.ValidQueues, dequeueCache, executortypes.DequeueTtl, 5*time.Second),
+		NewMultiqueueCacheCleaner(executortypes.ValidQueueNames, dequeueCache, executortypes.DequeueTtl, 5*time.Second),
 	}
 
 	return routines, nil
