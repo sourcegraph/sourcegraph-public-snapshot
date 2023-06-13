@@ -170,7 +170,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                         graph.
                     </>
                 }
-                className="mb-3 d-none d-sm-flex"
+                className="mb-3 d-none d-md-flex"
             >
                 <PageHeader.Heading as="h2" styleAs="h1">
                     <PageHeader.Breadcrumb icon={CodyColorIcon}>
@@ -188,7 +188,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
 
             {/* Page content */}
             <div className={classNames('row flex-1 overflow-hidden', styles.pageWrapper)}>
-                <div className="d-none d-sm-flex flex-column col-sm-3 h-100">
+                <div className="d-none d-md-flex flex-column col-md-3 h-100">
                     <div className={styles.sidebarHeader}>
                         <H4>
                             <b>Chats</b>
@@ -305,7 +305,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
 
                 <div
                     className={classNames(
-                        'd-sm-flex flex-column col-sm-9 h-100',
+                        'd-md-flex flex-column col-md-9 h-100',
                         showMobileHistory ? 'd-none' : 'd-flex',
                         styles.chatMainWrapper
                     )}
@@ -316,12 +316,12 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                             className={styles.mobileTopBarButton}
                             onClick={() => setShowMobileHistory(true)}
                         >
-                            <Icon aria-hidden={true} svgPath={mdiViewList} />
+                            <Icon aria-hidden={true} svgPath={mdiViewList} className="mr-2" />
                             All chats
                         </Button>
                         <div className={classNames('border-right', styles.mobileTopBarDivider)} />
                         <Button variant="icon" className={styles.mobileTopBarButton} onClick={initializeNewChat}>
-                            <Icon aria-hidden={true} svgPath={mdiPlus} />
+                            <Icon aria-hidden={true} svgPath={mdiPlus} className="mr-2" />
                             New chat
                         </Button>
                     </div>
@@ -329,14 +329,14 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                 </div>
 
                 {showMobileHistory && (
-                    <div className="d-flex flex-column d-sm-none h-100 w-100">
+                    <div className="d-flex flex-column d-md-none h-100 w-100">
                         <div className={styles.mobileTopBar}>
                             <Button
                                 variant="icon"
                                 className={classNames('w-100', styles.mobileTopBarButton)}
                                 onClick={() => setShowMobileHistory(false)}
                             >
-                                <Icon aria-hidden={true} svgPath={mdiClose} />
+                                <Icon aria-hidden={true} svgPath={mdiClose} className="mr-2" />
                                 Close
                             </Button>
                         </div>
