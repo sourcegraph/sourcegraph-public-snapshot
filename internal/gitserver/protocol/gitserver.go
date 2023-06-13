@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
