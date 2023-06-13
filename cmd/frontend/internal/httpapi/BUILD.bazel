@@ -116,7 +116,6 @@ go_test(
         "//internal/authz",
         "//internal/codeintel/types",
         "//internal/conf",
-        "//internal/ctags_config",
         "//internal/database",
         "//internal/errcode",
         "//internal/featureflag",
