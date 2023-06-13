@@ -38,7 +38,7 @@ func IsCodyEnabled(ctx context.Context) bool {
 // If the license does not have the Cody feature, cody is disabled.
 // If Completions aren't configured, cody is disabled.
 // If Completions are not enabled, cody is disabled
-// If CodyRestrictUsersFeatureFlag is set, the cody-experimental featureflag
+// If CodyRestrictUsersFeatureFlag is set, the cody featureflag
 // will determine access.
 // Otherwise, all authenticated users are granted access.
 func isCodyEnabled(ctx context.Context) bool {

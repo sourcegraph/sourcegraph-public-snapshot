@@ -1,7 +1,6 @@
 package updatecheck
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -23,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -771,17 +769,6 @@ func reserializeCodyUsage(payload json.RawMessage) (json.RawMessage, error) {
 	}
 
 	return json.Marshal(singlePeriodUsage)
-}
-
-func codyFeatureFlag() bool {
-	ctx := context.Background()
-	flags := featureflag.FromContext(ctx)
-	codyExperimental, err := flags.GetBool("cody-experimental")
-	if !err {
-		return false
-	}
-
-	return codyExperimental
 }
 
 var (

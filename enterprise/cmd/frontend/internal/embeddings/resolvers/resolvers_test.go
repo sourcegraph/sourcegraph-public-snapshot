@@ -81,7 +81,7 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	})
 
 	ctx := actor.WithActor(context.Background(), actor.FromMockUser(1))
-	ffs := featureflag.NewMemoryStore(map[string]bool{"cody-experimental": true}, nil, nil)
+	ffs := featureflag.NewMemoryStore(map[string]bool{"cody": true}, nil, nil)
 	ctx = featureflag.WithFlags(ctx, ffs)
 
 	results, err := resolver.EmbeddingsMultiSearch(ctx, graphqlbackend.EmbeddingsMultiSearchInputArgs{
