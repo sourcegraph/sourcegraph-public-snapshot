@@ -3,10 +3,14 @@ import * as vscode from 'vscode'
 import { CodyTaskState } from '../non-stop/utils'
 
 import { DecorationProvider } from './DecorationProvider'
-import { getSingleLineRange, updateRangeOnDocChange } from './InlineAssist'
+import { editDocByUri, getSingleLineRange, updateRangeOnDocChange } from './InlineAssist'
 
 export class CodeLensProvider implements vscode.CodeLensProvider {
     private selectionRange: vscode.Range | null = null
+    private contextStore = new Map<
+        string,
+        { docUri: vscode.Uri; original: string; replacement: string; range: vscode.Range }
+    >()
 
     private status = CodyTaskState.idle
     public decorator: DecorationProvider
@@ -51,6 +55,27 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         void this.decorator.decorate(newRange)
         this.selectionRange = newRange
         this._onDidChangeCodeLenses.fire()
+    }
+
+    public storeContext(
+        id: string,
+        docUri: vscode.Uri,
+        original: string,
+        replacement: string,
+        range: vscode.Range
+    ): void {
+        this.contextStore.set(id, { docUri, original, replacement, range })
+    }
+
+    public async undo(id: string): Promise<void> {
+        const context = this.contextStore.get(id)
+        if (!context) {
+            return
+        }
+        const chatSelection = context.range
+        const range = new vscode.Selection(chatSelection.start, new vscode.Position(chatSelection.end.line + 1, 0))
+        await editDocByUri(context.docUri, { start: range.start.line, end: range.end.line }, context.original)
+        this.remove()
     }
     /**
      * Remove all lenses and decorations created for task

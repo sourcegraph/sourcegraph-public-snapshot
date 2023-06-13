@@ -140,8 +140,7 @@ export class InlineController {
     }
 
     private undo(id: string): void {
-        void vscode.commands.executeCommand('undo')
-        this.codeLenses.get(id)?.remove()
+        void this.codeLenses.get(id)?.undo(id)
         this.codeLenses.delete(id)
     }
     /**
@@ -278,9 +277,12 @@ export class InlineController {
         this.isInProgress = false
         const chatSelection = this.getSelectionRange()
         const documentUri = vscode.Uri.joinPath(this.workspacePath, fileName)
-        // const documentUri = vscode.Uri.file(docFsPath)
         const range = new vscode.Selection(chatSelection.start, new vscode.Position(chatSelection.end.line + 1, 0))
         const newRange = await editDocByUri(documentUri, { start: range.start.line, end: range.end.line }, replacement)
+
+        const lens = this.codeLenses.get(this.currentTaskId)
+        lens?.storeContext(this.currentTaskId, documentUri, original, replacement, newRange)
+
         await this.stopFixMode(false, newRange)
         logEvent('CodyVSCodeExtension:inline-assist:replaced')
     }
