@@ -201,6 +201,8 @@ func runMigration(ctx context.Context,
 	)
 }
 
+type dialer func(_ *observation.Context, dsn string, appName string) (*sql.DB, error)
+
 // performs the role of `migrator up`, applying any migrations in the patch versions between the minor version we're at (that `upgrade` brings you to)
 // and the patch version we desire to be at.
 func finalMileMigrations(obsvCtx *observation.Context) error {
@@ -209,15 +211,17 @@ func finalMileMigrations(obsvCtx *observation.Context) error {
 		return err
 	}
 
-	schemas := []string{"frontend", "codeintel", "codeinsights"}
-	for i, fn := range []func(_ *observation.Context, dsn string, appName string) (*sql.DB, error){
-		connections.MigrateNewFrontendDB, connections.MigrateNewCodeIntelDB, connections.MigrateNewCodeInsightsDB,
-	} {
-		obsvCtx.Logger.Info("Running last-mile migrations", log.String("schema", schemas[i]))
+	migratorsBySchema := map[string]dialer{
+		"frontend":     connections.MigrateNewFrontendDB,
+		"codeintel":    connections.MigrateNewCodeIntelDB,
+		"codeinsights": connections.MigrateNewCodeInsightsDB,
+	}
+	for schema, migrateLastMile := range migratorsBySchema {
+		obsvCtx.Logger.Info("Running last-mile migrations", log.String("schema", schema))
 
-		sqlDB, err := fn(obsvCtx, dsns[schemas[i]], "frontend")
+		sqlDB, err := migrateLastMile(obsvCtx, dsns[schema], "frontend")
 		if err != nil {
-			return errors.Wrapf(err, "failed to perform last-mile migration for %s schema", schemas[i])
+			return errors.Wrapf(err, "failed to perform last-mile migration for %s schema", schema)
 		}
 		sqlDB.Close()
 	}
