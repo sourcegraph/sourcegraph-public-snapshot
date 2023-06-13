@@ -121,6 +121,16 @@ export const TranscriptItem: React.FunctionComponent<
                 message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow
             )}
         >
+            {showEditButton && EditButtonContainer && editButtonOnSubmit && TextArea && message.speaker === 'human' && (
+                <header className={classNames(styles.headerContainer, transcriptItemParticipantClassName)}>
+                    {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
+                    <EditButtonContainer
+                        className={styles.FeedbackEditButtonsContainer}
+                        messageBeingEdited={beingEdited}
+                        setMessageBeingEdited={setBeingEdited}
+                    />
+                </header>
+            )}
             {message.contextFiles && message.contextFiles.length > 0 && (
                 <div className={styles.actions}>
                     <ContextFiles
@@ -144,31 +154,18 @@ export const TranscriptItem: React.FunctionComponent<
                     <BlinkingCursor />
                 ) : null}
             </div>
-            <header className={classNames(styles.participant, transcriptItemParticipantClassName)}>
-                {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
-                <div className={styles.participantName}>
-                    {showEditButton &&
-                        EditButtonContainer &&
-                        editButtonOnSubmit &&
-                        TextArea &&
-                        message.speaker === 'human' && (
-                            <EditButtonContainer
-                                className={styles.FeedbackEditButtonsContainer}
-                                messageBeingEdited={beingEdited}
-                                setMessageBeingEdited={setBeingEdited}
-                            />
-                        )}
-                    {showFeedbackButtons &&
-                        FeedbackButtonsContainer &&
-                        feedbackButtonsOnSubmit &&
-                        message.speaker === 'assistant' && (
-                            <FeedbackButtonsContainer
-                                className={styles.FeedbackEditButtonsContainer}
-                                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                            />
-                        )}
-                </div>
-            </header>
+            {showFeedbackButtons &&
+                FeedbackButtonsContainer &&
+                feedbackButtonsOnSubmit &&
+                message.speaker === 'assistant' && (
+                    <footer className={classNames(styles.footerContainer, transcriptItemParticipantClassName)}>
+                        {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
+                        <FeedbackButtonsContainer
+                            className={styles.FeedbackEditButtonsContainer}
+                            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                        />
+                    </footer>
+                )}
         </div>
     )
 })
