@@ -44,13 +44,12 @@ gcs_filenames=(
 function download_gcs() {
   outfile="${OUTPUT}/schema-descriptions/${1}-${2}"
   # 3.20.0 is missing the codeintel and codeinsights schemas.
-  if ! curl -fsSL "https://storage.googleapis.com/sourcegraph-assets/migrations/drift/${1}-${2}" >"${outfile}"; then
+  if ! curl -fsSL "https://storage.googleapis.com/sourcegraph-assets/migrations/drift/${1}-${2}" 2>/dev/null >"${outfile}"; then
     rm "${outfile}"
   fi
 }
 
 for version in "${gcs_versions[@]}"; do
-  echo "Persisting schemas for ${version} from GCS..."
   for filename in "${gcs_filenames[@]}"; do
     download_gcs "${version}" "${filename}"
   done
@@ -80,7 +79,6 @@ git_versions=(
 )
 
 for version in "${git_versions[@]}"; do
-  echo "Persisting schemas for ${version} from GitHub..."
   download_github "${version}"
 done
 
