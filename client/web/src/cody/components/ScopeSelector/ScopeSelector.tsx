@@ -86,6 +86,11 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
         [scope, setScope]
     )
 
+    const resetScope = useCallback(
+        () => setScope({ ...scope, repositories: [], includeInferredRepository: true, includeInferredFile: true }),
+        [scope, setScope]
+    )
+
     return (
         <div className={styles.wrapper}>
             <div className="d-flex text-truncate">
@@ -96,13 +101,14 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                     inferredFilePath={activeEditor?.filePath || null}
                     additionalRepositories={additionalRepositories}
                     addRepository={addRepository}
+                    resetScope={resetScope}
                     removeRepository={removeRepository}
                     toggleIncludeInferredRepository={toggleIncludeInferredRepository}
                     toggleIncludeInferredFile={toggleIncludeInferredFile}
                 />
                 {scope.includeInferredFile && activeEditor?.filePath && (
                     <div className={classNames('d-flex align-items-center', styles.filepathText)}>
-                        <div className={classNames('mx-2', styles.separator)} />
+                        <div className={styles.separator} />
                         {getFileName(activeEditor.filePath)}
                     </div>
                 )}

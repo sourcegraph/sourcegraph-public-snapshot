@@ -154,7 +154,7 @@ func (p *parser) handleParseRequest(
 	}
 
 	source := GetParserType(language)
-	if source == ctags_config.NoCtags || source == ctags_config.UnknownCtags {
+	if ctags_config.ParserIsNoop(source) {
 		return nil
 	}
 
@@ -237,8 +237,8 @@ func (p *parser) handleParseRequest(
 }
 
 func (p *parser) parserFromPool(ctx context.Context, source ctags_config.ParserType) (ctags.Parser, error) {
-	if source == ctags_config.NoCtags || source == ctags_config.UnknownCtags {
-		return nil, errors.New("Should not pass NoCtags to this function")
+	if ctags_config.ParserIsNoop(source) {
+		return nil, errors.New("Should not pass Noop ParserType to this function")
 	}
 
 	p.operations.parseQueueSize.Inc()

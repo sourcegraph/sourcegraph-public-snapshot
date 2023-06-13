@@ -32,6 +32,7 @@ intellij {
 
 dependencies {
     implementation("org.commonmark:commonmark:0.21.0")
+    implementation("org.commonmark:commonmark-ext-gfm-tables:0.21.0")
     testImplementation(platform("org.junit:junit-bom:5.7.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
@@ -96,7 +97,6 @@ tasks {
 
     runIde {
         jvmArgs("-Djdk.module.illegalAccess.silent=true")
-        systemProperty("cody.completions.enabled", "true")
     }
 
     // Configure UI tests plugin

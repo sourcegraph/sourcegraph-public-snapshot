@@ -10,6 +10,7 @@ import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Container, ErrorAlert, Link, PageHeader } from '@sourcegraph/wildcard'
 
+import { CodyColorIcon } from '../../../../cody/chat/CodyPageIcon'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
@@ -81,27 +82,22 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
 
     return (
         <>
-            <PageTitle
-                title={
-                    repo
-                        ? 'Embeddings data configuration policies for repository'
-                        : 'Global embeddings data configuration policies'
-                }
-            />
+            <PageTitle title={repo ? 'Embeddings policies for repository' : 'Global embeddings policies'} />
             <PageHeader
                 headingElement="h2"
                 path={[
+                    { icon: CodyColorIcon, text: 'Cody' },
                     {
                         text: repo ? (
                             <>
-                                Embeddings data configuration for <RepoLink repoName={repo.name} to={null} />
+                                Embeddings policies for <RepoLink repoName={repo.name} to={null} />
                             </>
                         ) : (
-                            'Global embeddings data configuration'
+                            'Global embeddings policies'
                         ),
                     },
                 ]}
-                description={<>Rules that control embeddings re-indexing.</>}
+                description={<>Rules that control keeping embeddings up-to-date.</>}
                 actions={
                     authenticatedUser?.siteAdmin && (
                         <Button to="./new?type=head" variant="primary" as={Link}>
