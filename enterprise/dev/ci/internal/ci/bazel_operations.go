@@ -38,14 +38,12 @@ func bazelCmd(args ...string) string {
 	return strings.Join(Cmd, " ")
 }
 
-func bazelPushImagesCmd(version string, production bool) func(*bk.Pipeline) {
+func bazelPushImagesCmd(version string, isCandidate bool) func(*bk.Pipeline) {
 	stepKey := "bazel-push-images"
-	pushProduction := ""
-	if production {
-		stepKey = stepKey + "-prod"
-		pushProduction = "true"
-	} else {
-		stepKey = stepKey + "-dev"
+	candidate := ""
+	if isCandidate {
+		stepKey = stepKey + "-candidate"
+		candidate = "true"
 	}
 
 	return func(pipeline *bk.Pipeline) {
@@ -54,7 +52,7 @@ func bazelPushImagesCmd(version string, production bool) func(*bk.Pipeline) {
 			bk.DependsOn("bazel-tests"),
 			bk.Key(stepKey),
 			bk.Env("PUSH_VERSION", version),
-			bk.Env("PUSH_PRODUCTION", pushProduction),
+			bk.Env("CANDIDATE_ONLY", candidate),
 			bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
 			bk.Cmd("./enterprise/dev/ci/push_all.sh"),
 		)
