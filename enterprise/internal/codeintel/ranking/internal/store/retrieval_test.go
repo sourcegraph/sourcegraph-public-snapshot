@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
@@ -175,20 +176,22 @@ func TestLastUpdatedAt(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
+	now := time.Unix(1686695462, 0)
 	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
 
 	if _, err := db.ExecContext(ctx, `
 		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at)
 		VALUES
-			($1, 1000, NOW(), NOW())
+			($1, 1000, NOW(), $2)
 	`,
-		key,
+		key, now,
 	); err != nil {
 		t.Fatalf("failed to insert metadata: %s", err)
 	}
 
 	idFoo := api.RepoID(1)
 	idBar := api.RepoID(2)
+	idBaz := api.RepoID(3)
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (id, name) VALUES (1, 'foo'), (2, 'bar'), (3, 'baz')`); err != nil {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
@@ -212,12 +215,12 @@ func TestLastUpdatedAt(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected 'bar' in result: %v", pairs)
 	}
-	if _, ok := pairs[999]; ok {
-		t.Fatalf("unexpected 'bonk' in result: %v", pairs)
+	if _, ok := pairs[idBaz]; ok {
+		t.Fatalf("unexpected repo 'baz' in result: %v", pairs)
 	}
 
-	if !fooUpdatedAt.Before(barUpdatedAt) {
-		t.Errorf("unexpected timestamp ordering: %v and %v", fooUpdatedAt, barUpdatedAt)
+	if !fooUpdatedAt.Equal(now) || !barUpdatedAt.Equal(now) {
+		t.Errorf("unexpected timestamps: expected=%v, got %v and %v", now, fooUpdatedAt, barUpdatedAt)
 	}
 }
 
