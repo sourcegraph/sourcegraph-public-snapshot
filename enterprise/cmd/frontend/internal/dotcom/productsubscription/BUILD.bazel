@@ -41,6 +41,7 @@ go_library(
         "//internal/errcode",
         "//internal/featureflag",
         "//internal/gqlutil",
+        "//internal/hashutil",
         "//internal/redispool",
         "//internal/slack",
         "//internal/types",
