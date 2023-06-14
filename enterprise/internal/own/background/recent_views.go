@@ -52,6 +52,7 @@ func (r *recentViewsIndexer) handle(ctx context.Context, checker authz.SubRepoPe
 		return errors.Wrap(err, "getting event logs")
 	}
 	var filteredEvents []*database.Event
+	subRepoPermsCache := map[string]struct{}{}
 	for _, event := range events {
 		var vb viewBlob
 		err = json.Unmarshal(event.PublicArgument, &vb)
@@ -61,11 +62,17 @@ func (r *recentViewsIndexer) handle(ctx context.Context, checker authz.SubRepoPe
 				log.String("url", event.URL)))
 			continue
 		}
+
+		if _, ok := subRepoPermsCache[vb.RepoName]; ok {
+			r.logger.Debug("view event skipped due to repo having subrepo permissions on", log.String("repo name", vb.RepoName))
+			continue
+		}
 		ok, err := authz.SubRepoEnabledForRepo(ctx, checker, api.RepoName(vb.RepoName))
 		if err != nil {
 			r.logger.Info("encountered error checking subrepo permissions for repo", log.String("repo name", vb.RepoName), log.Error(err))
 		} else if ok {
 			r.logger.Debug("view event skipped due to repo having subrepo permissions on", log.String("repo name", vb.RepoName))
+			subRepoPermsCache[vb.RepoName] = struct{}{}
 		} else {
 			filteredEvents = append(filteredEvents, event)
 		}
