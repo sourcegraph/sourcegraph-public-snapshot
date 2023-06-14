@@ -9,12 +9,84 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derision-test/glock"
 	"github.com/gomodule/redigo/redis"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
+
+func Test_calcDurationToWaitForNextHandle(t *testing.T) {
+	// Connect to local redis for testing, this is the same URL used in rcache.SetupForTest
+	store = redispool.NewKeyValue("127.0.0.1:6379", &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 5 * time.Second,
+	})
+
+	cleanupStore := func() {
+		store.Del(licenseValidityStoreKey)
+		store.Del(lastCalledAtStoreKey)
+	}
+
+	now := time.Now().Round(time.Second)
+	clock := glock.NewMockClock()
+	clock.SetCurrent(now)
+
+	tests := map[string]struct {
+		lastCalledAt string
+		want         time.Duration
+		wantErr      bool
+	}{
+		"returns 0 if last called at is empty": {
+			lastCalledAt: "",
+			want:         0,
+			wantErr:      true,
+		},
+		"returns 0 if last called at is invalid": {
+			lastCalledAt: "invalid",
+			want:         0,
+			wantErr:      true,
+		},
+		"returns 0 if last called at is in the future": {
+			lastCalledAt: now.Add(time.Minute).Format(time.RFC3339),
+			want:         0,
+			wantErr:      true,
+		},
+		"returns 0 if last called at is before LicenseCheckInterval": {
+			lastCalledAt: now.Add(-LicenseCheckInterval - time.Minute).Format(time.RFC3339),
+			want:         0,
+			wantErr:      false,
+		},
+		"returns 0 if last called at is at LicenseCheckInterval": {
+			lastCalledAt: now.Add(-LicenseCheckInterval).Format(time.RFC3339),
+			want:         0,
+			wantErr:      false,
+		},
+		"returns diff between last called at and now": {
+			lastCalledAt: now.Add(-time.Hour).Format(time.RFC3339),
+			want:         LicenseCheckInterval - time.Hour,
+			wantErr:      false,
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			cleanupStore()
+			if test.lastCalledAt != "" {
+				store.Set(lastCalledAtStoreKey, test.lastCalledAt)
+			}
+
+			got, err := calcDurationSinceLastCalled(clock)
+			if test.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, test.want, got)
+		})
+	}
+}
 
 func Test_licenseChecker(t *testing.T) {
 	// Connect to local redis for testing, this is the same URL used in rcache.SetupForTest
@@ -23,10 +95,16 @@ func Test_licenseChecker(t *testing.T) {
 		IdleTimeout: 5 * time.Second,
 	})
 
+	cleanupStore := func() {
+		store.Del(licenseValidityStoreKey)
+		store.Del(lastCalledAtStoreKey)
+	}
+
 	siteID := "some-site-id"
 	token := "test-token"
 
 	t.Run("skips check if license is air-gapped", func(t *testing.T) {
+		cleanupStore()
 		var featureChecked Feature
 		defaultMock := MockCheckFeature
 		MockCheckFeature = func(feature Feature) error {
@@ -37,9 +115,6 @@ func Test_licenseChecker(t *testing.T) {
 		t.Cleanup(func() {
 			MockCheckFeature = defaultMock
 		})
-
-		store.Del(licenseValidityStoreKey)
-		store.Del(lastCalledAtStoreKey)
 
 		doer := &mockDoer{
 			status:   '1',
@@ -102,8 +177,7 @@ func Test_licenseChecker(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			store.Del(licenseValidityStoreKey)
-			store.Del(lastCalledAtStoreKey)
+			cleanupStore()
 
 			doer := &mockDoer{
 				status:   test.status,
