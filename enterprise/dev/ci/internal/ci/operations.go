@@ -630,7 +630,7 @@ func executorsE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":bazel::docker::packer: Executors E2E",
 			// Run tests against the candidate server image
-			bk.DependsOn("bazel-tests"),
+			bk.DependsOn("bazel-push-images-candidate"),
 			bk.Agent("queue", "bazel"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
