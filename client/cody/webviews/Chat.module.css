@@ -72,14 +72,22 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     outline: none;
 }
 
-:global(.token-hallucinated) {
-    border-bottom: 2px solid var(--vscode-testing-iconQueued);
+:global(.token-hallucinated), :global(.token-not-hallucinated) {
     word-break: break-all;
+    text-underline-offset: .125rem;
+}
+
+:global(.token-hallucinated) {
+    text-decoration: 1px wavy underline var(--vscode-problemsWarningIcon-foreground);
 }
 
 :global(.token-not-hallucinated) {
-    border-bottom: 2px solid var(--vscode-testing-iconPassed);
-    word-break: break-all;
+    text-decoration: 1px underline var(--vscode-textLink-foreground);
+}
+
+:global(.token-hallucinated)::before {
+    content: '⚠️ ';
+    color: var(--vscode-problemsWarningIcon-foreground);
 }
 
 .feedback-buttons {

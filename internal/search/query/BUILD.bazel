@@ -56,6 +56,7 @@ go_test(
     embed = [":query"],
     deps = [
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_google_go_cmp//cmp",
         "@com_github_grafana_regexp//syntax",
         "@com_github_hexops_autogold_v2//:autogold",

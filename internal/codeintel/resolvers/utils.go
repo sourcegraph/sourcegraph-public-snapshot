@@ -6,6 +6,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type ConnectionResolver[T any] interface {
@@ -169,7 +171,7 @@ type ConnectionArgs struct {
 }
 
 func (a *ConnectionArgs) Limit(defaultValue int32) int32 {
-	return Deref(a.First, defaultValue)
+	return pointers.Deref(a.First, defaultValue)
 }
 
 type PagedConnectionArgs struct {
@@ -197,30 +199,6 @@ var Empty = &EmptyResponse{}
 
 func (er *EmptyResponse) AlwaysNil() *string {
 	return nil
-}
-
-func Ptr[T any](v T) *T {
-	return &v
-}
-
-func NonZeroPtr[T comparable](v T) *T {
-	if v != zero[T]() {
-		return Ptr(v)
-	}
-
-	return nil
-}
-
-func zero[T any]() (zeroValue T) {
-	return zeroValue
-}
-
-func Deref[T any](v *T, defaultValue T) T {
-	if v != nil {
-		return *v
-	}
-
-	return defaultValue
 }
 
 func UnmarshalID[T any](id graphql.ID) (val T, err error) {

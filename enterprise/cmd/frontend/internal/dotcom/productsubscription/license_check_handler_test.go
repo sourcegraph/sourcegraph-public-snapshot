@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestNewLicenseCheckHandler(t *testing.T) {
@@ -23,7 +24,6 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 		token := licensing.GenerateHashedLicenseKeyAccessToken(licenseKey)
 		return &token
 	}
-	strPtr := func(s string) *string { return &s }
 	now := time.Now()
 	hourAgo := now.Add(-1 * time.Hour)
 
@@ -44,7 +44,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 	assignedLicense := dbLicense{
 		LicenseKey:        "assigned-license-key",
 		LicenseCheckToken: makeToken("assigned-site-id-token"),
-		SiteID:            strPtr("C2582A60-573C-4EBC-BDD4-BC57A73CF010"), // uppercase to test case sensitivity
+		SiteID:            pointers.Ptr("C2582A60-573C-4EBC-BDD4-BC57A73CF010"), // uppercase to test case sensitivity
 	}
 	licenses := []dbLicense{
 		validLicense,

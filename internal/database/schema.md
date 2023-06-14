@@ -3087,11 +3087,13 @@ One entry per file changed in every commit that classifies as a contribution sig
 
 # Table "public.ownership_path_stats"
 ```
-           Column           |            Type             | Collation | Nullable | Default 
-----------------------------+-----------------------------+-----------+----------+---------
- file_path_id               | integer                     |           | not null | 
- tree_codeowned_files_count | integer                     |           |          | 
- last_updated_at            | timestamp without time zone |           | not null | 
+               Column                |            Type             | Collation | Nullable | Default 
+-------------------------------------+-----------------------------+-----------+----------+---------
+ file_path_id                        | integer                     |           | not null | 
+ tree_codeowned_files_count          | integer                     |           |          | 
+ last_updated_at                     | timestamp without time zone |           | not null | 
+ tree_assigned_ownership_files_count | integer                     |           |          | 
+ tree_any_ownership_files_count      | integer                     |           |          | 
 Indexes:
     "ownership_path_stats_pkey" PRIMARY KEY, btree (file_path_id)
 Foreign-key constraints:
@@ -3475,6 +3477,29 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.repo_embedding_job_stats"
+```
+        Column        |  Type   | Collation | Nullable |   Default   
+----------------------+---------+-----------+----------+-------------
+ job_id               | integer |           | not null | 
+ is_incremental       | boolean |           | not null | false
+ code_files_total     | integer |           | not null | 0
+ code_files_embedded  | integer |           | not null | 0
+ code_chunks_embedded | integer |           | not null | 0
+ code_files_skipped   | jsonb   |           | not null | '{}'::jsonb
+ code_bytes_embedded  | integer |           | not null | 0
+ text_files_total     | integer |           | not null | 0
+ text_files_embedded  | integer |           | not null | 0
+ text_chunks_embedded | integer |           | not null | 0
+ text_files_skipped   | jsonb   |           | not null | '{}'::jsonb
+ text_bytes_embedded  | integer |           | not null | 0
+Indexes:
+    "repo_embedding_job_stats_pkey" PRIMARY KEY, btree (job_id)
+Foreign-key constraints:
+    "repo_embedding_job_stats_job_id_fkey" FOREIGN KEY (job_id) REFERENCES repo_embedding_jobs(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.repo_embedding_jobs"
 ```
       Column       |           Type           | Collation | Nullable |                     Default                     
@@ -3496,6 +3521,8 @@ Foreign-key constraints:
  revision          | text                     |           | not null | 
 Indexes:
     "repo_embedding_jobs_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "repo_embedding_job_stats" CONSTRAINT "repo_embedding_job_stats_job_id_fkey" FOREIGN KEY (job_id) REFERENCES repo_embedding_jobs(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
