@@ -295,7 +295,7 @@ func TestConfig_Validate(t *testing.T) {
 					return defaultValue
 				}
 			},
-			expectedErr: errors.New("EXECUTOR_QUEUE_NAMES contains invalid queue name 'batches;codeintel'"),
+			expectedErr: errors.New("EXECUTOR_QUEUE_NAMES contains invalid queue name 'batches;codeintel', valid names are 'batches, codeintel' and should be comma-separated"),
 		},
 	}
 	for _, test := range tests {

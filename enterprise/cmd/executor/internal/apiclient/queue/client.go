@@ -188,16 +188,17 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 		}
 		endpoint = "/heartbeat"
 		payload = types.HeartbeatRequest{
-			ExecutorName:    c.options.ExecutorName,
-			QueueNames:      c.options.QueueNames,
-			JobIDsByQueue:   queueJobIDs,
-			OS:              c.options.TelemetryOptions.OS,
-			Architecture:    c.options.TelemetryOptions.Architecture,
-			DockerVersion:   c.options.TelemetryOptions.DockerVersion,
-			ExecutorVersion: c.options.TelemetryOptions.ExecutorVersion,
-			GitVersion:      c.options.TelemetryOptions.GitVersion,
-			IgniteVersion:   c.options.TelemetryOptions.IgniteVersion,
-			SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
+			ExecutorName:      c.options.ExecutorName,
+			QueueNames:        c.options.QueueNames,
+			JobIDsByQueue:     queueJobIDs,
+			OS:                c.options.TelemetryOptions.OS,
+			Architecture:      c.options.TelemetryOptions.Architecture,
+			DockerVersion:     c.options.TelemetryOptions.DockerVersion,
+			ExecutorVersion:   c.options.TelemetryOptions.ExecutorVersion,
+			GitVersion:        c.options.TelemetryOptions.GitVersion,
+			IgniteVersion:     c.options.TelemetryOptions.IgniteVersion,
+			SrcCliVersion:     c.options.TelemetryOptions.SrcCliVersion,
+			PrometheusMetrics: metrics,
 		}
 	} else {
 		// If queueName is set, then we cannot be sure whether Sourcegraph is new enough (since Heartbeat can't provide

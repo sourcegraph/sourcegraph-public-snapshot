@@ -1909,6 +1909,11 @@
           "type": "string",
           "group": "Sourcegraph.com"
         },
+        "slackLicenseAnomallyWebhook": {
+          "description": "Slack webhook for when there is an anomaly detected with license key usage.",
+          "type": "string",
+          "group": "Sourcegraph.com"
+        },
         "srcCliVersionCache": {
           "description": "Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.",
           "type": "object",

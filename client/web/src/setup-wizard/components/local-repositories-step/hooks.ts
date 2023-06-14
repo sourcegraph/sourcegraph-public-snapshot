@@ -200,6 +200,8 @@ interface LocalRepositoriesResult {
     repositories: LocalRepository[]
 }
 
+const EMPTY_REPOSITORY_LIST: LocalRepository[] = []
+
 /** Returns list of local repositories by a given list of local paths. */
 export function useLocalRepositories({ paths, skip }: LocalRepositoriesInput): LocalRepositoriesResult {
     const { data, previousData, loading, error } = useQuery<
@@ -215,6 +217,9 @@ export function useLocalRepositories({ paths, skip }: LocalRepositoriesInput): L
         loading,
         error,
         loaded: skip || !!data || !!previousData,
-        repositories: data?.localDirectories?.repositories ?? previousData?.localDirectories?.repositories ?? [],
+        repositories:
+            data?.localDirectories?.repositories ??
+            previousData?.localDirectories?.repositories ??
+            EMPTY_REPOSITORY_LIST,
     }
 }
