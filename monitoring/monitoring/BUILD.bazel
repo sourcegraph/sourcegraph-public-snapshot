@@ -22,6 +22,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//lib/errors",
+        "//lib/pointers",
         "//monitoring/grafanaclient",
         "//monitoring/monitoring/internal/grafana",
         "//monitoring/monitoring/internal/promql",

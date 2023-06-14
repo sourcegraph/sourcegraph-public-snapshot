@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
@@ -1216,15 +1217,13 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 			OwnedByBatchChange:  123,
 			Metadata:            &github.PullRequest{Title: "Se titel"},
 		})
-		intptr := func(i int32) *int32 { return &i }
-		strptr := func(i string) *string { return &i }
 
 		cs.ExternalBranch = "refs/heads/branch-2"
 		cs.ExternalState = btypes.ChangesetExternalStateDeleted
 		cs.ExternalReviewState = btypes.ChangesetReviewStateApproved
 		cs.ExternalCheckState = btypes.ChangesetCheckStateFailed
-		cs.DiffStatAdded = intptr(100)
-		cs.DiffStatDeleted = intptr(100)
+		cs.DiffStatAdded = pointers.Ptr(int32(100))
+		cs.DiffStatDeleted = pointers.Ptr(int32(100))
 		cs.Metadata = &github.PullRequest{Title: "The title"}
 		want := cs.Clone()
 
@@ -1237,7 +1236,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 		cs.PublicationState = btypes.ChangesetPublicationStatePublished
 		cs.UiPublicationState = &published
 		cs.ReconcilerState = btypes.ReconcilerStateCompleted
-		cs.FailureMessage = strptr("very bad for real this time")
+		cs.FailureMessage = pointers.Ptr("very bad for real this time")
 		cs.NumFailures = 100
 		cs.OwnedByBatchChangeID = 234
 		cs.Closing = true
@@ -1533,7 +1532,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 			NumResets:              0,
 			NumFailures:            0,
 			SyncErrorMessage:       nil,
-			PreviousFailureMessage: strPtr("horse was here"),
+			PreviousFailureMessage: pointers.Ptr("horse was here"),
 		})
 	})
 
@@ -2667,5 +2666,3 @@ func TestCleanDetachedChangesets(t *testing.T) {
 		})
 	}
 }
-
-func strPtr(s string) *string { return &s }

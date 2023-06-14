@@ -14,13 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestUserEmail_NeedsVerificationCoolDown(t *testing.T) {
-	timePtr := func(t time.Time) *time.Time {
-		return &t
-	}
-
 	tests := []struct {
 		name                   string
 		lastVerificationSentAt *time.Time
@@ -33,12 +30,12 @@ func TestUserEmail_NeedsVerificationCoolDown(t *testing.T) {
 		},
 		{
 			name:                   "needs cool down",
-			lastVerificationSentAt: timePtr(time.Now().Add(time.Minute)),
+			lastVerificationSentAt: pointers.Ptr(time.Now().Add(time.Minute)),
 			needsCoolDown:          true,
 		},
 		{
 			name:                   "does not need cool down",
-			lastVerificationSentAt: timePtr(time.Now().Add(-1 * time.Minute)),
+			lastVerificationSentAt: pointers.Ptr(time.Now().Add(-1 * time.Minute)),
 			needsCoolDown:          false,
 		},
 	}

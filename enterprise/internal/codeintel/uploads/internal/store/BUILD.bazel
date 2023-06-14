@@ -79,6 +79,7 @@ go_test(
         "//internal/observation",
         "//lib/codeintel/precise",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_keegancsmith_sqlf//:sqlf",

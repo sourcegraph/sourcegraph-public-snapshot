@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -121,7 +122,7 @@ func TestGetIndexOptions(t *testing.T) {
 	}, {
 		name: "nosymbols",
 		conf: schema.SiteConfiguration{
-			SearchIndexSymbolsEnabled: boolPtr(false),
+			SearchIndexSymbolsEnabled: pointers.Ptr(false),
 		},
 		repo: REPO,
 		want: ZoektIndexOptions{
@@ -423,8 +424,4 @@ func TestGetIndexOptions_batch(t *testing.T) {
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatal("mismatch (-want, +got):\n", diff)
 	}
-}
-
-func boolPtr(b bool) *bool {
-	return &b
 }
