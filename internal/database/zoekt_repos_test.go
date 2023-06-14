@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
@@ -47,6 +48,7 @@ func TestZoektRepos_UpdateIndexStatuses(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	s := &zoektReposStore{Store: basestore.NewWithHandle(db.Handle())}
+	timeUnix := int64(1686763487)
 
 	var repos types.MinimalRepos
 	for _, name := range []api.RepoName{
@@ -69,7 +71,10 @@ func TestZoektRepos_UpdateIndexStatuses(t *testing.T) {
 
 	// 1/3 repo is indexed
 	indexed := map[uint32]*zoekt.MinimalRepoListEntry{
-		uint32(repos[0].ID): {Branches: []zoekt.RepositoryBranch{{Name: "main", Version: "d34db33f"}}},
+		uint32(repos[0].ID): {
+			Branches:      []zoekt.RepositoryBranch{{Name: "main", Version: "d34db33f"}},
+			IndexTimeUnix: timeUnix,
+		},
 	}
 
 	if err := s.UpdateIndexStatuses(ctx, indexed); err != nil {
@@ -79,7 +84,12 @@ func TestZoektRepos_UpdateIndexStatuses(t *testing.T) {
 	assertZoektRepoStatistics(t, ctx, s, ZoektRepoStatistics{Total: 3, Indexed: 1, NotIndexed: 2})
 
 	assertZoektRepos(t, ctx, s, map[api.RepoID]*ZoektRepo{
-		repos[0].ID: {RepoID: repos[0].ID, IndexStatus: "indexed", Branches: []zoekt.RepositoryBranch{{Name: "main", Version: "d34db33f"}}},
+		repos[0].ID: {
+			RepoID:        repos[0].ID,
+			IndexStatus:   "indexed",
+			Branches:      []zoekt.RepositoryBranch{{Name: "main", Version: "d34db33f"}},
+			LastIndexedAt: time.Unix(timeUnix, 0),
+		},
 		repos[1].ID: {RepoID: repos[1].ID, IndexStatus: "not_indexed", Branches: []zoekt.RepositoryBranch{}},
 		repos[2].ID: {RepoID: repos[2].ID, IndexStatus: "not_indexed", Branches: []zoekt.RepositoryBranch{}},
 	})

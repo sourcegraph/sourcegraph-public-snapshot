@@ -4869,7 +4869,8 @@ CREATE TABLE zoekt_repos (
     branches jsonb DEFAULT '[]'::jsonb NOT NULL,
     index_status text DEFAULT 'not_indexed'::text NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    last_indexed_at timestamp with time zone
 );
 
 ALTER TABLE ONLY access_requests ALTER COLUMN id SET DEFAULT nextval('access_requests_id_seq'::regclass);

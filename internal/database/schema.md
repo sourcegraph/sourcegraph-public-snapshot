@@ -4393,13 +4393,14 @@ Webhooks registered in Sourcegraph instance.
 
 # Table "public.zoekt_repos"
 ```
-    Column    |           Type           | Collation | Nullable |       Default       
---------------+--------------------------+-----------+----------+---------------------
- repo_id      | integer                  |           | not null | 
- branches     | jsonb                    |           | not null | '[]'::jsonb
- index_status | text                     |           | not null | 'not_indexed'::text
- updated_at   | timestamp with time zone |           | not null | now()
- created_at   | timestamp with time zone |           | not null | now()
+     Column      |           Type           | Collation | Nullable |       Default       
+-----------------+--------------------------+-----------+----------+---------------------
+ repo_id         | integer                  |           | not null | 
+ branches        | jsonb                    |           | not null | '[]'::jsonb
+ index_status    | text                     |           | not null | 'not_indexed'::text
+ updated_at      | timestamp with time zone |           | not null | now()
+ created_at      | timestamp with time zone |           | not null | now()
+ last_indexed_at | timestamp with time zone |           |          | 
 Indexes:
     "zoekt_repos_pkey" PRIMARY KEY, btree (repo_id)
     "zoekt_repos_index_status" btree (index_status)
