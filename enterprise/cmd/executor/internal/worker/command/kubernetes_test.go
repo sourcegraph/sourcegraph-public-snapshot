@@ -66,6 +66,96 @@ func TestKubernetesCommand_DeleteJob(t *testing.T) {
 	assert.Equal(t, "my-job", clientset.Actions()[1].(k8stesting.DeleteAction).GetName())
 }
 
+func TestKubernetesCommand_CreateSecrets(t *testing.T) {
+	clientset := fake.NewSimpleClientset()
+
+	cmd := &command.KubernetesCommand{
+		Logger:     logtest.Scoped(t),
+		Clientset:  clientset,
+		Operations: command.NewOperations(&observation.TestContext),
+	}
+
+	secrets := map[string]string{
+		"foo": "bar",
+		"baz": "qux",
+	}
+	createSecrets, err := cmd.CreateSecrets(context.Background(), "my-namespace", "my-secret", secrets)
+	require.NoError(t, err)
+
+	require.Len(t, clientset.Actions(), 1)
+	require.Equal(t, "create", clientset.Actions()[0].GetVerb())
+	require.Equal(t, "secrets", clientset.Actions()[0].GetResource().Resource)
+	require.Equal(t, "my-namespace", clientset.Actions()[0].GetNamespace())
+
+	assert.Equal(t, "my-secret", createSecrets.Name)
+	assert.Len(t, createSecrets.Keys, 2)
+	assert.Equal(t, []string{"foo", "baz"}, createSecrets.Keys)
+}
+
+func TestKubernetesCommand_DeleteSecret(t *testing.T) {
+	clientset := fake.NewSimpleClientset()
+
+	cmd := &command.KubernetesCommand{
+		Logger:     logtest.Scoped(t),
+		Clientset:  clientset,
+		Operations: command.NewOperations(&observation.TestContext),
+	}
+
+	secrets := map[string]string{
+		"foo": "bar",
+		"baz": "qux",
+	}
+	_, err := cmd.CreateSecrets(context.Background(), "my-namespace", "my-secret", secrets)
+	require.NoError(t, err)
+
+	err = cmd.DeleteSecret(context.Background(), "my-namespace", "my-secret")
+	require.NoError(t, err)
+
+	require.Len(t, clientset.Actions(), 2)
+	require.Equal(t, "delete", clientset.Actions()[1].GetVerb())
+	require.Equal(t, "secrets", clientset.Actions()[1].GetResource().Resource)
+	assert.Equal(t, "my-namespace", clientset.Actions()[1].GetNamespace())
+}
+
+func TestKubernetesCommand_CreateJobPVC(t *testing.T) {
+	clientset := fake.NewSimpleClientset()
+
+	cmd := &command.KubernetesCommand{
+		Logger:     logtest.Scoped(t),
+		Clientset:  clientset,
+		Operations: command.NewOperations(&observation.TestContext),
+	}
+
+	err := cmd.CreateJobPVC(context.Background(), "my-namespace", "my-pvc", resource.MustParse("1Gi"))
+	require.NoError(t, err)
+
+	require.Len(t, clientset.Actions(), 1)
+	require.Equal(t, "create", clientset.Actions()[0].GetVerb())
+	require.Equal(t, "persistentvolumeclaims", clientset.Actions()[0].GetResource().Resource)
+	require.Equal(t, "my-namespace", clientset.Actions()[0].GetNamespace())
+}
+
+func TestKubernetesCommand_DeleteJobPVC(t *testing.T) {
+	clientset := fake.NewSimpleClientset()
+
+	cmd := &command.KubernetesCommand{
+		Logger:     logtest.Scoped(t),
+		Clientset:  clientset,
+		Operations: command.NewOperations(&observation.TestContext),
+	}
+
+	err := cmd.CreateJobPVC(context.Background(), "my-namespace", "my-pvc", resource.MustParse("1Gi"))
+	require.NoError(t, err)
+
+	err = cmd.DeleteJobPVC(context.Background(), "my-namespace", "my-pvc")
+	require.NoError(t, err)
+
+	require.Len(t, clientset.Actions(), 2)
+	require.Equal(t, "delete", clientset.Actions()[1].GetVerb())
+	require.Equal(t, "persistentvolumeclaims", clientset.Actions()[1].GetResource().Resource)
+	assert.Equal(t, "my-namespace", clientset.Actions()[1].GetNamespace())
+}
+
 func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 	tests := []struct {
 		name           string
