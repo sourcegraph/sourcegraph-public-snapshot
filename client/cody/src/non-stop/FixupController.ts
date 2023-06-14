@@ -94,19 +94,6 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         return task.id
     }
 
-    // Replaces content of the file before mark the task as done
-    // Then update the tree view with the new task state
-    // TODO: Move this to the state transition to "ready"
-    public stop(taskID: taskID): void {
-        const task = this.tasks.get(taskID)
-        if (!task) {
-            return
-        }
-        void this.setTaskState(task, CodyTaskState.ready)
-        // show diff between current document and replacement content
-        void this.contentStore.set(task.id, task.fixupFile.uri)
-    }
-
     // Open fsPath at the selected line in editor on tree item click
     private showThisFixup(taskID: taskID): void {
         const task = this.tasks.get(taskID)
@@ -453,6 +440,14 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             void vscode.commands.executeCommand('setContext', 'cody.fixup.running', true)
         } else if (oldState === CodyTaskState.asking && task.state !== CodyTaskState.asking) {
             void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
+        }
+        if (task.state === CodyTaskState.ready) {
+            // TODO: Moved from stop() but this is the wrong timing to populate
+            // the content store. First, the content store reads the source
+            // document, not the fixup. Second, both the source document and
+            // the fixup task diff could still change as the user edits the text
+            // around Cody's edits.
+            void this.contentStore.set(task.id, task.fixupFile.uri)
         }
         if (task.state === CodyTaskState.fixed) {
             this.discard(task.id)
