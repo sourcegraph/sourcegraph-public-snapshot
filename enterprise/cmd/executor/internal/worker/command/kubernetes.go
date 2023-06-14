@@ -584,7 +584,7 @@ func NewKubernetesSingleJob(
 		dir := filepath.Dir(file.Path)
 		setupArgs[0] += "mkdir -p " + dir + "; echo -E '" + formatContent(string(file.Content)) + "' > " + file.Path + "; chmod +x " + file.Path + "; "
 		if !file.ModifiedAt.IsZero() {
-			setupArgs[0] += fmt.Sprintf("touch -m -d '%s' %s; ", file.ModifiedAt.Local().Format("2006-01-02T15:04:05"), file.Path)
+			setupArgs[0] += fmt.Sprintf("touch -m -d '%s' %s; ", file.ModifiedAt.Format("200601021504.05"), file.Path)
 		}
 	}
 
