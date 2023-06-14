@@ -305,7 +305,10 @@ func TestGetEmbeddableReposLimit(t *testing.T) {
 func TestGetEmbeddableRepoOpts(t *testing.T) {
 	conf.Mock(&conf.Unified{})
 	defer conf.Mock(nil)
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{CodyEnabled: pointify(true)}})
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		CodyEnabled: pointify(true),
+		LicenseKey:  "asdf",
+	}})
 
 	opts := GetEmbeddableRepoOpts()
 	require.Equal(t, 24*time.Hour, opts.MinimumInterval)
@@ -316,7 +319,15 @@ func TestGetEmbeddableRepoOpts(t *testing.T) {
 	require.Equal(t, 5000, *opts.PolicyRepositoryMatchLimit)
 
 	limit := 5
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{Embeddings: &schema.Embeddings{MinimumInterval: "1h", PolicyRepositoryMatchLimit: &limit}}})
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		CodyEnabled: pointify(true),
+		Embeddings: &schema.Embeddings{
+			Provider:                   "openai",
+			AccessToken:                "asdf",
+			MinimumInterval:            "1h",
+			PolicyRepositoryMatchLimit: &limit,
+		}},
+	})
 
 	opts = GetEmbeddableRepoOpts()
 	require.Equal(t, 1*time.Hour, opts.MinimumInterval)
