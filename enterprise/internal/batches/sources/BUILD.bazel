@@ -90,6 +90,7 @@ go_test(
         "//internal/testutil",
         "//internal/types",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_derision_test_go_mockgen//testutil/assert",
         "@com_github_dnaeon_go_vcr//cassette",

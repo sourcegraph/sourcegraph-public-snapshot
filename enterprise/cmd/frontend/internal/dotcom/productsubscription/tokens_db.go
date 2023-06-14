@@ -44,6 +44,10 @@ func (t dbTokens) LookupProductSubscriptionIDByAccessToken(ctx context.Context, 
 	// Extract the raw token and decode it. Right now the prefix doesn't mean
 	// much, we only track 'license_key' and check the that the raw token value
 	// matches the license key. Note that all prefixes have the same length.
+	//
+	// TODO(@bobheadxi): Migrate to licensing.ExtractLicenseKeyBasedAccessTokenContents(token)
+	// after back-compat with productsubscription.AccessTokenPrefix is no longer
+	// needed
 	decoded, err := hex.DecodeString(token[len(licensing.LicenseKeyBasedAccessTokenPrefix):])
 	if err != nil {
 		return "", productSubscriptionNotFoundError{reason: "invalid token with unknown encoding"}
@@ -99,7 +103,7 @@ WHERE t.id IN (
 	SELECT t2.id FROM access_tokens t2
 	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
 	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
-	WHERE digest(value_sha256, 'sha256')=%s AND t2.deleted_at IS NULL 	
+	WHERE digest(value_sha256, 'sha256')=%s AND t2.deleted_at IS NULL
 )
 RETURNING t.subject_user_id`,
 		decoded,

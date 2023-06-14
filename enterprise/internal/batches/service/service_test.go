@@ -34,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestServicePermissionLevels(t *testing.T) {
@@ -589,7 +590,7 @@ func TestService(t *testing.T) {
 			NumResets:              0,
 			NumFailures:            0,
 			FailureMessage:         nil,
-			PreviousFailureMessage: strPtr(bt.FailedChangesetFailureMessage),
+			PreviousFailureMessage: pointers.Ptr(bt.FailedChangesetFailureMessage),
 		})
 
 		// rs[0] is filtered out
@@ -3411,5 +3412,3 @@ func assertNoAuthError(t *testing.T, err error) {
 		t.Fatalf("got auth error")
 	}
 }
-
-func strPtr(s string) *string { return &s }
