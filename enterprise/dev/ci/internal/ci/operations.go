@@ -53,10 +53,8 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	ops.Merge(linterOps)
 
 	if diff.Has(changed.Client | changed.GraphQL) {
-		var clientChecks *operations.Set
-
 		// If there are any Graphql changes, they are impacting the client as well.
-		clientChecks = operations.NewNamedSet("Client checks",
+		clientChecks := operations.NewNamedSet("Client checks",
 			clientChromaticTests(opts),
 			addWebAppEnterpriseBuild(opts),
 			addJetBrainsUnitTests, // ~2.5m
