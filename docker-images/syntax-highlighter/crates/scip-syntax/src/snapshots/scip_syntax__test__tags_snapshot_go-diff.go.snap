@@ -1,6 +1,5 @@
 ---
 source: crates/scip-syntax/src/lib.rs
-assertion_line: 103
 expression: "String::from_utf8_lossy(buf_writer.buffer())"
 ---
 {"_type":"tag","name":"main","path":"go-diff.go","language":"go","line":1,"kind":"package","scope":null}
