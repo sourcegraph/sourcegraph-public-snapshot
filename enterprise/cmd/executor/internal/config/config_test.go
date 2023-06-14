@@ -160,12 +160,12 @@ func TestConfig_Load(t *testing.T) {
 	assert.Equal(
 		t,
 		[]corev1.Volume{{Name: "foo", VolumeSource: corev1.VolumeSource{ConfigMap: &corev1.ConfigMapVolumeSource{LocalObjectReference: corev1.LocalObjectReference{Name: "bar"}}}}},
-		cfg.KubernetesJobVolumes,
+		cfg.KubernetesAdditionalJobVolumes,
 	)
 	assert.Equal(
 		t,
 		[]corev1.VolumeMount{{Name: "foo", MountPath: "/foo"}},
-		cfg.KubernetesJobVolumeMounts,
+		cfg.KubernetesAdditionalJobVolumeMounts,
 	)
 	assert.Equal(t, "sourcegraph/step-image:latest", cfg.KubernetesSingleJobStepImage)
 }
@@ -217,8 +217,8 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.False(t, cfg.KubernetesSingleJobPod)
 	assert.Equal(t, "emptyDir", cfg.KubernetesJobVolumeType)
 	assert.Equal(t, "5Gi", cfg.KubernetesJobVolumeSize)
-	assert.Empty(t, cfg.KubernetesJobVolumes)
-	assert.Empty(t, cfg.KubernetesJobVolumeMounts)
+	assert.Empty(t, cfg.KubernetesAdditionalJobVolumes)
+	assert.Empty(t, cfg.KubernetesAdditionalJobVolumeMounts)
 	assert.Equal(t, "sourcegraph/batcheshelper:insiders", cfg.KubernetesSingleJobStepImage)
 }
 

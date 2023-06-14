@@ -239,8 +239,8 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 			JobVolume: command.KubernetesJobVolume{
 				Type:    command.KubernetesVolumeType(c.KubernetesJobVolumeType),
 				Size:    resource.MustParse(c.KubernetesJobVolumeSize),
-				Volumes: c.KubernetesJobVolumes,
-				Mounts:  c.KubernetesJobVolumeMounts,
+				Volumes: c.KubernetesAdditionalJobVolumes,
+				Mounts:  c.KubernetesAdditionalJobVolumeMounts,
 			},
 		},
 	}
