@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -1446,13 +1447,13 @@ func TestEventLogs_ListAll(t *testing.T) {
 	}
 
 	t.Run("listed all SearchResultsQueried events", func(t *testing.T) {
-		have, err := db.EventLogs().ListAll(ctx, EventLogsListOptions{EventName: strptr("SearchResultsQueried")})
+		have, err := db.EventLogs().ListAll(ctx, EventLogsListOptions{EventName: pointers.Ptr("SearchResultsQueried")})
 		require.NoError(t, err)
 		assert.Len(t, have, 2)
 	})
 
 	t.Run("listed one ViewRepository event", func(t *testing.T) {
-		opts := EventLogsListOptions{EventName: strptr("ViewRepository"), LimitOffset: &LimitOffset{Limit: 1}}
+		opts := EventLogsListOptions{EventName: pointers.Ptr("ViewRepository"), LimitOffset: &LimitOffset{Limit: 1}}
 		have, err := db.EventLogs().ListAll(ctx, opts)
 		require.NoError(t, err)
 		assert.Len(t, have, 1)
@@ -1460,14 +1461,14 @@ func TestEventLogs_ListAll(t *testing.T) {
 	})
 
 	t.Run("listed zero events because of after parameter", func(t *testing.T) {
-		opts := EventLogsListOptions{EventName: strptr("ViewRepository"), AfterID: 3}
+		opts := EventLogsListOptions{EventName: pointers.Ptr("ViewRepository"), AfterID: 3}
 		have, err := db.EventLogs().ListAll(ctx, opts)
 		require.NoError(t, err)
 		require.Empty(t, have)
 	})
 
 	t.Run("listed one SearchResultsQueried event because of after parameter", func(t *testing.T) {
-		opts := EventLogsListOptions{EventName: strptr("SearchResultsQueried"), AfterID: 1}
+		opts := EventLogsListOptions{EventName: pointers.Ptr("SearchResultsQueried"), AfterID: 1}
 		have, err := db.EventLogs().ListAll(ctx, opts)
 		require.NoError(t, err)
 		assert.Len(t, have, 1)
@@ -1494,10 +1495,6 @@ func TestEventLogs_LatestPing(t *testing.T) {
 		}
 	})
 
-	ptr := func(s string) *string {
-		return &s
-	}
-
 	t.Run("with existing pings in database", func(t *testing.T) {
 		userID := int32(0)
 		timestamp := timeutil.Now()
@@ -1513,8 +1510,8 @@ func TestEventLogs_LatestPing(t *testing.T) {
 				Timestamp:       timestamp,
 				Argument:        json.RawMessage(`{"key": "value1"}`),
 				PublicArgument:  json.RawMessage("{}"),
-				DeviceID:        ptr("device-id"),
-				InsertID:        ptr("insert-id"),
+				DeviceID:        pointers.Ptr("device-id"),
+				InsertID:        pointers.Ptr("insert-id"),
 			}, {
 				UserID:          0,
 				Name:            "ping",
@@ -1524,8 +1521,8 @@ func TestEventLogs_LatestPing(t *testing.T) {
 				Timestamp:       timestamp,
 				Argument:        json.RawMessage(`{"key": "value2"}`),
 				PublicArgument:  json.RawMessage("{}"),
-				DeviceID:        ptr("device-id"),
-				InsertID:        ptr("insert-id"),
+				DeviceID:        pointers.Ptr("device-id"),
+				InsertID:        pointers.Ptr("insert-id"),
 			},
 		}
 		for _, event := range events {
@@ -1550,8 +1547,8 @@ func TestEventLogs_LatestPing(t *testing.T) {
 			Source:          events[1].Source,
 			Timestamp:       timestamp,
 		}
-		expectedPing.DeviceID = ptr("device-id")
-		expectedPing.InsertID = ptr("insert-id") // set these values for test determinism
+		expectedPing.DeviceID = pointers.Ptr("device-id")
+		expectedPing.InsertID = pointers.Ptr("insert-id") // set these values for test determinism
 		if diff := cmp.Diff(gotPing, expectedPing); diff != "" {
 			t.Fatal(diff)
 		}
@@ -1650,7 +1647,6 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	ptr := func(i int32) *int32 { return &i }
 	for name, testCase := range map[string]struct {
 		now             time.Time
 		events          []*Event
@@ -1676,9 +1672,9 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 			queryEventNames: []string{"horse"},
 			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
 				"horse": {
-					DAU: ptr(2),
-					WAU: ptr(2),
-					MAU: ptr(2),
+					DAU: pointers.Ptr(int32(2)),
+					WAU: pointers.Ptr(int32(2)),
+					MAU: pointers.Ptr(int32(2)),
 				},
 			},
 		},
@@ -1701,9 +1697,9 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 			queryEventNames: []string{"horse"},
 			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
 				"horse": {
-					DAU: ptr(0),
-					WAU: ptr(2),
-					MAU: ptr(2),
+					DAU: pointers.Ptr(int32(0)),
+					WAU: pointers.Ptr(int32(2)),
+					MAU: pointers.Ptr(int32(2)),
 				},
 			},
 		},
@@ -1726,9 +1722,9 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 			queryEventNames: []string{"horse"},
 			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
 				"horse": {
-					DAU: ptr(0),
-					WAU: ptr(0),
-					MAU: ptr(2),
+					DAU: pointers.Ptr(int32(0)),
+					WAU: pointers.Ptr(int32(0)),
+					MAU: pointers.Ptr(int32(2)),
 				},
 			},
 		},
@@ -1751,9 +1747,9 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 			queryEventNames: []string{"horse"},
 			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
 				"horse": {
-					DAU: ptr(0),
-					WAU: ptr(2),
-					MAU: ptr(0),
+					DAU: pointers.Ptr(int32(0)),
+					WAU: pointers.Ptr(int32(2)),
+					MAU: pointers.Ptr(int32(0)),
 				},
 			},
 		},
@@ -1800,14 +1796,14 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 			queryEventNames: []string{"cat", "dog"},
 			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
 				"cat": {
-					DAU: ptr(0),
-					WAU: ptr(0),
-					MAU: ptr(0),
+					DAU: pointers.Ptr(int32(0)),
+					WAU: pointers.Ptr(int32(0)),
+					MAU: pointers.Ptr(int32(0)),
 				},
 				"dog": {
-					DAU: ptr(0),
-					WAU: ptr(0),
-					MAU: ptr(0),
+					DAU: pointers.Ptr(int32(0)),
+					WAU: pointers.Ptr(int32(0)),
+					MAU: pointers.Ptr(int32(0)),
 				},
 			},
 		},
@@ -1854,14 +1850,14 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 			queryEventNames: []string{"horse", "ram"},
 			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
 				"horse": {
-					DAU: ptr(2),
-					WAU: ptr(2),
-					MAU: ptr(2),
+					DAU: pointers.Ptr(int32(2)),
+					WAU: pointers.Ptr(int32(2)),
+					MAU: pointers.Ptr(int32(2)),
 				},
 				"ram": {
-					DAU: ptr(2),
-					WAU: ptr(2),
-					MAU: ptr(2),
+					DAU: pointers.Ptr(int32(2)),
+					WAU: pointers.Ptr(int32(2)),
+					MAU: pointers.Ptr(int32(2)),
 				},
 			},
 		},
@@ -1891,7 +1887,6 @@ func TestEventLogs_AggregatedRepoMetadataStats(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	ptr := func(i int32) *int32 { return &i }
 	now := time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC)
 	events := []*Event{
 		{
@@ -1952,20 +1947,20 @@ func TestEventLogs_AggregatedRepoMetadataStats(t *testing.T) {
 			stats: &types.RepoMetadataAggregatedEvents{
 				StartTime: time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC),
 				CreateRepoMetadata: &types.EventStats{
-					UsersCount:  ptr(1),
-					EventsCount: ptr(2),
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(2)),
 				},
 				UpdateRepoMetadata: &types.EventStats{
-					UsersCount:  ptr(1),
-					EventsCount: ptr(1),
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
 				},
 				DeleteRepoMetadata: &types.EventStats{
-					UsersCount:  ptr(1),
-					EventsCount: ptr(1),
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
 				},
 				SearchFilterUsage: &types.EventStats{
-					UsersCount:  ptr(1),
-					EventsCount: ptr(1),
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
 				},
 			},
 		},
@@ -1975,20 +1970,20 @@ func TestEventLogs_AggregatedRepoMetadataStats(t *testing.T) {
 			stats: &types.RepoMetadataAggregatedEvents{
 				StartTime: time.Date(now.Year(), now.Month(), now.Day()-int(now.Weekday()), 0, 0, 0, 0, time.UTC),
 				CreateRepoMetadata: &types.EventStats{
-					UsersCount:  ptr(1),
-					EventsCount: ptr(3),
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(3)),
 				},
 				UpdateRepoMetadata: &types.EventStats{
-					UsersCount:  ptr(1),
-					EventsCount: ptr(1),
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
 				},
 				DeleteRepoMetadata: &types.EventStats{
-					UsersCount:  ptr(1),
-					EventsCount: ptr(1),
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
 				},
 				SearchFilterUsage: &types.EventStats{
-					UsersCount:  ptr(1),
-					EventsCount: ptr(1),
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
 				},
 			},
 		},
@@ -1998,20 +1993,20 @@ func TestEventLogs_AggregatedRepoMetadataStats(t *testing.T) {
 			stats: &types.RepoMetadataAggregatedEvents{
 				StartTime: time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
 				CreateRepoMetadata: &types.EventStats{
-					UsersCount:  ptr(1),
-					EventsCount: ptr(3),
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(3)),
 				},
 				UpdateRepoMetadata: &types.EventStats{
-					UsersCount:  ptr(1),
-					EventsCount: ptr(1),
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
 				},
 				DeleteRepoMetadata: &types.EventStats{
-					UsersCount:  ptr(1),
-					EventsCount: ptr(1),
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
 				},
 				SearchFilterUsage: &types.EventStats{
-					UsersCount:  ptr(1),
-					EventsCount: ptr(1),
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
 				},
 			},
 		},

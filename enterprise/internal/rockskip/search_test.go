@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestIsFileExtensionMatch(t *testing.T) {
@@ -37,16 +39,14 @@ func TestIsFileExtensionMatch(t *testing.T) {
 }
 
 func TestIsLiteralPrefix(t *testing.T) {
-	ptr := func(s string) *string { return &s }
-
 	tests := []struct {
 		expr   string
 		prefix *string
 	}{
 		{``, nil},
-		{`^`, ptr(``)},
-		{`^foo`, ptr(`foo`)},
-		{`^foo/bar\.go`, ptr(`foo/bar.go`)},
+		{`^`, pointers.Ptr(``)},
+		{`^foo`, pointers.Ptr(`foo`)},
+		{`^foo/bar\.go`, pointers.Ptr(`foo/bar.go`)},
 		{`foo/bar\.go`, nil},
 	}
 

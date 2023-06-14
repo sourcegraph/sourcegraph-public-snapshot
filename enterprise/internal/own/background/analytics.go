@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -56,7 +57,7 @@ func (r *analyticsIndexer) indexRepo(ctx context.Context, repoId api.RepoID) err
 	// Try to compute ownership stats
 	commitID, err := r.client.ResolveRevision(ctx, repo.Name, "HEAD", gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
-		return errors.Wrapf(err, "cannot resolve HEAD")
+		return errcode.MakeNonRetryable(errors.Wrapf(err, "cannot resolve HEAD"))
 	}
 	isOwnedViaCodeowners := r.codeowners(ctx, repo, commitID)
 	isOwnedViaAssignedOwnership := r.assignedOwners(ctx, repo, commitID)

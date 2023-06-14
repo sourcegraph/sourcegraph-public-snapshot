@@ -3,8 +3,16 @@
 cd "$(dirname "${BASH_SOURCE[0]}")"
 set -Eexo pipefail
 
-# shellcheck source=./env.sh
-source /env.sh
+# If REINDEX_COMPLETED_FILE is not set, load it from env.sh
+if [[ -z $REINDEX_COMPLETED_FILE ]]; then
+  # shellcheck source=./env.sh
+  source /env.sh
+fi
+# Check REINDEX_COMPLETED_FILE has been set
+if [[ -z $REINDEX_COMPLETED_FILE ]]; then
+  echo "Envar REINDEX_COMPLETED_FILE is undefined"
+  exit 1
+fi
 
 file_env() {
   local var="$1"
@@ -41,7 +49,7 @@ postgres_is_running() {
   local pid="$1"
 
   local proc_entry="/proc/$pid/comm"
-  [[ -s "$proc_entry" ]] && grep -q '^postgres$' "$proc_entry"
+  grep -q '^postgres$' "$proc_entry"
 }
 
 postgres_stop_cleanly() {
@@ -100,6 +108,8 @@ reindex() {
 # allow the container to be started with `--user`
 if [ "$(id -u)" = '0' ]; then
   su-exec postgres "${BASH_SOURCE[0]}" "$@"
+  # Exit original process running as root
+  exit
 fi
 
 # look specifically for REINDEX_COMPLETED_FILE, as it is expected in the DB dir
@@ -117,7 +127,8 @@ if [ ! -s "${REINDEX_COMPLETED_FILE}" ]; then
   reindex --all
 
   # mark reindexing process as done
-  echo "Re-indexing for 3.31 release completed successfully at $(date)" >"${REINDEX_COMPLETED_FILE}"
+  echo "Writing to '$REINDEX_COMPLETED_FILE"
+  echo "Re-indexing completed successfully at $(date)" >"${REINDEX_COMPLETED_FILE}"
 
   echo
   echo 'PostgreSQL reindexing process complete - ready for start up.'

@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -20,8 +21,7 @@ var (
 )
 
 func timeOfDayPtr(hour, minute int8) *timeOfDay {
-	t := timeOfDayFromParts(hour, minute)
-	return &t
+	return pointers.Ptr(timeOfDayFromParts(hour, minute))
 }
 
 func TestConfiguration_Estimate(t *testing.T) {

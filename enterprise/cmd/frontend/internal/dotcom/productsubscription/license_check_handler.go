@@ -54,10 +54,11 @@ func logEvent(ctx context.Context, db database.DB, name string, siteID string) {
 }
 
 func NewLicenseCheckHandler(db database.DB) http.Handler {
-	logger := log.Scoped("LicenseCheckHandler", "Handles license validity checks")
+	baseLogger := log.Scoped("LicenseCheckHandler", "Handles license validity checks")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		tokenHexEncoded, err := authz.ParseBearerHeader(r.Header.Get("Authorization"))
+
+		token, err := authz.ParseBearerHeader(r.Header.Get("Authorization"))
 		if err != nil {
 			replyWithJSON(w, http.StatusUnauthorized, licensing.LicenseCheckResponse{
 				Error: ErrInvalidAccessTokenMsg,
@@ -81,12 +82,13 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 		}
 
 		siteID := siteUUID.String()
-		logger.Debug("starting license validity check", log.String("token", tokenHexEncoded), log.String("siteID", siteID))
+		logger := baseLogger.With(log.String("siteID", siteID))
+		logger.Debug("starting license validity check")
 
 		lStore := dbLicenses{db: db}
-		license, err := lStore.GetByToken(ctx, tokenHexEncoded)
+		license, err := lStore.GetByAccessToken(ctx, token)
 		if err != nil || license == nil {
-			logger.Warn("could not find license for provided token", log.String("token", tokenHexEncoded), log.String("siteID", siteID))
+			logger.Warn("could not find license for provided token", log.String("siteID", siteID))
 			replyWithJSON(w, http.StatusUnauthorized, licensing.LicenseCheckResponse{
 				Error: ErrInvalidAccessTokenMsg,
 			})
@@ -94,7 +96,7 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 		}
 		now := time.Now()
 		if license.LicenseExpiresAt != nil && license.LicenseExpiresAt.Before(now) {
-			logger.Warn("license is expired", log.String("token", tokenHexEncoded), log.String("siteID", siteID))
+			logger.Warn("license is expired")
 			replyWithJSON(w, http.StatusForbidden, licensing.LicenseCheckResponse{
 				Error: ErrExpiredLicenseMsg,
 			})
@@ -102,7 +104,7 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 		}
 
 		if license.RevokedAt != nil && license.RevokedAt.Before(now) {
-			logger.Warn("license is revoked", log.String("token", tokenHexEncoded), log.String("siteID", siteID))
+			logger.Warn("license is revoked")
 			replyWithJSON(w, http.StatusForbidden, licensing.LicenseCheckResponse{
 				Data: &licensing.LicenseCheckResponseData{
 					IsValid: false,
@@ -113,7 +115,7 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 		}
 
 		if license.SiteID != nil && !strings.EqualFold(*license.SiteID, siteID) {
-			logger.Warn("license being used with multiple site IDs", log.String("token", tokenHexEncoded), log.String("previousSiteID", *license.SiteID), log.String("newSiteID", siteID))
+			logger.Warn("license being used with multiple site IDs", log.String("previousSiteID", *license.SiteID))
 			replyWithJSON(w, http.StatusOK, licensing.LicenseCheckResponse{
 				Data: &licensing.LicenseCheckResponseData{
 					IsValid: false,
@@ -125,7 +127,7 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 
 		if license.SiteID == nil {
 			if err := lStore.AssignSiteID(r.Context(), license.ID, siteID); err != nil {
-				logger.Warn("failed to assign site ID to license", log.String("token", tokenHexEncoded), log.String("siteID", siteID))
+				logger.Warn("failed to assign site ID to license")
 				replyWithJSON(w, http.StatusInternalServerError, licensing.LicenseCheckResponse{
 					Error: ErrFailedToAssignSiteIDMsg,
 				})
@@ -134,7 +136,7 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 			logEvent(ctx, db, EventNameAssigned, siteID)
 		}
 
-		logger.Debug("finished license validity check", log.String("token", tokenHexEncoded), log.String("siteID", siteID))
+		logger.Debug("finished license validity check")
 		replyWithJSON(w, http.StatusOK, licensing.LicenseCheckResponse{
 			Data: &licensing.LicenseCheckResponseData{
 				IsValid: true,

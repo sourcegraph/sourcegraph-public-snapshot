@@ -13,10 +13,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestProductLicenses_Create(t *testing.T) {
@@ -121,7 +123,7 @@ func TestGetByToken(t *testing.T) {
 	}{
 		{
 			name:  "ok",
-			token: hex.EncodeToString(*license.LicenseCheckToken),
+			token: licensing.GenerateLicenseKeyBasedAccessToken("key"),
 			want:  &license.ID,
 		},
 		{
@@ -137,7 +139,7 @@ func TestGetByToken(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := store.GetByToken(ctx, tt.token)
+			got, err := store.GetByAccessToken(ctx, tt.token)
 			if tt.wantError != nil {
 				require.Equal(t, tt.wantError, err)
 			} else {
@@ -298,37 +300,37 @@ func TestProductLicenses_List(t *testing.T) {
 		},
 		{
 			name:          "expired only",
-			opts:          dbLicensesListOptions{Expired: boolPtr(true)},
+			opts:          dbLicensesListOptions{Expired: pointers.Ptr(true)},
 			expectedCount: 1,
 		},
 		{
 			name:          "non expired only",
-			opts:          dbLicensesListOptions{Expired: boolPtr(false)},
+			opts:          dbLicensesListOptions{Expired: pointers.Ptr(false)},
 			expectedCount: len(licenses) - 1,
 		},
 		{
 			name:          "revoked only",
-			opts:          dbLicensesListOptions{Revoked: boolPtr(true)},
+			opts:          dbLicensesListOptions{Revoked: pointers.Ptr(true)},
 			expectedCount: 1,
 		},
 		{
 			name:          "non revoked only",
-			opts:          dbLicensesListOptions{Revoked: boolPtr(false)},
+			opts:          dbLicensesListOptions{Revoked: pointers.Ptr(false)},
 			expectedCount: len(licenses) - 1,
 		},
 		{
 			name: "non revoked and non expired",
 			opts: dbLicensesListOptions{
-				Revoked: boolPtr(false),
-				Expired: boolPtr(false),
+				Revoked: pointers.Ptr(false),
+				Expired: pointers.Ptr(false),
 			},
 			expectedCount: len(licenses) - 2,
 		},
 		{
 			name: "non revoked and non expired with site ID",
 			opts: dbLicensesListOptions{
-				Revoked:         boolPtr(false),
-				Expired:         boolPtr(false),
+				Revoked:         pointers.Ptr(false),
+				Expired:         pointers.Ptr(false),
 				WithSiteIDsOnly: true,
 			},
 			expectedCount: 1,

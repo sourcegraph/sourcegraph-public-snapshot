@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/lib/pq"
 
@@ -130,25 +131,21 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	flags := make(map[string]bool)
 	flags["testflag"] = true
 
-	ptr := func(s string) *string {
-		return &s
-	}
-
 	want := []*database.Event{
 		{
 			Name:             "event1",
 			UserID:           1,
 			Source:           "test",
 			EvaluatedFlagSet: flags,
-			DeviceID:         ptr("device-1"),
-			InsertID:         ptr("insert-1"),
+			DeviceID:         pointers.Ptr("device-1"),
+			InsertID:         pointers.Ptr("insert-1"),
 		},
 		{
 			Name:     "event2",
 			UserID:   2,
 			Source:   "test",
-			DeviceID: ptr("device-2"),
-			InsertID: ptr("insert-2"),
+			DeviceID: pointers.Ptr("device-2"),
+			InsertID: pointers.Ptr("insert-2"),
 		},
 	}
 	err := db.EventLogs().BulkInsert(ctx, want)
@@ -248,25 +245,21 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
-	ptr := func(s string) *string {
-		return &s
-	}
-
 	initAllowedEvents(t, db, []string{"event1", "event2", "event4"})
 	testData := []*database.Event{
 		{
 			Name:     "event1",
 			UserID:   1,
 			Source:   "test",
-			DeviceID: ptr("device"),
-			InsertID: ptr("insert"),
+			DeviceID: pointers.Ptr("device"),
+			InsertID: pointers.Ptr("insert"),
 		},
 		{
 			Name:     "event2",
 			UserID:   2,
 			Source:   "test",
-			DeviceID: ptr("device"),
-			InsertID: ptr("insert"),
+			DeviceID: pointers.Ptr("device"),
+			InsertID: pointers.Ptr("insert"),
 		},
 	}
 	err := db.EventLogs().BulkInsert(ctx, testData)
@@ -362,32 +355,28 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
-	ptr := func(s string) *string {
-		return &s
-	}
-
 	initAllowedEvents(t, db, []string{"allowed"})
 	testData := []*database.Event{
 		{
 			Name:     "allowed",
 			UserID:   1,
 			Source:   "test",
-			DeviceID: ptr("device"),
-			InsertID: ptr("insert"),
+			DeviceID: pointers.Ptr("device"),
+			InsertID: pointers.Ptr("insert"),
 		},
 		{
 			Name:     "not-allowed",
 			UserID:   2,
 			Source:   "test",
-			DeviceID: ptr("device"),
-			InsertID: ptr("insert"),
+			DeviceID: pointers.Ptr("device"),
+			InsertID: pointers.Ptr("insert"),
 		},
 		{
 			Name:     "allowed",
 			UserID:   3,
 			Source:   "test",
-			DeviceID: ptr("device"),
-			InsertID: ptr("insert"),
+			DeviceID: pointers.Ptr("device"),
+			InsertID: pointers.Ptr("insert"),
 		},
 	}
 	err := db.EventLogs().BulkInsert(ctx, testData)
@@ -492,10 +481,6 @@ func TestBuildBigQueryObject(t *testing.T) {
 	flags := make(featureflag.EvaluatedFlagSet)
 	flags["testflag"] = true
 
-	ptr := func(s string) *string {
-		return &s
-	}
-
 	event := &database.Event{
 		ID:               1,
 		Name:             "GREAT_EVENT",
@@ -507,12 +492,12 @@ func TestBuildBigQueryObject(t *testing.T) {
 		Version:          "1.1.1",
 		Timestamp:        atTime,
 		EvaluatedFlagSet: flags,
-		CohortID:         ptr("cohort1"),
-		FirstSourceURL:   ptr("first_source_url"),
-		LastSourceURL:    ptr("last_source_url"),
-		Referrer:         ptr("reff"),
-		DeviceID:         ptr("devid"),
-		InsertID:         ptr("insertid"),
+		CohortID:         pointers.Ptr("cohort1"),
+		FirstSourceURL:   pointers.Ptr("first_source_url"),
+		LastSourceURL:    pointers.Ptr("last_source_url"),
+		Referrer:         pointers.Ptr("reff"),
+		DeviceID:         pointers.Ptr("devid"),
+		InsertID:         pointers.Ptr("insertid"),
 	}
 
 	metadata := &instanceMetadata{

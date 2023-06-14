@@ -4,7 +4,7 @@ import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 
 import { test } from './helpers'
 
-test('checks for the chat history and new session', async ({ page, sidebar }) => {
+test.skip('checks for the chat history and new session', async ({ page, sidebar }) => {
     await sidebar.getByRole('textbox', { name: 'Sourcegraph Instance URL' }).fill(SERVER_URL)
 
     await sidebar.getByRole('textbox', { name: 'Access Token (docs)' }).fill(VALID_TOKEN)

@@ -507,9 +507,7 @@ func TestAssignedTeamsMatch(t *testing.T) {
 
 func createTeam(t *testing.T, ctx context.Context, db database.DB, teamName string) *itypes.Team {
 	t.Helper()
-	err := db.Teams().CreateTeam(ctx, &itypes.Team{Name: teamName})
-	require.NoError(t, err)
-	team, err := db.Teams().GetTeamByName(ctx, teamName)
+	team, err := db.Teams().CreateTeam(ctx, &itypes.Team{Name: teamName})
 	require.NoError(t, err)
 	return team
 }
