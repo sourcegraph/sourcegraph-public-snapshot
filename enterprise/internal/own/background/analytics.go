@@ -58,14 +58,8 @@ func (r *analyticsIndexer) indexRepo(ctx context.Context, repoId api.RepoID) err
 	if err != nil {
 		return errors.Wrapf(err, "cannot resolve HEAD")
 	}
-	isOwnedViaCodeowners, err := r.codeowners(ctx, repo, commitID)
-	if err != nil {
-		return err
-	}
-	isOwnedViaAssignedOwnership, err := r.assignedOwners(ctx, repo, commitID)
-	if err != nil {
-		return err
-	}
+	isOwnedViaCodeowners := r.codeowners(ctx, repo, commitID)
+	isOwnedViaAssignedOwnership := r.assignedOwners(ctx, repo, commitID)
 	var totalCount int
 	var ownCounts database.PathAggregateCounts
 	for _, f := range files {
@@ -105,38 +99,38 @@ func (r *analyticsIndexer) indexRepo(ctx context.Context, repoId api.RepoID) err
 
 // codeowners pulls a path matcher for repo HEAD.
 // If result function is nil, then no CODEOWNERS file was found.
-func (r *analyticsIndexer) codeowners(ctx context.Context, repo *types.Repo, commitID api.CommitID) (func(string) bool, error) {
+func (r *analyticsIndexer) codeowners(ctx context.Context, repo *types.Repo, commitID api.CommitID) func(string) bool {
 	ownService := own.NewService(r.client, r.db)
 	ruleset, err := ownService.RulesetForRepo(ctx, repo.Name, repo.ID, commitID)
 	if ruleset == nil || err != nil {
 		// TODO(#53155): Return error in case there is an issue,
 		// but return noRuleset and no error if CODEOWNERS is not found.
-		return noOwners, nil
+		return noOwners
 	}
 	return func(path string) bool {
 		rule := ruleset.Match(path)
 		owners := rule.GetOwner()
 		return len(owners) > 0
-	}, nil
+	}
 }
 
-func (r *analyticsIndexer) assignedOwners(ctx context.Context, repo *types.Repo, commitID api.CommitID) (func(string) bool, error) {
+func (r *analyticsIndexer) assignedOwners(ctx context.Context, repo *types.Repo, commitID api.CommitID) func(string) bool {
 	ownService := own.NewService(r.client, r.db)
 	assignedOwners, err := own.NewService(r.client, r.db).AssignedOwnership(ctx, repo.ID, commitID)
 	if err != nil {
 		// TODO(#53155): Return error in case there is an issue,
 		// but return noRuleset and no error if CODEOWNERS is not found.
-		return noOwners, nil
+		return noOwners
 	}
 	assignedTeams, err := ownService.AssignedTeams(ctx, repo.ID, commitID)
 	if err != nil {
 		// TODO(#53155): Return error in case there is an issue,
 		// but return noRuleset and no error if CODEOWNERS is not found.
-		return noOwners, nil
+		return noOwners
 	}
 	return func(path string) bool {
 		return len(assignedOwners.Match(path)) > 0 || len(assignedTeams.Match(path)) > 0
-	}, nil
+	}
 }
 
 // For proto it is safe to return nil from a function,
