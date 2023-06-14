@@ -18,6 +18,7 @@ import (
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -1382,15 +1383,15 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 				{
 					repo: a,
 					resp: &gitserverprotocol.RepoUpdateResponse{
-						LastFetched: timePtr(defaultTime.Add(2 * time.Minute)),
-						LastChanged: timePtr(defaultTime),
+						LastFetched: pointers.Ptr(defaultTime.Add(2 * time.Minute)),
+						LastChanged: pointers.Ptr(defaultTime),
 					},
 				},
 				{
 					repo: b,
 					resp: &gitserverprotocol.RepoUpdateResponse{
-						LastFetched: timePtr(defaultTime.Add(2 * time.Minute)),
-						LastChanged: timePtr(defaultTime),
+						LastFetched: pointers.Ptr(defaultTime.Add(2 * time.Minute)),
+						LastChanged: pointers.Ptr(defaultTime),
 					},
 				},
 			},
@@ -1494,10 +1495,6 @@ func verifyRecording(t *testing.T, s *UpdateScheduler, timeAfterFuncDelays []tim
 	if expected := expectedNotifications(s); !reflect.DeepEqual(expected, r.notifications) {
 		t.Fatalf("\nexpected notifications\n%s\ngot\n%s", spew.Sdump(expected), spew.Sdump(r.notifications))
 	}
-}
-
-func timePtr(t time.Time) *time.Time {
-	return &t
 }
 
 func Test_updateQueue_Less(t *testing.T) {

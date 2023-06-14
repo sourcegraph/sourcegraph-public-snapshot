@@ -7,10 +7,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -104,10 +106,6 @@ func TestRelevantSettings(t *testing.T) {
 }
 
 func TestMergeSettings(t *testing.T) {
-	boolPtr := func(b bool) *bool {
-		return &b
-	}
-
 	cases := []struct {
 		name     string
 		left     *schema.Settings
@@ -130,14 +128,14 @@ func TestMergeSettings(t *testing.T) {
 	}, {
 		name: "merge bool ptr",
 		left: &schema.Settings{
-			AlertsHideObservabilitySiteAlerts: boolPtr(true),
+			AlertsHideObservabilitySiteAlerts: pointers.Ptr(true),
 		},
 		right: &schema.Settings{
 			SearchDefaultMode: "test",
 		},
 		expected: &schema.Settings{
 			SearchDefaultMode:                 "test",
-			AlertsHideObservabilitySiteAlerts: boolPtr(true),
+			AlertsHideObservabilitySiteAlerts: pointers.Ptr(true),
 		},
 	}, {
 		name: "merge bool",
@@ -171,30 +169,30 @@ func TestMergeSettings(t *testing.T) {
 		name: "deep merge struct pointer",
 		left: &schema.Settings{
 			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
-				CodeMonitoringWebHooks: boolPtr(true),
+				CodeMonitoringWebHooks: pointers.Ptr(true),
 			},
 		},
 		right: &schema.Settings{
 			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
-				ShowMultilineSearchConsole: boolPtr(false),
+				ShowMultilineSearchConsole: pointers.Ptr(false),
 			},
 		},
 		expected: &schema.Settings{
 			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
-				CodeMonitoringWebHooks:     boolPtr(true),
-				ShowMultilineSearchConsole: boolPtr(false),
+				CodeMonitoringWebHooks:     pointers.Ptr(true),
+				ShowMultilineSearchConsole: pointers.Ptr(false),
 			},
 		},
 	}, {
 		name: "overwriting merge",
 		left: &schema.Settings{
-			AlertsHideObservabilitySiteAlerts: boolPtr(true),
+			AlertsHideObservabilitySiteAlerts: pointers.Ptr(true),
 		},
 		right: &schema.Settings{
-			AlertsHideObservabilitySiteAlerts: boolPtr(false),
+			AlertsHideObservabilitySiteAlerts: pointers.Ptr(false),
 		},
 		expected: &schema.Settings{
-			AlertsHideObservabilitySiteAlerts: boolPtr(false),
+			AlertsHideObservabilitySiteAlerts: pointers.Ptr(false),
 		},
 	}, {
 		name: "deep merge slice",

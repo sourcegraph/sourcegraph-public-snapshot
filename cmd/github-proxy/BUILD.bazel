@@ -58,7 +58,10 @@ container_structure_test(
     configs = ["image_test.yaml"],
     driver = "docker",
     image = ":image",
-    tags = ["requires-network"],
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
 )
 
 oci_push(

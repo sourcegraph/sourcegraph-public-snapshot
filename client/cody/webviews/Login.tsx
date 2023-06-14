@@ -29,7 +29,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     callbackScheme,
     appOS,
 }) => {
-    const [endpoint, setEndpoint] = useState(serverEndpoint)
+    const [endpoint, setEndpoint] = useState(serverEndpoint || DOTCOM_URL.href)
 
     const isOSSupported = appOS === 'darwin' || appOS === 'linux'
     const loginWithDotCom = (): void => {
@@ -62,7 +62,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 
     return (
         <div className={styles.container}>
-            {authStatus && <ErrorContainer authStatus={authStatus} />}
+            {authStatus && <ErrorContainer authStatus={authStatus} endpoint={endpoint} />}
             <div className={styles.sectionsContainer}>
                 <section className={classNames(styles.section, isOSSupported ? styles.codyGradient : null)}>
                     <h2 className={styles.sectionHeader}>{isAppInstalled ? 'Connect to Cody App' : 'Get Started'}</h2>
@@ -100,7 +100,7 @@ const ERROR_MESSAGES = {
     EMAIL_NOT_VERIFIED: 'Email not verified. Please add a verified email to your Sourcegraph.com account.',
 }
 
-const ErrorContainer: React.FunctionComponent<{ authStatus: AuthStatus }> = ({ authStatus }) => {
+const ErrorContainer: React.FunctionComponent<{ authStatus: AuthStatus; endpoint: string }> = ({ authStatus }) => {
     const {
         authenticated,
         siteHasCodyEnabled,

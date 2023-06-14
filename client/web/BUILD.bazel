@@ -979,7 +979,6 @@ ts_project(
         "src/enterprise/productSubscription/ExpirationDate.tsx",
         "src/enterprise/productSubscription/LicenseGenerationKeyWarning.tsx",
         "src/enterprise/productSubscription/ProductCertificate.tsx",
-        "src/enterprise/productSubscription/ProductLicenseInfoDescription.tsx",
         "src/enterprise/productSubscription/ProductLicenseTags.tsx",
         "src/enterprise/productSubscription/TrueUpStatusSummary.tsx",
         "src/enterprise/rbac/SiteAdminRolesPage.tsx",
