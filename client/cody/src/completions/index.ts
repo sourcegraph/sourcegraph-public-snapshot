@@ -13,10 +13,23 @@ import { getCurrentDocContext } from './document'
 import { History } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultilineMode } from './multiline'
-import { CompletionProvider, InlineCompletionProvider } from './post-process'
 import { SNIPPET_WINDOW_SIZE, lastNLines } from './utils'
 
 export const inlineCompletionsCache = new CompletionsCache()
+
+// TODO:
+//
+// - Figure out how to change the provider constructor so that I can create providers in here
+//   without having to worry about provider specific flags. (createProvider? but how to pass statics
+//   then?) ProviderConfig object with {create(): Provider, ..statics?}
+// - Abstract the prefix/suffix percentage and token limits logic (should be provider specific)
+// - Wire it up so completions work again
+// - Add new `cody.completions.advanced.provider` option and add `experimental-codegen` setting.
+// - Add new `cody.completions.advanced.serverEndpoint` option
+// - Add new `ExperimentalCodeGenProvider` that does a fetch()
+// - Verify it works with the mock server and create a vsix to test
+// - Document
+// - Fix tests & productionize this. Land in nightly
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptTokens: number
