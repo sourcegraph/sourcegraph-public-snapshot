@@ -39,15 +39,18 @@ func bazelCmd(args ...string) string {
 }
 
 func bazelPushImagesCmd(version string, isCandidate bool) func(*bk.Pipeline) {
+	stepName := ":bazel::docker: Push OCI/Wolfi"
 	stepKey := "bazel-push-images"
 	candidate := ""
+
 	if isCandidate {
+		stepName = ":bazel::docker: Push OCI/Wolfi Candidate"
 		stepKey = stepKey + "-candidate"
 		candidate = "true"
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":bazel::docker: Push OCI/Wolfi",
+		pipeline.AddStep(stepName,
 			bk.Agent("queue", "bazel"),
 			bk.DependsOn("bazel-tests"),
 			bk.Key(stepKey),

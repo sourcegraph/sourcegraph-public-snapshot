@@ -396,9 +396,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ForceBazel:                !c.MessageFlags.NoBazel,
 		}))
 
-		// Publish images to dev registry
-		publishOpsDev := operations.NewNamedSet("Publish dev images")
-		publishOpsDev.Append(bazelPushImagesCmd(c.Version, false))
+		// Publish candidate images to dev registry
+		publishOpsDev := operations.NewNamedSet("Publish candidate images")
+		publishOpsDev.Append(bazelPushImagesCmd(c.Version, true))
 		ops.Merge(publishOpsDev)
 
 		// Integration tests
@@ -432,9 +432,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				publishOps.Append(publishExecutorDockerMirror(c))
 			}
 		}
-		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
-			publishOps.Append(bazelPushImagesCmd(c.Version, true))
-		}
+		// Final Bazel images
+		publishOps.Append(bazelPushImagesCmd(c.Version, false))
 		ops.Merge(publishOps)
 	}
 
