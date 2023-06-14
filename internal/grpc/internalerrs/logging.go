@@ -78,7 +78,7 @@ func LoggingStreamClientInterceptor(l log.Logger) grpc.StreamClientInterceptor {
 
 		stream, err := streamer(ctx, desc, cc, fullMethod, opts...)
 		if err != nil {
-			// Note: This is a bit hacky, we provide nil initial and payload messages here since they message isn't available
+			// Note: This is a bit hacky, we provide nil initial and payload messages here since the message isn't available
 			// until after the stream is created.
 			//
 			// This is fine since the error is already available, and the non-utf8 string check is robust against nil messages.
@@ -229,7 +229,7 @@ func doLog(logger log.Logger, serviceName, methodName string, initialRequest *pr
 // additionalNonUTF8StringDebugFields returns additional log fields that should be included when logging a non-UTF8 string error.
 //
 // By default, this includes the names of all fields that contain non-UTF8 strings.
-// If shouldLogMessageJSON is true, then the JSON representation of the initial request message and latest message ares also included.
+// If shouldLogMessageJSON is true, then the JSON representations for the initial request message and latest message are also included.
 // The maxMessageSizeLogBytes parameter controls the maximum size of the messages that will be logged, after which they will be truncated. Negative values disable truncation.
 func additionalNonUTF8StringDebugFields(firstMessage *proto.Message, latestMessage proto.Message, shouldLogMessageJSON bool, maxMessageLogSizeBytes int) []log.Field {
 	var allFields []log.Field
