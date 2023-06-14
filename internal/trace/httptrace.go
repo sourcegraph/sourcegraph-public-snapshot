@@ -252,6 +252,14 @@ func loggingRecoverer(logger log.Logger, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if r := recover(); r != nil {
+				// ErrAbortHandler is a sentinal error which is used to stop an
+				// http handler but not report the error. In practice we have only
+				// seen this used by httputil.ReverseProxy when the server goes
+				// down.
+				if r == http.ErrAbortHandler {
+					return
+				}
+
 				err := errors.Errorf("handler panic: %v", redact.Safe(r))
 				logger.Error("handler panic", log.Error(err), log.String("stacktrace", string(debug.Stack())))
 				w.WriteHeader(http.StatusInternalServerError)
