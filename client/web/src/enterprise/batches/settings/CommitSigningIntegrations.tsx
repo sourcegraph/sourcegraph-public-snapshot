@@ -2,7 +2,7 @@ import React from 'react'
 
 import { useLocation } from 'react-router-dom'
 
-import { Container, H3, Link, Text } from '@sourcegraph/wildcard'
+import { Container, H3, Text } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 import { UseShowMorePaginationResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
