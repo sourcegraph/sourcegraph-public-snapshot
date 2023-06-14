@@ -174,7 +174,7 @@ func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (val 
 		return nil, errors.New("could not find data for the external account")
 	}
 
-	return val, errors.New("could not find data for the external account")
+	return val, nil
 }
 
 func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.AccountData) (*extsvc.PublicAccountData, error) {
