@@ -80,6 +80,10 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) *schema.Completio
 			if completionsConfig.ChatModel == "" {
 				completionsConfig.ChatModel = "anthropic/claude-v1"
 			}
+			// Configure fastChatModel
+			if completionsConfig.FastChatModel == "" {
+				completionsConfig.FastChatModel = "anthropic/claude-fast-v1"
+			}
 			// Configure completionModel
 			if completionsConfig.CompletionModel == "" {
 				completionsConfig.CompletionModel = "anthropic/claude-instant-v1"
