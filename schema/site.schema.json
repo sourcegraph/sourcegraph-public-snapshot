@@ -2359,7 +2359,7 @@
           "!go": {
             "pointer": true
           },
-          "default": false
+          "default": true
         },
         "dimensions": {
           "description": "The dimensionality of the embedding vectors. Required field if not using the sourcegraph provider.",
@@ -2446,7 +2446,10 @@
         "enabled": {
           "description": "DEPRECATED. Use cody.enabled instead to turn Cody on/off.",
           "type": "boolean",
-          "default": false
+          "!go": {
+            "pointer": true
+          },
+          "default": true
         },
         "model": {
           "description": "DEPRECATED. Use chatModel instead.",

@@ -223,13 +223,6 @@ func embeddingConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
 	return nil
 }
 
-var defaultPolicyRepositoryMatchLimit = 5000
-
-var defaultOpts = EmbeddableRepoOpts{
-	MinimumInterval:            24 * time.Hour,
-	PolicyRepositoryMatchLimit: &defaultPolicyRepositoryMatchLimit,
-}
-
 func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
 	embeddingsConf := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
 	return EmbeddableRepoOpts{
