@@ -61,7 +61,6 @@ export class NonStop implements Recipe {
             },
             onTurnComplete: async () => {
                 await context.editor.didReceiveFixupText(taskID, text, 'complete')
-                controllers.task.stop(taskID)
             },
         })
 

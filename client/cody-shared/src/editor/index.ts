@@ -29,7 +29,6 @@ interface VsCodeInlineController {
 // TODO: Move this interface to client/cody
 interface VsCodeTaskController {
     add(input: string, selection: ActiveTextEditorSelection): string | null
-    stop(taskID: string): void
 }
 
 export interface ActiveTextEditorViewControllers {
