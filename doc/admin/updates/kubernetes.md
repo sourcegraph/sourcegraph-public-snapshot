@@ -16,25 +16,24 @@ For upgrade procedures or general info about sourcegraph versioning see the link
 
 ## Unreleased
 
-No applicable notes for unreleased versions.
-
 <!-- Add changes changes to this section before release. -->
+- Fixed typo in embeddings component path [#33](https://github.com/sourcegraph/deploy-sourcegraph-k8s/pull/33)
 
 ## v5.0.4 ➔ v5.0.5
 
-#### Notes:
+No upgrade notes.
 
 ## v5.0.3 ➔ v5.0.4
 
-#### Notes:
+No upgrade notes.
 
 ## v5.0.2 ➔ v5.0.3
 
-#### Notes:
+No upgrade notes.
 
 ## v5.0.1 ➔ v5.0.2
 
-#### Notes:
+No upgrade notes.
 
 ## v5.0.0 ➔ v5.0.1
 

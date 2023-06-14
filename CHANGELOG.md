@@ -86,6 +86,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased 5.0.6
 
+### Fixed
+
+- k8s: Typo in embeddings component path [#33](https://github.com/sourcegraph/deploy-sourcegraph-k8s/pull/33)
+
 ## 5.0.5
 
 ### Added
