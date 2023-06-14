@@ -65,7 +65,7 @@ func TestEmbeddingsSearch(t *testing.T) {
 	getRepoEmbeddingIndex := func(_ context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
 		return indexes[repoName], nil
 	}
-	getQueryEmbedding := func(_ context.Context, query string) ([]float32, string, error) {
+	getMockQueryEmbedding := func(_ context.Context, query string) ([]float32, string, error) {
 		model := "openai/text-embedding-ada-002"
 		switch query {
 		case "one":
@@ -86,14 +86,14 @@ func TestEmbeddingsSearch(t *testing.T) {
 	server1 := httptest.NewServer(NewHandler(
 		logger,
 		getRepoEmbeddingIndex,
-		getQueryEmbedding,
+		getMockQueryEmbedding,
 		nil,
 	))
 
 	server2 := httptest.NewServer(NewHandler(
 		logger,
 		getRepoEmbeddingIndex,
-		getQueryEmbedding,
+		getMockQueryEmbedding,
 		nil,
 	))
 
