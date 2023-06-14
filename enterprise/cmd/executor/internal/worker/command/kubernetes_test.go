@@ -19,6 +19,7 @@ import (
 	"k8s.io/utils/pointer"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -597,4 +598,180 @@ func TestNewKubernetesJob(t *testing.T) {
 	assert.Nil(t, job.Spec.Template.Spec.SecurityContext.RunAsUser)
 	assert.Nil(t, job.Spec.Template.Spec.SecurityContext.RunAsGroup)
 	assert.Equal(t, int64(1000), *job.Spec.Template.Spec.SecurityContext.FSGroup)
+}
+
+func TestNewKubernetesSingleJob(t *testing.T) {
+	err := os.Setenv("KUBERNETES_SERVICE_HOST", "http://localhost")
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		os.Unsetenv("KUBERNETES_SERVICE_HOST")
+	})
+
+	specs := []command.Spec{
+		{
+			Key:     "my.container.0",
+			Name:    "my-container-0",
+			Command: []string{"echo", "hello"},
+			Env:     []string{"FOO=bar"},
+			Dir:     "repository",
+			Image:   "my-image:latest",
+		},
+		{
+			Key:     "my.container.1",
+			Name:    "my-container-1",
+			Command: []string{"echo", "world"},
+			Env:     []string{"FOO=baz"},
+			Dir:     "repository",
+			Image:   "my-image:latest",
+		},
+	}
+	workspaceFiles := []files.WorkspaceFile{
+		{
+			Path:    "/my/path/script1.sh",
+			Content: []byte("echo hello"),
+		},
+		{
+			Path:    "/my/path/script2.sh",
+			Content: []byte("echo world"),
+		},
+	}
+	secret := command.JobSecret{
+		Name: "my-secret",
+		Keys: []string{"TOKEN"},
+	}
+	repoOptions := command.RepositoryOptions{
+		JobID:               42,
+		RepositoryName:      "my-repo",
+		RepositoryDirectory: "repository",
+		Commit:              "deadbeef",
+	}
+	options := command.KubernetesContainerOptions{
+		CloneOptions: command.KubernetesCloneOptions{
+			ExecutorName: "my-executor",
+			BaseURL:      "http://my-frontend/.executor/git",
+		},
+		Namespace:             "default",
+		NodeName:              "my-node",
+		PersistenceVolumeName: "my-pvc",
+		ResourceLimit: command.KubernetesResource{
+			CPU:    resource.MustParse("10"),
+			Memory: resource.MustParse("10Gi"),
+		},
+		ResourceRequest: command.KubernetesResource{
+			CPU:    resource.MustParse("1"),
+			Memory: resource.MustParse("1Gi"),
+		},
+		SecurityContext: command.KubernetesSecurityContext{
+			FSGroup: pointer.Int64(1000),
+		},
+		StepImage: "step-image:latest",
+	}
+	job := command.NewKubernetesSingleJob(
+		"my-job",
+		specs,
+		workspaceFiles,
+		secret,
+		"my-volume",
+		repoOptions,
+		options,
+	)
+
+	assert.Equal(t, "my-job", job.Name)
+	assert.Equal(t, int32(0), *job.Spec.BackoffLimit)
+
+	assert.Equal(t, "my-node", job.Spec.Template.Spec.NodeName)
+	assert.Equal(t, corev1.RestartPolicyNever, job.Spec.Template.Spec.RestartPolicy)
+
+	require.Len(t, job.Spec.Template.Spec.InitContainers, 3)
+
+	assert.Equal(t, "setup-workspace", job.Spec.Template.Spec.InitContainers[0].Name)
+	assert.Equal(t, "step-image:latest", job.Spec.Template.Spec.InitContainers[0].Image)
+	assert.Equal(t, "/job", job.Spec.Template.Spec.InitContainers[0].WorkingDir)
+	require.Len(t, job.Spec.Template.Spec.InitContainers[0].Command, 2)
+	assert.Equal(t, []string{"sh", "-c"}, job.Spec.Template.Spec.InitContainers[0].Command)
+	require.Len(t, job.Spec.Template.Spec.InitContainers[0].Args, 1)
+	assert.Equal(
+		t,
+		"mkdir -p repository; "+
+			"git -C repository init; "+
+			"git -C repository remote add origin http://my-frontend/.executor/git/my-repo; "+
+			"git -C repository config --local gc.auto 0; "+
+			"git -C repository "+
+			"-c http.extraHeader=\"Authorization:Bearer $TOKEN\" "+
+			"-c http.extraHeader=X-Sourcegraph-Actor-UID:internal "+
+			"-c http.extraHeader=X-Sourcegraph-Job-ID:42 "+
+			"-c http.extraHeader=X-Sourcegraph-Executor-Name:my-executor "+
+			"-c protocol.version=2 fetch --progress --no-recurse-submodules --no-tags --depth=1 origin deadbeef; "+
+			"git -C repository checkout --progress --force deadbeef; "+
+			"mkdir -p .sourcegraph-executor; "+
+			"echo '#!/bin/sh\n\nfile=\"$1\"\n\nif [ ! -f \"$file\" ]; then\n  exit 0\nfi\n\nnextStep=$(grep -o '\"'\"'\"nextStep\":[^,]*'\"'\"' $file | sed '\"'\"'s/\"nextStep\"://'\"'\"' | sed -e '\"'\"'s/^[[:space:]]*//'\"'\"' -e '\"'\"'s/[[:space:]]*$//'\"'\"' -e '\"'\"'s/\"//g'\"'\"' -e '\"'\"'s/}//g'\"'\"')\n\nif [ \"${2%$nextStep}\" = \"$2\" ]; then\n  echo \"skip\"\n  exit 0\nfi\n' > nextIndex.sh; "+
+			"chmod +x nextIndex.sh; "+
+			"mkdir -p /my/path; "+
+			"echo -E 'echo hello' > /my/path/script1.sh; "+
+			"chmod +x /my/path/script1.sh; "+
+			"mkdir -p /my/path; "+
+			"echo -E 'echo world' > /my/path/script2.sh; "+
+			"chmod +x /my/path/script2.sh; ",
+		job.Spec.Template.Spec.InitContainers[0].Args[0],
+	)
+	require.Len(t, job.Spec.Template.Spec.InitContainers[0].Env, 1)
+	assert.Equal(t, "TOKEN", job.Spec.Template.Spec.InitContainers[0].Env[0].Name)
+	assert.Equal(t, &corev1.EnvVarSource{
+		SecretKeyRef: &corev1.SecretKeySelector{
+			Key:                  "TOKEN",
+			LocalObjectReference: corev1.LocalObjectReference{Name: "my-secret"},
+		},
+	}, job.Spec.Template.Spec.InitContainers[0].Env[0].ValueFrom)
+	require.Len(t, job.Spec.Template.Spec.InitContainers[0].VolumeMounts, 1)
+	assert.Equal(t, "job-data", job.Spec.Template.Spec.InitContainers[0].VolumeMounts[0].Name)
+	assert.Equal(t, "/job", job.Spec.Template.Spec.InitContainers[0].VolumeMounts[0].MountPath)
+
+	assert.Equal(t, "my-container-0", job.Spec.Template.Spec.InitContainers[1].Name)
+	assert.Equal(t, "my-image:latest", job.Spec.Template.Spec.InitContainers[1].Image)
+	assert.Equal(t, "/job/repository", job.Spec.Template.Spec.InitContainers[1].WorkingDir)
+	require.Len(t, job.Spec.Template.Spec.InitContainers[1].Command, 2)
+	assert.Equal(t, []string{"sh", "-c"}, job.Spec.Template.Spec.InitContainers[1].Command)
+	require.Len(t, job.Spec.Template.Spec.InitContainers[1].Args, 1)
+	assert.Equal(
+		t,
+		"if [ \"$(/job/nextIndex.sh /job/skip.json my.container.0)\" != \"skip\" ]; then echo; hello;  fi",
+		job.Spec.Template.Spec.InitContainers[1].Args[0],
+	)
+	require.Len(t, job.Spec.Template.Spec.InitContainers[1].Env, 1)
+	assert.Equal(t, "FOO", job.Spec.Template.Spec.InitContainers[1].Env[0].Name)
+	assert.Equal(t, "bar", job.Spec.Template.Spec.InitContainers[1].Env[0].Value)
+	require.Len(t, job.Spec.Template.Spec.InitContainers[1].VolumeMounts, 1)
+	assert.Equal(t, "job-data", job.Spec.Template.Spec.InitContainers[1].VolumeMounts[0].Name)
+	assert.Equal(t, "/job", job.Spec.Template.Spec.InitContainers[1].VolumeMounts[0].MountPath)
+
+	assert.Equal(t, "my-container-1", job.Spec.Template.Spec.InitContainers[2].Name)
+	assert.Equal(t, "my-image:latest", job.Spec.Template.Spec.InitContainers[2].Image)
+	assert.Equal(t, "/job/repository", job.Spec.Template.Spec.InitContainers[2].WorkingDir)
+	require.Len(t, job.Spec.Template.Spec.InitContainers[2].Command, 2)
+	assert.Equal(t, []string{"sh", "-c"}, job.Spec.Template.Spec.InitContainers[2].Command)
+	require.Len(t, job.Spec.Template.Spec.InitContainers[2].Args, 1)
+	assert.Equal(
+		t,
+		"if [ \"$(/job/nextIndex.sh /job/skip.json my.container.1)\" != \"skip\" ]; then echo; world;  fi",
+		job.Spec.Template.Spec.InitContainers[2].Args[0],
+	)
+	require.Len(t, job.Spec.Template.Spec.InitContainers[2].Env, 1)
+	assert.Equal(t, "FOO", job.Spec.Template.Spec.InitContainers[2].Env[0].Name)
+	assert.Equal(t, "baz", job.Spec.Template.Spec.InitContainers[2].Env[0].Value)
+	require.Len(t, job.Spec.Template.Spec.InitContainers[2].VolumeMounts, 1)
+	assert.Equal(t, "job-data", job.Spec.Template.Spec.InitContainers[2].VolumeMounts[0].Name)
+	assert.Equal(t, "/job", job.Spec.Template.Spec.InitContainers[2].VolumeMounts[0].MountPath)
+
+	require.Len(t, job.Spec.Template.Spec.Containers, 1)
+	assert.Equal(t, "main", job.Spec.Template.Spec.Containers[0].Name)
+	assert.Equal(t, "step-image:latest", job.Spec.Template.Spec.Containers[0].Image)
+	assert.Equal(t, []string{"sh", "-c"}, job.Spec.Template.Spec.Containers[0].Command)
+	require.Len(t, job.Spec.Template.Spec.Containers[0].Args, 1)
+	assert.Equal(t, "echo 'complete'", job.Spec.Template.Spec.Containers[0].Args[0])
+	assert.Equal(t, "/job", job.Spec.Template.Spec.Containers[0].WorkingDir)
+
+	assert.Equal(t, resource.MustParse("10"), *job.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu())
+	assert.Equal(t, resource.MustParse("10Gi"), *job.Spec.Template.Spec.Containers[0].Resources.Limits.Memory())
+	assert.Equal(t, resource.MustParse("1"), *job.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu())
+	assert.Equal(t, resource.MustParse("1Gi"), *job.Spec.Template.Spec.Containers[0].Resources.Requests.Memory())
 }
