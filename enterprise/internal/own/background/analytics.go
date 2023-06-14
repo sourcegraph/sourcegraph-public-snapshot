@@ -54,11 +54,15 @@ func (r *analyticsIndexer) indexRepo(ctx context.Context, repoId api.RepoID) err
 		return errors.Wrap(err, "ls-files")
 	}
 	// Try to compute ownership stats
-	isOwnedViaCodeowners, err := r.codeowners(ctx, repo)
+	commitID, err := r.client.ResolveRevision(ctx, repo.Name, "HEAD", gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+	if err != nil {
+		return errors.Wrapf(err, "cannot resolve HEAD")
+	}
+	isOwnedViaCodeowners, err := r.codeowners(ctx, repo, commitID)
 	if err != nil {
 		return err
 	}
-	isOwnedViaAssignedOwnership, err := r.assignedOwners(ctx, repo)
+	isOwnedViaAssignedOwnership, err := r.assignedOwners(ctx, repo, commitID)
 	if err != nil {
 		return err
 	}
@@ -101,12 +105,8 @@ func (r *analyticsIndexer) indexRepo(ctx context.Context, repoId api.RepoID) err
 
 // codeowners pulls a path matcher for repo HEAD.
 // If result function is nil, then no CODEOWNERS file was found.
-func (r *analyticsIndexer) codeowners(ctx context.Context, repo *types.Repo) (func(string) bool, error) {
+func (r *analyticsIndexer) codeowners(ctx context.Context, repo *types.Repo, commitID api.CommitID) (func(string) bool, error) {
 	ownService := own.NewService(r.client, r.db)
-	commitID, err := r.client.ResolveRevision(ctx, repo.Name, "HEAD", gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot resolve HEAD")
-	}
 	ruleset, err := ownService.RulesetForRepo(ctx, repo.Name, repo.ID, commitID)
 	if ruleset == nil || err != nil {
 		// TODO(#53155): Return error in case there is an issue,
@@ -120,13 +120,9 @@ func (r *analyticsIndexer) codeowners(ctx context.Context, repo *types.Repo) (fu
 	}, nil
 }
 
-func (r *analyticsIndexer) assignedOwners(ctx context.Context, repo *types.Repo) (func(string) bool, error) {
+func (r *analyticsIndexer) assignedOwners(ctx context.Context, repo *types.Repo, commitID api.CommitID) (func(string) bool, error) {
 	ownService := own.NewService(r.client, r.db)
-	commitID, err := r.client.ResolveRevision(ctx, repo.Name, "HEAD", gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot resolve HEAD")
-	}
-	assignedOwners, err := ownService.AssignedOwnership(ctx, repo.ID, commitID)
+	assignedOwners, err := own.NewService(r.client, r.db).AssignedOwnership(ctx, repo.ID, commitID)
 	if err != nil {
 		// TODO(#53155): Return error in case there is an issue,
 		// but return noRuleset and no error if CODEOWNERS is not found.
