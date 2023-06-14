@@ -4,7 +4,7 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
-import { DOTCOM_URL, LOCAL_APP_URL, isLoggedIn } from './chat/protocol'
+import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL, isLoggedIn } from './chat/protocol'
 import { getAuthStatus } from './chat/utils'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
@@ -16,6 +16,7 @@ import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
 import { getRgPath } from './rg'
+import { AuthProvider } from './services/AuthProvider'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
 import { LocalStorage } from './services/LocalStorageProvider'
@@ -25,9 +26,6 @@ import {
     SecretStorage,
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
-
-const CODY_FEEDBACK_URL =
-    'https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -42,7 +40,7 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
 
     const { disposable, onConfigurationChange } = await register(
         context,
-        await getFullConfig(secretStorage),
+        await getFullConfig(secretStorage, localStorage),
         secretStorage,
         localStorage,
         rgPath
@@ -53,12 +51,12 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
     disposables.push(
         secretStorage.onDidChange(async key => {
             if (key === CODY_ACCESS_TOKEN_SECRET) {
-                onConfigurationChange(await getFullConfig(secretStorage))
+                onConfigurationChange(await getFullConfig(secretStorage, localStorage))
             }
         }),
         vscode.workspace.onDidChangeConfiguration(async event => {
             if (event.affectsConfiguration('cody')) {
-                onConfigurationChange(await getFullConfig(secretStorage))
+                onConfigurationChange(await getFullConfig(secretStorage, localStorage))
             }
         })
     )
@@ -91,6 +89,7 @@ const register = async (
     const editor = new VSCodeEditor(controllers)
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
+    const authProvider = new AuthProvider(secretStorage, localStorage)
 
     const {
         intentDetector,
@@ -112,7 +111,8 @@ const register = async (
         editor,
         secretStorage,
         localStorage,
-        rgPath
+        rgPath,
+        authProvider
     )
     disposables.push(chatProvider)
 
@@ -176,6 +176,8 @@ const register = async (
         vscode.commands.registerCommand('cody.delete-access-token', async () => {
             await chatProvider.logout()
         }),
+        vscode.commands.registerCommand('cody.auth.login', (endpoint: string) => authProvider.login(endpoint)),
+        vscode.commands.registerCommand('cody.auth.support', () => quickPickForSupport()),
         vscode.commands.registerCommand('cody.clear-chat-history', async () => {
             await chatProvider.clearHistory()
         }),
@@ -184,7 +186,7 @@ const register = async (
             vscode.commands.executeCommand('workbench.action.openWalkthrough', 'sourcegraph.cody-ai#welcome', false)
         ),
         vscode.commands.registerCommand('cody.feedback', () =>
-            vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(CODY_FEEDBACK_URL))
+            vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(CODY_FEEDBACK_URL.href))
         ),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings', () => chatProvider.setWebviewView('settings')),
@@ -235,20 +237,8 @@ const register = async (
         // Register URI Handler for resolving token sending back from sourcegraph.com
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
-                const params = new URLSearchParams(uri.query)
-                let serverEndpoint = DOTCOM_URL.href
-                if (params.get('type') === 'app') {
-                    serverEndpoint = LOCAL_APP_URL.href
-                }
-                await workspaceConfig.update('cody.serverEndpoint', serverEndpoint, vscode.ConfigurationTarget.Global)
-                const token = params.get('code')
-                if (token && token.length > 8) {
-                    await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, token)
-                    const authStatus = await getAuthStatus({
-                        serverEndpoint,
-                        accessToken: token,
-                        customHeaders: config.customHeaders,
-                    })
+                const authStatus = await authProvider.makeAuthStatusFromCallback(uri, config.customHeaders)
+                if (authStatus) {
                     await chatProvider.sendLogin(authStatus)
                     if (isLoggedIn(authStatus)) {
                         void vscode.window.showInformationMessage('Token has been retrieved and updated successfully')
@@ -324,3 +314,31 @@ const register = async (
         },
     }
 }
+
+const quickPickForSupport = (): void => {
+    const quickPick = vscode.window.createQuickPick()
+    quickPick.title = 'Cody Feedback & Support'
+    quickPick.placeholder = 'Choose an option'
+    quickPick.items = suportQuickPickItems
+    quickPick.onDidChangeSelection(async selection => {
+        quickPick.dispose()
+        switch (selection[0].label) {
+            case 'Share Feedback':
+                await vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
+                break
+            case 'Documentation':
+                await vscode.env.openExternal(vscode.Uri.parse(CODY_DOC_URL.href))
+                break
+            case 'Discord Channel':
+                await vscode.env.openExternal(vscode.Uri.parse(DISCORD_URL.href))
+                break
+        }
+    })
+    quickPick.show()
+}
+
+const suportQuickPickItems = [
+    { label: '$(feedback) Share Feedback', detail: 'Idea, bug, or need help? Let us know.' },
+    { label: '$(book) Documentation', detail: 'Search the Cody documentation' },
+    { label: '$(organization) Discord Channel', detail: 'Join our Discord community’s #cody channel' },
+]

@@ -6,6 +6,7 @@ import type {
     ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared/src/configuration'
 
+import { LocalStorage } from './services/LocalStorageProvider'
 import { SecretStorage, getAccessToken } from './services/SecretStorageProvider'
 
 /**
@@ -66,8 +67,13 @@ export async function updateConfiguration(configKey: string, configValue: string
     await codyConfiguration.update(configKey, configValue, vscode.ConfigurationTarget.Global)
 }
 
-export const getFullConfig = async (secretStorage: SecretStorage): Promise<ConfigurationWithAccessToken> => {
+export const getFullConfig = async (
+    secretStorage: SecretStorage,
+    localStorage: LocalStorage
+): Promise<ConfigurationWithAccessToken> => {
     const config = getConfiguration(vscode.workspace.getConfiguration())
+    // Migrate endpoints to local storage
+    config.serverEndpoint = localStorage.getEndpoint() || config.serverEndpoint
     const accessToken = (await getAccessToken(secretStorage)) || null
     return { ...config, accessToken }
 }

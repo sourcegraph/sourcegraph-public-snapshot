@@ -97,7 +97,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const onLogin = useCallback(
         (token: string, endpoint: string) => {
-            if (!token || !endpoint) {
+            if (!endpoint) {
                 return
             }
             setAuthStatus(undefined)
@@ -126,6 +126,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     serverEndpoint={config?.serverEndpoint}
                     isAppInstalled={isAppInstalled}
                     vscodeAPI={vscodeAPI}
+                    appOS={config?.appOS}
                     callbackScheme={config?.appScheme}
                 />
             ) : (

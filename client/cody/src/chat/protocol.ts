@@ -22,6 +22,7 @@ export type WebviewMessage =
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
     | { command: 'insert'; text: string }
+    | { command: 'auth'; type: 'login' | 'logout' | 'support' }
 
 /**
  * A message sent from the extension host to the webview.
@@ -46,6 +47,14 @@ export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debu
 
 export const DOTCOM_URL = new URL('https://sourcegraph.com')
 export const LOCAL_APP_URL = new URL('http://localhost:3080')
+export const APP_DOWNLOAD_URL = new URL('https://about.sourcegraph.com/app')
+export const APP_CALLBACK_URL = new URL('sourcegraph://user/settings/tokens/new/callback?requestFrom=CODY')
+export const DOTCOM_CALLBACK_URL = new URL('https://sourcegraph.com/user/settings/tokens/new/callback')
+export const CODY_DOC_URL = new URL('https://docs.sourcegraph.com/cody')
+export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
+export const CODY_FEEDBACK_URL = new URL(
+    'https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode'
+)
 
 /**
  * The status of a users authentication, whether they're authenticated and have a
@@ -84,6 +93,8 @@ export interface LocalEnv {
     appName: string
     // The URL scheme the editor is registered to in the operating system
     appScheme: string
+    // The operating system kind
+    appOS: string
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {

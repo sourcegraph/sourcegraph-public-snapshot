@@ -17,7 +17,7 @@ export const Settings: React.FunctionComponent<React.PropsWithChildren<SettingsP
         <div className="non-transcript-container">
             <div className="settings">
                 {serverEndpoint && (
-                    <p>🟢 Connected to {isLocalApp(serverEndpoint) ? 'Sourcegraph App' : serverEndpoint}</p>
+                    <p>Signed in to {isLocalApp(serverEndpoint) ? 'Sourcegraph App' : serverEndpoint}</p>
                 )}
                 <VSCodeButton className="logout-button" type="button" onClick={onLogout}>
                     Logout

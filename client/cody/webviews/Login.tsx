@@ -1,12 +1,9 @@
 import { useCallback, useState } from 'react'
 
-import { TextFieldType } from '@vscode/webview-ui-toolkit/dist/text-field'
-import { VSCodeTextField, VSCodeButton } from '@vscode/webview-ui-toolkit/react'
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
+import classNames from 'classnames'
 
-import { renderCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
-import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
-
-import { AuthStatus } from '../src/chat/protocol'
+import { AuthStatus, DOTCOM_CALLBACK_URL, DOTCOM_URL } from '../src/chat/protocol'
 
 import { ConnectApp } from './ConnectApp'
 import { VSCodeWrapper } from './utils/VSCodeApi'
@@ -20,6 +17,7 @@ interface LoginProps {
     isAppInstalled: boolean
     vscodeAPI: VSCodeWrapper
     callbackScheme?: string
+    appOS?: string
 }
 
 export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
@@ -29,75 +27,67 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     isAppInstalled,
     vscodeAPI,
     callbackScheme,
+    appOS,
 }) => {
-    const [token, setToken] = useState<string>('')
     const [endpoint, setEndpoint] = useState(serverEndpoint)
-    const authUri = new URL('https://sourcegraph/user/settings/tokens/new/callback')
-    authUri.searchParams.append('requestFrom', callbackScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY')
 
-    const onSubmit = useCallback<React.FormEventHandler>(
-        event => {
-            event.preventDefault()
-            if (endpoint) {
-                onLogin(token, endpoint)
-            }
+    const isOSSupported = appOS === 'darwin' || appOS === 'linux'
+    const loginWithDotCom = (): void => {
+        const authUri = new URL(DOTCOM_CALLBACK_URL.href)
+        authUri.searchParams.append('requestFrom', callbackScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY')
+        setEndpoint(DOTCOM_URL.href)
+        onLogin('', DOTCOM_URL.href)
+        openLink(authUri.href)
+    }
+
+    const openLink = (url: string): void => {
+        vscodeAPI.postMessage({ command: 'links', value: url })
+    }
+
+    const onFooterButtonClick = useCallback(
+        (title: 'login' | 'support') => {
+            vscodeAPI.postMessage({ command: 'auth', type: title })
         },
-        [endpoint, onLogin, token]
+        [vscodeAPI]
     )
+
+    const messages = {
+        getStarted:
+            'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code. Download the desktop app to configure your local code graph.',
+        connectApp: 'Cody App detected. All that’s left is to do is connect VS Code with Cody App.',
+        // unsupportedNote: 'Sorry, ${platform} is not yet supported',
+        comingSoon:
+            'We’re working on bringing Cody App to your platform. In the meantime, you can try Cody with open source repositories by logging into sourcegraph.com.',
+    }
 
     return (
         <div className={styles.container}>
             {authStatus && <ErrorContainer authStatus={authStatus} />}
-            <section className={styles.section}>
-                <h2 className={styles.sectionHeader}>Enterprise User</h2>
-                <form className={styles.wrapper} onSubmit={onSubmit}>
-                    <VSCodeTextField
-                        id="endpoint"
-                        value={endpoint || ''}
-                        className={styles.input}
-                        placeholder="https://example.sourcegraph.com"
-                        onChange={e => setEndpoint((e.target as HTMLInputElement).value)}
-                        onInput={e => setEndpoint((e.target as HTMLInputElement).value)}
-                    >
-                        Sourcegraph Instance URL
-                    </VSCodeTextField>
-                    <VSCodeTextField
-                        id="accessToken"
-                        value={token}
-                        className={styles.input}
-                        type={TextFieldType.password}
-                        onChange={e => setToken((e.target as HTMLInputElement).value)}
-                        onInput={e => setToken((e.target as HTMLInputElement).value)}
-                    >
-                        Access Token (
-                        <a href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token">docs</a>)
-                    </VSCodeTextField>
-                    <VSCodeButton className={styles.button} type="submit">
-                        Sign In
-                    </VSCodeButton>
-                </form>
-            </section>
-            <div className={styles.divider} />
-            <section className={styles.section}>
-                <h2 className={styles.sectionHeader}>Everyone Else</h2>
-                <p className={styles.openMessage}>
-                    Cody for open source code is available to all users with a Sourcegraph.com account
-                </p>
-                <a href={authUri.href}>
-                    <VSCodeButton
-                        className={styles.button}
-                        type="button"
-                        onClick={() => setEndpoint('https://sourcegraph.com')}
-                    >
-                        Continue with Sourcegraph.com
-                    </VSCodeButton>
-                </a>
-                {isAppInstalled && <ConnectApp vscodeAPI={vscodeAPI} />}
-            </section>
-            <div
-                className={styles.terms}
-                dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(CODY_TERMS_MARKDOWN) }}
-            />
+            <div className={styles.sectionsContainer}>
+                <section className={classNames(styles.section, isOSSupported ? styles.codyGradient : null)}>
+                    <h2 className={styles.sectionHeader}>{isAppInstalled ? 'Connect to Cody App' : 'Get Started'}</h2>
+                    <p className={styles.openMessage}>{isAppInstalled ? messages.connectApp : messages.getStarted}</p>
+                    <ConnectApp isAppInstalled={isAppInstalled} vscodeAPI={vscodeAPI} isOSSupported={isOSSupported} />
+                    {!isOSSupported && <small>Sorry, {appOS} is not yet supported.</small>}
+                </section>
+                {!isOSSupported && (
+                    <section className={classNames(styles.section, styles.codyGradient)}>
+                        <h2 className={styles.sectionHeader}>Cody App for {appOS} coming soon</h2>
+                        <p className={styles.openMessage}>{messages.comingSoon}</p>
+                        <VSCodeButton className={styles.button} type="button" onClick={() => loginWithDotCom()}>
+                            Login with Sourcegraph.com
+                        </VSCodeButton>
+                    </section>
+                )}
+            </div>
+            <footer className={styles.footer}>
+                <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('login')}>
+                    Other Login Options...
+                </VSCodeButton>
+                <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('support')}>
+                    Feedback & Support
+                </VSCodeButton>
+            </footer>
         </div>
     )
 }
