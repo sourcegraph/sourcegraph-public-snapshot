@@ -159,7 +159,7 @@ func (c *Config) Load() {
 	c.KubernetesSingleJobPod = c.GetBool("KUBERNETES_SINGLE_JOB_POD", "false", "Determine if a single Job Pod should be used to process a workspace")
 	c.KubernetesJobVolumeType = c.Get("KUBERNETES_JOB_VOLUME_TYPE", "emptyDir", "Determines the type of volume to use with the single job. Options are 'emptyDir' and 'pvc'.")
 	c.KubernetesJobVolumeSize = c.Get("KUBERNETES_JOB_VOLUME_SIZE", "5Gi", "Determines the size of the job volume.")
-	c.kubernetesJobVolumes = c.GetOptional("KUBERNETES_JOB_VOLUMES", "Additional volumes to associate with the Jobs. e.g. [{\"name\": \"my-volume\", \"configMap\": {\"name\": \"cluser-volume\"}}]")
+	c.kubernetesJobVolumes = c.GetOptional("KUBERNETES_JOB_VOLUMES", "Additional volumes to associate with the Jobs. e.g. [{\"name\": \"my-volume\", \"configMap\": {\"name\": \"cluster-volume\"}}]")
 	c.kubernetesJobVolumeMounts = c.GetOptional("KUBERNETES_JOB_VOLUME_MOUNTS", "Volumes to mount to the Jobs. e.g. [{\"name\":\"my-volume\", \"mountPath\":\"/foo/bar\"}]")
 	c.KubernetesSingleJobStepImage = c.Get("KUBERNETES_SINGLE_JOB_STEP_IMAGE", "sourcegraph/batcheshelper:insiders", "The image to use for intermediate steps in the single job. Defaults to sourcegraph/batcheshelper:latest.")
 
