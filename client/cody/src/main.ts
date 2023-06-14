@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
+import { showAccountSwitcher } from './account-switcher'
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
@@ -197,9 +198,7 @@ const register = async (
             vscode.commands.executeCommand('workbench.action.openSettings', { query: 'Cody:' })
         ),
         vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
-        vscode.commands.registerCommand('cody.switch-account', () =>
-            vscode.commands.executeCommand('cody.status-bar.interacted')
-        ),
+        vscode.commands.registerCommand('cody.switch-account', () => showAccountSwitcher()),
         vscode.commands.registerCommand('cody.walkthrough.showLogin', () =>
             vscode.commands.executeCommand('workbench.view.extension.cody')
         ),
