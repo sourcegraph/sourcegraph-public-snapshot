@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -565,7 +564,7 @@ func NewKubernetesSingleJob(
 	setupArgs := []string{
 		fmt.Sprintf("mkdir -p %s; ", repoDir) +
 			fmt.Sprintf("git -C %s init; ", repoDir) +
-			fmt.Sprintf("git -C %s remote add origin %s; ", repoDir, path.Join(options.CloneOptions.BaseURL, repoOptions.RepositoryName)) +
+			fmt.Sprintf("git -C %s remote add origin %s/%s; ", repoDir, options.CloneOptions.BaseURL, repoOptions.RepositoryName) +
 			fmt.Sprintf("git -C %s config --local gc.auto 0; ", repoDir) +
 			fmt.Sprintf("git -C %s "+
 				"-c http.extraHeader=\"Authorization:Bearer $TOKEN\" "+
