@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
+// TODO: use implements vscode.XXX on mocked classes to ensure they match the real vscode API.
+// import * as vscode from 'vscode'
+
 /**
  * This module defines shared VSCode mocks for use in every Jest test.
  * Tests requiring no custom mocks will automatically apply the mocks defined in this file.
@@ -105,10 +109,42 @@ class WorkspaceEdit {
     }
 }
 
-const vsCodeMocks = {
+class EventEmitter {
+    public on: () => undefined
+
+    constructor() {
+        this.on = () => undefined
+    }
+}
+
+enum EndOfLine {
+    /**
+     * The line feed `\n` character.
+     */
+    LF = 1,
+    /**
+     * The carriage return line feed `\r\n` sequence.
+     */
+    CRLF = 2,
+}
+
+class CancellationTokenSource {
+    public token: unknown
+
+    constructor() {
+        this.token = {
+            onCancellationRequested() {},
+        }
+    }
+}
+
+export const vsCodeMocks = {
     Range,
     Position,
     InlineCompletionItem,
+    EventEmitter,
+    EndOfLine,
+    CancellationTokenSource,
     WorkspaceEdit,
     window: {
         showInformationMessage: () => undefined,
@@ -122,6 +158,7 @@ const vsCodeMocks = {
             console.error(message)
         },
         activeTextEditor: { document: { uri: { scheme: 'not-cody' } }, options: { tabSize: 4 } },
+        onDidChangeActiveTextEditor() {},
     },
     workspace: {
         getConfiguration() {
@@ -144,18 +181,3 @@ const vsCodeMocks = {
         }),
     },
 } as const
-
-/**
- * Mock name is required to keep Jest happy and avoid the error:
- * "The module factory of jest.mock() is not allowed to reference any out-of-scope variables"
- *
- * This function can be used to customize the default VSCode mocks in any test file.
- */
-export function mockVSCodeExports(): typeof vsCodeMocks {
-    return vsCodeMocks
-}
-
-/**
- * Apply the default VSCode mocks to the global scope.
- */
-jest.mock('vscode', () => mockVSCodeExports())

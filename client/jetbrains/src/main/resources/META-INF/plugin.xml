@@ -51,6 +51,9 @@
         <editorFactoryListener implementation="com.sourcegraph.cody.completions.CodyEditorFactoryListener"/>
 
         <projectService serviceImplementation="com.sourcegraph.cody.UpdatableChatHolderService"/>
+
+        <projectService serviceImplementation="com.sourcegraph.cody.ui.SelectOptionManager"/>
+
     </extensions>
 
     <actions>
