@@ -32,7 +32,7 @@ func TestTeamNode(t *testing.T) {
 	userID := fs.AddUser(types.User{Username: "bob", SiteAdmin: false})
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team", CreatorID: userID}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team", CreatorID: userID}); err != nil {
 		t.Fatalf("failed to create fake team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -78,7 +78,7 @@ func TestTeamNodeURL(t *testing.T) {
 	team := &types.Team{
 		Name: "team-刺身", // team-sashimi
 	}
-	if err := fs.TeamStore.CreateTeam(ctx, team); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, team); err != nil {
 		t.Fatalf("failed to create fake team: %s", err)
 	}
 	RunTest(t, &Test{
@@ -107,7 +107,7 @@ func TestTeamNodeViewerCanAdminister(t *testing.T) {
 			fs.Wire(db)
 			ctx := userCtx(fs.AddUser(types.User{SiteAdmin: isAdmin}))
 			ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-			if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+			if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 				t.Fatalf("failed to create fake team: %s", err)
 			}
 			team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -145,7 +145,7 @@ func TestTeamNodeViewerCanAdminister(t *testing.T) {
 			userID := fs.AddUser(types.User{SiteAdmin: false})
 			ctx := userCtx(userID)
 			ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-			if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+			if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 				t.Fatalf("failed to create fake team: %s", err)
 			}
 			team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -188,7 +188,7 @@ func TestTeamNodeViewerCanAdminister(t *testing.T) {
 		userID := fs.AddUser(types.User{SiteAdmin: false})
 		ctx := userCtx(userID)
 		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team", CreatorID: userID}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team", CreatorID: userID}); err != nil {
 			t.Fatalf("failed to create fake team: %s", err)
 		}
 		team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -370,7 +370,7 @@ func TestCreateTeamParentByID(t *testing.T) {
 		userID := fs.AddUser(types.User{SiteAdmin: false})
 		ctx := userCtx(userID)
 		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-		err := fs.TeamStore.CreateTeam(ctx, &types.Team{
+		_, err := fs.TeamStore.CreateTeam(ctx, &types.Team{
 			Name: "team-name-parent",
 		})
 		if err != nil {
@@ -411,7 +411,7 @@ func TestCreateTeamParentByID(t *testing.T) {
 		userID := fs.AddUser(types.User{SiteAdmin: false})
 		ctx := userCtx(userID)
 		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-		err := fs.TeamStore.CreateTeam(ctx, &types.Team{
+		_, err := fs.TeamStore.CreateTeam(ctx, &types.Team{
 			Name:     "team-name-parent",
 			ReadOnly: true,
 		})
@@ -451,7 +451,7 @@ func TestCreateTeamParentByName(t *testing.T) {
 	fs := fakedb.New()
 	db := database.NewMockDB()
 	fs.Wire(db)
-	if err := fs.TeamStore.CreateTeam(context.Background(), &types.Team{Name: "team-name-parent"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(context.Background(), &types.Team{Name: "team-name-parent"}); err != nil {
 		t.Fatal(err)
 	}
 	userID := fs.AddUser(types.User{SiteAdmin: false})
@@ -495,7 +495,7 @@ func TestUpdateTeamByID(t *testing.T) {
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{
 		Name:        "team-name-testing",
 		DisplayName: "Display Name",
 	}); err != nil {
@@ -545,7 +545,7 @@ func TestUpdateTeamByName(t *testing.T) {
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{
 		Name:        "team-name-testing",
 		DisplayName: "Display Name",
 	}); err != nil {
@@ -595,7 +595,7 @@ func TestUpdateTeamErrorBothNameAndID(t *testing.T) {
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{
 		Name:        "team-name-testing",
 		DisplayName: "Display Name",
 	}); err != nil {
@@ -638,14 +638,14 @@ func TestUpdateParentByID(t *testing.T) {
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
 		t.Fatalf("failed to create parent team: %s", err)
 	}
 	parentTeam, err := fs.TeamStore.GetTeamByName(ctx, "parent")
 	if err != nil {
 		t.Fatalf("failed to fetch fake parent team: %s", err)
 	}
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -686,14 +686,14 @@ func TestUpdateParentByName(t *testing.T) {
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
 		t.Fatalf("failed to create parent team: %s", err)
 	}
 	parentTeam, err := fs.TeamStore.GetTeamByName(ctx, "parent")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -734,14 +734,14 @@ func TestUpdateParentErrorBothNameAndID(t *testing.T) {
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
 		t.Fatalf("failed to create parent team: %s", err)
 	}
 	parentTeam, err := fs.TeamStore.GetTeamByName(ctx, "parent")
 	if err != nil {
 		t.Fatalf("failed to fetch fake parent team: %s", err)
 	}
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	RunTest(t, &Test{
@@ -839,7 +839,7 @@ func TestDeleteTeamByID(t *testing.T) {
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -878,7 +878,7 @@ func TestDeleteTeamByName(t *testing.T) {
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -917,7 +917,7 @@ func TestDeleteTeamErrorBothIDAndNameGiven(t *testing.T) {
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -1013,7 +1013,7 @@ func TestDeleteTeamUnauthorized(t *testing.T) {
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	t.Run("non-member", func(t *testing.T) {
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 			t.Fatalf("failed to create a team: %s", err)
 		}
 		RunTest(t, &Test{
@@ -1039,7 +1039,7 @@ func TestDeleteTeamUnauthorized(t *testing.T) {
 		})
 	})
 	t.Run("readonly", func(t *testing.T) {
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team-readonly", ReadOnly: true}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team-readonly", ReadOnly: true}); err != nil {
 			t.Fatalf("failed to create a team: %s", err)
 		}
 		team, err := fs.TeamStore.GetTeamByName(ctx, "team-readonly")
@@ -1080,7 +1080,7 @@ func TestTeamByName(t *testing.T) {
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	RunTest(t, &Test{
@@ -1135,7 +1135,7 @@ func TestTeamsPaginated(t *testing.T) {
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	for i := 1; i <= 25; i++ {
 		name := fmt.Sprintf("team-%d", i)
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
 			t.Fatalf("failed to create a team: %s", err)
 		}
 	}
@@ -1201,7 +1201,7 @@ func TestTeamsNameSearch(t *testing.T) {
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	for _, name := range []string{"hit-1", "Hit-2", "HIT-3", "miss-4", "mIss-5", "MISS-6"} {
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
 			t.Fatalf("failed to create a team: %s", err)
 		}
 	}
@@ -1328,7 +1328,7 @@ func TestTeamsCount(t *testing.T) {
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	for i := 1; i <= 25; i++ {
 		name := fmt.Sprintf("team-%d", i)
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
 			t.Fatalf("failed to create a team: %s", err)
 		}
 	}
@@ -1365,7 +1365,7 @@ func TestChildTeams(t *testing.T) {
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
 		t.Fatalf("failed to create parent team: %s", err)
 	}
 	parent, err := fs.TeamStore.GetTeamByName(ctx, "parent")
@@ -1374,13 +1374,13 @@ func TestChildTeams(t *testing.T) {
 	}
 	for i := 1; i <= 5; i++ {
 		name := fmt.Sprintf("child-%d", i)
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name, ParentTeamID: parent.ID}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name, ParentTeamID: parent.ID}); err != nil {
 			t.Fatalf("cannot create child team: %s", err)
 		}
 	}
 	for i := 6; i <= 10; i++ {
 		name := fmt.Sprintf("not-child-%d", i)
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
 			t.Fatalf("cannot create a team: %s", err)
 		}
 	}
@@ -1419,14 +1419,14 @@ func TestMembersPaginated(t *testing.T) {
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team-with-members"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team-with-members"}); err != nil {
 		t.Fatalf("failed to create team: %s", err)
 	}
 	teamWithMembers, err := fs.TeamStore.GetTeamByName(ctx, "team-with-members")
 	if err != nil {
 		t.Fatalf("failed to featch fake team: %s", err)
 	}
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "different-team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "different-team"}); err != nil {
 		t.Fatalf("failed to create team: %s", err)
 	}
 	differentTeam, err := fs.TeamStore.GetTeamByName(ctx, "different-team")
@@ -1516,7 +1516,7 @@ func TestMembersSearch(t *testing.T) {
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create parent team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -1577,7 +1577,7 @@ func TestMembersAdd(t *testing.T) {
 		userID := fs.AddUser(types.User{SiteAdmin: true})
 		ctx := userCtx(userID)
 		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 			t.Fatalf("failed to create team: %s", err)
 		}
 		team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -1632,7 +1632,7 @@ func TestMembersAdd(t *testing.T) {
 		userID := fs.AddUser(types.User{SiteAdmin: false})
 		ctx := userCtx(userID)
 		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 			t.Fatalf("failed to create team: %s", err)
 		}
 		RunTest(t, &Test{
@@ -1667,7 +1667,7 @@ func TestMembersRemove(t *testing.T) {
 	userID := fs.AddUser(types.User{SiteAdmin: true})
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -1727,7 +1727,7 @@ func TestMembersSet(t *testing.T) {
 	userID := fs.AddUser(types.User{SiteAdmin: true})
 	ctx := userCtx(userID)
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")

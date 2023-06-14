@@ -398,7 +398,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 		}
 		return resolvedRevision, nil
 	}
-	if err := fakeDB.TeamStore.CreateTeam(ctx, team); err != nil {
+	if _, err := fakeDB.TeamStore.CreateTeam(ctx, team); err != nil {
 		t.Fatalf("failed to create fake team: %s", err)
 	}
 	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
@@ -503,8 +503,20 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 									nodes {
 										owner {
 											... on Team {
+												id
 												name
 												displayName
+												url
+												avatarURL
+												readonly
+												parentTeam {
+													id
+												}
+												viewerCanAdminister
+												creator {
+													id
+												}
+												external
 											}
 										}
 									}
@@ -522,8 +534,16 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 							"nodes": [
 								{
 									"owner": {
+										"id": "VGVhbTow",
 										"name": "sourcegraph/own",
-										"displayName": "sourcegraph/own"
+										"displayName": "sourcegraph/own",
+										"url": "",
+										"avatarURL": null,
+										"readonly": true,
+										"parentTeam": null,
+										"viewerCanAdminister": false,
+										"creator": null,
+										"external": true
 									}
 								}
 							]
@@ -532,6 +552,47 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 				}
 			}
 		}`,
+		Variables: map[string]any{
+			"repo":        string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+			"revision":    parameterRevision,
+			"currentPath": "foo/bar.js",
+		},
+	})
+
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Schema:  schema,
+		Context: ctx,
+		Query: `
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+				node(id: $repo) {
+					... on Repository {
+						commit(rev: $revision) {
+							blob(path: $currentPath) {
+								ownership {
+									nodes {
+										owner {
+											... on Team {
+												displayName
+												members(first: 10) {
+													totalCount
+												}
+												childTeams(first: 10) {
+													totalCount
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}`,
+		ExpectedResult: `{"node":{"commit":{"blob":null}}}`,
+		ExpectedErrors: []*gqlerrors.QueryError{
+			{Message: "cannot get child teams of external team", Path: []any{"node", "commit", "blob", "ownership", "nodes", 0, "owner", "childTeams"}},
+			{Message: "cannot get members of external team", Path: []any{"node", "commit", "blob", "ownership", "nodes", 0, "owner", "members"}},
+		},
 		Variables: map[string]any{
 			"repo":        string(graphqlbackend.MarshalRepositoryID(repo.ID)),
 			"revision":    parameterRevision,
@@ -2220,9 +2281,7 @@ func TestDisplayOwnershipStats(t *testing.T) {
 
 func createTeam(t *testing.T, ctx context.Context, db database.DB, teamName string) *types.Team {
 	t.Helper()
-	err := db.Teams().CreateTeam(ctx, &types.Team{Name: teamName})
-	require.NoError(t, err)
-	team, err := db.Teams().GetTeamByName(ctx, teamName)
+	team, err := db.Teams().CreateTeam(ctx, &types.Team{Name: teamName})
 	require.NoError(t, err)
 	return team
 }

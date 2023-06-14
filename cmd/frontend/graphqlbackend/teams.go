@@ -166,6 +166,9 @@ func (r *TeamResolver) Name() string {
 }
 
 func (r *TeamResolver) URL() string {
+	if r.External() {
+		return ""
+	}
 	absolutePath := fmt.Sprintf("/teams/%s", r.team.Name)
 	u := &url.URL{Path: absolutePath}
 	return u.String()
@@ -191,7 +194,7 @@ func (r *TeamResolver) DisplayName() *string {
 }
 
 func (r *TeamResolver) Readonly() bool {
-	return r.team.ReadOnly
+	return r.team.ReadOnly || r.External()
 }
 
 func (r *TeamResolver) ParentTeam(ctx context.Context) (*TeamResolver, error) {
@@ -210,6 +213,9 @@ func (r *TeamResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 }
 
 func (r *TeamResolver) Members(_ context.Context, args *ListTeamMembersArgs) (*teamMemberConnection, error) {
+	if r.External() {
+		return nil, errors.New("cannot get members of external team")
+	}
 	c := &teamMemberConnection{
 		db:     r.db,
 		teamID: r.team.ID,
@@ -221,6 +227,9 @@ func (r *TeamResolver) Members(_ context.Context, args *ListTeamMembersArgs) (*t
 }
 
 func (r *TeamResolver) ChildTeams(_ context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
+	if r.External() {
+		return nil, errors.New("cannot get child teams of external team")
+	}
 	c := &teamConnectionResolver{
 		db:       r.db,
 		parentID: r.team.ID,
@@ -407,10 +416,11 @@ func (r *schemaResolver) CreateTeam(ctx context.Context, args *CreateTeamArgs) (
 		}
 	}
 	t.CreatorID = actor.FromContext(ctx).UID
-	if err := teams.CreateTeam(ctx, &t); err != nil {
+	team, err := teams.CreateTeam(ctx, &t)
+	if err != nil {
 		return nil, err
 	}
-	return NewTeamResolver(r.db, &t), nil
+	return NewTeamResolver(r.db, team), nil
 }
 
 type UpdateTeamArgs struct {
@@ -998,6 +1008,9 @@ func areTeamEndpointsAvailable(ctx context.Context) error {
 }
 
 func canModifyTeam(ctx context.Context, db database.DB, team *types.Team) (bool, error) {
+	if team.ID == 0 {
+		return false, nil
+	}
 	if isSiteAdmin(ctx, db) {
 		return true, nil
 	}

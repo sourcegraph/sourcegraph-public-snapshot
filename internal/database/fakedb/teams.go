@@ -39,10 +39,10 @@ func (fs Fakes) AddTeam(t *types.Team) int32 {
 	return u.ID
 }
 
-func (teams *Teams) CreateTeam(_ context.Context, t *types.Team) error {
+func (teams *Teams) CreateTeam(_ context.Context, t *types.Team) (*types.Team, error) {
 	u := *t
 	teams.addTeam(&u)
-	return nil
+	return &u, nil
 }
 
 func (teams *Teams) addTeam(t *types.Team) {
