@@ -8,7 +8,6 @@ import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { FetchTreeOwnershipResult, FetchTreeOwnershipVariables } from '../../../graphql-operations'
 import { OwnershipAssignPermission } from '../../../rbac/constants'
 
@@ -56,18 +55,17 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
     const canAssignOwners = (data?.currentUser?.permissions?.nodes || []).some(
         permission => permission.displayName === OwnershipAssignPermission
     )
-    const makeOwnerButton =
-        canAssignOwners
-            ? (userId: string | undefined) => (
-                  <MakeOwnerButton
-                      onSuccess={refetch}
-                      onError={setMakeOwnerError}
-                      repoId={repoID}
-                      path={filePath}
-                      userId={userId}
-                  />
-              )
-            : undefined
+    const makeOwnerButton = canAssignOwners
+        ? (userId: string | undefined) => (
+              <MakeOwnerButton
+                  onSuccess={refetch}
+                  onError={setMakeOwnerError}
+                  repoId={repoID}
+                  path={filePath}
+                  userId={userId}
+              />
+          )
+        : undefined
 
     if (error) {
         logger.log(error)
