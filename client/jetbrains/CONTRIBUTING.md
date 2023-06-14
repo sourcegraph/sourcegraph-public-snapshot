@@ -37,6 +37,8 @@ New issues and feature requests can be filed through our [issue tracker](https:/
 - If you are using an M1 MacBook and get a JCEF-related error using the "Find with Sourcegraph" command, try
   running `./gradlew -PplatformVersion=221.5080.210 :runIde` instead.
   See https://youtrack.jetbrains.com/issue/IDEA-291946 for more details.
+- To debug communication between the IntelliJ plugin and Cody agent, it's useful to keep an open terminal tab that's
+  running the command `fail -f build/sourcegraph/cody-agent-trace.json`.
 
 ## Publishing a new version
 
