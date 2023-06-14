@@ -121,6 +121,7 @@ function getLanguageConfig(languageId: string): LanguageConfig | null {
         case 'typescript':
         case 'typescriptreact':
         case 'javascript':
+        case 'javascriptreact':
         case 'go':
             return {
                 blockStart: '{',
