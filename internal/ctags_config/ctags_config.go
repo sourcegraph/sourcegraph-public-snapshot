@@ -73,15 +73,21 @@ var supportedLanguages = map[string]struct{}{
 var DefaultEngines = map[string]ParserType{
 	// Add the languages we want to turn on by default (you'll need to
 	// update the ctags_config module for supported languages as well)
-	"zig": ScipCtags,
+	"c_sharp":    ScipCtags,
+	"go":         ScipCtags,
+	"javascript": ScipCtags,
+	"python":     ScipCtags,
+	"ruby":       ScipCtags,
+	"rust":       ScipCtags,
+	"scala":      ScipCtags,
+	"typescript": ScipCtags,
+	"zig":        ScipCtags,
 
-	// TODO: Turn these on in the next PR, so there is no runtime differences for this PR.
-	// "c_sharp": ctags_config.ScipCtags,
-	// "python":  ctags_config.ScipCtags,
-
-	// TODO: Not ready to turn on java yet. Worried about not handling enough cases.
+	// TODO: Not ready to turn on the following yet. Worried about not handling enough cases.
 	// May wait until after next release
-	// "Java":   ScipCtags,
+	// "c"
+	// "c++"
+	// "java":   ScipCtags,
 }
 
 func CreateEngineMap(siteConfig schema.SiteConfiguration) map[string]ParserType {
