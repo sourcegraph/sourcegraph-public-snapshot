@@ -40,8 +40,6 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)),
             vscode.commands.registerCommand('cody.fixup.codelens.apply', id => this.apply(id)),
             vscode.commands.registerCommand('cody.fixup.codelens.diff', id => this.diff(id)),
-            vscode.commands.registerCommand('cody.fixup.codelens.discard', id => this.discard(id)),
-            vscode.commands.registerCommand('cody.fixup.codelens.edit', id => this.edit(id)),
             vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => this.cancel(id))
         )
         // Observe file renaming and deletion
@@ -110,7 +108,6 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         console.log(id + ' applying')
         const task = this.tasks.get(id)
         if (!task) {
-            this.discard(id)
             console.error('cannot find task')
             return
         }
@@ -209,32 +206,22 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         console.error('cannot apply fixups')
     }
 
-    // TODO: Add support for editing a fixup task
-    // Placeholder function for editing a fixup task
-    private edit(id: taskID): void {
-        void vscode.window.showInformationMessage('Editing a task is not implemented yet...' + id)
-        return
-    }
-
-    // TODO: Add support for cancelling a fixup task
-    // Placeholder function for cancelling a fixup task
     private cancel(id: taskID): void {
-        this.discard(id)
-        void vscode.window.showInformationMessage('Cancelling a task is not implemented yet...' + id)
-        return
-    }
-
-    private discard(id: taskID): void {
         const task = this.tasks.get(id)
         if (!task) {
             return
         }
+        this.setTaskState(task, task.state === CodyTaskState.error ? CodyTaskState.error : CodyTaskState.fixed)
+        this.discard(task)
+    }
+
+    private discard(task: FixupTask): void {
         this.needsDiffUpdate_.delete(task)
         this.codelenses.didDeleteTask(task)
-        this.contentStore.delete(id)
+        this.contentStore.delete(task.id)
         this.decorator.didCompleteTask(task)
-        this.tasks.delete(id)
-        this.taskViewProvider.removeTreeItemByID(id)
+        this.tasks.delete(task.id)
+        this.taskViewProvider.removeTreeItemByID(task.id)
     }
 
     public getTaskView(): TaskViewProvider {
@@ -444,7 +431,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
         }
         if (task.state === CodyTaskState.fixed) {
-            this.discard(task.id)
+            this.discard(task)
             return
         }
         // Save states of the task
