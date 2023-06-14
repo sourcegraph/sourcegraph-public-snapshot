@@ -416,10 +416,11 @@ func (r *schemaResolver) CreateTeam(ctx context.Context, args *CreateTeamArgs) (
 		}
 	}
 	t.CreatorID = actor.FromContext(ctx).UID
-	if err := teams.CreateTeam(ctx, &t); err != nil {
+	team, err := teams.CreateTeam(ctx, &t)
+	if err != nil {
 		return nil, err
 	}
-	return NewTeamResolver(r.db, &t), nil
+	return NewTeamResolver(r.db, team), nil
 }
 
 type UpdateTeamArgs struct {

@@ -398,7 +398,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 		}
 		return resolvedRevision, nil
 	}
-	if err := fakeDB.TeamStore.CreateTeam(ctx, team); err != nil {
+	if _, err := fakeDB.TeamStore.CreateTeam(ctx, team); err != nil {
 		t.Fatalf("failed to create fake team: %s", err)
 	}
 	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
@@ -2281,9 +2281,7 @@ func TestDisplayOwnershipStats(t *testing.T) {
 
 func createTeam(t *testing.T, ctx context.Context, db database.DB, teamName string) *types.Team {
 	t.Helper()
-	err := db.Teams().CreateTeam(ctx, &types.Team{Name: teamName})
-	require.NoError(t, err)
-	team, err := db.Teams().GetTeamByName(ctx, teamName)
+	team, err := db.Teams().CreateTeam(ctx, &types.Team{Name: teamName})
 	require.NoError(t, err)
 	return team
 }
