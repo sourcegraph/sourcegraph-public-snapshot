@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -122,7 +123,7 @@ func TestGetByToken(t *testing.T) {
 	}{
 		{
 			name:  "ok",
-			token: hex.EncodeToString(*license.LicenseCheckToken),
+			token: licensing.GenerateLicenseKeyBasedAccessToken("key"),
 			want:  &license.ID,
 		},
 		{
@@ -138,7 +139,7 @@ func TestGetByToken(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := store.GetByToken(ctx, tt.token)
+			got, err := store.GetByAccessToken(ctx, tt.token)
 			if tt.wantError != nil {
 				require.Equal(t, tt.wantError, err)
 			} else {

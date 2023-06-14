@@ -2,7 +2,6 @@ package productsubscription
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -29,7 +29,7 @@ type dbLicense struct {
 	LicenseExpiresAt         *time.Time
 	AccessTokenEnabled       bool
 	SiteID                   *string // UUID
-	LicenseCheckToken        *[]byte
+	LicenseCheckToken        []byte
 	RevokedAt                *time.Time
 	RevokeReason             *string
 	SalesforceSubscriptionID *string
@@ -77,7 +77,8 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		pq.Array(info.Tags),
 		dbutil.NewNullInt64(int64(info.UserCount)),
 		dbutil.NullTime{Time: expiresAt},
-		licensing.GenerateHashedLicenseKeyAccessToken(licenseKey),
+		// TODO(@bobheadxi): Migrate to single hash
+		hashutil.ToSHA256Bytes(hashutil.ToSHA256Bytes([]byte(licenseKey))),
 		info.SalesforceSubscriptionID,
 		info.SalesforceOpportunityID,
 	).Scan(&id); err != nil {
@@ -105,17 +106,19 @@ func (s dbLicenses) GetByID(ctx context.Context, id string) (*dbLicense, error) 
 }
 
 // GetByLicenseKey retrieves the product license (if any) given its check license token.
+// The accessToken is of the format created by GenerateLicenseKeyBasedAccessToken.
 //
 // 🚨 SECURITY: The caller must ensure that errTokenInvalid error is handled appropriately
-func (s dbLicenses) GetByToken(ctx context.Context, tokenHexEncoded string) (*dbLicense, error) {
+func (s dbLicenses) GetByAccessToken(ctx context.Context, accessToken string) (*dbLicense, error) {
 	if mocks.licenses.GetByToken != nil {
-		return mocks.licenses.GetByToken(tokenHexEncoded)
+		return mocks.licenses.GetByToken(accessToken)
 	}
-	token, err := hex.DecodeString(tokenHexEncoded)
+
+	contents, err := licensing.ExtractLicenseKeyBasedAccessTokenContents(accessToken)
 	if err != nil {
 		return nil, errTokenInvalid
 	}
-	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("license_check_token=%s", token)}, nil)
+	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("license_check_token=%s", hashutil.ToSHA256Bytes([]byte(contents)))}, nil)
 	if err != nil {
 		return nil, err
 	}
