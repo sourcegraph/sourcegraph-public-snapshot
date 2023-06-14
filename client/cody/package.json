@@ -366,7 +366,7 @@
       {
         "command": "cody.guardrails.debug",
         "title": "Cody: Guardrails Debug Attribution",
-        "enablement": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
+        "enablement": "config.cody.experimental.guardrails && editorHasSelection"
       },
       {
         "command": "cody.recipe.file-touch",
@@ -533,7 +533,7 @@
         },
         {
           "command": "cody.guardrails.debug",
-          "when": "false"
+          "when": "config.cody.experimental.guardrails && editorHasSelection"
         },
         {
           "command": "cody.inline.insert",
@@ -613,7 +613,7 @@
         },
         {
           "command": "cody.guardrails.debug",
-          "when": "cody.activated && config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
+          "when": "config.cody.experimental.guardrails && editorHasSelection"
         }
       ],
       "view/title": [
@@ -790,6 +790,22 @@
           "markdownDescription": "Regular expression to filter debug output. If empty, defaults to '.*', which prints all messages."
         }
       }
+    },
+    "icons": {
+      "cody-logo": {
+        "description": "Cody logo",
+        "default": {
+          "fontPath": "dist/assets/cody-icons.woff",
+          "fontCharacter": "\\0041"
+        }
+      },
+      "cody-logo-heavy": {
+        "description": "Cody logo heavy",
+        "default": {
+          "fontPath": "dist/assets/cody-icons.woff",
+          "fontCharacter": "\\0042"
+        }
+      }
     }
   },
   "dependencies": {
@@ -804,6 +820,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.33.0",
-    "playwright": "^1.33.0"
+    "cody-icons-font": "workspace:^",
+    "playwright": "^1.33.0",
+    "vite-plugin-static-copy": "^0.16.0"
   }
 }
