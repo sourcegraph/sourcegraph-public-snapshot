@@ -31,11 +31,7 @@ export function getLensesByState(id: string, state: CodyTaskState, range: vscode
             const edit = getEditLens(codeLensRange, id)
             return [title, apply, edit, diff]
         }
-        case CodyTaskState.marking: {
-            const title = getMakingFixupsLens(codeLensRange)
-            const follow = getFollowLens(codeLensRange, id)
-            return [title, follow]
-        }
+        // TODO: Add lenses for waiting tasks, so they can be cancelled
         default:
             return []
     }
@@ -126,24 +122,6 @@ function getApplyLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens 
     lens.command = {
         title: 'Apply',
         command: 'cody.fixup.codelens.apply',
-        arguments: [id],
-    }
-    return lens
-}
-
-function getMakingFixupsLens(codeLensRange: vscode.Range): vscode.CodeLens {
-    const lens = new vscode.CodeLens(codeLensRange)
-    lens.command = {
-        title: '$(edit) Cody is making fixups...',
-        command: 'cody.focus',
-    }
-    return lens
-}
-function getFollowLens(codeLensRange: vscode.Range, id: string): vscode.CodeLens {
-    const lens = new vscode.CodeLens(codeLensRange)
-    lens.command = {
-        title: 'Follow',
-        command: 'cody.fixup.open',
         arguments: [id],
     }
     return lens

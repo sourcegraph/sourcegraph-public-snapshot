@@ -96,6 +96,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
 
     // Replaces content of the file before mark the task as done
     // Then update the tree view with the new task state
+    // TODO: Move this to the state transition to "ready"
     public stop(taskID: taskID): void {
         const task = this.tasks.get(taskID)
         if (!task) {
@@ -262,7 +263,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         if (!task) {
             return Promise.resolve()
         }
-        if (task.state !== CodyTaskState.asking && task.state !== CodyTaskState.marking) {
+        if (task.state !== CodyTaskState.asking) {
             // TODO: Update this when we re-spin tasks with conflicts so that
             // we store the new text but can also display something reasonably
             // stable in the editor
@@ -272,7 +273,6 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         switch (state) {
             case 'streaming':
                 task.inProgressReplacement = text
-                await this.setTaskState(task, CodyTaskState.marking)
                 break
             case 'complete':
                 task.inProgressReplacement = undefined
