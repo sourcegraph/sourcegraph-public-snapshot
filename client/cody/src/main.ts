@@ -10,6 +10,7 @@ import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
+import { ManualCompletionService } from './completions/manual'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
@@ -130,7 +131,7 @@ const register = async (
         await chatProvider.executeRecipe(recipe, '', showTab)
     }
 
-    const webviewErrorMessager = async (error: string): Promise<void> => {
+    const webviewErrorMessenger = async (error: string): Promise<void> => {
         if (error.includes('rate limit')) {
             const currentTime: number = Date.now()
             const userPref = localStorage.get('rateLimitError')
@@ -288,17 +289,22 @@ const register = async (
         disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))
 
         const history = new History()
-        const completionsProvider = new CodyCompletionItemProvider(
-            webviewErrorMessager,
+        const manualCompletionService = new ManualCompletionService(
+            webviewErrorMessenger,
             completionsClient,
             docprovider,
+            history,
+            codebaseContext
+        )
+        const completionsProvider = new CodyCompletionItemProvider(
+            completionsClient,
             history,
             statusBar,
             codebaseContext
         )
         disposables.push(
             vscode.commands.registerCommand('cody.manual-completions', async () => {
-                await completionsProvider.fetchAndShowManualCompletions()
+                await manualCompletionService.fetchAndShowManualCompletions()
             }),
             vscode.commands.registerCommand('cody.completions.inline.accepted', ({ codyLogId }) => {
                 CompletionsLogger.accept(codyLogId)

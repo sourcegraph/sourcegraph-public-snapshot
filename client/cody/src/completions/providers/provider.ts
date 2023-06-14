@@ -1,7 +1,7 @@
 import { Completion } from '..'
 import { ReferenceSnippet } from '../context'
 
-export abstract class Prompt {
+export abstract class Provider {
     protected prefix: string
     protected suffix: string
     protected fileName: string
@@ -48,5 +48,5 @@ export abstract class Prompt {
         return 2500
     }
 
-    public abstract generateCompletions(abortSignal: AbortSignal): Completion
+    public abstract generateCompletions(abortSignal: AbortSignal): Promise<Completion[]>
 }

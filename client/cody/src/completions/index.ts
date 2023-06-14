@@ -4,32 +4,17 @@ import * as vscode from 'vscode'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
-import { logEvent } from '../event-logger'
 import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
 import { CompletionsCache } from './cache'
 import { getContext } from './context'
-import { CompletionsDocumentProvider } from './docprovider'
+import { getCurrentDocContext } from './document'
 import { History } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultilineMode } from './multiline'
-import { CompletionProvider, InlineCompletionProvider, ManualCompletionProvider } from './provider'
-
-const LOG_MANUAL = { type: 'manual' }
-
-/**
- * The size of the Jaccard distance match window in number of lines. It determines how many
- * lines of the 'matchText' are considered at once when searching for a segment
- * that is most similar to the 'targetText'. In essence, it sets the maximum number
- * of lines that the best match can be. A larger 'windowSize' means larger potential matches
- */
-const WINDOW_SIZE = 50
-
-function lastNLines(text: string, n: number): string {
-    const lines = text.split('\n')
-    return lines.slice(Math.max(0, lines.length - n)).join('\n')
-}
+import { CompletionProvider, InlineCompletionProvider } from './provider'
+import { SNIPPET_WINDOW_SIZE, lastNLines } from './utils'
 
 export const inlineCompletionsCache = new CompletionsCache()
 
@@ -38,15 +23,12 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private maxPrefixTokens: number
     private maxSuffixTokens: number
     private abortOpenInlineCompletions: () => void = () => {}
-    private abortOpenManualCompletion: () => void = () => {}
     private lastContentChanges: LRUCache<string, 'add' | 'del'> = new LRUCache<string, 'add' | 'del'>({
         max: 10,
     })
 
     constructor(
-        private webviewErrorMessenger: (error: string) => Promise<void>,
         private completionsClient: SourcegraphNodeCompletionsClient,
-        private documentProvider: CompletionsDocumentProvider,
         private history: History,
         private statusBar: CodyStatusBar,
         private codebaseContext: CodebaseContext,
@@ -166,8 +148,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const similarCode = await getContext({
             currentEditor,
             history: this.history,
-            targetText: lastNLines(prefix, WINDOW_SIZE),
-            windowSize: WINDOW_SIZE,
+            targetText: lastNLines(prefix, SNIPPET_WINDOW_SIZE),
+            windowSize: SNIPPET_WINDOW_SIZE,
             maxChars: contextChars,
             codebaseContext: this.codebaseContext,
         })
@@ -304,191 +286,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         CompletionLogger.noResponse(logId)
         return []
-    }
-
-    public async fetchAndShowManualCompletions(): Promise<void> {
-        this.abortOpenManualCompletion()
-        const abortController = new AbortController()
-        this.abortOpenManualCompletion = () => abortController.abort()
-
-        const currentEditor = vscode.window.activeTextEditor
-        if (!currentEditor || currentEditor?.document.uri.scheme === 'cody') {
-            return
-        }
-        const filename = currentEditor.document.fileName
-        const ext = filename.split('.').pop() || ''
-        const completionsUri = vscode.Uri.parse('cody:Completions.md')
-        this.documentProvider.clearCompletions(completionsUri)
-
-        const doc = await vscode.workspace.openTextDocument(completionsUri)
-        await vscode.window.showTextDocument(doc, {
-            preview: false,
-            viewColumn: 2,
-        })
-
-        // TODO(beyang): make getCurrentDocContext fetch complete line prefix
-        const docContext = getCurrentDocContext(
-            currentEditor.document,
-            currentEditor.selection.start,
-            this.tokToChar(this.maxPrefixTokens),
-            this.tokToChar(this.maxSuffixTokens)
-        )
-        if (docContext === null) {
-            console.error('not showing completions, no currently open doc')
-            return
-        }
-        const { prefix, suffix } = docContext
-
-        const remainingChars = this.tokToChar(this.promptTokens)
-
-        const completionNoSnippets = new ManualCompletionProvider(
-            this.completionsClient,
-            remainingChars,
-            this.responseTokens,
-            [],
-            prefix,
-            suffix,
-            '',
-            currentEditor.document.languageId
-        )
-        const emptyPromptLength = completionNoSnippets.emptyPromptLength()
-
-        const contextChars = this.tokToChar(this.promptTokens) - emptyPromptLength
-
-        const similarCode = await getContext({
-            currentEditor,
-            history: this.history,
-            targetText: lastNLines(prefix, WINDOW_SIZE),
-            windowSize: WINDOW_SIZE,
-            maxChars: contextChars,
-            codebaseContext: this.codebaseContext,
-        })
-
-        const completer = new ManualCompletionProvider(
-            this.completionsClient,
-            remainingChars,
-            this.responseTokens,
-            similarCode,
-            prefix,
-            suffix,
-            '',
-            currentEditor.document.languageId
-        )
-
-        try {
-            logEvent('CodyVSCodeExtension:completion:started', LOG_MANUAL, LOG_MANUAL)
-            const completions = await completer.generateCompletions(abortController.signal, 3)
-            this.documentProvider.addCompletions(completionsUri, ext, completions, {
-                suffix: '',
-                elapsedMillis: 0,
-                llmOptions: null,
-            })
-            logEvent('CodyVSCodeExtension:completion:suggested', LOG_MANUAL, LOG_MANUAL)
-        } catch (error) {
-            if (error.message === 'aborted') {
-                return
-            }
-
-            await this.webviewErrorMessenger(`FetchAndShowCompletions - ${error}`)
-        }
-    }
-}
-
-/**
- * Get the current document context based on the cursor position in the current document.
- *
- * This function is meant to provide a context around the current position in the document,
- * including a prefix, a suffix, the previous line, the previous non-empty line, and the next non-empty line.
- * The prefix and suffix are obtained by looking around the current position up to a max length
- * defined by `maxPrefixLength` and `maxSuffixLength` respectively. If the length of the entire
- * document content in either direction is smaller than these parameters, the entire content will be used.
- *
- * @param document - A `vscode.TextDocument` object, the document in which to find the context.
- * @param position - A `vscode.Position` object, the position in the document from which to find the context.
- * @param maxPrefixLength - A number representing the maximum length of the prefix to get from the document.
- * @param maxSuffixLength - A number representing the maximum length of the suffix to get from the document.
- *
- * @returns An object containing the current document context or null if there are no lines in the document.
- */
-function getCurrentDocContext(
-    document: vscode.TextDocument,
-    position: vscode.Position,
-    maxPrefixLength: number,
-    maxSuffixLength: number
-): {
-    prefix: string
-    suffix: string
-    prevLine: string
-    prevNonEmptyLine: string
-    nextNonEmptyLine: string
-} | null {
-    const offset = document.offsetAt(position)
-
-    const prefixLines = document.getText(new vscode.Range(new vscode.Position(0, 0), position)).split('\n')
-
-    if (prefixLines.length === 0) {
-        console.error('no lines')
-        return null
-    }
-
-    const suffixLines = document
-        .getText(new vscode.Range(position, document.positionAt(document.getText().length)))
-        .split('\n')
-
-    let nextNonEmptyLine = ''
-    if (suffixLines.length > 0) {
-        for (const line of suffixLines) {
-            if (line.trim().length > 0) {
-                nextNonEmptyLine = line
-                break
-            }
-        }
-    }
-
-    let prevNonEmptyLine = ''
-    for (let i = prefixLines.length - 1; i >= 0; i--) {
-        const line = prefixLines[i]
-        if (line.trim().length > 0) {
-            prevNonEmptyLine = line
-            break
-        }
-    }
-
-    const prevLine = prefixLines[prefixLines.length - 1]
-
-    let prefix: string
-    if (offset > maxPrefixLength) {
-        let total = 0
-        let startLine = prefixLines.length
-        for (let i = prefixLines.length - 1; i >= 0; i--) {
-            if (total + prefixLines[i].length > maxPrefixLength) {
-                break
-            }
-            startLine = i
-            total += prefixLines[i].length
-        }
-        prefix = prefixLines.slice(startLine).join('\n')
-    } else {
-        prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position))
-    }
-
-    let totalSuffix = 0
-    let endLine = 0
-    for (let i = 0; i < suffixLines.length; i++) {
-        if (totalSuffix + suffixLines[i].length > maxSuffixLength) {
-            break
-        }
-        endLine = i + 1
-        totalSuffix += suffixLines[i].length
-    }
-    const suffix = suffixLines.slice(0, endLine).join('\n')
-
-    return {
-        prefix,
-        suffix,
-        prevLine,
-        prevNonEmptyLine,
-        nextNonEmptyLine,
     }
 }
 

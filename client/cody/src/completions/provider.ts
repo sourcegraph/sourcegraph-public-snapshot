@@ -10,7 +10,7 @@ import {
 import { Completion } from '.'
 import { ReferenceSnippet } from './context'
 import { truncateMultilineCompletion } from './multiline'
-import { messagesToText } from './prompts'
+import { messagesToText } from './utils'
 
 const COMPLETIONS_PREAMBLE = `You are Cody, a code completion AI developed by Sourcegraph.
 You only respond in a single Markdown code blocks to all questions.
@@ -108,108 +108,6 @@ export abstract class CompletionProvider {
     }
 
     public abstract generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]>
-}
-
-export class ManualCompletionProvider extends CompletionProvider {
-    protected createPromptPrefix(): Message[] {
-        // TODO(beyang): escape 'Human:' and 'Assistant:'
-        const prefix = this.prefix.trim()
-
-        const prefixLines = prefix.split('\n')
-        if (prefixLines.length === 0) {
-            throw new Error('no prefix lines')
-        }
-
-        let prefixMessages: Message[]
-        if (prefixLines.length > 2) {
-            const endLine = Math.max(Math.floor(prefixLines.length / 2), prefixLines.length - 5)
-            prefixMessages = [
-                {
-                    speaker: 'human',
-                    text:
-                        'Complete the following file:\n' +
-                        '```' +
-                        `\n${prefixLines.slice(0, endLine).join('\n')}\n` +
-                        '```',
-                },
-                {
-                    speaker: 'assistant',
-                    text: `Here is the completion of the file:\n\`\`\`\n${prefixLines.slice(endLine).join('\n')}`,
-                },
-            ]
-        } else {
-            prefixMessages = [
-                {
-                    speaker: 'human',
-                    text: 'Write some code',
-                },
-                {
-                    speaker: 'assistant',
-                    text: `Here is some code:\n\`\`\`\n${prefix}`,
-                },
-            ]
-        }
-
-        return prefixMessages
-    }
-
-    private postProcess(completion: string): string {
-        let suggestion = completion
-        const endBlockIndex = completion.indexOf('```')
-        if (endBlockIndex !== -1) {
-            suggestion = completion.slice(0, endBlockIndex)
-        }
-
-        // Remove trailing whitespace before newlines
-        suggestion = suggestion
-            .split('\n')
-            .map(line => line.trimEnd())
-            .join('\n')
-
-        return sliceUntilFirstNLinesOfSuffixMatch(suggestion, this.suffix, 5)
-    }
-
-    public async generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]> {
-        const prefix = this.prefix.trim()
-
-        // Create prompt
-        const prompt = this.createPrompt()
-        const textPrompt = messagesToText(prompt)
-        if (textPrompt.length > this.promptChars) {
-            throw new Error('prompt length exceeded maximum alloted chars')
-        }
-
-        // Issue request
-        const responses = await batchCompletions(
-            this.completionsClient,
-            {
-                messages: prompt,
-                maxTokensToSample: this.responseTokens,
-            },
-            // We over-fetch the number of completions to account for potential
-            // empty results
-            (n || this.defaultN) + 2,
-            abortSignal
-        )
-        // Post-process
-        return responses
-            .flatMap(resp => {
-                const completion = this.postProcess(resp.completion)
-                if (completion.trim() === '') {
-                    return []
-                }
-
-                return [
-                    {
-                        prefix,
-                        messages: prompt,
-                        content: this.postProcess(resp.completion),
-                        stopReason: resp.stopReason,
-                    },
-                ]
-            })
-            .slice(0, 3)
-    }
 }
 
 export class InlineCompletionProvider extends CompletionProvider {
@@ -404,7 +302,7 @@ export class InlineCompletionProvider extends CompletionProvider {
     }
 }
 
-async function batchCompletions(
+export async function batchCompletions(
     client: SourcegraphNodeCompletionsClient,
     params: CompletionParameters,
     n: number,
