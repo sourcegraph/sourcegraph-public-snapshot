@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"path"
 	"runtime"
 	"strings"
 	"time"
@@ -209,7 +210,10 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 		Enabled:    config.IsKubernetes(),
 		ConfigPath: c.KubernetesConfigPath,
 		ContainerOptions: command.KubernetesContainerOptions{
-			ExecutorName: c.WorkerHostname,
+			CloneOptions: command.KubernetesCloneOptions{
+				ExecutorName: c.WorkerHostname,
+				BaseURL:      path.Join(c.FrontendURL, "/.executors/git"),
+			},
 			NodeName:     c.KubernetesNodeName,
 			NodeSelector: nodeSelector,
 			RequiredNodeAffinity: command.KubernetesNodeAffinity{
