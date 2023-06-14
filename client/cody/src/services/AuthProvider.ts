@@ -23,29 +23,6 @@ export class AuthProvider {
         this.getEndpointHistory()
     }
 
-    public async makeAuthStatusFromCallback(uri: vscode.Uri, customHeaders: {}): Promise<AuthStatus | null> {
-        const params = new URLSearchParams(uri.query)
-        if (params.get('type') === 'app') {
-            this.endpoint = LOCAL_APP_URL.href
-        }
-        const endpoint = this.endpoint
-        const token = params.get('code')
-        if (!token || !endpoint) {
-            return null
-        }
-        await this.storeAuthInfo(endpoint, token)
-        const authStatus = await getAuthStatus({
-            serverEndpoint: endpoint,
-            accessToken: token,
-            customHeaders,
-        })
-        if (isLoggedIn(authStatus)) {
-            void vscode.window.showInformationMessage('Token has been retrieved and updated successfully')
-        }
-        await vscode.commands.executeCommand('cody.chat.focus')
-        return this.authStatus
-    }
-
     public login(endpoint?: string): void {
         this.setEndpoint(endpoint)
         const quickPick = loginOptionsPicker(this.endpointHistory)
@@ -129,8 +106,37 @@ export class AuthProvider {
     private getEndpointHistory(): void {
         this.endpointHistory = this.localStorage.getEndpointHistory() || []
     }
+
+    public async tokenCallbackHandler(uri: vscode.Uri, customHeaders: {}): Promise<AuthStatus | null> {
+        const params = new URLSearchParams(uri.query)
+        const isApp = params.get('type') === 'app'
+        if (isApp) {
+            this.endpoint = LOCAL_APP_URL.href
+        }
+        const endpoint = this.endpoint
+        const token = params.get('code')
+        if (!token || !endpoint) {
+            return null
+        }
+        await this.storeAuthInfo(endpoint, token)
+        const authStatus = await getAuthStatus({
+            serverEndpoint: endpoint,
+            accessToken: token,
+            customHeaders,
+        })
+        if (isLoggedIn(authStatus)) {
+            const actionButtonLabel = 'Get Started'
+            const successMessage = isApp ? 'Connected to Cody App' : 'Logged in to sourcegraph.com'
+            const action = await vscode.window.showInformationMessage(successMessage, actionButtonLabel)
+            if (action === actionButtonLabel) {
+                await vscode.commands.executeCommand('cody.chat.focus')
+            }
+        }
+        return this.authStatus
+    }
 }
 
+// HELPER FUNCTIONS
 function loginOptionsPicker(historyItems: string[]): vscode.QuickPick<vscode.QuickPickItem> {
     const quickPick = vscode.window.createQuickPick()
     quickPick.title = 'Other Login Options'

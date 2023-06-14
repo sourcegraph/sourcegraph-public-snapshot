@@ -15,6 +15,7 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
+import { showSetupNotification } from './notifications/setup-notification'
 import { getRgPath } from './rg'
 import { AuthProvider } from './services/AuthProvider'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
@@ -26,6 +27,7 @@ import {
     SecretStorage,
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
+import { createStatusBar } from './services/StatusBar'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -149,6 +151,8 @@ const register = async (
         chatProvider.sendErrorToWebview(error)
     }
 
+    const statusBar = createStatusBar()
+
     disposables.push(
         vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
             // Insert copiedText to the current cursor position
@@ -234,18 +238,18 @@ const register = async (
         vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
         vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
         vscode.commands.registerCommand('cody.recipe.optimize-code', () => executeRecipe('optimize-code')),
-        // Register URI Handler for resolving token sending back from sourcegraph.com
+        // Register URI Handler (vscode://sourcegraph.cody-ai) for:
+        // - Deep linking into VS Code with Cody focused (e.g. from the App setup)
+        // - Resolving token sending back from sourcegraph.com and App
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
-                const authStatus = await authProvider.makeAuthStatusFromCallback(uri, config.customHeaders)
+                const authStatus = await authProvider.tokenCallbackHandler(uri, config.customHeaders)
                 if (authStatus) {
                     await chatProvider.sendLogin(authStatus)
-                    if (isLoggedIn(authStatus)) {
-                        void vscode.window.showInformationMessage('Token has been retrieved and updated successfully')
-                    }
                 }
             },
-        })
+        }),
+        statusBar
     )
 
     if (initialConfig.experimentalSuggest) {
@@ -258,7 +262,9 @@ const register = async (
             webviewErrorMessager,
             completionsClient,
             docprovider,
-            history
+            history,
+            statusBar,
+            codebaseContext
         )
         disposables.push(
             vscode.commands.registerCommand('cody.manual-completions', async () => {
@@ -305,6 +311,8 @@ const register = async (
         const authStatus = await getAuthStatus(initialConfig)
         await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
     }
+
+    await showSetupNotification(initialConfig, localStorage)
 
     return {
         disposable: vscode.Disposable.from(...disposables),

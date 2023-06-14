@@ -38,8 +38,8 @@ func TestRecall(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	getQueryEmbedding := func(ctx context.Context, query string) ([]float32, error) {
-		return queryEmbeddings[query], nil
+	getQueryEmbedding := func(ctx context.Context, query string) ([]float32, string, error) {
+		return queryEmbeddings[query], "openai/text-embedding-ada-002", nil
 	}
 
 	mockStore := uploadstoremocks.NewMockStore()
