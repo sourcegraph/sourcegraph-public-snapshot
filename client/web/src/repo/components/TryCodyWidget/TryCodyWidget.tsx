@@ -29,6 +29,7 @@ const AUTO_DISMISS_ON_EVENTS = new Set([
 interface WidgetContentProps extends TelemetryProps {
     type: 'blob' | 'repo'
     theme?: 'light' | 'dark'
+    isSourcegraphDotCom: boolean
 }
 
 interface NoAuhWidgetContentProps extends WidgetContentProps {
@@ -88,8 +89,8 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
                 <div className={styles.authButtonsWrap}>
                     <ExternalsAuth
                         context={context}
-                        githubLabel="Github"
-                        gitlabLabel="Gitlab"
+                        githubLabel="GitHub"
+                        gitlabLabel="GitLab"
                         withCenteredText={true}
                         onClick={logEvent}
                         ctaClassName={styles.authButton}
@@ -104,7 +105,7 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
                         Email
                     </Link>
                 </div>
-                <Text className="mb-0 mt-2">
+                <Text className="mb-2 mt-2">
                     By registering, you agree to our{' '}
                     <Link
                         to="https://about.sourcegraph.com/terms"
@@ -129,9 +130,9 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
     )
 }
 
-const AuthUserWidgetContent: React.FC<WidgetContentProps> = ({ type, theme }) => {
-    const { title, useCases, image } =
-        type === 'blob'
+const AuthUserWidgetContent: React.FC<WidgetContentProps> = ({ type, theme, isSourcegraphDotCom }) => {
+    const { title, useCases, image } = isSourcegraphDotCom
+        ? type === 'blob'
             ? {
                   title: 'Try Cody on public code',
                   useCases: ['Select code in the file below', 'Select an action with Cody widget'],
@@ -145,14 +146,28 @@ const AuthUserWidgetContent: React.FC<WidgetContentProps> = ({ type, theme }) =>
                   ],
                   image: `https://storage.googleapis.com/sourcegraph-assets/app-images/cody-chat-banner-image-${theme}.png`,
               }
+        : type === 'blob'
+        ? {
+              title: 'Try Cody AI assist on this file',
+              useCases: ['Select code in the file below', 'Select an action with Cody widget'],
+              image: `https://storage.googleapis.com/sourcegraph-assets/app-images/cody-action-bar-${theme}.png`,
+          }
+        : {
+              title: 'Try Cody AI assist on this repo',
+              useCases: [
+                  'Click the Ask Cody button above and to the right of this banner',
+                  'Ask Cody a question like “Explain the structure of this repository”',
+              ],
+              image: `https://storage.googleapis.com/sourcegraph-assets/app-images/cody-chat-banner-image-${theme}.png`,
+          }
 
     return (
         <>
             <div className="d-flex pb-3">
                 <GlowingCodySVG />
-                <div className="d-flex flex-column flex-grow-1 justify-content-center">
+                <div className="d-flex flex-column flex-grow-1 justify-content-center flex-shrink-0">
                     <H4 className={styles.cardTitle}>{title}</H4>
-                    <ol className={classNames('m-0 pl-4 fs-6', styles.cardList)}>
+                    <ol className={classNames('m-0 pl-4', styles.cardList)}>
                         {useCases.map(useCase => (
                             <Text key={useCase} as="li">
                                 {useCase}
@@ -173,6 +188,7 @@ interface TryCodyWidgetProps extends TelemetryProps {
     type: 'blob' | 'repo'
     authenticatedUser: AuthenticatedUser | null
     context: Pick<SourcegraphContext, 'authProviders'>
+    isSourcegraphDotCom: boolean
 }
 
 export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
@@ -181,6 +197,7 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
     authenticatedUser,
     context,
     type,
+    isSourcegraphDotCom,
 }) => {
     const isLightTheme = useIsLightTheme()
     const { isDismissed, onDismiss } = useTryCodyWidget(telemetryService)
@@ -198,7 +215,11 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
 
     return (
         <MarketingBlock
-            wrapperClassName={classNames(className, type === 'blob' ? styles.blobCardWrapper : styles.repoCardWrapper)}
+            wrapperClassName={classNames(
+                className,
+                type === 'blob' ? styles.blobCardWrapper : styles.repoCardWrapper,
+                'mb-2'
+            )}
             contentClassName={classNames(
                 'd-flex position-relative pb-0 overflow-auto justify-content-between',
                 styles.card,
@@ -211,9 +232,15 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
                     type={type}
                     theme={isLightTheme ? 'light' : 'dark'}
                     telemetryService={telemetryService}
+                    isSourcegraphDotCom={isSourcegraphDotCom}
                 />
             ) : (
-                <NoAuthWidgetContent telemetryService={telemetryService} type={type} context={context} />
+                <NoAuthWidgetContent
+                    telemetryService={telemetryService}
+                    type={type}
+                    context={context}
+                    isSourcegraphDotCom={isSourcegraphDotCom}
+                />
             )}
             <Button className={classNames(styles.closeButton, 'position-absolute mt-2')} onClick={onDismiss}>
                 <Icon svgPath={mdiClose} aria-label="Close try Cody widget" />

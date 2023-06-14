@@ -1,4 +1,4 @@
-import { mdiChevronRight, mdiCodeBracesBox, mdiGit, mdiMicrosoftVisualStudioCode } from '@mdi/js'
+import { mdiChevronRight, mdiCodeBracesBox, mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
@@ -18,7 +18,7 @@ import styles from './CodyMarketingPage.module.scss'
 interface CodyPlatformCardProps {
     icon: string | JSX.Element
     title: string
-    description: string
+    description: string | JSX.Element
     illustration: string
 }
 
@@ -49,8 +49,12 @@ const codyPlatformCardItems = (isSourcegraphDotCom: boolean) => [
     },
     {
         title: 'More powerful in your IDE',
-        description:
-            'The extensions combine an LLM with the context of your code to help you generate and fix code more accurately.',
+        description: (
+            <>
+                The extensions combine an LLM with the context of your code to help you generate and fix code more
+                accurately. <Link to="/help/cody#get-cody">View supported IDEs</Link>.
+            </>
+        ),
         icon: <IDEIcon />,
         illustration: {
             dark: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-vs-code-illustration-dark.png',
@@ -74,7 +78,7 @@ const codyPlatformCardItems = (isSourcegraphDotCom: boolean) => [
               {
                   title: 'Recipes accelerate your flow',
                   description:
-                      'Cody explains, generates, convert code, and more within the context of public repositories.',
+                      'Cody explains, generates, convert code, and more within the context of your repositories.',
                   icon: mdiGit,
                   illustration: {
                       dark: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-com-illustration-dark.png',

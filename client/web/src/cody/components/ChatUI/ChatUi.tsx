@@ -17,6 +17,7 @@ import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourceg
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
+import { isCodyEnabled, isEmailVerificationNeededForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
 import { CodyChatStore } from '../../useCodyChat'
 import { ScopeSelector } from '../ScopeSelector'
@@ -40,7 +41,6 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore }): JSX.Element =
         transcript,
         transcriptHistory,
         loaded,
-        isCodyEnabled,
         scope,
         setScope,
         toggleIncludeInferredRepository,
@@ -99,13 +99,14 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore }): JSX.Element =
                 transcriptActionClassName={styles.transcriptAction}
                 FeedbackButtonsContainer={FeedbackButtons}
                 feedbackButtonsOnSubmit={onFeedbackSubmit}
-                needsEmailVerification={isCodyEnabled.needsEmailVerification}
+                needsEmailVerification={isEmailVerificationNeededForCody()}
                 needsEmailVerificationNotice={NeedsEmailVerificationNotice}
                 codyNotEnabledNotice={CodyNotEnabledNotice}
                 contextStatusComponent={ScopeSelector}
                 contextStatusComponentProps={scopeSelectorProps}
                 abortMessageInProgressComponent={AbortMessageInProgress}
                 onAbortMessageInProgress={abortMessageInProgress}
+                isCodyEnabled={isCodyEnabled()}
             />
         </>
     )
@@ -241,7 +242,7 @@ interface AutoResizableTextAreaProps extends ChatUITextAreaProps {}
 
 export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = React.memo(
     function AutoResizableTextAreaContent({ value, onInput, onKeyDown, className, disabled = false }) {
-        const { inputNeedsFocus, setFocusProvided, isCodyEnabled } = useCodySidebar() || {
+        const { inputNeedsFocus, setFocusProvided } = useCodySidebar() || {
             inputNeedsFocus: false,
             setFocusProvided: () => null,
         }
@@ -281,7 +282,7 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = React
         }
 
         return (
-            <Tooltip content={isCodyEnabled.needsEmailVerification ? 'Verify your email to use Cody.' : ''}>
+            <Tooltip content={isEmailVerificationNeededForCody() ? 'Verify your email to use Cody.' : ''}>
                 <TextArea
                     ref={textAreaRef}
                     className={className}

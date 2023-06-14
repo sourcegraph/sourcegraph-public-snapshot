@@ -1,12 +1,13 @@
 import React from 'react'
 
-import { mdiArrowRight, mdiClose, mdiMicrosoftVisualStudioCode } from '@mdi/js'
+import { mdiArrowRight, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, ButtonLink, H2, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
+import { isCodyEnabled } from '../../../cody/isCodyEnabled'
 import { MarketingBlock } from '../../../components/MarketingBlock'
 import { EventName } from '../../../util/constants'
 
@@ -88,6 +89,36 @@ export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
         return null
     }
 
+    if (!isCodyEnabled()) {
+        return (
+            <div className="d-flex justify-content-center mt-5">
+                <MarketingBlock
+                    wrapperClassName={styles.notEnabledBlock}
+                    contentClassName={classNames('d-flex p-3 align-items-center', styles.card)}
+                >
+                    <div className={classNames(styles.codyIllustration)}>
+                        <MeetCodySVG />
+                    </div>
+                    <div>
+                        <Text>Move faster with Cody, Sourcegraphs' AI coding assistant</Text>
+                        <div className="mb-2">
+                            <ButtonLink
+                                to="https://about.sourcegraph.com/cody"
+                                variant="primary"
+                                className="d-inline-flex align-items-center"
+                            >
+                                Learn more <Icon svgPath={mdiArrowRight} aria-hidden={true} size="md" />
+                            </ButtonLink>
+                        </div>
+                    </div>
+                    <Button className={classNames(styles.closeButton, 'position-absolute m-0')} onClick={onDismiss}>
+                        <Icon svgPath={mdiClose} aria-label="Close try Cody widget" />
+                    </Button>
+                </MarketingBlock>
+            </div>
+        )
+    }
+
     return (
         <div className={classNames('d-flex position-relative pt-4', className, styles.container)}>
             <div className={classNames(styles.codyIllustration)}>
@@ -99,12 +130,7 @@ export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
                 contentClassName={classNames('flex-grow-1 d-flex flex-column justify-content-between p-4', styles.card)}
             >
                 <H3 className="d-flex align-items-center">
-                    <Icon
-                        svgPath={mdiMicrosoftVisualStudioCode}
-                        aria-hidden={true}
-                        className={classNames(styles.vscodeIcon, 'mr-1')}
-                        size="md"
-                    />
+                    <CodyInIDEIcon aria-hidden={true} />
                     Install Cody for your IDE
                 </H3>
                 <Text>
@@ -122,7 +148,7 @@ export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
                     </ButtonLink>
                 </div>
             </MarketingBlock>
-            {isSourcegraphDotCom && (
+            {isSourcegraphDotCom ? (
                 <>
                     <div className="d-flex flex-column justify-content-center p-4">
                         <H3>Cody for Sourcegraph.com</H3>
@@ -153,7 +179,62 @@ export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
                         <Icon svgPath={mdiClose} aria-label="Close try Cody widget" />
                     </Button>
                 </>
+            ) : (
+                <>
+                    <div className="d-flex flex-column justify-content-center p-4">
+                        <H3>Try Cody AI in the web application</H3>
+                        <Text>
+                            Cody for Sourcegraph explains, generates, and translates code, right in the web interface.
+                        </Text>
+                        <Text
+                            as={Link}
+                            to="/cody"
+                            className={classNames('d-flex align-items-center mb-2', styles.tryCodyLink)}
+                            onClick={onTryWebClick}
+                        >
+                            Cody Chat
+                            <Icon svgPath={mdiArrowRight} aria-hidden={true} size="sm" className="ml-1" />
+                        </Text>
+                    </div>
+                    <Button className={classNames(styles.closeButton, 'position-absolute m-0')} onClick={onDismiss}>
+                        <Icon svgPath={mdiClose} aria-label="Close try Cody widget" />
+                    </Button>
+                </>
             )}
         </div>
     )
 }
+
+const CodyInIDEIcon: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+    <svg
+        width="34"
+        height="23"
+        viewBox="10 0 48 33"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={className}
+    >
+        <path
+            d="M17.5623 26.079C17.5623 26.4422 17.7005 26.7906 17.9467 27.0474C18.1928 27.3042 18.5267 27.4485 18.8748 27.4485H21.4998V30.1877H18.2185C17.4966 30.1877 16.2498 29.5714 16.2498 28.8181C16.2498 29.5714 15.0029 30.1877 14.281 30.1877H10.9998V27.4485H13.6248C13.9729 27.4485 14.3067 27.3042 14.5528 27.0474C14.799 26.7906 14.9373 26.4422 14.9373 26.079V6.90505C14.9373 6.54182 14.799 6.19347 14.5528 5.93662C14.3067 5.67978 13.9729 5.53549 13.6248 5.53549H10.9998V2.79636H14.281C15.0029 2.79636 16.2498 3.41266 16.2498 4.16592C16.2498 3.41266 17.4966 2.79636 18.2185 2.79636H21.4998V5.53549H18.8748C18.5267 5.53549 18.1928 5.67978 17.9467 5.93662C17.7005 6.19347 17.5623 6.54182 17.5623 6.90505V26.079Z"
+            fill="#A305E1"
+        />
+        <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M39.5458 7.992C40.6755 7.992 41.5912 8.86333 41.5912 9.93817V13.398C41.5912 14.4729 40.6755 15.3442 39.5458 15.3442C38.4161 15.3442 37.5003 14.4729 37.5003 13.398V9.93817C37.5003 8.86333 38.4161 7.992 39.5458 7.992Z"
+            fill="#A305E1"
+        />
+        <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M26.5908 12.533C26.5908 11.4581 27.5066 10.5868 28.6362 10.5868H32.2726C33.4023 10.5868 34.3181 11.4581 34.3181 12.533C34.3181 13.6078 33.4023 14.4791 32.2726 14.4791H28.6362C27.5066 14.4791 26.5908 13.6078 26.5908 12.533Z"
+            fill="#A305E1"
+        />
+        <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M44.4341 18.1987C45.1621 18.8567 45.1916 19.9517 44.5 20.6444L43.8564 21.2889C38.8205 26.3326 30.3304 26.207 25.4617 21.0167C24.7931 20.3039 24.8584 19.2103 25.6075 18.5741C26.3567 17.938 27.5061 18.0001 28.1747 18.7129C31.6275 22.3938 37.6486 22.4829 41.2201 18.906L41.8636 18.2614C42.5552 17.5687 43.7061 17.5407 44.4341 18.1987Z"
+            fill="#A305E1"
+        />
+    </svg>
+)

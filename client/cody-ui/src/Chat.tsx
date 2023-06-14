@@ -44,6 +44,7 @@ interface ChatProps extends ChatClassNames {
     codyNotEnabledNotice?: React.FunctionComponent
     abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
     onAbortMessageInProgress?: () => void
+    isCodyEnabled: boolean
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -134,6 +135,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     contextStatusComponentProps = {},
     abortMessageInProgressComponent,
     onAbortMessageInProgress,
+    isCodyEnabled,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -232,8 +234,6 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [afterTips, transcript]
     )
 
-    const isCodyEnabled = false
-
     return (
         <div className={classNames(className, styles.innerContainer)}>
             {!isCodyEnabled && CodyNotEnabledNotice ? (
@@ -289,7 +289,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     <TextArea
                         className={classNames(styles.chatInput, chatInputClassName)}
                         rows={inputRows}
-                        value={formInput}
+                        value={isCodyEnabled ? formInput : 'Cody is disabled on this instance'}
                         autoFocus={true}
                         required={true}
                         disabled={needsEmailVerification || !isCodyEnabled}

@@ -11,7 +11,7 @@ import {
 import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import { useIsCodyEnabled, IsCodyEnabled, notEnabled } from './useIsCodyEnabled'
+import { isEmailVerificationNeededForCody } from './isCodyEnabled'
 
 export type { CodyClientScope } from '@sourcegraph/cody-shared/src/chat/useClient'
 
@@ -35,7 +35,6 @@ export interface CodyChatStore
     > {
     readonly transcriptHistory: TranscriptJSON[]
     readonly loaded: boolean
-    readonly isCodyEnabled: IsCodyEnabled
     clearHistory: () => void
     deleteHistoryItem: (id: string) => void
     loadTranscriptFromHistory: (id: string) => Promise<void>
@@ -60,7 +59,6 @@ export const codyChatStoreMock: CodyChatStore = {
     setEditorScope: () => {},
     transcriptHistory: [],
     loaded: true,
-    isCodyEnabled: notEnabled,
     clearHistory: () => {},
     deleteHistoryItem: () => {},
     loadTranscriptFromHistory: () => Promise.resolve(),
@@ -91,7 +89,6 @@ export const useCodyChat = ({
     onTranscriptHistoryLoad,
     autoLoadTranscriptFromHistory = true,
 }: CodyChatProps): CodyChatStore => {
-    const isCodyEnabled = useIsCodyEnabled()
     const [loadedTranscriptFromHistory, setLoadedTranscriptFromHistory] = useState(false)
     const [transcriptHistoryInternal, setTranscriptHistoryState] = useLocalStorage<TranscriptJSON[]>(
         CODY_TRANSCRIPT_HISTORY_KEY,
@@ -123,7 +120,7 @@ export const useCodyChat = ({
             accessToken: null,
             customHeaders: window.context.xhrHeaders,
             debugEnable: false,
-            needsEmailVerification: isCodyEnabled.needsEmailVerification,
+            needsEmailVerification: isEmailVerificationNeededForCody(),
         },
         scope: initialScope,
         onEvent,
@@ -268,10 +265,7 @@ export const useCodyChat = ({
         [executeRecipeInternal, updateTranscriptInHistory]
     )
 
-    const loaded = useMemo(
-        () => loadedTranscriptFromHistory && isCodyEnabled.loaded,
-        [loadedTranscriptFromHistory, isCodyEnabled.loaded]
-    )
+    const loaded = useMemo(() => loadedTranscriptFromHistory, [loadedTranscriptFromHistory])
 
     // Autoload the latest transcript from history once it is loaded. Initially the transcript is null.
     useEffect(() => {
@@ -349,7 +343,6 @@ export const useCodyChat = ({
 
     return {
         loaded,
-        isCodyEnabled,
         transcript,
         transcriptHistory,
         chatMessages,

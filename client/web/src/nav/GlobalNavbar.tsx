@@ -25,7 +25,6 @@ import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
 import { CodyLogo } from '../cody/components/CodyLogo'
-import { useIsCodyEnabled } from '../cody/useIsCodyEnabled'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
@@ -151,7 +150,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showSearchNotebook = notebooksEnabled && !isSourcegraphApp
     const isLicensed = !!window.context?.licenseInfo || isSourcegraphApp // Assume licensed when running as a native app
     const showBatchChanges = ((props.batchChangesEnabled && isLicensed) || isSourcegraphDotCom) && !isSourcegraphApp // Batch changes are enabled on sourcegraph.com so users can see the Getting Started page
-    const codyEnabled = useIsCodyEnabled()
+    const [codySearchEnabled] = useFeatureFlag('cody-web-search')
 
     const [isSentinelEnabled] = useFeatureFlag('sentinel')
     // TODO: Include isSourcegraphDotCom in subsequent PR
@@ -178,7 +177,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
             ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
-            codyEnabled.search && {
+            codySearchEnabled && {
                 path: EnterprisePageRoutes.CodySearch,
                 content: (
                     <>
@@ -188,7 +187,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [ownEnabled, showSearchContext, codyEnabled.search])
+    }, [ownEnabled, showSearchContext, codySearchEnabled])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
