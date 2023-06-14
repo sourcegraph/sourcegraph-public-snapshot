@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
+	"github.com/sourcegraph/sourcegraph/internal/pointers"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -1507,7 +1508,7 @@ func TestGitlabSource_GetFork(t *testing.T) {
 					ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/custom-bar"}},
 				namespace:     &org,
 				wantNamespace: org,
-				name:          strPtr("custom-bar"),
+				name:          pointers.Ptr("custom-bar"),
 				wantName:      "custom-bar",
 				client: &mockGitlabClientFork{
 					fork: &gitlab.Project{

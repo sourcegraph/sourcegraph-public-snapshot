@@ -86,6 +86,7 @@ go_test(
         "//internal/gitserver/protocol",
         "//internal/httpcli",
         "//internal/httptestutil",
+        "//internal/pointers",
         "//internal/rcache",
         "//internal/testutil",
         "//internal/types",

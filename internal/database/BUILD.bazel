@@ -249,6 +249,7 @@ go_test(
         "//internal/extsvc/gitlab",
         "//internal/featureflag",
         "//internal/oauthutil",
+        "//internal/pointers",
         "//internal/rbac/types",
         "//internal/temporarysettings",
         "//internal/timeutil",

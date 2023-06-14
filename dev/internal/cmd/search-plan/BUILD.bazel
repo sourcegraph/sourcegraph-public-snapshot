@@ -9,6 +9,7 @@ go_library(
     deps = [
         "//cmd/frontend/envvar",
         "//internal/conf",
+        "//internal/pointers",
         "//internal/search",
         "//internal/search/client",
         "//internal/search/job",

@@ -61,6 +61,7 @@ go_test(
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
         "//internal/extsvc/gitlab/webhooks",
+        "//internal/pointers",
         "//internal/types",
         "//lib/errors",
         "//schema",

@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/pointers"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -1151,10 +1152,6 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		},
 	})
 
-	statePtr := func(state btypes.ChangesetState) *btypes.ChangesetState {
-		return &state
-	}
-
 	for name, tc := range map[string]struct {
 		opts GetRewirerMappingsOpts
 		want []*btypes.Changeset
@@ -1162,28 +1159,28 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		"state and text": {
 			opts: GetRewirerMappingsOpts{
 				TextSearch:   []search.TextSearchTerm{{Term: "foo"}},
-				CurrentState: statePtr(btypes.ChangesetStateOpen),
+				CurrentState: pointers.Ptr(btypes.ChangesetStateOpen),
 			},
 			want: []*btypes.Changeset{openFoo},
 		},
 		"state and not text": {
 			opts: GetRewirerMappingsOpts{
 				TextSearch:   []search.TextSearchTerm{{Term: "foo", Not: true}},
-				CurrentState: statePtr(btypes.ChangesetStateOpen),
+				CurrentState: pointers.Ptr(btypes.ChangesetStateOpen),
 			},
 			want: []*btypes.Changeset{openBar},
 		},
 		"state match only": {
 			opts: GetRewirerMappingsOpts{
 				TextSearch:   []search.TextSearchTerm{{Term: "bar"}},
-				CurrentState: statePtr(btypes.ChangesetStateClosed),
+				CurrentState: pointers.Ptr(btypes.ChangesetStateClosed),
 			},
 			want: []*btypes.Changeset{},
 		},
 		"text match only": {
 			opts: GetRewirerMappingsOpts{
 				TextSearch:   []search.TextSearchTerm{{Term: "foo"}},
-				CurrentState: statePtr(btypes.ChangesetStateMerged),
+				CurrentState: pointers.Ptr(btypes.ChangesetStateMerged),
 			},
 			want: []*btypes.Changeset{},
 		},

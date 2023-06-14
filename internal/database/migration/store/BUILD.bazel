@@ -59,6 +59,7 @@ go_test(
         "//internal/database/migration/definition",
         "//internal/database/migration/shared",
         "//internal/observation",
+        "//internal/pointers",
         "//internal/timeutil",
         "@com_github_google_go_cmp//cmp",
         "@com_github_hexops_autogold_v2//:autogold",

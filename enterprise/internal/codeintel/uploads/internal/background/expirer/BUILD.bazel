@@ -49,6 +49,7 @@ go_test(
         "//internal/executor",
         "//internal/gitserver/gitdomain",
         "//internal/observation",
+        "//internal/pointers",
         "//internal/timeutil",
         "//internal/types",
         "//internal/workerutil",

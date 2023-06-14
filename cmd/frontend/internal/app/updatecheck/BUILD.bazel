@@ -57,6 +57,7 @@ go_test(
     embed = [":updatecheck"],
     deps = [
         "//internal/extsvc",
+        "//internal/pointers",
         "//internal/types",
         "//schema",
         "@com_github_google_go_cmp//cmp",

@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/pointers"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
@@ -101,7 +102,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 	inputs, err := h.searchClient.Plan(
 		ctx,
 		args.Version,
-		strPtr(args.PatternType),
+		pointers.NonZeroPtr(args.PatternType),
 		args.Query,
 		search.Mode(args.SearchMode),
 		search.Streaming,
@@ -255,13 +256,6 @@ func parseURLQuery(q url.Values) (*args, error) {
 	}
 
 	return &a, nil
-}
-
-func strPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }
 
 func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {

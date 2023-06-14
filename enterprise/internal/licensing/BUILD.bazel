@@ -54,6 +54,7 @@ go_test(
     ],
     deps = [
         "//enterprise/internal/license",
+        "//internal/pointers",
         "//internal/redispool",
         "@com_github_gomodule_redigo//redis",
         "@com_github_google_go_cmp//cmp",

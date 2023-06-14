@@ -57,6 +57,7 @@ go_test(
         "//internal/database/dbtest",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
+        "//internal/pointers",
         "//internal/search",
         "//lib/errors",
         "@com_github_google_go_cmp//cmp",

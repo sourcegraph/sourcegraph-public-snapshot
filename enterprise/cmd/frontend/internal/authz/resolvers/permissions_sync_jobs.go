@@ -6,12 +6,14 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/pointers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -329,6 +331,5 @@ func unmarshalPermissionsSyncJobID(id graphql.ID) (jobID int, err error) {
 }
 
 func intToInt32Ptr(value int) *int32 {
-	int32Value := int32(value)
-	return &int32Value
+	return pointers.Ptr(int32(value))
 }

@@ -30,6 +30,7 @@ import (
 	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/pointers"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -589,7 +590,7 @@ func TestService(t *testing.T) {
 			NumResets:              0,
 			NumFailures:            0,
 			FailureMessage:         nil,
-			PreviousFailureMessage: strPtr(bt.FailedChangesetFailureMessage),
+			PreviousFailureMessage: pointers.Ptr(bt.FailedChangesetFailureMessage),
 		})
 
 		// rs[0] is filtered out
@@ -3411,5 +3412,3 @@ func assertNoAuthError(t *testing.T, err error) {
 		t.Fatalf("got auth error")
 	}
 }
-
-func strPtr(s string) *string { return &s }

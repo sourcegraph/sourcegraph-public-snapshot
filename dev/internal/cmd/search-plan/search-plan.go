@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/pointers"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -50,7 +51,7 @@ func run(w io.Writer, args []string) error {
 	inputs, err := cli.Plan(
 		context.Background(),
 		*version,
-		strPtr(*patternType),
+		pointers.NonZeroPtr(*patternType),
 		query,
 		mode,
 		search.Streaming,
@@ -80,11 +81,4 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 		os.Exit(1)
 	}
-}
-
-func strPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }

@@ -30,6 +30,7 @@ go_test(
         "//internal/api",
         "//internal/database",
         "//internal/database/dbtest",
+        "//internal/pointers",
         "//internal/types",
         "//schema",
         "@com_github_sourcegraph_log//logtest",

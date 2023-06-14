@@ -20,6 +20,7 @@ go_library(
         "//internal/gitserver",
         "//internal/gqlutil",
         "//internal/markdown",
+        "//internal/pointers",
         "//internal/types",
         "//lib/errors",
         "@com_github_graph_gophers_graphql_go//:graphql-go",

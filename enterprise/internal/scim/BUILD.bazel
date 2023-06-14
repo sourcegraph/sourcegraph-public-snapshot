@@ -66,6 +66,7 @@ go_test(
         "//internal/conf",
         "//internal/database",
         "//internal/observation",
+        "//internal/pointers",
         "//internal/txemail",
         "//internal/types",
         "//lib/errors",

@@ -68,6 +68,7 @@ go_test(
         "//internal/gitserver/protocol",
         "//internal/httpcli",
         "//internal/observation",
+        "//internal/pointers",
         "//internal/repos",
         "//internal/repoupdater/protocol",
         "//internal/timeutil",

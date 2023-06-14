@@ -152,6 +152,7 @@ go_test(
         "//internal/gqlutil",
         "//internal/httptestutil",
         "//internal/observation",
+        "//internal/pointers",
         "//internal/rbac",
         "//internal/rcache",
         "//internal/repos",

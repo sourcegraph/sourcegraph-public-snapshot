@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/pointers"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -47,7 +48,7 @@ func TestOutboundWebhookJobs(t *testing.T) {
 					target **types.OutboundWebhookJob
 				}{
 					"scoped": {
-						scope:  stringPtr("scope"),
+						scope:  pointers.Ptr("scope"),
 						target: &scopedJob,
 					},
 					"unscoped": {

@@ -15,18 +15,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/pointers"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func initializeData(ctx context.Context, store *Store, repos, times int, withCapture int) string {
 	var cv []*string
-	strPtr := func(s string) *string {
-		return &s
-	}
 
 	if withCapture > 0 {
 		for i := 0; i < withCapture; i++ {
-			cv = append(cv, strPtr(fmt.Sprintf("%d", i)))
+			cv = append(cv, pointers.Ptr(fmt.Sprintf("%d", i)))
 		}
 	} else {
 		cv = append(cv, nil)

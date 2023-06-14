@@ -89,6 +89,7 @@ go_test(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/observation",
+        "//internal/pointers",
         "//internal/repoupdater",
         "//internal/search/streaming/api",
         "//internal/search/streaming/http",

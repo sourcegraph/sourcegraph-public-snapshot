@@ -24,6 +24,7 @@ go_library(
         "//internal/conf",
         "//internal/metrics",
         "//internal/observation",
+        "//internal/pointers",
         "//lib/codeintel/autoindex/config",
         "//lib/errors",
         "@com_github_graph_gophers_graphql_go//:graphql-go",

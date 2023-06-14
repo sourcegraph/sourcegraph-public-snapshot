@@ -35,6 +35,7 @@ go_library(
         "//internal/gitserver",
         "//internal/metrics",
         "//internal/observation",
+        "//internal/pointers",
         "//lib/errors",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_sourcegraph_go_lsp//:go-lsp",

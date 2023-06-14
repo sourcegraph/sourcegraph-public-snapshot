@@ -184,6 +184,7 @@ go_test(
         "//internal/httptestutil",
         "//internal/limiter",
         "//internal/observation",
+        "//internal/pointers",
         "//internal/ratelimit",
         "//internal/rcache",
         "//internal/testutil",

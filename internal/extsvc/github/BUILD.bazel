@@ -55,6 +55,7 @@ go_test(
         "//internal/extsvc/auth",
         "//internal/httpcli",
         "//internal/httptestutil",
+        "//internal/pointers",
         "//internal/rcache",
         "//internal/testutil",
         "//lib/errors",

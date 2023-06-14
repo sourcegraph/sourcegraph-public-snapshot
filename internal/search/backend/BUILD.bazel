@@ -67,6 +67,7 @@ go_test(
     deps = [
         "//internal/api",
         "//internal/conf",
+        "//internal/pointers",
         "//internal/types",
         "//lib/errors",
         "//schema",

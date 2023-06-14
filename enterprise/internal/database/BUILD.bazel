@@ -106,6 +106,7 @@ go_test(
         "//internal/database/dbtest",
         "//internal/database/dbutil",
         "//internal/extsvc",
+        "//internal/pointers",
         "//internal/search/result",
         "//internal/timeutil",
         "//internal/types",

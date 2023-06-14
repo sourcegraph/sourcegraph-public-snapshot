@@ -74,6 +74,7 @@ go_test(
         "//internal/extsvc",
         "//internal/extsvc/bitbucketserver",
         "//internal/observation",
+        "//internal/pointers",
         "//internal/timeutil",
         "//internal/types",
         "//schema",

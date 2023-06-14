@@ -12,6 +12,7 @@ import (
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/pointers"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -97,7 +98,7 @@ func (r *indexConfigurationResolver) Configuration(ctx context.Context) (_ *stri
 		return nil, nil
 	}
 
-	return resolverstubs.NonZeroPtr(string(configuration.Data)), nil
+	return pointers.NonZeroPtr(string(configuration.Data)), nil
 }
 
 func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) (_ resolverstubs.InferredConfigurationResolver, err error) {

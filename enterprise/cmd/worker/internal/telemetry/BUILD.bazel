@@ -46,6 +46,7 @@ go_test(
         "//internal/database/dbtest",
         "//internal/featureflag",
         "//internal/observation",
+        "//internal/pointers",
         "//internal/version",
         "//lib/errors",
         "//schema",

@@ -61,6 +61,7 @@ go_test(
         "//cmd/frontend/envvar",
         "//internal/api/internalapi",
         "//internal/conf/conftypes",
+        "//internal/pointers",
         "//lib/errors",
         "//schema",
         "@com_github_google_go_cmp//cmp",

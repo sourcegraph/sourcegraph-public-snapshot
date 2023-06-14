@@ -58,6 +58,7 @@ go_test(
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",
+        "//internal/pointers",
         "//internal/timeutil",
         "//lib/errors",
         "@com_github_google_go_cmp//cmp",

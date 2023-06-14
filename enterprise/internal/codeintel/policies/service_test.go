@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/pointers"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -46,7 +47,7 @@ func TestGetRetentionPolicyOverview(t *testing.T) {
 			mockPolicies: []policiesshared.RetentionPolicyMatchCandidate{
 				{
 					ConfigurationPolicy: &policiesshared.ConfigurationPolicy{
-						RetentionDuration:         timePtr(time.Hour * 24),
+						RetentionDuration:         pointers.Ptr(time.Hour * 24),
 						RetainIntermediateCommits: false,
 						Type:                      policiesshared.GitObjectTypeTag,
 						Pattern:                   "*",
@@ -74,7 +75,7 @@ func TestGetRetentionPolicyOverview(t *testing.T) {
 			mockPolicies: []policiesshared.RetentionPolicyMatchCandidate{
 				{
 					ConfigurationPolicy: &policiesshared.ConfigurationPolicy{
-						RetentionDuration:         timePtr(time.Hour * 24),
+						RetentionDuration:         pointers.Ptr(time.Hour * 24),
 						RetainIntermediateCommits: false,
 						Type:                      policiesshared.GitObjectTypeTag,
 						Pattern:                   "*",
@@ -125,7 +126,7 @@ func TestGetRetentionPolicyOverview(t *testing.T) {
 			mockPolicies: []policiesshared.RetentionPolicyMatchCandidate{
 				{
 					ConfigurationPolicy: &policiesshared.ConfigurationPolicy{
-						RetentionDuration:         timePtr(time.Hour * 24),
+						RetentionDuration:         pointers.Ptr(time.Hour * 24),
 						RetainIntermediateCommits: false,
 						Type:                      policiesshared.GitObjectTypeTag,
 						Pattern:                   "*",
@@ -134,7 +135,7 @@ func TestGetRetentionPolicyOverview(t *testing.T) {
 				},
 				{
 					ConfigurationPolicy: &policiesshared.ConfigurationPolicy{
-						RetentionDuration:         timePtr(time.Hour * 24),
+						RetentionDuration:         pointers.Ptr(time.Hour * 24),
 						RetainIntermediateCommits: false,
 						Type:                      policiesshared.GitObjectTypeTree,
 						Pattern:                   "*",
@@ -162,7 +163,7 @@ func TestGetRetentionPolicyOverview(t *testing.T) {
 			mockPolicies: []policiesshared.RetentionPolicyMatchCandidate{
 				{
 					ConfigurationPolicy: &policiesshared.ConfigurationPolicy{
-						RetentionDuration:         timePtr(time.Hour * 24),
+						RetentionDuration:         pointers.Ptr(time.Hour * 24),
 						RetainIntermediateCommits: false,
 						Type:                      policiesshared.GitObjectTypeTag,
 						Pattern:                   "*",
@@ -252,7 +253,7 @@ func TestRetentionPolicyOverview_ByVisibility(t *testing.T) {
 			mockPolicies: []policiesshared.RetentionPolicyMatchCandidate{
 				{
 					ConfigurationPolicy: &policiesshared.ConfigurationPolicy{
-						RetentionDuration:         timePtr(time.Hour * 24),
+						RetentionDuration:         pointers.Ptr(time.Hour * 24),
 						RetainIntermediateCommits: false,
 						Type:                      policiesshared.GitObjectTypeTag,
 						Pattern:                   "*",
@@ -327,10 +328,6 @@ func TestRetentionPolicyOverview_ByVisibility(t *testing.T) {
 			}
 		})
 	}
-}
-
-func timePtr(t time.Duration) *time.Duration {
-	return &t
 }
 
 func mockConfigurationPolicies(policies []policiesshared.RetentionPolicyMatchCandidate) (mockedCandidates []policiesshared.RetentionPolicyMatchCandidate, mockedPolicies []policiesshared.ConfigurationPolicy) {

@@ -116,6 +116,7 @@ go_test(
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",
         "//internal/observation",
+        "//internal/pointers",
         "//internal/timeutil",
         "//internal/types",
         "//internal/types/typestest",
