@@ -296,7 +296,7 @@ func (r *PeriodicGoroutine) runHandlerPeriodically(monitorCtx context.Context) {
 	}()
 
 	select {
-	// Sleep - might be a zero-duration value if we're immediately reinvoking,
+	// Initial delay sleep - might be a zero-duration value if it wasn't set,
 	// but this gives us a nice chance to check the context to see if we should
 	// exit naturally.
 	case <-r.clock.After(r.initialDelay):

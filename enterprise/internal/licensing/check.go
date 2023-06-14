@@ -151,7 +151,6 @@ func StartLicenseCheck(originalCtx context.Context, logger log.Logger, siteID st
 			initialWaitInterval, _ = calcDurationSinceLastCalled(glock.NewRealClock())
 		}
 
-		// todo: clarify shall we use sync.Mutex or something else?
 		// continue running with new license key
 		store.Set(prevLicenseTokenKey, licenseToken)
 
