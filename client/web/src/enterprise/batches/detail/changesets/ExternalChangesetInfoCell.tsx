@@ -73,7 +73,7 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<
                     <ChangesetLastSynced changeset={node} viewerCanAdminister={viewerCanAdminister} />
                 )}
                 {!!node?.commitVerification?.verified && (
-                    <Tooltip content="This commit is signed with a verified signature.">
+                    <Tooltip content="This commit was signed and verified by the code host.">
                         <Badge pill={true} className="mx-2">
                             Verified
                         </Badge>
