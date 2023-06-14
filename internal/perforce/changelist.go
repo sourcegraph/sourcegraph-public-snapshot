@@ -13,6 +13,9 @@ import (
 //
 // [git-p4: depot-paths = "//test-perms/": change = 83725]
 // [p4-fusion: depot-paths = "//test-perms/": change = 80972]
+//
+// NOTE: Do not anchor this pattern to look for the beginning or ending of a line. This ensures that
+// we can look for this pattern even when this is not in its own line by itself.
 var gitP4Pattern = lazyregexp.New(`\[(?:git-p4|p4-fusion): depot-paths? = "(.*?)"\: change = (\d+)\]`)
 
 func GetP4ChangelistID(body string) (string, error) {
