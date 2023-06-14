@@ -257,6 +257,7 @@ go_test(
         "//internal/types/typestest",
         "//internal/version",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_cockroachdb_errors//errbase",
         "@com_github_gofrs_uuid//:uuid",

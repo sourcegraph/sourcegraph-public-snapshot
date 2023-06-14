@@ -146,7 +146,7 @@ func (s *Service) changelistMappingConsumer(ctx context.Context, tasks <-chan *c
 		// NOTE: Hardcoded to log for tasks that run longer than 1 minute. Will revisit this if it
 		// becomes noisy under production loads.
 		if timeTaken > time.Duration(time.Second*60) {
-			s.Logger.Warn("mapping job took long to complete", log.Float64("seconds", timeTaken.Seconds()))
+			s.Logger.Warn("mapping job took long to complete", log.Duration("duration", timeTaken))
 		}
 	}
 }

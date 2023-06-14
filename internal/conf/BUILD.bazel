@@ -67,6 +67,7 @@ go_test(
         "//internal/conf/deploy",
         "//internal/licensing",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_log//:log",

@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // NewResolver returns a new Resolver that uses the given database
@@ -71,7 +72,7 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 
 	ms, err := r.db.CodeMonitors().ListMonitors(ctx, edb.ListMonitorsOpts{
 		UserID: &userID,
-		First:  intPtr(int(newArgs.First)),
+		First:  pointers.Ptr(int(newArgs.First)),
 		After:  intPtrToInt64Ptr(after),
 	})
 	if err != nil {
@@ -890,7 +891,7 @@ func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEven
 	}
 	es, err := q.db.CodeMonitors().ListQueryTriggerJobs(ctx, edb.ListTriggerJobsOpts{
 		QueryID: &q.QueryTrigger.ID,
-		First:   intPtr(int(args.First)),
+		First:   pointers.Ptr(int(args.First)),
 		After:   intPtrToInt64Ptr(after),
 	})
 	if err != nil {
@@ -1063,7 +1064,7 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 	}
 	ms, err := m.db.CodeMonitors().ListRecipients(ctx, edb.ListRecipientsOpts{
 		EmailID: &m.EmailAction.ID,
-		First:   intPtr(int(args.First)),
+		First:   pointers.Ptr(int(args.First)),
 		After:   intPtrToInt64Ptr(after),
 	})
 	if err != nil {
@@ -1125,9 +1126,9 @@ func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEven
 	}
 
 	ajs, err := m.db.CodeMonitors().ListActionJobs(ctx, edb.ListActionJobsOpts{
-		EmailID:        intPtr(int(m.EmailAction.ID)),
+		EmailID:        pointers.Ptr(int(m.EmailAction.ID)),
 		TriggerEventID: m.triggerEventID,
-		First:          intPtr(int(args.First)),
+		First:          pointers.Ptr(int(args.First)),
 		After:          after,
 	})
 	if err != nil {
@@ -1135,7 +1136,7 @@ func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEven
 	}
 
 	totalCount, err := m.db.CodeMonitors().CountActionJobs(ctx, edb.ListActionJobsOpts{
-		EmailID:        intPtr(int(m.EmailAction.ID)),
+		EmailID:        pointers.Ptr(int(m.EmailAction.ID)),
 		TriggerEventID: m.triggerEventID,
 	})
 	if err != nil {
@@ -1181,9 +1182,9 @@ func (m *monitorWebhook) Events(ctx context.Context, args *graphqlbackend.ListEv
 	}
 
 	ajs, err := m.db.CodeMonitors().ListActionJobs(ctx, edb.ListActionJobsOpts{
-		WebhookID:      intPtr(int(m.WebhookAction.ID)),
+		WebhookID:      pointers.Ptr(int(m.WebhookAction.ID)),
 		TriggerEventID: m.triggerEventID,
-		First:          intPtr(int(args.First)),
+		First:          pointers.Ptr(int(args.First)),
 		After:          after,
 	})
 	if err != nil {
@@ -1191,7 +1192,7 @@ func (m *monitorWebhook) Events(ctx context.Context, args *graphqlbackend.ListEv
 	}
 
 	totalCount, err := m.db.CodeMonitors().CountActionJobs(ctx, edb.ListActionJobsOpts{
-		WebhookID:      intPtr(int(m.WebhookAction.ID)),
+		WebhookID:      pointers.Ptr(int(m.WebhookAction.ID)),
 		TriggerEventID: m.triggerEventID,
 	})
 	if err != nil {
@@ -1237,9 +1238,9 @@ func (m *monitorSlackWebhook) Events(ctx context.Context, args *graphqlbackend.L
 	}
 
 	ajs, err := m.db.CodeMonitors().ListActionJobs(ctx, edb.ListActionJobsOpts{
-		SlackWebhookID: intPtr(int(m.SlackWebhookAction.ID)),
+		SlackWebhookID: pointers.Ptr(int(m.SlackWebhookAction.ID)),
 		TriggerEventID: m.triggerEventID,
-		First:          intPtr(int(args.First)),
+		First:          pointers.Ptr(int(args.First)),
 		After:          after,
 	})
 	if err != nil {
@@ -1247,7 +1248,7 @@ func (m *monitorSlackWebhook) Events(ctx context.Context, args *graphqlbackend.L
 	}
 
 	totalCount, err := m.db.CodeMonitors().CountActionJobs(ctx, edb.ListActionJobsOpts{
-		SlackWebhookID: intPtr(int(m.SlackWebhookAction.ID)),
+		SlackWebhookID: pointers.Ptr(int(m.SlackWebhookAction.ID)),
 		TriggerEventID: m.triggerEventID,
 	})
 	if err != nil {
@@ -1260,7 +1261,6 @@ func (m *monitorSlackWebhook) Events(ctx context.Context, args *graphqlbackend.L
 	return &monitorActionEventConnection{events: events, totalCount: int32(totalCount)}, nil
 }
 
-func intPtr(i int) *int { return &i }
 func intPtrToInt64Ptr(i *int) *int64 {
 	if i == nil {
 		return nil

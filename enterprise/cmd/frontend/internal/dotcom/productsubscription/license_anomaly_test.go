@@ -18,12 +18,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-func int32Ptr(n int32) *int32 {
-	return &n
-}
 
 func TestMaybeCheckAnomalies(t *testing.T) {
 	logger := logtest.Scoped(t)
@@ -108,7 +105,7 @@ func TestCheckAnomalies(t *testing.T) {
 	}
 	mocks.licenses.List = func(ctx context.Context, opt dbLicensesListOptions) ([]*dbLicense, error) {
 		if opt.ProductSubscriptionID == sub2ID {
-			return []*dbLicense{{ID: licenseID, LicenseKey: "key", ProductSubscriptionID: opt.ProductSubscriptionID, SiteID: &siteID, LicenseVersion: int32Ptr(2)}}, nil
+			return []*dbLicense{{ID: licenseID, LicenseKey: "key", ProductSubscriptionID: opt.ProductSubscriptionID, SiteID: &siteID, LicenseVersion: pointers.Ptr(int32(2))}}, nil
 		}
 		return []*dbLicense{}, nil
 	}

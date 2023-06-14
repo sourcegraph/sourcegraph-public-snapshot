@@ -12,9 +12,10 @@ import { History } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
-import { logEvent, updateEventLogger } from './event-logger'
+import { logEvent, updateEventLogger, eventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
+import { showSetupNotification } from './notifications/setup-notification'
 import { getRgPath } from './rg'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
@@ -25,6 +26,7 @@ import {
     SecretStorage,
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
+import { createStatusBar } from './services/StatusBar'
 
 const CODY_FEEDBACK_URL =
     'https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode'
@@ -80,7 +82,6 @@ const register = async (
     const disposables: vscode.Disposable[] = []
 
     await updateEventLogger(initialConfig, localStorage)
-
     // Controller for inline assist
     const commentController = new InlineController(context.extensionPath)
     disposables.push(commentController.get())
@@ -148,6 +149,8 @@ const register = async (
         }
         chatProvider.sendErrorToWebview(error)
     }
+
+    const statusBar = createStatusBar()
 
     disposables.push(
         vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
@@ -275,7 +278,8 @@ const register = async (
                     }
                 }
             },
-        })
+        }),
+        statusBar
     )
 
     if (initialConfig.experimentalSuggest) {
@@ -288,7 +292,9 @@ const register = async (
             webviewErrorMessager,
             completionsClient,
             docprovider,
-            history
+            history,
+            statusBar,
+            codebaseContext
         )
         disposables.push(
             vscode.commands.registerCommand('cody.manual-completions', async () => {
@@ -336,11 +342,16 @@ const register = async (
         await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
     }
 
+    await showSetupNotification(initialConfig, localStorage)
+
     return {
         disposable: vscode.Disposable.from(...disposables),
         onConfigurationChange: newConfig => {
             chatProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
+            if (eventLogger) {
+                eventLogger.onConfigurationChange(vscode.workspace.getConfiguration())
+            }
         },
     }
 }

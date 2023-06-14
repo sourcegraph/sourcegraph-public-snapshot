@@ -1,4 +1,4 @@
-import { bestJaccardMatch, getWords } from './context'
+import { bestJaccardMatch, getWords } from './bestJaccardMatch'
 
 const targetSnippet = `
 import { bestJaccardMatch, getWords } from './context'
@@ -104,11 +104,11 @@ describe('bestJaccardMatch', () => {
         ].join('\n')
         expect(bestJaccardMatch('foo\nbar\nbaz', matchText, 3)).toEqual({
             score: 1,
-            text: 'foo\nbar\nbaz',
+            content: 'foo\nbar\nbaz',
         })
         expect(bestJaccardMatch('bar\nquux', matchText, 4)).toEqual({
             score: 0.5,
-            text: 'bar\nbaz\nqux\nquux',
+            content: 'bar\nbaz\nqux\nquux',
         })
         expect(
             bestJaccardMatch(
@@ -118,19 +118,19 @@ describe('bestJaccardMatch', () => {
             )
         ).toEqual({
             score: 0.3,
-            text: ['quux', 'quuz', 'corge', 'grault', 'garply', 'waldo'].join('\n'),
+            content: ['quux', 'quuz', 'corge', 'grault', 'garply', 'waldo'].join('\n'),
         })
     })
 
     it('works with code snippets', () => {
         expect(bestJaccardMatch(targetSnippet, matchSnippet, 5)).toMatchInlineSnapshot(`
             Object {
-              "score": 0.08695652173913043,
-              "text": "describe('bestJaccardMatch', () => {
+              "content": "describe('bestJaccardMatch', () => {
                 it('should return the best match', () => {
                     const matchText = [
                         'foo',
                         'bar',",
+              "score": 0.08695652173913043,
             }
         `)
     })

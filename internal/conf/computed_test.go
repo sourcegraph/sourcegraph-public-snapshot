@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -84,17 +85,17 @@ func TestGitMaxCodehostRequestsPerSecond(t *testing.T) {
 		},
 		{
 			name: "bad value should return default",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: intPtr(-100)}},
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(-100)}},
 			want: -1,
 		},
 		{
 			name: "set 0 should return 0",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: intPtr(0)}},
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(0)}},
 			want: 0,
 		},
 		{
 			name: "set non-0 should return non-0",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: intPtr(100)}},
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(100)}},
 			want: 100,
 		},
 	}
@@ -323,14 +324,6 @@ func TestIsAccessRequestEnabled(t *testing.T) {
 	}
 }
 
-func boolPtr(b bool) *bool {
-	return &b
-}
-
-func intPtr(i int) *int {
-	return &i
-}
-
 func TestCodyEnabled(t *testing.T) {
 	tests := []struct {
 		name string
@@ -344,27 +337,27 @@ func TestCodyEnabled(t *testing.T) {
 		},
 		{
 			name: "cody enabled",
-			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(true)},
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(true)},
 			want: true,
 		},
 		{
 			name: "cody disabled",
-			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(false)},
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(false)},
 			want: false,
 		},
 		{
 			name: "cody enabled, completions configured",
-			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(true), Completions: &schema.Completions{Model: "foobar"}},
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(true), Completions: &schema.Completions{Model: "foobar"}},
 			want: true,
 		},
 		{
 			name: "cody disabled, completions enabled",
-			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(false), Completions: &schema.Completions{Enabled: boolPtr(true), Model: "foobar"}},
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(false), Completions: &schema.Completions{Enabled: pointers.Ptr(true), Model: "foobar"}},
 			want: false,
 		},
 		{
 			name: "cody disabled, completions configured",
-			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(false), Completions: &schema.Completions{Model: "foobar"}},
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(false), Completions: &schema.Completions{Model: "foobar"}},
 			want: false,
 		},
 		{
