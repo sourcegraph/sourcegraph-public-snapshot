@@ -93,6 +93,9 @@ func TestServeConfiguration(t *testing.T) {
 				continue
 			}
 
+			sort.Slice(repo.LanguageMap, func(i, j int) bool {
+				return repo.LanguageMap[i].Language > repo.LanguageMap[j].Language
+			})
 			receivedRepositories = append(receivedRepositories, repo)
 		}
 
@@ -108,6 +111,10 @@ func TestServeConfiguration(t *testing.T) {
 		for lang, engine := range ctags_config.DefaultEngines {
 			languageMap = append(languageMap, &proto.LanguageMapping{Language: lang, Ctags: proto.CTagsParserType(engine)})
 		}
+
+		sort.Slice(languageMap, func(i, j int) bool {
+			return languageMap[i].Language > languageMap[j].Language
+		})
 
 		// Verify: Check to see that the response the expected repos 5 and 6
 		expectedRepo5 := &proto.ZoektIndexOptions{
@@ -168,8 +175,16 @@ func TestServeConfiguration(t *testing.T) {
 			t.Fatalf("SearchConfiguration: %s", err)
 		}
 
+		fingerprintedResponses := fingerprintedResponse.GetUpdatedOptions()
+
+		for _, res := range fingerprintedResponses {
+			sort.Slice(res.LanguageMap, func(i, j int) bool {
+				return res.LanguageMap[i].Language > res.LanguageMap[j].Language
+			})
+		}
+
 		// Verify that the response contains the expected repo 5
-		if diff := cmp.Diff(fingerprintedResponse.GetUpdatedOptions(), []*proto.ZoektIndexOptions{expectedRepo5}, protocmp.Transform()); diff != "" {
+		if diff := cmp.Diff(fingerprintedResponses, []*proto.ZoektIndexOptions{expectedRepo5}, protocmp.Transform()); diff != "" {
 			t.Errorf("mismatch in fingerprinted repositories (-want, +got):\n%s", diff)
 		}
 
