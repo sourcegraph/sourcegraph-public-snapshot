@@ -62,9 +62,9 @@ func TestConfig_Load(t *testing.T) {
 			return "pvc"
 		case "KUBERNETES_JOB_VOLUME_SIZE":
 			return "10Gi"
-		case "KUBERNETES_JOB_VOLUMES":
+		case "KUBERNETES_ADDITIONAL_JOB_VOLUMES":
 			return `[{"name": "foo", "configMap": {"name": "bar"}}]`
-		case "KUBERNETES_JOB_VOLUME_MOUNTS":
+		case "KUBERNETES_ADDITIONAL_JOB_VOLUME_MOUNTS":
 			return `[{"name": "foo", "mountPath": "/foo"}]`
 		case "KUBERNETES_SINGLE_JOB_STEP_IMAGE":
 			return "sourcegraph/step-image:latest"

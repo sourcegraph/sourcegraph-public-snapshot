@@ -641,14 +641,13 @@ func TestNewKubernetesSingleJob(t *testing.T) {
 	}
 	repoOptions := command.RepositoryOptions{
 		JobID:               42,
-		RepositoryName:      "my-repo",
+		CloneURL:            "http://my-frontend/.executor/git/my-repo",
 		RepositoryDirectory: "repository",
 		Commit:              "deadbeef",
 	}
 	options := command.KubernetesContainerOptions{
 		CloneOptions: command.KubernetesCloneOptions{
 			ExecutorName: "my-executor",
-			BaseURL:      "http://my-frontend/.executor/git",
 		},
 		Namespace:             "default",
 		NodeName:              "my-node",
@@ -692,7 +691,8 @@ func TestNewKubernetesSingleJob(t *testing.T) {
 	require.Len(t, job.Spec.Template.Spec.InitContainers[0].Args, 1)
 	assert.Equal(
 		t,
-		"mkdir -p repository; "+
+		"set -e; "+
+			"mkdir -p repository; "+
 			"git -C repository init; "+
 			"git -C repository remote add origin http://my-frontend/.executor/git/my-repo; "+
 			"git -C repository config --local gc.auto 0; "+
