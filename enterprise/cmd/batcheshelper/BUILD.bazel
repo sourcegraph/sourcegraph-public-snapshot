@@ -42,16 +42,12 @@ go_test(
 pkg_tar(
     name = "tar_batcheshelper",
     srcs = [":batcheshelper"],
+    package_dir = "/usr/local/bin",
 )
 
 oci_image(
     name = "image",
     base = "@wolfi_batcheshelper_base",
-    entrypoint = [
-        "/sbin/tini",
-        "--",
-        "/batcheshelper",
-    ],
     tars = [":tar_batcheshelper"],
 )
 
