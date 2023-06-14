@@ -139,7 +139,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
         setAutoUpgradeEnabled(!autoUpgradeEnabled)
         await setAutoUpgrade({
             variables: { enable: !autoUpgradeEnabled },
-        }).catch(() => {})
+        })
     }
     useEffect(() => {
         if (data) {
