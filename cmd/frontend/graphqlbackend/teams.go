@@ -162,7 +162,6 @@ func (r *TeamResolver) ID() graphql.ID {
 }
 
 func (r *TeamResolver) Name() string {
-	fmt.Println("TEAM NAME OF ", r.team)
 	return r.team.Name
 }
 
