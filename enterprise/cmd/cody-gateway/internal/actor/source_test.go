@@ -117,6 +117,22 @@ func TestSourcesWorkers(t *testing.T) {
 	g.Wait()
 }
 
+func TestSourcesSyncAll(t *testing.T) {
+	t.Parallel()
+
+	var s1, s2 mockSourceSyncer
+	sources := NewSources(&s1, &s2)
+	err := sources.SyncAll(context.Background(), logtest.Scoped(t))
+	require.NoError(t, err)
+	assert.Equal(t, int32(1), s1.syncCount.Load())
+	assert.Equal(t, int32(1), s2.syncCount.Load())
+
+	err = sources.SyncAll(context.Background(), logtest.Scoped(t))
+	require.NoError(t, err)
+	assert.Equal(t, int32(2), s1.syncCount.Load())
+	assert.Equal(t, int32(2), s2.syncCount.Load())
+}
+
 func TestIsErrNotFromSource(t *testing.T) {
 	var err error
 	err = ErrNotFromSource{Reason: "foo"}
