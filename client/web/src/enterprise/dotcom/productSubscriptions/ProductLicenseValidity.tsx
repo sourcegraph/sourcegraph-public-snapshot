@@ -4,7 +4,7 @@ import { mdiCheckCircle, mdiCloseCircle, mdiShieldRemove } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, Label } from '@sourcegraph/wildcard'
 
 import { ProductLicenseFields } from '../../../graphql-operations'
 import { isProductLicenseExpired } from '../../../productSubscription/helpers'
@@ -25,8 +25,8 @@ const ValidityIcon: React.FC<{ isExpired: boolean; isRevoked: boolean }> = ({ is
         aria-hidden={true}
         className={classNames('mr-1', {
             ['text-success']: !isExpired && !isRevoked,
-            ['text-danger']: isExpired && !isRevoked,
-            ['text-warning']: !isExpired && isRevoked,
+            ['text-muted']: isExpired && !isRevoked,
+            ['text-danger']: isRevoked,
         })}
     />
 )
@@ -68,7 +68,11 @@ export const ProductLicenseValidity: React.FunctionComponent<
         <div className={className}>
             {variant !== 'no-icon' && <ValidityIcon isExpired={isExpired} isRevoked={isRevoked} />}
             {getText(isExpired, isRevoked)} <Timestamp date={timestamp} noAbout={true} noAgo={true} /> {timestampSuffix}
-            {!isExpired && isRevoked && revokeReason && <span> because of "{revokeReason}" reason</span>}
+            {!isExpired && isRevoked && revokeReason && (
+                <>
+                    <Label className="ml-2 mb-0 d-inline">Reason:</Label> {revokeReason}
+                </>
+            )}
         </div>
     )
 }
