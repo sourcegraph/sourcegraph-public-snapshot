@@ -72,7 +72,6 @@ All notable changes to Sourcegraph are documented in this file.
 - GitLab code host connections will disable repo-centric repository permission syncs when the authentication provider is set as "oauth". This prevents repo-centric permission sync from getting incorrect data. [#51452](https://github.com/sourcegraph/sourcegraph/pull/51452)
 - Code intelligence background jobs did not correctly use an internal context, causing SCIP data to sometimes be prematurely deleted. [#51591](https://github.com/sourcegraph/sourcegraph/pull/51591)
 - Slow request logs now have the correct trace and span IDs attached if a trace is present on the request. [#51826](https://github.com/sourcegraph/sourcegraph/pull/51826)
-- SAML assertions to get user display name are now compared case insensitively and we do not always return an error. [#52992](https://github.com/sourcegraph/sourcegraph/pull/52992)
 - The braindot menu on the blob view no longer fetches data eagerly to prevent performance issues for larger monorepo users. [#53039](https://github.com/sourcegraph/sourcegraph/pull/53039)
 - Fixed an issue where commenting out redacted site-config secrets would re-add the secrets. [#53152](https://github.com/sourcegraph/sourcegraph/pull/53152)
 - Fixed an issue where `type:diff` search would not work when sub-repo permissions are enabled. [#53210](https://github.com/sourcegraph/sourcegraph/pull/53210)
@@ -84,7 +83,11 @@ All notable changes to Sourcegraph are documented in this file.
 - Unused site-config field `api.rateLimit` has been removed. [#51087](https://github.com/sourcegraph/sourcegraph/pull/51087)
 - Legacy (table-based) blob viewer. [#50915](https://github.com/sourcegraph/sourcegraph/pull/50915)
 
-## Unreleased 5.0.6
+## 5.0.6
+
+### Fixed
+
+- SAML assertions to get user display name are now compared case insensitively and we do not always return an error. [#52992](https://github.com/sourcegraph/sourcegraph/pull/52992)
 
 ## 5.0.5
 
