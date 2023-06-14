@@ -33,6 +33,7 @@ import {
     H3,
     H4,
     Label,
+    CopyableText,
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../components/LogOutput'
@@ -241,38 +242,40 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                             </CollapseHeader>
 
                             <CollapsePanel>
-                                {data.site.upgradeReadiness.schemaDrift.map(summary => (
-                                    <div key={summary.name} className={styles.container}>
-                                        <div className={styles.tableContainer}>
-                                            <div className={styles.table}>
-                                                <div className={styles.label}>Problem:</div>
-                                                <div>{summary.problem}</div>
-                                            </div>
-                                            <div className={styles.table}>
-                                                <div className={styles.label}>Solution:</div>
-                                                <div>{capitalize(summary.solution)}</div>
-                                            </div>
-                                            <div className={styles.table}>
-                                                <div className={styles.label}>Hint:</div>
-                                                <div>
-                                                    {summary.urlHint ? (
-                                                        <Link to={summary.urlHint}>
-                                                            See Sourcegraph query for potential fix
-                                                        </Link>
-                                                    ) : (
-                                                        'Not Applicable'
-                                                    )}
+                                {data.site.upgradeReadiness.schemaDrift.map(summary => {
+                                    return (
+                                        <div key={summary.name} className={styles.container}>
+                                            <div className={styles.tableContainer}>
+                                                <div className={styles.table}>
+                                                    <div className={styles.label}>Problem:</div>
+                                                    <div>{summary.problem}</div>
+                                                </div>
+                                                <div className={styles.table}>
+                                                    <div className={styles.label}>Solution:</div>
+                                                    <div>{capitalize(summary.solution)}</div>
+                                                </div>
+                                                <div className={styles.table}>
+                                                    <div className={styles.label}>Hint:</div>
+                                                    <div>
+                                                        {summary.urlHint ? (
+                                                            <Link to={summary.urlHint}>
+                                                                See Sourcegraph query for potential fix
+                                                            </Link>
+                                                        ) : (
+                                                            'Not Applicable'
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div className={styles.outputContainer}>
-                                            <div className={styles.infoContainer}>
-                                                <div className={styles.label}>Current Delta:</div>
-                                                <div>
-                                                    <LogOutput
-                                                        text={summary.diff ? summary.diff : 'None'}
-                                                        logDescription="The object diff"
-                                                    />
+                                            <div className={styles.outputContainer}>
+                                                <div className={styles.infoContainer}>
+                                                    <div className={styles.label}>Current Delta:</div>
+                                                    <div>
+                                                        <LogOutput
+                                                            text={summary.diff ? summary.diff : 'None'}
+                                                            logDescription="The object diff"
+                                                        />
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -307,8 +310,8 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    )
+                                })}
                             </CollapsePanel>
                         </Collapse>
                     ) : (
