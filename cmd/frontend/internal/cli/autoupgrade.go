@@ -68,8 +68,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 
 	currentVersionStr, doAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
 	// fresh instance
-	var pgerr *pgconn.PgError
-	if errors.Is(err, sql.ErrNoRows) || (errors.As(err, pgerr) && pgerr.Code == pgerrcode.UndefinedTable) {
+	if errors.Is(err, sql.ErrNoRows) || hasPostgresCode(err, pgerrcode.UndefinedTable) {
 		return nil
 	} else if err != nil {
 		return errors.Wrap(err, "autoupgradestore.GetAutoUpgrade")
@@ -366,4 +365,9 @@ func blockForDisconnects(ctx context.Context, logger log.Logger, db database.DB)
 
 		time.Sleep(time.Second * 10)
 	}
+}
+
+func hasPostgresCode(err error, code string) bool {
+	var pgerr *pgconn.PgError
+	return errors.As(err, &pgerr) && pgerr.Code == code
 }
