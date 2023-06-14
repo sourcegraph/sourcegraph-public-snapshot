@@ -447,18 +447,15 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 			wantDisabled: true,
 		},
-		////////////////
 		{
 			name: "anthropic completions",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointify(true),
 				LicenseKey:  licenseKey,
 				Completions: &schema.Completions{
-					Enabled:         pointify(true),
-					Provider:        "anthropic",
-					AccessToken:     "asdf",
-					ChatModel:       "claude-v1",
-					CompletionModel: "claude-instant-v1",
+					Enabled:     pointify(true),
+					Provider:    "anthropic",
+					AccessToken: "asdf",
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
@@ -470,9 +467,8 @@ func TestGetCompletionsConfig(t *testing.T) {
 				Endpoint:        "https://api.anthropic.com/v1/complete",
 			},
 		},
-		// TODO I thought this was not the case.
 		{
-			name: "anthropic completions, with cody.enabled taking precedence over completions.enabled",
+			name: "anthropic completions, with only completions.enabled",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointify(true),
 				LicenseKey:  licenseKey,
@@ -491,6 +487,43 @@ func TestGetCompletionsConfig(t *testing.T) {
 				AccessToken:     "asdf",
 				Provider:        "anthropic",
 				Endpoint:        "https://api.anthropic.com/v1/complete",
+			},
+		},
+		{
+			name: "soucregraph completions defaults",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider: "sourcegraph",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:       "anthropic/claude-v1",
+				FastChatModel:   "anthropic/claude-instant-v1",
+				CompletionModel: "anthropic/claude-instant-v1",
+				AccessToken:     licenseAccessToken,
+				Provider:        "sourcegraph",
+				Endpoint:        "https://cody-gateway.sourcegraph.com",
+			},
+		},
+		{
+			name: "OpenAI completions completions",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider:    "openai",
+					AccessToken: "asdf",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:       "gpt-4",
+				FastChatModel:   "gpt-3.5-turbo",
+				CompletionModel: "gpt-3.5-turbo",
+				AccessToken:     "asdf",
+				Provider:        "openai",
+				Endpoint:        "https://api.openai.com/v1/chat/completions",
 			},
 		},
 		{
@@ -526,8 +559,6 @@ func TestGetCompletionsConfig(t *testing.T) {
 			wantDisabled: true,
 		},
 		{
-			// TODO, this is testing that no provider set is ok, this feels wrong.
-			// Legacy support for completions.enabled
 			name: "legacy field completions.enabled: zero-config cody gateway completions with license key",
 			siteConfig: schema.SiteConfiguration{
 				Completions: &schema.Completions{
@@ -535,15 +566,8 @@ func TestGetCompletionsConfig(t *testing.T) {
 				},
 				LicenseKey: licenseKey,
 			},
+			// Not supported anymore.
 			wantDisabled: true,
-			// wantConfig: &conftypes.CompletionsConfig{
-			// 	ChatModel:       "anthropic/claude-v1",
-			// 	FastChatModel:   "anthropic/claude-instant-v1",
-			// 	CompletionModel: "anthropic/claude-instant-v1",
-			// 	AccessToken:     licenseAccessToken,
-			// 	Provider:        "sourcegraph",
-			// 	Endpoint:        "https://cody-gateway.sourcegraph.com",
-			// },
 		},
 		{
 			name:       "app zero-config cody gateway completions with dotcom token",
@@ -587,6 +611,17 @@ func TestGetCompletionsConfig(t *testing.T) {
 				Provider:        "anthropic",
 				Endpoint:        "https://api.anthropic.com/v1/complete",
 			},
+		},
+		{
+			name:       "App but no dotcom username",
+			deployType: deploy.App,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				App: &schema.App{
+					DotcomAuthToken: "",
+				},
+			},
+			wantDisabled: true,
 		},
 	}
 
@@ -780,6 +815,16 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MaxTextEmbeddingsPerRepo:   512_000,
 				PolicyRepositoryMatchLimit: pointify(5000),
 			},
+		},
+		{
+			name: "App but no dotcom username",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				App: &schema.App{
+					DotcomAuthToken: "",
+				},
+			},
+			wantDisabled: true,
 		},
 		{
 			name:       "App with dotcom token",
