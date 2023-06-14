@@ -34,15 +34,14 @@ func newCompletionsHandler(
 		ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
 		defer cancel()
 
-		completionsConfig := client.GetCompletionsConfig(conf.Get().SiteConfig())
-		if completionsConfig == nil || !completionsConfig.Enabled {
-			http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
-			return
-		}
-
 		if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
 			http.Error(w, "cody experimental feature flag is not enabled for current user", http.StatusUnauthorized)
 			return
+		}
+
+		completionsConfig := client.GetCompletionsConfig(conf.Get().SiteConfig())
+		if completionsConfig == nil {
+			http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
 		}
 
 		var requestParams types.CodyCompletionRequestParameters
@@ -52,10 +51,6 @@ func newCompletionsHandler(
 		}
 
 		// TODO: Model is not configurable but technically allowed in the request body right now.
-		if requestParams.Model != "" {
-			http.Error(w, "user-specified models are not allowed", http.StatusBadRequest)
-			return
-		}
 		requestParams.Model = getModel(requestParams, completionsConfig)
 
 		var err error

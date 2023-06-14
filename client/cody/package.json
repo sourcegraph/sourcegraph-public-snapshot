@@ -2,13 +2,13 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI by Sourcegraph",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
   "description": "AI code assistant that writes code and answers questions for you",
   "scripts": {
-    "start:debug": "NODE_ENV=development CODY_FOCUS_ON_STARTUP=1 code --extensionDevelopmentPath=\"$INIT_CWD/client/cody\" --disable-extension=sourcegraph.cody-ai --inspect-extensions=9333 . --goto ./src/local-app-detector.ts:12:59",
+    "start:debug": "NODE_ENV=development code --extensionDevelopmentPath=\"$INIT_CWD/client/cody\" --disable-extension=sourcegraph.cody-ai --inspect-extensions=9333 . --goto ./src/local-app-detector.ts:12:59",
     "build": "pnpm esbuild --minify && vite build --mode production",
     "build:dev": "concurrently \"pnpm esbuild --sourcemap\" \"vite build --mode development\"",
     "download-rg": "scripts/download-rg.sh",
@@ -343,12 +343,14 @@
         "command": "cody.comment.add",
         "title": "Ask Cody",
         "category": "Cody Inline Assist",
+        "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentIsEmpty"
       },
       {
         "command": "cody.comment.delete",
         "title": "Cody Inline Assist: Remove Comment",
         "category": "Cody Inline Assist",
+        "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(trash)"
       },
@@ -356,13 +358,14 @@
         "command": "cody.comment.load",
         "title": "Cody Inline Assist: Loading",
         "category": "Cody Inline Assist",
+        "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(sync~spin)"
       },
       {
         "command": "cody.guardrails.debug",
         "title": "Cody: Guardrails Debug Attribution",
-        "enablement": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
+        "enablement": "config.cody.experimental.guardrails && editorHasSelection"
       },
       {
         "command": "cody.recipe.file-touch",
@@ -376,35 +379,41 @@
         "command": "cody.recipe.non-stop",
         "title": "Cody: Fixup (Experimental)",
         "icon": "resources/cody.png",
+        "when": "cody.nonstop.fixups.enabled",
         "enablement": "cody.nonstop.fixups.enabled && editorHasSelection"
       },
       {
         "command": "cody.fixup.open",
         "title": "Cody: Go to Fixup",
+        "when": "cody.nonstop.fixups.enabled",
         "enablement": "cody.nonstop.fixups.enabled",
         "icon": "$(file-code)"
       },
       {
         "command": "cody.fixup.apply",
         "title": "Cody: Apply fixup",
+        "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check)"
       },
       {
         "command": "cody.fixup.apply-all",
         "title": "Cody: Apply all fixups",
+        "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check-all)"
       },
       {
         "command": "cody.fixup.apply-by-file",
         "title": "Cody: Apply fixups to selected directory",
+        "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check-all)"
       },
       {
         "command": "cody.fixup.diff",
         "title": "Cody: Show diff for fixup",
+        "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(diff)"
       }
@@ -519,16 +528,16 @@
         },
         {
           "command": "cody.manual-completions",
-          "when": "config.cody.completions"
+          "when": "config.cody.experimental.suggestions"
         },
         {
           "command": "cody.guardrails.debug",
-          "when": "false"
+          "when": "config.cody.experimental.guardrails && editorHasSelection"
         },
         {
           "command": "cody.inline.insert",
           "when": "false"
-	      },
+        },
         {
           "command": "cody.walkthrough.showLogin",
           "when": "false"
@@ -575,7 +584,7 @@
         },
         {
           "command": "cody.recipe.file-touch",
-          "when": "cody.activated"
+          "when": "cody.activated && cody.inline-assist.enabled"
         },
         {
           "command": "cody.recipe.generate-unit-test",
@@ -603,7 +612,7 @@
         },
         {
           "command": "cody.guardrails.debug",
-          "when": "cody.activated && config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
+          "when": "config.cody.experimental.guardrails && editorHasSelection"
         }
       ],
       "view/title": [
@@ -650,24 +659,24 @@
         {
           "command": "cody.comment.add",
           "group": "inline",
-          "when": "cody.activated && commentController =~ /^cody-inline/"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.inline-assist.enabled"
         },
         {
           "command": "cody.focus",
           "group": "inline",
-          "when": "!cody.activated && commentController =~ /^cody-inline/"
+          "when": "!cody.activated && commentController =~ /^cody-inline/ && cody.inline-assist.enabled"
         }
       ],
       "comments/commentThread/title": [
         {
           "command": "cody.comment.delete",
           "group": "inline@1",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty && cody.inline-assist.enabled"
         },
         {
           "command": "cody.comment.load",
           "group": "inline@2",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending && cody.inline-assist.enabled"
         }
       ],
       "view/item/context": [
@@ -734,10 +743,6 @@
           ]
         },
         "cody.experimental.suggestions": {
-          "markdownDeprecationMessage": "This setting was renamed to `cody.completions`.",
-          "default": false
-        },
-        "cody.completions": {
           "order": 5,
           "type": "boolean",
           "markdownDescription": "Enables experimental Cody completions in your editor.",
@@ -784,6 +789,22 @@
           "markdownDescription": "Regular expression to filter debug output. If empty, defaults to '.*', which prints all messages."
         }
       }
+    },
+    "icons": {
+      "cody-logo": {
+        "description": "Cody logo",
+        "default": {
+          "fontPath": "dist/assets/cody-icons.woff",
+          "fontCharacter": "\\0041"
+        }
+      },
+      "cody-logo-heavy": {
+        "description": "Cody logo heavy",
+        "default": {
+          "fontPath": "dist/assets/cody-icons.woff",
+          "fontCharacter": "\\0042"
+        }
+      }
     }
   },
   "dependencies": {
@@ -798,6 +819,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.33.0",
-    "playwright": "^1.33.0"
+    "cody-icons-font": "workspace:^",
+    "playwright": "^1.33.0",
+    "vite-plugin-static-copy": "^0.16.0"
   }
 }

@@ -14,8 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// SourceVersion should be bumped whenever the format of any cached data in this
+// actor source implementation is changed. This effectively expires all entries.
+const SourceVersion = "v1"
 
 // dotcom user gateway tokens are always a prefix of 4 characters (sgd_)
 // followed by a 64-character hex-encoded SHA256 hash
@@ -62,7 +67,7 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 
 	var act *actor.Actor
 	if err := json.Unmarshal(data, &act); err != nil || act == nil {
-		s.log.Error("failed to unmarshal actor", log.Error(err))
+		trace.Logger(ctx, s.log).Error("failed to unmarshal actor", log.Error(err))
 
 		// Delete the corrupted record.
 		s.cache.Delete(token)
@@ -137,7 +142,7 @@ func newActor(source *Source, cacheKey string, user dotcom.DotcomUserState, conc
 
 	if rl := user.CodyGatewayAccess.ChatCompletionsRateLimit; rl != nil {
 		a.RateLimits[codygateway.FeatureChatCompletions] = actor.NewRateLimitWithPercentageConcurrency(
-			rl.Limit,
+			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
 			rl.AllowedModels,
 			concurrencyConfig,
@@ -146,7 +151,7 @@ func newActor(source *Source, cacheKey string, user dotcom.DotcomUserState, conc
 
 	if rl := user.CodyGatewayAccess.CodeCompletionsRateLimit; rl != nil {
 		a.RateLimits[codygateway.FeatureCodeCompletions] = actor.NewRateLimitWithPercentageConcurrency(
-			rl.Limit,
+			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
 			rl.AllowedModels,
 			concurrencyConfig,
@@ -155,7 +160,7 @@ func newActor(source *Source, cacheKey string, user dotcom.DotcomUserState, conc
 
 	if rl := user.CodyGatewayAccess.EmbeddingsRateLimit; rl != nil {
 		a.RateLimits[codygateway.FeatureEmbeddings] = actor.NewRateLimitWithPercentageConcurrency(
-			rl.Limit,
+			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
 			rl.AllowedModels,
 			concurrencyConfig,

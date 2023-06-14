@@ -15,6 +15,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/grafana/regexp v0.0.0-20221123153739-15dc172cd2db
 	github.com/hexops/autogold/v2 v2.0.3
+	github.com/jackc/pgconn v1.10.1
 	github.com/json-iterator/go v1.1.12
 	github.com/klauspost/pgzip v1.2.5
 	github.com/mattn/go-isatty v0.0.17
@@ -25,7 +26,7 @@ require (
 	github.com/sourcegraph/go-diff v0.6.2-0.20221123165719-f8cd299c40f3
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/sourcegraph/log v0.0.0-20221206163500-7d93c6ad7037
-	github.com/sourcegraph/scip v0.2.4-0.20221213205653-aa0e511dcfef
+	github.com/sourcegraph/scip v0.2.4-0.20230613194658-b62733841bc3
 	github.com/stretchr/testify v1.8.2
 	github.com/urfave/cli/v2 v2.23.7
 	github.com/xeipuuv/gojsonschema v1.2.0
@@ -70,6 +71,11 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
+	github.com/jackc/pgio v1.0.0 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgproto3/v2 v2.1.1 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
 	github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a // indirect
 	github.com/jhump/protocompile v0.0.0-20220216033700-d705409f108f // indirect
 	github.com/jhump/protoreflect v1.12.1-0.20220417024638-438db461d753 // indirect

@@ -5,6 +5,8 @@ package dotcom
 import (
 	"context"
 	"encoding/json"
+	"strconv"
+	"strings"
 
 	"github.com/Khan/genqlient/graphql"
 )
@@ -281,8 +283,8 @@ func (v *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit) Ge
 }
 
 // GetLimit returns CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit.Limit, and is useful for accessing the field via an interface.
-func (v *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit) GetLimit() int {
-	return v.RateLimitFields.Limit
+func (v *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit) GetLimit() int64 {
+	return int64(v.RateLimitFields.Limit)
 }
 
 // GetIntervalSeconds returns CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit.IntervalSeconds, and is useful for accessing the field via an interface.
@@ -320,7 +322,7 @@ type __premarshalCodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateL
 
 	Source CodyGatewayRateLimitSource `json:"source"`
 
-	Limit int `json:"limit"`
+	Limit int64 `json:"limit"`
 
 	IntervalSeconds int `json:"intervalSeconds"`
 }
@@ -338,7 +340,7 @@ func (v *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit) __
 
 	retval.AllowedModels = v.RateLimitFields.AllowedModels
 	retval.Source = v.RateLimitFields.Source
-	retval.Limit = v.RateLimitFields.Limit
+	retval.Limit = int64(v.RateLimitFields.Limit)
 	retval.IntervalSeconds = v.RateLimitFields.IntervalSeconds
 	return &retval, nil
 }
@@ -363,8 +365,8 @@ func (v *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit) Ge
 }
 
 // GetLimit returns CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit.Limit, and is useful for accessing the field via an interface.
-func (v *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit) GetLimit() int {
-	return v.RateLimitFields.Limit
+func (v *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit) GetLimit() int64 {
+	return int64(v.RateLimitFields.Limit)
 }
 
 // GetIntervalSeconds returns CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit.IntervalSeconds, and is useful for accessing the field via an interface.
@@ -402,7 +404,7 @@ type __premarshalCodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateL
 
 	Source CodyGatewayRateLimitSource `json:"source"`
 
-	Limit int `json:"limit"`
+	Limit int64 `json:"limit"`
 
 	IntervalSeconds int `json:"intervalSeconds"`
 }
@@ -420,7 +422,7 @@ func (v *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit) __
 
 	retval.AllowedModels = v.RateLimitFields.AllowedModels
 	retval.Source = v.RateLimitFields.Source
-	retval.Limit = v.RateLimitFields.Limit
+	retval.Limit = int64(v.RateLimitFields.Limit)
 	retval.IntervalSeconds = v.RateLimitFields.IntervalSeconds
 	return &retval, nil
 }
@@ -445,8 +447,8 @@ func (v *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit) GetSour
 }
 
 // GetLimit returns CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit.Limit, and is useful for accessing the field via an interface.
-func (v *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit) GetLimit() int {
-	return v.RateLimitFields.Limit
+func (v *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit) GetLimit() int64 {
+	return int64(v.RateLimitFields.Limit)
 }
 
 // GetIntervalSeconds returns CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit.IntervalSeconds, and is useful for accessing the field via an interface.
@@ -484,7 +486,7 @@ type __premarshalCodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit 
 
 	Source CodyGatewayRateLimitSource `json:"source"`
 
-	Limit int `json:"limit"`
+	Limit int64 `json:"limit"`
 
 	IntervalSeconds int `json:"intervalSeconds"`
 }
@@ -502,7 +504,7 @@ func (v *CodyGatewayAccessFieldsEmbeddingsRateLimitCodyGatewayRateLimit) __prema
 
 	retval.AllowedModels = v.RateLimitFields.AllowedModels
 	retval.Source = v.RateLimitFields.Source
-	retval.Limit = v.RateLimitFields.Limit
+	retval.Limit = int64(v.RateLimitFields.Limit)
 	retval.IntervalSeconds = v.RateLimitFields.IntervalSeconds
 	return &retval, nil
 }
@@ -1065,10 +1067,22 @@ type RateLimitFields struct {
 	// The source of the rate limit configuration.
 	Source CodyGatewayRateLimitSource `json:"source"`
 	// Requests per time interval.
-	// TODO: This needs to become BigInt, the limits for embeddings can exceed int32.
-	Limit int `json:"limit"`
+	// TODO: Make this be `BigInt` after initial rollout.
+	Limit maybeBigInt `json:"limit"`
 	// Interval for rate limiting.
 	IntervalSeconds int `json:"intervalSeconds"`
+}
+
+// TODO: Delete this after initial rollout of BigInt.
+type maybeBigInt int64
+
+func (v *maybeBigInt) UnmarshalJSON(data []byte) error {
+	i, err := strconv.ParseInt(strings.Trim(string(data), `"`), 10, 64)
+	if err != nil {
+		return err
+	}
+	*v = maybeBigInt(i)
+	return nil
 }
 
 // GetAllowedModels returns RateLimitFields.AllowedModels, and is useful for accessing the field via an interface.
@@ -1078,7 +1092,7 @@ func (v *RateLimitFields) GetAllowedModels() []string { return v.AllowedModels }
 func (v *RateLimitFields) GetSource() CodyGatewayRateLimitSource { return v.Source }
 
 // GetLimit returns RateLimitFields.Limit, and is useful for accessing the field via an interface.
-func (v *RateLimitFields) GetLimit() int { return v.Limit }
+func (v *RateLimitFields) GetLimit() int64 { return int64(v.Limit) }
 
 // GetIntervalSeconds returns RateLimitFields.IntervalSeconds, and is useful for accessing the field via an interface.
 func (v *RateLimitFields) GetIntervalSeconds() int { return v.IntervalSeconds }

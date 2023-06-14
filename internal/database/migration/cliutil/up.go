@@ -2,17 +2,23 @@ package cliutil
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
+	"github.com/jackc/pgerrcode"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
+
+var EnvShouldAutoUpgrade = env.MustGetBool("SRC_AUTOUPGRADE", false, "If you forgot to set intent to autoupgrade before shutting down the instance, set this env var.")
 
 func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, development bool) *cli.Command {
 	schemaNamesFlag := &cli.StringSliceFlag{
@@ -110,8 +116,21 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 		if err != nil {
 			return err
 		}
+
+		upgradestore := upgradestore.New(db)
+
+		_, dbShouldAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
+		if err != nil && !errors.HasPostgresCode(err, pgerrcode.UndefinedTable) && !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+
+		if EnvShouldAutoUpgrade || dbShouldAutoUpgrade {
+			out.WriteLine(output.Emoji(output.EmojiInfo, "Auto-upgrade flag is set, delegating upgrade to frontend instance"))
+			return nil
+		}
+
 		if !skipUpgradeValidationFlag.Get(cmd) {
-			if err := upgradestore.New(db).ValidateUpgrade(ctx, "frontend", version.Version()); err != nil {
+			if err := upgradestore.ValidateUpgrade(ctx, "frontend", version.Version()); err != nil {
 				return err
 			}
 		}
