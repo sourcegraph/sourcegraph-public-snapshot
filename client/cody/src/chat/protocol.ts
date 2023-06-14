@@ -4,6 +4,7 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { View } from '../../webviews/NavBar'
+import { LocalProcess } from '../services/LocalAppDetector'
 
 /**
  * A message sent from the webview to the extension host.
@@ -88,7 +89,7 @@ export const unauthenticatedStatus = {
 }
 
 /** The local environment of the editor. */
-export interface LocalEnv {
+export interface LocalEnv extends LocalProcess {
     // The application name of the editor
     appName: string
     // The URL scheme the editor is registered to in the operating system

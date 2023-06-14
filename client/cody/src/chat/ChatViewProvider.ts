@@ -696,7 +696,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.localAppDetector.dispose()
                 this.sendLocalAppState(true)
             }
+            const localProcess = this.localAppDetector.getProcessInfo()
             const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
+                ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
                 appScheme: vscode.env.uriScheme,

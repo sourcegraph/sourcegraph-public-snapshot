@@ -1,8 +1,4 @@
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
-
-import { AuthStatus, defaultAuthStatus, isLocalApp, unauthenticatedStatus } from './protocol'
+import { AuthStatus, defaultAuthStatus, unauthenticatedStatus } from './protocol'
 
 // Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
 // This should captures:
@@ -45,38 +41,6 @@ export function convertGitCloneURLToCodebaseName(cloneURL: string): string | nul
         console.error(`Cody could not extract repo name from clone URL ${cloneURL}:`, error)
         return null
     }
-}
-
-let client: SourcegraphGraphQLAPIClient
-let configWithToken: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
-
-/**
- * Gets the authentication status for a user.
- *
- * @returns The user's authentication status.
- */
-export async function getAuthStatus(
-    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
-): Promise<AuthStatus> {
-    if (!config.accessToken || !config.serverEndpoint) {
-        return { ...defaultAuthStatus }
-    }
-    // Cache the config and the GraphQL client
-    if (config !== configWithToken) {
-        configWithToken = config
-        client = new SourcegraphGraphQLAPIClient(config)
-    }
-    // Version is for frontend to check if Cody is not enabled due to unsupported version when siteHasCodyEnabled is false
-    const { enabled, version } = await client.isCodyEnabled()
-    const isDotComOrApp = client.isDotCom() || isLocalApp(config.serverEndpoint)
-    if (!isDotComOrApp) {
-        const currentUserID = await client.getCurrentUserId()
-        return newAuthStatus(isDotComOrApp, !isError(currentUserID), false, enabled, version)
-    }
-    const userInfo = await client.getCurrentUserIdAndVerifiedEmail()
-    return isError(userInfo)
-        ? { ...unauthenticatedStatus }
-        : newAuthStatus(isDotComOrApp, !!userInfo.id, userInfo.hasVerifiedEmail, true, version)
 }
 
 /**

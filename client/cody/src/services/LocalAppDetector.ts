@@ -1,10 +1,18 @@
 import * as vscode from 'vscode'
 
+export interface LocalProcess {
+    arch: string
+    homeDir: string | undefined
+    os: string
+    isAppInstalled: boolean
+}
+
 const LOCAL_APP_LOCATIONS: { [key: string]: string[] } = {
+    // Only apply silicon is supported
     darwin: [
-        '~/Library/Application Support/com.sourcegraph.cody',
         '/Applications/Sourcegraph.app',
         '/Applications/Cody.app',
+        '/Library/Application Support/com.sourcegraph.cody',
     ],
 }
 
@@ -17,98 +25,102 @@ async function pathExists(path: string): Promise<boolean> {
     }
 }
 
-function expandHomeDir(path: string): string {
-    if (path.startsWith('~/')) {
-        return path.replace('~', process.env.HOME || '')
-    }
-    return path
-}
-
 type OnChangeCallback = (value: boolean) => void
 
 /**
  * Detects whether the user has the Sourcegraph app installed locally.
  */
 export class LocalAppDetector implements vscode.Disposable {
-    private onChange: OnChangeCallback
+    private arch: string
+    private platformName: string
+    private homeDir: string | undefined
+
+    private isSupported = false
     private isInstalled = false
     private localAppMarkers: string[] | undefined
-    private watcher: vscode.FileSystemWatcher | undefined
-    private platformName: string
+
+    private onChange: OnChangeCallback
+    private _watchers: vscode.Disposable[] = []
 
     constructor(options: { onChange: OnChangeCallback }) {
         this.onChange = options.onChange
         this.platformName = process.platform
+        this.arch = process.arch
+        this.homeDir = process.env.HOME
         this.localAppMarkers = LOCAL_APP_LOCATIONS[this.platformName]
+        // Only Mac Silicon (M1 chip) is supported
+        this.isSupported = this.platformName === 'darwin' && this.arch === 'arm64'
         this.start()
+    }
+
+    public async detect(): Promise<void> {
+        const startCondition = this.canStart()
+        if (!startCondition || !this.localAppMarkers) {
+            return
+        }
+        const foundPaths = new Set()
+        for (const marker of this.localAppMarkers) {
+            const markerExists = await pathExists(marker)
+            if (markerExists) {
+                foundPaths.add(marker)
+            }
+        }
+        // Check if Sourcegraph.app/Cody.aoo AND com.sourcegraph.cody are found
+        this.fire(foundPaths.size === 2)
+    }
+
+    private fire(state: boolean): void {
+        if (!this.isSupported) {
+            return
+        }
+        this.onChange(state)
+        this.isInstalled = state
+    }
+
+    public start(): void {
+        const markers = this.localAppMarkers
+        const startCondition = this.canStart()
+        if (!startCondition || !markers || !this.homeDir) {
+            return
+        }
+        for (const marker of markers) {
+            const watchPattern = new vscode.RelativePattern(this.homeDir, `${marker}`)
+            const watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
+            watcher.onDidChange(() => this.detect())
+            watcher.onDidCreate(() => this.detect())
+            watcher.onDidDelete(() => this.detect())
+            this._watchers.push(watcher)
+        }
+        void this.detect()
+    }
+
+    private canStart(): boolean {
+        if (!this.isSupported || this._watchers.length || this.isInstalled || !this.homeDir) {
+            return false
+        }
+        return true
+    }
+
+    public getProcessInfo(): LocalProcess {
+        return {
+            arch: this.arch,
+            os: this.platformName,
+            homeDir: this.homeDir,
+            isAppInstalled: this.isInstalled,
+        }
     }
 
     public get isLocalAppInstalled(): boolean {
         return this.isInstalled
     }
 
-    public async detect(): Promise<void> {
-        if (!this.localAppMarkers) {
-            return
-        }
-
-        if (await pathExists(this.localAppMarkers[0])) {
-            if (isMac() && (await pathExists(this.localAppMarkers[1]))) {
-                this.fire(true)
-                return
-            }
-        }
-
-        for (const marker of this.localAppMarkers) {
-            const markerExists = await pathExists(expandHomeDir(marker))
-            if (markerExists) {
-                this.fire(true)
-                return
-            }
-        }
-
-        this.fire(false)
-    }
-
-    private fire(state: boolean): void {
-        this.onChange(state)
-        this.isInstalled = state
-    }
-
-    public start(): void {
-        // Get home directory
-        const homeDir = process.env.HOME
-        if (this.watcher !== undefined || !homeDir) {
-            return
-        }
-        const marker = this.localAppMarkers?.[0].replace('~/', '')
-        if (!marker) {
-            return
-        }
-
-        const watchPattern = new vscode.RelativePattern(homeDir, `${marker}/**`)
-        this.watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
-
-        void this.detect()
-
-        this.watcher.onDidChange(() => {
-            void this.detect()
-        })
-        this.watcher.onDidCreate(() => {
-            void this.detect()
-        })
-        this.watcher.onDidDelete(() => {
-            void this.detect()
-        })
-    }
-
     public dispose(): void {
-        if (this.watcher !== undefined) {
-            this.watcher.dispose()
+        if (!this._watchers.length) {
+            return
         }
+        for (const watcher of this._watchers) {
+            watcher.dispose()
+        }
+        this._watchers = []
     }
-}
-
-function isMac(): boolean {
-    return process.platform === 'darwin'
 }

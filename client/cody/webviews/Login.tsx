@@ -18,6 +18,7 @@ interface LoginProps {
     vscodeAPI: VSCodeWrapper
     callbackScheme?: string
     appOS?: string
+    appArch?: string
 }
 
 export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
@@ -28,10 +29,11 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     vscodeAPI,
     callbackScheme,
     appOS,
+    appArch,
 }) => {
     const [endpoint, setEndpoint] = useState(serverEndpoint || DOTCOM_URL.href)
 
-    const isOSSupported = appOS === 'darwin' || appOS === 'linux'
+    const isOSSupported = appOS === 'darwin' && appArch === 'arm64'
     const loginWithDotCom = (): void => {
         const authUri = new URL(DOTCOM_CALLBACK_URL.href)
         authUri.searchParams.append('requestFrom', callbackScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY')
@@ -68,7 +70,11 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                     <h2 className={styles.sectionHeader}>{isAppInstalled ? 'Connect to Cody App' : 'Get Started'}</h2>
                     <p className={styles.openMessage}>{isAppInstalled ? messages.connectApp : messages.getStarted}</p>
                     <ConnectApp isAppInstalled={isAppInstalled} vscodeAPI={vscodeAPI} isOSSupported={isOSSupported} />
-                    {!isOSSupported && <small>Sorry, {appOS} is not yet supported.</small>}
+                    {!isOSSupported && (
+                        <small>
+                            Sorry, {appOS}-{appArch} is not yet supported.
+                        </small>
+                    )}
                 </section>
                 {!isOSSupported && (
                     <section className={classNames(styles.section, styles.codyGradient)}>
