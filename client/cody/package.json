@@ -478,7 +478,7 @@
     ],
     "submenus": [
       {
-        "label": "Ask Cody",
+        "label": "Cody",
         "id": "cody.submenu"
       }
     ],
