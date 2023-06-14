@@ -53,7 +53,7 @@ func (c *codyGatewayClient) Stream(ctx context.Context, feature types.Completion
 	if err != nil {
 		return err
 	}
-	return cc.Stream(ctx, feature, requestParams, sendEvent)
+	return overwriteErrSource(cc.Stream(ctx, feature, requestParams, sendEvent))
 }
 
 func (c *codyGatewayClient) Complete(ctx context.Context, feature types.CompletionsFeature, requestParams types.CompletionRequestParameters) (*types.CompletionResponse, error) {
@@ -61,9 +61,20 @@ func (c *codyGatewayClient) Complete(ctx context.Context, feature types.Completi
 	if err != nil {
 		return nil, err
 	}
-	// Passthrough error directly, ErrStatusNotOK should be implemented by the
-	// underlying client.
-	return cc.Complete(ctx, feature, requestParams)
+	resp, err := cc.Complete(ctx, feature, requestParams)
+	return resp, overwriteErrSource(err)
+}
+
+// overwriteErrSource should be used on all errors returned by an underlying
+// types.CompletionsClient to avoid confusing error messages.
+func overwriteErrSource(err error) error {
+	if err == nil {
+		return nil
+	}
+	if statusErr, ok := types.IsErrStatusNotOK(err); ok {
+		statusErr.Source = "Sourcegraph Cody Gateway"
+	}
+	return err
 }
 
 func (c *codyGatewayClient) clientForParams(feature types.CompletionsFeature, requestParams *types.CompletionRequestParameters) (types.CompletionsClient, error) {
