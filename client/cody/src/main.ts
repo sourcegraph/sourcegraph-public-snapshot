@@ -87,7 +87,8 @@ const register = async (
     disposables.push(commentController.get())
 
     const fixup = new FixupController()
-    const controllers = { inline: commentController, task: fixup, fixup }
+    disposables.push(fixup)
+    const controllers = { inline: commentController, task: fixup }
 
     const editor = new VSCodeEditor(controllers)
     const workspaceConfig = vscode.workspace.getConfiguration()
@@ -116,6 +117,7 @@ const register = async (
         rgPath
     )
     disposables.push(chatProvider)
+    fixup.recipeRunner = chatProvider
 
     disposables.push(
         vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
@@ -153,7 +155,6 @@ const register = async (
     const statusBar = createStatusBar()
 
     disposables.push(
-        fixup,
         vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
             // Insert copiedText to the current cursor position
             await vscode.commands.executeCommand('editor.action.insertSnippet', {

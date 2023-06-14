@@ -15,8 +15,6 @@ export class VSCodeEditor implements Editor {
     constructor(
         public controllers: {
             inline: InlineController
-            // TODO: Rename this from "task" to "fixup" when the fixup data
-            // model moves from client/cody-shared to client/cody
             task: FixupController
         }
     ) {

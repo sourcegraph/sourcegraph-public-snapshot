@@ -10,7 +10,7 @@ import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, taskID } from './FixupTask'
 import { FixupTypingUI } from './FixupTypingUI'
-import { FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged } from './roles'
+import { FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged, IdleRecipeRunner } from './roles'
 import { TaskViewProvider, FixupTaskTreeItem } from './TaskViewProvider'
 import { CodyTaskState } from './utils'
 
@@ -28,6 +28,7 @@ export class FixupController
     private readonly codelenses = new FixupCodeLenses(this)
     private readonly contentStore = new ContentProvider()
     private readonly typingUI = new FixupTypingUI(this)
+    public recipeRunner: IdleRecipeRunner | undefined
 
     private _disposables: vscode.Disposable[] = []
 
