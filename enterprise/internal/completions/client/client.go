@@ -103,6 +103,9 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) *schema.Completio
 	if completionsConfig.CompletionModel == "" {
 		completionsConfig.CompletionModel = "claude-instant-v1"
 	}
+	if completionsConfig.FastChatModel == "" {
+		completionsConfig.FastChatModel = completionsConfig.CompletionModel
+	}
 
 	return completionsConfig
 }

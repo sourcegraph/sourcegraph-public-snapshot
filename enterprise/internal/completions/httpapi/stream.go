@@ -22,7 +22,7 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 	return newCompletionsHandler(rl, "chat", func(requestParams types.CodyCompletionRequestParameters, c *schema.Completions) string {
 		// No user defined models for now.
 		if requestParams.Fast {
-			return c.GetFastChatModel()
+			return c.FastChatModel
 		}
 		return c.ChatModel
 	}, func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {

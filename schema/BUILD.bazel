@@ -52,7 +52,6 @@ go_library(
         "github_util.go",
         "gitlab_util.go",
         "schema.go",
-        "schema_util.go",
         "stringdata.go",
     ],
     embedsrcs = [

@@ -47,7 +47,7 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 
 	var chatModel string
 	if args.Fast {
-		chatModel = completionsConfig.GetFastChatModel()
+		chatModel = completionsConfig.FastChatModel
 	} else {
 		chatModel = completionsConfig.ChatModel
 	}
