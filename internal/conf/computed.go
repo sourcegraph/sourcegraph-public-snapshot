@@ -201,8 +201,12 @@ func BatchChangesRestrictedToAdmins() bool {
 // If `cody.enabled` is NOT set, but `completions.enabled` is true, then cody is enabled.
 // If `cody.enabled` is set, and `completions.enabled` is set to false, cody is disabled.
 func CodyEnabled() bool {
-	enabled := Get().CodyEnabled
-	completions := Get().Completions
+	return codyEnabled(Get().SiteConfig())
+}
+
+func codyEnabled(siteConfig schema.SiteConfiguration) bool {
+	enabled := siteConfig.CodyEnabled
+	completions := siteConfig.Completions
 
 	// If the cody.enabled flag is explicitly false, disable all cody features.
 	if enabled != nil && !*enabled {
@@ -635,7 +639,7 @@ func GitMaxConcurrentClones() int {
 // site configuration. The configuration may be nil if completions is disabled.
 func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.CompletionsConfig) {
 	// If cody is disabled, don't use completions.
-	if !CodyEnabled() {
+	if !codyEnabled(siteConfig) {
 		return nil
 	}
 
@@ -779,8 +783,8 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 // GetEmbeddingsConfig evaluates a complete embeddings configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
 func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.EmbeddingsConfig {
-	// If cody is disabled, don't use completions.
-	if !CodyEnabled() {
+	// If cody is disabled, don't use embeddings.
+	if !codyEnabled(siteConfig) {
 		return nil
 	}
 
@@ -803,9 +807,7 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 	// a default configuration.
 	if embeddingsConfig == nil {
 		embeddingsConfig = &schema.Embeddings{
-			Dimensions: 1536,
-			Provider:   string(conftypes.EmbeddingsProviderNameSourcegraph),
-			Model:      "openai/text-embedding-ada-002",
+			Provider: string(conftypes.EmbeddingsProviderNameSourcegraph),
 		}
 	}
 
@@ -890,6 +892,9 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		if embeddingsConfig.Dimensions <= 0 && embeddingsConfig.Model == "text-embedding-ada-002" {
 			embeddingsConfig.Dimensions = 1536
 		}
+	} else {
+		// Unknown provider value.
+		return nil
 	}
 
 	computedConfig := &conftypes.EmbeddingsConfig{
@@ -899,7 +904,7 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		Endpoint:    embeddingsConfig.Endpoint,
 		Dimensions:  embeddingsConfig.Dimensions,
 		// This is definitely set at this point.
-		Incremental:                *embeddingsConfig.Enabled,
+		Incremental:                *embeddingsConfig.Incremental,
 		ExcludedFilePathPatterns:   embeddingsConfig.ExcludedFilePathPatterns,
 		MaxCodeEmbeddingsPerRepo:   embeddingsConfig.MaxCodeEmbeddingsPerRepo,
 		MaxTextEmbeddingsPerRepo:   embeddingsConfig.MaxTextEmbeddingsPerRepo,

@@ -5,9 +5,11 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -356,6 +358,11 @@ func TestCodyEnabled(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "cody disabled, completions enabled",
+			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(false), Completions: &schema.Completions{Enabled: boolPtr(true), Model: "foobar"}},
+			want: false,
+		},
+		{
 			name: "cody disabled, completions configured",
 			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(false), Completions: &schema.Completions{Model: "foobar"}},
 			want: false,
@@ -384,552 +391,479 @@ func TestCodyEnabled(t *testing.T) {
 }
 
 func TestGetCompletionsConfig(t *testing.T) {
-	truePtr := true
-
-	for _, tc := range []struct {
-		name   string
-		config schema.SiteConfiguration
-		want   autogold.Value
+	licenseKey := "theasdfkey"
+	licenseAccessToken := licensing.GenerateLicenseKeyBasedAccessToken(licenseKey)
+	testCases := []struct {
+		name         string
+		siteConfig   schema.SiteConfiguration
+		deployType   string
+		wantConfig   *conftypes.CompletionsConfig
+		wantDisabled bool
 	}{
 		{
-			name: "cody not enabled",
-			config: schema.SiteConfiguration{
-				CodyEnabled: nil,
+			name: "Completions disabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Enabled: pointify(false),
+				},
 			},
-			want: autogold.Expect((*schema.Completions)(nil)),
+			wantDisabled: true,
 		},
 		{
+			name: "cody.enabled and empty completions object",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "cody.enabled set false",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(false),
+				Completions: &schema.Completions{},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "no cody config",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: nil,
+				Completions: nil,
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "Invalid provider",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider: "invalid",
+				},
+			},
+			wantDisabled: true,
+		},
+		////////////////
+		{
 			name: "anthropic completions",
-			config: schema.SiteConfiguration{
-				CodyEnabled: &truePtr,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				LicenseKey:  licenseKey,
 				Completions: &schema.Completions{
 					Enabled:         pointify(true),
 					Provider:        "anthropic",
+					AccessToken:     "asdf",
 					ChatModel:       "claude-v1",
 					CompletionModel: "claude-instant-v1",
 				},
 			},
-			want: autogold.Expect(&schema.Completions{
-				Enabled:         pointify(true),
+			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:       "claude-v1",
+				FastChatModel:   "claude-instant-v1",
 				CompletionModel: "claude-instant-v1",
+				AccessToken:     "asdf",
 				Provider:        "anthropic",
-			}),
+				Endpoint:        "https://api.anthropic.com/v1/complete",
+			},
 		},
+		// TODO I thought this was not the case.
 		{
 			name: "anthropic completions, with cody.enabled taking precedence over completions.enabled",
-			config: schema.SiteConfiguration{
-				CodyEnabled: &truePtr,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				LicenseKey:  licenseKey,
 				Completions: &schema.Completions{
 					Enabled:         pointify(false),
 					Provider:        "anthropic",
+					AccessToken:     "asdf",
 					ChatModel:       "claude-v1",
 					CompletionModel: "claude-instant-v1",
 				},
 			},
-			want: autogold.Expect(&schema.Completions{
-				Enabled:         pointify(true),
+			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:       "claude-v1",
+				FastChatModel:   "claude-instant-v1",
 				CompletionModel: "claude-instant-v1",
+				AccessToken:     "asdf",
 				Provider:        "anthropic",
-			}),
+				Endpoint:        "https://api.anthropic.com/v1/complete",
+			},
 		},
 		{
 			name: "zero-config cody gateway completions without license key",
-			config: schema.SiteConfiguration{
-				CodyEnabled: &truePtr,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
 				LicenseKey:  "",
 			},
-			want: autogold.Expect(&schema.Completions{
-				ChatModel:       "anthropic/claude-v1",
-				CompletionModel: "anthropic/claude-instant-v1",
-				Enabled:         pointify(true),
-				Endpoint:        "https://cody-gateway.sourcegraph.com",
-				Provider:        "sourcegraph",
-			}),
+			wantDisabled: true,
 		},
 		{
 			name: "zero-config cody gateway completions with license key",
-			config: schema.SiteConfiguration{
-				CodyEnabled: &truePtr,
-				LicenseKey:  "foobar",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				LicenseKey:  licenseKey,
 			},
-			want: autogold.Expect(&schema.Completions{
-				Enabled:         pointify(true),
-				AccessToken:     "slk_c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2",
-				CompletionModel: "anthropic/claude-v1",
-				Endpoint:        "https://cody-gateway.sourcegraph.com",
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:       "anthropic/claude-v1",
+				FastChatModel:   "anthropic/claude-instant-v1",
+				CompletionModel: "anthropic/claude-instant-v1",
+				AccessToken:     licenseAccessToken,
 				Provider:        "sourcegraph",
-			}),
+				Endpoint:        "https://cody-gateway.sourcegraph.com",
+			},
 		},
 		{
 			// Legacy support for completions.enabled
 			name: "legacy field completions.enabled: zero-config cody gateway completions without license key",
-			config: schema.SiteConfiguration{
+			siteConfig: schema.SiteConfiguration{
 				Completions: &schema.Completions{Enabled: pointify(true)},
 				LicenseKey:  "",
 			},
-			want: autogold.Expect(&schema.Completions{
-				Enabled:         pointify(true),
-				CompletionModel: "anthropic/claude-v1",
-				Endpoint:        "https://cody-gateway.sourcegraph.com",
-				Provider:        "sourcegraph",
-			}),
+			wantDisabled: true,
 		},
 		{
+			// TODO, this is testing that no provider set is ok, this feels wrong.
 			// Legacy support for completions.enabled
 			name: "legacy field completions.enabled: zero-config cody gateway completions with license key",
-			config: schema.SiteConfiguration{
-				Completions: &schema.Completions{Enabled: pointify(true)},
-				LicenseKey:  "foobar",
+			siteConfig: schema.SiteConfiguration{
+				Completions: &schema.Completions{
+					Enabled: pointify(true),
+				},
+				LicenseKey: licenseKey,
 			},
-			want: autogold.Expect(&schema.Completions{
-				Enabled:         pointify(true),
-				AccessToken:     "slk_c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2",
-				CompletionModel: "anthropic/claude-v1",
+			wantDisabled: true,
+			// wantConfig: &conftypes.CompletionsConfig{
+			// 	ChatModel:       "anthropic/claude-v1",
+			// 	FastChatModel:   "anthropic/claude-instant-v1",
+			// 	CompletionModel: "anthropic/claude-instant-v1",
+			// 	AccessToken:     licenseAccessToken,
+			// 	Provider:        "sourcegraph",
+			// 	Endpoint:        "https://cody-gateway.sourcegraph.com",
+			// },
+		},
+		{
+			name:       "app zero-config cody gateway completions with dotcom token",
+			deployType: deploy.App,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				App: &schema.App{
+					DotcomAuthToken: "TOKEN",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				AccessToken:     "sgd_5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
+				ChatModel:       "anthropic/claude-v1",
+				FastChatModel:   "anthropic/claude-instant-v1",
+				CompletionModel: "anthropic/claude-instant-v1",
 				Endpoint:        "https://cody-gateway.sourcegraph.com",
 				Provider:        "sourcegraph",
-			}),
+			},
 		},
-	} {
+		{
+			name:       "app with custom configuration",
+			deployType: deploy.App,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				Completions: &schema.Completions{
+					AccessToken:     "CUSTOM_TOKEN",
+					Provider:        "anthropic",
+					ChatModel:       "claude-v1",
+					FastChatModel:   "claude-instant-v1",
+					CompletionModel: "claude-instant-v1",
+				},
+				App: &schema.App{
+					DotcomAuthToken: "TOKEN",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				AccessToken:     "CUSTOM_TOKEN",
+				ChatModel:       "claude-v1",
+				CompletionModel: "claude-instant-v1",
+				FastChatModel:   "claude-instant-v1",
+				Provider:        "anthropic",
+				Endpoint:        "https://api.anthropic.com/v1/complete",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := GetCompletionsConfig(tc.config)
-			tc.want.Equal(t, got)
+			defaultDeploy := deploy.Type()
+			if tc.deployType != "" {
+				deploy.Mock(tc.deployType)
+			}
+			t.Cleanup(func() {
+				deploy.Mock(defaultDeploy)
+			})
+			conf := GetCompletionsConfig(tc.siteConfig)
+			if tc.wantDisabled {
+				if conf != nil {
+					t.Fatal("expected nil config but got non-nil")
+				}
+			} else {
+				if conf == nil {
+					t.Fatal("unexpected nil config returned")
+				}
+				if diff := cmp.Diff(tc.wantConfig, conf); diff != "" {
+					t.Fatalf("unexpected config computed: %s", diff)
+				}
+			}
 		})
 	}
 }
 
-// func TestGetCompletionsConfig(t *testing.T) {
-// 	truePtr := true
+func TestGetEmbeddingsConfig(t *testing.T) {
+	licenseKey := "theasdfkey"
+	licenseAccessToken := licensing.GenerateLicenseKeyBasedAccessToken(licenseKey)
+	testCases := []struct {
+		name         string
+		siteConfig   schema.SiteConfiguration
+		deployType   string
+		wantConfig   *conftypes.EmbeddingsConfig
+		wantDisabled bool
+	}{
+		{
+			name: "Embeddings disabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Enabled: pointify(false),
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "cody.enabled and empty embeddings object",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				LicenseKey:  licenseKey,
+				Embeddings:  &schema.Embeddings{},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "cody.enabled set false",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(false),
+				Embeddings:  &schema.Embeddings{},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "no cody config",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: nil,
+				Embeddings:  nil,
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "Invalid provider",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "invalid",
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "Implicit config with cody.enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				LicenseKey:  licenseKey,
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                licenseAccessToken,
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointify(5000),
+			},
+		},
+		{
+			name: "Sourcegraph provider",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                licenseAccessToken,
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointify(5000),
+			},
+		},
+		{
+			name: "Sourcegraph provider without license",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				LicenseKey:  "",
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "OpenAI provider",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider:    "openai",
+					AccessToken: "asdf",
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "openai",
+				AccessToken:                "asdf",
+				Model:                      "text-embedding-ada-002",
+				Endpoint:                   "https://api.openai.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointify(5000),
+			},
+		},
+		{
+			name: "OpenAI provider without access token",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "openai",
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name:       "App default config",
+			deployType: deploy.App,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				App: &schema.App{
+					DotcomAuthToken: "TOKEN",
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                "sgd_5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointify(5000),
+			},
+		},
+		{
+			name:       "App with dotcom token",
+			deployType: deploy.App,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+				},
+				App: &schema.App{
+					DotcomAuthToken: "TOKEN",
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                "sgd_5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointify(5000),
+			},
+		},
+		{
+			name:       "App with user token",
+			deployType: deploy.App,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				Embeddings: &schema.Embeddings{
+					Provider:    "sourcegraph",
+					AccessToken: "TOKEN",
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                "TOKEN",
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointify(5000),
+			},
+		},
+		{
+			name:       "App without dotcom or user token",
+			deployType: deploy.App,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointify(true),
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+				},
+			},
+			wantDisabled: true,
+		},
+	}
 
-// 	for _, tc := range []struct {
-// 		name       string
-// 		deployType string
-// 		config     schema.SiteConfiguration
-// 		want       autogold.Value
-// 	}{
-// 		{
-// 			name: "cody not enabled",
-// 			config: schema.SiteConfiguration{
-// 				CodyEnabled: nil,
-// 			},
-// 			want: autogold.Expect((*schema.Completions)(nil)),
-// 		},
-// 		{
-// 			name: "anthropic completions",
-// 			config: schema.SiteConfiguration{
-// 				CodyEnabled: &truePtr,
-// 				Completions: &schema.Completions{
-// 					Enabled:         pointify(true),
-// 					Provider:        "anthropic",
-// 					ChatModel:       "claude-v1",
-// 					FastChatModel:   "claude-instant-v1",
-// 					CompletionModel: "claude-instant-v1",
-// 				},
-// 			},
-// 			want: autogold.Expect(&schema.Completions{
-// 				Enabled:         pointify(true),
-// 				ChatModel:       "claude-v1",
-// 				FastChatModel:   "claude-instant-v1",
-// 				CompletionModel: "claude-instant-v1",
-// 				Provider:        "anthropic",
-// 			}),
-// 		},
-// 		{
-// 			name: "anthropic completions, with cody.enabled taking precedence over completions.enabled",
-// 			config: schema.SiteConfiguration{
-// 				CodyEnabled: &truePtr,
-// 				Completions: &schema.Completions{
-// 					Enabled:         false,
-// 					Provider:        "anthropic",
-// 					ChatModel:       "claude-v1",
-// 					CompletionModel: "claude-instant-v1",
-// 				},
-// 			},
-// 			want: autogold.Expect(&schema.Completions{
-// 				ChatModel: "claude-v1", CompletionModel: "claude-instant-v1",
-// 				Enabled:       true,
-// 				FastChatModel: "claude-instant-v1",
-// 				Provider:      "anthropic",
-// 			}),
-// 		},
-// 		{
-// 			name: "zero-config cody gateway completions without license key",
-// 			config: schema.SiteConfiguration{
-// 				CodyEnabled: &truePtr,
-// 				LicenseKey:  "",
-// 			},
-// 			want: autogold.Expect(&schema.Completions{
-// 				ChatModel:       "anthropic/claude-v1",
-// 				CompletionModel: "anthropic/claude-instant-v1",
-// 				Enabled:         pointify(true),
-// 				Endpoint:        "https://cody-gateway.sourcegraph.com",
-// 				Provider:        "sourcegraph",
-// 			}),
-// 		},
-// 		{
-// 			name: "zero-config cody gateway completions with license key",
-// 			config: schema.SiteConfiguration{
-// 				CodyEnabled: &truePtr,
-// 				LicenseKey:  "foobar",
-// 			},
-// 			want: autogold.Expect(&schema.Completions{
-// 				Enabled:         pointify(true),
-// 				AccessToken:     "slk_c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2",
-// 				ChatModel:       "anthropic/claude-v1",
-// 				CompletionModel: "anthropic/claude-instant-v1",
-// 				Endpoint:        "https://cody-gateway.sourcegraph.com",
-// 				Provider:        "sourcegraph",
-// 			}),
-// 		},
-// 		{
-// 			// Legacy support for completions.enabled
-// 			name: "legacy field completions.enabled: zero-config cody gateway completions without license key",
-// 			config: schema.SiteConfiguration{
-// 				Completions: &schema.Completions{Enabled: pointify(true)},
-// 				LicenseKey:  "",
-// 			},
-// 			want: autogold.Expect(&schema.Completions{
-// 				Enabled:         pointify(true),
-// 				ChatModel:       "anthropic/claude-v1",
-// 				CompletionModel: "anthropic/claude-instant-v1",
-// 				Endpoint:        "https://cody-gateway.sourcegraph.com",
-// 				Provider:        "sourcegraph",
-// 			}),
-// 		},
-// 		{
-// 			// Legacy support for completions.enabled
-// 			name: "legacy field completions.enabled: zero-config cody gateway completions with license key",
-// 			config: schema.SiteConfiguration{
-// 				Completions: &schema.Completions{Enabled: pointify(true)},
-// 				LicenseKey:  "foobar",
-// 			},
-// 			want: autogold.Expect(&schema.Completions{
-// 				Enabled:         pointify(true),
-// 				AccessToken:     "slk_c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2",
-// 				ChatModel:       "anthropic/claude-v1",
-// 				CompletionModel: "anthropic/claude-instant-v1",
-// 				Endpoint:        "https://cody-gateway.sourcegraph.com",
-// 				Provider:        "sourcegraph",
-// 			}),
-// 		},
-// 		{
-// 			name:       "app zero-config cody gateway completions with dotcom token",
-// 			deployType: deploy.App,
-// 			config: schema.SiteConfiguration{
-// 				CodyEnabled: &truePtr,
-// 				App: &schema.App{
-// 					DotcomAuthToken: "TOKEN",
-// 				},
-// 			},
-// 			want: autogold.Expect(&schema.Completions{
-// 				AccessToken:     "sgd_5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
-// 				ChatModel:       "anthropic/claude-v1",
-// 				CompletionModel: "anthropic/claude-instant-v1",
-// 				Enabled:         pointify(true),
-// 				Endpoint:        "https://cody-gateway.sourcegraph.com",
-// 				Provider:        "sourcegraph",
-// 			}),
-// 		},
-// 		{
-// 			name:       "app with custom configuration",
-// 			deployType: deploy.App,
-// 			config: schema.SiteConfiguration{
-// 				CodyEnabled: &truePtr,
-// 				Completions: &schema.Completions{
-// 					AccessToken:     "CUSTOM_TOKEN",
-// 					Provider:        "anthropic",
-// 					ChatModel:       "claude-v1",
-// 					FastChatModel:   "claude-instant-v1",
-// 					CompletionModel: "claude-instant-v1",
-// 				},
-// 				App: &schema.App{
-// 					DotcomAuthToken: "TOKEN",
-// 				},
-// 			},
-// 			want: autogold.Expect(&schema.Completions{
-// 				AccessToken: "CUSTOM_TOKEN", ChatModel: "claude-v1",
-// 				CompletionModel: "claude-instant-v1",
-// 				Enabled:         pointify(true),
-// 				FastChatModel:   "claude-instant-v1",
-// 				Provider:        "anthropic",
-// 			}),
-// 		},
-// 	} {
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			defaultDeploy := deploy.Type()
-// 			if tc.deployType != "" {
-// 				deploy.Mock(tc.deployType)
-// 			}
-// 			defer deploy.Mock(defaultDeploy)
-// 			got := GetCompletionsConfig(tc.config)
-// 			tc.want.Equal(t, got)
-// 		})
-// 	}
-// }
-
-// func TestGetCompletionsConfig(t *testing.T) {
-// 	truePtr := true
-
-// 	for _, tc := range []struct {
-// 		name       string
-// 		deployType string
-// 		config     schema.SiteConfiguration
-// 		want       autogold.Value
-// 	}{
-// 		{
-// 			name: "cody not enabled",
-// 			config: schema.SiteConfiguration{
-// 				CodyEnabled: nil,
-// 			},
-// 			want: autogold.Expect((*schema.Completions)(nil)),
-// 		},
-// 		{
-// 			name: "anthropic completions",
-// 			config: schema.SiteConfiguration{
-// 				CodyEnabled: &truePtr,
-// 				Completions: &schema.Completions{
-// 					Enabled:         pointify(true),
-// 					Provider:        "anthropic",
-// 					ChatModel:       "claude-v1",
-// 					FastChatModel:   "claude-instant-v1",
-// 					CompletionModel: "claude-instant-v1",
-// 				},
-// 			},
-// 			want: autogold.Expect(&schema.Completions{
-// 				Enabled:         pointify(true),
-// 				ChatModel:       "claude-v1",
-// 				FastChatModel:   "claude-instant-v1",
-// 				CompletionModel: "claude-instant-v1",
-// 				Provider:        "anthropic",
-// 			}),
-// 		},
-// 		{
-// 			name: "anthropic completions, with cody.enabled taking precedence over completions.enabled",
-// 			config: schema.SiteConfiguration{
-// 				CodyEnabled: &truePtr,
-// 				Completions: &schema.Completions{
-// 					Enabled:         false,
-// 					Provider:        "anthropic",
-// 					ChatModel:       "claude-v1",
-// 					CompletionModel: "claude-instant-v1",
-// 				},
-// 			},
-// 			want: autogold.Expect(&schema.Completions{
-// 				ChatModel: "claude-v1", CompletionModel: "claude-instant-v1",
-// 				Enabled:       true,
-// 				FastChatModel: "claude-instant-v1",
-// 				Provider:      "anthropic",
-// 			}),
-// 		},
-// 		{
-// 			name: "zero-config cody gateway completions without license key",
-// 			config: schema.SiteConfiguration{
-// 				CodyEnabled: &truePtr,
-// 				LicenseKey:  "",
-// 			},
-// 			want: autogold.Expect(&schema.Completions{
-// 				ChatModel:       "anthropic/claude-v1",
-// 				CompletionModel: "anthropic/claude-instant-v1",
-// 				Enabled:         pointify(true),
-// 				Endpoint:        "https://cody-gateway.sourcegraph.com",
-// 				Provider:        "sourcegraph",
-// 			}),
-// 		},
-// 		{
-// 			name: "zero-config cody gateway completions with license key",
-// 			config: schema.SiteConfiguration{
-// 				CodyEnabled: &truePtr,
-// 				LicenseKey:  "foobar",
-// 			},
-// 			want: autogold.Expect(&schema.Completions{
-// 				Enabled:         pointify(true),
-// 				AccessToken:     "slk_c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2",
-// 				ChatModel:       "anthropic/claude-v1",
-// 				CompletionModel: "anthropic/claude-instant-v1",
-// 				Endpoint:        "https://cody-gateway.sourcegraph.com",
-// 				Provider:        "sourcegraph",
-// 			}),
-// 		},
-// 		{
-// 			// Legacy support for completions.enabled
-// 			name: "legacy field completions.enabled: zero-config cody gateway completions without license key",
-// 			config: schema.SiteConfiguration{
-// 				Completions: &schema.Completions{Enabled: pointify(true)},
-// 				LicenseKey:  "",
-// 			},
-// 			want: autogold.Expect(&schema.Completions{
-// 				Enabled:         pointify(true),
-// 				ChatModel:       "anthropic/claude-v1",
-// 				CompletionModel: "anthropic/claude-instant-v1",
-// 				Endpoint:        "https://cody-gateway.sourcegraph.com",
-// 				Provider:        "sourcegraph",
-// 			}),
-// 		},
-// 		{
-// 			// Legacy support for completions.enabled
-// 			name: "legacy field completions.enabled: zero-config cody gateway completions with license key",
-// 			config: schema.SiteConfiguration{
-// 				Completions: &schema.Completions{Enabled: pointify(true)},
-// 				LicenseKey:  "foobar",
-// 			},
-// 			want: autogold.Expect(&schema.Completions{
-// 				Enabled:         pointify(true),
-// 				AccessToken:     "slk_c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2",
-// 				ChatModel:       "anthropic/claude-v1",
-// 				CompletionModel: "anthropic/claude-instant-v1",
-// 				Endpoint:        "https://cody-gateway.sourcegraph.com",
-// 				Provider:        "sourcegraph",
-// 			}),
-// 		},
-// 		{
-// 			name:       "app zero-config cody gateway completions with dotcom token",
-// 			deployType: deploy.App,
-// 			config: schema.SiteConfiguration{
-// 				CodyEnabled: &truePtr,
-// 				App: &schema.App{
-// 					DotcomAuthToken: "TOKEN",
-// 				},
-// 			},
-// 			want: autogold.Expect(&schema.Completions{
-// 				AccessToken:     "sgd_5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
-// 				ChatModel:       "anthropic/claude-v1",
-// 				CompletionModel: "anthropic/claude-instant-v1",
-// 				Enabled:         pointify(true),
-// 				Endpoint:        "https://cody-gateway.sourcegraph.com",
-// 				Provider:        "sourcegraph",
-// 			}),
-// 		},
-// 		{
-// 			name:       "app with custom configuration",
-// 			deployType: deploy.App,
-// 			config: schema.SiteConfiguration{
-// 				CodyEnabled: &truePtr,
-// 				Completions: &schema.Completions{
-// 					AccessToken:     "CUSTOM_TOKEN",
-// 					Provider:        "anthropic",
-// 					ChatModel:       "claude-v1",
-// 					FastChatModel:   "claude-instant-v1",
-// 					CompletionModel: "claude-instant-v1",
-// 				},
-// 				App: &schema.App{
-// 					DotcomAuthToken: "TOKEN",
-// 				},
-// 			},
-// 			want: autogold.Expect(&schema.Completions{
-// 				AccessToken: "CUSTOM_TOKEN", ChatModel: "claude-v1",
-// 				CompletionModel: "claude-instant-v1",
-// 				Enabled:         pointify(true),
-// 				FastChatModel:   "claude-instant-v1",
-// 				Provider:        "anthropic",
-// 			}),
-// 		},
-// 	} {
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			defaultDeploy := deploy.Type()
-// 			if tc.deployType != "" {
-// 				deploy.Mock(tc.deployType)
-// 			}
-// 			defer deploy.Mock(defaultDeploy)
-// 			got := GetCompletionsConfig(tc.config)
-// 			tc.want.Equal(t, got)
-// 		})
-// 	}
-// }
-
-// func TestNewEmbeddingsClient(t *testing.T) {
-// 	testCases := []struct {
-// 		name       string
-// 		siteConfig *schema.SiteConfiguration
-// 		deployType string
-// 		wantErr    bool
-// 	}{
-// 		{
-// 			name: "Embeddings disabled",
-// 			siteConfig: &schema.SiteConfiguration{
-// 				Embeddings: &schema.Embeddings{
-// 					Enabled: pointify(false),
-// 				},
-// 			},
-// 			wantErr: true,
-// 		},
-// 		{
-// 			name: "Invalid provider",
-// 			siteConfig: &schema.SiteConfiguration{
-// 				Embeddings: &schema.Embeddings{
-// 					Enabled:  pointify(true),
-// 					Provider: "invalid",
-// 				},
-// 			},
-// 			wantErr: true,
-// 		},
-// 		{
-// 			name: "Sourcegraph provider",
-// 			siteConfig: &schema.SiteConfiguration{
-// 				Embeddings: &schema.Embeddings{
-// 					Enabled:  pointify(true),
-// 					Provider: "sourcegraph",
-// 				},
-// 			},
-// 		},
-// 		{
-// 			name:       "App with dotcom token",
-// 			deployType: deploy.App,
-// 			siteConfig: &schema.SiteConfiguration{
-// 				Embeddings: &schema.Embeddings{
-// 					Enabled:  pointify(true),
-// 					Provider: "sourcegraph",
-// 				},
-// 				App: &schema.App{
-// 					DotcomAuthToken: "TOKEN",
-// 				},
-// 			},
-// 		},
-// 		{
-// 			name:       "App with user token",
-// 			deployType: deploy.App,
-// 			siteConfig: &schema.SiteConfiguration{
-// 				Embeddings: &schema.Embeddings{
-// 					Enabled:     pointify(true),
-// 					Provider:    "sourcegraph",
-// 					AccessToken: "TOKEN",
-// 				},
-// 			},
-// 		},
-// 		{
-// 			name:       "App without dotcom or user token",
-// 			deployType: deploy.App,
-// 			siteConfig: &schema.SiteConfiguration{
-// 				Embeddings: &schema.Embeddings{
-// 					Enabled:  pointify(true),
-// 					Provider: "sourcegraph",
-// 				},
-// 			},
-// 			wantErr: true,
-// 		},
-// 	}
-
-// 	for _, tc := range testCases {
-// 		t.Run(tc.name, func(t *testing.T) {
-// 			defaultDeploy := deploy.Type()
-// 			if tc.deployType != "" {
-// 				deploy.Mock(tc.deployType)
-// 			}
-// 			defer deploy.Mock(defaultDeploy)
-// 			client, err := NewEmbeddingsClient(tc.siteConfig)
-// 			if tc.wantErr {
-// 				if err == nil {
-// 					t.Fatal("expected error but got nil")
-// 				}
-// 			} else {
-// 				if err != nil {
-// 					t.Fatal(err)
-// 				}
-// 				if client == nil {
-// 					t.Fatal("expected client but got nil")
-// 				}
-
-// 			}
-// 		})
-// 	}
-// }
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			defaultDeploy := deploy.Type()
+			if tc.deployType != "" {
+				deploy.Mock(tc.deployType)
+			}
+			t.Cleanup(func() {
+				deploy.Mock(defaultDeploy)
+			})
+			conf := GetEmbeddingsConfig(tc.siteConfig)
+			if tc.wantDisabled {
+				if conf != nil {
+					t.Fatal("expected nil config but got non-nil")
+				}
+			} else {
+				if conf == nil {
+					t.Fatal("unexpected nil config returned")
+				}
+				if diff := cmp.Diff(tc.wantConfig, conf); diff != "" {
+					t.Fatalf("unexpected config computed: %s", diff)
+				}
+			}
+		})
+	}
+}
