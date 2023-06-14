@@ -15,8 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 )
 
 func handleAnalytics(ctx context.Context, logger log.Logger, repoId api.RepoID, db database.DB) error {
@@ -56,15 +54,28 @@ func (r *analyticsIndexer) indexRepo(ctx context.Context, repoId api.RepoID) err
 		return errors.Wrap(err, "ls-files")
 	}
 	// Try to compute ownership stats
-	ruleset, err := r.codeowners(ctx, repo)
+	isOwnedViaCodeowners, err := r.codeowners(ctx, repo)
 	if err != nil {
 		return err
 	}
-	var totalCount, codeownedCount int
+	isOwnedViaAssignedOwnership, err := r.assignedOwners(ctx, repo)
+	if err != nil {
+		return err
+	}
+	var totalCount int
+	var ownCounts database.PathAggregateCounts
 	for _, f := range files {
 		totalCount++
-		if len(ruleset(f).GetOwner()) > 0 {
-			codeownedCount++
+		countCodeowners := isOwnedViaCodeowners(f)
+		countAssignedOwnership := isOwnedViaAssignedOwnership(f)
+		if countCodeowners {
+			ownCounts.CodeownedFileCount++
+		}
+		if countAssignedOwnership {
+			ownCounts.AssignedOwnershipFileCount++
+		}
+		if countCodeowners || countAssignedOwnership {
+			ownCounts.TotalOwnedFileCount++
 		}
 	}
 	timestamp := time.Now()
@@ -76,9 +87,7 @@ func (r *analyticsIndexer) indexRepo(ctx context.Context, repoId api.RepoID) err
 	if rowCount == 0 {
 		return errors.New("expected total file count updates")
 	}
-	codeownedCountUpdate := rootPathIterator[database.PathAggregateCounts]{
-		value: database.PathAggregateCounts{CodeownedFileCount: codeownedCount},
-	}
+	codeownedCountUpdate := rootPathIterator[database.PathAggregateCounts]{value: ownCounts}
 	rowCount, err = r.db.OwnershipStats().UpdateAggregateCounts(ctx, repo.ID, codeownedCountUpdate, timestamp)
 	if err != nil {
 		return errors.Wrap(err, "UpdateAggregateCounts")
@@ -92,7 +101,7 @@ func (r *analyticsIndexer) indexRepo(ctx context.Context, repoId api.RepoID) err
 
 // codeowners pulls a path matcher for repo HEAD.
 // If result function is nil, then no CODEOWNERS file was found.
-func (r *analyticsIndexer) codeowners(ctx context.Context, repo *types.Repo) (func(string) *codeownerspb.Rule, error) {
+func (r *analyticsIndexer) codeowners(ctx context.Context, repo *types.Repo) (func(string) bool, error) {
 	ownService := own.NewService(r.client, r.db)
 	commitID, err := r.client.ResolveRevision(ctx, repo.Name, "HEAD", gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
@@ -102,16 +111,43 @@ func (r *analyticsIndexer) codeowners(ctx context.Context, repo *types.Repo) (fu
 	if ruleset == nil || err != nil {
 		// TODO(#53155): Return error in case there is an issue,
 		// but return noRuleset and no error if CODEOWNERS is not found.
-		return noRuleset, nil
+		return noOwners, nil
 	}
-	return ruleset.Match, nil
+	return func(path string) bool {
+		rule := ruleset.Match(path)
+		owners := rule.GetOwner()
+		return len(owners) > 0
+	}, nil
+}
+
+func (r *analyticsIndexer) assignedOwners(ctx context.Context, repo *types.Repo) (func(string) bool, error) {
+	ownService := own.NewService(r.client, r.db)
+	commitID, err := r.client.ResolveRevision(ctx, repo.Name, "HEAD", gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot resolve HEAD")
+	}
+	assignedOwners, err := ownService.AssignedOwnership(ctx, repo.ID, commitID)
+	if err != nil {
+		// TODO(#53155): Return error in case there is an issue,
+		// but return noRuleset and no error if CODEOWNERS is not found.
+		return noOwners, nil
+	}
+	assignedTeams, err := ownService.AssignedTeams(ctx, repo.ID, commitID)
+	if err != nil {
+		// TODO(#53155): Return error in case there is an issue,
+		// but return noRuleset and no error if CODEOWNERS is not found.
+		return noOwners, nil
+	}
+	return func(path string) bool {
+		return len(assignedOwners.Match(path)) > 0 || len(assignedTeams.Match(path)) > 0
+	}, nil
 }
 
 // For proto it is safe to return nil from a function,
 // since the implementation handles a nil reference gracefully.
 // Just need to use getters instead of field access.
-func noRuleset(string) *codeownerspb.Rule {
-	return nil
+func noOwners(string) bool {
+	return false
 }
 
 type rootPathIterator[T any] struct {
