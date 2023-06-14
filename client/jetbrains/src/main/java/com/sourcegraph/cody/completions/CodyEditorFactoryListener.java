@@ -22,10 +22,9 @@ import com.sourcegraph.agent.protocol.Position;
 import com.sourcegraph.agent.protocol.Range;
 import com.sourcegraph.agent.protocol.TextDocument;
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
 
 /**
  * Determines when to trigger completions and when to clear completions.

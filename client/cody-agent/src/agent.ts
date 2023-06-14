@@ -74,7 +74,7 @@ export class Agent extends MessageHandler {
             Promise.resolve(
                 Object.values(registeredRecipes).map(({ id }) => ({
                     id,
-                    title: 'TODO: recipe title for id ' + id,
+                    title: id, // TODO: will be added in a follow PR
                 }))
             )
         )

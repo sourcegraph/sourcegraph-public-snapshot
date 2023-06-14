@@ -1,7 +1,6 @@
 package com.sourcegraph.agent;
 
 import com.sourcegraph.agent.protocol.*;
-
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;
