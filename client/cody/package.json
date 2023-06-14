@@ -9,6 +9,7 @@
   "description": "AI code assistant that writes code and answers questions for you",
   "scripts": {
     "start:debug": "NODE_ENV=development code --extensionDevelopmentPath=\"$INIT_CWD/client/cody\" --disable-extension=sourcegraph.cody-ai --inspect-extensions=9333 . --goto ./src/local-app-detector.ts:12:59",
+    "generate:completions": "ts-node-transpile-only ./src/testutils/cli/run-code-completions-on-dataset.ts",
     "build": "pnpm esbuild --minify && vite build --mode production",
     "build:dev": "concurrently \"pnpm esbuild --sourcemap\" \"vite build --mode development\"",
     "download-rg": "scripts/download-rg.sh",
