@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	stderrors "github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -106,7 +107,7 @@ func TestOrgInvitationURL(t *testing.T) {
 		OrgID:        1,
 		ID:           2,
 		SenderUserID: 3,
-		ExpiresAt:    timePtr(timeNow().Add(DefaultExpiryDuration)),
+		ExpiresAt:    pointers.Ptr(timeNow().Add(DefaultExpiryDuration)),
 	}
 
 	t.Run("Fails if site config is not defined", func(t *testing.T) {
@@ -186,7 +187,7 @@ func TestInviteUserToOrganization(t *testing.T) {
 	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
 
 	orgInvitations := database.NewMockOrgInvitationStore()
-	orgInvitations.CreateFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, ExpiresAt: timePtr(timeNow().Add(DefaultExpiryDuration))}, nil)
+	orgInvitations.CreateFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, ExpiresAt: pointers.Ptr(timeNow().Add(DefaultExpiryDuration))}, nil)
 
 	featureFlags := database.NewMockFeatureFlagStore()
 	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(false, nil)

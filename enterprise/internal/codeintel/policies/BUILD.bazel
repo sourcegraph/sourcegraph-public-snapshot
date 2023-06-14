@@ -58,6 +58,7 @@ go_test(
         "//internal/observation",
         "//internal/timeutil",
         "//internal/types",
+        "//lib/pointers",
         "@com_github_derision_test_glock//:glock",
         "@com_github_google_go_cmp//cmp",
     ],

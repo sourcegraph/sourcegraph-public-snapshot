@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -471,7 +472,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			update: &ExternalServiceUpdate{
 				DisplayName:    strptr("GITHUB (updated) #5"),
 				Config:         strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
-				TokenExpiresAt: timePtr(time.Now()),
+				TokenExpiresAt: pointers.Ptr(time.Now()),
 			},
 			wantCloudDefault:   true,
 			wantTokenExpiresAt: true,

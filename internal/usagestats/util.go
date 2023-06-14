@@ -1,6 +1,7 @@
 package usagestats
 
+import "github.com/sourcegraph/sourcegraph/lib/pointers"
+
 func int32Ptr(v int) *int32 {
-	v32 := int32(v)
-	return &v32
+	return pointers.Ptr(int32(v))
 }

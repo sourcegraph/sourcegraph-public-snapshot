@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -238,8 +239,6 @@ func clock() time.Time {
 	return time.Unix(0, atomic.LoadInt64(&now))
 }
 
-func toIntPtr(n int) *int { return &n }
-
 func TestOldestUserPermissionsBatchSize(t *testing.T) {
 	t.Cleanup(func() { conf.Mock(nil) })
 
@@ -254,17 +253,17 @@ func TestOldestUserPermissionsBatchSize(t *testing.T) {
 		},
 		{
 			name:      "uses number from config",
-			configure: toIntPtr(5),
+			configure: pointers.Ptr(5),
 			want:      5,
 		},
 		{
 			name:      "can be set to 0",
-			configure: toIntPtr(0),
+			configure: pointers.Ptr(0),
 			want:      0,
 		},
 		{
 			name:      "negative numbers result in default",
-			configure: toIntPtr(-248),
+			configure: pointers.Ptr(-248),
 			want:      10,
 		},
 	}
@@ -293,17 +292,17 @@ func TestOldestRepoPermissionsBatchSize(t *testing.T) {
 		},
 		{
 			name:      "uses number from config",
-			configure: toIntPtr(5),
+			configure: pointers.Ptr(5),
 			want:      5,
 		},
 		{
 			name:      "can be set to 0",
-			configure: toIntPtr(0),
+			configure: pointers.Ptr(0),
 			want:      0,
 		},
 		{
 			name:      "negative numbers result in default",
-			configure: toIntPtr(-248),
+			configure: pointers.Ptr(-248),
 			want:      10,
 		},
 	}

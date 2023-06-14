@@ -63,6 +63,7 @@ go_test(
         "//internal/extsvc/gitlab/webhooks",
         "//internal/types",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_derision_test_go_mockgen//testutil/assert",
         "@com_github_google_go_github_v43//github",

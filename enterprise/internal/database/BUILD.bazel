@@ -110,6 +110,7 @@ go_test(
         "//internal/timeutil",
         "//internal/types",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_gitchander_permutation//:permutation",
         "@com_github_google_go_cmp//cmp",

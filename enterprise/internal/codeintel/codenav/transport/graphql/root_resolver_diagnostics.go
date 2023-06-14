@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // DefaultDiagnosticsPageSize is the diagnostic result page size when no limit is supplied.
@@ -16,7 +17,7 @@ const DefaultDiagnosticsPageSize = 100
 
 // Diagnostics returns the diagnostics for documents with the given path prefix.
 func (r *gitBlobLSIFDataResolver) Diagnostics(ctx context.Context, args *resolverstubs.LSIFDiagnosticsArgs) (_ resolverstubs.DiagnosticConnectionResolver, err error) {
-	limit := int(resolverstubs.Deref(args.First, DefaultDiagnosticsPageSize))
+	limit := int(pointers.Deref(args.First, DefaultDiagnosticsPageSize))
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
@@ -55,13 +56,13 @@ func newDiagnosticResolver(diagnostic codenav.DiagnosticAtUpload, locationResolv
 
 func (r *diagnosticResolver) Severity() (*string, error) { return toSeverity(r.diagnostic.Severity) }
 func (r *diagnosticResolver) Code() (*string, error) {
-	return resolverstubs.NonZeroPtr(r.diagnostic.Code), nil
+	return pointers.NonZeroPtr(r.diagnostic.Code), nil
 }
 func (r *diagnosticResolver) Source() (*string, error) {
-	return resolverstubs.NonZeroPtr(r.diagnostic.Source), nil
+	return pointers.NonZeroPtr(r.diagnostic.Source), nil
 }
 func (r *diagnosticResolver) Message() (*string, error) {
-	return resolverstubs.NonZeroPtr(r.diagnostic.Message), nil
+	return pointers.NonZeroPtr(r.diagnostic.Message), nil
 }
 
 func (r *diagnosticResolver) Location(ctx context.Context) (resolverstubs.LocationResolver, error) {

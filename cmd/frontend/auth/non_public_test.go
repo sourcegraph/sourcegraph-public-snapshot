@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -71,8 +72,6 @@ func TestAllowAnonymousRequestWithAdditionalConfig(t *testing.T) {
 		return r
 	}
 
-	boolPtr := func(b bool) *bool { return &b }
-
 	tests := []struct {
 		req                      *http.Request
 		confAuthPublic           bool
@@ -81,25 +80,25 @@ func TestAllowAnonymousRequestWithAdditionalConfig(t *testing.T) {
 	}{
 		{req: req("GET", "/"), confAuthPublic: false, allowAnonymousContextKey: nil, want: false},
 		{req: req("GET", "/"), confAuthPublic: true, allowAnonymousContextKey: nil, want: false},
-		{req: req("GET", "/"), confAuthPublic: false, allowAnonymousContextKey: boolPtr(false), want: false},
-		{req: req("GET", "/"), confAuthPublic: true, allowAnonymousContextKey: boolPtr(false), want: false},
-		{req: req("GET", "/"), confAuthPublic: false, allowAnonymousContextKey: boolPtr(true), want: false},
-		{req: req("GET", "/"), confAuthPublic: true, allowAnonymousContextKey: boolPtr(true), want: true},
+		{req: req("GET", "/"), confAuthPublic: false, allowAnonymousContextKey: pointers.Ptr(false), want: false},
+		{req: req("GET", "/"), confAuthPublic: true, allowAnonymousContextKey: pointers.Ptr(false), want: false},
+		{req: req("GET", "/"), confAuthPublic: false, allowAnonymousContextKey: pointers.Ptr(true), want: false},
+		{req: req("GET", "/"), confAuthPublic: true, allowAnonymousContextKey: pointers.Ptr(true), want: true},
 		{req: req("POST", "/"), confAuthPublic: false, allowAnonymousContextKey: nil, want: false},
 		{req: req("POST", "/"), confAuthPublic: true, allowAnonymousContextKey: nil, want: false},
-		{req: req("POST", "/"), confAuthPublic: false, allowAnonymousContextKey: boolPtr(false), want: false},
-		{req: req("POST", "/"), confAuthPublic: true, allowAnonymousContextKey: boolPtr(false), want: false},
-		{req: req("POST", "/"), confAuthPublic: false, allowAnonymousContextKey: boolPtr(true), want: false},
-		{req: req("POST", "/"), confAuthPublic: true, allowAnonymousContextKey: boolPtr(true), want: true},
+		{req: req("POST", "/"), confAuthPublic: false, allowAnonymousContextKey: pointers.Ptr(false), want: false},
+		{req: req("POST", "/"), confAuthPublic: true, allowAnonymousContextKey: pointers.Ptr(false), want: false},
+		{req: req("POST", "/"), confAuthPublic: false, allowAnonymousContextKey: pointers.Ptr(true), want: false},
+		{req: req("POST", "/"), confAuthPublic: true, allowAnonymousContextKey: pointers.Ptr(true), want: true},
 
 		{req: req("POST", "/-/sign-in"), confAuthPublic: false, allowAnonymousContextKey: nil, want: true},
 		{req: req("POST", "/-/sign-in"), confAuthPublic: true, allowAnonymousContextKey: nil, want: true},
-		{req: req("POST", "/-/sign-in"), confAuthPublic: false, allowAnonymousContextKey: boolPtr(true), want: true},
-		{req: req("POST", "/-/sign-in"), confAuthPublic: true, allowAnonymousContextKey: boolPtr(true), want: true},
+		{req: req("POST", "/-/sign-in"), confAuthPublic: false, allowAnonymousContextKey: pointers.Ptr(true), want: true},
+		{req: req("POST", "/-/sign-in"), confAuthPublic: true, allowAnonymousContextKey: pointers.Ptr(true), want: true},
 		{req: req("GET", "/sign-in"), confAuthPublic: false, allowAnonymousContextKey: nil, want: true},
 		{req: req("GET", "/sign-in"), confAuthPublic: true, allowAnonymousContextKey: nil, want: true},
-		{req: req("GET", "/sign-in"), confAuthPublic: false, allowAnonymousContextKey: boolPtr(true), want: true},
-		{req: req("GET", "/sign-in"), confAuthPublic: true, allowAnonymousContextKey: boolPtr(true), want: true},
+		{req: req("GET", "/sign-in"), confAuthPublic: false, allowAnonymousContextKey: pointers.Ptr(true), want: true},
+		{req: req("GET", "/sign-in"), confAuthPublic: true, allowAnonymousContextKey: pointers.Ptr(true), want: true},
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%s %s + auth.public=%v, allowAnonymousContext=%v", test.req.Method, test.req.URL, test.confAuthPublic, test.allowAnonymousContextKey), func(t *testing.T) {

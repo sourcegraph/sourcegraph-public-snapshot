@@ -24,6 +24,7 @@ go_test(
     ],
     embed = [":env"],
     deps = [
+        "//lib/pointers",
         "@com_github_google_go_cmp//cmp",
         "@in_gopkg_yaml_v2//:yaml_v2",
     ],

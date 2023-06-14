@@ -8,6 +8,7 @@ import (
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
@@ -67,7 +68,7 @@ func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolvers
 			return nil, err
 		}
 	}
-	term := resolverstubs.Deref(args.Query, "")
+	term := pointers.Deref(args.Query, "")
 
 	visibleAtTip := false
 	if args.IsLatestForRepo != nil {
@@ -158,7 +159,7 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 			return nil, err
 		}
 	}
-	term := resolverstubs.Deref(args.Query, "")
+	term := pointers.Deref(args.Query, "")
 
 	visibleAtTip := false
 	if args.IsLatestForRepo != nil {

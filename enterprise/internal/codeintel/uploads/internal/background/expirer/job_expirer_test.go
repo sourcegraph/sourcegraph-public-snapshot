@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestUploadExpirer(t *testing.T) {
@@ -93,10 +94,10 @@ func TestUploadExpirer(t *testing.T) {
 func setupMockPolicyService() *MockPolicyService {
 	policies := []policiesshared.ConfigurationPolicy{
 		{ID: 1, RepositoryID: nil},
-		{ID: 2, RepositoryID: intPtr(53)},
+		{ID: 2, RepositoryID: pointers.Ptr(53)},
 		{ID: 3, RepositoryID: nil},
 		{ID: 4, RepositoryID: nil},
-		{ID: 5, RepositoryID: intPtr(50)},
+		{ID: 5, RepositoryID: pointers.Ptr(50)},
 	}
 
 	getConfigurationPolicies := func(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) (filtered []policiesshared.ConfigurationPolicy, _ int, _ error) {
@@ -259,10 +260,6 @@ func testUploadExpirerMockPolicyMatcher() *MockPolicyMatcher {
 	policyMatcher := NewMockPolicyMatcher()
 	policyMatcher.CommitsDescribedByPolicyFunc.SetDefaultHook(commitsDescribedByPolicy)
 	return policyMatcher
-}
-
-func intPtr(v int) *int {
-	return &v
 }
 
 func days(n int) *time.Duration {

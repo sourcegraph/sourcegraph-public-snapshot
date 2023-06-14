@@ -15,14 +15,15 @@ import (
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // 🚨 SECURITY: Only site admins may infer auto-index jobs
 func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.InferAutoIndexJobsForRepoArgs) (_ resolverstubs.InferAutoIndexJobsResultResolver, err error) {
 	ctx, _, endObservation := r.operations.inferAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("repository", string(args.Repository)),
-		attribute.String("rev", resolverstubs.Deref(args.Rev, "")),
-		attribute.String("script", resolverstubs.Deref(args.Script, "")),
+		attribute.String("rev", pointers.Deref(args.Rev, "")),
+		attribute.String("script", pointers.Deref(args.Script, "")),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -68,8 +69,8 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.QueueAutoIndexJobsForRepoArgs) (_ []resolverstubs.PreciseIndexResolver, err error) {
 	ctx, traceErrs, endObservation := r.operations.queueAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("repository", string(args.Repository)),
-		attribute.String("rev", resolverstubs.Deref(args.Rev, "")),
-		attribute.String("configuration", resolverstubs.Deref(args.Configuration, "")),
+		attribute.String("rev", pointers.Deref(args.Rev, "")),
+		attribute.String("configuration", pointers.Deref(args.Configuration, "")),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 

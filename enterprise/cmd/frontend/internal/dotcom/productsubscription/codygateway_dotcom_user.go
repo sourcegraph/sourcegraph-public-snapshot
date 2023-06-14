@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type ErrDotcomUserNotFound struct {
@@ -179,18 +180,18 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 		switch scope {
 		case types.CompletionsFeatureChat:
 			if cfg.Completions != nil && cfg.Completions.PerUserDailyLimit > 0 {
-				limit = iPtr(cfg.Completions.PerUserDailyLimit)
+				limit = pointers.Ptr(cfg.Completions.PerUserDailyLimit)
 			}
 		case types.CompletionsFeatureCode:
 			if cfg.Completions != nil && cfg.Completions.PerUserCodeCompletionsDailyLimit > 0 {
-				limit = iPtr(cfg.Completions.PerUserCodeCompletionsDailyLimit)
+				limit = pointers.Ptr(cfg.Completions.PerUserCodeCompletionsDailyLimit)
 			}
 		default:
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Newf("unknown scope: %s", scope)
 		}
 	}
 	if limit == nil {
-		limit = iPtr(0)
+		limit = pointers.Ptr(0)
 	}
 	return licensing.CodyGatewayRateLimit{
 		AllowedModels:   allowedModels(scope),
@@ -208,8 +209,4 @@ func allowedModels(scope types.CompletionsFeature) []string {
 	default:
 		return []string{}
 	}
-}
-
-func iPtr(i int) *int {
-	return &i
 }

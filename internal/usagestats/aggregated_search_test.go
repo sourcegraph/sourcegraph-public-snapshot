@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestGroupAggregateSearchStats(t *testing.T) {
@@ -65,13 +66,9 @@ func TestGroupAggregateSearchStats(t *testing.T) {
 }
 
 func newSearchTestEvent(eventCount, userCount int32, p50, p90, p99 float64) *types.SearchEventStatistics {
-	intptr := func(i int32) *int32 {
-		return &i
-	}
-
 	return &types.SearchEventStatistics{
-		EventsCount:    intptr(eventCount),
-		UserCount:      intptr(userCount),
+		EventsCount:    pointers.Ptr(eventCount),
+		UserCount:      pointers.Ptr(userCount),
 		EventLatencies: &types.SearchEventLatencies{P50: p50, P90: p90, P99: p99},
 	}
 }

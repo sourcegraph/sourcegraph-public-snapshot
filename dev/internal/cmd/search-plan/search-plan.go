@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/printer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func run(w io.Writer, args []string) error {
@@ -50,7 +51,7 @@ func run(w io.Writer, args []string) error {
 	inputs, err := cli.Plan(
 		context.Background(),
 		*version,
-		strPtr(*patternType),
+		pointers.NonZeroPtr(*patternType),
 		query,
 		mode,
 		search.Streaming,
@@ -80,11 +81,4 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 		os.Exit(1)
 	}
-}
-
-func strPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }

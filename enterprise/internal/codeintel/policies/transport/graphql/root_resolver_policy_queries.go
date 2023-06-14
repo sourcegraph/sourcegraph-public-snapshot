@@ -9,6 +9,7 @@ import (
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 const DefaultConfigurationPolicyPageSize = 50
@@ -16,13 +17,13 @@ const DefaultConfigurationPolicyPageSize = 50
 // 🚨 SECURITY: dbstore layer handles authz for GetConfigurationPolicies
 func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, args *resolverstubs.CodeIntelligenceConfigurationPoliciesArgs) (_ resolverstubs.CodeIntelligenceConfigurationPolicyConnectionResolver, err error) {
 	ctx, traceErrs, endObservation := r.operations.configurationPolicies.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("first", int(resolverstubs.Deref(args.First, 0))),
-		attribute.String("after", resolverstubs.Deref(args.After, "")),
-		attribute.String("repository", string(resolverstubs.Deref(args.Repository, ""))),
-		attribute.String("query", resolverstubs.Deref(args.Query, "")),
-		attribute.Bool("forDataRetention", resolverstubs.Deref(args.ForDataRetention, false)),
-		attribute.Bool("forIndexing", resolverstubs.Deref(args.ForIndexing, false)),
-		attribute.Bool("protected", resolverstubs.Deref(args.Protected, false)),
+		attribute.Int("first", int(pointers.Deref(args.First, 0))),
+		attribute.String("after", pointers.Deref(args.After, "")),
+		attribute.String("repository", string(pointers.Deref(args.Repository, ""))),
+		attribute.String("query", pointers.Deref(args.Query, "")),
+		attribute.Bool("forDataRetention", pointers.Deref(args.ForDataRetention, false)),
+		attribute.Bool("forIndexing", pointers.Deref(args.ForIndexing, false)),
+		attribute.Bool("protected", pointers.Deref(args.Protected, false)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 

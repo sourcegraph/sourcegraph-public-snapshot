@@ -37,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -1870,16 +1871,16 @@ query {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		bbProjects := database.NewMockBitbucketProjectPermissionsStore()
-		entry := executor.ExecutionLogEntry{Key: "key", Command: []string{"command"}, StartTime: mustParseTime("2020-01-06"), ExitCode: intPtr(1), Out: "out", DurationMs: intPtr(1)}
+		entry := executor.ExecutionLogEntry{Key: "key", Command: []string{"command"}, StartTime: mustParseTime("2020-01-06"), ExitCode: pointers.Ptr(1), Out: "out", DurationMs: pointers.Ptr(1)}
 		bbProjects.ListJobsFunc.SetDefaultReturn([]*types.BitbucketProjectPermissionJob{
 			{
 				ID:                1,
 				State:             "queued",
-				FailureMessage:    stringPtr("failure massage"),
+				FailureMessage:    pointers.Ptr("failure massage"),
 				QueuedAt:          mustParseTime("2020-01-01"),
-				StartedAt:         timePtr(mustParseTime("2020-01-01")),
-				FinishedAt:        timePtr(mustParseTime("2020-01-01")),
-				ProcessAfter:      timePtr(mustParseTime("2020-01-01")),
+				StartedAt:         pointers.Ptr(mustParseTime("2020-01-01")),
+				FinishedAt:        pointers.Ptr(mustParseTime("2020-01-01")),
+				ProcessAfter:      pointers.Ptr(mustParseTime("2020-01-01")),
 				NumResets:         1,
 				NumFailures:       2,
 				LastHeartbeatAt:   mustParseTime("2020-01-05"),
@@ -2597,10 +2598,6 @@ func mustParseTime(v string) time.Time {
 	}
 	return t
 }
-
-func intPtr(v int) *int              { return &v }
-func timePtr(v time.Time) *time.Time { return &v }
-func stringPtr(v string) *string     { return &v }
 
 func TestResolver_PermissionsSyncingStats(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {

@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestGetOwnershipUsageStatsReposCount(t *testing.T) {
@@ -44,10 +45,9 @@ func TestGetOwnershipUsageStatsReposCount(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetOwnershipUsageStats err: %s", err)
 	}
-	iptr := func(i int32) *int32 { return &i }
 	want := &types.OwnershipUsageReposCounts{
-		Total:                 iptr(2),
-		WithIngestedOwnership: iptr(1),
+		Total:                 pointers.Ptr(int32(2)),
+		WithIngestedOwnership: pointers.Ptr(int32(1)),
 	}
 	if diff := cmp.Diff(want, stats.ReposCount); diff != "" {
 		t.Errorf("GetOwnershipUsageStates.ReposCount, +want,-got:\n%s", diff)
@@ -69,10 +69,9 @@ func TestGetOwnershipUsageStatsReposCountNoCodeowners(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetOwnershipUsageStats err: %s", err)
 	}
-	iptr := func(i int32) *int32 { return &i }
 	want := &types.OwnershipUsageReposCounts{
-		Total:                 iptr(1),
-		WithIngestedOwnership: iptr(0),
+		Total:                 pointers.Ptr(int32(1)),
+		WithIngestedOwnership: pointers.Ptr(int32(0)),
 	}
 	if diff := cmp.Diff(want, stats.ReposCount); diff != "" {
 		t.Errorf("GetOwnershipUsageStates.ReposCount, +want,-got:\n%s", diff)
@@ -94,10 +93,9 @@ func TestGetOwnershipUsageStatsReposCountNoRepos(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetOwnershipUsageStats err: %s", err)
 	}
-	iptr := func(i int32) *int32 { return &i }
 	want := &types.OwnershipUsageReposCounts{
-		Total:                 iptr(0),
-		WithIngestedOwnership: iptr(0),
+		Total:                 pointers.Ptr(int32(0)),
+		WithIngestedOwnership: pointers.Ptr(int32(0)),
 	}
 	if diff := cmp.Diff(want, stats.ReposCount); diff != "" {
 		t.Errorf("GetOwnershipUsageStates.ReposCount, -want+got:\n%s", diff)
@@ -130,11 +128,10 @@ func TestGetOwnershipUsageStatsReposCountStatsNotCompacted(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetOwnershipUsageStats err: %s", err)
 	}
-	iptr := func(i int32) *int32 { return &i }
 	want := &types.OwnershipUsageReposCounts{
 		// Can have zero repos and one ingested ownership then.
-		Total:                 iptr(2),
-		WithIngestedOwnership: iptr(1),
+		Total:                 pointers.Ptr(int32(2)),
+		WithIngestedOwnership: pointers.Ptr(int32(1)),
 	}
 	if diff := cmp.Diff(want, stats.ReposCount); diff != "" {
 		t.Errorf("GetOwnershipUsageStates.ReposCount, -want,+got:\n%s", diff)
@@ -237,11 +234,10 @@ func TestGetOwnershipUsageStatsAggregatedStats(t *testing.T) {
 			if err != nil {
 				t.Fatalf("GetOwnershipUsageStats err: %s", err)
 			}
-			ptr := func(i int32) *int32 { return &i }
 			want := &types.OwnershipUsageStatisticsActiveUsers{
-				MAU: ptr(2),
-				WAU: ptr(1),
-				DAU: ptr(0),
+				MAU: pointers.Ptr(int32(2)),
+				WAU: pointers.Ptr(int32(1)),
+				DAU: pointers.Ptr(int32(0)),
 			}
 			if diff := cmp.Diff(want, lens(stats)); diff != "" {
 				t.Errorf("GetOwnershipUsageStats().%s -want+got: %s", eventName, diff)

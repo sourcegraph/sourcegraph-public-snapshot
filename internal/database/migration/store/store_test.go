@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestEnsureSchemaTable(t *testing.T) {
@@ -210,9 +211,9 @@ func TestVersions(t *testing.T) {
 			return testCase{t, version, up, nil, nil}
 		}
 		if *failed {
-			return testCase{t, version, up, boolPtr(false), strPtr("uh-oh")}
+			return testCase{t, version, up, pointers.Ptr(false), pointers.Ptr("uh-oh")}
 		}
-		return testCase{t, version, up, boolPtr(true), nil}
+		return testCase{t, version, up, pointers.Ptr(true), nil}
 	}
 
 	t3 := timeutil.Now()
@@ -221,17 +222,17 @@ func TestVersions(t *testing.T) {
 
 	for _, migrationLog := range []testCase{
 		// Historic attempts
-		makeCase(t1, 1003, true, boolPtr(true)), makeCase(t2, 1003, false, boolPtr(true)), // 1003: successful up, successful down
-		makeCase(t1, 1004, true, boolPtr(true)),                                           // 1004: successful up
-		makeCase(t1, 1006, true, boolPtr(false)), makeCase(t2, 1006, true, boolPtr(true)), // 1006: failed up, successful up
+		makeCase(t1, 1003, true, pointers.Ptr(true)), makeCase(t2, 1003, false, pointers.Ptr(true)), // 1003: successful up, successful down
+		makeCase(t1, 1004, true, pointers.Ptr(true)),                                                // 1004: successful up
+		makeCase(t1, 1006, true, pointers.Ptr(false)), makeCase(t2, 1006, true, pointers.Ptr(true)), // 1006: failed up, successful up
 
 		// Last attempts
-		makeCase(t3, 1001, true, boolPtr(false)),  // successful up
-		makeCase(t3, 1002, false, boolPtr(false)), // successful down
-		makeCase(t3, 1003, true, nil),             // pending up
-		makeCase(t3, 1004, false, nil),            // pending down
-		makeCase(t3, 1005, true, boolPtr(true)),   // failed up
-		makeCase(t3, 1006, false, boolPtr(true)),  // failed down
+		makeCase(t3, 1001, true, pointers.Ptr(false)),  // successful up
+		makeCase(t3, 1002, false, pointers.Ptr(false)), // successful down
+		makeCase(t3, 1003, true, nil),                  // pending up
+		makeCase(t3, 1004, false, nil),                 // pending down
+		makeCase(t3, 1005, true, pointers.Ptr(true)),   // failed up
+		makeCase(t3, 1006, false, pointers.Ptr(true)),  // failed down
 	} {
 		finishedAt := &migrationLog.startedAt
 		if migrationLog.success == nil {
@@ -346,19 +347,19 @@ func TestWrappedUp(t *testing.T) {
 			Schema:  defaultTestTableName,
 			Version: 13,
 			Up:      true,
-			Success: boolPtr(true),
+			Success: pointers.Ptr(true),
 		},
 		{
 			Schema:  defaultTestTableName,
 			Version: 14,
 			Up:      true,
-			Success: boolPtr(true),
+			Success: pointers.Ptr(true),
 		},
 		{
 			Schema:  defaultTestTableName,
 			Version: 15,
 			Up:      true,
-			Success: boolPtr(true),
+			Success: pointers.Ptr(true),
 		},
 	}
 
@@ -395,7 +396,7 @@ func TestWrappedUp(t *testing.T) {
 			Schema:  defaultTestTableName,
 			Version: 16,
 			Up:      true,
-			Success: boolPtr(true),
+			Success: pointers.Ptr(true),
 		})
 		assertLogs(t, ctx, store, logs)
 		assertVersions(t, ctx, store, []int{13, 14, 15, 16}, nil, nil)
@@ -427,7 +428,7 @@ func TestWrappedUp(t *testing.T) {
 			Schema:  defaultTestTableName,
 			Version: 17,
 			Up:      true,
-			Success: boolPtr(false),
+			Success: pointers.Ptr(false),
 		})
 		assertLogs(t, ctx, store, logs)
 		assertVersions(t, ctx, store, []int{13, 14, 15, 16}, nil, []int{17})
@@ -489,19 +490,19 @@ func TestWrappedDown(t *testing.T) {
 			Schema:  defaultTestTableName,
 			Version: 12,
 			Up:      true,
-			Success: boolPtr(true),
+			Success: pointers.Ptr(true),
 		},
 		{
 			Schema:  defaultTestTableName,
 			Version: 13,
 			Up:      true,
-			Success: boolPtr(true),
+			Success: pointers.Ptr(true),
 		},
 		{
 			Schema:  defaultTestTableName,
 			Version: 14,
 			Up:      true,
-			Success: boolPtr(true),
+			Success: pointers.Ptr(true),
 		},
 	}
 
@@ -528,7 +529,7 @@ func TestWrappedDown(t *testing.T) {
 			Schema:  defaultTestTableName,
 			Version: 14,
 			Up:      false,
-			Success: boolPtr(true),
+			Success: pointers.Ptr(true),
 		})
 		assertLogs(t, ctx, store, logs)
 		assertVersions(t, ctx, store, []int{12, 13}, nil, nil)
@@ -555,7 +556,7 @@ func TestWrappedDown(t *testing.T) {
 			Schema:  defaultTestTableName,
 			Version: 13,
 			Up:      false,
-			Success: boolPtr(false),
+			Success: pointers.Ptr(false),
 		})
 		assertLogs(t, ctx, store, logs)
 		assertVersions(t, ctx, store, []int{12, 13}, nil, nil)
@@ -727,14 +728,6 @@ func testStore(db *sql.DB) *Store {
 
 func testStoreWithName(db *sql.DB, name string) *Store {
 	return NewWithDB(&observation.TestContext, db, name)
-}
-
-func strPtr(v string) *string {
-	return &v
-}
-
-func boolPtr(value bool) *bool {
-	return &value
 }
 
 func assertLogs(t *testing.T, ctx context.Context, store *Store, expectedLogs []migrationLog) {

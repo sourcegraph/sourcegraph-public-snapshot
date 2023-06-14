@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestProductLicenses_Create(t *testing.T) {
@@ -298,37 +299,37 @@ func TestProductLicenses_List(t *testing.T) {
 		},
 		{
 			name:          "expired only",
-			opts:          dbLicensesListOptions{Expired: boolPtr(true)},
+			opts:          dbLicensesListOptions{Expired: pointers.Ptr(true)},
 			expectedCount: 1,
 		},
 		{
 			name:          "non expired only",
-			opts:          dbLicensesListOptions{Expired: boolPtr(false)},
+			opts:          dbLicensesListOptions{Expired: pointers.Ptr(false)},
 			expectedCount: len(licenses) - 1,
 		},
 		{
 			name:          "revoked only",
-			opts:          dbLicensesListOptions{Revoked: boolPtr(true)},
+			opts:          dbLicensesListOptions{Revoked: pointers.Ptr(true)},
 			expectedCount: 1,
 		},
 		{
 			name:          "non revoked only",
-			opts:          dbLicensesListOptions{Revoked: boolPtr(false)},
+			opts:          dbLicensesListOptions{Revoked: pointers.Ptr(false)},
 			expectedCount: len(licenses) - 1,
 		},
 		{
 			name: "non revoked and non expired",
 			opts: dbLicensesListOptions{
-				Revoked: boolPtr(false),
-				Expired: boolPtr(false),
+				Revoked: pointers.Ptr(false),
+				Expired: pointers.Ptr(false),
 			},
 			expectedCount: len(licenses) - 2,
 		},
 		{
 			name: "non revoked and non expired with site ID",
 			opts: dbLicensesListOptions{
-				Revoked:         boolPtr(false),
-				Expired:         boolPtr(false),
+				Revoked:         pointers.Ptr(false),
+				Expired:         pointers.Ptr(false),
 				WithSiteIDsOnly: true,
 			},
 			expectedCount: 1,

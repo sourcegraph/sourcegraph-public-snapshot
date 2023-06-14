@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestChangesetSpec_ForkGetters(t *testing.T) {
@@ -18,14 +20,14 @@ func TestChangesetSpec_ForkGetters(t *testing.T) {
 			namespace: nil,
 		},
 		"fork to user": {
-			spec:      &ChangesetSpec{ForkNamespace: strPtr(changesetSpecForkNamespaceUser)},
+			spec:      &ChangesetSpec{ForkNamespace: pointers.Ptr(changesetSpecForkNamespaceUser)},
 			isFork:    true,
 			namespace: nil,
 		},
 		"fork to namespace": {
-			spec:      &ChangesetSpec{ForkNamespace: strPtr("org")},
+			spec:      &ChangesetSpec{ForkNamespace: pointers.Ptr("org")},
 			isFork:    true,
-			namespace: strPtr("org"),
+			namespace: pointers.Ptr("org"),
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -47,5 +49,3 @@ func TestChangesetSpec_SetForkToUser(t *testing.T) {
 	assert.NotNil(t, cs.ForkNamespace)
 	assert.Equal(t, changesetSpecForkNamespaceUser, *cs.ForkNamespace)
 }
-
-func strPtr(s string) *string { return &s }

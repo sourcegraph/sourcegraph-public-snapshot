@@ -11,13 +11,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 const DefaultReferencesPageSize = 100
 
 // References returns the list of source locations that reference the symbol at the given position.
 func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
-	limit := int(resolverstubs.Deref(args.First, DefaultReferencesPageSize))
+	limit := int(pointers.Deref(args.First, DefaultReferencesPageSize))
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
@@ -60,7 +61,7 @@ func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolver
 		refs = filtered
 	}
 
-	return newLocationConnectionResolver(refs, resolverstubs.NonZeroPtr(nextCursor), r.locationResolver), nil
+	return newLocationConnectionResolver(refs, pointers.NonZeroPtr(nextCursor), r.locationResolver), nil
 }
 
 //

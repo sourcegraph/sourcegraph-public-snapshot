@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func newTestClient(t *testing.T, cli httpcli.Doer) *V3Client {
@@ -745,7 +746,7 @@ func TestV3Client_Fork(t *testing.T) {
 		// We'll use github.com/sourcegraph/automation-testing as our guinea pig.
 		for name, org := range map[string]*string{
 			"user":                nil,
-			"sourcegraph-testing": strPtr("sourcegraph-testing"),
+			"sourcegraph-testing": pointers.Ptr("sourcegraph-testing"),
 		} {
 			t.Run(name, func(t *testing.T) {
 				testName := testName(t)
@@ -814,8 +815,6 @@ func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
 
 	return NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, doer), save
 }
-
-func strPtr(s string) *string { return &s }
 
 func TestClient_ListRepositoriesForSearch(t *testing.T) {
 	cli, save := newV3TestClient(t, "ListRepositoriesForSearch")

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 const licenseAnomalyCheckKey = "license_anomaly_check"
@@ -70,10 +71,6 @@ func maybeCheckAnomalies(logger log.Logger, db database.DB, client slackClient, 
 	}
 }
 
-func boolPtr(b bool) *bool {
-	return &b
-}
-
 // checkAnomalies loops through all current subscriptions and triggers a check for each subscription
 func checkAnomalies(logger log.Logger, db database.DB, clock glock.Clock, client slackClient) {
 	if conf.Get().Dotcom == nil || conf.Get().Dotcom.SlackLicenseAnomallyWebhook == "" {
@@ -100,8 +97,8 @@ func checkSubscriptionAnomalies(ctx context.Context, logger log.Logger, db datab
 	licenses, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{
 		ProductSubscriptionID: sub.ID,
 		WithSiteIDsOnly:       true,
-		Expired:               boolPtr(false),
-		Revoked:               boolPtr(false),
+		Expired:               pointers.Ptr(false),
+		Revoked:               pointers.Ptr(false),
 	})
 	if err != nil {
 		logger.Error("error listing licenses", log.String("subscription", sub.ID), log.Error(err))

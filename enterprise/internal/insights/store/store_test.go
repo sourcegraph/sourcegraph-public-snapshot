@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestSeriesPoints(t *testing.T) {
@@ -148,8 +149,7 @@ func TestCountData(t *testing.T) {
 		return v
 	}
 	timePtr := func(s string) *time.Time {
-		t := timeValue(s)
-		return &t
+		return pointers.Ptr(timeValue(s))
 	}
 	optionalString := func(v string) *string { return &v }
 	optionalRepoID := func(v api.RepoID) *api.RepoID { return &v }

@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestSiteConfigurationDiff(t *testing.T) {
@@ -63,11 +64,11 @@ func TestSiteConfigurationDiff(t *testing.T) {
 		// the nodes in both the directions.
 		{
 			name: "first: 10",
-			args: &graphqlutil.ConnectionResolverArgs{First: int32Ptr(10)},
+			args: &graphqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(10))},
 		},
 		{
 			name: "last: 10",
-			args: &graphqlutil.ConnectionResolverArgs{Last: int32Ptr(10)},
+			args: &graphqlutil.ConnectionResolverArgs{Last: pointers.Ptr(int32(10))},
 		},
 	}
 

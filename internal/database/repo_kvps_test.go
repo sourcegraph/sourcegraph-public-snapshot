@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestRepoKVPs(t *testing.T) {
@@ -26,13 +27,11 @@ func TestRepoKVPs(t *testing.T) {
 	repo, err := db.Repos().GetByName(ctx, "repo")
 	require.NoError(t, err)
 
-	strPtr := func(s string) *string { return &s }
-
 	t.Run("Create", func(t *testing.T) {
 		t.Run("non-nil value", func(t *testing.T) {
 			err := kvps.Create(ctx, repo.ID, KeyValuePair{
 				Key:   "key1",
-				Value: strPtr("value1"),
+				Value: pointers.Ptr("value1"),
 			})
 			require.NoError(t, err)
 		})
@@ -50,7 +49,7 @@ func TestRepoKVPs(t *testing.T) {
 		t.Run("exists", func(t *testing.T) {
 			kvp, err := kvps.Get(ctx, repo.ID, "key1")
 			require.NoError(t, err)
-			require.Equal(t, kvp, KeyValuePair{Key: "key1", Value: strPtr("value1")})
+			require.Equal(t, kvp, KeyValuePair{Key: "key1", Value: pointers.Ptr("value1")})
 		})
 
 		t.Run("exists with nil value", func(t *testing.T) {
@@ -73,7 +72,7 @@ func TestRepoKVPs(t *testing.T) {
 	t.Run("ListKeys", func(t *testing.T) {
 		t.Run("returns all", func(t *testing.T) {
 			keys, err := kvps.ListKeys(ctx, RepoKVPListKeysOptions{}, PaginationArgs{
-				First:   intPtr(10),
+				First:   pointers.Ptr(10),
 				OrderBy: OrderBy{{Field: string(RepoKVPListKeyColumn)}},
 			})
 			require.NoError(t, err)
@@ -82,8 +81,8 @@ func TestRepoKVPs(t *testing.T) {
 		})
 
 		t.Run("returns when found match by query", func(t *testing.T) {
-			keys, err := kvps.ListKeys(ctx, RepoKVPListKeysOptions{Query: strPtr("tag")}, PaginationArgs{
-				First:   intPtr(10),
+			keys, err := kvps.ListKeys(ctx, RepoKVPListKeysOptions{Query: pointers.Ptr("tag")}, PaginationArgs{
+				First:   pointers.Ptr(10),
 				OrderBy: OrderBy{{Field: string(RepoKVPListKeyColumn)}},
 			})
 			require.NoError(t, err)
@@ -91,8 +90,8 @@ func TestRepoKVPs(t *testing.T) {
 		})
 
 		t.Run("returns empty when found no match by query", func(t *testing.T) {
-			keys, err := kvps.ListKeys(ctx, RepoKVPListKeysOptions{Query: strPtr("nonexisting")}, PaginationArgs{
-				First: intPtr(10), OrderBy: OrderBy{{Field: string(RepoKVPListKeyColumn)}},
+			keys, err := kvps.ListKeys(ctx, RepoKVPListKeysOptions{Query: pointers.Ptr("nonexisting")}, PaginationArgs{
+				First: pointers.Ptr(10), OrderBy: OrderBy{{Field: string(RepoKVPListKeyColumn)}},
 			})
 			require.NoError(t, err)
 			require.Empty(t, keys)
@@ -107,17 +106,17 @@ func TestRepoKVPs(t *testing.T) {
 		})
 
 		t.Run("returns when found match by query", func(t *testing.T) {
-			count, err := kvps.CountKeys(ctx, RepoKVPListKeysOptions{Query: strPtr("ey")})
+			count, err := kvps.CountKeys(ctx, RepoKVPListKeysOptions{Query: pointers.Ptr("ey")})
 			require.NoError(t, err)
 			require.Equal(t, 1, count)
 
-			count, err = kvps.CountKeys(ctx, RepoKVPListKeysOptions{Query: strPtr("1")})
+			count, err = kvps.CountKeys(ctx, RepoKVPListKeysOptions{Query: pointers.Ptr("1")})
 			require.NoError(t, err)
 			require.Equal(t, 2, count)
 		})
 
 		t.Run("returns empty when found no match by query", func(t *testing.T) {
-			count, err := kvps.CountKeys(ctx, RepoKVPListKeysOptions{Query: strPtr("nonexisting")})
+			count, err := kvps.CountKeys(ctx, RepoKVPListKeysOptions{Query: pointers.Ptr("nonexisting")})
 			require.NoError(t, err)
 			require.Empty(t, count)
 		})
@@ -126,7 +125,7 @@ func TestRepoKVPs(t *testing.T) {
 	t.Run("ListValues", func(t *testing.T) {
 		t.Run("returns all", func(t *testing.T) {
 			values, err := kvps.ListValues(ctx, RepoKVPListValuesOptions{Key: "key1"}, PaginationArgs{
-				First:   intPtr(10),
+				First:   pointers.Ptr(10),
 				OrderBy: OrderBy{{Field: string(RepoKVPListValueColumn)}},
 			})
 			require.NoError(t, err)
@@ -134,8 +133,8 @@ func TestRepoKVPs(t *testing.T) {
 		})
 
 		t.Run("returns when found match by query", func(t *testing.T) {
-			keys, err := kvps.ListValues(ctx, RepoKVPListValuesOptions{Key: "key1", Query: strPtr("val")}, PaginationArgs{
-				First:   intPtr(10),
+			keys, err := kvps.ListValues(ctx, RepoKVPListValuesOptions{Key: "key1", Query: pointers.Ptr("val")}, PaginationArgs{
+				First:   pointers.Ptr(10),
 				OrderBy: OrderBy{{Field: string(RepoKVPListValueColumn)}},
 			})
 			require.NoError(t, err)
@@ -143,8 +142,8 @@ func TestRepoKVPs(t *testing.T) {
 		})
 
 		t.Run("returns empty when found no match by query", func(t *testing.T) {
-			keys, err := kvps.ListValues(ctx, RepoKVPListValuesOptions{Key: "key1", Query: strPtr("nonexisting")}, PaginationArgs{
-				First: intPtr(10), OrderBy: OrderBy{{Field: string(RepoKVPListValueColumn)}},
+			keys, err := kvps.ListValues(ctx, RepoKVPListValuesOptions{Key: "key1", Query: pointers.Ptr("nonexisting")}, PaginationArgs{
+				First: pointers.Ptr(10), OrderBy: OrderBy{{Field: string(RepoKVPListValueColumn)}},
 			})
 			require.NoError(t, err)
 			require.Empty(t, keys)
@@ -159,13 +158,13 @@ func TestRepoKVPs(t *testing.T) {
 		})
 
 		t.Run("returns when found match by query", func(t *testing.T) {
-			count, err := kvps.CountValues(ctx, RepoKVPListValuesOptions{Key: "key1", Query: strPtr("value")})
+			count, err := kvps.CountValues(ctx, RepoKVPListValuesOptions{Key: "key1", Query: pointers.Ptr("value")})
 			require.NoError(t, err)
 			require.Equal(t, 1, count)
 		})
 
 		t.Run("returns empty when found no match by query", func(t *testing.T) {
-			count, err := kvps.CountValues(ctx, RepoKVPListValuesOptions{Key: "key1", Query: strPtr("nonexisting")})
+			count, err := kvps.CountValues(ctx, RepoKVPListValuesOptions{Key: "key1", Query: pointers.Ptr("nonexisting")})
 			require.NoError(t, err)
 			require.Empty(t, count)
 		})
@@ -175,10 +174,10 @@ func TestRepoKVPs(t *testing.T) {
 		t.Run("normal", func(t *testing.T) {
 			kvp, err := kvps.Update(ctx, repo.ID, KeyValuePair{
 				Key:   "key1",
-				Value: strPtr("value2"),
+				Value: pointers.Ptr("value2"),
 			})
 			require.NoError(t, err)
-			require.Equal(t, kvp, KeyValuePair{Key: "key1", Value: strPtr("value2")})
+			require.Equal(t, kvp, KeyValuePair{Key: "key1", Value: pointers.Ptr("value2")})
 		})
 
 		t.Run("into tag", func(t *testing.T) {
@@ -193,16 +192,16 @@ func TestRepoKVPs(t *testing.T) {
 		t.Run("from tag", func(t *testing.T) {
 			kvp, err := kvps.Update(ctx, repo.ID, KeyValuePair{
 				Key:   "key1",
-				Value: strPtr("value3"),
+				Value: pointers.Ptr("value3"),
 			})
 			require.NoError(t, err)
-			require.Equal(t, kvp, KeyValuePair{Key: "key1", Value: strPtr("value3")})
+			require.Equal(t, kvp, KeyValuePair{Key: "key1", Value: pointers.Ptr("value3")})
 		})
 
 		t.Run("does not exist", func(t *testing.T) {
 			_, err := kvps.Update(ctx, repo.ID, KeyValuePair{
 				Key:   "noexist",
-				Value: strPtr("value3"),
+				Value: pointers.Ptr("value3"),
 			})
 			require.Error(t, err)
 		})

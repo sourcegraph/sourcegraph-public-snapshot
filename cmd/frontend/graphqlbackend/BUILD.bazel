@@ -504,6 +504,7 @@ go_test(
         "//internal/version",
         "//internal/webhooks/outbound",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_davecgh_go_spew//spew",
         "@com_github_derision_test_go_mockgen//testutil/assert",

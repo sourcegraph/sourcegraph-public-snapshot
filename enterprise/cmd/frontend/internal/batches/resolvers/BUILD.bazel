@@ -164,6 +164,7 @@ go_test(
         "//lib/batches/schema",
         "//lib/batches/yaml",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
