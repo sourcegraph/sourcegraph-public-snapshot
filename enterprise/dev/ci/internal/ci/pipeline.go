@@ -56,14 +56,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 	bk.FeatureFlags.ApplyEnv(env)
 
-	// If we detect the author to be a folk from Aspect.dev, force the Bazel flag.
-	// This is to avoid incorrectly assuming that the CI will run Bazel task and
-	// missing regressions being introduced in a PR.
-	authorEmail := os.Getenv("BUILDKITE_BUILD_AUTHOR_EMAIL")
-	if strings.HasSuffix(authorEmail, "@aspect.dev") {
-		c.MessageFlags.NoBazel = false
-	}
-
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
 	if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) {
 		env["PERCY_TARGET_BRANCH"] = c.Branch
@@ -174,7 +166,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CreateBundleSizeDiff:      true,
-			ForceBazel:                !c.MessageFlags.NoBazel,
 		}))
 
 		// Now we set up conditional operations that only apply to pull requests.
@@ -338,39 +329,19 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
-		if c.MessageFlags.NoBazel {
-			for _, dockerImage := range images.SourcegraphDockerImages {
-				// Only upload sourcemaps for the "frontend" image, on the Main branch build
-				uploadSourcemaps := false
-				if c.RunType.Is(runtype.MainBranch) && dockerImage == "frontend" {
-					uploadSourcemaps = true
-				}
-				imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), uploadSourcemaps))
+		imageBuildOps.Append(buildCandidateDockerImage("syntax-highlighter", c.Version, c.candidateImageTag(), false))
+		imageBuildOps.Append(buildCandidateDockerImage("symbols", c.Version, c.candidateImageTag(), false))
+		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesTestDeps, c.Version, c.candidateImageTag(), c.RunType))
+		var deployImages = []string{}
+		for _, image := range images.DeploySourcegraphDockerImages {
+			if image == "syntax-highlighter" || image == "symbols" {
+				continue
 			}
-			// Executor VM image
-			// skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
-			if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
-				imageBuildOps.Append(buildExecutorVM(c, skipHashCompare))
-				imageBuildOps.Append(buildExecutorBinary(c))
-				if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-					imageBuildOps.Append(buildExecutorDockerMirror(c))
-				}
-			}
-		} else {
-			imageBuildOps.Append(buildCandidateDockerImage("syntax-highlighter", c.Version, c.candidateImageTag(), false))
-			imageBuildOps.Append(buildCandidateDockerImage("symbols", c.Version, c.candidateImageTag(), false))
-			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesTestDeps, c.Version, c.candidateImageTag(), c.RunType))
-			var deployImages = []string{}
-			for _, image := range images.DeploySourcegraphDockerImages {
-				if image == "syntax-highlighter" || image == "symbols" {
-					continue
-				}
-				deployImages = append(deployImages, image)
-			}
-			imageBuildOps.Append(bazelBuildCandidateDockerImages(deployImages, c.Version, c.candidateImageTag(), c.RunType))
-			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesMisc, c.Version, c.candidateImageTag(), c.RunType))
-
+			deployImages = append(deployImages, image)
 		}
+		imageBuildOps.Append(bazelBuildCandidateDockerImages(deployImages, c.Version, c.candidateImageTag(), c.RunType))
+		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesMisc, c.Version, c.candidateImageTag(), c.RunType))
+
 		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
 			imageBuildOps.Append(buildExecutorVM(c, skipHashCompare))
 			imageBuildOps.Append(buildExecutorBinary(c))
@@ -393,7 +364,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
-			ForceBazel:                !c.MessageFlags.NoBazel,
 		}))
 
 		// Publish candidate images to dev registry

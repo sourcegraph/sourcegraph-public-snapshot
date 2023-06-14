@@ -7,20 +7,20 @@ Sourcegraph is currently migrating to Bazel as its build system and this page is
 - 2023-04-03 Bazel steps are required to pass on all PR builds.
   - Run `bazel run //:gazelle-update-repos` if you changed the `go.mod`.
   - Run `bazel configure` after making all your changes in the PR and commit the updated/added `BUILD.bazel`
-  - Add `[no-bazel]` in your commit description if you want to bypass Bazel.
+  - ~Add `[no-bazel]` in your commit description if you want to bypass Bazel~.
     - ⚠️  see [what to do after using `[no-bazel]`](#i-just-used-no-bazel-to-merge-my-pr)
 - 2023-04-06 Bazel steps are required to pass on main.
   - Run `bazel run //:gazelle-update-repos` if you changed the `go.mod`.
   - Run `bazel configure` after making all your changes in the PR and commit the updated/added `BUILD.bazel`
-  - Add `[no-bazel]` in your commit description if you want to bypass Bazel.
+  - ~Add `[no-bazel]` in your commit description if you want to bypass Bazel.~
     - ⚠️  see [what to do after using `[no-bazel]`](#i-just-used-no-bazel-to-merge-my-pr)
 - 2023-04-10 You cannot opt out of Bazel anymore
 - 2023-05-02 Additonally, to normal container building process, container images are now also built with `rules_oci` and Wolfi for as base images.
   - Those new images are used by the new test targets under `//testing/...` that run the E2E tests and Backend Integration tests.
   - The new images are deployed on S2 (and only S2).
   - See [Slack thread](https://sourcegraph.slack.com/archives/C04MYFW01NV/p1685606796918859)
-- **2023-05-07 The new images are deployed on Dotcom.** 
-- 2023-05-14 After the release cut and the beginning of the code freeze, all operations that are now migrated to Bazel will have their legacy counterpart removed. 
+- 2023-05-07 The new images are deployed on Dotcom.
+- **2023-05-14 After the release cut and the beginning of the code freeze, all operations that are now migrated to Bazel will have their legacy counterpart removed.**
 
 - ➡️  [Cheat sheet](#bazel-cheat-sheet)
 - ➡️  [FAQ](#faq)
@@ -213,12 +213,6 @@ So when a change is detected, `iBazel` will build the affected target and it wil
 ## FAQ
 
 ### General
-
-#### I just used `[no-bazel]` to merge my PR
-
-While using `[no-bazel]` will enable you to get your pull request merged, the subsequent builds will be with Bazel unless they also have that flag.
-
-Therefore you need to follow-up quickly with a fix to ensure `main` is not broken.
 
 #### The analysis cache is being busted because of `--action_env`
 
