@@ -3,11 +3,9 @@ contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
     - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
-    - https://storage.googleapis.com/package-repository/chainguard/chainguard-enterprise.rsa.pub
   repositories:
     - https://packages.wolfi.dev/os
     - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main'
-    - '@chainguard https://storage.googleapis.com/package-repository/chainguard'
   packages:
     ## Base set of packages
     - wolfi-baselayout
@@ -42,4 +40,4 @@ annotations:
   org.opencontainers.image.source: https://github.com/sourcegraph/sourcegraph/
   org.opencontainers.image.documentation: https://docs.sourcegraph.com/
 
-# MANUAL REBUILD: Wed Jun 14 15:27:52 BST 2023
+# MANUAL REBUILD:
