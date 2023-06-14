@@ -653,10 +653,20 @@ func (c *CreateCommitFromPatchRequest) ToProto() *proto.CreateCommitFromPatchBin
 		CommitInfo:   c.CommitInfo.ToProto(),
 		Push:         c.Push.ToProto(),
 		GitApplyArgs: c.GitApplyArgs,
+		PushRef:      c.PushRef,
 	}
 }
 
 func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchBinaryRequest) {
+	gp := p.GetPush()
+	var pushConfig *PushConfig
+	if gp != nil {
+		pushConfig = &PushConfig{}
+		pushConfig.FromProto(gp)
+	}
+
+	pr := p.GetPushRef()
+
 	*c = CreateCommitFromPatchRequest{
 		Repo:         api.RepoName(p.GetRepo()),
 		BaseCommit:   api.CommitID(p.GetBaseCommit()),
@@ -664,8 +674,9 @@ func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchB
 		TargetRef:    p.GetTargetRef(),
 		UniqueRef:    p.GetUniqueRef(),
 		CommitInfo:   PatchCommitInfoFromProto(p.GetCommitInfo()),
-		Push:         PushConfigFromProto(p.GetPush()),
+		Push:         pushConfig,
 		GitApplyArgs: p.GetGitApplyArgs(),
+		PushRef:      &pr,
 	}
 }
 
@@ -681,7 +692,7 @@ type PatchCommitInfo struct {
 
 func (p *PatchCommitInfo) ToProto() *proto.PatchCommitInfo {
 	return &proto.PatchCommitInfo{
-		Message:        p.Messages,
+		Messages:       p.Messages,
 		AuthorName:     p.AuthorName,
 		AuthorEmail:    p.AuthorEmail,
 		CommitterName:  p.CommitterName,
@@ -692,7 +703,7 @@ func (p *PatchCommitInfo) ToProto() *proto.PatchCommitInfo {
 
 func PatchCommitInfoFromProto(p *proto.PatchCommitInfo) PatchCommitInfo {
 	return PatchCommitInfo{
-		Messages:       p.GetMessage(), //TODO: @varsanojidan fix this
+		Messages:       p.GetMessages(), //TODO: @varsanojidan fix this
 		AuthorName:     p.GetAuthorName(),
 		AuthorEmail:    p.GetAuthorEmail(),
 		CommitterName:  p.GetCommitterName(),
@@ -727,11 +738,8 @@ func (p *PushConfig) ToProto() *proto.PushConfig {
 	}
 }
 
-func PushConfigFromProto(p *proto.PushConfig) *PushConfig {
-	if p == nil {
-		return nil
-	}
-	return &PushConfig{
+func (pc *PushConfig) FromProto(p *proto.PushConfig) {
+	*pc = PushConfig{
 		RemoteURL:  p.GetRemoteUrl(),
 		PrivateKey: p.GetPrivateKey(),
 		Passphrase: p.GetPassphrase(),
