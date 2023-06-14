@@ -73,7 +73,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 		return nil
 	}
 
-	currentVersion, ok := oobmigration.NewVersionFromString(currentVersionStr)
+	currentVersion, currentPatch, ok := oobmigration.NewVersionAndPatchFromString(currentVersionStr)
 	if !ok {
 		return errors.Newf("unexpected string for desired instance schema version, skipping auto-upgrade (%s)", currentVersionStr)
 	}
@@ -97,7 +97,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 	}
 
 	toVersionStr := version.Version()
-	toVersion, ok := oobmigration.NewVersionFromString(toVersionStr)
+	toVersion, toPatch, ok := oobmigration.NewVersionAndPatchFromString(toVersionStr)
 	if !ok {
 		obsvCtx.Logger.Warn("unexpected string for desired instance schema version, skipping auto-upgrade", log.String("version", toVersionStr))
 		return nil
@@ -107,11 +107,15 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 		return errors.Wrap(err, "autoupgradestore.EnsureUpgradeTable")
 	}
 
-	stillNeedsUpgrade, err := claimAutoUpgradeLock(ctx, obsvCtx, upgradestore, toVersion)
+	stillNeedsMVU, err := claimAutoUpgradeLock(ctx, obsvCtx, upgradestore, toVersion)
 	if err != nil {
 		return err
 	}
-	if !stillNeedsUpgrade {
+	if !stillNeedsMVU {
+		// may not need an MVU (major/minor versions match), but still need to update for patch version difference
+		if oobmigration.CompareVersions(currentVersion, toVersion) == oobmigration.VersionOrderEqual && currentPatch < toPatch {
+			return finalMileMigrations(obsvCtx)
+		}
 		return nil
 	}
 
