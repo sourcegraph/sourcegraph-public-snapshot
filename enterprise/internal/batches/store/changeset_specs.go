@@ -198,7 +198,7 @@ func (s *Store) UpdateChangesetSpecCommitVerification(ctx context.Context, batch
 		SET commit_verification = %s
 		WHERE id = %s`,
 		cv,
-		batchSpec,
+		specID,
 	)
 
 	return s.Exec(ctx, q)
