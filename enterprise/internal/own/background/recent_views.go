@@ -52,29 +52,31 @@ func (r *recentViewsIndexer) handle(ctx context.Context, checker authz.SubRepoPe
 		return errors.Wrap(err, "getting event logs")
 	}
 	var filteredEvents []*database.Event
-	subRepoPermsCache := map[string]struct{}{}
+	subRepoPermsCache := map[string]bool{}
 	for _, event := range events {
 		var vb viewBlob
 		err = json.Unmarshal(event.PublicArgument, &vb)
 		if err != nil {
-			r.logger.Info("could not use view event for signal", log.Object("event",
+			r.logger.Debug("could not use view event for signal", log.Object("event",
 				log.String("name", event.Name),
 				log.String("url", event.URL)))
 			continue
 		}
 
-		if _, ok := subRepoPermsCache[vb.RepoName]; ok {
-			r.logger.Debug("view event skipped due to repo having subrepo permissions on", log.String("repo name", vb.RepoName))
+		if isSubRepoPermsRepo, ok := subRepoPermsCache[vb.RepoName]; ok {
+			if !isSubRepoPermsRepo {
+				filteredEvents = append(filteredEvents, event)
+			}
 			continue
 		}
 		ok, err := authz.SubRepoEnabledForRepo(ctx, checker, api.RepoName(vb.RepoName))
 		if err != nil {
-			r.logger.Info("encountered error checking subrepo permissions for repo", log.String("repo name", vb.RepoName), log.Error(err))
+			r.logger.Debug("encountered error checking subrepo permissions for repo", log.String("repo name", vb.RepoName), log.Error(err))
 		} else if ok {
-			r.logger.Debug("view event skipped due to repo having subrepo permissions on", log.String("repo name", vb.RepoName))
-			subRepoPermsCache[vb.RepoName] = struct{}{}
+			subRepoPermsCache[vb.RepoName] = true
 		} else {
 			filteredEvents = append(filteredEvents, event)
+			subRepoPermsCache[vb.RepoName] = false
 		}
 	}
 	numberOfEvents := len(filteredEvents)
