@@ -66,6 +66,7 @@ describe('TreePage', () => {
         useBreadcrumb: sinon.spy(),
         ownEnabled: false,
         authenticatedUser: null,
+        context: { authProviders: [] },
     })
 
     describe('repo page', () => {

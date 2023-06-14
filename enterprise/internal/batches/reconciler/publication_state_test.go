@@ -5,6 +5,7 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestPublicationStateCalculator(t *testing.T) {
@@ -41,17 +42,17 @@ func TestPublicationStateCalculator(t *testing.T) {
 		},
 		"no published value; unpublished ui": {
 			spec: batches.PublishedValue{Val: nil},
-			ui:   uiPublicationStatePtr(btypes.ChangesetUiPublicationStateUnpublished),
+			ui:   pointers.Ptr(btypes.ChangesetUiPublicationStateUnpublished),
 			want: want{false, false, true},
 		},
 		"no published value; draft ui": {
 			spec: batches.PublishedValue{Val: nil},
-			ui:   uiPublicationStatePtr(btypes.ChangesetUiPublicationStateDraft),
+			ui:   pointers.Ptr(btypes.ChangesetUiPublicationStateDraft),
 			want: want{false, true, false},
 		},
 		"no published value; published ui": {
 			spec: batches.PublishedValue{Val: nil},
-			ui:   uiPublicationStatePtr(btypes.ChangesetUiPublicationStatePublished),
+			ui:   pointers.Ptr(btypes.ChangesetUiPublicationStatePublished),
 			want: want{true, false, false},
 		},
 	} {

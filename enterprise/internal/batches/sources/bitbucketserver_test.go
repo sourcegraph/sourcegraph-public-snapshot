@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -830,7 +831,7 @@ func TestBitbucketServerSource_GetFork(t *testing.T) {
 		cf, save := newClientFactory(t, testName(t))
 		defer save(t)
 
-		svc := newExternalService(t, strPtr("invalid"))
+		svc := newExternalService(t, pointers.Ptr("invalid"))
 
 		ctx := context.Background()
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
@@ -861,7 +862,7 @@ func TestBitbucketServerSource_GetFork(t *testing.T) {
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetFork(ctx, target, strPtr("~milton"), strPtr("vcr-fork-test-repo"))
+		fork, err := bbsSrc.GetFork(ctx, target, pointers.Ptr("~milton"), pointers.Ptr("vcr-fork-test-repo"))
 		assert.Nil(t, fork)
 		assert.ErrorContains(t, err, "repo is not a fork")
 	})
@@ -887,7 +888,7 @@ func TestBitbucketServerSource_GetFork(t *testing.T) {
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetFork(ctx, target, strPtr("~milton"), strPtr("BAT-vcr-fork-test-repo-already-forked"))
+		fork, err := bbsSrc.GetFork(ctx, target, pointers.Ptr("~milton"), pointers.Ptr("BAT-vcr-fork-test-repo-already-forked"))
 		assert.Nil(t, fork)
 		assert.ErrorContains(t, err, "repo was not forked from the given parent")
 	})
@@ -995,7 +996,7 @@ func TestBitbucketServerSource_GetFork(t *testing.T) {
 		username, err := bbsSrc.client.AuthenticatedUsername(ctx)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetFork(ctx, target, strPtr("~milton"), strPtr("BAT-vcr-fork-test-repo-already-forked"))
+		fork, err := bbsSrc.GetFork(ctx, target, pointers.Ptr("~milton"), pointers.Ptr("BAT-vcr-fork-test-repo-already-forked"))
 		assert.Nil(t, err)
 		assert.NotNil(t, fork)
 		assert.NotEqual(t, fork, target)
@@ -1036,7 +1037,7 @@ func TestBitbucketServerSource_GetFork(t *testing.T) {
 		username, err := bbsSrc.client.AuthenticatedUsername(ctx)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetFork(ctx, target, strPtr("~milton"), strPtr("BAT-vcr-fork-test-repo-not-forked"))
+		fork, err := bbsSrc.GetFork(ctx, target, pointers.Ptr("~milton"), pointers.Ptr("BAT-vcr-fork-test-repo-not-forked"))
 		assert.Nil(t, err)
 		assert.NotNil(t, fork)
 		assert.NotEqual(t, fork, target)
@@ -1046,5 +1047,3 @@ func TestBitbucketServerSource_GetFork(t *testing.T) {
 		testutil.AssertGolden(t, "testdata/golden/"+name, update(name), fork)
 	})
 }
-
-func strPtr(s string) *string { return &s }

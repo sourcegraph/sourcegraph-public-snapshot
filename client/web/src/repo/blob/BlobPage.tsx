@@ -52,6 +52,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { Scalars } from '../../graphql-operations'
+import { SourcegraphContext } from '../../jscontext'
 import { NotebookProps } from '../../notebooks'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
@@ -112,6 +113,7 @@ interface BlobPageProps
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     className?: string
+    context: Pick<SourcegraphContext, 'authProviders'>
 }
 
 /**
@@ -122,7 +124,7 @@ interface BlobPageInfo extends Optional<BlobInfo, 'commitID'> {
     aborted: boolean
 }
 
-export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ...props }) => {
+export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, context, ...props }) => {
     const location = useLocation()
     const navigate = useNavigate()
 
@@ -360,8 +362,13 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const alwaysRender = (
         <>
             <PageTitle title={getPageTitle()} />
-            {!!props.isSourcegraphDotCom && !!props.authenticatedUser && (
-                <TryCodyWidget className="mb-4" telemetryService={props.telemetryService} type="blob" />
+            {props.isSourcegraphDotCom && (
+                <TryCodyWidget
+                    telemetryService={props.telemetryService}
+                    type="blob"
+                    authenticatedUser={props.authenticatedUser}
+                    context={context}
+                />
             )}
             {window.context.isAuthenticatedUser && (
                 <RepoHeaderContributionPortal

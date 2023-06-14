@@ -58,7 +58,7 @@ func (w *weaviateClient) Search(ctx context.Context, repoName api.RepoName, repo
 		return nil, nil, w.clientErr
 	}
 
-	embeddedQuery, err := w.getQueryEmbedding(ctx, query)
+	embeddedQuery, _, err := w.getQueryEmbedding(ctx, query)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "getting query embedding")
 	}

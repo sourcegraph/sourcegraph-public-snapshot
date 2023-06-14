@@ -8,19 +8,38 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Added
 
-- Add delete button for removing individual history [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
-- Load the recent ongoing chat on reload of window [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
+- Hover tooltips to intent-detection underlines. [pull/52029](https://github.com/sourcegraph/sourcegraph/pull/52029)
+- Notification to prompt users to setup Cody if it wasn't configured initially. [pull/53321](https://github.com/sourcegraph/sourcegraph/pull/53321)
 
 ### Fixed
 
-- Fix the loading of files and scroll chat to the end while restoring the history [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
+- `Continue with Sourcegraph.com` callback URL. [pull/53418](https://github.com/sourcegraph/sourcegraph/pull/53418)
+
+### Changed
+
+- Simplified the appearance of commands in various parts of the UI [pull/53395](https://github.com/sourcegraph/sourcegraph/pull/53395)
+
+## [0.2.3]
+
+### Added
+
+- Add delete button for removing individual history. [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
+- Load the recent ongoing chat on reload of window. [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
+- Added a new Cody status bar item to relay global loading states and allowing you to quickly enable/disable features [pull/53307](https://github.com/sourcegraph/sourcegraph/pull/53307)
+- Handle URL callbacks from `vscode-insiders`. [pull/53313](https://github.com/sourcegraph/sourcegraph/pull/53313)
+- Inline Assist: New Code Lens to undo `inline fix` performed by Cody. [pull/53348](https://github.com/sourcegraph/sourcegraph/pull/53348)
+
+### Fixed
+
+- Fix the loading of files and scroll chat to the end while restoring the history. [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
 - Open file paths from Cody's responses in a workspace with the correct protocol. [pull/53103](https://github.com/sourcegraph/sourcegraph/pull/53103)
 - Cody completions: Fixes an issue where completions would often start in the next line. [pull/53246](https://github.com/sourcegraph/sourcegraph/pull/53246)
 
 ### Changed
 
 - Save the current ongoing conversation to the chat history [pull/52904](https://github.com/sourcegraph/sourcegraph/pull/52904)
-- Cody completions: Changed the feature flag from `cody.experimental.suggestions` to `cody.completions`. [pull/53240](https://github.com/sourcegraph/sourcegraph/pull/53240)
+- Inline Assist: Updating configuration no longer requires reloading the extension. [pull/53348](https://github.com/sourcegraph/sourcegraph/pull/53348)
+- Context quality has been improved when the repository has not been indexed. The LLM is used to generate keyword and filename queries, and the LLM also reranks results from multiple sources. Response latency has also improved on long user queries. [pull/52815](https://github.com/sourcegraph/sourcegraph/pull/52815)
 
 ## [0.2.2]
 

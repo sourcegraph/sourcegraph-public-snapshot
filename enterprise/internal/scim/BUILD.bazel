@@ -69,6 +69,7 @@ go_test(
         "//internal/txemail",
         "//internal/types",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_elimity_com_scim//:scim",
         "@com_github_elimity_com_scim//errors",

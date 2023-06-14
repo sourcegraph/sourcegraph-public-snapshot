@@ -33,6 +33,11 @@ const REPO_EMBEDDING_JOB_FRAGMENT = gql`
             oid
             abbreviatedOID
         }
+        stats {
+            filesScheduled
+            filesEmbedded
+            filesSkipped
+        }
     }
 `
 
@@ -63,6 +68,9 @@ export const useRepoEmbeddingJobsConnection = (
         getConnection: result => {
             const { repoEmbeddingJobs } = dataOrThrowErrors(result)
             return repoEmbeddingJobs
+        },
+        options: {
+            pollInterval: 5000,
         },
     })
 

@@ -41,6 +41,11 @@ type PathAggregateCounts struct {
 	// CodeownedFileCount is the total number of files nested within given tree root
 	// that are owned via CODEOWNERS.
 	CodeownedFileCount int
+	// AssignedOwnershipFileCount is the total number of files in tree that are owned via assigned ownership.
+	AssignedOwnershipFileCount int
+	// TotalOwnedFileCount is the total number of files in tree that have any ownership associated
+	// - either via CODEOWNERS or via assigned ownership.
+	TotalOwnedFileCount int
 }
 
 // TreeLocationOpts allows locating and aggregating statistics on file trees.
@@ -147,11 +152,18 @@ func (s *ownershipStats) UpdateIndividualCounts(ctx context.Context, repoID api.
 }
 
 var aggregateCountsUpdateFmtstr = `
-	INSERT INTO ownership_path_stats (file_path_id, tree_codeowned_files_count, last_updated_at)
-	VALUES (%s, %s, %s)
+	INSERT INTO ownership_path_stats (
+		file_path_id,
+		tree_codeowned_files_count,
+		tree_assigned_ownership_files_count,
+		tree_any_ownership_files_count,
+		last_updated_at)
+	VALUES (%s, %s, %s, %s, %s)
 	ON CONFLICT (file_path_id)
 	DO UPDATE SET
 	tree_codeowned_files_count = EXCLUDED.tree_codeowned_files_count,
+	tree_assigned_ownership_files_count = EXCLUDED.tree_assigned_ownership_files_count,
+	tree_any_ownership_files_count = EXCLUDED.tree_any_ownership_files_count,
 	last_updated_at = EXCLUDED.last_updated_at
 `
 
@@ -165,7 +177,15 @@ func (s *ownershipStats) UpdateAggregateCounts(ctx context.Context, repoID api.R
 		if got, want := len(pathIDs), 1; got != want {
 			return errors.Newf("want exactly 1 repo path, got %d", got)
 		}
-		res, err := s.ExecResult(ctx, sqlf.Sprintf(aggregateCountsUpdateFmtstr, pathIDs[0], counts.CodeownedFileCount, timestamp))
+		q := sqlf.Sprintf(
+			aggregateCountsUpdateFmtstr,
+			pathIDs[0],
+			counts.CodeownedFileCount,
+			counts.AssignedOwnershipFileCount,
+			counts.TotalOwnedFileCount,
+			timestamp,
+		)
+		res, err := s.ExecResult(ctx, q)
 		if err != nil {
 			return errors.Wrapf(err, "updating counts at repoID=%d path=%s failed", repoID, path)
 		}
@@ -203,7 +223,10 @@ func (s *ownershipStats) QueryIndividualCounts(ctx context.Context, opts TreeLoc
 }
 
 var treeAggregateCountsFmtstr = `
-	SELECT SUM(COALESCE(s.tree_codeowned_files_count, 0))
+	SELECT
+		SUM(COALESCE(s.tree_codeowned_files_count, 0)),
+		SUM(COALESCE(s.tree_assigned_ownership_files_count, 0)),
+		SUM(COALESCE(s.tree_any_ownership_files_count, 0))
 	FROM ownership_path_stats AS s
 	INNER JOIN repo_paths AS p ON s.file_path_id = p.id
 	WHERE p.absolute_path = %s
@@ -215,6 +238,10 @@ func (s *ownershipStats) QueryAggregateCounts(ctx context.Context, opts TreeLoca
 		qs = append(qs, sqlf.Sprintf("AND p.repo_id = %s", repoID))
 	}
 	var cs PathAggregateCounts
-	err := s.Store.QueryRow(ctx, sqlf.Join(qs, "\n")).Scan(&dbutil.NullInt{N: &cs.CodeownedFileCount})
+	err := s.Store.QueryRow(ctx, sqlf.Join(qs, "\n")).Scan(
+		&dbutil.NullInt{N: &cs.CodeownedFileCount},
+		&dbutil.NullInt{N: &cs.AssignedOwnershipFileCount},
+		&dbutil.NullInt{N: &cs.TotalOwnedFileCount},
+	)
 	return cs, err
 }

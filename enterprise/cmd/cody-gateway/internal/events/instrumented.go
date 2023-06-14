@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"go.opentelemetry.io/otel"
@@ -23,8 +24,13 @@ func (i *instrumentedLogger) LogEvent(spanCtx context.Context, event Event) erro
 	_, span := tracer.Start(backgroundContextWithSpan(spanCtx), fmt.Sprintf("%s.LogEvent", i.Scope),
 		trace.WithAttributes(
 			attribute.String("source", event.Source),
-			attribute.String("name", string(event.Name))))
+			attribute.String("event.name", string(event.Name))))
 	defer span.End()
+
+	// Best-effort attempt to record event metadata
+	if metadataJSON, err := json.Marshal(event.Metadata); err == nil {
+		span.SetAttributes(attribute.String("event.metadata", string(metadataJSON)))
+	}
 
 	if err := i.Logger.LogEvent(spanCtx, event); err != nil {
 		span.RecordError(err)

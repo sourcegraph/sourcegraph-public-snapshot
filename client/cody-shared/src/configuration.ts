@@ -8,7 +8,7 @@ export interface Configuration {
     debugVerbose: boolean
     useContext: ConfigurationUseContext
     customHeaders: Record<string, string>
-    completions: boolean
+    experimentalSuggest: boolean
     experimentalChatPredictions: boolean
     experimentalInline: boolean
     experimentalGuardrails: boolean

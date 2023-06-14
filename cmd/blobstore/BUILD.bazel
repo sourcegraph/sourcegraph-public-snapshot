@@ -54,7 +54,10 @@ container_structure_test(
     configs = ["image_test.yaml"],
     driver = "docker",
     image = ":image",
-    tags = ["requires-network"],
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
 )
 
 # The rules below covers the old blobstore, which is based on s3 proxy. We don't push the newer one, as it's still considered experimental.
@@ -102,7 +105,10 @@ container_structure_test(
     configs = ["s3_proxy_image_test.yaml"],
     driver = "docker",
     image = ":s3_proxy_image",
-    tags = ["requires-network"],
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
 )
 
 oci_tarball(

@@ -50,6 +50,8 @@ export const TranscriptItem: React.FunctionComponent<
         showFeedbackButtons: boolean
         copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
+        abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
+        onAbortMessageInProgress?: () => void
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
     message,
@@ -73,6 +75,8 @@ export const TranscriptItem: React.FunctionComponent<
     copyButtonOnSubmit,
     submitButtonComponent: SubmitButton,
     chatInputClassName,
+    abortMessageInProgressComponent: AbortMessageInProgressButton,
+    onAbortMessageInProgress = () => {},
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const textarea =
@@ -153,6 +157,9 @@ export const TranscriptItem: React.FunctionComponent<
                 ) : inProgress ? (
                     <BlinkingCursor />
                 ) : null}
+                {inProgress && AbortMessageInProgressButton && (
+                    <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
+                )}
             </div>
             {showFeedbackButtons &&
                 FeedbackButtonsContainer &&
