@@ -438,7 +438,7 @@ func bazelPublishFinalDockerImage(c Config, apps []string) operations.Operation 
 
 			var imgs []string
 			for _, image := range []string{publishImage, devImage} {
-				if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest, runtype.CandidatesNoTest) {
+				if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
 					imgs = append(imgs, fmt.Sprintf("%s:%s", image, c.Version))
 				}
 

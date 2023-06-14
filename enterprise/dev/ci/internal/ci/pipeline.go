@@ -179,12 +179,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
 
-	case runtype.BackendIntegrationTests:
-		ops.Append(
-			bazelBuildCandidateDockerImage("server", c.Version, c.candidateImageTag(), c.RunType),
-			backendIntegrationTests(c.candidateImageTag(), "server"),
-		)
-
 	case runtype.BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
@@ -282,29 +276,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			bazelBuildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), c.RunType),
 			wait,
 			publishFinalDockerImage(c, patchImage))
-
-	case runtype.CandidatesNoTest:
-		imageBuildOps := operations.NewNamedSet("Image builds")
-		imageBuildOps.Append(buildCandidateDockerImage("syntax-highlighter", c.Version, c.candidateImageTag(), false))
-		imageBuildOps.Append(buildCandidateDockerImage("symbols", c.Version, c.candidateImageTag(), false))
-		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesTestDeps, c.Version, c.candidateImageTag(), c.RunType))
-		var deployImages = []string{}
-		for _, image := range images.DeploySourcegraphDockerImages {
-			if image == "syntax-highlighter" || image == "symbols" {
-				continue
-			}
-			deployImages = append(deployImages, image)
-		}
-		imageBuildOps.Append(bazelBuildCandidateDockerImages(deployImages, c.Version, c.candidateImageTag(), c.RunType))
-		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesMisc, c.Version, c.candidateImageTag(), c.RunType))
-		ops.Merge(imageBuildOps)
-		ops.Append(wait)
-
-		publishOps := operations.NewNamedSet("Publish images")
-		publishOps.Append(bazelPublishFinalDockerImage(c, images.SourcegraphDockerImages))
-
-		ops.Merge(publishOps)
-
 	case runtype.ExecutorPatchNoTest:
 		executorVMImage := "executor-vm"
 		ops = operations.NewSet(
