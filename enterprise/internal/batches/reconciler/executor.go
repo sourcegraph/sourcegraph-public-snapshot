@@ -220,7 +220,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 		e.ch.ExternalID = resp.ChangelistId
 	}
 
-  if err = e.runAfterCommit(ctx, css, resp, remoteRepo, opts); err != nil {
+	if err = e.runAfterCommit(ctx, css, resp, remoteRepo, opts); err != nil {
 		return afterDone, errors.Wrap(err, "running after commit routine")
 	}
 
