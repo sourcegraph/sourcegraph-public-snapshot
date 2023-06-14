@@ -160,7 +160,7 @@ func getCodeOwnersFromMatches(
 			continue
 		}
 		refs := rule.References()
-		for i, _ := range refs {
+		for i := range refs {
 			refs[i].RepoContext = &own.RepoContext{
 				Name:         mm.Repo.Name,
 				CodeHostKind: rs.codeowners.GetCodeHostType(),
