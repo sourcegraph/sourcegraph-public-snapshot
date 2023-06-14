@@ -148,8 +148,7 @@ func StartLicenseCheck(originalCtx context.Context, logger log.Logger, siteID st
 		licenseToken := hex.EncodeToString(GenerateHashedLicenseKeyAccessToken(conf.Get().LicenseKey))
 		var initialWaitInterval time.Duration = 0
 		if prevLicenseToken == licenseToken {
-			durationSinceLastCalled, _ := calcDurationSinceLastCalled(glock.NewRealClock())
-			initialWaitInterval = durationSinceLastCalled
+			initialWaitInterval, _ = calcDurationSinceLastCalled(glock.NewRealClock())
 		}
 
 		// todo: clarify shall we use sync.Mutex or something else?
