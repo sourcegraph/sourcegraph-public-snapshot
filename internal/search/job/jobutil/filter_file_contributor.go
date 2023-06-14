@@ -53,7 +53,9 @@ func (j *fileHasContributorsJob) Run(ctx context.Context, clients job.RuntimeCli
 				// We send one fetch contributors request per file path.
 				// We should quit early on context deadline exceeded.
 				if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+					mu.Lock()
 					errs = errors.Append(errs, ctx.Err())
+					mu.Unlock()
 					break
 				}
 				fileMatchContributors, err := getFileContributors(ctx, clients.Gitserver, fm)
