@@ -17,6 +17,7 @@ export type WebviewMessage =
     | { command: 'removeToken' }
     | { command: 'removeHistory' }
     | { command: 'restoreHistory'; chatID: string }
+    | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
@@ -27,7 +28,7 @@ export type WebviewMessage =
  */
 export type ExtensionMessage =
     | { type: 'showTab'; tab: string }
-    | { type: 'config'; config: ConfigurationSubsetForWebview; authStatus: AuthStatus }
+    | { type: 'config'; config: ConfigurationSubsetForWebview & LocalEnv; authStatus: AuthStatus }
     | { type: 'login'; authStatus: AuthStatus }
     | { type: 'history'; messages: UserLocalHistory | null }
     | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean }
@@ -75,6 +76,14 @@ export const unauthenticatedStatus = {
     requiresVerifiedEmail: false,
     siteHasCodyEnabled: false,
     siteVersion: '',
+}
+
+/** The local environment of the editor. */
+export interface LocalEnv {
+    // The application name of the editor
+    appName: string
+    // The URL scheme the editor is registered to in the operating system
+    appScheme: string
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {

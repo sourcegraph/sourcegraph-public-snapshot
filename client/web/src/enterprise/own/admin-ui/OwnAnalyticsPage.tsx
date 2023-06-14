@@ -21,14 +21,15 @@ interface OwnCoverageDatum {
 }
 
 export const OwnAnalyticsPage: FC = () => {
-    // TODO(#52826): Error handling and loading
-    const { data } = useQuery<GetOwnSignalConfigurationsResult>(GET_OWN_JOB_CONFIGURATIONS, {})
+    const { data, loading, error } = useQuery<GetOwnSignalConfigurationsResult>(GET_OWN_JOB_CONFIGURATIONS, {})
     const enabled =
         data?.ownSignalConfigurations.some(
             (config: OwnSignalConfig) => config.name === 'analytics' && config.isEnabled
         ) || false
     return (
         <>
+            {loading && <LoadingSpinner />}
+            {error && <ErrorAlert prefix="Error finding out if own analytics are enabled" error={error} />}
             <AnalyticsPageTitle>Own</AnalyticsPageTitle>
             {enabled ? <OwnAnalyticsPanel /> : <OwnEnableAnalytics />}
         </>
@@ -42,8 +43,20 @@ const OwnAnalyticsPanel: FC = () => {
         {
             name: 'CODEOWNERS',
             count: data?.instanceOwnershipStats?.totalCodeownedFiles || 0,
-            fill: 'var(--info)',
+            fill: 'var(--info-2)',
             tooltip: 'Total number of files owned through CODEOWNERS',
+        },
+        {
+            name: 'Assigned ownership',
+            count: data?.instanceOwnershipStats?.totalAssignedOwnershipFiles || 0,
+            fill: 'var(--info)',
+            tooltip: 'Total number of files with assigned owners',
+        },
+        {
+            name: 'All owned files',
+            count: data?.instanceOwnershipStats?.totalOwnedFiles || 0,
+            fill: 'var(--info-3)',
+            tooltip: 'Total number of owned files',
         },
         {
             name: 'All files',
@@ -56,7 +69,7 @@ const OwnAnalyticsPanel: FC = () => {
     return (
         <>
             {loading && <LoadingSpinner />}
-            {error && <ErrorAlert prefix="Error finding out if own analytics are enabled" error={error} />}
+            {error && <ErrorAlert prefix="Error getting own analytics" error={error} />}
             {!loading && !error && (
                 <>
                     {/* TODO(#52826): If only partial data is available - make that clear to the user. */}

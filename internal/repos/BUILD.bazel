@@ -192,6 +192,7 @@ go_test(
         "//internal/types",
         "//internal/types/typestest",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_davecgh_go_spew//spew",
         "@com_github_dnaeon_go_vcr//cassette",

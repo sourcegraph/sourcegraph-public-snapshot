@@ -103,7 +103,8 @@ export class FileTouch implements Recipe {
                     speaker: 'assistant',
                     prefix: 'Working on it! I will notify you when the file is ready.\n',
                 },
-                this.getContextMessages(selection, currentDir)
+                this.getContextMessages(selection, currentDir),
+                []
             )
         )
     }

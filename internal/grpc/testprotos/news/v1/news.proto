@@ -1,0 +1,46 @@
+// Copyright 2020 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+//
+// Note (@Sourcegraph): This file was copied / adapted from
+// https://github.com/protocolbuffers/protobuf-go/blob/v1.30.0/internal/testprotos/news/news.proto to aid our testing.
+
+syntax = "proto3";
+
+package grpc.testprotos.news.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news/v1";
+
+message Article {
+  enum Status {
+    STATUS_DRAFT_UNSPECIFIED = 0;
+    STATUS_PUBLISHED = 1;
+    STATUS_REVOKED = 2;
+  }
+
+  string author = 1;
+  google.protobuf.Timestamp date = 2;
+  string title = 3;
+  string content = 4;
+  Status status = 8;
+  repeated Attachment attachments = 7;
+}
+
+message Attachment {
+  oneof contents {
+    BinaryAttachment binary_attachment = 1;
+    KeyValueAttachment key_value_attachment = 2;
+  }
+}
+
+message BinaryAttachment {
+  string name = 1;
+  bytes data = 2;
+}
+
+message KeyValueAttachment {
+  string name = 1;
+  map<string, string> data = 2;
+}

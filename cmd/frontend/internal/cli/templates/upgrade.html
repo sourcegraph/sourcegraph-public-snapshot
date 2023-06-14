@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Migration In Progress...</title>
+        <style>
+            body {
+                margin: 0;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
+                    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+                background-color: #f9fafb;
+            }
+            h2 {
+                margin: 0;
+                padding: 2rem 0 2rem;
+                font-size: 1.85rem;
+            }
+            .tabs {
+                border-radius: 5px;
+                overflow: hidden;
+                border: 2px solid #e5e5e5;
+            }
+            .tab {
+                width: 100%;
+                color: black;
+                overflow: hidden;
+                border-bottom: 1px solid #e5e5e5;
+            }
+            .tab:last-child {
+                border-bottom: none;
+            }
+            .tab-label {
+                justify-content: space-between;
+                padding: 1.5em 1rem 1.5rem 1.2rem;
+                cursor: pointer;
+                display: grid;
+                grid-template-columns: 30px 1fr 1fr;
+                font-size: 1.25rem;
+            }
+            .tab-label span:last-child {
+                font-weight: 400;
+                padding-right: 20px;
+                justify-self: end;
+            }
+            .tab-label:hover {
+                background: darken(#2c3e50, 10%);
+            }
+            .tab-label::before {
+                content: '\276F';
+                width: 1em;
+                height: 1em;
+                text-align: center;
+                transition: all 0.35s;
+            }
+            .tab-content {
+                max-height: 0;
+                padding: 0 1em;
+                transition: all 0.35s;
+                transition-timing-function: ease-in-out;
+                grid-template-columns: 1fr 1fr;
+            }
+            .tab-close:hover {
+                background: darken(#2c3e50, 10%);
+            }
+            .tab-close {
+                display: flex;
+                justify-content: flex-end;
+                padding: 1em;
+                font-size: 0.75em;
+                background: #2c3e50;
+                cursor: pointer;
+            }
+            input {
+                position: absolute;
+                opacity: 0;
+                z-index: -1;
+            }
+            input:checked + .tab-label::before {
+                transform: rotate(90deg);
+            }
+            input:checked ~ .tab-content {
+                max-height: 100vh;
+                overflow-x: scroll;
+            }
+            .top-container {
+                border-right: 2px solid #e5e5e5;
+                display: grid;
+                align-items: center;
+            }
+            .top-container div {
+                text-align: center;
+            }
+            .logo-container {
+                padding-top: 4rem;
+                width: 70%;
+                margin: 0 auto;
+                padding-bottom: 2rem;
+            }
+            .bottom-container {
+                padding: 1rem 0;
+                width: 60%;
+                margin: 0 auto;
+            }
+
+            .title-container {
+                display: grid;
+                grid-template-columns: 320px 20px;
+                align-items: center;
+                justify-content: center;
+                column-gap: 10px;
+            }
+            .title-container img {
+                width: 1.5rem;
+                height: 1.5rem;
+            }
+            .logo {
+                width: 40%;
+            }
+            .tuning {
+                font-size: 1.5rem;
+                margin: 0;
+            }
+            .later {
+                font-size: 1.5rem;
+                margin-top: 0.5rem;
+            }
+            .progress-title {
+                margin: 0;
+                padding-bottom: 1rem;
+            }
+
+            .logo-spin {
+                width: 100px;
+                height: 100px;
+                animation-name: spin;
+                animation-duration: 5000ms;
+                animation-iteration-count: infinite;
+                animation-timing-function: linear;
+            }
+            @keyframes spin {
+                from {
+                    transform: rotate(0deg);
+                }
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .status-banner {
+                border: 1px solid #2fcd66;
+                padding: 1.5rem;
+                background: #2fcd66;
+                font-weight: 500;
+                border-radius: 5px;
+                color: white;
+                margin: 1rem 0;
+                font-size: 1.25rem;
+            }
+
+            .header-applied {
+                color: #2FCD66;
+            }
+            .header-in-progress {
+                color: #f4c134;
+            }
+            .header-failed {
+                color: #f81434;
+            }
+
+            .migration-list {
+                padding: 0;
+                list-style-type: none;
+                max-height: 350px;
+                overflow: scroll;
+            }
+            .migration-list li {
+                margin: 1em;
+                padding: 1em;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+            .migration-list li span:last-child {
+                font-weight: 400;
+                padding-right: 20px;
+                justify-self: end;
+            }
+            .migration-item-applied {
+                border: 1px solid #2FCD66;
+                border-radius: 5px;
+            }
+            .migration-item-in-progress {
+                border: 1px solid #f4c134;
+                border-radius: 5px;
+            }
+            .migration-item-failed {
+                border: 1px solid #f81434;
+                border-radius: 5px;
+            }
+            .migration-item-queued {
+                border: 1px solid #98AFBA;
+                border-radius: 5px;
+            }
+
+            .oobmigration-list {
+                padding: 0;
+                list-style-type: none;
+                max-height: 350px;
+                overflow: scroll;
+            }
+            .oobmigration-list li {
+                margin: 1em;
+                padding: 1em;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+            .oobmigration-list li span:last-child {
+                font-weight: 400;
+                padding-right: 20px;
+                justify-self: end;
+            }
+            .oobmigration-item-applied {
+                border: 1px solid #2FCD66;
+                border-radius: 5px;
+            }
+            .oobmigration-item-in-progress {
+                border: 1px solid #FFDE82;
+                border-radius: 5px;
+            }
+            .oobmigration-item-failed {
+                border: 1px solid #FA2543;
+                border-radius: 5px;
+            }
+
+            .expected {
+                padding: 0 1rem;
+            }
+            .explanation {
+                padding: 0 1rem;
+                font-style: italic;
+            }
+            .admin {
+                padding: 1rem;
+                font-style: italic;
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <section>
+            <div class="top-container">
+                <div>
+                    <div class="logo-container">
+                        <img
+                            class="logo"
+                            src="https://sourcegraph.com/.assets/img/sourcegraph-logo-light.svg"
+                            alt="logo"
+                        />
+                    </div>
+                    <div class="title-container">
+                        <h2>Migration in Progress...</h2>
+                        <img
+                            src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg?v2"
+                            alt=""
+                            class="logo-spin"
+                        />
+                    </div>
+                    <p class="tuning">We are currently updating your database.</p>
+                    <p class="later">Please check back later.</p>
+                </div>
+            </div>
+            <div class="bottom-container">
+                <div class="status-banner">Upgrading from v{{ .Upgrade.FromVersion }} to v{{ .Upgrade.ToVersion }}</div>
+
+
+
+                <div class="row">
+                    <div class="tabs">
+                        <!-- Frontend -->
+                        <div class="tab">
+                            <input type="checkbox" id="chck1" />
+                            <label class="tab-label" for="chck1">
+                                <span>Frontend</span>
+                                <span class="header-{{if .Frontend.HasFailure}}failed{{else}}{{if .Frontend.NumMigrationsRequired}}in-progress{{else}}applied{{end}}{{end}}">
+                                    {{ .Frontend.NumMigrationsRequired }} migrations need to be applied
+                                </span>
+                            </label>
+                            <div class="tab-content">
+                                {{if .Frontend.Migrations}}
+                                <p class="explanation">The following schema migrations will be applied sequentially.</p>
+
+                                <ul class="migration-list">
+                                    {{range .Frontend.Migrations}}
+                                    <li class="migration-item-{{ .State }}">
+                                        {{.ID}}: {{.Name}}
+                                        <span>{{.State}}</span></li>
+                                    {{end}}
+                                </ul>
+                                {{else}}
+                                <p class="expected">This schema is in the expected state.</p>
+                                {{end}}
+                            </div>
+                        </div>
+
+                        <!-- Code Intel -->
+                        <div class="tab">
+                            <input type="checkbox" id="chck3" />
+                            <label class="tab-label" for="chck3">
+                                <span>Code Intel</span>
+                                <span class="header-{{if .CodeIntel.HasFailure}}failed{{else}}{{if .CodeIntel.NumMigrationsRequired}}in-progress{{else}}applied{{end}}{{end}}">
+                                    {{ .CodeIntel.NumMigrationsRequired }} migrations need to be applied
+                                </span>
+                            </label>
+                            <div class="tab-content">
+                                {{if .CodeIntel.Migrations}}
+                                <p class="explanation">The following schema migrations will be applied sequentially.</p>
+
+                                <ul class="migration-list">
+                                    {{range .CodeIntel.Migrations}}
+                                    <li class="migration-item-{{ .State }}">
+                                        {{.ID}}: {{.Name}}
+                                        <span>{{.State}}</span></li>
+                                    {{end}}
+                                </ul>
+                                {{else}}
+                                <p class="expected">This schema is in the expected state.</p>
+                                {{end}}
+                            </div>
+                        </div>
+
+                        <!-- Code Insights -->
+                        <div class="tab">
+                            <input type="checkbox" id="chck2" />
+                            <label class="tab-label" for="chck2">
+                                <span>Code Insights</span>
+                                <span class="header-{{if .CodeInsights.HasFailure}}failed{{else}}{{if .CodeInsights.NumMigrationsRequired}}in-progress{{else}}applied{{end}}{{end}}">
+                                    {{ .CodeInsights.NumMigrationsRequired }} migrations need to be applied
+                                </span>
+                            </label>
+                            <div class="tab-content">
+                                {{if .CodeInsights.Migrations}}
+                                <p class="explanation">The following schema migrations will be applied sequentially.</p>
+
+                                <ul class="migration-list">
+                                    {{range .CodeInsights.Migrations}}
+                                    <li class="migration-item-{{ .State }}">
+                                        {{.ID}}: {{.Name}}
+                                        <span>{{.State}}</span></li>
+                                    {{end}}
+                                </ul>
+                                {{else}}
+                                <p class="expected">This schema is in the expected state.</p>
+                                {{end}}
+                            </div>
+                        </div>
+
+                        <!-- Out of band migrations -->
+                        <div class="tab">
+                            <input type="checkbox" id="chck4" />
+                            <label class="tab-label" for="chck4">
+                                <span>Out of band migrations</span>
+                                <span class="header-in-progress">
+                                    {{ .NumUnfinishedOutOfBandMigrations }} migrations need to complete
+                                </span>
+                            </label>
+                            <div class="tab-content">
+                                {{if .OutOfBandMigrations}}
+                                <p class="explanation">The following out of band migrations must complete before the upgrade can complete.</p>
+
+                                <ul class="oobmigration-list">
+                                    {{range .OutOfBandMigrations}}
+                                    <li class="oobmigration-item-{{if .Errors}}failed{{else}}in-progress{{end}}">
+                                        {{ .ID }}: {{ .Description }}
+                                        <span>{{FormatPercentage .Progress}}</span>
+                                    </li>
+                                    {{end}}
+                                </ul>
+                                {{else}}
+                                <p class=""expected>No out of band migrations need to be performed.</p>
+                                {{end}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="admin">If you are a Sourcegraph administrator, see the frontend logs for additional upgrade progress reporting.</p>
+            </div>
+        </section>
+    </body>
+</html>

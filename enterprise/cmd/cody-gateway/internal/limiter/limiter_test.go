@@ -154,7 +154,7 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 				require.NoError(t, err)
 			}
 			if !tc.noCommit {
-				assert.NoError(t, commit(1))
+				assert.NoError(t, commit(context.Background(), 1))
 			}
 			tc.wantStore.Equal(t, tc.limiter.Redis)
 		})

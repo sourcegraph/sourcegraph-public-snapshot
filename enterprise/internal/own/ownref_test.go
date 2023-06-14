@@ -380,6 +380,15 @@ func initUser(ctx context.Context, t *testing.T, db edb.EnterpriseDB) (*types.Us
 		MockConfigID:          providers.ConfigID{Type: extsvc.TypeGitLab},
 		MockPublicAccountData: &extsvc.PublicAccountData{Login: stringPointer(gitLabLogin)},
 	}
+	// 3) Adding SCIM external account to the user, but not to providers to test
+	// https://github.com/sourcegraph/sourcegraph/issues/52718.
+	scimSpec := extsvc.AccountSpec{
+		ServiceType: "scim",
+		ServiceID:   "scim",
+		AccountID:   "5C1M",
+	}
+	scimAccountData := extsvc.AccountData{Data: extsvc.NewUnencryptedData(json.RawMessage("{}"))}
+	require.NoError(t, db.UserExternalAccounts().Insert(ctx, user.ID, scimSpec, scimAccountData))
 	// Adding providers to the mock.
 	providers.MockProviders = []providers.Provider{mockGitHubProvider, gitLabMockGitHubProvider}
 	return user, err

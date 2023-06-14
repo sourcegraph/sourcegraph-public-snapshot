@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 
+import { ApolloError } from '@apollo/client/errors'
 import { noop } from 'lodash'
 import { useNavigate } from 'react-router-dom'
 
@@ -7,10 +8,16 @@ import { useMutation } from '@sourcegraph/http-client'
 import { Button, ErrorAlert, Form, H3, Label, Modal } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'
-import { AssignOwnerResult, AssignOwnerVariables, Scalars } from '../../graphql-operations'
-import { UserSelect as SingleUserSelect } from '../../site-admin/user-select/UserSelect'
+import {
+    AssignOwnerResult,
+    AssignOwnerVariables,
+    AssignTeamResult,
+    AssignTeamVariables,
+    Scalars,
+} from '../../graphql-operations'
 
-import { ASSIGN_OWNER } from './graphqlQueries'
+import { ASSIGN_OWNER, ASSIGN_TEAM } from './graphqlQueries'
+import { UserTeamSelect } from './UserTeamSelect'
 
 export interface AddOwnerModalProps {
     repoID: string
@@ -25,9 +32,11 @@ export const AddOwnerModal: React.FunctionComponent<React.PropsWithChildren<AddO
 }) => {
     const labelId = 'addOwner'
     const [selectedUser, setSelectedUser] = useState<Scalars['ID']>('')
+    const [selectedTeam, setSelectedTeam] = useState<Scalars['ID']>('')
+    const [error, setError] = useState<ApolloError | undefined>(undefined)
     const navigate = useNavigate()
 
-    const [assignOwner, { error, loading }] = useMutation<AssignOwnerResult, AssignOwnerVariables>(ASSIGN_OWNER, {
+    const [assignOwner, { loading }] = useMutation<AssignOwnerResult, AssignOwnerVariables>(ASSIGN_OWNER, {
         variables: {
             input: {
                 absolutePath: path,
@@ -36,6 +45,19 @@ export const AddOwnerModal: React.FunctionComponent<React.PropsWithChildren<AddO
             },
         },
         onCompleted: () => navigate(0),
+        onError: error => setError(error),
+    })
+
+    const [assignTeam, { loading: teamLoading }] = useMutation<AssignTeamResult, AssignTeamVariables>(ASSIGN_TEAM, {
+        variables: {
+            input: {
+                absolutePath: path,
+                assignedOwnerID: selectedTeam,
+                repoID,
+            },
+        },
+        onCompleted: () => navigate(0),
+        onError: error => setError(error),
     })
 
     return (
@@ -47,25 +69,36 @@ export const AddOwnerModal: React.FunctionComponent<React.PropsWithChildren<AddO
             <Form
                 onSubmit={event => {
                     event.preventDefault()
-                    assignOwner().catch(noop)
+                    const assignmentFunction = selectedUser !== '' ? assignOwner : assignTeam
+                    assignmentFunction().catch(noop)
                 }}
             >
                 <Label htmlFor="add-owner--owner" className="mt-2">
-                    New owners
+                    New owner
                 </Label>
                 <div className="mb-3">
-                    <SingleUserSelect htmlID="add-owner--owner" onSelect={user => setSelectedUser(user?.id ?? '')} />
+                    <UserTeamSelect
+                        htmlID="add-owner--owner"
+                        onSelectUser={user => setSelectedUser(user?.id ?? '')}
+                        onSelectTeam={team => setSelectedTeam(team?.id ?? '')}
+                    />
                 </div>
 
                 <div className="d-flex justify-content-end pt-1">
-                    <Button disabled={loading} className="mr-2" onClick={onCancel} outline={true} variant="secondary">
+                    <Button
+                        disabled={loading || teamLoading}
+                        className="mr-2"
+                        onClick={onCancel}
+                        outline={true}
+                        variant="secondary"
+                    >
                         Cancel
                     </Button>
                     <LoaderButton
                         type="submit"
                         variant="primary"
-                        loading={loading}
-                        disabled={loading || selectedUser === ''}
+                        loading={loading || teamLoading}
+                        disabled={loading || teamLoading || (selectedUser === '' && selectedTeam === '')}
                         alwaysShowLabel={true}
                         label="Add owner"
                     />

@@ -2,6 +2,7 @@ package productsubscription
 
 import (
 	"context"
+	"fmt"
 	"math"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -10,9 +11,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+type ErrDotcomUserNotFound struct {
+	err error
+}
+
+func (e ErrDotcomUserNotFound) Error() string {
+	if e.err == nil {
+		return "dotcom user not found"
+	}
+	return fmt.Sprintf("dotcom user not found: %v", e.err)
+}
+
+func (e ErrDotcomUserNotFound) Extensions() map[string]any {
+	return map[string]any{"code": codygateway.GQLErrCodeDotcomUserNotFound}
+}
 
 // CodyGatewayDotcomUserResolver implements the GraphQL Query and Mutation fields related to Cody gateway users.
 type CodyGatewayDotcomUserResolver struct {
@@ -27,11 +45,17 @@ func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.
 	dbTokens := newDBTokens(r.DB)
 	userID, err := dbTokens.LookupDotcomUserIDByAccessToken(ctx, args.Token)
 	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, ErrDotcomUserNotFound{err}
+		}
 		return nil, err
 	}
 
 	user, err := r.DB.Users().GetByID(ctx, int32(userID))
 	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, ErrDotcomUserNotFound{err}
+		}
 		return nil, err
 	}
 	verified, err := r.DB.UserEmails().HasVerifiedEmail(ctx, user.ID)
@@ -156,18 +180,18 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 		switch scope {
 		case types.CompletionsFeatureChat:
 			if cfg.Completions != nil && cfg.Completions.PerUserDailyLimit > 0 {
-				limit = iPtr(cfg.Completions.PerUserDailyLimit)
+				limit = pointers.Ptr(cfg.Completions.PerUserDailyLimit)
 			}
 		case types.CompletionsFeatureCode:
 			if cfg.Completions != nil && cfg.Completions.PerUserCodeCompletionsDailyLimit > 0 {
-				limit = iPtr(cfg.Completions.PerUserCodeCompletionsDailyLimit)
+				limit = pointers.Ptr(cfg.Completions.PerUserCodeCompletionsDailyLimit)
 			}
 		default:
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Newf("unknown scope: %s", scope)
 		}
 	}
 	if limit == nil {
-		limit = iPtr(0)
+		limit = pointers.Ptr(0)
 	}
 	return licensing.CodyGatewayRateLimit{
 		AllowedModels:   allowedModels(scope),
@@ -185,8 +209,4 @@ func allowedModels(scope types.CompletionsFeature) []string {
 	default:
 		return []string{}
 	}
-}
-
-func iPtr(i int) *int {
-	return &i
 }

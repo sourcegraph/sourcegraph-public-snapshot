@@ -697,7 +697,8 @@ Search only inside repositories having a description matching the given regular 
 ComplexDiagram(
     Choice(0,
         Terminal("has.content(...)", {href: "#file-has-content"}),
-        Terminal("has.owner(...)", {href: "#file-has-owner"}))).addTo();
+        Terminal("has.owner(...)", {href: "#file-has-owner"}),
+        Terminal("has.contributor(...)", {href: "#file-has-contributor"}))).addTo();
 </script>
 
 ### File has content
@@ -733,6 +734,18 @@ Search only inside files that have an owner associated matching given string.
 _Note:_ When no parameter is supplied, the predicate only includes files with _any_ owner assigned to them:
 *   `file:has.owner()` will include files with any owner assigned.  
 *   `-file:has.owner()` will only include files without an owner.  
+
+### File has contributor
+
+<script>
+ComplexDiagram(
+    Terminal("has.contributor"),
+    Terminal("("),
+    Terminal("regexp", {href: "#regular-expression"}),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside files that have a contributor whose name or email matches the provided regex pattern.
 
 ## Regular expression
 

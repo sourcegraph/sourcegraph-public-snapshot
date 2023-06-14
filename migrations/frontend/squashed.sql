@@ -1853,7 +1853,8 @@ CREATE TABLE codeintel_ranking_definitions (
     symbol_name text NOT NULL,
     document_path text NOT NULL,
     graph_key text NOT NULL,
-    exported_upload_id integer NOT NULL
+    exported_upload_id integer NOT NULL,
+    symbol_checksum bytea DEFAULT '\x'::bytea NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_definitions_id_seq
@@ -1952,7 +1953,8 @@ CREATE TABLE codeintel_ranking_references (
     id bigint NOT NULL,
     symbol_names text[] NOT NULL,
     graph_key text NOT NULL,
-    exported_upload_id integer NOT NULL
+    exported_upload_id integer NOT NULL,
+    symbol_checksums bytea[] DEFAULT '{}'::bytea[] NOT NULL
 );
 
 COMMENT ON TABLE codeintel_ranking_references IS 'References for a given upload proceduced by background job consuming SCIP indexes.';
@@ -3832,7 +3834,9 @@ ALTER SEQUENCE own_signal_recent_contribution_id_seq OWNED BY own_signal_recent_
 CREATE TABLE ownership_path_stats (
     file_path_id integer NOT NULL,
     tree_codeowned_files_count integer,
-    last_updated_at timestamp without time zone NOT NULL
+    last_updated_at timestamp without time zone NOT NULL,
+    tree_assigned_ownership_files_count integer,
+    tree_any_ownership_files_count integer
 );
 
 COMMENT ON TABLE ownership_path_stats IS 'Data on how many files in given tree are owned by anyone.
@@ -4169,6 +4173,21 @@ CREATE SEQUENCE repo_commits_changelists_id_seq
     CACHE 1;
 
 ALTER SEQUENCE repo_commits_changelists_id_seq OWNED BY repo_commits_changelists.id;
+
+CREATE TABLE repo_embedding_job_stats (
+    job_id integer NOT NULL,
+    is_incremental boolean DEFAULT false NOT NULL,
+    code_files_total integer DEFAULT 0 NOT NULL,
+    code_files_embedded integer DEFAULT 0 NOT NULL,
+    code_chunks_embedded integer DEFAULT 0 NOT NULL,
+    code_files_skipped jsonb DEFAULT '{}'::jsonb NOT NULL,
+    code_bytes_embedded integer DEFAULT 0 NOT NULL,
+    text_files_total integer DEFAULT 0 NOT NULL,
+    text_files_embedded integer DEFAULT 0 NOT NULL,
+    text_chunks_embedded integer DEFAULT 0 NOT NULL,
+    text_files_skipped jsonb DEFAULT '{}'::jsonb NOT NULL,
+    text_bytes_embedded integer DEFAULT 0 NOT NULL
+);
 
 CREATE TABLE repo_embedding_jobs (
     id integer NOT NULL,
@@ -5477,6 +5496,9 @@ ALTER TABLE ONLY registry_extensions
 ALTER TABLE ONLY repo_commits_changelists
     ADD CONSTRAINT repo_commits_changelists_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY repo_embedding_job_stats
+    ADD CONSTRAINT repo_embedding_job_stats_pkey PRIMARY KEY (job_id);
+
 ALTER TABLE ONLY repo_embedding_jobs
     ADD CONSTRAINT repo_embedding_jobs_pkey PRIMARY KEY (id);
 
@@ -5712,7 +5734,7 @@ CREATE INDEX codeintel_path_ranks_repository_id_updated_at_id ON codeintel_path_
 
 CREATE INDEX codeintel_ranking_definitions_exported_upload_id ON codeintel_ranking_definitions USING btree (exported_upload_id);
 
-CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_name, exported_upload_id, document_path);
+CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_checksum_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_checksum, exported_upload_id, document_path);
 
 CREATE INDEX codeintel_ranking_exports_graph_key_deleted_at_id ON codeintel_ranking_exports USING btree (graph_key, deleted_at DESC, id);
 
@@ -6605,6 +6627,9 @@ ALTER TABLE ONLY registry_extensions
 
 ALTER TABLE ONLY repo_commits_changelists
     ADD CONSTRAINT repo_commits_changelists_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY repo_embedding_job_stats
+    ADD CONSTRAINT repo_embedding_job_stats_job_id_fkey FOREIGN KEY (job_id) REFERENCES repo_embedding_jobs(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY repo_kvps
     ADD CONSTRAINT repo_kvps_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;

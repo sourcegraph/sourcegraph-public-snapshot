@@ -19,6 +19,7 @@ go_library(
         "//internal/gqlutil",
         "//internal/metrics",
         "//internal/observation",
+        "//lib/pointers",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@io_opentelemetry_go_otel//attribute",
     ],
