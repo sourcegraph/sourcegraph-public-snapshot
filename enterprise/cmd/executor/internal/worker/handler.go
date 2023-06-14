@@ -268,6 +268,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 			},
 			Image:      dockerStep.Image,
 			ScriptPath: ws.ScriptFilenames()[i],
+			Job:        job,
 		}
 
 		logger.Info(fmt.Sprintf("Running docker step #%d", i))
