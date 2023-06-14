@@ -28080,6 +28080,19 @@
           "Comment": ""
         },
         {
+          "Name": "last_indexed_at",
+          "Index": 6,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "repo_id",
           "Index": 1,
           "TypeName": "integer",
