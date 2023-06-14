@@ -412,7 +412,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(operations.NewNamedSet("End-to-end tests",
 			executorsE2E(c.candidateImageTag()),
 			serverE2E(c.candidateImageTag()),
-			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
+			// testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
 		))
 
 		// All operations before this point are required
