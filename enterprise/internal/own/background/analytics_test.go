@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -57,7 +58,10 @@ func TestAnalyticsIndexerSuccess(t *testing.T) {
 			"CODEOWNERS": "/owned/* @owner",
 		},
 	}
-	err = newAnalyticsIndexer(client, db).indexRepo(ctx, repoID)
+	checker := authz.NewMockSubRepoPermissionChecker()
+	checker.EnabledFunc.SetDefaultReturn(true)
+	checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
+	err = newAnalyticsIndexer(client, db, nil, logger).indexRepo(ctx, repoID, checker)
 	require.NoError(t, err)
 
 	totalFileCount, err := db.RepoPaths().AggregateFileCount(ctx, database.TreeLocationOpts{})
@@ -69,7 +73,37 @@ func TestAnalyticsIndexerSuccess(t *testing.T) {
 	assert.Equal(t, database.PathAggregateCounts{CodeownedFileCount: 3}, codeownedCount)
 }
 
+func TestAnalyticsIndexerSkipsReposWithSubRepoPerms(t *testing.T) {
+	obsCtx := observation.TestContextTB(t)
+	logger := obsCtx.Logger
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	var repoID api.RepoID = 1
+	err := db.Repos().Create(ctx, &types.Repo{Name: "repo", ID: repoID})
+	require.NoError(t, err)
+	client := fakeGitServer{
+		files: []string{"notOwned.go", "alsoNotOwned.go", "owned/file1.go", "owned/file2.go", "owned/file3.go"},
+		fileContents: map[string]string{
+			"CODEOWNERS": "/owned/* @owner",
+		},
+	}
+	checker := authz.NewMockSubRepoPermissionChecker()
+	checker.EnabledFunc.SetDefaultReturn(true)
+	checker.EnabledForRepoIDFunc.SetDefaultReturn(true, nil)
+	err = newAnalyticsIndexer(client, db, nil, logger).indexRepo(ctx, repoID, checker)
+	require.NoError(t, err)
+
+	totalFileCount, err := db.RepoPaths().AggregateFileCount(ctx, database.TreeLocationOpts{})
+	require.NoError(t, err)
+	assert.Equal(t, int32(0), totalFileCount)
+
+	codeownedCount, err := db.OwnershipStats().QueryAggregateCounts(ctx, database.TreeLocationOpts{})
+	require.NoError(t, err)
+	assert.Equal(t, database.PathAggregateCounts{CodeownedFileCount: 0}, codeownedCount)
+}
+
 func TestAnalyticsIndexerNoCodeowners(t *testing.T) {
+	rcache.SetupForTest(t)
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -80,7 +114,10 @@ func TestAnalyticsIndexerNoCodeowners(t *testing.T) {
 	client := fakeGitServer{
 		files: []string{"notOwned.go", "alsoNotOwned.go", "owned/file1.go", "owned/file2.go", "owned/file3.go"},
 	}
-	err = newAnalyticsIndexer(client, db).indexRepo(ctx, repoID)
+	checker := authz.NewMockSubRepoPermissionChecker()
+	checker.EnabledFunc.SetDefaultReturn(true)
+	checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
+	err = newAnalyticsIndexer(client, db, nil, logger).indexRepo(ctx, repoID, checker)
 	require.NoError(t, err)
 
 	totalFileCount, err := db.RepoPaths().AggregateFileCount(ctx, database.TreeLocationOpts{})

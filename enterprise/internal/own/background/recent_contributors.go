@@ -3,6 +3,7 @@ package background
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -18,24 +19,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func handleRecentContributors(ctx context.Context, lgr logger.Logger, repoId api.RepoID, db database.DB) error {
+func handleRecentContributors(ctx context.Context, lgr logger.Logger, repoId api.RepoID, db database.DB, subRepoPermsCache *rcache.Cache) error {
 	// 🚨 SECURITY: we use the internal actor because the background indexer is not associated with any user, and needs
 	// to see all repos and files
 	internalCtx := actor.WithInternalActor(ctx)
 
-	indexer := newRecentContributorsIndexer(gitserver.NewClient(), db, lgr)
+	indexer := newRecentContributorsIndexer(gitserver.NewClient(), db, lgr, subRepoPermsCache)
 	return indexer.indexRepo(internalCtx, repoId, authz.DefaultSubRepoPermsChecker)
 }
 
 type recentContributorsIndexer struct {
-	client gitserver.Client
-	db     database.DB
-	logger logger.Logger
-	cache  *rcache.Cache
+	client            gitserver.Client
+	db                database.DB
+	logger            logger.Logger
+	subRepoPermsCache *rcache.Cache
 }
 
-func newRecentContributorsIndexer(client gitserver.Client, db database.DB, lgr logger.Logger) *recentContributorsIndexer {
-	return &recentContributorsIndexer{client: client, db: db, logger: lgr, cache: rcache.NewWithTTL("own_contributor_signal_subrepoperms", 3600)}
+func newRecentContributorsIndexer(client gitserver.Client, db database.DB, lgr logger.Logger, subRepoPermsCache *rcache.Cache) *recentContributorsIndexer {
+	return &recentContributorsIndexer{client: client, db: db, logger: lgr, subRepoPermsCache: subRepoPermsCache}
 }
 
 var commitCounter = promauto.NewCounter(prometheus.CounterOpts{
@@ -45,42 +46,12 @@ var commitCounter = promauto.NewCounter(prometheus.CounterOpts{
 
 func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.RepoID, checker authz.SubRepoPermissionChecker) error {
 	// If the repo has sub-repo perms enabled, skip indexing
-	repoIsCachedAndSubRepoPermsDisabled := false
-	if r.cache != nil {
-		val, ok := r.cache.Get(string(repoId))
-		if ok {
-			var isSubRepoPermsRepo bool
-			if err := json.Unmarshal(val, &isSubRepoPermsRepo); err != nil {
-				return err
-			}
-			if isSubRepoPermsRepo {
-				r.logger.Debug("skipping own contributor signal due to the repo having subrepo perms enabled")
-				return nil
-			}
-			repoIsCachedAndSubRepoPermsDisabled = true
-		}
-	}
-
-	// No entry in cache, so we need to look up whether this is a sub-repo perms repo in the DB.
-	if !repoIsCachedAndSubRepoPermsDisabled {
-		ok, err := authz.SubRepoEnabledForRepoID(ctx, checker, repoId)
-		if err != nil {
-			return err
-		}
-		if ok {
-			b, err := json.Marshal(true)
-			if err != nil {
-				return err
-			}
-			r.cache.Set(string(repoId), b)
-			r.logger.Debug("skipping own contributor signal due to the repo having subrepo perms enabled")
-			return nil
-		}
-		b, err := json.Marshal(false)
-		if err != nil {
-			return err
-		}
-		r.cache.Set(string(repoId), b)
+	isSubRepoPermsRepo, err := isSubRepoPermsRepo(ctx, repoId, r.subRepoPermsCache, checker)
+	if err != nil {
+		return err
+	} else if isSubRepoPermsRepo {
+		r.logger.Debug("skipping own contributor signal due to the repo having subrepo perms enabled")
+		return nil
 	}
 
 	repoStore := r.db.Repos()
@@ -115,4 +86,51 @@ func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.Re
 	r.logger.Info("commits inserted", logger.Int("count", len(commitLog)), logger.Int("repo_id", int(repoId)))
 	commitCounter.Add(float64(len(commitLog)))
 	return nil
+}
+
+func isSubRepoPermsRepo(ctx context.Context, repoID api.RepoID, cache *rcache.Cache, checker authz.SubRepoPermissionChecker) (isSubRepoPermsRepo bool, err error) {
+	repoIsCachedAndSubRepoPermsDisabled := false
+	cacheKey := strconv.Itoa(int(repoID))
+	noCache := false
+	if cache != nil {
+		val, ok := cache.Get(cacheKey)
+		if ok {
+			var isSubRepoPermsRepo bool
+			if err := json.Unmarshal(val, &isSubRepoPermsRepo); err != nil {
+				return false, err
+			}
+			if isSubRepoPermsRepo {
+				return true, nil
+			}
+			repoIsCachedAndSubRepoPermsDisabled = true
+		}
+	} else {
+		noCache = true
+	}
+
+	// No entry in cache, so we need to look up whether this is a sub-repo perms repo in the DB.
+	if !repoIsCachedAndSubRepoPermsDisabled {
+		ok, err := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
+		if err != nil {
+			return false, err
+		}
+		if ok {
+			b, err := json.Marshal(true)
+			if err != nil {
+				return false, err
+			}
+			if !noCache {
+				cache.Set(cacheKey, b)
+			}
+			return true, nil
+		}
+		b, err := json.Marshal(false)
+		if err != nil {
+			return false, err
+		}
+		if !noCache {
+			cache.Set(cacheKey, b)
+		}
+	}
+	return false, nil
 }
