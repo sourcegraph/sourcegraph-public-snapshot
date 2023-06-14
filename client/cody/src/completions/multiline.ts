@@ -119,7 +119,9 @@ interface LanguageConfig {
 function getLanguageConfig(languageId: string): LanguageConfig | null {
     switch (languageId) {
         case 'typescript':
+        case 'typescriptreact':
         case 'javascript':
+        case 'javascriptreact':
         case 'go':
             return {
                 blockStart: '{',
