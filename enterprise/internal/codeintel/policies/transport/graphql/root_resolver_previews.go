@@ -12,6 +12,7 @@ import (
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 const (
@@ -21,7 +22,7 @@ const (
 
 func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *resolverstubs.PreviewRepositoryFilterArgs) (_ resolverstubs.RepositoryFilterPreviewResolver, err error) {
 	ctx, _, endObservation := r.operations.previewRepoFilter.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("first", int(resolverstubs.Deref(args.First, 0))),
+		attribute.Int("first", int(pointers.Deref(args.First, 0))),
 		attribute.StringSlice("patterns", args.Patterns),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -56,7 +57,7 @@ func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *resolv
 
 func (r *rootResolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *resolverstubs.PreviewGitObjectFilterArgs) (_ resolverstubs.GitObjectFilterPreviewResolver, err error) {
 	ctx, _, endObservation := r.operations.previewGitObjectFilter.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("first", int(resolverstubs.Deref(args.First, 0))),
+		attribute.Int("first", int(pointers.Deref(args.First, 0))),
 		attribute.String("type", string(args.Type)),
 		attribute.String("pattern", args.Pattern),
 	}})

@@ -71,7 +71,7 @@ Foreign-key constraints:
  assigned_at          | timestamp without time zone |           | not null | now()
 Indexes:
     "assigned_owners_pkey" PRIMARY KEY, btree (id)
-    "assigned_owners_file_path" btree (file_path_id)
+    "assigned_owners_file_path_owner" UNIQUE, btree (file_path_id, owner_user_id)
 Foreign-key constraints:
     "assigned_owners_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
     "assigned_owners_owner_user_id_fkey" FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
@@ -80,6 +80,27 @@ Foreign-key constraints:
 ```
 
 Table for ownership assignments, one entry contains an assigned user ID, which repo_path is assigned and the date and user who assigned the owner.
+
+# Table "public.assigned_teams"
+```
+        Column        |            Type             | Collation | Nullable |                  Default                   
+----------------------+-----------------------------+-----------+----------+--------------------------------------------
+ id                   | integer                     |           | not null | nextval('assigned_teams_id_seq'::regclass)
+ owner_team_id        | integer                     |           | not null | 
+ file_path_id         | integer                     |           | not null | 
+ who_assigned_team_id | integer                     |           |          | 
+ assigned_at          | timestamp without time zone |           | not null | now()
+Indexes:
+    "assigned_teams_pkey" PRIMARY KEY, btree (id)
+    "assigned_teams_file_path_owner" UNIQUE, btree (file_path_id, owner_team_id)
+Foreign-key constraints:
+    "assigned_teams_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
+    "assigned_teams_owner_team_id_fkey" FOREIGN KEY (owner_team_id) REFERENCES teams(id) ON DELETE CASCADE DEFERRABLE
+    "assigned_teams_who_assigned_team_id_fkey" FOREIGN KEY (who_assigned_team_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+
+```
+
+Table for team ownership assignments, one entry contains an assigned team ID, which repo_path is assigned and the date and user who assigned the owner team.
 
 # Table "public.batch_changes"
 ```
@@ -893,6 +914,7 @@ Referenced by:
 Indexes:
     "codeintel_initial_path_ranks_processed_pkey" PRIMARY KEY, btree (id)
     "codeintel_initial_path_ranks_processed_cgraph_key_codeintel_ini" UNIQUE, btree (graph_key, codeintel_initial_path_ranks_id)
+    "codeintel_initial_path_ranks_processed_codeintel_initial_path_r" btree (codeintel_initial_path_ranks_id)
 Foreign-key constraints:
     "fk_codeintel_initial_path_ranks" FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE
 
@@ -942,10 +964,11 @@ Triggers:
  document_path      | text    |           | not null | 
  graph_key          | text    |           | not null | 
  exported_upload_id | integer |           | not null | 
+ symbol_checksum    | bytea   |           | not null | '\x'::bytea
 Indexes:
     "codeintel_ranking_definitions_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_definitions_exported_upload_id" btree (exported_upload_id)
-    "codeintel_ranking_definitions_graph_key_symbol_search" btree (graph_key, symbol_name, exported_upload_id, document_path)
+    "codeintel_ranking_definitions_graph_key_symbol_checksum_search" btree (graph_key, symbol_checksum, exported_upload_id, document_path)
 Foreign-key constraints:
     "codeintel_ranking_definitions_exported_upload_id_fkey" FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE
 
@@ -961,6 +984,7 @@ Foreign-key constraints:
  id              | integer                  |           | not null | nextval('codeintel_ranking_exports_id_seq'::regclass)
  last_scanned_at | timestamp with time zone |           |          | 
  deleted_at      | timestamp with time zone |           |          | 
+ upload_key      | text                     |           |          | 
 Indexes:
     "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_exports_graph_key_upload_id" UNIQUE, btree (graph_key, upload_id)
@@ -975,41 +999,56 @@ Referenced by:
 
 ```
 
+# Table "public.codeintel_ranking_graph_keys"
+```
+   Column   |           Type           | Collation | Nullable |                         Default                          
+------------+--------------------------+-----------+----------+----------------------------------------------------------
+ id         | integer                  |           | not null | nextval('codeintel_ranking_graph_keys_id_seq'::regclass)
+ graph_key  | text                     |           | not null | 
+ created_at | timestamp with time zone |           |          | now()
+Indexes:
+    "codeintel_ranking_graph_keys_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.codeintel_ranking_path_counts_inputs"
 ```
     Column     |  Type   | Collation | Nullable |                             Default                              
 ---------------+---------+-----------+----------+------------------------------------------------------------------
  id            | bigint  |           | not null | nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass)
- document_path | text    |           | not null | 
  count         | integer |           | not null | 
  graph_key     | text    |           | not null | 
  processed     | boolean |           | not null | false
- repository_id | integer |           | not null | 
+ definition_id | bigint  |           |          | 
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_path_counts_inputs_graph_key_unique_definitio" UNIQUE, btree (graph_key, definition_id) WHERE NOT processed
     "codeintel_ranking_path_counts_inputs_graph_key_id" btree (graph_key, id)
-    "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id" btree (graph_key, repository_id, id) WHERE NOT processed
 
 ```
 
 # Table "public.codeintel_ranking_progress"
 ```
-             Column              |           Type           | Collation | Nullable |                        Default                         
----------------------------------+--------------------------+-----------+----------+--------------------------------------------------------
- id                              | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
- graph_key                       | text                     |           | not null | 
- mappers_started_at              | timestamp with time zone |           | not null | 
- mapper_completed_at             | timestamp with time zone |           |          | 
- seed_mapper_completed_at        | timestamp with time zone |           |          | 
- reducer_started_at              | timestamp with time zone |           |          | 
- reducer_completed_at            | timestamp with time zone |           |          | 
- num_path_records_total          | integer                  |           |          | 
- num_reference_records_total     | integer                  |           |          | 
- num_count_records_total         | integer                  |           |          | 
- num_path_records_processed      | integer                  |           |          | 
- num_reference_records_processed | integer                  |           |          | 
- num_count_records_processed     | integer                  |           |          | 
- max_export_id                   | bigint                   |           | not null | 
+               Column               |           Type           | Collation | Nullable |                        Default                         
+------------------------------------+--------------------------+-----------+----------+--------------------------------------------------------
+ id                                 | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
+ graph_key                          | text                     |           | not null | 
+ mappers_started_at                 | timestamp with time zone |           | not null | 
+ mapper_completed_at                | timestamp with time zone |           |          | 
+ seed_mapper_completed_at           | timestamp with time zone |           |          | 
+ reducer_started_at                 | timestamp with time zone |           |          | 
+ reducer_completed_at               | timestamp with time zone |           |          | 
+ num_path_records_total             | integer                  |           |          | 
+ num_reference_records_total        | integer                  |           |          | 
+ num_count_records_total            | integer                  |           |          | 
+ num_path_records_processed         | integer                  |           |          | 
+ num_reference_records_processed    | integer                  |           |          | 
+ num_count_records_processed        | integer                  |           |          | 
+ max_export_id                      | bigint                   |           | not null | 
+ reference_cursor_export_deleted_at | timestamp with time zone |           |          | 
+ reference_cursor_export_id         | integer                  |           |          | 
+ path_cursor_deleted_export_at      | timestamp with time zone |           |          | 
+ path_cursor_export_id              | integer                  |           |          | 
 Indexes:
     "codeintel_ranking_progress_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_progress_graph_key_key" UNIQUE CONSTRAINT, btree (graph_key)
@@ -1024,6 +1063,7 @@ Indexes:
  symbol_names       | text[]  |           | not null | 
  graph_key          | text    |           | not null | 
  exported_upload_id | integer |           | not null | 
+ symbol_checksums   | bytea[] |           | not null | '{}'::bytea[]
 Indexes:
     "codeintel_ranking_references_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_references_exported_upload_id" btree (exported_upload_id)
@@ -1070,6 +1110,51 @@ Foreign-key constraints:
     "codeowners_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 
 ```
+
+# Table "public.codeowners_individual_stats"
+```
+         Column         |            Type             | Collation | Nullable | Default 
+------------------------+-----------------------------+-----------+----------+---------
+ file_path_id           | integer                     |           | not null | 
+ owner_id               | integer                     |           | not null | 
+ tree_owned_files_count | integer                     |           | not null | 
+ updated_at             | timestamp without time zone |           | not null | 
+Indexes:
+    "codeowners_individual_stats_pkey" PRIMARY KEY, btree (file_path_id, owner_id)
+Foreign-key constraints:
+    "codeowners_individual_stats_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
+    "codeowners_individual_stats_owner_id_fkey" FOREIGN KEY (owner_id) REFERENCES codeowners_owners(id)
+
+```
+
+Data on how many files in given tree are owned by given owner.
+
+As opposed to ownership-general `ownership_path_stats` table, the individual &lt;path x owner&gt; stats
+are stored in CODEOWNERS-specific table `codeowners_individual_stats`. The reason for that is that
+we are also indexing on owner_id which is CODEOWNERS-specific.
+
+**tree_owned_files_count**: Total owned file count by given owner at given file tree.
+
+**updated_at**: When the last background job updating counts run.
+
+# Table "public.codeowners_owners"
+```
+  Column   |  Type   | Collation | Nullable |                    Default                    
+-----------+---------+-----------+----------+-----------------------------------------------
+ id        | integer |           | not null | nextval('codeowners_owners_id_seq'::regclass)
+ reference | text    |           | not null | 
+Indexes:
+    "codeowners_owners_pkey" PRIMARY KEY, btree (id)
+    "codeowners_owners_reference" btree (reference)
+Referenced by:
+    TABLE "codeowners_individual_stats" CONSTRAINT "codeowners_individual_stats_owner_id_fkey" FOREIGN KEY (owner_id) REFERENCES codeowners_owners(id)
+
+```
+
+Text reference in CODEOWNERS entry to use in codeowners_individual_stats. Reference is either email or handle without @ in front.
+
+**reference**: We just keep the reference as opposed to splitting it to handle or email
+since the distinction is not relevant for query, and this makes indexing way easier.
 
 # Table "public.commit_authors"
 ```
@@ -1336,7 +1421,7 @@ Contains state for own jobs that scrape events if enabled.
 ------------------+--------------------------+-----------+----------+-------------------------------------------------
  id               | integer                  |           | not null | nextval('executor_heartbeats_id_seq'::regclass)
  hostname         | text                     |           | not null | 
- queue_name       | text                     |           | not null | 
+ queue_name       | text                     |           |          | 
  os               | text                     |           | not null | 
  architecture     | text                     |           | not null | 
  docker_version   | text                     |           | not null | 
@@ -1346,9 +1431,12 @@ Contains state for own jobs that scrape events if enabled.
  src_cli_version  | text                     |           | not null | 
  first_seen_at    | timestamp with time zone |           | not null | now()
  last_seen_at     | timestamp with time zone |           | not null | now()
+ queue_names      | text[]                   |           |          | 
 Indexes:
     "executor_heartbeats_pkey" PRIMARY KEY, btree (id)
     "executor_heartbeats_hostname_key" UNIQUE CONSTRAINT, btree (hostname)
+Check constraints:
+    "one_of_queue_name_queue_names" CHECK (queue_name IS NOT NULL AND queue_names IS NULL OR queue_names IS NOT NULL AND queue_name IS NULL)
 
 ```
 
@@ -1373,6 +1461,8 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 **os**: The operating system running the executor.
 
 **queue_name**: The queue name that the executor polls for work.
+
+**queue_names**: The list of queue names that the executor polls for work.
 
 **src_cli_version**: The version of src-cli used by the executor.
 
@@ -1644,6 +1734,31 @@ Referenced by:
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
+# Table "public.github_app_installs"
+```
+       Column       |           Type           | Collation | Nullable |                     Default                     
+--------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id                 | integer                  |           | not null | nextval('github_app_installs_id_seq'::regclass)
+ app_id             | integer                  |           | not null | 
+ installation_id    | integer                  |           | not null | 
+ created_at         | timestamp with time zone |           | not null | now()
+ url                | text                     |           |          | 
+ account_login      | text                     |           |          | 
+ account_avatar_url | text                     |           |          | 
+ account_url        | text                     |           |          | 
+ account_type       | text                     |           |          | 
+ updated_at         | timestamp with time zone |           | not null | now()
+Indexes:
+    "github_app_installs_pkey" PRIMARY KEY, btree (id)
+    "unique_app_install" UNIQUE CONSTRAINT, btree (app_id, installation_id)
+    "app_id_idx" btree (app_id)
+    "github_app_installs_account_login" btree (account_login)
+    "installation_id_idx" btree (installation_id)
+Foreign-key constraints:
+    "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
+
+```
+
 # Table "public.github_apps"
 ```
       Column       |           Type           | Collation | Nullable |                 Default                 
@@ -1662,11 +1777,14 @@ Referenced by:
  updated_at        | timestamp with time zone |           | not null | now()
  app_url           | text                     |           | not null | ''::text
  webhook_id        | integer                  |           |          | 
+ domain            | text                     |           | not null | 'repos'::text
 Indexes:
     "github_apps_pkey" PRIMARY KEY, btree (id)
     "github_apps_app_id_slug_base_url_unique" UNIQUE, btree (app_id, slug, base_url)
 Foreign-key constraints:
     "github_apps_webhook_id_fkey" FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL
+Referenced by:
+    TABLE "github_app_installs" CONSTRAINT "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
 
 ```
 
@@ -2967,6 +3085,31 @@ Triggers:
 
 One entry per file changed in every commit that classifies as a contribution signal.
 
+# Table "public.ownership_path_stats"
+```
+               Column                |            Type             | Collation | Nullable | Default 
+-------------------------------------+-----------------------------+-----------+----------+---------
+ file_path_id                        | integer                     |           | not null | 
+ tree_codeowned_files_count          | integer                     |           |          | 
+ last_updated_at                     | timestamp without time zone |           | not null | 
+ tree_assigned_ownership_files_count | integer                     |           |          | 
+ tree_any_ownership_files_count      | integer                     |           |          | 
+Indexes:
+    "ownership_path_stats_pkey" PRIMARY KEY, btree (file_path_id)
+Foreign-key constraints:
+    "ownership_path_stats_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
+
+```
+
+Data on how many files in given tree are owned by anyone.
+
+We choose to have a table for `ownership_path_stats` - more general than for CODEOWNERS,
+with a specific tree_codeowned_files_count CODEOWNERS column. The reason for that
+is that we aim at expanding path stats by including total owned files (via CODEOWNERS
+or assigned ownership), and perhaps files count by assigned ownership only.
+
+**last_updated_at**: When the last background job updating counts run.
+
 # Table "public.package_repo_filters"
 ```
    Column   |           Type           | Collation | Nullable |                     Default                      
@@ -3111,8 +3254,15 @@ Indexes:
  license_user_count      | integer                  |           |          | 
  license_expires_at      | timestamp with time zone |           |          | 
  access_token_enabled    | boolean                  |           | not null | true
+ site_id                 | uuid                     |           |          | 
+ license_check_token     | bytea                    |           |          | 
+ revoked_at              | timestamp with time zone |           |          | 
+ salesforce_sub_id       | text                     |           |          | 
+ salesforce_opp_id       | text                     |           |          | 
+ revoke_reason           | text                     |           |          | 
 Indexes:
     "product_licenses_pkey" PRIMARY KEY, btree (id)
+    "product_licenses_license_check_token_idx" UNIQUE, btree (license_check_token)
 Foreign-key constraints:
     "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
 
@@ -3122,18 +3272,25 @@ Foreign-key constraints:
 
 # Table "public.product_subscriptions"
 ```
-             Column              |           Type           | Collation | Nullable | Default 
----------------------------------+--------------------------+-----------+----------+---------
- id                              | uuid                     |           | not null | 
- user_id                         | integer                  |           | not null | 
- billing_subscription_id         | text                     |           |          | 
- created_at                      | timestamp with time zone |           | not null | now()
- updated_at                      | timestamp with time zone |           | not null | now()
- archived_at                     | timestamp with time zone |           |          | 
- account_number                  | text                     |           |          | 
- llm_proxy_enabled               | boolean                  |           | not null | false
- llm_proxy_rate_limit            | integer                  |           |          | 
- llm_proxy_rate_interval_seconds | integer                  |           |          | 
+                      Column                       |           Type           | Collation | Nullable | Default 
+---------------------------------------------------+--------------------------+-----------+----------+---------
+ id                                                | uuid                     |           | not null | 
+ user_id                                           | integer                  |           | not null | 
+ billing_subscription_id                           | text                     |           |          | 
+ created_at                                        | timestamp with time zone |           | not null | now()
+ updated_at                                        | timestamp with time zone |           | not null | now()
+ archived_at                                       | timestamp with time zone |           |          | 
+ account_number                                    | text                     |           |          | 
+ cody_gateway_enabled                              | boolean                  |           | not null | false
+ cody_gateway_chat_rate_limit                      | integer                  |           |          | 
+ cody_gateway_chat_rate_interval_seconds           | integer                  |           |          | 
+ cody_gateway_embeddings_api_rate_limit            | integer                  |           |          | 
+ cody_gateway_embeddings_api_rate_interval_seconds | integer                  |           |          | 
+ cody_gateway_embeddings_api_allowed_models        | text[]                   |           |          | 
+ cody_gateway_chat_rate_limit_allowed_models       | text[]                   |           |          | 
+ cody_gateway_code_rate_limit                      | integer                  |           |          | 
+ cody_gateway_code_rate_interval_seconds           | integer                  |           |          | 
+ cody_gateway_code_rate_limit_allowed_models       | text[]                   |           |          | 
 Indexes:
     "product_subscriptions_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -3143,11 +3300,11 @@ Referenced by:
 
 ```
 
-**llm_proxy_enabled**: Whether or not this subscription has access to LLM-proxy
+**cody_gateway_embeddings_api_allowed_models**: Custom override for the set of models allowed for embedding
 
-**llm_proxy_rate_interval_seconds**: Custom time interval over which the for LLM-proxy rate limit is applied
+**cody_gateway_embeddings_api_rate_interval_seconds**: Custom time interval over which the embeddings rate limit is applied
 
-**llm_proxy_rate_limit**: Custom requests per time interval allowed for LLM-proxy
+**cody_gateway_embeddings_api_rate_limit**: Custom requests per time interval allowed for embeddings
 
 # Table "public.query_runner_state"
 ```
@@ -3320,6 +3477,29 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.repo_embedding_job_stats"
+```
+        Column        |  Type   | Collation | Nullable |   Default   
+----------------------+---------+-----------+----------+-------------
+ job_id               | integer |           | not null | 
+ is_incremental       | boolean |           | not null | false
+ code_files_total     | integer |           | not null | 0
+ code_files_embedded  | integer |           | not null | 0
+ code_chunks_embedded | integer |           | not null | 0
+ code_files_skipped   | jsonb   |           | not null | '{}'::jsonb
+ code_bytes_embedded  | integer |           | not null | 0
+ text_files_total     | integer |           | not null | 0
+ text_files_embedded  | integer |           | not null | 0
+ text_chunks_embedded | integer |           | not null | 0
+ text_files_skipped   | jsonb   |           | not null | '{}'::jsonb
+ text_bytes_embedded  | integer |           | not null | 0
+Indexes:
+    "repo_embedding_job_stats_pkey" PRIMARY KEY, btree (job_id)
+Foreign-key constraints:
+    "repo_embedding_job_stats_job_id_fkey" FOREIGN KEY (job_id) REFERENCES repo_embedding_jobs(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.repo_embedding_jobs"
 ```
       Column       |           Type           | Collation | Nullable |                     Default                     
@@ -3341,6 +3521,8 @@ Foreign-key constraints:
  revision          | text                     |           | not null | 
 Indexes:
     "repo_embedding_jobs_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "repo_embedding_job_stats" CONSTRAINT "repo_embedding_job_stats_job_id_fkey" FOREIGN KEY (job_id) REFERENCES repo_embedding_jobs(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -3360,12 +3542,14 @@ Foreign-key constraints:
 
 # Table "public.repo_paths"
 ```
-    Column     |  Type   | Collation | Nullable |                Default                 
----------------+---------+-----------+----------+----------------------------------------
- id            | integer |           | not null | nextval('repo_paths_id_seq'::regclass)
- repo_id       | integer |           | not null | 
- absolute_path | text    |           | not null | 
- parent_id     | integer |           |          | 
+            Column            |            Type             | Collation | Nullable |                Default                 
+------------------------------+-----------------------------+-----------+----------+----------------------------------------
+ id                           | integer                     |           | not null | nextval('repo_paths_id_seq'::regclass)
+ repo_id                      | integer                     |           | not null | 
+ absolute_path                | text                        |           | not null | 
+ parent_id                    | integer                     |           |          | 
+ tree_files_count             | integer                     |           |          | 
+ tree_files_counts_updated_at | timestamp without time zone |           |          | 
 Indexes:
     "repo_paths_pkey" PRIMARY KEY, btree (id)
     "repo_paths_index_absolute_path" UNIQUE, btree (repo_id, absolute_path)
@@ -3374,14 +3558,21 @@ Foreign-key constraints:
     "repo_paths_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
     TABLE "assigned_owners" CONSTRAINT "assigned_owners_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
+    TABLE "assigned_teams" CONSTRAINT "assigned_teams_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
+    TABLE "codeowners_individual_stats" CONSTRAINT "codeowners_individual_stats_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
     TABLE "own_aggregate_recent_contribution" CONSTRAINT "own_aggregate_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
     TABLE "own_aggregate_recent_view" CONSTRAINT "own_aggregate_recent_view_viewed_file_path_id_fkey" FOREIGN KEY (viewed_file_path_id) REFERENCES repo_paths(id)
     TABLE "own_signal_recent_contribution" CONSTRAINT "own_signal_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
+    TABLE "ownership_path_stats" CONSTRAINT "ownership_path_stats_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
     TABLE "repo_paths" CONSTRAINT "repo_paths_parent_id_fkey" FOREIGN KEY (parent_id) REFERENCES repo_paths(id)
 
 ```
 
 **absolute_path**: Absolute path does not start or end with forward slash. Example: &#34;a/b/c&#34;. Root directory is empty path &#34;&#34;.
+
+**tree_files_count**: Total count of files in the file tree rooted at the path. 1 for files.
+
+**tree_files_counts_updated_at**: Timestamp of the job that updated the file counts
 
 # Table "public.repo_pending_permissions"
 ```
@@ -3728,6 +3919,7 @@ Foreign-key constraints:
     "teams_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
     "teams_parent_team_id_fkey" FOREIGN KEY (parent_team_id) REFERENCES teams(id) ON DELETE CASCADE
 Referenced by:
+    TABLE "assigned_teams" CONSTRAINT "assigned_teams_owner_team_id_fkey" FOREIGN KEY (owner_team_id) REFERENCES teams(id) ON DELETE CASCADE DEFERRABLE
     TABLE "names" CONSTRAINT "names_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "team_members" CONSTRAINT "team_members_team_id_fkey" FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
     TABLE "teams" CONSTRAINT "teams_parent_team_id_fkey" FOREIGN KEY (parent_team_id) REFERENCES teams(id) ON DELETE CASCADE
@@ -3961,6 +4153,7 @@ Referenced by:
     TABLE "aggregated_user_statistics" CONSTRAINT "aggregated_user_statistics_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "assigned_owners" CONSTRAINT "assigned_owners_owner_user_id_fkey" FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "assigned_owners" CONSTRAINT "assigned_owners_who_assigned_user_id_fkey" FOREIGN KEY (who_assigned_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    TABLE "assigned_teams" CONSTRAINT "assigned_teams_who_assigned_team_id_fkey" FOREIGN KEY (who_assigned_team_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_initial_applier_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE

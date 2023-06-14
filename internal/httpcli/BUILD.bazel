@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "httpcli",
@@ -16,6 +17,7 @@ go_library(
         "//internal/actor",
         "//internal/conf/deploy",
         "//internal/env",
+        "//internal/instrumentation",
         "//internal/lazyregexp",
         "//internal/metrics",
         "//internal/rcache",
@@ -26,14 +28,10 @@ go_library(
         "//lib/errors",
         "//schema",
         "@com_github_gregjones_httpcache//:httpcache",
-        "@com_github_opentracing_contrib_go_stdlib//nethttp",
-        "@com_github_opentracing_opentracing_go//:opentracing-go",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_puerkitobio_rehttp//:rehttp",
         "@com_github_sourcegraph_log//:log",
-        "@io_opentelemetry_go_contrib_instrumentation_net_http_otelhttp//:otelhttp",
         "@io_opentelemetry_go_otel//attribute",
     ],
 )

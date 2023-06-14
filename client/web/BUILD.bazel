@@ -6,8 +6,8 @@ load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_op
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
 load("//dev:webpack.bzl", "webpack_bundle", "webpack_devserver", "webpack_web_app")
-load("//dev:eslint.bzl", "eslint_config")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
@@ -22,11 +22,30 @@ load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 
 npm_link_all_packages(name = "node_modules")
 
-eslint_config(
-    deps = [
+eslint_config_and_lint_root(
+    config_deps = [
         "//client/web/src/end-to-end:tsconfig",
         "//client/web/src/integration:tsconfig",
         "//client/web/src/regression:tsconfig",
+    ],
+    root_js_deps = [
+        "//client/web/dev:dev",
+    ],
+)
+
+# Temporary ESLint target to lint stories. This will be removed once we have a
+# custom gazelle targets. E.g., `gazelle:custom_js_files stories src/**/*.story.tsx`
+eslint_test_with_types(
+    name = "stories_eslint",
+    srcs = glob([
+        "src/**/*.story.tsx",
+        "src/**/*.fixtures.ts",  # required for import/extensions rule not to fail.
+    ]),
+    config = ":eslint_config",
+    deps = [
+        ":web_tests",
+        "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
+        "//:node_modules/@types/node",
     ],
 )
 
@@ -147,9 +166,7 @@ ts_project(
         "src/api/ApiConsoleToolbar.tsx",
         "src/api/NoApiConsole.tsx",
         "src/app/TauriLink.tsx",
-        "src/app/TauriNavigation.tsx",
         "src/app/tauriIcpUtils.ts",
-        "src/app/useHistoryStack.tsx",
         "src/auth.ts",
         "src/auth/CloudSignUpPage.tsx",
         "src/auth/OrDivider.tsx",
@@ -193,7 +210,6 @@ ts_project(
         "src/codeintel/useCodeIntel.ts",
         "src/codeintel/useRepoAndBlob.ts",
         "src/codeintel/util/helpers.ts",
-        "src/cody/CodyStandalonePage.tsx",
         "src/cody/chat/CodyChatPage.tsx",
         "src/cody/chat/CodyPageIcon.tsx",
         "src/cody/chat/index.tsx",
@@ -202,17 +218,26 @@ ts_project(
         "src/cody/components/CodeMirrorEditor.ts",
         "src/cody/components/CodyIcon.tsx",
         "src/cody/components/CodyLogo.tsx",
+        "src/cody/components/CodyMarketingPage/CodyMarketingPage.tsx",
+        "src/cody/components/CodyMarketingPage/index.ts",
+        "src/cody/components/FileContentEditor.ts",
         "src/cody/components/HistoryList/HistoryList.tsx",
         "src/cody/components/HistoryList/index.tsx",
+        "src/cody/components/RepoContainerEditor.ts",
+        "src/cody/components/ScopeSelector/RepositoriesSelectorPopover.tsx",
+        "src/cody/components/ScopeSelector/ScopeSelector.tsx",
+        "src/cody/components/ScopeSelector/backend.ts",
+        "src/cody/components/ScopeSelector/index.tsx",
         "src/cody/search/CodySearchPage.tsx",
         "src/cody/search/api.ts",
         "src/cody/search/translateToQuery.ts",
         "src/cody/sidebar/CodySidebar.tsx",
+        "src/cody/sidebar/Provider.tsx",
         "src/cody/sidebar/index.tsx",
-        "src/cody/stores/chat.ts",
-        "src/cody/stores/editor.ts",
-        "src/cody/stores/sidebar.ts",
+        "src/cody/sidebar/useSidebarSize.tsx",
+        "src/cody/useCodyChat.tsx",
         "src/cody/useIsCodyEnabled.tsx",
+        "src/cody/useSizebarSize.tsx",
         "src/cody/widgets/CodyRecipesWidget.tsx",
         "src/cody/widgets/components/Recipe.tsx",
         "src/cody/widgets/components/RecipeAction.tsx",
@@ -335,9 +360,11 @@ ts_project(
         "src/components/gitHubApps/AuthProviderMessage.tsx",
         "src/components/gitHubApps/CreateGitHubAppPage.tsx",
         "src/components/gitHubApps/GitHubAppCard.tsx",
+        "src/components/gitHubApps/GitHubAppFailureAlert.tsx",
         "src/components/gitHubApps/GitHubAppPage.tsx",
         "src/components/gitHubApps/GitHubAppSelector.tsx",
         "src/components/gitHubApps/GitHubAppsPage.tsx",
+        "src/components/gitHubApps/RemoveGitHubAppModal.tsx",
         "src/components/gitHubApps/backend.ts",
         "src/components/shared.tsx",
         "src/components/time/Duration.tsx",
@@ -347,11 +374,17 @@ ts_project(
         "src/enterprise/EnterpriseWebApp.tsx",
         "src/enterprise/app-main.tsx",
         "src/enterprise/app/AppAuthCallbackPage.tsx",
-        "src/enterprise/app/AppComingSoonPage.tsx",
+        "src/enterprise/app/components/index.ts",
+        "src/enterprise/app/components/zero-states/AppZeroStates.tsx",
+        "src/enterprise/app/routes.tsx",
         "src/enterprise/app/settings/AppSettingsArea.tsx",
         "src/enterprise/app/settings/local-repositories/LocalRepositoriesTab.tsx",
-        "src/enterprise/app/setup/AppSetupSteps.tsx",
         "src/enterprise/app/setup/AppSetupWizard.tsx",
+        "src/enterprise/app/setup/steps/AppAllSetSetupStep.tsx",
+        "src/enterprise/app/setup/steps/AppInstallExtensionsSetupStep.tsx",
+        "src/enterprise/app/setup/steps/AppLocalRepositoriesSetupStep.tsx",
+        "src/enterprise/app/setup/steps/AppWelcomeSetupStep.tsx",
+        "src/enterprise/app/setup/steps/embeddings-step/AppEmbeddingsSetupStep.tsx",
         "src/enterprise/batches/BatchChangeTabs.tsx",
         "src/enterprise/batches/BatchSpec.tsx",
         "src/enterprise/batches/BatchSpecNode.tsx",
@@ -519,12 +552,15 @@ ts_project(
         "src/enterprise/batches/repo/backend.ts",
         "src/enterprise/batches/repo/testData.ts",
         "src/enterprise/batches/settings/AddCredentialModal.tsx",
+        "src/enterprise/batches/settings/BatchChangesCreateGitHubAppPage.tsx",
         "src/enterprise/batches/settings/BatchChangesSettingsArea.tsx",
-        "src/enterprise/batches/settings/BatchChangesSiteConfigSettingsArea.tsx",
+        "src/enterprise/batches/settings/BatchChangesSiteConfigSettingsPage.tsx",
         "src/enterprise/batches/settings/CheckButton.tsx",
         "src/enterprise/batches/settings/CodeHostConnectionNode.tsx",
         "src/enterprise/batches/settings/CodeHostConnections.tsx",
         "src/enterprise/batches/settings/CodeHostSshPublicKey.tsx",
+        "src/enterprise/batches/settings/CommitSigningIntegrationNode.tsx",
+        "src/enterprise/batches/settings/CommitSigningIntegrations.tsx",
         "src/enterprise/batches/settings/ModalHeader.tsx",
         "src/enterprise/batches/settings/RemoveCredentialModal.tsx",
         "src/enterprise/batches/settings/RolloutWindowsConfiguration.tsx",
@@ -932,12 +968,16 @@ ts_project(
         "src/enterprise/organizations/routes.tsx",
         "src/enterprise/organizations/settings/routes.tsx",
         "src/enterprise/organizations/settings/sidebaritems.ts",
+        "src/enterprise/own/AddOwnerModal.tsx",
         "src/enterprise/own/DeleteFileButton.tsx",
         "src/enterprise/own/IngestedFileViewer.tsx",
         "src/enterprise/own/OwnPage.tsx",
+        "src/enterprise/own/RepositoryOwnEditPage.tsx",
         "src/enterprise/own/RepositoryOwnPage.tsx",
         "src/enterprise/own/RepositoryOwnPageContents.tsx",
         "src/enterprise/own/UploadFileButton.tsx",
+        "src/enterprise/own/UserTeamSelect.tsx",
+        "src/enterprise/own/admin-ui/OwnAnalyticsPage.tsx",
         "src/enterprise/own/admin-ui/OwnStatusPage.tsx",
         "src/enterprise/own/admin-ui/query.ts",
         "src/enterprise/own/graphqlQueries.ts",
@@ -1003,12 +1043,13 @@ ts_project(
         "src/enterprise/site-admin/cody/SiteAdminCodyPage.tsx",
         "src/enterprise/site-admin/cody/backend.ts",
         "src/enterprise/site-admin/dotcom/customers/SiteAdminCustomersPage.tsx",
+        "src/enterprise/site-admin/dotcom/productSubscriptions/CodyGatewayRateLimitModal.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/CodyServicesSection.tsx",
-        "src/enterprise/site-admin/dotcom/productSubscriptions/LlmProxyRateLimitModal.tsx",
+        "src/enterprise/site-admin/dotcom/productSubscriptions/ModelBadges.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminCreateProductSubscriptionPage.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminGenerateProductLicenseForSubscriptionForm.tsx",
+        "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminLicenseKeyLookupPage.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminProductLicenseNode.tsx",
-        "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminProductLicensesPage.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminProductSubscriptionNode.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminProductSubscriptionPage.tsx",
         "src/enterprise/site-admin/dotcom/productSubscriptions/SiteAdminProductSubscriptionsPage.tsx",
@@ -1229,7 +1270,6 @@ ts_project(
         "src/repo/blob/GoToRawAction.tsx",
         "src/repo/blob/RenderedFile.tsx",
         "src/repo/blob/RenderedNotebookMarkdown.tsx",
-        "src/repo/blob/TryCodyWidget.tsx",
         "src/repo/blob/actions/ToggleHistoryPanel.tsx",
         "src/repo/blob/actions/ToggleLineWrap.tsx",
         "src/repo/blob/actions/ToggleRenderedFileMode.tsx",
@@ -1268,6 +1308,11 @@ ts_project(
         "src/repo/blob/own/FileOwnershipEntry.tsx",
         "src/repo/blob/own/FileOwnershipPanel.tsx",
         "src/repo/blob/own/HistoryAndOwnBar.tsx",
+        "src/repo/blob/own/MakeOwnerButton.tsx",
+        "src/repo/blob/own/OwnerList.tsx",
+        "src/repo/blob/own/OwnershipBadge.tsx",
+        "src/repo/blob/own/RemoveOwnerButton.tsx",
+        "src/repo/blob/own/TreeOwnershipPanel.tsx",
         "src/repo/blob/own/grapqlQueries.ts",
         "src/repo/blob/panel/BlobPanel.tsx",
         "src/repo/blob/use-blob-store.ts",
@@ -1294,6 +1339,8 @@ ts_project(
         "src/repo/components/RepoHeaderActions/index.ts",
         "src/repo/components/RepoRevision/RepoRevision.tsx",
         "src/repo/components/RepoRevision/index.ts",
+        "src/repo/components/TryCodyWidget/TryCodyWidget.tsx",
+        "src/repo/components/TryCodyWidget/WidgetIcons.tsx",
         "src/repo/linkifiy/Linkified.tsx",
         "src/repo/linkifiy/get-links.ts",
         "src/repo/packages/isPackageServiceType.ts",
@@ -1689,7 +1736,6 @@ ts_project(
         "//:node_modules/@opentelemetry/resources",
         "//:node_modules/@opentelemetry/sdk-trace-base",
         "//:node_modules/@opentelemetry/semantic-conventions",
-        "//:node_modules/@reach/accordion",
         "//:node_modules/@reach/combobox",
         "//:node_modules/@reach/tabs",  #keep
         "//:node_modules/@reach/visually-hidden",
@@ -2125,6 +2171,7 @@ build_test(
 
 bundlesize_bin.bundlesize_test(
     name = "bundlesize-report",
+    timeout = "short",
     args = [
         "--config",
         "$(location bundlesize.config.js)",

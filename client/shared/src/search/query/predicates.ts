@@ -235,6 +235,12 @@ export const predicateCompletion = (field: string): Completion[] => {
                 asSnippet: true,
                 description: 'Search only inside files that have a specific owner',
             },
+            {
+                label: 'has.contributor(...)',
+                insertText: 'has.contributor(${1})',
+                asSnippet: true,
+                description: 'Search only inside files that have a contributor that matches a pattern',
+            },
         ]
     }
     return []

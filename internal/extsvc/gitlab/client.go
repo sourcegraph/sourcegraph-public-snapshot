@@ -11,10 +11,9 @@ import (
 	"path"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
@@ -25,40 +24,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
 	// The metric generated here will be named as "src_gitlab_requests_total".
 	requestCounter = metrics.NewRequestMeter("gitlab", "Total number of requests sent to the GitLab API.")
-
-	// Whether debug logging is turned on
-	traceEnabled int32 = 0
 )
-
-func init() {
-	go func() {
-		conf.Watch(func() {
-			exp := conf.Get().ExperimentalFeatures
-			if exp == nil {
-				atomic.StoreInt32(&traceEnabled, 0)
-				return
-			}
-			if debugLog := exp.DebugLog; debugLog == nil || !debugLog.ExtsvcGitlab {
-				atomic.StoreInt32(&traceEnabled, 0)
-				return
-			}
-			atomic.StoreInt32(&traceEnabled, 1)
-		})
-	}()
-}
-
-func trace(msg string, ctx ...any) {
-	if atomic.LoadInt32(&traceEnabled) == 1 {
-		log15.Info(fmt.Sprintf("TRACE %s", msg), ctx...)
-	}
-}
 
 // TokenType is the type of an access token.
 type TokenType string
@@ -172,6 +145,7 @@ func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
 type Client struct {
 	// The URN of the external service that the client is derived from.
 	urn string
+	log log.Logger
 
 	baseURL             *url.URL
 	httpClient          httpcli.Doer
@@ -210,6 +184,7 @@ func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 
 	return &Client{
 		urn:                 p.urn,
+		log:                 log.Scoped("gitlabAPIClient", "client used to make API requests to Gitlab."),
 		baseURL:             p.baseURL,
 		httpClient:          p.httpClient,
 		projCache:           projCache,
@@ -277,17 +252,15 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	var resp *http.Response
 
-	span, ctx := ot.StartSpanFromContext(ctx, "GitLab") //nolint:staticcheck // OT is deprecated
-	span.SetTag("URL", req.URL.String())
+	tr, ctx := trace.New(ctx, "GitLab", "",
+		attribute.Stringer("url", req.URL))
 	defer func() {
-		if err != nil {
-			span.SetTag("error", err.Error())
-		}
 		if resp != nil {
-			span.SetTag("status", resp.Status)
+			tr.SetAttributes(attribute.String("status", resp.Status))
 		}
-		span.Finish()
+		tr.FinishWithErr(&err)
 	}()
+	req = req.WithContext(ctx)
 
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	// Prevent the CachedTransportOpt from caching client side, but still use ETags
@@ -299,7 +272,7 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 		c.externalRateLimiter.Update(resp.Header)
 	}
 	if err != nil {
-		trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
+		c.log.Debug("GitLab API error", log.String("method", req.Method), log.String("url", req.URL.String()), log.Error(err))
 		return nil, 0, errors.Wrap(err, "request failed")
 	}
 

@@ -38,6 +38,55 @@ func bazelCmd(args ...string) string {
 	return strings.Join(Cmd, " ")
 }
 
+func bazelPushImagesCandidates(version string) func(*bk.Pipeline) {
+	return bazelPushImagesCmd(version, true)
+}
+
+func bazelPushImagesFinal(version string) func(*bk.Pipeline) {
+	return bazelPushImagesCmd(version, false)
+}
+
+func bazelPushImagesCmd(version string, isCandidate bool) func(*bk.Pipeline) {
+	stepName := ":bazel::docker: Push final images"
+	stepKey := "bazel-push-images"
+	candidate := ""
+
+	if isCandidate {
+		stepName = ":bazel::docker: Push candidate Images"
+		stepKey = stepKey + "-candidate"
+		candidate = "true"
+	}
+
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(stepName,
+			bk.Agent("queue", "bazel"),
+			bk.DependsOn("bazel-tests"),
+			bk.Key(stepKey),
+			bk.Env("PUSH_VERSION", version),
+			bk.Env("CANDIDATE_ONLY", candidate),
+			bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
+			bk.Cmd("./enterprise/dev/ci/push_all.sh"),
+		)
+	}
+}
+
+func bazelStampedCmd(args ...string) string {
+	pre := []string{
+		"bazel",
+		"--bazelrc=.bazelrc",
+		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
+		"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
+	}
+	post := []string{
+		"--stamp",
+		"--workspace_status_command=./dev/bazel_stamp_vars.sh",
+	}
+
+	cmd := append(pre, args...)
+	cmd = append(cmd, post...)
+	return strings.Join(cmd, " ")
+}
+
 // bazelAnalysisPhase only runs the analasys phase, ensure that the buildfiles
 // are correct, but do not actually build anything.
 func bazelAnalysisPhase() func(*bk.Pipeline) {
@@ -90,7 +139,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
 		bk.Key("bazel-tests"),
-		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log"),
+		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log", "./command.profile.gz"),
 		bk.AutomaticRetry(1), // TODO @jhchabran flaky stuff are breaking builds
 	}
 
@@ -153,17 +202,19 @@ func bazelTestWithDepends(optional bool, dependsOn string, targets ...string) fu
 	}
 }
 
-func bazelBuild(optional bool, targets ...string) func(*bk.Pipeline) {
+func bazelBuild(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
+		bk.Key("bazel_build"),
 		bk.Agent("queue", "bazel"),
 	}
-	bazelCmd := bazelCmd(fmt.Sprintf("build %s", strings.Join(targets, " ")))
-	cmds = append(cmds, bk.Cmd(bazelCmd))
+	cmd := bazelStampedCmd(fmt.Sprintf("build %s", strings.Join(targets, " ")))
+	cmds = append(
+		cmds,
+		bk.Cmd(cmd),
+		bk.Cmd(bazelStampedCmd("run //enterprise/cmd/server:candidate_push")),
+	)
 
 	return func(pipeline *bk.Pipeline) {
-		if optional {
-			cmds = append(cmds, bk.SoftFail())
-		}
 		pipeline.AddStep(":bazel: Build ...",
 			cmds...,
 		)
@@ -395,7 +446,7 @@ func bazelPublishFinalDockerImage(c Config, apps []string) operations.Operation 
 
 			var imgs []string
 			for _, image := range []string{publishImage, devImage} {
-				if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest, runtype.CandidatesNoTest) {
+				if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
 					imgs = append(imgs, fmt.Sprintf("%s:%s", image, c.Version))
 				}
 

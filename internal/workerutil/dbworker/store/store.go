@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -96,7 +97,7 @@ type Store[T workerutil.Record] interface {
 
 	// Heartbeat marks the given records as currently being processed and returns the list of records that are
 	// still known to the database (to detect lost jobs) and jobs that are marked as to be canceled.
-	Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs, cancelIDs []int, err error)
+	Heartbeat(ctx context.Context, ids []string, options HeartbeatOptions) (knownIDs, cancelIDs []string, err error)
 
 	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 	// the next dequeue of this record can be performed.
@@ -605,12 +606,12 @@ func (s *store[T]) makeDequeueUpdateStatements(updatedColumns map[string]*sqlf.Q
 	return updateStatements
 }
 
-func (s *store[T]) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs, cancelIDs []int, err error) {
+func (s *store[T]) Heartbeat(ctx context.Context, ids []string, options HeartbeatOptions) (knownIDs, cancelIDs []string, err error) {
 	ctx, _, endObservation := s.operations.heartbeat.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if len(ids) == 0 {
-		return []int{}, []int{}, nil
+		return []string{}, []string{}, nil
 	}
 
 	quotedTableName := quote(s.options.TableName)
@@ -621,7 +622,7 @@ func (s *store[T]) Heartbeat(ctx context.Context, ids []int, options HeartbeatOp
 	}
 	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
 
-	scanner := basestore.NewMapScanner(func(scanner dbutil.Scanner) (id int, cancel bool, err error) {
+	scanner := basestore.NewMapScanner(func(scanner dbutil.Scanner) (id string, cancel bool, err error) {
 		err = scanner.Scan(&id, &cancel)
 		return
 	})
@@ -646,15 +647,22 @@ func (s *store[T]) Heartbeat(ctx context.Context, ids []int, options HeartbeatOp
 				}
 			}
 
-			debug, debugErr := s.fetchDebugInformationForJob(ctx, recordID)
-			if debugErr != nil {
-				s.logger.Error("failed to fetch debug information for job",
-					log.Int("recordID", recordID),
-					log.Error(debugErr),
-				)
+			var debug string
+			intId, convErr := strconv.Atoi(recordID)
+			if convErr != nil {
+				debug = fmt.Sprintf("can't fetch debug information for job, failed to convert recordID to int: %s", convErr.Error())
+			} else {
+				var debugErr error
+				debug, debugErr = s.fetchDebugInformationForJob(ctx, intId)
+				if debugErr != nil {
+					s.logger.Error("failed to fetch debug information for job",
+						log.String("recordID", recordID),
+						log.Error(debugErr),
+					)
+				}
 			}
 			s.logger.Error("heartbeat lost a job",
-				log.Int("recordID", recordID),
+				log.String("recordID", recordID),
 				log.String("debug", debug),
 				log.String("options.workerHostname", options.WorkerHostname),
 			)

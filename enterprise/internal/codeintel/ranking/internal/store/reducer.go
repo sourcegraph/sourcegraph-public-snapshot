@@ -53,41 +53,45 @@ func (s *store) InsertPathRanks(
 const insertPathRanksQuery = `
 WITH
 progress AS (
-	SELECT
-		crp.id,
-		crp.mappers_started_at as started_at
+	SELECT crp.id
 	FROM codeintel_ranking_progress crp
 	WHERE
 		crp.graph_key = %s and
 		crp.reducer_started_at IS NOT NULL AND
 		crp.reducer_completed_at IS NULL
 ),
-input_ranks AS (
-	SELECT
-		pci.id,
-		pci.repository_id,
-		pci.document_path AS path,
-		pci.count
+rank_ids AS (
+	SELECT pci.id
 	FROM codeintel_ranking_path_counts_inputs pci
 	JOIN progress p ON TRUE
 	WHERE
 		pci.graph_key = %s AND
-		NOT pci.processed AND
-		EXISTS (
-			SELECT 1 FROM repo r
-			WHERE
-				r.id = pci.repository_id AND
-				r.deleted_at IS NULL AND
-				r.blocked IS NULL
-		)
-	ORDER BY pci.graph_key, pci.repository_id, pci.id
+		NOT pci.processed
+	ORDER BY pci.graph_key, pci.definition_id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
+),
+input_ranks AS (
+	SELECT
+		pci.id,
+		u.repository_id,
+		rd.document_path AS path,
+		pci.count
+	FROM codeintel_ranking_path_counts_inputs pci
+	JOIN codeintel_ranking_definitions rd ON rd.id = pci.definition_id
+	JOIN codeintel_ranking_exports eu ON eu.id = rd.exported_upload_id
+	JOIN lsif_uploads u ON u.id = eu.upload_id
+	JOIN repo r ON r.id = u.repository_id
+	JOIN progress p ON TRUE
+	WHERE
+		pci.id IN (SELECT id FROM rank_ids) AND
+		r.deleted_at IS NULL AND
+		r.blocked IS NULL
 ),
 processed AS (
 	UPDATE codeintel_ranking_path_counts_inputs
 	SET processed = true
-	WHERE id IN (SELECT ir.id FROM input_ranks ir)
+	WHERE id IN (SELECT ir.id FROM rank_ids ir)
 	RETURNING 1
 ),
 inserted AS (
@@ -124,7 +128,7 @@ set_progress AS (
 	UPDATE codeintel_ranking_progress
 	SET
 		num_count_records_processed = COALESCE(num_count_records_processed, 0) + (SELECT COUNT(*) FROM processed),
-		reducer_completed_at        = CASE WHEN (SELECT COUNT(*) FROM input_ranks) = 0 THEN NOW() ELSE NULL END
+		reducer_completed_at        = CASE WHEN (SELECT COUNT(*) FROM rank_ids) = 0 THEN NOW() ELSE NULL END
 	WHERE id IN (SELECT id FROM progress)
 )
 SELECT

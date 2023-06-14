@@ -12,6 +12,7 @@ import (
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // indexStepsResolver resolves the steps of an index record.
@@ -167,7 +168,7 @@ func newIndexStepResolver(siteAdminChecker sharedresolvers.SiteAdminChecker, ind
 
 func (r *indexStepResolver) Commands() []string    { return r.index.LocalSteps }
 func (r *indexStepResolver) IndexerArgs() []string { return r.index.IndexerArgs }
-func (r *indexStepResolver) Outfile() *string      { return resolverstubs.NonZeroPtr(r.index.Outfile) }
+func (r *indexStepResolver) Outfile() *string      { return pointers.NonZeroPtr(r.index.Outfile) }
 
 func (r *indexStepResolver) RequestedEnvVars() *[]string {
 	if len(r.index.RequestedEnvVars) == 0 {

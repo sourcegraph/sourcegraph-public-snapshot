@@ -56,10 +56,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tr, ctx := trace.New(ctx, "compute.ServeStream", args.Query)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	eventWriter, err := streamhttp.NewWriter(w)
 	if err != nil {

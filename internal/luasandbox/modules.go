@@ -39,6 +39,7 @@ func LuaModulesFromFS(fs embed.FS, dir, prefix string) (map[string]string, error
 		// All paths in embed FS are unix paths, so we need to use Unix, even on windows.
 		// Thus, we don't use filepath here.
 		name := strings.Join(splitPathList(strings.TrimSuffix(filepath.Base(file), filepath.Ext(file))), ".")
+
 		if prefix != "" {
 			name = prefix + "." + name
 		}

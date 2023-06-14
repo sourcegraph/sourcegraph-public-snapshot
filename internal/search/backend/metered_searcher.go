@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/keegancsmith/rpc"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	sglog "github.com/sourcegraph/log"
@@ -17,8 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
 var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
@@ -101,20 +98,6 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		b, _ := gobCache.GobEncode()
 		tr.SetAttributes(attribute.Int("query.size", len(b)))
 		event.AddField("query.size", len(b))
-	}
-
-	if isLeaf && opts != nil && policy.ShouldTrace(ctx) {
-		// Replace any existing spanContext with a new one, given we've done additional tracing
-		spanContext := make(map[string]string)
-		if span := opentracing.SpanFromContext(ctx); span == nil {
-			m.log.Warn("ctx does not have a trace span associated with it")
-		} else if err := ot.GetTracer(ctx).Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err == nil { //nolint:staticcheck // Drop once we get rid of OpenTracing
-			newOpts := *opts
-			newOpts.SpanContext = spanContext
-			opts = &newOpts
-		} else {
-			m.log.Warn("error injecting new span context into map", sglog.Error(err))
-		}
 	}
 
 	// Instrument the RPC layer
@@ -225,7 +208,7 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 	return AggregateStreamSearch(ctx, m.StreamSearch, q, opts)
 }
 
-func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
+func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListOptions) (_ *zoekt.RepoList, err error) {
 	start := time.Now()
 
 	var cat string
@@ -248,8 +231,12 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 
 	qStr := queryString(q)
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, attrs...)
-	tr.SetAttributes(attribute.Stringer("opts", opts))
+	tr, ctx := trace.New(ctx, "zoekt", cat, attrs...)
+	tr.SetAttributes(
+		attribute.Stringer("opts", opts),
+		attribute.String("query", qStr),
+	)
+	defer tr.FinishWithErr(&err)
 
 	event := honey.NoopEvent()
 	if honey.Enabled() && cat == "ListAll" {
@@ -280,11 +267,9 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 
 	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
 
-	tr.SetError(err)
 	if zsl != nil {
 		tr.SetAttributes(attribute.Int("repos", len(zsl.Repos)))
 	}
-	tr.Finish()
 
 	return zsl, err
 }

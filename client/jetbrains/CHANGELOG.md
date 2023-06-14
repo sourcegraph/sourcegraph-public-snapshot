@@ -14,6 +14,50 @@
 
 ### Security
 
+## [3.0.0-alpha.2]
+
+### Added
+
+- A separate setting for the (optional) dotcom access token. [pull/53018](https://github.com/sourcegraph/sourcegraph/pull/53018)
+- Enabled "Explain selected code (detailed)" recipe [#53080](https://github.com/sourcegraph/sourcegraph/pull/53080)
+- Enabled multiple recipes [#53299](https://github.com/sourcegraph/sourcegraph/pull/53299)
+  - Explain selected code (high level)
+  - Generate a unit test
+  - Generate a docstring
+  - Improve variable names
+  - Smell code
+  - Optimize code
+- A separate setting for enabling/disabling Cody completions. [pull/53302](https://github.com/sourcegraph/sourcegraph/pull/53302)
+- Debounce for inline Cody completions [pull/53447](https://github.com/sourcegraph/sourcegraph/pull/53447)
+- Enabled "Translate to different language" recipe [#53393](https://github.com/sourcegraph/sourcegraph/pull/53393)
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [3.0.0-alpha.1]
+
+### Added
+
+- Alpha-quality Cody chat, not ready yet for internal dogfooding.
+- Alpha-quality Cody code completions, not ready yet for internal dogfooding.
+
+## [2.1.4]
+
+### Added
+
+- Add `extensionDetails` to `public_argument` on logger [#51321](https://github.com/sourcegraph/sourcegraph/pull/51321)
+
+### Fixed
+
+- Handle case when remote for local branch != sourcegraph remote [#52172](https://github.com/sourcegraph/sourcegraph/pull/52172)
+
 ## [2.1.3]
 
 ### Added

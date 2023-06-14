@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "defaults",
@@ -13,6 +14,7 @@ go_library(
         "//internal/env",
         "//internal/grpc",
         "//internal/grpc/internalerrs",
+        "//internal/grpc/messagesize",
         "//internal/grpc/propagator",
         "//internal/requestclient",
         "//internal/trace/policy",

@@ -1,0 +1,55 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("//dev:oci_defs.bzl", "image_repository")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+
+filegroup(
+    name = "redis_conf",
+    srcs = ["redis.conf"],
+)
+
+pkg_tar(
+    name = "redis_tarball",
+    srcs = [":redis_conf"],
+    modes = {
+        "/etc/redis/redis.conf": "0644",
+    },
+    remap_paths = {
+        "/redis.conf": "/etc/redis/redis.conf",
+    },
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_redis_base",
+    entrypoint = [
+        "redis-server",
+        "/etc/redis/redis.conf",
+    ],
+    tars = [":redis_tarball"],
+    user = "redis",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["redis-store:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("redis-store"),
+)

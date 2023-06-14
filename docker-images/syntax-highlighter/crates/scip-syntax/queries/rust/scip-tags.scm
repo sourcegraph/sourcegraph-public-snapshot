@@ -7,16 +7,24 @@
  name: (_) @descriptor.type) @scope
 
 (impl_item
- trait: (_) @descriptor.type
- type: (_) @descriptor.type) @scope
+ trait: [(generic_type type: (type_identifier) @descriptor.type)
+         (type_identifier) @descriptor.type]?
+
+ type: [(generic_type type: (type_identifier) @descriptor.type)
+        (type_identifier) @descriptor.type]) @scope
 
 ;; TODO: @local to stop traversal
 (function_signature_item
  name: (identifier) @descriptor.method)
 
-;; TODO: @local to stop traversal
 (function_item
- name: (identifier) @descriptor.method)
+ name: (identifier) @descriptor.method body: (_) @local)
 
 (struct_item
  name: (type_identifier) @descriptor.type) @scope
+
+(field_declaration
+  name: (_) @descriptor.term) @enclosing
+
+(enum_item name: (_) @descriptor.type) @scope
+(enum_variant name: (_) @descriptor.term)

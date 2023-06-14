@@ -13,7 +13,12 @@
   "tauri": {
     "allowlist": {
       "dialog": {
-        "open": true
+        "open": true,
+        "confirm": true
+      },
+      "fs": {
+        "scope": ["$APPDATA/postgresql/data"],
+        "removeDir": true
       },
       "shell": {
         "sidecar": true,

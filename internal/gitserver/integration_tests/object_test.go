@@ -6,8 +6,10 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetObject(t *testing.T) {
@@ -18,12 +20,14 @@ func TestGetObject(t *testing.T) {
 		"git add f",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
-	tests := map[string]struct {
+
+	type test struct {
 		repo           api.RepoName
 		objectName     string
 		wantOID        string
 		wantObjectType gitdomain.ObjectType
-	}{
+	}
+	tests := map[string]test{
 		"basic": {
 			repo:           MakeGitRepository(t, gitCommands...),
 			objectName:     "e86b31b62399cfc86199e8b6e21a35e76d0e8b5e^{tree}",
@@ -32,10 +36,9 @@ func TestGetObject(t *testing.T) {
 		},
 	}
 
-	for label, test := range tests {
+	runTest := func(t *testing.T, label string, test test, cli gitserver.Client) {
 		t.Run(label, func(t *testing.T) {
-			source := gitserver.NewTestClientSource(t, GitserverAddresses)
-			obj, err := gitserver.NewTestClient(http.DefaultClient, source).GetObject(context.Background(), test.repo, test.objectName)
+			obj, err := cli.GetObject(context.Background(), test.repo, test.objectName)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -48,4 +51,34 @@ func TestGetObject(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("gRPC", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: true,
+				},
+			},
+		})
+		for label, test := range tests {
+			source := gitserver.NewTestClientSource(t, GitserverAddresses)
+			cli := gitserver.NewTestClient(http.DefaultClient, source)
+			runTest(t, label, test, cli)
+		}
+	})
+
+	t.Run("HTTP", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: false,
+				},
+			},
+		})
+		for label, test := range tests {
+			source := gitserver.NewTestClientSource(t, GitserverAddresses)
+			cli := gitserver.NewTestClient(http.DefaultClient, source)
+			runTest(t, label, test, cli)
+		}
+	})
 }

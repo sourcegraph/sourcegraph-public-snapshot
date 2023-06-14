@@ -27,6 +27,7 @@ export interface TranscriptItemClassNames {
     humanTranscriptItemClassName?: string
     transcriptItemParticipantClassName?: string
     codeBlocksCopyButtonClassName?: string
+    codeBlocksInsertButtonClassName?: string
     transcriptActionClassName?: string
     chatInputClassName?: string
 }
@@ -50,8 +51,10 @@ export const TranscriptItem: React.FunctionComponent<
         showFeedbackButtons: boolean
         copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
+        abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
+        onAbortMessageInProgress?: () => void
     } & TranscriptItemClassNames
-> = ({
+> = React.memo(function TranscriptItemContent({
     message,
     inProgress,
     beingEdited,
@@ -61,6 +64,7 @@ export const TranscriptItem: React.FunctionComponent<
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
     codeBlocksCopyButtonClassName,
+    codeBlocksInsertButtonClassName,
     transcriptActionClassName,
     textAreaComponent: TextArea,
     EditButtonContainer,
@@ -72,7 +76,9 @@ export const TranscriptItem: React.FunctionComponent<
     copyButtonOnSubmit,
     submitButtonComponent: SubmitButton,
     chatInputClassName,
-}) => {
+    abortMessageInProgressComponent: AbortMessageInProgressButton,
+    onAbortMessageInProgress = () => {},
+}) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const textarea =
         TextArea && beingEdited && editButtonOnSubmit && SubmitButton ? (
@@ -170,12 +176,16 @@ export const TranscriptItem: React.FunctionComponent<
                             displayText={message.displayText}
                             copyButtonClassName={codeBlocksCopyButtonClassName}
                             CopyButtonProps={copyButtonOnSubmit}
+                            insertButtonClassName={codeBlocksInsertButtonClassName}
                         />
                     )
                 ) : inProgress ? (
                     <BlinkingCursor />
                 ) : null}
+                {inProgress && AbortMessageInProgressButton && (
+                    <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
+                )}
             </div>
         </div>
     )
-}
+})

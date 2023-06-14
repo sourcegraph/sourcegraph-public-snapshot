@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "server",
@@ -14,6 +15,7 @@ go_library(
         "patch.go",
         "refspecoverrides.go",
         "repo_info.go",
+        "run.go",
         "server.go",
         "server_grpc.go",
         "servermetrics.go",
@@ -37,6 +39,7 @@ go_library(
         "//cmd/gitserver/server/accesslog",
         "//cmd/gitserver/server/common",
         "//cmd/gitserver/server/internal/cacert",
+        "//cmd/gitserver/server/perforce",
         "//internal/actor",
         "//internal/api",
         "//internal/codeintel/dependencies",
@@ -74,7 +77,6 @@ go_library(
         "//internal/security",
         "//internal/syncx",
         "//internal/trace",
-        "//internal/trace/ot",
         "//internal/types",
         "//internal/unpack",
         "//internal/vcs",
@@ -83,8 +85,6 @@ go_library(
         "//lib/gitservice",
         "//schema",
         "@com_github_mxk_go_flowrate//flowrate",
-        "@com_github_opentracing_opentracing_go//ext",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_conc//:conc",
@@ -105,10 +105,12 @@ go_library(
 
 go_test(
     name = "server_test",
+    timeout = "moderate",
     srcs = [
         "cleanup_test.go",
         "customfetch_test.go",
         "list_gitolite_test.go",
+        "run_test.go",
         "server_test.go",
         "serverutil_test.go",
         "ssh_agent_test.go",
@@ -131,6 +133,7 @@ go_test(
     ],
     deps = [
         "//cmd/gitserver/server/common",
+        "//cmd/gitserver/server/perforce",
         "//internal/actor",
         "//internal/api",
         "//internal/codeintel/dependencies",

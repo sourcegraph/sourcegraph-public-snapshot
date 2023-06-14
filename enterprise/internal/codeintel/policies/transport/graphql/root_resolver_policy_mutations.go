@@ -10,12 +10,13 @@ import (
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.CreateCodeIntelligenceConfigurationPolicyArgs) (_ resolverstubs.CodeIntelligenceConfigurationPolicyResolver, err error) {
 	ctx, traceErrs, endObservation := r.operations.createConfigurationPolicy.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repository", string(resolverstubs.Deref(args.Repository, ""))),
+		attribute.String("repository", string(pointers.Deref(args.Repository, ""))),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -50,7 +51,7 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
-		EmbeddingEnabled:          args.EmbeddingsEnabled,
+		EmbeddingEnabled:          args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,
 	}
 	configurationPolicy, err := r.policySvc.CreateConfigurationPolicy(ctx, opts)
 	if err != nil {
@@ -92,7 +93,7 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
-		EmbeddingEnabled:          args.EmbeddingsEnabled,
+		EmbeddingEnabled:          args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,
 	}
 	if err := r.policySvc.UpdateConfigurationPolicy(ctx, opts); err != nil {
 		return nil, err
@@ -157,7 +158,7 @@ func validateConfigurationPolicy(policy resolverstubs.CodeIntelConfigurationPoli
 		return errors.Errorf("illegal index commit max age '%d'", *policy.IndexCommitMaxAgeHours)
 	}
 
-	if policy.EmbeddingsEnabled {
+	if policy.EmbeddingsEnabled != nil && *policy.EmbeddingsEnabled {
 		if policy.RetentionEnabled || policy.IndexingEnabled {
 			return errors.Errorf("configuration policies can apply to SCIP indexes or embeddings, but not both")
 		}

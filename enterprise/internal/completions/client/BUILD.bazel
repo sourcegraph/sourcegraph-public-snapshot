@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -7,14 +8,25 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/completions/client/anthropic",
-        "//enterprise/internal/completions/client/dotcom",
-        "//enterprise/internal/completions/client/llmproxy",
+        "//enterprise/internal/completions/client/codygateway",
         "//enterprise/internal/completions/client/openai",
         "//enterprise/internal/completions/types",
-        "//internal/conf",
+        "//enterprise/internal/dotcomuser",
+        "//enterprise/internal/licensing",
         "//internal/conf/deploy",
         "//internal/httpcli",
         "//lib/errors",
         "//schema",
+    ],
+)
+
+go_test(
+    name = "client_test",
+    srcs = ["client_test.go"],
+    embed = [":client"],
+    deps = [
+        "//internal/conf/deploy",
+        "//schema",
+        "@com_github_hexops_autogold_v2//:autogold",
     ],
 )

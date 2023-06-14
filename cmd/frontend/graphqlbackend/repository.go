@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -25,8 +27,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -97,9 +100,29 @@ func (r *RepositoryResolver) EmbeddingExists(ctx context.Context) (bool, error) 
 
 func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
 
+func MarshalRepositoryIDs(ids []api.RepoID) []graphql.ID {
+	res := make([]graphql.ID, len(ids))
+	for i, id := range ids {
+		res[i] = MarshalRepositoryID(id)
+	}
+	return res
+}
+
 func UnmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	err = relay.UnmarshalSpec(id, &repo)
 	return
+}
+
+func UnmarshalRepositoryIDs(ids []graphql.ID) ([]api.RepoID, error) {
+	repoIDs := make([]api.RepoID, len(ids))
+	for i, id := range ids {
+		repoID, err := UnmarshalRepositoryID(id)
+		if err != nil {
+			return nil, err
+		}
+		repoIDs[i] = repoID
+	}
+	return repoIDs, nil
 }
 
 // repo makes sure the repo is hydrated before returning it.
@@ -209,10 +232,10 @@ type RepositoryCommitArgs struct {
 	InputRevspec *string
 }
 
-func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (*GitCommitResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "repository.commit") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
-	span.SetTag("commit", args.Rev)
+func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (_ *GitCommitResolver, err error) {
+	tr, ctx := trace.New(ctx, "RepositoryResolver", "Commit",
+		attribute.String("commit", args.Rev))
+	defer tr.FinishWithErr(&err)
 
 	repo, err := r.repo(ctx)
 	if err != nil {
@@ -230,9 +253,43 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 	return r.CommitFromID(ctx, args, commitID)
 }
 
-func (r *RepositoryResolver) FirstEverCommit(ctx context.Context) (*GitCommitResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "repository.firstEverCommit") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+type RepositoryChangelistArgs struct {
+	CID string
+}
+
+func (r *RepositoryResolver) Changelist(ctx context.Context, args *RepositoryChangelistArgs) (_ *PerforceChangelistResolver, err error) {
+	tr, ctx := trace.New(ctx, "RepositoryResolver", "Changelist",
+		attribute.String("changelist", args.CID))
+	defer tr.FinishWithErr(&err)
+
+	cid, err := strconv.ParseInt(args.CID, 10, 64)
+	if err != nil {
+		return nil, &perforce.BadChangelistError{}
+	}
+
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rc, err := r.db.RepoCommitsChangelists().GetRepoCommitChangelist(ctx, repo.ID, cid)
+	if err != nil {
+		if errors.HasType(err, &perforce.ChangelistNotFoundError{}) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return newPerforceChangelistResolver(
+		r,
+		fmt.Sprintf("%d", rc.PerforceChangelistID),
+		string(rc.CommitSHA),
+	), nil
+}
+
+func (r *RepositoryResolver) FirstEverCommit(ctx context.Context) (_ *GitCommitResolver, err error) {
+	tr, ctx := trace.New(ctx, "RepositoryResolver", "FirstEverCommit")
+	defer tr.FinishWithErr(&err)
 
 	repo, err := r.repo(ctx)
 	if err != nil {
@@ -581,7 +638,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		CommitInfo: protocol.PatchCommitInfo{
 			AuthorName:  info.AuthorName,
 			AuthorEmail: info.AuthorEmail,
-			Message:     info.Message,
+			Messages:    []string{info.Message},
 			Date:        info.Date,
 		},
 	})

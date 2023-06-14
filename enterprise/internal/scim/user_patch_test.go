@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -122,7 +123,7 @@ func Test_UserResourceHandler_PatchRemoveWithFilter(t *testing.T) {
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 	operations := []scim.PatchOperation{
 		{Op: "remove", Path: parseStringPath("emails[type eq \"work\" and primary eq false]")},
-		{Op: "remove", Path: createPath(AttrName, strPtr(AttrNameMiddle))},
+		{Op: "remove", Path: createPath(AttrName, pointers.Ptr(AttrNameMiddle))},
 	}
 
 	userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
@@ -237,7 +238,7 @@ func Test_UserResourceHandler_PatchNoChange(t *testing.T) {
 	db := createMockDB()
 	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
 	operations := []scim.PatchOperation{
-		{Op: "replace", Path: createPath(AttrName, strPtr(AttrNameGiven)), Value: "Nannie"},
+		{Op: "replace", Path: createPath(AttrName, pointers.Ptr(AttrNameGiven)), Value: "Nannie"},
 	}
 
 	userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
@@ -303,7 +304,7 @@ func Test_UserResourceHandler_PatchReactiveUser(t *testing.T) {
 			"type": "work",
 			"value": "primary@work.com",
 			"primary": true
-		  },		 
+		  },
 		],
 		"name": {
 		  "givenName": "Nannie",
@@ -419,11 +420,6 @@ func createPath(attr string, subAttr *string) *filter.Path {
 func parseStringPath(path string) *filter.Path {
 	f, _ := filter.ParsePath([]byte(path))
 	return &f
-}
-
-// strPtr returns a pointer to the given string.
-func strPtr(s string) *string {
-	return &s
 }
 
 // toInterfaceSlice converts a slice of maps to a slice of interfaces.

@@ -4,7 +4,7 @@ This page outlines the process for adding or changing the data collected from So
 
 ## Ping philosophy
 
-Pings are the only data Sourcegraph receives from installations. Our users and customers trust us with their most sensitive data. We must preserve and build this trust through only careful additions and changes to pings.
+Pings, alongside [license verification checks](../../admin/licensing/index.md), are the only data Sourcegraph receives from installations. Our users and customers trust us with their most sensitive data. We must preserve and build this trust through only careful additions and changes to pings.
 
 All ping data must be:
 
@@ -39,6 +39,12 @@ Treat adding new data to pings as having a very high bar. Would you be willing t
 1. Open a PR to change [the schema](https://github.com/sourcegraph/analytics/blob/master/BigQuery%20Schemas/sourcegraph_analytics.update_checks_schema.json) with sourcegraph/bizops as approvers. **Note: we have a 3 business day SLA to test and merge the production schema to properly test before branch cuts.** Keep in mind:
 	- Check the data types sent in the JSON match up with the BigQuery schema (e.g. a JSON '1' will not match up with a BigQuery integer).
 	- Every field in the BigQuery schema should not be non-nullable (i.e. `"mode": "NULLABLE"` and `"mode": "REPEATED"` are acceptable). There will be instances on the older Sourcegraph versions that will not be sending new data fields, and this will cause pings to fail.
+	- All root level fields names should follow `snake_case` and nested fields should be `PascalCase`
+	- i.e.
+      ```
+      batch_changes_usage
+      |-- BatchChangesCount
+      ```
 1. Once the schema change PR is merged, test the new schema. Contact sourcegraph/bizops (#data-eng-ops or #analytics) for this part.
   - Delete the [test table](https://console.cloud.google.com/bigquery?utm_source=bqui&utm_medium=link&utm_campaign=classic&project=telligentsourcegraph&ws=&p=telligentsourcegraph&d=sourcegraph_analytics&t=update_checks_test&page=table) (`$DATASET.$TABLE_test`), create a new table with the same name (`update_checks_test`), and then upload the schema with the newest version (see "Changing the BigQuery schema" for commands). This is done to wipe the data in the table and any legacy configurations that could trigger a false positive test, but keep the connection with Pub/Sub.
 	- Update and publish [a message](https://github.com/sourcegraph/analytics/blob/master/BigQuery%20Schemas/pubsub_message.json) to [Pub/Sub](https://console.cloud.google.com/cloudpubsub/topic/detail/server-update-checks-test?project=telligentsourcegraph), which will go through [Dataflow](https://console.cloud.google.com/dataflow/jobs/us-central1/2020-02-28_09_44_54-15810172927534693373?project=telligentsourcegraph&organizationId=1006954638239) to the BigQuery test table. The message can use [this example](https://github.com/sourcegraph/analytics/blob/master/BigQuery%20Schemas/pubsub_message) as a baseline, and add sample data for the new ping data points.

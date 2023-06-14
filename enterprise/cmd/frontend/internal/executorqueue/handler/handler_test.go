@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -23,10 +24,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	dbworkerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestHandler_Name(t *testing.T) {
@@ -296,9 +297,9 @@ func TestHandler_HandleAddExecutionLogEntry(t *testing.T) {
 						Key:        "foo",
 						Command:    []string{"faz", "baz"},
 						StartTime:  startTime,
-						ExitCode:   newIntPtr(0),
+						ExitCode:   pointers.Ptr(0),
 						Out:        "done",
-						DurationMs: newIntPtr(100),
+						DurationMs: pointers.Ptr(100),
 					},
 					mockStore.AddExecutionLogEntryFunc.History()[0].Arg2,
 				)
@@ -405,9 +406,9 @@ func TestHandler_HandleUpdateExecutionLogEntry(t *testing.T) {
 						Key:        "foo",
 						Command:    []string{"faz", "baz"},
 						StartTime:  startTime,
-						ExitCode:   newIntPtr(0),
+						ExitCode:   pointers.Ptr(0),
 						Out:        "done",
-						DurationMs: newIntPtr(100),
+						DurationMs: pointers.Ptr(100),
 					},
 					mockStore.UpdateExecutionLogEntryFunc.History()[0].Arg3,
 				)
@@ -831,45 +832,28 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 		assertionFunc        func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord])
 	}{
 		{
-			name: "Heartbeat",
-			body: `{"executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			name: "V2 Heartbeat number IDs",
+			body: `{"version":"V2", "executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
 			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
-				mockStore.HeartbeatFunc.PushReturn([]int{42, 7}, nil, nil)
+				mockStore.HeartbeatFunc.PushReturn([]string{"42", "7"}, nil, nil)
 			},
 			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: "[42,7]",
+			expectedResponseBody: `{"knownIds":["42","7"],"cancelIds":null}`,
 			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
-				assert.Equal(
-					t,
-					types.Executor{
-						Hostname:        "test-executor",
-						QueueName:       "test",
-						OS:              "test-os",
-						Architecture:    "test-arch",
-						DockerVersion:   "1.0",
-						ExecutorVersion: "2.0",
-						GitVersion:      "3.0",
-						IgniteVersion:   "4.0",
-						SrcCliVersion:   "5.0",
-					},
-					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
-				)
 				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
-				assert.Equal(t, []int{42, 7}, mockStore.HeartbeatFunc.History()[0].Arg1)
-				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, mockStore.HeartbeatFunc.History()[0].Arg2)
 			},
 		},
 		{
 			name: "V2 Heartbeat",
-			body: `{"version":"V2", "executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			body: `{"version":"V2", "executorName": "test-executor", "jobIds": ["42", "7"], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
 			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
-				mockStore.HeartbeatFunc.PushReturn([]int{42, 7}, nil, nil)
+				mockStore.HeartbeatFunc.PushReturn([]string{"42", "7"}, nil, nil)
 			},
 			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: `{"knownIds":[42,7],"cancelIds":null}`,
+			expectedResponseBody: `{"knownIds":["42","7"],"cancelIds":null}`,
 			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
 				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
@@ -877,7 +861,7 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 		},
 		{
 			name:                 "Invalid worker hostname",
-			body:                 `{"executorName": "", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			body:                 `{"executorName": "", "jobIds": ["42", "7"], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
 			expectedStatusCode:   http.StatusInternalServerError,
 			expectedResponseBody: `{"error":"worker hostname cannot be empty"}`,
 			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
@@ -887,13 +871,13 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 		},
 		{
 			name: "Failed to upsert heartbeat",
-			body: `{"executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			body: `{"executorName": "test-executor", "jobIds": ["42", "7"], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
 			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				executorStore.UpsertHeartbeatFunc.PushReturn(errors.New("failed"))
-				mockStore.HeartbeatFunc.PushReturn([]int{42, 7}, nil, nil)
+				mockStore.HeartbeatFunc.PushReturn([]string{"42", "7"}, nil, nil)
 			},
 			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: `[42,7]`,
+			expectedResponseBody: `{"knownIds":["42","7"],"cancelIds":null}`,
 			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
 				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
@@ -901,7 +885,7 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 		},
 		{
 			name: "Failed to heartbeat",
-			body: `{"executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			body: `{"executorName": "test-executor", "jobIds": ["42", "7"], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
 			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
 				mockStore.HeartbeatFunc.PushReturn(nil, nil, errors.New("failed"))
@@ -914,28 +898,14 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 			},
 		},
 		{
-			name: "Has cancelled ids",
-			body: `{"executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
-			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
-				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
-				mockStore.HeartbeatFunc.PushReturn(nil, []int{42, 7}, nil)
-			},
-			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: `null`,
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
-				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
-				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
-			},
-		},
-		{
 			name: "V2 has cancelled ids",
-			body: `{"version": "V2", "executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			body: `{"version": "V2", "executorName": "test-executor", "jobIds": ["42", "7"], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
 			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
-				mockStore.HeartbeatFunc.PushReturn(nil, []int{42, 7}, nil)
+				mockStore.HeartbeatFunc.PushReturn(nil, []string{"42", "7"}, nil)
 			},
 			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: `{"knownIds":null,"cancelIds":[42,7]}`,
+			expectedResponseBody: `{"knownIds":null,"cancelIds":["42","7"]}`,
 			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
 				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
@@ -999,102 +969,12 @@ func encodeMetrics(t *testing.T, data ...*dto.MetricFamily) string {
 	return buf.String()
 }
 
-func TestHandler_HandleCanceledJobs(t *testing.T) {
-	tests := []struct {
-		name                 string
-		body                 string
-		mockFunc             func(mockStore *dbworkerstoremocks.MockStore[testRecord])
-		expectedStatusCode   int
-		expectedResponseBody string
-		assertionFunc        func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord])
-	}{
-		{
-			name: "Cancel Jobs",
-			body: `{"knownJobIds": [42,7], "executorName": "test-executor"}`,
-			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord]) {
-				mockStore.HeartbeatFunc.PushReturn(nil, []int{42, 7}, nil)
-			},
-			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: "[42,7]",
-			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
-				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
-				assert.Equal(t, []int{42, 7}, mockStore.HeartbeatFunc.History()[0].Arg1)
-				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, mockStore.HeartbeatFunc.History()[0].Arg2)
-			},
-		},
-		{
-			name: "Invalid worker hostname",
-			body: `{"knownJobIds": [42,7], "executorName": ""}`,
-			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord]) {
-			},
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: `{"error":"worker hostname cannot be empty"}`,
-			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
-				require.Len(t, mockStore.HeartbeatFunc.History(), 0)
-			},
-		},
-		{
-			name: "Failed to cancel Jobs",
-			body: `{"knownJobIds": [42,7], "executorName": "test-executor"}`,
-			mockFunc: func(mockStore *dbworkerstoremocks.MockStore[testRecord]) {
-				mockStore.HeartbeatFunc.PushReturn(nil, nil, errors.New("failed"))
-			},
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: `{"error":"dbworkerstore.CanceledJobs: failed"}`,
-			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
-				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
-			},
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			mockStore := dbworkerstoremocks.NewMockStore[testRecord]()
-
-			h := handler.NewHandler(
-				database.NewMockExecutorStore(),
-				executorstore.NewMockJobTokenStore(),
-				metricsstore.NewMockDistributedStore(),
-				handler.QueueHandler[testRecord]{Store: mockStore},
-			)
-
-			router := mux.NewRouter()
-			router.HandleFunc("/{queueName}", h.HandleCanceledJobs)
-
-			req, err := http.NewRequest(http.MethodPost, "/test", strings.NewReader(test.body))
-			require.NoError(t, err)
-
-			rw := httptest.NewRecorder()
-
-			if test.mockFunc != nil {
-				test.mockFunc(mockStore)
-			}
-
-			router.ServeHTTP(rw, req)
-
-			assert.Equal(t, test.expectedStatusCode, rw.Code)
-
-			b, err := io.ReadAll(rw.Body)
-			require.NoError(t, err)
-
-			if len(test.expectedResponseBody) > 0 {
-				assert.JSONEq(t, test.expectedResponseBody, string(b))
-			} else {
-				assert.Empty(t, string(b))
-			}
-
-			if test.assertionFunc != nil {
-				test.assertionFunc(t, mockStore)
-			}
-		})
-	}
-}
-
 type testRecord struct {
 	id int
 }
 
 func (r testRecord) RecordID() int { return r.id }
 
-func newIntPtr(i int) *int {
-	return &i
+func (r testRecord) RecordUID() string {
+	return strconv.Itoa(r.id)
 }

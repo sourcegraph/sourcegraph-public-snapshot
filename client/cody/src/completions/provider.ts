@@ -9,7 +9,15 @@ import {
 
 import { Completion } from '.'
 import { ReferenceSnippet } from './context'
+import { truncateMultilineCompletion } from './multiline'
 import { messagesToText } from './prompts'
+
+const COMPLETIONS_PREAMBLE = `You are Cody, a code completion AI developed by Sourcegraph.
+You only respond in a single Markdown code blocks to all questions.
+All answers must be valid {lang} programs.
+DO NOT respond with anything other than code.`
+
+const BAD_COMPLETION_START = /^(\p{Emoji_Presentation}|\u{200B}|\+ |- |. )+(\s)+/u
 
 export abstract class CompletionProvider {
     constructor(
@@ -20,6 +28,7 @@ export abstract class CompletionProvider {
         protected prefix: string,
         protected suffix: string,
         protected injectPrefix: string,
+        protected languageId: string,
         protected defaultN: number = 1
     ) {}
 
@@ -60,7 +69,7 @@ export abstract class CompletionProvider {
                     },
                     {
                         speaker: 'assistant',
-                        text: 'Okay, I have added it to my knowledge base.',
+                        text: '```\n// Ok```',
                     },
                 ]
 
@@ -77,9 +86,9 @@ export abstract class CompletionProvider {
                 {
                     speaker: 'human',
                     text:
-                        `Add the following code snippet (from file ${snippet.filename}) to your knowledge base:\n` +
+                        `Add the following code snippet (from file ${snippet.fileName}) to your knowledge base:\n` +
                         '```' +
-                        `\n${snippet.text}\n` +
+                        `\n${snippet.content}\n` +
                         '```',
                 },
                 {
@@ -212,10 +221,21 @@ export class InlineCompletionProvider extends CompletionProvider {
         prefix: string,
         suffix: string,
         injectPrefix: string,
+        languageId: string,
         defaultN: number = 1,
         protected multilineMode: null | 'block' | 'statement' = null
     ) {
-        super(completionsClient, promptChars, responseTokens, snippets, prefix, suffix, injectPrefix, defaultN)
+        super(
+            completionsClient,
+            promptChars,
+            responseTokens,
+            snippets,
+            prefix,
+            suffix,
+            injectPrefix,
+            languageId,
+            defaultN
+        )
     }
 
     protected createPromptPrefix(): Message[] {
@@ -231,6 +251,14 @@ export class InlineCompletionProvider extends CompletionProvider {
             prefixMessages = [
                 {
                     speaker: 'human',
+                    text: COMPLETIONS_PREAMBLE.replace('{lang}', this.languageId),
+                },
+                {
+                    speaker: 'assistant',
+                    text: '```\n// Ok```',
+                },
+                {
+                    speaker: 'human',
                     text:
                         'Complete the following file:\n' +
                         '```' +
@@ -239,10 +267,7 @@ export class InlineCompletionProvider extends CompletionProvider {
                 },
                 {
                     speaker: 'assistant',
-                    text:
-                        'Here is the completion of the file:\n' +
-                        '```' +
-                        `\n${prefixLines.slice(endLine).join('\n')}${this.injectPrefix}`,
+                    text: `\`\`\`\n${prefixLines.slice(endLine).join('\n')}${this.injectPrefix}`,
                 },
             ]
         } else {
@@ -282,9 +307,18 @@ export class InlineCompletionProvider extends CompletionProvider {
             completion = completion.slice(1)
             hasOddIndentation = true
         }
+
         // Insert the injected prefix back in
         if (this.injectPrefix.length > 0) {
             completion = this.injectPrefix + completion
+        }
+
+        // Experimental: Trim start of the completion to remove all trailing whitespace nonsense
+        completion = completion.trimStart()
+
+        // Detect bad completion start
+        if (BAD_COMPLETION_START.test(completion)) {
+            completion = completion.replace(BAD_COMPLETION_START, '')
         }
 
         // Strip out trailing markdown block and trim trailing whitespace
@@ -294,49 +328,13 @@ export class InlineCompletionProvider extends CompletionProvider {
         }
 
         if (this.multilineMode !== null) {
-            const lines = completion.split('\n')
-
-            // We use a whitespace counting approach to finding the end of the completion. To find
-            // an end, we look for the first line that is below the start scope of the completion (
-            // calculated by the number of leading spaces or tabs)
-
-            const prefixLastLineIndent = this.prefix.length - this.prefix.lastIndexOf('\n') - 1
-            const completionFirstLineIndent = indentation(completion)
-            const startIndent = prefixLastLineIndent + completionFirstLineIndent
-
-            // If odd indentation is detected (i.e Claude adds a space to every line),
-            // we fix it for the whole multiline block first.
-            //
-            // We can skip the first line as it was already corrected above
-            if (hasOddIndentation) {
-                for (let i = 1; i < lines.length; i++) {
-                    if (indentation(lines[i]) >= startIndent) {
-                        lines[i] = lines[i].replace(/^ /, '')
-                    }
-                }
-            }
-
-            let cutOffIndex = lines.length
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i]
-
-                if (i === 0 || line === '' || line.trim().startsWith('} else')) {
-                    continue
-                }
-
-                if (indentation(line) < startIndent) {
-                    // When we find the first block below the start indentation, only include it if
-                    // it is an end block
-                    if (line.trim().startsWith('}')) {
-                        cutOffIndex = i + 1
-                    } else {
-                        cutOffIndex = i
-                    }
-                    break
-                }
-            }
-
-            completion = lines.slice(0, cutOffIndex).join('\n')
+            completion = truncateMultilineCompletion(
+                completion,
+                hasOddIndentation,
+                this.prefix,
+                nextNonEmptyLine,
+                this.languageId
+            )
         }
 
         // If a completed line matches the next non-empty line of the suffix 1:1, we remove
@@ -356,14 +354,6 @@ export class InlineCompletionProvider extends CompletionProvider {
         })
         if (matchedLineIndex !== -1) {
             completion = lines.slice(0, matchedLineIndex).join('\n')
-        }
-
-        // Ignore completions that start with a whitespace. These are handled oddly in VS Code
-        // since you can't accept them via tab.
-        //
-        // TODO: Should we trim the response instead?
-        if (completion.trimStart().length !== completion.length) {
-            return null
         }
 
         return completion.trimEnd()
@@ -466,12 +456,4 @@ export function sliceUntilFirstNLinesOfSuffixMatch(suggestion: string, suffix: s
     }
 
     return suggestion
-}
-
-/**
- * Counts space or tabs in the beginning of a line
- */
-function indentation(line: string): number {
-    const regex = line.match(/^[\t ]*/)
-    return regex ? regex[0].length : 0
 }

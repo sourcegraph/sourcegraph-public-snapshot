@@ -22,6 +22,7 @@
 
 .item-button {
     display: block;
+    position: relative;
     padding-top: .5rem;
     padding-bottom: .5rem;
 }
@@ -37,11 +38,23 @@
     margin-bottom: .25rem;
 }
 
+.item-delete {
+    position: absolute;
+    right: 0.25rem;
+    top: 0.5rem;
+    visibility: hidden;
+}
+
+.item-button:hover .item-delete {
+    visibility: visible;
+}
+
 .item-last-message {
     /* Show a few lines of text and then an ellipsis */
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 4;
     overflow: hidden;
-    overflow-wrap: break-word
+    overflow-wrap: break-word;
+    word-break: break-all;
 }

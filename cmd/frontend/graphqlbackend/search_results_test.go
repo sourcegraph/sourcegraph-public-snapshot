@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -84,8 +85,8 @@ func TestSearchResults(t *testing.T) {
 	searchVersions := []string{"V1", "V2"}
 
 	t.Run("repo: only", func(t *testing.T) {
-		MockDecodedViewerFinalSettings = &schema.Settings{}
-		defer func() { MockDecodedViewerFinalSettings = nil }()
+		settings.MockCurrentUserFinal = &schema.Settings{}
+		defer func() { settings.MockCurrentUserFinal = nil }()
 
 		repos := database.NewMockRepoStore()
 		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
@@ -234,8 +235,8 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 	}
 
-	MockDecodedViewerFinalSettings = &schema.Settings{}
-	defer func() { MockDecodedViewerFinalSettings = nil }()
+	settings.MockCurrentUserFinal = &schema.Settings{}
+	defer func() { settings.MockCurrentUserFinal = nil }()
 
 	var expectedDynamicFilterStrs map[string]int
 	for _, test := range tests {
@@ -321,7 +322,7 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	query := `foobar index:only count:350`
 	literalPatternType := "literal"
-	cli := client.NewSearchClient(logtest.Scoped(t), db, z, nil, nil, jobutil.NewUnimplementedEnterpriseJobs())
+	cli := client.MockedZoekt(logtest.Scoped(t), db, z)
 	searchInputs, err := cli.Plan(
 		ctx,
 		"V2",
@@ -329,8 +330,6 @@ func TestSearchResultsHydration(t *testing.T) {
 		query,
 		search.Precise,
 		search.Batch,
-		&schema.Settings{},
-		false,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -559,7 +558,7 @@ func TestEvaluateAnd(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			literalPatternType := "literal"
-			cli := client.NewSearchClient(logtest.Scoped(t), db, z, nil, nil, jobutil.NewUnimplementedEnterpriseJobs())
+			cli := client.MockedZoekt(logtest.Scoped(t), db, z)
 			searchInputs, err := cli.Plan(
 				context.Background(),
 				"V2",
@@ -567,8 +566,6 @@ func TestEvaluateAnd(t *testing.T) {
 				tt.query,
 				search.Precise,
 				search.Batch,
-				&schema.Settings{},
-				false,
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -632,6 +629,9 @@ func TestSubRepoFiltering(t *testing.T) {
 					}
 					return authz.Read, nil
 				})
+				checker.EnabledForRepoFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName) (bool, error) {
+					return true, nil
+				})
 				return checker
 			},
 		},
@@ -664,7 +664,7 @@ func TestSubRepoFiltering(t *testing.T) {
 			})
 
 			literalPatternType := "literal"
-			cli := client.NewSearchClient(logtest.Scoped(t), db, mockZoekt, nil, nil, jobutil.NewUnimplementedEnterpriseJobs())
+			cli := client.MockedZoekt(logtest.Scoped(t), db, mockZoekt)
 			searchInputs, err := cli.Plan(
 				context.Background(),
 				"V2",
@@ -672,8 +672,6 @@ func TestSubRepoFiltering(t *testing.T) {
 				tt.searchQuery,
 				search.Precise,
 				search.Batch,
-				&schema.Settings{},
-				false,
 			)
 			if err != nil {
 				t.Fatal(err)

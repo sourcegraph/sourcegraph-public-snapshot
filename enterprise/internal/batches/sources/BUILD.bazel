@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "sources",
@@ -21,8 +22,12 @@ go_library(
         "//enterprise/internal/batches/sources/gerrit",
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
+        "//enterprise/internal/github_apps/auth",
+        "//enterprise/internal/github_apps/store",
+        "//internal/api",
         "//internal/conf",
         "//internal/database",
+        "//internal/encryption/keyring",
         "//internal/errcode",
         "//internal/extsvc",
         "//internal/extsvc/auth",
@@ -68,6 +73,9 @@ go_test(
         "//enterprise/internal/batches/sources/bitbucketcloud",
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
+        "//enterprise/internal/github_apps/auth",
+        "//enterprise/internal/github_apps/store",
+        "//enterprise/internal/github_apps/types",
         "//internal/api",
         "//internal/conf",
         "//internal/database",
@@ -88,6 +96,7 @@ go_test(
         "//internal/testutil",
         "//internal/types",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_derision_test_go_mockgen//testutil/assert",
         "@com_github_dnaeon_go_vcr//cassette",

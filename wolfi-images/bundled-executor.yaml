@@ -9,18 +9,16 @@ contents:
     ## executor packages
     - ca-certificates
     - git
+    - maven
+    - openjdk-11
+    - openjdk-11-default-jvm
     - python3
     - py3-pip
     - xmlstarlet@sourcegraph
-
-environment:
-  # Firecracker doesn't work in docker, so disable it by default
-  EXECUTOR_USE_FIRECRACKER: false
-  # Preconfigure bundled-executor to take 1 parallel job and restart afterwards, this is to keep the environment clean-ish.
-  EXECUTOR_MAXIMUM_NUM_JOBS: 1
-  EXECUTOR_NUM_TOTAL_JOBS: 1
 
 paths:
   - path: /usr/local/bin
     type: directory
     permissions: 0o755
+
+# MANUAL REBUILD: Wed Jun 14 15:27:52 BST 2023

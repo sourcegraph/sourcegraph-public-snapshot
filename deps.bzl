@@ -978,8 +978,8 @@ def go_dependencies():
         name = "com_github_bwesterb_go_ristretto",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/bwesterb/go-ristretto",
-        sum = "h1:S2C0mmSjCLS3H9+zfXoIoKzl+cOncvBvt6pE+zTm5Ms=",
-        version = "v1.2.2",
+        sum = "h1:1w53tCkGhCQ5djbat3+MH0BAQ5Kfgbt56UZQ/JMzngw=",
+        version = "v1.2.3",
     )
     go_repository(
         name = "com_github_c2h5oh_datasize",
@@ -1145,8 +1145,8 @@ def go_dependencies():
             "//third_party/com_github_cloudflare_circl:dh_x25519_BUILD_bazel.patch",  # keep
             "//third_party/com_github_cloudflare_circl:dh_x448_BUILD_bazel.patch",  # keep
         ],
-        sum = "h1:VWp8dY3yH69fdM7lM6A1+NhhVoDu9vqK0jOgmkQHFWk=",
-        version = "v1.3.2",
+        sum = "h1:fE/Qz0QdIGqeWfnwq0RE0R7MI51s0M2E4Ga9kq5AEMs=",
+        version = "v1.3.3",
     )
 
     go_repository(
@@ -2393,8 +2393,8 @@ def go_dependencies():
         name = "com_github_go_enry_go_enry_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/go-enry/go-enry/v2",
-        sum = "h1:BwvNrN58JqBJhyyVdZSl5QD3xoxEEGYUrRyPh31FGhw=",
-        version = "v2.8.3",
+        sum = "h1:QrY3hx/RiqCJJRbdU0MOcjfTM1a586J0WSooqdlJIhs=",
+        version = "v2.8.4",
     )
     go_repository(
         name = "com_github_go_enry_go_oniguruma",
@@ -5429,12 +5429,14 @@ def go_dependencies():
     )
 
     go_repository(
+        # This is no longer used but we keep it for backwards compatability
+        # tests while on 5.0.x.
         name = "com_github_opentracing_contrib_go_stdlib",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/opentracing-contrib/go-stdlib",
         sum = "h1:TBS7YuVotp8myLon4Pv7BtCBzOTo1DeZCld0Z63mW2w=",
         version = "v1.0.0",
-    )
+    )  # keep
     go_repository(
         name = "com_github_opentracing_opentracing_go",
         build_file_proto_mode = "disable_global",
@@ -6341,23 +6343,16 @@ def go_dependencies():
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/scip",
-        sum = "h1:nl0JdCmCkQYTM1gQWbDJkdaiXyoZiluUzJbyeBDGFe0=",
-        version = "v0.2.4-0.20230403145725-e720fb88e6fd",
+        sum = "h1:6PgJPdhDHRGskCu7+NxodNtX1z8umdC40QvoQt4FsP8=",
+        version = "v0.2.4-0.20230613194658-b62733841bc3",
     )
 
     go_repository(
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        patch_args = ["-p1"],
-        patches = [
-            "//third_party/com_github_sourcegraph_zoekt:zoekt_archive_index.patch",
-            "//third_party/com_github_sourcegraph_zoekt:zoekt_git_index.patch",
-            "//third_party/com_github_sourcegraph_zoekt:zoekt_webserver.patch",
-            "//third_party/com_github_sourcegraph_zoekt:zoekt_indexserver.patch",
-        ],
-        sum = "h1:/5s1HW1DdlGpgr9PkOIgLcdFMHR1IHAJibXqT2Op5fk=",
-        version = "v0.0.0-20230523175034-5250e0e52a1b",
+        sum = "h1:BF1WS0akdRzj/2nYEzqcVhnBDbgucO6sqgDmKgbQDU8=",
+        version = "v0.0.0-20230613154029-b8b672211c40",
     )
 
     go_repository(
@@ -9020,8 +9015,8 @@ def go_dependencies():
         name = "org_golang_x_exp",
         build_file_proto_mode = "disable_global",
         importpath = "golang.org/x/exp",
-        sum = "h1:4iLhBPcpqFmylhnkbY3W0ONLUYYkDAW9xMFLfxgsvCw=",
-        version = "v0.0.0-20221208152030-732eee02a75a",
+        sum = "h1:5llv2sWeaMSnA3w2kS57ouQQ4pudlXrR0dCgw51QK9o=",
+        version = "v0.0.0-20230425010034-47ecfdc1ba53",
     )
     go_repository(
         name = "org_golang_x_image",

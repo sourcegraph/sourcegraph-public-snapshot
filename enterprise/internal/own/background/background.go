@@ -3,6 +3,7 @@ package background
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -10,6 +11,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
@@ -57,6 +59,10 @@ type Job struct {
 
 func (b *Job) RecordID() int {
 	return b.ID
+}
+
+func (b *Job) RecordUID() string {
+	return strconv.Itoa(b.ID)
 }
 
 var jobColumns = []*sqlf.Query{
@@ -181,6 +187,8 @@ func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error
 	switch record.ConfigName {
 	case types.SignalRecentContributors:
 		delegate = handleRecentContributors
+	case types.Analytics:
+		delegate = handleAnalytics
 	default:
 		return errcode.MakeNonRetryable(errors.New("unsupported own index job type"))
 	}

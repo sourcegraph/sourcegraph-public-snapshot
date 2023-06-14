@@ -7,10 +7,12 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/contextdetection"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -20,11 +22,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/require"
 )
 
 func TestEmbeddingSearchResolver(t *testing.T) {
 	logger := logtest.Scoped(t)
+
+	oldMock := licensing.MockCheckFeature
+	licensing.MockCheckFeature = func(feature licensing.Feature) error {
+		return nil
+	}
+	t.Cleanup(func() {
+		licensing.MockCheckFeature = oldMock
+	})
 
 	mockDB := database.NewMockDB()
 	mockRepos := database.NewMockRepoStore()
@@ -53,7 +62,6 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	}, nil)
 
 	repoEmbeddingJobsStore := repo.NewMockRepoEmbeddingJobsStore()
-	contextDetectionJobsStore := contextdetection.NewMockContextDetectionEmbeddingJobsStore()
 
 	resolver := NewResolver(
 		mockDB,
@@ -61,18 +69,19 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 		mockGitserver,
 		mockEmbeddingsClient,
 		repoEmbeddingJobsStore,
-		contextDetectionJobsStore,
 	)
 
+	truePtr := true
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
+			CodyEnabled: &truePtr,
 			Embeddings:  &schema.Embeddings{Enabled: true},
-			Completions: &schema.Completions{Enabled: true},
+			Completions: &schema.Completions{},
 		},
 	})
 
 	ctx := actor.WithActor(context.Background(), actor.FromMockUser(1))
-	ffs := featureflag.NewMemoryStore(map[string]bool{"cody-experimental": true}, nil, nil)
+	ffs := featureflag.NewMemoryStore(map[string]bool{"cody": true}, nil, nil)
 	ctx = featureflag.WithFlags(ctx, ffs)
 
 	results, err := resolver.EmbeddingsMultiSearch(ctx, graphqlbackend.EmbeddingsMultiSearchInputArgs{
@@ -87,7 +96,6 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, codeResults, 1)
 	require.Equal(t, "test\nfirst\nfour\nlines", codeResults[0].Content(ctx))
-
 }
 
 func Test_extractLineRange(t *testing.T) {

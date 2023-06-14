@@ -1,9 +1,9 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "autoindexing",
     srcs = [
-        "config.go",
         "iface.go",
         "init.go",
         "observability.go",
@@ -26,7 +26,6 @@ go_library(
         "//internal/authz",
         "//internal/codeintel/dependencies",
         "//internal/database",
-        "//internal/env",
         "//internal/gitserver",
         "//internal/goroutine",
         "//internal/metrics",

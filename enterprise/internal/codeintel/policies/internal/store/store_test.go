@@ -48,10 +48,6 @@ func insertRepo(t testing.TB, db database.DB, id int, name string, private bool)
 	}
 }
 
-func boolPtr(value bool) *bool {
-	return &value
-}
-
 // scanPolicyRepositories returns a map of policyIDs that have a slice of their correspondent repoIDs (repoIDs associated with that policyIDs).
 func scanPolicyRepositories(rows *sql.Rows, queryErr error) (_ map[int][]int, err error) {
 	if queryErr != nil {

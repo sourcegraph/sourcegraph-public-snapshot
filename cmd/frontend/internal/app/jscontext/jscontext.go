@@ -11,22 +11,23 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	logger "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -180,7 +181,13 @@ type JSContext struct {
 	BatchChangesDisableWebhooksWarning bool `json:"batchChangesDisableWebhooksWarning"`
 	BatchChangesWebhookLogsEnabled     bool `json:"batchChangesWebhookLogsEnabled"`
 
-	CodyEnabled               bool `json:"codyEnabled"`
+	// CodyEnabled is true `cody.enabled` is not false in site-config
+	CodyEnabled bool `json:"codyEnabled"`
+	// CodyEnabledForCurrentUser is true if CodyEnabled is true and current
+	// user has access to Cody.
+	CodyEnabledForCurrentUser bool `json:"codyEnabledForCurrentUser"`
+	// CodyRequiresVerifiedEmail is true if usage of Cody requires the current
+	// user to have a verified email.
 	CodyRequiresVerifiedEmail bool `json:"codyRequiresVerifiedEmail"`
 
 	ExecutorsEnabled                         bool `json:"executorsEnabled"`
@@ -277,15 +284,17 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		openTelemetry = clientObservability.OpenTelemetry
 	}
 
-	var licenseInfo *hooks.LicenseInfo
+	// License info contains basic, non-sensitive information about the license type. Some
+	// properties are only set for certain license types. This information can be used to
+	// soft-gate features from the UI, and to provide info to admins from site admin
+	// settings pages in the UI.
+	licenseInfo := hooks.GetLicenseInfo()
+
 	var user *types.User
 	temporarySettings := "{}"
-	if !a.IsAuthenticated() {
-		licenseInfo = hooks.GetLicenseInfo(false)
-	} else {
+	if a.IsAuthenticated() {
 		// Ignore err as we don't care if user does not exist
 		user, _ = a.User(ctx, db.Users())
-		licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
 		if user != nil {
 			if settings, err := db.TemporarySettings().GetTemporarySettings(ctx, user.ID); err == nil {
 				temporarySettings = settings.Contents
@@ -361,14 +370,15 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
-		CodyEnabled:               cody.IsCodyEnabled(ctx),
+		CodyEnabled:               conf.CodyEnabled(),
+		CodyEnabledForCurrentUser: cody.IsCodyEnabled(ctx),
 		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
 
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 
-		CodeInsightsEnabled: graphqlbackend.IsCodeInsightsEnabled(),
+		CodeInsightsEnabled: insights.IsCodeInsightsEnabled(),
 
 		EmbeddingsEnabled: conf.EmbeddingsEnabled(),
 

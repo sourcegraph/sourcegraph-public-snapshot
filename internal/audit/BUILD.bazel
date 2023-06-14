@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "audit",
@@ -11,6 +12,7 @@ go_library(
     deps = [
         "//internal/actor",
         "//internal/conf",
+        "//internal/env",
         "//internal/requestclient",
         "//schema",
         "@com_github_google_uuid//:uuid",
@@ -29,6 +31,7 @@ go_test(
     deps = [
         "//internal/actor",
         "//internal/conf",
+        "//internal/env",
         "//internal/requestclient",
         "//schema",
         "@com_github_sourcegraph_log//:log",

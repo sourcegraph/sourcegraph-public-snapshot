@@ -10,15 +10,15 @@ import (
 	"github.com/goware/urlx"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-diff/diff"
-	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-
 	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
+	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -311,6 +311,10 @@ type Changeset struct {
 // RecordID is needed to implement the workerutil.Record interface.
 func (c *Changeset) RecordID() int { return int(c.ID) }
 
+func (c *Changeset) RecordUID() string {
+	return strconv.FormatInt(c.ID, 10)
+}
+
 // Clone returns a clone of a Changeset.
 func (c *Changeset) Clone() *Changeset {
 	tt := *c
@@ -453,12 +457,12 @@ func (c *Changeset) SetMetadata(meta any) error {
 		}
 	case *gerritbatches.AnnotatedChange:
 		c.Metadata = pr
-		c.ExternalID = pr.ID
+		c.ExternalID = pr.Change.ChangeID
 		c.ExternalServiceType = extsvc.TypeGerrit
-		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.Branch)
-		c.ExternalUpdatedAt = pr.Updated
+		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.Change.Branch)
+		c.ExternalUpdatedAt = pr.Change.Updated
 	default:
-		return errors.New("unknown changeset type")
+		return errors.New("setmetadata unknown changeset type")
 	}
 	return nil
 }
@@ -487,9 +491,12 @@ func (c *Changeset) Title() (string, error) {
 	case *adobatches.AnnotatedPullRequest:
 		return m.Title, nil
 	case *gerritbatches.AnnotatedChange:
-		return m.Subject, nil
+		title, _, _ := strings.Cut(m.Change.Subject, "\n")
+		// Remove extra quotes added by the commit message
+		title = strings.TrimPrefix(strings.TrimSuffix(title, "\""), "\"")
+		return title, nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New("title unknown changeset type")
 	}
 }
 
@@ -512,9 +519,9 @@ func (c *Changeset) AuthorName() (string, error) {
 	case *adobatches.AnnotatedPullRequest:
 		return m.CreatedBy.UniqueName, nil
 	case *gerritbatches.AnnotatedChange:
-		return m.Owner.Name, nil
+		return m.Change.Owner.Name, nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New("authorname unknown changeset type")
 	}
 }
 
@@ -545,9 +552,9 @@ func (c *Changeset) AuthorEmail() (string, error) {
 	case *adobatches.AnnotatedPullRequest:
 		return m.CreatedBy.UniqueName, nil
 	case *gerritbatches.AnnotatedChange:
-		return m.Owner.Email, nil
+		return m.Change.Owner.Email, nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New("author email unknown changeset type")
 	}
 }
 
@@ -567,7 +574,7 @@ func (c *Changeset) ExternalCreatedAt() time.Time {
 	case *adobatches.AnnotatedPullRequest:
 		return m.CreationDate
 	case *gerritbatches.AnnotatedChange:
-		return m.Created
+		return m.Change.Created
 	default:
 		return time.Time{}
 	}
@@ -588,9 +595,9 @@ func (c *Changeset) Body() (string, error) {
 		return m.Description, nil
 	case *gerritbatches.AnnotatedChange:
 		// Gerrit doesn't really differentiate between title/description.
-		return m.Subject, nil
+		return m.Change.Subject, nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New("body unknown changeset type")
 	}
 }
 
@@ -654,9 +661,9 @@ func (c *Changeset) URL() (s string, err error) {
 
 		return returnURL.String(), nil
 	case *gerritbatches.AnnotatedChange:
-		return m.CodeHostURL.JoinPath("c", url.PathEscape(m.Project), "+", url.PathEscape(strconv.Itoa(m.ChangeNumber))).String(), nil
+		return m.CodeHostURL.JoinPath("c", url.PathEscape(m.Change.Project), "+", url.PathEscape(strconv.Itoa(m.Change.ChangeNumber))).String(), nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New("url unknown changeset type")
 	}
 }
 
@@ -858,8 +865,23 @@ func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
 			})
 		}
 	case *gerritbatches.AnnotatedChange:
-		// TODO: @varsanojidan implement once reviews are implemented
+		// There is one type of event that we create from an annotated pull
+		// request: review events, based on the reviewers within the change.
+		var kind ChangesetEventKind
+
+		for _, reviewer := range m.Reviewers {
+			if kind, err = ChangesetEventKindFor(&reviewer); err != nil {
+				return
+			}
+			appendEvent(&ChangesetEvent{
+				ChangesetID: c.ID,
+				Key:         strconv.Itoa(reviewer.AccountID),
+				Kind:        kind,
+				Metadata:    reviewer,
+			})
+		}
 	}
+
 	return events, nil
 }
 
@@ -881,7 +903,7 @@ func (c *Changeset) HeadRefOid() (string, error) {
 	case *gerritbatches.AnnotatedChange:
 		return "", nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New("head ref oid unknown changeset type")
 	}
 }
 
@@ -902,7 +924,7 @@ func (c *Changeset) HeadRef() (string, error) {
 	case *gerritbatches.AnnotatedChange:
 		return "", nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New("headref unknown changeset type")
 	}
 }
 
@@ -924,7 +946,7 @@ func (c *Changeset) BaseRefOid() (string, error) {
 	case *gerritbatches.AnnotatedChange:
 		return "", nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New("base ref oid unknown changeset type")
 	}
 }
 
@@ -943,9 +965,9 @@ func (c *Changeset) BaseRef() (string, error) {
 	case *adobatches.AnnotatedPullRequest:
 		return m.TargetRefName, nil
 	case *gerritbatches.AnnotatedChange:
-		return "refs/heads/" + m.Branch, nil
+		return "refs/heads/" + m.Change.Branch, nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New(" base ref unknown changeset type")
 	}
 }
 
@@ -1055,8 +1077,8 @@ func (c *Changeset) Labels() []ChangesetLabel {
 		}
 		return labels
 	case *gerritbatches.AnnotatedChange:
-		labels := make([]ChangesetLabel, len(m.Hashtags))
-		for i, l := range m.Hashtags {
+		labels := make([]ChangesetLabel, len(m.Change.Hashtags))
+		for i, l := range m.Change.Hashtags {
 			labels[i] = ChangesetLabel{Name: l, Color: "000000"}
 		}
 		return labels
@@ -1293,7 +1315,7 @@ func ChangesetEventKindFor(e any) (ChangesetEventKind, error) {
 		case 5:
 			return ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions, nil
 		case 0:
-			return ChangesetEventKindAzureDevOpsPullRequesReviewed, nil
+			return ChangesetEventKindAzureDevOpsPullRequestReviewed, nil
 		case -5:
 			return ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor, nil
 		case -10:
@@ -1310,9 +1332,21 @@ func ChangesetEventKindFor(e any) (ChangesetEventKind, error) {
 		default:
 			return ChangesetEventKindAzureDevOpsPullRequestBuildPending, nil
 		}
-		// TODO: @varsanojidan return to this if events are happening
+	case *gerrit.Reviewer:
+		switch e.Approvals.CodeReview {
+		case "+2":
+			return ChangesetEventKindGerritChangeApproved, nil
+		case "+1":
+			return ChangesetEventKindGerritChangeApprovedWithSuggestions, nil
+		case " 0": // Not a typo, this is how Gerrit displays a no score.
+			return ChangesetEventKindGerritChangeReviewed, nil
+		case "-1":
+			return ChangesetEventKindGerritChangeNeedsChanges, nil
+		case "-2":
+			return ChangesetEventKindGerritChangeRejected, nil
+		}
 	}
-	return ChangesetEventKindInvalid, errors.Errorf("unknown changeset event kind for %T", e)
+	return ChangesetEventKindInvalid, errors.Errorf("changeset eventkindfor unknown changeset event kind for %T", e)
 }
 
 // NewChangesetEventMetadata returns a new metadata object for the given
@@ -1447,7 +1481,15 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (any, error) {
 		default:
 			return new(azuredevops.PullRequestUpdatedEvent), nil
 		}
-		// TODO: @varsanojidan come back to this for events
+	case strings.HasPrefix(string(k), "gerrit"):
+		switch k {
+		case ChangesetEventKindGerritChangeApproved,
+			ChangesetEventKindGerritChangeApprovedWithSuggestions,
+			ChangesetEventKindGerritChangeReviewed,
+			ChangesetEventKindGerritChangeNeedsChanges,
+			ChangesetEventKindGerritChangeRejected:
+			return new(gerrit.Reviewer), nil
+		}
 	}
-	return nil, errors.Errorf("unknown changeset event kind %q", k)
+	return nil, errors.Errorf("changeset event metadata unknown changeset event kind %q", k)
 }

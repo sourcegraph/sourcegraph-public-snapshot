@@ -21,6 +21,7 @@ const (
 	ReleaseNightly // release branch nightly healthcheck builds
 	BextNightly    // browser extension nightly build
 	VsceNightly    // vs code extension nightly build
+	CodyNightly    // cody vs code extension nightly build
 	AppRelease     // app release build
 	AppInsiders    // app insiders build
 
@@ -41,7 +42,6 @@ const (
 
 	ImagePatch          // build a patched image after testing
 	ImagePatchNoTest    // build a patched image without testing
-	CandidatesNoTest    // build one or all candidate images without testing
 	ExecutorPatchNoTest // build executor image without testing
 
 	// Special test branches
@@ -97,7 +97,12 @@ func (t RunType) Matcher() *RunTypeMatcher {
 				"BEXT_NIGHTLY": "true",
 			},
 		}
-
+	case CodyNightly:
+		return &RunTypeMatcher{
+			EnvIncludes: map[string]string{
+				"CODY_NIGHTLY": "true",
+			},
+		}
 	case VsceNightly:
 		return &RunTypeMatcher{
 			EnvIncludes: map[string]string{
@@ -109,7 +114,6 @@ func (t RunType) Matcher() *RunTypeMatcher {
 			Branch:      "vsce/release",
 			BranchExact: true,
 		}
-
 	case CodyReleaseBranch:
 		return &RunTypeMatcher{
 			Branch:      "cody/release",
@@ -165,10 +169,6 @@ func (t RunType) Matcher() *RunTypeMatcher {
 			Branch:                 "docker-images-patch-notest/",
 			BranchArgumentRequired: true,
 		}
-	case CandidatesNoTest:
-		return &RunTypeMatcher{
-			Branch: "docker-images-candidates-notest/",
-		}
 	case ExecutorPatchNoTest:
 		return &RunTypeMatcher{
 			Branch: "executor-patch-notest/",
@@ -193,6 +193,8 @@ func (t RunType) String() string {
 		return "Release branch nightly healthcheck build"
 	case BextNightly:
 		return "Browser extension nightly release build"
+	case CodyNightly:
+		return "Cody VS Code extension nightly release build"
 	case VsceNightly:
 		return "VS Code extension nightly release build"
 	case AppRelease:
@@ -219,8 +221,6 @@ func (t RunType) String() string {
 		return "Patch image"
 	case ImagePatchNoTest:
 		return "Patch image without testing"
-	case CandidatesNoTest:
-		return "Build all candidates without testing"
 	case ExecutorPatchNoTest:
 		return "Build executor without testing"
 

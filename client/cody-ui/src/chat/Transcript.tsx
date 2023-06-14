@@ -32,8 +32,10 @@ export const Transcript: React.FunctionComponent<
         feedbackButtonsOnSubmit?: (text: string) => void
         copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
+        abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
+        onAbortMessageInProgress?: () => void
     } & TranscriptItemClassNames
-> = ({
+> = React.memo(function TranscriptContent({
     transcript,
     messageInProgress,
     messageBeingEdited,
@@ -41,6 +43,7 @@ export const Transcript: React.FunctionComponent<
     fileLinkComponent,
     className,
     codeBlocksCopyButtonClassName,
+    codeBlocksInsertButtonClassName,
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
@@ -53,7 +56,9 @@ export const Transcript: React.FunctionComponent<
     copyButtonOnSubmit,
     submitButtonComponent,
     chatInputClassName,
-}) => {
+    abortMessageInProgressComponent,
+    onAbortMessageInProgress,
+}) {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
         if (transcriptContainerRef.current) {
@@ -75,6 +80,11 @@ export const Transcript: React.FunctionComponent<
                     top: transcriptContainerRef.current.scrollHeight,
                 })
             }
+
+            // scroll to the end when messages are loaded
+            transcriptContainerRef.current.scrollTo({
+                top: transcriptContainerRef.current.scrollHeight,
+            })
         }
     }, [transcript, transcriptContainerRef])
 
@@ -100,6 +110,7 @@ export const Transcript: React.FunctionComponent<
                             setBeingEdited={setMessageBeingEdited}
                             fileLinkComponent={fileLinkComponent}
                             codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                            codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                             transcriptItemClassName={transcriptItemClassName}
                             humanTranscriptItemClassName={humanTranscriptItemClassName}
                             transcriptItemParticipantClassName={transcriptItemParticipantClassName}
@@ -125,6 +136,7 @@ export const Transcript: React.FunctionComponent<
                     setBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                    codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                     transcriptItemClassName={transcriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
@@ -133,8 +145,10 @@ export const Transcript: React.FunctionComponent<
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     submitButtonComponent={submitButtonComponent}
                     chatInputClassName={chatInputClassName}
+                    abortMessageInProgressComponent={abortMessageInProgressComponent}
+                    onAbortMessageInProgress={onAbortMessageInProgress}
                 />
             )}
         </div>
     )
-}
+})

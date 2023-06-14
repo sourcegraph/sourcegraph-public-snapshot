@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "handler",
@@ -53,6 +54,7 @@ go_test(
         "//internal/workerutil/dbworker/store",
         "//internal/workerutil/dbworker/store/mocks",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_gorilla_mux//:mux",
         "@com_github_prometheus_client_model//go",
         "@com_github_prometheus_common//expfmt",

@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "upgradestore",
@@ -13,6 +14,7 @@ go_library(
         "//internal/conf/deploy",
         "//internal/database",
         "//internal/database/basestore",
+        "//internal/hostname",
         "//lib/errors",
         "@com_github_jackc_pgconn//:pgconn",
         "@com_github_jackc_pgerrcode//:pgerrcode",

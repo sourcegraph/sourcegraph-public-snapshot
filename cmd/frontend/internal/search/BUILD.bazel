@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "search",
@@ -11,7 +12,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/internal/highlight",
         "//cmd/frontend/internal/search/logs",
@@ -34,6 +34,7 @@ go_library(
         "//internal/trace",
         "//internal/types",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
@@ -51,7 +52,6 @@ go_test(
     ],
     embed = [":search"],
     deps = [
-        "//cmd/frontend/graphqlbackend",
         "//internal/api",
         "//internal/database",
         "//internal/search",
@@ -61,6 +61,7 @@ go_test(
         "//internal/search/streaming",
         "//internal/search/streaming/api",
         "//internal/search/streaming/http",
+        "//internal/settings",
         "//internal/types",
         "//schema",
         "@com_github_google_go_cmp//cmp",

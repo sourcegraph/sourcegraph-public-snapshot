@@ -23,7 +23,9 @@ import (
 
 const appDirectory = "sourcegraph"
 
-func Init(logger log.Logger) {
+type CleanupFunc func() error
+
+func Init(logger log.Logger) CleanupFunc {
 	if deploy.IsApp() {
 		fmt.Fprintln(os.Stderr, "✱ Sourcegraph App version:", version.Version())
 	}
@@ -91,7 +93,8 @@ func Init(logger log.Logger) {
 	}
 
 	embeddedPostgreSQLRootDir := filepath.Join(configDir, "postgresql")
-	if err := initPostgreSQL(logger, embeddedPostgreSQLRootDir); err != nil {
+	postgresCleanup, err := initPostgreSQL(logger, embeddedPostgreSQLRootDir)
+	if err != nil {
 		fmt.Fprintln(os.Stderr, "unable to set up PostgreSQL:", err)
 		os.Exit(1)
 	}
@@ -115,6 +118,9 @@ func Init(logger log.Logger) {
 	setDefaultEnv(logger, "GLOBAL_SETTINGS_FILE", globalSettingsPath)
 	setDefaultEnv(logger, "GLOBAL_SETTINGS_ALLOW_EDITS", "true")
 	writeFileIfNotExists(globalSettingsPath, []byte("{}\n"))
+
+	// Set configuration file path for local repositories
+	setDefaultEnv(logger, "SRC_LOCAL_REPOS_CONFIG_FILE", filepath.Join(configDir, "repos.json"))
 
 	// We disable the use of executors passwords, because executors only listen on `localhost` this
 	// is safe to do.
@@ -175,6 +181,9 @@ func Init(logger log.Logger) {
 			writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
 			setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
 		}
+	}
+	return func() error {
+		return postgresCleanup()
 	}
 }
 

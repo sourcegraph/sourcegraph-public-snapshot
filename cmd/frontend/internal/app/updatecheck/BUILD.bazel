@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "updatecheck",
@@ -22,7 +23,6 @@ go_library(
         "//internal/database",
         "//internal/env",
         "//internal/extsvc/versions",
-        "//internal/featureflag",
         "//internal/httpcli",
         "//internal/jsonc",
         "//internal/lazyregexp",
@@ -58,6 +58,7 @@ go_test(
     deps = [
         "//internal/extsvc",
         "//internal/types",
+        "//lib/pointers",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_hexops_autogold_v2//:autogold",

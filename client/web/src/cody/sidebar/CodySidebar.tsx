@@ -7,7 +7,8 @@ import { Button, Icon, Tooltip, Badge } from '@sourcegraph/wildcard'
 
 import { ChatUI, ScrollDownButton } from '../components/ChatUI'
 import { HistoryList } from '../components/HistoryList'
-import { useChatStoreState } from '../stores/chat'
+
+import { useCodySidebar } from './Provider'
 
 import styles from './CodySidebar.module.scss'
 
@@ -15,11 +16,21 @@ export const SCROLL_THRESHOLD = 100
 
 interface CodySidebarProps {
     onClose?: () => void
-    titleContent?: JSX.Element
 }
 
-export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, titleContent }) => {
-    const { reset, transcript, messageInProgress, clearHistory } = useChatStoreState()
+export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
+    const codySidebarStore = useCodySidebar()
+    const {
+        initializeNewChat,
+        transcript,
+        messageInProgress,
+        clearHistory,
+        loaded,
+        isCodyEnabled,
+        transcriptHistory,
+        deleteHistoryItem,
+        loadTranscriptFromHistory,
+    } = codySidebarStore
 
     const codySidebarRef = useRef<HTMLDivElement>(null)
     const [showHistory, setShowHistory] = useState(false)
@@ -45,14 +56,10 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, titleContent 
         }
     }
 
-    const onReset = useCallback(async () => {
-        await reset()
+    const onReset = useCallback(() => {
+        initializeNewChat()
         setShowHistory(false)
-    }, [reset, setShowHistory])
-
-    const closeHistory = useCallback(() => {
-        setShowHistory(false)
-    }, [setShowHistory])
+    }, [initializeNewChat, setShowHistory])
 
     useEffect(() => {
         const sidebar = codySidebarRef.current
@@ -60,6 +67,18 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, titleContent 
             scrollToBottom('auto')
         }
     }, [transcript, shouldScrollToBottom, messageInProgress])
+
+    const onHistoryItemSelect = useCallback(
+        async (id: string) => {
+            await loadTranscriptFromHistory(id)
+            setShowHistory(false)
+        },
+        [loadTranscriptFromHistory, setShowHistory]
+    )
+
+    if (!(loaded && isCodyEnabled.sidebar)) {
+        return null
+    }
 
     return (
         <div className={styles.mainWrapper}>
@@ -96,15 +115,13 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, titleContent 
                         )}
                     </div>
                     <div className="col-8 d-flex justify-content-center">
-                        {titleContent || (
-                            <div className="d-flex flex-shrink-0 align-items-center">
-                                <CodyLogo />
-                                {showHistory ? 'Chats' : 'Ask Cody'}
-                                <div className="ml-2">
-                                    <Badge variant="info">Beta</Badge>
-                                </div>
+                        <div className="d-flex flex-shrink-0 align-items-center">
+                            <CodyLogo />
+                            {showHistory ? 'Chats' : 'Ask Cody'}
+                            <div className="ml-2">
+                                <Badge variant="info">Beta</Badge>
                             </div>
-                        )}
+                        </div>
                     </div>
                     <div className="col-2 d-flex justify-content-end p-0">
                         {onClose && (
@@ -115,7 +132,18 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, titleContent 
                     </div>
                 </div>
 
-                {showHistory ? <HistoryList onSelect={closeHistory} itemClassName="rounded-0" /> : <ChatUI />}
+                {showHistory ? (
+                    <HistoryList
+                        itemClassName="rounded-0"
+                        currentTranscript={transcript}
+                        transcriptHistory={transcriptHistory}
+                        truncateMessageLength={60}
+                        loadTranscriptFromHistory={onHistoryItemSelect}
+                        deleteHistoryItem={deleteHistoryItem}
+                    />
+                ) : (
+                    <ChatUI codyChatStore={codySidebarStore} />
+                )}
             </div>
             {showScrollDownButton && <ScrollDownButton onClick={() => scrollToBottom('smooth')} />}
         </div>
