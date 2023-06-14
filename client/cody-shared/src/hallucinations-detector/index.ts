@@ -101,7 +101,10 @@ function getHighlightedTokenHTML(token: HighlightedToken, workspaceRootPath?: st
         filePath = `<a href="${uri}">${filePath}</a>`
     }
     const isHallucinatedClassName = token.isHallucinated ? 'hallucinated' : 'not-hallucinated'
-    return ` <span class="token-${token.type} token-${isHallucinatedClassName}">${filePath}</span> `
+    const title = token.isHallucinated
+        ? 'Hallucination detected: file does not exist'
+        : 'No hallucination detected: file exists'
+    return ` <span class="token-${token.type} token-${isHallucinatedClassName}" title="${title}">${filePath}</span> `
 }
 
 export function findFilePaths(line: string): { fullMatch: string; pathMatch: string }[] {
