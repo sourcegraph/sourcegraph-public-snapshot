@@ -5,7 +5,7 @@ import {
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { mockVSCodeExports } from '../testSetup/vscode'
+import { mockVSCodeExports } from '../testutils/vscode'
 
 import { CodyCompletionItemProvider, inlineCompletionsCache } from '.'
 

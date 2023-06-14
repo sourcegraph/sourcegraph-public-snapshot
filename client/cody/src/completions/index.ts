@@ -77,7 +77,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         document: vscode.TextDocument,
         position: vscode.Position,
         context: vscode.InlineCompletionContext,
-        token: vscode.CancellationToken
+        // Making it optional here to execute multiple suggestion in parallel from the CLI script.
+        token?: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionItem[]> {
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
@@ -99,12 +100,15 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         document: vscode.TextDocument,
         position: vscode.Position,
         context: vscode.InlineCompletionContext,
-        token: vscode.CancellationToken
+        token?: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionItem[]> {
-        this.abortOpenInlineCompletions()
         const abortController = new AbortController()
-        token.onCancellationRequested(() => abortController.abort())
-        this.abortOpenInlineCompletions = () => abortController.abort()
+
+        if (token) {
+            this.abortOpenInlineCompletions()
+            token.onCancellationRequested(() => abortController.abort())
+            this.abortOpenInlineCompletions = () => abortController.abort()
+        }
 
         CompletionLogger.clear()
 
@@ -280,6 +284,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const logId = CompletionLogger.start({ type: 'inline', multilineMode })
 
         const results = rankCompletions(
+            // Q: does it make sense to show the first completion as soon as it's available
+            // and process others in the background ?
             (await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))).flat()
         )
 
