@@ -498,6 +498,17 @@ func (p Parameters) FileHasOwner() (include, exclude []string) {
 	return include, exclude
 }
 
+func (p Parameters) FileHasContributor() (include []string, exclude []string) {
+	VisitTypedPredicate(toNodes(p), func(pred *FileHasContributorPredicate) {
+		if pred.Negated {
+			exclude = append(exclude, pred.Contributor)
+		} else {
+			include = append(include, pred.Contributor)
+		}
+	})
+	return include, exclude
+}
+
 // Exists returns whether a parameter exists in the query (whether negated or not).
 func (p Parameters) Exists(field string) bool {
 	found := false
