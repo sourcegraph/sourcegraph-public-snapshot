@@ -2,7 +2,11 @@
 
 This page adds some additional depth and context to Sourcegraph's search GraphQL API.
 
-For general information about the GraphQL API and how to use it, see [this page instead](index.md).
+## Search Pagination in GraphQL API
+
+Sourcegraph does not support pagination for search results when using the GraphQL search API due to the dynamic nature of search queries. The order of results may vary each time you run a search, making traditional pagination unreliable.
+
+Instead, we recommend using the [stream search API](../stream_api/index.md) for scenarios where you need to run a long query and receive continuous results. This enables you to execute long-running queries.
 
 ## `src` CLI usage (easier than GraphQL)
 
