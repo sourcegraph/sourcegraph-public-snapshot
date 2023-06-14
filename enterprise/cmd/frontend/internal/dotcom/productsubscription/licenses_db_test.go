@@ -5,8 +5,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"testing"
+	"time"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -162,16 +163,15 @@ func TestAssignSiteID(t *testing.T) {
 
 	license := insertLicense(t, ctx, db, u, "key")
 
-	siteID, err := uuid.NewV4()
-	require.NoError(t, err)
-	err = store.AssignSiteID(ctx, license.ID, siteID.String())
+	siteID := uuid.NewString()
+	err = store.AssignSiteID(ctx, license.ID, siteID)
 	require.NoError(t, err)
 
 	license, err = store.GetByID(ctx, license.ID)
 	require.NoError(t, err)
 
 	require.NotNil(t, license.SiteID)
-	require.Equal(t, siteID.String(), *license.SiteID)
+	require.Equal(t, siteID, *license.SiteID)
 }
 
 func insertLicense(t *testing.T, ctx context.Context, db database.DB, user *types.User, licenseKey string) *dbLicense {
@@ -212,33 +212,135 @@ func TestProductLicenses_List(t *testing.T) {
 	ps1, err := subscriptionStore.Create(ctx, u1.ID, "")
 	require.NoError(t, err)
 
-	_, err = store.Create(ctx, ps0, "k1", 1, license.Info{})
-	require.NoError(t, err)
-	_, err = store.Create(ctx, ps0, "n1", 1, license.Info{})
-	require.NoError(t, err)
-
-	{
-		// List all product licenses.
-		ts, err := store.List(ctx, dbLicensesListOptions{})
-		require.NoError(t, err)
-		assert.Equalf(t, 2, len(ts), "got %d product licenses, want 2", len(ts))
-		count, err := store.Count(ctx, dbLicensesListOptions{})
-		require.NoError(t, err)
-		assert.Equal(t, 2, count)
+	licenses := []struct {
+		key          string
+		expiresAt    time.Time
+		revokedAt    time.Time
+		revokeReason string
+		siteID       string
+		subscription string
+		version      int
+	}{
+		{
+			key:       "k1",
+			expiresAt: time.Now().Add(-48 * time.Hour),
+			version:   1,
+		},
+		{
+			key:          "k2",
+			revokedAt:    time.Now().Add(-2 * time.Hour),
+			revokeReason: "test",
+			version:      2,
+		},
+		{
+			key:     "k3",
+			version: 2,
+		},
+		{
+			key:          "k4",
+			version:      2,
+			siteID:       uuid.NewString(),
+			subscription: ps1,
+		},
 	}
 
-	{
-		// List ps0's product licenses.
-		ts, err := store.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps0})
+	for _, l := range licenses {
+		info := license.Info{
+			ExpiresAt: time.Now().Add(365 * 24 * time.Hour), // 1 year from now
+		}
+
+		if !l.expiresAt.IsZero() {
+			info.ExpiresAt = l.expiresAt
+		}
+
+		subID := ps0
+		if l.subscription != "" {
+			subID = l.subscription
+		}
+
+		id, err := store.Create(ctx, subID, l.key, l.version, info)
 		require.NoError(t, err)
-		assert.Equalf(t, 2, len(ts), "got %d product licenses, want 2", len(ts))
+
+		if !l.revokedAt.IsZero() {
+			err = store.Revoke(ctx, id, l.revokeReason)
+			require.NoError(t, err)
+		}
+		if l.siteID != "" {
+			err = store.AssignSiteID(ctx, id, l.siteID)
+			require.NoError(t, err)
+		}
 	}
 
-	{
-		// List ps1's product licenses.
-		ts, err := store.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps1})
-		require.NoError(t, err)
-		assert.Equalf(t, 0, len(ts), "got %d product licenses, want 0", len(ts))
+	tests := []struct {
+		name          string
+		opts          dbLicensesListOptions
+		expectedCount int
+	}{
+		{
+			name:          "all",
+			opts:          dbLicensesListOptions{},
+			expectedCount: len(licenses),
+		},
+		{
+			name:          "ps0 licenses",
+			opts:          dbLicensesListOptions{ProductSubscriptionID: ps0},
+			expectedCount: len(licenses) - 1,
+		},
+		{
+			name:          "ps1 licenses",
+			opts:          dbLicensesListOptions{ProductSubscriptionID: ps1},
+			expectedCount: 1,
+		},
+		{
+			name:          "with side ID only",
+			opts:          dbLicensesListOptions{WithSiteIDsOnly: true},
+			expectedCount: 1,
+		},
+		{
+			name:          "expired only",
+			opts:          dbLicensesListOptions{Expired: boolPtr(true)},
+			expectedCount: 1,
+		},
+		{
+			name:          "non expired only",
+			opts:          dbLicensesListOptions{Expired: boolPtr(false)},
+			expectedCount: len(licenses) - 1,
+		},
+		{
+			name:          "revoked only",
+			opts:          dbLicensesListOptions{Revoked: boolPtr(true)},
+			expectedCount: 1,
+		},
+		{
+			name:          "non revoked only",
+			opts:          dbLicensesListOptions{Revoked: boolPtr(false)},
+			expectedCount: len(licenses) - 1,
+		},
+		{
+			name: "non revoked and non expired",
+			opts: dbLicensesListOptions{
+				Revoked: boolPtr(false),
+				Expired: boolPtr(false),
+			},
+			expectedCount: len(licenses) - 2,
+		},
+		{
+			name: "non revoked and non expired with site ID",
+			opts: dbLicensesListOptions{
+				Revoked:         boolPtr(false),
+				Expired:         boolPtr(false),
+				WithSiteIDsOnly: true,
+			},
+			expectedCount: 1,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ts, err := store.List(ctx, test.opts)
+			require.NoError(t, err)
+			assert.Equalf(t, test.expectedCount, len(ts), "got %d product licenses, want %d", len(ts), test.expectedCount)
+		})
 	}
 }
 

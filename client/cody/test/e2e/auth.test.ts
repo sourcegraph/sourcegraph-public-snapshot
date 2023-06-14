@@ -25,7 +25,7 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
 
     await page.getByRole('button', { name: 'Chat Section' }).hover()
 
-    await page.click('[aria-label="Cody: Settings"]')
+    await page.click('[aria-label="Settings"]')
     await sidebar.getByRole('button', { name: 'Logout' }).click()
 
     await expect(sidebar.getByRole('button', { name: 'Sign In' })).toBeVisible()

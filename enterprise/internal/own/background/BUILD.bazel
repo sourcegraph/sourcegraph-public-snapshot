@@ -15,7 +15,6 @@ go_library(
     deps = [
         "//enterprise/internal/codeintel/shared/background",
         "//enterprise/internal/own",
-        "//enterprise/internal/own/codeowners/v1:codeowners",
         "//enterprise/internal/own/types",
         "//internal/actor",
         "//internal/api",
