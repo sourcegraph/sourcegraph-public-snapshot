@@ -400,6 +400,7 @@ describe('Repository component', () => {
                     )
                 )
 
+                // Expect the names
                 expect(sortBy(symbolNames)).toEqual(sortBy(symbolTest.symbolNames))
                 expect(sortBy(symbolTypes)).toEqual(sortBy(symbolTest.symbolTypes))
             })
