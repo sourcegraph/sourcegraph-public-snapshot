@@ -167,12 +167,14 @@ type RestCommit struct {
 	Message      string              `json:"message"`
 	Tree         restCommitTree      `json:"tree"`
 	Parents      []restCommitParent  `json:"parents"`
-	Verification struct {
-		Verified  bool   `json:"verified"`
-		Reason    string `json:"reason"`
-		Signature string `json:"signature"`
-		Payload   string `json:"payload"`
-	} `json:"verification"`
+	Verification Verification        `json:"verification"`
+}
+
+type Verification struct {
+	Verified  bool   `json:"verified"`
+	Reason    string `json:"reason"`
+	Signature string `json:"signature"`
+	Payload   string `json:"payload"`
 }
 
 // An updated reference in a Repository, returned from the REST API `update-ref` endpoint.

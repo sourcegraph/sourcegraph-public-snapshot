@@ -666,7 +666,7 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 			if err != nil {
 				return errors.Wrap(err, "failed to duplicate commit")
 			}
-			if newCommit.Verification.Verified == true {
+			if newCommit.Verification.Verified {
 				e.tx.UpdateChangesetSpecCommitVerification(ctx, e.spec.ID, newCommit)
 			}
 		}

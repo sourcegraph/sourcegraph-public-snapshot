@@ -609,7 +609,7 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 		return errors.Wrapf(err, "scanChangesetSpecs: failed to unmarshal commitVerification: %s", commitVerification)
 	}
 
-	if cv.Verified == true {
+	if cv.Verified {
 		c.CommitVerification = cv
 	}
 
