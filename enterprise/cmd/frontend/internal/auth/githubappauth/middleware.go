@@ -136,15 +136,14 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		gqlID := req.URL.Query().Get("id")
 		domain := req.URL.Query().Get("domain")
 		if gqlID == "" {
-			stateDetails := gitHubAppStateDetails{}
 			// we marshal an empty `gitHubAppStateDetails` struct because we want the values saved in the cache
 			// to always conform to the same structure.
-			stateDeets, err := json.Marshal(stateDetails)
+			stateDetails, err := json.Marshal(gitHubAppStateDetails{})
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
 				return
 			}
-			cache.Set(s, stateDeets)
+			cache.Set(s, stateDetails)
 
 			_, _ = w.Write([]byte(s))
 			return
@@ -155,18 +154,16 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Error(w, fmt.Sprintf("Unexpected error while unmarshalling App ID: %s", err.Error()), http.StatusBadRequest)
 			return
 		}
-
-		stateDetails := gitHubAppStateDetails{
+		stateDetails, err := json.Marshal(gitHubAppStateDetails{
 			AppID:  int(id64),
 			Domain: domain,
-		}
-		stateDeets, err := json.Marshal(stateDetails)
+		})
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
 
-		cache.Set(s, stateDeets)
+		cache.Set(s, stateDetails)
 
 		_, _ = w.Write([]byte(s))
 	})
@@ -198,17 +195,16 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
-		stateDetails := gitHubAppStateDetails{
+		stateDetails, err := json.Marshal(gitHubAppStateDetails{
 			WebhookUUID: webhookUUID,
 			Domain:      domain,
-		}
-		stateDeets, err := json.Marshal(stateDetails)
+		})
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
 
-		cache.Set(s, stateDeets)
+		cache.Set(s, stateDetails)
 
 		resp := struct {
 			State       string `json:"state"`
@@ -250,8 +246,8 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
-		var stateDeets gitHubAppStateDetails
-		err := json.Unmarshal(stateValue, &stateDeets)
+		var stateDetails gitHubAppStateDetails
+		err := json.Unmarshal(stateValue, &stateDetails)
 		if err != nil {
 			http.Error(w, "Bad request, invalid state", http.StatusBadRequest)
 			return
@@ -259,7 +255,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		// Wait until we've validated the type of state before deleting it from the cache.
 		cache.Delete(state)
 
-		webhookUUID, err := uuid.Parse(stateDeets.WebhookUUID)
+		webhookUUID, err := uuid.Parse(stateDetails.WebhookUUID)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Bad request, could not parse webhook UUID: %v", err), http.StatusBadRequest)
 			return
@@ -271,7 +267,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
-		domain, err := parseDomain(&stateDeets.Domain)
+		domain, err := parseDomain(&stateDetails.Domain)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unable to parse domain: %v", err), http.StatusBadRequest)
 			return
@@ -308,16 +304,15 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
-		newStateDetails := gitHubAppStateDetails{
-			Domain: stateDeets.Domain,
+		newStateDetails, err := json.Marshal(gitHubAppStateDetails{
+			Domain: stateDetails.Domain,
 			AppID:  id,
-		}
-		newStateDeets, err := json.Marshal(newStateDetails)
+		})
 		if err != nil {
 			http.Error(w, fmt.Sprintf("unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
-		cache.Set(state, newStateDeets)
+		cache.Set(state, newStateDetails)
 
 		// The installations page often takes a few seconds to become available after the
 		// app is first created, so we sleep for a bit to give it time to load. The exact
@@ -362,8 +357,8 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
-		var stateDeets gitHubAppStateDetails
-		err := json.Unmarshal(setupInfo, &stateDeets)
+		var stateDetails gitHubAppStateDetails
+		err := json.Unmarshal(setupInfo, &stateDetails)
 		if err != nil {
 			redirectURL := generateRedirectURL(nil, nil, nil, nil, errors.New("Bad request, invalid state"))
 			http.Redirect(w, req, redirectURL, http.StatusFound)
@@ -374,7 +369,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 
 		installationID, err := strconv.Atoi(instID)
 		if err != nil {
-			redirectURL := generateRedirectURL(&stateDeets.Domain, nil, &stateDeets.AppID, nil, errors.New("Bad request, could not parse installation ID"))
+			redirectURL := generateRedirectURL(&stateDetails.Domain, nil, &stateDetails.AppID, nil, errors.New("Bad request, could not parse installation ID"))
 			http.Redirect(w, req, redirectURL, http.StatusFound)
 			return
 		}
@@ -382,23 +377,23 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		action := query.Get("setup_action")
 		if action == "install" {
 			ctx := req.Context()
-			app, err := db.GitHubApps().GetByID(ctx, stateDeets.AppID)
+			app, err := db.GitHubApps().GetByID(ctx, stateDetails.AppID)
 			if err != nil {
-				redirectURL := generateRedirectURL(&stateDeets.Domain, &installationID, &stateDeets.AppID, nil, errors.Newf("Unexpected error while fetching GitHub App from DB: %s", err.Error()))
+				redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, nil, errors.Newf("Unexpected error while fetching GitHub App from DB: %s", err.Error()))
 				http.Redirect(w, req, redirectURL, http.StatusFound)
 				return
 			}
 
 			auther, err := ghaauth.NewGitHubAppAuthenticator(app.AppID, []byte(app.PrivateKey))
 			if err != nil {
-				redirectURL := generateRedirectURL(&stateDeets.Domain, &installationID, &stateDeets.AppID, nil, errors.Newf("Unexpected error while creating GitHubAppAuthenticator: %s", err.Error()))
+				redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, nil, errors.Newf("Unexpected error while creating GitHubAppAuthenticator: %s", err.Error()))
 				http.Redirect(w, req, redirectURL, http.StatusFound)
 				return
 			}
 
 			baseURL, err := url.Parse(app.BaseURL)
 			if err != nil {
-				redirectURL := generateRedirectURL(&stateDeets.Domain, &installationID, &stateDeets.AppID, nil, errors.Newf("Unexpected error while parsing App base URL: %s", err.Error()))
+				redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, nil, errors.Newf("Unexpected error while parsing App base URL: %s", err.Error()))
 				http.Redirect(w, req, redirectURL, http.StatusFound)
 				return
 			}
@@ -415,7 +410,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 
 			remoteInstall, err := client.GetAppInstallation(ctx, int64(installationID))
 			if err != nil {
-				redirectURL := generateRedirectURL(&stateDeets.Domain, &installationID, &stateDeets.AppID, nil, errors.Newf("Unexpected error while fetching App installation details from GitHub: %s", err.Error()))
+				redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, nil, errors.Newf("Unexpected error while fetching App installation details from GitHub: %s", err.Error()))
 				http.Redirect(w, req, redirectURL, http.StatusFound)
 				return
 			}
@@ -430,12 +425,12 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 				AccountType:      remoteInstall.Account.GetType(),
 			})
 			if err != nil {
-				redirectURL := generateRedirectURL(&stateDeets.Domain, &installationID, &stateDeets.AppID, &app.Name, errors.Newf("Unexpected error while creating GitHub App installation: %s", err.Error()))
+				redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, &app.Name, errors.Newf("Unexpected error while creating GitHub App installation: %s", err.Error()))
 				http.Redirect(w, req, redirectURL, http.StatusFound)
 				return
 			}
 
-			redirectURL := generateRedirectURL(&stateDeets.Domain, &installationID, &app.ID, &app.Name, nil)
+			redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &app.ID, &app.Name, nil)
 			http.Redirect(w, req, redirectURL, http.StatusFound)
 			return
 		} else {
