@@ -327,7 +327,7 @@ func runPostgresReindex() {
 		fmt.Printf("To perform the reindexing process now, please review the instructions at https://docs.sourcegraph.com/admin/migration/5_1 and restart the container with the environment variable `SOURCEGRAPH_5_1_DB_MIGRATION=true` set.\n")
 		fmt.Printf("\n**************** MIGRATION REQUIRED **************\n\n")
 
-		os.Exit(1)
+		os.Exit(101)
 	}
 
 	cmd := exec.Command("/bin/bash", "/reindex.sh")
