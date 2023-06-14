@@ -22,24 +22,17 @@ export const LoginMenuQuickPick = async (historyItems: string[]): Promise<LoginM
     return option
 }
 
-export async function LoginStepInputBox(title: string, needToken: boolean): Promise<LoginInput | null> {
+// step 1 is to get the endpoint, step 2 is to get the token
+export async function LoginStepInputBox(title: string, step: number, needToken: boolean): Promise<LoginInput | null> {
     // Get endpoint
-    const options = LoginStepOptions[0]
+    const options = LoginStepOptions[step - 1]
     options.title = title
     const endpoint = await vscode.window.showInputBox(options)
     if (!needToken || !endpoint) {
         return { endpoint, token: null }
     }
     const token = await vscode.window.showInputBox(LoginStepOptions[1])
-    console.log(token)
     return { endpoint, token }
-}
-
-export async function LoginStepInputBox1(title: string, step: number): Promise<string | null> {
-    const options = LoginStepOptions[step - 1]
-    options.title = title
-    const input = await vscode.window.showInputBox(options)
-    return input || null
 }
 
 export const LoginMenuOptions = {

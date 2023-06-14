@@ -54,6 +54,7 @@ export function convertGitCloneURLToCodebaseName(cloneURL: string): string | nul
  * @returns The user's authentication status. It's for frontend to display when instance is on unsupported version if siteHasCodyEnabled is false
  */
 export function newAuthStatus(
+    endpoint: string,
     isDotComOrApp: boolean,
     user: boolean,
     isEmailVerified: boolean,
@@ -61,9 +62,9 @@ export function newAuthStatus(
     version: string
 ): AuthStatus {
     if (!user) {
-        return { ...unauthenticatedStatus }
+        return { ...unauthenticatedStatus, endpoint }
     }
-    const newAuthStatus = { ...defaultAuthStatus }
+    const newAuthStatus = { ...defaultAuthStatus, endpoint }
     // Set values and return early
     newAuthStatus.authenticated = user
     newAuthStatus.showInvalidAccessTokenError = !user

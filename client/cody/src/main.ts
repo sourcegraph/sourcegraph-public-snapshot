@@ -4,7 +4,7 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
-import { CODY_FEEDBACK_URL } from './chat/protocol'
+import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
@@ -179,6 +179,7 @@ const register = async (
         vscode.commands.registerCommand('cody.delete-access-token', async () => {
             await chatProvider.logout()
         }),
+        vscode.commands.registerCommand('cody.auth.verify', (state: AuthStatus) => chatProvider.sendLogin(state)),
         vscode.commands.registerCommand('cody.auth.login', (endpoint: string) => authProvider.login(endpoint)),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         vscode.commands.registerCommand('cody.clear-chat-history', async () => {

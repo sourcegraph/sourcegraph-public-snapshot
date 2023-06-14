@@ -690,13 +690,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 accessToken: this.config.accessToken,
                 customHeaders: this.config.customHeaders,
             })
-            void this.localAppDetector.detect()
+            const localProcess = this.localAppDetector.getProcessInfo()
             // Remove local app detector if user is logged in
             if (isLoggedIn(authStatus)) {
                 this.localAppDetector.dispose()
-                this.sendLocalAppState(true)
             }
-            const localProcess = this.localAppDetector.getProcessInfo()
+            this.sendLocalAppState(localProcess.isAppInstalled)
             const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,

@@ -10,9 +10,9 @@ export interface LocalProcess {
 const LOCAL_APP_LOCATIONS: { [key: string]: string[] } = {
     // Only apply silicon is supported
     darwin: [
+        '~/Library/Application Support/com.sourcegraph.cody',
         '/Applications/Sourcegraph.app',
         '/Applications/Cody.app',
-        '/Library/Application Support/com.sourcegraph.cody',
     ],
 }
 
@@ -25,6 +25,13 @@ async function pathExists(path: string): Promise<boolean> {
     }
 }
 
+function expandHomeDir(path: string): string {
+    if (path.startsWith('~/')) {
+        return path.replace('~', process.env.HOME || '')
+    }
+    return path
+}
+
 type OnChangeCallback = (value: boolean) => void
 
 /**
@@ -35,7 +42,7 @@ export class LocalAppDetector implements vscode.Disposable {
     private platformName: string
     private homeDir: string | undefined
 
-    private isSupported = false
+    private isSupported: boolean
     private isInstalled = false
     private localAppMarkers: string[] | undefined
 
@@ -58,21 +65,16 @@ export class LocalAppDetector implements vscode.Disposable {
         if (!startCondition || !this.localAppMarkers) {
             return
         }
-        const foundPaths = new Set()
         for (const marker of this.localAppMarkers) {
-            const markerExists = await pathExists(marker)
+            const markerExists = await pathExists(expandHomeDir(marker))
             if (markerExists) {
-                foundPaths.add(marker)
+                this.fire(true)
             }
         }
-        // Check if Sourcegraph.app/Cody.aoo AND com.sourcegraph.cody are found
-        this.fire(foundPaths.size === 2)
     }
 
-    private fire(state: boolean): void {
-        if (!this.isSupported) {
-            return
-        }
+    private fire(condition: boolean): void {
+        const state = this.isInstalled || (condition && this.isSupported)
         this.onChange(state)
         this.isInstalled = state
     }
@@ -83,6 +85,7 @@ export class LocalAppDetector implements vscode.Disposable {
         if (!startCondition || !markers || !this.homeDir) {
             return
         }
+        void this.detect()
         for (const marker of markers) {
             const watchPattern = new vscode.RelativePattern(this.homeDir, `${marker}`)
             const watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
@@ -91,11 +94,10 @@ export class LocalAppDetector implements vscode.Disposable {
             watcher.onDidDelete(() => this.detect())
             this._watchers.push(watcher)
         }
-        void this.detect()
     }
 
     private canStart(): boolean {
-        if (!this.isSupported || this._watchers.length || this.isInstalled || !this.homeDir) {
+        if (!this.isSupported || !this.homeDir) {
             return false
         }
         return true
@@ -115,9 +117,6 @@ export class LocalAppDetector implements vscode.Disposable {
     }
 
     public dispose(): void {
-        if (!this._watchers.length) {
-            return
-        }
         for (const watcher of this._watchers) {
             watcher.dispose()
         }

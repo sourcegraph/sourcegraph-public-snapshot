@@ -62,6 +62,7 @@ export const CODY_FEEDBACK_URL = new URL(
  * verified email.
  */
 export interface AuthStatus {
+    endpoint: string | null
     showInvalidAccessTokenError: boolean
     authenticated: boolean
     hasVerifiedEmail: boolean
@@ -71,6 +72,7 @@ export interface AuthStatus {
 }
 
 export const defaultAuthStatus = {
+    endpoint: null,
     showInvalidAccessTokenError: false,
     authenticated: false,
     hasVerifiedEmail: false,
@@ -80,6 +82,7 @@ export const defaultAuthStatus = {
 }
 
 export const unauthenticatedStatus = {
+    endpoint: null,
     showInvalidAccessTokenError: true,
     authenticated: false,
     hasVerifiedEmail: false,

@@ -41,7 +41,7 @@ export class AuthProvider {
         }
         switch (item?.id) {
             case 'enterprise': {
-                const input = await LoginStepInputBox(item.label, false)
+                const input = await LoginStepInputBox(item.label, 1, false)
                 if (!input?.endpoint) {
                     return
                 }
@@ -53,20 +53,25 @@ export class AuthProvider {
                 this.redirectToEndpointLogin(true)
                 break
             case 'token': {
-                const input = await LoginStepInputBox(item.label, true)
-                await this.storeAuthInfo(input?.endpoint, input?.token)
+                const input = await LoginStepInputBox(item.label, 1, true)
+                if (!input?.endpoint || !input?.token) {
+                    console.log('No endpoint or token provided')
+                    return
+                }
+                await this.auth(input?.endpoint, input?.token || null)
                 break
             }
             default: {
                 // Auto log user if token for the selected instance was found in secret
                 const selectedEndpoint = item.label
+                this.setEndpoint(selectedEndpoint)
                 const token = await this.secretStorage.get(selectedEndpoint)
                 const authedUser = await this.auth(selectedEndpoint, token || null)
                 if (authedUser) {
                     return
                 }
-                const input = await LoginStepInputBox(item.label, true)
-                await this.storeAuthInfo(selectedEndpoint, input?.token)
+                const input = await LoginStepInputBox(item.label, 2, false)
+                await this.auth(selectedEndpoint, input?.token || null)
             }
         }
     }
@@ -74,8 +79,9 @@ export class AuthProvider {
     public async getAuthStatus(
         config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
     ): Promise<AuthStatus> {
-        if (!config.accessToken || !config.serverEndpoint) {
-            return { ...defaultAuthStatus }
+        const endpoint = config.serverEndpoint
+        if (!config.accessToken || !endpoint) {
+            return { ...defaultAuthStatus, endpoint }
         }
         // Cache the config and the GraphQL client
         if (this.config !== config || !this.client) {
@@ -84,30 +90,28 @@ export class AuthProvider {
         }
         // Version is for frontend to check if Cody is not enabled due to unsupported version when siteHasCodyEnabled is false
         const { enabled, version } = await this.client.isCodyEnabled()
-        const isDotComOrApp = this.client.isDotCom() || isLocalApp(config.serverEndpoint)
+        const isDotComOrApp = this.client.isDotCom() || isLocalApp(endpoint)
         if (!isDotComOrApp) {
             const currentUserID = await this.client.getCurrentUserId()
-            return newAuthStatus(isDotComOrApp, !isError(currentUserID), false, enabled, version)
+            return newAuthStatus(endpoint, isDotComOrApp, !isError(currentUserID), false, enabled, version)
         }
         const userInfo = await this.client.getCurrentUserIdAndVerifiedEmail()
         return isError(userInfo)
-            ? { ...unauthenticatedStatus }
-            : newAuthStatus(isDotComOrApp, !!userInfo.id, userInfo.hasVerifiedEmail, true, version)
+            ? { ...unauthenticatedStatus, endpoint }
+            : newAuthStatus(endpoint, isDotComOrApp, !!userInfo.id, userInfo.hasVerifiedEmail, true, version)
     }
 
     // It process the authetication steps and store the login info.
     // Returns Auth state
     public async auth(endpoint: string, token: string | null, customHeaders?: {}): Promise<boolean> {
+        await this.storeAuthInfo(endpoint, token)
         const config = {
             serverEndpoint: endpoint,
             accessToken: token,
             customHeaders: customHeaders || this.config.customHeaders,
         }
         const authStatus = await this.getAuthStatus(config)
-        const userIsLoggedIn = isLoggedIn(authStatus)
-        // activate extension when user has valid login
-        await vscode.commands.executeCommand('setContext', 'cody.activated', userIsLoggedIn)
-        // return { isAuthed: isLoggedIn(authStatus), authStatus }
+        await vscode.commands.executeCommand('cody.auth.verify', authStatus)
         return isLoggedIn(authStatus)
     }
 
