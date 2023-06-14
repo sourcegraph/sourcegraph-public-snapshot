@@ -95,9 +95,7 @@ func TestBitbucketCloudRepoName(t *testing.T) {
     for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			repoName := BitbucketCloudRepoName(testCase.repositoryPathPattern, testCase.host, testCase.nameWithOwner)
-			if repoName != testCase.expected {
-				t.Errorf("Expected %s but got %s for repositoryPathPattern %s, host %s and nameWithOwner %s", testCase.expected, repoName, testCase.repositoryPathPattern, testCase.host, testCase.nameWithOwner)
-			}
+			assert.Equal(t, testCase.expected, repoName)
 		})
     }
 }
