@@ -4,7 +4,11 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "resolvers",
     srcs = [
+        "assigned_owners.go",
+        "codeowners.go",
         "codeowners_resolvers.go",
+        "recent_contributors_signal.go",
+        "recent_view_signal.go",
         "resolvers.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/own/resolvers",

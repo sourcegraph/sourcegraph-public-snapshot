@@ -60,6 +60,7 @@ func (r Reference) ResolutionGuess() codeowners.ResolvedOwner {
 		return nil
 	}
 	// If this is a GitHub repo and the handle contains a "/", then we can tell that this is a team.
+	// TODO this does not work well with team resolver which expects team to be in the DB.
 	if r.RepoContext != nil && strings.ToLower(r.RepoContext.CodeHostKind) == extsvc.VariantGitHub.AsType() && strings.Contains(r.Handle, "/") {
 		return &codeowners.Team{
 			Handle: r.Handle,
@@ -222,6 +223,9 @@ func (b bag) FindResolved(ref Reference) (codeowners.ResolvedOwner, bool) {
 	}
 	if e := ref.Email; e != "" {
 		ks = append(ks, refKey{email: e})
+	}
+	if id := ref.TeamID; id != 0 {
+		ks = append(ks, refKey{teamID: id})
 	}
 	// Attempt to find user by any reference:
 	for _, k := range ks {
@@ -487,7 +491,10 @@ type refKey struct {
 
 func (k refKey) String() string {
 	if id := k.userID; id != 0 {
-		return fmt.Sprintf("#%d", id)
+		return fmt.Sprintf("u%d", id)
+	}
+	if id := k.teamID; id != 0 {
+		return fmt.Sprintf("t%d", id)
 	}
 	if h := k.handle; h != "" {
 		return fmt.Sprintf("@%s", h)
@@ -502,10 +509,6 @@ func (k refKey) String() string {
 // It queries by email, userID, user name or team name based on what information
 // is available.
 func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences, *teamReferences, error) {
-	// refKey must contain at least one reference.
-	if k.handle == "" && k.email == "" && k.userID == 0 {
-		return nil, nil, errors.New("empty refKey is not valid")
-	}
 	if k.userID != 0 {
 		return &userReferences{id: k.userID}, nil, nil
 	}
