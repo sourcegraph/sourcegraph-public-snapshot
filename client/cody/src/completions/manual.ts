@@ -11,8 +11,13 @@ import { ReferenceSnippet, getContext } from './context'
 import { CompletionsDocumentProvider } from './docprovider'
 import { getCurrentDocContext } from './document'
 import { History } from './history'
-import { batchCompletions, sliceUntilFirstNLinesOfSuffixMatch } from './provider'
-import { SNIPPET_WINDOW_SIZE, lastNLines, messagesToText } from './utils'
+import {
+    batchCompletions,
+    sliceUntilFirstNLinesOfSuffixMatch,
+    SNIPPET_WINDOW_SIZE,
+    lastNLines,
+    messagesToText,
+} from './utils'
 
 const LOG_MANUAL = { type: 'manual' }
 

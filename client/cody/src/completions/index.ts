@@ -13,7 +13,7 @@ import { getCurrentDocContext } from './document'
 import { History } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultilineMode } from './multiline'
-import { CompletionProvider, InlineCompletionProvider } from './provider'
+import { CompletionProvider, InlineCompletionProvider } from './post-process'
 import { SNIPPET_WINDOW_SIZE, lastNLines } from './utils'
 
 export const inlineCompletionsCache = new CompletionsCache()

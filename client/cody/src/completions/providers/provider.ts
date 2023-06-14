@@ -1,38 +1,32 @@
 import { Completion } from '..'
 import { ReferenceSnippet } from '../context'
 
+export interface ProviderOptions {
+    prefix: string
+    suffix: string
+    fileName: string
+    languageId: string
+    snippets: ReferenceSnippet[]
+    multilineMode: null | 'block'
+    n: number
+}
+
 export abstract class Provider {
     protected prefix: string
     protected suffix: string
     protected fileName: string
     protected languageId: string
     protected snippets: ReferenceSnippet[]
-    protected multiline: boolean
+    protected multilineMode: null | 'block'
     protected n: number
 
-    constructor({
-        prefix,
-        suffix,
-        fileName,
-        languageId,
-        snippets,
-        multiline,
-        n = 1,
-    }: {
-        prefix: string
-        suffix: string
-        fileName: string
-        languageId: string
-        snippets: ReferenceSnippet[]
-        multiline: boolean
-        n: number
-    }) {
+    constructor({ prefix, suffix, fileName, languageId, snippets, multilineMode, n = 1 }: ProviderOptions) {
         this.prefix = prefix
         this.suffix = suffix
         this.fileName = fileName
         this.languageId = languageId
         this.snippets = snippets
-        this.multiline = multiline
+        this.multilineMode = multilineMode
         this.n = n
     }
 
