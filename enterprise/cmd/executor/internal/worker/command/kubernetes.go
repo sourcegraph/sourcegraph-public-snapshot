@@ -270,42 +270,6 @@ func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, logger cmdl
 	return nil, errors.New("unexpected end of watch")
 }
 
-func (c *KubernetesCommand) handleContainers(
-	ctx context.Context,
-	logger cmdlogger.Logger,
-	namespace string,
-	pod *corev1.Pod,
-	containerStatus []corev1.ContainerStatus,
-	containerLoggers map[string]containerLogger,
-	specs []Spec,
-) error {
-	for _, status := range containerStatus {
-		// If the container is waiting, it hasn't started yet, so skip it.
-		if status.State.Waiting != nil {
-			continue
-		}
-		// If the container is not waiting, then it has either started or completed. Either way, we will want to
-		// create the logEntry if it doesn't exist.
-		l, ok := containerLoggers[status.Name]
-		if !ok {
-			// Potentially the container completed too quickly, so we may not have started the log entry yet.
-			key, command := getLogMetadata(status.Name, specs)
-			containerLoggers[status.Name] = containerLogger{logEntry: logger.LogEntry(key, command)}
-			l = containerLoggers[status.Name]
-		}
-		// We only want to read the logs once. If the log entry is already completed, we can skip it.
-		// Waiting for the container to complete also gives us access to the exit code.
-		if status.State.Terminated != nil && !l.completed {
-			if err := c.ReadLogs(ctx, namespace, pod, status.Name, containerStatus, l.logEntry); err != nil {
-				return err
-			}
-			l.completed = true
-			containerLoggers[status.Name] = l
-		}
-	}
-	return nil
-}
-
 func kubernetesTimep(key string, time *metav1.Time) log.Field {
 	if time == nil {
 		return log.Timep(key, nil)
@@ -336,6 +300,42 @@ func kubernetesConditions(key string, conditions []corev1.PodCondition) log.Fiel
 	)
 }
 
+func (c *KubernetesCommand) handleContainers(
+	ctx context.Context,
+	logger cmdlogger.Logger,
+	namespace string,
+	pod *corev1.Pod,
+	containerStatus []corev1.ContainerStatus,
+	containerLoggers map[string]containerLogger,
+	specs []Spec,
+) error {
+	for _, status := range containerStatus {
+		// If the container is waiting, it hasn't started yet, so skip it.
+		if status.State.Waiting != nil {
+			continue
+		}
+		// If the container is not waiting, then it has either started or completed. Either way, we will want to
+		// create the logEntry if it doesn't exist.
+		l, ok := containerLoggers[status.Name]
+		if !ok {
+			// Potentially the container completed too quickly, so we may not have started the log entry yet.
+			key, command := getLogMetadata(status.Name, specs)
+			containerLoggers[status.Name] = containerLogger{logEntry: logger.LogEntry(key, command)}
+			l = containerLoggers[status.Name]
+		}
+		// We only want to read the logs once. If the log entry is already completed, we can skip it.
+		// Waiting for the container to complete also gives us access to the exit code.
+		if status.State.Terminated != nil && !l.completed {
+			if err := c.readLogs(ctx, namespace, pod, status.Name, containerStatus, l.logEntry); err != nil {
+				return err
+			}
+			l.completed = true
+			containerLoggers[status.Name] = l
+		}
+	}
+	return nil
+}
+
 func getLogMetadata(key string, specs []Spec) (string, []string) {
 	for _, step := range specs {
 		if step.Name == key {
@@ -356,8 +356,8 @@ type containerLogger struct {
 	completed bool
 }
 
-// ReadLogs reads the logs of the given pod and writes them to the logger.
-func (c *KubernetesCommand) ReadLogs(
+// readLogs reads the logs of the given pod and writes them to the logger.
+func (c *KubernetesCommand) readLogs(
 	ctx context.Context,
 	namespace string,
 	pod *corev1.Pod,
