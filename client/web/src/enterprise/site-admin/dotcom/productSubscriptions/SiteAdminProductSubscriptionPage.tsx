@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { logger } from '@sourcegraph/common'
@@ -18,6 +18,7 @@ import {
     SummaryContainer,
 } from '../../../../components/FilteredConnection/ui'
 import { PageTitle } from '../../../../components/PageTitle'
+import { useScrollToLocationHash } from '../../../../components/useScrollToLocationHash'
 import { useFeatureFlag } from '../../../../featureFlags/useFeatureFlag'
 import {
     DotComProductSubscriptionResult,
@@ -234,6 +235,15 @@ const ProductSubscriptionLicensesConnection: React.FunctionComponent<{
         setRefetch(refetchAll)
     }, [setRefetch, refetchAll])
 
+    const location = useLocation()
+    const licenseIDFromLocationHash = useMemo(() => {
+        if (location.hash.length > 1) {
+            return decodeURIComponent(location.hash.slice(1))
+        }
+        return
+    }, [location.hash])
+    useScrollToLocationHash(location)
+
     return (
         <ConnectionContainer>
             {error && <ConnectionError errors={[error.message]} />}
@@ -243,6 +253,7 @@ const ProductSubscriptionLicensesConnection: React.FunctionComponent<{
                     <SiteAdminProductLicenseNode
                         key={node.id}
                         node={node}
+                        defaultExpanded={node.id === licenseIDFromLocationHash}
                         showSubscription={false}
                         onRevokeCompleted={refetchAll}
                     />

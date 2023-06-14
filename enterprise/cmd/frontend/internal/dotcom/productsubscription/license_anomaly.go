@@ -131,7 +131,7 @@ SELECT EXTRACT(EPOCH FROM p50)::int AS p50_seconds FROM percentiles
 `
 
 const slackMessageFmt = `
-The license key ID: ` + "`%s`" + ` for <%s/site-admin/dotcom/product/subscriptions/%s|subscription %s> seems to be used on multiple customer instances with the same site ID: ` + "`%s`" + `.
+The license key ID <%s/site-admin/dotcom/product/subscriptions/%s#%s|%s> seems to be used on multiple customer instances with the same site ID: "%s.
 
 To fix it, <https://app.golinks.io/internal-licensing-faq-slack-multiple|follow the guide to update the siteID and license key for all customer instances>.
 `
@@ -168,7 +168,7 @@ func checkP50CallTimeForLicense(ctx context.Context, logger log.Logger, db datab
 	}
 
 	err = client.Post(context.Background(), &slack.Payload{
-		Text: fmt.Sprintf(slackMessageFmt, license.ID, externalURL.String(), license.ProductSubscriptionID, license.ProductSubscriptionID, *license.SiteID),
+		Text: fmt.Sprintf(slackMessageFmt, externalURL.String(), url.QueryEscape(license.ProductSubscriptionID), url.QueryEscape(license.ID), license.ID, *license.SiteID),
 	})
 	if err != nil {
 		logger.Error("error sending Slack message", log.Error(err))
