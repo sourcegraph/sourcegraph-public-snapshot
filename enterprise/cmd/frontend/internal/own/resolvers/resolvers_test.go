@@ -2182,13 +2182,17 @@ func TestDisplayOwnershipStats(t *testing.T) {
 				instanceOwnershipStats {
 					totalFiles
 					totalCodeownedFiles
+					totalOwnedFiles
+					totalAssignedOwnershipFiles
 				}
 			}`,
 		ExpectedResult: `
 			{
 				"instanceOwnershipStats": {
 					"totalFiles": 350000,
-					"totalCodeownedFiles" : 150000
+					"totalCodeownedFiles" : 150000,
+					"totalOwnedFiles" : 0,
+					"totalAssignedOwnershipFiles" : 0
 				}
 			}`,
 	})

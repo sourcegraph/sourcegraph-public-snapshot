@@ -418,6 +418,14 @@ func (r *ownStatsResolver) TotalCodeownedFiles(ctx context.Context) (int32, erro
 	return int32(counts.CodeownedFileCount), nil
 }
 
+func (r *ownStatsResolver) TotalOwnedFiles(context.Context) (int32, error) {
+	return 0, nil
+}
+
+func (r *ownStatsResolver) TotalAssignedOwnershipFiles(context.Context) (int32, error) {
+	return 0, nil
+}
+
 type ownershipConnectionResolver struct {
 	db         edb.EnterpriseDB
 	total      int
