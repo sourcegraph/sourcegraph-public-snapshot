@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiAccount, mdiPencil, mdiPlus } from '@mdi/js'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import {
@@ -31,8 +31,8 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
     repo,
     telemetryService,
 }) => {
-    const queryParameters = new URLSearchParams(location.search)
-    const filePath = queryParameters.get('path') ?? ''
+    const [searchParams] = useSearchParams()
+    const filePath = searchParams.get('path') ?? ''
 
     useBreadcrumb(
         useMemo(() => {
