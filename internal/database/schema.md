@@ -3059,11 +3059,13 @@ One entry per file changed in every commit that classifies as a contribution sig
 
 # Table "public.ownership_path_stats"
 ```
-           Column           |            Type             | Collation | Nullable | Default 
-----------------------------+-----------------------------+-----------+----------+---------
- file_path_id               | integer                     |           | not null | 
- tree_codeowned_files_count | integer                     |           |          | 
- last_updated_at            | timestamp without time zone |           | not null | 
+               Column                |            Type             | Collation | Nullable | Default 
+-------------------------------------+-----------------------------+-----------+----------+---------
+ file_path_id                        | integer                     |           | not null | 
+ tree_codeowned_files_count          | integer                     |           |          | 
+ last_updated_at                     | timestamp without time zone |           | not null | 
+ tree_assigned_ownership_files_count | integer                     |           |          | 
+ tree_any_ownership_files_count      | integer                     |           |          | 
 Indexes:
     "ownership_path_stats_pkey" PRIMARY KEY, btree (file_path_id)
 Foreign-key constraints:

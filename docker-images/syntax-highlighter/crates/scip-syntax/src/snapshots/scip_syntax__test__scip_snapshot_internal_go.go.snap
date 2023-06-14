@@ -3,7 +3,7 @@ source: crates/scip-syntax/src/lib.rs
 expression: dumped
 ---
   package memo
-//        ^^^^ definition scip-ctags memo/
+//        ^^^^ definition(Package) scip-ctags memo/
   
   import "sync"
   
@@ -26,7 +26,7 @@ expression: dumped
   
   // NewMemoizedConstructor memoizes the given constructor
   func NewMemoizedConstructorWithArg[A, T any](ctor func(A) (T, error)) *MemoizedConstructorWithArg[A, T] {
-//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition scip-ctags memo/NewMemoizedConstructorWithArg().
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ definition(Function) scip-ctags memo/NewMemoizedConstructorWithArg().
    return &MemoizedConstructorWithArg[A, T]{ctor: ctor}
   }
   

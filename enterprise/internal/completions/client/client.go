@@ -46,68 +46,66 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) *schema.Completio
 		return nil
 	}
 
-	// When the Completions is present always use it
-	if completionsConfig != nil {
-		// If a provider is not set, or if the provider is Cody Gateway, set up
-		// magic defaults. Note that we do NOT enable completions for the user -
-		// that still needs to be explicitly configured.
-		if completionsConfig.Provider == "" || completionsConfig.Provider == codygateway.ProviderName {
-			// Set provider to Cody Gateway in case it's empty.
-			completionsConfig.Provider = codygateway.ProviderName
+	// If a provider is not set, or if the provider is Cody Gateway, set up
+	// magic defaults. Note that we do NOT enable completions for the user -
+	// that still needs to be explicitly configured.
+	if completionsConfig.Provider == "" || completionsConfig.Provider == codygateway.ProviderName {
+		// Set provider to Cody Gateway in case it's empty.
+		completionsConfig.Provider = codygateway.ProviderName
 
-			// Configure accessToken. We don't validate the license here because
-			// Cody Gateway will check and reject the request.
-			if completionsConfig.AccessToken == "" {
-				switch deploy.Type() {
-				case deploy.App:
-					if siteConfig.App != nil && siteConfig.App.DotcomAuthToken != "" {
-						completionsConfig.AccessToken = dotcomuser.GenerateDotcomUserGatewayAccessToken(siteConfig.App.DotcomAuthToken)
-					}
-				default:
-					if siteConfig.LicenseKey != "" {
-						completionsConfig.AccessToken = licensing.GenerateLicenseKeyBasedAccessToken(siteConfig.LicenseKey)
-					}
+		// Configure accessToken. We don't validate the license here because
+		// Cody Gateway will check and reject the request.
+		if completionsConfig.AccessToken == "" {
+			switch deploy.Type() {
+			case deploy.App:
+				if siteConfig.App != nil && siteConfig.App.DotcomAuthToken != "" {
+					completionsConfig.AccessToken = dotcomuser.GenerateDotcomUserGatewayAccessToken(siteConfig.App.DotcomAuthToken)
 				}
-
+			default:
+				if siteConfig.LicenseKey != "" {
+					completionsConfig.AccessToken = licensing.GenerateLicenseKeyBasedAccessToken(siteConfig.LicenseKey)
+				}
 			}
 
-			// Configure endpoint
-			if completionsConfig.Endpoint == "" {
-				completionsConfig.Endpoint = codygateway.DefaultEndpoint
-			}
-
-			// Configure chatModel
-			if completionsConfig.ChatModel == "" {
-				completionsConfig.ChatModel = "anthropic/claude-v1"
-			}
-			// Configure completionModel
-			if completionsConfig.CompletionModel == "" {
-				completionsConfig.CompletionModel = "anthropic/claude-instant-v1"
-			}
-
-			// NOTE: We explicitly aren't adding back-compat for completions.model
-			// because Cody Gateway disallows the use of most chat models for
-			// code completions, so in most cases the back-compat wouldn't work
-			// anyway.
-
-			return completionsConfig
 		}
 
+		// Configure endpoint
+		if completionsConfig.Endpoint == "" {
+			completionsConfig.Endpoint = codygateway.DefaultEndpoint
+		}
+
+		// Configure chatModel
 		if completionsConfig.ChatModel == "" {
-			// If no model for chat is configured, nothing we can do.
-			if completionsConfig.Model == "" {
-				return nil
-			}
-			completionsConfig.ChatModel = completionsConfig.Model
+			completionsConfig.ChatModel = "anthropic/claude-v1"
+		}
+		// Configure completionModel
+		if completionsConfig.CompletionModel == "" {
+			completionsConfig.CompletionModel = "anthropic/claude-instant-v1"
 		}
 
-		// TODO: Temporary workaround to fix instances where no completion model is set.
-		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "claude-instant-v1"
-		}
+		// NOTE: We explicitly aren't adding back-compat for completions.model
+		// because Cody Gateway disallows the use of most chat models for
+		// code completions, so in most cases the back-compat wouldn't work
+		// anyway.
 
 		return completionsConfig
 	}
 
-	return nil
+	if completionsConfig.ChatModel == "" {
+		// If no model for chat is configured, nothing we can do.
+		if completionsConfig.Model == "" {
+			return nil
+		}
+		completionsConfig.ChatModel = completionsConfig.Model
+	}
+
+	// TODO: Temporary workaround to fix instances where no completion model is set.
+	if completionsConfig.CompletionModel == "" {
+		completionsConfig.CompletionModel = "claude-instant-v1"
+	}
+	if completionsConfig.FastChatModel == "" {
+		completionsConfig.FastChatModel = completionsConfig.CompletionModel
+	}
+
+	return completionsConfig
 }

@@ -10,11 +10,11 @@ import {
     IS_CONTEXT_REQUIRED_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_IDS_QUERY,
+    SEARCH_ATTRIBUTION_QUERY,
     SEARCH_EMBEDDINGS_QUERY,
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     REPOSITORY_EMBEDDING_EXISTS_QUERY,
-    SEARCH_TYPE_REPO_QUERY,
     CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
     CURRENT_SITE_VERSION_QUERY,
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
@@ -91,12 +91,10 @@ interface GetCodyContextResponse {
     getCodyContext: GetCodyContextResult[]
 }
 
-interface SearchTypeRepoResponse {
-    search: {
-        results: {
-            limitHit: boolean
-            results: { name: string }[]
-        }
+interface SearchAttributionResponse {
+    snippetAttribution: {
+        limitHit: boolean
+        nodes: { repositoryName: string }[]
     }
 }
 
@@ -116,9 +114,9 @@ export interface EmbeddingsSearchResults {
     textResults: EmbeddingsSearchResult[]
 }
 
-export interface SearchTypeRepoResults {
+export interface SearchAttributionResults {
     limitHit: boolean
-    repositories: { name: string }[]
+    nodes: { repositoryName: string }[]
 }
 
 interface IsContextRequiredForChatQueryResponse {
@@ -348,15 +346,10 @@ export class SourcegraphGraphQLAPIClient {
         }).then(response => extractDataOrError(response, data => data.embeddingsSearch))
     }
 
-    public async searchTypeRepo(query: string): Promise<SearchTypeRepoResults | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<SearchTypeRepoResponse>>(SEARCH_TYPE_REPO_QUERY, {
-            query,
-        }).then(response =>
-            extractDataOrError(response, data => ({
-                limitHit: data.search.results.limitHit,
-                repositories: data.search.results.results,
-            }))
-        )
+    public async searchAttribution(snippet: string): Promise<SearchAttributionResults | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<SearchAttributionResponse>>(SEARCH_ATTRIBUTION_QUERY, {
+            snippet,
+        }).then(response => extractDataOrError(response, data => data.snippetAttribution))
     }
 
     public async isContextRequiredForQuery(query: string): Promise<boolean | Error> {
