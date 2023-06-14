@@ -27,6 +27,7 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	dbworkerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestHandler_Name(t *testing.T) {
@@ -296,9 +297,9 @@ func TestHandler_HandleAddExecutionLogEntry(t *testing.T) {
 						Key:        "foo",
 						Command:    []string{"faz", "baz"},
 						StartTime:  startTime,
-						ExitCode:   newIntPtr(0),
+						ExitCode:   pointers.Ptr(0),
 						Out:        "done",
-						DurationMs: newIntPtr(100),
+						DurationMs: pointers.Ptr(100),
 					},
 					mockStore.AddExecutionLogEntryFunc.History()[0].Arg2,
 				)
@@ -405,9 +406,9 @@ func TestHandler_HandleUpdateExecutionLogEntry(t *testing.T) {
 						Key:        "foo",
 						Command:    []string{"faz", "baz"},
 						StartTime:  startTime,
-						ExitCode:   newIntPtr(0),
+						ExitCode:   pointers.Ptr(0),
 						Out:        "done",
-						DurationMs: newIntPtr(100),
+						DurationMs: pointers.Ptr(100),
 					},
 					mockStore.UpdateExecutionLogEntryFunc.History()[0].Arg3,
 				)
@@ -976,8 +977,4 @@ func (r testRecord) RecordID() int { return r.id }
 
 func (r testRecord) RecordUID() string {
 	return strconv.Itoa(r.id)
-}
-
-func newIntPtr(i int) *int {
-	return &i
 }

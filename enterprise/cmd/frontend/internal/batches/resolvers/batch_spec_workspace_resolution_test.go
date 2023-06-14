@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestWorkspacesListArgsToDBOpts(t *testing.T) {
@@ -33,7 +34,7 @@ func TestWorkspacesListArgsToDBOpts(t *testing.T) {
 		{
 			name: "after set",
 			args: &graphqlbackend.ListWorkspacesArgs{
-				After: strPtr("10"),
+				After: pointers.Ptr("10"),
 			},
 			want: store.ListBatchSpecWorkspacesOpts{
 				Cursor: 10,
@@ -42,7 +43,7 @@ func TestWorkspacesListArgsToDBOpts(t *testing.T) {
 		{
 			name: "search set",
 			args: &graphqlbackend.ListWorkspacesArgs{
-				Search: strPtr("sourcegraph"),
+				Search: pointers.Ptr("sourcegraph"),
 			},
 			want: store.ListBatchSpecWorkspacesOpts{
 				TextSearch: []search.TextSearchTerm{{Term: "sourcegraph"}},
@@ -51,7 +52,7 @@ func TestWorkspacesListArgsToDBOpts(t *testing.T) {
 		{
 			name: "state completed",
 			args: &graphqlbackend.ListWorkspacesArgs{
-				State: strPtr("COMPLETED"),
+				State: pointers.Ptr("COMPLETED"),
 			},
 			want: store.ListBatchSpecWorkspacesOpts{
 				OnlyCachedOrCompleted: true,
@@ -60,7 +61,7 @@ func TestWorkspacesListArgsToDBOpts(t *testing.T) {
 		{
 			name: "state pending",
 			args: &graphqlbackend.ListWorkspacesArgs{
-				State: strPtr("PENDING"),
+				State: pointers.Ptr("PENDING"),
 			},
 			want: store.ListBatchSpecWorkspacesOpts{
 				OnlyWithoutExecutionAndNotCached: true,
@@ -69,7 +70,7 @@ func TestWorkspacesListArgsToDBOpts(t *testing.T) {
 		{
 			name: "state queued",
 			args: &graphqlbackend.ListWorkspacesArgs{
-				State: strPtr("QUEUED"),
+				State: pointers.Ptr("QUEUED"),
 			},
 			want: store.ListBatchSpecWorkspacesOpts{
 				State: types.BatchSpecWorkspaceExecutionJobStateQueued,

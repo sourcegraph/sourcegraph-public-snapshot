@@ -43,6 +43,7 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestNullIDResilience(t *testing.T) {
@@ -1643,7 +1644,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 	haveCheckStates := []string{"PENDING", "INVALID"}
 	wantReviewStates := []btypes.ChangesetReviewState{"APPROVED", "INVALID"}
 	wantCheckStates := []btypes.ChangesetCheckState{"PENDING", "INVALID"}
-	truePtr := func() *bool { val := true; return &val }()
+	truePtr := pointers.Ptr(true)
 	wantSearches := []search.TextSearchTerm{{Term: "foo"}, {Term: "bar", Not: true}}
 	var batchChangeID int64 = 1
 	var repoID api.RepoID = 123
@@ -1674,7 +1675,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting state is safe and transferred to opts.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				State: stringPtr(string(haveStates[0])),
+				State: pointers.Ptr(string(haveStates[0])),
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
@@ -1684,7 +1685,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting invalid state fails.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				State: stringPtr(string(haveStates[1])),
+				State: pointers.Ptr(string(haveStates[1])),
 			},
 			wantErr: "changeset state not valid",
 		},
@@ -1732,7 +1733,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting a positive search.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				Search: stringPtr("foo"),
+				Search: pointers.Ptr("foo"),
 			},
 			wantSafe: false,
 			wantParsed: store.ListChangesetsOpts{
@@ -1742,7 +1743,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting a negative search.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				Search: stringPtr("-bar"),
+				Search: pointers.Ptr("-bar"),
 			},
 			wantSafe: false,
 			wantParsed: store.ListChangesetsOpts{
@@ -2887,8 +2888,6 @@ query($includeLocallyExecutedSpecs: Boolean!) {
 	batchSpecs(includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) { nodes { id } }
 }
 `
-
-func stringPtr(s string) *string { return &s }
 
 func assignBatchChangesWritePermissionToUser(ctx context.Context, t *testing.T, db database.DB, userID int32) (*types.Role, *types.Permission) {
 	role := bt.CreateTestRole(ctx, t, db, "TEST-ROLE-1")
