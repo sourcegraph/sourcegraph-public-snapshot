@@ -22,8 +22,6 @@ public class TranslateToLanguagePromptProvider implements PromptProvider {
             .appendText("Translate the following code into " + toLanguage.getValue())
             .appendCodeSnippet(selectedText)
             .build();
-    return new PromptContext(
-        promptMessage,
-        displayText);
+    return new PromptContext(promptMessage, displayText);
   }
 }

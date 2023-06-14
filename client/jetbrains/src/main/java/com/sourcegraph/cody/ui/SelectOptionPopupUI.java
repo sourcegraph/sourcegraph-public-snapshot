@@ -2,7 +2,6 @@ package com.sourcegraph.cody.ui;
 
 import static com.intellij.openapi.wm.IdeFocusManager.getGlobalInstance;
 
-import com.intellij.find.FindBundle;
 import com.intellij.ide.actions.BigPopupUI;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
@@ -40,8 +39,6 @@ public class SelectOptionPopupUI extends BigPopupUI {
 
   private final List<String> myOptions;
   private final Consumer<String> runOnSelect;
-  private CollectionListModel<Object> myListModel;
-  private JLabel myTextFieldTitle;
   private boolean myIsItemSelected;
   private final Alarm myListRenderingAlarm = new Alarm(Alarm.ThreadToUse.SWING_THREAD);
 
@@ -191,7 +188,7 @@ public class SelectOptionPopupUI extends BigPopupUI {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
     myListRenderingAlarm.cancelAllRequests();
-    myResultsList.getEmptyText().setText(FindBundle.message("empty.text.searching"));
+    myResultsList.getEmptyText().setText("No options found");
 
     if (DumbService.getInstance(myProject).isDumb()) {
       myResultsList.setEmptyText("Select option is not supported while indexes are updating");
@@ -212,20 +209,6 @@ public class SelectOptionPopupUI extends BigPopupUI {
                     () -> {
                       addListDataListener(model);
                       myResultsList.setModel(model);
-                      boolean oneOfElementsMatches =
-                          model.getItems().stream()
-                              .anyMatch(
-                                  it -> {
-                                    if (it instanceof String) {
-                                      return ((String) it)
-                                          .toLowerCase()
-                                          .startsWith(getSearchPattern().toLowerCase());
-                                    }
-                                    return false;
-                                  });
-                      if (oneOfElementsMatches) {
-                        myResultsList.setSelectedIndex(0);
-                      }
                       model.allContentsChanged();
                     },
                     150))
@@ -238,7 +221,8 @@ public class SelectOptionPopupUI extends BigPopupUI {
 
   @Override
   public @NotNull JBList<Object> createList() {
-    myListModel = new CollectionListModel<>(myOptions);
+    CollectionListModel<Object> myListModel = new CollectionListModel<>(myOptions);
+    addListDataListener(myListModel);
     return new JBList<>(myListModel);
   }
 
@@ -249,7 +233,7 @@ public class SelectOptionPopupUI extends BigPopupUI {
 
   @Override
   protected @NotNull JPanel createTopLeftPanel() {
-    myTextFieldTitle = new JLabel("Select option");
+    JLabel myTextFieldTitle = new JLabel("Select option");
     JPanel topPanel = new NonOpaquePanel(new BorderLayout());
     Color foregroundColor =
         StartupUiUtil.isUnderDarcula()
