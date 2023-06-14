@@ -135,11 +135,11 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
 
     const [setAutoUpgrade] = useMutation<SetAutoUpgradeResult, SetAutoUpgradeVariables>(SET_AUTO_UPGRADE)
     const [autoUpgradeEnabled, setAutoUpgradeEnabled] = useState(data?.site.autoUpgradeEnabled)
-    const handleToggle = (): void => {
+    const handleToggle = async (): Promise<void> => {
         setAutoUpgradeEnabled(!autoUpgradeEnabled)
-        setAutoUpgrade({
+        await setAutoUpgrade({
             variables: { enable: !autoUpgradeEnabled },
-        }).catch(() => {})
+        })
     }
     useEffect(() => {
         if (data) {
