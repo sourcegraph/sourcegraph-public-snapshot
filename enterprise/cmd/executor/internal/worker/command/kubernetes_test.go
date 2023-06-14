@@ -159,13 +159,23 @@ func TestKubernetesCommand_DeleteJobPVC(t *testing.T) {
 func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 	tests := []struct {
 		name           string
-		spec           command.Spec
+		specs          []command.Spec
 		mockFunc       func(clientset *fake.Clientset)
-		mockAssertFunc func(t *testing.T, actions []k8stesting.Action)
+		mockAssertFunc func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger)
 		expectedErr    error
 	}{
 		{
 			name: "Pod succeeded",
+			specs: []command.Spec{
+				{
+					Key:  "my.container",
+					Name: "my-container",
+					Command: []string{
+						"echo",
+						"hello world",
+					},
+				},
+			},
 			mockFunc: func(clientset *fake.Clientset) {
 				watcher := watch.NewFakeWithChanSize(10, false)
 				watcher.Add(&corev1.Pod{
@@ -177,15 +187,119 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 					},
 					Status: corev1.PodStatus{
 						Phase: corev1.PodSucceeded,
+						ContainerStatuses: []corev1.ContainerStatus{
+							{
+								Name: "my-container",
+								State: corev1.ContainerState{
+									Terminated: &corev1.ContainerStateTerminated{
+										ExitCode: 0,
+									},
+								},
+							},
+						},
 					},
 				})
 				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
-				require.Len(t, actions, 1)
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
+				require.Len(t, actions, 2)
 				assert.Equal(t, "watch", actions[0].GetVerb())
 				assert.Equal(t, "pods", actions[0].GetResource().Resource)
 				assert.Equal(t, "job-name=my-job", actions[0].(k8stesting.WatchActionImpl).GetWatchRestrictions().Labels.String())
+				assert.Equal(t, "get", actions[1].GetVerb())
+				assert.Equal(t, "pods", actions[1].GetResource().Resource)
+				assert.Equal(t, "log", actions[1].GetSubresource())
+
+				require.Len(t, logger.LogEntryFunc.History(), 1)
+				assert.Equal(t, "my.container", logger.LogEntryFunc.History()[0].Arg0)
+				assert.Equal(t, []string{"echo", "hello world"}, logger.LogEntryFunc.History()[0].Arg1)
+				logEntry := logger.LogEntryFunc.History()[0].Result0.(*command.MockLogEntry)
+				require.Len(t, logEntry.WriteFunc.History(), 1)
+				assert.Equal(t, "stdout: fake logs\n", string(logEntry.WriteFunc.History()[0].Arg0))
+				require.Len(t, logEntry.FinalizeFunc.History(), 1)
+				assert.Equal(t, 0, logEntry.FinalizeFunc.History()[0].Arg0)
+				require.Len(t, logEntry.CloseFunc.History(), 1)
+			},
+		},
+		{
+			name: "Pod succeeded single job",
+			specs: []command.Spec{
+				{
+					Key:  "setup.0",
+					Name: "setup-0",
+					Command: []string{
+						"echo",
+						"hello",
+					},
+				},
+				{
+					Key:  "setup.1",
+					Name: "setup-1",
+					Command: []string{
+						"echo",
+						"world",
+					},
+				},
+			},
+			mockFunc: func(clientset *fake.Clientset) {
+				watcher := watch.NewFakeWithChanSize(10, false)
+				watcher.Add(&corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "my-pod",
+						Labels: map[string]string{
+							"job-name": "my-job",
+						},
+					},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodSucceeded,
+						InitContainerStatuses: []corev1.ContainerStatus{
+							{
+								Name: "setup.0",
+								State: corev1.ContainerState{
+									Terminated: &corev1.ContainerStateTerminated{
+										ExitCode: 0,
+									},
+								},
+							},
+							{
+								Name: "setup.1",
+								State: corev1.ContainerState{
+									Terminated: &corev1.ContainerStateTerminated{
+										ExitCode: 0,
+									},
+								},
+							},
+						},
+						ContainerStatuses: []corev1.ContainerStatus{
+							{
+								Name: "my-container",
+								State: corev1.ContainerState{
+									Terminated: &corev1.ContainerStateTerminated{
+										ExitCode: 0,
+									},
+								},
+							},
+						},
+					},
+				})
+				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
+			},
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
+				require.Len(t, actions, 4)
+				assert.Equal(t, "watch", actions[0].GetVerb())
+				assert.Equal(t, "pods", actions[0].GetResource().Resource)
+				assert.Equal(t, "job-name=my-job", actions[0].(k8stesting.WatchActionImpl).GetWatchRestrictions().Labels.String())
+				assert.Equal(t, "get", actions[1].GetVerb())
+				assert.Equal(t, "pods", actions[1].GetResource().Resource)
+				assert.Equal(t, "log", actions[1].GetSubresource())
+				assert.Equal(t, "get", actions[2].GetVerb())
+				assert.Equal(t, "pods", actions[2].GetResource().Resource)
+				assert.Equal(t, "log", actions[2].GetSubresource())
+				assert.Equal(t, "get", actions[3].GetVerb())
+				assert.Equal(t, "pods", actions[3].GetResource().Resource)
+				assert.Equal(t, "log", actions[3].GetSubresource())
+
+				require.Len(t, logger.LogEntryFunc.History(), 3)
 			},
 		},
 		{
@@ -201,9 +315,24 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 					},
 					Status: corev1.PodStatus{
 						Phase: corev1.PodFailed,
+						ContainerStatuses: []corev1.ContainerStatus{
+							{
+								Name: "my-container",
+								State: corev1.ContainerState{
+									Terminated: &corev1.ContainerStateTerminated{
+										ExitCode: 1,
+									},
+								},
+							},
+						},
 					},
 				})
 				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
+			},
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
+				require.Len(t, logger.LogEntryFunc.History(), 1)
+				logEntry := logger.LogEntryFunc.History()[0].Result0.(*command.MockLogEntry)
+				require.Len(t, logEntry.FinalizeFunc.History(), 1)
 			},
 			expectedErr: errors.New("pod failed"),
 		},
@@ -242,7 +371,7 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 				})
 				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
 				require.Len(t, actions, 1)
 			},
 		},
@@ -275,7 +404,7 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 				})
 				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
 				require.Len(t, actions, 1)
 			},
 			expectedErr: errors.New("deleted by scheduler: pod could not be scheduled"),
@@ -303,7 +432,7 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 				})
 				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
 				require.Len(t, actions, 1)
 				assert.Equal(t, "watch", actions[0].GetVerb())
 				assert.Equal(t, "pods", actions[0].GetResource().Resource)
@@ -328,7 +457,7 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 				})
 				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
 				require.Len(t, actions, 1)
 				assert.Equal(t, "watch", actions[0].GetVerb())
 				assert.Equal(t, "pods", actions[0].GetResource().Resource)
@@ -358,7 +487,7 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 				})
 				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
 				require.Len(t, actions, 1)
 				assert.Equal(t, "watch", actions[0].GetVerb())
 				assert.Equal(t, "pods", actions[0].GetResource().Resource)
@@ -370,6 +499,7 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			clientset := fake.NewSimpleClientset()
 			logger := command.NewMockLogger()
+			logger.LogEntryFunc.SetDefaultReturn(command.NewMockLogEntry())
 
 			if test.mockFunc != nil {
 				test.mockFunc(clientset)
@@ -386,7 +516,7 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 				logger,
 				"my-namespace",
 				"my-job",
-				[]command.Spec{},
+				test.specs,
 			)
 			if test.expectedErr != nil {
 				require.Error(t, err)
@@ -397,7 +527,7 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 			}
 
 			if test.mockAssertFunc != nil {
-				test.mockAssertFunc(t, clientset.Actions())
+				test.mockAssertFunc(t, clientset.Actions(), logger)
 			}
 		})
 	}
