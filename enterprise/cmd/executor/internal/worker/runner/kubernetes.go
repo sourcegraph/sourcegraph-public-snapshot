@@ -115,15 +115,15 @@ func (r *kubernetesRunner) Teardown(ctx context.Context) error {
 func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	var job *batchv1.Job
 	if r.options.SingleJobPod {
-		workspaceFiles, err := files.GetWorkspaceFiles(ctx, r.filesStore, spec.CommandSpec.Job, command.KubernetesJobMountPath)
+		workspaceFiles, err := files.GetWorkspaceFiles(ctx, r.filesStore, spec.Job, command.KubernetesJobMountPath)
 		if err != nil {
 			return err
 		}
 
-		jobName := fmt.Sprintf("sg-executor-job-%s-%d", spec.CommandSpec.Job.Queue, spec.CommandSpec.Job.ID)
+		jobName := fmt.Sprintf("sg-executor-job-%s-%d", spec.Job.Queue, spec.Job.ID)
 
 		r.secretName = jobName + "-secrets"
-		secrets, err := r.cmd.CreateSecrets(ctx, r.options.Namespace, r.secretName, map[string]string{"TOKEN": spec.CommandSpec.Job.Token})
+		secrets, err := r.cmd.CreateSecrets(ctx, r.options.Namespace, r.secretName, map[string]string{"TOKEN": spec.Job.Token})
 		if err != nil {
 			return err
 		}
@@ -135,33 +135,40 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 			}
 		}
 
+		repoOptions := command.RepositoryOptions{
+			JobID:               spec.Job.ID,
+			RepositoryName:      spec.Job.RepositoryName,
+			RepositoryDirectory: spec.Job.RepositoryDirectory,
+			Commit:              spec.Job.Commit,
+		}
 		job = command.NewKubernetesSingleJob(
 			jobName,
-			spec.CommandSpec,
+			spec.CommandSpecs,
 			workspaceFiles,
 			secrets,
 			r.volumeName,
+			repoOptions,
 			r.options,
 		)
 	} else {
 		job = command.NewKubernetesJob(
-			fmt.Sprintf("sg-executor-job-%s-%d-%s", spec.CommandSpec.Job.Queue, spec.CommandSpec.Job.ID, spec.CommandSpec.Key),
+			fmt.Sprintf("sg-executor-job-%s-%d-%s", spec.Job.Queue, spec.Job.ID, spec.CommandSpecs[0].Key),
 			spec.Image,
-			spec.CommandSpec,
+			spec.CommandSpecs[0],
 			r.dir,
 			r.options,
 		)
 	}
-	r.internalLogger.Debug("Creating job", log.Int("jobID", spec.CommandSpec.Job.ID))
+	r.internalLogger.Debug("Creating job", log.Int("jobID", spec.Job.ID))
 	if _, err := r.cmd.CreateJob(ctx, r.options.Namespace, job); err != nil {
 		return errors.Wrap(err, "creating job")
 	}
 	r.jobNames = append(r.jobNames, job.Name)
 
 	// Wait for the job to complete before reading the logs. This lets us get also get exit codes.
-	r.internalLogger.Debug("Waiting for pod to succeed", log.Int("jobID", spec.CommandSpec.Job.ID), log.String("jobName", job.Name))
+	r.internalLogger.Debug("Waiting for pod to succeed", log.Int("jobID", spec.Job.ID), log.String("jobName", job.Name))
 
-	pod, podWaitErr := r.cmd.WaitForPodToSucceed(ctx, r.commandLogger, r.options.Namespace, job.Name, spec.CommandSpec)
+	pod, podWaitErr := r.cmd.WaitForPodToSucceed(ctx, r.commandLogger, r.options.Namespace, job.Name, spec.CommandSpecs)
 	// Handle when the wait failed to do the things.
 	if podWaitErr != nil && pod == nil {
 		return errors.Wrapf(podWaitErr, "waiting for job %s to complete", job.Name)
@@ -177,6 +184,6 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 		}
 		return errors.New(errMessage)
 	}
-	r.internalLogger.Debug("Job completed successfully", log.Int("jobID", spec.CommandSpec.Job.ID))
+	r.internalLogger.Debug("Job completed successfully", log.Int("jobID", spec.Job.ID))
 	return nil
 }

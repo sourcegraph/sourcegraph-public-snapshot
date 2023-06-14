@@ -145,20 +145,20 @@ func TestKubernetesRunner_Run(t *testing.T) {
 			}
 
 			spec := runner.Spec{
-				Queue: "some-queue",
-				JobID: 42,
-				CommandSpec: command.Spec{
-					Key:     "some-key",
-					Command: []string{"echo", "hello"},
-					Dir:     "/workingdir",
-					Env:     []string{"FOO=bar"},
-					Job: types.Job{
-						ID:    42,
-						Queue: "some-queue",
+				CommandSpecs: []command.Spec{
+					{
+						Key:     "some-key",
+						Command: []string{"echo", "hello"},
+						Dir:     "/workingdir",
+						Env:     []string{"FOO=bar"},
 					},
 				},
 				Image:      "alpine",
 				ScriptPath: "/some/script",
+				Job: types.Job{
+					ID:    42,
+					Queue: "some-queue",
+				},
 			}
 
 			err := kubernetesRunner.Run(context.Background(), spec)
