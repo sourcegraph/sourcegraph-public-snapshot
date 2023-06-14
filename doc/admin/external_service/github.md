@@ -45,6 +45,19 @@ After making the app public, go back to Sourcegraph **Site admin > GitHub Apps >
 To sync repositories from this installation, click **Add connection** in Sourcegraph.  
 
 > NOTE: Each organization that the app needs to access requires its own installation.
+
+### GitHub App token use
+
+Sourcegraph uses the tokens from GitHub Apps in the following ways:
+
+#### Installation access tokens
+
+Installation access tokens are short-lived, non-refreshable tokens that give Sourcegraph access to the repositories the GitHub App has been given access to. Sourcegraph uses these tokens to clone repositories and to determine which users should be able to view a repository. These tokens expire after 1 hour.
+
+#### User access tokens
+
+These are OAuth tokens that Sourcegraph receives when a user signs into Sourcegraph using the configured GitHub App. Sourcegraph uses these tokens to link the user's Sourcegraph account to their GitHub account, as well as determine which repositories a user should be able to access. These tokens are refreshable, and by default they expire after 8 hours. Sourcegraph refreshes the user tokens as required.
+
 ## Using an access token
 
 To connect GitHub to Sourcegraph with an access token:
