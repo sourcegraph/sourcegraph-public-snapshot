@@ -15,7 +15,9 @@ import { TaskViewProvider, FixupTaskTreeItem } from './TaskViewProvider'
 import { CodyTaskState } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
-export class FixupController implements FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged {
+export class FixupController
+    implements FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged, vscode.Disposable
+{
     private tasks = new Map<taskID, FixupTask>()
     private readonly taskViewProvider: TaskViewProvider
     private readonly files: FixupFileObserver
@@ -33,7 +35,6 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         // Register commands
         this._disposables.push(
             vscode.workspace.registerTextDocumentContentProvider('cody-fixup', this.contentStore),
-            vscode.commands.registerCommand('cody.non-stop.fixup', () => this.typingUI.show()),
             vscode.commands.registerCommand('cody.fixup.open', id => this.showThisFixup(id)),
             vscode.commands.registerCommand('cody.fixup.apply', treeItem => this.applyFixups(treeItem)),
             vscode.commands.registerCommand('cody.fixup.apply-by-file', treeItem => this.applyFixups(treeItem)),
@@ -55,6 +56,17 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         this.editObserver = new FixupDocumentEditObserver(this)
         this._disposables.push(
             vscode.workspace.onDidChangeTextDocument(this.editObserver.textDocumentChanged.bind(this.editObserver))
+        )
+    }
+
+    /**
+     * Register commands and views which are entrypoints to the feature. Call this if the feature
+     * is enabled.
+     */
+    public register(): void {
+        this._disposables.push(
+            vscode.window.registerTreeDataProvider('cody.fixup.tree.view', this.taskViewProvider),
+            vscode.commands.registerCommand('cody.non-stop.fixup', () => this.typingUI.show())
         )
     }
 
@@ -117,6 +129,11 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
     // will return undefined. This may update the task with the newly computed
     // diff.
     private applicableDiffOrRespin(task: FixupTask, document: vscode.TextDocument): Diff | undefined {
+        if (task.state !== CodyTaskState.ready) {
+            // We haven't received a response from the LLM yet, so there is
+            // no diff.
+            return undefined
+        }
         const bufferText = document.getText(task.selectionRange)
         let diff = task.diff
         if (task.replacement !== undefined && bufferText !== diff?.bufferText) {
@@ -133,6 +150,9 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
     }
 
     private async applyTask(task: FixupTask): Promise<void> {
+        if (task.state !== CodyTaskState.ready) {
+            return
+        }
         this.setTaskState(task, CodyTaskState.applying)
 
         let editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
@@ -220,10 +240,6 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         this.decorator.didCompleteTask(task)
         this.tasks.delete(task.id)
         this.taskViewProvider.removeTreeItemByID(task.id)
-    }
-
-    public getTaskView(): TaskViewProvider {
-        return this.taskViewProvider
     }
 
     public getTasks(): FixupTask[] {

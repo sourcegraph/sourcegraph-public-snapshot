@@ -23,7 +23,7 @@ export class FixupTypingUI {
         }
 
         const CHAT_COMMAND = '/chat'
-        const CHAT_RE = /\/chat(|\s.*)^/
+        const CHAT_RE = /^\/chat(|\s.*)$/
         const instruction = (
             await vscode.window.showInputBox({
                 title: `Ask Cody to edit your code, or use ${CHAT_COMMAND} to ask a question`,
@@ -34,7 +34,9 @@ export class FixupTypingUI {
         }
         const match = instruction.match(CHAT_RE)
         if (match) {
-            void vscode.commands.executeCommand('cody.focus', match[1].trim())
+            // TODO: If we got here, we have a selection; start an inline chat
+            // with match[1].
+            void vscode.commands.executeCommand('cody.focus')
             return
         }
 

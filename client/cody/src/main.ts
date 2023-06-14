@@ -153,6 +153,7 @@ const register = async (
     const statusBar = createStatusBar()
 
     disposables.push(
+        fixup,
         vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
             // Insert copiedText to the current cursor position
             await vscode.commands.executeCommand('editor.action.insertSnippet', {
@@ -328,12 +329,7 @@ const register = async (
     }
     // Register task view and non-stop cody command when feature flag is on
     if (initialConfig.experimentalNonStop || process.env.CODY_TESTING === 'true') {
-        disposables.push(vscode.window.registerTreeDataProvider('cody.fixup.tree.view', fixup.getTaskView()))
-        disposables.push(
-            vscode.commands.registerCommand('cody.recipe.non-stop', async () => {
-                await chatProvider.executeRecipe('non-stop', '', false)
-            })
-        )
+        fixup.register()
         await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
     }
 

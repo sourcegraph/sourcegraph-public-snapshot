@@ -685,7 +685,7 @@
       ],
       "editor/title": [
         {
-          "command": "cody.recipe.non-stop",
+          "command": "cody.non-stop.fixup",
           "when": "cody.nonstop.fixups.enabled && cody.activated",
           "group": "navigation",
           "visibility": "visible"
