@@ -17,3 +17,12 @@ mod namespace {
 }
 
 fn something() {}
+
+impl X for Y {}
+impl<T> X<T> for Y<T<X>> {}
+
+enum MyEnum {
+    Dog,
+    Cat(u8),
+    Bat(String),
+}
