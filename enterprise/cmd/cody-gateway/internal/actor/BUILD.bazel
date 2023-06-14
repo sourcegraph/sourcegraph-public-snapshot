@@ -31,6 +31,7 @@ go_library(
 go_test(
     name = "actor_test",
     srcs = [
+        "actor_test.go",
         "limits_test.go",
         "source_test.go",
     ],
