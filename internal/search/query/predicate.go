@@ -603,7 +603,7 @@ type FileHasContributorPredicate struct {
 }
 
 func (f *FileHasContributorPredicate) Unmarshal(params string, negated bool) error {
-	if _, err := regexp.Compile(params); err != nil {
+	if _, err := syntax.Parse(params, syntax.Perl); err != nil {
 		return errors.Errorf("the file:has.contributor() predicate has invalid argument: %w", err)
 	}
 
