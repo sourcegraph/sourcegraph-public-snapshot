@@ -74,8 +74,9 @@ func (s *LocalGitSource) ListRepos(ctx context.Context, results chan SourceResul
 						CloneURL: uri,
 					},
 				},
-				// Looks like this needs to be convertible to a JSON object
-				Metadata: struct{}{},
+				Metadata: &extsvc.LocalGitMetadata {
+					AbsRepoPath: r.Path,
+				},
 			},
 		}
 	}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { isEqual } from 'lodash'
@@ -7,6 +7,8 @@ import { ErrorLike } from '@sourcegraph/common'
 import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
 
 import {
+    AddLocalRepositoriesResult,
+    AddLocalRepositoriesVariables,
     AddRemoteCodeHostResult,
     AddRemoteCodeHostVariables,
     DeleteRemoteCodeHostResult,
@@ -15,11 +17,12 @@ import {
     DiscoverLocalRepositoriesVariables,
     ExternalServiceKind,
     GetLocalCodeHostsResult,
+    GetLocalCodeHostsVariables,
     LocalRepository,
 } from '../../../graphql-operations'
-import { ADD_CODE_HOST, DELETE_CODE_HOST } from '../../queries'
+import { ADD_CODE_HOST, ADD_LOCAL_REPOSITORIES, DELETE_CODE_HOST } from '../../queries'
 
-import { createDefaultLocalServiceConfig, getLocalServicePaths, getLocalServices } from './helpers'
+import { LocalCodeHost, createDefaultLocalServiceConfig, getLocalServicePaths, getLocalServices } from './helpers'
 import { DISCOVER_LOCAL_REPOSITORIES, GET_LOCAL_CODE_HOSTS } from './queries'
 
 type Path = string
@@ -234,5 +237,65 @@ export function useLocalRepositories({ paths, skip }: LocalRepositoriesInput): L
             data?.localDirectories?.repositories ??
             previousData?.localDirectories?.repositories ??
             EMPTY_REPOSITORY_LIST,
+    }
+}
+
+interface LocalCodeHostResult {
+    loading: boolean
+    error: ErrorLike | undefined
+    loaded: boolean
+    services: LocalCodeHost[]
+    addRepositories: (paths: string[]) => Promise<void>
+    deleteService: (service: LocalCodeHost) => Promise<void>
+}
+
+const EMPTY_CODEHOST_LIST: LocalCodeHost[] = []
+
+export function useLocalExternalServices(): LocalCodeHostResult {
+    const apolloClient = useApolloClient()
+
+    const { data, previousData, loading, error } = useQuery<GetLocalCodeHostsResult, GetLocalCodeHostsVariables>(
+        GET_LOCAL_CODE_HOSTS,
+        {
+            fetchPolicy: 'network-only',
+        }
+    )
+
+    const [addLocalRepositories] = useMutation<AddLocalRepositoriesResult, AddLocalRepositoriesVariables>(
+        ADD_LOCAL_REPOSITORIES
+    )
+
+    const [deleteLocalCodeHost] = useMutation<DeleteRemoteCodeHostResult, DeleteRemoteCodeHostVariables>(
+        DELETE_CODE_HOST
+    )
+
+    const addRepositories = useCallback(
+        async (paths: string[]): Promise<void> => {
+            await addLocalRepositories({ variables: { paths } })
+            await apolloClient.refetchQueries({ include: ['GetLocalCodeHosts'] })
+        },
+        [deleteLocalCodeHost]
+    )
+
+    const deleteService = useCallback(
+        async (service: LocalCodeHost): Promise<void> => {
+            await deleteLocalCodeHost({ variables: { id: service.id } })
+            await apolloClient.refetchQueries({ include: ['GetLocalCodeHosts'] })
+        },
+        [deleteLocalCodeHost]
+    )
+
+    return {
+        loading,
+        error,
+        loaded: !!data || !!previousData,
+        services: (
+            data?.localExternalServices ??
+            previousData?.localExternalServices ??
+            // FIXME: Determine folder/single repo on the server
+            EMPTY_CODEHOST_LIST
+        ).map(service => ({ ...service, isFolder: service.repositories.length !== 1 })),
+        deleteService,
+        addRepositories,
     }
 }
