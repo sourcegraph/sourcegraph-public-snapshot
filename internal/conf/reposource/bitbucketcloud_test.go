@@ -3,6 +3,7 @@ package reposource
 import (
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -59,3 +60,45 @@ func TestBitbucketCloud_cloneURLToRepoName(t *testing.T) {
 		}
 	}
 }
+
+func TestBitbucketCloudRepoName(t *testing.T) {
+    testCases := []struct {
+		name                  string
+        repositoryPathPattern string
+        host                  string
+        nameWithOwner         string
+        expected              api.RepoName
+    }{
+        {
+			name: "empty repositoryPathPattern",
+            repositoryPathPattern: "",
+            host:                  "bitbucket.org",
+            nameWithOwner:         "sourcegraph/sourcegraph",
+            expected:              "bitbucket.org/sourcegraph/sourcegraph",
+        },
+        {
+			name: "not empty repositoryPathPattern",
+            repositoryPathPattern: "{host}/{nameWithOwner}",
+            host:                  "bitbucket.org",
+            nameWithOwner:         "sourcegraph/sourcegraph",
+            expected:              "bitbucket.org/sourcegraph/sourcegraph",
+        },
+        {
+			name: "repositoryPathPattern with https",
+            repositoryPathPattern: "https://{host}/{nameWithOwner}",
+            host:                  "bitbucket.org",
+            nameWithOwner:         "sourcegraph/sourcegraph",
+            expected:              "https://bitbucket.org/sourcegraph/sourcegraph",
+        },
+    }
+
+    for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			repoName := BitbucketCloudRepoName(testCase.repositoryPathPattern, testCase.host, testCase.nameWithOwner)
+			if repoName != testCase.expected {
+				t.Errorf("Expected %s but got %s for repositoryPathPattern %s, host %s and nameWithOwner %s", testCase.expected, repoName, testCase.repositoryPathPattern, testCase.host, testCase.nameWithOwner)
+			}
+		})
+    }
+}
+
