@@ -13,7 +13,6 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/conf",
-        "//internal/conf/conftypes",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbutil",

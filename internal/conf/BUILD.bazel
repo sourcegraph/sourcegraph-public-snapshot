@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "auth.go",
         "client.go",
+        "cody_validators.go",
         "computed.go",
         "conf.go",
         "diff.go",
