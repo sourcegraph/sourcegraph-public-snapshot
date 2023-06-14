@@ -10,6 +10,7 @@ import (
 
 	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
+	"github.com/jackc/pgerrcode"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
@@ -63,7 +64,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 
 	currentVersionStr, dbShouldAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
 	// fresh instance
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, sql.ErrNoRows) || errors.HasPostgresCode(err, pgerrcode.UndefinedTable) {
 		return nil
 	} else if err != nil {
 		return errors.Wrap(err, "autoupgradestore.GetAutoUpgrade")
