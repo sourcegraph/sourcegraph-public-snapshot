@@ -8,10 +8,7 @@ export type taskID = string
 
 export class FixupTask {
     public id: taskID
-    public selectionRange: vscode.Range
     public state_: CodyTaskState = CodyTaskState.waiting
-    // The original text that we're working on updating
-    public readonly original: string
     // The text of the streaming turn of the LLM, if any
     public inProgressReplacement: string | undefined
     // The text of the last completed turn of the LLM, if any
@@ -20,10 +17,14 @@ export class FixupTask {
     // is cached here. Diffs are recomputed lazily and may be stale.
     public diff: Diff | undefined
 
-    constructor(public readonly fixupFile: FixupFile, public readonly instruction: string, editor: vscode.TextEditor) {
+    constructor(
+        public readonly fixupFile: FixupFile,
+        public readonly instruction: string,
+        // The original text that we're working on updating
+        public readonly original: string,
+        public selectionRange: vscode.Range
+    ) {
         this.id = Date.now().toString(36).replace(/\d+/g, '')
-        this.selectionRange = editor.selection
-        this.original = editor.document.getText(this.selectionRange)
     }
 
     /**

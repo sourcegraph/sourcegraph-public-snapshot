@@ -1,7 +1,5 @@
 import * as vscode from 'vscode'
 
-import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
-
 import { computeDiff, Diff } from './diff'
 import { FixupCodeLenses } from './FixupCodeLenses'
 import { ContentProvider } from './FixupContentStore'
@@ -11,12 +9,13 @@ import { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
 import { FixupTask, taskID } from './FixupTask'
-import { FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
+import { FixupTypingUI } from './FixupTypingUI'
+import { FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged } from './roles'
 import { TaskViewProvider, FixupTaskTreeItem } from './TaskViewProvider'
 import { CodyTaskState } from './utils'
 
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
-export class FixupController implements FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged {
+export class FixupController implements FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged {
     private tasks = new Map<taskID, FixupTask>()
     private readonly taskViewProvider: TaskViewProvider
     private readonly files: FixupFileObserver
@@ -26,6 +25,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
     private readonly decorator = new FixupDecorator()
     private readonly codelenses = new FixupCodeLenses(this)
     private readonly contentStore = new ContentProvider()
+    private readonly typingUI = new FixupTypingUI(this)
 
     private _disposables: vscode.Disposable[] = []
 
@@ -33,6 +33,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         // Register commands
         this._disposables.push(
             vscode.workspace.registerTextDocumentContentProvider('cody-fixup', this.contentStore),
+            vscode.commands.registerCommand('cody.non-stop.fixup', () => this.typingUI.show()),
             vscode.commands.registerCommand('cody.fixup.open', id => this.showThisFixup(id)),
             vscode.commands.registerCommand('cody.fixup.apply', treeItem => this.applyFixups(treeItem)),
             vscode.commands.registerCommand('cody.fixup.apply-by-file', treeItem => this.applyFixups(treeItem)),
@@ -73,23 +74,20 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         return this.scheduler.scheduleIdle(callback)
     }
 
+    // FixupTaskFactory
+
     // Adds a new task to the list of tasks
     // Then mark it as pending before sending it to the tree view for tree item creation
-    public add(input: string, selection: ActiveTextEditorSelection): string | null {
-        const editor = vscode.window.activeTextEditor
-        if (!editor) {
-            void vscode.window.showInformationMessage('No active editor found...')
-            return null
-        }
-
-        // Create a task and then mark it as started
-        const fixupFile = this.files.forUri(editor.document.uri)
-        const task = new FixupTask(fixupFile, input, editor)
+    public createTask(
+        documentUri: vscode.Uri,
+        instruction: string,
+        originalText: string,
+        selectionRange: vscode.Range
+    ): void {
+        const fixupFile = this.files.forUri(documentUri)
+        const task = new FixupTask(fixupFile, instruction, originalText, selectionRange)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.asking)
-        // Move the cursor to the start of the selection range to show fixup markups
-        editor.selection = new vscode.Selection(task.selectionRange.start, task.selectionRange.start)
-        return task.id
     }
 
     // Open fsPath at the selected line in editor on tree item click

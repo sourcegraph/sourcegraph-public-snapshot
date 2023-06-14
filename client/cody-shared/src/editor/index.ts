@@ -26,15 +26,8 @@ interface VsCodeInlineController {
     error(): Promise<void>
 }
 
-// TODO: Move this interface to client/cody
-interface VsCodeTaskController {
-    add(input: string, selection: ActiveTextEditorSelection): string | null
-}
-
 export interface ActiveTextEditorViewControllers {
     inline: VsCodeInlineController
-    // TODO: Remove this field once the fixup task view moves to client/cody
-    task: VsCodeTaskController
 }
 
 export interface Editor {

@@ -29,6 +29,13 @@ export interface FixupIdleTaskRunner {
 }
 
 /**
+ * Creates and starts processing a task.
+ */
+export interface FixupTaskFactory {
+    createTask(documentUri: vscode.Uri, instruction: string, originalText: string, selectionRange: vscode.Range): void
+}
+
+/**
  * Sink for notifications that text related to the fixup task--either the text
  * in the file, or the text provided by Cody--has changed.
  */

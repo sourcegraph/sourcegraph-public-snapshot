@@ -11,6 +11,7 @@ export class NonStop implements Recipe {
     public id: RecipeID = 'non-stop'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        // TODO: Invoke this recipe with a task from the fixup queue.
         const controllers = context.editor.controllers
         const selection = context.editor.getActiveTextEditorSelection()
 
@@ -27,8 +28,7 @@ export class NonStop implements Recipe {
             (await context.editor.showInputBox('Ask Cody to edit your code, or use /chat to ask a question.')) ||
             ''
 
-        const taskID = controllers.task.add(humanInput, selection)
-        if ((!humanInput && !selection.selectedText.trim()) || !taskID) {
+        if (!humanInput && !selection.selectedText.trim()) {
             await context.editor.showWarningMessage(
                 'Cody Fixups: Failed to start due to missing instruction with empty selection.'
             )
@@ -57,10 +57,10 @@ export class NonStop implements Recipe {
         context.responseMultiplexer.sub('selection', {
             onResponse: async (content: string) => {
                 text += content
-                await context.editor.didReceiveFixupText(taskID, text, 'streaming')
+                await context.editor.didReceiveFixupText('', text, 'streaming')
             },
             onTurnComplete: async () => {
-                await context.editor.didReceiveFixupText(taskID, text, 'complete')
+                await context.editor.didReceiveFixupText('', text, 'complete')
             },
         })
 
