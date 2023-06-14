@@ -514,3 +514,27 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 		})
 	}
 }
+
+func TestNewKubernetesWorkspace_SingleJob(t *testing.T) {
+	filesStore := workspace.NewMockStore()
+	cmd := workspace.NewMockCommand()
+	logger := workspace.NewMockLogger()
+
+	operations := command.NewOperations(&observation.TestContext)
+
+	ws, err := workspace.NewKubernetesWorkspace(
+		context.Background(),
+		filesStore,
+		types.Job{},
+		cmd,
+		logger,
+		workspace.CloneOptions{},
+		"",
+		true,
+		operations,
+	)
+	require.NoError(t, err)
+	assert.Empty(t, ws.Path())
+	assert.Len(t, ws.ScriptFilenames(), 0)
+	assert.Empty(t, ws.WorkingDirectory())
+}
