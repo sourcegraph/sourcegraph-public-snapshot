@@ -127,7 +127,13 @@ func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, rep
 			if err != nil {
 				return nil, err
 			}
-			return codeowners.NewRuleset(codeowners.GitRulesetSource{Repo: repoID, Commit: commitID, Path: path}, pbfile), nil
+			repo, err := s.db.Repos().Get(ctx, repoID)
+			if err != nil && !errcode.IsNotFound(err) {
+				return nil, err
+			}
+			rs := codeowners.NewRuleset(codeowners.GitRulesetSource{Repo: repoID, Commit: commitID, Path: path}, pbfile)
+			rs.SetCodeHostType(repo.ExternalRepo.ServiceType)
+			return rs, nil
 		} else if os.IsNotExist(err) {
 			continue
 		}
