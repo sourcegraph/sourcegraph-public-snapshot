@@ -4,6 +4,8 @@ import type { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { getConfiguration } from '../configuration'
 
+import { FeedbackOptions } from './FeedbackOptions'
+
 export interface CodyStatusBar {
     dispose(): void
     startLoading(label: string): () => void
@@ -28,7 +30,8 @@ export function createStatusBar(): CodyStatusBar {
             description: string,
             detail: string,
             setting: string,
-            getValue: (config: Configuration) => boolean
+            getValue: (config: Configuration) => boolean,
+            requiresReload: boolean = false
         ): vscode.QuickPickItem & { onSelect: () => Promise<void> } {
             const isEnabled = getValue(config)
             return {
@@ -37,7 +40,15 @@ export function createStatusBar(): CodyStatusBar {
                 detail,
                 onSelect: async () => {
                     await workspaceConfig.update(setting, !isEnabled, vscode.ConfigurationTarget.Global)
-                    await vscode.window.showInformationMessage(name + ' ' + (isEnabled ? 'disabled' : 'enabled') + '.')
+
+                    const info = name + ' ' + (isEnabled ? 'disabled' : 'enabled') + '.'
+                    const response = await (requiresReload
+                        ? vscode.window.showInformationMessage(info, 'Reload Window')
+                        : vscode.window.showInformationMessage(info))
+
+                    if (response === 'Reload Window') {
+                        await vscode.commands.executeCommand('workbench.action.reloadWindow')
+                    }
                 },
             }
         }
@@ -49,8 +60,9 @@ export function createStatusBar(): CodyStatusBar {
                     'Code Completions',
                     'Beta',
                     'Experimental Cody completions in your editor',
-                    'cody.completions',
-                    c => c.completions
+                    'cody.experimental.suggestions',
+                    c => c.experimentalSuggest,
+                    true
                 ),
                 createFeatureToggle(
                     'Inline Assist',
@@ -65,20 +77,11 @@ export function createStatusBar(): CodyStatusBar {
                     'Experimental',
                     'Adds suggestions of possible relevant messages in the chat window',
                     'cody.experimental.chatPredictions',
-                    c => c.experimentalChatPredictions
+                    c => c.experimentalChatPredictions,
+                    true
                 ),
                 { label: 'cody feedback', kind: vscode.QuickPickItemKind.Separator },
-                {
-                    label: '$(feedback) Share Feedback',
-                    detail: 'Ideas or frustrations — we’d love to hear your feedback',
-                    async onSelect(): Promise<void> {
-                        await vscode.env.openExternal(
-                            vscode.Uri.parse(
-                                'https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode'
-                            )
-                        )
-                    },
-                },
+                ...FeedbackOptions,
             ],
             {
                 placeHolder: 'Select an option',
@@ -87,8 +90,7 @@ export function createStatusBar(): CodyStatusBar {
         )
 
         if (option && 'onSelect' in option) {
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            option.onSelect()
+            option.onSelect().catch(console.error)
         }
     })
 
