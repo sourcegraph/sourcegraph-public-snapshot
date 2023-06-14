@@ -34,6 +34,8 @@ export const GET_INSTANCE_OWN_STATS = gql`
         instanceOwnershipStats {
             totalFiles
             totalCodeownedFiles
+            totalOwnedFiles
+            totalAssignedOwnershipFiles
         }
     }
 `
