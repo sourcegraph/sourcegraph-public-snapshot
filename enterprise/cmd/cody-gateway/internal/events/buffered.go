@@ -106,6 +106,16 @@ func (l *BufferedLogger) Stop() {
 	close(l.bufferC)
 	l.log.Info("buffer closed - waiting for events to flush")
 
-	<-l.flushedC
-	l.log.Info("shutdown complete")
+	start := time.Now()
+	select {
+	case <-l.flushedC:
+		l.log.Info("shutdown complete",
+			log.Duration("elapsed", time.Since(start)))
+
+	// We may lose some events, but it won't be a lot since traffic should
+	// already be routing to new instances when work is stopping.
+	case <-time.After(10 * time.Second):
+		l.log.Error("failed to shut down within shutdown deadline",
+			log.Error(errors.Newf("unflushed events: %d", len(l.bufferC)))) // real error for Sentry
+	}
 }

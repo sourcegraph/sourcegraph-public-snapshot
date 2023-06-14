@@ -2,7 +2,6 @@ package actor
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -89,18 +88,7 @@ func (s *Sources) Get(ctx context.Context, token string) (_ *Actor, err error) {
 		// Otherwise we continue with the first result we get. We also return
 		// the error here, anything that's not ErrNotFromSource is a hard error.
 		span.SetAttributes(attribute.String("matched_source", src.Name()))
-		if actor != nil {
-			span.SetAttributes(
-				attribute.String("actor.id", actor.ID),
-				attribute.Bool("actor.accessEnabled", actor.AccessEnabled))
-			if actor.LastUpdated != nil {
-				span.SetAttributes(attribute.String("actor.lastUpdated", actor.LastUpdated.String()))
-			}
-			// Best-effort add attribute summarizing rate limits
-			if rateLimitsJSON, err := json.Marshal(actor.RateLimits); err == nil {
-				span.SetAttributes(attribute.String("actor.rateLimits", string(rateLimitsJSON)))
-			}
-		}
+		span.SetAttributes(actor.TraceAttributes()...)
 		return actor, errors.Wrap(err, src.Name())
 	}
 
@@ -200,24 +188,44 @@ func (s *redisLockedBackgroundRoutine) Start() {
 	// We check if we have the lock first because in tests we may manually acquire
 	// it first to keep tests stable.
 	if expire := s.rmux.Until(); expire.IsZero() {
-		_ = s.rmux.LockContext(context.Background())
+		if err := s.rmux.LockContext(context.Background()); err != nil {
+			s.logger.Info("Attempted to claim worker lock, but failed", log.Error(err))
+		} else {
+			s.logger.Info("Claimed worker lock")
+		}
+	} else {
+		s.logger.Info("Did not claim worker lock")
 	}
 
 	s.routine.Start()
 }
 
 func (s *redisLockedBackgroundRoutine) Stop() {
+	start := time.Now()
 	s.logger.Info("Stopping background sync routine")
 	s.routine.Stop()
 
 	// If we have the lock, release it and let somebody else work
 	if expire := s.rmux.Until(); !expire.IsZero() {
-		s.logger.Info("Releasing held lock")
-		_, err := s.rmux.Unlock()
+		s.logger.Info("Releasing held lock",
+			log.Time("heldLockExpiry", expire))
+
+		releaseCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		state, err := s.rmux.UnlockContext(releaseCtx)
 		if err != nil {
-			s.logger.Warn("Failed to unlock mutex after work completed", log.Error(err))
+			s.logger.Error("Failed to unlock mutex after work completed",
+				log.Bool("lockState", state),
+				log.Error(err))
+		} else {
+			s.logger.Info("Lock released successfully",
+				log.Bool("lockState", state))
 		}
 	}
+
+	s.logger.Info("Background sync successfully stopped",
+		log.Duration("elapsed", time.Since(start)))
 }
 
 // sourcesSyncHandler is a handler for NewPeriodicGoroutine
@@ -232,30 +240,39 @@ var _ goroutine.Handler = &sourcesSyncHandler{}
 func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 	handleLogger := sgtrace.Logger(ctx, s.logger)
 
+	var skippedReason string
+	span := trace.SpanFromContext(ctx)
+	defer func() {
+		// Annotate span to indicate whether we're actually doing work today
+		span.SetAttributes(
+			attribute.Bool("skipped", skippedReason != ""),
+			attribute.String("skipped.reason", skippedReason))
+	}()
+
 	// If we are not holding a lock, try to acquire it.
 	if expire := s.rmux.Until(); expire.IsZero() {
 		// If another instance is working on background syncs, we don't want to
 		// do anything. We should check every time still in case the current worker
 		// goes offline, we want to be ready to pick up the work.
 		if err := s.rmux.LockContext(ctx); errors.HasType(err, &redsync.ErrTaken{}) {
-			msg := fmt.Sprintf("did not acquire lock, another worker is likely active: %s", err.Error())
-			handleLogger.Debug(msg)
-			trace.SpanFromContext(ctx).SetAttributes(
-				attribute.Bool("skipped", true),
-				attribute.String("reason", msg))
-
+			skippedReason = fmt.Sprintf("did not acquire lock, another worker is likely active: %s", err.Error())
+			handleLogger.Debug(skippedReason)
 			return nil // ignore lock contention errors
 		} else if err != nil {
-			return errors.Wrap(err, "acquire worker lock")
+			err = errors.Wrap(err, "failed to acquire unclaimed worker lock")
+			skippedReason = err.Error()
+			return err
 		}
 	} else {
-		handleLogger.Debug("Extending lock duration")
 		// Otherwise, extend our lock so that we can keep working.
-		_, _ = s.rmux.ExtendContext(ctx)
+		if _, err = s.rmux.ExtendContext(ctx); err != nil {
+			err = errors.Wrap(err, "failed to extend claimed worker lock")
+			skippedReason = err.Error()
+			return err
+		}
+		handleLogger.Debug("Extending held lock duration")
 	}
 
-	// Annotate span to indicate we're actually doing work today!
-	trace.SpanFromContext(ctx).SetAttributes(attribute.Bool("skipped", false))
-
+	handleLogger.Info("Running sources sync")
 	return s.sources.SyncAll(ctx, handleLogger)
 }
