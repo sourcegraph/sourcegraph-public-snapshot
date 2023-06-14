@@ -129,6 +129,7 @@ func (c *KubernetesCommand) DeleteJob(ctx context.Context, namespace string, job
 	return c.Clientset.BatchV1().Jobs(namespace).Delete(ctx, jobName, metav1.DeleteOptions{PropagationPolicy: &propagationPolicy})
 }
 
+// CreateSecrets creates Kubernetes secrets with the given name and data.
 func (c *KubernetesCommand) CreateSecrets(ctx context.Context, namespace string, name string, secrets map[string]string) (JobSecret, error) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -149,10 +150,12 @@ func (c *KubernetesCommand) CreateSecrets(ctx context.Context, namespace string,
 	return JobSecret{Name: name, Keys: keys}, nil
 }
 
+// DeleteSecret deletes the Kubernetes secret with the given name.
 func (c *KubernetesCommand) DeleteSecret(ctx context.Context, namespace string, name string) error {
 	return c.Clientset.CoreV1().Secrets(namespace).Delete(ctx, name, metav1.DeleteOptions{PropagationPolicy: &propagationPolicy})
 }
 
+// CreateJobPVC creates a Kubernetes PersistentVolumeClaim with the given name and size.
 func (c *KubernetesCommand) CreateJobPVC(ctx context.Context, namespace string, name string, size resource.Quantity) error {
 	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
@@ -172,6 +175,7 @@ func (c *KubernetesCommand) CreateJobPVC(ctx context.Context, namespace string, 
 	return nil
 }
 
+// DeleteJobPVC deletes the Kubernetes PersistentVolumeClaim with the given name.
 func (c *KubernetesCommand) DeleteJobPVC(ctx context.Context, namespace string, name string) error {
 	return c.Clientset.CoreV1().PersistentVolumeClaims(namespace).Delete(ctx, name, metav1.DeleteOptions{PropagationPolicy: &propagationPolicy})
 }
