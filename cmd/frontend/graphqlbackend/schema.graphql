@@ -7112,19 +7112,6 @@ type ExternalServicesCounts {
     """
     localExternalServicesCount: Int!
 }
-# """
-# Auto upgrade readiness state, contains version and auto_upgrade from the fontend databse versions table.
-# """
-# type AutoUpgrade {
-#     """
-#     The frontend database version
-#     """
-#     version: String!
-#     """
-#     State of auto_upgrade in the frontend database
-#     """
-#     enabled: Boolean!
-# }
 
 """
 Instance upgrade readiness information includes schema drifts and deprecated-but-unfinished out-of-band migrations.
