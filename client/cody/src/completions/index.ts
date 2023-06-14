@@ -1,6 +1,7 @@
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
+import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
@@ -16,6 +17,13 @@ import { detectMultilineMode } from './multiline'
 import { CompletionProvider, InlineCompletionProvider, ManualCompletionProvider } from './provider'
 
 const LOG_MANUAL = { type: 'manual' }
+
+/**
+ * The size of the Jaccard distance match window in number of lines. It determines how many
+ * lines of the 'matchText' are considered at once when searching for a segment
+ * that is most similar to the 'targetText'. In essence, it sets the maximum number
+ * of lines that the best match can be. A larger 'windowSize' means larger potential matches
+ */
 const WINDOW_SIZE = 50
 
 function lastNLines(text: string, n: number): string {
@@ -40,6 +48,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         private completionsClient: SourcegraphNodeCompletionsClient,
         private documentProvider: CompletionsDocumentProvider,
         private history: History,
+        private codebaseContext: CodebaseContext,
         private contextWindowTokens = 2048, // 8001
         private charsPerToken = 4,
         private responseTokens = 200,
@@ -153,13 +162,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const contextChars = this.tokToChar(this.promptTokens) - emptyPromptLength
 
-        const similarCode = await getContext(
+        const similarCode = await getContext({
             currentEditor,
-            this.history,
-            lastNLines(prefix, WINDOW_SIZE),
-            WINDOW_SIZE,
-            contextChars
-        )
+            history: this.history,
+            targetText: lastNLines(prefix, WINDOW_SIZE),
+            windowSize: WINDOW_SIZE,
+            maxChars: contextChars,
+            codebaseContext: this.codebaseContext,
+        })
 
         const completers: CompletionProvider[] = []
         let timeout: number
@@ -334,13 +344,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const contextChars = this.tokToChar(this.promptTokens) - emptyPromptLength
 
-        const similarCode = await getContext(
+        const similarCode = await getContext({
             currentEditor,
-            this.history,
-            lastNLines(prefix, WINDOW_SIZE),
-            WINDOW_SIZE,
-            contextChars
-        )
+            history: this.history,
+            targetText: lastNLines(prefix, WINDOW_SIZE),
+            windowSize: WINDOW_SIZE,
+            maxChars: contextChars,
+            codebaseContext: this.codebaseContext,
+        })
 
         const completer = new ManualCompletionProvider(
             this.completionsClient,
@@ -372,6 +383,22 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     }
 }
 
+/**
+ * Get the current document context based on the cursor position in the current document.
+ *
+ * This function is meant to provide a context around the current position in the document,
+ * including a prefix, a suffix, the previous line, the previous non-empty line, and the next non-empty line.
+ * The prefix and suffix are obtained by looking around the current position up to a max length
+ * defined by `maxPrefixLength` and `maxSuffixLength` respectively. If the length of the entire
+ * document content in either direction is smaller than these parameters, the entire content will be used.
+ *
+ * @param document - A `vscode.TextDocument` object, the document in which to find the context.
+ * @param position - A `vscode.Position` object, the position in the document from which to find the context.
+ * @param maxPrefixLength - A number representing the maximum length of the prefix to get from the document.
+ * @param maxSuffixLength - A number representing the maximum length of the suffix to get from the document.
+ *
+ * @returns An object containing the current document context or null if there are no lines in the document.
+ */
 function getCurrentDocContext(
     document: vscode.TextDocument,
     position: vscode.Position,
@@ -385,7 +412,9 @@ function getCurrentDocContext(
     nextNonEmptyLine: string
 } | null {
     const offset = document.offsetAt(position)
+
     const prefixLines = document.getText(new vscode.Range(new vscode.Position(0, 0), position)).split('\n')
+
     if (prefixLines.length === 0) {
         console.error('no lines')
         return null
@@ -394,6 +423,7 @@ function getCurrentDocContext(
     const suffixLines = document
         .getText(new vscode.Range(position, document.positionAt(document.getText().length)))
         .split('\n')
+
     let nextNonEmptyLine = ''
     if (suffixLines.length > 0) {
         for (const line of suffixLines) {

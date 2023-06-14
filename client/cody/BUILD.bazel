@@ -37,6 +37,7 @@ ts_project(
         "src/chat/protocol.ts",
         "src/chat/recipes.ts",
         "src/chat/utils.ts",
+        "src/completions/bestJaccardMatch.ts",
         "src/completions/cache.ts",
         "src/completions/context.ts",
         "src/completions/docprovider.ts",
@@ -139,9 +140,9 @@ ts_project(
     srcs = [
         "src/chat/fastFileFinder.test.ts",
         "src/chat/utils.test.ts",
+        "src/completions/bestJaccardMatch.test.ts",
         "src/completions/cache.test.ts",
         "src/completions/completion.test.ts",
-        "src/completions/context.test.ts",
         "src/completions/provider.test.ts",
         "src/configuration.test.ts",
         "src/non-stop/diff.test.ts",

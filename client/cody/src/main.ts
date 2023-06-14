@@ -288,7 +288,8 @@ const register = async (
             webviewErrorMessager,
             completionsClient,
             docprovider,
-            history
+            history,
+            codebaseContext
         )
         disposables.push(
             vscode.commands.registerCommand('cody.manual-completions', async () => {

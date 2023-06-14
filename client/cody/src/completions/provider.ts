@@ -86,9 +86,9 @@ export abstract class CompletionProvider {
                 {
                     speaker: 'human',
                     text:
-                        `Add the following code snippet (from file ${snippet.filename}) to your knowledge base:\n` +
+                        `Add the following code snippet (from file ${snippet.fileName}) to your knowledge base:\n` +
                         '```' +
-                        `\n${snippet.text}\n` +
+                        `\n${snippet.content}\n` +
                         '```',
                 },
                 {
