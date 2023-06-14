@@ -3,7 +3,8 @@ import * as vscode from 'vscode'
 const LOCAL_APP_LOCATIONS: { [key: string]: string[] } = {
     darwin: [
         '~/Library/Application Support/com.sourcegraph.cody',
-        '/Applications/Sourcegraph App.app/Contents/MacOS/Sourcegraph App',
+        '/Applications/Sourcegraph.app',
+        '/Applications/Cody.app',
     ],
 }
 
