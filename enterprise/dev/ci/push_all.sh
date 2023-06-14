@@ -56,6 +56,8 @@ prod_tags=(
   "${PUSH_VERSION}"
 )
 
+CANDIDATE_ONLY=${CANDIDATE_ONLY:-""}
+
 push_prod=false
 
 if [ "$BUILDKITE_BRANCH" == "main" ]; then
@@ -68,6 +70,12 @@ if [[ "$BUILDKITE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   dev_tags+=("${BUILDKITE_TAG:1}")
   prod_tags+=("${BUILDKITE_TAG:1}")
   push_prod=true
+fi
+
+# If CANDIDATE_ONLY is set, only push the candidate tag to the dev repo
+if [ -n "$CANDIDATE_ONLY" ]; then
+  dev_tags=("${BUILDKITE_COMMIT}_${BUILDKITE_BUILD_NUMBER}_candidate")
+  push_prod=false
 fi
 
 preview_tags "${dev_registries[*]}" "${dev_tags[*]}"
