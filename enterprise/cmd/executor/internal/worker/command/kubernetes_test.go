@@ -491,7 +491,8 @@ func TestNewKubernetesJob(t *testing.T) {
 	})
 
 	spec := command.Spec{
-		Key:     "my-container",
+		Key:     "my.container",
+		Name:    "my-container",
 		Command: []string{"echo", "hello"},
 		Env:     []string{"FOO=bar"},
 	}

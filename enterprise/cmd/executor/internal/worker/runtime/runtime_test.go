@@ -298,14 +298,14 @@ func TestCommandKey(t *testing.T) {
 			runtimeName: runtime.NameKubernetes,
 			key:         "step.1.pre",
 			index:       0,
-			expectedKey: "step-kubernetes-step-1-pre",
+			expectedKey: "step.kubernetes.step.1.pre",
 		},
 		{
 			name:        "Kubernetes with index",
 			runtimeName: runtime.NameKubernetes,
 			key:         "",
 			index:       1,
-			expectedKey: "step-kubernetes-1",
+			expectedKey: "step.kubernetes.1",
 		},
 		{
 			name:        "Shell",
