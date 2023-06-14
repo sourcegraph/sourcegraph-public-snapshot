@@ -265,3 +265,35 @@ type RepoEmbeddingJobsConnection implements Connection {
     """
     pageInfo: ConnectionPageInfo!
 }
+
+extend type Repository {
+    """
+    Returns all embedding jobs for the repo.
+    """
+    embeddingJobs(
+        """
+        Number of jobs returned. Up to 100 jobs are returned by default.
+        """
+        first: Int
+        """
+        The number of nodes to return starting from the end (latest).
+        Note: Use either last or first (see above) in the query. Setting both will
+        return an error.
+        """
+        last: Int
+        """
+        Opaque pagination cursor to be used when paginating forwards that may be also used
+        in conjunction with "first" to return the first N nodes.
+        """
+        after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards that may be
+        also used in conjunction with "last" to return the last N nodes.
+        """
+        before: String
+        """
+        Filter by the state of the job.
+        """
+        state: String
+    ): RepoEmbeddingJobsConnection!
+}
