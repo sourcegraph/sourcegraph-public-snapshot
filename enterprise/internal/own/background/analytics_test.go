@@ -5,7 +5,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -117,7 +116,6 @@ func TestAnalyticsIndexerSkipsReposWithSubRepoPerms(t *testing.T) {
 }
 
 func TestAnalyticsIndexerNoCodeowners(t *testing.T) {
-	rcache.SetupForTest(t)
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
