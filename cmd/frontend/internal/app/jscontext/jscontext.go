@@ -181,7 +181,13 @@ type JSContext struct {
 	BatchChangesDisableWebhooksWarning bool `json:"batchChangesDisableWebhooksWarning"`
 	BatchChangesWebhookLogsEnabled     bool `json:"batchChangesWebhookLogsEnabled"`
 
-	CodyEnabled               bool `json:"codyEnabled"`
+	// CodyEnabled is true `cody.enabled` is not false in site-config
+	CodyEnabled bool `json:"codyEnabled"`
+	// CodyEnabledForCurrentUser is true if CodyEnabled is true and current
+	// user has access to Cody.
+	CodyEnabledForCurrentUser bool `json:"codyEnabledForCurrentUser"`
+	// CodyRequiresVerifiedEmail is true if usage of Cody requires the current
+	// user to have a verified email.
 	CodyRequiresVerifiedEmail bool `json:"codyRequiresVerifiedEmail"`
 
 	ExecutorsEnabled                         bool `json:"executorsEnabled"`
@@ -364,7 +370,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
-		CodyEnabled:               cody.IsCodyEnabled(ctx),
+		CodyEnabled:               conf.CodyEnabled(),
+		CodyEnabledForCurrentUser: cody.IsCodyEnabled(ctx),
 		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
 
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),

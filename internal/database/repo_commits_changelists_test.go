@@ -130,7 +130,29 @@ func TestRepoCommitsChangelists(t *testing.T) {
 			repoCommit, err := s.GetLatestForRepo(ctx, api.RepoID(2))
 			require.Error(t, err)
 			require.True(t, errors.Is(err, sql.ErrNoRows))
-			require.Equal(t, &types.RepoCommit{}, repoCommit)
+			require.Nil(t, repoCommit)
+		})
+	})
+
+	t.Run("GetRepoCommit", func(t *testing.T) {
+		t.Run("existing row", func(t *testing.T) {
+			gotRow, err := s.GetRepoCommitChangelist(ctx, 1, 123)
+			require.NoError(t, err)
+			if diff := cmp.Diff(&types.RepoCommit{
+				ID:                   1,
+				RepoID:               api.RepoID(1),
+				CommitSHA:            dbutil.CommitBytea(commitSHA1),
+				PerforceChangelistID: 123,
+			}, gotRow); diff != "" {
+				t.Errorf("mismatched row, (-want, +got)\n%s", diff)
+			}
+		})
+
+		t.Run("non existing row", func(t *testing.T) {
+			gotRow, err := s.GetRepoCommitChangelist(ctx, 2, 999)
+			require.Error(t, err)
+			require.True(t, errors.Is(err, sql.ErrNoRows))
+			require.Nil(t, gotRow)
 		})
 	})
 }
