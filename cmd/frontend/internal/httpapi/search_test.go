@@ -24,6 +24,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	citypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -104,7 +105,9 @@ func TestServeConfiguration(t *testing.T) {
 		}
 
 		languageMap := make([]*proto.LanguageMapping, 0)
-		languageMap = append(languageMap, &proto.LanguageMapping{Language: "zig", Ctags: proto.CTagsParserType_C_TAGS_PARSER_TYPE_SCIP})
+		for lang, engine := range ctags_config.DefaultEngines {
+			languageMap = append(languageMap, &proto.LanguageMapping{Language: lang, Ctags: proto.CTagsParserType(engine)})
+		}
 
 		// Verify: Check to see that the response the expected repos 5 and 6
 		expectedRepo5 := &proto.ZoektIndexOptions{
