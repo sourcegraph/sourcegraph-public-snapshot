@@ -100,7 +100,7 @@ export class FixupController
         const fixupFile = this.files.forUri(documentUri)
         const task = new FixupTask(fixupFile, instruction, originalText, selectionRange)
         this.tasks.set(task.id, task)
-        this.setTaskState(task, CodyTaskState.asking)
+        this.setTaskState(task, CodyTaskState.waiting)
     }
 
     // Open fsPath at the selected line in editor on tree item click
@@ -130,9 +130,10 @@ export class FixupController
     // will return undefined. This may update the task with the newly computed
     // diff.
     private applicableDiffOrRespin(task: FixupTask, document: vscode.TextDocument): Diff | undefined {
-        if (task.state !== CodyTaskState.ready) {
+        if (!(task.state == CodyTaskState.ready || task.state == CodyTaskState.applying)) {
             // We haven't received a response from the LLM yet, so there is
             // no diff.
+            console.warn('no response cached from LLM so no applicable diff')
             return undefined
         }
         const bufferText = document.getText(task.selectionRange)
@@ -245,6 +246,32 @@ export class FixupController
 
     public getTasks(): FixupTask[] {
         return Array.from(this.tasks.values())
+    }
+
+    // Called by the non-stop recipe to gather current state for the task.
+    public getTaskRecipeData(id: string):
+        | {
+              instruction: string
+              fileName: string
+              precedingText: string
+              selectedText: string
+              followingText: string
+          }
+        | undefined {
+        const task = this.tasks.get(id)
+        if (!task) {
+            return undefined
+        }
+        return {
+            instruction: task.instruction,
+            // TODO: is this a full path or a short name?
+            fileName: task.fixupFile.uri.fsPath,
+            // TODO: provide the preceeding and following text
+            precedingText: '',
+            // TODO: we should re-snapshot the original text now
+            selectedText: task.original,
+            followingText: '',
+        }
     }
 
     public async didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
@@ -437,6 +464,7 @@ export class FixupController
         }
         console.log(task.id, 'changing state from', oldState, 'to', state)
         task.state = state
+
         // TODO: These state transition actions were moved from FixupTask, but
         // it is wrong for a single task to toggle the cody.fixup.running state.
         // There's more than one task.
@@ -445,6 +473,16 @@ export class FixupController
         } else if (oldState === CodyTaskState.asking && task.state !== CodyTaskState.asking) {
             void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
         }
+
+        if (task.state === CodyTaskState.waiting && this.recipeRunner) {
+            // TODO: Move this to the scheduler, have one outstanding callback
+            // at a time, and pick the most advantageous recipe to execute.
+            this.recipeRunner.onIdle(() => {
+                this.setTaskState(task, CodyTaskState.asking)
+                void this.recipeRunner?.runIdleRecipe('non-stop', task.id)
+            })
+        }
+
         if (task.state === CodyTaskState.fixed) {
             this.discard(task)
             return

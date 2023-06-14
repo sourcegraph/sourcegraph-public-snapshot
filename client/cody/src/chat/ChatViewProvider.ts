@@ -870,7 +870,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             console.error('used ForTesting method without test support object')
             return []
         }
-        return this.editor.controllers.task.getTasks()
+        return this.editor.controllers.fixups.getTasks()
     }
 
     public dispose(): void {

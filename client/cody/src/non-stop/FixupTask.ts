@@ -8,7 +8,7 @@ export type taskID = string
 
 export class FixupTask {
     public id: taskID
-    public state_: CodyTaskState = CodyTaskState.waiting
+    public state_: CodyTaskState = CodyTaskState.idle
     // The text of the streaming turn of the LLM, if any
     public inProgressReplacement: string | undefined
     // The text of the last completed turn of the LLM, if any

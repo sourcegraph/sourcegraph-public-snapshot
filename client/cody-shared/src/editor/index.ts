@@ -26,8 +26,21 @@ interface VsCodeInlineController {
     error(): Promise<void>
 }
 
+interface VsCodeFixupController {
+    getTaskRecipeData(taskId: string):
+        | {
+              instruction: string
+              fileName: string
+              precedingText: string
+              selectedText: string
+              followingText: string
+          }
+        | undefined
+}
+
 export interface ActiveTextEditorViewControllers {
     inline: VsCodeInlineController
+    fixups: VsCodeFixupController
 }
 
 export interface Editor {

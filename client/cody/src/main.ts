@@ -88,7 +88,7 @@ const register = async (
 
     const fixup = new FixupController()
     disposables.push(fixup)
-    const controllers = { inline: commentController, task: fixup }
+    const controllers = { inline: commentController, fixups: fixup }
 
     const editor = new VSCodeEditor(controllers)
     const workspaceConfig = vscode.workspace.getConfiguration()

@@ -20,8 +20,6 @@ export type CodyTaskList = {
  * Icon for each task state
  */
 export const fixupTaskList: CodyTaskList = {
-    // TODO: Remove this state when the code lens and decoration provider
-    // no longer maintain their own copy of state.
     [CodyTaskState.idle]: {
         id: 'idle',
         icon: 'clock',
