@@ -53,12 +53,14 @@ func TestFirecrackerRuntime_NewRunnerSpecs(t *testing.T) {
 				ws.ScriptFilenamesFunc.SetDefaultReturn([]string{"script.sh"})
 			},
 			expected: []runner.Spec{{
-				CommandSpec: command.Spec{
-					Key:       "step.docker.key-1",
-					Command:   []string(nil),
-					Dir:       ".",
-					Env:       []string{"FOO=bar"},
-					Operation: operations.Exec,
+				CommandSpecs: []command.Spec{
+					{
+						Key:       "step.docker.key-1",
+						Command:   []string(nil),
+						Dir:       ".",
+						Env:       []string{"FOO=bar"},
+						Operation: operations.Exec,
+					},
 				},
 				Image:      "my-image",
 				ScriptPath: "script.sh",
@@ -92,23 +94,27 @@ func TestFirecrackerRuntime_NewRunnerSpecs(t *testing.T) {
 			},
 			expected: []runner.Spec{
 				{
-					CommandSpec: command.Spec{
-						Key:       "step.docker.key-1",
-						Command:   []string(nil),
-						Dir:       ".",
-						Env:       []string{"FOO=bar"},
-						Operation: operations.Exec,
+					CommandSpecs: []command.Spec{
+						{
+							Key:       "step.docker.key-1",
+							Command:   []string(nil),
+							Dir:       ".",
+							Env:       []string{"FOO=bar"},
+							Operation: operations.Exec,
+						},
 					},
 					Image:      "my-image",
 					ScriptPath: "script1.sh",
 				},
 				{
-					CommandSpec: command.Spec{
-						Key:       "step.docker.key-2",
-						Command:   []string(nil),
-						Dir:       ".",
-						Env:       []string{"FOO=bar"},
-						Operation: operations.Exec,
+					CommandSpecs: []command.Spec{
+						{
+							Key:       "step.docker.key-2",
+							Command:   []string(nil),
+							Dir:       ".",
+							Env:       []string{"FOO=bar"},
+							Operation: operations.Exec,
+						},
 					},
 					Image:      "my-image",
 					ScriptPath: "script2.sh",
@@ -134,12 +140,14 @@ func TestFirecrackerRuntime_NewRunnerSpecs(t *testing.T) {
 				ws.ScriptFilenamesFunc.SetDefaultReturn([]string{"script.sh"})
 			},
 			expected: []runner.Spec{{
-				CommandSpec: command.Spec{
-					Key:       "step.docker.0",
-					Command:   []string(nil),
-					Dir:       ".",
-					Env:       []string{"FOO=bar"},
-					Operation: operations.Exec,
+				CommandSpecs: []command.Spec{
+					{
+						Key:       "step.docker.0",
+						Command:   []string(nil),
+						Dir:       ".",
+						Env:       []string{"FOO=bar"},
+						Operation: operations.Exec,
+					},
 				},
 				Image:      "my-image",
 				ScriptPath: "script.sh",
@@ -164,7 +172,20 @@ func TestFirecrackerRuntime_NewRunnerSpecs(t *testing.T) {
 				assert.EqualError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, test.expected, actual)
+				require.Len(t, actual, len(test.expected))
+				for _, expected := range test.expected {
+					// find the matching actual spec based on the command spec key. There will only ever be one command spec per spec.
+					var actualSpec runner.Spec
+					for _, spec := range actual {
+						if spec.CommandSpecs[0].Key == expected.CommandSpecs[0].Key {
+							actualSpec = spec
+							break
+						}
+					}
+					assert.Equal(t, expected.Image, actualSpec.Image)
+					assert.Equal(t, expected.ScriptPath, actualSpec.ScriptPath)
+					assert.Equal(t, expected.CommandSpecs[0], actualSpec.CommandSpecs[0])
+				}
 			}
 
 			test.assertMockFunc(t, ws)

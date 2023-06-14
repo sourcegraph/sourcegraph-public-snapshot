@@ -51,14 +51,15 @@ func (r *shellRuntime) NewRunnerSpecs(ws workspace.Workspace, job types.Job) ([]
 	runnerSpecs := make([]runner.Spec, len(job.DockerSteps))
 	for i, step := range job.DockerSteps {
 		runnerSpecs[i] = runner.Spec{
-			JobID: job.ID,
-			Queue: job.Queue,
-			CommandSpec: command.Spec{
-				Key:       dockerKey(step.Key, i),
-				Command:   nil,
-				Dir:       step.Dir,
-				Env:       step.Env,
-				Operation: r.operations.Exec,
+			Job: job,
+			CommandSpecs: []command.Spec{
+				{
+					Key:       dockerKey(step.Key, i),
+					Command:   nil,
+					Dir:       step.Dir,
+					Env:       step.Env,
+					Operation: r.operations.Exec,
+				},
 			},
 			Image:      step.Image,
 			ScriptPath: ws.ScriptFilenames()[i],

@@ -55,27 +55,15 @@ func (r *kubernetesRuntime) NewRunnerSpecs(ws workspace.Workspace, job types.Job
 	// TODO switch to the single job in 5.2
 	if r.options.SingleJobPod {
 		spec := runner.Spec{
-			JobID: job.ID,
-			Queue: job.Queue,
-			CommandSpec: command.Spec{
-				Key:  "kubernetes.single.job",
-				Name: "kubernetes.single.job",
-				CloneOptions: command.CloneOptions{
-					ExecutorName:   r.cloneOptions.ExecutorName,
-					EndpointURL:    r.cloneOptions.EndpointURL,
-					GitServicePath: r.cloneOptions.GitServicePath,
-					ExecutorToken:  r.cloneOptions.ExecutorToken,
-				},
-				Job: job,
-			},
+			Job: job,
 		}
 
-		steps := make([]command.Step, len(job.DockerSteps))
+		specs := make([]command.Spec, len(job.DockerSteps))
 		for i, step := range job.DockerSteps {
 			scriptName := files.ScriptNameFromJobStep(job, i)
 
 			key := kubernetesKey(step.Key, i)
-			steps[i] = command.Step{
+			specs[i] = command.Spec{
 				Key:  key,
 				Name: strings.ReplaceAll(key, ".", "-"),
 				Command: []string{
@@ -87,7 +75,7 @@ func (r *kubernetesRuntime) NewRunnerSpecs(ws workspace.Workspace, job types.Job
 				Image: step.Image,
 			}
 		}
-		spec.CommandSpec.Steps = steps
+		spec.CommandSpecs = specs
 
 		return []runner.Spec{spec}, nil
 	} else {
@@ -95,18 +83,19 @@ func (r *kubernetesRuntime) NewRunnerSpecs(ws workspace.Workspace, job types.Job
 		for i, step := range job.DockerSteps {
 			key := kubernetesKey(step.Key, i)
 			runnerSpecs[i] = runner.Spec{
-				CommandSpec: command.Spec{
-					Key:  key,
-					Name: strings.ReplaceAll(key, ".", "-"),
-					Command: []string{
-						"/bin/sh",
-						"-c",
-						filepath.Join(command.KubernetesJobMountPath, files.ScriptsPath, ws.ScriptFilenames()[i]),
+				CommandSpecs: []command.Spec{
+					{
+						Key:  key,
+						Name: strings.ReplaceAll(key, ".", "-"),
+						Command: []string{
+							"/bin/sh",
+							"-c",
+							filepath.Join(command.KubernetesJobMountPath, files.ScriptsPath, ws.ScriptFilenames()[i]),
+						},
+						Dir:       step.Dir,
+						Env:       step.Env,
+						Operation: r.operations.Exec,
 					},
-					Dir:       step.Dir,
-					Env:       step.Env,
-					Operation: r.operations.Exec,
-					Job:       job,
 				},
 				Image: step.Image,
 			}
