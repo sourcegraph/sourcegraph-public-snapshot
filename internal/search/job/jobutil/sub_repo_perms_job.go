@@ -8,6 +8,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -84,7 +85,28 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 	// Filter matches in place
 	filtered := matches[:0]
 
+	subRepoPermsCache := map[api.RepoName]bool{}
+
 	for _, m := range matches {
+		// Skip check if sub-repo perms are disabled for the repository
+		enabled, ok := subRepoPermsCache[m.RepoName().Name]
+		if ok && !enabled {
+			filtered = append(filtered, m)
+			continue
+		}
+		if !ok {
+			enabled, err := authz.SubRepoEnabledForRepo(ctx, checker, m.RepoName().Name)
+			if err != nil {
+				// If an error occurs while checking sub-repo perms, we ommit it from the results
+				logger.Warn("Could not determine if sub-repo permissions are enabled for repo, skipping", log.String("repoName", string(m.RepoName().Name)))
+				continue
+			}
+			subRepoPermsCache[m.RepoName().Name] = enabled // cache the result for this repo name
+			if !enabled {
+				filtered = append(filtered, m)
+				continue
+			}
+		}
 		switch mm := m.(type) {
 		case *result.FileMatch:
 			repo := mm.Repo.Name
