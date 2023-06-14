@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 
 	logger "github.com/sourcegraph/log"
@@ -32,11 +33,11 @@ type recentContributorsIndexer struct {
 	client            gitserver.Client
 	db                database.DB
 	logger            logger.Logger
-	subRepoPermsCache *rcache.Cache
+	subRepoPermsCache rcache.Cache
 }
 
 func newRecentContributorsIndexer(client gitserver.Client, db database.DB, lgr logger.Logger, subRepoPermsCache *rcache.Cache) *recentContributorsIndexer {
-	return &recentContributorsIndexer{client: client, db: db, logger: lgr, subRepoPermsCache: subRepoPermsCache}
+	return &recentContributorsIndexer{client: client, db: db, logger: lgr, subRepoPermsCache: *subRepoPermsCache}
 }
 
 var commitCounter = promauto.NewCounter(prometheus.CounterOpts{
@@ -48,7 +49,7 @@ func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.Re
 	// If the repo has sub-repo perms enabled, skip indexing.
 	isSubRepoPermsRepo, err := isSubRepoPermsRepo(ctx, repoId, r.subRepoPermsCache, checker)
 	if err != nil {
-		return err
+		return errcode.MakeNonRetryable(err)
 	} else if isSubRepoPermsRepo {
 		r.logger.Debug("skipping own contributor signal due to the repo having subrepo perms enabled")
 		return nil
@@ -88,28 +89,20 @@ func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.Re
 	return nil
 }
 
-func isSubRepoPermsRepo(ctx context.Context, repoID api.RepoID, cache *rcache.Cache, checker authz.SubRepoPermissionChecker) (isSubRepoPermsRepo bool, err error) {
+func isSubRepoPermsRepo(ctx context.Context, repoID api.RepoID, cache rcache.Cache, checker authz.SubRepoPermissionChecker) (isSubRepoPermsRepo bool, err error) {
 	cacheKey := strconv.Itoa(int(repoID))
-	noCache := false
 	// Look for the repo in cache to see if we have seen it before instead of hitting the DB.
-	if cache != nil {
-		val, ok := cache.Get(cacheKey)
-		if ok {
-			var isSubRepoPermsRepo bool
-			if err := json.Unmarshal(val, &isSubRepoPermsRepo); err != nil {
-				return false, err
-			}
-			if isSubRepoPermsRepo {
-				return true, nil
-			}
-			return false, nil
+	val, ok := cache.Get(cacheKey)
+	if ok {
+		var isSubRepoPermsRepo bool
+		if err := json.Unmarshal(val, &isSubRepoPermsRepo); err != nil {
+			return false, err
 		}
-	} else {
-		noCache = true
+		return isSubRepoPermsRepo, nil
 	}
 
 	// No entry in cache, so we need to look up whether this is a sub-repo perms repo in the DB.
-	ok, err := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
+	ok, err = authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
 	if err != nil {
 		return false, err
 	}
@@ -118,18 +111,13 @@ func isSubRepoPermsRepo(ctx context.Context, repoID api.RepoID, cache *rcache.Ca
 		if err != nil {
 			return false, err
 		}
-		if !noCache {
-			cache.Set(cacheKey, b)
-		}
+		cache.Set(cacheKey, b)
 		return true, nil
 	}
 	b, err := json.Marshal(false)
 	if err != nil {
 		return false, err
 	}
-	if !noCache {
-		cache.Set(cacheKey, b)
-	}
-
+	cache.Set(cacheKey, b)
 	return false, nil
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -44,6 +45,7 @@ func (f fakeGitServer) ReadFile(ctx context.Context, checker authz.SubRepoPermis
 }
 
 func TestAnalyticsIndexerSuccess(t *testing.T) {
+	rcache.SetupForTest(t)
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -70,7 +72,7 @@ func TestAnalyticsIndexerSuccess(t *testing.T) {
 	checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
 	require.NoError(t, db.AssignedOwners().Insert(ctx, user.ID, repoID, "owned/file1.go", user.ID))
 	require.NoError(t, db.AssignedOwners().Insert(ctx, user.ID, repoID, "assigned.go", user.ID))
-	require.NoError(t, newAnalyticsIndexer(client, db, nil, logger).indexRepo(ctx, repoID, checker))
+	require.NoError(t, newAnalyticsIndexer(client, db, rcache.New("test_own_signal"), logger).indexRepo(ctx, repoID, checker))
 
 	totalFileCount, err := db.RepoPaths().AggregateFileCount(ctx, database.TreeLocationOpts{})
 	require.NoError(t, err)
@@ -87,6 +89,7 @@ func TestAnalyticsIndexerSuccess(t *testing.T) {
 }
 
 func TestAnalyticsIndexerSkipsReposWithSubRepoPerms(t *testing.T) {
+	rcache.SetupForTest(t)
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -103,7 +106,7 @@ func TestAnalyticsIndexerSkipsReposWithSubRepoPerms(t *testing.T) {
 	checker := authz.NewMockSubRepoPermissionChecker()
 	checker.EnabledFunc.SetDefaultReturn(true)
 	checker.EnabledForRepoIDFunc.SetDefaultReturn(true, nil)
-	err = newAnalyticsIndexer(client, db, nil, logger).indexRepo(ctx, repoID, checker)
+	err = newAnalyticsIndexer(client, db, rcache.New("test_own_signal"), logger).indexRepo(ctx, repoID, checker)
 	require.NoError(t, err)
 
 	totalFileCount, err := db.RepoPaths().AggregateFileCount(ctx, database.TreeLocationOpts{})
@@ -116,6 +119,7 @@ func TestAnalyticsIndexerSkipsReposWithSubRepoPerms(t *testing.T) {
 }
 
 func TestAnalyticsIndexerNoCodeowners(t *testing.T) {
+	rcache.SetupForTest(t)
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -129,7 +133,7 @@ func TestAnalyticsIndexerNoCodeowners(t *testing.T) {
 	checker := authz.NewMockSubRepoPermissionChecker()
 	checker.EnabledFunc.SetDefaultReturn(true)
 	checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
-	err = newAnalyticsIndexer(client, db, nil, logger).indexRepo(ctx, repoID, checker)
+	err = newAnalyticsIndexer(client, db, rcache.New("test_own_signal"), logger).indexRepo(ctx, repoID, checker)
 	require.NoError(t, err)
 
 	totalFileCount, err := db.RepoPaths().AggregateFileCount(ctx, database.TreeLocationOpts{})

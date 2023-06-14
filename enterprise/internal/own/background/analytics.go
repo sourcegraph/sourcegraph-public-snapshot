@@ -36,11 +36,11 @@ type analyticsIndexer struct {
 	client            gitserver.Client
 	db                database.DB
 	logger            log.Logger
-	subRepoPermsCache *rcache.Cache
+	subRepoPermsCache rcache.Cache
 }
 
 func newAnalyticsIndexer(client gitserver.Client, db database.DB, subRepoPermsCache *rcache.Cache, lgr log.Logger) *analyticsIndexer {
-	return &analyticsIndexer{client: client, db: db, subRepoPermsCache: subRepoPermsCache, logger: lgr}
+	return &analyticsIndexer{client: client, db: db, subRepoPermsCache: *subRepoPermsCache, logger: lgr}
 }
 
 var ownAnalyticsFilesCounter = promauto.NewCounter(prometheus.CounterOpts{
@@ -52,7 +52,7 @@ func (r *analyticsIndexer) indexRepo(ctx context.Context, repoId api.RepoID, che
 	// If the repo has sub-repo perms enabled, skip indexing
 	isSubRepoPermsRepo, err := isSubRepoPermsRepo(ctx, repoId, r.subRepoPermsCache, checker)
 	if err != nil {
-		return err
+		return errcode.MakeNonRetryable(err)
 	} else if isSubRepoPermsRepo {
 		r.logger.Debug("skipping own contributor signal due to the repo having subrepo perms enabled")
 		return nil
