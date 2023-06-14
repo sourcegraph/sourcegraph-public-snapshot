@@ -466,29 +466,6 @@ func addGoBuild(pipeline *bk.Pipeline) {
 	)
 }
 
-// Adds backend integration tests step.
-func backendIntegrationTests(candidateImageTag string, imageDep string) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		for _, enableGRPC := range []bool{true, false} {
-			description := ":bazel::docker: :chains: Backend integration tests"
-			if enableGRPC {
-				description += " (gRPC)"
-			}
-			pipeline.AddStep(
-				description,
-				// Run tests against the candidate server image
-				bk.DependsOn(candidateImageStepKey(imageDep)),
-				bk.AutomaticRetry(1), // TODO: @jhchabran, flaky, investigate
-				bk.Env("IMAGE",
-					images.DevRegistryImage("server", candidateImageTag)),
-				bk.Env("SG_FEATURE_FLAG_GRPC", strconv.FormatBool(enableGRPC)),
-				bk.Cmd("dev/ci/integration/backend/run.sh"),
-				bk.ArtifactPaths("./*.log"),
-				bk.Agent("queue", "bazel"))
-		}
-	}
-}
-
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome"} {
 		// Run e2e tests
@@ -669,25 +646,6 @@ func executorsE2E(candidateTag string) operations.Operation {
 			bk.Cmd("enterprise/dev/ci/integration/executors/run.sh"),
 			bk.ArtifactPaths("./*.log"),
 		)
-	}
-}
-
-func serverE2E(candidateTag string) operations.Operation {
-	return func(p *bk.Pipeline) {
-		p.AddStep(":chromium: Sourcegraph E2E",
-			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
-			bk.Env("CANDIDATE_VERSION", candidateTag),
-			bk.Env("DISPLAY", ":99"),
-			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
-			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
-			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
-			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.AnnotatedCmd("dev/ci/integration/e2e/run.sh", bk.AnnotatedCmdOpts{
-				Annotations: &bk.AnnotationOpts{},
-			}),
-			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
 

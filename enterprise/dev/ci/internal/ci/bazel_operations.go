@@ -38,13 +38,21 @@ func bazelCmd(args ...string) string {
 	return strings.Join(Cmd, " ")
 }
 
+func bazelPushImagesCandidates(version string) func(*bk.Pipeline) {
+	return bazelPushImagesCmd(version, true)
+}
+
+func bazelPushImagesFinal(version string) func(*bk.Pipeline) {
+	return bazelPushImagesCmd(version, false)
+}
+
 func bazelPushImagesCmd(version string, isCandidate bool) func(*bk.Pipeline) {
-	stepName := ":bazel::docker: Push OCI/Wolfi"
+	stepName := ":bazel::docker: Push final images"
 	stepKey := "bazel-push-images"
 	candidate := ""
 
 	if isCandidate {
-		stepName = ":bazel::docker: Push OCI/Wolfi Candidate"
+		stepName = ":bazel::docker: Push candidate Images"
 		stepKey = stepKey + "-candidate"
 		candidate = "true"
 	}
