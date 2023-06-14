@@ -9,7 +9,7 @@ export type taskID = string
 export class FixupTask {
     public id: taskID
     public selectionRange: vscode.Range
-    public state_: CodyTaskState = CodyTaskState.idle
+    public state_: CodyTaskState = CodyTaskState.waiting
     // The original text that we're working on updating
     public readonly original: string
     // The text of the streaming turn of the LLM, if any
