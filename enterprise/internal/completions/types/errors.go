@@ -16,7 +16,7 @@ import (
 // Callers of CompletionsClient should check for this error with AsErrStatusNotOK
 // and handle it appropriately, typically with (*ErrStatusNotOK).WriteResponse.
 type ErrStatusNotOK struct {
-	source     string
+	Source     string
 	statusCode int
 	// responseBody is a truncated copy of the response body, read on a best-effort basis.
 	responseBody   string
@@ -27,7 +27,7 @@ var _ error = &ErrStatusNotOK{}
 
 func (e *ErrStatusNotOK) Error() string {
 	return fmt.Sprintf("%s: unexpected status code %d: %s",
-		e.source, e.statusCode, e.responseBody)
+		e.Source, e.statusCode, e.responseBody)
 }
 
 // NewErrStatusNotOK parses reads resp body and closes it to return an ErrStatusNotOK
@@ -44,7 +44,7 @@ func NewErrStatusNotOK(source string, resp *http.Response) error {
 	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
 
 	return &ErrStatusNotOK{
-		source:         source,
+		Source:         source,
 		statusCode:     resp.StatusCode,
 		responseBody:   string(respBody),
 		responseHeader: resp.Header,
