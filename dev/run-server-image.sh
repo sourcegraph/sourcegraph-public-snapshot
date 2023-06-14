@@ -51,7 +51,6 @@ docker run "$@" \
   -e SG_FEATURE_FLAG_GRPC="$SG_FEATURE_FLAG_GRPC" \
   -e DB_STARTUP_TIMEOUT="$DB_STARTUP_TIMEOUT" \
   -e SOURCEGRAPH_5_1_DB_MIGRATION=true \
-  -e SKIP_DB_MIGRATION=true \
   --volume "$DATA/config:/etc/sourcegraph" \
   --volume "$DATA/data:/var/opt/sourcegraph" \
   "$IMAGE"
