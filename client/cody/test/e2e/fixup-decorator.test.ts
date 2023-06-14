@@ -30,7 +30,7 @@ test('decorations from un-applied Cody changes appear', async ({ page, sidebar }
     await page.keyboard.press('ArrowDown')
 
     // Open the command palette by clicking on the Cody Icon
-    await page.getByRole('button', { name: /Cody: Fixup.*/ }).click()
+    await page.getByRole('button', { name: 'Fixup (Experimental)' }).click()
 
     // Wait for the input box to appear
     await page.getByPlaceholder('Ask Cody to edit your code, or use /chat to ask a question.').click()
