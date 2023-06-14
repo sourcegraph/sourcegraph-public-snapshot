@@ -13,11 +13,13 @@ export {
 export type { StepConfiguration, StepComponentProps } from './setup-steps'
 
 export {
+    LocalCodeHost,
     LocalRepositoriesStep,
     callFilePicker,
     useLocalRepositories,
     useLocalRepositoriesPaths,
     useNewLocalRepositoriesPaths,
+    useLocalExternalServices,
 } from './local-repositories-step'
 
 export { RemoteRepositoriesStep } from './remote-repositories-step'
