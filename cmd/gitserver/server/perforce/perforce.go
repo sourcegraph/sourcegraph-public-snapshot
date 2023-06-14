@@ -216,7 +216,20 @@ func (s *Service) getCommitsToInsert(ctx context.Context, logger log.Logger, rep
 		return nil, nil
 	}
 
-	results, err := newMappableCommits(ctx, dir, string(latestRowCommit.CommitSHA), head)
+	// 🚨 SECURITY: Make sure that no side-channel attacks are ever possible. It is sufficient to
+	// validate the value only the latestCommit since head is obtained by running a git command so
+	// we're guaranteed that it's already a valid object.
+	latestCommit := string(latestRowCommit.CommitSHA)
+	if err := validateCommitSHA(ctx, dir, latestCommit); err != nil {
+		// TODO: When this is an invalid range, we maybe looking at repo corruption. We want to
+		// attempt to locate the last known good commit that is mapped in the DB and update the rows
+		// beyond that point.
+		//
+		// Follow up in another PR.
+		return nil, err
+	}
+
+	results, err := newMappableCommits(ctx, dir, latestCommit, head)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to import existing repo's commits after HEAD: %q", head)
 	}
@@ -237,6 +250,22 @@ func headCommitSHA(ctx context.Context, dir common.GitDir) (string, error) {
 	return string(bytes.TrimSpace(output)), nil
 }
 
+func validateCommitSHA(ctx context.Context, dir common.GitDir, commitSHA string) error {
+	// If commitSHA is an invalid object, then the command will exit with a non-zero status.
+	cmd := exec.CommandContext(ctx, "git", "cat-file", commitSHA, "-e")
+	dir.Set(cmd)
+
+	if err := cmd.Run(); err != nil {
+		if errors.HasType(err, &exec.ExitError{}) {
+			return &badCommitSHAError{value: commitSHA}
+		}
+
+		return errors.Wrapf(err, `validate commit SHA failed while running "git cat-file %s"`, commitSHA)
+	}
+
+	return nil
+}
+
 // logFormatWithCommitSHAAndCommitBodyOnly prints the commit SHA and the commit body (skips the
 // subject) separated by a space. These are the only two fields that we need to parse the changelist
 // ID from the commit.
@@ -255,14 +284,18 @@ var logFormatWithCommitSHAAndCommitBodyOnly = "--format=format:%H %b%x00"
 // If "lastMappedCommit" is empty, it will return the list for all commits of this repo.
 //
 // newMappableCommits will read the output one commit at a time to avoid an unbounded memory growth.
+//
+// 🚨SECURITY: Callers of newMappableCommits must ensure that they have validated that
+// lastMappedCommit and head are valid objects in this repository. Not doing so leaves this
+// vulnerable to side-channel attacks. For example:
+//
+// git log --output../path/to/dir/where/attacker/has/access
 func newMappableCommits(ctx context.Context, dir common.GitDir, lastMappedCommit, head string) ([]types.PerforceChangelist, error) {
 	// ensure we cleanup command when returning
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "git", "log", logFormatWithCommitSHAAndCommitBodyOnly)
-	// FIXME: When lastMappedCommit..head is an invalid range.
-	// TODO: Follow up in a separate PR.
 	if lastMappedCommit != "" {
 		cmd.Args = append(cmd.Args, fmt.Sprintf("%s..%s", lastMappedCommit, head))
 	}
@@ -336,4 +369,12 @@ func parseGitLogLine(line string) (*types.PerforceChangelist, error) {
 type changelistMappingTask struct {
 	*changelistMappingJob
 	done func() time.Duration
+}
+
+type badCommitSHAError struct {
+	value string
+}
+
+func (e *badCommitSHAError) Error() string {
+	return fmt.Sprintf("bad commitSHA %q: unknown revision or path not in the working tree", e.value)
 }

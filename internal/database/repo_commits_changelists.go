@@ -54,7 +54,6 @@ func (s *repoCommitsChangelistsStore) BatchInsertCommitSHAsWithPerforceChangelis
 		}
 		return inserter.Flush(ctx)
 	})
-
 }
 
 var getLatestForRepoFmtStr = `

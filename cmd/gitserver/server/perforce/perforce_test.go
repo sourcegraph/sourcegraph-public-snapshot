@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/require"
 )
@@ -147,6 +148,27 @@ func TestHeadCommitSHA(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Equal(t, string(allCommitMaps[0].CommitSHA), commitSHA)
+}
+
+func TestValidateCommitSHA(t *testing.T) {
+	dir, allCommitMaps := setupTestRepo(t)
+	ctx := context.Background()
+
+	t.Run("valid commit SHA", func(t *testing.T) {
+		err := validateCommitSHA(ctx, dir, string(allCommitMaps[0].CommitSHA))
+		require.NoError(t, err)
+	})
+
+	t.Run("invalid commit SHA", func(t *testing.T) {
+		badCommit := "mumbo jumbo"
+		err := validateCommitSHA(ctx, dir, badCommit)
+		require.Error(t, err)
+
+		expectedErr := &badCommitSHAError{value: badCommit}
+		if !errors.Is(err, expectedErr) {
+			t.Fatalf("mismatched errors, expected %v, but got %v", expectedErr, err)
+		}
+	})
 }
 
 func TestNewMappableCommits(t *testing.T) {
