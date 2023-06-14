@@ -22,7 +22,9 @@ ts_project(
     name = "cody-agent",
     srcs = [
         "src/agent.ts",
+        "src/editor.ts",
         "src/index.ts",
+        "src/offsets.ts",
         "src/protocol.ts",
         "src/rpc.ts",
     ],

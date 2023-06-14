@@ -29,6 +29,7 @@ ts_project(
         "src/chat/context.ts",
         "src/chat/markdown.ts",
         "src/chat/preamble.ts",
+        "src/chat/recipes/agent-recipes.ts",
         "src/chat/recipes/browser-recipes.ts",
         "src/chat/recipes/chat-question.ts",
         "src/chat/recipes/context-search.ts",
