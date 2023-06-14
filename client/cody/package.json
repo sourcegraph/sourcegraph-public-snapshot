@@ -228,117 +228,143 @@
     "commands": [
       {
         "command": "cody.welcome",
-        "title": "Cody: Help & Getting Started",
+        "title": "Help & Getting Started",
+        "category": "Cody",
         "group": "Cody",
         "icon": "$(book)"
       },
       {
         "command": "cody.feedback",
-        "title": "Cody: Feedback",
+        "title": "Feedback",
+        "category": "Cody",
         "group": "Cody",
         "icon": "$(feedback)"
       },
       {
         "command": "cody.recipe.optimize-code",
-        "title": "Ask Cody: Optimize Code"
+        "category": "Ask Cody",
+        "title": "Optimize Code"
       },
       {
         "command": "cody.recipe.explain-code",
-        "title": "Ask Cody: Explain Code in Detail"
+        "category": "Ask Cody",
+        "title": "Explain Code in Detail"
       },
       {
         "command": "cody.recipe.explain-code-high-level",
-        "title": "Ask Cody: Explain Code at a High Level"
+        "category": "Ask Cody",
+        "title": "Explain Code at a High Level"
       },
       {
         "command": "cody.recipe.generate-unit-test",
-        "title": "Ask Cody: Generate Unit Test"
+        "category": "Ask Cody",
+        "title": "Generate Unit Test"
       },
       {
         "command": "cody.recipe.generate-docstring",
-        "title": "Ask Cody: Generate Docstring"
+        "category": "Ask Cody",
+        "title": "Generate Docstring"
       },
       {
         "command": "cody.recipe.translate-to-language",
-        "title": "Ask Cody: Translate to Language"
+        "category": "Ask Cody",
+        "title": "Translate to Language"
       },
       {
         "command": "cody.recipe.git-history",
-        "title": "Ask Cody: Summarize Recent Code Changes"
+        "category": "Ask Cody",
+        "title": "Summarize Recent Code Changes"
       },
       {
         "command": "cody.recipe.improve-variable-names",
-        "title": "Ask Cody: Improve Variable Names"
+        "category": "Ask Cody",
+        "title": "Improve Variable Names"
       },
       {
         "command": "cody.recipe.fixup",
-        "title": "Cody: Fixup"
+        "category": "Cody",
+        "title": "Fixup"
       },
       {
         "command": "cody.recipe.context-search",
-        "title": "Ask Cody: Codebase Context Search"
+        "category": "Ask Cody",
+        "title": "Codebase Context Search"
       },
       {
         "command": "cody.set-access-token",
-        "title": "Cody: Set Access Token"
+        "category": "Cody",
+        "title": "Set Access Token"
       },
       {
         "command": "cody.delete-access-token",
-        "title": "Cody: Sign out"
+        "category": "Cody",
+        "title": "Sign out"
       },
       {
         "command": "cody.clear-chat-history",
-        "title": "Cody: Clear chat history"
+        "category": "Cody",
+        "title": "Clear chat history"
       },
       {
         "command": "cody.manual-completions",
-        "title": "Cody: Open Completions Panel"
+        "category": "Cody",
+        "title": "Open Completions Panel"
       },
       {
         "command": "cody.settings",
-        "title": "Cody: Settings",
+        "category": "Cody",
+        "title": "Settings",
         "group": "Cody",
         "icon": "$(gear)"
       },
       {
         "command": "cody.focus",
-        "title": "Cody: Sign In"
+        "category": "Cody",
+        "title": "Sign In"
       },
       {
         "command": "cody.interactive.clear",
-        "title": "Cody: Start a New Chat Session",
+        "category": "Cody",
+        "title": "Start a New Chat Session",
         "group": "Cody",
         "icon": "$(add)"
       },
       {
         "command": "cody.history",
-        "title": "Cody: Chat History",
+        "category": "Cody",
+        "title": "Chat History",
         "group": "Cody",
         "icon": "$(list-unordered)"
       },
       {
         "command": "cody.walkthrough.showLogin",
-        "title": "Cody Walkthrough: Show Login"
+        "category": "Cody Walkthrough",
+        "title": "Show Login"
       },
       {
         "command": "cody.walkthrough.showChat",
-        "title": "Cody Walkthrough: Show Chat"
+        "category": "Cody Walkthrough",
+        "title": "Show Chat"
       },
       {
         "command": "cody.walkthrough.showFixup",
-        "title": "Cody Walkthrough: Show Fixup"
+        "category": "Cody Walkthrough",
+        "title": "Show Fixup"
       },
       {
         "command": "cody.walkthrough.showExplain",
-        "title": "Cody Walkthrough: Show Explain"
+        "category": "Cody Walkthrough",
+        "title": "Show Explain"
       },
       {
         "command": "cody.walkthrough.enableInlineAssist",
-        "title": "Cody Walkthrough: Show Inline Assist"
+        "category": "Cody Walkthrough",
+        "title": "Show Inline Assist"
       },
       {
         "command": "cody.walkthrough.enableCodeCompletions",
-        "title": "Cody Walkthrough: Enable Code Completions"
+        "category": "Cody Walkthrough",
+        "title": "Enable Code Completions"
       },
       {
         "command": "cody.comment.add",
@@ -349,7 +375,7 @@
       },
       {
         "command": "cody.comment.delete",
-        "title": "Cody Inline Assist: Remove Comment",
+        "title": "Remove Comment",
         "category": "Cody Inline Assist",
         "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentThreadIsEmpty",
@@ -357,7 +383,7 @@
       },
       {
         "command": "cody.comment.load",
-        "title": "Cody Inline Assist: Loading",
+        "title": "Loading",
         "category": "Cody Inline Assist",
         "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentThreadIsEmpty",
@@ -365,55 +391,64 @@
       },
       {
         "command": "cody.guardrails.debug",
-        "title": "Cody: Guardrails Debug Attribution",
+        "category": "Cody",
+        "title": "Guardrails Debug Attribution",
         "enablement": "config.cody.experimental.guardrails && editorHasSelection"
       },
       {
         "command": "cody.recipe.file-touch",
-        "title": "Cody: Touch"
+        "category": "Cody",
+        "title": "Touch"
       },
       {
         "command": "cody.inline.insert",
-        "title": "Cody: Insert text at the current cursor position"
+        "category": "Cody",
+        "title": "Insert text at the current cursor position"
       },
       {
         "command": "cody.recipe.non-stop",
-        "title": "Cody: Fixup (Experimental)",
+        "category": "Cody",
+        "title": "Fixup (Experimental)",
         "icon": "resources/cody.png",
         "when": "cody.nonstop.fixups.enabled",
         "enablement": "cody.nonstop.fixups.enabled && editorHasSelection"
       },
       {
         "command": "cody.fixup.open",
-        "title": "Cody: Go to Fixup",
+        "category": "Cody",
+        "title": "Go to Fixup",
         "when": "cody.nonstop.fixups.enabled",
         "enablement": "cody.nonstop.fixups.enabled",
         "icon": "$(file-code)"
       },
       {
         "command": "cody.fixup.apply",
-        "title": "Cody: Apply fixup",
+        "category": "Cody",
+        "title": "Apply fixup",
         "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check)"
       },
       {
         "command": "cody.fixup.apply-all",
-        "title": "Cody: Apply all fixups",
+        "category": "Cody",
+        "title": "Apply all fixups",
         "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check-all)"
       },
       {
         "command": "cody.fixup.apply-by-file",
-        "title": "Cody: Apply fixups to selected directory",
+        "category": "Cody",
+        "title": "Apply fixups to selected directory",
         "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check-all)"
       },
       {
         "command": "cody.fixup.diff",
-        "title": "Cody: Show diff for fixup",
+        "category": "Cody",
+        "title": "Show diff for fixup",
         "when": "cody.nonstop.fixups.enabled",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(diff)"
@@ -444,7 +479,7 @@
     ],
     "submenus": [
       {
-        "label": "Ask Cody",
+        "label": "Cody",
         "id": "cody.submenu"
       }
     ],
