@@ -108,6 +108,17 @@
     }
 }
 
+.mobile-top-bar-web {
+    display: none;
+
+    @media (--sm-breakpoint-down) {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 1rem;
+    }
+}
+
 .mobile-top-bar-button {
     color: var(--text-muted);
     padding: 0.5rem 2rem;

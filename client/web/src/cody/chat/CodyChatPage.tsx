@@ -9,10 +9,12 @@ import {
     mdiPlus,
     mdiChevronRight,
     mdiViewList,
+    mdiFormatListBulleted,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 
+import { CodyLogo } from '@sourcegraph/cody-ui/src/icons/CodyLogo'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import {
@@ -31,6 +33,7 @@ import {
     H4,
     H3,
     Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../components/MarketingBlock'
@@ -307,44 +310,106 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                         ))}
                 </div>
 
-                <div
-                    className={classNames(
-                        'col-md-9 h-100',
-                        styles.chatMainWrapper,
-                        showMobileHistory && styles.chatMainWrapperWithMobileHistory
-                    )}
-                >
-                    <div className={styles.mobileTopBar}>
-                        <Button
-                            variant="icon"
-                            className={styles.mobileTopBarButton}
-                            onClick={() => setShowMobileHistory(true)}
+                {isSourcegraphApp ? (
+                    <>
+                        <div
+                            className={classNames(
+                                'col-md-9 h-100',
+                                styles.chatMainWrapper,
+                                showMobileHistory && styles.chatMainWrapperWithMobileHistory
+                            )}
                         >
-                            <Icon aria-hidden={true} svgPath={mdiViewList} className="mr-2" />
-                            All chats
-                        </Button>
-                        <div className={classNames('border-right', styles.mobileTopBarDivider)} />
-                        <Button variant="icon" className={styles.mobileTopBarButton} onClick={initializeNewChat}>
-                            <Icon aria-hidden={true} svgPath={mdiPlus} className="mr-2" />
-                            New chat
-                        </Button>
-                    </div>
-                    <ChatUI codyChatStore={codyChatStore} />
-                </div>
-
-                {showMobileHistory && (
-                    <div className={styles.mobileHistoryWrapper}>
-                        <div className={styles.mobileTopBar}>
-                            <Button
-                                variant="icon"
-                                className={classNames('w-100', styles.mobileTopBarButton)}
-                                onClick={() => setShowMobileHistory(false)}
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiClose} className="mr-2" />
-                                Close
-                            </Button>
+                            <div className={styles.mobileTopBar}>
+                                <Button
+                                    variant="icon"
+                                    className={styles.mobileTopBarButton}
+                                    onClick={() => setShowMobileHistory(true)}
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiViewList} className="mr-2" />
+                                    All chats
+                                </Button>
+                                <div className={classNames('border-right', styles.mobileTopBarDivider)} />
+                                <Button
+                                    variant="icon"
+                                    className={styles.mobileTopBarButton}
+                                    onClick={initializeNewChat}
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiPlus} className="mr-2" />
+                                    New chat
+                                </Button>
+                            </div>
+                            <ChatUI codyChatStore={codyChatStore} />
                         </div>
-                        <div className={styles.mobileHistory}>
+
+                        {showMobileHistory && (
+                            <div className={styles.mobileHistoryWrapper}>
+                                <div className={styles.mobileTopBar}>
+                                    <Button
+                                        variant="icon"
+                                        className={classNames('w-100', styles.mobileTopBarButton)}
+                                        onClick={() => setShowMobileHistory(false)}
+                                    >
+                                        <Icon aria-hidden={true} svgPath={mdiClose} className="mr-2" />
+                                        Close
+                                    </Button>
+                                </div>
+                                <div className={styles.mobileHistory}>
+                                    <HistoryList
+                                        currentTranscript={transcript}
+                                        transcriptHistory={transcriptHistory}
+                                        truncateMessageLength={60}
+                                        loadTranscriptFromHistory={loadTranscriptFromHistory}
+                                        deleteHistoryItem={deleteHistoryItem}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <div className={classNames('col-md-9 h-100', styles.chatMainWrapper)}>
+                        <div className={styles.mobileTopBarWeb}>
+                            <div className="d-flex col-2 p-0">
+                                <Tooltip content="Chat history">
+                                    <Button
+                                        variant="icon"
+                                        className="mr-2"
+                                        aria-label="Active chats"
+                                        onClick={() => setShowMobileHistory(true)}
+                                        aria-pressed={showMobileHistory}
+                                    >
+                                        <Icon aria-hidden={true} svgPath={mdiFormatListBulleted} />
+                                    </Button>
+                                </Tooltip>
+                                <Tooltip content="Start a new chat">
+                                    <Button variant="icon" aria-label="Start a new chat" onClick={initializeNewChat}>
+                                        <Icon aria-hidden={true} svgPath={mdiPlus} />
+                                    </Button>
+                                </Tooltip>
+                                {showMobileHistory && (
+                                    <Tooltip content="Clear all chats">
+                                        <Button
+                                            variant="icon"
+                                            className="ml-2"
+                                            aria-label="Clear all chats"
+                                            onClick={clearHistory}
+                                        >
+                                            <Icon aria-hidden={true} svgPath={mdiDelete} />
+                                        </Button>
+                                    </Tooltip>
+                                )}
+                            </div>
+                            <div className="col-8 d-flex justify-content-center">
+                                <div className="d-flex flex-shrink-0 align-items-center">
+                                    <CodyLogo />
+                                    {showMobileHistory ? 'Chats' : 'Ask Cody'}
+                                    <div className="ml-2">
+                                        <Badge variant="info">Beta</Badge>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="col-2 d-flex" />
+                        </div>
+                        {showMobileHistory ? (
                             <HistoryList
                                 currentTranscript={transcript}
                                 transcriptHistory={transcriptHistory}
@@ -352,7 +417,9 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                 loadTranscriptFromHistory={loadTranscriptFromHistory}
                                 deleteHistoryItem={deleteHistoryItem}
                             />
-                        </div>
+                        ) : (
+                            <ChatUI codyChatStore={codyChatStore} />
+                        )}
                     </div>
                 )}
             </div>
