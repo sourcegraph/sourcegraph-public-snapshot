@@ -436,7 +436,7 @@ type ExternalChangeset implements Node & Changeset {
     forkName: String
 
     """
-    Commit verification for commit signing, if any has been set up. Always nil if the code host didn't setup commit signing.
+    Commit verification object for this changeset's commit, if it was signed.
     """
     commitVerification: CommitVerification
 
