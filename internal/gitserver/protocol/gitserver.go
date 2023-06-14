@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"encoding/json"
-	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -682,7 +681,7 @@ type PatchCommitInfo struct {
 
 func (p *PatchCommitInfo) ToProto() *proto.PatchCommitInfo {
 	return &proto.PatchCommitInfo{
-		Message:        strings.Join(p.Messages, "\n"),
+		Message:        p.Messages,
 		AuthorName:     p.AuthorName,
 		AuthorEmail:    p.AuthorEmail,
 		CommitterName:  p.CommitterName,
@@ -693,7 +692,7 @@ func (p *PatchCommitInfo) ToProto() *proto.PatchCommitInfo {
 
 func PatchCommitInfoFromProto(p *proto.PatchCommitInfo) PatchCommitInfo {
 	return PatchCommitInfo{
-		Messages:       []string{p.GetMessage()}, //TODO: @varsanojidan fix this
+		Messages:       p.GetMessage(), //TODO: @varsanojidan fix this
 		AuthorName:     p.GetAuthorName(),
 		AuthorEmail:    p.GetAuthorEmail(),
 		CommitterName:  p.GetCommitterName(),
