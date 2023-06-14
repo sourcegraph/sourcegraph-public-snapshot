@@ -87,6 +87,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         // Create a task and then mark it as started
         const fixupFile = this.files.forUri(editor.document.uri)
         const task = new FixupTask(fixupFile, input, editor)
+        this.tasks.set(task.id, task)
         void this.setTaskState(task, CodyTaskState.asking)
         // Move the cursor to the start of the selection range to show fixup markups
         editor.selection = new vscode.Selection(task.selectionRange.start, task.selectionRange.start)
@@ -102,7 +103,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         }
         void this.setTaskState(task, CodyTaskState.ready)
         // show diff between current document and replacement content
-        void this.contentStore.set(task.id, task.editor.document.uri)
+        void this.contentStore.set(task.id, task.fixupFile.uri)
     }
 
     // Open fsPath at the selected line in editor on tree item click
@@ -271,13 +272,11 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         switch (state) {
             case 'streaming':
                 task.inProgressReplacement = text
-                task.marking()
                 await this.setTaskState(task, CodyTaskState.marking)
                 break
             case 'complete':
                 task.inProgressReplacement = undefined
                 task.replacement = text
-                task.stop()
                 await this.setTaskState(task, CodyTaskState.ready)
                 break
         }
@@ -444,28 +443,16 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         // TODO: Something is abusing this method to refresh code lenses. Find
         // the state 2->2 (and maybe more) callers, work out what they are
         // actually notifying, and just notify about that.
-        switch (state) {
-            case CodyTaskState.queued:
-                task.queue()
-                break
-            case CodyTaskState.asking:
-                task.start()
-                break
-            case CodyTaskState.ready:
-                task.stop()
-                break
-            case CodyTaskState.marking:
-                task.marking()
-                break
-            case CodyTaskState.fixed:
-                task.fixed()
-                break
-            case CodyTaskState.error:
-                task.error()
-                break
-            case CodyTaskState.applying:
-                task.apply()
-                break
+        const oldState = task.state
+        console.log(task.id, 'changing state from', oldState, 'to', state)
+        task.state = state
+        // TODO: These state transition actions were moved from FixupTask, but
+        // it is wrong for a single task to toggle the cody.fixup.running state.
+        // There's more than one task.
+        if (oldState !== CodyTaskState.asking && task.state === CodyTaskState.asking) {
+            void vscode.commands.executeCommand('setContext', 'cody.fixup.running', true)
+        } else if (oldState === CodyTaskState.asking && task.state !== CodyTaskState.asking) {
+            void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
         }
         if (task.state === CodyTaskState.fixed) {
             this.discard(task.id)
@@ -473,9 +460,6 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         }
         // Save states of the task
         this.codelenses.didUpdateTask(task)
-        // TODO: Tasks should not change IDs, so just store them once on
-        // creation.
-        this.tasks.set(task.id, task)
         this.taskViewProvider.setTreeItem(task)
         return Promise.resolve(task)
     }
