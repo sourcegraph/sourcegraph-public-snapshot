@@ -1,17 +1,20 @@
-import React, { FunctionComponent, useMemo, useState } from 'react'
+import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 
-import { mdiOpenInNew, mdiCheckCircle, mdiChevronUp, mdiChevronDown } from '@mdi/js'
+import { mdiOpenInNew, mdiCheckCircle, mdiChevronUp, mdiChevronDown, mdiAlertOctagram } from '@mdi/js'
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
 import {
+    SetAutoUpgradeResult,
+    SetAutoUpgradeVariables,
     SiteUpdateCheckResult,
     SiteUpdateCheckVariables,
     SiteUpgradeReadinessResult,
     SiteUpgradeReadinessVariables,
 } from 'src/graphql-operations'
 
-import { useQuery } from '@sourcegraph/http-client'
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { useQuery, useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     LoadingSpinner,
@@ -29,12 +32,13 @@ import {
     CollapsePanel,
     H3,
     H4,
+    Label,
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../components/LogOutput'
 import { PageTitle } from '../components/PageTitle'
 
-import { SITE_UPDATE_CHECK, SITE_UPGRADE_READINESS } from './backend'
+import { SITE_UPDATE_CHECK, SITE_UPGRADE_READINESS, SET_AUTO_UPGRADE } from './backend'
 
 import styles from './SiteAdminUpdatesPage.module.scss'
 
@@ -128,6 +132,20 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
         SITE_UPGRADE_READINESS,
         {}
     )
+
+    const [setAutoUpgrade] = useMutation<SetAutoUpgradeResult, SetAutoUpgradeVariables>(SET_AUTO_UPGRADE)
+    const [autoUpgradeEnabled, setAutoUpgradeEnabled] = useState(data?.site.autoUpgradeEnabled)
+    const handleToggle = async (): Promise<void> => {
+        setAutoUpgradeEnabled(!autoUpgradeEnabled)
+        await setAutoUpgrade({
+            variables: { enable: !autoUpgradeEnabled },
+        })
+    }
+    useEffect(() => {
+        if (data) {
+            setAutoUpgradeEnabled(data.site.autoUpgradeEnabled)
+        }
+    }, [data])
     const [isExpanded, setIsExpanded] = useState(true)
     return (
         <>
@@ -136,40 +154,82 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
             {data && !loading && (
                 <>
                     <div className="d-flex flex-row justify-content-between">
+                        <H3>Automatic Upgrade State</H3>
+                        <div>
+                            <Label>
+                                <Toggle
+                                    title="Enable Auto Upgrade"
+                                    value={autoUpgradeEnabled}
+                                    onToggle={handleToggle}
+                                    className="mr-2"
+                                    aria-describedby="auto-upgrade-toggle-description"
+                                />
+                                {autoUpgradeEnabled &&
+                                (data.site.upgradeReadiness.requiredOutOfBandMigrations.length > 0 ||
+                                    data.site.upgradeReadiness.schemaDrift.length > 0) ? (
+                                    <Icon aria-hidden={true} svgPath={mdiAlertOctagram} className="text-danger" />
+                                ) : null}
+                                {autoUpgradeEnabled ? 'Enabled' : 'Disabled'}
+                            </Label>
+                        </div>
+                    </div>
+                    <div>
+                        {data?.site.upgradeReadiness.schemaDrift.length > 0 ? (
+                            <span>
+                                <Icon aria-hidden={true} svgPath={mdiAlertOctagram} className="text-danger" /> Schema
+                                drift is detected. Please resolve schema drift before attempting an upgrade.
+                                <br />
+                                <br /> Learn more about the migrator{' '}
+                                <Link to="/help/admin/updates/migrator/migrator-operations">upgrade command</Link>.
+                            </span>
+                        ) : data?.site.upgradeReadiness.requiredOutOfBandMigrations.length > 0 ? (
+                            <span>
+                                Some oob migrations must complete before a multi version upgrade can finish. Learn more
+                                at the <Link to="/site-admin/migrations?filters=pending">migrations</Link> page, and
+                                reach out to{' '}
+                                <Link to="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
+                                    Sourcegraph support
+                                </Link>{' '}
+                                for clarifications.
+                                <br />
+                                <br /> Learn more about the migrator{' '}
+                                <Link to="/help/admin/updates/migrator/migrator-operations">upgrade command</Link>.
+                            </span>
+                        ) : (
+                            <span>
+                                This instance is prepared for a multiversion upgrade. If automatic upgrades are enabled
+                                the migrator upgrade command will now infer to and from versions.
+                                <br />
+                                <br />
+                                Learn more about the migrator{' '}
+                                <Link to="/help/admin/updates/migrator/migrator-operations">upgrade command</Link>.
+                            </span>
+                        )}
+                    </div>
+                    <hr className="my-3" />
+                    <div className="d-flex flex-row justify-content-between">
                         <H3>Schema drift</H3>
                         <Button onClick={() => refetch()} variant="primary" size="sm">
                             {' '}
                             Refresh{' '}
                         </Button>
                     </div>
-
                     {data.site.upgradeReadiness.schemaDrift.length > 0 ? (
                         <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded} openByDefault={false}>
-                            <div className="mb-4">
-                                <Alert className={classNames('mb-0', styles.alert)} variant="danger">
-                                    <span>
-                                        There are schema drifts detected. Please follow suggestions below. If you need
-                                        assistance, please contact{' '}
-                                        <Link
-                                            to="mailto:support@sourcegraph.com"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                        >
-                                            Sourcegraph support
-                                        </Link>
-                                        {'. '}
-                                    </span>
-                                </Alert>
-                            </div>
-
+                            <Alert className={classNames('mb-0', styles.alert)} variant="danger">
+                                <span>
+                                    There are schema drifts detected, please contact{' '}
+                                    <Link to="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
+                                        Sourcegraph support
+                                    </Link>{' '}
+                                    for assistance.
+                                </span>
+                            </Alert>
                             <CollapseHeader
                                 as={Button}
                                 variant="secondary"
                                 outline={true}
-                                className={classNames(
-                                    'p-0 m-0 mt-2 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center',
-                                    styles.header
-                                )}
+                                className="p-0 m-0 mt-2 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
                             >
                                 <H4 className="m-0">View drift output</H4>
                                 <Icon
@@ -233,9 +293,11 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                             </CollapsePanel>
                         </Collapse>
                     ) : (
-                        <Alert className={classNames('mb-0', styles.alert)} variant="success">
-                            <Text> There is no schema drift detected.</Text>
-                        </Alert>
+                        <Text>
+                            <Alert className={classNames('mb-0', styles.alert)} variant="success">
+                                There is no schema drift detected.
+                            </Alert>
+                        </Text>
                     )}
                     <hr className="my-3" />
                     <H3>Required out-of-band migrations</H3>
@@ -255,13 +317,13 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                             </ul>
                         </>
                     ) : (
-                        <Alert className={classNames('mb-0', styles.alert)} variant="success">
-                            <Text className="mb-0">
-                                {' '}
+                        <Text>
+                            <Alert className={classNames('mb-0', styles.alert)} variant="success">
                                 There are no pending out-of-band migrations that need to complete.
-                            </Text>
-                        </Alert>
+                            </Alert>
+                        </Text>
                     )}
+                    <hr className="my-3" />
                 </>
             )}
         </>
