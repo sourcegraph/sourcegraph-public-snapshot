@@ -330,3 +330,39 @@ func TestFileHasOwnerPredicate(t *testing.T) {
 		}
 	})
 }
+
+func TestFileHasContributorPredicate(t *testing.T) {
+	t.Run("Unmarshal", func(t *testing.T) {
+		type test struct {
+			name     string
+			params   string
+			expected *FileHasContributorPredicate
+			error    string
+		}
+
+		valid := []test{
+			{`text`, `test`, &FileHasContributorPredicate{Contributor: "test"}, ""},
+			{`error parsing regexp`, `(((test`, &FileHasContributorPredicate{}, "the file:has.contributor() predicate has invalid argument: error parsing regexp: missing closing ): `(((test`"},
+			{`email to regex`, `test@example.com`, &FileHasContributorPredicate{Contributor: "test@example.com"}, ""},
+			{`regex`, `(?i)te.t@mails.*`, &FileHasContributorPredicate{Contributor: "(?i)te.t@mails.*"}, ""},
+		}
+
+		for _, tc := range valid {
+			t.Run(tc.name, func(t *testing.T) {
+				p := &FileHasContributorPredicate{}
+				err := p.Unmarshal(tc.params, false)
+				if err != nil {
+					if tc.error == "" {
+						t.Fatalf("unexpected error: %s", err)
+					} else if tc.error != err.Error() {
+						t.Fatalf("expected error %s, got %s", tc.error, err.Error())
+					}
+				}
+
+				if !reflect.DeepEqual(tc.expected, p) {
+					t.Fatalf("expected %#v, got %#v", tc.expected, p)
+				}
+			})
+		}
+	})
+}

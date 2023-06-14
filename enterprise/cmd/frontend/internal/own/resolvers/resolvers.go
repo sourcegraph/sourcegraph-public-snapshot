@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -434,8 +435,18 @@ func (r *ownResolver) ownershipConnection(
 }
 
 type ownStatsResolver struct {
-	db   edb.EnterpriseDB
-	opts database.TreeLocationOpts
+	db           edb.EnterpriseDB
+	opts         database.TreeLocationOpts
+	once         sync.Once
+	ownCounts    database.PathAggregateCounts
+	ownCountsErr error
+}
+
+func (r *ownStatsResolver) computeOwnCounts(ctx context.Context) (database.PathAggregateCounts, error) {
+	r.once.Do(func() {
+		r.ownCounts, r.ownCountsErr = r.db.OwnershipStats().QueryAggregateCounts(ctx, r.opts)
+	})
+	return r.ownCounts, r.ownCountsErr
 }
 
 func (r *ownStatsResolver) TotalFiles(ctx context.Context) (int32, error) {
@@ -443,19 +454,27 @@ func (r *ownStatsResolver) TotalFiles(ctx context.Context) (int32, error) {
 }
 
 func (r *ownStatsResolver) TotalCodeownedFiles(ctx context.Context) (int32, error) {
-	counts, err := r.db.OwnershipStats().QueryAggregateCounts(ctx, r.opts)
+	counts, err := r.computeOwnCounts(ctx)
 	if err != nil {
 		return 0, err
 	}
 	return int32(counts.CodeownedFileCount), nil
 }
 
-func (r *ownStatsResolver) TotalOwnedFiles(context.Context) (int32, error) {
-	return 0, nil
+func (r *ownStatsResolver) TotalOwnedFiles(ctx context.Context) (int32, error) {
+	counts, err := r.computeOwnCounts(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(counts.TotalOwnedFileCount), nil
 }
 
-func (r *ownStatsResolver) TotalAssignedOwnershipFiles(context.Context) (int32, error) {
-	return 0, nil
+func (r *ownStatsResolver) TotalAssignedOwnershipFiles(ctx context.Context) (int32, error) {
+	counts, err := r.computeOwnCounts(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int32(counts.AssignedOwnershipFileCount), nil
 }
 
 type ownershipConnectionResolver struct {

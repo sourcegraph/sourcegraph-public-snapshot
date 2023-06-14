@@ -15,6 +15,7 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
+import { showSetupNotification } from './notifications/setup-notification'
 import { getRgPath } from './rg'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
@@ -25,6 +26,7 @@ import {
     SecretStorage,
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
+import { createStatusBar } from './services/StatusBar'
 
 const CODY_FEEDBACK_URL =
     'https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode'
@@ -148,6 +150,8 @@ const register = async (
         }
         chatProvider.sendErrorToWebview(error)
     }
+
+    const statusBar = createStatusBar()
 
     disposables.push(
         vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
@@ -275,7 +279,8 @@ const register = async (
                     }
                 }
             },
-        })
+        }),
+        statusBar
     )
 
     if (initialConfig.experimentalSuggest) {
@@ -289,6 +294,7 @@ const register = async (
             completionsClient,
             docprovider,
             history,
+            statusBar,
             codebaseContext
         )
         disposables.push(
@@ -336,6 +342,8 @@ const register = async (
         const authStatus = await getAuthStatus(initialConfig)
         await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
     }
+
+    await showSetupNotification(initialConfig, localStorage)
 
     return {
         disposable: vscode.Disposable.from(...disposables),
