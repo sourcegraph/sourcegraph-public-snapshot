@@ -2,7 +2,7 @@ package reposource
 
 import (
 	"testing"
-
+	"github.com/stretchr/testify/assert"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
