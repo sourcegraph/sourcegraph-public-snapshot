@@ -5,7 +5,7 @@ You'll find a lot of mentions of [OCI](https://opencontainers.org/) throughout t
 
 We use [`rules_oci`](https://github.com/bazel-contrib/rules_oci) and [Wolfi](https://github.com/wolfi-dev) to produce the container images. 
 
-See [bazel.md](./bazel.md) for general bazel info/setup.
+See [Bazel at Sourcegraph](./index.md) for general bazel info/setup.
 
 ## Why using Bazel to build containers 
 
@@ -46,7 +46,7 @@ The first two layers are handled by Wolfi and the rest if handled by Bazel.
 
 ### Wolfi 
 
-See [the dedicated page for Wolfi](./wolfi/index.md). 
+See [the dedicated page for Wolfi](../wolfi/index.md). 
 
 ### Bazel
 
