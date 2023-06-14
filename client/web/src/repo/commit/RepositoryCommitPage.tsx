@@ -56,7 +56,7 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
     })
 
     const commit = useMemo(
-        () => (data?.node && data?.node?.__typename === 'Repository' ? data?.node?.commit : undefined),
+        () => (data?.node && data?.node?.__typename === 'Repository' ? data?.node?.commit || undefined : undefined),
         [data]
     )
 
@@ -115,8 +115,8 @@ interface RepositoryRevisionNodesProps extends TelemetryProps, PlatformContextPr
     changelistID: string
 
     repo: RepositoryFields
-    commit: GitCommitFields | undefined | null
-    onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
+    commit: GitCommitFields | undefined
+    onDidUpdateExternalLinks: (externalLinks?: ExternalLinkFields[]) => void
 }
 
 const RepositoryRevisionNodes: React.FunctionComponent<RepositoryRevisionNodesProps> = props => {
