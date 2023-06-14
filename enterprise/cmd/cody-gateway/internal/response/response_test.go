@@ -29,5 +29,6 @@ func TestStatusHeaderRecorder(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, recorder.StatusCode)
 		assert.Equal(t, http.StatusOK, underlying.Code)
+		assert.Equal(t, "foo", underlying.Body.String())
 	})
 }
