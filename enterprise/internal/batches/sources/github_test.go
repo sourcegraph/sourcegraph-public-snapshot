@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -797,6 +798,69 @@ func TestGithubSource_GetFork(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestGithubSource_DuplicateCommit(t *testing.T) {
+	// This test uses the branch "duplicate-commits-on-me" on the repository
+	// https://github.com/sourcegraph/automation-testing. The branch contains a single
+	// commit, to mimic the state after gitserver pushes the commit for Batch Changes.
+	//
+	// The requests here cannot be easily rerun with `-update` since you can only open a
+	// pull request once. To update, push a new branch with at least one commit to
+	// automation-testing, and put the branch names into the `success` case below.
+	//
+	// You can update just this test with `-update GithubSource_DuplicateCommit`.
+	repo := &types.Repo{
+		Metadata: &github.Repository{
+			ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+			NameWithOwner: "sourcegraph/automation-testing",
+		},
+	}
+
+	testCases := []struct {
+		name string
+		rev  string
+		err  *string
+	}{
+		{
+			name: "success",
+			rev:  "refs/heads/duplicate-commits-on-me",
+		},
+		{
+			name: "invalid ref",
+			rev:  "refs/heads/some-non-existent-branch-naturally",
+			err:  pointers.Ptr("No commit found for SHA: refs/heads/some-non-existent-branch-naturally"),
+		},
+	}
+
+	opts := protocol.CreateCommitFromPatchRequest{
+		CommitInfo: protocol.PatchCommitInfo{
+			Messages: []string{"Test commit from VCR tests"},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+
+		tc.name = "GithubSource_DuplicateCommit_" + strings.ReplaceAll(tc.name, " ", "_")
+
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			src, save := setup(t, ctx, tc.name)
+			defer save(t)
+
+			err := src.DuplicateCommit(ctx, opts, repo, tc.rev)
+			if err != nil && tc.err == nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+			if err == nil && tc.err != nil {
+				t.Fatalf("expected error %q but got none", *tc.err)
+			}
+			if err != nil && tc.err != nil {
+				assert.ErrorContains(t, err, *tc.err)
+			}
+		})
+	}
 }
 
 type mockGithubClientFork struct {
