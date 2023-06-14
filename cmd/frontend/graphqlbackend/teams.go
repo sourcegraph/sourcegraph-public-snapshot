@@ -184,7 +184,6 @@ func (r *TeamResolver) Creator(ctx context.Context) (*UserResolver, error) {
 }
 
 func (r *TeamResolver) DisplayName() *string {
-	fmt.Println("TEAM DISPLAY NAME OF ", r.team)
 	if r.team.DisplayName == "" {
 		return nil
 	}
