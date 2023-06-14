@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
@@ -78,14 +79,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	getQueryEmbedding, err := getCachedQueryEmbeddingFn()
 	if err != nil {
 		return err
 	}
 
 	weaviate := newWeaviateClient(
 		logger,
-		getQueryEmbedding,
 		config.WeaviateURL,
 	)
 
@@ -165,6 +164,19 @@ func NewHandler(
 	})
 
 	return mux
+}
+
+func getQueryEmbedding(ctx context.Context, query string) ([]float32, string, error) {
+	client, err := embed.NewEmbeddingsClient(&conf.Get().SiteConfiguration)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "getting embeddings client")
+	}
+
+	floatQuery, err := client.GetEmbeddingsWithRetries(ctx, []string{query}, queryEmbeddingRetries)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "getting query embedding")
+	}
+	return floatQuery, client.GetModelIdentifier(), nil
 }
 
 func mustInitializeFrontendDB(observationCtx *observation.Context) *sql.DB {

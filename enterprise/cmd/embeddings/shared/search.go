@@ -9,7 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT = 1000
+const similaritySearchMinRowsToSplit = 1000
+const queryEmbeddingRetries = 3
 
 type getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
 type getQueryEmbeddingFn func(ctx context.Context, model string) ([]float32, string, error)
@@ -23,13 +24,13 @@ func searchRepoEmbeddingIndexes(
 ) (*embeddings.EmbeddingCombinedSearchResults, error) {
 	floatQuery, queryModel, err := getQueryEmbedding(ctx, params.Query)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting query embedding")
+		return nil, err
 	}
 	embeddedQuery := embeddings.Quantize(floatQuery)
 
 	workerOpts := embeddings.WorkerOptions{
 		NumWorkers:     runtime.GOMAXPROCS(0),
-		MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT,
+		MinRowsToSplit: similaritySearchMinRowsToSplit,
 	}
 
 	searchOpts := embeddings.SearchOptions{
@@ -40,7 +41,7 @@ func searchRepoEmbeddingIndexes(
 
 	for i, repoName := range params.RepoNames {
 		if weaviate.Use(ctx) {
-			codeResults, textResults, err := weaviate.Search(ctx, repoName, params.RepoIDs[i], params.Query, params.CodeResultsCount, params.TextResultsCount)
+			codeResults, textResults, err := weaviate.Search(ctx, repoName, params.RepoIDs[i], floatQuery, params.CodeResultsCount, params.TextResultsCount)
 			if err != nil {
 				return nil, err
 			}

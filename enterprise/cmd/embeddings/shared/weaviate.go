@@ -18,8 +18,7 @@ import (
 )
 
 type weaviateClient struct {
-	logger            log.Logger
-	getQueryEmbedding getQueryEmbeddingFn
+	logger log.Logger
 
 	client    *weaviate.Client
 	clientErr error
@@ -27,7 +26,6 @@ type weaviateClient struct {
 
 func newWeaviateClient(
 	logger log.Logger,
-	getQueryEmbedding getQueryEmbeddingFn,
 	url *url.URL,
 ) *weaviateClient {
 	if url == nil {
@@ -42,10 +40,9 @@ func newWeaviateClient(
 	})
 
 	return &weaviateClient{
-		logger:            logger.Scoped("weaviate", "client for weaviate embedding index"),
-		getQueryEmbedding: getQueryEmbedding,
-		client:            client,
-		clientErr:         err,
+		logger:    logger.Scoped("weaviate", "client for weaviate embedding index"),
+		client:    client,
+		clientErr: err,
 	}
 }
 
@@ -53,20 +50,15 @@ func (w *weaviateClient) Use(ctx context.Context) bool {
 	return featureflag.FromContext(ctx).GetBoolOr("search-weaviate", false)
 }
 
-func (w *weaviateClient) Search(ctx context.Context, repoName api.RepoName, repoID api.RepoID, query string, codeResultsCount, textResultsCount int) (codeResults, textResults []embeddings.EmbeddingSearchResult, _ error) {
+func (w *weaviateClient) Search(ctx context.Context, repoName api.RepoName, repoID api.RepoID, query []float32, codeResultsCount, textResultsCount int) (codeResults, textResults []embeddings.EmbeddingSearchResult, _ error) {
 	if w.clientErr != nil {
 		return nil, nil, w.clientErr
-	}
-
-	embeddedQuery, _, err := w.getQueryEmbedding(ctx, query)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "getting query embedding")
 	}
 
 	queryBuilder := func(klass string, limit int) *graphql.GetBuilder {
 		return graphql.NewQueryClassBuilder(klass).
 			WithNearVector((&graphql.NearVectorArgumentBuilder{}).
-				WithVector(embeddedQuery)).
+				WithVector(query)).
 			WithFields([]graphql.Field{
 				{Name: "file_name"},
 				{Name: "start_line"},

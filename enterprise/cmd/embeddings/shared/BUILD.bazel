@@ -8,7 +8,6 @@ go_library(
         "config.go",
         "context_detection.go",
         "main.go",
-        "query_embeddings_cache.go",
         "repo_embedding_index_cache.go",
         "search.go",
         "service.go",
