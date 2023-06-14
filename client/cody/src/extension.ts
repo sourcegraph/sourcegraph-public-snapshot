@@ -15,7 +15,12 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
     }
 
     start(context)
-        .then(disposable => context.subscriptions.push(disposable))
+        .then(disposable => {
+            if (!context.globalState.get('extension.hasActivatedPreviously')) {
+                void context.globalState.update('extension.hasActivatedPreviously', 'true')
+            }
+            context.subscriptions.push(disposable)
+        })
         .catch(error => console.error(error))
 
     return new ExtensionApi()
