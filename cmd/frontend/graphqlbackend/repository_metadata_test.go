@@ -71,7 +71,7 @@ func TestRepositoryMetadata(t *testing.T) {
 		}{
 			Repo:  gqlID,
 			Key:   "tag1",
-			Value: pointers.Ptr("        "),
+			Value: pointers.Ptr(" 	"),
 		})
 		require.Error(t, err)
 		require.Equal(t, emptyNonNilValueError{value: " 	"}, err)
