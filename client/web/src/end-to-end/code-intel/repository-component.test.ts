@@ -403,14 +403,14 @@ describe('Repository component', () => {
                 const missingNames = []
                 for (const symName of symbolTest.symbolNames) {
                     if (!symbolNames.includes(symName)) {
-                        missingNames.push(symName);
+                        missingNames.push(symName)
                     }
                 }
 
                 const missingTypes = []
                 for (const symType of symbolTest.symbolTypes) {
                     if (!symbolTypes.includes(symType)) {
-                        missingTypes.push(symType);
+                        missingTypes.push(symType)
                     }
                 }
 
