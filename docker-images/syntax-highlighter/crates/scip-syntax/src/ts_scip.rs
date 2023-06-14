@@ -1,4 +1,4 @@
-use scip::types::{descriptor::Suffix, Descriptor};
+use scip::types::{descriptor::Suffix, symbol_information, Descriptor};
 
 pub fn capture_name_to_descriptor(capture: &str, name: String) -> Descriptor {
     Descriptor {
@@ -14,5 +14,27 @@ pub fn capture_name_to_descriptor(capture: &str, name: String) -> Descriptor {
         .into(),
         name,
         ..Default::default()
+    }
+}
+
+pub fn captures_to_kind(kind: &Option<&String>) -> symbol_information::Kind {
+    use symbol_information::Kind::*;
+
+    kind.map_or(UnspecifiedKind, |kind| match kind.as_str() {
+        "kind.constant" => Constant,
+        "kind.package" => Package,
+        "kind.function" => Function,
+        _ => UnspecifiedKind,
+    })
+}
+
+pub fn symbol_kind_to_ctags_kind(kind: &symbol_information::Kind) -> Option<&'static str> {
+    use symbol_information::Kind::*;
+
+    match kind {
+        Constant => Some("constant"),
+        Package => Some("package"),
+        Function => Some("function"),
+        _ => None,
     }
 }
