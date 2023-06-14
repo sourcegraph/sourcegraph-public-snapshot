@@ -246,7 +246,10 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 	t.Run("/redirect", func(t *testing.T) {
 		baseURL := "/githubapp/redirect"
 		code := "2644896245sasdsf6dsd"
-		state := uuid.New()
+		state, err := RandomState(128)
+		if err != nil {
+			t.Fatalf("unexpected error generating random state: %s", err.Error())
+		}
 		domain := types.BatchesGitHubAppDomain
 
 		t.Run("normal user", func(t *testing.T) {
@@ -306,7 +309,7 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 				Domain:      string(domain),
 			})
 			require.NoError(t, err)
-			cache.Set(state.String(), stateDeets)
+			cache.Set(state, stateDeets)
 
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, req)
@@ -319,7 +322,10 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 
 	t.Run("/setup", func(t *testing.T) {
 		baseURL := "/githubapp/setup"
-		state := uuid.New()
+		state, err := RandomState(128)
+		if err != nil {
+			t.Fatalf("unexpected error generating random state: %s", err.Error())
+		}
 		installationID := 232034243
 		domain := types.BatchesGitHubAppDomain
 
@@ -373,7 +379,7 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 
 			stateDeets, err := json.Marshal(gitHubAppStateDetails{})
 			require.NoError(t, err)
-			cache.Set(state.String(), stateDeets)
+			cache.Set(state, stateDeets)
 
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, req)
@@ -393,7 +399,7 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 				Domain: string(domain),
 			})
 			require.NoError(t, err)
-			cache.Set(state.String(), stateDeets)
+			cache.Set(state, stateDeets)
 
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, req)

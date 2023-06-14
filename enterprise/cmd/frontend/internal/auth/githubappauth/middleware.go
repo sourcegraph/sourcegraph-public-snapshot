@@ -86,8 +86,9 @@ func checkSiteAdmin(db edb.EnterpriseDB, w http.ResponseWriter, req *http.Reques
 	return err
 }
 
-// randomState returns a random sha256 hash that can be used as a state parameter
-func randomState(n int) (string, error) {
+// RandomState returns a random sha256 hash that can be used as a state parameter. It is only
+// exported for testing purposes.
+func RandomState(n int) (string, error) {
 	data := make([]byte, n)
 	if _, err := io.ReadFull(rand.Reader, data); err != nil {
 		return "", err
@@ -127,7 +128,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
-		s, err := randomState(128)
+		s, err := RandomState(128)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error when generating state parameter: %s", err.Error()), http.StatusInternalServerError)
 			return
@@ -189,7 +190,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			webhookUUID = hook.UUID.String()
 		}
 
-		s, err := randomState(128)
+		s, err := RandomState(128)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error when generating state parameter: %s", err.Error()), http.StatusInternalServerError)
 			return
@@ -298,7 +299,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
-		state, err = randomState(128)
+		state, err = RandomState(128)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error when creating state param: %s", err.Error()), http.StatusInternalServerError)
 			return
