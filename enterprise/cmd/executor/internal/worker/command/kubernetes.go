@@ -6,7 +6,6 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
@@ -64,8 +63,9 @@ type KubernetesContainerOptions struct {
 
 // KubernetesCloneOptions contains options for cloning a Git repository.
 type KubernetesCloneOptions struct {
-	ExecutorName string
-	BaseURL      string
+	ExecutorName   string
+	EndpointURL    string
+	GitServicePath string
 }
 
 // KubernetesNodeAffinity contains the Kubernetes node affinity for a Job.
@@ -494,7 +494,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 // RepositoryOptions contains the options for a repository job.
 type RepositoryOptions struct {
 	JobID               int
-	RepositoryName      string
+	CloneURL            string
 	RepositoryDirectory string
 	Commit              string
 }
@@ -561,9 +561,10 @@ func NewKubernetesSingleJob(
 		repoDir = repoOptions.RepositoryDirectory
 	}
 	setupArgs := []string{
-		fmt.Sprintf("mkdir -p %s; ", repoDir) +
+		"set -e; " +
+			fmt.Sprintf("mkdir -p %s; ", repoDir) +
 			fmt.Sprintf("git -C %s init; ", repoDir) +
-			fmt.Sprintf("git -C %s remote add origin %s/%s; ", repoDir, options.CloneOptions.BaseURL, repoOptions.RepositoryName) +
+			fmt.Sprintf("git -C %s remote add origin %s; ", repoDir, repoOptions.CloneURL) +
 			fmt.Sprintf("git -C %s config --local gc.auto 0; ", repoDir) +
 			fmt.Sprintf("git -C %s "+
 				"-c http.extraHeader=\"Authorization:Bearer $TOKEN\" "+
@@ -583,7 +584,7 @@ func NewKubernetesSingleJob(
 		dir := filepath.Dir(file.Path)
 		setupArgs[0] += "mkdir -p " + dir + "; echo -E '" + formatContent(string(file.Content)) + "' > " + file.Path + "; chmod +x " + file.Path + "; "
 		if !file.ModifiedAt.IsZero() {
-			setupArgs[0] += fmt.Sprintf("touch -m -d '%s' %s; ", file.ModifiedAt.Format(time.RFC3339), file.Path)
+			setupArgs[0] += fmt.Sprintf("touch -m -d '%s' %s; ", file.ModifiedAt.Local().Format("2006-01-02T15:04:05"), file.Path)
 		}
 	}
 

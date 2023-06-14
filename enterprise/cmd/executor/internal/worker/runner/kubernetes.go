@@ -3,6 +3,8 @@ package runner
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"path/filepath"
 
 	"github.com/sourcegraph/log"
 	batchv1 "k8s.io/api/batch/v1"
@@ -135,9 +137,14 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 			}
 		}
 
+		relativeURL, err := makeRelativeURL(r.options.CloneOptions.EndpointURL, r.options.CloneOptions.GitServicePath, spec.Job.RepositoryName)
+		if err != nil {
+			return errors.Wrap(err, "failed to make relative URL")
+		}
+
 		repoOptions := command.RepositoryOptions{
 			JobID:               spec.Job.ID,
-			RepositoryName:      spec.Job.RepositoryName,
+			CloneURL:            relativeURL.String(),
 			RepositoryDirectory: spec.Job.RepositoryDirectory,
 			Commit:              spec.Job.Commit,
 		}
@@ -186,4 +193,18 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	}
 	r.internalLogger.Debug("Job completed successfully", log.Int("jobID", spec.Job.ID))
 	return nil
+}
+
+func makeRelativeURL(base string, path ...string) (*url.URL, error) {
+	baseURL, err := url.Parse(base)
+	if err != nil {
+		return nil, err
+	}
+
+	urlx, err := baseURL.ResolveReference(&url.URL{Path: filepath.Join(path...)}), nil
+	if err != nil {
+		return nil, err
+	}
+
+	return urlx, nil
 }
