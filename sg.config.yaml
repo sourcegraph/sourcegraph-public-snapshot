@@ -637,7 +637,7 @@ commands:
       }
       kubectl delete -f . --ignore-not-found
       kubectl apply -f .
-      trap cleanup EXIT
+      trap cleanup EXIT SIGINT
       while true; do
         sleep 1
       done
