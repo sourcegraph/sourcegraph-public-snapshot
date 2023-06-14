@@ -1034,6 +1034,7 @@ ts_project(
         "src/enterprise/site-admin/UserManagement/backend.ts",
         "src/enterprise/site-admin/UserManagement/components/RoleAssignmentModal.tsx",
         "src/enterprise/site-admin/backend.ts",
+        "src/enterprise/site-admin/cody/RepoEmbeddingJobDetails.tsx",
         "src/enterprise/site-admin/cody/RepoEmbeddingJobNode.tsx",
         "src/enterprise/site-admin/cody/SiteAdminCodyPage.tsx",
         "src/enterprise/site-admin/cody/backend.ts",

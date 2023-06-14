@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -201,6 +203,7 @@ type ListOpts struct {
 	*database.PaginationArgs
 	Query *string
 	State *string
+	Repo  *graphql.ID
 }
 
 func init() {
@@ -468,6 +471,14 @@ func (s *repoEmbeddingJobsStore) CountRepoEmbeddingJobs(ctx context.Context, opt
 		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.state = %s", strings.ToLower(*opts.State)))
 	}
 
+	if opts.Repo != nil {
+		var repoID api.RepoID
+		if err := relay.UnmarshalSpec(*opts.Repo, &repoID); err != nil {
+			return 0, err
+		}
+		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.repo_id = %d", repoID))
+	}
+
 	var whereClause *sqlf.Query
 	if len(conds) != 0 {
 		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
@@ -508,6 +519,14 @@ func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, opts
 
 	if opts.State != nil && *opts.State != "" {
 		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.state = %s", strings.ToLower(*opts.State)))
+	}
+
+	if opts.Repo != nil {
+		var repoID api.RepoID
+		if err := relay.UnmarshalSpec(*opts.Repo, &repoID); err != nil {
+			return nil, err
+		}
+		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.repo_id = %d", repoID))
 	}
 
 	var whereClause *sqlf.Query
