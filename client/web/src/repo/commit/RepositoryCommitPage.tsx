@@ -111,8 +111,8 @@ interface RepositoryRevisionNodesProps extends TelemetryProps, PlatformContextPr
     error?: ApolloError
     loading: boolean
 
-    revspec: String
-    changelistID: String
+    revspec: string
+    changelistID: string
 
     repo: RepositoryFields
     commit: GitCommitFields | undefined | null
@@ -136,7 +136,7 @@ const RepositoryRevisionNodes: React.FunctionComponent<RepositoryRevisionNodesPr
         return () => {
             props.onDidUpdateExternalLinks(undefined)
         }
-    }, [props])
+    }, [commit, props])
 
     const queryDiffs = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
@@ -158,7 +158,7 @@ const RepositoryRevisionNodes: React.FunctionComponent<RepositoryRevisionNodesPr
         ? `Changelist ${props.changelistID}`
         : `Commit ${props.revspec}`
 
-    const pageError = repo.sourceType == RepositoryType.PERFORCE_DEPOT ? 'Changelist not found' : 'Commit not found'
+    const pageError = repo.sourceType === RepositoryType.PERFORCE_DEPOT ? 'Changelist not found' : 'Commit not found'
 
     return (
         <div data-testid="repository-commit-page" className={classNames('p-3', styles.repositoryCommitPage)}>
