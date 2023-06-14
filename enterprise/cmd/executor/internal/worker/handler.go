@@ -297,6 +297,7 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 					Operation: h.operations.Exec,
 				},
 			},
+			Job: job,
 		}
 
 		logger.Info(fmt.Sprintf("Running src-cli step #%d", i))
