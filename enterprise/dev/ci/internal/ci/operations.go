@@ -760,7 +760,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
+			bk.DependsOn("bazel-push-images-candidate"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
 			bk.Env("DISPLAY", ":99"),

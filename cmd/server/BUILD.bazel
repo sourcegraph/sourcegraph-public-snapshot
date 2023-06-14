@@ -94,7 +94,17 @@ pkg_tar(
 
 pkg_tar(
     name = "tar_postgres_optimize",
-    srcs = ["//cmd/server/rootfs:postgres-optimize.sh"],
+    srcs = [
+        "//cmd/server/rootfs:postgres-optimize.sh",
+    ],
+)
+
+pkg_tar(
+    name = "tar_postgres_reindex",
+    srcs = [
+        "//docker-images/postgres-12-alpine/rootfs:reindex.sh",
+    ],
+    package_dir = "/",
 )
 
 # TODO(@jhchabran) prom-wrapper has to be in /bin while we're still
@@ -129,6 +139,7 @@ oci_image(
         ":tar_syntax-highlighter",
         ":tar_scip-ctags",
         ":tar_postgres_optimize",
+        ":tar_postgres_reindex",
         ":tar_prom-wrapper",
         "//cmd/gitserver:tar_p4_fusion_wrappers",
     ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),

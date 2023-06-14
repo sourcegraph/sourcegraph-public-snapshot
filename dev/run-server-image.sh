@@ -50,6 +50,7 @@ docker run "$@" \
   -e SOURCEGRAPH_LICENSE_GENERATION_KEY="$SOURCEGRAPH_LICENSE_GENERATION_KEY" \
   -e SG_FEATURE_FLAG_GRPC="$SG_FEATURE_FLAG_GRPC" \
   -e DB_STARTUP_TIMEOUT="$DB_STARTUP_TIMEOUT" \
+  -e SOURCEGRAPH_5_1_DB_MIGRATION=true \
   --volume "$DATA/config:/etc/sourcegraph" \
   --volume "$DATA/data:/var/opt/sourcegraph" \
   "$IMAGE"

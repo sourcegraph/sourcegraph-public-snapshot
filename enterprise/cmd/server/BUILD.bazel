@@ -62,6 +62,14 @@ pkg_tar(
     srcs = ["//cmd/server/rootfs:postgres-optimize.sh"],
 )
 
+pkg_tar(
+    name = "tar_postgres_reindex",
+    srcs = [
+        "//docker-images/postgres-12-alpine/rootfs:reindex.sh",
+    ],
+    package_dir = "/",
+)
+
 # TODO(@jhchabran) prom-wrapper has to be in /bin while we're still
 # building the old and new images, because this path is fed to the procfile
 # by the server, and cannot be placed at two different places.
@@ -161,6 +169,7 @@ oci_image(
         ":tar_syntax-highlighter",
         ":tar_scip-ctags",
         ":tar_postgres_optimize",
+        ":tar_postgres_reindex",
         ":tar_prom-wrapper",
         "//enterprise/cmd/gitserver:tar_p4_fusion_wrappers",
         "tar_image_test_scripts",

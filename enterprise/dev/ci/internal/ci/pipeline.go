@@ -396,6 +396,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ForceBazel:                !c.MessageFlags.NoBazel,
 		}))
 
+		// Publish candidate images to dev registry
+		publishOpsDev := operations.NewNamedSet("Publish candidate images")
+		publishOpsDev.Append(bazelPushImagesCmd(c.Version, true))
+		ops.Merge(publishOpsDev)
+
 		// Integration tests
 		// Temporary: on main branches, we build images with bazel binaries based on their toolchain and/or purpose. This step key is the first image in the array.
 		// This will be removed once we build images with wolfi.
@@ -427,7 +432,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				publishOps.Append(publishExecutorDockerMirror(c))
 			}
 		}
-		publishOps.Append(bazelPushImagesCmd(c.Version))
+		// Final Bazel images
+		publishOps.Append(bazelPushImagesCmd(c.Version, false))
 		ops.Merge(publishOps)
 	}
 
