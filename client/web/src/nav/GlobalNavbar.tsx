@@ -19,8 +19,6 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, ButtonLink, useWindowSize, Tooltip, ProductStatusBadge } from '@sourcegraph/wildcard'
 
-import { TauriNavigation } from '../app/TauriNavigation'
-import { HistoryStack } from '../app/useHistoryStack'
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
@@ -73,8 +71,6 @@ export interface GlobalNavbarProps
     showFeedbackModal: () => void
 
     setFuzzyFinderIsVisible: React.Dispatch<SetStateAction<boolean>>
-
-    historyStack: HistoryStack
 }
 
 /**
@@ -137,7 +133,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     notebooksEnabled,
     ownEnabled,
     showFeedbackModal,
-    historyStack,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -212,8 +207,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     />
                 }
             >
-                {isSourcegraphApp && <TauriNavigation historyStack={historyStack} />}
-
                 <NavGroup>
                     {!isSourcegraphApp &&
                         (searchNavBarItems.length > 0 ? (

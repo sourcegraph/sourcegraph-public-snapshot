@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from 'react'
 
-import { mdiClose, mdiCogOutline, mdiDelete, mdiDotsVertical, mdiOpenInNew, mdiPlus, mdiChevronRight } from '@mdi/js'
+import {
+    mdiClose,
+    mdiCogOutline,
+    mdiDelete,
+    mdiDotsVertical,
+    mdiOpenInNew,
+    mdiPlus,
+    mdiChevronRight,
+    mdiViewList,
+} from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -42,6 +51,7 @@ import styles from './CodyChatPage.module.scss'
 interface CodyChatPageProps {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphApp: boolean
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
@@ -83,6 +93,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     authenticatedUser,
     context,
     isSourcegraphDotCom,
+    isSourcegraphApp,
 }) => {
     const { pathname } = useLocation()
     const navigate = useNavigate()
@@ -124,6 +135,12 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
         }
     }, [transcriptId, loaded, pathname, navigate])
 
+    const [showMobileHistory, setShowMobileHistory] = useState<boolean>(false)
+    // Close mobile history list when transcript changes
+    useEffect(() => {
+        setShowMobileHistory(false)
+    }, [transcript])
+
     if (!loaded) {
         return null
     }
@@ -142,7 +159,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     }
 
     return (
-        <Page className="overflow-hidden">
+        <Page className={classNames('d-flex flex-column', styles.page)}>
             <PageTitle title="Cody AI Chat" />
             <PageHeader
                 actions={
@@ -159,23 +176,25 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                         graph.
                     </>
                 }
-                className="mb-3"
+                className={styles.pageHeader}
             >
                 <PageHeader.Heading as="h2" styleAs="h1">
                     <PageHeader.Breadcrumb icon={CodyColorIcon}>
                         <div className="d-inline-flex align-items-center">
                             Cody Chat
-                            <Badge variant="info" className="ml-2">
-                                Beta
-                            </Badge>
+                            {!isSourcegraphApp && (
+                                <Badge variant="info" className="ml-2">
+                                    Beta
+                                </Badge>
+                            )}
                         </div>
                     </PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
 
             {/* Page content */}
-            <div className={classNames('row mb-5', styles.pageWrapper)}>
-                <div className="d-flex flex-column col-sm-3 h-100">
+            <div className={classNames('row flex-1 overflow-hidden', styles.pageWrapper)}>
+                <div className={classNames('col-md-3', styles.sidebarWrapper)}>
                     <div className={styles.sidebarHeader}>
                         <H4>
                             <b>Chats</b>
@@ -290,9 +309,54 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                         ))}
                 </div>
 
-                <div className={classNames('d-flex flex-column col-sm-9 h-100', styles.chatMainWrapper)}>
+                <div
+                    className={classNames(
+                        'col-md-9 h-100',
+                        styles.chatMainWrapper,
+                        showMobileHistory && styles.chatMainWrapperWithMobileHistory
+                    )}
+                >
+                    <div className={styles.mobileTopBar}>
+                        <Button
+                            variant="icon"
+                            className={styles.mobileTopBarButton}
+                            onClick={() => setShowMobileHistory(true)}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiViewList} className="mr-2" />
+                            All chats
+                        </Button>
+                        <div className={classNames('border-right', styles.mobileTopBarDivider)} />
+                        <Button variant="icon" className={styles.mobileTopBarButton} onClick={initializeNewChat}>
+                            <Icon aria-hidden={true} svgPath={mdiPlus} className="mr-2" />
+                            New chat
+                        </Button>
+                    </div>
                     <ChatUI codyChatStore={codyChatStore} />
                 </div>
+
+                {showMobileHistory && (
+                    <div className={styles.mobileHistoryWrapper}>
+                        <div className={styles.mobileTopBar}>
+                            <Button
+                                variant="icon"
+                                className={classNames('w-100', styles.mobileTopBarButton)}
+                                onClick={() => setShowMobileHistory(false)}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiClose} className="mr-2" />
+                                Close
+                            </Button>
+                        </div>
+                        <div className={styles.mobileHistory}>
+                            <HistoryList
+                                currentTranscript={transcript}
+                                transcriptHistory={transcriptHistory}
+                                truncateMessageLength={60}
+                                loadTranscriptFromHistory={loadTranscriptFromHistory}
+                                deleteHistoryItem={deleteHistoryItem}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
         </Page>
     )

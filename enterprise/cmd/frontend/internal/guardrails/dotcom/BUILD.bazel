@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dotcom",
+    srcs = [
+        "dotcom.go",
+        "gen.go",
+        "operations.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails/dotcom",
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    deps = [
+        "//internal/httpcli",
+        "//internal/trace",
+        "@com_github_khan_genqlient//graphql",
+    ],
+)

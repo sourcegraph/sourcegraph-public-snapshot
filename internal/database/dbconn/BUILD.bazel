@@ -23,6 +23,7 @@ go_library(
         "//internal/env",
         "//internal/lazyregexp",
         "//lib/errors",
+        "//lib/output",
         "@com_github_jackc_pgx_v4//:pgx",
         "@com_github_jackc_pgx_v4//stdlib",
         "@com_github_lib_pq//:pq",
