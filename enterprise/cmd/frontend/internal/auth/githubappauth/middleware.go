@@ -238,12 +238,17 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
+		// Check that the length of state is the expected length
+		if len(state) != 64 {
+			http.Error(w, "Bad request, state query param is wrong length", http.StatusBadRequest)
+			return
+		}
+
 		stateValue, ok := cache.Get(state)
 		if !ok {
 			http.Error(w, "Bad request, state query param does not match", http.StatusBadRequest)
 			return
 		}
-		cache.Delete(state)
 
 		var stateDeets gitHubAppStateDetails
 		err := json.Unmarshal(stateValue, &stateDeets)
@@ -251,6 +256,8 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Error(w, "Bad request, invalid state", http.StatusBadRequest)
 			return
 		}
+		// Wait until we've validated the type of state before deleting it from the cache.
+		cache.Delete(state)
 
 		webhookUUID, err := uuid.Parse(stateDeets.WebhookUUID)
 		if err != nil {
@@ -342,13 +349,18 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
+		// Check that the length of state is the expected length
+		if len(state) != 64 {
+			http.Error(w, "Bad request, state query param is wrong length", http.StatusBadRequest)
+			return
+		}
+
 		setupInfo, ok := cache.Get(state)
 		if !ok {
 			redirectURL := generateRedirectURL(nil, nil, nil, nil, errors.New("Bad request, state query param does not match"))
 			http.Redirect(w, req, redirectURL, http.StatusFound)
 			return
 		}
-		cache.Delete(state)
 
 		var stateDeets gitHubAppStateDetails
 		err := json.Unmarshal(setupInfo, &stateDeets)
@@ -357,6 +369,8 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Redirect(w, req, redirectURL, http.StatusFound)
 			return
 		}
+		// Wait until we've validated the type of state before deleting it from the cache.
+		cache.Delete(state)
 
 		installationID, err := strconv.Atoi(instID)
 		if err != nil {
