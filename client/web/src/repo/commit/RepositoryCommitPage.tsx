@@ -45,7 +45,7 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
     const params = useParams<{ revspec: string }>()
 
     if (!params.revspec) {
-        throw new Error('Missing `revspec` param!')
+        throw new Error('Missing `revspec` param.')
     }
 
     const { data, error, loading } = useQuery<RepositoryCommitResult, RepositoryCommitVariables>(COMMIT_QUERY, {
@@ -77,7 +77,7 @@ export const RepositoryChangelistPage: React.FunctionComponent<RepositoryCommitP
     const params = useParams<{ changelistID: string }>()
 
     if (!params.changelistID) {
-        throw new Error('Missing `changelistID` param! It must be set.')
+        throw new Error('Missing `changelistID` param. It must be set.')
     }
 
     const { data, error, loading } = useQuery<RepositoryChangelistResult, RepositoryChangelistVariables>(
