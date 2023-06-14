@@ -2,7 +2,7 @@ import React from 'react'
 
 import { useLocation } from 'react-router-dom'
 
-import { Container, H3, Link, Text } from '@sourcegraph/wildcard'
+import { Container, H3, Text } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 import { UseShowMorePaginationResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
@@ -104,12 +104,7 @@ export const CommitSigningIntegrations: React.FunctionComponent<
                 )}
             </ConnectionContainer>
             <Text className="mb-0">
-                Code host not present? Batch Changes only supports commit signing on GitHub code hosts today.{' '}
-                {/* TODO: Fill in docs link */}
-                <Link to="/help/admin/commit_signing_intergrations" target="_blank" rel="noopener noreferrer">
-                    See the docs
-                </Link>{' '}
-                for more information.
+                Code host not present? Batch Changes only supports commit signing on GitHub code hosts today.
             </Text>
         </Container>
     )

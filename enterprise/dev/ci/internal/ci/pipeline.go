@@ -193,7 +193,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
 		ops = operations.NewSet(
-			addClientLintersForAllFiles,
 			addBrowserExtensionUnitTests,
 			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			frontendTests,
@@ -203,7 +202,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.VsceReleaseBranch:
 		// If this is a vs code extension release branch, run the vscode-extension tests and release
 		ops = operations.NewSet(
-			addClientLintersForAllFiles,
 			addVsceTests,
 			wait,
 			addVsceReleaseSteps)
@@ -211,7 +209,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.CodyReleaseBranch:
 		// If this is the Cody VS Code extension release branch, run the Cody tests and release
 		ops = operations.NewSet(
-			addClientLintersForAllFiles,
 			addCodyUnitIntegrationTests,
 			addCodyE2ETests,
 			wait,
@@ -220,7 +217,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.CodyNightly:
 		// If this is a Cody VS Code extension nightly build, run the Cody tests and release
 		ops = operations.NewSet(
-			addClientLintersForAllFiles,
 			addCodyUnitIntegrationTests,
 			addCodyE2ETests,
 			wait,
@@ -230,7 +226,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
 		ops = operations.NewSet(
-			addClientLintersForAllFiles,
 			addBrowserExtensionUnitTests,
 			recordBrowserExtensionIntegrationTests,
 			frontendTests,
@@ -240,7 +235,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.VsceNightly:
 		// If this is a VS Code extension nightly build, run the vsce-extension integration tests
 		ops = operations.NewSet(
-			addClientLintersForAllFiles,
 			addVsceTests,
 		)
 
