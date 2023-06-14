@@ -54,19 +54,19 @@ func Test_calcDurationToWaitForNextHandle(t *testing.T) {
 			want:         0,
 			wantErr:      true,
 		},
-		"returns 0 if last called at is before licenseCheckInterval": {
-			lastCalledAt: now.Add(-licenseCheckInterval - time.Minute).Format(time.RFC3339),
+		"returns 0 if last called at is before LicenseCheckInterval": {
+			lastCalledAt: now.Add(-LicenseCheckInterval - time.Minute).Format(time.RFC3339),
 			want:         0,
 			wantErr:      false,
 		},
-		"returns 0 if last called at is at licenseCheckInterval": {
-			lastCalledAt: now.Add(-licenseCheckInterval).Format(time.RFC3339),
+		"returns 0 if last called at is at LicenseCheckInterval": {
+			lastCalledAt: now.Add(-LicenseCheckInterval).Format(time.RFC3339),
 			want:         0,
 			wantErr:      false,
 		},
 		"returns diff between last called at and now": {
 			lastCalledAt: now.Add(-time.Hour).Format(time.RFC3339),
-			want:         licenseCheckInterval - time.Hour,
+			want:         LicenseCheckInterval - time.Hour,
 			wantErr:      false,
 		},
 	}
