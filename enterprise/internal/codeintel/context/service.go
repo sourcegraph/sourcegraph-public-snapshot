@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
@@ -60,25 +61,25 @@ const (
 	hunkCacheSize                  = 1000
 )
 
-func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolverstubs.FindMostRelevantSCIPSymbolsArgs) (string, error) {
-	filename := args.Args.EditorState.ActiveFile
-	content := args.Args.EditorState.ActiveFileContent
-	commitID := args.Args.CommitID
+func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.GetPreciseContextInput) ([]*types.PreciseData, error) {
+	filename := args.Input.ActiveFile
+	content := args.Input.ActiveFileContent
+	commitID := args.Input.CommitID
 
-	repoID, err := strconv.Atoi(args.Args.Repository)
+	repoID, err := strconv.Atoi(args.Input.Repository)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// TODO: Get uploads from codenav service
 	uploads, err := s.codenavSvc.GetClosestDumpsForBlob(ctx, repoID, commitID, filename, true, "")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	syntectDocument, err := s.getSCIPDocumentByContent(ctx, content, filename)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	usersDescriptorsMap := map[string]struct{}{}
@@ -96,7 +97,7 @@ func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolve
 	for _, upload := range uploads {
 		sd, err := s.codenavSvc.GetSCIPDocumentsBySymbolNames(ctx, upload.ID, symbolNames)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		scipDocs = append(scipDocs, sd...)
 	}
@@ -123,10 +124,10 @@ func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolve
 
 	repo, err := s.repostore.GetByIDs(ctx, api.RepoID(repoID))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if len(repo) == 0 {
-		return "", fmt.Errorf("repo not found")
+		return nil, fmt.Errorf("repo not found")
 	}
 
 	// {
@@ -166,7 +167,7 @@ func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolve
 			}
 			hunkCache, err := codenav.NewHunkCache(hunkCacheSize)
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 			reqState := codenavtypes.NewRequestState(
 				uploads,
@@ -194,12 +195,12 @@ func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolve
 			for _, upload := range uploads {
 				loc, _, err := s.codenavSvc.GetScipDefinitionsLocation(ctx, el.Document, el.Occurrence, upload.ID, el.Document.RelativePath, 100, 0)
 				if err != nil {
-					return "", err
+					return nil, err
 				}
 
 				ul, err := s.codenavSvc.GetUploadLocations(ctx, args, reqState, loc, true)
 				if err != nil {
-					return "", err
+					return nil, err
 				}
 				fmt.Println("HERE IS THE ul \n", ul)
 				defsList = append(defsList, ul...)
@@ -239,14 +240,14 @@ func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolve
 				l.Path,
 			)
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 			c := strings.Split(string(file), "\n")
 			// fmt.Println("HERE IS THE c", c)
 
 			syntectDocs, err := s.getSCIPDocumentByContent(ctx, string(file), l.Path)
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 			fmt.Println("HERE IS THE syntectDocs \n", syntectDocs)
 
@@ -327,35 +328,34 @@ func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolve
 	fmt.Println("HERE IS THE keysInString \n", printTwo)
 	fmt.Println("HERE IS THE preciseDataList \n", printThree)
 
-	preciseResponse := []*preciseData{}
+	preciseResponse := []*types.PreciseData{}
 	for k, v := range snippetToPreciseDataMap {
 		compositeKey := strings.Split(k, "$$$$")
 		syntectDescriptor, text := compositeKey[0], compositeKey[1]
-		preciseResponse = append(preciseResponse, &preciseData{
-			symbolName:        v.symbolName,
-			syntectDescriptor: syntectDescriptor,
-			repository:        v.repository,
-			symbolRole:        v.symbolRole,
-			confidence:        v.confidence,
-			text:              text,
-			location:          v.location,
+		preciseResponse = append(preciseResponse, &types.PreciseData{
+			SymbolName:        v.symbolName,
+			SyntectDescriptor: syntectDescriptor,
+			Repository:        v.repository,
+			SymbolRole:        v.symbolRole,
+			Confidence:        v.confidence,
+			Text:              text,
 		})
 	}
 
-	printFour := preciseResponse
-	fmt.Println("HERE IS THE preciseResponse \n", printFour)
+	// printFour := preciseResponse
+	// fmt.Println("HERE IS THE preciseResponse \n", printFour)
 
-	for _, v := range preciseResponse {
-		fmt.Println("HERE IS THE preciseResponse \n", v)
-	}
+	// for _, v := range preciseResponse {
+	// 	fmt.Println("HERE IS THE preciseResponse \n", v)
+	// }
 
-	var allContent string
-	for k := range clippedContent {
-		// allContent = append(allContent, k)
-		allContent += "\n" + k
-	}
+	// var allContent string
+	// for k := range clippedContent {
+	// 	// allContent = append(allContent, k)
+	// 	allContent += "\n" + k
+	// }
 
-	return allContent, nil
+	return preciseResponse, nil
 }
 
 // WORKS GREAT!

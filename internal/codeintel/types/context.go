@@ -33,3 +33,12 @@ func (s *SCIPNames) GetIdentifier() string {
 	}
 	return fmt.Sprintf("%s %s %s %s %s", scheme, manager, name, version, descriptor)
 }
+
+type PreciseData struct {
+	SymbolName        string
+	SyntectDescriptor string
+	Repository        string
+	SymbolRole        int32
+	Confidence        string
+	Text              string
+}

@@ -213,8 +213,8 @@ func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, ar
 	return r.policiesRootResolver.PreviewGitObjectFilter(ctx, id, args)
 }
 
-func (r *Resolver) FindMostRelevantSCIPSymbols(ctx context.Context, args *FindMostRelevantSCIPSymbolsArgs) (string, error) {
-	return r.contextRootResolver.FindMostRelevantSCIPSymbols(ctx, args)
+func (r *Resolver) GetPreciseContext(ctx context.Context, input *GetPreciseContextInput) (PreciseContextResolver, error) {
+	return r.contextRootResolver.GetPreciseContext(ctx, input)
 }
 
 func (r *Resolver) RankingSummary(ctx context.Context) (_ GlobalRankingSummaryResolver, err error) {

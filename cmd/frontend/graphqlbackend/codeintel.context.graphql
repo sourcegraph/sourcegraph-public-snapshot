@@ -2,13 +2,13 @@ extend type Query {
     """
     Returns the most relevant SCIP symbol information based on a list and the current state of the editor.
     """
-    findMostRelevantSCIPSymbols(args: RelevantSCIPSymbolsInput!): String!
+    getPreciseContext(input: PreciseContextInput!): PreciseContext!
 }
 
 """
 The input required to fetch the most relevant SCIP symbols.
 """
-input RelevantSCIPSymbolsInput {
+input PreciseContextInput {
     """
     The list of symbols to consider.
     """
@@ -22,20 +22,6 @@ input RelevantSCIPSymbolsInput {
     """
     commitID: String!
     """
-    The closes remote commit ID.
-    """
-    closestRemoteCommitID: String!
-    """
-    The current editor state.
-    """
-    editorState: EditorStateInput!
-}
-
-"""
-The current editor state.
-"""
-input EditorStateInput {
-    """
     The name of the active file.
     """
     activeFile: String!
@@ -43,12 +29,44 @@ input EditorStateInput {
     The content of the active file.
     """
     activeFileContent: String!
+}
+
+"""
+PreciseContext provides code intelligence context.
+"""
+type PreciseContext {
     """
-    The dirty state of the active file.
+    The precise context data.
     """
-    isActiveFileDirty: Boolean!
+    context: [PreciseContextData!]!
+}
+
+"""
+PreciseContextData provides code intelligence information for a snippet of code.
+"""
+type PreciseContextData {
     """
-    The files that are currently open in the user's editor.
+    The scip symbol name.
     """
-    openFiles: [String]!
+    symbol: String!
+    """
+    The descriptor created by Syntect.
+    """
+    syntectDescriptor: String!
+    """
+    The repository id.
+    """
+    repository: String!
+    """
+    The role of the symbol.
+    """
+    symbolRole: Int!
+    """
+    The confidence of the context whether PRECISE or SEARCH based.
+    """
+    confidence: String!
+    """
+    The snippet of code of the symbol.
+    """
+    text: String!
 }
