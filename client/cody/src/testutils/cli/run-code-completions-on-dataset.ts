@@ -4,7 +4,6 @@ import './mock-vscode'
 import fs from 'fs'
 import path from 'path'
 
-import { indexOf } from 'lodash'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
@@ -44,6 +43,8 @@ async function initCompletionsProvider(): Promise<CodyCompletionItemProvider> {
         completionsClient,
         docprovider,
         history,
+        null as any,
+        null as any,
         2048,
         4,
         200,
