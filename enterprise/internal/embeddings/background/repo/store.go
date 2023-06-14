@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -203,7 +201,7 @@ type ListOpts struct {
 	*database.PaginationArgs
 	Query *string
 	State *string
-	Repo  *graphql.ID
+	Repo  *api.RepoID
 }
 
 func init() {
@@ -472,11 +470,7 @@ func (s *repoEmbeddingJobsStore) CountRepoEmbeddingJobs(ctx context.Context, opt
 	}
 
 	if opts.Repo != nil {
-		var repoID api.RepoID
-		if err := relay.UnmarshalSpec(*opts.Repo, &repoID); err != nil {
-			return 0, err
-		}
-		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.repo_id = %d", repoID))
+		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.repo_id = %d", *opts.Repo))
 	}
 
 	var whereClause *sqlf.Query
@@ -522,11 +516,7 @@ func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, opts
 	}
 
 	if opts.Repo != nil {
-		var repoID api.RepoID
-		if err := relay.UnmarshalSpec(*opts.Repo, &repoID); err != nil {
-			return nil, err
-		}
-		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.repo_id = %d", repoID))
+		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.repo_id = %d", *opts.Repo))
 	}
 
 	var whereClause *sqlf.Query
