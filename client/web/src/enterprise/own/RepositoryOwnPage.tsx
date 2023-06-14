@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiAccount, mdiPencil, mdiPlus } from '@mdi/js'
 import { Navigate } from 'react-router-dom'
@@ -19,6 +19,7 @@ import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { TreeOwnershipPanel } from '../../repo/blob/own/TreeOwnershipPanel'
+import { FilePathBreadcrumbs } from '../../repo/FilePathBreadcrumbs'
 
 import { AddOwnerModal } from './AddOwnerModal'
 import { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
@@ -31,7 +32,29 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
     telemetryService,
 }) => {
     const queryParameters = new URLSearchParams(location.search)
-    const path = queryParameters.get('path') ?? ''
+    const filePath = queryParameters.get('path') ?? ''
+
+    useBreadcrumb(
+        useMemo(() => {
+            if (!filePath || !repo) {
+                return
+            }
+            return {
+                key: 'treePath',
+                className: 'flex-shrink-past-contents',
+                element: (
+                    <FilePathBreadcrumbs
+                        key="path"
+                        repoName={repo.name}
+                        revision="main"
+                        filePath={filePath}
+                        isDir={true}
+                        telemetryService={telemetryService}
+                    />
+                ),
+            }
+        }, [filePath, repo, telemetryService])
+    )
 
     useBreadcrumb({ key: 'own', element: 'Ownership' })
 
@@ -96,9 +119,9 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                     </H1>
                 </PageHeader>
 
-                <TreeOwnershipPanel repoID={repo.id} filePath={path} telemetryService={telemetryService} />
+                <TreeOwnershipPanel repoID={repo.id} filePath={filePath} telemetryService={telemetryService} />
             </Page>
-            {openAddOwnerModal && <AddOwnerModal repoID={repo.id} path={path} onCancel={closeModal} />}
+            {openAddOwnerModal && <AddOwnerModal repoID={repo.id} path={filePath} onCancel={closeModal} />}
         </>
     )
 }
