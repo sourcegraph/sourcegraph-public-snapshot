@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
-
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
@@ -132,6 +132,49 @@ func Test_licenseChecker(t *testing.T) {
 
 		// check feature was checked
 		require.Equal(t, FeatureAllowAirGapped, featureChecked)
+
+		// check doer NOT called
+		require.False(t, doer.DoCalled)
+
+		// check result was set to true
+		valid, err := store.Get(licenseValidityStoreKey).Bool()
+		require.NoError(t, err)
+		require.True(t, valid)
+
+		// check last called at was set
+		lastCalledAt, err := store.Get(lastCalledAtStoreKey).String()
+		require.NoError(t, err)
+		require.NotEmpty(t, lastCalledAt)
+	})
+
+	t.Run("skips check if license has dev tag", func(t *testing.T) {
+		defaultMockGetLicense := MockGetConfiguredProductLicenseInfo
+		MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
+			return &license.Info{
+				Tags: []string{"dev"},
+			}, "", nil
+		}
+
+		t.Cleanup(func() {
+			MockGetConfiguredProductLicenseInfo = defaultMockGetLicense
+		})
+
+		store.Del(licenseValidityStoreKey)
+		store.Del(lastCalledAtStoreKey)
+
+		doer := &mockDoer{
+			status:   '1',
+			response: []byte(``),
+		}
+		handler := licenseChecker{
+			siteID: siteID,
+			token:  token,
+			doer:   doer,
+			logger: logtest.NoOp(t),
+		}
+
+		err := handler.Handle(context.Background())
+		require.NoError(t, err)
 
 		// check doer NOT called
 		require.False(t, doer.DoCalled)

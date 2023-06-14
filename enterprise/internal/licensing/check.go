@@ -50,6 +50,16 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 		return nil
 	}
 
+	info, err := GetConfiguredProductLicenseInfo()
+	if err != nil {
+		return err
+	}
+	if info.HasTag("dev") {
+		l.logger.Debug("dev license, skipping license verification check")
+		store.Set(licenseValidityStoreKey, true)
+		return nil
+	}
+
 	payload, err := json.Marshal(struct {
 		ClientSiteID string `json:"siteID"`
 	}{ClientSiteID: l.siteID})
