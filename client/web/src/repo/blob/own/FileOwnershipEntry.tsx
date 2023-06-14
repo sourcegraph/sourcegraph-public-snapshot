@@ -68,21 +68,6 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
 
     return (
         <tr>
-            <td className={containerStyles.fitting}>
-                <div className="d-flex">
-                    <Tooltip content={email ? `Email ${email}` : 'No email address'} placement="top">
-                        {email ? (
-                            <ButtonLink variant="icon" to={`mailto:${email}`}>
-                                <Icon svgPath={mdiEmail} aria-label="email" />
-                            </ButtonLink>
-                        ) : (
-                            <Button variant="icon" disabled={true}>
-                                <Icon svgPath={mdiEmail} aria-label="email" />
-                            </Button>
-                        )}
-                    </Tooltip>
-                </div>
-            </td>
             <td className={`${containerStyles.fitting} ${containerStyles.moreSpace}`}>
                 <div className="d-flex align-items-center mr-2">
                     {owner.__typename === 'Person' && (
@@ -112,19 +97,32 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
                 ))}
             </td>
             <td className={containerStyles.fitting}>
-                <span className={containerStyles.editButton}>
-                    {makeOwnerButton ||
-                        (hasAssigned && (
-                            <RemoveOwnerButton
-                                onSuccess={refetch}
-                                onError={setRemoveOwnerError}
-                                repoId={repoID}
-                                path={filePath}
-                                userID={userID}
-                                teamID={teamID}
-                                isDirectAssigned={isDirectAssigned}
-                            />
-                        ))}
+                <span className={containerStyles.editButtonColumn}>
+                    <div className={containerStyles.removeAddButton}>
+                        {makeOwnerButton ||
+                            (hasAssigned && (
+                                <RemoveOwnerButton
+                                    onSuccess={refetch}
+                                    onError={setRemoveOwnerError}
+                                    repoId={repoID}
+                                    path={filePath}
+                                    userID={userID}
+                                    teamID={teamID}
+                                    isDirectAssigned={isDirectAssigned}
+                                />
+                            ))}
+                    </div>
+                    <Tooltip content={email ? `Email ${email}` : 'No email address'} placement="top">
+                        {email ? (
+                            <ButtonLink variant="icon" to={`mailto:${email}`}>
+                                <Icon svgPath={mdiEmail} aria-label="email" />
+                            </ButtonLink>
+                        ) : (
+                            <Button variant="icon" disabled={true}>
+                                <Icon svgPath={mdiEmail} aria-label="email" />
+                            </Button>
+                        )}
+                    </Tooltip>
                 </span>
             </td>
         </tr>

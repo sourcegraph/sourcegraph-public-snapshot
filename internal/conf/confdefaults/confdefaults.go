@@ -93,6 +93,23 @@ var App = conftypes.RawUnified{
 	"experimentalFeatures": {		
 		"structuralSearch": "disabled"
 	},
+	"completions": {
+		"enabled": true,
+		"provider": "sourcegraph"
+	},
+	"embeddings": {
+		"enabled": true,
+		"provider": "sourcegraph",
+		"incremental": true,
+		"excludedFilePathPatterns": [
+			"*.svg",
+			"*.png",
+			"*.jpeg",
+			"*.jpg",
+			"**/__mocks__/**",
+			"**/test/**"
+   	 	]
+	}
 }`,
 }
 

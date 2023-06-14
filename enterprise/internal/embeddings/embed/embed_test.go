@@ -9,12 +9,111 @@ import (
 	"github.com/stretchr/testify/require"
 
 	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
+	bgrepo "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestNewEmbeddingsClient(t *testing.T) {
+	testCases := []struct {
+		name       string
+		siteConfig *schema.SiteConfiguration
+		deployType string
+		wantErr    bool
+	}{
+		{
+			name: "Embeddings disabled",
+			siteConfig: &schema.SiteConfiguration{
+				Embeddings: &schema.Embeddings{
+					Enabled: false,
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Invalid provider",
+			siteConfig: &schema.SiteConfiguration{
+				Embeddings: &schema.Embeddings{
+					Enabled:  true,
+					Provider: "invalid",
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Sourcegraph provider",
+			siteConfig: &schema.SiteConfiguration{
+				Embeddings: &schema.Embeddings{
+					Enabled:  true,
+					Provider: "sourcegraph",
+				},
+			},
+		},
+		{
+			name:       "App with dotcom token",
+			deployType: deploy.App,
+			siteConfig: &schema.SiteConfiguration{
+				Embeddings: &schema.Embeddings{
+					Enabled:  true,
+					Provider: "sourcegraph",
+				},
+				App: &schema.App{
+					DotcomAuthToken: "TOKEN",
+				},
+			},
+		},
+		{
+			name:       "App with user token",
+			deployType: deploy.App,
+			siteConfig: &schema.SiteConfiguration{
+				Embeddings: &schema.Embeddings{
+					Enabled:     true,
+					Provider:    "sourcegraph",
+					AccessToken: "TOKEN",
+				},
+			},
+		},
+		{
+			name:       "App without dotcom or user token",
+			deployType: deploy.App,
+			siteConfig: &schema.SiteConfiguration{
+				Embeddings: &schema.Embeddings{
+					Enabled:  true,
+					Provider: "sourcegraph",
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			defaultDeploy := deploy.Type()
+			if tc.deployType != "" {
+				deploy.Mock(tc.deployType)
+			}
+			defer deploy.Mock(defaultDeploy)
+			client, err := NewEmbeddingsClient(tc.siteConfig)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatal("expected error but got nil")
+				}
+			} else {
+				if err != nil {
+					t.Fatal(err)
+				}
+				if client == nil {
+					t.Fatal("expected client but got nil")
+				}
+
+			}
+		})
+	}
+}
 
 func mockFile(lines ...string) []byte {
 	return []byte(strings.Join(lines, "\n"))
@@ -116,92 +215,76 @@ func TestEmbedRepo(t *testing.T) {
 	}
 
 	logger := log.NoOp()
+	noopReport := func(*bgrepo.EmbedRepoStats) {}
 
 	t.Run("no files", func(t *testing.T) {
-		index, _, stats, err := EmbedRepo(ctx, client, contextService, newReadLister(), mockRepoPathRanks, opts, logger)
+		index, _, stats, err := EmbedRepo(ctx, client, contextService, newReadLister(), mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 0)
 
-		expectedStats := &embeddings.EmbedRepoStats{
-			HasRanks: true,
-			CodeIndexStats: embeddings.EmbedFilesStats{
-				SkippedByteCounts: map[string]int{},
-				SkippedCounts:     map[string]int{},
+		expectedStats := &bgrepo.EmbedRepoStats{
+			CodeIndexStats: bgrepo.EmbedFilesStats{
+				FilesSkipped: map[string]int{},
 			},
-			TextIndexStats: embeddings.EmbedFilesStats{
-				SkippedByteCounts: map[string]int{},
-				SkippedCounts:     map[string]int{},
+			TextIndexStats: bgrepo.EmbedFilesStats{
+				FilesSkipped: map[string]int{},
 			},
 		}
-		// ignore durations
-		stats.Duration = 0
-		stats.CodeIndexStats.Duration = 0
-		stats.TextIndexStats.Duration = 0
 		require.Equal(t, expectedStats, stats)
 	})
 
 	t.Run("code files only", func(t *testing.T) {
-		index, _, stats, err := EmbedRepo(ctx, client, contextService, newReadLister("a.go"), mockRepoPathRanks, opts, logger)
+		index, _, stats, err := EmbedRepo(ctx, client, contextService, newReadLister("a.go"), mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.TextIndex.Embeddings, 0)
 		require.Len(t, index.CodeIndex.Embeddings, 6)
 		require.Len(t, index.CodeIndex.RowMetadata, 2)
 		require.Len(t, index.CodeIndex.Ranks, 2)
 
-		expectedStats := &embeddings.EmbedRepoStats{
-			HasRanks: true,
-			CodeIndexStats: embeddings.EmbedFilesStats{
-				EmbeddedFileCount:  1,
-				EmbeddedChunkCount: 2,
-				EmbeddedBytes:      65,
-				SkippedByteCounts:  map[string]int{},
-				SkippedCounts:      map[string]int{},
+		expectedStats := &bgrepo.EmbedRepoStats{
+			CodeIndexStats: bgrepo.EmbedFilesStats{
+				FilesScheduled: 1,
+				FilesEmbedded:  1,
+				ChunksEmbedded: 2,
+				BytesEmbedded:  65,
+				FilesSkipped:   map[string]int{},
 			},
-			TextIndexStats: embeddings.EmbedFilesStats{
-				SkippedByteCounts: map[string]int{},
-				SkippedCounts:     map[string]int{},
+			TextIndexStats: bgrepo.EmbedFilesStats{
+				FilesSkipped: map[string]int{},
 			},
 		}
 		// ignore durations
-		stats.Duration = 0
-		stats.CodeIndexStats.Duration = 0
-		stats.TextIndexStats.Duration = 0
 		require.Equal(t, expectedStats, stats)
 	})
 
 	t.Run("text files only", func(t *testing.T) {
-		index, _, stats, err := EmbedRepo(ctx, client, contextService, newReadLister("b.md"), mockRepoPathRanks, opts, logger)
+		index, _, stats, err := EmbedRepo(ctx, client, contextService, newReadLister("b.md"), mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 6)
 		require.Len(t, index.TextIndex.RowMetadata, 2)
 		require.Len(t, index.TextIndex.Ranks, 2)
 
-		expectedStats := &embeddings.EmbedRepoStats{
-			HasRanks: true,
-			CodeIndexStats: embeddings.EmbedFilesStats{
-				SkippedByteCounts: map[string]int{},
-				SkippedCounts:     map[string]int{},
+		expectedStats := &bgrepo.EmbedRepoStats{
+			CodeIndexStats: bgrepo.EmbedFilesStats{
+				FilesSkipped: map[string]int{},
 			},
-			TextIndexStats: embeddings.EmbedFilesStats{
-				EmbeddedFileCount:  1,
-				EmbeddedChunkCount: 2,
-				EmbeddedBytes:      70,
-				SkippedByteCounts:  map[string]int{},
-				SkippedCounts:      map[string]int{},
+			TextIndexStats: bgrepo.EmbedFilesStats{
+				FilesScheduled: 1,
+				FilesEmbedded:  1,
+				ChunksEmbedded: 2,
+				BytesEmbedded:  70,
+				FilesSkipped:   map[string]int{},
 			},
 		}
 		// ignore durations
-		stats.Duration = 0
-		stats.CodeIndexStats.Duration = 0
-		stats.TextIndexStats.Duration = 0
 		require.Equal(t, expectedStats, stats)
 	})
 
 	t.Run("mixed code and text files", func(t *testing.T) {
 		rl := newReadLister("a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin")
-		index, _, stats, err := EmbedRepo(ctx, client, contextService, rl, mockRepoPathRanks, opts, logger)
+		index, _, stats, err := EmbedRepo(ctx, client, contextService, rl, mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 15)
 		require.Len(t, index.CodeIndex.RowMetadata, 5)
@@ -210,38 +293,46 @@ func TestEmbedRepo(t *testing.T) {
 		require.Len(t, index.TextIndex.RowMetadata, 2)
 		require.Len(t, index.TextIndex.Ranks, 2)
 
-		expectedStats := &embeddings.EmbedRepoStats{
-			HasRanks: true,
-			CodeIndexStats: embeddings.EmbedFilesStats{
-				EmbeddedFileCount:  2,
-				EmbeddedChunkCount: 5,
-				EmbeddedBytes:      163,
-				SkippedByteCounts: map[string]int{
-					"autogenerated": 49,
-					"binary":        8,
-					"longLine":      6149,
-					"small":         0,
-				},
-				SkippedCounts: map[string]int{
+		expectedStats := &bgrepo.EmbedRepoStats{
+			CodeIndexStats: bgrepo.EmbedFilesStats{
+				FilesScheduled: 6,
+				FilesEmbedded:  2,
+				ChunksEmbedded: 5,
+				BytesEmbedded:  163,
+				FilesSkipped: map[string]int{
 					"autogenerated": 1,
 					"binary":        1,
 					"longLine":      1,
 					"small":         1,
 				},
 			},
-			TextIndexStats: embeddings.EmbedFilesStats{
-				EmbeddedFileCount:  1,
-				EmbeddedChunkCount: 2,
-				EmbeddedBytes:      70,
-				SkippedByteCounts:  map[string]int{},
-				SkippedCounts:      map[string]int{},
+			TextIndexStats: bgrepo.EmbedFilesStats{
+				FilesScheduled: 1,
+				FilesEmbedded:  1,
+				ChunksEmbedded: 2,
+				BytesEmbedded:  70,
+				FilesSkipped:   map[string]int{},
 			},
 		}
 		// ignore durations
-		stats.Duration = 0
-		stats.CodeIndexStats.Duration = 0
-		stats.TextIndexStats.Duration = 0
 		require.Equal(t, expectedStats, stats)
+	})
+
+	t.Run("mixed code and text files", func(t *testing.T) {
+		// 3 will be embedded, 4 will be skipped
+		fileNames := []string{"a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin"}
+		rl := newReadLister(fileNames...)
+		statReports := 0
+		countingReporter := func(*bgrepo.EmbedRepoStats) {
+			statReports++
+		}
+		_, _, _, err := EmbedRepo(ctx, client, contextService, rl, mockRepoPathRanks, opts, logger, countingReporter)
+		require.NoError(t, err)
+		require.Equal(t, 2, statReports, `
+			Expected one update for flush. This is subject to change if the
+			test changes, so a failure should be considered a notification of a
+			change rather than a signal that something is wrong.
+		`)
 	})
 
 	t.Run("embeddings limited", func(t *testing.T) {
@@ -250,7 +341,7 @@ func TestEmbedRepo(t *testing.T) {
 		optsCopy.MaxTextEmbeddings = 1
 
 		rl := newReadLister("a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin")
-		index, _, _, err := EmbedRepo(ctx, client, contextService, rl, mockRepoPathRanks, optsCopy, logger)
+		index, _, _, err := EmbedRepo(ctx, client, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
 		require.NoError(t, err)
 
 		// a.md has 2 chunks, c.java has 3 chunks
@@ -268,6 +359,10 @@ type mockEmbeddingsClient struct{}
 
 func (c *mockEmbeddingsClient) GetDimensions() (int, error) {
 	return 3, nil
+}
+
+func (c *mockEmbeddingsClient) GetModelIdentifier() string {
+	return "mock/some-model"
 }
 
 func (c *mockEmbeddingsClient) GetEmbeddingsWithRetries(_ context.Context, texts []string, _ int) ([]float32, error) {

@@ -85,6 +85,7 @@ async function complete(
         completionsClient as any,
         null as any,
         null as any,
+        null as any,
         undefined,
         undefined,
         undefined,

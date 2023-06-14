@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"math"
 	"net/http"
@@ -13,12 +14,16 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+const defaultModel = "openai/text-embedding-ada-002"
 
 func NewClient(config *schema.SiteConfiguration) *sourcegraphEmbeddingsClient {
 	return &sourcegraphEmbeddingsClient{
@@ -33,15 +38,19 @@ const defaultAPIURL = "https://cody-gateway.sourcegraph.com/v1/embeddings"
 
 func getModel(config *schema.SiteConfiguration) string {
 	if config.Embeddings == nil || config.Embeddings.Model == "" {
-		return "openai/text-embedding-ada-002"
+		return defaultModel
 	}
-	return config.Embeddings.Model
+	return strings.ToLower(config.Embeddings.Model)
 }
 
 func getAccessToken(config *schema.SiteConfiguration) string {
 	// If an access token is configured, use it.
 	if config.Embeddings.AccessToken != "" {
 		return config.Embeddings.AccessToken
+	}
+	// App generates a token from the api token the user used to connect app to dotcom.
+	if deploy.IsApp() && config.App != nil {
+		return dotcomuser.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
 	}
 	// Otherwise, use the current license key to compute an access token.
 	return licensing.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)
@@ -68,7 +77,7 @@ type sourcegraphEmbeddingsClient struct {
 }
 
 func (c *sourcegraphEmbeddingsClient) GetDimensions() (int, error) {
-	if c.dimensions <= 0 && strings.EqualFold(c.model, "openai/text-embedding-ada-002") {
+	if c.dimensions <= 0 && strings.EqualFold(c.model, defaultModel) {
 		return 1536, nil
 	}
 
@@ -80,6 +89,14 @@ func (c *sourcegraphEmbeddingsClient) GetDimensions() (int, error) {
 	}
 
 	return c.dimensions, nil
+}
+
+func (c *sourcegraphEmbeddingsClient) GetModelIdentifier() string {
+	// Special-case the default model, since it already includes the provider name
+	if strings.EqualFold(c.model, defaultModel) {
+		return defaultModel
+	}
+	return fmt.Sprintf("sourcegraph/%s", c.model)
 }
 
 // GetEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.

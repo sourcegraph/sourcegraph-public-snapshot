@@ -29,6 +29,7 @@ type PeriodicGoroutine struct {
 	jobName           string
 	recorder          *recorder.Recorder
 	getInterval       getIntervalFunc
+	initialDelay      time.Duration
 	getConcurrency    getConcurrencyFunc
 	handler           unifiedHandler
 	operation         *observation.Operation
@@ -128,6 +129,11 @@ func WithConcurrencyFunc(getConcurrency getConcurrencyFunc) Option {
 
 func WithOperation(operation *observation.Operation) Option {
 	return func(p *PeriodicGoroutine) { p.operation = operation }
+}
+
+// WithInitialDelay sets the initial delay before the first invocation of the handler.
+func WithInitialDelay(delay time.Duration) Option {
+	return func(p *PeriodicGoroutine) { p.initialDelay = delay }
 }
 
 func withClock(clock glock.Clock) Option {
@@ -288,6 +294,21 @@ func (r *PeriodicGoroutine) runHandlerPeriodically(monitorCtx context.Context) {
 		<-monitorCtx.Done()
 		cancel()
 	}()
+
+	select {
+	// Initial delay sleep - might be a zero-duration value if it wasn't set,
+	// but this gives us a nice chance to check the context to see if we should
+	// exit naturally.
+	case <-r.clock.After(r.initialDelay):
+
+	case <-r.ctx.Done():
+		// Goroutine is shutting down
+		return
+
+	case <-monitorCtx.Done():
+		// Caller is requesting we return to resize the pool
+		return
+	}
 
 	for {
 		interval, ok := r.runHandlerAndDetermineBackoff(handlerCtx)

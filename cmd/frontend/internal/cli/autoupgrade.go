@@ -24,12 +24,12 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/multiversion"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -45,10 +45,7 @@ import (
 
 const appName = "frontend-autoupgrader"
 
-var (
-	AutoUpgradeDone  = make(chan struct{})
-	shouldAutoUpgade = env.MustGetBool("SRC_AUTOUPGRADE", false, "If you forgot to set intent to autoupgrade before shutting down the instance, set this env var.")
-)
+var AutoUpgradeDone = make(chan struct{})
 
 func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready service.ReadyFunc, hook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) (err error) {
 	defer func() {
@@ -64,14 +61,14 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 	db := database.NewDB(obsvCtx.Logger, sqlDB)
 	upgradestore := upgradestore.New(db)
 
-	currentVersionStr, doAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
+	currentVersionStr, dbShouldAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
 	// fresh instance
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	} else if err != nil {
 		return errors.Wrap(err, "autoupgradestore.GetAutoUpgrade")
 	}
-	if !doAutoUpgrade && !shouldAutoUpgade {
+	if !dbShouldAutoUpgrade && !cliutil.EnvShouldAutoUpgrade {
 		return nil
 	}
 
