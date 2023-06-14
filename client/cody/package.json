@@ -365,7 +365,7 @@
       {
         "command": "cody.guardrails.debug",
         "title": "Cody: Guardrails Debug Attribution",
-        "enablement": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
+        "enablement": "config.cody.experimental.guardrails && editorHasSelection"
       },
       {
         "command": "cody.recipe.file-touch",
@@ -532,7 +532,7 @@
         },
         {
           "command": "cody.guardrails.debug",
-          "when": "false"
+          "when": "config.cody.experimental.guardrails && editorHasSelection"
         },
         {
           "command": "cody.inline.insert",
@@ -612,7 +612,7 @@
         },
         {
           "command": "cody.guardrails.debug",
-          "when": "cody.activated && config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
+          "when": "config.cody.experimental.guardrails && editorHasSelection"
         }
       ],
       "view/title": [
