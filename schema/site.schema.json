@@ -125,11 +125,6 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "codyRestrictUsersFeatureFlag": {
-          "description": "Restrict Cody to only be enabled for users that have a feature flag labeled \"cody-experimental\" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag.",
-          "type": "boolean",
-          "default": false
-        },
         "rateLimitAnonymous": {
           "description": "Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.",
           "type": "integer",
@@ -1914,6 +1909,11 @@
           "type": "string",
           "group": "Sourcegraph.com"
         },
+        "slackLicenseAnomallyWebhook": {
+          "description": "Slack webhook for when there is an anomaly detected with license key usage.",
+          "type": "string",
+          "group": "Sourcegraph.com"
+        },
         "srcCliVersionCache": {
           "description": "Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.",
           "type": "object",
@@ -2331,6 +2331,24 @@
         }
       ]
     },
+    "cody.enabled": {
+      "description": "Enable or disable Cody instance-wide. When Cody is disabled, all Cody endpoints and GraphQL queries will return errors, Cody will not show up in the site-admin sidebar, and Cody in the global navbar will only show a call-to-action for site-admins to enable Cody.",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      },
+      "group": "Cody"
+    },
+    "cody.restrictUsersFeatureFlag": {
+      "description": "Restrict Cody to only be enabled for users that have a feature flag labeled \"cody\" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      },
+      "group": "Cody"
+    },
     "embeddings": {
       "description": "Configuration for embeddings service.",
       "type": "object",
@@ -2387,14 +2405,25 @@
           "minimum": 0
         },
         "incremental": {
-          "description": "Experimental: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.",
+          "description": "Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.",
           "type": "boolean",
-          "default": false
+          "!go": {
+            "pointer": true
+          },
+          "default": true
         },
         "minimumInterval": {
           "description": "The time to wait between runs. Valid time units are \"s\", \"m\", \"h\". Example values: \"30s\", \"5m\", \"1h\".",
           "type": "string",
           "default": "24h"
+        },
+        "policyRepositoryMatchLimit": {
+          "description": "The maximum number of repositories that can be matched by a global embeddings policy",
+          "type": "integer",
+          "!go": {
+            "pointer": true
+          },
+          "default": "5000"
         }
       },
       "examples": [
@@ -2411,15 +2440,18 @@
     "completions": {
       "description": "Configuration for the completions service.",
       "type": "object",
-      "required": ["enabled"],
       "properties": {
         "enabled": {
-          "description": "Toggles whether completions are enabled.",
+          "description": "DEPRECATED. Use cody.enabled instead to turn Cody on/off.",
           "type": "boolean",
           "default": false
         },
         "model": {
           "description": "DEPRECATED. Use chatModel instead.",
+          "type": "string"
+        },
+        "fastChatModel": {
+          "description": "The model used for fast chat completions.",
           "type": "string"
         },
         "chatModel": {

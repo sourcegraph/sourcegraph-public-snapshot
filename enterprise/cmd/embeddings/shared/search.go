@@ -12,7 +12,7 @@ import (
 const SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT = 1000
 
 type getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
-type getQueryEmbeddingFn func(ctx context.Context, query string) ([]float32, error)
+type getQueryEmbeddingFn func(ctx context.Context, model string) ([]float32, string, error)
 
 func searchRepoEmbeddingIndexes(
 	ctx context.Context,
@@ -21,7 +21,7 @@ func searchRepoEmbeddingIndexes(
 	getQueryEmbedding getQueryEmbeddingFn,
 	weaviate *weaviateClient,
 ) (*embeddings.EmbeddingCombinedSearchResults, error) {
-	floatQuery, err := getQueryEmbedding(ctx, params.Query)
+	floatQuery, queryModel, err := getQueryEmbedding(ctx, params.Query)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting query embedding")
 	}
@@ -53,6 +53,12 @@ func searchRepoEmbeddingIndexes(
 		embeddingIndex, err := getRepoEmbeddingIndex(ctx, repoName)
 		if err != nil {
 			return nil, errors.Wrapf(err, "getting repo embedding index for repo %q", repoName)
+		}
+
+		if !embeddingIndex.IsModelCompatible(queryModel) {
+			return nil, errors.Newf("embeddings model in config (%s) does not match the embeddings model for the"+
+				" index (%s). Embedding index for repo %q must be reindexed with the new model",
+				queryModel, embeddingIndex.EmbeddingsModel, repoName)
 		}
 
 		codeResults := embeddingIndex.CodeIndex.SimilaritySearch(embeddedQuery, params.CodeResultsCount, workerOpts, searchOpts, embeddingIndex.RepoName, embeddingIndex.Revision)

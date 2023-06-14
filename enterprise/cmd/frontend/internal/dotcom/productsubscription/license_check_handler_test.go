@@ -44,7 +44,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 	assignedLicense := dbLicense{
 		LicenseKey:        "assigned-license-key",
 		LicenseCheckToken: makeToken("assigned-site-id-token"),
-		SiteID:            strPtr("assigned-site-id"),
+		SiteID:            strPtr("C2582A60-573C-4EBC-BDD4-BC57A73CF010"), // uppercase to test case sensitivity
 	}
 	licenses := []dbLicense{
 		validLicense,
@@ -53,7 +53,20 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 		assignedLicense,
 	}
 
+	getBody := func(siteID string) string {
+		s := "a43d50fa-23b6-41e9-86c9-558dd1f7ad54"
+		if siteID != "" {
+			s = siteID
+		}
+		return fmt.Sprintf(`{"siteID": "%s"}`, s)
+	}
+
 	db := database.NewMockDB()
+
+	mockedEventLogs := database.NewStrictMockEventLogStore()
+	mockedEventLogs.InsertFunc.SetDefaultReturn(nil)
+	db.EventLogsFunc.SetDefaultReturn(mockedEventLogs)
+
 	mocks.licenses.GetByToken = func(tokenHexEncoded string) (*dbLicense, error) {
 		token, err := hex.DecodeString(tokenHexEncoded)
 		if err != nil {
@@ -76,32 +89,32 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 	}{
 		{
 			name:       "no access token",
-			body:       `{"siteID": "some-site-id"}`,
+			body:       getBody(""),
 			headers:    nil,
-			want:       licensing.LicenseCheckResponse{Error: "invalid access token"},
+			want:       licensing.LicenseCheckResponse{Error: ErrInvalidAccessTokenMsg},
 			wantStatus: http.StatusUnauthorized,
 		},
 		{
 			name: "invalid access token",
-			body: `{"siteID": "some-site-id"}`,
+			body: getBody(""),
 			headers: http.Header{
 				"Authorization": {"Bearer invalid-token"},
 			},
-			want:       licensing.LicenseCheckResponse{Error: "invalid access token"},
+			want:       licensing.LicenseCheckResponse{Error: ErrInvalidAccessTokenMsg},
 			wantStatus: http.StatusUnauthorized,
 		},
 		{
 			name: "expired license access token",
-			body: `{"siteID": "some-site-id"}`,
+			body: getBody(""),
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(*expiredLicense.LicenseCheckToken)},
 			},
-			want:       licensing.LicenseCheckResponse{Error: "license expired"},
+			want:       licensing.LicenseCheckResponse{Error: ErrExpiredLicenseMsg},
 			wantStatus: http.StatusForbidden,
 		},
 		{
 			name: "revoked license access token",
-			body: `{"siteID": "some-site-id"}`,
+			body: getBody(""),
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(*revokedLicense.LicenseCheckToken)},
 			},
@@ -114,21 +127,21 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(*validLicense.LicenseCheckToken)},
 			},
-			want:       licensing.LicenseCheckResponse{Error: "invalid request body"},
+			want:       licensing.LicenseCheckResponse{Error: ErrInvalidRequestBodyMsg},
 			wantStatus: http.StatusBadRequest,
 		},
 		{
-			name: "valid access token, invalid site id (abuse)",
+			name: "valid access token, invalid site id (same license key used in multiple instances)",
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(*assignedLicense.LicenseCheckToken)},
 			},
-			body:       `{"siteID": "some-site-id"}`,
+			body:       getBody(""),
 			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: false, Reason: "license is already in use"}},
 			wantStatus: http.StatusOK,
 		},
 		{
 			name: "valid access token, valid site id",
-			body: fmt.Sprintf(`{"siteID": "%s"}`, *assignedLicense.SiteID),
+			body: getBody(strings.ToLower(*assignedLicense.SiteID)),
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(*assignedLicense.LicenseCheckToken)},
 			},
@@ -136,8 +149,17 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			wantStatus: http.StatusOK,
 		},
 		{
-			name: "valid access token, new site id",
-			body: `{"siteID": "some-site-id"}`,
+			name: "valid access token, invalid uuid",
+			body: getBody("some-non-uuid-string"),
+			headers: http.Header{
+				"Authorization": {"Bearer " + hex.EncodeToString(*validLicense.LicenseCheckToken)},
+			},
+			want:       licensing.LicenseCheckResponse{Error: ErrInvalidSiteIDMsg},
+			wantStatus: http.StatusBadRequest,
+		},
+		{
+			name: "valid access token, new site ID",
+			body: getBody("85d3d2ed-d2d0-4a88-a49a-79af730f5ed0"),
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(*validLicense.LicenseCheckToken)},
 			},

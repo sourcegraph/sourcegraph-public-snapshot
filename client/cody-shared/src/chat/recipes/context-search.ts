@@ -46,7 +46,8 @@ export class ContextSearch implements Recipe {
                 text: '',
                 displayText: await this.displaySearchResults(truncatedText, context.codebaseContext, wsRootPath),
             },
-            new Promise(resolve => resolve([]))
+            new Promise(resolve => resolve([])),
+            []
         )
     }
 

@@ -83,21 +83,25 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 		TextResultsCount: args.TextResultsCount - embeddingsArgs.TextResultsCount,
 	}
 
+	var embeddingsResults, keywordResults []FileChunkContext
+
 	// Fetch keyword results and embeddings results concurrently
-	p := pool.NewWithResults[[]FileChunkContext]().WithErrors()
-	p.Go(func() ([]FileChunkContext, error) {
-		return c.getEmbeddingsContext(ctx, embeddingsArgs)
+	p := pool.New().WithErrors()
+	p.Go(func() (err error) {
+		embeddingsResults, err = c.getEmbeddingsContext(ctx, embeddingsArgs)
+		return err
 	})
-	p.Go(func() ([]FileChunkContext, error) {
-		return c.getKeywordContext(ctx, keywordArgs)
+	p.Go(func() (err error) {
+		keywordResults, err = c.getKeywordContext(ctx, keywordArgs)
+		return err
 	})
 
-	results, err := p.Wait()
+	err = p.Wait()
 	if err != nil {
 		return nil, err
 	}
 
-	return append(results[0], results[1]...), nil
+	return append(embeddingsResults, keywordResults...), nil
 }
 
 // partitionRepos splits a set of repos into repos with embeddings and repos without embeddings

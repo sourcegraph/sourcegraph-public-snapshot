@@ -44,7 +44,8 @@ export class ImproveVariableNames implements Recipe {
                 truncatedFollowingText,
                 selection,
                 context.codebaseContext
-            )
+            ),
+            []
         )
     }
 }
