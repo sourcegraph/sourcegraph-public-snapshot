@@ -36,7 +36,14 @@ const IDEIcon: React.FunctionComponent<{}> = () => (
     </svg>
 )
 
-const codyPlatformCardItems = (isSourcegraphDotCom: boolean) => [
+const codyPlatformCardItems = (
+    isSourcegraphDotCom: boolean
+): {
+    title: string
+    description: string | JSX.Element
+    icon: string | JSX.Element
+    illustration: { dark: string; light: string }
+}[] => [
     {
         title: 'Knows your code',
         description:
