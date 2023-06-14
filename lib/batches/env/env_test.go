@@ -6,6 +6,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"gopkg.in/yaml.v2"
+
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestEnvironment_MarshalJSON(t *testing.T) {
@@ -19,14 +21,14 @@ func TestEnvironment_MarshalJSON(t *testing.T) {
 		},
 		"only static variables": {
 			in: Environment{vars: []variable{
-				{name: "foo", value: stringPtr("bar")},
-				{name: "quux", value: stringPtr("baz")},
+				{name: "foo", value: pointers.Ptr("bar")},
+				{name: "quux", value: pointers.Ptr("baz")},
 			}},
 			want: `{"foo":"bar","quux":"baz"}`,
 		},
 		"with variables": {
 			in: Environment{vars: []variable{
-				{name: "foo", value: stringPtr("bar")},
+				{name: "foo", value: pointers.Ptr("bar")},
 				{name: "quux", value: nil},
 			}},
 			want: `[{"foo":"bar"},"quux"]`,
@@ -58,7 +60,7 @@ func TestEnvironment_UnmarshalJSON(t *testing.T) {
 			"set array": {
 				in: `[{"foo":"bar"},"quux"]`,
 				want: Environment{vars: []variable{
-					{name: "foo", value: stringPtr("bar")},
+					{name: "foo", value: pointers.Ptr("bar")},
 					{name: "quux"},
 				}},
 			},
@@ -69,8 +71,8 @@ func TestEnvironment_UnmarshalJSON(t *testing.T) {
 			"set object": {
 				in: `{"foo":"bar","quux":"baz"}`,
 				want: Environment{vars: []variable{
-					{name: "foo", value: stringPtr("bar")},
-					{name: "quux", value: stringPtr("baz")},
+					{name: "foo", value: pointers.Ptr("bar")},
+					{name: "quux", value: pointers.Ptr("baz")},
 				}},
 			},
 		} {
@@ -117,7 +119,7 @@ func TestEnvironment_UnmarshalYAML(t *testing.T) {
 			"set array": {
 				in: "- foo: bar\n- quux",
 				want: Environment{vars: []variable{
-					{name: "foo", value: stringPtr("bar")},
+					{name: "foo", value: pointers.Ptr("bar")},
 					{name: "quux"},
 				}},
 			},
@@ -128,8 +130,8 @@ func TestEnvironment_UnmarshalYAML(t *testing.T) {
 			"set object": {
 				in: "foo: bar\nquux: baz",
 				want: Environment{vars: []variable{
-					{name: "foo", value: stringPtr("bar")},
-					{name: "quux", value: stringPtr("baz")},
+					{name: "foo", value: pointers.Ptr("bar")},
+					{name: "quux", value: pointers.Ptr("baz")},
 				}},
 			},
 		} {
@@ -174,14 +176,14 @@ func TestEnvironment_IsStatic(t *testing.T) {
 		},
 		"static": {
 			env: Environment{vars: []variable{
-				{name: "foo", value: stringPtr("bar")},
-				{name: "quux", value: stringPtr("baz")},
+				{name: "foo", value: pointers.Ptr("bar")},
+				{name: "quux", value: pointers.Ptr("baz")},
 			}},
 			want: true,
 		},
 		"not static": {
 			env: Environment{vars: []variable{
-				{name: "foo", value: stringPtr("bar")},
+				{name: "foo", value: pointers.Ptr("bar")},
 				{name: "quux", value: nil},
 			}},
 			want: false,
@@ -198,7 +200,7 @@ func TestEnvironment_IsStatic(t *testing.T) {
 func TestEnvironment_Resolve(t *testing.T) {
 	env := Environment{vars: []variable{
 		{name: "nil"},
-		{name: "foo", value: stringPtr("bar")},
+		{name: "foo", value: pointers.Ptr("bar")},
 	}}
 
 	t.Run("invalid outer", func(t *testing.T) {
@@ -267,14 +269,14 @@ func TestEnvironment_OuterVars(t *testing.T) {
 		},
 		"static variables": {
 			in: Environment{vars: []variable{
-				{name: "foo", value: stringPtr("bar")},
-				{name: "quux", value: stringPtr("baz")},
+				{name: "foo", value: pointers.Ptr("bar")},
+				{name: "quux", value: pointers.Ptr("baz")},
 			}},
 			want: []string{},
 		},
 		"dynamic variables and static mixed": {
 			in: Environment{vars: []variable{
-				{name: "foo", value: stringPtr("bar")},
+				{name: "foo", value: pointers.Ptr("bar")},
 				{name: "quux", value: nil},
 			}},
 			want: []string{"quux"},

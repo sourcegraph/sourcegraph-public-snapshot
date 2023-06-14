@@ -38,6 +38,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Added `isCodyEnabled` as a new GraphQL field to `Site`. [#52941](https://github.com/sourcegraph/sourcegraph/pull/52941)
 - Enabled improved search ranking by default. This feature can be disabled through the `search-ranking` feature flag.[#53031](https://github.com/sourcegraph/sourcegraph/pull/53031)
 - Added token callback route for Cody in VS Code and VS Code insiders. [#53313](https://github.com/sourcegraph/sourcegraph/pull/53313)
+- New `file:has.contributor(...)` predicate for filtering files based on contributors. [#53206](https://github.com/sourcegraph/sourcegraph/pull/53206)
+- Added multi-repo scope selector for Cody on the web supporting unified context generation API which uses combination of embeddings search and keyword search as fallback for context generation. [53046](https://github.com/sourcegraph/sourcegraph/pull/53046)
 
 ### Changed
 
@@ -57,6 +59,7 @@ All notable changes to Sourcegraph are documented in this file.
   - `completions.enabled` has been removed, replaced by `cody.enabled`.
   - Ping data now reflects whether `cody.enabled` and `completions` are set.
 - If a Sourcegraph request is traced, its trace ID and span ID are now set to the `X-Trace` and `X-Trace-Span` response headers respectively. The trace URL (if a template is configured in `observability.tracing.urlTemplate`) is now set to `X-Trace-URL` - previously, the URL was set to `X-Trace`. [#53259](https://github.com/sourcegraph/sourcegraph/pull/53259)
+- For users using the single-container server image with the default built-in database, the database must be reindexed. This process can take up to a few hours on systems with large datasets. See [Migrating to Sourcegraph 5.1.x](https://docs.sourcegraph.com/admin/migration/5_1) for full details. [#53256](https://github.com/sourcegraph/sourcegraph/pull/53256)
 
 ### Fixed
 

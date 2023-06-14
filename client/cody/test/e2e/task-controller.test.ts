@@ -20,7 +20,7 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     await page.getByRole('button', { name: 'Fixups Section' }).click()
 
     // Cody Fixup button should not be enabled if no text is selected.
-    await expect(page.getByRole('button', { name: /Cody: Fixup.*/, disabled: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Fixup (Experimental)', disabled: true })).toBeVisible()
 
     // Find the text hello cody, and then highlight the text
     await page.getByText('<title>Hello Cody</title>').click()
@@ -30,7 +30,7 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     await page.keyboard.press('ArrowDown')
 
     // Open the command palette by clicking on the Cody Icon
-    await page.getByRole('button', { name: /Cody: Fixup.*/ }).click()
+    await page.getByRole('button', { name: 'Fixup (Experimental)' }).click()
 
     // Wait for the input box to appear
     await page.getByPlaceholder('Ask Cody to edit your code, or use /chat to ask a question.').click()
@@ -53,13 +53,13 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
 
     // Diff view button
     await page.locator('a').filter({ hasText: 'replace hello with goodbye' }).click()
-    await page.getByRole('button', { name: 'Cody: Show diff for fixup' }).click()
+    await page.getByRole('button', { name: 'Show diff for fixup' }).click()
     await expect(page.getByText(/^Cody Fixup Diff View.*/)).toBeVisible()
 
     // Apply fixup button on Click
     await page.locator('a').filter({ hasText: 'replace hello with goodbye' }).click()
     await expect(page.getByText('<title>Hello Cody</title>')).toBeVisible()
-    await page.getByRole('button', { name: 'Cody: Apply fixup' }).click()
+    await page.getByRole('button', { name: 'Apply fixup' }).click()
     await expect(page.getByText('No pending Cody fixups')).toBeVisible()
 
     // Close the diff view

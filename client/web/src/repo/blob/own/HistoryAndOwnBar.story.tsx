@@ -14,10 +14,14 @@ const barData: FetchOwnersAndHistoryResult = {
         sourceType: RepositoryType.GIT_REPOSITORY,
         commit: {
             blob: {
+                contributors: {
+                    totalCount: 0,
+                },
                 ownership: {
                     nodes: [
                         {
                             owner: {
+                                id: 'user1',
                                 avatarURL: null,
                                 teamDisplayName: 'Xclaesse',
                                 url: '/teams/xclaesse',
@@ -33,6 +37,7 @@ const barData: FetchOwnersAndHistoryResult = {
                                 avatarURL: 'https://avatars.githubusercontent.com/u/5090588?v=4',
                                 displayName: 'pwithnall',
                                 user: {
+                                    id: 'user2',
                                     displayName: 'Philip Withnall',
                                     url: '/users/pwithnall',
                                     username: 'pwithnall',

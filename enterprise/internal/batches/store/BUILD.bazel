@@ -124,6 +124,7 @@ go_test(
         "//lib/batches/execution",
         "//lib/batches/overridable",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_keegancsmith_sqlf//:sqlf",

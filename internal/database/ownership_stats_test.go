@@ -167,9 +167,28 @@ func TestUpdateAggregateCountsSuccess(t *testing.T) {
 	repo := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
 	// 2. Insert aggregate counts:
 	iter := fakeAggregateStatsIterator{
-		"":              {CodeownedFileCount: 3},
-		"dir1":          {CodeownedFileCount: 2},
-		"dir2/file1.go": {CodeownedFileCount: 1},
+		"": {
+			CodeownedFileCount:         1,
+			AssignedOwnershipFileCount: 2,
+			TotalOwnedFileCount:        3,
+		},
+		"file1.go": {
+			AssignedOwnershipFileCount: 1,
+			TotalOwnedFileCount:        1,
+		},
+		"dir": {
+			CodeownedFileCount:         1,
+			AssignedOwnershipFileCount: 1,
+			TotalOwnedFileCount:        2,
+		},
+		"dir/file2.go": {
+			CodeownedFileCount:  1,
+			TotalOwnedFileCount: 1,
+		},
+		"dir/file3.go": {
+			AssignedOwnershipFileCount: 1,
+			TotalOwnedFileCount:        1,
+		},
 	}
 	timestamp := time.Now()
 	updatedRows, err := d.OwnershipStats().UpdateAggregateCounts(ctx, repo.ID, iter, timestamp)
@@ -190,6 +209,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 	// 1. Setup repo and paths:
 	repo1 := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
 	repo2 := mustCreate(ctx, t, d, &types.Repo{Name: "a/c"})
+	_ = mustCreate(ctx, t, d, &types.Repo{Name: "a/d"}) // No data for this repo
 
 	t.Run("no data - query single repo", func(t *testing.T) {
 		opts := TreeLocationOpts{
@@ -212,14 +232,32 @@ func TestQueryAggregateCounts(t *testing.T) {
 	// 2. Insert aggregate counts:
 	timestamp := time.Now()
 	repo1Counts := fakeAggregateStatsIterator{
-		"":              {CodeownedFileCount: 3},
-		"dir1":          {CodeownedFileCount: 2},
-		"dir2/file1.go": {CodeownedFileCount: 1},
+		"": {
+			CodeownedFileCount:         1,
+			AssignedOwnershipFileCount: 1,
+			TotalOwnedFileCount:        2,
+		},
+		"dir": {
+			CodeownedFileCount:         1,
+			AssignedOwnershipFileCount: 1,
+			TotalOwnedFileCount:        2,
+		},
+		"dir/file1.go": {
+			CodeownedFileCount:  1,
+			TotalOwnedFileCount: 1,
+		},
+		"dir/file2.go": {
+			AssignedOwnershipFileCount: 1,
+			TotalOwnedFileCount:        1,
+		},
 	}
 	_, err := d.OwnershipStats().UpdateAggregateCounts(ctx, repo1.ID, repo1Counts, timestamp)
 	require.NoError(t, err)
 	repo2Counts := fakeAggregateStatsIterator{
-		"": {CodeownedFileCount: 10}, // Just the root data
+		"": { // Just the root data
+			CodeownedFileCount:  10,
+			TotalOwnedFileCount: 10,
+		},
 	}
 	_, err = d.OwnershipStats().UpdateAggregateCounts(ctx, repo2.ID, repo2Counts, timestamp)
 	require.NoError(t, err)
@@ -228,22 +266,29 @@ func TestQueryAggregateCounts(t *testing.T) {
 	t.Run("query single file", func(t *testing.T) {
 		opts := TreeLocationOpts{
 			RepoID: repo1.ID,
-			Path:   "dir2/file1.go",
+			Path:   "dir/file1.go",
 		}
 		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
-		want := PathAggregateCounts{CodeownedFileCount: 1}
+		want := PathAggregateCounts{
+			CodeownedFileCount:  1,
+			TotalOwnedFileCount: 1,
+		}
 		assert.DeepEqual(t, want, got)
 	})
 
 	t.Run("query single dir", func(t *testing.T) {
 		opts := TreeLocationOpts{
 			RepoID: repo1.ID,
-			Path:   "dir1",
+			Path:   "dir",
 		}
 		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
-		want := PathAggregateCounts{CodeownedFileCount: 2}
+		want := PathAggregateCounts{
+			CodeownedFileCount:         1,
+			AssignedOwnershipFileCount: 1,
+			TotalOwnedFileCount:        2,
+		}
 		assert.DeepEqual(t, want, got)
 	})
 
@@ -253,7 +298,11 @@ func TestQueryAggregateCounts(t *testing.T) {
 		}
 		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
-		want := PathAggregateCounts{CodeownedFileCount: 3}
+		want := PathAggregateCounts{
+			CodeownedFileCount:         1,
+			AssignedOwnershipFileCount: 1,
+			TotalOwnedFileCount:        2,
+		}
 		assert.DeepEqual(t, want, got)
 	})
 
@@ -261,7 +310,11 @@ func TestQueryAggregateCounts(t *testing.T) {
 		opts := TreeLocationOpts{}
 		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
-		want := PathAggregateCounts{CodeownedFileCount: 13}
+		want := PathAggregateCounts{
+			CodeownedFileCount:         11,
+			AssignedOwnershipFileCount: 1,
+			TotalOwnedFileCount:        12,
+		}
 		assert.DeepEqual(t, want, got)
 	})
 }
