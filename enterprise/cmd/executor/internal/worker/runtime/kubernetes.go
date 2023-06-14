@@ -83,6 +83,7 @@ func (r *kubernetesRuntime) NewRunnerSpecs(ws workspace.Workspace, job types.Job
 		for i, step := range job.DockerSteps {
 			key := kubernetesKey(step.Key, i)
 			runnerSpecs[i] = runner.Spec{
+				Job: job,
 				CommandSpecs: []command.Spec{
 					{
 						Key:  key,
