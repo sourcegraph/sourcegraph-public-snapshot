@@ -69,11 +69,11 @@ export async function updateConfiguration(configKey: string, configValue: string
 
 export const getFullConfig = async (
     secretStorage: SecretStorage,
-    localStorage: LocalStorage
+    localStorage?: LocalStorage
 ): Promise<ConfigurationWithAccessToken> => {
     const config = getConfiguration(vscode.workspace.getConfiguration())
     // Migrate endpoints to local storage
-    config.serverEndpoint = localStorage.getEndpoint() || config.serverEndpoint
+    config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
     const accessToken = (await getAccessToken(secretStorage)) || null
     return { ...config, accessToken }
 }
