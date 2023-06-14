@@ -78,6 +78,7 @@ ts_project(
         "src/rg.ts",
         "src/services/AuthProvider.ts",
         "src/services/CodeLensProvider.ts",
+        "src/services/CodyMenus.ts",
         "src/services/DecorationProvider.ts",
         "src/services/FeedbackOptions.ts",
         "src/services/GuardrailsProvider.ts",

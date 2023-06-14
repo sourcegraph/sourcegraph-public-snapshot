@@ -741,9 +741,9 @@
         "cody.serverEndpoint": {
           "order": 1,
           "type": "string",
-          "default": "https://sourcegraph.com",
-          "example": "https://example.sourcegraph.com",
-          "description": "URL to the Sourcegraph instance."
+          "format": "uri",
+          "description": "URL to the Sourcegraph instance.",
+          "deprecationMessage": "Please login following the instructions in the UI."
         },
         "cody.codebase": {
           "order": 2,
