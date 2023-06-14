@@ -100,8 +100,7 @@ func (r *RepositoryResolver) EmbeddingExists(ctx context.Context) (bool, error) 
 }
 
 func (r *RepositoryResolver) EmbeddingJobs(ctx context.Context, args ListRepoEmbeddingJobsArgs) (*graphqlutil.ConnectionResolver[RepoEmbeddingJobResolver], error) {
-	// Set the repository argument to ensure that we only return jobs for this
-	// repository.
+	// Ensure that we only return jobs for this repository.
 	gqlID := r.ID()
 	args.Repo = &gqlID
 

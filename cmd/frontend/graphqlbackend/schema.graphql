@@ -3804,7 +3804,7 @@ type Repository implements Node & GenericSearchResultInterface {
         Filter by the state of the job.
         """
         state: String
-    ):RepoEmbeddingJobsConnection!
+    ): RepoEmbeddingJobsConnection!
 }
 
 """
