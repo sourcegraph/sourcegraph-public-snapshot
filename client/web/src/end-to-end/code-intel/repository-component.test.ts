@@ -328,9 +328,8 @@ describe('Repository component', () => {
                     'throwIfCancelled',
                     'tryCancel',
                     'toAxiosCancelToken',
-                    'source',
                 ],
-                symbolTypes: ['constant', 'constant', 'function', 'function', 'function', 'constant'],
+                symbolTypes: ['constant', 'constant', 'function', 'function', 'function'],
             },
             {
                 name: 'lists symbols in file for Java',
