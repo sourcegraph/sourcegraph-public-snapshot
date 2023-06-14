@@ -51,10 +51,6 @@ func newCompletionsHandler(
 		}
 
 		// TODO: Model is not configurable but technically allowed in the request body right now.
-		if requestParams.Model != "" {
-			http.Error(w, "user-specified models are not allowed", http.StatusBadRequest)
-			return
-		}
 		requestParams.Model = getModel(requestParams, completionsConfig)
 
 		var err error
