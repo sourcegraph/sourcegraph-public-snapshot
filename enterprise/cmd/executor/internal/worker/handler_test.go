@@ -470,12 +470,14 @@ func TestHandler_Handle(t *testing.T) {
 				jobRuntime.NewRunnerFunc.PushReturn(jobRunner, nil)
 				jobRuntime.NewRunnerSpecsFunc.PushReturn([]runner.Spec{
 					{
-						CommandSpec: command.Spec{
-							Key:       "my-key",
-							Command:   []string{"echo", "hello"},
-							Dir:       ".",
-							Env:       []string{"FOO=bar"},
-							Operation: operations.Exec,
+						CommandSpecs: []command.Spec{
+							{
+								Key:       "my-key",
+								Command:   []string{"echo", "hello"},
+								Dir:       ".",
+								Env:       []string{"FOO=bar"},
+								Operation: operations.Exec,
+							},
 						},
 						Image:      "my-image",
 						ScriptPath: "./foo",
@@ -499,7 +501,8 @@ func TestHandler_Handle(t *testing.T) {
 				require.Len(t, jobRunner.RunFunc.History(), 1)
 				assert.Equal(t, "my-image", jobRunner.RunFunc.History()[0].Arg1.Image)
 				assert.Equal(t, "./foo", jobRunner.RunFunc.History()[0].Arg1.ScriptPath)
-				assert.Equal(t, []string{"echo", "hello"}, jobRunner.RunFunc.History()[0].Arg1.CommandSpec.Command)
+				require.Len(t, jobRunner.RunFunc.History()[0].Arg1.CommandSpecs, 1)
+				assert.Equal(t, []string{"echo", "hello"}, jobRunner.RunFunc.History()[0].Arg1.CommandSpecs[0].Command)
 			},
 		},
 		{
@@ -565,12 +568,14 @@ func TestHandler_Handle(t *testing.T) {
 				jobRuntime.NewRunnerFunc.PushReturn(jobRunner, nil)
 				jobRuntime.NewRunnerSpecsFunc.PushReturn([]runner.Spec{
 					{
-						CommandSpec: command.Spec{
-							Key:       "my-key",
-							Command:   []string{"echo", "hello"},
-							Dir:       ".",
-							Env:       []string{"FOO=bar"},
-							Operation: operations.Exec,
+						CommandSpecs: []command.Spec{
+							{
+								Key:       "my-key",
+								Command:   []string{"echo", "hello"},
+								Dir:       ".",
+								Env:       []string{"FOO=bar"},
+								Operation: operations.Exec,
+							},
 						},
 						Image:      "my-image",
 						ScriptPath: "./foo",

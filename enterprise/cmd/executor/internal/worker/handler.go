@@ -156,16 +156,16 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	logger.Info("Running commands")
 	skipKey := ""
 	for i, spec := range commands {
-		if len(skipKey) > 0 && skipKey != spec.CommandSpec.Key {
+		if len(skipKey) > 0 && skipKey != spec.CommandSpecs[0].Key {
 			continue
 		} else if len(skipKey) > 0 {
 			// We have a match, so reset the skip key.
 			skipKey = ""
 		}
 		if err := runtimeRunner.Run(ctx, spec); err != nil {
-			return errors.Wrapf(err, "running command %q", spec.CommandSpec.Key)
+			return errors.Wrapf(err, "running command %q", spec.CommandSpecs[0].Key)
 		}
-		if executorutil.IsPreStepKey(spec.CommandSpec.Key) {
+		if executorutil.IsPreStepKey(spec.CommandSpecs[0].Key) {
 			// Check if there is a skip file. and if so, what the next step is.
 			nextStep, err := runner.NextStep(ws.WorkingDirectory())
 			if err != nil {
@@ -258,11 +258,13 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 			key = fmt.Sprintf("step.docker.%d", i)
 		}
 		dockerStepCommand := runner.Spec{
-			CommandSpec: command.Spec{
-				Key:       key,
-				Dir:       dockerStep.Dir,
-				Env:       dockerStep.Env,
-				Operation: h.operations.Exec,
+			CommandSpecs: []command.Spec{
+				{
+					Key:       key,
+					Dir:       dockerStep.Dir,
+					Env:       dockerStep.Env,
+					Operation: h.operations.Exec,
+				},
 			},
 			Image:      dockerStep.Image,
 			ScriptPath: ws.ScriptFilenames()[i],
@@ -285,12 +287,14 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 		}
 
 		cliStepCommand := runner.Spec{
-			CommandSpec: command.Spec{
-				Key:       key,
-				Command:   append([]string{"src"}, cliStep.Commands...),
-				Dir:       cliStep.Dir,
-				Env:       cliStep.Env,
-				Operation: h.operations.Exec,
+			CommandSpecs: []command.Spec{
+				{
+					Key:       key,
+					Command:   append([]string{"src"}, cliStep.Commands...),
+					Dir:       cliStep.Dir,
+					Env:       cliStep.Env,
+					Operation: h.operations.Exec,
+				},
 			},
 		}
 
