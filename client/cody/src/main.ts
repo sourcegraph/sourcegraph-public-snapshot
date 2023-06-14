@@ -12,7 +12,7 @@ import { History } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
-import { logEvent, updateEventLogger } from './event-logger'
+import { logEvent, updateEventLogger, eventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
@@ -82,7 +82,6 @@ const register = async (
     const disposables: vscode.Disposable[] = []
 
     await updateEventLogger(initialConfig, localStorage)
-
     // Controller for inline assist
     const commentController = new InlineController(context.extensionPath)
     disposables.push(commentController.get())
@@ -350,6 +349,9 @@ const register = async (
         onConfigurationChange: newConfig => {
             chatProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
+            if (eventLogger) {
+                eventLogger.onConfigurationChange(vscode.workspace.getConfiguration())
+            }
         },
     }
 }
