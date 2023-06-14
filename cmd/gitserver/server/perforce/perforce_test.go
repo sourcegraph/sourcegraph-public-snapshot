@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/require"
@@ -201,9 +202,10 @@ func TestServicePipeline(t *testing.T) {
 	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
-	svc := NewService(ctx, logtest.NoOp(t), db, list.New())
+	logger := logtest.NoOp(t)
+	svc := NewService(ctx, observation.NewContext(logger), logger, db, list.New())
 
-	job := &ChangelistMappingJob{RepoName: repo.Name}
+	job := NewChangelistMappingJob(repo.Name, common.GitDir("foo"))
 
 	testCases := []struct {
 		name          string

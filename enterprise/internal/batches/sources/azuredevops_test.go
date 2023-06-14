@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 var (
@@ -709,7 +710,7 @@ func TestAzureDevOpsSource_GetFork(t *testing.T) {
 			return azuredevops.Repository{}, want
 		})
 
-		repo, err := s.GetFork(ctx, upstreamRepo, strPtr("fork"), nil)
+		repo, err := s.GetFork(ctx, upstreamRepo, pointers.Ptr("fork"), nil)
 		assert.Nil(t, repo)
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
@@ -723,7 +724,7 @@ func TestAzureDevOpsSource_GetFork(t *testing.T) {
 			return fork, nil
 		})
 
-		forkRepo, err := s.GetFork(ctx, upstreamRepo, strPtr("fork"), nil)
+		forkRepo, err := s.GetFork(ctx, upstreamRepo, pointers.Ptr("fork"), nil)
 		assert.Nil(t, err)
 		assert.NotNil(t, forkRepo)
 		assert.NotEqual(t, forkRepo, upstreamRepo)
@@ -745,7 +746,7 @@ func TestAzureDevOpsSource_GetFork(t *testing.T) {
 			return azuredevops.Project{}, want
 		})
 
-		repo, err := s.GetFork(ctx, upstreamRepo, strPtr("fork"), nil)
+		repo, err := s.GetFork(ctx, upstreamRepo, pointers.Ptr("fork"), nil)
 		assert.Nil(t, repo)
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
@@ -772,7 +773,7 @@ func TestAzureDevOpsSource_GetFork(t *testing.T) {
 			return azuredevops.Repository{}, want
 		})
 
-		repo, err := s.GetFork(ctx, upstreamRepo, strPtr("fork"), nil)
+		repo, err := s.GetFork(ctx, upstreamRepo, pointers.Ptr("fork"), nil)
 		assert.Nil(t, repo)
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
@@ -814,7 +815,7 @@ func TestAzureDevOpsSource_GetFork(t *testing.T) {
 			return fork, nil
 		})
 
-		forkRepo, err := s.GetFork(ctx, upstreamRepo, strPtr("fork"), nil)
+		forkRepo, err := s.GetFork(ctx, upstreamRepo, pointers.Ptr("fork"), nil)
 		assert.Nil(t, err)
 		assert.NotNil(t, forkRepo)
 		assert.NotEqual(t, forkRepo, upstreamRepo)
@@ -846,7 +847,7 @@ func TestAzureDevOpsSource_GetFork(t *testing.T) {
 			return fork, nil
 		})
 
-		forkRepo, err := s.GetFork(ctx, upstreamRepo, strPtr("fork"), strPtr("special-fork-name"))
+		forkRepo, err := s.GetFork(ctx, upstreamRepo, pointers.Ptr("fork"), pointers.Ptr("special-fork-name"))
 		assert.Nil(t, err)
 		assert.NotNil(t, forkRepo)
 		assert.NotEqual(t, forkRepo, upstreamRepo)

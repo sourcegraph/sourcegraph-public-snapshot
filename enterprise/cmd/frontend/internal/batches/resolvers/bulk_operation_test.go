@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestBulkOperationResolver(t *testing.T) {
@@ -69,7 +70,7 @@ func TestBulkOperationResolver(t *testing.T) {
 			JobType:        btypes.ChangesetJobTypeComment,
 			Payload:        btypes.ChangesetJobCommentPayload{Message: "test"},
 			State:          btypes.ChangesetJobStateFailed,
-			FailureMessage: strPtr(errorMsg),
+			FailureMessage: pointers.Ptr(errorMsg),
 			StartedAt:      now,
 			FinishedAt:     now,
 		},
@@ -93,7 +94,7 @@ func TestBulkOperationResolver(t *testing.T) {
 			JobType:        btypes.ChangesetJobTypeComment,
 			Payload:        btypes.ChangesetJobCommentPayload{Message: "test"},
 			State:          btypes.ChangesetJobStateFailed,
-			FailureMessage: strPtr(errorMsg),
+			FailureMessage: pointers.Ptr(errorMsg),
 			StartedAt:      now,
 			FinishedAt:     now,
 		},
@@ -116,7 +117,7 @@ func TestBulkOperationResolver(t *testing.T) {
 		Errors: []*apitest.ChangesetJobError{
 			{
 				Changeset: &apitest.Changeset{ID: string(bgql.MarshalChangesetID(changeset1.ID))},
-				Error:     strPtr(errorMsg),
+				Error:     pointers.Ptr(errorMsg),
 			},
 			{
 				Changeset: &apitest.Changeset{ID: string(bgql.MarshalChangesetID(changeset3.ID))},

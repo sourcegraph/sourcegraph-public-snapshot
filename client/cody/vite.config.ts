@@ -2,11 +2,22 @@ import { resolve } from 'path'
 
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 // https://vitejs.dev/config/
 // eslint-disable-next-line import/no-default-export
 export default defineConfig({
-    plugins: [react()],
+    plugins: [
+        viteStaticCopy({
+            targets: [
+                {
+                    src: 'node_modules/cody-icons-font/font/cody-icons.woff',
+                    dest: 'assets',
+                },
+            ],
+        }),
+        react(),
+    ],
     publicDir: 'resources',
     base: './',
     css: {

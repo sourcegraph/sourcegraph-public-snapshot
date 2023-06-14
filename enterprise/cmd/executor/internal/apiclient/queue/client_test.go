@@ -542,12 +542,12 @@ func Test_parseJobIDs(t *testing.T) {
 			jobIDs: []string{"1-foo", "2-foo", "3-bar", "44-foo"},
 			expected: []types.QueueJobIDs{
 				{
-					QueueName: "foo",
-					JobIDs:    []string{"1", "2", "44"},
-				},
-				{
 					QueueName: "bar",
 					JobIDs:    []string{"3"},
+				},
+				{
+					QueueName: "foo",
+					JobIDs:    []string{"1", "2", "44"},
 				},
 			},
 		},

@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -558,7 +559,7 @@ func TestGithubSource_GetFork(t *testing.T) {
 				defer save(t)
 				target := newGitHubRepo(urn, tc.target.namespace+"/"+tc.target.name, "123")
 
-				fork, err := src.GetFork(ctx, target, strPtr(tc.fork.namespace), strPtr(tc.fork.name))
+				fork, err := src.GetFork(ctx, target, pointers.Ptr(tc.fork.namespace), pointers.Ptr(tc.fork.name))
 
 				assert.Nil(t, fork)
 				assert.ErrorContains(t, err, tc.err)
@@ -664,7 +665,7 @@ func TestGithubSource_GetFork(t *testing.T) {
 				var fork *types.Repo
 				var err error
 				if tc.externalNameAndNamespace {
-					fork, err = src.GetFork(ctx, target, strPtr(tc.fork.namespace), strPtr(tc.fork.name))
+					fork, err = src.GetFork(ctx, target, pointers.Ptr(tc.fork.namespace), pointers.Ptr(tc.fork.name))
 				} else {
 					fork, err = src.GetFork(ctx, target, nil, nil)
 				}
@@ -778,7 +779,7 @@ func TestGithubSource_GetFork(t *testing.T) {
 				forkRepo:      &github.Repository{NameWithOwner: org + "/custom-bar", IsFork: true},
 				namespace:     &org,
 				wantNamespace: org,
-				name:          strPtr("custom-bar"),
+				name:          pointers.Ptr("custom-bar"),
 				wantName:      "custom-bar",
 				client: &mockGithubClientFork{
 					fork:    &github.Repository{NameWithOwner: org + "/custom-bar", IsFork: true},

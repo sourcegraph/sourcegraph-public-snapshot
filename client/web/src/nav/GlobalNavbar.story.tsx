@@ -8,7 +8,6 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { Grid, H3 } from '@sourcegraph/wildcard'
 
-import { HistoryStack } from '../app/useHistoryStack'
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 
@@ -40,7 +39,6 @@ const defaultProps: GlobalNavbarProps = {
     codeMonitoringEnabled: true,
     ownEnabled: true,
     showFeedbackModal: () => undefined,
-    historyStack: {} as HistoryStack,
 }
 
 const allNavItemsProps: Partial<GlobalNavbarProps> = {
@@ -79,7 +77,10 @@ const config: Meta = {
     parameters: {
         chromatic: {
             disableSnapshot: false,
-            viewports: [320, 576, 978],
+            viewports: [
+                // 320, // TODO: Mobile size detection is not working in Storybook
+                576, 978,
+            ],
         },
     },
 }

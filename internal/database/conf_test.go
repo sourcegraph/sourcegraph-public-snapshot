@@ -6,12 +6,14 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestSiteGetLatestDefault(t *testing.T) {
@@ -383,9 +385,6 @@ func TestGetSiteConfigCount(t *testing.T) {
 }
 
 func TestListSiteConfigs(t *testing.T) {
-	toIntPtr := func(n int) *int { return &n }
-	toStringPtr := func(n string) *string { return &n }
-
 	if testing.Short() {
 		t.Skip()
 	}
@@ -413,106 +412,106 @@ func TestListSiteConfigs(t *testing.T) {
 		{
 			name: "first: 2 (subset of data)",
 			listOptions: &PaginationArgs{
-				First: toIntPtr(2),
+				First: pointers.Ptr(2),
 			},
 			expectedIDs: []int32{5, 3},
 		},
 		{
 			name: "last: 2 (subset of data)",
 			listOptions: &PaginationArgs{
-				Last: toIntPtr(2),
+				Last: pointers.Ptr(2),
 			},
 			expectedIDs: []int32{1, 2},
 		},
 		{
 			name: "first: 5 (all of data)",
 			listOptions: &PaginationArgs{
-				First: toIntPtr(5),
+				First: pointers.Ptr(5),
 			},
 			expectedIDs: []int32{5, 3, 2, 1},
 		},
 		{
 			name: "last: 5 (all of data)",
 			listOptions: &PaginationArgs{
-				Last: toIntPtr(5),
+				Last: pointers.Ptr(5),
 			},
 			expectedIDs: []int32{1, 2, 3, 5},
 		},
 		{
 			name: "first: 10 (more than data)",
 			listOptions: &PaginationArgs{
-				First: toIntPtr(10),
+				First: pointers.Ptr(10),
 			},
 			expectedIDs: []int32{5, 3, 2, 1},
 		},
 		{
 			name: "last: 10 (more than data)",
 			listOptions: &PaginationArgs{
-				Last: toIntPtr(10),
+				Last: pointers.Ptr(10),
 			},
 			expectedIDs: []int32{1, 2, 3, 5},
 		},
 		{
 			name: "first: 2, after: 5",
 			listOptions: &PaginationArgs{
-				First: toIntPtr(2),
-				After: toStringPtr("5"),
+				First: pointers.Ptr(2),
+				After: pointers.Ptr("5"),
 			},
 			expectedIDs: []int32{3, 2},
 		},
 		{
 			name: "first: 6, after: 5 (overflow)",
 			listOptions: &PaginationArgs{
-				First: toIntPtr(6),
-				After: toStringPtr("5"),
+				First: pointers.Ptr(6),
+				After: pointers.Ptr("5"),
 			},
 			expectedIDs: []int32{3, 2, 1},
 		},
 		{
 			name: "last: 2, after: 5",
 			listOptions: &PaginationArgs{
-				Last:  toIntPtr(2),
-				After: toStringPtr("5"),
+				Last:  pointers.Ptr(2),
+				After: pointers.Ptr("5"),
 			},
 			expectedIDs: []int32{1, 2},
 		},
 		{
 			name: "last: 6, after: 5 (overflow)",
 			listOptions: &PaginationArgs{
-				Last:  toIntPtr(6),
-				After: toStringPtr("5"),
+				Last:  pointers.Ptr(6),
+				After: pointers.Ptr("5"),
 			},
 			expectedIDs: []int32{1, 2, 3},
 		},
 		{
 			name: "first: 2, before: 1",
 			listOptions: &PaginationArgs{
-				First:  toIntPtr(2),
-				Before: toStringPtr("1"),
+				First:  pointers.Ptr(2),
+				Before: pointers.Ptr("1"),
 			},
 			expectedIDs: []int32{5, 3},
 		},
 		{
 			name: "first: 6, before: 1 (overflow)",
 			listOptions: &PaginationArgs{
-				First:  toIntPtr(6),
-				Before: toStringPtr("1"),
+				First:  pointers.Ptr(6),
+				Before: pointers.Ptr("1"),
 			},
 			expectedIDs: []int32{5, 3, 2},
 		},
 		{
 			name: "last: 2, before: 2",
 			listOptions: &PaginationArgs{
-				Last:   toIntPtr(2),
-				Before: toStringPtr("2"),
+				Last:   pointers.Ptr(2),
+				Before: pointers.Ptr("2"),
 			},
 			expectedIDs: []int32{3, 5},
 		},
 		{
 			name: "last: 6, before: 2 (overflow)",
 			listOptions: &PaginationArgs{
-				Last:   toIntPtr(6),
-				Before: toStringPtr("2"),
+				Last:   pointers.Ptr(6),
+				Before: pointers.Ptr("2"),
 			},
 			expectedIDs: []int32{3, 5},
 		},
