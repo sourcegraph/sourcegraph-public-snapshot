@@ -134,7 +134,7 @@ func HandleFeature(
 
 		// If response is healthy, consume the rate limit
 		if responseRecorder.StatusCode >= 200 && responseRecorder.StatusCode < 300 {
-			if err := commit(1); err != nil {
+			if err := commit(r.Context(), 1); err != nil {
 				logger.Error("failed to commit rate limit consumption", log.Error(err))
 			}
 		}

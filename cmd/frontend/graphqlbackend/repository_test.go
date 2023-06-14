@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -42,10 +43,9 @@ func TestRepository_Commit(t *testing.T) {
 	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
-	RunTests(t, []*Test{
-		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Query: `
+	RunTest(t, &Test{
+		Schema: mustParseGraphQLSchema(t, db),
+		Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {
 						commit(rev: "abc") {
@@ -54,7 +54,7 @@ func TestRepository_Commit(t *testing.T) {
 					}
 				}
 			`,
-			ExpectedResult: `
+		ExpectedResult: `
 				{
 					"repository": {
 						"commit": {
@@ -63,7 +63,61 @@ func TestRepository_Commit(t *testing.T) {
 					}
 				}
 			`,
-		},
+	})
+}
+
+func TestRepository_Changelist(t *testing.T) {
+	repo := &types.Repo{ID: 2, Name: "github.com/gorilla/mux"}
+
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		assert.Equal(t, api.RepoID(2), repo.ID)
+		return exampleCommitSHA1, nil
+	}
+
+	repos := database.NewMockRepoStore()
+	repos.GetFunc.SetDefaultReturn(repo, nil)
+	repos.GetByNameFunc.SetDefaultReturn(repo, nil)
+
+	repoCommitsChangelists := database.NewMockRepoCommitsChangelistsStore()
+	repoCommitsChangelists.GetRepoCommitChangelistFunc.SetDefaultReturn(&types.RepoCommit{
+		ID:                   1,
+		RepoID:               2,
+		CommitSHA:            dbutil.CommitBytea(exampleCommitSHA1),
+		PerforceChangelistID: 123,
+	}, nil)
+
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+	db.RepoCommitsChangelistsFunc.SetDefaultReturn(repoCommitsChangelists)
+
+	RunTest(t, &Test{
+		Schema: mustParseGraphQLSchema(t, db),
+		Query: `
+				{
+					repository(name: "github.com/gorilla/mux") {
+						changelist(cid: "123") {
+							cid
+							canonicalURL
+							commit {
+								oid
+							}
+						}
+					}
+				}
+			`,
+		ExpectedResult: fmt.Sprintf(`
+				{
+					"repository": {
+						"changelist": {
+							"cid": "123",
+							"canonicalURL": "/github.com/gorilla/mux/-/changelist/123",
+"commit": {
+	"oid": "%s"
+}
+						}
+					}
+				}
+			`, exampleCommitSHA1),
 	})
 }
 

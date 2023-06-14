@@ -28,6 +28,7 @@
   - Smell code
   - Optimize code
 - A separate setting for enabling/disabling Cody completions. [pull/53302](https://github.com/sourcegraph/sourcegraph/pull/53302)
+- Debounce for inline Cody completions [pull/53447](https://github.com/sourcegraph/sourcegraph/pull/53447)
 
 ### Changed
 

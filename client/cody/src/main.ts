@@ -207,10 +207,10 @@ const register = async (
             })
         }),
         vscode.commands.registerCommand('cody.walkthrough.enableCodeCompletions', async () => {
-            await workspaceConfig.update('cody.completions', true, vscode.ConfigurationTarget.Global)
+            await workspaceConfig.update('cody.experimental.suggestions', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openSettings', {
-                query: 'cody.completions',
+                query: 'cody.experimental.suggestions',
                 openToSide: true,
             })
         }),
@@ -235,17 +235,31 @@ const register = async (
         vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
         vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
         vscode.commands.registerCommand('cody.recipe.optimize-code', () => executeRecipe('optimize-code')),
-        // Register URI Handler for resolving token sending back from sourcegraph.com
+        // Register URI Handler (vscode://sourcegraph.cody-ai) for:
+        // - Deep linking into VS Code with Cody focused (e.g. from the App setup)
+        // - Resolving token sending back from sourcegraph.com and App
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
                 const params = new URLSearchParams(uri.query)
-                let serverEndpoint = DOTCOM_URL.href
-                if (params.get('type') === 'app') {
-                    serverEndpoint = LOCAL_APP_URL.href
-                }
-                await workspaceConfig.update('cody.serverEndpoint', serverEndpoint, vscode.ConfigurationTarget.Global)
+                const type = params.get('type')
                 const token = params.get('code')
-                if (token && token.length > 8) {
+
+                if (!token) {
+                    await vscode.commands.executeCommand('cody.chat.focus')
+                    return
+                }
+
+                // FIXME: What is this magic number?
+                if (token.length > 8) {
+                    const serverEndpoint = type === 'app' ? LOCAL_APP_URL.href : DOTCOM_URL.href
+                    const successMessage = type === 'app' ? 'Connected to Cody App' : 'Logged in to sourcegraph.com'
+
+                    await workspaceConfig.update(
+                        'cody.serverEndpoint',
+                        serverEndpoint,
+                        vscode.ConfigurationTarget.Global
+                    )
+
                     await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, token)
                     const authStatus = await getAuthStatus({
                         serverEndpoint,
@@ -254,7 +268,13 @@ const register = async (
                     })
                     await chatProvider.sendLogin(authStatus)
                     if (isLoggedIn(authStatus)) {
-                        void vscode.window.showInformationMessage('Token has been retrieved and updated successfully')
+                        const actionButtonLabel = 'Get Started'
+                        const action = await vscode.window.showInformationMessage(successMessage, actionButtonLabel)
+                        if (action === actionButtonLabel) {
+                            await vscode.commands.executeCommand('cody.chat.focus')
+                        }
+                    } else {
+                        await vscode.window.showInformationMessage('Error logging into Cody')
                     }
                 }
             },
@@ -262,7 +282,7 @@ const register = async (
         statusBar
     )
 
-    if (initialConfig.completions) {
+    if (initialConfig.experimentalSuggest) {
         // TODO(sqs): make this listen to config and not just use initialConfig
         const docprovider = new CompletionsDocumentProvider()
         disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))
@@ -273,7 +293,8 @@ const register = async (
             completionsClient,
             docprovider,
             history,
-            statusBar
+            statusBar,
+            codebaseContext
         )
         disposables.push(
             vscode.commands.registerCommand('cody.manual-completions', async () => {
