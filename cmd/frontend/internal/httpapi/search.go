@@ -528,7 +528,7 @@ func (h *searchIndexerServer) doIndexStatusUpdate(ctx context.Context, args *ind
 
 	for i, repo := range args.Repositories {
 		ids[i] = int32(repo.RepoID)
-		minimal[repo.RepoID] = &zoekt.MinimalRepoListEntry{Branches: repo.Branches}
+		minimal[repo.RepoID] = &zoekt.MinimalRepoListEntry{Branches: repo.Branches, IndexTimeUnix: repo.IndexTimeUnix}
 	}
 
 	h.logger.Info("updating index status", log.Int32s("repositories", ids))
@@ -540,8 +540,9 @@ type indexStatusUpdateArgs struct {
 }
 
 type indexStatusUpdateRepository struct {
-	RepoID   uint32
-	Branches []zoekt.RepositoryBranch
+	RepoID        uint32
+	Branches      []zoekt.RepositoryBranch
+	IndexTimeUnix int64
 }
 
 func (a *indexStatusUpdateArgs) FromProto(req *proto.UpdateIndexStatusRequest) {
@@ -556,12 +557,10 @@ func (a *indexStatusUpdateArgs) FromProto(req *proto.UpdateIndexStatusRequest) {
 			})
 		}
 
-		a.Repositories = append(a.Repositories, struct {
-			RepoID   uint32
-			Branches []zoekt.RepositoryBranch
-		}{
-			RepoID:   repo.RepoId,
-			Branches: branches,
+		a.Repositories = append(a.Repositories, indexStatusUpdateRepository{
+			RepoID:        repo.RepoId,
+			Branches:      branches,
+			IndexTimeUnix: repo.GetIndexTimeUnix(),
 		})
 	}
 }
@@ -579,8 +578,9 @@ func (a *indexStatusUpdateArgs) ToProto() *proto.UpdateIndexStatusRequest {
 		}
 
 		repos = append(repos, &proto.UpdateIndexStatusRequest_Repository{
-			RepoId:   repo.RepoID,
-			Branches: branches,
+			RepoId:        repo.RepoID,
+			Branches:      branches,
+			IndexTimeUnix: repo.IndexTimeUnix,
 		})
 	}
 
