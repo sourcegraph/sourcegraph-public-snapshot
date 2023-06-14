@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -16,31 +17,10 @@ type ParserConfiguration struct {
 	Engine  map[string]ParserType
 }
 
+var parserConfigMutex sync.Mutex
 var parserConfig = ParserConfiguration{
 	Default: ctags_config.UniversalCtags,
 	Engine:  map[string]ctags_config.ParserType{},
-}
-
-var defaultParserConfig = ParserConfiguration{
-	Engine: map[string]ParserType{
-		// Add the languages we want to turn on by default (you'll need to
-		// update the ctags_config module for supported languages as well)
-		"c_sharp":    ctags_config.ScipCtags,
-		"go":         ctags_config.ScipCtags,
-		"javascript": ctags_config.ScipCtags,
-		"python":     ctags_config.ScipCtags,
-		"ruby":       ctags_config.ScipCtags,
-		"rust":       ctags_config.ScipCtags,
-		"scala":      ctags_config.ScipCtags,
-		"typescript": ctags_config.ScipCtags,
-		"zig":        ctags_config.ScipCtags,
-
-		// TODO: Not ready to turn on the following yet. Worried about not handling enough cases.
-		// May wait until after next release
-		// "c"
-		// "c++"
-		// "java":   ScipCtags,
-	},
 }
 
 func init() {
@@ -70,31 +50,19 @@ func init() {
 	// Update parserConfig here
 	go func() {
 		conf.Watch(func() {
-			// Set the defaults
-			parserConfig.Engine = make(map[string]ctags_config.ParserType)
-			for lang, engine := range defaultParserConfig.Engine {
-				lang = languages.NormalizeLanguage(lang)
-				parserConfig.Engine[lang] = engine
-			}
+			parserConfigMutex.Lock()
+			defer parserConfigMutex.Unlock()
 
-			// Set any relevant overrides
-			c := conf.Get()
-			configuration := c.SiteConfig().SyntaxHighlighting
-			if configuration != nil {
-				for lang, engine := range configuration.Symbols.Engine {
-					lang = languages.NormalizeLanguage(lang)
-
-					if engine, err := ctags_config.ParserNameToParserType(engine); err != nil {
-						parserConfig.Engine[lang] = engine
-					}
-				}
-			}
+			parserConfig.Engine = ctags_config.CreateEngineMap(conf.Get().SiteConfig())
 		})
 	}()
 }
 
 func GetParserType(language string) ctags_config.ParserType {
 	language = languages.NormalizeLanguage(language)
+
+	parserConfigMutex.Lock()
+	defer parserConfigMutex.Unlock()
 
 	parserType, ok := parserConfig.Engine[language]
 	if !ok {
