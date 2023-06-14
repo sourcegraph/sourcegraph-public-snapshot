@@ -45,7 +45,7 @@ var commitCounter = promauto.NewCounter(prometheus.CounterOpts{
 })
 
 func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.RepoID, checker authz.SubRepoPermissionChecker) error {
-	// If the repo has sub-repo perms enabled, skip indexing
+	// If the repo has sub-repo perms enabled, skip indexing.
 	isSubRepoPermsRepo, err := isSubRepoPermsRepo(ctx, repoId, r.subRepoPermsCache, checker)
 	if err != nil {
 		return err
@@ -89,9 +89,9 @@ func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.Re
 }
 
 func isSubRepoPermsRepo(ctx context.Context, repoID api.RepoID, cache *rcache.Cache, checker authz.SubRepoPermissionChecker) (isSubRepoPermsRepo bool, err error) {
-	repoIsCachedAndSubRepoPermsDisabled := false
 	cacheKey := strconv.Itoa(int(repoID))
 	noCache := false
+	// Look for the repo in cache to see if we have seen it before instead of hitting the DB.
 	if cache != nil {
 		val, ok := cache.Get(cacheKey)
 		if ok {
@@ -102,35 +102,34 @@ func isSubRepoPermsRepo(ctx context.Context, repoID api.RepoID, cache *rcache.Ca
 			if isSubRepoPermsRepo {
 				return true, nil
 			}
-			repoIsCachedAndSubRepoPermsDisabled = true
+			return false, nil
 		}
 	} else {
 		noCache = true
 	}
 
 	// No entry in cache, so we need to look up whether this is a sub-repo perms repo in the DB.
-	if !repoIsCachedAndSubRepoPermsDisabled {
-		ok, err := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
-		if err != nil {
-			return false, err
-		}
-		if ok {
-			b, err := json.Marshal(true)
-			if err != nil {
-				return false, err
-			}
-			if !noCache {
-				cache.Set(cacheKey, b)
-			}
-			return true, nil
-		}
-		b, err := json.Marshal(false)
+	ok, err := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
+	if err != nil {
+		return false, err
+	}
+	if ok {
+		b, err := json.Marshal(true)
 		if err != nil {
 			return false, err
 		}
 		if !noCache {
 			cache.Set(cacheKey, b)
 		}
+		return true, nil
 	}
+	b, err := json.Marshal(false)
+	if err != nil {
+		return false, err
+	}
+	if !noCache {
+		cache.Set(cacheKey, b)
+	}
+
 	return false, nil
 }
