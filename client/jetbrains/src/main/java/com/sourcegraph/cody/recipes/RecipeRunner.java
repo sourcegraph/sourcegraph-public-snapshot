@@ -20,16 +20,8 @@ public class RecipeRunner {
     this.chat = chat;
   }
 
-  public void runRecipe(PromptProvider promptProvider) {
+  public void runRecipe(@NotNull PromptProvider promptProvider, @NotNull String editorSelection) {
     EditorContext editorContext = EditorContextGetter.getEditorContext(project);
-    String editorSelection = editorContext.getSelection();
-    if (editorSelection == null) {
-      chat.activateChatTab();
-      chat.addMessageToChat(
-          ChatMessage.createAssistantMessage(
-              "No code selected. Please select some code and try again."));
-      return;
-    }
     Language language =
         new Language(
             LanguageUtils.getNormalizedLanguageName(editorContext.getCurrentFileExtension()));
