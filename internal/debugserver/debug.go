@@ -13,11 +13,12 @@ import (
 	"github.com/felixge/fgprof"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"golang.org/x/net/trace"
+	nettrace "golang.org/x/net/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 var addr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address.")
@@ -89,7 +90,7 @@ func NewServerRoutine(ready <-chan struct{}, extra ...Endpoint) goroutine.Backgr
 	}
 
 	// we're protected by adminOnly on the front of this
-	trace.AuthRequest = func(req *http.Request) (any, sensitive bool) {
+	nettrace.AuthRequest = func(req *http.Request) (any, sensitive bool) {
 		return true, true
 	}
 
@@ -126,8 +127,17 @@ func NewServerRoutine(ready <-chan struct{}, extra ...Endpoint) goroutine.Backgr
 		router.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
 		router.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
 		router.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
-		router.Handle("/debug/requests", http.HandlerFunc(trace.Traces))
-		router.Handle("/debug/events", http.HandlerFunc(trace.Events))
+		if trace.EnableNetTrace {
+			router.Handle("/debug/requests", http.HandlerFunc(nettrace.Traces))
+			router.Handle("/debug/events", http.HandlerFunc(nettrace.Events))
+		} else {
+			netTraceDisabled := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusNotFound)
+				w.Write([]byte("golang.org/x/net/trace is not available, SRC_ENABLE_NET_TRACE=false"))
+			})
+			router.Handle("/debug/requests", netTraceDisabled)
+			router.Handle("/debug/events", netTraceDisabled)
+		}
 		router.Handle("/metrics", promhttp.Handler())
 
 		// This path acts as a wildcard and should appear after more specific entries.
