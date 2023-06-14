@@ -36,7 +36,6 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
         },
     })
     const [makeOwnerError, setMakeOwnerError] = React.useState<Error | undefined>(undefined)
-    const [ownPromotionEnabled] = useFeatureFlag('own-promote')
 
     if (loading) {
         return (
@@ -49,7 +48,7 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
         permission => permission.displayName === OwnershipAssignPermission
     )
     const makeOwnerButton =
-        canAssignOwners && ownPromotionEnabled
+        canAssignOwners
             ? (userId: string | undefined) => (
                   <MakeOwnerButton
                       onSuccess={refetch}

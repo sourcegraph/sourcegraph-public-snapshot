@@ -346,6 +346,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
                 {!isPackage && (
                     <div className={styles.contributors}>
+                        {/*TODO(#53160): use settings instead of feature flags to show Ownership*/}
                         {ownSignalsEnabled && (
                             <Card>
                                 <CardHeader className={panelStyles.cardColHeaderWrapper}>Own</CardHeader>

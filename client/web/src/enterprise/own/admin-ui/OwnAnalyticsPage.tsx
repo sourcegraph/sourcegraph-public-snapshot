@@ -19,7 +19,7 @@ interface OwnCoverageDatum {
     fill: string
     tooltip: string
 }
-
+ˆ
 export const OwnAnalyticsPage: FC = () => {
     const { data, loading, error } = useQuery<GetOwnSignalConfigurationsResult>(GET_OWN_JOB_CONFIGURATIONS, {})
     const enabled =
