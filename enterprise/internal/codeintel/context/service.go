@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type Service struct {
@@ -139,12 +138,15 @@ func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolve
 	// },
 
 	type preciseData struct {
-		symbol     string
-		repository string
-		symbolType int32
-		text       string
-		location   []codenavshared.UploadLocation
+		symbolName        string
+		syntectDescriptor string
+		repository        string
+		symbolType        int32
+		text              string
+		location          []codenavshared.UploadLocation
 	}
+
+	definitionMap := map[string]*preciseData{}
 
 	seenOccurrences := map[string]struct{}{}
 	var defsList []codenavshared.UploadLocation
@@ -188,11 +190,6 @@ func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolve
 			// 	return "", err
 			// }
 			// defsList = append(defsList, test...)
-			pd := &preciseData{
-				symbol:     el.Occurrence.Symbol,
-				repository: string(repo[0].Name),
-				symbolType: int32(el.Occurrence.SyntaxKind),
-			}
 			for _, upload := range uploads {
 				loc, _, err := s.codenavSvc.GetScipDefinitionsLocation(ctx, el.Document, el.Occurrence, upload.ID, el.Document.RelativePath, 100, 0)
 				if err != nil {
@@ -205,145 +202,142 @@ func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolve
 				}
 				fmt.Println("HERE IS THE ul \n", ul)
 				defsList = append(defsList, ul...)
-				pd.location = append(pd.location, ul...)
+				pd := &preciseData{
+					symbolName: el.Occurrence.Symbol,
+					repository: string(repo[0].Name),
+					symbolType: int32(el.Occurrence.SyntaxKind),
+					location:   ul,
+				}
 				preciseDataList = append(preciseDataList, pd)
+				e := strings.Split(el.Occurrence.Symbol, "/")
+				key := e[len(e)-1]
+				definitionMap[key] = pd
+				// if key != "" {
+
+				// }
 
 				fmt.Println("HERE IS THE defsList \n", defsList[0])
 			}
-
-			/// Option #2: Get definitions
-			// nms, err := s.codenavSvc.GetFullSCIPNameByDescriptor(ctx, uploadIDs, symbolNames)
-			// if err != nil {
-			// 	return "", err
-			// }
-
-			// // fmt.Println("HERE IS THE nms", &nms)
-
-			// var pqm []precise.QualifiedMonikerData
-			// for _, nm := range nms {
-			// 	// fmt.Println("HERE IS THE nm", nm)
-			// 	pqm = append(pqm, precise.QualifiedMonikerData{
-			// 		MonikerData: precise.MonikerData{
-			// 			Kind:       "import",
-			// 			Scheme:     nm.Scheme,
-			// 			Identifier: nm.GetIdentifier(),
-			// 		},
-			// 		PackageInformationData: precise.PackageInformationData{
-			// 			Manager: nm.PackageManager,
-			// 			Name:    nm.PackageName,
-			// 			Version: nm.PackageVersion,
-			// 		},
-			// 	})
-			// }
-
-			// // fmt.Println("PASSSSSES", pqm)
-
-			// defs, err := s.codenavSvc.GetDefinitionBySymbolName(ctx, pqm, reqState, args)
-			// if err != nil {
-			// 	return "", err
-			// }
-
-			// defsList = append(defsList, defs...)
 		}
 	}
 
+	keysInString := []string{}
+	textInString := []string{}
+	snippetToPreciseDataMap := map[string]*preciseData{}
 	clippedContent := map[string]struct{}{}
 	// var syntectDocsList []*scip.Document
-	for _, def := range defsList {
-		file, err := s.gitserverClient.ReadFile(
-			ctx,
-			authz.DefaultSubRepoPermsChecker,
-			api.RepoName(def.Dump.RepositoryName),
-			api.CommitID(def.Dump.Commit),
-			def.Path,
-		)
-		if err != nil {
-			return "", err
-		}
-		c := strings.Split(string(file), "\n")
-		// fmt.Println("HERE IS THE c", c)
-
-		syntectDocs, err := s.getSCIPDocumentByContent(ctx, string(file), def.Path)
-		if err != nil {
-			return "", err
-		}
-
-		// prd := precise.RangeData{
-		// 	StartLine:      def.TargetRange.Start.Line,
-		// 	EndLine:        def.TargetRange.End.Line,
-		// 	StartCharacter: def.TargetRange.Start.Character,
-		// 	EndCharacter:   def.TargetRange.End.Character,
-		// }
-
-		for _, occ := range syntectDocs.Occurrences {
-			prd := scip.NewRange(occ.Range)
-			pprd := precise.RangeData{
-				StartLine:      int(prd.Start.Line),
-				EndLine:        int(prd.End.Line),
-				StartCharacter: int(prd.Start.Character),
-				EndCharacter:   int(prd.End.Character),
+	for _, pd := range definitionMap {
+		for _, l := range pd.location {
+			file, err := s.gitserverClient.ReadFile(
+				ctx,
+				authz.DefaultSubRepoPermsChecker,
+				api.RepoName(l.Dump.RepositoryName),
+				api.CommitID(l.Dump.Commit),
+				l.Path,
+			)
+			if err != nil {
+				return "", err
 			}
-			r := scip.NewRange(occ.EnclosingRange)
-			_ = occ
-			fmt.Println("HERE IS THE prd \n", prd)
-			fmt.Println("HERE IS THE c \n", c)
-			fmt.Println("HERE IS THE r \n", r)
-			fmt.Println("HERE IS THE occ \n", occ)
-			fmt.Println("HERE IS THE clippedContent \n", clippedContent)
-			isInside := precise.RangeIntersectsSpan(pprd, int(r.Start.Line), int(r.End.Line))
-			fmt.Println("HERE IS THE isInside \n", isInside)
-			if isInside {
-				// z := strings.Join(c[r.Start.Line:r.End.Line], "\n")
-				// zz := z[r.Start.Character:r.End.Character]
-				// fmt.Println("HERE IS THE zz \n", zz)
-				// fmt.Println("HERE IS THE r.Start.Line", r.Start.Line)
-				// fmt.Println("HERE IS THE r.End.Line", r.End.Line)
-				// fmt.Println("HERE IS THE r.Start.Character", r.Start.Character)
-				// fmt.Println("HERE IS THE r.End.Character", r.End.Character)
+			c := strings.Split(string(file), "\n")
+			// fmt.Println("HERE IS THE c", c)
+
+			syntectDocs, err := s.getSCIPDocumentByContent(ctx, string(file), l.Path)
+			if err != nil {
+				return "", err
+			}
+
+			for _, occ := range syntectDocs.Occurrences {
+
+				r := scip.NewRange(occ.EnclosingRange)
+				fmt.Println("HERE IS THE c \n", c)
+				fmt.Println("HERE IS THE r \n", r)
+				fmt.Println("HERE IS THE occ \n", occ)
+				fmt.Println("HERE IS THE clippedContent \n", clippedContent)
 				snpt := extractSnippet(c, r.Start.Line, r.End.Line, r.Start.Character, r.End.Character)
-				// fmt.Println("HERE IS THE SNIPPETS", snpt)
-				// cnt := pageContent(c, &r.Start.Line, &r.End.Line)
-				// clippedContent = append(clippedContent, cnt)
 				clippedContent[snpt] = struct{}{}
+
+				e := strings.Split(occ.Symbol, "/")
+				key := e[len(e)-1]
+				keysInString = append(keysInString, key)
+				textInString = append(textInString, snpt)
+
+				keyLookup := fmt.Sprintf("%s-%s", key, snpt)
+				// pd.text = snpt
+
+				// HERE check the World New()
+				snippetToPreciseDataMap[keyLookup] = pd
+
+				// if key == "" || snpt == "" {
+				// 	continue
+				// }
+				// if _, ok := definitionMap[key]; ok {
+				// 	definitionMap[key].text = snpt
+				// }
+				// prd := scip.NewRange(occ.Range)
+				// pprd := precise.RangeData{
+				// 	StartLine:      int(prd.Start.Line),
+				// 	EndLine:        int(prd.End.Line),
+				// 	StartCharacter: int(prd.Start.Character),
+				// 	EndCharacter:   int(prd.End.Character),
+				// }
+				// r := scip.NewRange(occ.EnclosingRange)
+				// _ = occ
+				// fmt.Println("HERE IS THE prd \n", prd)
+				// fmt.Println("HERE IS THE c \n", c)
+				// fmt.Println("HERE IS THE r \n", r)
+				// fmt.Println("HERE IS THE occ \n", occ)
+				// fmt.Println("HERE IS THE clippedContent \n", clippedContent)
+				// isInside := precise.RangeIntersectsSpan(pprd, int(r.Start.Line), int(r.End.Line))
+				// fmt.Println("HERE IS THE isInside \n", isInside)
+				// if isInside {
+				// 	snpt := extractSnippet(c, r.Start.Line, r.End.Line, r.Start.Character, r.End.Character)
+				// 	clippedContent[snpt] = struct{}{}
+
+				// 	e := strings.Split(occ.Symbol, "/")
+				// 	key := e[len(e)-1]
+				// 	if key == "" || snpt == "" {
+				// 		continue
+				// 	}
+				// 	if _, ok := definitionMap[key]; ok {
+				// 		definitionMap[key].text = snpt
+				// 	}
+				// }
 			}
 		}
-
-		// prd := precise.RangeData{
-		// 	StartLine:      def.TargetRange.Start.Line,
-		// 	EndLine:        def.TargetRange.End.Line,
-		// 	StartCharacter: def.TargetRange.Start.Character,
-		// 	EndCharacter:   def.TargetRange.End.Character,
-		// }
-
-		// for _, occ := range syntectDocs.Occurrences {
-		// 	r := scip.NewRange(occ.EnclosingRange)
-		// 	_ = occ
-		// 	fmt.Println("HERE IS THE prd \n", prd)
-		// 	fmt.Println("HERE IS THE c \n", c)
-		// 	fmt.Println("HERE IS THE r \n", r)
-		// 	fmt.Println("HERE IS THE occ \n", occ)
-		// 	fmt.Println("HERE IS THE clippedContent \n", clippedContent)
-		// 	isInside := precise.RangeIntersectsSpan(prd, int(r.Start.Line), int(r.End.Line))
-		// 	fmt.Println("HERE IS THE isInside \n", isInside)
-		// 	if isInside {
-		// 		// z := strings.Join(c[r.Start.Line:r.End.Line], "\n")
-		// 		// zz := z[r.Start.Character:r.End.Character]
-		// 		// fmt.Println("HERE IS THE zz \n", zz)
-		// 		// fmt.Println("HERE IS THE r.Start.Line", r.Start.Line)
-		// 		// fmt.Println("HERE IS THE r.End.Line", r.End.Line)
-		// 		// fmt.Println("HERE IS THE r.Start.Character", r.Start.Character)
-		// 		// fmt.Println("HERE IS THE r.End.Character", r.End.Character)
-		// 		snpt := extractSnippet(c, r.Start.Line, r.End.Line, r.Start.Character, r.End.Character)
-		// 		// fmt.Println("HERE IS THE SNIPPETS", snpt)
-		// 		// cnt := pageContent(c, &r.Start.Line, &r.End.Line)
-		// 		// clippedContent = append(clippedContent, cnt)
-		// 		clippedContent[snpt] = struct{}{}
-		// 	}
-		// }
-
 	}
 
+	printOne := textInString
+	printTwo := keysInString
+	printThree := snippetToPreciseDataMap
+	fmt.Println("HERE IS THE definitionMap \n", definitionMap)
 	fmt.Println("HERE IS THE clippedContent \n", clippedContent)
+	fmt.Println("HERE IS THE snippetToPreciseDataMap \n", snippetToPreciseDataMap)
+
+	fmt.Println("HERE IS THE textInString \n", printOne)
+	fmt.Println("HERE IS THE keysInString \n", printTwo)
+	fmt.Println("HERE IS THE preciseDataList \n", printThree)
+
+	preciseResponse := []*preciseData{}
+	for k, v := range snippetToPreciseDataMap {
+		compositeKey := strings.Split(k, "-")
+		syntectDescriptor, text := compositeKey[0], compositeKey[1]
+		preciseResponse = append(preciseResponse, &preciseData{
+			symbolName:        v.symbolName,
+			syntectDescriptor: syntectDescriptor,
+			repository:        v.repository,
+			symbolType:        v.symbolType,
+			text:              text,
+			location:          v.location,
+		})
+	}
+
+	printFour := preciseResponse
+	fmt.Println("HERE IS THE preciseResponse \n", printFour)
+
+	for _, v := range preciseResponse {
+		fmt.Println("HERE IS THE preciseResponse \n", v)
+	}
+
 	var allContent string
 	for k := range clippedContent {
 		// allContent = append(allContent, k)
