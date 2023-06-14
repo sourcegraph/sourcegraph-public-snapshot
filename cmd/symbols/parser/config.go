@@ -29,6 +29,7 @@ var defaultParserConfig = ParserConfiguration{
 		"go":         ctags_config.ScipCtags,
 		"javascript": ctags_config.ScipCtags,
 		"python":     ctags_config.ScipCtags,
+		"ruby":       ctags_config.UniversalCtags,
 		"scala":      ctags_config.ScipCtags,
 		"typescript": ctags_config.ScipCtags,
 		"zig":        ctags_config.ScipCtags,

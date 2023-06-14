@@ -11,11 +11,17 @@
 (class_definition name: (_) @descriptor.type body: (_) @scope)
 (class_definition
   body: (block
-          (function_definition
-            name: (_) @descriptor.method @kind.field
-            body: (_) @local)))
+          [(function_definition
+             name: (_) @descriptor.method @kind.field
+             body: (_) @local)
+           (decorated_definition
+             definition: (function_definition
+                          name: (_) @descriptor.method @kind.field
+                          body: (_) @local))]))
+
 
 (module (function_definition name: (_) @descriptor.method body: (_) @local))
+(module (decorated_definition (function_definition name: (_) @descriptor.method body: (_) @local)))
 
 ;; foo = 1
 (expression_statement (assignment left: (identifier) @descriptor.term))
