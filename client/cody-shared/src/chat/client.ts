@@ -32,7 +32,7 @@ export interface ClientInit {
     setTranscript: (transcript: Transcript) => void
     editor: Editor
     initialTranscript?: Transcript
-    createCompletionsClient: (config: CompletionsClientConfig) => SourcegraphCompletionsClient
+    createCompletionsClient?: (config: CompletionsClientConfig) => SourcegraphCompletionsClient
 }
 
 export interface Client {
