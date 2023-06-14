@@ -128,21 +128,6 @@ func addStylelint(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/pnpm-run.sh lint:css:all"))
 }
 
-func addESLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":eslint: ESLint (all)",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:js:all"))
-
-	pipeline.AddStep(":eslint: ESLint (web)",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:js:web"))
-}
-
-func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
-	addStylelint(pipeline)
-	addESLint(pipeline)
-}
-
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
 func addWebAppOSSBuild(opts CoreTestOperationsOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
