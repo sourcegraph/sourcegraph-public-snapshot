@@ -2,6 +2,7 @@ package upgradestore
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -188,6 +189,7 @@ func (s *store) EnsureUpgradeTable(ctx context.Context) (err error) {
 		sqlf.Sprintf(`ALTER TABLE upgrade_logs ADD COLUMN IF NOT EXISTS from_version text NOT NULL`),
 		sqlf.Sprintf(`ALTER TABLE upgrade_logs ADD COLUMN IF NOT EXISTS to_version text NOT NULL`),
 		sqlf.Sprintf(`ALTER TABLE upgrade_logs ADD COLUMN IF NOT EXISTS upgrader_hostname text NOT NULL`),
+		sqlf.Sprintf(`ALTER TABLE upgrade_logs ADD COLUMN IF NOT EXISTS plan json NOT NULL DEFAULT '{}'::json`),
 	}
 
 	if err := s.db.WithTransact(ctx, func(tx *basestore.Store) error {
@@ -256,6 +258,31 @@ WITH claim_attempt AS (
 SELECT COALESCE((
 	SELECT claimed FROM claim_attempt
 ), false)`
+
+type UpgradePlan struct {
+	OutOfBandMigrationIDs []int
+	Migrations            map[string][]int
+	MigrationNames        map[string]map[int]string
+}
+
+// TODO(efritz) - probably want to pass a claim id here as well instead of just hitting the max from upgrade logs
+func (s *store) SetUpgradePlan(ctx context.Context, plan UpgradePlan) error {
+	serialized, err := json.Marshal(plan)
+	if err != nil {
+		return err
+	}
+
+	return s.db.Exec(ctx, sqlf.Sprintf(setUpgradePlanQuery, serialized))
+}
+
+const setUpgradePlanQuery = `
+UPDATE upgrade_logs
+SET
+	plan = %s
+WHERE id = (
+	SELECT MAX(id) FROM upgrade_logs
+)
+`
 
 // TODO(efritz) - probably want to pass a claim id here as well instead of just hitting the max from upgrade logs
 func (s *store) SetUpgradeStatus(ctx context.Context, success bool) error {

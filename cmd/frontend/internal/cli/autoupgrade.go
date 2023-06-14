@@ -84,7 +84,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 	}
 	defer stopFunc()
 
-	stopFunc, err = serveExternalServer(db)
+	stopFunc, err = serveExternalServer(obsvCtx, sqlDB, db)
 	if err != nil {
 		return errors.Wrap(err, "failed to start UI & healthcheck server")
 	}
@@ -96,9 +96,10 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 		return errors.Wrap(err, "error blocking on postgres client disconnects")
 	}
 
-	toVersion, ok := oobmigration.NewVersionFromString(version.Version())
+	toVersionStr := version.Version()
+	toVersion, ok := oobmigration.NewVersionFromString(toVersionStr)
 	if !ok {
-		obsvCtx.Logger.Warn("unexpected string for desired instance schema version, skipping auto-upgrade", log.String("version", version.Version()))
+		obsvCtx.Logger.Warn("unexpected string for desired instance schema version, skipping auto-upgrade", log.String("version", toVersionStr))
 		return nil
 	}
 
@@ -123,7 +124,14 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 		}
 	}()
 
-	if err := runMigration(ctx, obsvCtx, currentVersion, toVersion, db, hook); err != nil {
+	plan, err := planMigration(currentVersion, toVersion)
+	if err != nil {
+		return errors.Wrap(err, "error planning auto-upgrade")
+	}
+	if err := upgradestore.SetUpgradePlan(ctx, multiversion.SerializeUpgradePlan(plan)); err != nil {
+		return errors.Wrap(err, "error updating auto-upgrade plan")
+	}
+	if err := runMigration(ctx, obsvCtx, plan, db, hook); err != nil {
 		return errors.Wrap(err, "error during auto-upgrade")
 	}
 
@@ -140,28 +148,32 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 	return nil
 }
 
-func runMigration(ctx context.Context,
-	obsvCtx *observation.Context,
-	from,
-	to oobmigration.Version,
-	db database.DB,
-	enterpriseMigratorsHook store.RegisterMigratorsUsingConfAndStoreFactoryFunc,
-) error {
+func planMigration(from, to oobmigration.Version) (multiversion.MigrationPlan, error) {
 	versionRange, err := oobmigration.UpgradeRange(from, to)
 	if err != nil {
-		return err
+		return multiversion.MigrationPlan{}, err
 	}
 
 	interrupts, err := oobmigration.ScheduleMigrationInterrupts(from, to)
 	if err != nil {
-		return err
+		return multiversion.MigrationPlan{}, err
 	}
 
 	plan, err := multiversion.PlanMigration(from, to, versionRange, interrupts)
 	if err != nil {
-		return err
+		return multiversion.MigrationPlan{}, err
 	}
 
+	return plan, nil
+}
+
+func runMigration(
+	ctx context.Context,
+	obsvCtx *observation.Context,
+	plan multiversion.MigrationPlan,
+	db database.DB,
+	enterpriseMigratorsHook store.RegisterMigratorsUsingConfAndStoreFactoryFunc,
+) error {
 	registerMigrators := store.ComposeRegisterMigratorsFuncs(
 		migrations.RegisterOSSMigratorsUsingConfAndStoreFactory,
 		enterpriseMigratorsHook,
@@ -196,6 +208,8 @@ func runMigration(ctx context.Context,
 	)
 }
 
+type dialer func(_ *observation.Context, dsn string, appName string) (*sql.DB, error)
+
 // performs the role of `migrator up`, applying any migrations in the patch versions between the minor version we're at (that `upgrade` brings you to)
 // and the patch version we desire to be at.
 func finalMileMigrations(obsvCtx *observation.Context) error {
@@ -203,13 +217,18 @@ func finalMileMigrations(obsvCtx *observation.Context) error {
 	if err != nil {
 		return err
 	}
-	schemas := []string{"frontend", "codeintel", "codeinsights"}
-	for i, fn := range []func(_ *observation.Context, dsn string, appName string) (*sql.DB, error){
-		connections.MigrateNewFrontendDB, connections.MigrateNewCodeIntelDB, connections.MigrateNewCodeInsightsDB,
-	} {
-		sqlDB, err := fn(obsvCtx, dsns[schemas[i]], "frontend")
+
+	migratorsBySchema := map[string]dialer{
+		"frontend":     connections.MigrateNewFrontendDB,
+		"codeintel":    connections.MigrateNewCodeIntelDB,
+		"codeinsights": connections.MigrateNewCodeInsightsDB,
+	}
+	for schema, migrateLastMile := range migratorsBySchema {
+		obsvCtx.Logger.Info("Running last-mile migrations", log.String("schema", schema))
+
+		sqlDB, err := migrateLastMile(obsvCtx, dsns[schema], appName)
 		if err != nil {
-			return errors.Wrapf(err, "failed to perform last-mile migration for %s schema", schemas[i])
+			return errors.Wrapf(err, "failed to perform last-mile migration for %s schema", schema)
 		}
 		sqlDB.Close()
 	}
@@ -245,7 +264,7 @@ func claimAutoUpgradeLock(ctx context.Context, obsvCtx *observation.Context, upg
 			return false, nil
 		}
 
-		claimed, err := upgradestore.ClaimAutoUpgrade(ctx, currentVersionStr, version.Version())
+		claimed, err := upgradestore.ClaimAutoUpgrade(ctx, currentVersionStr, toVersion.String())
 		if err != nil {
 			return false, errors.Wrap(err, "autoupgradstore.ClaimAutoUpgrade")
 		}
@@ -311,11 +330,15 @@ func serveInternalServer(obsvCtx *observation.Context) (context.CancelFunc, erro
 	return confServer.Stop, nil
 }
 
-func serveExternalServer(db database.DB) (context.CancelFunc, error) {
-	serveMux := http.NewServeMux()
+func serveExternalServer(obsvCtx *observation.Context, sqlDB *sql.DB, db database.DB) (context.CancelFunc, error) {
+	progressHandler, err := makeUpgradeProgressHandler(obsvCtx, sqlDB, db)
+	if err != nil {
+		return nil, err
+	}
 
+	serveMux := http.NewServeMux()
 	serveMux.Handle("/.assets/", http.StripPrefix("/.assets", secureHeadersMiddleware(assetsutil.NewAssetHandler(serveMux), crossOriginPolicyAssets)))
-	serveMux.HandleFunc("/", makeUpgradeProgressHandler(db))
+	serveMux.HandleFunc("/", progressHandler)
 	h := gcontext.ClearHandler(serveMux)
 	h = healthCheckMiddleware(h)
 
@@ -328,13 +351,13 @@ func serveExternalServer(db database.DB) (context.CancelFunc, error) {
 	if err != nil {
 		return nil, err
 	}
-	confServer := httpserver.New(listener, server)
+	progressServer := httpserver.New(listener, server)
 
 	goroutine.Go(func() {
-		confServer.Start()
+		progressServer.Start()
 	})
 
-	return confServer.Stop, nil
+	return progressServer.Stop, nil
 }
 
 // we want to block until all named connections (which we make use of) besides 'frontend-autoupgrader' are no longer connected,
