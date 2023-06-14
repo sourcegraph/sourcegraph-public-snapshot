@@ -209,7 +209,40 @@ func TestClient_RepoUpdateRequest_ProtoRoundTrip(t *testing.T) {
 func TestClient_CreateCommitFromPatchRequest_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
-	req := func(original protocol.CreateCommitFromPatchRequest) bool {
+	fn := func(
+		repo string,
+		baseCommit string,
+		patch []byte,
+		targetRef string,
+		uniqueRef bool,
+		pushRef *string,
+
+		commitInfo struct {
+			Messages    []string
+			AuthorName  string
+			AuthorEmail string
+			Date        fuzzTime
+		},
+
+		pushConfig *protocol.PushConfig,
+		gitApplyArgs []string,
+	) bool {
+		original := protocol.CreateCommitFromPatchRequest{
+			Repo:       api.RepoName(repo),
+			BaseCommit: api.CommitID(baseCommit),
+			Patch:      patch,
+			TargetRef:  targetRef,
+			UniqueRef:  uniqueRef,
+			CommitInfo: protocol.PatchCommitInfo{
+				Messages:    commitInfo.Messages,
+				AuthorName:  commitInfo.AuthorName,
+				AuthorEmail: commitInfo.AuthorEmail,
+				Date:        time.Time(commitInfo.Date),
+			},
+			Push:         pushConfig,
+			PushRef:      pushRef,
+			GitApplyArgs: gitApplyArgs,
+		}
 		var converted protocol.CreateCommitFromPatchRequest
 		converted.FromProto(original.ToProto())
 
@@ -220,29 +253,7 @@ func TestClient_CreateCommitFromPatchRequest_ProtoRoundTrip(t *testing.T) {
 		return true
 	}
 
-	if err := quick.Check(req, &quick.Config{
-		Values: func(args []reflect.Value, rand *rand.Rand) {
-			args[0] = reflect.ValueOf(protocol.CreateCommitFromPatchRequest{
-				Repo:       api.RepoName(fmt.Sprintf("repo-%d", rand.Int())),
-				BaseCommit: api.CommitID(randstring.NewLen(40)),
-				Patch:      []byte(randstring.NewLen(10)),
-				TargetRef:  randstring.NewLen(10),
-				UniqueRef:  rand.Intn(2) == 1,
-				CommitInfo: protocol.PatchCommitInfo{
-					Messages:    []string{randstring.NewLen(10)},
-					AuthorName:  randstring.NewLen(10),
-					AuthorEmail: randstring.NewLen(10),
-					Date:        timeGenerator(rand, 0).Interface().(time.Time),
-				},
-				Push: &protocol.PushConfig{
-					RemoteURL:  randstring.NewLen(10),
-					PrivateKey: randstring.NewLen(10),
-					Passphrase: randstring.NewLen(10),
-				},
-				GitApplyArgs: []string{randstring.NewLen(10)},
-			})
-		},
-	}); err != nil {
+	if err := quick.Check(fn, nil); err != nil {
 		t.Errorf("CreateCommitFromPatchRequest proto roundtrip failed (-want +got):\n%s", diff)
 	}
 
@@ -1795,3 +1806,15 @@ func (mc *mockClient) Archive(ctx context.Context, in *proto.ArchiveRequest, opt
 var _ proto.GitserverServiceClient = &mockClient{}
 
 var _ proto.GitserverService_P4ExecClient = &mockP4ExecClient{}
+
+type fuzzTime time.Time
+
+func (fuzzTime) Generate(rand *rand.Rand, _ int) reflect.Value {
+	// The maximum representable year in RFC 3339 is 9999, so we'll use that as our upper bound.
+	maxDate := time.Date(9999, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	ts := time.Unix(rand.Int63n(maxDate.Unix()), rand.Int63n(int64(time.Second)))
+	return reflect.ValueOf(fuzzTime(ts))
+}
+
+var _ quick.Generator = fuzzTime{}
