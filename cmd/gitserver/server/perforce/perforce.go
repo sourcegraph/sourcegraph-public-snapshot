@@ -221,7 +221,7 @@ func (s *Service) getCommitsToInsert(ctx context.Context, logger log.Logger, rep
 	// we're guaranteed that it's already a valid object.
 	latestCommit := string(latestRowCommit.CommitSHA)
 	if err := validateCommitSHA(ctx, dir, latestCommit); err != nil {
-		// TODO: When this is an invalid range, we maybe looking at repo corruption. We want to
+		// TODO: When this is an invalid range, we may be looking at repo corruption. We want to
 		// attempt to locate the last known good commit that is mapped in the DB and update the rows
 		// beyond that point.
 		//
