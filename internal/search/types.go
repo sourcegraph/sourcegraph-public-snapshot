@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"go.opentelemetry.io/otel/attribute"
@@ -185,7 +184,7 @@ type ZoektParameters struct {
 }
 
 // ToSearchOptions converts the parameters to options for the Zoekt search API.
-func (o *ZoektParameters) ToSearchOptions(ctx context.Context, logger log.Logger) *zoekt.SearchOptions {
+func (o *ZoektParameters) ToSearchOptions(ctx context.Context) *zoekt.SearchOptions {
 	defaultTimeout := 20 * time.Second
 	searchOpts := &zoekt.SearchOptions{
 		Trace:             policy.ShouldTrace(ctx),
@@ -198,6 +197,12 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context, logger log.Logger
 	// replica respectively.
 	searchOpts.ShardMaxMatchCount = 10_000
 	searchOpts.TotalMaxMatchCount = 100_000
+	if o.KeywordScoring {
+		// Keyword searches tends to match much more broadly than code searches, so we need to
+		// consider more candidates to ensure we don't miss highly-ranked documents
+		searchOpts.ShardMaxMatchCount *= 10
+		searchOpts.TotalMaxMatchCount *= 10
+	}
 
 	// Tell each zoekt replica to not send back more than limit results.
 	limit := int(o.FileMatchLimit)
@@ -225,7 +230,7 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context, logger log.Logger
 	if o.Features.Ranking {
 		// This enables our stream based ranking, where we wait a certain amount
 		// of time to collect results before ranking.
-		searchOpts.FlushWallTime = conf.SearchFlushWallTime()
+		searchOpts.FlushWallTime = conf.SearchFlushWallTime(o.KeywordScoring)
 
 		// This enables the use of document ranks in scoring, if they are available.
 		searchOpts.UseDocumentRanks = true
