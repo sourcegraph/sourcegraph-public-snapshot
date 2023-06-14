@@ -40,7 +40,7 @@ func (z *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	err = zoektSearch(ctx, clients.Logger, z.Repos, z.Query, nil, search.SymbolRequest, clients.Zoekt, z.ZoektParams, since, stream)
+	err = zoektSearch(ctx, z.Repos, z.Query, nil, search.SymbolRequest, clients.Zoekt, z.ZoektParams, since, stream)
 	if err != nil {
 		tr.SetAttributes(trace.Error(err))
 		// Only record error if we haven't timed out.

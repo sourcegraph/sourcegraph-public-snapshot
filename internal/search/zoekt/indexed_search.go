@@ -304,7 +304,7 @@ func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, params *sea
 }
 
 // zoektSearch searches repositories using zoekt.
-func zoektSearch(ctx context.Context, logger log.Logger, repos *IndexedRepoRevs, q zoektquery.Q, pathRegexps []*regexp.Regexp, typ search.IndexedRequestType, client zoekt.Streamer, zoektParams *search.ZoektParameters, since func(t time.Time) time.Duration, c streaming.Sender) error {
+func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pathRegexps []*regexp.Regexp, typ search.IndexedRequestType, client zoekt.Streamer, zoektParams *search.ZoektParameters, since func(t time.Time) time.Duration, c streaming.Sender) error {
 	if len(repos.RepoRevs) == 0 {
 		return nil
 	}
@@ -670,7 +670,7 @@ func (z *RepoSubsetTextSearchJob) Run(ctx context.Context, clients job.RuntimeCl
 		since = z.Since
 	}
 
-	return nil, zoektSearch(ctx, clients.Logger, z.Repos, z.Query, z.ZoektQueryRegexps, z.Typ, clients.Zoekt, z.ZoektParams, since, stream)
+	return nil, zoektSearch(ctx, z.Repos, z.Query, z.ZoektQueryRegexps, z.Typ, clients.Zoekt, z.ZoektParams, since, stream)
 }
 
 func (*RepoSubsetTextSearchJob) Name() string {
