@@ -11,6 +11,9 @@ import {
 import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
+import { eventLogger } from '../tracking/eventLogger'
+import { EventName } from '../util/constants'
+
 import { isEmailVerificationNeededForCody } from './isCodyEnabled'
 
 export type { CodyClientScope } from '@sourcegraph/cody-shared/src/chat/useClient'
@@ -149,6 +152,8 @@ export const useCodyChat = ({
             return
         }
 
+        eventLogger.log(EventName.CODY_CHAT_HISTORY_CLEARED)
+
         const newTranscript = initializeNewChatInternal()
         if (newTranscript) {
             setTranscriptHistoryState([newTranscript.toJSONEmpty()])
@@ -162,6 +167,8 @@ export const useCodyChat = ({
             if (client.config.needsEmailVerification) {
                 return
             }
+
+            eventLogger.log(EventName.CODY_CHAT_HISTORY_ITEM_DELETED)
 
             setTranscriptHistoryState((history: TranscriptJSON[]) => {
                 const updatedHistory = [...history.filter(transcript => transcript.id !== id)]
@@ -219,6 +226,7 @@ export const useCodyChat = ({
 
     const submitMessage = useCallback<typeof submitMessageInternal>(
         async (humanInputText, scope): Promise<Transcript | null> => {
+            eventLogger.log(EventName.CODY_CHAT_SUBMIT)
             const transcript = await submitMessageInternal(humanInputText, scope)
 
             if (transcript) {
@@ -231,6 +239,7 @@ export const useCodyChat = ({
     )
     const editMessage = useCallback<typeof editMessageInternal>(
         async (humanInputText, messageId?, scope?): Promise<Transcript | null> => {
+            eventLogger.log(EventName.CODY_CHAT_EDIT)
             const transcript = await editMessageInternal(humanInputText, messageId, scope)
 
             if (transcript) {
@@ -243,6 +252,7 @@ export const useCodyChat = ({
     )
 
     const initializeNewChat = useCallback((): Transcript | null => {
+        eventLogger.log(EventName.CODY_CHAT_INITIALIZED)
         const transcript = initializeNewChatInternal()
 
         if (transcript) {
@@ -254,6 +264,8 @@ export const useCodyChat = ({
 
     const executeRecipe = useCallback<typeof executeRecipeInternal>(
         async (recipeId, options): Promise<Transcript | null> => {
+            eventLogger.log(EventName.CODY_CHAT_RECIPE_EXECUTED, { recipeId })
+
             const transcript = await executeRecipeInternal(recipeId, options)
 
             if (transcript) {
@@ -320,6 +332,12 @@ export const useCodyChat = ({
     )
 
     const toggleIncludeInferredRepository = useCallback<CodyClient['toggleIncludeInferredRepository']>(() => {
+        eventLogger.log(
+            scope.includeInferredRepository
+                ? EventName.CODY_CHAT_SCOPE_INFERRED_REPO_DISABLED
+                : EventName.CODY_CHAT_SCOPE_INFERRED_REPO_ENABLED
+        )
+
         toggleIncludeInferredRepositoryInternal()
 
         if (transcript) {
@@ -331,6 +349,12 @@ export const useCodyChat = ({
     }, [transcript, updateTranscriptInHistory, scope, toggleIncludeInferredRepositoryInternal])
 
     const toggleIncludeInferredFile = useCallback<CodyClient['toggleIncludeInferredRepository']>(() => {
+        eventLogger.log(
+            scope.includeInferredRepository
+                ? EventName.CODY_CHAT_SCOPE_INFERRED_FILE_DISABLED
+                : EventName.CODY_CHAT_SCOPE_INFERRED_FILE_ENABLED
+        )
+
         toggleIncludeInferredFileInternal()
 
         if (transcript) {
