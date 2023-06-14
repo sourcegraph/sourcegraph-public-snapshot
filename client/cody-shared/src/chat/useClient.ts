@@ -154,7 +154,22 @@ export const useClient = ({
     const setScope = useCallback((scope: CodyClientScope) => setScopeState(scope), [setScopeState])
 
     const setEditorScope = useCallback(
-        (editor: Editor) => setScopeState(scope => ({ ...scope, editor })),
+        (editor: Editor) => {
+            const newRepoName = editor.getActiveTextEditor()?.repoName
+
+            return setScopeState(scope => {
+                const oldRepoName = scope.editor.getActiveTextEditor()?.repoName
+
+                const resetInferredScope = newRepoName !== oldRepoName
+
+                return {
+                    ...scope,
+                    editor,
+                    includeInferredRepository: resetInferredScope ? true : scope.includeInferredRepository,
+                    includeInferredFile: resetInferredScope ? true : scope.includeInferredFile,
+                }
+            })
+        },
         [setScopeState]
     )
 
