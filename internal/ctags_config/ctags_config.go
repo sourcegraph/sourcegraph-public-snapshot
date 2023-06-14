@@ -3,7 +3,9 @@ package ctags_config
 import (
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type ParserType = uint8
@@ -66,4 +68,47 @@ var supportedLanguages = map[string]struct{}{
 	"scala":      {},
 	"typescript": {},
 	"zig":        {},
+}
+
+var DefaultEngines = map[string]ParserType{
+	// Add the languages we want to turn on by default (you'll need to
+	// update the ctags_config module for supported languages as well)
+	"c_sharp":    ScipCtags,
+	"go":         ScipCtags,
+	"javascript": ScipCtags,
+	"python":     ScipCtags,
+	"ruby":       ScipCtags,
+	"rust":       ScipCtags,
+	"scala":      ScipCtags,
+	"typescript": ScipCtags,
+	"zig":        ScipCtags,
+
+	// TODO: Not ready to turn on the following yet. Worried about not handling enough cases.
+	// May wait until after next release
+	// "c"
+	// "c++"
+	// "java":   ScipCtags,
+}
+
+func CreateEngineMap(siteConfig schema.SiteConfiguration) map[string]ParserType {
+	// Set the defaults
+	engines := make(map[string]ParserType)
+	for lang, engine := range DefaultEngines {
+		lang = languages.NormalizeLanguage(lang)
+		engines[lang] = engine
+	}
+
+	// Set any relevant overrides
+	configuration := siteConfig.SyntaxHighlighting
+	if configuration != nil {
+		for lang, engine := range configuration.Symbols.Engine {
+			lang = languages.NormalizeLanguage(lang)
+
+			if engine, err := ParserNameToParserType(engine); err != nil {
+				engines[lang] = engine
+			}
+		}
+	}
+
+	return engines
 }

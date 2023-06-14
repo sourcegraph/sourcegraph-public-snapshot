@@ -9,6 +9,7 @@ import (
 	proto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -55,6 +56,8 @@ type ZoektIndexOptions struct {
 
 	// Error if non-empty indicates the request failed for the repo.
 	Error string `json:",omitempty"`
+
+	LanguageMap map[string]ctags_config.ParserType
 }
 
 func (o *ZoektIndexOptions) FromProto(p *proto.ZoektIndexOptions) {
@@ -78,6 +81,12 @@ func (o *ZoektIndexOptions) FromProto(p *proto.ZoektIndexOptions) {
 	}
 
 	o.Branches = branches
+
+	languageMap := make(map[string]ctags_config.ParserType)
+	for _, entry := range p.GetLanguageMap() {
+		languageMap[entry.Language] = uint8(entry.Ctags.Number())
+	}
+	o.LanguageMap = languageMap
 }
 
 func (o *ZoektIndexOptions) ToProto() *proto.ZoektIndexOptions {
@@ -87,6 +96,11 @@ func (o *ZoektIndexOptions) ToProto() *proto.ZoektIndexOptions {
 			Name:    b.Name,
 			Version: b.Version,
 		})
+	}
+
+	languageMap := make([]*proto.LanguageMapping, 0)
+	for language, engine := range o.LanguageMap {
+		languageMap = append(languageMap, &proto.LanguageMapping{Language: language, Ctags: proto.CTagsParserType(engine)})
 	}
 
 	return &proto.ZoektIndexOptions{
@@ -101,6 +115,7 @@ func (o *ZoektIndexOptions) ToProto() *proto.ZoektIndexOptions {
 		Priority:             o.Priority,
 		DocumentRanksVersion: o.DocumentRanksVersion,
 		Error:                o.Error,
+		LanguageMap:          languageMap,
 	}
 }
 
@@ -196,6 +211,7 @@ func getIndexOptions(
 		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
 
 		DocumentRanksVersion: opts.DocumentRanksVersion,
+		LanguageMap:          ctags_config.CreateEngineMap(*c),
 	}
 
 	// Set of branch names. Always index HEAD
