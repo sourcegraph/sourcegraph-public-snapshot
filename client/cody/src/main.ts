@@ -232,16 +232,21 @@ const register = async (
         vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
         vscode.commands.registerCommand('cody.recipe.optimize-code', () => executeRecipe('optimize-code')),
         // Register URI Handler (vscode://sourcegraph.cody-ai) for:
-        // - Resolving token sending back from sourcegraph.com and App
         // - Deep linking into VS Code with Cody focused (e.g. from the App setup)
+        // - Resolving token sending back from sourcegraph.com and App
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
                 const params = new URLSearchParams(uri.query)
                 const type = params.get('type')
                 const token = params.get('code')
 
+                if (!token) {
+                    await vscode.commands.executeCommand('cody.chat.focus')
+                    return
+                }
+
                 // FIXME: What is this magic number?
-                if (token && token.length > 8) {
+                if (token.length > 8) {
                     const serverEndpoint = type === 'app' ? LOCAL_APP_URL.href : DOTCOM_URL.href
                     const successMessage = type === 'app' ? 'Connected to Cody App' : 'Logged in to sourcegraph.com'
 
@@ -260,17 +265,14 @@ const register = async (
                     await chatProvider.sendLogin(authStatus)
                     if (isLoggedIn(authStatus)) {
                         const actionButtonLabel = 'Get Started'
-                        void vscode.window.showInformationMessage(successMessage, actionButtonLabel).then(action => {
-                            if (action === actionButtonLabel) {
-                                void vscode.commands.executeCommand('cody.chat.focus')
-                            }
-                        })
+                        const action = await vscode.window.showInformationMessage(successMessage, actionButtonLabel)
+                        if (action === actionButtonLabel) {
+                            await vscode.commands.executeCommand('cody.chat.focus')
+                        }
                     } else {
-                        void vscode.window.showInformationMessage('Error logging into Cody')
+                        await vscode.window.showInformationMessage('Error logging into Cody')
                     }
                 }
-
-                void vscode.commands.executeCommand('cody.chat.focus')
             },
         })
     )
