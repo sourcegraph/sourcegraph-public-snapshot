@@ -35,12 +35,24 @@ func setupTestRepo(t *testing.T) (common.GitDir, []types.PerforceChangelist) {
 	commitCommand := "GIT_AUTHOR_NAME=a GIT_AUTHOR_EMAIL=a@a.com GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com git commit --allow-empty -m '%s'"
 
 	gitCommands := []string{}
-	for cid := 1; cid < 6; cid++ {
-		gitCommands = append(gitCommands, fmt.Sprintf(
-			commitCommand,
-			fmt.Sprintf(commitMessage, cid, cid),
-		))
+	for cid := 1; cid <= 4; cid++ {
+		gitCommands = append(
+			gitCommands,
+			fmt.Sprintf(commitCommand, fmt.Sprintf(commitMessage, cid, cid)),
+		)
 	}
+
+	// We want to test this edge case becase p4-fusion does this sometimes and we're not sure why.
+	// But it is trivial for us to support this edge case so we do that and make sure we're always
+	// doing that.
+	commitMessageWithNoBlankLine := `%d - test change
+[p4-fusion: depot-paths = "//test-perms/": change = %d]`
+
+	// 5th and final changelist.
+	gitCommands = append(
+		gitCommands,
+		fmt.Sprintf(commitCommand, fmt.Sprintf(commitMessageWithNoBlankLine, 5, 5)),
+	)
 
 	dir := gitserver.InitGitRepository(t, gitCommands...)
 
@@ -164,15 +176,22 @@ func TestNewMappableCommits(t *testing.T) {
 
 func TestParseGitLogLine(t *testing.T) {
 	t.Run("passes valid perforce commit", func(t *testing.T) {
-		got, err := parseGitLogLine(`4e5b9dbc6393b195688a93ea04b98fada50bfa03 [p4-fusion: depot-paths = "//rhia-depot-test/": change = 83733]`)
-
-		want := &types.PerforceChangelist{
-			CommitSHA:    api.CommitID("4e5b9dbc6393b195688a93ea04b98fada50bfa03"),
-			ChangelistID: 83733,
+		testCases := []string{
+			`4e5b9dbc6393b195688a93ea04b98fada50bfa03 [p4-fusion: depot-paths = "//rhia-depot-test/": change = 83733]`,
+			`4e5b9dbc6393b195688a93ea04b98fada50bfa03 48485 - test-5386 [p4-fusion: depot-paths = "//go/": change = 83733]`,
 		}
 
-		require.NoError(t, err)
-		require.Equal(t, want, got)
+		for _, tc := range testCases {
+			got, err := parseGitLogLine(tc)
+
+			want := &types.PerforceChangelist{
+				CommitSHA:    api.CommitID("4e5b9dbc6393b195688a93ea04b98fada50bfa03"),
+				ChangelistID: 83733,
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, want, got)
+		}
 	})
 
 	t.Run("fails invalid perforce commit", func(t *testing.T) {
