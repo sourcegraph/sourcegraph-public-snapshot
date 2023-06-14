@@ -20180,6 +20180,32 @@
           "Comment": "When the last background job updating counts run."
         },
         {
+          "Name": "tree_any_ownership_files_count",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "tree_assigned_ownership_files_count",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "tree_codeowned_files_count",
           "Index": 2,
           "TypeName": "integer",

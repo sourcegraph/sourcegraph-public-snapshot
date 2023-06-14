@@ -3834,7 +3834,9 @@ ALTER SEQUENCE own_signal_recent_contribution_id_seq OWNED BY own_signal_recent_
 CREATE TABLE ownership_path_stats (
     file_path_id integer NOT NULL,
     tree_codeowned_files_count integer,
-    last_updated_at timestamp without time zone NOT NULL
+    last_updated_at timestamp without time zone NOT NULL,
+    tree_assigned_ownership_files_count integer,
+    tree_any_ownership_files_count integer
 );
 
 COMMENT ON TABLE ownership_path_stats IS 'Data on how many files in given tree are owned by anyone.
