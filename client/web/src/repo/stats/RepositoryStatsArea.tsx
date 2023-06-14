@@ -1,5 +1,7 @@
 import { FC, useMemo } from 'react'
 
+import { useSearchParams } from 'react-router-dom'
+
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -30,8 +32,8 @@ const BREADCRUMB = { key: 'contributors', element: 'Contributors' }
  */
 export const RepositoryStatsArea: FC<Props> = props => {
     const { useBreadcrumb, repo, telemetryService } = props
-    const queryParameters = new URLSearchParams(location.search)
-    const filePath = queryParameters.get('path') ?? ''
+    const [searchParams] = useSearchParams()
+    const filePath = searchParams.get('path') ?? ''
 
     const setter = useBreadcrumb(
         useMemo(() => {
