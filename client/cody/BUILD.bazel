@@ -74,6 +74,8 @@ ts_project(
         "src/non-stop/roles.ts",
         "src/non-stop/tracked-range.ts",
         "src/non-stop/utils.ts",
+        "src/notifications/index.ts",
+        "src/notifications/setup-notification.ts",
         "src/rg.ts",
         "src/services/CodeLensProvider.ts",
         "src/services/DecorationProvider.ts",

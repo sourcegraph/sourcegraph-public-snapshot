@@ -15,6 +15,7 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
+import { showSetupNotification } from './notifications/setup-notification'
 import { getRgPath } from './rg'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
@@ -341,6 +342,8 @@ const register = async (
         const authStatus = await getAuthStatus(initialConfig)
         await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
     }
+
+    await showSetupNotification(initialConfig, localStorage)
 
     return {
         disposable: vscode.Disposable.from(...disposables),
