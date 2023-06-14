@@ -56,6 +56,7 @@ export const AllStates: Story = args => {
                                     body: 'This changeset does the following things:\nIs awesome\nIs useful',
                                     checkState: ChangesetCheckState.PENDING,
                                     createdAt: now.toISOString(),
+                                    commitVerification: null,
                                     externalID: '123',
                                     externalURL: {
                                         url: 'http://test.test/pr/123',
@@ -142,6 +143,7 @@ export const Unpublished: Story = args => {
                         body: 'This changeset does the following things:\nIs awesome\nIs useful',
                         checkState: null,
                         createdAt: now.toISOString(),
+                        commitVerification: null,
                         externalID: null,
                         externalURL: null,
                         forkNamespace: null,
@@ -217,6 +219,7 @@ export const Importing: Story = args => {
                         body: null,
                         checkState: null,
                         createdAt: now.toISOString(),
+                        commitVerification: null,
                         externalID: '12345',
                         externalURL: null,
                         forkNamespace: null,
@@ -279,6 +282,7 @@ export const ImportingFailed: Story = args => {
                         body: null,
                         checkState: null,
                         createdAt: now.toISOString(),
+                        commitVerification: null,
                         externalID: '99999',
                         externalURL: null,
                         forkNamespace: null,
@@ -333,6 +337,7 @@ export const SyncFailed: Story = args => {
                         body: null,
                         checkState: null,
                         createdAt: now.toISOString(),
+                        commitVerification: null,
                         externalID: '99999',
                         externalURL: null,
                         forkNamespace: null,
@@ -418,7 +423,6 @@ export const SignedCommitBatchChange: Story = args => {
                         },
                         commitVerification: {
                             verified: true,
-                            reason: 'valid',
                         },
                     }}
                     viewerCanAdminister={args.viewerCanAdminister}

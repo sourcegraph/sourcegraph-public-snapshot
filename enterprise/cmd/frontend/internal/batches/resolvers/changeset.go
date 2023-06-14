@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -580,7 +581,7 @@ func (r *changesetLabelResolver) Description() *string {
 var _ graphqlbackend.CommitVerificationResolver = &commitVerificationResolver{}
 
 type commitVerificationResolver struct {
-	commitVerification *btypes.CommitVerification
+	commitVerification *github.Verification
 }
 
 func (c *commitVerificationResolver) ToGitHubCommitVerification() (graphqlbackend.GitHubCommitVerificationResolver, bool) {
@@ -594,7 +595,7 @@ func (c *commitVerificationResolver) ToGitHubCommitVerification() (graphqlbacken
 var _ graphqlbackend.GitHubCommitVerificationResolver = &gitHubCommitVerificationResolver{}
 
 type gitHubCommitVerificationResolver struct {
-	commitVerification *btypes.CommitVerification
+	commitVerification *github.Verification
 }
 
 func (r *gitHubCommitVerificationResolver) Verified() bool {

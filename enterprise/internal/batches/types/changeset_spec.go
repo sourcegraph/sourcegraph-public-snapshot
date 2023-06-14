@@ -7,10 +7,12 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -114,16 +116,9 @@ type ChangesetSpec struct {
 	CommitMessage      string
 	CommitAuthorName   string
 	CommitAuthorEmail  string
-	CommitVerification *CommitVerification
+	CommitVerification *github.Verification
 
 	ForkNamespace *string
-}
-
-type CommitVerification struct {
-	Verified  bool   `json:"verified,omitempty"`
-	Reason    string `json:"reason,omitempty"`
-	Signature string `json:"signature,omitempty"`
-	Payload   string `json:"payload,omitempty"`
 }
 
 // Clone returns a clone of a ChangesetSpec.

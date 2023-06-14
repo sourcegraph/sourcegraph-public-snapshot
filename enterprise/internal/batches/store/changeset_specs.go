@@ -603,7 +603,7 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 
 	c.Type = btypes.ChangesetSpecType(typ)
 
-	var cv *btypes.CommitVerification
+	var cv *github.Verification
 
 	if err = json.Unmarshal(commitVerification, &cv); err != nil {
 		return errors.Wrapf(err, "scanChangesetSpecs: failed to unmarshal commitVerification: %s", commitVerification)
