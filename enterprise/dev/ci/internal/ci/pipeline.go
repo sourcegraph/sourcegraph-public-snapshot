@@ -16,6 +16,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
+var legacyDockerImages = []string{
+	"executor-vm",
+
+	// See RFC 793, those images will be dropped in 5.1.x.
+	"alpine-3.14",
+	"codeinsights-db",
+	"codeintel-db",
+	"postgres-12-alpine",
+}
+
 // GeneratePipeline is the main pipeline generation function. It defines the build pipeline for each of the
 // main CI cases, which are defined in the main switch statement in the function.
 func GeneratePipeline(c Config) (*bk.Pipeline, error) {
@@ -300,18 +310,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
-		imageBuildOps.Append(buildCandidateDockerImage("syntax-highlighter", c.Version, c.candidateImageTag(), false))
-		imageBuildOps.Append(buildCandidateDockerImage("symbols", c.Version, c.candidateImageTag(), false))
-		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesTestDeps, c.Version, c.candidateImageTag(), c.RunType))
-		var deployImages = []string{}
-		for _, image := range images.DeploySourcegraphDockerImages {
-			if image == "syntax-highlighter" || image == "symbols" {
-				continue
-			}
-			deployImages = append(deployImages, image)
-		}
-		imageBuildOps.Append(bazelBuildCandidateDockerImages(deployImages, c.Version, c.candidateImageTag(), c.RunType))
-		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesMisc, c.Version, c.candidateImageTag(), c.RunType))
+		imageBuildOps.Append(bazelBuildCandidateDockerImages(legacyDockerImages, c.Version, c.candidateImageTag(), c.RunType))
 
 		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
 			imageBuildOps.Append(buildExecutorVM(c, skipHashCompare))
@@ -321,13 +320,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			}
 		}
 		ops.Merge(imageBuildOps)
-
-		// Trivy security scans
-		imageScanOps := operations.NewNamedSet("Image security scans")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			imageScanOps.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
-		}
-		ops.Merge(imageScanOps)
 
 		// Core tests
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
@@ -339,20 +331,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Publish candidate images to dev registry
 		publishOpsDev := operations.NewNamedSet("Publish candidate images")
-		publishOpsDev.Append(bazelPushImagesCmd(c.Version, true))
+		publishOpsDev.Append(bazelPushImagesCandidates(c.Version))
 		ops.Merge(publishOpsDev)
 
-		// Integration tests
-		// Temporary: on main branches, we build images with bazel binaries based on their toolchain and/or purpose. This step key is the first image in the array.
-		// This will be removed once we build images with wolfi.
-		ops.Merge(operations.NewNamedSet("Integration tests",
-			backendIntegrationTests(c.candidateImageTag(), "server"),
-			codeIntelQA(c.candidateImageTag()),
-		))
 		// End-to-end tests
 		ops.Merge(operations.NewNamedSet("End-to-end tests",
 			executorsE2E(c.candidateImageTag()),
-			serverE2E(c.candidateImageTag()),
 			// testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
 		))
 
@@ -362,7 +346,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Add final artifacts
 		publishOps := operations.NewNamedSet("Publish images")
 		// Add final artifacts
-		for _, dockerImage := range images.SourcegraphDockerImages {
+		for _, dockerImage := range legacyDockerImages {
 			publishOps.Append(publishFinalDockerImage(c, dockerImage))
 		}
 		// Executor VM image
@@ -374,7 +358,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			}
 		}
 		// Final Bazel images
-		publishOps.Append(bazelPushImagesCmd(c.Version, false))
+		publishOps.Append(bazelPushImagesFinal(c.Version))
 		ops.Merge(publishOps)
 	}
 
