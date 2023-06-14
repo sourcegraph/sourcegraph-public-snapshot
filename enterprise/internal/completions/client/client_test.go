@@ -58,8 +58,9 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 			want: autogold.Expect(&schema.Completions{
 				ChatModel: "claude-v1", CompletionModel: "claude-instant-v1",
-				Enabled:  true,
-				Provider: "anthropic",
+				Enabled:       true,
+				FastChatModel: "claude-instant-v1",
+				Provider:      "anthropic",
 			}),
 		},
 		{
