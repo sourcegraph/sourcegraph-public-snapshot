@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -59,9 +60,9 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 	// User with rate limit overrides
 	overrideUser, err := db.Users().Create(ctx, database.NewUser{Username: "override", EmailIsVerified: true, Email: "override@test.com"})
 	require.NoError(t, err)
-	err = db.Users().SetChatCompletionsQuota(context.Background(), overrideUser.ID, iPtr(chatOverrideLimit))
+	err = db.Users().SetChatCompletionsQuota(context.Background(), overrideUser.ID, pointers.Ptr(chatOverrideLimit))
 	require.NoError(t, err)
-	err = db.Users().SetCodeCompletionsQuota(context.Background(), overrideUser.ID, iPtr(codeOverrideLimit))
+	err = db.Users().SetCodeCompletionsQuota(context.Background(), overrideUser.ID, pointers.Ptr(codeOverrideLimit))
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -216,10 +217,6 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 
 		})
 	}
-}
-
-func iPtr(i int) *int {
-	return &i
 }
 
 func makeGatewayToken(apiToken string) string {

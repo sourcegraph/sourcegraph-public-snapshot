@@ -44,12 +44,13 @@ export const UnknownTagWarning: React.FunctionComponent<React.PropsWithChildren<
 export const ProductLicenseTags: React.FunctionComponent<
     React.PropsWithChildren<{
         tags: string[]
+        small?: boolean
     }>
-> = ({ tags }) => (
+> = ({ tags, small }) => (
     <>
         {tags.map(tag => (
             <Tooltip key={tag} content={getTagDescription(tag)}>
-                <Badge variant={getBadgeVariant(tag)} className="mr-1">
+                <Badge variant={getBadgeVariant(tag)} className="mr-1" small={small}>
                     {tag}
                 </Badge>
             </Tooltip>

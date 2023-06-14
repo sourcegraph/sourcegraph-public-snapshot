@@ -1,68 +1,98 @@
-import { FC, useState, useCallback, useRef, useEffect } from 'react'
+import React, { FC, useState, useCallback, useRef, useEffect } from 'react'
 
+import { noop } from 'lodash'
 import { Link } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Container, Button, Input, Label, Text, PageHeader, ButtonLink } from '@sourcegraph/wildcard'
+import { Alert, Container, Button, Input, Label, Text, PageHeader, ButtonLink, Checkbox } from '@sourcegraph/wildcard'
 
+import { GitHubAppDomain } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { PageTitle } from '../PageTitle'
 
-export interface AddGitHubPageProps extends TelemetryProps {}
+interface StateResponse {
+    state?: string
+    webhookUUID?: string
+    appID?: string
+}
 
-interface stateResponse {
+interface FormOptions {
     state: string
-    webhookUUID: string
+    name: string
+    webhookURL?: string
+}
+
+export interface CreateGitHubAppPageProps {
+    /** The events that the new GitHub App should subscribe to by default. */
+    defaultEvents: string[]
+    /** The permissions that the new GitHub App will request by default. */
+    defaultPermissions: Record<string, string>
+    /**
+     * The title to show at the top of the page, defaults to "Create GitHub App".
+     */
+    pageTitle?: string
+    /**
+     * The main description to show at the top of the page underneat the header. If
+     * omitted, a generic introduction to GitHub Apps with a link to the docs will be
+     * shown.
+     */
+    headerDescription?: React.ReactNode
+    /** The domain the new GitHub App is meant to be used for in Sourcegraph. */
+    appDomain: GitHubAppDomain
+    /** The name to use for the new GitHub App. Defaults to "Sourcegraph". */
+    defaultAppName?: string
+    /*
+     * If omitted, the user will be asked to specify a URL from the form. If provided, it
+     * will be left off the form.
+     */
+    baseURL?: string
+    /**
+     * A customer validation function for the URL input. Returns true if the URL is valid,
+     * or a string with an error message reason if not.
+     */
+    validateURL?: (url: string) => true | string
 }
 
 /**
- * Page for choosing a service kind and variant to add, among the available options.
+ * Page for creating and connecting a new GitHub App.
  */
-export const CreateGitHubAppPage: FC<AddGitHubPageProps> = () => {
+export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
+    defaultEvents,
+    defaultPermissions,
+    pageTitle = 'Create GitHub App',
+    headerDescription,
+    appDomain,
+    defaultAppName = 'Sourcegraph',
+    baseURL,
+    validateURL,
+}) => {
     const ref = useRef<HTMLFormElement>(null)
     const formInput = useRef<HTMLInputElement>(null)
-    const [name, setName] = useState<string>('')
-    const [url, setUrl] = useState<string>('')
+    const [name, setName] = useState<string>(defaultAppName)
+    const [nameError, setNameError] = useState<string>()
+    const [url, setUrl] = useState<string>(baseURL || 'https://github.com')
+    const [urlError, setUrlError] = useState<string>()
     const [org, setOrg] = useState<string>('')
-    const [error, setError] = useState<any>(null)
+    const [isPublic, setIsPublic] = useState<boolean>(false)
+    const [error, setError] = useState<string>()
 
-    useEffect(() => {
-        eventLogger.logPageView('SiteAdminCreateGiHubApp')
-    }, [])
+    useEffect(() => eventLogger.logPageView('SiteAdminCreateGiHubApp'), [])
 
-    const baseUrl = window.location.origin
+    const originURL = window.location.origin
     const getManifest = useCallback(
-        (name: string, webhookURL: string): string =>
+        (name: string, webhookURL?: string): string =>
             JSON.stringify({
                 name: name.trim(),
-                url: baseUrl,
-                hook_attributes: {
-                    url: webhookURL,
-                },
-                redirect_url: new URL('/.auth/githubapp/redirect', baseUrl).href,
-                setup_url: new URL('/.auth/githubapp/setup', baseUrl).href,
-                callback_urls: [new URL('/.auth/github/callback', baseUrl).href],
+                url: originURL,
+                hook_attributes: webhookURL ? { url: webhookURL } : undefined,
+                redirect_url: new URL('/.auth/githubapp/redirect', originURL).href,
+                setup_url: new URL('/.auth/githubapp/setup', originURL).href,
+                callback_urls: [new URL('/.auth/github/callback', originURL).href],
                 setup_on_update: true,
-                public: false,
-                default_permissions: {
-                    contents: 'read',
-                    emails: 'read',
-                    members: 'read',
-                    metadata: 'read',
-                },
-                default_events: [
-                    'repository',
-                    'public',
-                    'member',
-                    'membership',
-                    'organization',
-                    'team',
-                    'team_add',
-                    'meta',
-                    'push',
-                ],
+                public: isPublic,
+                default_permissions: defaultPermissions,
+                default_events: defaultEvents,
             }),
-        [baseUrl]
+        [originURL, defaultEvents, defaultPermissions, isPublic]
     )
 
     const createActionUrl = useCallback(
@@ -74,14 +104,14 @@ export const CreateGitHubAppPage: FC<AddGitHubPageProps> = () => {
             }
 
             const trimmedUrl = url.trim()
-            const baseUrl = trimmedUrl.endsWith('/') ? trimmedUrl : `${trimmedUrl}/`
-            return new URL(`${prefix}?state=${state}`, baseUrl).href
+            const originURL = trimmedUrl.endsWith('/') ? trimmedUrl : `${trimmedUrl}/`
+            return new URL(`${prefix}?state=${state}`, originURL).href
         },
         [org, url]
     )
 
     const submitForm = useCallback(
-        (state: string, webhookURL: string, name: string) => {
+        ({ state, webhookURL, name }: FormOptions) => {
             if (state && ref.current && formInput.current) {
                 const actionUrl = createActionUrl(state)
                 ref.current.action = actionUrl
@@ -93,62 +123,97 @@ export const CreateGitHubAppPage: FC<AddGitHubPageProps> = () => {
     )
 
     const createState = useCallback(async () => {
-        setError(null)
+        setError(undefined)
         try {
-            const response = await fetch(`/.auth/githubapp/new-app-state?appName=${name}&webhookURN=${url}`)
-            const state: stateResponse = await response.json()
-            const webhookURL = new URL(`/.api/webhooks/${state.webhookUUID}`, baseUrl).href
-            submitForm(state.state, webhookURL, name)
-        } catch (_error) {
-            setError(_error)
+            const response = await fetch(
+                `/.auth/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=${appDomain}`
+            )
+            if (!response.ok) {
+                if (response.body instanceof ReadableStream) {
+                    const error = await response.text()
+                    throw new Error(error)
+                }
+            }
+            const state = (await response.json()) as StateResponse
+            let webhookURL: string | undefined
+            if (state.webhookUUID?.length) {
+                webhookURL = new URL(`/.api/webhooks/${state.webhookUUID}`, originURL).href
+            }
+            if (!state.state?.length) {
+                throw new Error('Response from server missing state parameter')
+            }
+            submitForm({ state: state.state, webhookURL, name })
+        } catch (error_) {
+            if (error_ instanceof Error) {
+                setError(error_.message)
+            } else {
+                // eslint-disable-next-line no-console
+                console.error(error_)
+                setError('Unknown error occurred.')
+            }
         }
-    }, [submitForm, name, url, baseUrl])
+    }, [submitForm, name, appDomain, url, originURL])
 
-    const handleNameChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>) => {
-            setName(event.target.value)
-        },
-        [setName]
-    )
+    const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        setName(event.target.value)
+        const trimmedValue = event.target.value.trim()
+        if (trimmedValue.length < 3) {
+            setNameError('Name must be 3 characters or more.')
+        } else if (trimmedValue.length > 34) {
+            // A requirement from GitHub's side
+            setNameError('Name must be 34 characters or less.')
+        } else {
+            setNameError(undefined)
+        }
+    }, [])
 
     const handleUrlChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
-            setUrl(event.target.value)
+            const trimmedURL = event.target.value.trim()
+            setUrl(trimmedURL)
+            try {
+                new URL(trimmedURL)
+            } catch {
+                return setUrlError('URL is not valid.')
+            }
+            if (validateURL) {
+                const error = validateURL(event.target.value)
+                if (error !== true) {
+                    return setUrlError(error)
+                }
+            }
+            setUrlError(undefined)
         },
-        [setUrl]
+        [validateURL]
     )
 
-    const handleOrgChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>) => {
-            setOrg(event.target.value)
-        },
-        [setOrg]
-    )
+    const handleOrgChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setOrg(event.target.value), [])
+    const toggleIsPublic = useCallback(() => setIsPublic(isPublic => !isPublic), [])
 
     return (
         <>
-            <PageTitle title="Create GitHub App" />
+            <PageTitle title={pageTitle} />
             <PageHeader
-                path={[{ text: 'Create GitHub App' }]}
+                path={[{ text: pageTitle }]}
                 description={
-                    <>
-                        Create and connect a GitHub App to better manage GitHub code host connections.
-                        <Link to="/help/admin/external_service/github#using-a-github-app" className="ml-1">
-                            See how GitHub App configuration works.
-                        </Link>
-                    </>
+                    headerDescription || (
+                        <>
+                            Register a GitHub App to better manage GitHub code host connections.
+                            <Link to="/help/admin/external_service/github#using-a-github-app" className="ml-1">
+                                See how GitHub App configuration works.
+                            </Link>
+                        </>
+                    )
                 }
             />
             <Container className="mt-3">
-                {error && <Alert variant="danger">Error creating github app: {error}</Alert>}
+                {error && <Alert variant="danger">Error creating GitHub App: {error}</Alert>}
                 <Text>
-                    Create a new GitHub App by completing the form below. Once you click "Create GitHub App", you will
-                    be redirected to GitHub where you will create your GitHub App, and choose which repositories to
-                    install. By default, the GitHub App will be created under your personal account. If you would like
-                    to create the GitHub App under an organization, enter the organization name below.
+                    Provide the details for a new GitHub App with the form below. Once you click "Create GitHub App",
+                    you will be routed to {baseURL || 'GitHub'} to create the App and choose which repositories to grant
+                    it access to. Once created on {baseURL || 'GitHub'}, you'll be redirected back here to finish
+                    connecting it to Sourcegraph.
                 </Text>
-                <Text>Once completing install in GitHub, you'll be redirected back here.</Text>
-
                 <Label className="w-100">
                     <Text alignment="left" className="mb-2">
                         GitHub App Name
@@ -157,22 +222,28 @@ export const CreateGitHubAppPage: FC<AddGitHubPageProps> = () => {
                         type="text"
                         onChange={handleNameChange}
                         value={name}
+                        error={nameError}
+                        status={nameError ? 'error' : undefined}
                         placeholder="Sourcegraph"
-                        message="This is the display name of your GitHub App in GitHub."
+                        message="The display name of your GitHub App. It must be unique across the GitHub instance."
                     />
                 </Label>
-                <Label className="w-100 mt-2">
-                    <Text alignment="left" className="mb-2">
-                        GitHub URL
-                    </Text>
-                    <Input
-                        type="text"
-                        onChange={handleUrlChange}
-                        value={url}
-                        placeholder="https://github.com"
-                        message="This is the root URL of the GitHub instance, e.g., https://github.com, https://github.company.com."
-                    />
-                </Label>
+                {baseURL ? null : (
+                    <Label className="w-100 mt-2">
+                        <Text alignment="left" className="mb-2">
+                            GitHub URL
+                        </Text>
+                        <Input
+                            type="text"
+                            onChange={handleUrlChange}
+                            value={url}
+                            error={urlError}
+                            status={urlError ? 'error' : undefined}
+                            placeholder="https://github.com"
+                            message="The base URL of the GitHub instance, e.g., https://github.com, https://github.company.com."
+                        />
+                    </Label>
+                )}
                 <Label className="w-100 mt-2">
                     <Text alignment="left" className="mb-2">
                         Organization name <span className="text-muted">(optional)</span>
@@ -183,26 +254,46 @@ export const CreateGitHubAppPage: FC<AddGitHubPageProps> = () => {
                         value={org}
                         message={
                             <>
-                                If creating a GitHub App for your GitHub Organization, this should match your GitHub
-                                Organization name. Only{' '}
+                                By default, the GitHub App will be registered on your personal account. To register the
+                                App on a GitHub organization instead, specify the organization name. Only{' '}
                                 <Link
                                     to="https://docs.github.com/en/organizations/managing-peoples-access-to-your-organization-with-roles/roles-in-an-organization#organization-owners"
                                     target="_blank"
-                                    rel="noopener"
+                                    rel="noopener noreferrer"
                                 >
                                     organization owners
                                 </Link>{' '}
-                                can create GitHub Apps.
+                                can register GitHub Apps.
                             </>
                         }
                     />
                 </Label>
-                <div className="mt-3">
-                    <Button
-                        variant="primary"
-                        onClick={createState}
-                        disabled={name.trim().length < 3 || url.trim().length < 10}
-                    >
+                <Checkbox
+                    wrapperClassName="mt-2"
+                    id="app-is-public"
+                    onChange={toggleIsPublic}
+                    checked={isPublic}
+                    label={
+                        <>
+                            Make App public <span className="text-muted">(optional)</span>
+                        </>
+                    }
+                    message={
+                        <>
+                            Your GitHub App must be public if you want to install it on multiple organizations or user
+                            accounts.{' '}
+                            <Link
+                                to="/help/admin/external_service/github#mutliple-installations"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Learn more about public vs. private GitHub Apps.
+                            </Link>
+                        </>
+                    }
+                />
+                <div className="mt-4">
+                    <Button variant="primary" onClick={createState} disabled={!!nameError || !!urlError}>
                         Create Github App
                     </Button>
                     <ButtonLink className="ml-3" to="/site-admin/github-apps" variant="secondary">
@@ -212,7 +303,7 @@ export const CreateGitHubAppPage: FC<AddGitHubPageProps> = () => {
                 {/* eslint-disable-next-line react/forbid-elements */}
                 <form ref={ref} method="post">
                     {/* eslint-disable-next-line react/forbid-elements */}
-                    <input ref={formInput} name="manifest" onChange={() => {}} hidden={true} />
+                    <input ref={formInput} name="manifest" onChange={noop} hidden={true} />
                 </form>
             </Container>
         </>

@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestParseJSONLogsFromOutput(t *testing.T) {
@@ -262,7 +263,7 @@ func TestParseLogLines(t *testing.T) {
 		},
 		{
 			name:  "Started but timeout",
-			entry: executor.ExecutionLogEntry{StartTime: time1, ExitCode: intPtr(-1), DurationMs: intPtr(500)},
+			entry: executor.ExecutionLogEntry{StartTime: time1, ExitCode: pointers.Ptr(-1), DurationMs: pointers.Ptr(500)},
 			lines: []*batcheslib.LogEvent{
 				{
 					Timestamp: time1,
@@ -287,7 +288,7 @@ func TestParseLogLines(t *testing.T) {
 				1: {
 					StartedAt:   time1,
 					FinishedAt:  time1.Add(500 * time.Millisecond),
-					ExitCode:    intPtr(-1),
+					ExitCode:    pointers.Ptr(-1),
 					Environment: map[string]string{"env": "var"},
 				},
 			},
@@ -485,5 +486,3 @@ func TestParseLogLines(t *testing.T) {
 		})
 	}
 }
-
-func intPtr(i int) *int { return &i }

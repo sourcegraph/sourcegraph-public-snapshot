@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -81,17 +82,17 @@ func TestGitMaxCodehostRequestsPerSecond(t *testing.T) {
 		},
 		{
 			name: "bad value should return default",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: intPtr(-100)}},
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(-100)}},
 			want: -1,
 		},
 		{
 			name: "set 0 should return 0",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: intPtr(0)}},
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(0)}},
 			want: 0,
 		},
 		{
 			name: "set non-0 should return non-0",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: intPtr(100)}},
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(100)}},
 			want: 100,
 		},
 	}
@@ -320,14 +321,6 @@ func TestIsAccessRequestEnabled(t *testing.T) {
 	}
 }
 
-func boolPtr(b bool) *bool {
-	return &b
-}
-
-func intPtr(i int) *int {
-	return &i
-}
-
 func TestCodyEnabled(t *testing.T) {
 	tests := []struct {
 		name string
@@ -341,22 +334,22 @@ func TestCodyEnabled(t *testing.T) {
 		},
 		{
 			name: "cody enabled",
-			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(true)},
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(true)},
 			want: true,
 		},
 		{
 			name: "cody disabled",
-			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(false)},
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(false)},
 			want: false,
 		},
 		{
 			name: "cody enabled, completions configured",
-			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(true), Completions: &schema.Completions{Model: "foobar"}},
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(true), Completions: &schema.Completions{Model: "foobar"}},
 			want: true,
 		},
 		{
 			name: "cody disabled, completions configured",
-			sc:   schema.SiteConfiguration{CodyEnabled: boolPtr(false), Completions: &schema.Completions{Model: "foobar"}},
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(false), Completions: &schema.Completions{Model: "foobar"}},
 			want: false,
 		},
 		{

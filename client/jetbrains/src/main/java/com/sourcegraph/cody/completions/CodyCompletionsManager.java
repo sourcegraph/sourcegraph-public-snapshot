@@ -21,16 +21,17 @@ import com.sourcegraph.config.NotificationActivity;
 import com.sourcegraph.config.SettingsComponent;
 import java.util.Optional;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 /** Responsible for triggering and clearing inline code completions. */
 public class CodyCompletionsManager {
   private static final Key<Boolean> KEY_EDITOR_SUPPORTED = Key.create("cody.editorSupported");
-  private final ExecutorService executor = Executors.newSingleThreadExecutor();
+  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   // TODO: figure out how to avoid the ugly nested `Future<CompletableFuture<T>>` type.
-  private final ConcurrentLinkedQueue<Future<CompletableFuture<Void>>> jobs =
-      new ConcurrentLinkedQueue<>();
+  private final AtomicReference<Optional<Future<CompletableFuture<Void>>>> currentJob =
+      new AtomicReference<>(Optional.empty());
 
   public static @NotNull CodyCompletionsManager getInstance() {
     return ApplicationManager.getApplication().getService(CodyCompletionsManager.class);
@@ -38,7 +39,7 @@ public class CodyCompletionsManager {
 
   @RequiresEdt
   public void clearCompletions(Editor editor) {
-    this.cancelRunningJobs();
+    cancelCurrentJob();
     for (Inlay<?> inlay :
         editor.getInlayModel().getInlineElementsInRange(0, editor.getDocument().getTextLength())) {
       if (!(inlay.getRenderer() instanceof CodyCompletionElementRenderer)) {
@@ -75,10 +76,11 @@ public class CodyCompletionsManager {
             0.6,
             0.1);
     TextDocument textDocument = new IntelliJTextDocument(editor);
-    Future<CompletableFuture<Void>> job =
-        this.executor.submit(
-            () -> triggerCompletionAsync(editor, offset, token, provider, textDocument));
-    this.jobs.add(job);
+    Callable<CompletableFuture<Void>> callable =
+        () -> triggerCompletionAsync(editor, offset, token, provider, textDocument);
+    // debouncing the completion trigger
+    cancelCurrentJob();
+    this.currentJob.set(Optional.of(this.scheduler.schedule(callable, 200, TimeUnit.MILLISECONDS)));
   }
 
   private CompletableFuture<Void> triggerCompletionAsync(
@@ -183,24 +185,26 @@ public class CodyCompletionsManager {
     return new CompletionsService(instanceUrl, accessToken);
   }
 
-  private void cancelRunningJobs() {
+  private void cancelCurrentJob() {
     // TODO: change this implementation when we avoid nested `Future<CompletableFuture<T>>`
-    int size = jobs.size();
-    for (int i = 0; i < size; i++) {
-      Future<CompletableFuture<Void>> job = jobs.poll();
-      if (job != null) {
-        if (job.isDone()) {
-          try {
-            job.get().cancel(true);
-          } catch (ExecutionException | InterruptedException ignored) {
-          }
-        } else if (!job.cancel(true)) {
-          // Cancelling the toplevel `Future<>` appears to cancel the nested `CompletableFuture<>`.
-          // Feel free to reimplement this entire method if it's causing problems because this logic
-          // is not bulletproof.
-          jobs.add(job);
-        }
-      }
-    }
+    this.currentJob
+        .get()
+        .ifPresent(
+            job -> {
+              if (job.isDone()) {
+                try {
+                  job.get().cancel(true);
+                } catch (ExecutionException
+                    | InterruptedException
+                    | CancellationException ignored) {
+                }
+              } else {
+                // Cancelling the toplevel `Future<>` appears to cancel the nested
+                // `CompletableFuture<>`.
+                // Feel free to reimplement this entire method if it's causing problems because this
+                // logic is not bulletproof.
+                job.cancel(true);
+              }
+            });
   }
 }

@@ -31,6 +31,7 @@ go_test(
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/types",
+        "//lib/pointers",
         "//schema",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",

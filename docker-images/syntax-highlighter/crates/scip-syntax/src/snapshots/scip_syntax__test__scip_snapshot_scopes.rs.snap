@@ -30,4 +30,19 @@ expression: dumped
   
   fn something() {}
 //   ^^^^^^^^^ definition scip-ctags something().
+  
+  impl X for Y {}
+//           ^ definition scip-ctags X#Y#
+  impl<T> X<T> for Y<T<X>> {}
+//                 ^ definition scip-ctags X#Y#
+  
+  enum MyEnum {
+//     ^^^^^^ definition scip-ctags MyEnum#
+      Dog,
+//    ^^^ definition scip-ctags MyEnum#Dog.
+      Cat(u8),
+//    ^^^ definition scip-ctags MyEnum#Cat.
+      Bat(String),
+//    ^^^ definition scip-ctags MyEnum#Bat.
+  }
 

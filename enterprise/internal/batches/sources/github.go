@@ -93,6 +93,68 @@ func (s GitHubSource) ValidateAuthenticator(ctx context.Context) error {
 	return err
 }
 
+// DuplicateCommit creates a new commit on the code host using the details of an existing
+// one at the given revision ref. It should be used for the purposes of creating a signed
+// version of an unsigned commit. Signing commits is only possible over the GitHub web
+// APIs when using a GitHub App to authenticate. Thus, this method only makes sense to
+// invoke in the context of a `ChangesetSource` authenticated via a GitHub App.
+//
+// Due to limitations and feature-incompleteness of both the REST and GraphQL APIs today
+// (2023-05-26), we still take advantage of gitserver to push an initial commit based on
+// the changeset patch. We then look up the commit on the code host and duplicate it using
+// a REST endpoint in order to create a signed version of it. Lastly, we update the branch
+// ref, orphaning the original commit (it will be trash-collected in time).
+//
+// Using the REST API is necessary because the GraphQL API does not expose any mutations
+// for creating commits other than one which requires sending the entire file contents for
+// any files changed by the commit, which is not feasible for duplicating large commits.
+// The REST API allows us to create a commit based on a tree SHA, which we can easily get
+// from the existing commit. However, it will only sign the commit if it's authenticated
+// as a GitHub App installation, meaning the commit will be authored by a bot account
+// representing the installation, rather than by the user who authored the batch change.
+//
+// If GitHub ever achieves parity between the REST and GraphQL APIs for creating commits,
+// we should update this method and use the GraphQL API instead, because it would allow us
+// to sign commits with the GitHub App authenticating on behalf of the user, rather than
+// authenticating as the installation. See here for more details:
+// https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/about-authentication-with-a-github-app
+func (s GitHubSource) DuplicateCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest, repo *types.Repo, rev string) error {
+	message := strings.Join(opts.CommitInfo.Messages, "\n")
+	repoMetadata := repo.Metadata.(*github.Repository)
+	owner, repoName, err := github.SplitRepositoryNameWithOwner(repoMetadata.NameWithOwner)
+	if err != nil {
+		return errors.Wrap(err, "getting owner and repo name to duplicate commit")
+	}
+
+	// Get the original, unsigned commit.
+	commit, err := s.client.GetRef(ctx, owner, repoName, rev)
+	if err != nil {
+		return errors.Wrap(err, "getting commit to duplicate")
+	}
+
+	// Our new signed commit should have the same parents as the original commit.
+	parents := []string{}
+	for _, parent := range commit.Parents {
+		parents = append(parents, parent.SHA)
+	}
+	// Create the new commit using the tree SHA of the original and its parents. Author
+	// and committer will not be respected since we are authenticating as a GitHub App
+	// installation, so we just omit them.
+	newCommit, err := s.client.CreateCommit(ctx, owner, repoName, message, commit.Commit.Tree.SHA, parents, nil, nil)
+	if err != nil {
+		return errors.Wrap(err, "creating new commit")
+	}
+
+	// Update the branch ref to point to the new commit, orphaning the original. There's
+	// no way to delete a commit over the API, but the orphaned commit will be garbage
+	// collected automatically by GitHub so it's okay to leave it.
+	_, err = s.client.UpdateRef(ctx, owner, repoName, rev, newCommit.SHA)
+	if err != nil {
+		return errors.Wrap(err, "updating ref to point to new commit")
+	}
+	return nil
+}
+
 // CreateChangeset creates the given changeset on the code host.
 func (s GitHubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
 	input, err := buildCreatePullRequestInput(c)
