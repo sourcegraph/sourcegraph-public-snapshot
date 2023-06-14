@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -43,7 +44,7 @@ const (
 
 // KubernetesContainerOptions contains options for the Kubernetes Job containers.
 type KubernetesContainerOptions struct {
-	ExecutorName          string
+	CloneOptions          KubernetesCloneOptions
 	Namespace             string
 	NodeName              string
 	NodeSelector          map[string]string
@@ -60,6 +61,12 @@ type KubernetesContainerOptions struct {
 	SingleJobPod          bool
 	StepImage             string
 	JobVolume             KubernetesJobVolume
+}
+
+// KubernetesCloneOptions contains options for cloning a Git repository.
+type KubernetesCloneOptions struct {
+	ExecutorName string
+	BaseURL      string
 }
 
 // KubernetesNodeAffinity contains the Kubernetes node affinity for a Job.
@@ -172,7 +179,7 @@ func (c *KubernetesCommand) DeleteJobPVC(ctx context.Context, namespace string, 
 var propagationPolicy = metav1.DeletePropagationBackground
 
 // WaitForPodToSucceed waits for the pod with the given job label to succeed.
-func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, logger cmdlogger.Logger, namespace string, jobName string, spec Spec) (p *corev1.Pod, err error) {
+func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, logger cmdlogger.Logger, namespace string, jobName string, specs []Spec) (p *corev1.Pod, err error) {
 	ctx, _, endObservation := c.Operations.KubernetesWaitForPodToSucceed.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("jobName", jobName),
 	}})
@@ -233,14 +240,14 @@ func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, logger cmdl
 		)
 		// If there are init containers, stream their logs.
 		if len(pod.Status.InitContainerStatuses) > 0 {
-			err = c.handleContainers(ctx, logger, namespace, pod, pod.Status.InitContainerStatuses, containerLoggers, spec)
+			err = c.handleContainers(ctx, logger, namespace, pod, pod.Status.InitContainerStatuses, containerLoggers, specs)
 			if err != nil {
 				return pod, err
 			}
 		}
 		// If there are containers, stream their logs.
 		if len(pod.Status.ContainerStatuses) > 0 {
-			err = c.handleContainers(ctx, logger, namespace, pod, pod.Status.ContainerStatuses, containerLoggers, spec)
+			err = c.handleContainers(ctx, logger, namespace, pod, pod.Status.ContainerStatuses, containerLoggers, specs)
 			if err != nil {
 				return pod, err
 			}
@@ -266,7 +273,7 @@ func (c *KubernetesCommand) handleContainers(
 	pod *corev1.Pod,
 	containerStatus []corev1.ContainerStatus,
 	containerLoggers map[string]containerLogger,
-	spec Spec,
+	specs []Spec,
 ) error {
 	for _, status := range containerStatus {
 		// If the container is waiting, it hasn't started yet, so skip it.
@@ -278,7 +285,7 @@ func (c *KubernetesCommand) handleContainers(
 		l, ok := containerLoggers[status.Name]
 		if !ok {
 			// Potentially the container completed too quickly, so we may not have started the log entry yet.
-			key, command := getLogMetadata(status.Name, spec)
+			key, command := getLogMetadata(status.Name, specs)
 			containerLoggers[status.Name] = containerLogger{logEntry: logger.LogEntry(key, command)}
 			l = containerLoggers[status.Name]
 		}
@@ -325,11 +332,8 @@ func kubernetesConditions(key string, conditions []corev1.PodCondition) log.Fiel
 	)
 }
 
-func getLogMetadata(key string, spec Spec) (string, []string) {
-	if spec.Name == key {
-		return spec.Key, spec.Command
-	}
-	for _, step := range spec.Steps {
+func getLogMetadata(key string, specs []Spec) (string, []string) {
+	for _, step := range specs {
 		if step.Name == key {
 			return step.Key, step.Command
 		}
@@ -485,8 +489,24 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 	}
 }
 
+// RepositoryOptions contains the options for a repository job.
+type RepositoryOptions struct {
+	JobID               int
+	RepositoryName      string
+	RepositoryDirectory string
+	Commit              string
+}
+
 // NewKubernetesSingleJob creates a Kubernetes job with the given name, image, volume path, and spec.
-func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.WorkspaceFile, secret JobSecret, volumeName string, options KubernetesContainerOptions) *batchv1.Job {
+func NewKubernetesSingleJob(
+	name string,
+	specs []Spec,
+	workspaceFiles []files.WorkspaceFile,
+	secret JobSecret,
+	volumeName string,
+	repoOptions RepositoryOptions,
+	options KubernetesContainerOptions,
+) *batchv1.Job {
 	affinity := newAffinity(options)
 
 	resourceLimit := newResourceLimit(options)
@@ -535,13 +555,13 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 	}
 
 	repoDir := "."
-	if spec.Job.RepositoryDirectory != "" {
-		repoDir = spec.Job.RepositoryDirectory
+	if repoOptions.RepositoryDirectory != "" {
+		repoDir = repoOptions.RepositoryDirectory
 	}
 	setupArgs := []string{
 		fmt.Sprintf("mkdir -p %s; ", repoDir) +
 			fmt.Sprintf("git -C %s init; ", repoDir) +
-			fmt.Sprintf("git -C %s remote add origin http://host.docker.internal:3082/.executors/git/%s; ", repoDir, spec.Job.RepositoryName) +
+			fmt.Sprintf("git -C %s remote add origin %s; ", repoDir, path.Join(options.CloneOptions.BaseURL, repoOptions.RepositoryName)) +
 			fmt.Sprintf("git -C %s config --local gc.auto 0; ", repoDir) +
 			fmt.Sprintf("git -C %s "+
 				"-c http.extraHeader=\"Authorization:Bearer $TOKEN\" "+
@@ -549,8 +569,8 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 				"-c http.extraHeader=X-Sourcegraph-Job-ID:%d "+
 				"-c http.extraHeader=X-Sourcegraph-Executor-Name:%s "+
 				"-c protocol.version=2 "+
-				"fetch --progress --no-recurse-submodules --no-tags --depth=1 origin %s; ", repoDir, spec.Job.ID, options.ExecutorName, spec.Job.Commit) +
-			fmt.Sprintf("git -C %s checkout --progress --force %s; ", repoDir, spec.Job.Commit) +
+				"fetch --progress --no-recurse-submodules --no-tags --depth=1 origin %s; ", repoDir, repoOptions.JobID, options.CloneOptions.ExecutorName, repoOptions.Commit) +
+			fmt.Sprintf("git -C %s checkout --progress --force %s; ", repoDir, repoOptions.Commit) +
 			"mkdir -p .sourcegraph-executor; " +
 			"echo '" + formatContent(nextIndexScript) + "' > nextIndex.sh; " +
 			"chmod +x nextIndex.sh; ",
@@ -565,7 +585,7 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 		}
 	}
 
-	stepInitContainers := make([]corev1.Container, len(spec.Steps)+1)
+	stepInitContainers := make([]corev1.Container, len(specs)+1)
 	mounts := make([]corev1.VolumeMount, len(options.JobVolume.Mounts)+1)
 	mounts[0] = corev1.VolumeMount{
 		Name:      "job-data",
@@ -590,7 +610,7 @@ func NewKubernetesSingleJob(name string, spec Spec, workspaceFiles []files.Works
 		VolumeMounts: mounts,
 	}
 
-	for stepIndex, step := range spec.Steps {
+	for stepIndex, step := range specs {
 		fmt.Println("dir: ", step.Dir)
 		jobEnvs := newEnvVars(step.Env)
 

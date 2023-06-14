@@ -466,7 +466,7 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 				logger,
 				"my-namespace",
 				"my-job",
-				command.Spec{},
+				[]command.Spec{},
 			)
 			if test.expectedErr != nil {
 				require.Error(t, err)
