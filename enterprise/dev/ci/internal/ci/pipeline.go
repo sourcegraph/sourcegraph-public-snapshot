@@ -380,11 +380,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 		ops.Merge(imageBuildOps)
 
-		// Publish images to dev registry
-		publishOpsDev := operations.NewNamedSet("Publish dev images")
-		publishOpsDev.Append(bazelPushImagesCmd(c.Version, false))
-		ops.Merge(publishOpsDev)
-
 		// Trivy security scans
 		imageScanOps := operations.NewNamedSet("Image security scans")
 		for _, dockerImage := range images.SourcegraphDockerImages {
@@ -400,6 +395,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
 			ForceBazel:                !c.MessageFlags.NoBazel,
 		}))
+
+		// Publish images to dev registry
+		publishOpsDev := operations.NewNamedSet("Publish dev images")
+		publishOpsDev.Append(bazelPushImagesCmd(c.Version, false))
+		ops.Merge(publishOpsDev)
 
 		// Integration tests
 		// Temporary: on main branches, we build images with bazel binaries based on their toolchain and/or purpose. This step key is the first image in the array.
