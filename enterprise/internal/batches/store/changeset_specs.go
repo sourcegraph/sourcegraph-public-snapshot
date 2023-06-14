@@ -178,8 +178,7 @@ func (s *Store) UpdateChangesetSpecBatchSpecID(ctx context.Context, cs []int64, 
 // UpdateChangesetSpecCommitVerification updates the given ChangesetSpecs CommitVerification if commit signing is applied and successful.
 func (s *Store) UpdateChangesetSpecCommitVerification(ctx context.Context, specID int64, commit *github.RestCommit) (err error) {
 	ctx, _, endObservation := s.operations.updateChangesetSpecCommitVerification.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		// TODO: add commit verification status
-		// attribute.Int("Count", len(cs)),
+		attribute.Int("specID", int(specID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
