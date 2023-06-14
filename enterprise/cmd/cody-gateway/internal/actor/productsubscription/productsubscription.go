@@ -225,7 +225,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 
 	if rl := s.CodyGatewayAccess.ChatCompletionsRateLimit; rl != nil {
 		a.RateLimits[codygateway.FeatureChatCompletions] = actor.NewRateLimitWithPercentageConcurrency(
-			rl.Limit,
+			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
 			rl.AllowedModels,
 			concurrencyConfig,
@@ -234,7 +234,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 
 	if rl := s.CodyGatewayAccess.CodeCompletionsRateLimit; rl != nil {
 		a.RateLimits[codygateway.FeatureCodeCompletions] = actor.NewRateLimitWithPercentageConcurrency(
-			rl.Limit,
+			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
 			rl.AllowedModels,
 			concurrencyConfig,
@@ -243,7 +243,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 
 	if rl := s.CodyGatewayAccess.EmbeddingsRateLimit; rl != nil {
 		a.RateLimits[codygateway.FeatureEmbeddings] = actor.NewRateLimitWithPercentageConcurrency(
-			rl.Limit,
+			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
 			rl.AllowedModels,
 			// TODO: Once we split interactive and on-interactive, we want to apply

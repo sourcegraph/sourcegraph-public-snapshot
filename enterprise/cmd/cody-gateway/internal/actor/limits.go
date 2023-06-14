@@ -22,7 +22,7 @@ type RateLimit struct {
 	// format, "$PROVIDER/$MODEL_NAME".
 	AllowedModels []string `json:"allowedModels"`
 
-	Limit    int           `json:"limit"`
+	Limit    int64         `json:"limit"`
 	Interval time.Duration `json:"interval"`
 
 	// ConcurrentRequests, ConcurrentRequestsInterval are generally applied
@@ -31,7 +31,7 @@ type RateLimit struct {
 	ConcurrentRequestsInterval time.Duration `json:"concurrentRequestsInterval"`
 }
 
-func NewRateLimitWithPercentageConcurrency(limit int, interval time.Duration, allowedModels []string, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) RateLimit {
+func NewRateLimitWithPercentageConcurrency(limit int64, interval time.Duration, allowedModels []string, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) RateLimit {
 	// The actual type of time.Duration is int64, so we can use it to compute the
 	// ratio of the rate limit interval to a day (24 hours).
 	ratioToDay := float32(interval) / float32(24*time.Hour)
@@ -79,7 +79,7 @@ func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func(context.Conte
 		LimiterName:        "actor.concurrencyLimiter",
 		Identifier:         l.actor.ID,
 		Redis:              l.redis,
-		Limit:              l.concurrentRequests,
+		Limit:              int64(l.concurrentRequests),
 		Interval:           l.concurrentInterval,
 		UpdateRateLimitTTL: true, // always adjust
 		NowFunc:            l.nowFunc,
@@ -118,7 +118,7 @@ func (e ErrConcurrencyLimitExceeded) Error() string {
 }
 
 func (e ErrConcurrencyLimitExceeded) Summary() string {
-	return fmt.Sprintf("you exceeded the concurrency limit of %d requests for %q. Retry after %s",
+	return fmt.Sprintf("you have exceeded the concurrency limit of %d requests for %q. Retry after %s",
 		e.limit, e.feature, e.retryAfter.Truncate(time.Second))
 }
 

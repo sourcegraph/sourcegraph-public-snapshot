@@ -36,7 +36,7 @@ type StaticLimiter struct {
 	Identifier string
 
 	Redis    RedisStore
-	Limit    int
+	Limit    int64
 	Interval time.Duration
 
 	// UpdateRateLimitTTL, if true, indicates that the TTL of the rate limit count should
@@ -67,7 +67,7 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 	// to update this assignment - removed for now because of ineffassign
 	_, span := tracer.Start(ctx, l.LimiterName+".TryAcquire",
 		trace.WithAttributes(
-			attribute.Int("limit", l.Limit),
+			attribute.Int64("limit", l.Limit),
 			attribute.Float64("intervalSeconds", intervalSeconds)))
 	defer func() {
 		span.RecordError(err)
@@ -89,7 +89,7 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 	// If the usage exceeds the maximum, we return an error. Consumers can check if
 	// the error is of type RateLimitExceededError and extract additional information
 	// like the limit and the time by when they should retry.
-	if currentUsage >= l.Limit {
+	if int64(currentUsage) >= l.Limit {
 		retryAfter, err := RetryAfterWithTTL(l.Redis, l.NowFunc, l.Identifier)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get TTL for rate limit counter")
@@ -100,11 +100,7 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 		}
 
 		return nil, RateLimitExceededError{
-			Limit: l.Limit,
-			// Return the minimum value of currentUsage and limit to not return
-			// confusing values when the limit was exceeded. This method increases
-			// on every check, even if the limit was reached.
-			Used:       min(currentUsage, l.Limit),
+			Limit:      l.Limit,
 			RetryAfter: retryAfter,
 		}
 	}
@@ -174,11 +170,4 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 
 		return nil
 	}, nil
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

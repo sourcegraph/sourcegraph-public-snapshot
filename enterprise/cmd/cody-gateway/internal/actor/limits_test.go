@@ -21,7 +21,7 @@ func TestNewRateLimitWithPercentageConcurrency(t *testing.T) {
 	}
 	tests := []struct {
 		name                 string
-		limit                int
+		limit                int64
 		interval             time.Duration
 		wantConcurrencyLimit int
 	}{
