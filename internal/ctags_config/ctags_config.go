@@ -62,6 +62,7 @@ var supportedLanguages = map[string]struct{}{
 	"javascript": {},
 	"python":     {},
 	"ruby":       {},
+	"rust":       {},
 	"scala":      {},
 	"typescript": {},
 	"zig":        {},
