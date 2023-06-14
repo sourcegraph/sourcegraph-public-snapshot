@@ -4,8 +4,7 @@ import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
-import { CODY_DOC_URL, CODY_FEEDBACK_URL, DISCORD_URL, isLoggedIn } from './chat/protocol'
-import { getAuthStatus } from './chat/utils'
+import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
@@ -18,6 +17,7 @@ import { FixupController } from './non-stop/FixupController'
 import { showSetupNotification } from './notifications/setup-notification'
 import { getRgPath } from './rg'
 import { AuthProvider } from './services/AuthProvider'
+import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
 import { LocalStorage } from './services/LocalStorageProvider'
@@ -91,7 +91,7 @@ const register = async (
     const editor = new VSCodeEditor(controllers)
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
-    const authProvider = new AuthProvider(secretStorage, localStorage)
+    const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage)
 
     const {
         intentDetector,
@@ -181,7 +181,7 @@ const register = async (
             await chatProvider.logout()
         }),
         vscode.commands.registerCommand('cody.auth.login', (endpoint: string) => authProvider.login(endpoint)),
-        vscode.commands.registerCommand('cody.auth.support', () => quickPickForSupport()),
+        vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         vscode.commands.registerCommand('cody.clear-chat-history', async () => {
             await chatProvider.clearHistory()
         }),
@@ -307,9 +307,9 @@ const register = async (
         await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
     }
 
+    // Automatically log user in if endpoint and token are found
     if (initialConfig.serverEndpoint && initialConfig.accessToken) {
-        const authStatus = await getAuthStatus(initialConfig)
-        await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
+        await authProvider.auth(initialConfig.serverEndpoint, initialConfig.accessToken, initialConfig.customHeaders)
     }
 
     await showSetupNotification(initialConfig, localStorage)
@@ -322,31 +322,3 @@ const register = async (
         },
     }
 }
-
-const quickPickForSupport = (): void => {
-    const quickPick = vscode.window.createQuickPick()
-    quickPick.title = 'Cody Feedback & Support'
-    quickPick.placeholder = 'Choose an option'
-    quickPick.items = suportQuickPickItems
-    quickPick.onDidChangeSelection(async selection => {
-        quickPick.dispose()
-        switch (selection[0].label) {
-            case 'Share Feedback':
-                await vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
-                break
-            case 'Documentation':
-                await vscode.env.openExternal(vscode.Uri.parse(CODY_DOC_URL.href))
-                break
-            case 'Discord Channel':
-                await vscode.env.openExternal(vscode.Uri.parse(DISCORD_URL.href))
-                break
-        }
-    })
-    quickPick.show()
-}
-
-const suportQuickPickItems = [
-    { label: '$(feedback) Share Feedback', detail: 'Idea, bug, or need help? Let us know.' },
-    { label: '$(book) Documentation', detail: 'Search the Cody documentation' },
-    { label: '$(organization) Discord Channel', detail: 'Join our Discord community’s #cody channel' },
-]

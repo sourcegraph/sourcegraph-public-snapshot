@@ -24,8 +24,9 @@ export class LocalStorage {
             return
         }
         try {
-            await this.storage.update(this.LAST_USED_ENDPOINT, endpoint)
-            await this.addEndpointHistory(endpoint)
+            const uri = new URL(endpoint).href
+            await this.storage.update(this.LAST_USED_ENDPOINT, uri)
+            await this.addEndpointHistory(uri)
         } catch (error) {
             console.error(error)
         }

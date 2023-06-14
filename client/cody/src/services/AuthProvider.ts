@@ -1,8 +1,21 @@
 import * as vscode from 'vscode'
 
-import { AuthStatus, DOTCOM_URL, LOCAL_APP_URL, isLoggedIn } from '../chat/protocol'
-import { getAuthStatus } from '../chat/utils'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { isError } from '@sourcegraph/cody-shared/src/utils'
 
+import {
+    AuthStatus,
+    DOTCOM_URL,
+    LOCAL_APP_URL,
+    defaultAuthStatus,
+    isLocalApp,
+    isLoggedIn,
+    unauthenticatedStatus,
+} from '../chat/protocol'
+import { newAuthStatus } from '../chat/utils'
+
+import { LoginMenuQuickPick, LoginStepInputBox } from './CodyMenus'
 import { LocalStorage } from './LocalStorageProvider'
 import { SecretStorage } from './SecretStorageProvider'
 
@@ -11,77 +24,116 @@ export class AuthProvider {
     private endpointHistory: string[] = []
     private appScheme = vscode.env.uriScheme
     private authStatus: AuthStatus | null = null
+    private client: SourcegraphGraphQLAPIClient | null = null
 
-    constructor(private secretStorage: SecretStorage, private localStorage: LocalStorage) {
-        this.getEndpointHistory()
+    constructor(
+        private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
+        private secretStorage: SecretStorage,
+        private localStorage: LocalStorage
+    ) {
+        this.loadEndpointHistory()
     }
-
-    public async storeAuthInfo(endpoint: string, token: string): Promise<void> {
+    public async login(endpoint?: string): Promise<void> {
         this.setEndpoint(endpoint)
-        await this.localStorage.saveEndpoint(endpoint)
-        await this.secretStorage.storeToken(endpoint, token)
-        this.getEndpointHistory()
-    }
-
-    public login(endpoint?: string): void {
-        this.setEndpoint(endpoint)
-        const quickPick = loginOptionsPicker(this.endpointHistory)
-        quickPick.onDidChangeSelection(async selection => {
-            quickPick.dispose()
-            const title = selection[0].label
-            switch (title) {
-                case 'Login to a Sourcegraph Enterprise Instance':
-                    this.loginWithURL(title, true)
-                    break
-                case 'Login to Sourcegraph.com':
-                    this.redirectToEndpointLogin(true)
-                    break
-                case 'Login with URL and Access Token':
-                    this.loginWithURL(title, false)
-                    break
-                default: {
-                    // Auto log user if token for the selected instance was found in secret
-                    const token = await this.secretStorage.get(title)
-                    if (token) {
-                        await this.storeAuthInfo(title, token)
-                        return
-                    }
-                    this.loginWithToken(title, title)
+        const item = await LoginMenuQuickPick(this.endpointHistory)
+        if (!item) {
+            return
+        }
+        switch (item?.id) {
+            case 'enterprise': {
+                const input = await LoginStepInputBox(item.label, false)
+                if (!input?.endpoint) {
+                    return
                 }
-            }
-        })
-        quickPick.show()
-    }
-
-    public loginWithSourcegraph(): void {
-        this.redirectToEndpointLogin(true)
-    }
-
-    private loginWithURL(title: string, redirect: boolean): void {
-        const inputBox = inputStep(title, 1)
-        inputBox.onDidAccept(() => {
-            const endpoint = inputBox.value
-            this.setEndpoint(endpoint)
-            if (redirect) {
+                this.setEndpoint(input?.endpoint)
                 this.redirectToEndpointLogin(false)
-                return
+                break
             }
-            this.loginWithToken(title, endpoint)
-            inputBox.dispose()
-        })
-        inputBox.show()
+            case 'dotcom':
+                this.redirectToEndpointLogin(true)
+                break
+            case 'token': {
+                const input = await LoginStepInputBox(item.label, true)
+                await this.storeAuthInfo(input?.endpoint, input?.token)
+                break
+            }
+            default: {
+                // Auto log user if token for the selected instance was found in secret
+                const selectedEndpoint = item.label
+                const token = await this.secretStorage.get(selectedEndpoint)
+                const authedUser = await this.auth(selectedEndpoint, token || null)
+                if (authedUser) {
+                    return
+                }
+                const input = await LoginStepInputBox(item.label, true)
+                await this.storeAuthInfo(selectedEndpoint, input?.token)
+            }
+        }
     }
 
-    private loginWithToken(title: string, endpoint: string): void {
-        const inputBox = inputStep(title, 2)
-        inputBox.onDidAccept(async () => {
-            if (inputBox.value) {
-                const token = inputBox.value
-                await this.storeAuthInfo(endpoint, token)
+    public async getAuthStatus(
+        config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+    ): Promise<AuthStatus> {
+        if (!config.accessToken || !config.serverEndpoint) {
+            return { ...defaultAuthStatus }
+        }
+        // Cache the config and the GraphQL client
+        if (this.config !== config || !this.client) {
+            this.config = config
+            this.client = new SourcegraphGraphQLAPIClient(config)
+        }
+        // Version is for frontend to check if Cody is not enabled due to unsupported version when siteHasCodyEnabled is false
+        const { enabled, version } = await this.client.isCodyEnabled()
+        const isDotComOrApp = this.client.isDotCom() || isLocalApp(config.serverEndpoint)
+        if (!isDotComOrApp) {
+            const currentUserID = await this.client.getCurrentUserId()
+            return newAuthStatus(isDotComOrApp, !isError(currentUserID), false, enabled, version)
+        }
+        const userInfo = await this.client.getCurrentUserIdAndVerifiedEmail()
+        return isError(userInfo)
+            ? { ...unauthenticatedStatus }
+            : newAuthStatus(isDotComOrApp, !!userInfo.id, userInfo.hasVerifiedEmail, true, version)
+    }
+
+    // It process the authetication steps and store the login info.
+    // Returns Auth state
+    public async auth(endpoint: string, token: string | null, customHeaders?: {}): Promise<boolean> {
+        const config = {
+            serverEndpoint: endpoint,
+            accessToken: token,
+            customHeaders: customHeaders || this.config.customHeaders,
+        }
+        const authStatus = await this.getAuthStatus(config)
+        const userIsLoggedIn = isLoggedIn(authStatus)
+        // activate extension when user has valid login
+        await vscode.commands.executeCommand('setContext', 'cody.activated', userIsLoggedIn)
+        // return { isAuthed: isLoggedIn(authStatus), authStatus }
+        return isLoggedIn(authStatus)
+    }
+
+    // For Uri Handler
+    public async tokenCallbackHandler(uri: vscode.Uri, customHeaders: {}): Promise<AuthStatus | null> {
+        const params = new URLSearchParams(uri.query)
+        const isApp = params.get('type') === 'app'
+        if (isApp) {
+            this.endpoint = LOCAL_APP_URL.href
+        }
+        const endpoint = this.endpoint
+        const token = params.get('code')
+        if (!token || !endpoint) {
+            return null
+        }
+        await this.storeAuthInfo(endpoint, token)
+        const authStatus = await this.auth(endpoint, token, customHeaders)
+        if (authStatus) {
+            const actionButtonLabel = 'Get Started'
+            const successMessage = isApp ? 'Connected to Cody App' : 'Logged in to sourcegraph.com'
+            const action = await vscode.window.showInformationMessage(successMessage, actionButtonLabel)
+            if (action === actionButtonLabel) {
+                await vscode.commands.executeCommand('cody.chat.focus')
             }
-            inputBox.dispose()
-        })
-        inputBox.show()
+        }
+        return this.authStatus
     }
 
     private redirectToEndpointLogin(isDotCom: boolean): void {
@@ -103,95 +155,17 @@ export class AuthProvider {
         this.endpoint = endpoint
     }
 
-    private getEndpointHistory(): void {
+    private loadEndpointHistory(): void {
         this.endpointHistory = this.localStorage.getEndpointHistory() || []
     }
 
-    public async tokenCallbackHandler(uri: vscode.Uri, customHeaders: {}): Promise<AuthStatus | null> {
-        const params = new URLSearchParams(uri.query)
-        const isApp = params.get('type') === 'app'
-        if (isApp) {
-            this.endpoint = LOCAL_APP_URL.href
+    public async storeAuthInfo(endpoint: string | null | undefined, token: string | null | undefined): Promise<void> {
+        if (!endpoint || !token) {
+            return
         }
-        const endpoint = this.endpoint
-        const token = params.get('code')
-        if (!token || !endpoint) {
-            return null
-        }
-        await this.storeAuthInfo(endpoint, token)
-        const authStatus = await getAuthStatus({
-            serverEndpoint: endpoint,
-            accessToken: token,
-            customHeaders,
-        })
-        if (isLoggedIn(authStatus)) {
-            const actionButtonLabel = 'Get Started'
-            const successMessage = isApp ? 'Connected to Cody App' : 'Logged in to sourcegraph.com'
-            const action = await vscode.window.showInformationMessage(successMessage, actionButtonLabel)
-            if (action === actionButtonLabel) {
-                await vscode.commands.executeCommand('cody.chat.focus')
-            }
-        }
-        return this.authStatus
+        this.setEndpoint(endpoint)
+        await this.localStorage.saveEndpoint(endpoint)
+        await this.secretStorage.storeToken(endpoint, token)
+        this.loadEndpointHistory()
     }
 }
-
-// HELPER FUNCTIONS
-function loginOptionsPicker(historyItems: string[]): vscode.QuickPick<vscode.QuickPickItem> {
-    const quickPick = vscode.window.createQuickPick()
-    quickPick.title = 'Other Login Options'
-    quickPick.placeholder = 'Select a login option '
-    quickPick.ignoreFocusOut = true
-    // Create options
-    const options = loginOptions.map(item => ({ label: item.label }))
-    const history = historyItems?.length > 0 ? historyItems?.map(endpoint => ({ label: endpoint })).reverse() : []
-    const seperator = [{ label: 'Last Signed in...', kind: -1 }]
-    quickPick.items = [...options, ...seperator, ...history]
-    return quickPick
-}
-
-function inputStep(title: string, step: number): vscode.InputBox {
-    const loginStep = loginStepOptions[step - 1]
-    const inputBox = vscode.window.createInputBox()
-    inputBox.title = title
-    inputBox.step = step
-    inputBox.totalSteps = 2
-    inputBox.password = loginStep.prompt === 'Access Token'
-    inputBox.prompt = loginStep.prompt
-    inputBox.placeholder = loginStep.placeholder
-    inputBox.ignoreFocusOut = true
-
-    return inputBox
-}
-
-const loginOptions = [
-    {
-        id: 'enterprise',
-        label: 'Login to a Sourcegraph Enterprise Instance',
-        description: 'Login to a Sourcegraph Enterprise Instance',
-        totalSteps: 1,
-    },
-    {
-        id: 'dotcom',
-        label: 'Login to Sourcegraph.com',
-        description: 'Login to Sourcegraph.com',
-        totalSteps: 0,
-    },
-    {
-        id: 'token',
-        label: 'Login with URL and Access Token',
-        description: 'Login with URL and Access Token',
-        totalSteps: 2,
-    },
-]
-
-const loginStepOptions = [
-    {
-        prompt: 'Enter your Sourcegraph instance URL',
-        placeholder: 'http://sourcegraph.mycompany.com/',
-    },
-    {
-        prompt: 'Access Token',
-        placeholder: 'Access Token',
-    },
-]

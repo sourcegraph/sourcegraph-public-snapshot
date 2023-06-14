@@ -44,11 +44,11 @@ import {
     ExtensionMessage,
     WebviewMessage,
     defaultAuthStatus,
-    isLoggedIn,
     LocalEnv,
+    isLoggedIn,
 } from './protocol'
 import { getRecipe } from './recipes'
-import { convertGitCloneURLToCodebaseName, getAuthStatus } from './utils'
+import { convertGitCloneURLToCodebaseName } from './utils'
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
@@ -560,7 +560,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
-     * Save Login state to webview
+     * Save authStatus state to webview
      */
     public async sendLogin(authStatus: AuthStatus): Promise<void> {
         // activate extension when user has valid login
@@ -570,11 +570,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     public async login(endpoint: string, token: string): Promise<void> {
-        const authStatus = await getAuthStatus({
+        const config = {
             serverEndpoint: endpoint,
             accessToken: token,
             customHeaders: this.config.customHeaders,
-        })
+        }
+        const authStatus = await this.authProvider.getAuthStatus(config)
         await this.authProvider.storeAuthInfo(endpoint, token)
         await this.sendLogin(authStatus)
     }
@@ -684,19 +685,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             void this.updateCodebaseContext()
             // check if new configuration change is valid or not
             // log user out if config is invalid
-            const authStatus = await getAuthStatus({
+            const authStatus = await this.authProvider.getAuthStatus({
                 serverEndpoint: this.config.serverEndpoint,
                 accessToken: this.config.accessToken,
                 customHeaders: this.config.customHeaders,
             })
-
             void this.localAppDetector.detect()
             // Remove local app detector if user is logged in
             if (isLoggedIn(authStatus)) {
                 this.localAppDetector.dispose()
                 this.sendLocalAppState(true)
             }
-
             const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
@@ -704,7 +703,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 appName: vscode.env.appName,
                 appOS: process.platform,
             }
-            void vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
             void this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
         }
 
