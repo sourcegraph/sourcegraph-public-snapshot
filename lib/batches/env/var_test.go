@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"gopkg.in/yaml.v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/pointers"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestVariable_MarshalJSON(t *testing.T) {

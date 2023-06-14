@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/pointers"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestChangesetSpec_ForkGetters(t *testing.T) {

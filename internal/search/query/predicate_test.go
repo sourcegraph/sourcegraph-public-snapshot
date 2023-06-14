@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/pointers"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestRepoContainsFilePredicate(t *testing.T) {

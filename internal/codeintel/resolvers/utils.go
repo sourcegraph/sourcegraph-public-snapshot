@@ -7,7 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/internal/pointers"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type ConnectionResolver[T any] interface {

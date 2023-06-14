@@ -9,13 +9,13 @@ go_library(
     deps = [
         "//cmd/frontend/envvar",
         "//internal/conf",
-        "//internal/pointers",
         "//internal/search",
         "//internal/search/client",
         "//internal/search/job",
         "//internal/search/job/jobutil",
         "//internal/search/job/printer",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_sourcegraph_log//:log",
     ],
 )

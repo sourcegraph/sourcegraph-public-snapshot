@@ -57,8 +57,8 @@ go_test(
     embed = [":updatecheck"],
     deps = [
         "//internal/extsvc",
-        "//internal/pointers",
         "//internal/types",
+        "//lib/pointers",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_hexops_autogold_v2//:autogold",

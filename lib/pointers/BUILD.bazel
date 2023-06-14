@@ -4,8 +4,8 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "pointers",
     srcs = ["ptr.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/pointers",
-    visibility = ["//:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/pointers",
+    visibility = ["//visibility:public"],
 )
 
 go_test(

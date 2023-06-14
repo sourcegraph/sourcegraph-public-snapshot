@@ -21,8 +21,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/monitoring/monitoring",
     visibility = ["//visibility:public"],
     deps = [
-        "//internal/pointers",
         "//lib/errors",
+        "//lib/pointers",
         "//monitoring/grafanaclient",
         "//monitoring/monitoring/internal/grafana",
         "//monitoring/monitoring/internal/promql",

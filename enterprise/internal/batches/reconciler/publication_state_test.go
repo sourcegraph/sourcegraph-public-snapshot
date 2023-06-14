@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/pointers"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestPublicationStateCalculator(t *testing.T) {

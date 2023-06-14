@@ -11,8 +11,8 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/prometheus/prometheus/model/labels"
 
-	"github.com/sourcegraph/sourcegraph/internal/pointers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/promql"
 )

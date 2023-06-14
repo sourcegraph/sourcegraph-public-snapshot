@@ -20,7 +20,7 @@ go_test(
     embed = [":api"],
     deps = [
         "//internal/api",
-        "//internal/pointers",
         "//internal/testutil",
+        "//lib/pointers",
     ],
 )
