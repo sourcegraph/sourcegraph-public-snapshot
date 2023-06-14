@@ -187,10 +187,7 @@ FROM temp_table source
 WHERE
 	zr.repo_id = source.repo_id
 AND
-	(zr.index_status != source.index_status OR zr.branches != source.branches OR NOT (
-		zr.last_indexed_at = source.last_indexed_at OR
-		(zr.last_indexed_at IS NULL AND source.last_indexed_at IS NULL)
-	))
+	(zr.index_status != source.index_status OR zr.branches != source.branches OR zr.last_indexed_at IS DISTINCT FROM source.last_indexed_at)
 ;
 `
 
