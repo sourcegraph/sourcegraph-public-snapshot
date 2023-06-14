@@ -1,6 +1,6 @@
 import { FC, useMemo } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/out/src/telemetry/telemetryService'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
