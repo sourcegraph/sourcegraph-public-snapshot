@@ -204,6 +204,11 @@ type ListOpts struct {
 
 func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
 	embeddingsConf := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	// Embeddings are disabled, nothing we can do.
+	if embeddingsConf == nil {
+		return EmbeddableRepoOpts{}
+	}
+
 	return EmbeddableRepoOpts{
 		MinimumInterval:            embeddingsConf.MinimumInterval,
 		PolicyRepositoryMatchLimit: embeddingsConf.PolicyRepositoryMatchLimit,

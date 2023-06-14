@@ -305,6 +305,7 @@ func TestGetEmbeddableReposLimit(t *testing.T) {
 func TestGetEmbeddableRepoOpts(t *testing.T) {
 	conf.Mock(&conf.Unified{})
 	defer conf.Mock(nil)
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{CodyEnabled: pointify(true)}})
 
 	opts := GetEmbeddableRepoOpts()
 	require.Equal(t, 24*time.Hour, opts.MinimumInterval)
@@ -363,4 +364,8 @@ func createGlobalPolicy(ctx context.Context, store RepoEmbeddingJobsStore) error
 		true, // Embeddings enabled
 	)
 	return store.Exec(ctx, q)
+}
+
+func pointify[T any](v T) *T {
+	return &v
 }
