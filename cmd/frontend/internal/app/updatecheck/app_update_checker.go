@@ -232,9 +232,9 @@ func readClientAppVersion(reqURL *url.URL) *AppVersion {
 		}
 	}
 
-	// The app versions contain + and Tauri is not encoding the updater url
-	// so this is being interpreted as a blank space and breaking the semver check.  '
-	// Replacing all blank spaces with '+' as a patch to enable auto updates.
+	// The app versions contain '+' and Tauri is not encoding the updater url
+	// this is being interpreted as a blank space and breaking the semver check.
+	// Trimming all leading/trailing spaces then replacing spaces with '+' to get auto updates working.
 	appClientVersion.Version = strings.ReplaceAll(strings.TrimSpace(appClientVersion.Version), " ", "+")
 
 	return &appClientVersion
