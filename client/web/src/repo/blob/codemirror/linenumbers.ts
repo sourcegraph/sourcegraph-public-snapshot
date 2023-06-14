@@ -69,7 +69,9 @@ const selectedLinesTheme = EditorView.theme({
  * selected. Line numbers are 1-based.
  * endLine may be smaller than line
  */
-export type SelectedLineRange = { line: number; character?: number; endLine?: number } | null
+export type SelectedLineRanges = SelectedLineRange[] | null
+
+export type SelectedLineRange = { line: number; character?: number; endLine?: number }
 
 const selectedLineDecoration = Decoration.line({
     class: 'selected-line',
@@ -82,14 +84,14 @@ const selectedLineDecoration = Decoration.line({
 const selectedLineGutterMarker = new (class extends GutterMarker {
     public elementClass = 'selected-line'
 })()
-export const setSelectedLines = StateEffect.define<SelectedLineRange>()
+export const setSelectedLines = StateEffect.define<SelectedLineRanges>()
 const setEndLine = StateEffect.define<number>()
 
 /**
  * This field stores the selected line range and provides the corresponding line
  * decorations.
  */
-export const selectedLines = StateField.define<SelectedLineRange>({
+export const selectedLines = StateField.define<SelectedLineRanges>({
     create() {
         return null
     },
@@ -109,23 +111,24 @@ export const selectedLines = StateField.define<SelectedLineRange>({
     },
     provide: field => [
         EditorView.decorations.compute([field], state => {
-            const range = state.field(field)
-            if (!range) {
+            const ranges = state.field(field)
+            if (!ranges) {
                 return Decoration.none
             }
 
-            // By ordering line and endLine here we make "inverse" selection
-            // work automagically
-
-            const endLine = range.endLine ?? range.line
-            const from = Math.min(range.line, endLine)
-            const to = Math.min(state.doc.lines, from === endLine ? range.line : endLine)
-
             const builder = new RangeSetBuilder<Decoration>()
+            for (let range of ranges) {
+                // By ordering line and endLine here we make "inverse" selection
+                // work automagically
 
-            for (let lineNumber = from; lineNumber <= to; lineNumber++) {
-                const from = state.doc.line(lineNumber).from
-                builder.add(from, from, selectedLineDecoration)
+                const endLine = range.endLine ?? range.line
+                const from = Math.min(range.line, endLine)
+                const to = Math.min(state.doc.lines, from === endLine ? range.line : endLine)
+
+                for (let lineNumber = from; lineNumber <= to; lineNumber++) {
+                    const from = state.doc.line(lineNumber).from
+                    builder.add(from, from, selectedLineDecoration)
+                }
             }
 
             return builder.finish()
@@ -143,22 +146,27 @@ export const selectedLines = StateField.define<SelectedLineRange>({
         layer({
             above: false,
             markers(view) {
-                const range = view.state.field(field)
-                if (!range) {
+                const ranges = view.state.field(field)
+                if (!ranges) {
                     return []
                 }
 
-                const endLineNumber = range.endLine ?? range.line
-                const startLine = view.state.doc.line(Math.min(range.line, endLineNumber))
-                const endLine = view.state.doc.line(
-                    Math.min(view.state.doc.lines, startLine.number === endLineNumber ? range.line : endLineNumber)
-                )
+                // const layerMarker = LayerMarker.of({ class: 'selected-line' })
+                return ranges.flatMap(range => {
+                    const endLineNumber = range.endLine ?? range.line
+                    const startLine = view.state.doc.line(Math.min(range.line, endLineNumber))
+                    const endLine = view.state.doc.line(
+                        Math.min(view.state.doc.lines, startLine.number === endLineNumber ? range.line : endLineNumber)
+                    )
 
-                return RectangleMarker.forRange(
-                    view,
-                    classNames('selected-line', { ['blame-visible']: view.state.facet(blobPropsFacet).isBlameVisible }),
-                    EditorSelection.range(startLine.from, Math.min(endLine.to + 1, view.state.doc.length))
-                )
+                    return RectangleMarker.forRange(
+                        view,
+                        classNames('selected-line', {
+                            ['blame-visible']: view.state.facet(blobPropsFacet).isBlameVisible,
+                        }),
+                        EditorSelection.range(startLine.from, Math.min(endLine.to + 1, view.state.doc.length))
+                    )
+                })
             },
             update(update) {
                 return (
@@ -215,12 +223,15 @@ const scrollIntoView = ViewPlugin.fromClass(
     class implements PluginValue {
         private lastSelectedLines: SelectedLineRange | null = null
         constructor(private readonly view: EditorView) {
+            // TODO: pick the top-most selected range.
             this.lastSelectedLines = this.view.state.field(selectedLines)
             this.scrollIntoView(this.lastSelectedLines)
         }
 
         public update(update: ViewUpdate): void {
+            // TODO: pick the top-most selected range.
             const currentSelectedLines = update.state.field(selectedLines)
+
             const isForcedScroll = update.transactions.some(
                 transaction => transaction.annotation(lineScrollEnforcing) === 'scroll-enforcing'
             )
