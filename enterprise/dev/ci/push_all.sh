@@ -4,12 +4,10 @@ set -eu
 
 function preview_tags() {
   IFS=' ' read -r -a registries <<<"$1"
-  IFS=' ' read -r -a tags <<<"$2"
+  tags="$2"
 
-  for tag in "${tags[@]}"; do
-    for registry in "${registries[@]}"; do
-      echo -e "\t ${registry}/\$IMAGE:${qa_prefix}-${tag}"
-    done
+  for registry in "${registries[@]}"; do
+    echo -e "\t ${registry}/\$IMAGE with tags: ${tags}"
   done
 }
 
@@ -56,37 +54,42 @@ prod_tags=(
   "${PUSH_VERSION}"
 )
 
+# Only push to production if PUSH_PRODUCTION is set by caller
+BK_PUSH_PROD=$PUSH_PRODUCTION
+
 push_prod=false
 
-if [ "$BUILDKITE_BRANCH" == "main" ]; then
+if [ "$BUILDKITE_BRANCH" == "main" ] && [ -n "$BK_PUSH_PROD" ]; then
   dev_tags+=("insiders")
   prod_tags+=("insiders")
   push_prod=true
 fi
 
-if [[ "$BUILDKITE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+if [[ "$BUILDKITE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] && [ -n "$BK_PUSH_PROD" ]; then
   dev_tags+=("${BUILDKITE_TAG:1}")
   prod_tags+=("${BUILDKITE_TAG:1}")
   push_prod=true
 fi
 
-preview_tags "${dev_registries[*]}" "${dev_tags[*]}"
-if $push_prod; then
-  preview_tags "${prod_registries[*]}" "${prod_tags[*]}"
-fi
-
 echo "--- done"
 
-dev_tags_args=""
-for t in "${dev_tags[@]}"; do
-  dev_tags_args="$dev_tags_args --tag ${qa_prefix}-${t}"
-done
-prod_tags_args=""
+registries=()
+tags_args=""
 if $push_prod; then
+  registries=("${prod_registries[@]}")
+
   for t in "${prod_tags[@]}"; do
-    prod_tags_args="$prod_tags_args --tag ${qa_prefix}-${t}"
+    tags_args="$tags_args --tag ${qa_prefix}-${t}"
+  done
+else
+  registries=("${dev_registries[@]}")
+
+  for t in "${dev_tags[@]}"; do
+    tags_args="$tags_args --tag ${qa_prefix}-${t}"
   done
 fi
+
+preview_tags "${registries[*]}" "$tags_args"
 
 images=$(bazel query 'kind("oci_push rule", //...)')
 
@@ -98,12 +101,8 @@ trap "rm -rf $job_file" EXIT
 for target in ${images[@]}; do
   [[ "$target" =~ ([A-Za-z0-9_-]+): ]]
   name="${BASH_REMATCH[1]}"
-  # Append push commands for dev registries
-  create_push_command "${dev_registries[*]}" "$name" "$target" "$dev_tags_args" >>"$job_file"
-  # Append push commands for prod registries
-  if $push_prod; then
-    create_push_command "${prod_registries[*]}" "$name" "$target" "$prod_tags_args" >>"$job_file"
-  fi
+  # Append push command
+  create_push_command "${registries[*]}" "$name" "$target" "$tags_args" >>"$job_file"
 done
 
 echo "-- jobfile"

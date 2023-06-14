@@ -380,6 +380,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 		ops.Merge(imageBuildOps)
 
+		// Publish images to dev registry
+		publishOpsDev := operations.NewNamedSet("Publish dev images")
+		publishOpsDev.Append(bazelPushImagesCmd(c.Version, false))
+		ops.Merge(publishOpsDev)
+
 		// Trivy security scans
 		imageScanOps := operations.NewNamedSet("Image security scans")
 		for _, dockerImage := range images.SourcegraphDockerImages {
@@ -427,7 +432,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				publishOps.Append(publishExecutorDockerMirror(c))
 			}
 		}
-		publishOps.Append(bazelPushImagesCmd(c.Version))
+		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
+			publishOps.Append(bazelPushImagesCmd(c.Version, true))
+		}
 		ops.Merge(publishOps)
 	}
 
