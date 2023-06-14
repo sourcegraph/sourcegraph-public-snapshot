@@ -2,7 +2,6 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { logEvent } from '../event-logger'
@@ -495,7 +494,6 @@ function getCurrentDocContext(
 
 export interface Completion {
     prefix: string
-    messages: Message[]
     content: string
     stopReason?: string
 }
