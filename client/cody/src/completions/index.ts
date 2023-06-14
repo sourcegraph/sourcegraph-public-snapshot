@@ -7,6 +7,7 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 
 import { logEvent } from '../event-logger'
 import { debug } from '../log'
+import { CodyStatusBar } from '../services/StatusBar'
 
 import { CompletionsCache } from './cache'
 import { getContext } from './context'
@@ -44,10 +45,11 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     })
 
     constructor(
-        private webviewErrorMessager: (error: string) => Promise<void>,
+        private webviewErrorMessenger: (error: string) => Promise<void>,
         private completionsClient: SourcegraphNodeCompletionsClient,
         private documentProvider: CompletionsDocumentProvider,
         private history: History,
+        private statusBar: CodyStatusBar,
         private codebaseContext: CodebaseContext,
         private contextWindowTokens = 2048, // 8001
         private charsPerToken = 4,
@@ -267,10 +269,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             )
         }
 
-        if (!this.disableTimeouts) {
-            await new Promise<void>(resolve => setTimeout(resolve, timeout))
-        }
-
         // We don't need to make a request at all if the signal is already aborted after the
         // debounce
         if (abortController.signal.aborted) {
@@ -278,12 +276,26 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
 
         const logId = CompletionLogger.start({ type: 'inline', multilineMode })
+        const stopLoading = this.statusBar.startLoading('Completions are being generated')
+
+        // Overwrite the abort handler to also update the loading state
+        const previousAbort = this.abortOpenInlineCompletions
+        this.abortOpenInlineCompletions = () => {
+            previousAbort()
+            stopLoading()
+        }
+
+        if (!this.disableTimeouts) {
+            await new Promise<void>(resolve => setTimeout(resolve, timeout))
+        }
 
         const results = rankCompletions(
             (await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))).flat()
         )
 
         const visibleResults = filterCompletions(results)
+
+        stopLoading()
 
         if (visibleResults.length > 0) {
             CompletionLogger.suggest(logId)
@@ -378,7 +390,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 return
             }
 
-            await this.webviewErrorMessager(`FetchAndShowCompletions - ${error}`)
+            await this.webviewErrorMessenger(`FetchAndShowCompletions - ${error}`)
         }
     }
 }

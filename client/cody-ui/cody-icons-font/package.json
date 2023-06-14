@@ -1,8 +1,0 @@
-{
-  "scripts": {
-    "font": "svgtofont --sources ./svg --output ./font && rm font/*.{eot,svg}"
-  },
-  "dependencies": {
-    "svgtofont": "^3.23.1"
-  }
-}

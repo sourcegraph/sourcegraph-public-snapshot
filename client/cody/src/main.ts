@@ -25,6 +25,7 @@ import {
     SecretStorage,
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
+import { createStatusBar } from './services/StatusBar'
 
 const CODY_FEEDBACK_URL =
     'https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode'
@@ -148,6 +149,8 @@ const register = async (
         }
         chatProvider.sendErrorToWebview(error)
     }
+
+    const statusBar = createStatusBar()
 
     disposables.push(
         vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
@@ -275,7 +278,8 @@ const register = async (
                     }
                 }
             },
-        })
+        }),
+        statusBar
     )
 
     if (initialConfig.experimentalSuggest) {
@@ -289,6 +293,7 @@ const register = async (
             completionsClient,
             docprovider,
             history,
+            statusBar,
             codebaseContext
         )
         disposables.push(
