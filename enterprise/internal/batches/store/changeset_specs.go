@@ -183,14 +183,15 @@ func (s *Store) UpdateChangesetSpecCommitVerification(ctx context.Context, batch
 	}})
 	defer endObservation(1, observation.Args{})
 
-	cv, err := jsonbColumn(commit.Verification)
+	var cv json.RawMessage
+	if commit.Verification.Verified {
+		cv, err = jsonbColumn(commit.Verification)
+	} else {
+		cv, err = jsonbColumn(nil)
+	}
 
 	if err != nil {
 		return err
-	}
-
-	if commit.Verification.Verified == false {
-		cv, err = jsonbColumn(nil)
 	}
 
 	q := sqlf.Sprintf(`
