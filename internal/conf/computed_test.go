@@ -369,7 +369,7 @@ func TestCodyEnabled(t *testing.T) {
 		{
 			// Legacy support: remove this once completions.enabled is removed
 			name: "cody.enabled not set, completions configured and enabled",
-			sc:   schema.SiteConfiguration{Completions: &schema.Completions{Enabled: true, Model: "foobar"}},
+			sc:   schema.SiteConfiguration{Completions: &schema.Completions{Enabled: pointify(true), Model: "foobar"}},
 			want: true,
 		},
 	}
@@ -403,14 +403,14 @@ func TestGetCompletionsConfig(t *testing.T) {
 			config: schema.SiteConfiguration{
 				CodyEnabled: &truePtr,
 				Completions: &schema.Completions{
-					Enabled:         true,
+					Enabled:         pointify(true),
 					Provider:        "anthropic",
 					ChatModel:       "claude-v1",
 					CompletionModel: "claude-instant-v1",
 				},
 			},
 			want: autogold.Expect(&schema.Completions{
-				Enabled:         true,
+				Enabled:         pointify(true),
 				ChatModel:       "claude-v1",
 				CompletionModel: "claude-instant-v1",
 				Provider:        "anthropic",
@@ -421,14 +421,14 @@ func TestGetCompletionsConfig(t *testing.T) {
 			config: schema.SiteConfiguration{
 				CodyEnabled: &truePtr,
 				Completions: &schema.Completions{
-					Enabled:         false,
+					Enabled:         pointify(false),
 					Provider:        "anthropic",
 					ChatModel:       "claude-v1",
 					CompletionModel: "claude-instant-v1",
 				},
 			},
 			want: autogold.Expect(&schema.Completions{
-				Enabled:         true,
+				Enabled:         pointify(true),
 				ChatModel:       "claude-v1",
 				CompletionModel: "claude-instant-v1",
 				Provider:        "anthropic",
@@ -443,7 +443,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 			want: autogold.Expect(&schema.Completions{
 				ChatModel:       "anthropic/claude-v1",
 				CompletionModel: "anthropic/claude-instant-v1",
-				Enabled:         true,
+				Enabled:         pointify(true),
 				Endpoint:        "https://cody-gateway.sourcegraph.com",
 				Provider:        "sourcegraph",
 			}),
@@ -455,7 +455,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 				LicenseKey:  "foobar",
 			},
 			want: autogold.Expect(&schema.Completions{
-				Enabled:         true,
+				Enabled:         pointify(true),
 				AccessToken:     "slk_c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2",
 				CompletionModel: "anthropic/claude-v1",
 				Endpoint:        "https://cody-gateway.sourcegraph.com",
@@ -466,11 +466,11 @@ func TestGetCompletionsConfig(t *testing.T) {
 			// Legacy support for completions.enabled
 			name: "legacy field completions.enabled: zero-config cody gateway completions without license key",
 			config: schema.SiteConfiguration{
-				Completions: &schema.Completions{Enabled: true},
+				Completions: &schema.Completions{Enabled: pointify(true)},
 				LicenseKey:  "",
 			},
 			want: autogold.Expect(&schema.Completions{
-				Enabled:         true,
+				Enabled:         pointify(true),
 				CompletionModel: "anthropic/claude-v1",
 				Endpoint:        "https://cody-gateway.sourcegraph.com",
 				Provider:        "sourcegraph",
@@ -480,11 +480,11 @@ func TestGetCompletionsConfig(t *testing.T) {
 			// Legacy support for completions.enabled
 			name: "legacy field completions.enabled: zero-config cody gateway completions with license key",
 			config: schema.SiteConfiguration{
-				Completions: &schema.Completions{Enabled: true},
+				Completions: &schema.Completions{Enabled: pointify(true)},
 				LicenseKey:  "foobar",
 			},
 			want: autogold.Expect(&schema.Completions{
-				Enabled:         true,
+				Enabled:         pointify(true),
 				AccessToken:     "slk_c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2",
 				CompletionModel: "anthropic/claude-v1",
 				Endpoint:        "https://cody-gateway.sourcegraph.com",
@@ -520,7 +520,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 // 			config: schema.SiteConfiguration{
 // 				CodyEnabled: &truePtr,
 // 				Completions: &schema.Completions{
-// 					Enabled:         true,
+// 					Enabled:         pointify(true),
 // 					Provider:        "anthropic",
 // 					ChatModel:       "claude-v1",
 // 					FastChatModel:   "claude-instant-v1",
@@ -528,7 +528,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 // 				},
 // 			},
 // 			want: autogold.Expect(&schema.Completions{
-// 				Enabled:         true,
+// 				Enabled:         pointify(true),
 // 				ChatModel:       "claude-v1",
 // 				FastChatModel:   "claude-instant-v1",
 // 				CompletionModel: "claude-instant-v1",
@@ -562,7 +562,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 // 			want: autogold.Expect(&schema.Completions{
 // 				ChatModel:       "anthropic/claude-v1",
 // 				CompletionModel: "anthropic/claude-instant-v1",
-// 				Enabled:         true,
+// 				Enabled:         pointify(true),
 // 				Endpoint:        "https://cody-gateway.sourcegraph.com",
 // 				Provider:        "sourcegraph",
 // 			}),
@@ -574,7 +574,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 // 				LicenseKey:  "foobar",
 // 			},
 // 			want: autogold.Expect(&schema.Completions{
-// 				Enabled:         true,
+// 				Enabled:         pointify(true),
 // 				AccessToken:     "slk_c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2",
 // 				ChatModel:       "anthropic/claude-v1",
 // 				CompletionModel: "anthropic/claude-instant-v1",
@@ -586,11 +586,11 @@ func TestGetCompletionsConfig(t *testing.T) {
 // 			// Legacy support for completions.enabled
 // 			name: "legacy field completions.enabled: zero-config cody gateway completions without license key",
 // 			config: schema.SiteConfiguration{
-// 				Completions: &schema.Completions{Enabled: true},
+// 				Completions: &schema.Completions{Enabled: pointify(true)},
 // 				LicenseKey:  "",
 // 			},
 // 			want: autogold.Expect(&schema.Completions{
-// 				Enabled:         true,
+// 				Enabled:         pointify(true),
 // 				ChatModel:       "anthropic/claude-v1",
 // 				CompletionModel: "anthropic/claude-instant-v1",
 // 				Endpoint:        "https://cody-gateway.sourcegraph.com",
@@ -601,11 +601,11 @@ func TestGetCompletionsConfig(t *testing.T) {
 // 			// Legacy support for completions.enabled
 // 			name: "legacy field completions.enabled: zero-config cody gateway completions with license key",
 // 			config: schema.SiteConfiguration{
-// 				Completions: &schema.Completions{Enabled: true},
+// 				Completions: &schema.Completions{Enabled: pointify(true)},
 // 				LicenseKey:  "foobar",
 // 			},
 // 			want: autogold.Expect(&schema.Completions{
-// 				Enabled:         true,
+// 				Enabled:         pointify(true),
 // 				AccessToken:     "slk_c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2",
 // 				ChatModel:       "anthropic/claude-v1",
 // 				CompletionModel: "anthropic/claude-instant-v1",
@@ -626,7 +626,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 // 				AccessToken:     "sgd_5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
 // 				ChatModel:       "anthropic/claude-v1",
 // 				CompletionModel: "anthropic/claude-instant-v1",
-// 				Enabled:         true,
+// 				Enabled:         pointify(true),
 // 				Endpoint:        "https://cody-gateway.sourcegraph.com",
 // 				Provider:        "sourcegraph",
 // 			}),
@@ -650,7 +650,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 // 			want: autogold.Expect(&schema.Completions{
 // 				AccessToken: "CUSTOM_TOKEN", ChatModel: "claude-v1",
 // 				CompletionModel: "claude-instant-v1",
-// 				Enabled:         true,
+// 				Enabled:         pointify(true),
 // 				FastChatModel:   "claude-instant-v1",
 // 				Provider:        "anthropic",
 // 			}),
@@ -689,7 +689,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 // 			config: schema.SiteConfiguration{
 // 				CodyEnabled: &truePtr,
 // 				Completions: &schema.Completions{
-// 					Enabled:         true,
+// 					Enabled:         pointify(true),
 // 					Provider:        "anthropic",
 // 					ChatModel:       "claude-v1",
 // 					FastChatModel:   "claude-instant-v1",
@@ -697,7 +697,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 // 				},
 // 			},
 // 			want: autogold.Expect(&schema.Completions{
-// 				Enabled:         true,
+// 				Enabled:         pointify(true),
 // 				ChatModel:       "claude-v1",
 // 				FastChatModel:   "claude-instant-v1",
 // 				CompletionModel: "claude-instant-v1",
@@ -731,7 +731,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 // 			want: autogold.Expect(&schema.Completions{
 // 				ChatModel:       "anthropic/claude-v1",
 // 				CompletionModel: "anthropic/claude-instant-v1",
-// 				Enabled:         true,
+// 				Enabled:         pointify(true),
 // 				Endpoint:        "https://cody-gateway.sourcegraph.com",
 // 				Provider:        "sourcegraph",
 // 			}),
@@ -743,7 +743,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 // 				LicenseKey:  "foobar",
 // 			},
 // 			want: autogold.Expect(&schema.Completions{
-// 				Enabled:         true,
+// 				Enabled:         pointify(true),
 // 				AccessToken:     "slk_c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2",
 // 				ChatModel:       "anthropic/claude-v1",
 // 				CompletionModel: "anthropic/claude-instant-v1",
@@ -755,11 +755,11 @@ func TestGetCompletionsConfig(t *testing.T) {
 // 			// Legacy support for completions.enabled
 // 			name: "legacy field completions.enabled: zero-config cody gateway completions without license key",
 // 			config: schema.SiteConfiguration{
-// 				Completions: &schema.Completions{Enabled: true},
+// 				Completions: &schema.Completions{Enabled: pointify(true)},
 // 				LicenseKey:  "",
 // 			},
 // 			want: autogold.Expect(&schema.Completions{
-// 				Enabled:         true,
+// 				Enabled:         pointify(true),
 // 				ChatModel:       "anthropic/claude-v1",
 // 				CompletionModel: "anthropic/claude-instant-v1",
 // 				Endpoint:        "https://cody-gateway.sourcegraph.com",
@@ -770,11 +770,11 @@ func TestGetCompletionsConfig(t *testing.T) {
 // 			// Legacy support for completions.enabled
 // 			name: "legacy field completions.enabled: zero-config cody gateway completions with license key",
 // 			config: schema.SiteConfiguration{
-// 				Completions: &schema.Completions{Enabled: true},
+// 				Completions: &schema.Completions{Enabled: pointify(true)},
 // 				LicenseKey:  "foobar",
 // 			},
 // 			want: autogold.Expect(&schema.Completions{
-// 				Enabled:         true,
+// 				Enabled:         pointify(true),
 // 				AccessToken:     "slk_c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2",
 // 				ChatModel:       "anthropic/claude-v1",
 // 				CompletionModel: "anthropic/claude-instant-v1",
@@ -795,7 +795,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 // 				AccessToken:     "sgd_5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
 // 				ChatModel:       "anthropic/claude-v1",
 // 				CompletionModel: "anthropic/claude-instant-v1",
-// 				Enabled:         true,
+// 				Enabled:         pointify(true),
 // 				Endpoint:        "https://cody-gateway.sourcegraph.com",
 // 				Provider:        "sourcegraph",
 // 			}),
@@ -819,7 +819,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 // 			want: autogold.Expect(&schema.Completions{
 // 				AccessToken: "CUSTOM_TOKEN", ChatModel: "claude-v1",
 // 				CompletionModel: "claude-instant-v1",
-// 				Enabled:         true,
+// 				Enabled:         pointify(true),
 // 				FastChatModel:   "claude-instant-v1",
 // 				Provider:        "anthropic",
 // 			}),

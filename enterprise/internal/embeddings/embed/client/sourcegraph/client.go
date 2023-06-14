@@ -47,12 +47,13 @@ func (c *sourcegraphEmbeddingsClient) GetDimensions() (int, error) {
 	return c.dimensions, nil
 }
 
-// TODO: Sourcegraph prefix might be dangerous.
 func (c *sourcegraphEmbeddingsClient) GetModelIdentifier() string {
-	// Special-case the default model, since it already includes the provider name
-	// if strings.EqualFold(c.model, defaultModel) {
-	// 	return defaultModel
-	// }
+	// Special-case the default model, since it already includes the provider name.
+	// This ensures we can safely migrate customers from the OpenAI provider to
+	// Cody Gateway.
+	if strings.EqualFold(c.model, "openai/text-embedding-ada-002") {
+		return "openai/text-embedding-ada-002"
+	}
 	return fmt.Sprintf("sourcegraph/%s", c.model)
 }
 

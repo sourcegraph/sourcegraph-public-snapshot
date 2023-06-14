@@ -776,10 +776,6 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	return computedConfig
 }
 
-const (
-	codygatewayDefaultEndpoint = "https://cody-gateway.sourcegraph.com"
-)
-
 // GetEmbeddingsConfig evaluates a complete embeddings configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
 func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.EmbeddingsConfig {
