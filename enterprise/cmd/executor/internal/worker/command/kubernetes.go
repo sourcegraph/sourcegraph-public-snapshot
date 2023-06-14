@@ -322,9 +322,8 @@ func (c *KubernetesCommand) handleContainers(
 			containerLoggers[status.Name] = containerLogger{logEntry: logger.LogEntry(key, command)}
 			l = containerLoggers[status.Name]
 		}
-		// We only want to read the logs once. If the log entry is already completed, we can skip it.
-		// Waiting for the container to complete also gives us access to the exit code.
 		if status.State.Terminated != nil && !l.completed {
+			// Read the logs once the container has terminated. This gives us access to the exit code.
 			if err := c.readLogs(ctx, namespace, pod, status.Name, containerStatus, l.logEntry); err != nil {
 				return err
 			}
