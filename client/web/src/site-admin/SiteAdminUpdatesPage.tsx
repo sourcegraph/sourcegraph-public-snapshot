@@ -135,7 +135,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
 
     const [setAutoUpgrade] = useMutation<SetAutoUpgradeResult, SetAutoUpgradeVariables>(SET_AUTO_UPGRADE)
     const [autoUpgradeEnabled, setAutoUpgradeEnabled] = useState(data?.site.autoUpgradeEnabled)
-    const handleToggle = () => {
+    const handleToggle = (): void => {
         setAutoUpgradeEnabled(!autoUpgradeEnabled)
         setAutoUpgrade({
             variables: { enable: !autoUpgradeEnabled },
