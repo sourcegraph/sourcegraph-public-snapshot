@@ -30,7 +30,7 @@ func mustParseGraphQLSchemaWithClient(t *testing.T, db database.DB, gitserverCli
 		db,
 		gitserverClient,
 		nil,
-		OptionalResolver{},
+		[]OptionalResolver{},
 		graphql.PanicHandler(printStackTrace{&gqlerrors.DefaultPanicHandler{}}),
 	)
 	if parseSchemaErr != nil {

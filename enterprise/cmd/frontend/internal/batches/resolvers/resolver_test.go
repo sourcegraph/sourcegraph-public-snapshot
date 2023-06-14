@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -52,7 +53,7 @@ func TestNullIDResilience(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	sr := New(store.New(db, &observation.TestContext, nil), gitserver.NewMockClient())
+	sr := New(edb.NewEnterpriseDB(db), store.New(db, &observation.TestContext, nil), gitserver.NewMockClient(), logger)
 
 	s, err := newSchema(db, sr)
 	if err != nil {

@@ -9,6 +9,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -33,18 +35,19 @@ func unmarshalBatchSpecWorkspaceID(id graphql.ID) (batchSpecWorkspaceID int64, e
 	return
 }
 
-func newBatchSpecWorkspaceResolver(ctx context.Context, store *store.Store, workspace *btypes.BatchSpecWorkspace, execution *btypes.BatchSpecWorkspaceExecutionJob, batchSpec *batcheslib.BatchSpec) (graphqlbackend.BatchSpecWorkspaceResolver, error) {
+func newBatchSpecWorkspaceResolver(ctx context.Context, store *store.Store, logger log.Logger, workspace *btypes.BatchSpecWorkspace, execution *btypes.BatchSpecWorkspaceExecutionJob, batchSpec *batcheslib.BatchSpec) (graphqlbackend.BatchSpecWorkspaceResolver, error) {
 	repo, err := store.Repos().Get(ctx, workspace.RepoID)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
 	}
 
-	return newBatchSpecWorkspaceResolverWithRepo(store, workspace, execution, batchSpec, repo), nil
+	return newBatchSpecWorkspaceResolverWithRepo(store, logger, workspace, execution, batchSpec, repo), nil
 }
 
-func newBatchSpecWorkspaceResolverWithRepo(store *store.Store, workspace *btypes.BatchSpecWorkspace, execution *btypes.BatchSpecWorkspaceExecutionJob, batchSpec *batcheslib.BatchSpec, repo *types.Repo) graphqlbackend.BatchSpecWorkspaceResolver {
+func newBatchSpecWorkspaceResolverWithRepo(store *store.Store, logger log.Logger, workspace *btypes.BatchSpecWorkspace, execution *btypes.BatchSpecWorkspaceExecutionJob, batchSpec *batcheslib.BatchSpec, repo *types.Repo) graphqlbackend.BatchSpecWorkspaceResolver {
 	return &batchSpecWorkspaceResolver{
 		store:        store,
+		logger:       logger,
 		workspace:    workspace,
 		execution:    execution,
 		batchSpec:    batchSpec,
@@ -55,6 +58,7 @@ func newBatchSpecWorkspaceResolverWithRepo(store *store.Store, workspace *btypes
 
 type batchSpecWorkspaceResolver struct {
 	store     *store.Store
+	logger    log.Logger
 	workspace *btypes.BatchSpecWorkspace
 	execution *btypes.BatchSpecWorkspaceExecutionJob
 	batchSpec *batcheslib.BatchSpec
@@ -298,7 +302,7 @@ func (r *batchSpecWorkspaceResolver) BatchSpec(ctx context.Context) (graphqlback
 	if err != nil {
 		return nil, err
 	}
-	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
+	return &batchSpecResolver{store: r.store, batchSpec: batchSpec, logger: r.logger}, nil
 }
 
 func (r *batchSpecWorkspaceResolver) Ignored() bool {

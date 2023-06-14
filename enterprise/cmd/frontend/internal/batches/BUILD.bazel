@@ -13,6 +13,7 @@ go_library(
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types/scheduler/window",
         "//enterprise/internal/codeintel",
+        "//enterprise/internal/database",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",

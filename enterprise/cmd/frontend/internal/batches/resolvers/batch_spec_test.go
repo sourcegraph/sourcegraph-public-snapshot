@@ -512,6 +512,7 @@ func TestBatchSpecResolver_Files(t *testing.T) {
 	resolver := batchSpecResolver{
 		store:     bstore,
 		batchSpec: &btypes.BatchSpec{RandID: "123"},
+		logger:    logger,
 	}
 
 	after := "1"

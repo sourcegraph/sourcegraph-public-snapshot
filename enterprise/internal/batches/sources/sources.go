@@ -9,10 +9,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	ghaauth "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
+	ghastore "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -21,10 +25,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// ErrMissingCredentials is returned by WithAuthenticatorForUser,
-// if the user that applied the last batch change/changeset spec doesn't have
-// UserCredentials for the given repository and is not a site-admin (so no
-// fallback to the global credentials is possible).
+// ErrExternalServiceNotGitHub is returned when authenticating a ChangesetSource for a
+// changeset if the method is invoked with AuthenticationStrategyGitHubApp, but the
+// external service that is loaded for the changeset repo is not a GitHub connection.
+var ErrExternalServiceNotGitHub = errors.New("cannot use GitHub App authentication with non-GitHub external service")
+
+// ErrNoGitHubAppConfigured is returned when authenticating a ChangesetSource for a
+// changeset if the method is invoked with AuthenticationStrategyGitHubApp and the code
+// host is GitHub, but there is no GitHub App configured for it for Batch Changes.
+var ErrNoGitHubAppConfigured = errors.New("no batches GitHub App found that can authenticate to this code host")
+
+// ErrNoGitHubAppInstallation is returned when authenticating a ChangesetSource for a
+// changeset if the method is invoked with AuthenticationStrategyGitHubApp, the code host
+// is GitHub, and a GitHub App is configured for it for Batch Changes, but there is no
+// recorded installation of that app for provided account namepsace.
+var ErrNoGitHubAppInstallation = errors.New("no installations of GitHub App found for this account namespace")
+
+// ErrMissingCredentials is returned when authenticating a ChangesetSource for a changeset
+// or a user, if no user or site credential can be found that can authenticate to the code
+// host.
 var ErrMissingCredentials = errors.New("no credential found that can authenticate to the code host")
 
 // ErrNoPushCredentials is returned by gitserverPushConfig if the
@@ -40,6 +59,20 @@ func (e ErrNoPushCredentials) Error() string {
 // doesn't support SSH pushes.
 var ErrNoSSHCredential = errors.New("authenticator doesn't support SSH")
 
+// AuthenticationStrategy defines the possible types of authentication strategy that can
+// be used to authenticate a ChangesetSource for a changeset.
+type AuthenticationStrategy string
+
+const (
+	// Authenticate using a traditional PAT configured by the user or site admin. This
+	// should be used for all code host interactions unless another authentication
+	// strategy is explicitly required.
+	AuthenticationStrategyUserCredential AuthenticationStrategy = "USER_CREDENTIAL"
+	// Authenticate using a GitHub App. This should only be used for GitHub code hosts for
+	// commit signing interactions.
+	AuthenticationStrategyGitHubApp AuthenticationStrategy = "GITHUB_APP"
+)
+
 type SourcerStore interface {
 	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error)
 	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error)
@@ -47,6 +80,7 @@ type SourcerStore interface {
 	Repos() database.RepoStore
 	ExternalServices() database.ExternalServiceStore
 	UserCredentials() database.UserCredentialsStore
+	GitHubAppsStore() ghastore.GitHubAppsStore
 }
 
 // Sourcer exposes methods to get a ChangesetSource based on a changeset, repo or
@@ -54,17 +88,20 @@ type SourcerStore interface {
 type Sourcer interface {
 	// ForChangeset returns a ChangesetSource for the given changeset. The changeset.RepoID
 	// is used to find the matching code host.
-	// It authenticates the given ChangesetSource with a
-	// credential appropriate to sync or reconcile the given changeset. If the
-	// changeset was created by a batch change, then authentication will be based on
-	// the first available option of:
+	//
+	// It authenticates the given ChangesetSource with a credential appropriate to sync or
+	// reconcile the given changeset based on the AuthenticationStrategy. Under most
+	// conditions, the AuthenticationStrategy should be
+	// AuthenticationStrategyUserCredential. When this strategy is used, if the changeset
+	// was created by a batch change, then authentication will be based on the first
+	// available option of:
 	//
 	// 1. The last applying user's credentials.
 	// 2. Any available site credential matching the changesets repo.
 	//
-	// If the changeset was not created by a batch change, then a site credential
-	// will be used.
-	ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset) (ChangesetSource, error)
+	// If the changeset was not created by a batch change, then a site credential will be
+	// used. If another AuthenticationStrategy is specified, then it will be used.
+	ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy) (ChangesetSource, error)
 	// ForUser returns a ChangesetSource for changesets on the given repo.
 	// It will be authenticated with the given authenticator.
 	ForUser(ctx context.Context, tx SourcerStore, uid int32, repo *types.Repo) (ChangesetSource, error)
@@ -78,7 +115,7 @@ func NewSourcer(cf *httpcli.Factory) Sourcer {
 	return newSourcer(cf, loadBatchesSource)
 }
 
-type changesetSourceFactory func(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, externalServiceIDs []int64) (ChangesetSource, error)
+type changesetSourceFactory func(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService) (ChangesetSource, error)
 
 type sourcer struct {
 	cf        *httpcli.Factory
@@ -92,16 +129,39 @@ func newSourcer(cf *httpcli.Factory, csf changesetSourceFactory) Sourcer {
 	}
 }
 
-func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset) (ChangesetSource, error) {
+func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy) (ChangesetSource, error) {
 	repo, err := tx.Repos().Get(ctx, ch.RepoID)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading changeset repo")
 	}
+
 	// Consider all available external services for this repo.
-	css, err := s.newSource(ctx, tx, s.cf, repo.ExternalServiceIDs())
+	extSvc, err := loadExternalService(ctx, tx.ExternalServices(), database.ExternalServicesListOptions{
+		IDs: repo.ExternalServiceIDs(),
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "loading external service")
+	}
+
+	if as == AuthenticationStrategyGitHubApp && extSvc.Kind != extsvc.KindGitHub {
+		return nil, ErrExternalServiceNotGitHub
+	}
+
+	css, err := s.newSource(ctx, tx, s.cf, extSvc)
 	if err != nil {
 		return nil, err
 	}
+
+	if as == AuthenticationStrategyGitHubApp {
+		repoMetadata := repo.Metadata.(*github.Repository)
+		owner, _, err := github.SplitRepositoryNameWithOwner(repoMetadata.NameWithOwner)
+		if err != nil {
+			return nil, errors.Wrap(err, "getting owner from repo name")
+		}
+
+		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, owner)
+	}
+
 	if ch.OwnedByBatchChangeID != 0 {
 		batchChange, err := loadBatchChange(ctx, tx, ch.OwnedByBatchChangeID)
 		if err != nil {
@@ -116,7 +176,13 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 
 func (s *sourcer) ForUser(ctx context.Context, tx SourcerStore, uid int32, repo *types.Repo) (ChangesetSource, error) {
 	// Consider all available external services for this repo.
-	css, err := s.newSource(ctx, tx, s.cf, repo.ExternalServiceIDs())
+	extSvc, err := loadExternalService(ctx, tx.ExternalServices(), database.ExternalServicesListOptions{
+		IDs: repo.ExternalServiceIDs(),
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "loading external service")
+	}
+	css, err := s.newSource(ctx, tx, s.cf, extSvc)
 	if err != nil {
 		return nil, err
 	}
@@ -133,20 +199,22 @@ func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au au
 	if err != nil {
 		return nil, errors.Wrap(err, "loading external service IDs")
 	}
-	css, err := s.newSource(ctx, tx, s.cf, extSvcIDs)
+
+	extSvc, err := loadExternalService(ctx, tx.ExternalServices(), database.ExternalServicesListOptions{
+		IDs: extSvcIDs,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "loading external service")
+	}
+
+	css, err := s.newSource(ctx, tx, s.cf, extSvc)
 	if err != nil {
 		return nil, err
 	}
 	return css.WithAuthenticator(au)
 }
 
-func loadBatchesSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, externalServiceIDs []int64) (ChangesetSource, error) {
-	extSvc, err := loadExternalService(ctx, tx.ExternalServices(), database.ExternalServicesListOptions{
-		IDs: externalServiceIDs,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "loading external service")
-	}
+func loadBatchesSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService) (ChangesetSource, error) {
 	css, err := buildChangesetSource(ctx, cf, extSvc)
 	if err != nil {
 		return nil, errors.Wrap(err, "building changeset source")
@@ -235,6 +303,66 @@ func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*btypes
 	}
 
 	return batchChange, nil
+}
+
+// withGitHubAppAuthenticator authenticates the given ChangesetSource with a GitHub App
+// installation token, if the external service is a GitHub connection and a GitHub App has
+// been configured for it for use with Batch Changes in the provided account namespace. If
+// the external service is not a GitHub connection, ErrExternalServiceNotGitHub is
+// returned. If the external service is a GitHub connection, but no batches domain GitHub
+// App has been configured for it, ErrNoGitHubAppConfigured is returned. If a batches
+// domain GitHub App has been configured, but no installation exists for the given
+// account, ErrNoGitHubAppInstallation is returned.
+func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, extSvc *types.ExternalService, account string) (ChangesetSource, error) {
+	if extSvc.Kind != extsvc.KindGitHub {
+		return nil, ErrExternalServiceNotGitHub
+	}
+
+	cfg, err := extSvc.Configuration(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "loading external service configuration")
+	}
+	config, ok := cfg.(*schema.GitHubConnection)
+	if !ok {
+		return nil, errors.Wrap(err, "invalid configuration type")
+	}
+
+	baseURL, err := url.Parse(config.Url)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing GitHub connection URL")
+	}
+	baseURL = extsvc.NormalizeBaseURL(baseURL)
+
+	app, err := tx.GitHubAppsStore().GetByDomain(ctx, types.BatchesGitHubAppDomain, baseURL.String())
+	if err != nil {
+		return nil, ErrNoGitHubAppConfigured
+	}
+
+	installID, err := tx.GitHubAppsStore().GetInstallID(ctx, app.AppID, account)
+	if err != nil || installID == 0 {
+		return nil, ErrNoGitHubAppInstallation
+	}
+
+	appAuther, err := ghaauth.NewGitHubAppAuthenticator(app.AppID, []byte(app.PrivateKey))
+	if err != nil {
+		return nil, errors.Wrap(err, "creating GitHub App authenticator")
+	}
+
+	baseURL, err = url.Parse(app.BaseURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing GitHub App base URL")
+	}
+	// Unfortunately as of today (2023-05-26), the GitHub REST API only supports signing
+	// commits with a GitHub App when it authenticates as an installation, rather than
+	// when it authenticates on behalf of a user. This means that commits will be authored
+	// by the GitHub App installation bot account, rather than by the user who authored
+	// the batch change. If GitHub adds support to their REST API for signing commits with
+	// a GitHub App authenticated on behalf of a user, we should switch to using that
+	// access token here. See here for more details:
+	// https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/about-authentication-with-a-github-app
+	installationAuther := ghaauth.NewInstallationAccessToken(baseURL, installID, appAuther, keyring.Default().GitHubAppKey)
+
+	return css.WithAuthenticator(installationAuther)
 }
 
 // withAuthenticatorForUser authenticates the given ChangesetSource with a credential

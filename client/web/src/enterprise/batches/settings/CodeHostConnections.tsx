@@ -55,7 +55,7 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
 }) => {
     const { loading, hasNextPage, fetchMore, connection, error, refetchAll } = connectionResult
     return (
-        <Container>
+        <Container className="mb-3">
             <H3>Code host tokens</H3>
             {headerLine}
             <ConnectionContainer className="mb-3">

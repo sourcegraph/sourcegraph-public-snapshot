@@ -3,6 +3,9 @@ package githubapp
 import (
 	"context"
 	"net/url"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -72,20 +75,24 @@ func (r *resolver) DeleteGitHubApp(ctx context.Context, args *graphqlbackend.Del
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *resolver) GitHubApps(ctx context.Context) (graphqlbackend.GitHubAppConnectionResolver, error) {
+func (r *resolver) GitHubApps(ctx context.Context, args *graphqlbackend.GitHubAppsArgs) (graphqlbackend.GitHubAppConnectionResolver, error) {
 	// 🚨 SECURITY: Check whether user is site-admin
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	apps, err := r.db.GitHubApps().List(ctx)
+	domain, err := parseDomain(args.Domain)
+	if err != nil {
+		return nil, err
+	}
+	apps, err := r.db.GitHubApps().List(ctx, domain)
 	if err != nil {
 		return nil, err
 	}
 
 	resolvers := make([]graphqlbackend.GitHubAppResolver, len(apps))
 	for i := range apps {
-		resolvers[i] = NewGitHubAppResolver(r.db, apps[i])
+		resolvers[i] = NewGitHubAppResolver(r.db, apps[i], r.logger)
 	}
 
 	gitHubAppConnection := &gitHubAppConnectionResolver{
@@ -94,6 +101,22 @@ func (r *resolver) GitHubApps(ctx context.Context) (graphqlbackend.GitHubAppConn
 	}
 
 	return gitHubAppConnection, nil
+}
+
+func parseDomain(s *string) (*itypes.GitHubAppDomain, error) {
+	if s == nil {
+		return nil, nil
+	}
+	switch strings.ToUpper(*s) {
+	case "REPOS":
+		domain := itypes.ReposGitHubAppDomain
+		return &domain, nil
+	case "BATCHES":
+		domain := itypes.BatchesGitHubAppDomain
+		return &domain, nil
+	default:
+		return nil, errors.Errorf("unknown domain %q", *s)
+	}
 }
 
 func (r *resolver) GitHubApp(ctx context.Context, args *graphqlbackend.GitHubAppArgs) (graphqlbackend.GitHubAppResolver, error) {
@@ -129,8 +152,9 @@ func (r *resolver) gitHubAppByID(ctx context.Context, id graphql.ID) (*gitHubApp
 	}
 
 	return &gitHubAppResolver{
-		app: app,
-		db:  r.db,
+		app:    app,
+		db:     r.db,
+		logger: r.logger,
 	}, nil
 }
 
@@ -146,14 +170,15 @@ func (r *resolver) gitHubAppByAppID(ctx context.Context, appID int, baseURL stri
 	}
 
 	return &gitHubAppResolver{
-		app: app,
-		db:  r.db,
+		app:    app,
+		db:     r.db,
+		logger: r.logger,
 	}, nil
 }
 
 // NewGitHubAppResolver creates a new GitHubAppResolver from a GitHubApp.
-func NewGitHubAppResolver(db edb.EnterpriseDB, app *types.GitHubApp) *gitHubAppResolver {
-	return &gitHubAppResolver{app: app, db: db}
+func NewGitHubAppResolver(db edb.EnterpriseDB, app *types.GitHubApp, logger log.Logger) *gitHubAppResolver {
+	return &gitHubAppResolver{app: app, db: db, logger: logger}
 }
 
 type gitHubAppConnectionResolver struct {
@@ -171,8 +196,13 @@ func (r *gitHubAppConnectionResolver) TotalCount(ctx context.Context) int32 {
 
 // gitHubAppResolver is a GraphQL node resolver for GitHubApps.
 type gitHubAppResolver struct {
-	app *types.GitHubApp
-	db  edb.EnterpriseDB
+	logger log.Logger
+	app    *types.GitHubApp
+	db     edb.EnterpriseDB
+
+	once          sync.Once
+	installations []graphqlbackend.GitHubAppInstallation
+	err           error
 }
 
 func (r *gitHubAppResolver) ID() graphql.ID {
@@ -185,6 +215,10 @@ func (r *gitHubAppResolver) AppID() int32 {
 
 func (r *gitHubAppResolver) Name() string {
 	return r.app.Name
+}
+
+func (r *gitHubAppResolver) Domain() string {
+	return r.app.Domain.ToGraphQL()
 }
 
 func (r *gitHubAppResolver) Slug() string {
@@ -219,60 +253,12 @@ func (r *gitHubAppResolver) UpdatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.app.UpdatedAt}
 }
 
-func (r *gitHubAppResolver) Installations(ctx context.Context) (installations []graphqlbackend.GitHubAppInstallation) {
-	auther, err := ghauth.NewGitHubAppAuthenticator(int(r.AppID()), []byte(r.app.PrivateKey))
+func (r *gitHubAppResolver) Installations(ctx context.Context) (installations []graphqlbackend.GitHubAppInstallation, err error) {
+	installations, err = r.compute(ctx)
 	if err != nil {
-		return nil
+		return []graphqlbackend.GitHubAppInstallation{}, err
 	}
-
-	baseURL, err := url.Parse(r.app.BaseURL)
-	if err != nil {
-		return nil
-	}
-	apiURL, _ := github.APIRoot(baseURL)
-
-	cli := github.NewV3Client(log.Scoped("GitHubAppResolver", ""), "", apiURL, auther, nil)
-	installs, err := cli.GetAppInstallations(ctx)
-	if err != nil {
-		return nil
-	}
-
-	extsvcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
-		Kinds: []string{extsvc.KindGitHub},
-	})
-	if err != nil {
-		return nil
-	}
-
-	for _, install := range installs {
-		var installationExtsvcs []*itypes.ExternalService
-		for _, es := range extsvcs {
-			parsed, err := extsvc.ParseEncryptableConfig(ctx, extsvc.KindGitHub, es.Config)
-			if err != nil {
-				continue
-			}
-			c := parsed.(*schema.GitHubConnection)
-			if c.GitHubAppDetails == nil || c.GitHubAppDetails.AppID != r.app.AppID || c.Url != r.app.BaseURL || c.GitHubAppDetails.InstallationID != int(install.GetID()) {
-				continue
-			}
-			installationExtsvcs = append(installationExtsvcs, es)
-		}
-
-		installations = append(installations, graphqlbackend.GitHubAppInstallation{
-			DB:         r.db,
-			InstallID:  int32(*install.ID),
-			InstallURL: install.GetHTMLURL(),
-			InstallAccount: graphqlbackend.GitHubAppInstallationAccount{
-				AccountLogin:     install.Account.GetLogin(),
-				AccountAvatarURL: install.Account.GetAvatarURL(),
-				AccountURL:       install.Account.GetHTMLURL(),
-				AccountType:      install.Account.GetType(),
-			},
-			InstallExternalServices: installationExtsvcs,
-		})
-	}
-
-	return
+	return installations, nil
 }
 
 func (r *gitHubAppResolver) Webhook(ctx context.Context) graphqlbackend.WebhookResolver {
@@ -284,4 +270,86 @@ func (r *gitHubAppResolver) Webhook(ctx context.Context) graphqlbackend.WebhookR
 		return nil
 	}
 	return resolvers.NewWebhookResolver(r.db, hook)
+}
+
+func (r *gitHubAppResolver) compute(ctx context.Context) ([]graphqlbackend.GitHubAppInstallation, error) {
+	r.once.Do(func() {
+		installs, err := r.db.GitHubApps().GetInstallations(ctx, r.app.ID)
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		// We use this opportunity to sync installations in our database. This is done in
+		// a goroutine so that we don't block the request completion.
+		go r.syncInstallations()
+
+		extsvcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
+			Kinds: []string{extsvc.KindGitHub},
+		})
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		for _, install := range installs {
+			var installationExtsvcs []*itypes.ExternalService
+			for _, es := range extsvcs {
+				parsed, err := extsvc.ParseEncryptableConfig(ctx, extsvc.KindGitHub, es.Config)
+				if err != nil {
+					continue
+				}
+				c := parsed.(*schema.GitHubConnection)
+				if c.GitHubAppDetails == nil || c.GitHubAppDetails.AppID != r.app.AppID || c.Url != r.app.BaseURL || c.GitHubAppDetails.InstallationID != int(install.InstallationID) {
+					continue
+				}
+				installationExtsvcs = append(installationExtsvcs, es)
+			}
+
+			r.installations = append(r.installations, graphqlbackend.GitHubAppInstallation{
+				DB:         r.db,
+				InstallID:  int32(install.InstallationID),
+				InstallURL: install.URL,
+				InstallAccount: graphqlbackend.GitHubAppInstallationAccount{
+					AccountLogin:     install.AccountLogin,
+					AccountAvatarURL: install.AccountAvatarURL,
+					AccountURL:       install.AccountURL,
+					AccountType:      install.AccountType,
+				},
+				InstallExternalServices: installationExtsvcs,
+			})
+		}
+	})
+	return r.installations, r.err
+}
+
+// syncInstallations syncs the GitHub App Installations in our database with those
+// found on GitHub.com. This method only logs errors rather than assigning them to
+// the resolver because they should not block the request from completing.
+func (r *gitHubAppResolver) syncInstallations() {
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+	defer cancel()
+
+	r.logger.Info("Performing opportunistic GitHub App Installations sync", log.String("app_name", r.app.Name))
+
+	auther, err := ghauth.NewGitHubAppAuthenticator(int(r.AppID()), []byte(r.app.PrivateKey))
+	if err != nil {
+		r.logger.Warn("Error creating GitHub App authenticator", log.Error(err))
+		return
+	}
+
+	baseURL, err := url.Parse(r.app.BaseURL)
+	if err != nil {
+		r.logger.Warn("Error parsing GitHub App base URL", log.Error(err))
+		return
+	}
+	apiURL, _ := github.APIRoot(baseURL)
+
+	client := github.NewV3Client(r.logger, "", apiURL, auther, nil)
+
+	errs := r.db.GitHubApps().SyncInstallations(ctx, *r.app, r.logger, client)
+	if errs != nil && len(errs.Errors()) > 0 {
+		r.logger.Warn("Error syncing GitHub App Installations", log.Error(errs))
+	}
 }

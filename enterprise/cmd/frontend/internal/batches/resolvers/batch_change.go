@@ -10,6 +10,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -30,6 +32,7 @@ var _ graphqlbackend.BatchChangeResolver = &batchChangeResolver{}
 type batchChangeResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
+	logger          log.Logger
 
 	batchChange *btypes.BatchChange
 
@@ -200,6 +203,7 @@ func (r *batchChangeResolver) Changesets(
 	return &changesetsConnectionResolver{
 		store:           r.store,
 		gitserverClient: r.gitserverClient,
+		logger:          r.logger,
 		opts:            opts,
 		optsSafe:        safe,
 	}, nil
@@ -281,7 +285,7 @@ func (r *batchChangeResolver) CurrentSpec(ctx context.Context) (graphqlbackend.B
 		return nil, err
 	}
 
-	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
+	return &batchSpecResolver{store: r.store, batchSpec: batchSpec, logger: r.logger}, nil
 }
 
 func (r *batchChangeResolver) BulkOperations(
@@ -313,6 +317,7 @@ func (r *batchChangeResolver) BulkOperations(
 		gitserverClient: r.gitserverClient,
 		batchChangeID:   r.batchChange.ID,
 		opts:            opts,
+		logger:          r.logger,
 	}, nil
 }
 
@@ -352,5 +357,5 @@ func (r *batchChangeResolver) BatchSpecs(
 		opts.Cursor = int64(id)
 	}
 
-	return &batchSpecConnectionResolver{store: r.store, opts: opts}, nil
+	return &batchSpecConnectionResolver{store: r.store, logger: r.logger, opts: opts}, nil
 }

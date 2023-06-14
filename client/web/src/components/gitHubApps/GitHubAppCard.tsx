@@ -1,13 +1,11 @@
-import React, { useCallback } from 'react'
+import React, { useState } from 'react'
 
 import { mdiDelete, mdiOpenInNew, mdiCogOutline } from '@mdi/js'
 import classNames from 'classnames'
-import { DeleteGitHubAppResult, DeleteGitHubAppVariables } from 'src/graphql-operations'
 
-import { useMutation } from '@sourcegraph/http-client'
-import { Button, Icon, Tooltip, Container, AnchorLink, ButtonLink } from '@sourcegraph/wildcard'
+import { Button, Icon, Container, AnchorLink, ButtonLink } from '@sourcegraph/wildcard'
 
-import { DELETE_GITHUB_APP_BY_ID_QUERY } from './backend'
+import { RemoveGitHubAppModal } from './RemoveGitHubAppModal'
 
 import styles from './GitHubAppCard.module.scss'
 
@@ -27,25 +25,13 @@ interface GitHubAppCardProps {
 }
 
 export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, refetch }) => {
-    const [deleteGitHubApp, { loading }] = useMutation<DeleteGitHubAppResult, DeleteGitHubAppVariables>(
-        DELETE_GITHUB_APP_BY_ID_QUERY
-    )
-
-    const onDelete = useCallback<React.MouseEventHandler>(async () => {
-        if (!window.confirm(`Delete the GitHub App ${app.name}?`)) {
-            return
-        }
-        try {
-            await deleteGitHubApp({
-                variables: { gitHubApp: app.id },
-            })
-        } finally {
-            refetch()
-        }
-    }, [app, deleteGitHubApp, refetch])
+    const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
 
     return (
         <Container className="d-flex align-items-center mb-2 p-3">
+            {removeModalOpen && (
+                <RemoveGitHubAppModal onCancel={() => setRemoveModalOpen(false)} afterDelete={refetch} app={app} />
+            )}
             <span className={classNames(styles.appLink, 'd-flex align-items-center')}>
                 <img className={classNames('mr-3', styles.logo)} src={app.logo} alt="app logo" aria-hidden={true} />
                 <span>
@@ -62,11 +48,14 @@ export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, refetch }) =>
                 <ButtonLink className="mr-2" aria-label="Edit" to={app.id} variant="secondary" size="sm">
                     <Icon aria-hidden={true} svgPath={mdiCogOutline} /> Edit
                 </ButtonLink>
-                <Tooltip content="Delete GitHub App">
-                    <Button aria-label="Delete" onClick={onDelete} disabled={loading} variant="danger" size="sm">
-                        <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete
-                    </Button>
-                </Tooltip>
+                <Button
+                    aria-label="Remove GitHub App"
+                    onClick={() => setRemoveModalOpen(true)}
+                    variant="danger"
+                    size="sm"
+                >
+                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Remove
+                </Button>
             </div>
         </Container>
     )

@@ -84,6 +84,15 @@ type Repo struct {
 	KeyValuePairs map[string]*string `json:",omitempty"`
 }
 
+type GitHubAppDomain string
+
+func (s GitHubAppDomain) ToGraphQL() string { return strings.ToUpper(string(s)) }
+
+const (
+	ReposGitHubAppDomain   GitHubAppDomain = "repos"
+	BatchesGitHubAppDomain GitHubAppDomain = "batches"
+)
+
 // RepoCommit is a record of a repo and a corresponding commit.
 type RepoCommit struct {
 	ID                   int64

@@ -665,6 +665,34 @@ func (c *V4Client) DeleteBranch(ctx context.Context, owner, repo, branch string)
 	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).DeleteBranch(ctx, owner, repo, branch)
 }
 
+// GetRef gets the contents of a single commit reference in a repository. The ref should
+// be supplied in a fully qualified format, such as `refs/heads/branch` or
+// `refs/tags/tag`.
+func (c *V4Client) GetRef(ctx context.Context, owner, repo, ref string) (*restCommitRef, error) {
+	logger := c.log.Scoped("GetRef", "temporary client for getting a ref on GitHub")
+	// We technically don't need to use the REST API for this but it's just a bit easier.
+	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).GetRef(ctx, owner, repo, ref)
+}
+
+// CreateCommit creates a commit in the given repository based on a tree object.
+func (c *V4Client) CreateCommit(ctx context.Context, owner, repo, message, tree string, parents []string, author, committer *restAuthorCommiter) (*restCommit, error) {
+	logger := c.log.Scoped("CreateCommit", "temporary client for creating a commit on GitHub")
+	// As of May 2023, the GraphQL API does not expose any mutations for creating commits
+	// other than one which requires sending the entire file contents for any files
+	// changed by the commit, which is not feasible for creating large commits. Therefore,
+	// we fall back on a REST API endpoint which allows us to create a commit based on a
+	// tree object.
+	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).CreateCommit(ctx, owner, repo, message, tree, parents, author, committer)
+}
+
+// UpdateRef updates the ref of a branch to point to the given commit. The ref should be
+// supplied in a fully qualified format, such as `refs/heads/branch` or `refs/tags/tag`.
+func (c *V4Client) UpdateRef(ctx context.Context, owner, repo, ref, commit string) (*restUpdatedRef, error) {
+	logger := c.log.Scoped("UpdateRef", "temporary client for updating a ref on GitHub")
+	// We technically don't need to use the REST API for this but it's just a bit easier.
+	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).UpdateRef(ctx, owner, repo, ref, commit)
+}
+
 type RecentCommittersParams struct {
 	// Repository name
 	Name string

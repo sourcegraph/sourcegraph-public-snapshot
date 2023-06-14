@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, useState } from 'react'
 
 import { ApolloError } from '@apollo/client'
-import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline } from '@mdi/js'
+import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline, mdiDelete, mdiEye } from '@mdi/js'
 import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
@@ -146,18 +146,25 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                                     successMessage={checkCredData ? 'Credential is valid' : undefined}
                                     failedMessage={checkCredError ? 'Credential is not authorized' : undefined}
                                 />
+
                                 <Button
-                                    className="text-danger text-nowrap test-code-host-connection-node-btn-remove"
-                                    onClick={onClickRemove}
-                                    variant="link"
+                                    className="ml-2 text-nowrap test-code-host-connection-node-btn-remove"
                                     aria-label={`Remove credentials for ${codeHostDisplayName}`}
+                                    onClick={onClickRemove}
+                                    variant="danger"
+                                    size="sm"
                                     ref={buttonReference}
                                 >
-                                    Remove
+                                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Remove
                                 </Button>
                                 {node.requiresSSH && (
-                                    <Button onClick={onClickView} className="text-nowrap ml-2" variant="secondary">
-                                        View public key
+                                    <Button
+                                        onClick={onClickView}
+                                        className="text-nowrap ml-2"
+                                        variant="secondary"
+                                        size="sm"
+                                    >
+                                        <Icon aria-hidden={true} svgPath={mdiEye} /> View public key
                                     </Button>
                                 )}
                             </>
@@ -173,6 +180,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                                 aria-label={`Add credentials for ${codeHostDisplayName}`}
                                 variant="success"
                                 ref={buttonReference}
+                                size="sm"
                             >
                                 Add credentials
                             </Button>

@@ -1009,6 +1009,8 @@ describe('Batches', () => {
                                         : null,
                                     requiresSSH: false,
                                     requiresUsername: false,
+                                    supportsCommitSigning: false,
+                                    commitSigningConfiguration: null,
                                 },
                             ],
                         },

@@ -14,11 +14,15 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	githubapp "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/githubappauth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -120,8 +124,9 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 	return timestamp
 }
 
-func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, r)
+func newSchema(db database.DB, bcr graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
+	ghar := githubapp.NewResolver(log.NoOp(), edb.NewEnterpriseDB(db))
+	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, bcr, ghar)
 }
 
 func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore) *types.ExternalService {

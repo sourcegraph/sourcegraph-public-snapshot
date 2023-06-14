@@ -6,8 +6,8 @@ import { GitHubAppByAppIDResult, GitHubAppByAppIDVariables } from '../../graphql
 import { ExternalServiceFieldsWithConfig, LIST_EXTERNAL_SERVICE_FRAGMENT } from '../externalServices/backend'
 
 export const GITHUB_APPS_QUERY = gql`
-    query GitHubApps {
-        gitHubApps {
+    query GitHubApps($domain: GitHubAppDomain) {
+        gitHubApps(domain: $domain) {
             nodes {
                 id
                 appID
@@ -46,40 +46,49 @@ export const GITHUB_APPS_WITH_INSTALLATIONS_QUERY = gql`
     }
 `
 
-export const GITHUB_APP_BY_ID_QUERY = gql`
+const GITHUB_APP_BY_ID_FRAGMENT = gql`
+    fragment GitHubAppByIDFields on GitHubApp {
+        id
+        appID
+        domain
+        baseURL
+        name
+        slug
+        appURL
+        baseURL
+        clientID
+        logo
+        createdAt
+        updatedAt
+        installations {
+            id
+            url
+            account {
+                login
+                avatarURL
+                url
+                type
+            }
+            externalServices(first: 100) {
+                nodes {
+                    ...ListExternalServiceFields
+                }
+                totalCount
+            }
+        }
+        webhook {
+            id
+        }
+    }
+
     ${LIST_EXTERNAL_SERVICE_FRAGMENT}
+`
+
+export const GITHUB_APP_BY_ID_QUERY = gql`
+    ${GITHUB_APP_BY_ID_FRAGMENT}
     query GitHubAppByID($id: ID!) {
         gitHubApp(id: $id) {
-            id
-            appID
-            baseURL
-            name
-            slug
-            appURL
-            baseURL
-            clientID
-            logo
-            createdAt
-            updatedAt
-            installations {
-                id
-                url
-                account {
-                    login
-                    avatarURL
-                    url
-                    type
-                }
-                externalServices(first: 100) {
-                    nodes {
-                        ...ListExternalServiceFields
-                    }
-                    totalCount
-                }
-            }
-            webhook {
-                id
-            }
+            ...GitHubAppByIDFields
         }
     }
 `

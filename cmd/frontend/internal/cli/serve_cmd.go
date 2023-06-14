@@ -225,7 +225,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		db,
 		gitserver.NewClient(),
 		enterpriseServices.EnterpriseSearchJobs,
-		enterpriseServices.OptionalResolver,
+		[]graphqlbackend.OptionalResolver{enterpriseServices.OptionalResolver},
 	)
 	if err != nil {
 		return err

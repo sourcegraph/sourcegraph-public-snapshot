@@ -554,8 +554,10 @@ type BatchChangesCodeHostResolver interface {
 	ExternalServiceURL() string
 	RequiresSSH() bool
 	RequiresUsername() bool
+	SupportsCommitSigning() bool
 	HasWebhooks() bool
 	Credential() BatchChangesCredentialResolver
+	CommitSigningConfiguration(context.Context) (CommitSigningConfigResolver, error)
 }
 
 type BatchChangesCredentialResolver interface {
@@ -565,6 +567,11 @@ type BatchChangesCredentialResolver interface {
 	SSHPublicKey(ctx context.Context) (*string, error)
 	CreatedAt() gqlutil.DateTime
 	IsSiteCredential() bool
+}
+
+// Only GitHubApps are supported for commit signing for now.
+type CommitSigningConfigResolver interface {
+	ToGitHubApp() (GitHubAppResolver, bool)
 }
 
 type ChangesetCountsArgs struct {

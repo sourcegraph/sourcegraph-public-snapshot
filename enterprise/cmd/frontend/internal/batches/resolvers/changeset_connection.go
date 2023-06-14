@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -17,6 +19,7 @@ import (
 type changesetsConnectionResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
+	logger          log.Logger
 
 	opts store.ListChangesetsOpts
 	// 🚨 SECURITY: If the given opts do not reveal hidden information about a
@@ -57,7 +60,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 
 	resolvers := make([]graphqlbackend.ChangesetResolver, 0, len(changesetsPage))
 	for _, c := range changesetsPage {
-		resolvers = append(resolvers, NewChangesetResolverWithNextSync(r.store, r.gitserverClient, c, reposByID[c.RepoID], scheduledSyncs[c.ID]))
+		resolvers = append(resolvers, NewChangesetResolverWithNextSync(r.store, r.gitserverClient, r.logger, c, reposByID[c.RepoID], scheduledSyncs[c.ID]))
 	}
 
 	return resolvers, nil

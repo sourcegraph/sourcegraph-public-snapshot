@@ -63,6 +63,8 @@ export const Overview: Story = () => (
                         externalServiceURL: 'https://github.com/',
                         requiresSSH: false,
                         requiresUsername: false,
+                        supportsCommitSigning: false,
+                        commitSigningConfiguration: null,
                     }}
                     refetchAll={() => {}}
                     userID="123"

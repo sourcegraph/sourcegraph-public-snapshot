@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -14,6 +16,7 @@ import (
 
 type bulkOperationConnectionResolver struct {
 	store           *store.Store
+	logger          log.Logger
 	batchChangeID   int64
 	opts            store.ListBulkOperationsOpts
 	gitserverClient gitserver.Client
@@ -59,7 +62,7 @@ func (r *bulkOperationConnectionResolver) Nodes(ctx context.Context) ([]graphqlb
 
 	resolvers := make([]graphqlbackend.BulkOperationResolver, 0, len(bulkOperations))
 	for _, b := range bulkOperations {
-		resolvers = append(resolvers, &bulkOperationResolver{store: r.store, gitserverClient: r.gitserverClient, bulkOperation: b})
+		resolvers = append(resolvers, &bulkOperationResolver{store: r.store, gitserverClient: r.gitserverClient, logger: r.logger, bulkOperation: b})
 	}
 
 	return resolvers, nil

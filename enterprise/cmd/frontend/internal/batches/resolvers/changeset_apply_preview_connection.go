@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
@@ -23,6 +25,7 @@ var _ graphqlbackend.ChangesetApplyPreviewConnectionResolver = &changesetApplyPr
 type changesetApplyPreviewConnectionResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
+	logger          log.Logger
 
 	opts              store.GetRewirerMappingsOpts
 	action            *btypes.ReconcilerOperation
@@ -244,7 +247,7 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 
 func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (*rewirerMappingsFacade, error) {
 	r.once.Do(func() {
-		r.mappings = newRewirerMappingsFacade(r.store, r.gitserverClient, r.batchSpecID, r.publicationStates)
+		r.mappings = newRewirerMappingsFacade(r.store, r.gitserverClient, r.logger, r.batchSpecID, r.publicationStates)
 		r.err = r.mappings.compute(ctx, r.opts)
 	})
 
@@ -261,6 +264,7 @@ type rewirerMappingsFacade struct {
 	publicationStates publicationStateMap
 	store             *store.Store
 	gitserverClient   gitserver.Client
+	logger            log.Logger
 
 	// This field is set when ReconcileBatchChange is called.
 	batchChange *btypes.BatchChange
@@ -276,11 +280,12 @@ type rewirerMappingsFacade struct {
 
 // newRewirerMappingsFacade creates a new rewirer mappings object, which
 // includes dry running the batch change reconciliation.
-func newRewirerMappingsFacade(s *store.Store, gitserverClient gitserver.Client, batchSpecID int64, publicationStates publicationStateMap) *rewirerMappingsFacade {
+func newRewirerMappingsFacade(s *store.Store, gitserverClient gitserver.Client, logger log.Logger, batchSpecID int64, publicationStates publicationStateMap) *rewirerMappingsFacade {
 	return &rewirerMappingsFacade{
 		batchSpecID:       batchSpecID,
 		publicationStates: publicationStates,
 		store:             s,
+		logger:            logger,
 		gitserverClient:   gitserverClient,
 		pages:             make(map[rewirerMappingPageOpts]*rewirerMappingPage),
 		resolvers:         make(map[*btypes.RewirerMapping]graphqlbackend.ChangesetApplyPreviewResolver),
@@ -394,6 +399,7 @@ func (rmf *rewirerMappingsFacade) Resolver(mapping *btypes.RewirerMapping) graph
 	rmf.resolvers[mapping] = &changesetApplyPreviewResolver{
 		store:                rmf.store,
 		gitserverClient:      rmf.gitserverClient,
+		logger:               rmf.logger,
 		mapping:              mapping,
 		preloadedBatchChange: rmf.batchChange,
 		batchSpecID:          rmf.batchSpecID,

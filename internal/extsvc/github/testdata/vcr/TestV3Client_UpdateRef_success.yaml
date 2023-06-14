@@ -1,0 +1,216 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"message":"New commit from VCR test!","tree":"9398082230ccd0ea7249b601d364e518dcd89271","parents":["58dd8da9d9099a823c814c528b29b72c9b2ac98b"],"author":{"name":"Sourcegraph
+      VCR Test","email":"dev@sourcegraph.com","date":"2023-06-01T12:00:00Z"},"committer":{"name":"Sourcegraph
+      VCR Test","email":"dev@sourcegraph.com","date":"2023-06-01T12:00:00Z"}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/repos/sourcegraph/automation-testing/git/commits
+    method: POST
+  response:
+    body: '{"sha":"58377a8785c955d5f61293dda65657afddbc8dfc","node_id":"C_kwDODS5xedoAKDU4Mzc3YTg3ODVjOTU1ZDVmNjEyOTNkZGE2NTY1N2FmZGRiYzhkZmM","url":"https://api.github.com/repos/sourcegraph/automation-testing/git/commits/58377a8785c955d5f61293dda65657afddbc8dfc","html_url":"https://github.com/sourcegraph/automation-testing/commit/58377a8785c955d5f61293dda65657afddbc8dfc","author":{"name":"Sourcegraph
+      VCR Test","email":"dev@sourcegraph.com","date":"2023-06-01T12:00:00Z"},"committer":{"name":"Sourcegraph
+      VCR Test","email":"dev@sourcegraph.com","date":"2023-06-01T12:00:00Z"},"tree":{"sha":"9398082230ccd0ea7249b601d364e518dcd89271","url":"https://api.github.com/repos/sourcegraph/automation-testing/git/trees/9398082230ccd0ea7249b601d364e518dcd89271"},"message":"New
+      commit from VCR test!","parents":[{"sha":"58dd8da9d9099a823c814c528b29b72c9b2ac98b","url":"https://api.github.com/repos/sourcegraph/automation-testing/git/commits/58dd8da9d9099a823c814c528b29b72c9b2ac98b","html_url":"https://github.com/sourcegraph/automation-testing/commit/58dd8da9d9099a823c814c528b29b72c9b2ac98b"}],"verification":{"verified":false,"reason":"unsigned","signature":null,"payload":null}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Length:
+      - "1165"
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 02 Jun 2023 00:21:59 GMT
+      Etag:
+      - '"cdb3a3ff85d83e3465ad2751b1db276fea9e6ec3d0cb10f640c13bbc76283b6d"'
+      Location:
+      - https://api.github.com/repos/sourcegraph/automation-testing/git/commits/58377a8785c955d5f61293dda65657afddbc8dfc
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
+        format=json
+      X-Github-Request-Id:
+      - E6EB:3B26:37B0D47:397662E:64793627
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4991"
+      X-Ratelimit-Reset:
+      - "1685668692"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "9"
+      X-Xss-Protection:
+      - "0"
+    status: 201 Created
+    code: 201
+    duration: ""
+- request:
+    body: '{"sha":"58377a8785c955d5f61293dda65657afddbc8dfc","force":true}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/repos/sourcegraph/automation-testing/git/refs/heads/ready-to-update
+    method: PATCH
+  response:
+    body: '{"ref":"refs/heads/ready-to-update","node_id":"MDM6UmVmMjIxMTQ3NTEzOnJlZnMvaGVhZHMvcmVhZHktdG8tdXBkYXRl","url":"https://api.github.com/repos/sourcegraph/automation-testing/git/refs/heads/ready-to-update","object":{"sha":"58377a8785c955d5f61293dda65657afddbc8dfc","type":"commit","url":"https://api.github.com/repos/sourcegraph/automation-testing/git/commits/58377a8785c955d5f61293dda65657afddbc8dfc"}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 02 Jun 2023 00:21:59 GMT
+      Etag:
+      - W/"ac7ee35847853e99968ca8eaa05cf5e76a9278acd18fb3df2f67f457ff5db745"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
+        format=json
+      X-Github-Request-Id:
+      - E6EB:3B26:37B0D89:397666C:64793627
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4990"
+      X-Ratelimit-Reset:
+      - "1685668692"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "10"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"sha":"c2f0a019668a800df480f07dba5d9dcaa0f64350","force":true}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/repos/sourcegraph/automation-testing/git/refs/heads/ready-to-update
+    method: PATCH
+  response:
+    body: '{"ref":"refs/heads/ready-to-update","node_id":"MDM6UmVmMjIxMTQ3NTEzOnJlZnMvaGVhZHMvcmVhZHktdG8tdXBkYXRl","url":"https://api.github.com/repos/sourcegraph/automation-testing/git/refs/heads/ready-to-update","object":{"sha":"c2f0a019668a800df480f07dba5d9dcaa0f64350","type":"commit","url":"https://api.github.com/repos/sourcegraph/automation-testing/git/commits/c2f0a019668a800df480f07dba5d9dcaa0f64350"}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 02 Jun 2023 00:22:00 GMT
+      Etag:
+      - W/"1e739eeb0851df1e4c1da3af8fee8716386c2f692927753be53e54f1e7796bc0"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
+        format=json
+      X-Github-Request-Id:
+      - E6EB:3B26:37B0DD9:39766C3:64793627
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4989"
+      X-Ratelimit-Reset:
+      - "1685668692"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "11"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""

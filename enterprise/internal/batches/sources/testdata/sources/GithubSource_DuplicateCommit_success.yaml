@@ -1,0 +1,202 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/repos/sourcegraph/automation-testing/commits/refs/heads/duplicate-commits-on-me
+    method: GET
+  response:
+    body: '{"sha":"d0dee216cbdb14a40d7b73cef3cbe0a435b268df","node_id":"C_kwDODS5xedoAKGQwZGVlMjE2Y2JkYjE0YTQwZDdiNzNjZWYzY2JlMGE0MzViMjY4ZGY","commit":{"author":{"name":"Kelli
+      Rockwell","email":"kellirockwell@gmail.com","date":"2023-06-02T03:56:20Z"},"committer":{"name":"Kelli
+      Rockwell","email":"kellirockwell@gmail.com","date":"2023-06-02T03:56:20Z"},"message":"Test
+      commit from VCR tests","tree":{"sha":"00c2308a9244a5b46d0812884a169f5df1bba817","url":"https://api.github.com/repos/sourcegraph/automation-testing/git/trees/00c2308a9244a5b46d0812884a169f5df1bba817"},"url":"https://api.github.com/repos/sourcegraph/automation-testing/git/commits/d0dee216cbdb14a40d7b73cef3cbe0a435b268df","comment_count":0,"verification":{"verified":false,"reason":"unsigned","signature":null,"payload":null}},"url":"https://api.github.com/repos/sourcegraph/automation-testing/commits/d0dee216cbdb14a40d7b73cef3cbe0a435b268df","html_url":"https://github.com/sourcegraph/automation-testing/commit/d0dee216cbdb14a40d7b73cef3cbe0a435b268df","comments_url":"https://api.github.com/repos/sourcegraph/automation-testing/commits/d0dee216cbdb14a40d7b73cef3cbe0a435b268df/comments","author":{"login":"courier-new","id":8942601,"node_id":"MDQ6VXNlcjg5NDI2MDE=","avatar_url":"https://avatars.githubusercontent.com/u/8942601?v=4","gravatar_id":"","url":"https://api.github.com/users/courier-new","html_url":"https://github.com/courier-new","followers_url":"https://api.github.com/users/courier-new/followers","following_url":"https://api.github.com/users/courier-new/following{/other_user}","gists_url":"https://api.github.com/users/courier-new/gists{/gist_id}","starred_url":"https://api.github.com/users/courier-new/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/courier-new/subscriptions","organizations_url":"https://api.github.com/users/courier-new/orgs","repos_url":"https://api.github.com/users/courier-new/repos","events_url":"https://api.github.com/users/courier-new/events{/privacy}","received_events_url":"https://api.github.com/users/courier-new/received_events","type":"User","site_admin":false},"committer":{"login":"courier-new","id":8942601,"node_id":"MDQ6VXNlcjg5NDI2MDE=","avatar_url":"https://avatars.githubusercontent.com/u/8942601?v=4","gravatar_id":"","url":"https://api.github.com/users/courier-new","html_url":"https://github.com/courier-new","followers_url":"https://api.github.com/users/courier-new/followers","following_url":"https://api.github.com/users/courier-new/following{/other_user}","gists_url":"https://api.github.com/users/courier-new/gists{/gist_id}","starred_url":"https://api.github.com/users/courier-new/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/courier-new/subscriptions","organizations_url":"https://api.github.com/users/courier-new/orgs","repos_url":"https://api.github.com/users/courier-new/repos","events_url":"https://api.github.com/users/courier-new/events{/privacy}","received_events_url":"https://api.github.com/users/courier-new/received_events","type":"User","site_admin":false},"parents":[{"sha":"58dd8da9d9099a823c814c528b29b72c9b2ac98b","url":"https://api.github.com/repos/sourcegraph/automation-testing/commits/58dd8da9d9099a823c814c528b29b72c9b2ac98b","html_url":"https://github.com/sourcegraph/automation-testing/commit/58dd8da9d9099a823c814c528b29b72c9b2ac98b"}],"stats":{"total":1,"additions":1,"deletions":0},"files":[{"sha":"20827fef1e80d5483dd316d77275fb122d4d98f0","filename":"new-file.txt","status":"added","additions":1,"deletions":0,"changes":1,"blob_url":"https://github.com/sourcegraph/automation-testing/blob/d0dee216cbdb14a40d7b73cef3cbe0a435b268df/new-file.txt","raw_url":"https://github.com/sourcegraph/automation-testing/raw/d0dee216cbdb14a40d7b73cef3cbe0a435b268df/new-file.txt","contents_url":"https://api.github.com/repos/sourcegraph/automation-testing/contents/new-file.txt?ref=d0dee216cbdb14a40d7b73cef3cbe0a435b268df","patch":"@@
+      -0,0 +1 @@\n+Hey I''m a new file!"}]}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 02 Jun 2023 04:07:23 GMT
+      Etag:
+      - W/"099aa616e14bb862c506b38d75601aa0056cec313b2c6c9a8783b78b14114aee"
+      Last-Modified:
+      - Fri, 02 Jun 2023 03:56:20 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
+        format=json
+      X-Github-Request-Id:
+      - CAA6:5FF5:299FF7:55665E:64796AFB
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "38"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"message":"Test commit from VCR tests","tree":"00c2308a9244a5b46d0812884a169f5df1bba817","parents":["58dd8da9d9099a823c814c528b29b72c9b2ac98b"]}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/repos/sourcegraph/automation-testing/git/commits
+    method: POST
+  response:
+    body: '{"sha":"8673c161f3d045ad33accde1c4d00041f6fc55db","node_id":"C_kwDODS5xedoAKDg2NzNjMTYxZjNkMDQ1YWQzM2FjY2RlMWM0ZDAwMDQxZjZmYzU1ZGI","url":"https://api.github.com/repos/sourcegraph/automation-testing/git/commits/8673c161f3d045ad33accde1c4d00041f6fc55db","html_url":"https://github.com/sourcegraph/automation-testing/commit/8673c161f3d045ad33accde1c4d00041f6fc55db","author":{"name":"Kelli
+      Rockwell","email":"kellirockwell@gmail.com","date":"2023-06-02T04:07:23Z"},"committer":{"name":"Kelli
+      Rockwell","email":"kellirockwell@gmail.com","date":"2023-06-02T04:07:23Z"},"tree":{"sha":"00c2308a9244a5b46d0812884a169f5df1bba817","url":"https://api.github.com/repos/sourcegraph/automation-testing/git/trees/00c2308a9244a5b46d0812884a169f5df1bba817"},"message":"Test
+      commit from VCR tests","parents":[{"sha":"58dd8da9d9099a823c814c528b29b72c9b2ac98b","url":"https://api.github.com/repos/sourcegraph/automation-testing/git/commits/58dd8da9d9099a823c814c528b29b72c9b2ac98b","html_url":"https://github.com/sourcegraph/automation-testing/commit/58dd8da9d9099a823c814c528b29b72c9b2ac98b"}],"verification":{"verified":false,"reason":"unsigned","signature":null,"payload":null}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Length:
+      - "1162"
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 02 Jun 2023 04:07:23 GMT
+      Etag:
+      - '"0d4ce6456e2aa238b7aab18c65cc8a9821b7e64a6776686e52da15612ab5b7ce"'
+      Location:
+      - https://api.github.com/repos/sourcegraph/automation-testing/git/commits/8673c161f3d045ad33accde1c4d00041f6fc55db
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
+        format=json
+      X-Github-Request-Id:
+      - CAA6:5FF5:29A042:5566F3:64796AFB
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "39"
+      X-Xss-Protection:
+      - "0"
+    status: 201 Created
+    code: 201
+    duration: ""
+- request:
+    body: '{"sha":"8673c161f3d045ad33accde1c4d00041f6fc55db","force":true}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/repos/sourcegraph/automation-testing/git/refs/heads/duplicate-commits-on-me
+    method: PATCH
+  response:
+    body: '{"ref":"refs/heads/duplicate-commits-on-me","node_id":"MDM6UmVmMjIxMTQ3NTEzOnJlZnMvaGVhZHMvZHVwbGljYXRlLWNvbW1pdHMtb24tbWU=","url":"https://api.github.com/repos/sourcegraph/automation-testing/git/refs/heads/duplicate-commits-on-me","object":{"sha":"8673c161f3d045ad33accde1c4d00041f6fc55db","type":"commit","url":"https://api.github.com/repos/sourcegraph/automation-testing/git/commits/8673c161f3d045ad33accde1c4d00041f6fc55db"}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 02 Jun 2023 04:07:24 GMT
+      Etag:
+      - W/"d2a1b003416d30303380d06f1ed4cca91360cc6591798f60df6b7ee7dfafd09b"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
+        format=json
+      X-Github-Request-Id:
+      - CAA6:5FF5:29A07E:55676B:64796AFB
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "40"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""

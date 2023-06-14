@@ -13,6 +13,7 @@ import (
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	store1 "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -42,6 +43,9 @@ type MockSyncStore struct {
 	// GetSiteCredentialFunc is an instance of a mock function object
 	// controlling the behavior of the method GetSiteCredential.
 	GetSiteCredentialFunc *SyncStoreGetSiteCredentialFunc
+	// GitHubAppsStoreFunc is an instance of a mock function object
+	// controlling the behavior of the method GitHubAppsStore.
+	GitHubAppsStoreFunc *SyncStoreGitHubAppsStoreFunc
 	// ListChangesetSyncDataFunc is an instance of a mock function object
 	// controlling the behavior of the method ListChangesetSyncData.
 	ListChangesetSyncDataFunc *SyncStoreListChangesetSyncDataFunc
@@ -105,6 +109,11 @@ func NewMockSyncStore() *MockSyncStore {
 		},
 		GetSiteCredentialFunc: &SyncStoreGetSiteCredentialFunc{
 			defaultHook: func(context.Context, store.GetSiteCredentialOpts) (r0 *types.SiteCredential, r1 error) {
+				return
+			},
+		},
+		GitHubAppsStoreFunc: &SyncStoreGitHubAppsStoreFunc{
+			defaultHook: func() (r0 store1.GitHubAppsStore) {
 				return
 			},
 		},
@@ -190,6 +199,11 @@ func NewStrictMockSyncStore() *MockSyncStore {
 				panic("unexpected invocation of MockSyncStore.GetSiteCredential")
 			},
 		},
+		GitHubAppsStoreFunc: &SyncStoreGitHubAppsStoreFunc{
+			defaultHook: func() store1.GitHubAppsStore {
+				panic("unexpected invocation of MockSyncStore.GitHubAppsStore")
+			},
+		},
 		ListChangesetSyncDataFunc: &SyncStoreListChangesetSyncDataFunc{
 			defaultHook: func(context.Context, store.ListChangesetSyncDataOpts) ([]*types.ChangesetSyncData, error) {
 				panic("unexpected invocation of MockSyncStore.ListChangesetSyncData")
@@ -257,6 +271,9 @@ func NewMockSyncStoreFrom(i SyncStore) *MockSyncStore {
 		},
 		GetSiteCredentialFunc: &SyncStoreGetSiteCredentialFunc{
 			defaultHook: i.GetSiteCredential,
+		},
+		GitHubAppsStoreFunc: &SyncStoreGitHubAppsStoreFunc{
+			defaultHook: i.GitHubAppsStore,
 		},
 		ListChangesetSyncDataFunc: &SyncStoreListChangesetSyncDataFunc{
 			defaultHook: i.ListChangesetSyncData,
@@ -1012,6 +1029,105 @@ func (c SyncStoreGetSiteCredentialFuncCall) Args() []interface{} {
 // invocation.
 func (c SyncStoreGetSiteCredentialFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// SyncStoreGitHubAppsStoreFunc describes the behavior when the
+// GitHubAppsStore method of the parent MockSyncStore instance is invoked.
+type SyncStoreGitHubAppsStoreFunc struct {
+	defaultHook func() store1.GitHubAppsStore
+	hooks       []func() store1.GitHubAppsStore
+	history     []SyncStoreGitHubAppsStoreFuncCall
+	mutex       sync.Mutex
+}
+
+// GitHubAppsStore delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSyncStore) GitHubAppsStore() store1.GitHubAppsStore {
+	r0 := m.GitHubAppsStoreFunc.nextHook()()
+	m.GitHubAppsStoreFunc.appendCall(SyncStoreGitHubAppsStoreFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GitHubAppsStore
+// method of the parent MockSyncStore instance is invoked and the hook queue
+// is empty.
+func (f *SyncStoreGitHubAppsStoreFunc) SetDefaultHook(hook func() store1.GitHubAppsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GitHubAppsStore method of the parent MockSyncStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *SyncStoreGitHubAppsStoreFunc) PushHook(hook func() store1.GitHubAppsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SyncStoreGitHubAppsStoreFunc) SetDefaultReturn(r0 store1.GitHubAppsStore) {
+	f.SetDefaultHook(func() store1.GitHubAppsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SyncStoreGitHubAppsStoreFunc) PushReturn(r0 store1.GitHubAppsStore) {
+	f.PushHook(func() store1.GitHubAppsStore {
+		return r0
+	})
+}
+
+func (f *SyncStoreGitHubAppsStoreFunc) nextHook() func() store1.GitHubAppsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SyncStoreGitHubAppsStoreFunc) appendCall(r0 SyncStoreGitHubAppsStoreFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SyncStoreGitHubAppsStoreFuncCall objects
+// describing the invocations of this function.
+func (f *SyncStoreGitHubAppsStoreFunc) History() []SyncStoreGitHubAppsStoreFuncCall {
+	f.mutex.Lock()
+	history := make([]SyncStoreGitHubAppsStoreFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SyncStoreGitHubAppsStoreFuncCall is an object that describes an
+// invocation of method GitHubAppsStore on an instance of MockSyncStore.
+type SyncStoreGitHubAppsStoreFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 store1.GitHubAppsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SyncStoreGitHubAppsStoreFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SyncStoreGitHubAppsStoreFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // SyncStoreListChangesetSyncDataFunc describes the behavior when the
