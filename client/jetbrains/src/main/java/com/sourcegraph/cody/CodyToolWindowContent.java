@@ -299,7 +299,11 @@ class CodyToolWindowContent implements UpdatableChat {
     //       in the main thread and then waited, we wouldn't see the messages streamed back to us.
     new Thread(
             () -> {
-              chat.sendMessage(humanMessage, responsePrefix, this); // TODO: Use prefix
+              try {
+                chat.sendMessage(humanMessage, responsePrefix, this);
+              } catch (Exception e) {
+                e.printStackTrace();
+              }
             })
         .start();
   }
