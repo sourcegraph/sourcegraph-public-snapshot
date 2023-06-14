@@ -141,7 +141,8 @@ func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolve
 		symbolName        string
 		syntectDescriptor string
 		repository        string
-		symbolType        int32
+		symbolRole        int32
+		confidence        string
 		text              string
 		location          []codenavshared.UploadLocation
 	}
@@ -205,7 +206,8 @@ func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolve
 				pd := &preciseData{
 					symbolName: el.Occurrence.Symbol,
 					repository: string(repo[0].Name),
-					symbolType: int32(el.Occurrence.SyntaxKind),
+					symbolRole: int32(el.Occurrence.SymbolRoles),
+					confidence: "PRECISE",
 					location:   ul,
 				}
 				preciseDataList = append(preciseDataList, pd)
@@ -227,6 +229,7 @@ func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolve
 	clippedContent := map[string]struct{}{}
 	// var syntectDocsList []*scip.Document
 	for _, pd := range definitionMap {
+		// for _, pd := range preciseDataList {
 		for _, l := range pd.location {
 			file, err := s.gitserverClient.ReadFile(
 				ctx,
@@ -245,6 +248,7 @@ func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolve
 			if err != nil {
 				return "", err
 			}
+			fmt.Println("HERE IS THE syntectDocs \n", syntectDocs)
 
 			for _, occ := range syntectDocs.Occurrences {
 
@@ -261,11 +265,17 @@ func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolve
 				keysInString = append(keysInString, key)
 				textInString = append(textInString, snpt)
 
-				keyLookup := fmt.Sprintf("%s-%s", key, snpt)
+				keyLookup := fmt.Sprintf("%s$$$$%s", key, snpt)
 				// pd.text = snpt
 
 				// HERE check the World New()
-				snippetToPreciseDataMap[keyLookup] = pd
+				data := &preciseData{
+					confidence: "SEARCH",
+				}
+				if _, ok := definitionMap[key]; ok {
+					data = definitionMap[key]
+				}
+				snippetToPreciseDataMap[keyLookup] = data
 
 				// if key == "" || snpt == "" {
 				// 	continue
@@ -319,13 +329,14 @@ func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolve
 
 	preciseResponse := []*preciseData{}
 	for k, v := range snippetToPreciseDataMap {
-		compositeKey := strings.Split(k, "-")
+		compositeKey := strings.Split(k, "$$$$")
 		syntectDescriptor, text := compositeKey[0], compositeKey[1]
 		preciseResponse = append(preciseResponse, &preciseData{
 			symbolName:        v.symbolName,
 			syntectDescriptor: syntectDescriptor,
 			repository:        v.repository,
-			symbolType:        v.symbolType,
+			symbolRole:        v.symbolRole,
+			confidence:        v.confidence,
 			text:              text,
 			location:          v.location,
 		})
