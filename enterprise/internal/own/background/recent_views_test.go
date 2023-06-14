@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -45,8 +46,15 @@ func TestRecentViewsIndexer(t *testing.T) {
 	// Creating a worker.
 	indexer := newRecentViewsIndexer(db, logger)
 
+	// Mock authz checker
+	checker := authz.NewMockSubRepoPermissionChecker()
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.EnabledForRepoFunc.SetDefaultReturn(false, nil)
+
 	// Dry run of handling: we should not have any summaries yet.
-	err = indexer.Handle(ctx)
+	err = indexer.handle(ctx, checker)
 	require.NoError(t, err)
 	// Assertions are in the loop over listed summaries -- it won't error out when
 	// there are 0 summaries.
@@ -93,7 +101,7 @@ func TestRecentViewsIndexer(t *testing.T) {
 	}
 
 	// First round of handling: we should have all counts equal to 1.
-	err = indexer.Handle(ctx)
+	err = indexer.handle(ctx, checker)
 	require.NoError(t, err)
 	got, err := db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{IncludeAllPaths: true})
 	require.NoError(t, err)
@@ -106,7 +114,7 @@ func TestRecentViewsIndexer(t *testing.T) {
 	insertEvents(ctx, t, db)
 
 	// Second round of handling: we should have all counts equal to 2.
-	err = indexer.Handle(ctx)
+	err = indexer.handle(ctx, checker)
 	require.NoError(t, err)
 	got, err = db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{IncludeAllPaths: true})
 	require.NoError(t, err)
@@ -114,6 +122,23 @@ func TestRecentViewsIndexer(t *testing.T) {
 	sortSummaries(got)
 	sortSummaries(want)
 	assert.Equal(t, want, got)
+
+	// Now we can insert some more events, but the checker will now caregorize this repo as having subrepo perms enabled
+	insertEvents(ctx, t, db)
+	checker.EnabledForRepoFunc.SetDefaultReturn(true, nil)
+
+	// Third round of handling: we should have all counts equal to 2.
+	err = indexer.handle(ctx, checker)
+	require.NoError(t, err)
+	got, err = db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{IncludeAllPaths: true})
+	require.NoError(t, err)
+	// we expect the summary to be no different than before since all new view events should be captured
+	// due to the repo having sub-repo permissions enabled.
+	want = expectedSummaries(2)
+	sortSummaries(got)
+	sortSummaries(want)
+	assert.Equal(t, want, got)
+
 }
 
 func insertEvents(ctx context.Context, t *testing.T, db database.DB) {

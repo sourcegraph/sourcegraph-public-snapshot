@@ -18,6 +18,7 @@ go_library(
         "//enterprise/internal/own/types",
         "//internal/actor",
         "//internal/api",
+        "//internal/authz",
         "//internal/conf",
         "//internal/database",
         "//internal/database/basestore",
