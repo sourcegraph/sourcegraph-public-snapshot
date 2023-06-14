@@ -215,7 +215,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
 - **Publish candidate images**: Push OCI/Wolfi Candidate
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
-- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
+- **End-to-end tests**: Executors E2E, Sourcegraph E2E
 - **Publish images**: server, executor, alpine-3.14, postgres-12-alpine, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, syntax-highlighter, worker, symbols, batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, cody-gateway, sg, cody-slack, Publish executor image, Publish executor binary, Publish docker registry mirror image, Push OCI/Wolfi
 
 ### Release branch
@@ -235,7 +235,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
 - **Publish candidate images**: Push OCI/Wolfi Candidate
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
-- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
+- **End-to-end tests**: Executors E2E, Sourcegraph E2E
 - **Publish images**: server, executor, alpine-3.14, postgres-12-alpine, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, syntax-highlighter, worker, symbols, batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, cody-gateway, sg, cody-slack, Push OCI/Wolfi
 
 ### Browser extension release build
@@ -297,7 +297,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
 - **Publish candidate images**: Push OCI/Wolfi Candidate
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
-- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
+- **End-to-end tests**: Executors E2E, Sourcegraph E2E
 - **Publish images**: server, executor, alpine-3.14, postgres-12-alpine, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, syntax-highlighter, worker, symbols, batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, cody-gateway, sg, cody-slack, Publish executor image, Publish executor binary, Push OCI/Wolfi
 
 ### Main dry run
@@ -322,7 +322,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
 - **Publish candidate images**: Push OCI/Wolfi Candidate
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
-- **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
+- **End-to-end tests**: Executors E2E, Sourcegraph E2E
 - **Publish images**: server, executor, alpine-3.14, postgres-12-alpine, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, syntax-highlighter, worker, symbols, batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, cody-gateway, sg, cody-slack, Push OCI/Wolfi
 
 ### Patch image
