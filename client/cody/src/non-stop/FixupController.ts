@@ -88,7 +88,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         const fixupFile = this.files.forUri(editor.document.uri)
         const task = new FixupTask(fixupFile, input, editor)
         this.tasks.set(task.id, task)
-        void this.setTaskState(task, CodyTaskState.asking)
+        this.setTaskState(task, CodyTaskState.asking)
         // Move the cursor to the start of the selection range to show fixup markups
         editor.selection = new vscode.Selection(task.selectionRange.start, task.selectionRange.start)
         return task.id
@@ -138,7 +138,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
     }
 
     private async applyTask(task: FixupTask): Promise<void> {
-        await this.setTaskState(task, CodyTaskState.applying)
+        this.setTaskState(task, CodyTaskState.applying)
 
         let editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
         if (!editor) {
@@ -173,7 +173,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         // TODO: Consider keeping tasks around to resurrect them if the user
         // hits undo.
         // TODO: See if we can discard a FixupFile now.
-        await this.setTaskState(task, CodyTaskState.fixed)
+        this.setTaskState(task, CodyTaskState.fixed)
     }
 
     // Applying fixups from tree item click
@@ -264,7 +264,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             case 'complete':
                 task.inProgressReplacement = undefined
                 task.replacement = text
-                await this.setTaskState(task, CodyTaskState.ready)
+                this.setTaskState(task, CodyTaskState.ready)
                 break
         }
         this.textDidChange(task)
@@ -402,6 +402,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         }
         // show diff view between the current document and replacement
         // Add replacement content to the temp document
+        await this.contentStore.set(task.id, task.fixupFile.uri)
         const tempDocUri = vscode.Uri.parse(`cody-fixup:${task.fixupFile.uri.fsPath}#${task.id}`)
         const doc = await vscode.workspace.openTextDocument(tempDocUri)
         const edit = new vscode.WorkspaceEdit()
@@ -426,11 +427,12 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         )
     }
 
-    private setTaskState(task: FixupTask, state: CodyTaskState): Promise<FixupTask | null> {
-        // TODO: Something is abusing this method to refresh code lenses. Find
-        // the state 2->2 (and maybe more) callers, work out what they are
-        // actually notifying, and just notify about that.
+    private setTaskState(task: FixupTask, state: CodyTaskState): void {
         const oldState = task.state
+        if (oldState === state) {
+            // Not a transition--nothing to do.
+            return
+        }
         console.log(task.id, 'changing state from', oldState, 'to', state)
         task.state = state
         // TODO: These state transition actions were moved from FixupTask, but
@@ -441,22 +443,14 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         } else if (oldState === CodyTaskState.asking && task.state !== CodyTaskState.asking) {
             void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
         }
-        if (task.state === CodyTaskState.ready) {
-            // TODO: Moved from stop() but this is the wrong timing to populate
-            // the content store. First, the content store reads the source
-            // document, not the fixup. Second, both the source document and
-            // the fixup task diff could still change as the user edits the text
-            // around Cody's edits.
-            void this.contentStore.set(task.id, task.fixupFile.uri)
-        }
         if (task.state === CodyTaskState.fixed) {
             this.discard(task.id)
-            return Promise.resolve(null)
+            return
         }
         // Save states of the task
         this.codelenses.didUpdateTask(task)
         this.taskViewProvider.setTreeItem(task)
-        return Promise.resolve(task)
+        return
     }
 
     private reset(): void {
