@@ -207,6 +207,7 @@ func init() {
 	conf.ContributeValidator(embeddingConfigValidator)
 }
 
+// TODO: Extend.
 func embeddingConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
 	embeddingsConf := q.SiteConfig().Embeddings
 	if embeddingsConf == nil {
@@ -230,24 +231,11 @@ var defaultOpts = EmbeddableRepoOpts{
 }
 
 func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
-	opts := defaultOpts
-
-	embeddingsConf := conf.Get().Embeddings
-	if embeddingsConf == nil {
-		return opts
+	embeddingsConf := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	return EmbeddableRepoOpts{
+		MinimumInterval:            embeddingsConf.MinimumInterval,
+		PolicyRepositoryMatchLimit: embeddingsConf.PolicyRepositoryMatchLimit,
 	}
-
-	minimumIntervalString := embeddingsConf.MinimumInterval
-	d, err := time.ParseDuration(minimumIntervalString)
-	if err == nil {
-		opts.MinimumInterval = d
-	}
-
-	if embeddingsConf.PolicyRepositoryMatchLimit != nil {
-		opts.PolicyRepositoryMatchLimit = embeddingsConf.PolicyRepositoryMatchLimit
-	}
-
-	return opts
 }
 
 func (s *repoEmbeddingJobsStore) GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error) {

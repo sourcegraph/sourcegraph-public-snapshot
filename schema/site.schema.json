@@ -2352,11 +2352,13 @@
     "embeddings": {
       "description": "Configuration for embeddings service.",
       "type": "object",
-      "required": ["enabled"],
       "properties": {
         "enabled": {
           "description": "Toggles whether embedding service is enabled.",
           "type": "boolean",
+          "!go": {
+            "pointer": true
+          },
           "default": false
         },
         "dimensions": {

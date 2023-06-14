@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	olicensing "github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -114,7 +115,7 @@ func StartLicenseCheck(ctx context.Context, logger log.Logger, siteID string) {
 	// watch for any config changes
 	conf.Watch(func() {
 		prevLicenseToken, _ := store.Get(prevLicenseTokenKey).String()
-		licenseToken := hex.EncodeToString(GenerateHashedLicenseKeyAccessToken(conf.Get().LicenseKey))
+		licenseToken := hex.EncodeToString(olicensing.GenerateHashedLicenseKeyAccessToken(conf.Get().LicenseKey))
 		// skip if license key hasn't changed and already running
 		if prevLicenseToken == licenseToken && routine != nil {
 			return

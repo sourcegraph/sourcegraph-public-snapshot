@@ -20,7 +20,11 @@ func getCachedQueryEmbeddingFn() (getQueryEmbeddingFn, error) {
 	}
 
 	return func(ctx context.Context, query string) (queryEmbedding []float32, model string, err error) {
-		config := &conf.Get().SiteConfiguration
+		config := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+		if config == nil {
+			return nil, "", errors.New("embeddings disabled or not configured")
+		}
+
 		if cachedQueryEmbedding, ok := cache.Get(query); ok {
 			queryEmbedding = cachedQueryEmbedding
 		} else {
@@ -34,6 +38,6 @@ func getCachedQueryEmbeddingFn() (getQueryEmbeddingFn, error) {
 			}
 			cache.Add(query, queryEmbedding)
 		}
-		return queryEmbedding, config.Embeddings.Model, err
+		return queryEmbedding, config.Model, err
 	}, nil
 }
