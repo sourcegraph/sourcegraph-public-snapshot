@@ -2,7 +2,7 @@ name: Verify Emacs Client
 on:
   push:
     paths:
-      - "*/client/emacs/**.el"
+      - "**.el"
 
 jobs:
   verify:
