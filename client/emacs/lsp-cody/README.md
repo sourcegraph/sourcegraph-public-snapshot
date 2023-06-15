@@ -5,21 +5,21 @@ This project was bootstrapped with [eask/cli](https://github.com/emacs-eask/cli)
 1. Write and design your package in `your-package.el`
 2. Install package dependences if any:
 
-  ```sh
-  eask install-deps
-  ```
+```sh
+eask install-deps
+```
 
 3. Prepare for installation, package it: (it will create package to `dist` folder)
 
-  ```sh
-  eask package
-  ```
+```sh
+eask package
+```
 
 4. Install the built package:
 
-  ```sh
-  eask install
-  ```
+```sh
+eask install
+```
 
 ## Compile
 
