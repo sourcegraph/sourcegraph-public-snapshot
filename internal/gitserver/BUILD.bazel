@@ -90,6 +90,7 @@ go_test(
         "//internal/grpc",
         "//internal/grpc/defaults",
         "//internal/httpcli",
+        "//internal/observation",
         "//internal/randstring",
         "//internal/types",
         "//lib/errors",

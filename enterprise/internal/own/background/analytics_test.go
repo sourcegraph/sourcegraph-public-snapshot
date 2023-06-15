@@ -48,25 +48,39 @@ func TestAnalyticsIndexerSuccess(t *testing.T) {
 	logger := obsCtx.Logger
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
-	var repoID api.RepoID = 1
-	err := db.Repos().Create(ctx, &types.Repo{Name: "repo", ID: repoID})
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "test"})
 	require.NoError(t, err)
+	var repoID api.RepoID = 1
+	require.NoError(t, db.Repos().Create(ctx, &types.Repo{Name: "repo", ID: repoID}))
 	client := fakeGitServer{
-		files: []string{"notOwned.go", "alsoNotOwned.go", "owned/file1.go", "owned/file2.go", "owned/file3.go"},
+		files: []string{
+			"notOwned.go",
+			"alsoNotOwned.go",
+			"owned/file1.go",
+			"owned/file2.go",
+			"owned/file3.go",
+			"assigned.go",
+		},
 		fileContents: map[string]string{
 			"CODEOWNERS": "/owned/* @owner",
 		},
 	}
-	err = newAnalyticsIndexer(client, db).indexRepo(ctx, repoID)
-	require.NoError(t, err)
+	require.NoError(t, db.AssignedOwners().Insert(ctx, user.ID, repoID, "owned/file1.go", user.ID))
+	require.NoError(t, db.AssignedOwners().Insert(ctx, user.ID, repoID, "assigned.go", user.ID))
+	require.NoError(t, newAnalyticsIndexer(client, db).indexRepo(ctx, repoID))
 
 	totalFileCount, err := db.RepoPaths().AggregateFileCount(ctx, database.TreeLocationOpts{})
 	require.NoError(t, err)
-	assert.Equal(t, int32(5), totalFileCount)
+	assert.Equal(t, int32(len(client.files)), totalFileCount)
 
-	codeownedCount, err := db.OwnershipStats().QueryAggregateCounts(ctx, database.TreeLocationOpts{})
+	gotCounts, err := db.OwnershipStats().QueryAggregateCounts(ctx, database.TreeLocationOpts{})
 	require.NoError(t, err)
-	assert.Equal(t, database.PathAggregateCounts{CodeownedFileCount: 3}, codeownedCount)
+	wantCounts := database.PathAggregateCounts{
+		CodeownedFileCount:         3,
+		AssignedOwnershipFileCount: 2,
+		TotalOwnedFileCount:        4,
+	}
+	assert.Equal(t, wantCounts, gotCounts)
 }
 
 func TestAnalyticsIndexerNoCodeowners(t *testing.T) {

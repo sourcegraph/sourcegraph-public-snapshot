@@ -5,6 +5,7 @@ go_library(
     name = "actor",
     srcs = [
         "actor.go",
+        "limits.go",
         "source.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor",
@@ -31,6 +32,7 @@ go_test(
     name = "actor_test",
     srcs = [
         "actor_test.go",
+        "limits_test.go",
         "source_test.go",
     ],
     embed = [":actor"],

@@ -34,7 +34,7 @@ The app is a free, lightweight, native desktop version of Sourcegraph that conne
 
 ## Installation
 
-Check the [latest release](https://github.com/sourcegraph/sourcegraph/releases/tag/app-v2023.6.6%2B1309.585fa485ce) to find the right download link for your operating system. The app is currently supported on MacOS and Linux, and we're working on Windows support.
+Check the [latest release](https://github.com/sourcegraph/sourcegraph/releases/tag/app-v2023.6.13%2B1311.1af08ae774) to find the right download link for your operating system. The app is currently supported on MacOS and Linux, and we're working on Windows support.
 
 ## Setup
 

@@ -26,3 +26,5 @@ paths:
     permissions: 0o755
 
 work-dir: /
+
+# MANUAL REBUILD: Wed Jun 14 15:27:52 BST 2023
