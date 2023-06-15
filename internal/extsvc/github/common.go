@@ -239,6 +239,7 @@ type PullRequest struct {
 	HeadRefName    string
 	BaseRefName    string
 	Number         int64
+	MergeableState string
 	Author         Actor
 	BaseRepository PullRequestRepo
 	HeadRepository PullRequestRepo
