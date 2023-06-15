@@ -1,10 +1,10 @@
 package reposource
 
 import (
-	"testing"
-	"github.com/stretchr/testify/assert"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestBitbucketCloud_cloneURLToRepoName(t *testing.T) {
@@ -62,41 +62,40 @@ func TestBitbucketCloud_cloneURLToRepoName(t *testing.T) {
 }
 
 func TestBitbucketCloudRepoName(t *testing.T) {
-    testCases := []struct {
+	testCases := []struct {
 		name                  string
-        repositoryPathPattern string
-        host                  string
-        nameWithOwner         string
-        expected              api.RepoName
-    }{
-        {
+		repositoryPathPattern string
+		host                  string
+		nameWithOwner         string
+		expected              api.RepoName
+	}{
+		{
 			name:                  "empty repositoryPathPattern: repositoryPathPattern='', host='bitbucket.org', nameWithOwner='sourcegraph/sourcegraph'",
-            repositoryPathPattern: "",
-            host:                  "bitbucket.org",
-            nameWithOwner:         "sourcegraph/sourcegraph",
-            expected:              "bitbucket.org/sourcegraph/sourcegraph",
-        },
-        {
+			repositoryPathPattern: "",
+			host:                  "bitbucket.org",
+			nameWithOwner:         "sourcegraph/sourcegraph",
+			expected:              "bitbucket.org/sourcegraph/sourcegraph",
+		},
+		{
 			name:                  "not empty repositoryPathPattern: repositoryPathPattern='{host}/{nameWithOwner}', host='bitbucket.org', nameWithOwner='sourcegraph/sourcegraph'",
-            repositoryPathPattern: "{host}/{nameWithOwner}",
-            host:                  "bitbucket.org",
-            nameWithOwner:         "sourcegraph/sourcegraph",
-            expected:              "bitbucket.org/sourcegraph/sourcegraph",
-        },
-        {
+			repositoryPathPattern: "{host}/{nameWithOwner}",
+			host:                  "bitbucket.org",
+			nameWithOwner:         "sourcegraph/sourcegraph",
+			expected:              "bitbucket.org/sourcegraph/sourcegraph",
+		},
+		{
 			name:                  "repositoryPathPattern with https: repositoryPathPattern='https://{host}/{nameWithOwner}', host='bitbucket.org', nameWithOwner='sourcegraph/sourcegraph'",
-            repositoryPathPattern: "https://{host}/{nameWithOwner}",
-            host:                  "bitbucket.org",
-            nameWithOwner:         "sourcegraph/sourcegraph",
-            expected:              "https://bitbucket.org/sourcegraph/sourcegraph",
-        },
-    }
+			repositoryPathPattern: "https://{host}/{nameWithOwner}",
+			host:                  "bitbucket.org",
+			nameWithOwner:         "sourcegraph/sourcegraph",
+			expected:              "https://bitbucket.org/sourcegraph/sourcegraph",
+		},
+	}
 
-    for _, testCase := range testCases {
+	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			repoName := BitbucketCloudRepoName(testCase.repositoryPathPattern, testCase.host, testCase.nameWithOwner)
 			assert.Equal(t, testCase.expected, repoName)
 		})
-    }
+	}
 }
-
