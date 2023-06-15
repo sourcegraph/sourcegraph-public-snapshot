@@ -145,14 +145,18 @@ matchesLoop:
 			errs = errors.Append(errs, err)
 			continue matchesLoop
 		}
+		var fileMatchesIncludeTerms bool
 		for _, path := range filePaths {
 			fileOwners := file.Match(path)
-			if len(includeTerms) > 0 && !ownersFilters(fileOwners, includeTerms, includeBags, false) {
-				continue matchesLoop
+			if len(includeTerms) > 0 && ownersFilters(fileOwners, includeTerms, includeBags, false) {
+				fileMatchesIncludeTerms = true
 			}
 			if len(excludeTerms) > 0 && !ownersFilters(fileOwners, excludeTerms, excludeBags, true) {
 				continue matchesLoop
 			}
+		}
+		if len(includeTerms) > 0 && !fileMatchesIncludeTerms {
+			continue matchesLoop
 		}
 
 		filtered = append(filtered, m)

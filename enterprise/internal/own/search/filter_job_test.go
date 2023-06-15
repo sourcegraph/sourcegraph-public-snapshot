@@ -472,7 +472,7 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			}),
 		},
 		{
-			name: "match commits where any file is owned by requested owner",
+			name: "match commits where any file is owned by included owner",
 			args: args{
 				includeOwners: []string{"@owner"},
 				excludeOwners: []string{},
@@ -497,6 +497,32 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 				},
 				&result.CommitMatch{
 					ModifiedFiles: []string{"file5.owned"},
+				},
+			}),
+		},
+		{
+			name: "discard commits where any file is owned by excluded owner",
+			args: args{
+				includeOwners: []string{},
+				excludeOwners: []string{"@owner"},
+				matches: []result.Match{
+					&result.CommitMatch{
+						ModifiedFiles: []string{"file1.notOwned", "file2.owned"},
+					},
+					&result.CommitMatch{
+						ModifiedFiles: []string{"file3.notOwned", "file4.notOwned"},
+					},
+					&result.CommitMatch{
+						ModifiedFiles: []string{"file5.owned"},
+					},
+				},
+				repoContent: map[string]string{
+					"CODEOWNERS": "*.owned @owner\n",
+				},
+			},
+			want: autogold.Expect([]result.Match{
+				&result.CommitMatch{
+					ModifiedFiles: []string{"file3.notOwned", "file4.notOwned"},
 				},
 			}),
 		},
