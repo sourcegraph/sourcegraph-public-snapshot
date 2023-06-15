@@ -26,7 +26,7 @@ While in experimental state, Cody completions need to be enabled manually. To do
 
 Please follow the steps in [Enabling Cody on Sourcegraph Enterprise](explanations/enabling_cody_enterprise.md) to enable Cody on Sourcegraph Enterprise.
 
-Custom models can be used for Cody completions via the `completionModel` option inside the `completions` site config.
+By default, a fully configured Sourcegraph instance picks a default LLM to generate code completions. Custom models can be used for Cody completions via the `completionModel` option inside the `completions` site config.
 
 > NOTE: Self-hosted customers need to update to a minimum of version 5.0.4 to use completions.
 
