@@ -13,20 +13,18 @@ Arguments:
 
 This release is scheduled for **$RELEASE_DATE**.
 
-> **Attention developers:** to get your commits in `main` included in this patch release add the `backport-$MAJOR.$MINOR` to the PR to `main`.
+> **Warning**: To get your commits in `main` included in this patch release, add the `backport-$MAJOR.$MINOR` to the PR to `main`.
 
 ## Setup
 
 <!-- Keep in sync with release_issue_template's "Setup" section -->
 
+- [ ] Ensure you have the latest version of the release tooling and configuration by checking out and updating `sourcegraph@main`.
 - [ ] Ensure release configuration in [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) on `main` has version $MAJOR.$MINOR.$PATCH selected by using the command:
 
 ```shell
 pnpm run release release:activate-release
 ```
-
-- [ ] Ensure you have the latest version of the release tooling and configuration by checking out and updating `sourcegraph@main`.
-- [ ] Create a `Security release approval issue` and post a message in the [#security](https://sourcegraph.slack.com/archives/C1JH2BEHZ) channel tagging @security-support.
 
 ## Prepare release
 
@@ -55,27 +53,31 @@ Create and test the first release candidate:
   pnpm run release release:create-candidate
   ```
 
-**Note**: Ensure that you've pulled both main and release branches before running this command.
+> **Note**: Ensure that you've pulled both main and release branches before running this command.
 
 - [ ] Ensure that the following Buildkite pipelines all pass for the `v$MAJOR.$MINOR.$PATCH-rc.1` tag:
-- [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.1)
+  - [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.1)
 - [ ] File any failures and regressions in the pipelines as `release-blocker` issues and assign the appropriate teams.
 
 **Note**: You will need to re-check the above pipelines for any subsequent release candidates. You can see the Buildkite logs by tweaking the "branch" query parameter in the URLs to point to the desired release candidate. In general, the URL scheme looks like the following (replacing `N` in the URL): `https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.N`
+
+Once there is a release candidate available:
+
+- [ ] Create a [Security release approval](https://github.com/sourcegraph/sourcegraph/issues/new/choose#:~:text=Security%20release%20approval) issue and post a message in the [#ask-security](https://sourcegraph.slack.com/archives/C1JH2BEHZ) channel tagging `@security-support`.
 
 ## Stage release
 
 <!-- Keep in sync with release_issue_template's "Stage release" section -->
 
-- [ ] Verify the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) on `main` and `$MAJOR.$MINOR` are accurate.
-- [ ] Ensure security has approved the `Security release approval issue` you created.
+- [ ] Verify the **$MAJOR.$MINOR.$PATCH** section of [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) on the `main` is accurate.
+- [ ] Ensure security has approved the [Security release approval](https://github.com/sourcegraph/sourcegraph/issues?q=label%3Arelease-blocker+Security+approval+is%3Aopen) issue you created.
 - [ ] Promote a release candidate to the final release build. You will need to provide the tag of the release candidate which you would like to promote as an argument. To get a list of available release candidates, you can use:
   ```shell
   pnpm run release release:check-candidate
   ```
   To promote the candidate, use the command:
   ```sh
-  pnpm run release release:promote-candidate tag
+  pnpm run release release:promote-candidate <tag>
   ```
 - [ ] Ensure that the pipeline for the `v$MAJOR.$MINOR.$PATCH` tag has passed: [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH)
 - [ ] Wait for the `v$MAJOR.$MINOR.$PATCH` release Docker images to be available in [Docker Hub](https://hub.docker.com/r/sourcegraph/server/tags)
@@ -112,4 +114,4 @@ Create and test the first release candidate:
 
 - [ ] Open a PR to update [`dev/release/release-config.jsonc`](https://github.com/sourcegraph/sourcegraph/edit/main/dev/release/release-config.jsonc) after the auto-generated changes above if any.
 
-**Note:** If another patch release is requested after the release, ask that a [patch request issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=team%2Fdistribution&template=request_patch_release.md) be filled out and approved first.
+> **Note:** If another patch release is requested after the release, ask that a [patch request issue](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=team%2Fdistribution&template=request_patch_release.md) be filled out and approved first.
