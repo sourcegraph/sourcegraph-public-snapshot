@@ -6,6 +6,7 @@ import (
 	"math"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -20,6 +21,7 @@ import (
 	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -903,6 +905,70 @@ func TestMultiHandler_SelectQueueForDequeueing(t *testing.T) {
 				upper := int(math.Floor(expectedSelectCounts[key] + expectedSelectCounts[key]*0.1))
 				assert.True(t, selectCounts[key] >= lower && selectCounts[key] <= upper, "SelectQueueForDequeueing: %s = %d, lower = %d, upper = %d", key, selectCounts[key], lower, upper)
 			}
+		})
+	}
+}
+
+func TestMultiHandler_DiscardQueuesAtLimit(t *testing.T) {
+	tests := []struct {
+		name             string
+		queues           []string
+		mockCacheEntries map[string]int
+		want             []string
+	}{
+		{
+			name:   "Nothing discarded",
+			queues: []string{"batches", "codeintel"},
+			mockCacheEntries: map[string]int{
+				// both have dequeued 5 times
+				"batches":   5,
+				"codeintel": 5,
+			},
+			want: []string{"batches", "codeintel"},
+		},
+		{
+			name:   "All discarded",
+			queues: []string{"batches", "codeintel"},
+			mockCacheEntries: map[string]int{
+				// both have dequeued their limit
+				"batches":   executortypes.DequeuePropertiesPerQueue["batches"].Limit,
+				"codeintel": executortypes.DequeuePropertiesPerQueue["codeintel"].Limit,
+			},
+			want: nil,
+		},
+		{
+			name:   "Batches discarded",
+			queues: []string{"batches", "codeintel"},
+			mockCacheEntries: map[string]int{
+				// batches has dequeued its limit, codeintel 5 times
+				"batches":   executortypes.DequeuePropertiesPerQueue["batches"].Limit,
+				"codeintel": 5,
+			},
+			want: []string{"codeintel"},
+		},
+	}
+
+	m := &handler.MultiHandler{
+		DequeueCache: rcache.New(executortypes.DequeueCachePrefix),
+	}
+
+	for _, tt := range tests {
+		rcache.SetupForTest(t)
+		t.Run(tt.name, func(t *testing.T) {
+			for key, value := range tt.mockCacheEntries {
+				for i := 0; i < value; i++ {
+					// mock dequeues
+					if err := m.DequeueCache.SetHashItem(key, strconv.Itoa(i), "job-id"); err != nil {
+						t.Fatalf("unexpected error while setting hash item: %s", err)
+					}
+				}
+			}
+
+			queues, err := m.DiscardQueuesAtLimit(tt.queues)
+			if err != nil {
+				t.Fatalf("unexpected error while discarding queues: %s", err)
+			}
+			assert.Equalf(t, tt.want, queues, "DiscardQueuesAtLimit(%v)", tt.queues)
 		})
 	}
 }

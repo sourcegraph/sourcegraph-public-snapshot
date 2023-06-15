@@ -51,6 +51,7 @@ go_test(
         "//internal/database",
         "//internal/executor",
         "//internal/metrics/store",
+        "//internal/rcache",
         "//internal/types",
         "//internal/workerutil",
         "//internal/workerutil/dbworker/store",
