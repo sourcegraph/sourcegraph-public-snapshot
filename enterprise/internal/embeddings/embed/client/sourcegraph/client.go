@@ -13,74 +13,30 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-const defaultModel = "openai/text-embedding-ada-002"
-
-func NewClient(config *schema.SiteConfiguration) *sourcegraphEmbeddingsClient {
+func NewClient(config *conftypes.EmbeddingsConfig) *sourcegraphEmbeddingsClient {
 	return &sourcegraphEmbeddingsClient{
-		model:       getModel(config),
-		dimensions:  config.Embeddings.Dimensions,
-		url:         getURL(config.Embeddings),
-		accessToken: getAccessToken(config),
+		model:       config.Model,
+		dimensions:  config.Dimensions,
+		endpoint:    config.Endpoint,
+		accessToken: config.AccessToken,
 	}
-}
-
-const defaultAPIURL = "https://cody-gateway.sourcegraph.com/v1/embeddings"
-
-func getModel(config *schema.SiteConfiguration) string {
-	if config.Embeddings == nil || config.Embeddings.Model == "" {
-		return defaultModel
-	}
-	return strings.ToLower(config.Embeddings.Model)
-}
-
-func getAccessToken(config *schema.SiteConfiguration) string {
-	// If an access token is configured, use it.
-	if config.Embeddings.AccessToken != "" {
-		return config.Embeddings.AccessToken
-	}
-	// App generates a token from the api token the user used to connect app to dotcom.
-	if deploy.IsApp() && config.App != nil {
-		return dotcomuser.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
-	}
-	// Otherwise, use the current license key to compute an access token.
-	return licensing.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)
-}
-
-func getURL(config *schema.Embeddings) string {
-	url := config.Endpoint
-	// Fallback to URL, it's the previous name of the setting.
-	if url == "" {
-		url = config.Url
-	}
-	// If that is also not set, use a sensible default.
-	if url == "" {
-		url = defaultAPIURL
-	}
-	return url
 }
 
 type sourcegraphEmbeddingsClient struct {
 	model       string
 	dimensions  int
-	url         string
+	endpoint    string
 	accessToken string
 }
 
 func (c *sourcegraphEmbeddingsClient) GetDimensions() (int, error) {
-	if c.dimensions <= 0 && strings.EqualFold(c.model, defaultModel) {
-		return 1536, nil
-	}
-
 	// TODO: Later, we should ideally ask the gateway for the dimensionality of the model
 	// so we don't have to hard-code defaults for all the models and can roll out new models
 	// to older instances, too.
@@ -92,9 +48,11 @@ func (c *sourcegraphEmbeddingsClient) GetDimensions() (int, error) {
 }
 
 func (c *sourcegraphEmbeddingsClient) GetModelIdentifier() string {
-	// Special-case the default model, since it already includes the provider name
-	if strings.EqualFold(c.model, defaultModel) {
-		return defaultModel
+	// Special-case the default model, since it already includes the provider name.
+	// This ensures we can safely migrate customers from the OpenAI provider to
+	// Cody Gateway.
+	if strings.EqualFold(c.model, "openai/text-embedding-ada-002") {
+		return "openai/text-embedding-ada-002"
 	}
 	return fmt.Sprintf("sourcegraph/%s", c.model)
 }
@@ -148,7 +106,7 @@ func (c *sourcegraphEmbeddingsClient) getEmbeddings(ctx context.Context, texts [
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.url, bytes.NewReader(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.endpoint, bytes.NewReader(bodyBytes))
 	if err != nil {
 		return nil, err
 	}

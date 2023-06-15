@@ -158,6 +158,7 @@ container_structure_test(
     driver = "docker",
     image = ":image_tarball",
     tags = [
+        "exclusive",
         "manual",  # this test is broken, an init function is checking for the config before reaching the main func.
         "requires-network",
     ],

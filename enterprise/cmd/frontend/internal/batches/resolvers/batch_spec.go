@@ -10,6 +10,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/go-diff/diff"
@@ -44,6 +46,7 @@ var _ graphqlbackend.BatchSpecResolver = &batchSpecResolver{}
 type batchSpecResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
+	logger          log.Logger
 
 	batchSpec          *btypes.BatchSpec
 	preloadedNamespace *graphqlbackend.NamespaceResolver
@@ -151,6 +154,7 @@ func (r *batchSpecResolver) ApplyPreview(ctx context.Context, args *graphqlbacke
 	return &changesetApplyPreviewConnectionResolver{
 		store:             r.store,
 		gitserverClient:   r.gitserverClient,
+		logger:            r.logger,
 		opts:              opts,
 		action:            (*btypes.ReconcilerOperation)(args.Action),
 		batchSpecID:       r.batchSpec.ID,
@@ -240,6 +244,7 @@ func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlba
 		store:           r.store,
 		gitserverClient: r.gitserverClient,
 		batchChange:     batchChange,
+		logger:          r.logger,
 	}, nil
 }
 
@@ -274,6 +279,7 @@ func (r *batchSpecResolver) SupersedingBatchSpec(ctx context.Context) (graphqlba
 	// Create our new resolver, reusing as many fields as we can from this one.
 	resolver := &batchSpecResolver{
 		store:              r.store,
+		logger:             r.logger,
 		batchSpec:          newest,
 		preloadedNamespace: namespace,
 	}
@@ -310,6 +316,7 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 		userID:                &actor.UID,
 		onlyWithoutCredential: args.OnlyWithoutCredential,
 		store:                 r.store,
+		logger:                r.logger,
 		opts: store.ListCodeHostsOpts{
 			RepoIDs:             repoIDs,
 			OnlyWithoutWebhooks: args.OnlyWithoutWebhooks,
@@ -485,7 +492,7 @@ func (r *batchSpecResolver) WorkspaceResolution(ctx context.Context) (graphqlbac
 		return nil, nil
 	}
 
-	return &batchSpecWorkspaceResolutionResolver{store: r.store, resolution: resolution}, nil
+	return &batchSpecWorkspaceResolutionResolver{store: r.store, logger: r.logger, resolution: resolution}, nil
 }
 
 func (r *batchSpecResolver) ViewerCanRetry(ctx context.Context) (bool, error) {

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -166,15 +165,21 @@ func TestZoektParameters(t *testing.T) {
 			context: context.Background(),
 			params: &ZoektParameters{
 				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				Features: Features{
+					Ranking: true,
+				},
 				KeywordScoring: true,
 			},
 			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount: 10000,
-				TotalMaxMatchCount: 100000,
-				MaxWallTime:        20000000000,
-				MaxDocDisplayCount: 500,
-				ChunkMatches:       true,
-				UseKeywordScoring:  true},
+				ShardMaxMatchCount:  100000,
+				TotalMaxMatchCount:  1000000,
+				MaxWallTime:         20000000000,
+				FlushWallTime:       2000000000, // for keyword search, default is 2 sec
+				MaxDocDisplayCount:  500,
+				ChunkMatches:        true,
+				UseDocumentRanks:    true,
+				DocumentRanksWeight: 4500,
+				UseKeywordScoring:   true},
 		},
 	}
 	for _, tt := range cases {
@@ -190,7 +195,7 @@ func TestZoektParameters(t *testing.T) {
 				}()
 			}
 
-			got := tt.params.ToSearchOptions(tt.context, logtest.Scoped(t))
+			got := tt.params.ToSearchOptions(tt.context)
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Fatalf("search params mismatch (-want +got):\n%s", diff)
 			}

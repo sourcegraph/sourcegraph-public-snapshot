@@ -13,6 +13,7 @@ import (
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	types1 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	store1 "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	auth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	azuredevops "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
@@ -2986,6 +2987,9 @@ type MockSourcerStore struct {
 	// GetSiteCredentialFunc is an instance of a mock function object
 	// controlling the behavior of the method GetSiteCredential.
 	GetSiteCredentialFunc *SourcerStoreGetSiteCredentialFunc
+	// GitHubAppsStoreFunc is an instance of a mock function object
+	// controlling the behavior of the method GitHubAppsStore.
+	GitHubAppsStoreFunc *SourcerStoreGitHubAppsStoreFunc
 	// ReposFunc is an instance of a mock function object controlling the
 	// behavior of the method Repos.
 	ReposFunc *SourcerStoreReposFunc
@@ -3015,6 +3019,11 @@ func NewMockSourcerStore() *MockSourcerStore {
 		},
 		GetSiteCredentialFunc: &SourcerStoreGetSiteCredentialFunc{
 			defaultHook: func(context.Context, store.GetSiteCredentialOpts) (r0 *types1.SiteCredential, r1 error) {
+				return
+			},
+		},
+		GitHubAppsStoreFunc: &SourcerStoreGitHubAppsStoreFunc{
+			defaultHook: func() (r0 store1.GitHubAppsStore) {
 				return
 			},
 		},
@@ -3055,6 +3064,11 @@ func NewStrictMockSourcerStore() *MockSourcerStore {
 				panic("unexpected invocation of MockSourcerStore.GetSiteCredential")
 			},
 		},
+		GitHubAppsStoreFunc: &SourcerStoreGitHubAppsStoreFunc{
+			defaultHook: func() store1.GitHubAppsStore {
+				panic("unexpected invocation of MockSourcerStore.GitHubAppsStore")
+			},
+		},
 		ReposFunc: &SourcerStoreReposFunc{
 			defaultHook: func() database.RepoStore {
 				panic("unexpected invocation of MockSourcerStore.Repos")
@@ -3084,6 +3098,9 @@ func NewMockSourcerStoreFrom(i SourcerStore) *MockSourcerStore {
 		},
 		GetSiteCredentialFunc: &SourcerStoreGetSiteCredentialFunc{
 			defaultHook: i.GetSiteCredential,
+		},
+		GitHubAppsStoreFunc: &SourcerStoreGitHubAppsStoreFunc{
+			defaultHook: i.GitHubAppsStore,
 		},
 		ReposFunc: &SourcerStoreReposFunc{
 			defaultHook: i.Repos,
@@ -3521,6 +3538,106 @@ func (c SourcerStoreGetSiteCredentialFuncCall) Args() []interface{} {
 // invocation.
 func (c SourcerStoreGetSiteCredentialFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// SourcerStoreGitHubAppsStoreFunc describes the behavior when the
+// GitHubAppsStore method of the parent MockSourcerStore instance is
+// invoked.
+type SourcerStoreGitHubAppsStoreFunc struct {
+	defaultHook func() store1.GitHubAppsStore
+	hooks       []func() store1.GitHubAppsStore
+	history     []SourcerStoreGitHubAppsStoreFuncCall
+	mutex       sync.Mutex
+}
+
+// GitHubAppsStore delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSourcerStore) GitHubAppsStore() store1.GitHubAppsStore {
+	r0 := m.GitHubAppsStoreFunc.nextHook()()
+	m.GitHubAppsStoreFunc.appendCall(SourcerStoreGitHubAppsStoreFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GitHubAppsStore
+// method of the parent MockSourcerStore instance is invoked and the hook
+// queue is empty.
+func (f *SourcerStoreGitHubAppsStoreFunc) SetDefaultHook(hook func() store1.GitHubAppsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GitHubAppsStore method of the parent MockSourcerStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *SourcerStoreGitHubAppsStoreFunc) PushHook(hook func() store1.GitHubAppsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SourcerStoreGitHubAppsStoreFunc) SetDefaultReturn(r0 store1.GitHubAppsStore) {
+	f.SetDefaultHook(func() store1.GitHubAppsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SourcerStoreGitHubAppsStoreFunc) PushReturn(r0 store1.GitHubAppsStore) {
+	f.PushHook(func() store1.GitHubAppsStore {
+		return r0
+	})
+}
+
+func (f *SourcerStoreGitHubAppsStoreFunc) nextHook() func() store1.GitHubAppsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SourcerStoreGitHubAppsStoreFunc) appendCall(r0 SourcerStoreGitHubAppsStoreFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SourcerStoreGitHubAppsStoreFuncCall objects
+// describing the invocations of this function.
+func (f *SourcerStoreGitHubAppsStoreFunc) History() []SourcerStoreGitHubAppsStoreFuncCall {
+	f.mutex.Lock()
+	history := make([]SourcerStoreGitHubAppsStoreFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SourcerStoreGitHubAppsStoreFuncCall is an object that describes an
+// invocation of method GitHubAppsStore on an instance of MockSourcerStore.
+type SourcerStoreGitHubAppsStoreFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 store1.GitHubAppsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SourcerStoreGitHubAppsStoreFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SourcerStoreGitHubAppsStoreFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // SourcerStoreReposFunc describes the behavior when the Repos method of the

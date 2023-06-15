@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"testing"
 	"time"
 
@@ -160,7 +161,7 @@ func TestCheckAnomalies(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	slackMessage := fmt.Sprintf(slackMessageFmt, licenseID, "https://sourcegraph.acme.com", sub2ID, sub2ID, siteID)
+	slackMessage := fmt.Sprintf(slackMessageFmt, "https://sourcegraph.acme.com", url.QueryEscape(sub2ID), url.QueryEscape(licenseID), licenseID, siteID)
 
 	tests := []struct {
 		name      string

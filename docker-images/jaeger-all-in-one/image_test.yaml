@@ -31,7 +31,7 @@ fileExistenceTests:
   shouldExist: true
   uid: 10001
   gid: 0
-  permissions: 'drwxrwxrwx'
+  permissions: 'drwxr-xr-x'
 
 metadataTest:
   envVars:
