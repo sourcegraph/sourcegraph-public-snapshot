@@ -12,6 +12,7 @@ import (
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type rootResolver struct {
@@ -45,8 +46,8 @@ func NewRootResolver(
 
 func (r *rootResolver) Vulnerabilities(ctx context.Context, args resolverstubs.GetVulnerabilitiesArgs) (_ resolverstubs.VulnerabilityConnectionResolver, err error) {
 	ctx, _, endObservation := r.operations.getVulnerabilities.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("first", int(resolverstubs.Deref(args.First, 0))),
-		attribute.String("after", resolverstubs.Deref(args.After, "")),
+		attribute.Int("first", int(pointers.Deref(args.First, 0))),
+		attribute.String("after", pointers.Deref(args.After, "")),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -73,8 +74,8 @@ func (r *rootResolver) Vulnerabilities(ctx context.Context, args resolverstubs.G
 
 func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverstubs.GetVulnerabilityMatchesArgs) (_ resolverstubs.VulnerabilityMatchConnectionResolver, err error) {
 	ctx, errTracer, endObservation := r.operations.getMatches.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("first", int(resolverstubs.Deref(args.First, 0))),
-		attribute.String("after", resolverstubs.Deref(args.After, "")),
+		attribute.Int("first", int(pointers.Deref(args.First, 0))),
+		attribute.String("after", pointers.Deref(args.After, "")),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 

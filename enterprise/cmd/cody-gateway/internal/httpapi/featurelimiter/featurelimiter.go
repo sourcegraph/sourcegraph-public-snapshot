@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/response"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -134,7 +134,7 @@ func HandleFeature(
 
 		// If response is healthy, consume the rate limit
 		if responseRecorder.StatusCode >= 200 && responseRecorder.StatusCode < 300 {
-			if err := commit(1); err != nil {
+			if err := commit(r.Context(), 1); err != nil {
 				logger.Error("failed to commit rate limit consumption", log.Error(err))
 			}
 		}

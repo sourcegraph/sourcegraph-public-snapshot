@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestNewCodyGatewayChatRateLimit(t *testing.T) {
@@ -17,7 +19,7 @@ func TestNewCodyGatewayChatRateLimit(t *testing.T) {
 		{
 			name:        "Enterprise plan with GPT tag and user count",
 			plan:        PlanEnterprise1,
-			userCount:   intPtr(50),
+			userCount:   pointers.Ptr(50),
 			licenseTags: []string{GPTLLMAccessTag},
 			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"openai/gpt-4", "openai/gpt-3.5-turbo"},
@@ -28,7 +30,7 @@ func TestNewCodyGatewayChatRateLimit(t *testing.T) {
 		{
 			name:      "Enterprise plan with no GPT tag",
 			plan:      PlanEnterprise1,
-			userCount: intPtr(50),
+			userCount: pointers.Ptr(50),
 			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"anthropic/claude-v1", "anthropic/claude-instant-v1"},
 				Limit:           2500,
@@ -75,7 +77,7 @@ func TestCodyGatewayCodeRateLimit(t *testing.T) {
 		{
 			name:        "Enterprise plan with GPT tag and user count",
 			plan:        PlanEnterprise1,
-			userCount:   intPtr(50),
+			userCount:   pointers.Ptr(50),
 			licenseTags: []string{GPTLLMAccessTag},
 			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"openai/gpt-3.5-turbo"},
@@ -86,7 +88,7 @@ func TestCodyGatewayCodeRateLimit(t *testing.T) {
 		{
 			name:      "Enterprise plan with no GPT tag",
 			plan:      PlanEnterprise1,
-			userCount: intPtr(50),
+			userCount: pointers.Ptr(50),
 			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"anthropic/claude-instant-v1"},
 				Limit:           50000,
@@ -133,10 +135,10 @@ func TestCodyGatewayEmbeddingsRateLimit(t *testing.T) {
 		{
 			name:      "Enterprise plan",
 			plan:      PlanEnterprise1,
-			userCount: intPtr(50),
+			userCount: pointers.Ptr(50),
 			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"openai/text-embedding-ada-002"},
-				Limit:           20 * 50 * 2_500_000 / 30,
+				Limit:           20 * 50 * 10_000_000 / 30,
 				IntervalSeconds: 60 * 60 * 24,
 			},
 		},
@@ -145,7 +147,7 @@ func TestCodyGatewayEmbeddingsRateLimit(t *testing.T) {
 			plan: PlanEnterprise1,
 			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"openai/text-embedding-ada-002"},
-				Limit:           1 * 20 * 2_500_000 / 30,
+				Limit:           1 * 20 * 10_000_000 / 30,
 				IntervalSeconds: 60 * 60 * 24,
 			},
 		},
@@ -154,7 +156,7 @@ func TestCodyGatewayEmbeddingsRateLimit(t *testing.T) {
 			plan: "unknown",
 			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"openai/text-embedding-ada-002"},
-				Limit:           1 * 10 * 2_500_000 / 30,
+				Limit:           1 * 10 * 10_000_000 / 30,
 				IntervalSeconds: 60 * 60 * 24,
 			},
 		},
@@ -168,5 +170,3 @@ func TestCodyGatewayEmbeddingsRateLimit(t *testing.T) {
 		})
 	}
 }
-
-func intPtr(i int) *int { return &i }

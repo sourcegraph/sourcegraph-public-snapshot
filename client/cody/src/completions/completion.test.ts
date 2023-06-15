@@ -5,7 +5,7 @@ import {
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { mockVSCodeExports } from '../testSetup/vscode'
+import { mockVSCodeExports } from '../testutils/vscode'
 
 import { CodyCompletionItemProvider, inlineCompletionsCache } from '.'
 
@@ -34,12 +34,20 @@ jest.mock('vscode', () => ({
     },
 }))
 
+jest.mock('./context-embeddings.ts', () => ({
+    getContextFromEmbeddings: () => [],
+}))
+
 function createCompletionResponse(completion: string): CompletionResponse {
     return {
         completion: truncateMultilineString(completion),
         stopReason: 'unknown',
     }
 }
+
+const noopStatusBar = {
+    startLoading: () => () => {},
+} as any
 
 const CURSOR_MARKER = '<cursor>'
 
@@ -85,6 +93,8 @@ async function complete(
         completionsClient as any,
         null as any,
         null as any,
+        noopStatusBar,
+        null as any,
         undefined,
         undefined,
         undefined,
@@ -108,6 +118,7 @@ async function complete(
         },
     }
     const document: any = {
+        filename: 'test.ts',
         languageId,
         offsetAt(): number {
             return 0

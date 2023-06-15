@@ -16,6 +16,7 @@ go_library(
         "//enterprise/internal/batches/state",
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
+        "//enterprise/internal/github_apps/store",
         "//internal/api",
         "//internal/batches",
         "//internal/conf",
@@ -45,6 +46,7 @@ go_test(
     deps = [
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
+        "//enterprise/internal/github_apps/store",
         "//internal/api",
         "//internal/database",
         "//internal/extsvc",

@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/auth"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/githubapps"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/own"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -72,6 +73,8 @@ var additionalJobs = map[string]job.Job{
 	"repo-embedding-scheduler": repoembeddings.NewRepoEmbeddingSchedulerJob(),
 
 	"own-repo-indexing-queue": own.NewOwnRepoIndexingQueue(),
+
+	"github-apps-installation-validation-job": githubapps.NewGitHubApsInstallationJob(),
 }
 
 // SetAuthzProviders waits for the database to be initialized, then periodically refreshes the

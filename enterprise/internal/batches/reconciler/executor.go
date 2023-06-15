@@ -200,7 +200,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 		return afterDone, err
 	}
 	opts := css.BuildCommitOpts(e.targetRepo, e.ch, e.spec, pushConf)
-	_, err = e.pushCommit(ctx, opts)
+	resp, err := e.pushCommit(ctx, opts)
 	var pce pushCommitError
 	if errors.As(err, &pce) {
 		if acss, ok := css.(sources.ArchivableChangesetSource); ok {
@@ -211,6 +211,10 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 				return afterDone, errCannotPushToArchivedRepo
 			}
 		}
+	}
+
+	if err = e.runAfterCommit(ctx, css, resp, remoteRepo, opts); err != nil {
+		return afterDone, errors.Wrap(err, "running after commit routine")
 	}
 
 	if triggerUpdateWebhook && err == nil {
@@ -576,7 +580,7 @@ func (e *executor) decorateChangesetBody(ctx context.Context) (string, error) {
 }
 
 func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
-	css, err := sourcer.ForChangeset(ctx, s, ch)
+	css, err := sourcer.ForChangeset(ctx, s, ch, sources.AuthenticationStrategyUserCredential)
 	if err != nil {
 		switch err {
 		case sources.ErrMissingCredentials:
@@ -625,6 +629,46 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 	}
 
 	return res, nil
+}
+
+func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSource, resp *protocol.CreateCommitFromPatchResponse, remoteRepo *types.Repo, opts protocol.CreateCommitFromPatchRequest) (err error) {
+	// If we're pushing to a GitHub code host, we should check if a GitHub App is
+	// configured for Batch Changes to sign commits on this code host with.
+	if _, ok := css.(*sources.GitHubSource); ok {
+		// Attempt to get a ChangesetSource authenticated with a GitHub App.
+		css, err = e.sourcer.ForChangeset(ctx, e.tx, e.ch, sources.AuthenticationStrategyGitHubApp)
+		if err != nil {
+			switch err {
+			case sources.ErrNoGitHubAppConfigured:
+				// If we didn't find any GitHub Apps configured for this code host, it's a
+				// noop; commit signing is not set up for this code host.
+				break
+			default:
+				// We shouldn't block on this error, but we should still log it.
+				log15.Error("Failed to get GitHub App authenticated ChangesetSource", "err", err)
+			}
+		} else {
+			// We found a GitHub App configured for Batch Changes; we should try to use it
+			// to sign the commit.
+			gcss, ok := css.(*sources.GitHubSource)
+			if !ok {
+				return errors.Wrap(err, "got non-GitHubSource for ChangesetSource when using GitHub App authentication strategy")
+			}
+			// Find the revision from the response from CreateCommitFromPatch.
+			if resp == nil {
+				return errors.New("no response from CreateCommitFromPatch")
+			}
+			rev := resp.Rev
+			// We use the existing commit as the basis for the new commit, duplicating it
+			// over the REST API in order to produce a signed version of it to replace the
+			// original one with.
+			err = gcss.DuplicateCommit(ctx, opts, remoteRepo, rev)
+			if err != nil {
+				return errors.Wrap(err, "failed to duplicate commit")
+			}
+		}
+	}
+	return nil
 }
 
 // handleArchivedRepo updates the changeset and repo once it has been

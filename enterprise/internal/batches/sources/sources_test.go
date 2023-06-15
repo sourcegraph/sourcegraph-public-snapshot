@@ -13,6 +13,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	ghaauth "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
+	ghastore "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
+	ghatypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -23,7 +26,37 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+// Random valid private key generated for this test and nothing else
+const testGHAppPrivateKey = `-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEA1LqMqnchtoTHiRfFds2RWWji43R5mHT65WZpZXpBuBwsgSWr
+rN5VwTHZ4dxWk+XlyVDYsri7vlVWNX4EIt0jwxvh/OBXCFJXTL+byNHCimRIKvur
+ofoT1eF3z+5WpH5ddHNPOkGZV0Chyd5kvUcNuFA7q203HRVEOloHEs4fqJrGPHIF
+zc8Sug5qkOtZTS5xiHgTtmZkDLuLZ26H5Gfx3zZk5Gv2Jy/+fLsGninaiwTRsZf6
+RgPgmdlkuM8OhSm4GtlpzoK0D3iZEhf4pITo1CK2U4Cs7vzkU0UkQ+J/z6dDmVBJ
+gkalH1SHsboRqjNxkStEqGnbWwdtal01skbGOwIDAQABAoIBAQCls54oll17V5g5
+0Htu3BdxBsNdG3gv6kcY85n7gqy4ZbHA83/zSsiPkW4/gasqzzQbiU8Sf9U2IDDj
+wAImygy2SPzSRklk4QbBcKs/VSztMcoJOTprFGno+xShsexpe0j+kWdQYJK6JU0g
++ouL6FHmlRC1qn/4tn0L2t6Rpl+Aq4peDLqdwFHXj8GxGv0S10qMQ4/ER7onP6f0
+99WDTvNQR5DugKqHxooOV5HfUP70scqhCcFhp2zc7/aYQFVt/k4hDOMu/w4HhkD3
+r34y4EJoZsugGD1kPaJCw2rbSdoTtQHCqG5tfidY+XUIoC9mfmN8243jeRrhayeT
+4ewiDuNhAoGBAPszeqN/+V8EVrlbBiBG+xVYGzWU0KgHu1TUiIrOSmKa6rTwaYMb
+dKI8N4gYwFtb24AeDLfGnpaZAKSvNnrf8OapyLik7zXDylY0DBU7tRxQiUvNsVTs
+7CYjxih5GWzUeP/xgpfVbHIIGdTHaZ6JWiDHWOolAw3hQyw6V/uQTDtxAoGBANjK
+6vlctX55MjE2tuPk3ZCtCjgDFmWQjvFuiYYE/2cP4v4UBqgZn1vOaLRCnFm10ycl
+peBLxPVpeeNBWc2ep2YNnJ+hm+SavhIDesLJTxuhC4wtcKMVAtq83VQmMQTU5wRO
+KcUpviXLv2Z0UfbMWcohR4fJY1SkREwaxneHZc5rAoGBAIpT8c/BNBhPslYFutzh
+WXiKeQlLdo9hGpZ/JuWQ7cNY3bBfxyqMXvDLyiSmxJ5KehgV9BjrRf9WJ9WIKq8F
+TIooqsCLCrMHqw9HP/QdWgFKlCBrF6DVisEB6Cf3b7nPUwZV/v0PaNVugpL6cL39
+kuUEAYGGeiUVi8D6K+L6tg/xAoGATlQqyAQ+Mz8Y6n0pYXfssfxDh+9dpT6w1vyo
+RbsCiLtNuZ2EtjHjySjv3cl/ck5mx2sr3rmhpUYB2yFekBN1ykK6x1Z93AApEpsd
+PMm9gm8SnAhC/Tl3OY8prODLr0I5Ye3X27v0TvWp5xu6DaDSBF032hDiic98Ob8m
+3EMYfpcCgYBySPGnPmwqimiSyZRn+gJh+cZRF1aOKBqdqsfdcQrNpaZuZuQ4aYLo
+cEoKFPr8HjXXUVCa3Q84tf9nGb4iUFslRSbS6RCP6Nm+JsfbCTtzyglYuPRKITGm
+jSzka5UER3Dj1lSLMk9DkU+jrBxUsFeeiQOYhzQBaZxguvwYRIYHpg==
+-----END RSA PRIVATE KEY-----`
 
 func TestGetCloneURL(t *testing.T) {
 	tcs := []struct {
@@ -303,14 +336,27 @@ func TestSourcer_ForChangeset(t *testing.T) {
 
 	es := &types.ExternalService{
 		ID:          1,
-		Kind:        extsvc.KindGitLab,
+		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub.com",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123", "authorization": {}}`),
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com/", "repos": ["sourcegraph/sourcegraph"], "token": "secret"}`),
 	}
+	cfg, err := es.Configuration(ctx)
+	if err != nil {
+		t.Fatal("could not get config for external service: ", err)
+	}
+	config, ok := cfg.(*schema.GitHubConnection)
+	if !ok {
+		t.Fatal("got wrong config type for external service")
+	}
+
 	repo := &types.Repo{
-		Name:    api.RepoName("test-repo"),
+		Name:    api.RepoName("some-org/test-repo"),
 		URI:     "test-repo",
 		Private: true,
+		Metadata: &github.Repository{
+			ID:            "external-id-123",
+			NameWithOwner: "some-org/test-repo",
+		},
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "external-id-123",
 			ServiceType: extsvc.TypeGitHub,
@@ -341,6 +387,8 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				cred.SetAuthenticator(ctx, userToken)
 				return cred, nil
 			})
+			extsvcStore := database.NewMockExternalServiceStore()
+			extsvcStore.ListFunc.SetDefaultReturn([]*types.ExternalService{es}, nil)
 
 			tx := NewMockSourcerStore()
 			rs := database.NewMockRepoStore()
@@ -351,6 +399,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				return bc, nil
 			})
 			tx.UserCredentialsFunc.SetDefaultReturn(credStore)
+			tx.ExternalServicesFunc.SetDefaultReturn(extsvcStore)
 
 			css := NewMockChangesetSource()
 			want := NewMockChangesetSource()
@@ -359,7 +408,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				return want, nil
 			})
 
-			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch)
+			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential)
 			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
@@ -372,6 +421,8 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				assert.EqualValues(t, bc.LastApplierID, opts.UserID)
 				return nil, &errcode.Mock{IsNotFound: true}
 			})
+			extsvcStore := database.NewMockExternalServiceStore()
+			extsvcStore.ListFunc.SetDefaultReturn([]*types.ExternalService{es}, nil)
 
 			tx := NewMockSourcerStore()
 			rs := database.NewMockRepoStore()
@@ -389,6 +440,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				return cred, nil
 			})
 			tx.UserCredentialsFunc.SetDefaultReturn(credStore)
+			tx.ExternalServicesFunc.SetDefaultReturn(extsvcStore)
 
 			css := NewMockChangesetSource()
 			want := NewMockChangesetSource()
@@ -397,7 +449,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				return want, nil
 			})
 
-			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch)
+			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential)
 			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
@@ -412,6 +464,8 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				assert.EqualValues(t, bc.LastApplierID, opts.UserID)
 				return nil, &errcode.Mock{IsNotFound: true}
 			})
+			extsvcStore := database.NewMockExternalServiceStore()
+			extsvcStore.ListFunc.SetDefaultReturn([]*types.ExternalService{es}, nil)
 
 			tx := NewMockSourcerStore()
 			rs := database.NewMockRepoStore()
@@ -427,10 +481,59 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				return nil, store.ErrNoResults
 			})
 			tx.UserCredentialsFunc.SetDefaultReturn(credStore)
+			tx.ExternalServicesFunc.SetDefaultReturn(extsvcStore)
 
 			css := NewMockChangesetSource()
-			_, err := newMockSourcer(css).ForChangeset(ctx, tx, ch)
+			_, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential)
 			assert.Error(t, err)
+		})
+
+		t.Run("with GH App", func(t *testing.T) {
+			ghaStore := ghastore.NewMockGitHubAppsStore()
+			ghaStore.GetByDomainFunc.SetDefaultHook(func(ctx context.Context, domain types.GitHubAppDomain, baseUrl string) (*ghatypes.GitHubApp, error) {
+				assert.EqualValues(t, types.BatchesGitHubAppDomain, domain)
+				assert.EqualValues(t, config.Url, baseUrl)
+				ghApp := &ghatypes.GitHubApp{
+					BaseURL:    config.Url,
+					Domain:     types.BatchesGitHubAppDomain,
+					AppID:      1234,
+					PrivateKey: testGHAppPrivateKey,
+				}
+				return ghApp, nil
+			})
+			ghaStore.GetInstallIDFunc.SetDefaultHook(func(ctx context.Context, appId int, account string) (int, error) {
+				assert.EqualValues(t, "some-org", account)
+				assert.EqualValues(t, 1234, appId)
+				return 5678, nil
+			})
+			extsvcStore := database.NewMockExternalServiceStore()
+			extsvcStore.ListFunc.SetDefaultReturn([]*types.ExternalService{es}, nil)
+
+			tx := NewMockSourcerStore()
+			rs := database.NewMockRepoStore()
+			rs.GetFunc.SetDefaultReturn(repo, nil)
+			tx.ReposFunc.SetDefaultReturn(rs)
+			tx.GetBatchChangeFunc.SetDefaultHook(func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
+				assert.EqualValues(t, bc.ID, opts.ID)
+				return bc, nil
+			})
+			tx.ExternalServicesFunc.SetDefaultReturn(extsvcStore)
+			tx.GitHubAppsStoreFunc.SetDefaultReturn(ghaStore)
+
+			css := NewMockChangesetSource()
+			want := NewMockChangesetSource()
+			css.WithAuthenticatorFunc.SetDefaultHook(func(a auth.Authenticator) (ChangesetSource, error) {
+				au, ok := a.(*ghaauth.InstallationAuthenticator)
+				if !ok {
+					t.Fatalf("unexpected authenticator type: %T", a)
+				}
+				assert.EqualValues(t, 5678, au.InstallationID())
+				return want, nil
+			})
+
+			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyGitHubApp)
+			assert.NoError(t, err)
+			assert.Same(t, want, have)
 		})
 	})
 
@@ -438,6 +541,9 @@ func TestSourcer_ForChangeset(t *testing.T) {
 		ch := &btypes.Changeset{ID: 2, OwnedByBatchChangeID: 0}
 
 		t.Run("with site credential", func(t *testing.T) {
+			extsvcStore := database.NewMockExternalServiceStore()
+			extsvcStore.ListFunc.SetDefaultReturn([]*types.ExternalService{es}, nil)
+
 			tx := NewMockSourcerStore()
 			rs := database.NewMockRepoStore()
 			rs.GetFunc.SetDefaultReturn(repo, nil)
@@ -449,6 +555,7 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				cred.SetAuthenticator(ctx, siteToken)
 				return cred, nil
 			})
+			tx.ExternalServicesFunc.SetDefaultReturn(extsvcStore)
 
 			css := NewMockChangesetSource()
 			want := NewMockChangesetSource()
@@ -457,14 +564,17 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				return want, nil
 			})
 
-			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch)
+			have, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential)
 			assert.NoError(t, err)
 			assert.Same(t, want, have)
 		})
 
+		// When we remove the fallback to the external service configuration, this test is
+		// expected to fail.
 		t.Run("without site credential", func(t *testing.T) {
-			// When we remove the fallback to the external service
-			// configuration, this test is expected to fail.
+			extsvcStore := database.NewMockExternalServiceStore()
+			extsvcStore.ListFunc.SetDefaultReturn([]*types.ExternalService{es}, nil)
+
 			tx := NewMockSourcerStore()
 			rs := database.NewMockRepoStore()
 			rs.GetFunc.SetDefaultReturn(repo, nil)
@@ -474,12 +584,13 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				assert.EqualValues(t, repo.ExternalRepo.ServiceType, opts.ExternalServiceType)
 				return nil, store.ErrNoResults
 			})
+			tx.ExternalServicesFunc.SetDefaultReturn(extsvcStore)
 
 			css := NewMockChangesetSource()
 			want := errors.New("validator was called")
 			css.ValidateAuthenticatorFunc.SetDefaultReturn(want)
 
-			_, err := newMockSourcer(css).ForChangeset(ctx, tx, ch)
+			_, err := newMockSourcer(css).ForChangeset(ctx, tx, ch, AuthenticationStrategyUserCredential)
 			assert.Error(t, err)
 		})
 	})
@@ -564,7 +675,7 @@ func TestGetRemoteRepo(t *testing.T) {
 }
 
 func newMockSourcer(css ChangesetSource) Sourcer {
-	return newSourcer(nil, func(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, externalServiceIDs []int64) (ChangesetSource, error) {
+	return newSourcer(nil, func(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService) (ChangesetSource, error) {
 		return css, nil
 	})
 }

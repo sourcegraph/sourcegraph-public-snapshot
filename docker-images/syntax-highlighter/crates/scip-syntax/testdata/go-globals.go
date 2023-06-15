@@ -5,9 +5,21 @@ import "sync"
 // Group is a collection of goroutines which return errors that need to be
 // coalesced.
 type Group struct {
-	mutex sync.Mutex
-	err   *Error
-	wg    sync.WaitGroup
+	mutex  sync.Mutex
+	err    *Error
+	wg     sync.WaitGroup
+	nested struct {
+		inner bool
+	}
+
+	innerface interface {
+		Another() bool
+	}
+}
+
+type SomeInterface interface {
+	Something() bool
+	Incredible() int
 }
 
 // Go calls the given function in a new goroutine.
@@ -36,3 +48,10 @@ func (g *Group) Wait() *Error {
 	defer g.mutex.Unlock()
 	return g.err
 }
+
+var (
+	diffPath = flag.String("f", stdin, "filename of diff (default: stdin)")
+	fileIdx  = flag.Int("i", -1, "if >= 0, only print and report errors from the i'th file (0-indexed)")
+)
+
+func RegularFunc() {}

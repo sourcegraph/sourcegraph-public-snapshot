@@ -36,6 +36,7 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
     queuedAt,
     startedAt,
     failureMessage,
+    stats,
     onCancel,
 }) => (
     <li className="list-group-item p-2">
@@ -60,6 +61,7 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
                             queuedAt={queuedAt}
                             startedAt={startedAt}
                             failureMessage={failureMessage}
+                            stats={stats}
                         />
                     </div>
                 </div>
@@ -84,14 +86,25 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
 )
 
 const RepoEmbeddingJobExecutionInfo: FC<
-    Pick<RepoEmbeddingJobFields, 'state' | 'cancel' | 'finishedAt' | 'failureMessage' | 'queuedAt' | 'startedAt'>
-> = ({ state, cancel, finishedAt, queuedAt, startedAt, failureMessage }) => {
+    Pick<
+        RepoEmbeddingJobFields,
+        'state' | 'cancel' | 'finishedAt' | 'failureMessage' | 'queuedAt' | 'startedAt' | 'stats'
+    >
+> = ({ state, cancel, finishedAt, queuedAt, startedAt, failureMessage, stats }) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+    const estimatedFinish = calculateEstimatedFinish(
+        startedAt,
+        stats.filesScheduled,
+        stats.filesEmbedded,
+        stats.filesSkipped
+    )
+
     return (
         <>
             {state === RepoEmbeddingJobState.COMPLETED && finishedAt && (
                 <small>
-                    Completed <Timestamp date={finishedAt} />
+                    Completed embedding {stats.filesEmbedded} files ({stats.filesSkipped} skipped){' '}
+                    <Timestamp date={finishedAt} />
                 </small>
             )}
             {state === RepoEmbeddingJobState.CANCELED && finishedAt && (
@@ -114,6 +127,11 @@ const RepoEmbeddingJobExecutionInfo: FC<
                 <small>
                     {cancel ? (
                         'Cancelling ...'
+                    ) : estimatedFinish ? (
+                        <>
+                            Expected to finish <Timestamp date={estimatedFinish} /> (
+                            {stats.filesSkipped + stats.filesEmbedded}/{stats.filesScheduled} files)
+                        </>
                     ) : (
                         <>
                             Started processing <Timestamp date={startedAt} />
@@ -138,6 +156,31 @@ const RepoEmbeddingJobExecutionInfo: FC<
             )}
         </>
     )
+}
+
+function calculateEstimatedFinish(
+    startedAt: string | null,
+    filesScheduled: number,
+    filesEmbedded: number,
+    filesSkipped: number,
+    now?: number
+): Date | null {
+    const currentTime = now ?? Date.now()
+    if (!startedAt) {
+        return null
+    }
+    const startTime = Date.parse(startedAt)
+    if (filesScheduled === 0) {
+        // There is a period between when the job starts processing and when
+        // we know how many files need to be processed. In the case where
+        // we do not have an update with the number of files scheduled,
+        // we cannot calculate a meaningful ETA.
+        return null
+    }
+    const proportionFinished = (filesEmbedded + filesSkipped) / filesScheduled
+    const timeElapsed = currentTime - startTime
+    const estimatedTotalTime = timeElapsed / proportionFinished
+    return new Date(startTime + estimatedTotalTime)
 }
 
 function getRepoEmbeddingJobStateBadgeVariant(state: RepoEmbeddingJobState): BadgeVariantType {
