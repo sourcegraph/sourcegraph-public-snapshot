@@ -3,10 +3,9 @@ package com.sourcegraph.cody.vcs;
 import com.intellij.openapi.vcs.FilePath;
 import com.intellij.vcs.log.VcsLogFilterCollection;
 import com.intellij.vcs.log.visible.filters.VcsLogFilterObject;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Collections;
 import java.util.Date;
+import org.jetbrains.annotations.NotNull;
 
 public class VcsFilter {
 
@@ -15,7 +14,10 @@ public class VcsFilter {
   private final @NotNull VcsLogFilterCollection filterCollection;
   private final @NotNull String filterDescription;
 
-  private VcsFilter(int count, @NotNull VcsLogFilterCollection filterCollection, @NotNull String filterDescription) {
+  private VcsFilter(
+      int count,
+      @NotNull VcsLogFilterCollection filterCollection,
+      @NotNull String filterDescription) {
     this.count = count;
     this.filterCollection = filterCollection;
     this.filterDescription = filterDescription;
