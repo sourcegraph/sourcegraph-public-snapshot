@@ -21,7 +21,7 @@ fn create_system_tray_menu() -> SystemTrayMenu {
     );
 
     SystemTrayMenu::new()
-        .add_item(CustomMenuItem::new("open".to_string(), "Open chat"))
+        .add_item(CustomMenuItem::new("open".to_string(), "Open Cody"))
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(
             CustomMenuItem::new("settings".to_string(), "Settings").accelerator("CmdOrCtrl+,"),
