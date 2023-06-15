@@ -407,6 +407,7 @@ function createCompletionsProvider(
                 break
             }
 
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             webviewErrorMessenger(
                 'Provider `unstable-codegen` can not be used without configuring `cody.completions.advanced.serverEndpoint`. Falling back to `anthropic`.'
             )
@@ -428,7 +429,6 @@ function createCompletionsProvider(
         }),
         vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
     )
-
     return {
         dispose: () => {
             for (const disposable of disposables) {
