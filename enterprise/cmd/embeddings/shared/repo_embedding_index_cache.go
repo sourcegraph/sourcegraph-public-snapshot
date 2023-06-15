@@ -158,7 +158,6 @@ func (c *CachedEmbeddingIndexGetter) Get(ctx context.Context, repoName api.RepoN
 }
 
 func (c *CachedEmbeddingIndexGetter) get(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
-
 	repo, err := c.repoStore.GetByName(ctx, repoName)
 	if err != nil {
 		return nil, err
