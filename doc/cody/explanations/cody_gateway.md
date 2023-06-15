@@ -70,7 +70,7 @@ In addition to the above, we may throttle concurrent requests to Cody Gateway pe
 
 Sourcegraph Cody Gateway does not retain any sensitive data (prompt test and source code included in requests, etc) from any traffic we receive.
 We only tracks rate limit consumption per Sourcegraph Enterprise subscription, and some high-level diagnostic data (errors codes from upstream, numeric/enum request parameters, etc).
-The cody that powers Cody Gateway is also [source-available](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph$+f:cmd/cody-gateway+lang:go&patternType=lucky&sm=1&groupBy=path) for audit.
+The code that powers Cody Gateway is also [source-available](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph$+f:cmd/cody-gateway+lang:go&patternType=lucky&sm=1&groupBy=path) for audit.
 
 For more details about Cody Gateway security practices, please reach out to your account manager.
 Also refer to the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice) for more privacy details about Cody in general.
