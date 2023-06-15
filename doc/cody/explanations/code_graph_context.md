@@ -18,23 +18,20 @@ Embeddings for relevant code files must be enabled for each repository that you'
 > See [Enabling Cody Enterprise](./enabling_cody_enterprise.md#cody-on-sourcegraph-cloud)
 
 1. Go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance
-1. Add the following to configure OpenAI embeddings:
+2. Add the following to configure [Cody Gateway](./cody_gateway.md) embeddings:
     ```json
     {
       // [...]
-      "embeddings": {
-        "enabled": true,
-        "url": "https://api.openai.com/v1/embeddings",
-        "accessToken": "<token>",
-        "model": "text-embedding-ada-002",
-        "dimensions": 1536,
-        "excludedFilePathPatterns": []
-      }
+      "embeddings": { "enabled": true }
     }
     ```
-1. Navigate to **Site admin > Cody** (`/site-admin/cody`) and schedule repositories for embedding.
+3. Navigate to **Site admin > Cody** (`/site-admin/cody`) and schedule repositories for embedding.
 
-> NOTE: By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice). 
+> NOTE: By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice).
+
+<span class="virtual-br"></span>
+
+> NOTE: You can also [use third-party LLM directly](#using-a-third-party-llm-directly) for embeddings.
 
 ### Excluding files from embeddings
 
@@ -79,8 +76,7 @@ To target an S3 bucket you've already provisioned, set the following environment
 
 > NOTE: You don't need to set the `EMBEDDINGS_UPLOAD_AWS_ACCESS_KEY_ID` environment variable when using `EMBEDDINGS_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS=true` because role credentials will be automatically resolved. 
 
-
-### Using GCS
+#### Using GCS
 
 To target a GCS bucket you've already provisioned, set the following environment variables. Authentication is done through a service account key, supplied as either a path to a volume-mounted file, or the contents read in as an environment variable payload.
 
@@ -136,6 +132,26 @@ Supported time units are h (hours), m ( minutes), and s (seconds).
   "embeddings": {
     // [...]
     "minimumInterval": "24h"
+  }
+}
+```
+
+### Using a third-party LLM directly
+
+Instead of [Sourcegraph Cody Gateway](./cody_gateway.md), you can configure Sourcegraph to use a third-party provider directly for embeddings. Currently, this can only be OpenAI embeddings.
+
+You must create your own key with OpenAI [here](https://beta.openai.com/account/api-keys). Once you have the key, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
+
+```jsonc
+{
+  "cody.enabled": true,
+  "embeddings": {
+    "provider": "openai",
+    "url": "https://api.openai.com/v1/embeddings",
+    "accessToken": "<token>",
+    "model": "text-embedding-ada-002",
+    "dimensions": 1536,
+    "excludedFilePathPatterns": []
   }
 }
 ```
