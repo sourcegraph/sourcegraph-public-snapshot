@@ -225,6 +225,10 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 
 // SelectQueueForDequeueing selects a queue from the provided list with weighted randomness.
 func (m *MultiHandler) SelectQueueForDequeueing(candidateQueues []string) (string, error) {
+	return DoSelectQueueForDequeueing(candidateQueues)
+}
+
+var DoSelectQueueForDequeueing = func(candidateQueues []string) (string, error) {
 	// pick a queue based on the defined weights
 	var choices []weightedrand.Choice[string, int]
 	for _, queue := range candidateQueues {

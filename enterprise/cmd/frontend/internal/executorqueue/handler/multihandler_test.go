@@ -29,21 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type MockRandom struct {
-	IntnResults []int
-}
-
-func (r *MockRandom) Seed(seed int64) {}
-
-func (r *MockRandom) Intn(n int) int {
-	if len(r.IntnResults) == 0 {
-		return 0
-	}
-	result := r.IntnResults[0]
-	r.IntnResults = r.IntnResults[1:]
-	return result
-}
-
 type dequeueEvent[T workerutil.Record] struct {
 	queueName            string
 	expectedStatusCode   int
@@ -82,6 +67,15 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			name: "Dequeue one record for each queue",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel", "batches"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				// QueuedCount gets called for each queue in queues on every invocation of HandleDequeue to filter empty queues,
+				// so two calls are mocked for two dequeue events. Functionally it doesn't really matter what these return, but
+				// for the sake of accuracy, the codeintel store returns 1 less. The batches store returns the same value because
+				// the batches job isn't dequeued until after the second call to QueuedCount.
+				codeintelMockStore.QueuedCountFunc.PushReturn(2, nil)
+				codeintelMockStore.QueuedCountFunc.PushReturn(1, nil)
+				batchesMockStore.QueuedCountFunc.PushReturn(2, nil)
+				batchesMockStore.QueuedCountFunc.PushReturn(2, nil)
+
 				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
 				jobTokenStore.CreateFunc.PushReturn("token1", nil)
 				batchesMockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{ID: 2}, true, nil)
@@ -441,6 +435,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			rcache.SetupForTest(t)
 			jobTokenStore := executorstore.NewMockJobTokenStore()
 			codeIntelMockStore := dbworkerstoremocks.NewMockStore[uploadsshared.Index]()
 			batchesMockStore := dbworkerstoremocks.NewMockStore[*btypes.BatchSpecWorkspaceExecutionJob]()
@@ -452,18 +447,6 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 				handler.QueueHandler[uploadsshared.Index]{Name: "codeintel", Store: codeIntelMockStore, RecordTransformer: transformerFunc[uploadsshared.Index]},
 				handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Name: "batches", Store: batchesMockStore, RecordTransformer: transformerFunc[*btypes.BatchSpecWorkspaceExecutionJob]},
 			)
-
-			// Mock random fairness to alternate between how the queues are defined in the request and reversed between dequeues in a single test.
-			// The first queue will be attempted to be dequeued. Without randomness, the first queue would be dequeued until no jobs are returned.
-			//
-			// Example with two dequeues and request ["codeintel", "batches"]: 1. codeintel, 2. batches (instead of 1. codeintel, 2. codeintel -> no job, then dequeue batches)
-			// Example with one dequeue and request ["codeintel", "batches"]: 1. codeintel
-			var intnResults []int
-			for i := len(test.codeintelDequeueEvents) + len(test.batchesDequeueEvents); i > 0; i-- {
-				intnResults = append(intnResults, i-1)
-			}
-			// TODO fix randomness testing
-			//mh.RandomGenerator = &MockRandom{IntnResults: intnResults}
 
 			router := mux.NewRouter()
 			router.HandleFunc("/dequeue", mh.HandleDequeue)
@@ -481,11 +464,19 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 						if event.transformerFunc != nil {
 							mh.CodeIntelQueueHandler.RecordTransformer = event.transformerFunc
 						}
+						// mock random queue picking to return "codeintel"
+						handler.DoSelectQueueForDequeueing = func(candidateQueues []string) (string, error) {
+							return event.queueName, nil
+						}
 						evaluateEvent(test.body, event.expectedStatusCode, event.expectedResponseBody, t, router)
 					} else {
 						event := test.batchesDequeueEvents[eventIndex]
 						if event.transformerFunc != nil {
 							mh.BatchesQueueHandler.RecordTransformer = event.transformerFunc
+						}
+						// mock random queue picking to return "batches"
+						handler.DoSelectQueueForDequeueing = func(candidateQueues []string) (string, error) {
+							return event.queueName, nil
 						}
 						evaluateEvent(test.body, event.expectedStatusCode, event.expectedResponseBody, t, router)
 					}
