@@ -314,21 +314,30 @@ const register = async (
     disposables.push(disposeCompletions)
 
     vscode.workspace.onDidChangeConfiguration(event => {
-        if (event.affectsConfiguration('cody.experimental.suggestions')) {
+        if (
+            event.affectsConfiguration('cody.experimental.suggestions') ||
+            event.affectsConfiguration('cody.completions')
+        ) {
             const config = getConfiguration(vscode.workspace.getConfiguration())
 
             if (!config.experimentalSuggest) {
                 completionsProvider?.dispose()
                 completionsProvider = null
-            } else if (completionsProvider === null) {
-                completionsProvider = createCompletionsProvider(
-                    config,
-                    webviewErrorMessenger,
-                    completionsClient,
-                    statusBar,
-                    codebaseContext
-                )
+                return
             }
+
+            if (completionsProvider !== null) {
+                // If completions are already initialized and still enabled, we
+                // need to reset the completion provider.
+                completionsProvider.dispose()
+            }
+            completionsProvider = createCompletionsProvider(
+                config,
+                webviewErrorMessenger,
+                completionsClient,
+                statusBar,
+                codebaseContext
+            )
         }
     })
 
