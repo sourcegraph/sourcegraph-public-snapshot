@@ -300,12 +300,12 @@ const register = async (
         )
     }
 
+    // Create a disposable to clean up completions when the extension reloads.
     const disposeCompletions: vscode.Disposable = {
         dispose: () => {
             completionsProvider?.dispose()
         },
     }
-
     disposables.push(disposeCompletions)
 
     vscode.workspace.onDidChangeConfiguration(event => {
