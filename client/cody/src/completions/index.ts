@@ -5,7 +5,6 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
-import { logEvent } from '../event-logger'
 import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
@@ -381,14 +380,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         )
 
         try {
-            logEvent('CodyVSCodeExtension:completion:started', LOG_MANUAL, LOG_MANUAL)
+            CompletionLogger.logCompletionEvent('started', LOG_MANUAL)
             const completions = await completer.generateCompletions(abortController.signal, 3)
             this.documentProvider.addCompletions(completionsUri, ext, completions, {
                 suffix: '',
                 elapsedMillis: 0,
                 llmOptions: null,
             })
-            logEvent('CodyVSCodeExtension:completion:suggested', LOG_MANUAL, LOG_MANUAL)
+            CompletionLogger.logCompletionEvent('suggested', LOG_MANUAL)
         } catch (error) {
             if (error.message === 'aborted') {
                 return

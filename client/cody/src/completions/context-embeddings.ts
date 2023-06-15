@@ -7,6 +7,7 @@ import * as vscode from 'vscode'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 
 import type { ReferenceSnippet } from './context'
+import { logCompletionEvent } from './logger'
 
 interface Options {
     currentEditor: vscode.TextEditor
@@ -56,13 +57,15 @@ interface FetchEmbeddingsOptions {
     codebaseContext: CodebaseContext
 }
 
-const NUM_CODE_RESULTS = 3
+const NUM_CODE_RESULTS = 2
 // Query a bigger number of code results than we need to get embeddings NOT from the current file.
 const NUM_CODE_RESULTS_EXTRA = 5
 const NUM_TEXT_RESULTS = 1
 
 async function fetchAndSaveEmbeddings(options: FetchEmbeddingsOptions): Promise<void> {
     const { currentFilePath, text, codebaseContext } = options
+
+    logCompletionEvent('fetchEmbeddings')
 
     // TODO: add comment on how big are the embedding results
     // TODO: add comment on what's the price for embedding a file to run embeddings search
