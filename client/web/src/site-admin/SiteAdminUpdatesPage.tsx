@@ -295,6 +295,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                                                                 // Handle null case
                                                                 console.log('summary.statements was null or undefined')
                                                             }
+                                                            return Promise.resolve(null)
                                                         }}
                                                         variant="primary"
                                                         size="sm"
