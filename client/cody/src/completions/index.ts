@@ -20,11 +20,8 @@ export const inlineCompletionsCache = new CompletionsCache()
 
 // TODO:
 //
-// - Add new `cody.completions.advanced.provider` option and add `experimental-codegen` setting.
-// - Add new `cody.completions.advanced.serverEndpoint` option
-// - Add new `ExperimentalCodeGenProvider` that does a fetch()
-// - Verify it works with the mock server and create a vsix to test
-// - Document
+// - Rebase: Ideally when Laura's changes have also landed
+// - Add used provider to logging
 // - Fix tests & productionize this. Land in nightly
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
