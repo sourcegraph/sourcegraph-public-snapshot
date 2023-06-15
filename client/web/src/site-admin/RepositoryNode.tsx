@@ -131,6 +131,11 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
 
                     <div className="d-flex align-items-center col justify-content-start px-0 px-md-2 mt-2 mt-md-0">
                         <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
+                        {node.embeddingExists && (
+                            <div className="ml-2">
+                                <RepositoryStatusBadge status="embedded" />
+                            </div>
+                        )}
                         {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}
                         {node.mirrorInfo.lastError && (
                             <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
