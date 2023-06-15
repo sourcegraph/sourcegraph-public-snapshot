@@ -34,6 +34,10 @@ jest.mock('vscode', () => ({
     },
 }))
 
+jest.mock('./context-embeddings.ts', () => ({
+    getContextFromEmbeddings: () => [],
+}))
+
 function createCompletionResponse(completion: string): CompletionResponse {
     return {
         completion: truncateMultilineString(completion),
@@ -114,6 +118,7 @@ async function complete(
         },
     }
     const document: any = {
+        filename: 'test.ts',
         languageId,
         offsetAt(): number {
             return 0

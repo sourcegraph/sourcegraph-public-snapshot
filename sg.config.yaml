@@ -1224,6 +1224,7 @@ commandsets:
       - gitserver-1
       - searcher
       - caddy
+      - symbols
       - docsite
       - syntax-highlighter
       - github-proxy
@@ -1233,7 +1234,6 @@ commandsets:
       - zoekt-web-1
       - blobstore
       - embeddings
-      - symbols
 
   enterprise-e2e:
     <<: *enterprise_set

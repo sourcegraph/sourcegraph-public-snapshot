@@ -2,14 +2,14 @@ import * as assert from 'assert'
 
 import * as vscode from 'vscode'
 
-import { ChatViewProvider } from '../../src/chat/ChatViewProvider'
+import { FixupController } from '../../src/non-stop/FixupController'
 
 import { afterIntegrationTest, beforeIntegrationTest, getExtensionAPI, getFixupTasks, getTranscript } from './helpers'
 
-async function getChatViewProvider(): Promise<ChatViewProvider> {
-    const chatViewProvider = await getExtensionAPI().exports.testing?.chatViewProvider.get()
-    assert.ok(chatViewProvider)
-    return chatViewProvider
+async function getFixupController(): Promise<FixupController> {
+    const fixups = await getExtensionAPI().exports.testing?.fixupController.get()
+    assert.ok(fixups)
+    return fixups
 }
 
 suite('Cody Fixup Task Controller', function () {
@@ -21,7 +21,6 @@ suite('Cody Fixup Task Controller', function () {
     // Run the non-stop recipe to create a new task before every test
     this.beforeEach(async () => {
         await vscode.commands.executeCommand('cody.chat.focus')
-        const chatView = await getChatViewProvider()
 
         // Open index.html
         assert.ok(vscode.workspace.workspaceFolders)
@@ -33,7 +32,8 @@ suite('Cody Fixup Task Controller', function () {
         textEditor.selection = new vscode.Selection(6, 0, 7, 0)
 
         // Brings up the vscode input box
-        await chatView.executeRecipe('non-stop', 'Replace hello with goodbye', false)
+        const fixups = await getFixupController()
+        fixups.createTask(textEditor.document.uri, 'Replace hello with goodbye', textEditor.selection)
 
         // Check the chat transcript contains markdown
         const humanMessage = await getTranscript(0)

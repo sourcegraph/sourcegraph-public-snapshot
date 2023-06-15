@@ -111,6 +111,7 @@ func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, rep
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
 	}
+	var rs *codeowners.Ruleset
 	if ingestedCodeowners != nil {
 		rs = codeowners.NewRuleset(codeowners.IngestedRulesetSource{ID: int32(ingestedCodeowners.RepoID)}, ingestedCodeowners.Proto)
 	} else {
@@ -126,13 +127,20 @@ func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, rep
 			} else if os.IsNotExist(err) {
 				continue
 			}
-			return codeowners.NewRuleset(codeowners.GitRulesetSource{Repo: repoID, Commit: commitID, Path: path}, pbfile), nil
-		} else if os.IsNotExist(err) {
-			continue
+			return nil, err
 		}
-		return nil, err
 	}
-	return nil, nil
+	if rs == nil {
+		return nil, nil
+	}
+	repo, err := s.db.Repos().Get(ctx, repoID)
+	if err != nil && !errcode.IsNotFound(err) {
+		return nil, err
+	} else if errcode.IsNotFound(err) {
+		return nil, nil
+	}
+	rs.SetCodeHostType(repo.ExternalRepo.ServiceType)
+	return rs, nil
 }
 
 func (s *service) AssignedOwnership(ctx context.Context, repoID api.RepoID, _ api.CommitID) (AssignedOwners, error) {

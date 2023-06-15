@@ -2,12 +2,6 @@
 
 ## General
 
-### I just used `[no-bazel]` to merge my PR
-
-While using `[no-bazel]` will enable you to get your pull request merged, the subsequent builds will be with Bazel unless they also have that flag.
-
-Therefore you need to follow-up quickly with a fix to ensure `main` is not broken.
-
 ### The analysis cache is being busted because of `--action_env`
 
 Typically you'll see this (in CI or locally):

@@ -30,6 +30,8 @@
 - A separate setting for enabling/disabling Cody completions. [pull/53302](https://github.com/sourcegraph/sourcegraph/pull/53302)
 - Debounce for inline Cody completions [pull/53447](https://github.com/sourcegraph/sourcegraph/pull/53447)
 - Enabled "Translate to different language" recipe [#53393](https://github.com/sourcegraph/sourcegraph/pull/53393)
+- Skip Cody completions if there is code in line suffix or in the middle of a word in prefix [#53476](https://github.com/sourcegraph/sourcegraph/pull/53476)
+- Enabled "Summarize recent code changes" recipe [#53534](https://github.com/sourcegraph/sourcegraph/pull/53534)
 
 ### Changed
 
@@ -38,6 +40,10 @@
 ### Removed
 
 ### Fixed
+
+- Fixed font on the chat ui [#53540](https://github.com/sourcegraph/sourcegraph/pull/53540)
+- Fixed line breaks in the chat ui [#53543](https://github.com/sourcegraph/sourcegraph/pull/53543)
+- Reset prompt input on message send [#53543](https://github.com/sourcegraph/sourcegraph/pull/53543)
 
 ### Security
 

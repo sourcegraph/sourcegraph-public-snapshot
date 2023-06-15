@@ -76,11 +76,14 @@ public class CodyCompletionsManager {
             0.6,
             0.1);
     TextDocument textDocument = new IntelliJTextDocument(editor);
-    Callable<CompletableFuture<Void>> callable =
-        () -> triggerCompletionAsync(editor, offset, token, provider, textDocument);
-    // debouncing the completion trigger
-    cancelCurrentJob();
-    this.currentJob.set(Optional.of(this.scheduler.schedule(callable, 200, TimeUnit.MILLISECONDS)));
+    if (textDocument.getCompletionContext(offset).isCompletionTriggerValid()) {
+      Callable<CompletableFuture<Void>> callable =
+          () -> triggerCompletionAsync(editor, offset, token, provider, textDocument);
+      // debouncing the completion trigger
+      cancelCurrentJob();
+      this.currentJob.set(
+          Optional.of(this.scheduler.schedule(callable, 200, TimeUnit.MILLISECONDS)));
+    }
   }
 
   private CompletableFuture<Void> triggerCompletionAsync(
