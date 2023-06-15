@@ -12,6 +12,7 @@ go_library(
         "//cmd/frontend/enterprise",
         "//cmd/frontend/registry/api",
         "//cmd/frontend/shared",
+        "//enterprise/cmd/frontend/internal/app",
         "//enterprise/cmd/frontend/internal/auth",
         "//enterprise/cmd/frontend/internal/auth/githubappauth",
         "//enterprise/cmd/frontend/internal/authz",
