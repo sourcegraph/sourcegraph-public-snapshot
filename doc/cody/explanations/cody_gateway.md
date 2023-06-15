@@ -20,7 +20,7 @@ Reach out your account manager for more details about Sourcegraph Cody Gateway a
 
 To enable completions and embeddings provided by Cody Gateway on your Sourcegraph Enterprise instance, simply ensure your license key is set and Cody is enabled in [site configuration](../../admin/config/site_config.md):
 
-```json
+```jsonc
 {
   "licenseKey": "<...>",
   "cody.enabled": true,
