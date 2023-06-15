@@ -136,7 +136,7 @@ Supported time units are h (hours), m ( minutes), and s (seconds).
 }
 ```
 
-### Using a third-party LLM directly
+### Using a third-party embeddings provider directly
 
 Instead of [Sourcegraph Cody Gateway](./cody_gateway.md), you can configure Sourcegraph to use a third-party provider directly for embeddings. Currently, this can only be OpenAI embeddings.
 
