@@ -305,7 +305,6 @@ const register = async (
             case 'unstable-codegen': {
                 if (initialConfig.completionsAdvancedServerEndpoint !== null) {
                     providerConfig = createUnstableCodeGenProviderConfig({
-                        contextWindowChars: 10_000,
                         serverEndpoint: initialConfig.completionsAdvancedServerEndpoint,
                     })
                     break

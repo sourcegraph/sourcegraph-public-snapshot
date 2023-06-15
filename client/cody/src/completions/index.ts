@@ -21,7 +21,6 @@ export const inlineCompletionsCache = new CompletionsCache()
 // TODO:
 //
 // - Rebase: Ideally when Laura's changes have also landed
-// - Add used provider to logging
 // - Fix tests & productionize this. Land in nightly
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
@@ -219,7 +218,11 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        const logId = CompletionLogger.start({ type: 'inline', multilineMode })
+        const logId = CompletionLogger.start({
+            type: 'inline',
+            multilineMode,
+            providerIdentifier: this.providerConfig.identifier,
+        })
         const stopLoading = this.statusBar.startLoading('Completions are being generated')
 
         // Overwrite the abort handler to also update the loading state

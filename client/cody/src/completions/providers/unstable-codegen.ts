@@ -51,11 +51,16 @@ export class UnstableCodeGenProvider extends Provider {
     }
 }
 
-export function createProviderConfig(unstableCodeGenOptions: UnstableCodeGenOptions): ProviderConfig {
+export function createProviderConfig(
+    unstableCodeGenOptions: Omit<UnstableCodeGenOptions, 'contextWindowChars'>
+): ProviderConfig {
+    // TODO: Find out how long we can make the whole context (including prefix + suffix)
+    const contextWindowChars = 10_000
     return {
         create(options: ProviderOptions) {
-            return new UnstableCodeGenProvider(options, unstableCodeGenOptions)
+            return new UnstableCodeGenProvider(options, { ...unstableCodeGenOptions, contextWindowChars })
         },
-        maximumContextCharacters: unstableCodeGenOptions.contextWindowChars,
+        maximumContextCharacters: contextWindowChars,
+        identifier: 'codegen',
     }
 }

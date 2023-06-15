@@ -17,6 +17,11 @@ export interface ProviderConfig {
      * snippets and can be validated by the provider implementing it.
      */
     maximumContextCharacters: number
+
+    /**
+     * A string identifier used in event logs
+     */
+    identifier: string
 }
 
 export interface ProviderOptions {

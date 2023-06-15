@@ -54,6 +54,7 @@ export function logEvent(eventName: string, eventProperties?: any, publicPropert
         version: packageVersion,
     }
     try {
+        console.log(eventName, argument)
         eventLogger.log(eventName, anonymousUserID, argument, publicArgument)
     } catch (error) {
         console.error(error)
