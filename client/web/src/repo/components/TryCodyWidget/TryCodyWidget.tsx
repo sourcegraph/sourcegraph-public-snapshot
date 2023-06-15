@@ -199,7 +199,6 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
     type,
     isSourcegraphDotCom,
 }) => {
-    console.log('try cody widget')
     const isLightTheme = useIsLightTheme()
     const { isDismissed, onDismiss } = useTryCodyWidget(telemetryService)
     useEffect(() => {
@@ -211,7 +210,6 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
     }, [isDismissed, telemetryService, type])
 
     if (isDismissed) {
-        console.log('widget is dismissed')
         return null
     }
 
