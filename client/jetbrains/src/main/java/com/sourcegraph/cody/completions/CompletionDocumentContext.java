@@ -1,19 +1,21 @@
 package com.sourcegraph.cody.completions;
 
-public class CompletionDocumentContext {
-  private final String sameLineSuffix;
-  private final String sameLinePrefix;
+import org.jetbrains.annotations.NotNull;
 
-  public CompletionDocumentContext(String sameLinePrefix, String sameLineSuffix) {
+public class CompletionDocumentContext {
+  private final @NotNull String sameLineSuffix;
+  private final @NotNull String sameLinePrefix;
+
+  public CompletionDocumentContext(@NotNull String sameLinePrefix, @NotNull String sameLineSuffix) {
     this.sameLineSuffix = sameLineSuffix;
     this.sameLinePrefix = sameLinePrefix;
   }
 
-  public String getSameLineSuffix() {
+  public @NotNull String getSameLineSuffix() {
     return sameLineSuffix;
   }
 
-  public String getSameLinePrefix() {
+  public @NotNull String getSameLinePrefix() {
     return sameLinePrefix;
   }
 
