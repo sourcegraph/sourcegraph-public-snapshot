@@ -15,7 +15,7 @@ import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 import { DiffModeSelector } from '../commit/DiffModeSelector'
 import { DiffMode } from '../commit/RepositoryCommitPage'
 import { Linkified } from '../linkifiy/Linkified'
-import { getRefType, isPerforceDepotSource } from '../utils'
+import { getCanonicalURL, getRefType, isPerforceDepotSource } from '../utils'
 
 import { GitCommitNodeByline } from './GitCommitNodeByline'
 
@@ -89,6 +89,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     const isPerforceDepot = isPerforceDepotSource(sourceType)
     const abbreviatedRefID = node.perforceChangelist?.cid ?? node.abbreviatedOID
     const refID = node.perforceChangelist?.cid ?? node.oid
+    const canonicalURL = getCanonicalURL(sourceType, node)
 
     const toggleShowCommitMessageBody = useCallback((): void => {
         eventLogger.log('CommitBodyToggled')
@@ -126,7 +127,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
         >
             <span className={classNames('mr-2', styles.messageSubject)}>
                 <CommitMessageWithLinks
-                    to={node.canonicalURL}
+                    to={canonicalURL}
                     className={classNames(messageSubjectClassName, styles.messageLink)}
                     message={node.subject}
                     externalURLs={node.externalURLs}
@@ -213,7 +214,10 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                         </span>{' '}
                         {node.parents.map(parent => (
                             <div className="d-flex" key={parent.oid}>
-                                <Link className={styles.shaAndParentsParent} to={parent.url}>
+                                <Link
+                                    className={styles.shaAndParentsParent}
+                                    to={parent.perforceChangelist?.canonicalURL ?? parent.url}
+                                >
                                     <Code>{parent.perforceChangelist?.cid ?? parent.oid}</Code>
                                 </Link>
                                 <Tooltip content={flashCopiedToClipboardMessage ? 'Copied!' : copyMessage}>
@@ -289,7 +293,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                     <div>
                                         <ButtonGroup className="mr-2">
                                             <Tooltip content={`View this ${refType}`}>
-                                                <Button to={node.canonicalURL} variant="secondary" as={Link} size="sm">
+                                                <Button to={canonicalURL} variant="secondary" as={Link} size="sm">
                                                     <strong>{oidElement}</strong>
                                                 </Button>
                                             </Tooltip>
@@ -337,7 +341,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                         <div className={styles.innerWrapper}>
                             {bylineElement}
                             {messageElement}
-                            {!extraCompact && <Link to={node.canonicalURL}>{oidElement}</Link>}
+                            {!extraCompact && <Link to={canonicalURL}>{oidElement}</Link>}
                             {afterElement}
                         </div>
                         {commitMessageBody}

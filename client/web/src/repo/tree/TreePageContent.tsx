@@ -13,7 +13,7 @@ import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
+import { RepositoryType, SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
@@ -766,11 +766,17 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
     const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
     const connection = node?.commit?.ancestors
 
-    let commitsUrl = tree.url
+    const revisionType =
+        window.context.experimentalFeatures.perforceChangelistMapping === 'enabled' &&
+        node?.sourceType === RepositoryType.PERFORCE_DEPOT
+            ? '/-/changelists'
+            : '/-/commits'
+
+    let revisionURL = tree.url
     if (tree.url.includes('/-/tree')) {
-        commitsUrl = commitsUrl.replace('/-/tree', '/-/commits')
+        revisionURL = revisionURL.replace('/-/tree', revisionType)
     } else {
-        commitsUrl = commitsUrl + '/-/commits'
+        revisionURL = revisionURL + revisionType
     }
 
     return (
@@ -813,7 +819,7 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
                             </span>
                         </small>
                         <small>
-                            <Link to={commitsUrl}>Show {connection.pageInfo.hasNextPage ? 'more' : 'all'}</Link>
+                            <Link to={revisionURL}>Show {connection.pageInfo.hasNextPage ? 'more' : 'all'}</Link>
                         </small>
                     </>
                 )}

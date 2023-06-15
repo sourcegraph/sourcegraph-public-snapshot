@@ -19,6 +19,8 @@ import {
     RepositoryCommitsPageProps,
 } from './RepositoryCommitsPage'
 
+window.context.experimentalFeatures = { perforceChangelistMapping: 'enabled' }
+
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
@@ -157,6 +159,7 @@ const mockRepositoryPerforceChangelistsQuery: MockedResponse<
                                 perforceChangelist: {
                                     __typename: 'PerforceChangelist',
                                     cid: '48485',
+                                    canonicalURL: '/go/-/changelist/48485',
                                 },
                                 message: '48485 - test-5386\n[p4-fusion: depot-paths = "//go/": change = 48485]',
                                 subject: 'test-5386',
@@ -192,6 +195,7 @@ const mockRepositoryPerforceChangelistsQuery: MockedResponse<
                                         perforceChangelist: {
                                             __typename: 'PerforceChangelist',
                                             cid: '48484',
+                                            canonicalURL: '/go/-/changelist/48484',
                                         },
                                         url: '/perforce.sgdev.org/go/-/commit/d9994dc548fd79b473ce05198c88282890983fa9',
                                         __typename: 'GitCommit',
@@ -214,6 +218,7 @@ const mockRepositoryPerforceChangelistsQuery: MockedResponse<
                                 perforceChangelist: {
                                     __typename: 'PerforceChangelist',
                                     cid: '1012',
+                                    canonicalURL: '/go/-/changelist/1012',
                                 },
                                 message: '1012 - :boar:\n\n[p4-fusion: depot-paths = "//go/": change = 1012]',
                                 subject: ':boar:',
@@ -249,6 +254,7 @@ const mockRepositoryPerforceChangelistsQuery: MockedResponse<
                                         perforceChangelist: {
                                             __typename: 'PerforceChangelist',
                                             cid: '48485',
+                                            canonicalURL: '/go/-/changelist/48485',
                                         },
                                         url: '/perforce.sgdev.org/go/-/commit/d7205ebf51c2c7486ee74ded9f000ddf1b0cca24',
                                         __typename: 'GitCommit',
@@ -271,6 +277,7 @@ const mockRepositoryPerforceChangelistsQuery: MockedResponse<
                                 perforceChangelist: {
                                     __typename: 'PerforceChangelist',
                                     cid: '1011',
+                                    canonicalURL: '/go/-/changelist/1011',
                                 },
                                 message:
                                     '1011 - Add Go source code\n\n[p4-fusion: depot-paths = "//go/": change = 1011]',

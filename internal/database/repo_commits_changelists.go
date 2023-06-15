@@ -20,7 +20,7 @@ type RepoCommitsChangelistsStore interface {
 	GetLatestForRepo(ctx context.Context, repoID api.RepoID) (*types.RepoCommit, error)
 
 	// GetRepoCommit will return the mathcing row from the table for the given repo ID and the
-	// given changelsit ID.
+	// given changelist ID.
 	GetRepoCommitChangelist(ctx context.Context, repoID api.RepoID, changelistID int64) (*types.RepoCommit, error)
 }
 

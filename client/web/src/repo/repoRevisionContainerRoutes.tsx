@@ -5,7 +5,6 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { RepoRevisionContainerRoute } from './RepoRevisionContainer'
 
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
-
 const RepositoryFileTreePage = lazyComponent(() => import('./RepositoryFileTreePage'), 'RepositoryFileTreePage')
 
 // Work around the issue that react router can not match nested splats when the URL contains spaces
@@ -29,6 +28,8 @@ const routeToObjectType = {
 
 export const commitsPath = repoSplat + '/-/commits/*'
 
+export const changelistsPath = repoSplat + '/-/changelists/*'
+
 export function createRepoRevisionContainerRoutes(
     PageComponent: typeof RepositoryFileTreePage
 ): RepoRevisionContainerRoute[] {
@@ -43,6 +44,11 @@ export function createRepoRevisionContainerRoutes(
         })),
         {
             path: commitsPath,
+            render: ({ revision, repo, ...context }) =>
+                repo ? <RepositoryCommitsPage {...context} repo={repo} revision={revision} /> : <LoadingSpinner />,
+        },
+        {
+            path: changelistsPath,
             render: ({ revision, repo, ...context }) =>
                 repo ? <RepositoryCommitsPage {...context} repo={repo} revision={revision} /> : <LoadingSpinner />,
         },

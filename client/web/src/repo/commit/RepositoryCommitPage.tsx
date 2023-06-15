@@ -1,10 +1,11 @@
 import React, { useMemo, useCallback, useEffect } from 'react'
 
+import { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
 import { useParams } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
-import { gql, useQuery } from '@sourcegraph/http-client'
+import { useQuery } from '@sourcegraph/http-client'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
@@ -21,28 +22,16 @@ import {
     RepositoryCommitVariables,
     RepositoryFields,
     FileDiffFields,
+    RepositoryChangelistResult,
+    RepositoryChangelistVariables,
+    RepositoryType,
 } from '../../graphql-operations'
 import { GitCommitNode } from '../commits/GitCommitNode'
-import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { queryRepositoryComparisonFileDiffs, RepositoryComparisonDiff } from '../compare/RepositoryCompareDiffPage'
 
-import styles from './RepositoryCommitPage.module.scss'
+import { CHANGELIST_QUERY, COMMIT_QUERY } from './backend'
 
-const COMMIT_QUERY = gql`
-    query RepositoryCommit($repo: ID!, $revspec: String!) {
-        node(id: $repo) {
-            __typename
-            ... on Repository {
-                sourceType
-                commit(rev: $revspec) {
-                    __typename # Necessary for error handling to check if commit exists
-                    ...GitCommitFields
-                }
-            }
-        }
-    }
-    ${gitCommitFragment}
-`
+import styles from './RepositoryCommitPage.module.scss'
 
 interface RepositoryCommitPageProps extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
     repo: RepositoryFields
@@ -56,7 +45,7 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
     const params = useParams<{ revspec: string }>()
 
     if (!params.revspec) {
-        throw new Error('Missing `revspec` param!')
+        throw new Error('Missing `revspec` param.')
     }
 
     const { data, error, loading } = useQuery<RepositoryCommitResult, RepositoryCommitVariables>(COMMIT_QUERY, {
@@ -67,11 +56,73 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
     })
 
     const commit = useMemo(
-        () => (data?.node && data?.node?.__typename === 'Repository' ? data?.node?.commit : undefined),
+        () => (data?.node && data?.node?.__typename === 'Repository' ? data?.node?.commit || undefined : undefined),
         [data]
     )
 
+    return (
+        <RepositoryRevisionNodes
+            error={error}
+            loading={loading}
+            revspec={params.revspec}
+            changelistID=""
+            commit={commit}
+            {...props}
+        />
+    )
+}
+
+/** Displays a changelist. */
+export const RepositoryChangelistPage: React.FunctionComponent<RepositoryCommitPageProps> = props => {
+    const params = useParams<{ changelistID: string }>()
+
+    if (!params.changelistID) {
+        throw new Error('Missing `changelistID` param. It must be set.')
+    }
+
+    const { data, error, loading } = useQuery<RepositoryChangelistResult, RepositoryChangelistVariables>(
+        CHANGELIST_QUERY,
+        {
+            variables: {
+                repo: props.repo.id,
+                changelistID: params.changelistID,
+            },
+        }
+    )
+
+    const commit = useMemo(
+        () => (data?.node?.__typename === 'Repository' ? data?.node?.changelist?.commit : undefined),
+        [data]
+    )
+
+    return (
+        <RepositoryRevisionNodes
+            error={error}
+            loading={loading}
+            changelistID={params.changelistID}
+            revspec=""
+            commit={commit}
+            {...props}
+        />
+    )
+}
+
+interface RepositoryRevisionNodesProps extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
+    error?: ApolloError
+    loading: boolean
+
+    revspec: string
+    changelistID: string
+
+    repo: RepositoryFields
+    commit: GitCommitFields | undefined
+    onDidUpdateExternalLinks: (externalLinks?: ExternalLinkFields[]) => void
+}
+
+const RepositoryRevisionNodes: React.FunctionComponent<RepositoryRevisionNodesProps> = props => {
     const [diffMode, setDiffMode] = useTemporarySetting('repo.commitPage.diffMode', 'unified')
+
+    const { error, loading, commit, repo } = props
 
     useEffect(() => {
         props.telemetryService.logViewEvent('RepositoryCommit')
@@ -94,20 +145,28 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
                 first: args.first ?? null,
                 after: args.after ?? null,
                 paths: [],
-                repo: props.repo.id,
+                repo: repo.id,
                 base: commitParentOrEmpty(commit!),
                 head: commit!.oid,
             }),
-        [commit, props.repo.id]
+        [commit, repo.id]
     )
+
+    const pageTitle = commit
+        ? commit.subject
+        : repo.sourceType === RepositoryType.PERFORCE_DEPOT
+        ? `Changelist ${props.changelistID}`
+        : `Commit ${props.revspec}`
+
+    const pageError = repo.sourceType === RepositoryType.PERFORCE_DEPOT ? 'Changelist not found' : 'Commit not found'
 
     return (
         <div data-testid="repository-commit-page" className={classNames('p-3', styles.repositoryCommitPage)}>
-            <PageTitle title={commit ? commit.subject : `Commit ${params.revspec}`} />
+            <PageTitle title={pageTitle} />
             {loading ? (
                 <LoadingSpinner className="mt-2" />
             ) : error || !commit ? (
-                <ErrorAlert className="mt-2" error={error ?? new Error('Commit not found')} />
+                <ErrorAlert className="mt-2" error={error ?? new Error(pageError)} />
             ) : (
                 <>
                     <div className="border-bottom pb-2">
@@ -133,7 +192,7 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
                             lineNumbers: true,
                             diffMode,
                         }}
-                        updateOnChange={`${props.repo.id}:${commit.oid}`}
+                        updateOnChange={`${repo.id}:${commit.oid}`}
                         defaultFirst={15}
                         hideSearch={true}
                         noSummaryIfAllNodesVisible={true}

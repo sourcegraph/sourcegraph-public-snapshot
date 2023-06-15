@@ -89,7 +89,7 @@ export const GitCommitNodeTableRow: React.FC<
                 />
                 <td className="flex-1 overflow-hidden">{messageElement}</td>
                 <td className="text-right">
-                    <Link to={node.canonicalURL}>
+                    <Link to={node.perforceChangelist?.canonicalURL ?? node.canonicalURL}>
                         <Code data-testid="git-commit-node-oid">
                             {node.perforceChangelist?.cid ?? node.abbreviatedOID}
                         </Code>
