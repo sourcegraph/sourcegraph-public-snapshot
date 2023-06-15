@@ -7,6 +7,7 @@ import { RankingSummaryResult, RankingSummaryVariables } from '../../../../graph
 export const RankingSummaryFieldsFragment = gql`
     fragment RankingSummaryFields on RankingSummary {
         graphKey
+        visibleToZoekt
         pathMapperProgress {
             ...RankingSummaryProgressFields
         }
@@ -32,6 +33,7 @@ export const RANKING_SUMMARY = gql`
             rankingSummary {
                 ...RankingSummaryFields
             }
+            derivativeGraphKey
             nextJobStartsAt
             numExportedIndexes
             numTargetIndexes
@@ -53,7 +55,7 @@ export const useRankingSummary = (
     useQuery<RankingSummaryResult, RankingSummaryVariables>(RANKING_SUMMARY, {
         variables,
         fetchPolicy: 'cache-first',
-        pollInterval: 5000,
+        pollInterval: 100,
     })
 
 export const BUMP_DERIVATIVE_GRAPH_KEY = gql`

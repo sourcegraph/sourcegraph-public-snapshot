@@ -40,6 +40,14 @@ func (r *rootResolver) RankingSummary(ctx context.Context) (_ resolverstubs.Glob
 		return nil, err
 	}
 
+	graphKey := rankingshared.GraphKey()
+	var derivativeGraphKey *string
+	if key, ok, err := r.rankingSvc.DerivativeGraphKey(ctx); err != nil {
+		return nil, err
+	} else if ok {
+		derivativeGraphKey = &key
+	}
+
 	summaries, err := r.rankingSvc.Summaries(ctx)
 	if err != nil {
 		return nil, err
@@ -59,16 +67,16 @@ func (r *rootResolver) RankingSummary(ctx context.Context) (_ resolverstubs.Glob
 		nextJobStartsAt = &t
 	}
 
-	graphKey := rankingshared.GraphKey()
 	counts, err := r.rankingSvc.CoverageCounts(ctx, graphKey)
 	if err != nil {
 		return nil, err
 	}
 
 	return &globalRankingSummaryResolver{
-		resolvers:       resolvers,
-		nextJobStartsAt: nextJobStartsAt,
-		counts:          counts,
+		derivativeGraphKey: derivativeGraphKey,
+		resolvers:          resolvers,
+		nextJobStartsAt:    nextJobStartsAt,
+		counts:             counts,
 	}, nil
 }
 
@@ -97,9 +105,14 @@ func (r *rootResolver) DeleteRankingProgress(ctx context.Context, args *resolver
 }
 
 type globalRankingSummaryResolver struct {
-	resolvers       []resolverstubs.RankingSummaryResolver
-	nextJobStartsAt *time.Time
-	counts          shared.CoverageCounts
+	derivativeGraphKey *string
+	resolvers          []resolverstubs.RankingSummaryResolver
+	nextJobStartsAt    *time.Time
+	counts             shared.CoverageCounts
+}
+
+func (r *globalRankingSummaryResolver) DerivativeGraphKey() *string {
+	return r.derivativeGraphKey
 }
 
 func (r *globalRankingSummaryResolver) RankingSummary() []resolverstubs.RankingSummaryResolver {
@@ -128,6 +141,10 @@ type rankingSummaryResolver struct {
 
 func (r *rankingSummaryResolver) GraphKey() string {
 	return r.summary.GraphKey
+}
+
+func (r *rankingSummaryResolver) VisibleToZoekt() bool {
+	return r.summary.VisibleToZoekt
 }
 
 func (r *rankingSummaryResolver) PathMapperProgress() resolverstubs.RankingSummaryProgressResolver {
