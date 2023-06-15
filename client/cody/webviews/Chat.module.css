@@ -120,3 +120,7 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
 
     letter-spacing: 0.1rem;
 }
+
+.submit-button-disabled {
+    cursor: not-allowed;
+}

@@ -132,7 +132,7 @@ interface AbortMessageInProgressProps {
     onAbortMessageInProgress: () => void
 }
 
-const AbortMessageInProgress: React.FC<AbortMessageInProgressProps> = ({ onAbortMessageInProgress }) => (
+const AbortMessageInProgress: React.FunctionComponent<AbortMessageInProgressProps> = ({ onAbortMessageInProgress }) => (
     <div className={classNames(styles.stopGeneratingButtonContainer)}>
         <VSCodeButton
             className={classNames(styles.stopGeneratingButton)}
@@ -203,7 +203,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
 
 const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
     <VSCodeButton
-        className={classNames(styles.submitButton, className)}
+        className={classNames(disabled ? styles.submitButtonDisabled : styles.submitButton, className)}
         appearance="icon"
         type="button"
         disabled={disabled}
