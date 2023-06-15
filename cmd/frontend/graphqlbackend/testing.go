@@ -30,7 +30,7 @@ func mustParseGraphQLSchemaWithClient(t *testing.T, db database.DB, gitserverCli
 		db,
 		gitserverClient,
 		nil,
-		OptionalResolver{},
+		[]OptionalResolver{},
 		graphql.PanicHandler(printStackTrace{&gqlerrors.DefaultPanicHandler{}}),
 	)
 	if parseSchemaErr != nil {
@@ -89,6 +89,7 @@ func RunTest(t *testing.T, test *Test) {
 
 	if test.ExpectedResult == "" {
 		if result.Data != nil {
+			t.Logf("%v", test)
 			t.Errorf("got: %s", result.Data)
 			t.Fatal("want: null")
 		}

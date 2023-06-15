@@ -1,17 +1,26 @@
 import { ConfigurationWithAccessToken } from '../../configuration'
 
-import {
-    Event,
-    CompletionParameters,
-    CompletionCallbacks,
-    CodeCompletionParameters,
-    CodeCompletionResponse,
-} from './types'
+import { Event, CompletionCallbacks, CompletionParameters, CompletionResponse } from './types'
 
-type Config = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'debug' | 'customHeaders'>
+export interface CompletionLogger {
+    startCompletion(params: CompletionParameters):
+        | undefined
+        | {
+              onError: (error: string) => void
+              onComplete: (response: string | CompletionResponse) => void
+              onEvents: (events: Event[]) => void
+          }
+}
+
+export type Config = Pick<
+    ConfigurationWithAccessToken,
+    'serverEndpoint' | 'accessToken' | 'debugEnable' | 'customHeaders'
+>
 
 export abstract class SourcegraphCompletionsClient {
-    constructor(protected config: Config) {}
+    private errorEncountered = false
+
+    constructor(protected config: Config, protected logger?: CompletionLogger) {}
 
     public onConfigurationChange(newConfig: Config): void {
         this.config = newConfig
@@ -32,18 +41,18 @@ export abstract class SourcegraphCompletionsClient {
                     cb.onChange(event.completion)
                     break
                 case 'error':
+                    this.errorEncountered = true
                     cb.onError(event.error)
                     break
                 case 'done':
-                    cb.onComplete()
+                    if (!this.errorEncountered) {
+                        cb.onComplete()
+                    }
                     break
             }
         }
     }
 
     public abstract stream(params: CompletionParameters, cb: CompletionCallbacks): () => void
-    public abstract complete(
-        params: CodeCompletionParameters,
-        abortSignal: AbortSignal
-    ): Promise<CodeCompletionResponse>
+    public abstract complete(params: CompletionParameters, abortSignal: AbortSignal): Promise<CompletionResponse>
 }

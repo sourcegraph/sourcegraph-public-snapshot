@@ -32,15 +32,18 @@ Available comamndsets in `sg.config.yaml`:
 * api-only
 * app
 * batches 🦡
+* batches-kubernetes
 * codeintel
 * codeintel-bazel
+* codeintel-kubernetes
+* cody-gateway
 * dotcom
-* embeddings
 * enterprise
 * enterprise-bazel
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
 * enterprise-codeintel-bazel
+* enterprise-codeintel-multi-queue-executor
 * enterprise-e2e
 * iam
 * monitoring
@@ -93,17 +96,22 @@ Available commands in `sg.config.yaml`:
 
 * batches-executor
 * batches-executor-firecracker
+* batches-executor-kubernetes
 * batcheshelper-builder
 * bext
 * blobstore
 * caddy
 * codeintel-executor
 * codeintel-executor-firecracker
+* codeintel-executor-kubernetes
 * codeintel-worker
-* cody-slack: Start Cody-Slack locally server locally
+* cody-gateway
+* cody-slack-dev: Start Cody-Slack dev locally
+* cody-slack-docker: Start Cody-Slack locally prod in Docker
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
 * embeddings
+* executor-kubernetes-template
 * executor-template
 * frontend: Enterprise frontend
 * github-proxy
@@ -113,9 +121,9 @@ Available commands in `sg.config.yaml`:
 * gitserver-template
 * grafana
 * jaeger
-* llm-proxy
 * loki
 * monitoring-generator
+* multiqueue-executor
 * oss-frontend
 * oss-gitserver-0
 * oss-gitserver-1
@@ -252,12 +260,10 @@ This command is useful when:
 
 Supported run types when providing an argument for 'sg ci build [runtype]':
 
-* bzl - Bazel Exp Branch
 * wolfi - Wolfi Exp Branch
 * main-dry-run - Main dry run
 * docker-images-patch - Patch image
 * docker-images-patch-notest - Patch image without testing
-* docker-images-candidates-notest - Build all candidates without testing
 * executor-patch-notest - Build executor without testing
 * backend-integration - Backend integration tests
 
@@ -356,6 +362,9 @@ Available testsuites in `sg.config.yaml`:
 * bext-e2e
 * bext-integration
 * client
+* cody-e2e
+* cody-integration
+* cody-unit
 * docsite
 * web-e2e
 * web-integration
@@ -423,6 +432,15 @@ Flags:
 ### sg lint go
 
 Check go code for linting errors, forbidden imports, generated files, etc.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg lint graphql
+
+Checks the graphql code for linting errors [bazel].
 
 
 Flags:
@@ -556,6 +574,9 @@ $ sg db reset-redis
 
 # Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
 $ sg db add-user -username=foo
+
+# Create an access token for the user created above.
+$ sg db add-access-token -username=foo
 ```
 
 ### sg db delete-test-dbs
@@ -622,6 +643,20 @@ Flags:
 * `--password="<value>"`: Password for user (default: sourcegraphsourcegraph)
 * `--username="<value>"`: Username for user (default: sourcegraph)
 
+### sg db add-access-token
+
+Create a sourcegraph access token.
+
+Run 'sg db add-access-token -username bob' to create an access token for the given username. The access token will be printed if the operation succeeds
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--note="<value>"`: Note attached to the token
+* `--sudo`: Set true to make a site-admin level token
+* `--username="<value>"`: Username for user (default: sourcegraph)
+
 ## sg migration
 
 Modifies and runs database migrations.
@@ -654,8 +689,8 @@ Arguments: `<name>`
 
 Flags:
 
-* `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--schema, --db="<value>"`: The target database `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights' (default: frontend)
 
 ### sg migration revert
 
@@ -689,12 +724,12 @@ $ sg migration up [-db=<schema>]
 
 Flags:
 
-* `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: "all")
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
 * `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--privileged-hash="<value>"`: Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Multiple privileged hash flags (for distinct schemas) may be supplied. Future (distinct) up operations will require a unique hash.
+* `--schema, --db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Possible values are 'frontend', 'codeintel', 'codeinsights' and 'all'. (default: "all")
 * `--skip-oobmigration-validation`: Do not attempt to validate the progress of out-of-band migrations.
 * `--skip-upgrade-validation`: Do not attempt to compare the previous instance version with the target instance version for upgrade compatibility. Please refer to https://docs.sourcegraph.com/admin/updates#update-policy for our instance upgrade compatibility policy.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
@@ -715,12 +750,12 @@ $ sg migration upto -db=<schema> -target=<target>,<target>,...
 
 Flags:
 
-* `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
 * `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--privileged-hash="<value>"`: Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Future (distinct) upto operations will require a unique hash.
+* `--schema, --db="<value>"`: The target `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights'
 * `--target="<value>"`: The `migration` to apply. Comma-separated values are accepted.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
 
@@ -740,8 +775,8 @@ $ sg migration undo -db=<schema>
 
 Flags:
 
-* `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--schema, --db="<value>"`: The target `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights'
 
 ### sg migration downto
 
@@ -759,12 +794,12 @@ $ sg migration downto -db=<schema> -target=<target>,<target>,...
 
 Flags:
 
-* `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
 * `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--privileged-hash="<value>"`: Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Future (distinct) downto operations will require a unique hash.
+* `--schema, --db="<value>"`: The target `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights'
 * `--target="<value>"`: The migration to apply. Comma-separated values are accepted.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
 
@@ -781,8 +816,8 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Supply "all" to validate all schemas. (default: "all")
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--schema, --db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Possible values are 'frontend', 'codeintel', 'codeinsights' and 'all'. (default: "all")
 * `--skip-out-of-band-migrations`: Do not attempt to validate out-of-band migration status.
 
 ### sg migration describe
@@ -798,12 +833,12 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target `schema` to describe.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--force`: Force write the file if it already exists.
 * `--format="<value>"`: The target output format.
 * `--no-color`: If writing to stdout, disable output colorization.
 * `--out="<value>"`: The file to write to. If not supplied, stdout is used.
+* `--schema, --db="<value>"`: The target `schema` to describe. Possible values are 'frontend', 'codeintel' and 'codeinsights'
 
 ### sg migration drift
 
@@ -818,11 +853,13 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target `schema` to compare.
+* `--auto-fix, --autofix`: Database goes brrrr.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--file="<value>"`: The target schema description file.
+* `--ignore-migrator-update`: Ignore the running migrator not being the latest version. It is recommended to use the latest migrator version.
+* `--schema, --db="<value>"`: The target `schema` to compare. Possible values are 'frontend', 'codeintel' and 'codeinsights'
 * `--skip-version-check`: Skip validation of the instance's current version.
-* `--version="<value>"`: The target schema version. Must be resolvable as a git revlike on the Sourcegraph repository.
+* `--version="<value>"`: The target schema version. Can be a version (e.g. 5.0.2) or resolvable as a git revlike on the Sourcegraph repository (e.g. a branch, tag or commit hash). (default: HEAD)
 
 ### sg migration add-log
 
@@ -840,8 +877,8 @@ $ sg migration add-log -db=<schema> -version=<version> [-up=true|false]
 
 Flags:
 
-* `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--schema, --db="<value>"`: The target `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights'
 * `--up`: The migration direction.
 * `--version="<value>"`: The migration `version` to log. (default: 0)
 
@@ -875,10 +912,10 @@ Arguments: `<current-release>`
 
 Flags:
 
-* `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--in-container`: Launch Postgres in a Docker container for squashing; do not use the host
 * `--in-timescaledb-container`: Launch TimescaleDB in a Docker container for squashing; do not use the host
+* `--schema, --db="<value>"`: The target database `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights' (default: frontend)
 * `--skip-data`: Skip writing data rows into the squashed migration
 * `--skip-teardown`: Skip tearing down the database created to run all registered migrations
 
@@ -895,10 +932,10 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--in-container`: Launch Postgres in a Docker container for squashing; do not use the host
 * `--in-timescaledb-container`: Launch TimescaleDB in a Docker container for squashing; do not use the host
+* `--schema, --db="<value>"`: The target database `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights' (default: frontend)
 * `--skip-data`: Skip writing data rows into the squashed migration
 * `--skip-teardown`: Skip tearing down the database created to run all registered migrations
 * `-f="<value>"`: The output filepath
@@ -916,8 +953,8 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--schema, --db="<value>"`: The target database `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights' (default: frontend)
 * `-f="<value>"`: The output filepath
 
 ### sg migration rewrite
@@ -933,9 +970,9 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--rev="<value>"`: The target revision
+* `--schema, --db="<value>"`: The target database `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights' (default: frontend)
 
 ## sg insights
 
@@ -1106,6 +1143,18 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--format, -f="<value>"`: Output format of list ('markdown', 'plain', 'regexp') (default: markdown)
 
+## sg embeddings-qa
+
+Calculate recall for embeddings.
+
+Recall is the fraction of relevant documents that were successfully retrieved. Recall=1 if, for every query in the test data, all relevant documents were retrieved. The command requires a running embeddings service with embeddings of the Sourcegraph repository.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--url, -u="<value>"`: Run the evaluation against this endpoint (default: http://localhost:9991/search)
+
 ## sg secret
 
 Manipulate secrets stored in memory and in file.
@@ -1201,6 +1250,43 @@ List registered instances for src-cli.
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+## sg app
+
+Manage releases and update manifests used to let Sourcegraph App clients know that a new update is available.
+
+
+Various commands to handle management of releases, and processes around Sourcegraph App.
+
+
+
+```sh
+# Update the updater manifest
+$ sg app update-manifest
+
+# Update the updater manifest based on a particular github release
+$ sg app update-manifest --release-tag app-v2023.07.07
+
+# Do everything except upload the updated manifest
+$ sg app update-manifest --no-upload
+
+# Update the manifest but don't update the signatures from the release - useful if the release comes from the same build
+$ sg app update-manifest --update-signatures
+```
+
+### sg app update-manifest
+
+update the manifest used by the updater endpoint on dotCom.
+
+
+Flags:
+
+* `--bucket="<value>"`: Bucket where the updated manifest should be uploaded to once updated. (default: sourcegraph-app)
+* `--build="<value>"`: Build number to retrieve the update-manifest from. If no build number is given, the latest build will be used (default: -1)
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--no-upload`: do everything except upload the final manifest
+* `--release-tag="<value>"`: GitHub release tag which should be used to update the manifest with. If no tag is given the latest GitHub release is used (default: latest)
+* `--update-signatures`: update the signatures in the update manifest by retrieving the signature content from the GitHub release
 
 ## sg teammate
 

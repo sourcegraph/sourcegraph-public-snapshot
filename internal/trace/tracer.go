@@ -7,7 +7,13 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	nettrace "golang.org/x/net/trace"
+
+	"github.com/sourcegraph/sourcegraph/internal/env"
 )
+
+// EnableNetTrace toggles golang.org/x/net/trace support (exported via
+// '/debug/requests' and '/debug/events') in internal/trace through SRC_ENABLE_NET_TRACE.
+var EnableNetTrace = env.MustGetBool("SRC_ENABLE_NET_TRACE", true, "Enable golang.org/x/net/trace")
 
 // A Tracer for trace creation, parameterised over an opentelemetry.TracerProvider. Set
 // TracerProvider if you don't want to use the global tracer provider, otherwise the
@@ -17,7 +23,7 @@ type Tracer struct {
 }
 
 // New returns a new Trace with the specified family and title. Must be closed with Finish().
-func (t Tracer) New(ctx context.Context, family, title string, tags ...Tag) (*Trace, context.Context) {
+func (t Tracer) New(ctx context.Context, family, title string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
 	if t.TracerProvider == nil {
 		t.TracerProvider = otel.GetTracerProvider()
 	}
@@ -27,10 +33,14 @@ func (t Tracer) New(ctx context.Context, family, title string, tags ...Tag) (*Tr
 		Tracer("sourcegraph/internal/trace").
 		Start(ctx, family,
 			oteltrace.WithAttributes(attribute.String("title", title)),
-			oteltrace.WithAttributes(tagSet(tags).toAttributes()...))
+			oteltrace.WithAttributes(attrs...))
 
-	// Create the nettrace trace to tee to.
-	ntTrace := nettrace.New(family, title)
+	// Create the nettrace trace to tee to. May be left nil if EnableNetTrace
+	// is false.
+	var ntTrace nettrace.Trace
+	if EnableNetTrace {
+		ntTrace = nettrace.New(family, title)
+	}
 
 	// Set up the split trace.
 	trace := &Trace{
@@ -39,29 +49,15 @@ func (t Tracer) New(ctx context.Context, family, title string, tags ...Tag) (*Tr
 		nettraceTrace: ntTrace,
 	}
 	if parent := TraceFromContext(ctx); parent != nil {
-		ntTrace.LazyPrintf("parent: %s", parent.family)
+		if ntTrace != nil {
+			ntTrace.LazyPrintf("parent: %s", parent.family)
+		}
 		trace.family = parent.family + " > " + family
 	}
-	for _, t := range tags {
-		ntTrace.LazyPrintf("%s: %s", t.Key, t.Value)
+	if ntTrace != nil {
+		for _, t := range attrs {
+			ntTrace.LazyPrintf("%s: %s", t.Key, t.Value)
+		}
 	}
 	return trace, contextWithTrace(ctx, trace)
-}
-
-// Tag may be passed when creating a new span. See
-// https://github.com/opentracing/specification/blob/master/semantic_conventions.md
-// for common tags.
-type Tag struct {
-	Key   string
-	Value string
-}
-
-type tagSet []Tag
-
-func (t tagSet) toAttributes() []attribute.KeyValue {
-	attributes := make([]attribute.KeyValue, len(t))
-	for i, tag := range t {
-		attributes[i] = attribute.String(tag.Key, tag.Value)
-	}
-	return attributes
 }

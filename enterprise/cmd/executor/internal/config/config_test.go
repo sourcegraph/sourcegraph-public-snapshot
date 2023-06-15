@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -49,6 +50,24 @@ func TestConfig_Load(t *testing.T) {
 			return `[{"key": "foo", "operator": "In", "values": ["bar"]}]`
 		case "EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS":
 			return `[{"key": "faz", "operator": "In", "values": ["baz"]}]`
+		case "EXECUTOR_KUBERNETES_POD_AFFINITY":
+			return `[{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}]`
+		case "EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY":
+			return `[{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}]`
+		case "EXECUTOR_KUBERNETES_NODE_TOLERATIONS":
+			return `[{"key": "foo", "operator": "Equal", "value": "bar", "effect": "NoSchedule"}]`
+		case "KUBERNETES_SINGLE_JOB_POD":
+			return "true"
+		case "KUBERNETES_JOB_VOLUME_TYPE":
+			return "pvc"
+		case "KUBERNETES_JOB_VOLUME_SIZE":
+			return "10Gi"
+		case "KUBERNETES_ADDITIONAL_JOB_VOLUMES":
+			return `[{"name": "foo", "configMap": {"name": "bar"}}]`
+		case "KUBERNETES_ADDITIONAL_JOB_VOLUME_MOUNTS":
+			return `[{"name": "foo", "mountPath": "/foo"}]`
+		case "KUBERNETES_SINGLE_JOB_STEP_IMAGE":
+			return "sourcegraph/step-image:latest"
 		default:
 			return name
 		}
@@ -58,6 +77,7 @@ func TestConfig_Load(t *testing.T) {
 	assert.Equal(t, "EXECUTOR_FRONTEND_URL", cfg.FrontendURL)
 	assert.Equal(t, "EXECUTOR_FRONTEND_PASSWORD", cfg.FrontendAuthorizationToken)
 	assert.Equal(t, "EXECUTOR_QUEUE_NAME", cfg.QueueName)
+	assert.Equal(t, "EXECUTOR_QUEUE_NAMES", cfg.QueueNamesStr)
 	assert.Equal(t, 10*time.Second, cfg.QueuePollInterval)
 	assert.Equal(t, 10, cfg.MaximumNumJobs)
 	assert.True(t, cfg.UseFirecracker)
@@ -93,6 +113,61 @@ func TestConfig_Load(t *testing.T) {
 		[]corev1.NodeSelectorRequirement{{Key: "faz", Operator: corev1.NodeSelectorOpIn, Values: []string{"baz"}}},
 		cfg.KubernetesNodeRequiredAffinityMatchFields,
 	)
+	assert.Equal(
+		t,
+		[]corev1.PodAffinityTerm{
+			{
+				LabelSelector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{
+							Key:      "foo",
+							Operator: metav1.LabelSelectorOpIn,
+							Values:   []string{"bar"},
+						},
+					},
+				},
+				TopologyKey: "kubernetes.io/hostname",
+			},
+		},
+		cfg.KubernetesPodAffinity,
+	)
+	assert.Equal(
+		t,
+		[]corev1.PodAffinityTerm{
+			{
+				LabelSelector: &metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{
+							Key:      "foo",
+							Operator: metav1.LabelSelectorOpIn,
+							Values:   []string{"bar"},
+						},
+					},
+				},
+				TopologyKey: "kubernetes.io/hostname",
+			},
+		},
+		cfg.KubernetesPodAntiAffinity,
+	)
+	assert.Equal(
+		t,
+		[]corev1.Toleration{{Key: "foo", Operator: corev1.TolerationOpEqual, Value: "bar", Effect: corev1.TaintEffectNoSchedule}},
+		cfg.KubernetesNodeTolerations,
+	)
+	assert.True(t, cfg.KubernetesSingleJobPod)
+	assert.Equal(t, "pvc", cfg.KubernetesJobVolumeType)
+	assert.Equal(t, "10Gi", cfg.KubernetesJobVolumeSize)
+	assert.Equal(
+		t,
+		[]corev1.Volume{{Name: "foo", VolumeSource: corev1.VolumeSource{ConfigMap: &corev1.ConfigMapVolumeSource{LocalObjectReference: corev1.LocalObjectReference{Name: "bar"}}}}},
+		cfg.KubernetesAdditionalJobVolumes,
+	)
+	assert.Equal(
+		t,
+		[]corev1.VolumeMount{{Name: "foo", MountPath: "/foo"}},
+		cfg.KubernetesAdditionalJobVolumeMounts,
+	)
+	assert.Equal(t, "sourcegraph/step-image:latest", cfg.KubernetesSingleJobStepImage)
 }
 
 func TestConfig_Load_Defaults(t *testing.T) {
@@ -102,6 +177,7 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Empty(t, cfg.FrontendURL)
 	assert.Empty(t, cfg.FrontendAuthorizationToken)
 	assert.Empty(t, cfg.QueueName)
+	assert.Empty(t, cfg.QueueNamesStr)
 	assert.Equal(t, time.Second, cfg.QueuePollInterval)
 	assert.Equal(t, 1, cfg.MaximumNumJobs)
 	assert.Equal(t, "sourcegraph/executor-vm:insiders", cfg.FirecrackerImage)
@@ -133,9 +209,17 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Equal(t, "12Gi", cfg.KubernetesResourceLimitMemory)
 	assert.Empty(t, cfg.KubernetesResourceRequestCPU)
 	assert.Equal(t, "12Gi", cfg.KubernetesResourceRequestMemory)
-	assert.Equal(t, 600, cfg.KubernetesJobRetryBackoffLimit)
-	assert.Equal(t, 100*time.Millisecond, cfg.KubernetesJobRetryBackoffDuration)
+	assert.Equal(t, 1200, cfg.KubernetesJobDeadline)
 	assert.False(t, cfg.KubernetesKeepJobs)
+	assert.Equal(t, -1, cfg.KubernetesSecurityContextRunAsUser)
+	assert.Equal(t, -1, cfg.KubernetesSecurityContextRunAsGroup)
+	assert.Equal(t, 1000, cfg.KubernetesSecurityContextFSGroup)
+	assert.False(t, cfg.KubernetesSingleJobPod)
+	assert.Equal(t, "emptyDir", cfg.KubernetesJobVolumeType)
+	assert.Equal(t, "5Gi", cfg.KubernetesJobVolumeSize)
+	assert.Empty(t, cfg.KubernetesAdditionalJobVolumes)
+	assert.Empty(t, cfg.KubernetesAdditionalJobVolumeMounts)
+	assert.Equal(t, "sourcegraph/batcheshelper:insiders", cfg.KubernetesSingleJobStepImage)
 }
 
 func TestConfig_Validate(t *testing.T) {
@@ -161,7 +245,7 @@ func TestConfig_Validate(t *testing.T) {
 		},
 		{
 			name:        "Default config",
-			expectedErr: errors.New("4 errors occurred:\n\t* invalid value \"\" for EXECUTOR_FRONTEND_URL: no value supplied\n\t* invalid value \"\" for EXECUTOR_FRONTEND_PASSWORD: no value supplied\n\t* invalid value \"\" for EXECUTOR_QUEUE_NAME: no value supplied\n\t* EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"),
+			expectedErr: errors.New("4 errors occurred:\n\t* invalid value \"\" for EXECUTOR_FRONTEND_URL: no value supplied\n\t* invalid value \"\" for EXECUTOR_FRONTEND_PASSWORD: no value supplied\n\t* neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES is set\n\t* EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"),
 		},
 		{
 			name: "Invalid EXECUTOR_DOCKER_AUTH_CONFIG",
@@ -196,6 +280,54 @@ func TestConfig_Validate(t *testing.T) {
 				}
 			},
 			expectedErr: errors.New("EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"),
+		},
+		{
+			name: "EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES both defined",
+			getterFunc: func(name string, defaultValue, description string) string {
+				switch name {
+				case "EXECUTOR_QUEUE_NAME":
+					return "batches"
+				case "EXECUTOR_QUEUE_NAMES":
+					return "batches,codeintel"
+				case "EXECUTOR_FRONTEND_URL":
+					return "http://some-url.com"
+				case "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-password"
+				default:
+					return defaultValue
+				}
+			},
+			expectedErr: errors.New("both EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES are set"),
+		},
+		{
+			name: "Neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES defined",
+			getterFunc: func(name string, defaultValue, description string) string {
+				switch name {
+				case "EXECUTOR_FRONTEND_URL":
+					return "http://some-url.com"
+				case "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-password"
+				default:
+					return defaultValue
+				}
+			},
+			expectedErr: errors.New("neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES is set"),
+		},
+		{
+			name: "EXECUTOR_QUEUE_NAMES using incorrect separator",
+			getterFunc: func(name string, defaultValue, description string) string {
+				switch name {
+				case "EXECUTOR_FRONTEND_URL":
+					return "http://some-url.com"
+				case "EXECUTOR_QUEUE_NAMES":
+					return "batches;codeintel"
+				case "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-password"
+				default:
+					return defaultValue
+				}
+			},
+			expectedErr: errors.New("EXECUTOR_QUEUE_NAMES contains invalid queue name 'batches;codeintel', valid names are 'batches, codeintel' and should be comma-separated"),
 		},
 	}
 	for _, test := range tests {

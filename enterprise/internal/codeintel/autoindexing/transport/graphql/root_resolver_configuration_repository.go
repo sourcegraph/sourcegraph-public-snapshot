@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
@@ -14,12 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
 func (r *rootResolver) IndexConfiguration(ctx context.Context, repoID graphql.ID) (_ resolverstubs.IndexConfigurationResolver, err error) {
-	_, traceErrs, endObservation := r.operations.indexConfiguration.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(repoID)),
+	_, traceErrs, endObservation := r.operations.indexConfiguration.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repoID", string(repoID)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -37,9 +38,9 @@ func (r *rootResolver) IndexConfiguration(ctx context.Context, repoID graphql.ID
 
 // 🚨 SECURITY: Only site admins may modify code intelligence indexing configuration
 func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *resolverstubs.UpdateRepositoryIndexConfigurationArgs) (_ *resolverstubs.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.updateRepositoryIndexConfiguration.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repository", string(args.Repository)),
-		log.String("configuration", args.Configuration),
+	ctx, _, endObservation := r.operations.updateRepositoryIndexConfiguration.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repository", string(args.Repository)),
+		attribute.String("configuration", args.Configuration),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -87,7 +88,7 @@ func newIndexConfigurationResolver(autoindexSvc AutoIndexingService, siteAdminCh
 }
 
 func (r *indexConfigurationResolver) Configuration(ctx context.Context) (_ *string, err error) {
-	defer r.errTracer.Collect(&err, log.String("indexConfigResolver.field", "configuration"))
+	defer r.errTracer.Collect(&err, attribute.String("indexConfigResolver.field", "configuration"))
 
 	configuration, exists, err := r.autoindexSvc.GetIndexConfigurationByRepositoryID(ctx, r.repositoryID)
 	if err != nil {
@@ -97,14 +98,14 @@ func (r *indexConfigurationResolver) Configuration(ctx context.Context) (_ *stri
 		return nil, nil
 	}
 
-	return resolverstubs.NonZeroPtr(string(configuration.Data)), nil
+	return pointers.NonZeroPtr(string(configuration.Data)), nil
 }
 
 func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) (_ resolverstubs.InferredConfigurationResolver, err error) {
-	defer r.errTracer.Collect(&err, log.String("indexConfigResolver.field", "inferredConfiguration"))
+	defer r.errTracer.Collect(&err, attribute.String("indexConfigResolver.field", "inferredConfiguration"))
 
 	var limitErr error
-	configuration, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, r.repositoryID, "", "", true)
+	result, err := r.autoindexSvc.InferIndexConfiguration(ctx, r.repositoryID, "", "", true)
 	if err != nil {
 		if errors.As(err, &inference.LimitError{}) {
 			limitErr = err
@@ -112,11 +113,8 @@ func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) 
 			return nil, err
 		}
 	}
-	if configuration == nil {
-		return nil, nil
-	}
 
-	marshaled, err := config.MarshalJSON(*configuration)
+	marshaled, err := config.MarshalJSON(config.IndexConfiguration{IndexJobs: result.IndexJobs})
 	if err != nil {
 		return nil, err
 	}

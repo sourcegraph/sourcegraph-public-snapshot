@@ -4,10 +4,13 @@ import (
 	"context"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/streaming"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/httpapi"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -18,12 +21,14 @@ var _ graphqlbackend.CompletionsResolver = &completionsResolver{}
 
 // completionsResolver provides chat completions
 type completionsResolver struct {
-	rl streaming.RateLimiter
+	rl     httpapi.RateLimiter
+	db     database.DB
+	logger log.Logger
 }
 
-func NewCompletionsResolver(db database.DB) graphqlbackend.CompletionsResolver {
-	rl := streaming.NewRateLimiter(db, redispool.Store)
-	return &completionsResolver{rl: rl}
+func NewCompletionsResolver(db database.DB, logger log.Logger) graphqlbackend.CompletionsResolver {
+	rl := httpapi.NewRateLimiter(db, redispool.Store, types.CompletionsFeatureChat)
+	return &completionsResolver{rl: rl, db: db, logger: logger}
 }
 
 func (c *completionsResolver) Completions(ctx context.Context, args graphqlbackend.CompletionsArgs) (_ string, err error) {
@@ -31,17 +36,32 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", errors.New("cody experimental feature flag is not enabled for current user")
 	}
 
-	completionsConfig := conf.Get().Completions
-	if completionsConfig == nil || !completionsConfig.Enabled {
-		return "", errors.New("completions are not configured or disabled")
+	if err := cody.CheckVerifiedEmailRequirement(ctx, c.db, c.logger); err != nil {
+		return "", err
 	}
 
-	ctx, done := streaming.Trace(ctx, "resolver", completionsConfig.Model).
+	completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+	if completionsConfig == nil {
+		return "", errors.New("completions are not configured")
+	}
+
+	var chatModel string
+	if args.Fast {
+		chatModel = completionsConfig.FastChatModel
+	} else {
+		chatModel = completionsConfig.ChatModel
+	}
+
+	ctx, done := httpapi.Trace(ctx, "resolver", chatModel).
 		WithErrorP(&err).
 		Build()
 	defer done()
 
-	client, err := streaming.GetCompletionClient(completionsConfig.Provider, completionsConfig.AccessToken, completionsConfig.Model)
+	client, err := client.Get(
+		completionsConfig.Endpoint,
+		completionsConfig.Provider,
+		completionsConfig.AccessToken,
+	)
 	if err != nil {
 		return "", errors.Wrap(err, "GetCompletionStreamClient")
 	}
@@ -51,20 +71,18 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", err
 	}
 
-	var last string
-	if err := client.Stream(ctx, convertParams(args), func(event types.ChatCompletionEvent) error {
-		// each completion is just a partial of the final result, since we're in a sync request anyway
-		// we will just wait for the final completion event
-		last = event.Completion
-		return nil
-	}); err != nil {
-		return "", errors.Wrap(err, "client.Stream")
+	params := convertParams(args)
+	// No way to configure the model through the request, we hard code to chat.
+	params.Model = chatModel
+	resp, err := client.Complete(ctx, types.CompletionsFeatureChat, params)
+	if err != nil {
+		return "", errors.Wrap(err, "client.Complete")
 	}
-	return last, nil
+	return resp.Completion, nil
 }
 
-func convertParams(args graphqlbackend.CompletionsArgs) types.ChatCompletionRequestParameters {
-	return types.ChatCompletionRequestParameters{
+func convertParams(args graphqlbackend.CompletionsArgs) types.CompletionRequestParameters {
+	return types.CompletionRequestParameters{
 		Messages:          convertMessages(args.Input.Messages),
 		Temperature:       float32(args.Input.Temperature),
 		MaxTokensToSample: int(args.Input.MaxTokensToSample),

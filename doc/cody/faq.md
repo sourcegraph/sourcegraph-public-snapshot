@@ -19,7 +19,7 @@ The way Cody generates an answer is the following:
 
 #### Does Cody work with self-hosted Sourcegraph?
 
-Yes, Cody works with self-hosted Sourcegraph instances, with the caveat that snippets of code (up to 28 KB per request) will be sent to a third party cloud service (Anthropic) on each request. Optionally, embeddings can be turned on for some repositories, which requires sending those repositories to another third party (OpenAI).
+Yes, Cody works with self-hosted Sourcegraph instances, with the caveat that snippets of code (up to 28 KB per request) will be sent to a third party cloud service (Anthropic by default, but can also be OpenAI) on each request. Optionally, embeddings can be turned on for some repositories, which requires sending those repositories to another third party (OpenAI).
 
 In particular, this means the Sourcegraph instance needs to be able to access the internet.
 
@@ -48,9 +48,14 @@ In the future, here are the steps that Sourcegraph will follow:
 
 #### What third-party cloud services does Cody depend on today?
 
-- Cody has one third-party dependency, which is Anthropic's Claude API.
+- Cody has one third-party dependency, which is Anthropic's Claude API. In the config, this can be replaced with OpenAI API.
 - Cody can optionally use OpenAI to generate embeddings, that are then used to improve the quality of its context snippets, but this is not required.
 
 #### What's the retention policy for Anthropic/OpenAI?
 
 See our [terms](https://about.sourcegraph.com/terms/cody-notice).
+
+#### Can I use my own API keys?
+
+Yes!
+

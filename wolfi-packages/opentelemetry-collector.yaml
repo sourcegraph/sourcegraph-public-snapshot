@@ -1,7 +1,7 @@
 package:
   name: opentelemetry-collector
   version: 0.71.0 # Keep in sync with version in go.mod
-  epoch: 0
+  epoch: 1
   description: "Vendor-agnostic implementation on how to receive, process and export telemetry data"
   target-architecture:
     - x86_64
@@ -41,6 +41,7 @@ pipeline:
       --config opentelemetry-collector/builder.yaml \
       --output-path=/tmp/otelcol-sourcegraph
   - name: Package collector
+    # TODO: Change directory, but /bin is hardcoded into k8s manifests
     runs: |
-      mkdir -p ${{targets.destdir}}/usr/bin/
-      cp /tmp/otelcol-sourcegraph/otelcol-sourcegraph ${{targets.destdir}}/usr/bin/otelcol-sourcegraph
+      mkdir -p ${{targets.destdir}}/bin/
+      cp /tmp/otelcol-sourcegraph/otelcol-sourcegraph ${{targets.destdir}}/bin/otelcol-sourcegraph

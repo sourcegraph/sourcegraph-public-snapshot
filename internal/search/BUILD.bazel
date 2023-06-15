@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "search",
@@ -19,19 +20,22 @@ go_library(
         "//internal/errcode",
         "//internal/featureflag",
         "//internal/gitserver/gitdomain",
+        "//internal/grpc/defaults",
         "//internal/search/backend",
         "//internal/search/filter",
         "//internal/search/limits",
         "//internal/search/query",
         "//internal/search/result",
         "//internal/trace",
+        "//internal/trace/policy",
         "//internal/types",
         "//lib/errors",
         "//schema",
         "@com_github_grafana_regexp//:regexp",
-        "@com_github_opentracing_opentracing_go//log",
+        "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_zoekt//:zoekt",
         "@com_github_sourcegraph_zoekt//query",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -41,13 +45,19 @@ go_test(
     srcs = [
         "alert_test.go",
         "repo_status_test.go",
+        "types_test.go",
     ],
     embed = [":search"],
     deps = [
         "//internal/api",
+        "//internal/conf",
+        "//internal/search/filter",
+        "//internal/search/limits",
         "//internal/search/query",
+        "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
+        "@com_github_sourcegraph_zoekt//:zoekt",
         "@com_github_stretchr_testify//require",
     ],
 )

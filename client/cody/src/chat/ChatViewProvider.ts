@@ -1,3 +1,4 @@
+import { spawnSync } from 'child_process'
 import path from 'path'
 
 import * as vscode from 'vscode'
@@ -5,13 +6,15 @@ import * as vscode from 'vscode'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
-import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes/vscode-recipes'
+import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage, ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
+import { Guardrails, annotateAttribution } from '@sourcegraph/cody-shared/src/guardrails'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
@@ -19,28 +22,49 @@ import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/source
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../webviews/NavBar'
-import { LocalStorage } from '../command/LocalStorageProvider'
-import { updateConfiguration } from '../configuration'
+import { getFullConfig, updateConfiguration } from '../configuration'
+import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent } from '../event-logger'
-import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../secret-storage'
+import { LocalAppDetector } from '../local-app-detector'
+import { FilenameContextFetcher } from '../local-context/filename-context-fetcher'
+import { LocalKeywordContextFetcher } from '../local-context/local-keyword-context-fetcher'
+import { debug } from '../log'
+import { getRerankWithLog } from '../logged-rerank'
+import { FixupTask } from '../non-stop/FixupTask'
+import { IdleRecipeRunner } from '../non-stop/roles'
+import { LocalStorage } from '../services/LocalStorageProvider'
+import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
 
-import { ConfigurationSubsetForWebview, DOTCOM_URL, ExtensionMessage, WebviewMessage } from './protocol'
+import { fastFilesExist } from './fastFileFinder'
+import {
+    AuthStatus,
+    ConfigurationSubsetForWebview,
+    DOTCOM_URL,
+    ExtensionMessage,
+    WebviewMessage,
+    defaultAuthStatus,
+    isLoggedIn,
+    LocalEnv,
+} from './protocol'
+import { getRecipe } from './recipes'
+import { convertGitCloneURLToCodebaseName, getAuthStatus } from './utils'
 
-export async function isValidLogin(
-    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
-): Promise<boolean> {
-    const client = new SourcegraphGraphQLAPIClient(config)
-    const userId = await client.getCurrentUserId()
-    return !isError(userId)
-}
-
-type Config = Pick<
+export type Config = Pick<
     ConfigurationWithAccessToken,
-    'codebase' | 'serverEndpoint' | 'debug' | 'customHeaders' | 'accessToken' | 'useContext'
+    | 'codebase'
+    | 'serverEndpoint'
+    | 'debugEnable'
+    | 'debugFilter'
+    | 'debugVerbose'
+    | 'customHeaders'
+    | 'accessToken'
+    | 'useContext'
+    | 'experimentalChatPredictions'
+    | 'experimentalGuardrails'
 >
 
-export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
+export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable, IdleRecipeRunner {
     private isMessageInProgress = false
     private cancelCompletionCallback: (() => void) | null = null
     private webview?: Omit<vscode.Webview, 'postMessage'> & {
@@ -60,15 +84,22 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private disposables: vscode.Disposable[] = []
 
+    // Codebase-context-related state
+    private currentWorkspaceRoot: string
+
+    private localAppDetector: LocalAppDetector
+
     constructor(
         private extensionPath: string,
-        private config: Config,
+        private config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
         private chat: ChatClient,
         private intentDetector: IntentDetector,
         private codebaseContext: CodebaseContext,
-        private editor: Editor,
+        private guardrails: Guardrails,
+        private editor: VSCodeEditor,
         private secretStorage: SecretStorage,
-        private localStorage: LocalStorage
+        private localStorage: LocalStorage,
+        private rgPath: string
     ) {
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
@@ -77,6 +108,78 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.createNewChatID()
 
         this.disposables.push(this.configurationChangeEvent)
+
+        // listen for vscode active editor change event
+        this.currentWorkspaceRoot = ''
+        this.disposables.push(
+            vscode.window.onDidChangeActiveTextEditor(async () => {
+                await this.updateCodebaseContext()
+            }),
+            vscode.workspace.onDidChangeConfiguration(async () => {
+                this.config = await getFullConfig(this.secretStorage)
+                const newCodebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor, chat)
+                if (newCodebaseContext) {
+                    this.codebaseContext = newCodebaseContext
+                    await this.setAnonymousUserID()
+                }
+            })
+        )
+
+        this.localAppDetector = new LocalAppDetector({
+            onChange: isInstalled => {
+                void this.webview?.postMessage({ type: 'app-state', isInstalled })
+
+                // If app has been detected, we can stop the local app detector.
+                if (isInstalled) {
+                    this.localAppDetector.stop()
+                }
+            },
+        })
+        this.disposables.push(this.localAppDetector)
+    }
+
+    private idleCallbacks_: (() => void)[] = []
+
+    private get isIdle(): boolean {
+        // TODO: Use a cooldown timer for typing and interaction
+        return !this.isMessageInProgress
+    }
+
+    private scheduleIdleRecipes(): void {
+        setTimeout(() => {
+            if (!this.isIdle) {
+                // We rely on the recipe ending re-scheduling idle recipes
+                return
+            }
+            const notifyIdle = this.idleCallbacks_.shift()
+            if (!notifyIdle) {
+                return
+            }
+            try {
+                notifyIdle()
+            } catch (error) {
+                console.error(error)
+            }
+            if (this.idleCallbacks_.length) {
+                this.scheduleIdleRecipes()
+            }
+        }, 1000)
+    }
+
+    public onIdle(callback: () => void): void {
+        if (this.isIdle) {
+            // Run "now", but not synchronously on this callstack.
+            void Promise.resolve().then(callback)
+        } else {
+            this.idleCallbacks_.push(callback)
+        }
+    }
+
+    public runIdleRecipe(recipeId: RecipeID, humanChatInput?: string): Promise<void> {
+        if (!this.isIdle) {
+            throw new Error('not idle')
+        }
+        return this.executeRecipe(recipeId, humanChatInput, false)
     }
 
     public onConfigurationChange(newConfig: Config): void {
@@ -84,11 +187,37 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.configurationChangeEvent.fire()
     }
 
-    public clearAndRestartSession(): void {
+    public async clearAndRestartSession(): Promise<void> {
+        await this.saveTranscriptToChatHistory()
+        await this.setAnonymousUserID()
         this.createNewChatID()
         this.cancelCompletion()
         this.isMessageInProgress = false
         this.transcript.reset()
+        this.sendSuggestions([])
+        this.sendTranscript()
+        this.sendChatHistory()
+    }
+
+    public async clearHistory(): Promise<void> {
+        this.chatHistory = {}
+        this.inputHistory = []
+        await this.localStorage.removeChatHistory()
+    }
+
+    public async setAnonymousUserID(): Promise<void> {
+        await this.localStorage.setAnonymousUserID()
+    }
+
+    /**
+     * Restores a session from a chatID
+     */
+    public async restoreSession(chatID: string): Promise<void> {
+        await this.saveTranscriptToChatHistory()
+        this.cancelCompletion()
+        this.currentChatID = chatID
+        this.transcript = Transcript.fromJSON(this.chatHistory[chatID])
+        await this.transcript.toJSON()
         this.sendTranscript()
         this.sendChatHistory()
     }
@@ -96,79 +225,80 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'initialized':
+                debug('ChatViewProvider:onDidReceiveMessage:initialized', '')
+                this.loadChatHistory()
                 this.publishContextStatus()
                 this.publishConfig()
                 this.sendTranscript()
                 this.sendChatHistory()
+                await this.loadRecentChat()
                 break
             case 'submit':
-                await this.onHumanMessageSubmitted(message.text)
+                await this.onHumanMessageSubmitted(message.text, message.submitType)
                 break
             case 'edit':
                 this.transcript.removeLastInteraction()
-                await this.onHumanMessageSubmitted(message.text)
+                await this.onHumanMessageSubmitted(message.text, 'user')
                 break
             case 'executeRecipe':
                 await this.executeRecipe(message.recipe)
                 break
             case 'settings': {
-                const isValid = await isValidLogin({
+                const authStatus = await getAuthStatus({
                     serverEndpoint: message.serverEndpoint,
                     accessToken: message.accessToken,
                     customHeaders: this.config.customHeaders,
                 })
-                // activate when user has valid login
-                await vscode.commands.executeCommand('setContext', 'cody.activated', isValid)
-                if (isValid) {
-                    await updateConfiguration('serverEndpoint', message.serverEndpoint)
-                    await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
-                    this.sendEvent('auth', 'login')
-                }
-                void this.webview?.postMessage({ type: 'login', isValid })
+
+                await updateConfiguration('serverEndpoint', message.serverEndpoint)
+                await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
+                await this.sendLogin(authStatus)
                 break
             }
+            case 'insert':
+                await vscode.commands.executeCommand('cody.inline.insert', message.text)
+                break
             case 'event':
                 this.sendEvent(message.event, message.value)
                 break
             case 'removeToken':
-                await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-                this.sendEvent('token', 'Delete')
+                await this.logout()
                 break
             case 'removeHistory':
-                await this.localStorage.removeChatHistory()
+                await this.clearHistory()
+                break
+            case 'restoreHistory':
+                await this.restoreSession(message.chatID)
+                break
+            case 'deleteHistory':
+                await this.deleteHistory(message.chatID)
                 break
             case 'links':
-                await vscode.env.openExternal(vscode.Uri.parse(message.value))
+                void this.openExternalLinks(message.value)
                 break
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()
-                if (rootPath !== null) {
-                    const uri = vscode.Uri.file(path.join(rootPath, message.filePath))
+                if (!rootPath) {
+                    this.sendErrorToWebview('Failed to open file: missing rootPath')
+                    return
+                }
+                try {
                     // This opens the file in the active column.
-                    try {
-                        const doc = await vscode.workspace.openTextDocument(uri)
-                        await vscode.window.showTextDocument(doc)
-                    } catch {
-                        // Try to open the file in the sourcegraph view
-                        const sourcegraphInstanceUrl = this.config.serverEndpoint
-                        const sourcegraphWebUrl = new URL(
-                            `/search?q=context:global+file:${message.filePath}`,
-                            sourcegraphInstanceUrl
-                        ).href
-
-                        try {
-                            await vscode.env.openExternal(vscode.Uri.parse(sourcegraphWebUrl))
-                        } catch (error) {
-                            console.error(`Could not open the file: ${error}`)
-                        }
-                    }
-                } else {
-                    console.error('Could not open file because rootPath is null')
+                    const uri = vscode.Uri.file(path.join(rootPath, message.filePath))
+                    const doc = await vscode.workspace.openTextDocument(uri)
+                    await vscode.window.showTextDocument(doc)
+                } catch {
+                    // Try to open the file in the sourcegraph view
+                    const sourcegraphSearchURL = new URL(
+                        `/search?q=context:global+file:${message.filePath}`,
+                        this.config.serverEndpoint
+                    ).href
+                    void this.openExternalLinks(sourcegraphSearchURL)
                 }
                 break
             }
             default:
-                console.error('Invalid request type from Webview')
+                this.sendErrorToWebview('Invalid request type from Webview')
         }
     }
 
@@ -178,6 +308,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private sendPrompt(promptMessages: Message[], responsePrefix = ''): void {
         this.cancelCompletion()
+        void vscode.commands.executeCommand('setContext', 'cody.reply.pending', true)
 
         let text = ''
 
@@ -191,14 +322,25 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             onTurnComplete: async () => {
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
-                    const { text, displayText } = lastInteraction.getAssistantMessage()
-                    const { text: highlightedDisplayText } = await highlightTokens(displayText || '', fileExists)
+                    const displayText = reformatBotMessage(text, responsePrefix)
+                    const fileExistFunc = (filePaths: string[]): Promise<{ [filePath: string]: boolean }> => {
+                        const rootPath = this.editor.getWorkspaceRootPath()
+                        if (!rootPath) {
+                            return Promise.resolve({})
+                        }
+                        return fastFilesExist(this.rgPath, rootPath, filePaths)
+                    }
+                    let { text: highlightedDisplayText } = await highlightTokens(
+                        displayText || '',
+                        fileExistFunc,
+                        this.currentWorkspaceRoot
+                    )
+                    // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
+                    highlightedDisplayText = await this.guardrailsAnnotateAttributions(highlightedDisplayText)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
+                    this.editor.controllers.inline.reply(highlightedDisplayText)
                 }
-                this.isMessageInProgress = false
-                this.cancelCompletionCallback = null
-                this.sendTranscript()
-                await this.saveChatHistory()
+                void this.onCompletionEnd()
             },
         })
 
@@ -209,11 +351,30 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
                 text = text.slice(textConsumed)
                 textConsumed += text.length
-                return this.multiplexer.publish(text)
+                void this.multiplexer.publish(text)
             },
-            onComplete: () => this.multiplexer.notifyTurnComplete(),
-            onError: err => {
-                void vscode.window.showErrorMessage(err)
+            onComplete: () => {
+                void this.multiplexer.notifyTurnComplete()
+            },
+            onError: (err, statusCode) => {
+                // Display error message as assistant response
+                this.transcript.addErrorAsAssistantResponse(err)
+                // Log users out on unauth error
+                if (statusCode && statusCode >= 400 && statusCode <= 410) {
+                    const authStatus = { ...defaultAuthStatus }
+                    if (statusCode === 403) {
+                        authStatus.authenticated = true
+                        authStatus.requiresVerifiedEmail = true
+                    } else {
+                        authStatus.showInvalidAccessTokenError = true
+                    }
+                    debug('ChatViewProvider:onError:unauth', err, { verbose: { authStatus } })
+                    void this.sendLogin(authStatus)
+                    void this.clearAndRestartSession()
+                }
+                this.onCompletionEnd()
+                void this.editor.controllers.inline.error()
+                console.error(`Completion request failed: ${err}`)
             },
         })
     }
@@ -223,17 +384,73 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.cancelCompletionCallback = null
     }
 
-    private async onHumanMessageSubmitted(text: string): Promise<void> {
-        this.inputHistory.push(text)
-        await this.executeRecipe('chat-question', text)
+    private onCompletionEnd(): void {
+        this.isMessageInProgress = false
+        this.cancelCompletionCallback = null
+        this.sendTranscript()
+        void this.saveTranscriptToChatHistory()
+        this.sendChatHistory()
+        void vscode.commands.executeCommand('setContext', 'cody.reply.pending', false)
+        this.logEmbeddingsSearchErrors()
+        this.scheduleIdleRecipes()
     }
 
-    public async executeRecipe(recipeId: string, humanChatInput: string = ''): Promise<void> {
-        if (this.isMessageInProgress) {
-            await vscode.window.showErrorMessage(
-                'Cannot execute multiple recipes. Please wait for the current recipe to finish.'
-            )
+    private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
+        debug('ChatViewProvider:onHumanMessageSubmitted', '', { verbose: { text, submitType } })
+        if (submitType === 'suggestion') {
+            logEvent('CodyVSCodeExtension:chatPredictions:used')
         }
+        this.inputHistory.push(text)
+        if (this.config.experimentalChatPredictions) {
+            void this.runRecipeForSuggestion('next-questions', text)
+        }
+        await this.executeChatCommands(text)
+    }
+
+    private async executeChatCommands(text: string): Promise<void> {
+        switch (true) {
+            case /^\/r(est)?\s/i.test(text):
+                await this.clearAndRestartSession()
+                break
+            case /^\/s(earch)?\s/i.test(text):
+                await this.executeRecipe('context-search', text)
+                break
+            default:
+                return this.executeRecipe('chat-question', text)
+        }
+    }
+
+    private async updateCodebaseContext(): Promise<void> {
+        if (!this.editor.getActiveTextEditor() && vscode.window.visibleTextEditors.length !== 0) {
+            // these are ephemeral
+            return
+        }
+        const workspaceRoot = this.editor.getWorkspaceRootPath()
+        if (!workspaceRoot || workspaceRoot === '' || workspaceRoot === this.currentWorkspaceRoot) {
+            return
+        }
+        this.currentWorkspaceRoot = workspaceRoot
+
+        const codebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor, this.chat)
+        if (!codebaseContext) {
+            return
+        }
+        // after await, check we're still hitting the same workspace root
+        if (this.currentWorkspaceRoot !== workspaceRoot) {
+            return
+        }
+
+        this.codebaseContext = codebaseContext
+        this.publishContextStatus()
+    }
+
+    public async executeRecipe(recipeId: RecipeID, humanChatInput: string = '', showTab = true): Promise<void> {
+        debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
+        if (this.isMessageInProgress) {
+            this.sendErrorToWebview('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
+            return
+        }
+
         const recipe = getRecipe(recipeId)
         if (!recipe) {
             return
@@ -247,6 +464,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             intentDetector: this.intentDetector,
             codebaseContext: this.codebaseContext,
             responseMultiplexer: this.multiplexer,
+            firstInteraction: this.transcript.isEmpty,
         })
         if (!interaction) {
             return
@@ -254,13 +472,108 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.isMessageInProgress = true
         this.transcript.addInteraction(interaction)
 
-        this.showTab('chat')
-        this.sendTranscript()
+        if (showTab) {
+            this.showTab('chat')
+        }
 
-        const prompt = await this.transcript.toPrompt(getPreamble(this.config.codebase))
-        this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
+        // Check whether or not to connect to LLM backend for responses
+        // Ex: performing fuzzy / context-search does not require responses from LLM backend
+        switch (recipeId) {
+            case 'context-search':
+                this.onCompletionEnd()
+                break
+            default: {
+                this.sendTranscript()
+
+                const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
+                    getPreamble(this.codebaseContext.getCodebase())
+                )
+                this.transcript.setUsedContextFilesForLastInteraction(contextFiles)
+                this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
+                await this.saveTranscriptToChatHistory()
+            }
+        }
+        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+    }
+
+    private async runRecipeForSuggestion(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
+        const recipe = getRecipe(recipeId)
+        if (!recipe) {
+            return
+        }
+
+        const multiplexer = new BotResponseMultiplexer()
+        const transcript = Transcript.fromJSON(await this.transcript.toJSON())
+
+        const interaction = await recipe.getInteraction(humanChatInput, {
+            editor: this.editor,
+            intentDetector: this.intentDetector,
+            codebaseContext: this.codebaseContext,
+            responseMultiplexer: multiplexer,
+            firstInteraction: this.transcript.isEmpty,
+        })
+        if (!interaction) {
+            return
+        }
+        transcript.addInteraction(interaction)
+
+        const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
+            getPreamble(this.codebaseContext.getCodebase())
+        )
+        transcript.setUsedContextFilesForLastInteraction(contextFiles)
 
         logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+
+        let text = ''
+        multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
+            onResponse: (content: string) => {
+                text += content
+                return Promise.resolve()
+            },
+            onTurnComplete: () => {
+                const suggestions = text
+                    .split('\n')
+                    .slice(0, 3)
+                    .map(line => line.trim().replace(/^-/, '').trim())
+                this.sendSuggestions(suggestions)
+                return Promise.resolve()
+            },
+        })
+
+        let textConsumed = 0
+        this.chat.chat(prompt, {
+            onChange: text => {
+                // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
+                text = text.slice(textConsumed)
+                textConsumed += text.length
+                void multiplexer.publish(text)
+            },
+            onComplete: () => {
+                void multiplexer.notifyTurnComplete()
+            },
+            onError: (error, statusCode) => {
+                console.error(error, statusCode)
+            },
+        })
+    }
+
+    private async guardrailsAnnotateAttributions(text: string): Promise<string> {
+        if (!this.config.experimentalGuardrails) {
+            return text
+        }
+
+        const result = await annotateAttribution(this.guardrails, text)
+
+        // Only log telemetry if we did work (ie had to annotate something).
+        if (result.codeBlocks > 0) {
+            const event = {
+                codeBlocks: result.codeBlocks,
+                duration: result.duration,
+            }
+            logEvent('CodyVSCodeExtension:guardrails:annotate', event, event)
+        }
+
+        return result.text
     }
 
     private showTab(tab: string): void {
@@ -268,6 +581,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         void this.webview?.postMessage({ type: 'showTab', tab })
     }
 
+    /**
+     * Send transcript to webview
+     */
     private sendTranscript(): void {
         void this.webview?.postMessage({
             type: 'transcript',
@@ -276,40 +592,99 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         })
     }
 
+    private sendSuggestions(suggestions: string[]): void {
+        void this.webview?.postMessage({
+            type: 'suggestions',
+            suggestions,
+        })
+    }
+
+    private async saveTranscriptToChatHistory(): Promise<void> {
+        if (this.transcript.isEmpty) {
+            return
+        }
+        this.chatHistory[this.currentChatID] = await this.transcript.toJSON()
+        await this.saveChatHistory()
+    }
+
     /**
      * Save chat history
      */
     private async saveChatHistory(): Promise<void> {
-        if (this.transcript) {
-            this.chatHistory[this.currentChatID] = this.transcript.toChat()
-            const userHistory = {
-                chat: this.chatHistory,
-                input: this.inputHistory,
-            }
-            await this.localStorage.setChatHistory(userHistory)
+        const userHistory = {
+            chat: this.chatHistory,
+            input: this.inputHistory,
         }
+        await this.localStorage.setChatHistory(userHistory)
     }
 
     /**
      * Save Login state to webview
      */
-    public async sendLogin(isValid: boolean): Promise<void> {
-        await vscode.commands.executeCommand('setContext', 'cody.activated', isValid)
-        void this.webview?.postMessage({ type: 'login', isValid })
+    public async sendLogin(authStatus: AuthStatus): Promise<void> {
+        // activate extension when user has valid login
+        await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
+        await this.webview?.postMessage({ type: 'login', authStatus })
+        this.sendEvent('auth', 'login')
+    }
+
+    /**
+     * Logout deletes token from secret storage
+     * Also removes the avtivate status for the extension to disable access to all commands and set webview back to login view
+     */
+    public async logout(): Promise<void> {
+        await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+        await vscode.commands.executeCommand('setContext', 'cody.activated', false)
+        this.sendEvent('token', 'Delete')
+        this.sendEvent('auth', 'logout')
+        this.setWebviewView('login')
+    }
+
+    /**
+     * Delete history from current chat history and local storage
+     */
+    private async deleteHistory(chatID: string): Promise<void> {
+        delete this.chatHistory[chatID]
+        await this.localStorage.deleteChatHistory(chatID)
+        this.sendChatHistory()
+    }
+
+    /**
+     * Loads chat history from local storage
+     */
+    private loadChatHistory(): void {
+        const localHistory = this.localStorage.getChatHistory()
+        if (localHistory) {
+            this.chatHistory = localHistory?.chat
+            this.inputHistory = localHistory.input
+        }
+    }
+
+    /**
+     * Loads the most recent chat
+     */
+    private async loadRecentChat(): Promise<void> {
+        const localHistory = this.localStorage.getChatHistory()
+        if (localHistory) {
+            const chats = localHistory.chat
+            const sortedChats = Object.entries(chats).sort(
+                (a, b) => +new Date(b[1].lastInteractionTimestamp) - +new Date(a[1].lastInteractionTimestamp)
+            )
+            const chatID = sortedChats[0][0]
+            await this.restoreSession(chatID)
+        }
     }
 
     /**
      * Sends chat history to webview
      */
     private sendChatHistory(): void {
-        const localHistory = this.localStorage.getChatHistory()
-        if (localHistory) {
-            this.chatHistory = localHistory.chat
-            this.inputHistory = localHistory.input
-        }
         void this.webview?.postMessage({
             type: 'history',
-            messages: localHistory,
+            messages: {
+                chat: this.chatHistory,
+                input: this.inputHistory,
+            },
         })
     }
 
@@ -324,15 +699,29 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 contextStatus: {
                     mode: this.config.useContext,
                     connection: this.codebaseContext.checkEmbeddingsConnection(),
-                    codebase: this.config.codebase,
+                    codebase: this.codebaseContext.getCodebase(),
                     filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
                     supportsKeyword: true,
                 },
             })
         }
-
         this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
         send()
+    }
+
+    /**
+     * Send embedding connections or results error to output
+     */
+    private logEmbeddingsSearchErrors(): void {
+        if (this.config.useContext !== 'embeddings') {
+            return
+        }
+        const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
+        // Display error message as assistant response for users with indexed codebase but getting search errors
+        if (this.codebaseContext.checkEmbeddingsConnection() && searchErrors) {
+            this.transcript.addErrorAsAssistantResponse(searchErrors)
+            debug('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
+        }
     }
 
     /**
@@ -340,44 +729,72 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     private publishConfig(): void {
         const send = async (): Promise<void> => {
+            // update codebase context on configuration change
+            void this.updateCodebaseContext()
             // check if new configuration change is valid or not
             // log user out if config is invalid
-            const isAuthed = await isValidLogin({
+            const authStatus = await getAuthStatus({
                 serverEndpoint: this.config.serverEndpoint,
                 accessToken: this.config.accessToken,
                 customHeaders: this.config.customHeaders,
             })
-            const configForWebview: ConfigurationSubsetForWebview = {
-                debug: this.config.debug,
-                serverEndpoint: this.config.serverEndpoint,
-                hasAccessToken: isAuthed,
+
+            // Ensure local app detector is running
+            if (!isLoggedIn(authStatus)) {
+                this.localAppDetector.start()
+            } else {
+                this.localAppDetector.stop()
             }
-            void vscode.commands.executeCommand('setContext', 'cody.activated', isAuthed)
-            void this.webview?.postMessage({ type: 'config', config: configForWebview })
+
+            const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
+                debugEnable: this.config.debugEnable,
+                serverEndpoint: this.config.serverEndpoint,
+                appScheme: vscode.env.uriScheme,
+                appName: vscode.env.appName,
+            }
+            void vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
+            void this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
         }
 
         this.disposables.push(this.configurationChangeEvent.event(() => send()))
         send().catch(error => console.error(error))
     }
 
+    /**
+     * Log Events
+     */
     public sendEvent(event: string, value: string): void {
         const isPrivateInstance = new URL(this.config.serverEndpoint).href !== DOTCOM_URL.href
+        const endpointUri = { serverEndpoint: this.config.serverEndpoint }
+        const chatTranscript = { chatTranscript: this.transcript.toChat() }
         switch (event) {
             case 'feedback':
                 // Only include context for dot com users with connected codebase
                 logEvent(
                     `CodyVSCodeExtension:codyFeedback:${value}`,
                     null,
-                    !isPrivateInstance && this.config.codebase ? this.transcript.toChat() : null
+                    !isPrivateInstance && this.codebaseContext.getCodebase() ? chatTranscript : null
                 )
                 break
             case 'token':
-                logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`)
+                logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`, endpointUri, endpointUri)
                 break
             case 'auth':
-                logEvent(`CodyVSCodeExtension:${value}:clicked`)
+                logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
+                break
+            // aditya combine this with above statemenet for auth or click
+            case 'click':
+                logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
                 break
         }
+    }
+
+    /**
+     * Display error message in webview view as banner in chat view
+     * It does not display error message as assistant response
+     */
+    public sendErrorToWebview(errorMsg: string): void {
+        void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
     }
 
     /**
@@ -411,15 +828,33 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             localResourceRoots: [webviewPath],
         }
 
-        // Create Webview
+        // Create Webview using client/cody/index.html
         const root = vscode.Uri.joinPath(webviewPath, 'index.html')
         const bytes = await vscode.workspace.fs.readFile(root)
         const decoded = new TextDecoder('utf-8').decode(bytes)
         const resources = webviewView.webview.asWebviewUri(webviewPath)
-        const nonce = this.getNonce()
 
-        webviewView.webview.html = decoded.replaceAll('./', `${resources.toString()}/`).replace('/nonce/', nonce)
+        // Set HTML for webview
+        // This replace variables from the client/cody/dist/index.html with webview info
+        // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
+        // 2. Update URIs for content security policy to only allow specific scripts to be run
+        webviewView.webview.html = decoded
+            .replaceAll('./', `${resources.toString()}/`)
+            .replaceAll('{cspSource}', webviewView.webview.cspSource)
+
+        // Register webview
         this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+    }
+
+    /**
+     * Open external links
+     */
+    private async openExternalLinks(uri: string): Promise<void> {
+        try {
+            await vscode.env.openExternal(vscode.Uri.parse(uri))
+        } catch (error) {
+            throw new Error(`Failed to open file: ${error}`)
+        }
     }
 
     public transcriptForTesting(testing: TestSupport): ChatMessage[] {
@@ -430,13 +865,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         return this.transcript.toChat()
     }
 
-    private getNonce(): string {
-        let text = ''
-        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-        for (let i = 0; i < 32; i++) {
-            text += possible.charAt(Math.floor(Math.random() * possible.length))
+    public fixupTasksForTesting(testing: TestSupport): FixupTask[] {
+        if (!testing) {
+            console.error('used ForTesting method without test support object')
+            return []
         }
-        return text
+        return this.editor.controllers.fixups.getTasks()
     }
 
     public dispose(): void {
@@ -447,30 +881,48 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 }
 
-function trimPrefix(text: string, prefix: string): string {
-    if (text.startsWith(prefix)) {
-        return text.slice(prefix.length)
+/**
+ * Gets codebase context for the current workspace.
+ *
+ * @param config Cody configuration
+ * @param rgPath Path to rg (ripgrep) executable
+ * @param editor Editor instance
+ * @returns CodebaseContext if a codebase can be determined, else null
+ */
+export async function getCodebaseContext(
+    config: Config,
+    rgPath: string,
+    editor: Editor,
+    chatClient: ChatClient
+): Promise<CodebaseContext | null> {
+    const client = new SourcegraphGraphQLAPIClient(config)
+    const workspaceRoot = editor.getWorkspaceRootPath()
+    if (!workspaceRoot) {
+        return null
     }
-    return text
-}
+    const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
+    const gitOutput = gitCommand.stdout.toString().trim()
+    // Get codebase from config or fallback to getting repository name from git clone URL
+    const codebase = config.codebase || convertGitCloneURLToCodebaseName(gitOutput)
+    if (!codebase) {
+        return null
+    }
+    // Check if repo is embedded in endpoint
+    const repoId = await client.getRepoIdIfEmbeddingExists(codebase)
+    if (isError(repoId)) {
+        const infoMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
+        console.info(infoMessage)
+        return null
+    }
 
-function trimSuffix(text: string, suffix: string): string {
-    if (text.endsWith(suffix)) {
-        return text.slice(0, -suffix.length)
-    }
-    return text
-}
-
-async function fileExists(filePath: string): Promise<boolean> {
-    const patterns = [filePath, '**/' + trimSuffix(trimPrefix(filePath, '/'), '/') + '/**']
-    if (!filePath.endsWith('/')) {
-        patterns.push('**/' + trimPrefix(filePath, '/') + '*')
-    }
-    for (const pattern of patterns) {
-        const files = await vscode.workspace.findFiles(pattern, null, 1)
-        if (files.length > 0) {
-            return true
-        }
-    }
-    return false
+    const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
+    return new CodebaseContext(
+        config,
+        codebase,
+        embeddingsSearch,
+        new LocalKeywordContextFetcher(rgPath, editor, chatClient),
+        new FilenameContextFetcher(rgPath, editor, chatClient),
+        undefined,
+        getRerankWithLog(chatClient)
+    )
 }

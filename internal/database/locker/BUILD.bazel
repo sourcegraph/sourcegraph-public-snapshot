@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "locker",
@@ -15,7 +16,7 @@ go_library(
 
 go_test(
     name = "locker_test",
-    timeout = "short",
+    timeout = "moderate",
     srcs = ["locker_test.go"],
     embed = [":locker"],
     tags = [

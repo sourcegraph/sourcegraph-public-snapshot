@@ -15,9 +15,11 @@ import (
 )
 
 func TestNewAuthzProviders(t *testing.T) {
+	ctx := context.Background()
 	db := database.NewMockDB()
 	t.Run("no authorization", func(t *testing.T) {
 		initResults := NewAuthzProviders(
+			ctx,
 			db,
 			[]*ExternalConnection{
 				{
@@ -45,6 +47,7 @@ func TestNewAuthzProviders(t *testing.T) {
 	t.Run("no matching auth provider", func(t *testing.T) {
 		t.Cleanup(licensing.TestingSkipFeatureChecks())
 		initResults := NewAuthzProviders(
+			ctx,
 			db,
 			[]*ExternalConnection{
 				{
@@ -79,6 +82,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		t.Run("default case", func(t *testing.T) {
 			t.Cleanup(licensing.TestingSkipFeatureChecks())
 			initResults := NewAuthzProviders(
+				ctx,
 				db,
 				[]*ExternalConnection{
 					{
@@ -109,6 +113,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		t.Run("license does not have ACLs feature", func(t *testing.T) {
 			t.Cleanup(licensing.MockCheckFeatureError("failed"))
 			initResults := NewAuthzProviders(
+				ctx,
 				db,
 				[]*ExternalConnection{
 					{
@@ -138,6 +143,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		t.Run("groups cache enabled, but not allowGroupsPermissionsSync", func(t *testing.T) {
 			t.Cleanup(licensing.TestingSkipFeatureChecks())
 			initResults := NewAuthzProviders(
+				ctx,
 				db,
 				[]*ExternalConnection{
 					{
@@ -178,6 +184,7 @@ func TestNewAuthzProviders(t *testing.T) {
 				return []string{"read:org"}, nil
 			}
 			initResults := NewAuthzProviders(
+				ctx,
 				db,
 				[]*ExternalConnection{
 					{

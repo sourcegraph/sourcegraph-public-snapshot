@@ -4,7 +4,13 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { ChatUITextAreaProps, EditButtonProps, FeedbackButtonsProps } from '../Chat'
+import {
+    ChatUITextAreaProps,
+    EditButtonProps,
+    FeedbackButtonsProps,
+    CopyButtonProps,
+    ChatUISubmitButtonProps,
+} from '../Chat'
 import { CodySvg } from '../utils/icons'
 
 import { BlinkingCursor } from './BlinkingCursor'
@@ -21,7 +27,9 @@ export interface TranscriptItemClassNames {
     humanTranscriptItemClassName?: string
     transcriptItemParticipantClassName?: string
     codeBlocksCopyButtonClassName?: string
+    codeBlocksInsertButtonClassName?: string
     transcriptActionClassName?: string
+    chatInputClassName?: string
 }
 
 /**
@@ -41,8 +49,12 @@ export const TranscriptItem: React.FunctionComponent<
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         showFeedbackButtons: boolean
+        copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
+        submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
+        abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
+        onAbortMessageInProgress?: () => void
     } & TranscriptItemClassNames
-> = ({
+> = React.memo(function TranscriptItemContent({
     message,
     inProgress,
     beingEdited,
@@ -52,6 +64,7 @@ export const TranscriptItem: React.FunctionComponent<
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
     codeBlocksCopyButtonClassName,
+    codeBlocksInsertButtonClassName,
     transcriptActionClassName,
     textAreaComponent: TextArea,
     EditButtonContainer,
@@ -60,39 +73,49 @@ export const TranscriptItem: React.FunctionComponent<
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     showFeedbackButtons,
-}) => {
+    copyButtonOnSubmit,
+    submitButtonComponent: SubmitButton,
+    chatInputClassName,
+    abortMessageInProgressComponent: AbortMessageInProgressButton,
+    onAbortMessageInProgress = () => {},
+}) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const textarea =
-        TextArea && beingEdited && editButtonOnSubmit ? (
-            <TextArea
-                className={classNames(styles.chatInput)}
-                rows={5}
-                value={formInput}
-                autoFocus={true}
-                required={true}
-                onInput={({ target }) => {
-                    const { value } = target as HTMLInputElement
-                    setFormInput(value)
-                }}
-                onKeyDown={event => {
-                    if (event.key === 'Escape') {
-                        setBeingEdited(false)
-                    }
+        TextArea && beingEdited && editButtonOnSubmit && SubmitButton ? (
+            <div className={styles.textAreaContainer}>
+                <TextArea
+                    className={classNames(styles.chatInput, chatInputClassName)}
+                    rows={5}
+                    value={formInput}
+                    autoFocus={true}
+                    required={true}
+                    onInput={event => setFormInput((event.target as HTMLInputElement).value)}
+                    onKeyDown={event => {
+                        if (event.key === 'Escape') {
+                            setBeingEdited(false)
+                        }
 
-                    if (
-                        event.key === 'Enter' &&
-                        !event.shiftKey &&
-                        !event.nativeEvent.isComposing &&
-                        formInput &&
-                        formInput.trim()
-                    ) {
-                        event.preventDefault()
-                        event.stopPropagation()
+                        if (
+                            event.key === 'Enter' &&
+                            !event.shiftKey &&
+                            !event.nativeEvent.isComposing &&
+                            formInput.trim()
+                        ) {
+                            event.preventDefault()
+                            setBeingEdited(false)
+                            editButtonOnSubmit(formInput)
+                        }
+                    }}
+                />
+                <SubmitButton
+                    className={styles.submitButton}
+                    onClick={() => {
                         setBeingEdited(false)
                         editButtonOnSubmit(formInput)
-                    }
-                }}
-            />
+                    }}
+                    disabled={formInput.length === 0}
+                />
+            </div>
         ) : null
 
     return (
@@ -146,20 +169,23 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 </div>
             )}
-            <div className={classNames(styles.content)}>
+            <div className={classNames(styles.contentPadding, textarea ? undefined : styles.content)}>
                 {message.displayText ? (
                     textarea ?? (
                         <CodeBlocks
                             displayText={message.displayText}
                             copyButtonClassName={codeBlocksCopyButtonClassName}
+                            CopyButtonProps={copyButtonOnSubmit}
+                            insertButtonClassName={codeBlocksInsertButtonClassName}
                         />
                     )
                 ) : inProgress ? (
-                    <span>
-                        Fetching context... <BlinkingCursor />
-                    </span>
+                    <BlinkingCursor />
                 ) : null}
+                {inProgress && AbortMessageInProgressButton && (
+                    <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
+                )}
             </div>
         </div>
     )
-}
+})

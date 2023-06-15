@@ -2,20 +2,26 @@ package background
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -26,25 +32,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type IndexJobType struct {
-	Name            string
-	Id              int
-	IndexInterval   time.Duration
-	RefreshInterval time.Duration
-}
-
-var IndexJobTypes = []IndexJobType{{
-	Name:            "recent-contributors",
-	Id:              1,
-	IndexInterval:   time.Hour * 24,
-	RefreshInterval: time.Minute * 5,
-}}
-
 func featureFlagName(jobType IndexJobType) string {
 	return fmt.Sprintf("own-background-index-repo-%s", jobType.Name)
 }
 
 const tableName = "own_background_jobs"
+const viewName = "own_background_jobs_config_aware"
 
 type Job struct {
 	ID              int
@@ -62,10 +55,15 @@ type Job struct {
 	Cancel          bool
 	RepoId          int
 	JobType         int
+	ConfigName      string
 }
 
 func (b *Job) RecordID() int {
 	return b.ID
+}
+
+func (b *Job) RecordUID() string {
+	return strconv.Itoa(b.ID)
 }
 
 var jobColumns = []*sqlf.Query{
@@ -83,7 +81,7 @@ var jobColumns = []*sqlf.Query{
 	sqlf.Sprintf("worker_hostname"),
 	sqlf.Sprintf("cancel"),
 	sqlf.Sprintf("repo_id"),
-	sqlf.Sprintf("job_type"),
+	sqlf.Sprintf("config_name"),
 }
 
 func scanJob(s dbutil.Scanner) (*Job, error) {
@@ -105,7 +103,7 @@ func scanJob(s dbutil.Scanner) (*Job, error) {
 		&job.WorkerHostname,
 		&job.Cancel,
 		&job.RepoId,
-		&job.JobType,
+		&job.ConfigName,
 	); err != nil {
 		return nil, err
 	}
@@ -119,18 +117,17 @@ func NewOwnBackgroundWorker(ctx context.Context, db database.DB, observationCtx 
 		Name:        "own-background-jobs-janitor",
 		Description: "Janitor for own-background-jobs queue",
 		Interval:    time.Minute * 5,
-		Metrics:     background.NewJanitorMetrics(observationCtx, "own-background-jobs-janitor", "own-background"),
+		Metrics:     background.NewJanitorMetrics(observationCtx, "own-background-jobs-janitor"),
 		CleanupFunc: janitorFunc(db, time.Hour*24*7),
 	})
 	return []goroutine.BackgroundRoutine{worker, resetter, janitor}
 }
 
-func makeWorker(ctx context.Context, db database.DB, observationCtx *observation.Context) (*workerutil.Worker[*Job], *dbworker.Resetter[*Job], dbworkerstore.Store[*Job]) {
-	name := "own_background_worker"
-
-	workerStore := dbworkerstore.New(observationCtx, db.Handle(), dbworkerstore.Options[*Job]{
-		Name:              fmt.Sprintf("%s_store", name),
+func makeWorkerStore(db database.DB, observationCtx *observation.Context) dbworkerstore.Store[*Job] {
+	return dbworkerstore.New(observationCtx, db.Handle(), dbworkerstore.Options[*Job]{
+		Name:              "own_background_worker_store",
 		TableName:         tableName,
+		ViewName:          viewName,
 		ColumnExpressions: jobColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(scanJob),
 		OrderByExpression: sqlf.Sprintf("id"), // processes oldest records first
@@ -140,53 +137,79 @@ func makeWorker(ctx context.Context, db database.DB, observationCtx *observation
 		MaxNumRetries:     3,
 	})
 
+}
+
+func makeWorker(ctx context.Context, db database.DB, observationCtx *observation.Context) (*workerutil.Worker[*Job], *dbworker.Resetter[*Job], dbworkerstore.Store[*Job]) {
+	workerStore := makeWorkerStore(db, observationCtx)
+
 	limiter := getRateLimiter()
 	conf.Watch(func() {
 		setRateLimitConfig(limiter)
 	})
 
 	task := handler{
-		workerStore: workerStore,
-		limiter:     limiter,
+		workerStore:       workerStore,
+		limiter:           limiter,
+		db:                db,
+		subRepoPermsCache: rcache.NewWithTTL("own_signals_subrepoperms", 3600),
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*Job](&task), workerutil.WorkerOptions{
-		Name:              name,
+		Name:              "own_background_worker",
 		Description:       "Sourcegraph own background processing partitioned by repository",
 		NumHandlers:       getConcurrencyConfig(),
 		Interval:          10 * time.Second,
 		HeartbeatInterval: 20 * time.Second,
-		Metrics:           workerutil.NewMetrics(observationCtx, name+"_processor"),
+		Metrics:           workerutil.NewMetrics(observationCtx, "own_background_worker_processor"),
 	})
 
 	resetter := dbworker.NewResetter(log.Scoped("OwnBackgroundResetter", ""), workerStore, dbworker.ResetterOptions{
-		Name:     fmt.Sprintf("%s_resetter", name),
+		Name:     "own_background_worker_resetter",
 		Interval: time.Second * 20,
-		Metrics:  dbworker.NewResetterMetrics(observationCtx, name),
+		Metrics:  dbworker.NewResetterMetrics(observationCtx, "own_background_worker"),
 	})
 
 	return worker, resetter, workerStore
 }
 
 type handler struct {
-	workerStore dbworkerstore.Store[*Job]
-	limiter     *ratelimit.InstrumentedLimiter
+	db                database.DB
+	workerStore       dbworkerstore.Store[*Job]
+	limiter           *ratelimit.InstrumentedLimiter
+	op                *observation.Operation
+	subRepoPermsCache *rcache.Cache
 }
 
-func (h *handler) Handle(ctx context.Context, logger log.Logger, record *Job) error {
+func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error {
 	err := h.limiter.Wait(ctx)
 	if err != nil {
 		return errors.Wrap(err, "limiter.Wait")
 	}
-	jsonify, _ := json.Marshal(record)
-	logger.Info(fmt.Sprintf("Hello from the own background processor: %v", string(jsonify)))
-	return nil
+
+	var delegate signalIndexFunc
+	switch record.ConfigName {
+	case types.SignalRecentContributors:
+		delegate = handleRecentContributors
+	case types.Analytics:
+		delegate = handleAnalytics
+	default:
+		return errcode.MakeNonRetryable(errors.New("unsupported own index job type"))
+	}
+
+	return delegate(ctx, lgr, api.RepoID(record.RepoId), h.db, h.subRepoPermsCache)
+}
+
+type signalIndexFunc func(ctx context.Context, lgr log.Logger, repoId api.RepoID, db database.DB, cache *rcache.Cache) error
+
+// janitorQuery is split into 2 parts. The first half is records that are finished (either completed or failed), the second half is records for jobs that are not enabled.
+func janitorQuery(deleteSince time.Time) *sqlf.Query {
+	return sqlf.Sprintf("DELETE FROM %s WHERE (state NOT IN ('queued', 'processing', 'errored') AND finished_at < %s) OR (id NOT IN (select id from %s))", sqlf.Sprintf(tableName), deleteSince, sqlf.Sprintf(viewName))
 }
 
 func janitorFunc(db database.DB, retention time.Duration) func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, err error) {
 	return func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, err error) {
 		ts := time.Now().Add(-1 * retention)
-		result, err := basestore.NewWithHandle(db.Handle()).ExecResult(ctx, sqlf.Sprintf("delete from %s where state not in ('queued', 'processing', 'errored') and finished_at < %s", sqlf.Sprintf(tableName), ts))
+		result, err := basestore.NewWithHandle(db.Handle()).ExecResult(ctx, janitorQuery(ts))
 		if err != nil {
 			return 0, 0, err
 		}

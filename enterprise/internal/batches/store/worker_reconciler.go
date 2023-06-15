@@ -13,11 +13,11 @@ import (
 
 // reconcilerMaxNumRetries is the maximum number of attempts the reconciler
 // makes to process a changeset when it fails.
-const reconcilerMaxNumRetries = 60
+const reconcilerMaxNumRetries = 10
 
 // reconcilerMaxNumResets is the maximum number of attempts the reconciler
 // makes to process a changeset when it stalls (process crashes, etc.).
-const reconcilerMaxNumResets = 60
+const reconcilerMaxNumResets = 10
 
 var reconcilerWorkerStoreOpts = dbworkerstore.Options[*types.Changeset]{
 	Name:                 "batches_reconciler_worker_store",

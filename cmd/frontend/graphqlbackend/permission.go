@@ -36,7 +36,7 @@ func (r *permissionResolver) Namespace() (string, error) {
 }
 
 func (r *permissionResolver) Action() string {
-	return r.permission.Action
+	return r.permission.Action.String()
 }
 
 func (r *permissionResolver) DisplayName() string {

@@ -81,11 +81,12 @@ func (s *SyncRegistry) Start() {
 
 	externalServiceSyncer := goroutine.NewPeriodicGoroutine(
 		s.ctx,
-		"batchchanges.codehost-syncer", "Batch Changes syncer external service sync",
-		externalServiceSyncerInterval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return s.syncCodeHosts(ctx)
 		}),
+		goroutine.WithName("batchchanges.codehost-syncer"),
+		goroutine.WithDescription("Batch Changes syncer external service sync"),
+		goroutine.WithInterval(externalServiceSyncerInterval),
 	)
 
 	goroutine.MonitorBackgroundRoutines(s.ctx, externalServiceSyncer)
@@ -486,7 +487,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	}
 
 	srcer := sources.NewSourcer(s.httpFactory)
-	source, err := srcer.ForChangeset(ctx, s.syncStore, cs)
+	source, err := srcer.ForChangeset(ctx, s.syncStore, cs, sources.AuthenticationStrategyUserCredential)
 	if err != nil {
 		if errors.Is(err, store.ErrDeletedNamespace) {
 			syncLogger.Debug("SyncChangeset skipping changeset: namespace deleted")

@@ -37,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -362,7 +363,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 
 	t.Run("authenticated as non-admin and not the same user", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 123}, nil)
+		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 123}, nil)
 
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
@@ -377,7 +378,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 	})
 
 	users := database.NewStrictMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 123, SiteAdmin: true}, nil)
+	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 123, SiteAdmin: true}, nil)
 
 	db := edb.NewStrictMockEnterpriseDB()
 	db.UsersFunc.SetDefaultReturn(users)
@@ -458,7 +459,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 
 		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
 		trueVal := true
-		_, err := r.ScheduleUserPermissionsSync(context.Background(), &graphqlbackend.UserPermissionsSyncArgs{
+		_, err := r.ScheduleUserPermissionsSync(actor.WithActor(context.Background(), &actor.Actor{UID: 123}), &graphqlbackend.UserPermissionsSyncArgs{
 			User:    graphqlbackend.MarshalUserID(userID),
 			Options: &struct{ InvalidateCaches *bool }{InvalidateCaches: &trueVal},
 		})
@@ -1540,8 +1541,9 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 		}
 	})
 
+	userID := int32(9999)
 	users := database.NewStrictMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID, SiteAdmin: true}, nil)
 	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id}, nil
 	})
@@ -1573,7 +1575,8 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 			name: "get permissions information",
 			gqlTests: []*graphqlbackend.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, db),
+					Context: actor.WithActor(context.Background(), &actor.Actor{UID: userID}),
+					Schema:  mustParseGraphQLSchema(t, db),
 					Query: `
 				{
 					currentUser {
@@ -1868,16 +1871,16 @@ query {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		bbProjects := database.NewMockBitbucketProjectPermissionsStore()
-		entry := executor.ExecutionLogEntry{Key: "key", Command: []string{"command"}, StartTime: mustParseTime("2020-01-06"), ExitCode: intPtr(1), Out: "out", DurationMs: intPtr(1)}
+		entry := executor.ExecutionLogEntry{Key: "key", Command: []string{"command"}, StartTime: mustParseTime("2020-01-06"), ExitCode: pointers.Ptr(1), Out: "out", DurationMs: pointers.Ptr(1)}
 		bbProjects.ListJobsFunc.SetDefaultReturn([]*types.BitbucketProjectPermissionJob{
 			{
 				ID:                1,
 				State:             "queued",
-				FailureMessage:    stringPtr("failure massage"),
+				FailureMessage:    pointers.Ptr("failure massage"),
 				QueuedAt:          mustParseTime("2020-01-01"),
-				StartedAt:         timePtr(mustParseTime("2020-01-01")),
-				FinishedAt:        timePtr(mustParseTime("2020-01-01")),
-				ProcessAfter:      timePtr(mustParseTime("2020-01-01")),
+				StartedAt:         pointers.Ptr(mustParseTime("2020-01-01")),
+				FinishedAt:        pointers.Ptr(mustParseTime("2020-01-01")),
+				ProcessAfter:      pointers.Ptr(mustParseTime("2020-01-01")),
 				NumResets:         1,
 				NumFailures:       2,
 				LastHeartbeatAt:   mustParseTime("2020-01-05"),
@@ -1960,6 +1963,7 @@ query {
 func TestResolverPermissionsSyncJobs(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
+		users.GetByIDFunc.SetDefaultReturn(&types.User{}, nil)
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
 		db := edb.NewStrictMockEnterpriseDB()
@@ -1977,6 +1981,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 	t.Run("authenticated as non-admin with current user's ID as userID filter", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
@@ -1993,6 +1998,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 	t.Run("authenticated as non-admin with different user's ID as userID filter", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
@@ -2009,6 +2015,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 	t.Run("authenticated as admin with different user's ID as userID filter", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
 		db := edb.NewStrictMockEnterpriseDB()
 		db.UsersFunc.SetDefaultReturn(users)
@@ -2591,10 +2598,6 @@ func mustParseTime(v string) time.Time {
 	}
 	return t
 }
-
-func intPtr(v int) *int              { return &v }
-func timePtr(v time.Time) *time.Time { return &v }
-func stringPtr(v string) *string     { return &v }
 
 func TestResolver_PermissionsSyncingStats(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {

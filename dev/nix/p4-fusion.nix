@@ -1,28 +1,19 @@
 { pkgs
+, pkgsStatic
 , lib
 , stdenv
 , fetchzip
 , fetchFromGitHub
+  # nativeBuildInputs only, the rest we fetch from pkgsStatic
 , cmake
-, http-parser
-, libcxx
-, libcxxabi
-, libiconv
-, libssh2
-, openssl_1_1
 , patchelf
-, pcre
 , pkg-config
-, zlib
 , darwin
-, hostPlatform
+, targetPlatform
 }:
 let
-  # utility function to add some best-effort flags for emitting static objects instead of dynamic
-  makeStatic = pkg: pkg.overrideAttrs (oldAttrs: {
-    configureFlags = (oldAttrs.configureFlags or [ ]) ++ [ "--without-shared" "--disable-shared" "--enable-static" ];
-  });
-  http-parser-static = ((makeStatic http-parser).overrideAttrs (oldAttrs: {
+  inherit (import ./util.nix { inherit lib; }) mkStatic unNixifyDylibs;
+  http-parser-static = ((mkStatic pkgsStatic.http-parser).overrideAttrs (oldAttrs: {
     # http-parser makefile is a bit incomplete, so fill in the gaps here
     # to move the static object and header files to the right location
     # https://github.com/nodejs/http-parser/issues/310
@@ -34,11 +25,13 @@ let
       ls -la $out/lib $out/include
     '';
   }));
-  libiconv-static = (libiconv.override { enableStatic = true; enableShared = false; });
-  openssl-static = (openssl_1_1.override { static = true; }).dev;
-  pcre-static = (makeStatic pcre).dev;
+  libiconv-static = mkStatic pkgsStatic.libiconv;
+  openssl-static = (mkStatic pkgsStatic.openssl).dev;
+  pcre-static = (mkStatic pkgsStatic.pcre).dev;
+  # pkgsStatic.zlib.static doesn't exist on linux, but does on macos
+  zlib-static = (pkgsStatic.zlib.static or pkgsStatic.zlib);
 in
-stdenv.mkDerivation rec {
+unNixifyDylibs pkgs (pkgsStatic.gccStdenv.mkDerivation rec {
   name = "p4-fusion";
   version = "v1.12";
 
@@ -51,24 +44,26 @@ stdenv.mkDerivation rec {
       hash = "sha256-rUXuBoXuOUanWxutd7dNgjn2vLFvHQ0IgCIn9vG5dgs=";
     })
     (
-      if hostPlatform.isMacOS then
-        if hostPlatform.isAarch64 then
-          fetchzip {
+      if targetPlatform.isMacOS then
+        if targetPlatform.isAarch64 then
+          fetchzip
+            {
               name = "helix-core-api";
-              url = "https://cdist2.perforce.com/perforce/r22.2/bin.macosx12arm64/p4api-openssl1.1.1.tgz";
-              hash = "sha256-YO7p24PuedTn2pVq/roF2u5zqS6byaG9N2gCbGVrpv0=";
+              url = "https://cdist2.perforce.com/perforce/r22.2/bin.macosx12arm64/p4api-openssl3.tgz";
+              hash = "sha256-gKSBdSZru+91a55sw9JvZkU0Q3U5kdkQ252wJgDlclg=";
             }
         else
           fetchzip {
             name = "helix-core-api";
-            url = "https://cdist2.perforce.com/perforce/r22.2/bin.macosx12x86_64/p4api-openssl1.1.1.tgz";
-            hash = "sha256-gaYvQOX8nvMIMHENHB0+uklyLcmeXT5gjGGcVC9TTtE=";
+            url = "https://cdist2.perforce.com/perforce/r22.2/bin.macosx12x86_64/p4api-openssl3.tgz";
+            hash = "sha256-E5oK/uvRRNuEC5b8h5zQVdfZOieUgV2T8aPISEWgSY8=";
           }
-      else if hostPlatform.isLinux then
-        fetchzip {
+      else if targetPlatform.isLinux then
+        fetchzip
+          {
             name = "helix-core-api";
-            url = "https://cdist2.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl1.1.1.tgz";
-            hash = "sha256-JkWG4ImrTzN0UuSMelG8zsH7YRlL1mXs9lpB5GptUb4=";
+            url = "https://cdist2.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl3.tgz";
+            hash = "sha256-wovk38lk4cjrC6pTa9dSwmYM1RN1nzmzdl8VIwf2BLY=";
           }
       else throw "unsupported platform ${stdenv.targetPlatform.parsed.kernel.name}"
     )
@@ -83,12 +78,11 @@ stdenv.mkDerivation rec {
   ];
 
   buildInputs = [
-    zlib.static
-    zlib.dev
+    zlib-static
     http-parser-static
     pcre-static
     openssl-static
-  ] ++ lib.optional hostPlatform.isMacOS [
+  ] ++ lib.optional targetPlatform.isMacOS [
     # iconv is bundled with glibc and apparently only needed for osx
     # https://sourcegraph.com/github.com/salesforce/p4-fusion@3ee482466464c18e6a635ff4f09cd75a2e1bfe0f/-/blob/vendor/libgit2/README.md?L178:3
     libiconv-static
@@ -96,11 +90,14 @@ stdenv.mkDerivation rec {
     darwin.apple_sdk.frameworks.Cocoa
   ];
 
-  # copy helix-core-api stuff into the expected directories
-  preBuild = let dir = if hostPlatform.isMacOS then "mac" else "linux"; in
+  # copy helix-core-api stuff into the expected directories, and statically link libstdc++
+  preBuild = let dir = if targetPlatform.isMacOS then "mac" else "linux"; in
     ''
       mkdir -p $NIX_BUILD_TOP/$sourceRoot/vendor/helix-core-api/${dir}
       cp -R $NIX_BUILD_TOP/helix-core-api/* $NIX_BUILD_TOP/$sourceRoot/vendor/helix-core-api/${dir}
+
+      sed -i "s/target_link_libraries(p4-fusion PUBLIC/target_link_libraries(p4-fusion PUBLIC -static-libstdc++/" \
+        $NIX_BUILD_TOP/$sourceRoot/p4-fusion/CMakeLists.txt
     '';
 
   cmakeFlags = [
@@ -121,4 +118,10 @@ stdenv.mkDerivation rec {
     mkdir -p "$out/bin"
     cp p4-fusion/p4-fusion "$out/bin/p4-fusion"
   '';
-}
+
+  meta = {
+    homepage = "https://github.com/salesforce/p4-fusion";
+    platforms = [ "x86_64-darwin" "aarch64-darwin" "x86_64-linux" ];
+    license = lib.licenses.bsd3;
+  };
+})

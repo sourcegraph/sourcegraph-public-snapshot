@@ -9,6 +9,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -33,18 +35,19 @@ func unmarshalBatchSpecWorkspaceID(id graphql.ID) (batchSpecWorkspaceID int64, e
 	return
 }
 
-func newBatchSpecWorkspaceResolver(ctx context.Context, store *store.Store, workspace *btypes.BatchSpecWorkspace, execution *btypes.BatchSpecWorkspaceExecutionJob, batchSpec *batcheslib.BatchSpec) (graphqlbackend.BatchSpecWorkspaceResolver, error) {
+func newBatchSpecWorkspaceResolver(ctx context.Context, store *store.Store, logger log.Logger, workspace *btypes.BatchSpecWorkspace, execution *btypes.BatchSpecWorkspaceExecutionJob, batchSpec *batcheslib.BatchSpec) (graphqlbackend.BatchSpecWorkspaceResolver, error) {
 	repo, err := store.Repos().Get(ctx, workspace.RepoID)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
 	}
 
-	return newBatchSpecWorkspaceResolverWithRepo(store, workspace, execution, batchSpec, repo), nil
+	return newBatchSpecWorkspaceResolverWithRepo(store, logger, workspace, execution, batchSpec, repo), nil
 }
 
-func newBatchSpecWorkspaceResolverWithRepo(store *store.Store, workspace *btypes.BatchSpecWorkspace, execution *btypes.BatchSpecWorkspaceExecutionJob, batchSpec *batcheslib.BatchSpec, repo *types.Repo) graphqlbackend.BatchSpecWorkspaceResolver {
+func newBatchSpecWorkspaceResolverWithRepo(store *store.Store, logger log.Logger, workspace *btypes.BatchSpecWorkspace, execution *btypes.BatchSpecWorkspaceExecutionJob, batchSpec *batcheslib.BatchSpec, repo *types.Repo) graphqlbackend.BatchSpecWorkspaceResolver {
 	return &batchSpecWorkspaceResolver{
 		store:        store,
+		logger:       logger,
 		workspace:    workspace,
 		execution:    execution,
 		batchSpec:    batchSpec,
@@ -55,6 +58,7 @@ func newBatchSpecWorkspaceResolverWithRepo(store *store.Store, workspace *btypes
 
 type batchSpecWorkspaceResolver struct {
 	store     *store.Store
+	logger    log.Logger
 	workspace *btypes.BatchSpecWorkspace
 	execution *btypes.BatchSpecWorkspaceExecutionJob
 	batchSpec *batcheslib.BatchSpec
@@ -148,17 +152,12 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 				skipped = true
 			}
 
-			var (
-				entry executor.ExecutionLogEntry
-				ok    bool
-			)
-			if r.execution != nil {
-				logKeyRegex, err := regexp.Compile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.step\\.%d\\.run$", idx))
-				if err != nil {
-					return nil, err
-				}
-				entry, ok = findExecutionLogEntry(r.execution, logKeyRegex)
+			// Get the log from the run step.
+			logKeyRegex, err := regexp.Compile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.step\\.%d\\.run$", idx))
+			if err != nil {
+				return nil, err
 			}
+			entry, ok := findExecutionLogEntry(r.execution, logKeyRegex)
 
 			resolver := &batchSpecWorkspaceStepV2Resolver{
 				index:         idx,
@@ -172,25 +171,36 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 			}
 
 			// See if we have a cache result for this step.
-			if cachedResult, ok := r.workspace.StepCacheResult(idx + 1); ok {
-				resolver.skipped = true
+			if cachedResult, cacheOk := r.workspace.StepCacheResult(idx + 1); cacheOk {
 				resolver.cachedResult = cachedResult.Value
-			} else if r.execution != nil {
-				logKeyRegex, err := regexp.Compile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.step\\.%d\\.post$", idx))
+			}
+
+			// Since we have not determined of the step is skipped yet and do not have a cached result, get the logs
+			// to get the step info and or skipped status.
+			if !resolver.skipped && resolver.cachedResult == nil {
+				// The skip log will be in the pre step.
+				logKeyPreRegex, err := regexp.Compile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.step\\.%d\\.pre$", idx))
 				if err != nil {
 					return nil, err
 				}
-				e, ok := findExecutionLogEntry(r.execution, logKeyRegex)
-				if ok {
-					ev := btypes.ParseJSONLogsFromOutput(e.Out)
-					for _, e := range ev {
-						if e.Operation == batcheslib.LogEventOperationCacheAfterStepResult {
-							m, ok := e.Metadata.(*batcheslib.CacheAfterStepResultMetadata)
-							if ok {
-								resolver.cachedResult = &m.Value
-							}
-						}
+				stepInfo := &btypes.StepInfo{}
+				if e, preLogOk := findExecutionLogEntry(r.execution, logKeyPreRegex); preLogOk {
+					logLines := btypes.ParseJSONLogsFromOutput(e.Out)
+					btypes.ParseLines(logLines, btypes.DefaultSetFunc(stepInfo))
+					resolver.stepInfo = stepInfo
+					if resolver.stepInfo.Skipped {
+						resolver.skipped = true
 					}
+				}
+
+				logKeyPreRegex, err = regexp.Compile(fmt.Sprintf("^step\\.(docker|kubernetes)\\.step\\.%d\\.post$", idx))
+				if err != nil {
+					return nil, err
+				}
+				if e, postLogOk := findExecutionLogEntry(r.execution, logKeyPreRegex); postLogOk {
+					logLines := btypes.ParseJSONLogsFromOutput(e.Out)
+					btypes.ParseLines(logLines, btypes.DefaultSetFunc(stepInfo))
+					resolver.stepInfo = stepInfo
 				}
 			}
 
@@ -292,7 +302,7 @@ func (r *batchSpecWorkspaceResolver) BatchSpec(ctx context.Context) (graphqlback
 	if err != nil {
 		return nil, err
 	}
-	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
+	return &batchSpecResolver{store: r.store, batchSpec: batchSpec, logger: r.logger}, nil
 }
 
 func (r *batchSpecWorkspaceResolver) Ignored() bool {

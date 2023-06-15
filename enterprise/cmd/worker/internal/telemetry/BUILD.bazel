@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "telemetry",
@@ -27,6 +28,7 @@ go_library(
 
 go_test(
     name = "telemetry_test",
+    timeout = "moderate",
     srcs = [
         "mocks_test.go",
         "telemetry_job_test.go",
@@ -46,6 +48,7 @@ go_test(
         "//internal/observation",
         "//internal/version",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_hexops_autogold_v2//:autogold",

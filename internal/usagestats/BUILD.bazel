@@ -1,10 +1,12 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "usagestats",
     srcs = [
         "aggregated.go",
         "aggregated_codeintel.go",
+        "aggregated_repo_metadata.go",
         "aggregated_search.go",
         "all_time_stats.go",
         "batches.go",
@@ -47,6 +49,7 @@ go_library(
         "//internal/types",
         "//internal/version",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_gomodule_redigo//redis",
         "@com_github_google_uuid//:uuid",
         "@com_github_inconshreveable_log15//:log15",
@@ -58,8 +61,10 @@ go_library(
 
 go_test(
     name = "usagestats_test",
+    timeout = "moderate",
     srcs = [
         "aggregated_codeintel_test.go",
+        "aggregated_repo_metadata_test.go",
         "aggregated_search_test.go",
         "aggregated_test.go",
         "batches_test.go",
@@ -89,6 +94,7 @@ go_test(
         "//internal/extsvc",
         "//internal/types",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_derision_test_glock//:glock",
         "@com_github_google_go_cmp//cmp",
         "@com_github_inconshreveable_log15//:log15",

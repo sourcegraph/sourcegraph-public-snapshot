@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	godiff "github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 
@@ -411,14 +413,14 @@ func TestRepository_BlameFile(t *testing.T) {
 	gitCommands := []string{
 		"echo line1 > f",
 		"git add f",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m foo",
 		"echo line2 >> f",
 		"git add f",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m foo",
 		"git mv f f2",
 		"echo line3 >> f2",
 		"git add f2",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m foo",
 	}
 	gitWantHunks := []*Hunk{
 		{
@@ -526,7 +528,7 @@ func TestRepository_ResolveBranch(t *testing.T) {
 	defer ResetClientMocks()
 
 	gitCommands := []string{
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -m foo",
 	}
 	tests := map[string]struct {
 		repo         api.RepoName
@@ -558,7 +560,7 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 	defer ResetClientMocks()
 
 	gitCommands := []string{
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -m foo",
 	}
 	tests := map[string]struct {
 		repo    api.RepoName
@@ -590,7 +592,7 @@ func TestRepository_ResolveTag(t *testing.T) {
 	defer ResetClientMocks()
 
 	gitCommands := []string{
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -m foo",
 		"git tag t",
 	}
 	tests := map[string]struct {
@@ -623,7 +625,7 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 	defer ResetClientMocks()
 
 	gitCommands := []string{
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -m foo",
 	}
 	tests := map[string]struct {
 		repo    api.RepoName
@@ -680,7 +682,7 @@ func runFileListingTest(t *testing.T,
 		"touch dir/file2",
 		"touch dir/file3",
 		"git add file1 dir/file2 dir/file3",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m commit1",
 	}
 
 	repo, dir := MakeGitRepositoryAndReturnDir(t, gitCommands...)
@@ -815,7 +817,7 @@ func TestListDirectoryChildren(t *testing.T) {
 		"touch dir3/sub1/file",
 		"touch dir3/sub3/file",
 		"git add .",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m commit1",
 	}
 
 	repo := MakeGitRepository(t, gitCommands...)
@@ -961,16 +963,16 @@ func TestMerger_MergeBase(t *testing.T) {
 	cmds := []string{
 		"echo line1 > f",
 		"git add f",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m foo",
 		"git tag testbase",
 		"git checkout -b b2",
 		"echo line2 >> f",
 		"git add f",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m foo",
 		"git checkout master",
 		"echo line3 > h",
 		"git add h",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m qux --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m qux",
 	}
 	tests := map[string]struct {
 		repo api.RepoName
@@ -1028,7 +1030,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		"ln -s ../file1 dir1/link2",
 		"touch --date=2006-01-02T15:04:05Z file1 link1 dir1/link2 || touch -t " + Times[0] + " file1 link1 dir1/link2",
 		"git add link1 file1 dir1/link2",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m commit1",
 	}
 
 	// map of path to size of content
@@ -1121,7 +1123,7 @@ func TestStat(t *testing.T) {
 		"mkdir dir1",
 		"touch dir1/file1",
 		"git add dir1/file1",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m commit1",
 	}
 
 	dir := InitGitRepository(t, gitCommands...)
@@ -1191,7 +1193,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		UID: 1,
 	})
 	gitCommands := []string{
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -m foo",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
 	}
 	gitCommandsWithFiles := getGitCommandsWithFiles(fileWithAccess, fileWithoutAccess)
@@ -1558,7 +1560,7 @@ func TestCommitExists(t *testing.T) {
 	}
 
 	gitCommands := []string{
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -m foo",
 	}
 	testCommitExists("basic", gitCommands, "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", NonExistentCommitID, nil)
 	gitCommandsWithFiles := getGitCommandsWithFiles(fileWithAccess, fileWithoutAccess)
@@ -1579,7 +1581,7 @@ func TestRepository_Commits(t *testing.T) {
 	// TODO(sqs): test CommitsOptions.Base
 
 	gitCommands := []string{
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -m foo",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
 	}
 	wantGitCommits := []*gitdomain.Commit{
@@ -1638,7 +1640,7 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 	gitCommands := []string{
 		"touch file1",
 		"git add file1",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m commit1",
 		"touch file2",
 		"git add file2",
 		"touch file2.2",
@@ -1818,7 +1820,7 @@ func TestRepository_Commits_options(t *testing.T) {
 	ctx := context.Background()
 
 	gitCommands := []string{
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -m foo",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:08Z git commit --allow-empty -m qux --author='a <a@a.com>' --date 2006-01-02T15:04:08Z",
 	}
@@ -1919,11 +1921,11 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	})
 
 	gitCommands := []string{
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -m commit1",
 		"touch file1",
 		"touch --date=2006-01-02T15:04:05Z file1 || touch -t " + Times[0] + " file1",
 		"git add file1",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m commit2",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
 	}
 	wantGitCommits := []*gitdomain.Commit{
@@ -2016,7 +2018,7 @@ func TestParseCommitsUniqueToBranch(t *testing.T) { // KEEP
 	}
 }
 
-func TestParseBranchesContaining(t *testing.T) { //KEEP
+func TestParseBranchesContaining(t *testing.T) { // KEEP
 	names := parseBranchesContaining([]string{
 		"refs/tags/v0.7.0",
 		"refs/tags/v0.5.1",
@@ -2401,10 +2403,10 @@ func getGitCommandsWithFiles(fileName1, fileName2 string) []string {
 	return []string{
 		fmt.Sprintf("touch %s", fileName1),
 		fmt.Sprintf("git add %s", fileName1),
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m commit1",
 		fmt.Sprintf("touch %s", fileName2),
 		fmt.Sprintf("git add %s", fileName2),
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m commit2",
 	}
 }
 
@@ -2440,7 +2442,7 @@ func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
 	repoName := MakeGitRepository(t,
 		"echo abcd > file1",
 		"git add file1",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m commit1",
 	)
 	const commitID = "3d689662de70f9e252d4f6f1d75284e23587d670"
 
@@ -2475,7 +2477,7 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 	repoName := MakeGitRepository(t,
 		"echo abcd > file1",
 		"git add file1",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m commit1",
 	)
 	const commitID = "3d689662de70f9e252d4f6f1d75284e23587d670"
 
@@ -2512,42 +2514,64 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 }
 
 func TestRead(t *testing.T) {
-	const wantData = "abcd\n"
-	repo := MakeGitRepository(t,
+	const commitCmd = "git commit -m commit1"
+	repo, dir := MakeGitRepositoryAndReturnDir(t,
+		// simple file
 		"echo abcd > file1",
 		"git add file1",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		commitCmd,
+
+		// test we handle file names with .. (git show by default interprets
+		// this). Ensure past the .. exists as a branch. Then if we use git
+		// show it would return a diff instead of file contents.
+		"mkdir subdir",
+		"echo old > subdir/name",
+		"echo old > subdir/name..dev",
+		"git add subdir",
+		commitCmd,
+		"echo dotdot > subdir/name..dev",
+		"git add subdir",
+		commitCmd,
+		"git branch dev",
 	)
-	const commitID = "3d689662de70f9e252d4f6f1d75284e23587d670"
+	commitID := api.CommitID(GetHeadCommitFromGitDir(t, dir))
 
 	ctx := context.Background()
 
 	tests := map[string]struct {
-		file    string
-		checkFn func(*testing.T, error, []byte)
+		file string
+		want string // if empty we treat as non-existant.
 	}{
 		"all": {
 			file: "file1",
-			checkFn: func(t *testing.T, err error, data []byte) {
-				if err != nil {
-					t.Fatal(err)
-				}
-				if string(data) != wantData {
-					t.Errorf("got %q, want %q", data, wantData)
-				}
-			},
+			want: "abcd\n",
 		},
 
 		"nonexistent": {
 			file: "filexyz",
-			checkFn: func(t *testing.T, err error, data []byte) {
-				if err == nil {
-					t.Fatal("err == nil")
-				}
-				if !errors.Is(err, os.ErrNotExist) {
-					t.Fatalf("got err %v, want os.IsNotExist", err)
-				}
-			},
+		},
+
+		"dotdot-all": {
+			file: "subdir/name..dev",
+			want: "dotdot\n",
+		},
+
+		"dotdot-nonexistent": {
+			file: "subdir/404..dev",
+		},
+
+		// This test case ensures we do not return a log with diff for the
+		// specially crafted "git show HASH:..branch". IE a way to bypass
+		// sub-repo permissions.
+		"dotdot-diff": {
+			file: "..dev",
+		},
+
+		// 3 dots ... as a prefix when using git show will return an error like
+		// error: object b5462a7c880ce339ba3f93ac343706c0fa35babc is a tree, not a commit
+		// fatal: Invalid symmetric difference expression 269e2b9bda9a95ad4181a7a6eb2058645d9bad82:...dev
+		"dotdotdot": {
+			file: "...dev",
 		},
 	}
 
@@ -2563,9 +2587,27 @@ func TestRead(t *testing.T) {
 		ctx = actor.WithActor(ctx, &actor.Actor{
 			UID: 1,
 		})
+		checkFn := func(t *testing.T, err error, data []byte) {
+			if test.want == "" {
+				if err == nil {
+					t.Fatal("err == nil")
+				}
+				if !errors.Is(err, os.ErrNotExist) {
+					t.Fatalf("got err %v, want os.IsNotExist", err)
+				}
+			} else {
+				if err != nil {
+					t.Fatal(err)
+				}
+				if string(data) != test.want {
+					t.Errorf("got %q, want %q", data, test.want)
+				}
+			}
+		}
+
 		t.Run(name+"-ReadFile", func(t *testing.T) {
 			data, err := client.ReadFile(ctx, nil, repo, commitID, test.file)
-			test.checkFn(t, err, data)
+			checkFn(t, err, data)
 		})
 		t.Run(name+"-ReadFile-with-sub-repo-permissions-no-op", func(t *testing.T) {
 			checker.EnabledFunc.SetDefaultHook(func() bool {
@@ -2578,7 +2620,7 @@ func TestRead(t *testing.T) {
 				return authz.None, nil
 			})
 			data, err := client.ReadFile(ctx, checker, repo, commitID, test.file)
-			test.checkFn(t, err, data)
+			checkFn(t, err, data)
 		})
 		t.Run(name+"-ReadFile-with-sub-repo-permissions-filters-file", func(t *testing.T) {
 			checker.EnabledFunc.SetDefaultHook(func() bool {
@@ -2596,7 +2638,7 @@ func TestRead(t *testing.T) {
 			}
 		})
 		t.Run(name+"-GetFileReader", func(t *testing.T) {
-			runNewFileReaderTest(ctx, t, repo, commitID, test.file, nil, test.checkFn)
+			runNewFileReaderTest(ctx, t, repo, commitID, test.file, nil, checkFn)
 		})
 		t.Run(name+"-GetFileReader-with-sub-repo-permissions-noop", func(t *testing.T) {
 			checker.EnabledFunc.SetDefaultHook(func() bool {
@@ -2608,7 +2650,7 @@ func TestRead(t *testing.T) {
 				}
 				return authz.None, nil
 			})
-			runNewFileReaderTest(ctx, t, repo, commitID, test.file, checker, test.checkFn)
+			runNewFileReaderTest(ctx, t, repo, commitID, test.file, checker, checkFn)
 		})
 		t.Run(name+"-GetFileReader-with-sub-repo-permissions-filters-file", func(t *testing.T) {
 			checker.EnabledFunc.SetDefaultHook(func() bool {
@@ -2652,7 +2694,7 @@ func TestRepository_ListBranches(t *testing.T) {
 	})
 
 	gitCommands := []string{
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -m foo",
 		"git checkout -b b0",
 		"git checkout -b b1",
 	}
@@ -2672,8 +2714,8 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 		"git checkout -b b0",
 		"echo 123 > some_other_file",
 		"git add some_other_file",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -am foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -am foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -am foo",
+		"git commit --allow-empty -am foo",
 
 		"git checkout HEAD^ -b b1",
 		"git merge b0",
@@ -2681,7 +2723,7 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 		"git checkout --orphan b2",
 		"echo 234 > somefile",
 		"git add somefile",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -am foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -am foo",
 	}
 
 	gitBranches := map[string][]*gitdomain.Branch{
@@ -2712,10 +2754,10 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 	})
 
 	gitCommands := []string{
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m base --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m master --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -m base",
+		"git commit --allow-empty -m master",
 		"git checkout HEAD^ -b branch2",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m branch2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -m branch2",
 	}
 
 	// Pre-sorted branches
@@ -2746,19 +2788,19 @@ func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
 	})
 
 	gitCommands := []string{
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo0 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -m foo0",
 		"git branch old_work",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo3 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo4 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo5 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -m foo1",
+		"git commit --allow-empty -m foo2",
+		"git commit --allow-empty -m foo3",
+		"git commit --allow-empty -m foo4",
+		"git commit --allow-empty -m foo5",
 		"git checkout -b dev",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo6 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo7 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo8 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -m foo6",
+		"git commit --allow-empty -m foo7",
+		"git commit --allow-empty -m foo8",
 		"git checkout old_work",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo9 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -m foo9",
 	}
 	wantBranches := []*gitdomain.Branch{
 		{Counts: &gitdomain.BehindAhead{Behind: 5, Ahead: 1}, Name: "old_work", Head: "26692c614c59ddaef4b57926810aac7d5f0e94f0"},
@@ -2776,7 +2818,7 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 	})
 
 	gitCommands := []string{
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo0 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit --allow-empty -m foo0",
 		"git checkout -b b0",
 		"GIT_COMMITTER_NAME=b GIT_COMMITTER_EMAIL=b@b.com GIT_COMMITTER_DATE=2006-01-02T15:04:06Z git commit --allow-empty -m foo1 --author='b <b@b.com>' --date 2006-01-02T15:04:06Z",
 	}
@@ -3205,4 +3247,55 @@ func TestBlameHunkReader(t *testing.T) {
 			}
 		}
 	})
+}
+
+func Test_CommitLog(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+
+	tests := map[string]struct {
+		extraGitCommands []string
+		wantFiles        [][]string // put these in log reverse order
+		wantCommits      int
+		wantErr          string
+	}{
+		"commit changes files": {
+			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt", "file2.txt"}, []string{"file3.txt"}),
+			wantFiles:        [][]string{{"file3.txt"}, {"file1.txt", "file2.txt"}},
+			wantCommits:      2,
+		},
+		"no commits": {
+			wantErr: "gitCommand: exit status 128",
+		},
+		"one file two commits": {
+			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt"}, []string{"file1.txt"}),
+			wantFiles:        [][]string{{"file1.txt"}, {"file1.txt"}},
+			wantCommits:      2,
+		},
+		"one commit": {
+			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt"}),
+			wantFiles:        [][]string{{"file1.txt"}},
+			wantCommits:      1,
+		},
+	}
+
+	for label, test := range tests {
+		t.Run(label, func(t *testing.T) {
+			repo := MakeGitRepository(t, test.extraGitCommands...)
+			logResults, err := NewClient().CommitLog(context.Background(), repo, time.Time{})
+			if err != nil {
+				require.ErrorContains(t, err, test.wantErr)
+			}
+
+			t.Log(test)
+			for i, result := range logResults {
+				t.Log(result)
+				assert.Equal(t, "a@a.com", result.AuthorEmail)
+				assert.Equal(t, "a", result.AuthorName)
+				assert.Equal(t, 40, len(result.SHA))
+				assert.ElementsMatch(t, test.wantFiles[i], result.ChangedFiles)
+			}
+			assert.Equal(t, test.wantCommits, len(logResults))
+		})
+	}
 }

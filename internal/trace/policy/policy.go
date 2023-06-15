@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"go.uber.org/atomic"
 )
 
@@ -69,13 +68,12 @@ const (
 // Transport wraps an underlying HTTP RoundTripper, injecting the X-Sourcegraph-Should-Trace header
 // into outgoing requests whenever the shouldTraceKey context value is true.
 type Transport struct {
-	http.RoundTripper
+	RoundTripper http.RoundTripper
 }
 
 func (r *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set(traceHeader, strconv.FormatBool(ShouldTrace(req.Context())))
-	t := nethttp.Transport{RoundTripper: r.RoundTripper}
-	return t.RoundTrip(req)
+	return r.RoundTripper.RoundTrip(req)
 }
 
 // requestWantsTrace returns true if a request is opting into tracing either

@@ -103,8 +103,8 @@ For example:
 
 You will be returned to the list of search contexts. Your new search context will appear in the search contexts selector in the search input, and can be [used immediately](#using-search-contexts).
 
-## Beta: Query-based search contexts
-As of release 3.36, search contexts can be defined with a restricted search query as an alternative to a specific list of repositories and revisions. This feature is in beta and may change in following releases. Allowed filters are: `repo`, `rev`, `file`, `lang`, `case`, `fork`, and `visibility`. `OR` and `AND` expressions are also allowed.
+## Query-based search contexts
+As of release 3.36, search contexts can be defined with a restricted search query as an alternative to a specific list of repositories and revisions. Allowed filters are: `repo`, `rev`, `file`, `lang`, `case`, `fork`, and `visibility`. `OR` and `AND` expressions are also allowed.
 
 > NOTE: Currently, repo built in predicates for example `repo:has.file`, `repo:has.content` etc, aren't currently supported in search contexts.
 

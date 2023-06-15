@@ -72,7 +72,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                         {result.oid.slice(0, 7)}
                         <VisuallyHidden>,</VisuallyHidden>
                     </Code>{' '}
-                    <VisuallyHidden>Commited</VisuallyHidden>
+                    <VisuallyHidden>Committed</VisuallyHidden>
                     <Timestamp date={result.authorDate} noAbout={true} strict={true} />
                 </Button>
             )}

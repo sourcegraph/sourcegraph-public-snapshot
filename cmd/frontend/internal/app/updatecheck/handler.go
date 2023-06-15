@@ -19,6 +19,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -35,17 +36,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newPingResponse("5.0.2")
+	latestReleaseDockerServerImageBuild = newPingResponse("5.0.6")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newPingResponse("5.0.2")
+	latestReleaseKubernetesBuild = newPingResponse("5.0.6")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.0.2")
+	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.0.6")
 
 	// latestReleaseApp is only used by sourcegraph.com to tell existing Sourcegraph
 	// App instances what the latest version is. The version here _must_ be available for download/released
@@ -243,6 +244,9 @@ type pingRequest struct {
 	EverSearched                  bool            `json:"searched,omitempty"`
 	EverFindRefs                  bool            `json:"refs,omitempty"`
 	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Sourcegraph App
+	HasCodyEnabled                bool            `json:"hasCodyEnabled,omitempty"`
+	CodyUsage                     json.RawMessage `json:"codyUsage,omitempty"`
+	RepoMetadataUsage             json.RawMessage `json:"repoMetadataUsage,omitempty"`
 }
 
 type dependencyVersions struct {
@@ -367,6 +371,9 @@ type pingPayload struct {
 	Os                            string          `json:"os"`
 	ActiveToday                   string          `json:"active_today"`
 	Timestamp                     string          `json:"timestamp"`
+	HasCodyEnabled                string          `json:"has_cody_enabled"`
+	CodyUsage                     json.RawMessage `json:"cody_usage"`
+	RepoMetadataUsage             json.RawMessage `json:"repo_metadata_usage"`
 }
 
 func logPing(logger log.Logger, r *http.Request, pr *pingRequest, hasUpdate bool) {
@@ -419,6 +426,11 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		return nil, errors.Wrap(err, "malformed search usage")
 	}
 
+	codyUsage, err := reserializeCodyUsage(pr.CodyUsage)
+	if err != nil {
+		return nil, errors.Wrap(err, "malformed cody usage")
+	}
+
 	return json.Marshal(&pingPayload{
 		RemoteIP:                      clientAddr,
 		RemoteSiteVersion:             pr.ClientVersionString,
@@ -462,6 +474,9 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		EverFindRefs:                  strconv.FormatBool(pr.EverFindRefs),
 		ActiveToday:                   strconv.FormatBool(pr.ActiveToday),
 		Timestamp:                     now.UTC().Format(time.RFC3339),
+		HasCodyEnabled:                strconv.FormatBool(conf.CodyEnabled()),
+		CodyUsage:                     codyUsage,
+		RepoMetadataUsage:             pr.RepoMetadataUsage,
 	})
 }
 
@@ -715,6 +730,42 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 	}
 	if len(searchUsage.Monthly) > 0 {
 		singlePeriodUsage.Monthly = searchUsage.Monthly[0]
+	}
+
+	return json.Marshal(singlePeriodUsage)
+}
+
+// reserializeCodyUsage will reserialize a cody usage statistics
+// struct with only the first period in each period type. This reduces the
+// complexity required in the BigQuery schema and downstream ETL transform
+// logic.
+func reserializeCodyUsage(payload json.RawMessage) (json.RawMessage, error) {
+	if len(payload) == 0 {
+		return nil, nil
+	}
+
+	var codyUsage *types.CodyUsageStatistics
+	if err := json.Unmarshal(payload, &codyUsage); err != nil {
+		return nil, err
+	}
+	if codyUsage == nil {
+		return nil, nil
+	}
+
+	singlePeriodUsage := struct {
+		Daily   *types.CodyUsagePeriod
+		Weekly  *types.CodyUsagePeriod
+		Monthly *types.CodyUsagePeriod
+	}{}
+
+	if len(codyUsage.Daily) > 0 {
+		singlePeriodUsage.Daily = codyUsage.Daily[0]
+	}
+	if len(codyUsage.Weekly) > 0 {
+		singlePeriodUsage.Weekly = codyUsage.Weekly[0]
+	}
+	if len(codyUsage.Monthly) > 0 {
+		singlePeriodUsage.Monthly = codyUsage.Monthly[0]
 	}
 
 	return json.Marshal(singlePeriodUsage)

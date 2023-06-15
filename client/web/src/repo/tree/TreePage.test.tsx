@@ -1,12 +1,13 @@
 import { MockedProvider } from '@apollo/client/testing'
-import { cleanup } from '@testing-library/react'
+import { cleanup, screen } from '@testing-library/react'
 import { EMPTY, NEVER } from 'rxjs'
 import sinon from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { RepositoryFields } from '../../graphql-operations'
+import { AuthenticatedUser } from '../../auth'
+import { RepositoryFields, RepositoryType } from '../../graphql-operations'
 
 import { Props, TreePage } from './TreePage'
 
@@ -16,6 +17,7 @@ describe('TreePage', () => {
     const repoDefaults = (): RepositoryFields => ({
         id: 'repo-id',
         name: 'repo name',
+        sourceType: RepositoryType.GIT_REPOSITORY,
         url: 'http://repo.url.example.com',
         description: 'Awesome for testing',
         viewerCanAdminister: false,
@@ -63,6 +65,8 @@ describe('TreePage', () => {
         setBreadcrumb: sinon.spy(),
         useBreadcrumb: sinon.spy(),
         ownEnabled: false,
+        authenticatedUser: null,
+        context: { authProviders: [] },
     })
 
     describe('repo page', () => {
@@ -90,6 +94,30 @@ describe('TreePage', () => {
                 </MockedProvider>
             )
             expect(result.queryByTestId('repo-fork-badge')).toHaveTextContent('Fork')
+        })
+
+        it('Should displays cody CTA', () => {
+            const repo = repoDefaults()
+            const props = treePagePropsDefaults(repo)
+
+            const mockUser = {
+                id: 'userID',
+                username: 'username',
+                emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
+                siteAdmin: true,
+            } as AuthenticatedUser
+
+            renderWithBrandedContext(
+                <MockedProvider>
+                    <TreePage {...{ ...props, isSourcegraphDotCom: true, authenticatedUser: mockUser }} />
+                </MockedProvider>
+            )
+
+            expect(screen.getByText('Try Cody AI assist on this repo')).toBeVisible()
+            expect(screen.getByText('Click the Ask Cody button above and to the right of this banner')).toBeVisible()
+            expect(
+                screen.getByText('Ask Cody a question like “Explain the structure of this repository”')
+            ).toBeVisible()
         })
     })
 })

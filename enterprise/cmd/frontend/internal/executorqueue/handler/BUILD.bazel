@@ -1,14 +1,18 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "handler",
     srcs = [
         "handler.go",
+        "multihandler.go",
         "routes.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
+        "//enterprise/internal/batches/types",
+        "//enterprise/internal/codeintel/uploads/shared",
         "//enterprise/internal/executor/store",
         "//enterprise/internal/executor/types",
         "//internal/database",
@@ -24,6 +28,7 @@ go_library(
         "@com_github_prometheus_client_model//go",
         "@com_github_prometheus_common//expfmt",
         "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_exp//slices",
     ],
 )
 
@@ -32,19 +37,24 @@ go_test(
     timeout = "short",
     srcs = [
         "handler_test.go",
+        "multihandler_test.go",
         "routes_test.go",
     ],
     deps = [
         ":handler",
+        "//enterprise/internal/batches/types",
+        "//enterprise/internal/codeintel/uploads/shared",
         "//enterprise/internal/executor/store",
         "//enterprise/internal/executor/types",
         "//internal/database",
         "//internal/executor",
         "//internal/metrics/store",
         "//internal/types",
+        "//internal/workerutil",
         "//internal/workerutil/dbworker/store",
         "//internal/workerutil/dbworker/store/mocks",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_gorilla_mux//:mux",
         "@com_github_prometheus_client_model//go",
         "@com_github_prometheus_common//expfmt",

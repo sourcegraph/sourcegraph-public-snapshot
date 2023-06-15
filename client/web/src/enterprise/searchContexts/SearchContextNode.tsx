@@ -89,7 +89,7 @@ export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<
                 />
             </td>
             <td className={styles.name}>
-                <Link to={`/contexts/${node.spec}`} className={styles.spec}>
+                <Link to={`/contexts/${encodeURIComponent(node.spec)}`} className={styles.spec}>
                     {node.spec}
                 </Link>{' '}
                 <span className="d-none d-md-inline-block">{tags}</span>
@@ -144,7 +144,11 @@ export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<
                                     : undefined
                             }
                         >
-                            <MenuLink as={Link} to={`/contexts/${node.spec}/edit`} disabled={!node.viewerCanManage}>
+                            <MenuLink
+                                as={Link}
+                                to={`/contexts/${encodeURIComponent(node.spec)}/edit`}
+                                disabled={!node.viewerCanManage}
+                            >
                                 Edit...
                             </MenuLink>
                         </Tooltip>

@@ -13,6 +13,46 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+func TestRepositoryExceptions(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	query := sqlf.Sprintf(
+		`INSERT INTO repo (id, name) VALUES (%s, %s)`,
+		42,
+		"github.com/baz/honk",
+	)
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error inserting repo: %s", err)
+	}
+
+	for _, testCase := range []struct {
+		canSchedule bool
+		canInfer    bool
+	}{
+		{true, false},
+		{false, true},
+		{false, false},
+		{true, true},
+	} {
+		if err := store.SetRepositoryExceptions(context.Background(), 42, testCase.canSchedule, testCase.canInfer); err != nil {
+			t.Fatalf("failed to update repository exception: %s", err)
+		}
+
+		canSchedule, canInfer, err := store.RepositoryExceptions(context.Background(), 42)
+		if err != nil {
+			t.Fatalf("unexpected error getting repository exceptions: %s", err)
+		}
+		if canSchedule != testCase.canSchedule {
+			t.Errorf("unexpected exception for can_schedule. want=%v have=%v", testCase.canSchedule, canSchedule)
+		}
+		if canInfer != testCase.canInfer {
+			t.Errorf("unexpected exception for can_infer. want=%v have=%v", testCase.canInfer, canInfer)
+		}
+	}
+}
+
 func TestGetIndexConfigurationByRepositoryID(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))

@@ -65,6 +65,15 @@ export const USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY = gql`
         ) {
             ...LocationConnectionFields
         }
+        prototypes(
+            line: $line
+            character: $character
+            first: $firstPrototypes
+            after: $afterPrototypes
+            filter: $filter
+        ) {
+            ...LocationConnectionFields
+        }
         definitions(line: $line, character: $character, filter: $filter) {
             ...LocationConnectionFields
         }
@@ -80,6 +89,8 @@ export const USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY = gql`
         $firstReferences: Int
         $afterImplementations: String
         $firstImplementations: Int
+        $afterPrototypes: String
+        $firstPrototypes: Int
         $filter: String
     ) {
         repository(name: $repository) {
@@ -166,11 +177,45 @@ export const LOAD_ADDITIONAL_IMPLEMENTATIONS_QUERY = gql`
     }
 `
 
+export const LOAD_ADDITIONAL_PROTOTYPES_QUERY = gql`
+    ${codeIntelFragments}
+
+    query LoadAdditionalPrototypes(
+        $repository: String!
+        $commit: String!
+        $path: String!
+        $line: Int!
+        $character: Int!
+        $afterPrototypes: String
+        $firstPrototypes: Int
+        $filter: String
+    ) {
+        repository(name: $repository) {
+            id
+            commit(rev: $commit) {
+                id
+                blob(path: $path) {
+                    lsif {
+                        prototypes(
+                            line: $line
+                            character: $character
+                            first: $firstPrototypes
+                            after: $afterPrototypes
+                            filter: $filter
+                        ) {
+                            ...LocationConnectionFields
+                        }
+                    }
+                }
+            }
+        }
+    }
+`
+
 export const FETCH_HIGHLIGHTED_BLOB = gql`
     fragment HighlightedGitBlobFields on GitBlob {
         highlight(disableTimeout: false, format: $format) {
             aborted
-            html @include(if: $html)
             lsif
         }
     }
@@ -180,7 +225,6 @@ export const FETCH_HIGHLIGHTED_BLOB = gql`
         $commit: String!
         $path: String!
         $format: HighlightResponseFormat!
-        $html: Boolean!
     ) {
         repository(name: $repository) {
             id

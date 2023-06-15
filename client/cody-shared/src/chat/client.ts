@@ -5,13 +5,14 @@ import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselec
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql/client'
+import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
 import { BotResponseMultiplexer } from './bot-response-multiplexer'
 import { ChatClient } from './chat'
 import { getPreamble } from './preamble'
 import { getRecipe } from './recipes/browser-recipes'
+import { RecipeID } from './recipes/recipe'
 import { Transcript, TranscriptJSON } from './transcript'
 import { ChatMessage } from './transcript/messages'
 import { reformatBotMessage } from './viewHelpers'
@@ -20,23 +21,29 @@ export type { TranscriptJSON }
 export { Transcript }
 
 export interface ClientInit {
-    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken'>
+    config: Pick<
+        ConfigurationWithAccessToken,
+        'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders'
+    >
     setMessageInProgress: (messageInProgress: ChatMessage | null) => void
-    setTranscript: (transcript: ChatMessage[]) => void
+    setTranscript: (transcript: Transcript) => void
     editor: Editor
     initialTranscript?: Transcript
 }
 
 export interface Client {
-    transcript: Transcript
+    readonly transcript: Transcript
+    readonly isMessageInProgress: boolean
     submitMessage: (text: string) => Promise<void>
     executeRecipe: (
-        recipeId: string,
+        recipeId: RecipeID,
         options?: {
             prefilledOptions?: PrefilledOptions
+            humanChatInput?: string
         }
     ) => Promise<void>
     reset: () => void
+    codebaseContext: CodebaseContext
 }
 
 export async function createClient({
@@ -46,7 +53,7 @@ export async function createClient({
     editor,
     initialTranscript,
 }: ClientInit): Promise<Client> {
-    const fullConfig = { ...config, debug: false, customHeaders: {} }
+    const fullConfig = { debugEnable: false, ...config }
 
     const completionsClient = new SourcegraphBrowserCompletionsClient(fullConfig)
     const chatClient = new ChatClient(completionsClient)
@@ -60,9 +67,9 @@ export async function createClient({
         )
     }
 
-    const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId) : null
+    const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, true) : null
 
-    const codebaseContext = new CodebaseContext(config, embeddingsSearch, null)
+    const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null)
 
     const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient)
 
@@ -73,16 +80,16 @@ export async function createClient({
     const sendTranscript = (): void => {
         if (isMessageInProgress) {
             const messages = transcript.toChat()
-            setTranscript(messages.slice(0, -1))
+            setTranscript(transcript)
             setMessageInProgress(messages[messages.length - 1])
         } else {
-            setTranscript(transcript.toChat())
+            setTranscript(transcript)
             setMessageInProgress(null)
         }
     }
 
     async function executeRecipe(
-        recipeId: string,
+        recipeId: RecipeID,
         options?: {
             prefilledOptions?: PrefilledOptions
             humanChatInput?: string
@@ -99,6 +106,7 @@ export async function createClient({
             intentDetector,
             codebaseContext,
             responseMultiplexer: new BotResponseMultiplexer(),
+            firstInteraction: transcript.isEmpty,
         })
         if (!interaction) {
             return
@@ -108,11 +116,15 @@ export async function createClient({
 
         sendTranscript()
 
-        const prompt = await transcript.toPrompt(getPreamble(config.codebase))
-        const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
+        const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(getPreamble(config.codebase))
+        transcript.setUsedContextFilesForLastInteraction(contextFiles)
 
+        const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
+        let rawText = ''
         chatClient.chat(prompt, {
-            onChange(rawText) {
+            onChange(_rawText) {
+                rawText = _rawText
+
                 const text = reformatBotMessage(rawText, responsePrefix)
                 transcript.addAssistantResponse(text)
 
@@ -120,16 +132,28 @@ export async function createClient({
             },
             onComplete() {
                 isMessageInProgress = false
+
+                const text = reformatBotMessage(rawText, responsePrefix)
+                transcript.addAssistantResponse(text)
                 sendTranscript()
             },
             onError(error) {
-                console.error(error)
+                // Display error message as assistant response
+                transcript.addErrorAsAssistantResponse(error)
+                isMessageInProgress = false
+                sendTranscript()
+                console.error(`Completion request failed: ${error}`)
             },
         })
     }
 
     return {
-        transcript,
+        get transcript() {
+            return transcript
+        },
+        get isMessageInProgress() {
+            return isMessageInProgress
+        },
         submitMessage(text: string) {
             return executeRecipe('chat-question', { humanChatInput: text })
         },
@@ -139,5 +163,6 @@ export async function createClient({
             transcript.reset()
             sendTranscript()
         },
+        codebaseContext,
     }
 }

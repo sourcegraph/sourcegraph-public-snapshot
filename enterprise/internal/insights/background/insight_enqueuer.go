@@ -38,15 +38,20 @@ func newInsightEnqueuer(ctx context.Context, observationCtx *observation.Context
 	//
 	// See also https://github.com/sourcegraph/sourcegraph/pull/17227#issuecomment-779515187 for some very rough
 	// data retention / scale concerns.
-	return goroutine.NewPeriodicGoroutineWithMetrics(
-		ctx, "insights.enqueuer", "enqueues snapshot and current recording query jobs",
-		1*time.Hour, goroutine.HandlerFunc(
+	return goroutine.NewPeriodicGoroutine(
+		ctx,
+		goroutine.HandlerFunc(
 			func(ctx context.Context) error {
 				ie := NewInsightEnqueuer(time.Now, workerBaseStore, logger)
 
 				return ie.discoverAndEnqueueInsights(ctx, insightStore)
 			},
-		), operation)
+		),
+		goroutine.WithName("insights.enqueuer"),
+		goroutine.WithDescription("enqueues snapshot and current recording query jobs"),
+		goroutine.WithInterval(1*time.Hour),
+		goroutine.WithOperation(operation),
+	)
 }
 
 type InsightEnqueuer struct {

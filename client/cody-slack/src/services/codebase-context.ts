@@ -2,7 +2,7 @@ import { memoize } from 'lodash'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
-import { KeywordContextFetcher } from '@sourcegraph/cody-shared/src/keyword-context'
+import { KeywordContextFetcher } from '@sourcegraph/cody-shared/src/local-context'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { sourcegraphClient } from './sourcegraph-client'
@@ -25,16 +25,19 @@ const getRepoId = memoize(async (codebase: string) => {
 
 export async function createCodebaseContext(
     codebase: string,
-    contextType: 'embeddings' | 'keyword' | 'none' | 'blended'
+    contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
+    serverEndpoint: string
 ) {
     const repoId = await getRepoId(codebase)
     const embeddingsSearch =
         repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(sourcegraphClient, repoId) : null
 
     const codebaseContext = new CodebaseContext(
-        { useContext: contextType },
+        { useContext: contextType, serverEndpoint },
+        codebase,
         embeddingsSearch,
-        new LocalKeywordContextFetcherMock()
+        new LocalKeywordContextFetcherMock(),
+        null
     )
 
     return codebaseContext
@@ -42,6 +45,9 @@ export async function createCodebaseContext(
 
 class LocalKeywordContextFetcherMock implements KeywordContextFetcher {
     public getContext() {
+        return Promise.resolve([])
+    }
+    public getSearchContext() {
         return Promise.resolve([])
     }
 }

@@ -18,12 +18,16 @@ import '../monitoring/initMonitoring'
 import { createRoot } from 'react-dom/client'
 
 import { logger } from '@sourcegraph/common'
+import { setLinkComponent } from '@sourcegraph/wildcard'
 
+import { TauriLink } from '../app/TauriLink'
 import { initAppShell } from '../storm/app-shell-init'
 
 import { EnterpriseWebApp } from './EnterpriseWebApp'
 
 const appShellPromise = initAppShell()
+
+setLinkComponent(TauriLink)
 
 // It's important to have a root component in a separate file to create a react-refresh boundary and avoid page reload.
 // https://github.com/pmmmwh/react-refresh-webpack-plugin/blob/main/docs/TROUBLESHOOTING.md#edits-always-lead-to-full-reload

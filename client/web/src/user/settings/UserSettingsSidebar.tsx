@@ -74,7 +74,7 @@ export const UserSettingsSidebar: FC<UserSettingsSidebarProps> = props => {
                                     key={label}
                                     to={`/users/${user.username}/settings` + to}
                                     onClick={collapseMobileSidebar}
-                                    exact={true}
+                                    exact={exact}
                                 >
                                     {label} {status && <ProductStatusBadge className="ml-1" status={status} />}
                                 </SidebarNavItem>
@@ -123,16 +123,11 @@ export const UserSettingsSidebar: FC<UserSettingsSidebarProps> = props => {
                             API console
                         </SidebarNavItem>
                     )}
-                    {props.authenticatedUser.siteAdmin &&
-                        (props.isSourcegraphApp ? (
-                            <SidebarNavItem to="/site-admin/configuration" onClick={collapseMobileSidebar}>
-                                Advanced settings
-                            </SidebarNavItem>
-                        ) : (
-                            <SidebarNavItem to="/site-admin" onClick={collapseMobileSidebar}>
-                                Site admin
-                            </SidebarNavItem>
-                        ))}
+                    {props.authenticatedUser.siteAdmin && (
+                        <SidebarNavItem to="/site-admin" onClick={collapseMobileSidebar}>
+                            Site admin
+                        </SidebarNavItem>
+                    )}
                 </SidebarGroup>
                 <div>Version: {window.context.version}</div>
             </div>

@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/go-version"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -18,8 +18,8 @@ import (
 )
 
 func (s *store) VulnerabilityMatchByID(ctx context.Context, id int) (_ shared.VulnerabilityMatch, _ bool, err error) {
-	ctx, _, endObservation := s.operations.vulnerabilityMatchByID.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("id", id),
+	ctx, _, endObservation := s.operations.vulnerabilityMatchByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -54,12 +54,12 @@ WHERE m.id = %s
 `
 
 func (s *store) GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) (_ []shared.VulnerabilityMatch, _ int, err error) {
-	ctx, _, endObservation := s.operations.getVulnerabilityMatches.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("limit", args.Limit),
-		otlog.Int("offset", args.Offset),
-		otlog.String("severity", args.Severity),
-		otlog.String("language", args.Language),
-		otlog.String("repositoryName", args.RepositoryName),
+	ctx, _, endObservation := s.operations.getVulnerabilityMatches.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("limit", args.Limit),
+		attribute.Int("offset", args.Offset),
+		attribute.String("severity", args.Severity),
+		attribute.String("language", args.Language),
+		attribute.String("repositoryName", args.RepositoryName),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -157,10 +157,10 @@ LEFT JOIN repo r ON r.id = lu.repository_id
 `
 
 func (s *store) GetVulnerabilityMatchesCountByRepository(ctx context.Context, args shared.GetVulnerabilityMatchesCountByRepositoryArgs) (_ []shared.VulnerabilityMatchesByRepository, _ int, err error) {
-	ctx, _, endObservation := s.operations.getVulnerabilityMatchesCountByRepository.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("limit", args.Limit),
-		otlog.Int("offset", args.Offset),
-		otlog.String("repositoryName", args.RepositoryName),
+	ctx, _, endObservation := s.operations.getVulnerabilityMatchesCountByRepository.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("limit", args.Limit),
+		attribute.Int("offset", args.Offset),
+		attribute.String("repositoryName", args.RepositoryName),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -211,8 +211,8 @@ limit %s offset %s
 //
 
 func (s *store) ScanMatches(ctx context.Context, batchSize int) (numReferencesScanned int, numVulnerabilityMatches int, err error) {
-	ctx, _, endObservation := s.operations.scanMatches.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("batchSize", batchSize),
+	ctx, _, endObservation := s.operations.scanMatches.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("batchSize", batchSize),
 	}})
 	defer endObservation(1, observation.Args{})
 

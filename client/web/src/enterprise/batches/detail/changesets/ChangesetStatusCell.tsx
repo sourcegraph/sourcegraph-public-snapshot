@@ -10,6 +10,7 @@ import {
     mdiTimerSand,
     mdiArchive,
     mdiLock,
+    mdiDotsVertical,
 } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
@@ -62,7 +63,9 @@ export const ChangesetStatusCell: React.FunctionComponent<React.PropsWithChildre
 const iconClassNames = 'm-0 text-nowrap flex-column align-items-center justify-content-center'
 
 const StatusLabel: React.FunctionComponent<{ status: string; className?: string }> = ({ status, className }) => (
-    <span className={className}>
+    // Relative positioning needed to avoid VisuallyHidden creating a double layer scrollbar in Chrome.
+    // Related bug: https://bugs.chromium.org/p/chromium/issues/detail?id=1154640#c15
+    <span className={classNames(className, 'position-relative')}>
         <VisuallyHidden>Status:</VisuallyHidden> {status}
     </span>
 )
@@ -186,4 +189,15 @@ export const ChangesetStatusReadOnly: React.FunctionComponent<React.PropsWithChi
             {label}
         </div>
     </Tooltip>
+)
+
+export const ChangesetStatusOthers: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
+    label = <StatusLabel status="Others" />,
+    className,
+    ...props
+}) => (
+    <div className={classNames(iconClassNames, className)} {...props}>
+        <Icon svgPath={mdiDotsVertical} inline={false} aria-hidden={true} />
+        {label}
+    </div>
 )

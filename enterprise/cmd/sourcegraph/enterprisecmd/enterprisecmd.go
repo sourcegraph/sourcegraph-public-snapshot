@@ -4,7 +4,6 @@
 package enterprisecmd
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
 )
@@ -16,15 +15,8 @@ func MainEnterprise(services []service.Service, args []string) {
 	svcmain.Main(services, config, args)
 }
 
-// DeprecatedSingleServiceMainEnterprise is called from the `main` function of a command in the
+// SingleServiceMainEnterprise is called from the `main` function of a command in the
 // enterprise (non-OSS) build to start a single service (such as frontend or gitserver).
-//
-// DEPRECATED: See svcmain.DeprecatedSingleServiceMain documentation for more info.
-func DeprecatedSingleServiceMainEnterprise(service service.Service) {
-	svcmain.DeprecatedSingleServiceMain(service, config, true, true)
-}
-
-func init() {
-	// TODO(sqs): TODO(single-binary): could we move this out of init?
-	oobmigration.ReturnEnterpriseMigrations = true
+func SingleServiceMainEnterprise(service service.Service) {
+	svcmain.SingleServiceMain(service, config)
 }

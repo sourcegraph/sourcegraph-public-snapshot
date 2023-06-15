@@ -13,16 +13,21 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
+	githubapp "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/githubappauth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches"
 	codeintelinit "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/compute"
+	internalcontext "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/context"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/embeddings"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/notebooks"
@@ -34,33 +39,40 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
+	ecody "github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/scim"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type EnterpriseInitializer = func(context.Context, *observation.Context, database.DB, codeintel.Services, conftypes.UnifiedWatchable, *enterprise.Services) error
 
 var initFunctions = map[string]EnterpriseInitializer{
+	"app":            app.Init,
 	"authz":          authz.Init,
 	"batches":        batches.Init,
 	"codeintel":      codeintelinit.Init,
 	"codemonitors":   codemonitors.Init,
+	"completions":    completions.Init,
 	"compute":        compute.Init,
 	"dotcom":         dotcom.Init,
+	"embeddings":     embeddings.Init,
+	"context":        internalcontext.Init,
+	"githubapp":      githubapp.Init,
+	"guardrails":     guardrails.Init,
 	"insights":       insights.Init,
 	"licensing":      licensing.Init,
 	"notebooks":      notebooks.Init,
+	"own":            own.Init,
+	"rbac":           rbac.Init,
+	"repos.webhooks": webhooks.Init,
 	"scim":           scim.Init,
 	"searchcontexts": searchcontexts.Init,
-	"repos.webhooks": webhooks.Init,
-	"embeddings":     embeddings.Init,
-	"rbac":           rbac.Init,
-	"own":            own.Init,
-	"completions":    completions.Init,
 }
 
 func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {
@@ -85,6 +97,9 @@ func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 	if err != nil {
 		logger.Fatal("failed to initialize code intelligence", log.Error(err))
 	}
+
+	// Set the IsCodyEnabled function, as it's only enabled in enterprise.
+	cody.IsCodyEnabled = ecody.IsCodyEnabled
 
 	// Initialize search first, as we require enterprise search jobs to exist already
 	// when other initializers are called.
@@ -118,4 +133,42 @@ func mustInitializeCodeIntelDB(logger log.Logger) codeintelshared.CodeIntelDB {
 	}
 
 	return codeintelshared.NewCodeIntelDB(logger, db)
+}
+
+func SwitchableSiteConfig() conftypes.WatchableSiteConfig {
+	confClient := conf.DefaultClient()
+	switchable := &switchingSiteConfig{
+		watchers:            make([]func(), 0),
+		WatchableSiteConfig: &noopSiteConfig{},
+	}
+	switchable.WatchableSiteConfig.(*noopSiteConfig).switcher = switchable
+
+	go func() {
+		<-shared.AutoUpgradeDone
+		switchable.WatchableSiteConfig = confClient
+		for _, watcher := range switchable.watchers {
+			confClient.Watch(watcher)
+		}
+		switchable.watchers = nil
+	}()
+
+	return switchable
+}
+
+type switchingSiteConfig struct {
+	watchers []func()
+	conftypes.WatchableSiteConfig
+}
+
+type noopSiteConfig struct {
+	switcher *switchingSiteConfig
+}
+
+func (n *noopSiteConfig) SiteConfig() schema.SiteConfiguration {
+	return schema.SiteConfiguration{}
+}
+
+func (n *noopSiteConfig) Watch(f func()) {
+	f()
+	n.switcher.watchers = append(n.switcher.watchers, f)
 }

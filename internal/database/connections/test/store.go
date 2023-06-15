@@ -44,6 +44,10 @@ func (s *memoryStore) Versions(ctx context.Context) (appliedVersions, pendingVer
 	return s.appliedVersions, s.pendingVersions, s.failedVersions, nil
 }
 
+func (s *memoryStore) RunDDLStatements(ctx context.Context, statements []string) error {
+	return nil
+}
+
 func (s *memoryStore) TryLock(ctx context.Context) (bool, func(err error) error, error) {
 	return true, func(err error) error { return err }, nil
 }

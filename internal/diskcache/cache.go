@@ -14,11 +14,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opentracing/opentracing-go/ext"
-	otelog "github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	internaltrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -129,8 +128,8 @@ func (s *store) Open(ctx context.Context, key []string, fetcher Fetcher) (file *
 }
 
 func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherWithPath) (file *File, err error) {
-	ctx, trace, endObservation := s.observe.cachedFetch.With(ctx, &err, observation.Args{LogFields: []otelog.Field{
-		otelog.String(string(ext.Component), s.component),
+	ctx, trace, endObservation := s.observe.cachedFetch.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("component", s.component),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -173,8 +172,8 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 	go func(ctx context.Context) {
 		var err error
 		var f *File
-		ctx, trace, endObservation := s.observe.backgroundFetch.With(ctx, &err, observation.Args{LogFields: []otelog.Field{
-			otelog.Bool("withBackgroundTimeout", s.backgroundTimeout != 0),
+		ctx, trace, endObservation := s.observe.backgroundFetch.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.Bool("withBackgroundTimeout", s.backgroundTimeout != 0),
 		}})
 		defer endObservation(1, observation.Args{})
 
@@ -294,8 +293,8 @@ type EvictStats struct {
 }
 
 func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
-	_, trace, endObservation := s.observe.evict.With(context.Background(), &err, observation.Args{LogFields: []otelog.Field{
-		otelog.Int64("maxCacheSizeBytes", maxCacheSizeBytes),
+	_, trace, endObservation := s.observe.evict.With(context.Background(), &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int64("maxCacheSizeBytes", maxCacheSizeBytes),
 	}})
 	endObservation(1, observation.Args{})
 
@@ -362,7 +361,7 @@ func (s *store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 		}
 		err = os.Remove(path)
 		if err != nil {
-			trace.AddEvent("failed to remove disk cache entry", attribute.String("path", path), attribute.String("error", err.Error()))
+			trace.AddEvent("failed to remove disk cache entry", attribute.String("path", path), internaltrace.Error(err))
 			log.Printf("failed to remove %s: %s", path, err)
 			continue
 		}

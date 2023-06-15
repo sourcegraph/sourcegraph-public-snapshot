@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "uploadhandler",
@@ -18,7 +19,6 @@ go_library(
         "//internal/uploadstore",
         "//lib/errors",
         "@com_github_aws_aws_sdk_go_v2_feature_s3_manager//:manager",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
     ],

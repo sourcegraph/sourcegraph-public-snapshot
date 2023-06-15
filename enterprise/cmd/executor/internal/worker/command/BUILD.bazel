@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "command",
@@ -7,7 +8,6 @@ go_library(
         "docker.go",
         "firecracker.go",
         "kubernetes.go",
-        "logger.go",
         "observability.go",
         "shell.go",
         "util.go",
@@ -16,8 +16,9 @@ go_library(
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
     deps = [
         "//enterprise/cmd/executor/internal/util",
+        "//enterprise/cmd/executor/internal/worker/cmdlogger",
+        "//enterprise/cmd/executor/internal/worker/files",
         "//enterprise/internal/executor/types",
-        "//internal/executor",
         "//internal/metrics",
         "//internal/observation",
         "//lib/errors",
@@ -28,7 +29,10 @@ go_library(
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/api/resource",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/watch",
         "@io_k8s_client_go//kubernetes",
+        "@io_k8s_utils//pointer",
+        "@io_opentelemetry_go_otel//attribute",
         "@org_golang_x_sync//errgroup",
     ],
 )
@@ -40,7 +44,6 @@ go_test(
         "docker_test.go",
         "firecracker_test.go",
         "kubernetes_test.go",
-        "logger_test.go",
         "mocks_test.go",
         "shell_test.go",
         "util_test.go",
@@ -48,6 +51,8 @@ go_test(
     embed = [":command"],
     deps = [
         "//enterprise/cmd/executor/internal/util",
+        "//enterprise/cmd/executor/internal/worker/cmdlogger",
+        "//enterprise/cmd/executor/internal/worker/files",
         "//enterprise/internal/executor/types",
         "//internal/executor",
         "//internal/observation",
@@ -61,11 +66,9 @@ go_test(
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/api/resource",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
-        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/watch",
         "@io_k8s_client_go//kubernetes/fake",
-        "@io_k8s_client_go//kubernetes/scheme",
-        "@io_k8s_client_go//rest",
-        "@io_k8s_client_go//rest/fake",
         "@io_k8s_client_go//testing",
+        "@io_k8s_utils//pointer",
     ],
 )

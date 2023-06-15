@@ -134,7 +134,7 @@ const (
 
 // CompareVersions returns the relationship between `a (op) b`.
 func CompareVersions(a, b Version) VersionOrder {
-	for _, pair := range [][2]int{
+	for _, pair := range [2][2]int{
 		{a.Major, b.Major},
 		{a.Minor, b.Minor},
 	} {

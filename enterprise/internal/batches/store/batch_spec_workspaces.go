@@ -8,7 +8,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -68,8 +68,8 @@ var BatchSpecWorkspaceColums = SQLColumns{
 
 // CreateBatchSpecWorkspace creates the given batch spec workspace jobs.
 func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.BatchSpecWorkspace) (err error) {
-	ctx, _, endObservation := s.operations.createBatchSpecWorkspace.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("count", len(ws)),
+	ctx, _, endObservation := s.operations.createBatchSpecWorkspace.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("count", len(ws)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -150,8 +150,8 @@ type GetBatchSpecWorkspaceOpts struct {
 
 // GetBatchSpecWorkspace gets a BatchSpecWorkspace matching the given options.
 func (s *Store) GetBatchSpecWorkspace(ctx context.Context, opts GetBatchSpecWorkspaceOpts) (job *btypes.BatchSpecWorkspace, err error) {
-	ctx, _, endObservation := s.operations.getBatchSpecWorkspace.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(opts.ID)),
+	ctx, _, endObservation := s.operations.getBatchSpecWorkspace.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(opts.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -382,8 +382,8 @@ AND NOT %s
 // MarkSkippedBatchSpecWorkspaces marks the workspace that were skipped in
 // CreateBatchSpecWorkspaceExecutionJobs as skipped.
 func (s *Store) MarkSkippedBatchSpecWorkspaces(ctx context.Context, batchSpecID int64) (err error) {
-	ctx, _, endObservation := s.operations.markSkippedBatchSpecWorkspaces.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchSpecID", int(batchSpecID)),
+	ctx, _, endObservation := s.operations.markSkippedBatchSpecWorkspaces.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("batchSpecID", int(batchSpecID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -494,8 +494,8 @@ WHERE
 
 // DisableBatchSpecWorkspaceExecutionCache removes caching information from workspaces prior to execution.
 func (s *Store) DisableBatchSpecWorkspaceExecutionCache(ctx context.Context, batchSpecID int64) (err error) {
-	ctx, _, endObservation := s.operations.disableBatchSpecWorkspaceExecutionCache.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchSpecID", int(batchSpecID)),
+	ctx, _, endObservation := s.operations.disableBatchSpecWorkspaceExecutionCache.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("batchSpecID", int(batchSpecID)),
 	}})
 	defer endObservation(1, observation.Args{})
 

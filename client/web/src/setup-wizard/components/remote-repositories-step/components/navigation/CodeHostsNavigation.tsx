@@ -86,11 +86,7 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                     key={codeHost.id}
                     className={classNames(styles.item, { [styles.itemActive]: codeHost.id === activeConnectionId })}
                 >
-                    <Button
-                        as={Link}
-                        to={`/setup/remote-repositories/${codeHost.id}/edit`}
-                        className={styles.itemButton}
-                    >
+                    <Button as={Link} to={`${codeHost.id}/edit`} className={styles.itemButton}>
                         <span>
                             <CodeHostIcon codeHostType={codeHost.kind} aria-hidden={true} />
                         </span>

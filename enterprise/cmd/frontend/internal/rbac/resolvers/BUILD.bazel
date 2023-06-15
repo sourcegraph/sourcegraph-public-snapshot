@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "resolvers",
@@ -35,6 +36,7 @@ go_test(
         "//internal/actor",
         "//internal/database",
         "//internal/database/dbtest",
+        "//internal/rbac/types",
         "//internal/types",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_keegancsmith_sqlf//:sqlf",

@@ -1,77 +1,120 @@
-import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
-import { version as packageVersion } from '../../package.json'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
-function _getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): string {
+function getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): string {
     return config.get<string>('cody.serverEndpoint', '')
 }
 
-const config = vscode.workspace.getConfiguration()
+function getUseContextFromConfig(config: vscode.WorkspaceConfiguration): string {
+    if (!config) {
+        return ''
+    }
+    return config.get<string>('cody.useContext', '')
+}
 
-const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
+function getChatPredictionsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+    if (!config) {
+        return false
+    }
+    return config.get<boolean>('cody.experimental.chatPredictions', false)
+}
 
-interface StorageProvider {
-    get(key: string): string | null
-    set(key: string, value: string): Promise<void>
+function getInlineFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+    if (!config) {
+        return false
+    }
+    return config.get<boolean>('cody.experimental.inline', false)
+}
+
+function getNonStopFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+    if (!config) {
+        return false
+    }
+    return config.get<boolean>('cody.experimental.nonStop', false)
+}
+
+function getSuggestionsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+    if (!config) {
+        return false
+    }
+    return config.get<boolean>('cody.experimental.suggestions', false)
+}
+
+function getGuardrailsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+    if (!config) {
+        return false
+    }
+    return config.get<boolean>('cody.experimental.guardrails', false)
 }
 
 export class EventLogger {
-    private version = packageVersion
-    private serverEndpoint = _getServerEndpointFromConfig(config)
+    private serverEndpoint = getServerEndpointFromConfig(vscode.workspace.getConfiguration())
     private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
+    private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient) {}
 
-    private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient, private uid: string) {}
+    public static create(gqlAPIClient: SourcegraphGraphQLAPIClient): EventLogger {
+        return new EventLogger(gqlAPIClient)
+    }
 
-    public static async create(
-        localStorageService: StorageProvider,
-        gqlAPIClient: SourcegraphGraphQLAPIClient
-    ): Promise<EventLogger> {
-        let anonymousUserID = localStorageService.get(ANONYMOUS_USER_ID_KEY)
-        let newInstall = false
-        if (!anonymousUserID) {
-            newInstall = true
-            anonymousUserID = uuid.v4()
-            await localStorageService.set(ANONYMOUS_USER_ID_KEY, anonymousUserID)
+    public configurationDetails = {
+        contextSelection: getUseContextFromConfig(vscode.workspace.getConfiguration()),
+        chatPredictions: getChatPredictionsFromConfig(vscode.workspace.getConfiguration()),
+        inline: getInlineFromConfig(vscode.workspace.getConfiguration()),
+        nonStop: getNonStopFromConfig(vscode.workspace.getConfiguration()),
+        suggestions: getSuggestionsFromConfig(vscode.workspace.getConfiguration()),
+        guardrails: getGuardrailsFromConfig(vscode.workspace.getConfiguration()),
+    }
+
+    public onConfigurationChange(newconfig: vscode.WorkspaceConfiguration): void {
+        this.configurationDetails = {
+            contextSelection: getUseContextFromConfig(newconfig),
+            chatPredictions: getChatPredictionsFromConfig(newconfig),
+            inline: getInlineFromConfig(newconfig),
+            nonStop: getNonStopFromConfig(newconfig),
+            suggestions: getSuggestionsFromConfig(newconfig),
+            guardrails: getGuardrailsFromConfig(newconfig),
         }
-        const eventLogger = new EventLogger(gqlAPIClient, anonymousUserID)
-        if (newInstall) {
-            await eventLogger.log('CodyInstalled')
-        }
-        return eventLogger
     }
 
     /**
-     * @param eventName The ID of the action executed.
+     * Logs an event.
+     *
+     * PRIVACY: Do NOT include any potentially private information in this
+     * field. These properties get sent to our analytics tools for Cloud, so
+     * must not include private information, such as search queries or
+     * repository names.
+     *
+     * @param eventName The name of the event.
+     * @param anonymousUserID The randomly generated unique user ID.
+     * @param eventProperties The additional argument information.
+     * @param publicProperties Public argument information.
      */
-    public async log(eventName: string, eventProperties?: any, publicProperties?: any): Promise<void> {
-        // Don't log events if the UID has not yet been generated.
-        if (this.uid === null) {
-            return
-        }
+    public log(eventName: string, anonymousUserID: string, eventProperties?: any, publicProperties?: any): void {
         const argument = {
             ...eventProperties,
-            version: this.version,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
+            configurationDetails: this.configurationDetails,
         }
         const publicArgument = {
             ...publicProperties,
-            version: this.version,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
+            configurationDetails: this.configurationDetails,
         }
-
         try {
-            await this.gqlAPIClient.logEvent({
-                event: eventName,
-                userCookieID: this.uid,
-                source: 'IDEEXTENSION',
-                url: '',
-                argument: JSON.stringify(argument),
-                publicArgument: JSON.stringify(publicArgument),
-            })
+            this.gqlAPIClient
+                .logEvent({
+                    event: eventName,
+                    userCookieID: anonymousUserID,
+                    source: 'IDEEXTENSION',
+                    url: '',
+                    argument: JSON.stringify(argument),
+                    publicArgument: JSON.stringify(publicArgument),
+                })
+                .then(() => {})
+                .catch(() => {})
         } catch (error) {
             console.log(error)
         }

@@ -42,6 +42,7 @@ export const currentAuthStateQuery = gql`
             viewerCanAdminister
             tosAccepted
             searchable
+            hasVerifiedEmail
             emails {
                 email
                 verified

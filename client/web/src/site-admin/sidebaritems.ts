@@ -51,6 +51,10 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/analytics/extensions',
         },
         {
+            label: 'Own',
+            to: '/site-admin/analytics/own',
+        },
+        {
             label: 'Feedback survey',
             to: '/site-admin/surveys',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
@@ -87,7 +91,7 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
     },
     items: [
         {
-            label: 'Manage code hosts',
+            label: 'Code host connections',
             to: '/site-admin/external-services',
         },
         {
@@ -213,6 +217,7 @@ export const apiConsoleGroup: SiteAdminSideBarGroup = {
         label: 'API Console',
         icon: ConsoleIcon,
     },
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
         {
             label: 'API Console',

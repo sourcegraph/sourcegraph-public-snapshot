@@ -13,13 +13,11 @@ import (
 	"sync"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -38,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // StreamHandler is an http handler which streams back search results.
@@ -46,7 +45,7 @@ func StreamHandler(db database.DB, enterpriseJobs jobutil.EnterpriseJobs) http.H
 	return &streamHandler{
 		logger:              logger,
 		db:                  db,
-		searchClient:        client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), enterpriseJobs),
+		searchClient:        client.New(logger, db, enterpriseJobs),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
 	}
@@ -72,7 +71,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Log events to trace
-	streamWriter.StatHook = eventStreamOTHook(tr.LogFields) //nolint:staticcheck // TODO when updating observation package
+	streamWriter.StatHook = eventStreamTraceHook(tr.AddEvent)
 
 	eventWriter := newEventWriter(streamWriter)
 	defer eventWriter.Done()
@@ -100,20 +99,13 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		attribute.Int("search_mode", args.SearchMode),
 	)
 
-	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, h.db)
-	if err != nil {
-		return err
-	}
-
 	inputs, err := h.searchClient.Plan(
 		ctx,
 		args.Version,
-		strPtr(args.PatternType),
+		pointers.NonZeroPtr(args.PatternType),
 		args.Query,
 		search.Mode(args.SearchMode),
 		search.Streaming,
-		settings,
-		envvar.SourcegraphDotComMode(),
 	)
 	if err != nil {
 		var queryErr *client.QueryError
@@ -142,9 +134,12 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}
 
+	var latency *time.Duration
 	logLatency := func() {
+		elapsed := time.Since(start)
 		metricLatency.WithLabelValues(string(GuessSource(r))).
-			Observe(time.Since(start).Seconds())
+			Observe(elapsed.Seconds())
+		latency = &elapsed
 	}
 
 	// HACK: We awkwardly call an inline function here so that we can defer the
@@ -179,38 +174,40 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 	if alert != nil {
 		eventWriter.Alert(alert)
 	}
-	logSearch(ctx, h.logger, alert, err, start, inputs.OriginalQuery, progress)
+	logSearch(ctx, h.logger, alert, err, time.Since(start), latency, inputs.OriginalQuery, progress)
 	return err
 }
 
-func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err error, start time.Time, originalQuery string, progress *streamclient.ProgressAggregator) {
-	status := graphqlbackend.DetermineStatusForLogs(alert, progress.Stats, err)
+func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err error, duration time.Duration, latency *time.Duration, originalQuery string, progress *streamclient.ProgressAggregator) {
+	if honey.Enabled() {
+		status := graphqlbackend.DetermineStatusForLogs(alert, progress.Stats, err)
+		var alertType string
+		if alert != nil {
+			alertType = alert.PrometheusType
+		}
 
-	var alertType string
-	if alert != nil {
-		alertType = alert.PrometheusType
-	}
+		var latencyMs *int64
+		if latency != nil {
+			ms := latency.Milliseconds()
+			latencyMs = &ms
+		}
 
-	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
-	if honey.Enabled() || isSlow {
-		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
+		_ = searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
 			OriginalQuery: originalQuery,
 			Typ:           "stream",
 			Source:        string(trace.RequestSource(ctx)),
 			Status:        status,
 			AlertType:     alertType,
-			DurationMs:    time.Since(start).Milliseconds(),
+			DurationMs:    duration.Milliseconds(),
+			LatencyMs:     latencyMs,
 			ResultSize:    progress.MatchCount,
 			Error:         err,
-		})
+		}).Send()
+	}
 
-		if honey.Enabled() {
-			_ = ev.Send()
-		}
-
-		if isSlow {
-			logger.Warn("streaming: slow search request", log.String("query", originalQuery))
-		}
+	isSlow := duration > searchlogs.LogSlowSearchesThreshold()
+	if isSlow {
+		logger.Warn("streaming: slow search request", log.String("query", originalQuery))
 	}
 }
 
@@ -221,13 +218,6 @@ type args struct {
 	Display            int
 	EnableChunkMatches bool
 	SearchMode         int
-
-	// Optional decoration parameters for server-side rendering a result set
-	// or subset. Decorations may specify, e.g., highlighting results with
-	// HTML markup up-front, and/or including context lines around file results.
-	DecorationLimit        int    // The initial number of files to decorate in the result set.
-	DecorationKind         string // The kind of decoration to apply (HTML highlighting, plaintext, etc.)
-	DecorationContextLines int    // The number of lines of context to include around lines with matches.
 }
 
 func parseURLQuery(q url.Values) (*args, error) {
@@ -240,10 +230,9 @@ func parseURLQuery(q url.Values) (*args, error) {
 	}
 
 	a := args{
-		Query:          get("q", ""),
-		Version:        get("v", "V3"),
-		PatternType:    get("t", ""),
-		DecorationKind: get("dk", "html"),
+		Query:       get("q", ""),
+		Version:     get("v", "V3"),
+		PatternType: get("t", ""),
 	}
 
 	if a.Query == "" {
@@ -266,24 +255,7 @@ func parseURLQuery(q url.Values) (*args, error) {
 		return nil, errors.Errorf("search mode must be integer, got %q: %w", searchMode, err)
 	}
 
-	decorationLimit := get("dl", "0")
-	if a.DecorationLimit, err = strconv.Atoi(decorationLimit); err != nil {
-		return nil, errors.Errorf("decorationLimit must be an integer, got %q: %w", decorationLimit, err)
-	}
-
-	decorationContextLines := get("dc", "1")
-	if a.DecorationContextLines, err = strconv.Atoi(decorationContextLines); err != nil {
-		return nil, errors.Errorf("decorationContextLines must be an integer, got %q: %w", decorationContextLines, err)
-	}
-
 	return &a, nil
-}
-
-func strPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }
 
 func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {
@@ -547,18 +519,17 @@ func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
 	}
 }
 
-// eventStreamOTHook returns a StatHook which logs to log.
-func eventStreamOTHook(log func(...otlog.Field)) func(streamhttp.WriterStat) {
+// eventStreamTraceHook returns a StatHook which logs to log.
+func eventStreamTraceHook(addEvent func(string, ...attribute.KeyValue)) func(streamhttp.WriterStat) {
 	return func(stat streamhttp.WriterStat) {
-		fields := []otlog.Field{
-			otlog.String("streamhttp.Event", stat.Event),
-			otlog.Int("bytes", stat.Bytes),
-			otlog.Int64("duration_ms", stat.Duration.Milliseconds()),
+		fields := []attribute.KeyValue{
+			attribute.Int("bytes", stat.Bytes),
+			attribute.Int64("duration_ms", stat.Duration.Milliseconds()),
 		}
 		if stat.Error != nil {
-			fields = append(fields, otlog.Error(stat.Error))
+			fields = append(fields, trace.Error(stat.Error))
 		}
-		log(fields...)
+		addEvent(stat.Event, fields...)
 	}
 }
 
@@ -696,7 +667,9 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 
 	repoMetadata, err := getEventRepoMetadata(h.ctx, h.db, event)
 	if err != nil {
-		h.logger.Error("failed to get repo metadata", log.Error(err))
+		if !errors.IsContextCanceled(err) {
+			h.logger.Error("failed to get repo metadata", log.Error(err))
+		}
 		return
 	}
 

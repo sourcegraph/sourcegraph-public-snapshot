@@ -2,50 +2,78 @@ package store
 
 import (
 	"context"
-	"time"
+	"crypto/md5"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *store) InsertInitialPathRanks(ctx context.Context, uploadID int, documentPaths chan string, batchSize int, graphKey string) (err error) {
-	ctx, _, endObservation := s.operations.insertInitialPathRanks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("graphKey", graphKey),
+var sentinelPathDefinitionName = func() [16]byte {
+	// This value is represented in the `insertInitialPathCountsInputsQuery`
+	// Postgres query by `'\xc3e97dd6e97fb5125688c97f36720cbe'::bytea`.
+	return md5.Sum([]byte("$"))
+}()
+
+func (s *store) InsertInitialPathRanks(ctx context.Context, exportedUploadID int, documentPaths []string, batchSize int, graphKey string) (err error) {
+	ctx, _, endObservation := s.operations.insertInitialPathRanks.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("graphKey", graphKey),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	return s.withTransaction(ctx, func(tx *store) error {
-		inserter := func(inserter *batch.Inserter) error {
-			for paths := range batchChannel(documentPaths, batchSize) {
-				if err := inserter.Insert(ctx, pq.Array(paths)); err != nil {
-					return err
+		pathDefinitions, err := func() (chan shared.RankingDefinitions, error) {
+			pathDefinitions := make(chan shared.RankingDefinitions, len(documentPaths))
+			defer close(pathDefinitions)
+
+			inserter := func(inserter *batch.Inserter) error {
+				for _, paths := range batchSlice(documentPaths, batchSize) {
+					if err := inserter.Insert(ctx, pq.Array(paths)); err != nil {
+						return err
+					}
+
+					for _, path := range paths {
+						pathDefinitions <- shared.RankingDefinitions{
+							ExportedUploadID: exportedUploadID,
+							SymbolChecksum:   sentinelPathDefinitionName,
+							DocumentPath:     path,
+						}
+					}
 				}
+
+				return nil
 			}
 
-			return nil
-		}
+			if err := tx.db.Exec(ctx, sqlf.Sprintf(createInitialPathTemporaryTableQuery)); err != nil {
+				return nil, err
+			}
 
-		if err := tx.db.Exec(ctx, sqlf.Sprintf(createInitialPathTemporaryTableQuery)); err != nil {
+			if err := batch.WithInserter(
+				ctx,
+				tx.db.Handle(),
+				"t_codeintel_initial_path_ranks",
+				batch.MaxNumPostgresParameters,
+				[]string{"document_paths"},
+				inserter,
+			); err != nil {
+				return nil, err
+			}
+
+			if err = tx.db.Exec(ctx, sqlf.Sprintf(insertInitialPathRankCountsQuery, exportedUploadID, graphKey)); err != nil {
+				return nil, err
+			}
+
+			return pathDefinitions, nil
+		}()
+		if err != nil {
 			return err
 		}
 
-		if err := batch.WithInserter(
-			ctx,
-			tx.db.Handle(),
-			"t_codeintel_initial_path_ranks",
-			batch.MaxNumPostgresParameters,
-			[]string{"document_paths"},
-			inserter,
-		); err != nil {
-			return err
-		}
-
-		if err = tx.db.Exec(ctx, sqlf.Sprintf(insertInitialPathRankCountsQuery, uploadID, graphKey)); err != nil {
+		if err := tx.InsertDefinitionsForRanking(ctx, graphKey, pathDefinitions); err != nil {
 			return err
 		}
 
@@ -61,99 +89,6 @@ ON COMMIT DROP
 `
 
 const insertInitialPathRankCountsQuery = `
-INSERT INTO codeintel_initial_path_ranks (upload_id, document_paths, graph_key)
+INSERT INTO codeintel_initial_path_ranks (exported_upload_id, document_paths, graph_key)
 SELECT %s, document_paths, %s FROM t_codeintel_initial_path_ranks
-`
-
-func (s *store) VacuumAbandonedInitialPathCounts(ctx context.Context, graphKey string, batchSize int) (_ int, err error) {
-	ctx, _, endObservation := s.operations.vacuumAbandonedInitialPathCounts.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
-	defer endObservation(1, observation.Args{})
-
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumAbandonedInitialPathCountsQuery, graphKey, graphKey, batchSize)))
-	return count, err
-}
-
-const vacuumAbandonedInitialPathCountsQuery = `
-WITH
-locked_initial_paths AS (
-	SELECT id
-	FROM codeintel_initial_path_ranks
-	WHERE (graph_key < %s OR graph_key > %s)
-	ORDER BY graph_key, id
-	FOR UPDATE SKIP LOCKED
-	LIMIT %s
-),
-deleted_initial_paths AS (
-	DELETE FROM codeintel_initial_path_ranks
-	WHERE id IN (SELECT id FROM locked_initial_paths)
-	RETURNING 1
-)
-SELECT COUNT(*) FROM deleted_initial_paths
-`
-
-func (s *store) VacuumStaleInitialPaths(ctx context.Context, graphKey string) (
-	numPathRecordsScanned int,
-	numStalePathRecordsDeleted int,
-	err error,
-) {
-	ctx, _, endObservation := s.operations.vacuumStaleInitialPaths.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
-	defer endObservation(1, observation.Args{})
-
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(
-		vacuumStalePathsQuery,
-		graphKey, int(threshold/time.Hour), vacuumBatchSize,
-	))
-	if err != nil {
-		return 0, 0, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		if err := rows.Scan(
-			&numPathRecordsScanned,
-			&numStalePathRecordsDeleted,
-		); err != nil {
-			return 0, 0, err
-		}
-	}
-
-	return numPathRecordsScanned, numStalePathRecordsDeleted, nil
-}
-
-const vacuumStalePathsQuery = `
-WITH
-locked_initial_path_ranks AS (
-	SELECT
-		ipr.id,
-		u.repository_id,
-		ipr.upload_id
-	FROM codeintel_initial_path_ranks ipr
-	JOIN lsif_uploads u ON u.id = ipr.upload_id
-	WHERE
-		ipr.graph_key = %s AND
-		(ipr.last_scanned_at IS NULL OR NOW() - ipr.last_scanned_at >= %s * '1 hour'::interval)
-	ORDER BY ipr.last_scanned_at ASC NULLS FIRST, ipr.id
-	FOR UPDATE SKIP LOCKED
-	LIMIT %s
-),
-candidates AS (
-	SELECT
-		lipr.id,
-		uvt.is_default_branch IS TRUE AS safe
-	FROM locked_initial_path_ranks lipr
-	LEFT JOIN lsif_uploads_visible_at_tip uvt ON uvt.repository_id = lipr.repository_id AND uvt.upload_id = lipr.upload_id
-),
-updated_initial_path_ranks AS (
-	UPDATE codeintel_initial_path_ranks
-	SET last_scanned_at = NOW()
-	WHERE id IN (SELECT c.id FROM candidates c WHERE c.safe)
-),
-deleted_initial_path_ranks AS (
-	DELETE FROM codeintel_initial_path_ranks
-	WHERE id IN (SELECT c.id FROM candidates c WHERE NOT c.safe)
-	RETURNING 1
-)
-SELECT
-	(SELECT COUNT(*) FROM candidates),
-	(SELECT COUNT(*) FROM deleted_initial_path_ranks)
 `

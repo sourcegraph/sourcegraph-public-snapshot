@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	api2 "github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -24,13 +23,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestServeStream_empty(t *testing.T) {
-	graphqlbackend.MockDecodedViewerFinalSettings = &schema.Settings{}
-	t.Cleanup(func() { graphqlbackend.MockDecodedViewerFinalSettings = nil })
+	settings.MockCurrentUserFinal = &schema.Settings{}
+	t.Cleanup(func() { settings.MockCurrentUserFinal = nil })
 
 	mock := client.NewMockSearchClient()
 	mock.PlanFunc.SetDefaultReturn(&search.Inputs{}, nil)
@@ -61,8 +61,8 @@ func TestServeStream_empty(t *testing.T) {
 }
 
 func TestServeStream_chunkMatches(t *testing.T) {
-	graphqlbackend.MockDecodedViewerFinalSettings = &schema.Settings{}
-	t.Cleanup(func() { graphqlbackend.MockDecodedViewerFinalSettings = nil })
+	settings.MockCurrentUserFinal = &schema.Settings{}
+	t.Cleanup(func() { settings.MockCurrentUserFinal = nil })
 
 	mock := client.NewMockSearchClient()
 	mock.PlanFunc.SetDefaultReturn(&search.Inputs{Query: query.Q{query.Parameter{Field: "count", Value: "1000"}}}, nil)
@@ -181,12 +181,12 @@ func TestDisplayLimit(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("q=%s;displayLimit=%d", c.queryString, c.displayLimit), func(t *testing.T) {
-			graphqlbackend.MockDecodedViewerFinalSettings = &schema.Settings{}
-			t.Cleanup(func() { graphqlbackend.MockDecodedViewerFinalSettings = nil })
+			settings.MockCurrentUserFinal = &schema.Settings{}
+			t.Cleanup(func() { settings.MockCurrentUserFinal = nil })
 
 			mockInput := make(chan streaming.SearchEvent)
 			mock := client.NewMockSearchClient()
-			mock.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, queryString string, _ search.Mode, _ search.Protocol, _ *schema.Settings, _ bool) (*search.Inputs, error) {
+			mock.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, queryString string, _ search.Mode, _ search.Protocol) (*search.Inputs, error) {
 				q, err := query.Parse(queryString, query.SearchTypeLiteral)
 				require.NoError(t, err)
 				return &search.Inputs{

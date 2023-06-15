@@ -10,6 +10,24 @@ cleanup() {
 }
 trap cleanup EXIT
 
+if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
+  ./dev/ci/bazel.sh build //enterprise/cmd/executor //internal/cmd/src-cli-version
+  out=$(./dev/ci/bazel.sh cquery //enterprise/cmd/executor --output=files)
+  cp "$out" "$OUTPUT"
+
+  src_cli=$(./dev/ci/bazel.sh cquery //internal/cmd/src-cli-version --output=files)
+  SRC_CLI_VERSION=$(eval "$src_cli")
+
+  docker build -f enterprise/cmd/executor/docker-image/Dockerfile -t "$IMAGE" "$OUTPUT" \
+    --progress=plain \
+    --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" \
+    --build-arg COMMIT_SHA \
+    --build-arg DATE \
+    --build-arg VERSION
+
+  exit $?
+fi
+
 SRC_CLI_VERSION="$(go run ./internal/cmd/src-cli-version/main.go)"
 
 # Environment for building linux binaries

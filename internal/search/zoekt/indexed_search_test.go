@@ -20,19 +20,16 @@ import (
 	"github.com/RoaringBitmap/roaring"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestIndexedSearch(t *testing.T) {
@@ -310,13 +307,17 @@ func TestIndexedSearch(t *testing.T) {
 				t.Errorf("unindexed mismatch (-want +got):\n%s", diff)
 			}
 
-			zoektJob := &RepoSubsetTextSearchJob{
-				Repos:          indexed,
-				Query:          zoektQuery,
-				Typ:            search.TextRequest,
+			zoektParams := &search.ZoektParameters{
 				FileMatchLimit: tt.args.fileMatchLimit,
 				Select:         tt.args.selectPath,
-				Since:          tt.args.since,
+			}
+
+			zoektJob := &RepoSubsetTextSearchJob{
+				Repos:       indexed,
+				Query:       zoektQuery,
+				Typ:         search.TextRequest,
+				ZoektParams: zoektParams,
+				Since:       tt.args.since,
 			}
 
 			_, err = zoektJob.Run(tt.args.ctx, job.RuntimeClients{Zoekt: fakeZoekt}, agg)
@@ -432,154 +433,6 @@ func TestZoektIndexedRepos(t *testing.T) {
 			}
 			if diff := cmp.Diff(tc.unindexed, unindexed); diff != "" {
 				t.Error("unexpected unindexed:", diff)
-			}
-		})
-	}
-}
-
-func TestZoektSearchOptions(t *testing.T) {
-	documentRanksWeight := 42.0
-
-	cases := []struct {
-		name            string
-		context         context.Context
-		options         *Options
-		rankingFeatures *schema.Ranking
-		want            *zoekt.SearchOptions
-	}{
-		{
-			name:    "test defaults",
-			context: context.Background(),
-			options: &Options{
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				NumRepos:       3,
-			},
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount: 10000,
-				TotalMaxMatchCount: 100000,
-				MaxWallTime:        20000000000,
-				MaxDocDisplayCount: 500,
-				ChunkMatches:       true,
-			},
-		},
-		{
-			name:    "test defaults with ranking feature enabled",
-			context: context.Background(),
-			options: &Options{
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				NumRepos:       3,
-				Features: search.Features{
-					Ranking: true,
-				},
-			},
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount:  10000,
-				TotalMaxMatchCount:  100000,
-				MaxWallTime:         20000000000,
-				FlushWallTime:       500000000,
-				MaxDocDisplayCount:  500,
-				ChunkMatches:        true,
-				UseDocumentRanks:    true,
-				DocumentRanksWeight: 4500,
-			},
-		},
-		{
-			name:    "test repo search defaults",
-			context: context.Background(),
-			options: &Options{
-				Selector:       []string{filter.Repository},
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				NumRepos:       3,
-				Features: search.Features{
-					Ranking: true,
-				},
-			},
-			want: &zoekt.SearchOptions{
-				ShardRepoMaxMatchCount: 1,
-				MaxWallTime:            20000000000,
-				ChunkMatches:           true,
-			},
-		},
-		{
-			name:    "test large file match limit",
-			context: context.Background(),
-			options: &Options{
-				FileMatchLimit: 100_000,
-				NumRepos:       3,
-			},
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount: 100_000,
-				TotalMaxMatchCount: 100_000,
-				MaxWallTime:        20000000000,
-				MaxDocDisplayCount: 100_000,
-				ChunkMatches:       true,
-			},
-		},
-		{
-			name:    "test document ranks weight",
-			context: context.Background(),
-			rankingFeatures: &schema.Ranking{
-				DocumentRanksWeight: &documentRanksWeight,
-			},
-			options: &Options{
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				NumRepos:       3,
-				Features: search.Features{
-					Ranking: true,
-				},
-			},
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount:  10000,
-				TotalMaxMatchCount:  100000,
-				MaxWallTime:         20000000000,
-				FlushWallTime:       500000000,
-				MaxDocDisplayCount:  500,
-				ChunkMatches:        true,
-				UseDocumentRanks:    true,
-				DocumentRanksWeight: 42,
-			},
-		},
-		{
-			name:    "test flush wall time",
-			context: context.Background(),
-			rankingFeatures: &schema.Ranking{
-				FlushWallTimeMS: 3141,
-			},
-			options: &Options{
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				NumRepos:       3,
-				Features: search.Features{
-					Ranking: true,
-				},
-			},
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount:  10000,
-				TotalMaxMatchCount:  100000,
-				MaxWallTime:         20000000000,
-				FlushWallTime:       3141000000,
-				MaxDocDisplayCount:  500,
-				ChunkMatches:        true,
-				UseDocumentRanks:    true,
-				DocumentRanksWeight: 4500,
-			},
-		},
-	}
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.rankingFeatures != nil {
-				cfg := conf.Get()
-				cfg.ExperimentalFeatures.Ranking = tt.rankingFeatures
-				conf.Mock(cfg)
-
-				defer func() {
-					cfg.ExperimentalFeatures.Ranking = nil
-					conf.Mock(cfg)
-				}()
-			}
-
-			got := tt.options.ToSearch(tt.context, logtest.Scoped(t))
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("search options mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
@@ -926,6 +779,15 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	return r
 }
 
+func makeRepositoryRevisionsMap(repos ...string) map[api.RepoID]*search.RepositoryRevisions {
+	r := makeRepositoryRevisions(repos...)
+	rMap := make(map[api.RepoID]*search.RepositoryRevisions, len(r))
+	for _, repoRev := range r {
+		rMap[repoRev.Repo.ID] = repoRev
+	}
+	return rMap
+}
+
 func mkRepos(names ...string) []types.MinimalRepo {
 	var repos []types.MinimalRepo
 	for _, name := range names {
@@ -1042,6 +904,100 @@ func TestZoektFileMatchToPathMatchRanges(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			got := zoektFileMatchToPathMatchRanges(tc.input, zoektQueryRegexps)
 			require.Equal(t, tc.output, got)
+		})
+	}
+}
+
+func TestGetRepoRevsFromBranchRepos_SingleRepo(t *testing.T) {
+	cases := []struct {
+		name            string
+		revisions       []string
+		indexedBranches []string
+		wantRepoRevs    []string
+	}{
+		{
+			name:            "no revisions specified for the indexed branch",
+			indexedBranches: []string{"HEAD"},
+			wantRepoRevs:    []string{"HEAD"},
+		}, {
+			name:            "specific revision is the latest commit ID indexed for the default branch of repo",
+			revisions:       []string{"latestCommitID"},
+			indexedBranches: []string{"HEAD"},
+			wantRepoRevs:    []string{"HEAD"},
+		}, {
+			name:            "specific revision that is also a non default branch which is indexed",
+			revisions:       []string{"myIndexedRevision"},
+			indexedBranches: []string{"myIndexedRevision"},
+			wantRepoRevs:    []string{"myIndexedRevision"},
+		}, {
+			name:            "specific revision is the latest commit ID indexed for a non default branch which is indexed",
+			revisions:       []string{"latestCommitID"},
+			indexedBranches: []string{"myIndexedFeatureBranch"},
+			wantRepoRevs:    []string{"myIndexedFeatureBranch"},
+		}, {
+			name:            "specific revision is the latest commit ID indexed for one of multiple indexed branches",
+			revisions:       []string{"someCommitID"},
+			indexedBranches: []string{"HEAD", "myIndexedFeatureBranch", "myIndexedRevision"},
+			wantRepoRevs:    []string{""},
+		}, {
+			name:            "specific revision is the latest commit ID indexed for one of multiple indexed branches, including the specified revision",
+			revisions:       []string{"someCommitID"},
+			indexedBranches: []string{"HEAD", "myIndexedFeatureBranch", "someCommitID"},
+			wantRepoRevs:    []string{"someCommitID"},
+		}, {
+			name:            "multiple specified revisions: one is indexed default branch and one is an indexed revision",
+			revisions:       []string{"someCommitID0", "someCommitID1"},
+			indexedBranches: []string{"HEAD", "someCommitID0"},
+			wantRepoRevs:    []string{"someCommitID0", ""},
+		}, {
+			name:            "multiple specified revisions: one is an indexed revision and the other cannot be matched by branch name so default to empty string",
+			revisions:       []string{"someCommitID0", "someCommitID1"},
+			indexedBranches: []string{"myIndexedFeatureBranch", "someCommitID0"},
+			wantRepoRevs:    []string{"someCommitID0", ""},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			repoWithRevs := "foo/indexed-one"
+
+			if len(tc.revisions) > 1 {
+				repoWithRevs = fmt.Sprintf("%v@%v", repoWithRevs, strings.Join(tc.revisions, ":"))
+			} else if len(tc.revisions) > 0 {
+				repoWithRevs = fmt.Sprintf("%v@%v", repoWithRevs, tc.revisions[0])
+			}
+
+			repoRevs := makeRepositoryRevisionsMap(repoWithRevs)
+
+			inputBranchRepos := make(map[string]*zoektquery.BranchRepos, len(tc.indexedBranches))
+
+			if len(repoRevs) != 1 {
+				t.Fatal("repoRevs map should represent revisions for no more than one repo with ID")
+			}
+
+			var wantRepoID api.RepoID
+			for repoID := range repoRevs {
+				wantRepoID = repoID
+				break
+			}
+
+			for _, branch := range tc.indexedBranches {
+				repos := roaring.New()
+				repos.Add(uint32(wantRepoID))
+				inputBranchRepos[branch] = &zoektquery.BranchRepos{Branch: branch, Repos: repos}
+			}
+
+			indexed := IndexedRepoRevs{
+				RepoRevs:    repoRevs,
+				branchRepos: inputBranchRepos,
+			}
+
+			gotRepoRevs := indexed.GetRepoRevsFromBranchRepos()
+			for _, revs := range gotRepoRevs {
+				if diff := cmp.Diff(tc.wantRepoRevs, revs.Revs); diff != "" {
+					t.Errorf("unindexed mismatch (-want +got):\n%s", diff)
+				}
+			}
 		})
 	}
 }

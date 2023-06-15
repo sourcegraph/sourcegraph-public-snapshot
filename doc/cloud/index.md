@@ -40,13 +40,13 @@ As part of this service you will receive a number of benefits from our team, inc
 - Advising if managed instances are right for your organization.
 - Initial resource estimations based on your organization & code size.
 - Putting forward a transparent deployment & cost estimate plan.
-- Your own `example.sourcegraph.com` domain with fully managed [DNS & HTTPS](../admin/http_https_configuration.md).
+- Your own `example.sourcegraphcloud.com` domain with fully managed [DNS & HTTPS](../admin/http_https_configuration.md). Optionally, you can [bring your own domain](#custom-domain).
 - Hardware provisioning, software installation, and kernel configuration done for you.
 - Direct assistance in:
   - [Adding repositories from all of your code hosts to Sourcegraph](../admin/external_service/index.md)
   - [Integrating your single sign-on provider with Sourcegraph](../admin/auth/index.md)
   - [Configuring Sourcegraph](../admin/config/index.md)
-  
+
 ### Access to all Sourcegraph features
 
 All Sourcegraph features are avilable on Sourcegraph Cloud instances out-of-the-box, including but not limited to:
@@ -65,6 +65,39 @@ All Sourcegraph features are avilable on Sourcegraph Cloud instances out-of-the-
 - Automatic monthly [upgrades](../admin/updates/index.md) and maintenance.
 - Regular reassessment of resource utilization based on your organization's unique usage to determine if costs can be reduced without impact to service. Additionally, you will automatically benefit from any committed use cloud provider discounts we receive.
 
+### Custom domains
+
+Sourcegraph Cloud provides all customer instances a `customer.sourcegraphcloud.com` domain. This domain is fully managed by Sourcegraph, including DNS and HTTPS.
+However, to provide better branding and a more seamless experience for your users, you may bring your own company domain, for example `sourcegraph.company.io`.
+
+In order to use your own domain, you need to perform an one-time setup by adding DNS records at your authoritative DNS. These DNS records are neccessary to ensure that your users can access your Sourcegraph instance via the custom domain, and also to ensure we can provide managed TLS certificates for your instance. See a [list of DNS records to be created by your organization](#list-of-dns-records-to-be-created-by-your-organization) below as an example. Additionally, your custom domain's [CAA records](https://blog.cloudflare.com/caa-of-the-wild/) should permit our upstream certificate authorities to issue certificates for your domain, follow the [instructions](#verify-caa-records) below to verify your CAA records.
+
+Please reach out to your Sourcegraph account team to request a custom domain to be configured for your Sourcegraph Cloud instance.
+
+#### DNS records to be created by your organization
+
+Below is a list of the DNS records that are required to be created by your organization. This is for illustrative purposes only, and the actual records will be provided by your Sourcegraph account team. We use `src.acme.com` as an example custom domain.
+
+- `CNAME` record for `src.acme.com` pointing to `acme.sourcegraphcloud.com`
+- `TXT` record for `_cf-custom-hostname.src.acme.com` with value `$token`
+- `CNAME` record for `_acme-challenge.src.acme.com` pointing to `src.acme.com.$token.dcv.cloudflare.com`
+
+#### Verify CAA records
+
+To verify that your CAA records are set correctly, you can use the following command:
+
+```sh
+dig acme.com caa +short
+dig src.acme.com caa +short
+```
+
+If the output is empty, you don't have to do anything. If the output is not empty, and it does not contain `letsencrypt.org` and `pki.goog`, you need to add them to your CAA records to the apex domain or your desired subdomain, e.g., `src.acme.com`.
+
+#### Limitations
+
+- You can only have a single custom domain per Sourcegraph Cloud instance.
+- You can only use the custom domain to access your Sourcegraph Cloud instance.
+
 ### Multiple region availability
 
 Sourcegraph Cloud instances are deployed in one of Google Cloud Platform data center locations:
@@ -79,9 +112,17 @@ More details about the locations and data storage can be found in [our handbook]
 
 Private Code Hosts refer to code hosts that are not publicly accessible, such as a GitHub or GitLab instance protected by a VPN.
 
-Sourcegraph Cloud connects to customer code hosts from 2 public NAT IPs. Customers can add the dedicated IPs for their Sourcegraph Cloud instance to an IP allowlist on their private code host.
+Sourcegraph Cloud connects to customer code hosts from Google Cloud Platform using NAT Gateway with 2 customer dedicated public NAT IPs. Customers can add the dedicated IPs for their Sourcegraph Cloud instance to an IP allowlist on their private code host.
 
 #### Code host on AWS without public access
+
+<aside class="experimental">
+<p>
+<span class="badge badge-experimental">Experimental</span> This feature is experimental
+</p>
+
+<p>Please contact Sourcegraph directly via <a href="https://about.sourcegraph.com/contact">prefered contact method</a> for more informations</p>
+</aside>
 
 As part of the [Enterprise tier](https://about.sourcegraph.com/pricing), Sourcegraph Cloud offers customers that have code hosts without public access deployed on AWS a [highly available site-to-site VPN solution](https://cloud.google.com/network-connectivity/docs/vpn/tutorials/create-ha-vpn-connections-google-cloud-aws) with [AWS Private Link](https://docs.aws.amazon.com/vpc/latest/privatelink/what-is-privatelink.html) inside AWS's network, so that access to a private code host never occurs over the public internet.
 
@@ -143,11 +184,11 @@ To opt out of managed SMTP, please let your Sourcegraph Account team know when r
 
 To learn more about how the Sourcegraph team operates managed SMTP internally, refer to [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/managed-smtp/).
 
-### Cody 
+### Cody
 
-<aside class="experimental">
+<aside class="beta">
 <p>
-<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+<span class="badge badge-beta">Beta</span> This feature is beta and might change in the future. We've released it to provide a preview of functionality we're working on.
 </p>
 </aside>
 
@@ -166,12 +207,12 @@ Now that Cody is turned on on your Sourcegraph Cloud instance, any user can conf
 
 3. Reload VS Code, and open the Cody extension. Review and accept the terms.
 
-4. Now you'll need to point the Cody extension to your Sourcegraph instance. On your instance, go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`). Generate an access token, copy it, and set it in the Cody extension.
+4. Now you'll need to point the Cody extension to your Sourcegraph instance. On your instance, go to `settings` / `access token` (`https://<your-instance>.sourcegraphcloud.com/users/<your-instance>/settings/tokens`). Generate an access token, copy it, and set it in the Cody extension.
 
 <img width="1369" alt="image" src="https://user-images.githubusercontent.com/25070988/227510686-4afcb1f9-a3a5-495f-b1bf-6d661ba53cce.png">
 
 5. In the Cody VS Code extension, set your instance URL and the access token
-    
+
 <img width="553" alt="image" src="https://user-images.githubusercontent.com/25070988/227510233-5ce37649-6ae3-4470-91d0-71ed6c68b7ef.png">
 
 You're all set!

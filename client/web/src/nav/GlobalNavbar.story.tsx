@@ -1,6 +1,7 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { updateJSContextBatchChangesLicense } from '@sourcegraph/shared/src/testing/batches'
 import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
@@ -56,15 +57,19 @@ const allAuthenticatedNavItemsProps: Partial<GlobalNavbarProps> = {
     } as AuthenticatedUser,
 }
 
-const decorator: DecoratorFn = Story => (
-    <WebStory>
-        {() => (
-            <div className="mt-3">
-                <Story args={defaultProps} />
-            </div>
-        )}
-    </WebStory>
-)
+const decorator: DecoratorFn = Story => {
+    updateJSContextBatchChangesLicense('full')
+
+    return (
+        <WebStory>
+            {() => (
+                <div className="mt-3">
+                    <Story args={defaultProps} />
+                </div>
+            )}
+        </WebStory>
+    )
+}
 
 const config: Meta = {
     title: 'web/nav/GlobalNav',
@@ -72,7 +77,10 @@ const config: Meta = {
     parameters: {
         chromatic: {
             disableSnapshot: false,
-            viewports: [320, 576, 978],
+            viewports: [
+                // 320, // TODO: Mobile size detection is not working in Storybook
+                576, 978,
+            ],
         },
     },
 }

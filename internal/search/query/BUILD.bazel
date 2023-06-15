@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "query",
@@ -55,6 +56,7 @@ go_test(
     embed = [":query"],
     deps = [
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_google_go_cmp//cmp",
         "@com_github_grafana_regexp//syntax",
         "@com_github_hexops_autogold_v2//:autogold",

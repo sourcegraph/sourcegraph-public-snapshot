@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	traceLog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -19,6 +19,7 @@ type operations struct {
 	definitions     *observation.Operation
 	references      *observation.Operation
 	implementations *observation.Operation
+	prototypes      *observation.Operation
 	diagnostics     *observation.Operation
 	stencil         *observation.Operation
 	ranges          *observation.Operation
@@ -48,6 +49,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		definitions:     op("Definitions"),
 		references:      op("References"),
 		implementations: op("Implementations"),
+		prototypes:      op("Prototypes"),
 		diagnostics:     op("Diagnostics"),
 		stencil:         op("Stencil"),
 		ranges:          op("Ranges"),
@@ -86,14 +88,12 @@ func lowSlowRequest(logger log.Logger, duration time.Duration, err *error) {
 }
 
 func getObservationArgs(args codenav.RequestArgs) observation.Args {
-	return observation.Args{
-		LogFields: []traceLog.Field{
-			traceLog.Int("repositoryID", args.RepositoryID),
-			traceLog.String("commit", args.Commit),
-			traceLog.String("path", args.Path),
-			traceLog.Int("line", args.Line),
-			traceLog.Int("character", args.Character),
-			traceLog.Int("limit", args.Limit),
-		},
-	}
+	return observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", args.RepositoryID),
+		attribute.String("commit", args.Commit),
+		attribute.String("path", args.Path),
+		attribute.Int("line", args.Line),
+		attribute.Int("character", args.Character),
+		attribute.Int("limit", args.Limit),
+	}}
 }

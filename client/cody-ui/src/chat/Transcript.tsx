@@ -4,7 +4,13 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { ChatUITextAreaProps, EditButtonProps, FeedbackButtonsProps } from '../Chat'
+import {
+    ChatUITextAreaProps,
+    EditButtonProps,
+    FeedbackButtonsProps,
+    CopyButtonProps,
+    ChatUISubmitButtonProps,
+} from '../Chat'
 
 import { FileLinkProps } from './ContextFiles'
 import { TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
@@ -24,8 +30,12 @@ export const Transcript: React.FunctionComponent<
         editButtonOnSubmit?: (text: string) => void
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
+        copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
+        submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
+        abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
+        onAbortMessageInProgress?: () => void
     } & TranscriptItemClassNames
-> = ({
+> = React.memo(function TranscriptContent({
     transcript,
     messageInProgress,
     messageBeingEdited,
@@ -33,6 +43,7 @@ export const Transcript: React.FunctionComponent<
     fileLinkComponent,
     className,
     codeBlocksCopyButtonClassName,
+    codeBlocksInsertButtonClassName,
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
@@ -42,7 +53,12 @@ export const Transcript: React.FunctionComponent<
     editButtonOnSubmit,
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
-}) => {
+    copyButtonOnSubmit,
+    submitButtonComponent,
+    chatInputClassName,
+    abortMessageInProgressComponent,
+    onAbortMessageInProgress,
+}) {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
         if (transcriptContainerRef.current) {
@@ -64,6 +80,11 @@ export const Transcript: React.FunctionComponent<
                     top: transcriptContainerRef.current.scrollHeight,
                 })
             }
+
+            // scroll to the end when messages are loaded
+            transcriptContainerRef.current.scrollTo({
+                top: transcriptContainerRef.current.scrollHeight,
+            })
         }
     }, [transcript, transcriptContainerRef])
 
@@ -77,29 +98,36 @@ export const Transcript: React.FunctionComponent<
 
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
-            {transcript.map((message, index) => (
-                <TranscriptItem
-                    // eslint-disable-next-line react/no-array-index-key
-                    key={index}
-                    message={message}
-                    inProgress={false}
-                    beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
-                    setBeingEdited={setMessageBeingEdited}
-                    fileLinkComponent={fileLinkComponent}
-                    codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
-                    transcriptItemClassName={transcriptItemClassName}
-                    humanTranscriptItemClassName={humanTranscriptItemClassName}
-                    transcriptItemParticipantClassName={transcriptItemParticipantClassName}
-                    transcriptActionClassName={transcriptActionClassName}
-                    textAreaComponent={textAreaComponent}
-                    EditButtonContainer={EditButtonContainer}
-                    editButtonOnSubmit={editButtonOnSubmit}
-                    showEditButton={index > 0 && transcript.length - index === 2}
-                    FeedbackButtonsContainer={FeedbackButtonsContainer}
-                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                    showFeedbackButtons={index > 0 && transcript.length - index === 1}
-                />
-            ))}
+            {transcript.map(
+                (message, index) =>
+                    message?.displayText && (
+                        <TranscriptItem
+                            // eslint-disable-next-line react/no-array-index-key
+                            key={index}
+                            message={message}
+                            inProgress={false}
+                            beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
+                            setBeingEdited={setMessageBeingEdited}
+                            fileLinkComponent={fileLinkComponent}
+                            codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                            codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
+                            transcriptItemClassName={transcriptItemClassName}
+                            humanTranscriptItemClassName={humanTranscriptItemClassName}
+                            transcriptItemParticipantClassName={transcriptItemParticipantClassName}
+                            transcriptActionClassName={transcriptActionClassName}
+                            textAreaComponent={textAreaComponent}
+                            EditButtonContainer={EditButtonContainer}
+                            editButtonOnSubmit={editButtonOnSubmit}
+                            showEditButton={index > 0 && transcript.length - index === 2}
+                            FeedbackButtonsContainer={FeedbackButtonsContainer}
+                            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                            copyButtonOnSubmit={copyButtonOnSubmit}
+                            showFeedbackButtons={index > 0 && transcript.length - index === 1}
+                            submitButtonComponent={submitButtonComponent}
+                            chatInputClassName={chatInputClassName}
+                        />
+                    )
+            )}
             {messageInProgress && messageInProgress.speaker === 'assistant' && (
                 <TranscriptItem
                     message={messageInProgress}
@@ -108,13 +136,19 @@ export const Transcript: React.FunctionComponent<
                     setBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                    codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                     transcriptItemClassName={transcriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
                     showEditButton={false}
                     showFeedbackButtons={false}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
+                    submitButtonComponent={submitButtonComponent}
+                    chatInputClassName={chatInputClassName}
+                    abortMessageInProgressComponent={abortMessageInProgressComponent}
+                    onAbortMessageInProgress={onAbortMessageInProgress}
                 />
             )}
         </div>
     )
-}
+})

@@ -25,7 +25,7 @@ type fakeSourcer struct {
 	source sources.ChangesetSource
 }
 
-func (s *fakeSourcer) ForChangeset(ctx context.Context, tx sources.SourcerStore, ch *btypes.Changeset) (sources.ChangesetSource, error) {
+func (s *fakeSourcer) ForChangeset(ctx context.Context, tx sources.SourcerStore, ch *btypes.Changeset, as sources.AuthenticationStrategy) (sources.ChangesetSource, error) {
 	return s.source, s.err
 }
 
@@ -58,6 +58,7 @@ type FakeChangesetSource struct {
 	ValidateAuthenticatorCalled bool
 	MergeChangesetCalled        bool
 	IsArchivedPushErrorCalled   bool
+	BuildCommitOptsCalled       bool
 
 	// The Changeset.HeadRef to be expected in CreateChangeset/UpdateChangeset calls.
 	WantHeadRef string
@@ -317,4 +318,9 @@ func (s *FakeChangesetSource) MergeChangeset(ctx context.Context, c *sources.Cha
 func (s *FakeChangesetSource) IsArchivedPushError(output string) bool {
 	s.IsArchivedPushErrorCalled = true
 	return s.IsArchivedPushErrorTrue
+}
+
+func (s *FakeChangesetSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, cfg *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	s.BuildCommitOptsCalled = true
+	return sources.BuildCommitOptsCommon(repo, spec, cfg)
 }

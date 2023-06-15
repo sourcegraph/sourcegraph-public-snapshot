@@ -12,6 +12,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -32,7 +33,7 @@ func init() {
 }
 
 type Command interface {
-	Run(ctx context.Context, cmdLogger Logger, spec Spec) error
+	Run(ctx context.Context, cmdLogger cmdlogger.Logger, spec Spec) error
 }
 
 type RealCommand struct {
@@ -44,13 +45,15 @@ var _ Command = &RealCommand{}
 
 type Spec struct {
 	Key       string
+	Name      string
 	Command   []string
 	Dir       string
 	Env       []string
+	Image     string
 	Operation *observation.Operation
 }
 
-func (c *RealCommand) Run(ctx context.Context, cmdLogger Logger, spec Spec) (err error) {
+func (c *RealCommand) Run(ctx context.Context, cmdLogger cmdlogger.Logger, spec Spec) (err error) {
 	// The context here is used below as a guard against the command finishing before we close
 	// the stdout and stderr pipes. This context may not cancel until after logs for the job
 	// have been flushed, or after the 30m job deadline, so we enforce a cancellation of a
@@ -61,7 +64,11 @@ func (c *RealCommand) Run(ctx context.Context, cmdLogger Logger, spec Spec) (err
 	ctx, _, endObservation := spec.Operation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	c.Logger.Info("Running command", log.Strings("command", spec.Command), log.String("workingDir", spec.Dir))
+	c.Logger.Info(
+		"Running command",
+		log.String("key", spec.Key),
+		log.String("workingDir", spec.Dir),
+	)
 
 	// Check if we can even run the command.
 	if err := validateCommand(spec.Command); err != nil {

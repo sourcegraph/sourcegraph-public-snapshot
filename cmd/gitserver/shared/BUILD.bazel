@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "shared",
@@ -11,6 +12,8 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/gitserver/server",
+        "//cmd/gitserver/server/accesslog",
+        "//cmd/gitserver/server/perforce",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
@@ -46,6 +49,7 @@ go_library(
         "//schema",
         "@com_github_json_iterator_go//:go",
         "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_grpc//:go_default_library",
         "@org_golang_x_sync//semaphore",
         "@org_golang_x_time//rate",
     ],
@@ -66,7 +70,9 @@ go_test(
         "//internal/database",
         "//internal/extsvc",
         "//internal/types",
+        "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//logtest",
+        "@org_golang_google_grpc//:go_default_library",
     ],
 )

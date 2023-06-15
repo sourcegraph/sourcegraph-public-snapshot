@@ -152,6 +152,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                 navbarSearchQuery={queryState.query}
                 showCopyQueryButton={false}
                 showSmartSearchButton={false}
+                structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             />
         </LazyExperimentalSearchInput>
     ) : (

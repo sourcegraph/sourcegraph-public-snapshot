@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "codenav",
@@ -31,7 +32,6 @@ go_library(
         "//lib/codeintel/precise",
         "//lib/errors",
         "@com_github_dgraph_io_ristretto//:ristretto",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_go_diff//diff",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_scip//bindings/go/scip",

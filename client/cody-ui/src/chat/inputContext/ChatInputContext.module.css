@@ -47,11 +47,12 @@
     overflow: hidden;
 }
 
-.fail {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    overflow: hidden;
+.index-present,
+.index-missing {
+    font-weight: bold;
+}
 
-    color: var(--vscode-errorForeground, red);
+.indexStatus {
+    display: inline;
+    color: var(--vscode-list-warningForeground, inherit);
 }

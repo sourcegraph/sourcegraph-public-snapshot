@@ -1,0 +1,38 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sg-executor-codeintel-role
+  namespace: default
+rules:
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - create
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - pods/log
+    verbs:
+      - get
+      - list
+      - watch
+# Secrets are required if KUBERNETES_SINGLE_JOB_POD is "true"
+#  - apiGroups:
+#      - ""
+#    resources:
+#      - secrets
+#    verbs:
+#      - create
+#      - delete
+# PVCs are required if KUBERNETES_JOB_VOLUME_TYPE is "pvc"
+#  - apiGroups:
+#      - ""
+#    resources:
+#      - persistentvolumeclaims
+#    verbs:
+#      - create
+#      - delete

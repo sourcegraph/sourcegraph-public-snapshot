@@ -210,6 +210,8 @@ const buildForBrowser = curry((browser: Browser, environment: BuildEnvironment):
     // Allow only building for specific browser targets.
     // Useful in local dev for faster builds.
     if (process.env.TARGETS && !process.env.TARGETS.includes(browser)) {
+        signale.info(`Skipping build ${browser} because TARGETS=${process.env.TARGETS}`)
+
         return
     }
 

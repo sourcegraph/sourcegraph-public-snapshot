@@ -6,36 +6,43 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 )
 
 type kubernetesWorkspace struct {
-	path            string
 	scriptFilenames []string
 	workspaceDir    string
-	logger          command.Logger
+	logger          cmdlogger.Logger
 }
 
 // NewKubernetesWorkspace creates a new workspace for a job.
 func NewKubernetesWorkspace(
 	ctx context.Context,
-	filesStore FilesStore,
+	filesStore files.Store,
 	job types.Job,
 	cmd command.Command,
-	logger command.Logger,
+	logger cmdlogger.Logger,
 	cloneOpts CloneOptions,
 	mountPath string,
+	singleJob bool,
 	operations *command.Operations,
 ) (Workspace, error) {
-	var path string
-	var workspaceDir string
-	var err error
-	path = fmt.Sprintf("job-%d", job.ID)
-	workspaceDir = filepath.Join(mountPath, path)
+	// TODO switch to the single job in 5.2
+	if singleJob {
+		return &kubernetesWorkspace{logger: logger}, nil
+	}
+
+	workspaceDir := filepath.Join(mountPath, fmt.Sprintf("job-%d", job.ID))
+
+	if err := os.MkdirAll(workspaceDir, os.ModePerm); err != nil {
+		return nil, err
+	}
 
 	if job.RepositoryName != "" {
-		if err = cloneRepo(ctx, workspaceDir, job, cmd, logger, cloneOpts, operations); err != nil {
+		if err := cloneRepo(ctx, workspaceDir, job, cmd, logger, cloneOpts, operations); err != nil {
 			_ = os.RemoveAll(workspaceDir)
 			return nil, err
 		}
@@ -48,7 +55,6 @@ func NewKubernetesWorkspace(
 	}
 
 	return &kubernetesWorkspace{
-		path:            path,
 		scriptFilenames: scriptPaths,
 		workspaceDir:    workspaceDir,
 		logger:          logger,
@@ -56,7 +62,11 @@ func NewKubernetesWorkspace(
 }
 
 func (w kubernetesWorkspace) Path() string {
-	return w.path
+	return w.workspaceDir
+}
+
+func (w kubernetesWorkspace) WorkingDirectory() string {
+	return w.workspaceDir
 }
 
 func (w kubernetesWorkspace) ScriptFilenames() []string {
@@ -77,8 +87,10 @@ func (w kubernetesWorkspace) Remove(ctx context.Context, keepWorkspace bool) {
 		return
 	}
 
-	fmt.Fprintf(handle, "Removing %s\n", w.workspaceDir)
-	if rmErr := os.RemoveAll(w.workspaceDir); rmErr != nil {
-		fmt.Fprintf(handle, "Operation failed: %s\n", rmErr.Error())
+	if w.workspaceDir != "" {
+		fmt.Fprintf(handle, "Removing %s\n", w.workspaceDir)
+		if rmErr := os.RemoveAll(w.workspaceDir); rmErr != nil {
+			fmt.Fprintf(handle, "Operation failed: %s\n", rmErr.Error())
+		}
 	}
 }

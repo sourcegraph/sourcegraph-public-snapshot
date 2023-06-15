@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/sourcegraph/log"
 )
@@ -392,7 +391,10 @@ func NewBasicLimitWatcher(logger log.Logger, store throttled.GCRAStore) *BasicLi
 	return basic
 }
 
-type BasicLimitWatcher RateLimitWatcher
+type BasicLimitWatcher struct {
+	store throttled.GCRAStore
+	rl    atomic.Value // *RateLimiter
+}
 
 func (bl *BasicLimitWatcher) updateFromConfig(logger log.Logger, limit int) {
 	if limit <= 0 {
@@ -437,116 +439,6 @@ func (bl *BasicLimiter) RateLimit(_ string, _ int, args LimiterArgs) (bool, thro
 		return bl.GCRARateLimiter.RateLimit("basic", 1)
 	}
 	return false, throttled.RateLimitResult{}, nil
-}
-
-// RateLimitWatcher stores the currently configured rate limiter and whether or
-// not rate limiting is enabled.
-type RateLimitWatcher struct {
-	store throttled.GCRAStore
-	rl    atomic.Value // *RateLimiter
-}
-
-// NewRateLimiteWatcher creates a new limiter with the provided store and starts
-// watching for config changes.
-func NewRateLimiteWatcher(logger log.Logger, store throttled.GCRAStore) *RateLimitWatcher {
-	w := &RateLimitWatcher{
-		store: store,
-	}
-
-	conf.Watch(func() {
-		logger.Debug("Rate limit config updated, applying changes")
-		w.updateFromConfig(logger, conf.Get().ApiRatelimit)
-	})
-
-	return w
-}
-
-// Get returns the current rate limiter. If rate limiting is currently disabled
-// (nil, false) is returned.
-func (w *RateLimitWatcher) Get() (Limiter, bool) {
-	if l, ok := w.rl.Load().(*RateLimiter); ok && l.enabled {
-		return l, true
-	}
-	return nil, false
-}
-
-func (w *RateLimitWatcher) updateFromConfig(logger log.Logger, rlc *schema.ApiRatelimit) {
-	// We can burst up to a max of 20% of limit
-	maxBurstPercentage := 0.2
-
-	if rlc == nil || !rlc.Enabled {
-		w.rl.Store(&RateLimiter{enabled: false})
-		return
-	}
-
-	ipQuota := throttled.RateQuota{
-		MaxRate:  throttled.PerHour(rlc.PerIP),
-		MaxBurst: int(float64(rlc.PerIP) * maxBurstPercentage),
-	}
-	ipLimiter, err := throttled.NewGCRARateLimiter(w.store, ipQuota)
-	if err != nil {
-		logger.Warn("error creating ip rate limiter", log.Error(err))
-		return
-	}
-
-	userQuota := throttled.RateQuota{
-		MaxRate:  throttled.PerHour(rlc.PerUser),
-		MaxBurst: int(float64(rlc.PerUser) * maxBurstPercentage),
-	}
-	userLimiter, err := throttled.NewGCRARateLimiter(w.store, userQuota)
-	if err != nil {
-		logger.Warn("error creating user rate limiter", log.Error(err))
-		return
-	}
-
-	overrides := make(map[string]limiter)
-	for _, o := range rlc.Overrides {
-		switch l := o.Limit.(type) {
-		case string:
-			if l == "blocked" {
-				overrides[o.Key] = &fixedLimiter{
-					limited: true,
-					result: throttled.RateLimitResult{
-						Limit:      0,
-						Remaining:  0,
-						ResetAfter: 0,
-						RetryAfter: 0,
-					},
-				}
-			} else if l == "unlimited" {
-				overrides[o.Key] = &fixedLimiter{
-					limited: false,
-					result: throttled.RateLimitResult{
-						Limit:      100000,
-						Remaining:  100000,
-						ResetAfter: 0,
-						RetryAfter: 0,
-					},
-				}
-			} else {
-				logger.Warn("unknown limit value", log.String("value", l))
-				return
-			}
-		case int:
-			rl, err := throttled.NewGCRARateLimiter(w.store, throttled.RateQuota{
-				MaxRate:  throttled.PerHour(l),
-				MaxBurst: int(float64(l) * maxBurstPercentage),
-			})
-			if err != nil {
-				logger.Warn("error creating override rate limiter", log.String("key", o.Key), log.Error(err))
-				return
-			}
-			overrides[o.Key] = rl
-		}
-	}
-
-	// Store the new limiter
-	w.rl.Store(&RateLimiter{
-		enabled:     true,
-		ipLimiter:   ipLimiter,
-		userLimiter: userLimiter,
-		overrides:   overrides,
-	})
 }
 
 type RateLimiter struct {

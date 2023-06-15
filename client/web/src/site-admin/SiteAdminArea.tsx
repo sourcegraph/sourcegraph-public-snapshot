@@ -86,7 +86,6 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
     const [isSourcegraphOperatorSiteAdminHideMaintenance] = useFeatureFlag(
         'sourcegraph-operator-site-admin-hide-maintenance'
     )
-
     const adminSideBarGroups = useMemo(
         () =>
             props.sideBarGroups.map(group => {

@@ -12,8 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -22,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -149,7 +147,7 @@ func (c *client) Ping(ctx context.Context) error {
 		return errors.Wrap(err, "creating request")
 	}
 
-	err = c.do(ctx, req, nil)
+	_, err = c.do(ctx, req, nil)
 	if err != nil && !errcode.IsNotFound(err) {
 		return err
 	}
@@ -196,7 +194,7 @@ func (c *client) reqPage(ctx context.Context, url string, results any) (*PageTok
 	}
 
 	var next PageToken
-	err = c.do(ctx, req, &struct {
+	_, err = c.do(ctx, req, &struct {
 		*PageToken
 		Values any `json:"values"`
 	}{
@@ -211,31 +209,28 @@ func (c *client) reqPage(ctx context.Context, url string, results any) (*PageTok
 	return &next, nil
 }
 
-func (c *client) do(ctx context.Context, req *http.Request, result any) error {
+func (c *client) do(ctx context.Context, req *http.Request, result any) (code int, err error) {
+	tr, ctx := trace.New(ctx, "Bitbucket Cloud", "do")
+	defer tr.FinishWithErr(&err)
+	req = req.WithContext(ctx)
+
 	req.URL = c.URL.ResolveReference(req.URL)
 
 	// If the request doesn't expect a body, then including a content-type can
 	// actually cause errors on the Bitbucket side. So we need to pick apart the
 	// request just a touch to figure out if we should add the header.
 	var reqBody []byte
-	var err error
 	if req.Body != nil {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
 		reqBody, err = io.ReadAll(req.Body)
 		if err != nil {
-			return err
+			return code, err
 		}
 	}
 	req.Body = io.NopCloser(bytes.NewReader(reqBody))
 
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
-		req.WithContext(ctx),
-		nethttp.OperationName("Bitbucket Cloud"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
-
 	if err = c.rateLimit.Wait(ctx); err != nil {
-		return err
+		return code, err
 	}
 
 	// Because we have no external rate limiting data for Bitbucket Cloud, we do an exponential
@@ -245,11 +240,14 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 	sleepTime := 10 * time.Second
 	for {
 		resp, err = oauthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth)
+		if resp != nil {
+			code = resp.StatusCode
+		}
 		if err != nil {
-			return err
+			return code, err
 		}
 
-		if resp.StatusCode != http.StatusTooManyRequests {
+		if code != http.StatusTooManyRequests {
 			break
 		}
 
@@ -265,22 +263,22 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) error {
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return code, err
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return errors.WithStack(&httpError{
+	if code < http.StatusOK || code >= http.StatusBadRequest {
+		return code, errors.WithStack(&httpError{
 			URL:        req.URL,
-			StatusCode: resp.StatusCode,
+			StatusCode: code,
 			Body:       string(bs),
 		})
 	}
 
 	if result != nil {
-		return json.Unmarshal(bs, result)
+		return code, json.Unmarshal(bs, result)
 	}
 
-	return nil
+	return code, nil
 }
 
 type PageToken struct {

@@ -12,7 +12,7 @@ Feature | Supported?
 
 ## Setup
 
-See the "[Rust dependencies](../admin/external_service/Rust.md)" documentation.
+See the "[Rust dependencies](../admin/external_service/rust.md)" documentation.
 
 ## Repository syncing
 

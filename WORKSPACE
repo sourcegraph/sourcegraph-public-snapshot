@@ -15,23 +15,23 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "aspect_bazel_lib",
-    sha256 = "2518c757715d4f5fc7cc7e0a68742dd1155eaafc78fb9196b8a18e13a738cea2",
-    strip_prefix = "bazel-lib-1.28.0",
-    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.28.0/bazel-lib-v1.28.0.tar.gz",
+    sha256 = "0da75299c5a52737b2ac39458398b3f256e41a1a6748e5457ceb3a6225269485",
+    strip_prefix = "bazel-lib-1.31.2",
+    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.31.2/bazel-lib-v1.31.2.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_js",
-    sha256 = "a592fafd8a27b2828318cebbda0003686c6da3318df366b563e8beeffa05a02c",
-    strip_prefix = "rules_js-1.21.0",
-    url = "https://github.com/aspect-build/rules_js/releases/download/v1.21.0/rules_js-v1.21.0.tar.gz",
+    sha256 = "0b69e0967f8eb61de60801d6c8654843076bf7ef7512894a692a47f86e84a5c2",
+    strip_prefix = "rules_js-1.27.1",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v1.27.1/rules_js-v1.27.1.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_ts",
-    sha256 = "02480b6a1cd12516edf364e678412e9da10445fe3f1070c014ac75e922c969ea",
-    strip_prefix = "rules_ts-1.3.1",
-    url = "https://github.com/aspect-build/rules_ts/releases/download/v1.3.1/rules_ts-v1.3.1.tar.gz",
+    sha256 = "ace5b609603d9b5b875d56c9c07182357c4ee495030f40dcefb10d443ba8c208",
+    strip_prefix = "rules_ts-1.4.0",
+    url = "https://github.com/aspect-build/rules_ts/releases/download/v1.4.0/rules_ts-v1.4.0.tar.gz",
 )
 
 http_archive(
@@ -74,6 +74,57 @@ http_archive(
     urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.19.0/rules_rust-v0.19.0.tar.gz"],
 )
 
+# Container rules
+http_archive(
+    name = "rules_oci",
+    sha256 = "db57efd706f01eb3ce771468366baa1614b5b25f4cce99757e2b8d942155b8ec",
+    strip_prefix = "rules_oci-1.0.0",
+    url = "https://github.com/bazel-contrib/rules_oci/releases/download/v1.0.0/rules_oci-v1.0.0.tar.gz",
+)
+
+http_archive(
+    name = "rules_pkg",
+    sha256 = "8c20f74bca25d2d442b327ae26768c02cf3c99e93fad0381f32be9aab1967675",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.8.1/rules_pkg-0.8.1.tar.gz",
+        "https://github.com/bazelbuild/rules_pkg/releases/download/0.8.1/rules_pkg-0.8.1.tar.gz",
+    ],
+)
+
+SRC_CLI_VERSION = "5.0.3"
+
+http_archive(
+    name = "src-cli-linux-amd64",
+    build_file_content = """
+filegroup(
+    name = "src-cli-linux-amd64",
+    srcs = ["src"],
+    visibility = ["//visibility:public"],
+)
+    """,
+    sha256 = "d125d732ad4c47ae6977c49574b01cc1b3c943b2a2108142267438e829538aa3",
+    url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_linux_amd64.tar.gz".format(SRC_CLI_VERSION),
+)
+
+http_archive(
+    name = "container_structure_test",
+    sha256 = "42edb647b51710cb917b5850380cc18a6c925ad195986f16e3b716887267a2d7",
+    strip_prefix = "container-structure-test-104a53ede5f78fff72172639781ac52df9f5b18f",
+    urls = ["https://github.com/GoogleContainerTools/container-structure-test/archive/104a53ede5f78fff72172639781ac52df9f5b18f.zip"],
+)
+
+# hermetic_cc_toolchain setup ================================
+HERMETIC_CC_TOOLCHAIN_VERSION = "v2.0.0-rc2"
+
+http_archive(
+    name = "hermetic_cc_toolchain",
+    sha256 = "40dff82816735e631e8bd51ede3af1c4ed1ad4646928ffb6a0e53e228e55738c",
+    urls = [
+        "https://mirror.bazel.build/github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
+        "https://github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(HERMETIC_CC_TOOLCHAIN_VERSION),
+    ],
+)
+
 # rules_js setup ================================
 load("@aspect_rules_js//js:repositories.bzl", "rules_js_dependencies")
 
@@ -95,6 +146,26 @@ npm_translate_lock(
     npm_package_target_name = "{dirname}_pkg",
     npmrc = "//:.npmrc",
     pnpm_lock = "//:pnpm-lock.yaml",
+    # Required for ESLint test targets.
+    # See https://github.com/aspect-build/rules_js/issues/239
+    # See `public-hoist-pattern[]=*eslint*` in the `.npmrc` of this monorepo.
+    public_hoist_packages = {
+        "@typescript-eslint/eslint-plugin": [""],
+        "@typescript-eslint/parser@5.56.0_qxbo2xm47qt6fxnlmgbosp4hva": [""],
+        "eslint-config-prettier": [""],
+        "eslint-plugin-ban": [""],
+        "eslint-plugin-etc": [""],
+        "eslint-plugin-import": [""],
+        "eslint-plugin-jest-dom": [""],
+        "eslint-plugin-jsdoc": [""],
+        "eslint-plugin-jsx-a11y": [""],
+        "eslint-plugin-react@7.32.1_eslint_8.34.0": [""],
+        "eslint-plugin-react-hooks": [""],
+        "eslint-plugin-rxjs": [""],
+        "eslint-plugin-unicorn": [""],
+        "eslint-plugin-unused-imports": [""],
+        "eslint-import-resolver-node": [""],
+    },
     verify_node_modules_ignored = "//:.bazelignore",
 )
 
@@ -126,9 +197,9 @@ jest_npm_repositories()
 # rules_esbuild setup ===========================
 http_archive(
     name = "aspect_rules_esbuild",
-    sha256 = "621c8ccb8a1400951c52357377eda4c575c6c901689bb629969881e0be8a8614",
-    strip_prefix = "rules_esbuild-175023fede7d2532dd35d89cb43b43cbe9e75678",
-    url = "https://github.com/aspect-build/rules_esbuild/archive/175023fede7d2532dd35d89cb43b43cbe9e75678.tar.gz",
+    sha256 = "2ea31bd97181a315e048be693ddc2815fddda0f3a12ca7b7cc6e91e80f31bac7",
+    strip_prefix = "rules_esbuild-0.14.4",
+    url = "https://github.com/aspect-build/rules_esbuild/releases/download/v0.14.4/rules_esbuild-v0.14.4.tar.gz",
 )
 
 load("@aspect_rules_esbuild//esbuild:dependencies.bzl", "rules_esbuild_dependencies")
@@ -195,6 +266,26 @@ go_repository(
     version = "v1.14.1",
 )
 
+# Overrides the default provided protobuf dep from rules_go by a more
+# recent one.
+go_repository(
+    name = "org_golang_google_protobuf",
+    build_file_proto_mode = "disable_global",
+    importpath = "google.golang.org/protobuf",
+    sum = "h1:7QBf+IK2gx70Ap/hDsOmam3GE0v9HicjfEdAxE62UoM=",
+    version = "v1.29.1",
+)  # keep
+
+# Pin protoc-gen-go-grpc to 1.3.0
+# See also //:gen-go-grpc
+go_repository(
+    name = "org_golang_google_grpc_cmd_protoc_gen_go_grpc",
+    build_file_proto_mode = "disable_global",
+    importpath = "google.golang.org/grpc/cmd/protoc-gen-go-grpc",
+    sum = "h1:rNBFJjBCOgVr9pWD7rs/knKL4FRTKgpZmsRfV214zcA=",
+    version = "v1.3.0",
+)  # keep
+
 # gazelle:repository_macro deps.bzl%go_dependencies
 go_dependencies()
 
@@ -252,6 +343,42 @@ load("@crate_index//:defs.bzl", "crate_repositories")
 
 crate_repositories()
 
+load("@hermetic_cc_toolchain//toolchain:defs.bzl", zig_toolchains = "toolchains")
+
+zig_toolchains()
+
 load("//dev/backcompat:defs.bzl", "back_compat_defs")
 
 back_compat_defs()
+
+# containers steup       ===============================
+load("@rules_oci//oci:dependencies.bzl", "rules_oci_dependencies")
+
+rules_oci_dependencies()
+
+load("@rules_oci//oci:repositories.bzl", "LATEST_CRANE_VERSION", "LATEST_ZOT_VERSION", "oci_register_toolchains")
+
+oci_register_toolchains(
+    name = "oci",
+    crane_version = LATEST_CRANE_VERSION,
+    # Uncommenting the zot toolchain will cause it to be used instead of crane for some tasks.
+    # Note that it does not support docker-format images.
+    # zot_version = LATEST_ZOT_VERSION,
+)
+
+# Optional, for oci_tarball rule
+load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
+
+rules_pkg_dependencies()
+
+load("//dev:oci_deps.bzl", "oci_deps")
+
+oci_deps()
+
+load("//enterprise/cmd/embeddings/shared:assets.bzl", "embbedings_assets_deps")
+
+embbedings_assets_deps()
+
+load("@container_structure_test//:repositories.bzl", "container_structure_test_register_toolchain")
+
+container_structure_test_register_toolchain(name = "cst")

@@ -12,6 +12,19 @@ cleanup() {
 
 trap cleanup EXIT
 
+if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
+  ./dev/ci/bazel.sh build //enterprise/cmd/gitserver
+  out=$(./dev/ci/bazel.sh cquery //enterprise/cmd/gitserver --output=files)
+  cp "$out" "$OUTPUT"
+
+  docker build -f enterprise/cmd/gitserver/Dockerfile.wolfi -t "$IMAGE" "$OUTPUT" \
+    --progress=plain \
+    --build-arg COMMIT_SHA \
+    --build-arg DATE \
+    --build-arg VERSION
+  exit $?
+fi
+
 # Environment for building linux binaries
 export GO111MODULE=on
 export GOARCH=amd64

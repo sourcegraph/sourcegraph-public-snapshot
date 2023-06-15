@@ -1,6 +1,8 @@
 package resolvers
 
 import (
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -10,6 +12,7 @@ import (
 
 type changesetJobErrorResolver struct {
 	store           *store.Store
+	logger          log.Logger
 	changeset       *btypes.Changeset
 	repo            *types.Repo
 	error           string
@@ -19,7 +22,7 @@ type changesetJobErrorResolver struct {
 var _ graphqlbackend.ChangesetJobErrorResolver = &changesetJobErrorResolver{}
 
 func (r *changesetJobErrorResolver) Changeset() graphqlbackend.ChangesetResolver {
-	return NewChangesetResolver(r.store, r.gitserverClient, r.changeset, r.repo)
+	return NewChangesetResolver(r.store, r.gitserverClient, r.logger, r.changeset, r.repo)
 }
 
 func (r *changesetJobErrorResolver) Error() *string {

@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "resolvers",
@@ -43,6 +44,7 @@ go_library(
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/externallink",
         "//cmd/frontend/graphqlbackend/graphqlutil",
+        "//enterprise/cmd/frontend/internal/auth/githubappauth",
         "//enterprise/internal/batches/graphql",
         "//enterprise/internal/batches/reconciler",
         "//enterprise/internal/batches/rewirer",
@@ -53,6 +55,9 @@ go_library(
         "//enterprise/internal/batches/syncer",
         "//enterprise/internal/batches/types",
         "//enterprise/internal/batches/types/scheduler/config",
+        "//enterprise/internal/database",
+        "//enterprise/internal/github_apps/store",
+        "//enterprise/internal/github_apps/types",
         "//enterprise/internal/licensing",
         "//internal/actor",
         "//internal/api",
@@ -81,11 +86,13 @@ go_library(
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_sourcegraph_go_diff//diff",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
 go_test(
     name = "resolvers_test",
+    timeout = "moderate",
     srcs = [
         "batch_change_connection_test.go",
         "batch_change_test.go",
@@ -123,6 +130,7 @@ go_test(
         "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/externallink",
+        "//enterprise/cmd/frontend/internal/auth/githubappauth",
         "//enterprise/cmd/frontend/internal/batches/resolvers/apitest",
         "//enterprise/internal/batches/graphql",
         "//enterprise/internal/batches/search",
@@ -133,6 +141,7 @@ go_test(
         "//enterprise/internal/batches/syncer",
         "//enterprise/internal/batches/testing",
         "//enterprise/internal/batches/types",
+        "//enterprise/internal/database",
         "//enterprise/internal/license",
         "//enterprise/internal/licensing",
         "//internal/actor",
@@ -162,12 +171,14 @@ go_test(
         "//lib/batches/schema",
         "//lib/batches/yaml",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//mock",

@@ -5,17 +5,23 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log"
 	"github.com/stretchr/testify/require"
 
+	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
+	bgrepo "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 func mockFile(lines ...string) []byte {
 	return []byte(strings.Join(lines, "\n"))
+}
+
+func defaultSplitter(ctx context.Context, text, fileName string, splitOptions codeintelContext.SplitOptions) ([]codeintelContext.EmbeddableChunk, error) {
+	return codeintelContext.SplitIntoEmbeddableChunks(text, fileName, splitOptions), nil
 }
 
 func TestEmbedRepo(t *testing.T) {
@@ -23,7 +29,9 @@ func TestEmbedRepo(t *testing.T) {
 	repoName := api.RepoName("repo/name")
 	revision := api.CommitID("deadbeef")
 	client := NewMockEmbeddingsClient()
-	splitOptions := split.SplitOptions{ChunkTokensThreshold: 8}
+	contextService := NewMockContextService()
+	contextService.SplitIntoEmbeddableChunksFunc.SetDefaultHook(defaultSplitter)
+	splitOptions := codeintelContext.SplitOptions{ChunkTokensThreshold: 8}
 	mockFiles := map[string][]byte{
 		// 2 embedding chunks (based on split options above)
 		"a.go": mockFile(
@@ -72,11 +80,9 @@ func TestEmbedRepo(t *testing.T) {
 		"binary.bin":       0.7,
 	}
 
-	getDocumentRanks := func(ctx context.Context, repoName string) (types.RepoPathRanks, error) {
-		return types.RepoPathRanks{
-			MeanRank: 0,
-			Paths:    mockRanks,
-		}, nil
+	mockRepoPathRanks := types.RepoPathRanks{
+		MeanRank: 0,
+		Paths:    mockRanks,
 	}
 
 	reader := funcReader(func(_ context.Context, fileName string) ([]byte, error) {
@@ -100,34 +106,86 @@ func TestEmbedRepo(t *testing.T) {
 
 	excludedGlobPatterns := GetDefaultExcludedFilePathPatterns()
 
+	opts := EmbedRepoOpts{
+		RepoName:          repoName,
+		Revision:          revision,
+		ExcludePatterns:   excludedGlobPatterns,
+		SplitOptions:      splitOptions,
+		MaxCodeEmbeddings: 100000,
+		MaxTextEmbeddings: 100000,
+	}
+
+	logger := log.NoOp()
+	noopReport := func(*bgrepo.EmbedRepoStats) {}
+
 	t.Run("no files", func(t *testing.T) {
-		index, err := EmbedRepo(ctx, repoName, revision, excludedGlobPatterns, client, splitOptions, newReadLister(), getDocumentRanks)
+		index, _, stats, err := EmbedRepo(ctx, client, contextService, newReadLister(), mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 0)
+
+		expectedStats := &bgrepo.EmbedRepoStats{
+			CodeIndexStats: bgrepo.EmbedFilesStats{
+				FilesSkipped: map[string]int{},
+			},
+			TextIndexStats: bgrepo.EmbedFilesStats{
+				FilesSkipped: map[string]int{},
+			},
+		}
+		require.Equal(t, expectedStats, stats)
 	})
 
 	t.Run("code files only", func(t *testing.T) {
-		index, err := EmbedRepo(ctx, repoName, revision, excludedGlobPatterns, client, splitOptions, newReadLister("a.go"), getDocumentRanks)
+		index, _, stats, err := EmbedRepo(ctx, client, contextService, newReadLister("a.go"), mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.TextIndex.Embeddings, 0)
 		require.Len(t, index.CodeIndex.Embeddings, 6)
 		require.Len(t, index.CodeIndex.RowMetadata, 2)
 		require.Len(t, index.CodeIndex.Ranks, 2)
+
+		expectedStats := &bgrepo.EmbedRepoStats{
+			CodeIndexStats: bgrepo.EmbedFilesStats{
+				FilesScheduled: 1,
+				FilesEmbedded:  1,
+				ChunksEmbedded: 2,
+				BytesEmbedded:  65,
+				FilesSkipped:   map[string]int{},
+			},
+			TextIndexStats: bgrepo.EmbedFilesStats{
+				FilesSkipped: map[string]int{},
+			},
+		}
+		// ignore durations
+		require.Equal(t, expectedStats, stats)
 	})
 
 	t.Run("text files only", func(t *testing.T) {
-		index, err := EmbedRepo(ctx, repoName, revision, excludedGlobPatterns, client, splitOptions, newReadLister("b.md"), getDocumentRanks)
+		index, _, stats, err := EmbedRepo(ctx, client, contextService, newReadLister("b.md"), mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 6)
 		require.Len(t, index.TextIndex.RowMetadata, 2)
 		require.Len(t, index.TextIndex.Ranks, 2)
+
+		expectedStats := &bgrepo.EmbedRepoStats{
+			CodeIndexStats: bgrepo.EmbedFilesStats{
+				FilesSkipped: map[string]int{},
+			},
+			TextIndexStats: bgrepo.EmbedFilesStats{
+				FilesScheduled: 1,
+				FilesEmbedded:  1,
+				ChunksEmbedded: 2,
+				BytesEmbedded:  70,
+				FilesSkipped:   map[string]int{},
+			},
+		}
+		// ignore durations
+		require.Equal(t, expectedStats, stats)
 	})
 
 	t.Run("mixed code and text files", func(t *testing.T) {
 		rl := newReadLister("a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin")
-		index, err := EmbedRepo(ctx, repoName, revision, excludedGlobPatterns, client, splitOptions, rl, getDocumentRanks)
+		index, _, stats, err := EmbedRepo(ctx, client, contextService, rl, mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 15)
 		require.Len(t, index.CodeIndex.RowMetadata, 5)
@@ -135,10 +193,66 @@ func TestEmbedRepo(t *testing.T) {
 		require.Len(t, index.TextIndex.Embeddings, 6)
 		require.Len(t, index.TextIndex.RowMetadata, 2)
 		require.Len(t, index.TextIndex.Ranks, 2)
+
+		expectedStats := &bgrepo.EmbedRepoStats{
+			CodeIndexStats: bgrepo.EmbedFilesStats{
+				FilesScheduled: 6,
+				FilesEmbedded:  2,
+				ChunksEmbedded: 5,
+				BytesEmbedded:  163,
+				FilesSkipped: map[string]int{
+					"autogenerated": 1,
+					"binary":        1,
+					"longLine":      1,
+					"small":         1,
+				},
+			},
+			TextIndexStats: bgrepo.EmbedFilesStats{
+				FilesScheduled: 1,
+				FilesEmbedded:  1,
+				ChunksEmbedded: 2,
+				BytesEmbedded:  70,
+				FilesSkipped:   map[string]int{},
+			},
+		}
+		// ignore durations
+		require.Equal(t, expectedStats, stats)
+	})
+
+	t.Run("mixed code and text files", func(t *testing.T) {
+		// 3 will be embedded, 4 will be skipped
+		fileNames := []string{"a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin"}
+		rl := newReadLister(fileNames...)
+		statReports := 0
+		countingReporter := func(*bgrepo.EmbedRepoStats) {
+			statReports++
+		}
+		_, _, _, err := EmbedRepo(ctx, client, contextService, rl, mockRepoPathRanks, opts, logger, countingReporter)
+		require.NoError(t, err)
+		require.Equal(t, 2, statReports, `
+			Expected one update for flush. This is subject to change if the
+			test changes, so a failure should be considered a notification of a
+			change rather than a signal that something is wrong.
+		`)
+	})
+
+	t.Run("embeddings limited", func(t *testing.T) {
+		optsCopy := opts
+		optsCopy.MaxCodeEmbeddings = 3
+		optsCopy.MaxTextEmbeddings = 1
+
+		rl := newReadLister("a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin")
+		index, _, _, err := EmbedRepo(ctx, client, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+		require.NoError(t, err)
+
+		// a.md has 2 chunks, c.java has 3 chunks
+		require.Len(t, index.CodeIndex.Embeddings, index.CodeIndex.ColumnDimension*5)
+		// b.md has 2 chunks
+		require.Len(t, index.TextIndex.Embeddings, index.CodeIndex.ColumnDimension*2)
 	})
 }
 
-func NewMockEmbeddingsClient() EmbeddingsClient {
+func NewMockEmbeddingsClient() client.EmbeddingsClient {
 	return &mockEmbeddingsClient{}
 }
 
@@ -148,7 +262,11 @@ func (c *mockEmbeddingsClient) GetDimensions() (int, error) {
 	return 3, nil
 }
 
-func (c *mockEmbeddingsClient) GetEmbeddingsWithRetries(_ context.Context, texts []string, maxRetries int) ([]float32, error) {
+func (c *mockEmbeddingsClient) GetModelIdentifier() string {
+	return "mock/some-model"
+}
+
+func (c *mockEmbeddingsClient) GetEmbeddingsWithRetries(_ context.Context, texts []string, _ int) ([]float32, error) {
 	dimensions, err := c.GetDimensions()
 	if err != nil {
 		return nil, err
@@ -171,4 +289,5 @@ func (l staticLister) List(_ context.Context) ([]FileEntry, error) {
 type listReader struct {
 	FileReader
 	FileLister
+	FileDiffer
 }

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -30,14 +31,23 @@ var defaultDoer = func() httpcli.Doer {
 	return d
 }()
 
-func NewClient() *Client {
-	return &Client{
-		Endpoints:  defaultEndpoints(),
-		HTTPClient: defaultDoer,
+func NewDefaultClient() Client {
+	return NewClient(defaultEndpoints(), defaultDoer)
+}
+
+func NewClient(endpoints *endpoint.Map, doer httpcli.Doer) Client {
+	return &client{
+		Endpoints:  endpoints,
+		HTTPClient: doer,
 	}
 }
 
-type Client struct {
+type Client interface {
+	Search(context.Context, EmbeddingsSearchParameters) (*EmbeddingCombinedSearchResults, error)
+	IsContextRequiredForChatQuery(context.Context, IsContextRequiredForChatQueryParameters) (bool, error)
+}
+
+type client struct {
 	// Endpoints to embeddings service.
 	Endpoints *endpoint.Map
 
@@ -46,15 +56,13 @@ type Client struct {
 }
 
 type EmbeddingsSearchParameters struct {
-	RepoName         api.RepoName `json:"repoName"`
-	RepoID           api.RepoID   `json:"repoID"`
-	Query            string       `json:"query"`
-	CodeResultsCount int          `json:"codeResultsCount"`
-	TextResultsCount int          `json:"textResultsCount"`
+	RepoNames        []api.RepoName `json:"repoNames"`
+	RepoIDs          []api.RepoID   `json:"repoIDs"`
+	Query            string         `json:"query"`
+	CodeResultsCount int            `json:"codeResultsCount"`
+	TextResultsCount int            `json:"textResultsCount"`
 
 	UseDocumentRanks bool `json:"useDocumentRanks"`
-	// If set to "True", EmbeddingSearchResult.Debug will contain useful information about scoring.
-	Debug bool `json:"debug"`
 }
 
 type IsContextRequiredForChatQueryParameters struct {
@@ -65,8 +73,43 @@ type IsContextRequiredForChatQueryResult struct {
 	IsRequired bool `json:"isRequired"`
 }
 
-func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*EmbeddingSearchResults, error) {
-	resp, err := c.httpPost(ctx, "search", args.RepoName, args)
+func (c *client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*EmbeddingCombinedSearchResults, error) {
+	partitions, err := c.partition(args.RepoNames, args.RepoIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	p := pool.NewWithResults[*EmbeddingCombinedSearchResults]().WithContext(ctx)
+
+	for endpoint, partition := range partitions {
+		endpoint := endpoint
+
+		// make a copy for this request
+		args := args
+		args.RepoNames = partition.repoNames
+		args.RepoIDs = partition.repoIDs
+
+		p.Go(func(ctx context.Context) (*EmbeddingCombinedSearchResults, error) {
+			return c.searchPartition(ctx, endpoint, args)
+		})
+	}
+
+	allResults, err := p.Wait()
+	if err != nil {
+		return nil, err
+	}
+
+	var combinedResult EmbeddingCombinedSearchResults
+	for _, result := range allResults {
+		combinedResult.CodeResults.MergeTruncate(result.CodeResults, args.CodeResultsCount)
+		combinedResult.TextResults.MergeTruncate(result.TextResults, args.TextResultsCount)
+	}
+
+	return &combinedResult, nil
+}
+
+func (c *client) searchPartition(ctx context.Context, endpoint string, args EmbeddingsSearchParameters) (*EmbeddingCombinedSearchResults, error) {
+	resp, err := c.httpPost(ctx, "search", endpoint, args)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +125,7 @@ func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*
 		)
 	}
 
-	var response EmbeddingSearchResults
+	var response EmbeddingCombinedSearchResults
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return nil, err
@@ -90,8 +133,13 @@ func (c *Client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*
 	return &response, nil
 }
 
-func (c *Client) IsContextRequiredForChatQuery(ctx context.Context, args IsContextRequiredForChatQueryParameters) (bool, error) {
-	resp, err := c.httpPost(ctx, "isContextRequiredForChatQuery", "", args)
+func (c *client) IsContextRequiredForChatQuery(ctx context.Context, args IsContextRequiredForChatQueryParameters) (bool, error) {
+	endpoint, err := c.url("")
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := c.httpPost(ctx, "isContextRequiredForChatQuery", endpoint, args)
 	if err != nil {
 		return false, err
 	}
@@ -115,24 +163,50 @@ func (c *Client) IsContextRequiredForChatQuery(ctx context.Context, args IsConte
 	return response.IsRequired, nil
 }
 
-func (c *Client) url(repo api.RepoName) (string, error) {
+func (c *client) url(repo api.RepoName) (string, error) {
 	if c.Endpoints == nil {
 		return "", errors.New("an embeddings service has not been configured")
 	}
 	return c.Endpoints.Get(string(repo))
 }
 
-func (c *Client) httpPost(
-	ctx context.Context,
-	method string,
-	repo api.RepoName,
-	payload any,
-) (resp *http.Response, err error) {
-	url, err := c.url(repo)
+type repoPartition struct {
+	repoNames []api.RepoName
+	repoIDs   []api.RepoID
+}
+
+// returns a partition of the input repos by the endpoint their requests should be routed to
+func (c *client) partition(repos []api.RepoName, repoIDs []api.RepoID) (map[string]repoPartition, error) {
+	if c.Endpoints == nil {
+		return nil, errors.New("an embeddings service has not been configured")
+	}
+
+	repoStrings := make([]string, len(repos))
+	for i, repo := range repos {
+		repoStrings[i] = string(repo)
+	}
+
+	endpoints, err := c.Endpoints.GetMany(repoStrings...)
 	if err != nil {
 		return nil, err
 	}
 
+	res := make(map[string]repoPartition)
+	for i, endpoint := range endpoints {
+		res[endpoint] = repoPartition{
+			repoNames: append(res[endpoint].repoNames, repos[i]),
+			repoIDs:   append(res[endpoint].repoIDs, repoIDs[i]),
+		}
+	}
+	return res, nil
+}
+
+func (c *client) httpPost(
+	ctx context.Context,
+	method string,
+	url string,
+	payload any,
+) (resp *http.Response, err error) {
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err

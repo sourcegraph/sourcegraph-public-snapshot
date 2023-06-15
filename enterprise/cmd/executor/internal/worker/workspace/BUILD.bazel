@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "workspace",
@@ -15,7 +16,9 @@ go_library(
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
     deps = [
         "//enterprise/cmd/executor/internal/util",
+        "//enterprise/cmd/executor/internal/worker/cmdlogger",
         "//enterprise/cmd/executor/internal/worker/command",
+        "//enterprise/cmd/executor/internal/worker/files",
         "//enterprise/internal/executor/types",
         "//lib/errors",
         "@com_github_c2h5oh_datasize//:datasize",
@@ -33,7 +36,9 @@ go_test(
     embed = [":workspace"],
     deps = [
         "//enterprise/cmd/executor/internal/util",
+        "//enterprise/cmd/executor/internal/worker/cmdlogger",
         "//enterprise/cmd/executor/internal/worker/command",
+        "//enterprise/cmd/executor/internal/worker/files",
         "//enterprise/internal/executor/types",
         "//internal/executor",
         "//internal/observation",

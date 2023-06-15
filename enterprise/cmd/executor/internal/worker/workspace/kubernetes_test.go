@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -33,8 +32,8 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 		name                   string
 		job                    types.Job
 		cloneOptions           workspace.CloneOptions
-		mockFunc               func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand)
-		assertMockFunc         func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string)
+		mockFunc               func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand)
+		assertMockFunc         func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string)
 		expectedWorkspaceFiles map[string]string
 		expectedDockerScripts  map[string][]string
 		expectedErr            error
@@ -46,10 +45,10 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 				Token:  "token",
 				Commit: "commit",
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 0)
 			},
@@ -62,11 +61,11 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 				Commit:         "commit",
 				RepositoryName: "my-repo",
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 6)
 				// Init
@@ -156,11 +155,11 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 				Commit:         "commit",
 				RepositoryName: "my-repo",
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(errors.New("failed"))
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 1)
 			},
@@ -175,11 +174,11 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 				RepositoryName:      "my-repo",
 				RepositoryDirectory: "/my/dir",
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 6)
 				repoDir := path.Join(tempDir, "/my/dir")
@@ -248,11 +247,11 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 				RepositoryName: "my-repo",
 				FetchTags:      true,
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 6)
 				assert.Equal(t, []string{
@@ -279,11 +278,11 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 				RepositoryName: "my-repo",
 				ShallowClone:   true,
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 6)
 				assert.Equal(t, []string{
@@ -311,11 +310,11 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 				RepositoryName: "my-repo",
 				SparseCheckout: []string{"foo/bar/**"},
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 8)
 				// Fetch
@@ -391,11 +390,11 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 					},
 				},
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				filesStore.GetFunc.SetDefaultReturn(io.NopCloser(strings.NewReader("content2")), nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, logger.LogEntryFunc.History(), 1)
 				require.Len(t, cmd.RunFunc.History(), 0)
 				require.Len(t, filesStore.GetFunc.History(), 1)
@@ -431,11 +430,11 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 					},
 				},
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				filesStore.GetFunc.SetDefaultReturn(io.NopCloser(strings.NewReader("content2")), nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, logger.LogEntryFunc.History(), 1)
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 0)
@@ -448,7 +447,7 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			filesStore := workspace.NewMockFilesStore()
+			filesStore := workspace.NewMockStore()
 			cmd := workspace.NewMockCommand()
 			logger := workspace.NewMockLogger()
 
@@ -458,7 +457,17 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 
 			mountPath := t.TempDir()
 
-			ws, err := workspace.NewKubernetesWorkspace(context.Background(), filesStore, test.job, cmd, logger, test.cloneOptions, mountPath, operations)
+			ws, err := workspace.NewKubernetesWorkspace(
+				context.Background(),
+				filesStore,
+				test.job,
+				cmd,
+				logger,
+				test.cloneOptions,
+				mountPath,
+				false,
+				operations,
+			)
 			t.Cleanup(func() {
 				if ws != nil {
 					ws.Remove(context.Background(), false)
@@ -467,7 +476,7 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 
 			tempDir := ""
 			if ws != nil {
-				tempDir = filepath.Join(mountPath, ws.Path())
+				tempDir = ws.Path()
 			}
 
 			if test.expectedErr != nil {
@@ -504,4 +513,28 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 			test.assertMockFunc(t, logger, filesStore, cmd, tempDir)
 		})
 	}
+}
+
+func TestNewKubernetesWorkspace_SingleJob(t *testing.T) {
+	filesStore := workspace.NewMockStore()
+	cmd := workspace.NewMockCommand()
+	logger := workspace.NewMockLogger()
+
+	operations := command.NewOperations(&observation.TestContext)
+
+	ws, err := workspace.NewKubernetesWorkspace(
+		context.Background(),
+		filesStore,
+		types.Job{},
+		cmd,
+		logger,
+		workspace.CloneOptions{},
+		"",
+		true,
+		operations,
+	)
+	require.NoError(t, err)
+	assert.Empty(t, ws.Path())
+	assert.Len(t, ws.ScriptFilenames(), 0)
+	assert.Empty(t, ws.WorkingDirectory())
 }

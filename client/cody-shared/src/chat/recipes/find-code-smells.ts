@@ -3,14 +3,15 @@ import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { getNormalizedLanguageName } from './helpers'
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class FindCodeSmells implements Recipe {
-    public id = 'find-code-smells'
+    public id: RecipeID = 'find-code-smells'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
+            await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
             return Promise.resolve(null)
         }
 
@@ -35,7 +36,8 @@ If you have no ideas because the code looks fine, feel free to say that it alrea
                 prefix: assistantResponsePrefix,
                 text: assistantResponsePrefix,
             },
-            new Promise(resolve => resolve([]))
+            new Promise(resolve => resolve([])),
+            []
         )
     }
 }

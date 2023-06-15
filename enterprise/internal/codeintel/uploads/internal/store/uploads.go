@@ -12,7 +12,6 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -27,7 +26,7 @@ import (
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
 func (s *store) GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []shared.Upload, totalCount int, err error) {
-	ctx, trace, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{LogFields: buildGetUploadsLogFields(opts)})
+	ctx, trace, endObservation := s.operations.getUploads.With(ctx, &err, observation.Args{Attrs: buildGetUploadsLogFields(opts)})
 	defer endObservation(1, observation.Args{})
 
 	tableExpr, conds, cte := buildGetConditionsAndCte(opts)
@@ -175,7 +174,7 @@ var scanFirstUpload = basestore.NewFirstScanner(scanCompleteUpload)
 
 // GetUploadByID returns an upload by its identifier and boolean flag indicating its existence.
 func (s *store) GetUploadByID(ctx context.Context, id int) (_ shared.Upload, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("id", id)}})
+	ctx, _, endObservation := s.operations.getUploadByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{attribute.Int("id", id)}})
 	defer endObservation(1, observation.Args{})
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
@@ -221,9 +220,9 @@ WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id = %s AND %s
 
 // GetDumpsByIDs returns a set of dumps by identifiers.
 func (s *store) GetDumpsByIDs(ctx context.Context, ids []int) (_ []shared.Dump, err error) {
-	ctx, trace, endObservation := s.operations.getDumpsByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numIDs", len(ids)),
-		log.String("ids", intsToString(ids)),
+	ctx, trace, endObservation := s.operations.getDumpsByIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numIDs", len(ids)),
+		attribute.IntSlice("ids", ids),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -268,8 +267,8 @@ FROM lsif_dumps_with_repository_name u WHERE u.id IN (%s)
 `
 
 func (s *store) getUploadsByIDs(ctx context.Context, allowDeleted bool, ids ...int) (_ []shared.Upload, err error) {
-	ctx, _, endObservation := s.operations.getUploadsByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("ids", intsToString(ids)),
+	ctx, _, endObservation := s.operations.getUploadsByIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.IntSlice("ids", ids),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -411,21 +410,16 @@ func (s *store) GetUploadIDsWithReferences(
 	return flattened, recordsScanned, totalCount, nil
 }
 
-// GetVisibleUploadsMatchingMonikers returns visible uploads that refer (via package information) to any of the
-// given monikers' packages.
-//
-// Visibility is determined in two parts: if the index belongs to the given repository, it is visible if
-// it can be seen from the given index; otherwise, an index is visible if it can be seen from the tip of
-// the default branch of its own repository.
-// ReferenceIDs
+// GetVisibleUploadsMatchingMonikers returns visible uploads that refer (via package information) to any of
+// the given monikers' packages.
 func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositoryID int, commit string, monikers []precise.QualifiedMonikerData, limit, offset int) (_ shared.PackageReferenceScanner, _ int, err error) {
-	ctx, trace, endObservation := s.operations.getVisibleUploadsMatchingMonikers.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-		log.String("commit", commit),
-		log.Int("numMonikers", len(monikers)),
-		log.String("monikers", monikersToString(monikers)),
-		log.Int("limit", limit),
-		log.Int("offset", offset),
+	ctx, trace, endObservation := s.operations.getVisibleUploadsMatchingMonikers.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+		attribute.String("commit", commit),
+		attribute.Int("numMonikers", len(monikers)),
+		attribute.String("monikers", monikersToString(monikers)),
+		attribute.Int("limit", limit),
+		attribute.Int("offset", offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -438,22 +432,42 @@ func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositor
 		qs = append(qs, sqlf.Sprintf("(%s, %s, %s, %s)", moniker.Scheme, moniker.Manager, moniker.Name, moniker.Version))
 	}
 
-	visibleUploadsQuery := makeVisibleUploadsQuery(repositoryID, commit)
-
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	countQuery := sqlf.Sprintf(referenceIDsCountQuery, visibleUploadsQuery, repositoryID, sqlf.Join(qs, ", "), authzConds)
+	var (
+		countExpr            = sqlf.Sprintf("COUNT(distinct r.dump_id)")
+		emptyExpr            = sqlf.Sprintf("")
+		selectExpr           = sqlf.Sprintf("r.dump_id, r.scheme, r.manager, r.name, r.version")
+		orderLimitOffsetExpr = sqlf.Sprintf(`ORDER BY dump_id LIMIT %s OFFSET %s`, limit, offset)
+	)
+
+	countQuery := sqlf.Sprintf(
+		referenceIDsQuery,
+		repositoryID, dbutil.CommitBytea(commit),
+		repositoryID, dbutil.CommitBytea(commit),
+		countExpr,
+		sqlf.Join(qs, ", "),
+		authzConds,
+		emptyExpr,
+	)
 	totalCount, _, err := basestore.ScanFirstInt(s.db.Query(ctx, countQuery))
 	if err != nil {
 		return nil, 0, err
 	}
 	trace.AddEvent("TODO Domain Owner", attribute.Int("totalCount", totalCount))
 
-	query := sqlf.Sprintf(referenceIDsQuery, visibleUploadsQuery, repositoryID, sqlf.Join(qs, ", "), authzConds, limit, offset)
-	rows, err := s.db.Query(ctx, query)
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(
+		referenceIDsQuery,
+		repositoryID, dbutil.CommitBytea(commit),
+		repositoryID, dbutil.CommitBytea(commit),
+		selectExpr,
+		sqlf.Join(qs, ", "),
+		authzConds,
+		orderLimitOffsetExpr,
+	))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -461,44 +475,80 @@ func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositor
 	return PackageReferenceScannerFromRows(rows), totalCount, nil
 }
 
-const referenceIDsBaseQuery = `
+const referenceIDsQuery = `
+WITH
+visible_uploads AS (
+	SELECT t.upload_id
+	FROM (
+
+		-- Select the set of uploads visible from the given commit. This is done by looking
+		-- at each commit's row in the lsif_nearest_uploads table, and the (adjusted) set of
+		-- uploads from each commit's nearest ancestor according to the data compressed in
+		-- the links table.
+		--
+		-- NB: A commit should be present in at most one of these tables.
+		SELECT
+			t.upload_id,
+			row_number() OVER (PARTITION BY root, indexer ORDER BY distance) AS r
+		FROM (
+			SELECT
+				upload_id::integer,
+				u_distance::text::integer as distance
+			FROM lsif_nearest_uploads nu
+			CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
+			WHERE nu.repository_id = %s AND nu.commit_bytea = %s
+			UNION (
+				SELECT
+					upload_id::integer,
+					u_distance::text::integer + ul.distance as distance
+				FROM lsif_nearest_uploads_links ul
+				JOIN lsif_nearest_uploads nu ON nu.repository_id = ul.repository_id AND nu.commit_bytea = ul.ancestor_commit_bytea
+				CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
+				WHERE nu.repository_id = %s AND ul.commit_bytea = %s
+			)
+		) t
+		JOIN lsif_uploads u ON u.id = upload_id
+	) t
+	WHERE t.r <= 1
+)
+SELECT %s
 FROM lsif_references r
 LEFT JOIN lsif_dumps u ON u.id = r.dump_id
 JOIN repo ON repo.id = u.repository_id
 WHERE
+	-- Source moniker condition
 	(r.scheme, r.manager, r.name, r.version) IN (%s) AND
-	r.dump_id IN (SELECT * FROM visible_uploads) AND
-	%s -- authz conds
-`
 
-const referenceIDsCTEDefinitions = `
-WITH
-visible_uploads AS (
-	(%s)
-	UNION
-	(SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id != %s AND uvt.is_default_branch)
-)
-`
+	-- Visibility conditions
+	(
+		-- Visibility (local case): if the index belongs to the given repository,
+		-- it is visible if it can be seen from the given index
+		r.dump_id IN (SELECT * FROM visible_uploads) OR
 
-const referenceIDsQuery = referenceIDsCTEDefinitions + `
-SELECT r.dump_id, r.scheme, r.manager, r.name, r.version
-` + referenceIDsBaseQuery + `
-ORDER BY dump_id
-LIMIT %s OFFSET %s
-`
+		-- Visibility (remote case): An index is visible if it can be seen from the
+		-- tip of the default branch of its own repository.
+		EXISTS (
+			SELECT 1
+			FROM lsif_uploads_visible_at_tip uvt
+			WHERE
+				uvt.upload_id = r.dump_id AND
+				uvt.is_default_branch
+		)
+	) AND
 
-const referenceIDsCountQuery = referenceIDsCTEDefinitions + `
-SELECT COUNT(distinct r.dump_id)
-` + referenceIDsBaseQuery
+	-- Authz conditions
+	%s
+%s
+`
 
 // definitionDumpsLimit is the maximum number of records that can be returned from DefinitionDumps.
 var definitionDumpsLimit, _ = strconv.ParseInt(env.Get("PRECISE_CODE_INTEL_DEFINITION_DUMPS_LIMIT", "100", "The maximum number of dumps that can define the same package."), 10, 64)
 
 // GetDumpsWithDefinitionsForMonikers returns the set of dumps that define at least one of the given monikers.
 func (s *store) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []shared.Dump, err error) {
-	ctx, trace, endObservation := s.operations.getDumpsWithDefinitionsForMonikers.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numMonikers", len(monikers)),
-		log.String("monikers", monikersToString(monikers)),
+	ctx, trace, endObservation := s.operations.getDumpsWithDefinitionsForMonikers.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numMonikers", len(monikers)),
+		attribute.String("monikers", monikersToString(monikers)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -667,7 +717,7 @@ var scanUploadAuditLogs = basestore.NewSliceScanner(scanUploadAuditLog)
 // DeleteUploads deletes uploads by filter criteria. The associated repositories will be marked as dirty
 // so that their commit graphs will be updated in the background.
 func (s *store) DeleteUploads(ctx context.Context, opts shared.DeleteUploadsOptions) (err error) {
-	ctx, _, endObservation := s.operations.deleteUploads.With(ctx, &err, observation.Args{LogFields: buildDeleteUploadsLogFields(opts)})
+	ctx, _, endObservation := s.operations.deleteUploads.With(ctx, &err, observation.Args{Attrs: buildDeleteUploadsLogFields(opts)})
 	defer endObservation(1, observation.Args{})
 
 	conds := buildDeleteConditions(opts)
@@ -716,7 +766,9 @@ RETURNING repository_id
 // was deleted. The associated repository will be marked as dirty so that its commit graph will be updated in
 // the background.
 func (s *store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.deleteUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{log.Int("id", id)}})
+	ctx, _, endObservation := s.operations.deleteUploadByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", id),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	var a bool
@@ -754,11 +806,11 @@ RETURNING repository_id
 
 // ReindexUploads reindexes uploads matching the given filter criteria.
 func (s *store) ReindexUploads(ctx context.Context, opts shared.ReindexUploadsOptions) (err error) {
-	ctx, _, endObservation := s.operations.reindexUploads.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", opts.RepositoryID),
-		log.String("states", strings.Join(opts.States, ",")),
-		log.String("term", opts.Term),
-		log.Bool("visibleAtTip", opts.VisibleAtTip),
+	ctx, _, endObservation := s.operations.reindexUploads.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", opts.RepositoryID),
+		attribute.StringSlice("states", opts.States),
+		attribute.String("term", opts.Term),
+		attribute.Bool("visibleAtTip", opts.VisibleAtTip),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -828,8 +880,8 @@ WHERE u.id IN (SELECT id FROM index_candidates)
 
 // ReindexUploadByID reindexes an upload by its identifier.
 func (s *store) ReindexUploadByID(ctx context.Context, id int) (err error) {
-	ctx, _, endObservation := s.operations.reindexUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
+	ctx, _, endObservation := s.operations.reindexUploadByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -1134,30 +1186,30 @@ FROM (
 JOIN lsif_uploads_audit_logs au ON au.upload_id = s.upload_id
 `
 
-func buildGetUploadsLogFields(opts shared.GetUploadsOptions) []log.Field {
-	return []log.Field{
-		log.Int("repositoryID", opts.RepositoryID),
-		log.String("state", opts.State),
-		log.String("term", opts.Term),
-		log.Bool("visibleAtTip", opts.VisibleAtTip),
-		log.Int("dependencyOf", opts.DependencyOf),
-		log.Int("dependentOf", opts.DependentOf),
-		log.String("uploadedBefore", nilTimeToString(opts.UploadedBefore)),
-		log.String("uploadedAfter", nilTimeToString(opts.UploadedAfter)),
-		log.String("lastRetentionScanBefore", nilTimeToString(opts.LastRetentionScanBefore)),
-		log.Bool("inCommitGraph", opts.InCommitGraph),
-		log.Bool("allowExpired", opts.AllowExpired),
-		log.Bool("oldestFirst", opts.OldestFirst),
-		log.Int("limit", opts.Limit),
-		log.Int("offset", opts.Offset),
+func buildGetUploadsLogFields(opts shared.GetUploadsOptions) []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.Int("repositoryID", opts.RepositoryID),
+		attribute.String("state", opts.State),
+		attribute.String("term", opts.Term),
+		attribute.Bool("visibleAtTip", opts.VisibleAtTip),
+		attribute.Int("dependencyOf", opts.DependencyOf),
+		attribute.Int("dependentOf", opts.DependentOf),
+		attribute.String("uploadedBefore", nilTimeToString(opts.UploadedBefore)),
+		attribute.String("uploadedAfter", nilTimeToString(opts.UploadedAfter)),
+		attribute.String("lastRetentionScanBefore", nilTimeToString(opts.LastRetentionScanBefore)),
+		attribute.Bool("inCommitGraph", opts.InCommitGraph),
+		attribute.Bool("allowExpired", opts.AllowExpired),
+		attribute.Bool("oldestFirst", opts.OldestFirst),
+		attribute.Int("limit", opts.Limit),
+		attribute.Int("offset", opts.Offset),
 	}
 }
 
-func buildDeleteUploadsLogFields(opts shared.DeleteUploadsOptions) []log.Field {
-	return []log.Field{
-		log.String("states", strings.Join(opts.States, ",")),
-		log.String("term", opts.Term),
-		log.Bool("visibleAtTip", opts.VisibleAtTip),
+func buildDeleteUploadsLogFields(opts shared.DeleteUploadsOptions) []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.StringSlice("states", opts.States),
+		attribute.String("term", opts.Term),
+		attribute.Bool("visibleAtTip", opts.VisibleAtTip),
 	}
 }
 

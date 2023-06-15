@@ -3,69 +3,138 @@ package embed
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/log"
 
+	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
+	bgrepo "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/openai"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/sourcegraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const GET_EMBEDDINGS_MAX_RETRIES = 5
-const MAX_CODE_EMBEDDING_VECTORS = 768_000
-const MAX_TEXT_EMBEDDING_VECTORS = 128_000
+func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsClient, error) {
+	switch config.Provider {
+	case "sourcegraph":
+		return sourcegraph.NewClient(config), nil
+	case "openai":
+		return openai.NewClient(config), nil
+	default:
+		return nil, errors.Newf("invalid provider %q", config.Provider)
+	}
+}
 
-const EMBEDDING_BATCHES = 5
-const EMBEDDING_BATCH_SIZE = 512
-
-const maxFileSize = 1000000 // 1MB
-
-type ranksGetter func(ctx context.Context, repoName string) (types.RepoPathRanks, error)
+const (
+	getEmbeddingsMaxRetries = 5
+	embeddingsBatchSize     = 512
+	maxFileSize             = 1_000_000 // 1MB
+)
 
 // EmbedRepo embeds file contents from the given file names for a repository.
 // It separates the file names into code files and text files and embeds them separately.
 // It returns a RepoEmbeddingIndex containing the embeddings and metadata.
 func EmbedRepo(
 	ctx context.Context,
-	repoName api.RepoName,
-	revision api.CommitID,
-	excludePatterns []*paths.GlobPattern,
-	client EmbeddingsClient,
-	splitOptions split.SplitOptions,
+	client client.EmbeddingsClient,
+	contextService ContextService,
 	readLister FileReadLister,
-	getDocumentRanks ranksGetter,
-) (*embeddings.RepoEmbeddingIndex, error) {
-	allFiles, err := readLister.List(ctx)
-	if err != nil {
-		return nil, err
+	ranks types.RepoPathRanks,
+	opts EmbedRepoOpts,
+	logger log.Logger,
+	reportProgress func(*bgrepo.EmbedRepoStats),
+) (*embeddings.RepoEmbeddingIndex, []string, *bgrepo.EmbedRepoStats, error) {
+	var toIndex []FileEntry
+	var toRemove []string
+	var err error
+
+	isIncremental := opts.IndexedRevision != ""
+
+	if isIncremental {
+		toIndex, toRemove, err = readLister.Diff(ctx, opts.IndexedRevision)
+		if err != nil {
+			logger.Error(
+				"failed to get diff. Falling back to full index",
+				log.String("RepoName", string(opts.RepoName)),
+				log.String("revision", string(opts.Revision)),
+				log.String("old revision", string(opts.IndexedRevision)),
+				log.Error(err),
+			)
+			toRemove = nil
+			isIncremental = false
+		}
+	}
+
+	if !isIncremental { // full index
+		toIndex, err = readLister.List(ctx)
+		if err != nil {
+			return nil, nil, nil, err
+		}
 	}
 
 	var codeFileNames, textFileNames []FileEntry
-	for _, file := range allFiles {
-		if isValidTextFile(file.Name) {
+	for _, file := range toIndex {
+		if IsValidTextFile(file.Name) {
 			textFileNames = append(textFileNames, file)
 		} else {
 			codeFileNames = append(codeFileNames, file)
 		}
 	}
 
-	ranks, err := getDocumentRanks(ctx, string(repoName))
-	if err != nil {
-		return nil, err
+	stats := bgrepo.EmbedRepoStats{
+		CodeIndexStats: bgrepo.NewEmbedFilesStats(len(codeFileNames)),
+		TextIndexStats: bgrepo.NewEmbedFilesStats(len(textFileNames)),
+		IsIncremental:  isIncremental,
 	}
 
-	codeIndex, err := embedFiles(ctx, codeFileNames, client, excludePatterns, splitOptions, readLister, MAX_CODE_EMBEDDING_VECTORS, ranks)
-	if err != nil {
-		return nil, err
+	reportCodeProgress := func(codeIndexStats bgrepo.EmbedFilesStats) {
+		stats.CodeIndexStats = codeIndexStats
+		reportProgress(&stats)
 	}
 
-	textIndex, err := embedFiles(ctx, textFileNames, client, excludePatterns, splitOptions, readLister, MAX_TEXT_EMBEDDING_VECTORS, ranks)
+	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks, reportCodeProgress)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
+	}
+	stats.CodeIndexStats = codeIndexStats
+
+	reportTextProgress := func(textIndexStats bgrepo.EmbedFilesStats) {
+		stats.TextIndexStats = textIndexStats
+		reportProgress(&stats)
 	}
 
-	return &embeddings.RepoEmbeddingIndex{RepoName: repoName, Revision: revision, CodeIndex: codeIndex, TextIndex: textIndex}, nil
+	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks, reportTextProgress)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	stats.TextIndexStats = textIndexStats
+
+	embeddingsModel := client.GetModelIdentifier()
+	index := &embeddings.RepoEmbeddingIndex{
+		RepoName:        opts.RepoName,
+		Revision:        opts.Revision,
+		EmbeddingsModel: embeddingsModel,
+		CodeIndex:       codeIndex,
+		TextIndex:       textIndex,
+	}
+
+	return index, toRemove, &stats, nil
+}
+
+type EmbedRepoOpts struct {
+	RepoName          api.RepoName
+	Revision          api.CommitID
+	ExcludePatterns   []*paths.GlobPattern
+	SplitOptions      codeintelContext.SplitOptions
+	MaxCodeEmbeddings int
+	MaxTextEmbeddings int
+
+	// If set, we already have an index for a previous commit.
+	IndexedRevision api.CommitID
 }
 
 // embedFiles embeds file contents from the given file names. Since embedding models can only handle a certain amount of text (tokens) we cannot embed
@@ -74,16 +143,18 @@ func EmbedRepo(
 func embedFiles(
 	ctx context.Context,
 	files []FileEntry,
-	client EmbeddingsClient,
+	client client.EmbeddingsClient,
+	contextService ContextService,
 	excludePatterns []*paths.GlobPattern,
-	splitOptions split.SplitOptions,
+	splitOptions codeintelContext.SplitOptions,
 	reader FileReader,
 	maxEmbeddingVectors int,
 	repoPathRanks types.RepoPathRanks,
-) (embeddings.EmbeddingIndex, error) {
+	reportProgress func(bgrepo.EmbedFilesStats),
+) (embeddings.EmbeddingIndex, bgrepo.EmbedFilesStats, error) {
 	dimensions, err := client.GetDimensions()
 	if err != nil {
-		return embeddings.EmbeddingIndex{}, err
+		return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, err
 	}
 
 	index := embeddings.EmbeddingIndex{
@@ -93,7 +164,9 @@ func embedFiles(
 		Ranks:           make([]float32, 0, len(files)/2),
 	}
 
-	var batch []split.EmbeddableChunk
+	stats := bgrepo.NewEmbedFilesStats(len(files))
+
+	var batch []codeintelContext.EmbeddableChunk
 
 	flush := func() error {
 		if len(batch) == 0 {
@@ -111,18 +184,20 @@ func embedFiles(
 			index.Ranks = append(index.Ranks, float32(repoPathRanks.Paths[chunk.FileName]))
 		}
 
-		batchEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, batchChunks, GET_EMBEDDINGS_MAX_RETRIES)
+		batchEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, batchChunks, getEmbeddingsMaxRetries)
 		if err != nil {
 			return errors.Wrap(err, "error while getting embeddings")
 		}
 		index.Embeddings = append(index.Embeddings, embeddings.Quantize(batchEmbeddings)...)
+
 		batch = batch[:0] // reset batch
+		reportProgress(stats)
 		return nil
 	}
 
-	addToBatch := func(chunk split.EmbeddableChunk) error {
+	addToBatch := func(chunk codeintelContext.EmbeddableChunk) error {
 		batch = append(batch, chunk)
-		if len(batch) >= EMBEDDING_BATCH_SIZE {
+		if len(batch) >= embeddingsBatchSize {
 			// Flush if we've hit batch size
 			return flush()
 		}
@@ -130,46 +205,62 @@ func embedFiles(
 	}
 
 	for _, file := range files {
-		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
-		if len(index.RowMetadata) > maxEmbeddingVectors {
-			break
+		if ctx.Err() != nil {
+			return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, ctx.Err()
 		}
 
-		if isExcludedFilePath(file.Name, excludePatterns) {
+		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
+		if stats.ChunksEmbedded >= maxEmbeddingVectors {
+			stats.Skip(SkipReasonMaxEmbeddings, int(file.Size))
 			continue
 		}
 
 		if file.Size > maxFileSize {
+			stats.Skip(SkipReasonLarge, int(file.Size))
+			continue
+		}
+
+		if isExcludedFilePath(file.Name, excludePatterns) {
+			stats.Skip(SkipReasonExcluded, int(file.Size))
 			continue
 		}
 
 		contentBytes, err := reader.Read(ctx, file.Name)
 		if err != nil {
-			return embeddings.EmbeddingIndex{}, errors.Wrap(err, "error while reading a file")
+			return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, errors.Wrap(err, "error while reading a file")
 		}
 
-		if embeddable, _ := isEmbeddableFileContent(contentBytes); !embeddable {
+		if embeddable, skipReason := isEmbeddableFileContent(contentBytes); !embeddable {
+			stats.Skip(skipReason, len(contentBytes))
 			continue
 		}
 
-		for _, chunk := range split.SplitIntoEmbeddableChunks(string(contentBytes), file.Name, splitOptions) {
-			if err := addToBatch(chunk); err != nil {
-				return embeddings.EmbeddingIndex{}, err
-			}
+		// At this point, we have determined that we want to embed this file.
+		chunks, err := contextService.SplitIntoEmbeddableChunks(ctx, string(contentBytes), file.Name, splitOptions)
+		if err != nil {
+			return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, errors.Wrap(err, "error while splitting file")
 		}
+		for _, chunk := range chunks {
+			if err := addToBatch(chunk); err != nil {
+				return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, err
+			}
+			stats.AddChunk(len(chunk.Content))
+		}
+		stats.AddFile()
 	}
 
 	// Always do a final flush
 	if err := flush(); err != nil {
-		return embeddings.EmbeddingIndex{}, err
+		return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, err
 	}
 
-	return index, nil
+	return index, stats, nil
 }
 
 type FileReadLister interface {
 	FileReader
 	FileLister
+	FileDiffer
 }
 
 type FileEntry struct {
@@ -183,4 +274,8 @@ type FileLister interface {
 
 type FileReader interface {
 	Read(context.Context, string) ([]byte, error)
+}
+
+type FileDiffer interface {
+	Diff(context.Context, api.CommitID) ([]FileEntry, []string, error)
 }

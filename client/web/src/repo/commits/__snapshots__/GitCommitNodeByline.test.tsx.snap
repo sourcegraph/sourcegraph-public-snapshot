@@ -99,7 +99,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
       >
         Alice Zhao
       </span>
-       authored and commited by 
+       authored and committed by 
       <a
         class="font-weight-bold"
         href="https://example.com/bobyang"
@@ -148,7 +148,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
       >
         Alice Zhao
       </span>
-       authored and commited by 
+       authored and committed by 
       <a
         class="font-weight-bold"
         href="https://example.com/bobyang"

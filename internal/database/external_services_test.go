@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -148,7 +149,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			name:    "2 errors",
 			kind:    extsvc.KindGitHub,
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": ""}`,
-			wantErr: "2 errors occurred:\n\t* token: String length must be greater than or equal to 1\n\t* token must be set",
+			wantErr: "2 errors occurred:\n\t* token: String length must be greater than or equal to 1\n\t* either token or GitHub App Details must be set",
 		},
 		{
 			name:   "no conflicting rate limit",
@@ -471,7 +472,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			update: &ExternalServiceUpdate{
 				DisplayName:    strptr("GITHUB (updated) #5"),
 				Config:         strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
-				TokenExpiresAt: timePtr(time.Now()),
+				TokenExpiresAt: pointers.Ptr(time.Now()),
 			},
 			wantCloudDefault:   true,
 			wantTokenExpiresAt: true,

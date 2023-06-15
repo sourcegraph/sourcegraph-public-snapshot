@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "env",
@@ -23,6 +24,7 @@ go_test(
     ],
     embed = [":env"],
     deps = [
+        "//lib/pointers",
         "@com_github_google_go_cmp//cmp",
         "@in_gopkg_yaml_v2//:yaml_v2",
     ],

@@ -10,6 +10,8 @@ import {
     ExternalServiceKind,
     UserBatchChangesCodeHostsResult,
 } from '../../../graphql-operations'
+import { BATCH_CHANGES_SITE_CONFIGURATION } from '../backend'
+import { noRolloutWindowMockResult, rolloutWindowConfigMockResult } from '../mocks'
 
 import { USER_CODE_HOSTS } from './backend'
 import { BatchChangesSettingsArea } from './BatchChangesSettingsArea'
@@ -63,6 +65,25 @@ export const Overview: Story = () => (
                                     externalServiceURL: 'https://github.com/',
                                     requiresSSH: false,
                                     requiresUsername: false,
+                                    supportsCommitSigning: true,
+                                    commitSigningConfiguration: {
+                                        __typename: 'GitHubApp',
+                                        id: '123',
+                                        appID: 123,
+                                        name: 'Sourcegraph Commit Signing',
+                                        appURL: 'https://github.com/apps/sourcegraph-commit-signing',
+                                        baseURL: 'https://github.com/',
+                                        logo: 'https://github.com/identicons/app/app/commit-testing-local',
+                                    },
+                                },
+                                {
+                                    credential: null,
+                                    externalServiceKind: ExternalServiceKind.GITHUB,
+                                    externalServiceURL: 'https://github.mycompany.com/',
+                                    requiresSSH: false,
+                                    requiresUsername: false,
+                                    supportsCommitSigning: true,
+                                    commitSigningConfiguration: null,
                                 },
                                 {
                                     credential: null,
@@ -70,6 +91,8 @@ export const Overview: Story = () => (
                                     externalServiceURL: 'https://gitlab.com/',
                                     requiresSSH: false,
                                     requiresUsername: false,
+                                    supportsCommitSigning: false,
+                                    commitSigningConfiguration: null,
                                 },
                                 {
                                     credential: sshCredential(true),
@@ -77,6 +100,8 @@ export const Overview: Story = () => (
                                     externalServiceURL: 'https://bitbucket.sgdev.org/',
                                     requiresSSH: true,
                                     requiresUsername: false,
+                                    supportsCommitSigning: false,
+                                    commitSigningConfiguration: null,
                                 },
                                 {
                                     credential: null,
@@ -84,9 +109,17 @@ export const Overview: Story = () => (
                                     externalServiceURL: 'https://bitbucket.org/',
                                     requiresSSH: false,
                                     requiresUsername: true,
+                                    supportsCommitSigning: false,
+                                    commitSigningConfiguration: null,
                                 }
                             ),
                         },
+                    },
+                    {
+                        request: {
+                            query: getDocumentNode(BATCH_CHANGES_SITE_CONFIGURATION),
+                        },
+                        result: noRolloutWindowMockResult,
                     },
                 ]}
             >
@@ -118,6 +151,16 @@ export const ConfigAdded: Story = () => (
                                     externalServiceURL: 'https://github.com/',
                                     requiresSSH: false,
                                     requiresUsername: false,
+                                    supportsCommitSigning: true,
+                                    commitSigningConfiguration: {
+                                        __typename: 'GitHubApp',
+                                        id: '123',
+                                        appID: 123,
+                                        name: 'Sourcegraph Commit Signing',
+                                        appURL: 'https://github.com/apps/sourcegraph-commit-signing',
+                                        baseURL: 'https://github.com/',
+                                        logo: 'https://github.com/identicons/app/app/commit-testing-local',
+                                    },
                                 },
                                 {
                                     credential: sshCredential(false),
@@ -125,6 +168,8 @@ export const ConfigAdded: Story = () => (
                                     externalServiceURL: 'https://gitlab.com/',
                                     requiresSSH: false,
                                     requiresUsername: false,
+                                    supportsCommitSigning: false,
+                                    commitSigningConfiguration: null,
                                 },
                                 {
                                     credential: sshCredential(false),
@@ -132,6 +177,8 @@ export const ConfigAdded: Story = () => (
                                     externalServiceURL: 'https://bitbucket.sgdev.org/',
                                     requiresSSH: true,
                                     requiresUsername: false,
+                                    supportsCommitSigning: false,
+                                    commitSigningConfiguration: null,
                                 },
                                 {
                                     credential: sshCredential(false),
@@ -139,9 +186,17 @@ export const ConfigAdded: Story = () => (
                                     externalServiceURL: 'https://bitbucket.org/',
                                     requiresSSH: false,
                                     requiresUsername: true,
+                                    supportsCommitSigning: false,
+                                    commitSigningConfiguration: null,
                                 }
                             ),
                         },
+                    },
+                    {
+                        request: {
+                            query: getDocumentNode(BATCH_CHANGES_SITE_CONFIGURATION),
+                        },
+                        result: noRolloutWindowMockResult,
                     },
                 ]}
             >
@@ -152,3 +207,82 @@ export const ConfigAdded: Story = () => (
 )
 
 ConfigAdded.storyName = 'Config added'
+
+export const RolloutWindowsConfigurationStory: Story = () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider
+                mocks={[
+                    {
+                        request: {
+                            query: getDocumentNode(USER_CODE_HOSTS),
+                            variables: {
+                                user: 'user-id-2',
+                                after: null,
+                                first: 15,
+                            },
+                        },
+                        result: {
+                            data: codeHostsResult(
+                                {
+                                    credential: sshCredential(false),
+                                    externalServiceKind: ExternalServiceKind.GITHUB,
+                                    externalServiceURL: 'https://github.com/',
+                                    requiresSSH: false,
+                                    requiresUsername: false,
+                                    supportsCommitSigning: true,
+                                    commitSigningConfiguration: {
+                                        __typename: 'GitHubApp',
+                                        id: '123',
+                                        appID: 123,
+                                        name: 'Sourcegraph Commit Signing',
+                                        appURL: 'https://github.com/apps/sourcegraph-commit-signing',
+                                        baseURL: 'https://github.com/',
+                                        logo: 'https://github.com/identicons/app/app/commit-testing-local',
+                                    },
+                                },
+                                {
+                                    credential: sshCredential(false),
+                                    externalServiceKind: ExternalServiceKind.GITLAB,
+                                    externalServiceURL: 'https://gitlab.com/',
+                                    requiresSSH: false,
+                                    requiresUsername: false,
+                                    supportsCommitSigning: false,
+                                    commitSigningConfiguration: null,
+                                },
+                                {
+                                    credential: sshCredential(false),
+                                    externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
+                                    externalServiceURL: 'https://bitbucket.sgdev.org/',
+                                    requiresSSH: true,
+                                    requiresUsername: false,
+                                    supportsCommitSigning: false,
+                                    commitSigningConfiguration: null,
+                                },
+                                {
+                                    credential: sshCredential(false),
+                                    externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
+                                    externalServiceURL: 'https://bitbucket.org/',
+                                    requiresSSH: false,
+                                    requiresUsername: true,
+                                    supportsCommitSigning: false,
+                                    commitSigningConfiguration: null,
+                                }
+                            ),
+                        },
+                    },
+                    {
+                        request: {
+                            query: getDocumentNode(BATCH_CHANGES_SITE_CONFIGURATION),
+                        },
+                        result: rolloutWindowConfigMockResult,
+                    },
+                ]}
+            >
+                <BatchChangesSettingsArea {...props} user={{ id: 'user-id-2' }} />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+
+RolloutWindowsConfigurationStory.storyName = 'Rollout Windows configured'

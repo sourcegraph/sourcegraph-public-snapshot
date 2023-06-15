@@ -18,20 +18,6 @@
     align-self: stretch;
 }
 
-.menu-close {
-    @media (--xs-breakpoint-down) {
-        display: none !important;
-    }
-}
-.menu-button {
-    color: var(--icon-color);
-    display: none;
-    padding: 0;
-    @media (--xs-breakpoint-down) {
-        display: block;
-    }
-}
-
 .logo {
     display: flex;
     height: 100%;
@@ -55,19 +41,4 @@
     margin: 0;
     padding: 0;
     gap: 1rem;
-    @media (--xs-breakpoint-down) {
-        border-radius: var(--border-radius);
-        border: 1px solid var(--border-color-2);
-        overflow: hidden;
-        width: 9.5rem;
-        height: auto;
-        flex-direction: column;
-        top: 0;
-        left: 0;
-        background: var(--color-bg-1);
-        z-index: 1;
-        position: absolute;
-        transform: translate3d(46px, 40px, 0);
-        gap: 0;
-    }
 }
