@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
@@ -97,7 +98,7 @@ func (r *indexConfigurationResolver) Configuration(ctx context.Context) (_ *stri
 		return nil, nil
 	}
 
-	return resolverstubs.NonZeroPtr(string(configuration.Data)), nil
+	return pointers.NonZeroPtr(string(configuration.Data)), nil
 }
 
 func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) (_ resolverstubs.InferredConfigurationResolver, err error) {

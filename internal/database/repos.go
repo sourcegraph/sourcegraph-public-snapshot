@@ -1079,7 +1079,7 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 							LIMIT 1
 						) AND
 
-						-- The ranks became visible when the progres objeect was
+						-- The ranks became visible when the progress object was
 						-- marked as completed. The timestamp on the path ranks
 						-- table is now an insertion date, but inserted records
 						-- may not be visible to active ranking jobs.

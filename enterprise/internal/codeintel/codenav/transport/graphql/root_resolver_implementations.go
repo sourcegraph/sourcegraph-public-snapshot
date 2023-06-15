@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // DefaultReferencesPageSize is the implementation result page size when no limit is supplied.
@@ -20,7 +21,7 @@ const DefaultImplementationsPageSize = 100
 var ErrIllegalLimit = errors.New("illegal limit")
 
 func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
-	limit := int(resolverstubs.Deref(args.First, DefaultImplementationsPageSize))
+	limit := int(pointers.Deref(args.First, DefaultImplementationsPageSize))
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
@@ -63,11 +64,11 @@ func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *res
 		impls = filtered
 	}
 
-	return newLocationConnectionResolver(impls, resolverstubs.NonZeroPtr(nextCursor), r.locationResolver), nil
+	return newLocationConnectionResolver(impls, pointers.NonZeroPtr(nextCursor), r.locationResolver), nil
 }
 
 func (r *gitBlobLSIFDataResolver) Prototypes(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
-	limit := int(resolverstubs.Deref(args.First, DefaultImplementationsPageSize))
+	limit := int(pointers.Deref(args.First, DefaultImplementationsPageSize))
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
@@ -110,7 +111,7 @@ func (r *gitBlobLSIFDataResolver) Prototypes(ctx context.Context, args *resolver
 		prototypes = filtered
 	}
 
-	return newLocationConnectionResolver(prototypes, resolverstubs.NonZeroPtr(nextCursor), r.locationResolver), nil
+	return newLocationConnectionResolver(prototypes, pointers.NonZeroPtr(nextCursor), r.locationResolver), nil
 }
 
 //

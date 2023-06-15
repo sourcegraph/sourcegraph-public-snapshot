@@ -42,16 +42,12 @@ go_test(
 pkg_tar(
     name = "tar_batcheshelper",
     srcs = [":batcheshelper"],
+    package_dir = "/usr/local/bin",
 )
 
 oci_image(
     name = "image",
     base = "@wolfi_batcheshelper_base",
-    entrypoint = [
-        "/sbin/tini",
-        "--",
-        "/batcheshelper",
-    ],
     tars = [":tar_batcheshelper"],
 )
 
@@ -67,7 +63,10 @@ container_structure_test(
     configs = ["image_test.yaml"],
     driver = "docker",
     image = ":image",
-    tags = ["requires-network"],
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
 )
 
 oci_push(

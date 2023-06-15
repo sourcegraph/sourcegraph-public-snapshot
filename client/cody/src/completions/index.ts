@@ -64,7 +64,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         document: vscode.TextDocument,
         position: vscode.Position,
         context: vscode.InlineCompletionContext,
-        token: vscode.CancellationToken
+        // Making it optional here to execute multiple suggestion in parallel from the CLI script.
+        token?: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionItem[]> {
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
@@ -82,12 +83,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         document: vscode.TextDocument,
         position: vscode.Position,
         context: vscode.InlineCompletionContext,
-        token: vscode.CancellationToken
+        token?: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionItem[]> {
-        this.abortOpenInlineCompletions()
         const abortController = new AbortController()
-        token.onCancellationRequested(() => abortController.abort())
-        this.abortOpenInlineCompletions = () => abortController.abort()
+        if (token) {
+            this.abortOpenInlineCompletions()
+            token.onCancellationRequested(() => abortController.abort())
+            this.abortOpenInlineCompletions = () => abortController.abort()
+        }
 
         CompletionLogger.clear()
 
@@ -126,9 +129,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const similarCode = await getContext({
             currentEditor,
+            prefix,
+            suffix,
             history: this.history,
-            targetText: lastNLines(prefix, SNIPPET_WINDOW_SIZE),
-            windowSize: SNIPPET_WINDOW_SIZE,
+            jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
             // TODO: Document this as behavior change in the PR.
             // To simplify the setup, we increase the context maximum character count to the whole
             // prompt size. This means we slightly over-fetch context but I don't think this is

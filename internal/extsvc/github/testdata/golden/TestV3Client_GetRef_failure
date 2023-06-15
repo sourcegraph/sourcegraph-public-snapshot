@@ -1,0 +1,6 @@
+{
+  "URL": "https://api.github.com/repos/sourcegraph/automation-testing/commits/refs/heads/butterfly-sponge-sandwich-rotation-technique-12345678-lol",
+  "Code": 422,
+  "Message": "No commit found for SHA: refs/heads/butterfly-sponge-sandwich-rotation-technique-12345678-lol",
+  "documentation_url": "https://docs.github.com/rest/commits/commits#get-a-commit"
+ }

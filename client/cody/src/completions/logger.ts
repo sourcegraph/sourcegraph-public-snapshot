@@ -16,6 +16,10 @@ const READ_TIMEOUT = 750
 
 const displayedCompletions: Map<string, CompletionEvent> = new Map()
 
+export function logCompletionEvent(name: string, params?: unknown): void {
+    logEvent(`CodyVSCodeExtension:completion:${name}`, params, params)
+}
+
 export function start(
     {
         type,
@@ -41,8 +45,7 @@ export function start(
         forceRead: false,
     })
 
-    const logParams = { type, multilineMode, providerIdentifier }
-    logEvent('CodyVSCodeExtension:completion:started', logParams, logParams)
+    logCompletionEvent('started', { type, multilineMode, providerIdentifier })
 
     return id
 }
@@ -63,23 +66,22 @@ export function accept(id: string): void {
         return
     }
     completionEvent.forceRead = true
-    const logParams = {
+
+    logSuggestionEvent()
+    logCompletionEvent('accepted', {
         type: completionEvent.type,
         multilineMode: completionEvent.multilineMode,
         providerIdentifier: completionEvent.providerIdentifier,
-    }
-    logSuggestionEvent()
-    logEvent('CodyVSCodeExtension:completion:accepted', logParams, logParams)
+    })
 }
 
 export function noResponse(id: string): void {
     const completionEvent = displayedCompletions.get(id)
-    const logParams = {
+    logCompletionEvent('noResponse', {
         type: completionEvent?.type,
         multilineMode: completionEvent?.multilineMode,
         providerIdentifier: completionEvent?.providerIdentifier,
-    }
-    logEvent('CodyVSCodeExtension:completion:noResponse', logParams, logParams)
+    })
 }
 
 /**
@@ -106,16 +108,15 @@ function logSuggestionEvent(): void {
         const latency = suggestedAt - startedAt
         const displayDuration = now - suggestedAt
         const read = displayDuration >= READ_TIMEOUT
-        const logParams = {
+
+        logCompletionEvent('suggested', {
             type,
             multilineMode,
             providerIdentifier,
             latency,
             displayDuration,
             read: forceRead || read,
-        }
-
-        logEvent('CodyVSCodeExtension:completion:suggested', logParams, logParams)
+        })
     }
     displayedCompletions.clear()
 }

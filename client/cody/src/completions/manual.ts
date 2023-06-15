@@ -4,20 +4,13 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { logEvent } from '../event-logger'
-
 import { Completion } from '.'
 import { ReferenceSnippet, getContext } from './context'
 import { CompletionsDocumentProvider } from './docprovider'
 import { getCurrentDocContext } from './document'
 import { History } from './history'
-import {
-    batchCompletions,
-    sliceUntilFirstNLinesOfSuffixMatch,
-    SNIPPET_WINDOW_SIZE,
-    lastNLines,
-    messagesToText,
-} from './utils'
+import { logCompletionEvent } from './logger'
+import { batchCompletions, sliceUntilFirstNLinesOfSuffixMatch, SNIPPET_WINDOW_SIZE, messagesToText } from './utils'
 
 const LOG_MANUAL = { type: 'manual' }
 
@@ -99,9 +92,10 @@ export class ManualCompletionService {
 
         const similarCode = await getContext({
             currentEditor,
+            prefix,
+            suffix,
             history: this.history,
-            targetText: lastNLines(prefix, SNIPPET_WINDOW_SIZE),
-            windowSize: SNIPPET_WINDOW_SIZE,
+            jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
             maxChars: contextChars,
             codebaseContext: this.codebaseContext,
         })
@@ -118,14 +112,14 @@ export class ManualCompletionService {
         )
 
         try {
-            logEvent('CodyVSCodeExtension:completion:started', LOG_MANUAL, LOG_MANUAL)
+            logCompletionEvent('started', LOG_MANUAL)
             const completions = await completer.generateCompletions(abortController.signal, 3)
             this.documentProvider.addCompletions(completionsUri, ext, completions, {
                 suffix: '',
                 elapsedMillis: 0,
                 llmOptions: null,
             })
-            logEvent('CodyVSCodeExtension:completion:suggested', LOG_MANUAL, LOG_MANUAL)
+            logCompletionEvent('suggested', LOG_MANUAL)
         } catch (error) {
             if (error.message === 'aborted') {
                 return

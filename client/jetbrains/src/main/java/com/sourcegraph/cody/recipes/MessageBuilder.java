@@ -24,8 +24,8 @@ public class MessageBuilder {
     return appendCodeSnippet(truncatedText.getValue());
   }
 
-  public MessageBuilder appendCodeSnippet(SelectedText selectedText) {
-    return appendCodeSnippet(selectedText.getValue());
+  public MessageBuilder appendCodeSnippet(OriginalText originalText) {
+    return appendCodeSnippet(originalText.getValue());
   }
 
   private MessageBuilder appendCodeSnippet(String code) {

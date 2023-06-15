@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"testing"
 	"time"
 
@@ -18,12 +19,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-func int32Ptr(n int32) *int32 {
-	return &n
-}
 
 func TestMaybeCheckAnomalies(t *testing.T) {
 	logger := logtest.Scoped(t)
@@ -108,7 +106,7 @@ func TestCheckAnomalies(t *testing.T) {
 	}
 	mocks.licenses.List = func(ctx context.Context, opt dbLicensesListOptions) ([]*dbLicense, error) {
 		if opt.ProductSubscriptionID == sub2ID {
-			return []*dbLicense{{ID: licenseID, LicenseKey: "key", ProductSubscriptionID: opt.ProductSubscriptionID, SiteID: &siteID, LicenseVersion: int32Ptr(2)}}, nil
+			return []*dbLicense{{ID: licenseID, LicenseKey: "key", ProductSubscriptionID: opt.ProductSubscriptionID, SiteID: &siteID, LicenseVersion: pointers.Ptr(int32(2))}}, nil
 		}
 		return []*dbLicense{}, nil
 	}
@@ -163,7 +161,7 @@ func TestCheckAnomalies(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	slackMessage := fmt.Sprintf(slackMessageFmt, licenseID, "https://sourcegraph.acme.com", sub2ID, sub2ID, siteID)
+	slackMessage := fmt.Sprintf(slackMessageFmt, "https://sourcegraph.acme.com", url.QueryEscape(sub2ID), url.QueryEscape(licenseID), licenseID, siteID)
 
 	tests := []struct {
 		name      string

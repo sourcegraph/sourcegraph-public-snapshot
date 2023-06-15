@@ -5,7 +5,7 @@ import {
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { mockVSCodeExports } from '../testSetup/vscode'
+import { mockVSCodeExports } from '../testutils/vscode'
 
 import { CodyCompletionItemProvider, inlineCompletionsCache } from '.'
 import { createProviderConfig } from './providers/anthropic'
@@ -33,6 +33,10 @@ jest.mock('vscode', () => ({
             return null
         },
     },
+}))
+
+jest.mock('./context-embeddings.ts', () => ({
+    getContextFromEmbeddings: () => [],
 }))
 
 function createCompletionResponse(completion: string): CompletionResponse {
@@ -113,6 +117,7 @@ async function complete(
         },
     }
     const document: any = {
+        filename: 'test.ts',
         languageId,
         offsetAt(): number {
             return 0

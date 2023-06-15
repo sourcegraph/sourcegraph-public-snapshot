@@ -57755,7 +57755,7 @@ func NewMockTeamStore() *MockTeamStore {
 			},
 		},
 		CreateTeamFunc: &TeamStoreCreateTeamFunc{
-			defaultHook: func(context.Context, *types.Team) (r0 error) {
+			defaultHook: func(context.Context, *types.Team) (r0 *types.Team, r1 error) {
 				return
 			},
 		},
@@ -57837,7 +57837,7 @@ func NewStrictMockTeamStore() *MockTeamStore {
 			},
 		},
 		CreateTeamFunc: &TeamStoreCreateTeamFunc{
-			defaultHook: func(context.Context, *types.Team) error {
+			defaultHook: func(context.Context, *types.Team) (*types.Team, error) {
 				panic("unexpected invocation of MockTeamStore.CreateTeam")
 			},
 		},
@@ -58280,23 +58280,23 @@ func (c TeamStoreCountTeamsFuncCall) Results() []interface{} {
 // TeamStoreCreateTeamFunc describes the behavior when the CreateTeam method
 // of the parent MockTeamStore instance is invoked.
 type TeamStoreCreateTeamFunc struct {
-	defaultHook func(context.Context, *types.Team) error
-	hooks       []func(context.Context, *types.Team) error
+	defaultHook func(context.Context, *types.Team) (*types.Team, error)
+	hooks       []func(context.Context, *types.Team) (*types.Team, error)
 	history     []TeamStoreCreateTeamFuncCall
 	mutex       sync.Mutex
 }
 
 // CreateTeam delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockTeamStore) CreateTeam(v0 context.Context, v1 *types.Team) error {
-	r0 := m.CreateTeamFunc.nextHook()(v0, v1)
-	m.CreateTeamFunc.appendCall(TeamStoreCreateTeamFuncCall{v0, v1, r0})
-	return r0
+func (m *MockTeamStore) CreateTeam(v0 context.Context, v1 *types.Team) (*types.Team, error) {
+	r0, r1 := m.CreateTeamFunc.nextHook()(v0, v1)
+	m.CreateTeamFunc.appendCall(TeamStoreCreateTeamFuncCall{v0, v1, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the CreateTeam method of
 // the parent MockTeamStore instance is invoked and the hook queue is empty.
-func (f *TeamStoreCreateTeamFunc) SetDefaultHook(hook func(context.Context, *types.Team) error) {
+func (f *TeamStoreCreateTeamFunc) SetDefaultHook(hook func(context.Context, *types.Team) (*types.Team, error)) {
 	f.defaultHook = hook
 }
 
@@ -58304,7 +58304,7 @@ func (f *TeamStoreCreateTeamFunc) SetDefaultHook(hook func(context.Context, *typ
 // CreateTeam method of the parent MockTeamStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *TeamStoreCreateTeamFunc) PushHook(hook func(context.Context, *types.Team) error) {
+func (f *TeamStoreCreateTeamFunc) PushHook(hook func(context.Context, *types.Team) (*types.Team, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -58312,20 +58312,20 @@ func (f *TeamStoreCreateTeamFunc) PushHook(hook func(context.Context, *types.Tea
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *TeamStoreCreateTeamFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *types.Team) error {
-		return r0
+func (f *TeamStoreCreateTeamFunc) SetDefaultReturn(r0 *types.Team, r1 error) {
+	f.SetDefaultHook(func(context.Context, *types.Team) (*types.Team, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *TeamStoreCreateTeamFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *types.Team) error {
-		return r0
+func (f *TeamStoreCreateTeamFunc) PushReturn(r0 *types.Team, r1 error) {
+	f.PushHook(func(context.Context, *types.Team) (*types.Team, error) {
+		return r0, r1
 	})
 }
 
-func (f *TeamStoreCreateTeamFunc) nextHook() func(context.Context, *types.Team) error {
+func (f *TeamStoreCreateTeamFunc) nextHook() func(context.Context, *types.Team) (*types.Team, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -58366,7 +58366,10 @@ type TeamStoreCreateTeamFuncCall struct {
 	Arg1 *types.Team
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 *types.Team
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -58378,7 +58381,7 @@ func (c TeamStoreCreateTeamFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c TeamStoreCreateTeamFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // TeamStoreCreateTeamMemberFunc describes the behavior when the

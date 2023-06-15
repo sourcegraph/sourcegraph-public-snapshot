@@ -1,7 +1,9 @@
 import * as vscode from 'vscode'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { DOTCOM_URL, LOCAL_APP_URL, isLoggedIn } from './chat/protocol'
@@ -16,9 +18,10 @@ import { ProviderConfig } from './completions/providers/provider'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './completions/providers/unstable-codegen'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
-import { logEvent, updateEventLogger } from './event-logger'
+import { logEvent, updateEventLogger, eventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { FixupController } from './non-stop/FixupController'
+import { showSetupNotification } from './notifications/setup-notification'
 import { getRgPath } from './rg'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
@@ -29,7 +32,8 @@ import {
     SecretStorage,
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
-import { createStatusBar } from './services/StatusBar'
+import { CodyStatusBar, createStatusBar } from './services/StatusBar'
+import { TestSupport } from './test-support'
 
 const CODY_FEEDBACK_URL =
     'https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode'
@@ -85,13 +89,16 @@ const register = async (
     const disposables: vscode.Disposable[] = []
 
     await updateEventLogger(initialConfig, localStorage)
-
     // Controller for inline assist
     const commentController = new InlineController(context.extensionPath)
     disposables.push(commentController.get())
 
     const fixup = new FixupController()
-    const controllers = { inline: commentController, task: fixup, fixup }
+    disposables.push(fixup)
+    if (TestSupport.instance) {
+        TestSupport.instance.fixupController.set(fixup)
+    }
+    const controllers = { inline: commentController, fixups: fixup }
 
     const editor = new VSCodeEditor(controllers)
     const workspaceConfig = vscode.workspace.getConfiguration()
@@ -120,6 +127,7 @@ const register = async (
         rgPath
     )
     disposables.push(chatProvider)
+    fixup.recipeRunner = chatProvider
 
     disposables.push(
         vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
@@ -286,52 +294,43 @@ const register = async (
         statusBar
     )
 
+    let completionsProvider: vscode.Disposable | null = null
     if (initialConfig.experimentalSuggest) {
-        // TODO(sqs): make this listen to config and not just use initialConfig
-        const docprovider = new CompletionsDocumentProvider()
-        disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))
-
-        const history = new History()
-        const manualCompletionService = new ManualCompletionService(
+        completionsProvider = createCompletionsProvider(
+            config,
             webviewErrorMessenger,
             completionsClient,
-            docprovider,
-            history,
+            statusBar,
             codebaseContext
         )
+    }
 
-        let providerConfig: ProviderConfig
-        switch (initialConfig.completionsAdvancedProvider) {
-            case 'unstable-codegen': {
-                if (initialConfig.completionsAdvancedServerEndpoint !== null) {
-                    providerConfig = createUnstableCodeGenProviderConfig({
-                        serverEndpoint: initialConfig.completionsAdvancedServerEndpoint,
-                    })
-                    break
-                }
+    // Create a disposable to clean up completions when the extension reloads.
+    const disposeCompletions: vscode.Disposable = {
+        dispose: () => {
+            completionsProvider?.dispose()
+        },
+    }
+    disposables.push(disposeCompletions)
 
-                webviewErrorMessenger(
-                    'Provider `unstable-codegen` can not be used without configuring `cody.completions.advanced.serverEndpoint`. Falling back to `anthropic`.'
+    vscode.workspace.onDidChangeConfiguration(event => {
+        if (event.affectsConfiguration('cody.experimental.suggestions')) {
+            const config = getConfiguration(vscode.workspace.getConfiguration())
+
+            if (!config.experimentalSuggest) {
+                completionsProvider?.dispose()
+                completionsProvider = null
+            } else if (completionsProvider === null) {
+                completionsProvider = createCompletionsProvider(
+                    config,
+                    webviewErrorMessenger,
+                    completionsClient,
+                    statusBar,
+                    codebaseContext
                 )
             }
-            default:
-                providerConfig = createAnthropicProviderConfig({
-                    completionsClient,
-                    contextWindowTokens: 2048,
-                })
         }
-
-        const completionsProvider = new CodyCompletionItemProvider(providerConfig, history, statusBar, codebaseContext)
-        disposables.push(
-            vscode.commands.registerCommand('cody.manual-completions', async () => {
-                await manualCompletionService.fetchAndShowManualCompletions()
-            }),
-            vscode.commands.registerCommand('cody.completions.inline.accepted', ({ codyLogId }) => {
-                CompletionsLogger.accept(codyLogId)
-            }),
-            vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
-        )
-    }
+    })
 
     // Initiate inline assist when feature flag is on
     if (initialConfig.experimentalInline) {
@@ -354,12 +353,7 @@ const register = async (
     }
     // Register task view and non-stop cody command when feature flag is on
     if (initialConfig.experimentalNonStop || process.env.CODY_TESTING === 'true') {
-        disposables.push(vscode.window.registerTreeDataProvider('cody.fixup.tree.view', fixup.getTaskView()))
-        disposables.push(
-            vscode.commands.registerCommand('cody.recipe.non-stop', async () => {
-                await chatProvider.executeRecipe('non-stop', '', false)
-            })
-        )
+        fixup.register()
         await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
     }
 
@@ -368,11 +362,78 @@ const register = async (
         await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
     }
 
+    await showSetupNotification(initialConfig, localStorage)
+
     return {
         disposable: vscode.Disposable.from(...disposables),
         onConfigurationChange: newConfig => {
             chatProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
+            if (eventLogger) {
+                eventLogger.onConfigurationChange(vscode.workspace.getConfiguration())
+            }
+        },
+    }
+}
+
+function createCompletionsProvider(
+    config: Configuration,
+    webviewErrorMessenger: (error: string) => Promise<void>,
+    completionsClient: SourcegraphNodeCompletionsClient,
+    statusBar: CodyStatusBar,
+    codebaseContext: CodebaseContext
+): vscode.Disposable {
+    const disposables: vscode.Disposable[] = []
+
+    const documentProvider = new CompletionsDocumentProvider()
+    disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', documentProvider))
+
+    const history = new History()
+    const manualCompletionService = new ManualCompletionService(
+        webviewErrorMessenger,
+        completionsClient,
+        documentProvider,
+        history,
+        codebaseContext
+    )
+
+    let providerConfig: ProviderConfig
+    switch (config.completionsAdvancedProvider) {
+        case 'unstable-codegen': {
+            if (config.completionsAdvancedServerEndpoint !== null) {
+                providerConfig = createUnstableCodeGenProviderConfig({
+                    serverEndpoint: config.completionsAdvancedServerEndpoint,
+                })
+                break
+            }
+
+            webviewErrorMessenger(
+                'Provider `unstable-codegen` can not be used without configuring `cody.completions.advanced.serverEndpoint`. Falling back to `anthropic`.'
+            )
+        }
+        default:
+            providerConfig = createAnthropicProviderConfig({
+                completionsClient,
+                contextWindowTokens: 2048,
+            })
+    }
+    const completionsProvider = new CodyCompletionItemProvider(providerConfig, history, statusBar, codebaseContext)
+
+    disposables.push(
+        vscode.commands.registerCommand('cody.manual-completions', async () => {
+            await manualCompletionService.fetchAndShowManualCompletions()
+        }),
+        vscode.commands.registerCommand('cody.completions.inline.accepted', ({ codyLogId }) => {
+            CompletionsLogger.accept(codyLogId)
+        }),
+        vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
+    )
+
+    return {
+        dispose: () => {
+            for (const disposable of disposables) {
+                disposable.dispose()
+            }
         },
     }
 }
