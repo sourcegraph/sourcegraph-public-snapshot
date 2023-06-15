@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
 import { logger } from '@sourcegraph/common'
-import { Button, Modal, Input, H3, Text, Alert, Link, ErrorAlert, Form } from '@sourcegraph/wildcard'
+import { Button, Modal, H3, Text, Alert, Link, ErrorAlert, Form, TextArea } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExecutorSecretFields } from '../../../graphql-operations'
@@ -23,7 +23,7 @@ export const UpdateSecretModal: React.FunctionComponent<React.PropsWithChildren<
     const labelId = 'updateSecret'
 
     const [value, setValue] = useState<string>('')
-    const onChangeValue = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
+    const onChangeValue = useCallback<React.ChangeEventHandler<HTMLTextAreaElement>>(event => {
         setValue(event.target.value)
     }, [])
 
@@ -75,17 +75,14 @@ export const UpdateSecretModal: React.FunctionComponent<React.PropsWithChildren<
 
             <Form onSubmit={onSubmit}>
                 <div className="form-group">
-                    <Input
+                    <TextArea
                         id="value"
                         name="value"
-                        type="password"
                         autoComplete="off"
                         required={true}
                         spellCheck="false"
                         minLength={1}
                         label="Value"
-                        placeholder="******"
-                        value={value}
                         onChange={onChangeValue}
                     />
                 </div>
