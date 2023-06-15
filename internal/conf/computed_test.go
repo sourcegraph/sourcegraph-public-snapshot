@@ -369,7 +369,7 @@ func TestCodyEnabled(t *testing.T) {
 		{
 			// Legacy support: remove this once completions.enabled is removed
 			name: "cody.enabled not set, completions configured and enabled",
-			sc:   schema.SiteConfiguration{Completions: &schema.Completions{Enabled: pointify(true), Model: "foobar"}},
+			sc:   schema.SiteConfiguration{Completions: &schema.Completions{Enabled: pointers.Ptr(true), Model: "foobar"}},
 			want: true,
 		},
 	}
@@ -396,10 +396,10 @@ func TestGetCompletionsConfig(t *testing.T) {
 		{
 			name: "Completions disabled",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Completions: &schema.Completions{
-					Enabled: pointify(false),
+					Enabled: pointers.Ptr(false),
 				},
 			},
 			wantDisabled: true,
@@ -407,7 +407,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 		{
 			name: "cody.enabled and empty completions object",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Completions: &schema.Completions{},
 			},
@@ -416,7 +416,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 		{
 			name: "cody.enabled set false",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(false),
+				CodyEnabled: pointers.Ptr(false),
 				Completions: &schema.Completions{},
 			},
 			wantDisabled: true,
@@ -432,7 +432,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 		{
 			name: "Invalid provider",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Completions: &schema.Completions{
 					Provider: "invalid",
@@ -443,10 +443,10 @@ func TestGetCompletionsConfig(t *testing.T) {
 		{
 			name: "anthropic completions",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Completions: &schema.Completions{
-					Enabled:     pointify(true),
+					Enabled:     pointers.Ptr(true),
 					Provider:    "anthropic",
 					AccessToken: "asdf",
 				},
@@ -463,10 +463,10 @@ func TestGetCompletionsConfig(t *testing.T) {
 		{
 			name: "anthropic completions, with only completions.enabled",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Completions: &schema.Completions{
-					Enabled:         pointify(false),
+					Enabled:         pointers.Ptr(false),
 					Provider:        "anthropic",
 					AccessToken:     "asdf",
 					ChatModel:       "claude-v1",
@@ -485,7 +485,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 		{
 			name: "soucregraph completions defaults",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Completions: &schema.Completions{
 					Provider: "sourcegraph",
@@ -503,7 +503,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 		{
 			name: "OpenAI completions completions",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Completions: &schema.Completions{
 					Provider:    "openai",
@@ -522,7 +522,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 		{
 			name: "zero-config cody gateway completions without license key",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  "",
 			},
 			wantDisabled: true,
@@ -530,7 +530,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 		{
 			name: "zero-config cody gateway completions with license key",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 			},
 			wantConfig: &conftypes.CompletionsConfig{
@@ -546,7 +546,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 			// Legacy support for completions.enabled
 			name: "legacy field completions.enabled: zero-config cody gateway completions without license key",
 			siteConfig: schema.SiteConfiguration{
-				Completions: &schema.Completions{Enabled: pointify(true)},
+				Completions: &schema.Completions{Enabled: pointers.Ptr(true)},
 				LicenseKey:  "",
 			},
 			wantDisabled: true,
@@ -555,7 +555,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 			name: "legacy field completions.enabled: zero-config cody gateway completions with license key",
 			siteConfig: schema.SiteConfiguration{
 				Completions: &schema.Completions{
-					Enabled: pointify(true),
+					Enabled: pointers.Ptr(true),
 				},
 				LicenseKey: licenseKey,
 			},
@@ -566,7 +566,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 			name:       "app zero-config cody gateway completions with dotcom token",
 			deployType: deploy.App,
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				App: &schema.App{
 					DotcomAuthToken: "TOKEN",
 				},
@@ -584,7 +584,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 			name:       "app with custom configuration",
 			deployType: deploy.App,
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				Completions: &schema.Completions{
 					AccessToken:     "CUSTOM_TOKEN",
 					Provider:        "anthropic",
@@ -609,7 +609,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 			name:       "App but no dotcom username",
 			deployType: deploy.App,
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				App: &schema.App{
 					DotcomAuthToken: "",
 				},
@@ -657,10 +657,10 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 		{
 			name: "Embeddings disabled",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Embeddings: &schema.Embeddings{
-					Enabled: pointify(false),
+					Enabled: pointers.Ptr(false),
 				},
 			},
 			wantDisabled: true,
@@ -668,7 +668,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 		{
 			name: "cody.enabled and empty embeddings object",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Embeddings:  &schema.Embeddings{},
 			},
@@ -677,7 +677,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 		{
 			name: "cody.enabled set false",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(false),
+				CodyEnabled: pointers.Ptr(false),
 				Embeddings:  &schema.Embeddings{},
 			},
 			wantDisabled: true,
@@ -693,7 +693,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 		{
 			name: "Invalid provider",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Embeddings: &schema.Embeddings{
 					Provider: "invalid",
@@ -704,7 +704,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 		{
 			name: "Implicit config with cody.enabled",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 			},
 			wantConfig: &conftypes.EmbeddingsConfig{
@@ -717,13 +717,13 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MinimumInterval:            24 * time.Hour,
 				MaxCodeEmbeddingsPerRepo:   3_072_000,
 				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointify(5000),
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
 			},
 		},
 		{
 			name: "Sourcegraph provider",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Embeddings: &schema.Embeddings{
 					Provider: "sourcegraph",
@@ -739,13 +739,13 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MinimumInterval:            24 * time.Hour,
 				MaxCodeEmbeddingsPerRepo:   3_072_000,
 				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointify(5000),
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
 			},
 		},
 		{
 			name: "Sourcegraph provider without license",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  "",
 				Embeddings: &schema.Embeddings{
 					Provider: "sourcegraph",
@@ -756,7 +756,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 		{
 			name: "OpenAI provider",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Embeddings: &schema.Embeddings{
 					Provider:    "openai",
@@ -773,13 +773,13 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MinimumInterval:            24 * time.Hour,
 				MaxCodeEmbeddingsPerRepo:   3_072_000,
 				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointify(5000),
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
 			},
 		},
 		{
 			name: "OpenAI provider without access token",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 				Embeddings: &schema.Embeddings{
 					Provider: "openai",
@@ -791,7 +791,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			name:       "App default config",
 			deployType: deploy.App,
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				App: &schema.App{
 					DotcomAuthToken: "TOKEN",
 				},
@@ -806,13 +806,13 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MinimumInterval:            24 * time.Hour,
 				MaxCodeEmbeddingsPerRepo:   3_072_000,
 				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointify(5000),
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
 			},
 		},
 		{
 			name: "App but no dotcom username",
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				App: &schema.App{
 					DotcomAuthToken: "",
 				},
@@ -823,7 +823,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			name:       "App with dotcom token",
 			deployType: deploy.App,
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				Embeddings: &schema.Embeddings{
 					Provider: "sourcegraph",
 				},
@@ -841,14 +841,14 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MinimumInterval:            24 * time.Hour,
 				MaxCodeEmbeddingsPerRepo:   3_072_000,
 				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointify(5000),
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
 			},
 		},
 		{
 			name:       "App with user token",
 			deployType: deploy.App,
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				Embeddings: &schema.Embeddings{
 					Provider:    "sourcegraph",
 					AccessToken: "TOKEN",
@@ -864,14 +864,14 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MinimumInterval:            24 * time.Hour,
 				MaxCodeEmbeddingsPerRepo:   3_072_000,
 				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointify(5000),
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
 			},
 		},
 		{
 			name:       "App without dotcom or user token",
 			deployType: deploy.App,
 			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointify(true),
+				CodyEnabled: pointers.Ptr(true),
 				Embeddings: &schema.Embeddings{
 					Provider: "sourcegraph",
 				},
