@@ -78,6 +78,8 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.CreateFunc.History(), 2)
 
+				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 2)
+				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 2)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
 				assert.Equal(t, "test-executor", codeintelMockStore.DequeueFunc.History()[0].Arg1)
 				assert.Nil(t, codeintelMockStore.DequeueFunc.History()[0].Arg2)
@@ -144,38 +146,36 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			name: "Dequeue only codeintel record when requesting both queues and batches record doesn't exists",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel", "batches"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				codeintelMockStore.QueuedCountFunc.PushReturn(1, nil)
+				codeintelMockStore.QueuedCountFunc.PushReturn(0, nil)
+				batchesMockStore.QueuedCountFunc.PushReturn(0, nil)
 				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
-				batchesMockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{}, false, nil)
 				jobTokenStore.CreateFunc.PushReturn("token1", nil)
 			},
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
 
-				// codeintel dequeue gets called twice: the second dequeue invocation mocks fairness to first dequeue the batches queue, which yields this sequence of events:
-				//   1. Queue order after fairness: [codeintel, batches], dequeue codeintel -> successful dequeue
-				//   2. Queue order after fairness: [batches, codeintel], dequeue batches -> no job to dequeue, dequeue codeintel -> no job to dequeue
-				require.Len(t, codeintelMockStore.DequeueFunc.History(), 2)
+				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 2)
+				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 2)
+				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
 				assert.Equal(t, "test-executor", codeintelMockStore.DequeueFunc.History()[0].Arg1)
 				assert.Nil(t, codeintelMockStore.DequeueFunc.History()[0].Arg2)
 				assert.Equal(t, 1, jobTokenStore.CreateFunc.History()[0].Arg1)
 				assert.Equal(t, "codeintel", jobTokenStore.CreateFunc.History()[0].Arg2)
 
-				require.Len(t, batchesMockStore.DequeueFunc.History(), 1)
+				require.Len(t, batchesMockStore.DequeueFunc.History(), 0)
 			},
-			dequeueEvents: []dequeueEvent{},
-			//codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
-			//	0: {
-			//		queueName:            "codeintel",
-			//		expectedStatusCode:   http.StatusOK,
-			//		expectedResponseBody: `{"id":1,"token":"token1","queue":"codeintel","repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
-			//	},
-			//},
-			//batchesDequeueEvents: map[int]dequeueEvent[*btypes.BatchSpecWorkspaceExecutionJob]{
-			//	1: {
-			//		queueName:          "batches",
-			//		expectedStatusCode: http.StatusNoContent,
-			//	},
-			//},
+			dequeueEvents: []dequeueEvent{
+				{
+					queueName:            "codeintel",
+					expectedStatusCode:   http.StatusOK,
+					expectedResponseBody: `{"id":1,"token":"token1","queue":"codeintel","repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
+				},
+				{
+					queueName:          "batches",
+					expectedStatusCode: http.StatusNoContent,
+				},
+			},
 		},
 		{
 			name: "Nothing to dequeue",
@@ -195,6 +195,8 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			name: "No queue names provided",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": []}`,
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 0)
+				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 0)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 0)
 				require.Len(t, batchesMockStore.DequeueFunc.History(), 0)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
@@ -205,69 +207,79 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			name: "Invalid queue name",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["invalidqueue"]}`,
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 0)
+				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 0)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 0)
+				require.Len(t, batchesMockStore.DequeueFunc.History(), 0)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
 			},
-			dequeueEvents: []dequeueEvent{},
-			//codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
-			//	0: {
-			//		expectedStatusCode:   http.StatusInternalServerError,
-			//		expectedResponseBody: `{"error":"Invalid queue name(s) 'invalidqueue' found. Supported queue names are 'batches, codeintel'."}`,
-			//	},
-			//},
+			dequeueEvents: []dequeueEvent{
+				{
+					expectedStatusCode:   http.StatusInternalServerError,
+					expectedResponseBody: `{"error":"Invalid queue name(s) 'invalidqueue' found. Supported queue names are 'batches, codeintel'."}`,
+				},
+			},
 		},
 		{
 			name: "Invalid version",
 			body: `{"executorName": "test-executor", "version":"\n1.2", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 0)
+				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 0)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 0)
+				require.Len(t, batchesMockStore.DequeueFunc.History(), 0)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
 			},
-			dequeueEvents: []dequeueEvent{},
-			//codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
-			//	0: {
-			//		expectedStatusCode:   http.StatusInternalServerError,
-			//		expectedResponseBody: `{"error":"Invalid Semantic Version"}`,
-			//	},
-			//},
+			dequeueEvents: []dequeueEvent{
+				{
+					expectedStatusCode:   http.StatusInternalServerError,
+					expectedResponseBody: `{"error":"Invalid Semantic Version"}`,
+				},
+			},
 		},
 		{
 			name: "Dequeue error codeintel",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				codeintelMockStore.QueuedCountFunc.PushReturn(1, nil)
 				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{}, false, errors.New("failed to dequeue"))
 			},
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 1)
+				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 0)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
 				require.Len(t, batchesMockStore.DequeueFunc.History(), 0)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
 			},
-			dequeueEvents: []dequeueEvent{},
-			//codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
-			//	0: {
-			//		expectedStatusCode:   http.StatusInternalServerError,
-			//		expectedResponseBody: `{"error":"dbworkerstore.Dequeue codeintel: failed to dequeue"}`,
-			//	},
-			//},
+			dequeueEvents: []dequeueEvent{
+				{
+					queueName:            "codeintel",
+					expectedStatusCode:   http.StatusInternalServerError,
+					expectedResponseBody: `{"error":"dbworkerstore.Dequeue codeintel: failed to dequeue"}`,
+				},
+			},
 		},
 		{
 			name: "Dequeue error batches",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["batches"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				batchesMockStore.QueuedCountFunc.PushReturn(1, nil)
 				batchesMockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{}, false, errors.New("failed to dequeue"))
 			},
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 0)
+				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 1)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 0)
 				require.Len(t, batchesMockStore.DequeueFunc.History(), 1)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
 			},
-			dequeueEvents: []dequeueEvent{},
-			//batchesDequeueEvents: map[int]dequeueEvent[*btypes.BatchSpecWorkspaceExecutionJob]{
-			//	0: {
-			//		expectedStatusCode:   http.StatusInternalServerError,
-			//		expectedResponseBody: `{"error":"dbworkerstore.Dequeue batches: failed to dequeue"}`,
-			//	},
-			//},
+			dequeueEvents: []dequeueEvent{
+				{
+					queueName:            "batches",
+					expectedStatusCode:   http.StatusInternalServerError,
+					expectedResponseBody: `{"error":"dbworkerstore.Dequeue batches: failed to dequeue"}`,
+				},
+			},
 		},
 		{
 			name: "Failed to transform record codeintel",
@@ -279,7 +291,9 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			},
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 1)
+				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 0)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
+				require.Len(t, batchesMockStore.DequeueFunc.History(), 0)
 				require.Len(t, codeintelMockStore.MarkFailedFunc.History(), 1)
 				assert.Equal(t, 1, codeintelMockStore.MarkFailedFunc.History()[0].Arg1)
 				assert.Equal(t, "failed to transform record: failed", codeintelMockStore.MarkFailedFunc.History()[0].Arg2)
@@ -288,6 +302,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			},
 			dequeueEvents: []dequeueEvent{
 				{
+					queueName:            "codeintel",
 					expectedStatusCode:   http.StatusInternalServerError,
 					expectedResponseBody: `{"error":"RecordTransformer codeintel: failed"}`,
 				},
@@ -300,10 +315,14 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			name: "Failed to transform record batches",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["batches"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				batchesMockStore.QueuedCountFunc.PushReturn(1, nil)
 				batchesMockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{ID: 1}, true, nil)
 				batchesMockStore.MarkFailedFunc.PushReturn(true, nil)
 			},
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 0)
+				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 1)
+				require.Len(t, codeintelMockStore.DequeueFunc.History(), 0)
 				require.Len(t, batchesMockStore.DequeueFunc.History(), 1)
 				require.Len(t, batchesMockStore.MarkFailedFunc.History(), 1)
 				assert.Equal(t, 1, batchesMockStore.MarkFailedFunc.History()[0].Arg1)
@@ -311,13 +330,13 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 				assert.Equal(t, dbworkerstore.MarkFinalOptions{}, batchesMockStore.MarkFailedFunc.History()[0].Arg3)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
 			},
-			dequeueEvents: []dequeueEvent{},
-			//batchesDequeueEvents: map[int]dequeueEvent[*btypes.BatchSpecWorkspaceExecutionJob]{
-			//	0: {
-			//		expectedStatusCode:   http.StatusInternalServerError,
-			//		expectedResponseBody: `{"error":"RecordTransformer batches: failed"}`,
-			//	},
-			//},
+			dequeueEvents: []dequeueEvent{
+				{
+					queueName:            "batches",
+					expectedStatusCode:   http.StatusInternalServerError,
+					expectedResponseBody: `{"error":"RecordTransformer batches: failed"}`,
+				},
+			},
 			batchesTransformerFunc: func(ctx context.Context, version string, record *btypes.BatchSpecWorkspaceExecutionJob, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
 				return executortypes.Job{}, errors.New("failed")
 			},
@@ -326,24 +345,28 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			name: "Failed to mark record as failed codeintel",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				codeintelMockStore.QueuedCountFunc.PushReturn(1, nil)
 				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
 				codeintelMockStore.MarkFailedFunc.PushReturn(true, errors.New("failed to mark"))
 			},
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 1)
+				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 0)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
+				require.Len(t, batchesMockStore.DequeueFunc.History(), 0)
 				require.Len(t, codeintelMockStore.MarkFailedFunc.History(), 1)
 				assert.Equal(t, 1, codeintelMockStore.MarkFailedFunc.History()[0].Arg1)
 				assert.Equal(t, "failed to transform record: failed", codeintelMockStore.MarkFailedFunc.History()[0].Arg2)
 				assert.Equal(t, dbworkerstore.MarkFinalOptions{}, codeintelMockStore.MarkFailedFunc.History()[0].Arg3)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
 			},
-			dequeueEvents: []dequeueEvent{},
-			//codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
-			//	0: {
-			//		expectedStatusCode:   http.StatusInternalServerError,
-			//		expectedResponseBody: `{"error":"RecordTransformer codeintel: 2 errors occurred:\n\t* failed\n\t* failed to mark"}`,
-			//	},
-			//},
+			dequeueEvents: []dequeueEvent{
+				{
+					queueName:            "codeintel",
+					expectedStatusCode:   http.StatusInternalServerError,
+					expectedResponseBody: `{"error":"RecordTransformer codeintel: 2 errors occurred:\n\t* failed\n\t* failed to mark"}`,
+				},
+			},
 			codeintelTransformerFunc: func(ctx context.Context, version string, record uploadsshared.Index, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
 				return executortypes.Job{}, errors.New("failed")
 			},
@@ -352,24 +375,27 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			name: "Failed to mark record as failed batches",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["batches"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				batchesMockStore.QueuedCountFunc.PushReturn(1, nil)
 				batchesMockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{ID: 1}, true, nil)
 				batchesMockStore.MarkFailedFunc.PushReturn(true, errors.New("failed to mark"))
 			},
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 0)
+				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 1)
+				require.Len(t, codeintelMockStore.DequeueFunc.History(), 0)
 				require.Len(t, batchesMockStore.DequeueFunc.History(), 1)
-				require.Len(t, batchesMockStore.MarkFailedFunc.History(), 1)
 				assert.Equal(t, 1, batchesMockStore.MarkFailedFunc.History()[0].Arg1)
 				assert.Equal(t, "failed to transform record: failed", batchesMockStore.MarkFailedFunc.History()[0].Arg2)
 				assert.Equal(t, dbworkerstore.MarkFinalOptions{}, batchesMockStore.MarkFailedFunc.History()[0].Arg3)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
 			},
-			dequeueEvents: []dequeueEvent{},
-			//batchesDequeueEvents: map[int]dequeueEvent[*btypes.BatchSpecWorkspaceExecutionJob]{
-			//	0: {
-			//		expectedStatusCode:   http.StatusInternalServerError,
-			//		expectedResponseBody: `{"error":"RecordTransformer batches: 2 errors occurred:\n\t* failed\n\t* failed to mark"}`,
-			//	},
-			//},
+			dequeueEvents: []dequeueEvent{
+				{
+					queueName:            "batches",
+					expectedStatusCode:   http.StatusInternalServerError,
+					expectedResponseBody: `{"error":"RecordTransformer batches: 2 errors occurred:\n\t* failed\n\t* failed to mark"}`,
+				},
+			},
 			batchesTransformerFunc: func(ctx context.Context, version string, record *btypes.BatchSpecWorkspaceExecutionJob, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
 				return executortypes.Job{}, errors.New("failed")
 			},
@@ -378,65 +404,71 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			name: "Failed to create job token",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				codeintelMockStore.QueuedCountFunc.PushReturn(1, nil)
 				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
 				jobTokenStore.CreateFunc.PushReturn("", errors.New("failed to create token"))
 			},
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 1)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
 				require.Len(t, jobTokenStore.RegenerateFunc.History(), 0)
 			},
-			dequeueEvents: []dequeueEvent{},
-			//codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
-			//	0: {
-			//		expectedStatusCode:   http.StatusInternalServerError,
-			//		expectedResponseBody: `{"error":"CreateToken: failed to create token"}`,
-			//	},
-			//},
+			dequeueEvents: []dequeueEvent{
+				{
+					queueName:            "codeintel",
+					expectedStatusCode:   http.StatusInternalServerError,
+					expectedResponseBody: `{"error":"CreateToken: failed to create token"}`,
+				},
+			},
 		},
 		{
 			name: "Job token already exists",
 			body: `{"executorName": "test-executor","numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				codeintelMockStore.QueuedCountFunc.PushReturn(1, nil)
 				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
 				jobTokenStore.CreateFunc.PushReturn("", executorstore.ErrJobTokenAlreadyCreated)
 				jobTokenStore.RegenerateFunc.PushReturn("somenewtoken", nil)
 			},
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 1)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
 				require.Len(t, jobTokenStore.RegenerateFunc.History(), 1)
 				assert.Equal(t, 1, jobTokenStore.RegenerateFunc.History()[0].Arg1)
 				assert.Equal(t, "codeintel", jobTokenStore.RegenerateFunc.History()[0].Arg2)
 			},
-			dequeueEvents: []dequeueEvent{},
-			//codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
-			//	0: {
-			//		expectedStatusCode:   http.StatusOK,
-			//		expectedResponseBody: `{"id":1,"token":"somenewtoken","queue":"codeintel", "repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
-			//	},
-			//},
+			dequeueEvents: []dequeueEvent{
+				{
+					queueName:            "codeintel",
+					expectedStatusCode:   http.StatusOK,
+					expectedResponseBody: `{"id":1,"token":"somenewtoken","queue":"codeintel", "repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
+				},
+			},
 		},
 		{
 			name: "Failed to regenerate token",
 			body: `{"executorName": "test-executor","numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				codeintelMockStore.QueuedCountFunc.PushReturn(1, nil)
 				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
 				jobTokenStore.CreateFunc.PushReturn("", executorstore.ErrJobTokenAlreadyCreated)
 				jobTokenStore.RegenerateFunc.PushReturn("", errors.New("failed to regen token"))
 			},
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 1)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
 				require.Len(t, jobTokenStore.RegenerateFunc.History(), 1)
 			},
-			dequeueEvents: []dequeueEvent{},
-			//codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
-			//	0: {
-			//		expectedStatusCode:   http.StatusInternalServerError,
-			//		expectedResponseBody: `{"error":"RegenerateToken: failed to regen token"}`,
-			//	},
-			//},
+			dequeueEvents: []dequeueEvent{
+				{
+					queueName:            "codeintel",
+					expectedStatusCode:   http.StatusInternalServerError,
+					expectedResponseBody: `{"error":"RegenerateToken: failed to regen token"}`,
+				},
+			},
 		},
 	}
 	for _, test := range tests {
@@ -477,30 +509,6 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 					}
 					evaluateEvent(test.body, event.expectedStatusCode, event.expectedResponseBody, t, router)
 				}
-
-				//for eventIndex := 0; eventIndex < len(test.batchesDequeueEvents)+len(test.codeintelDequeueEvents); eventIndex++ {
-				//	if _, ok := test.codeintelDequeueEvents[eventIndex]; ok {
-				//		event := test.codeintelDequeueEvents[eventIndex]
-				//		if event.transformerFunc != nil {
-				//			mh.CodeIntelQueueHandler.RecordTransformer = event.transformerFunc
-				//		}
-				//		// mock random queue picking to return "codeintel"
-				//		handler.DoSelectQueueForDequeueing = func(candidateQueues []string) (string, error) {
-				//			return event.queueName, nil
-				//		}
-				//		evaluateEvent(test.body, event.expectedStatusCode, event.expectedResponseBody, t, router)
-				//	} else {
-				//		event := test.batchesDequeueEvents[eventIndex]
-				//		if event.transformerFunc != nil {
-				//			mh.BatchesQueueHandler.RecordTransformer = event.transformerFunc
-				//		}
-				//		// mock random queue picking to return "batches"
-				//		handler.DoSelectQueueForDequeueing = func(candidateQueues []string) (string, error) {
-				//			return event.queueName, nil
-				//		}
-				//		evaluateEvent(test.body, event.expectedStatusCode, event.expectedResponseBody, t, router)
-				//	}
-				//}
 
 				if test.assertionFunc != nil {
 					test.assertionFunc(t, codeIntelMockStore, batchesMockStore, jobTokenStore)
