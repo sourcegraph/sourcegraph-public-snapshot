@@ -3265,7 +3265,7 @@ func Test_CommitLog(t *testing.T) {
 			wantCommits:      2,
 		},
 		"no commits": {
-			wantErr: "gitCommand: exit status 128",
+			wantErr: "gitCommand fatal: your current branch 'master' does not have any commits yet: exit status 128",
 		},
 		"one file two commits": {
 			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt"}, []string{"file1.txt"}),

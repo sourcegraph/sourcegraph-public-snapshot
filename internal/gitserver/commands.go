@@ -315,7 +315,7 @@ func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, af
 	cmd := c.gitCommand(repo, args...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "gitCommand")
+		return nil, errors.Wrapf(err, "gitCommand %s", string(out))
 	}
 
 	var ls []CommitLog
