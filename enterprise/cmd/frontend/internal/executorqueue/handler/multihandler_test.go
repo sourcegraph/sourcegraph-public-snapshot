@@ -879,6 +879,9 @@ func evaluateEvent(
 	}
 }
 
+// Note: this test passed multiple times with the bazel flag `--runs_per_test=1000` without failures,
+// but statistically speaking this test _could_ flake. The chance of two subsequent failures is low enough
+// that it shouldn't ever form an issue. If failures keep occurring something is actually broken.
 func TestMultiHandler_SelectQueueForDequeueing(t *testing.T) {
 	tests := []struct {
 		name            string
