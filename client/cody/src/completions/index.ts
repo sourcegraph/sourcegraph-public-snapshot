@@ -14,13 +14,12 @@ import * as CompletionLogger from './logger'
 import { detectMultilineMode } from './multiline'
 import { postProcess } from './post-process'
 import { Provider, ProviderConfig } from './providers/provider'
-import { SNIPPET_WINDOW_SIZE, lastNLines } from './utils'
+import { SNIPPET_WINDOW_SIZE } from './utils'
 
 export const inlineCompletionsCache = new CompletionsCache()
 
 // TODO:
 //
-// - Rebase: Ideally when Laura's changes have also landed
 // - Fix tests & productionize this. Land in nightly
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
