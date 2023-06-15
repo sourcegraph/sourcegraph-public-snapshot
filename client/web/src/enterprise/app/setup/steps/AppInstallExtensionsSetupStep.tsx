@@ -82,7 +82,10 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
 
                 {extensions && (
                     <li className={styles.extensionsSuggestionLink}>
-                        <Link to="https://sourcegraph.com" target="_blank">
+                        <Link
+                            to="https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&title=Cody%20extension%20suggestion"
+                            target="_blank"
+                        >
                             Suggest our next extension
                         </Link>
                     </li>
