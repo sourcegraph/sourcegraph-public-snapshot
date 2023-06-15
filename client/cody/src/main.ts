@@ -11,7 +11,9 @@ import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
 import { ManualCompletionService } from './completions/manual'
-import { createProviderConfig } from './completions/providers/anthropic'
+import { createProviderConfig as createAnthropicProviderConfig } from './completions/providers/anthropic'
+import { ProviderConfig } from './completions/providers/provider'
+import { createProviderConfig as createUnstableCodeGenProviderConfig } from './completions/providers/unstable-codegen'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
@@ -298,10 +300,27 @@ const register = async (
             codebaseContext
         )
 
-        const providerConfig = createProviderConfig({
-            completionsClient,
-            contextWindowTokens: 2048,
-        })
+        let providerConfig: ProviderConfig
+        switch (initialConfig.completionsAdvancedProvider) {
+            case 'unstable-codegen': {
+                if (initialConfig.completionsAdvancedServerEndpoint !== null) {
+                    providerConfig = createUnstableCodeGenProviderConfig({
+                        contextWindowChars: 10_000,
+                        serverEndpoint: initialConfig.completionsAdvancedServerEndpoint,
+                    })
+                    break
+                }
+
+                webviewErrorMessenger(
+                    'Provider `unstable-codegen` can not be used without configuring `cody.completions.advanced.serverEndpoint`. Falling back to `anthropic`.'
+                )
+            }
+            default:
+                providerConfig = createAnthropicProviderConfig({
+                    completionsClient,
+                    contextWindowTokens: 2048,
+                })
+        }
 
         const completionsProvider = new CodyCompletionItemProvider(providerConfig, history, statusBar, codebaseContext)
         disposables.push(

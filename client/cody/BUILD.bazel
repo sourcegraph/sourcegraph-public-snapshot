@@ -50,6 +50,7 @@ ts_project(
         "src/completions/post-process.ts",
         "src/completions/providers/anthropic.ts",
         "src/completions/providers/provider.ts",
+        "src/completions/providers/unstable-codegen.ts",
         "src/completions/utils.ts",
         "src/configuration.ts",
         "src/editor/vscode-editor.ts",
