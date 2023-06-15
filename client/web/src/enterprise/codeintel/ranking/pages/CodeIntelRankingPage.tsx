@@ -105,6 +105,26 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                         </Text>
                     )}
 
+                    <Container className="mb-3">
+                        <div className={styles.summary}>
+                            <span className={styles.summaryItem}>
+                                <div className={classNames(styles.summaryNumber)}>
+                                    {data.rankingSummary.numExportedIndexes} of {data.rankingSummary.numTargetIndexes}
+                                </div>
+                                <div className={styles.summaryLabel}>SCIP indexes have been exported</div>
+                            </span>
+
+                            <span className={styles.summaryItem}>
+                                <div className={classNames(styles.summaryNumber)}>
+                                    {data.rankingSummary.numRepositoriesWithoutCurrentRanks}
+                                </div>
+                                <div className={classNames(styles.summaryLabel, styles.summaryItemExtended)}>
+                                    repositories have not been indexed with the most recent scores
+                                </div>
+                            </span>
+                        </div>
+                    </Container>
+
                     {data.rankingSummary.rankingSummary.length === 0 ? (
                         <Container>
                             <>No data.</>

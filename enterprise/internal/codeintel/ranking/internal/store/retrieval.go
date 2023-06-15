@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -118,6 +119,71 @@ SELECT
 FROM codeintel_path_ranks pr
 WHERE pr.graph_key IN (SELECT graph_key FROM last_completed_progress)
 `
+
+func (s *store) CoverageCounts(ctx context.Context, graphKey string) (_ shared.CoverageCounts, err error) {
+	ctx, _, endObservation := s.operations.coverageCounts.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	counts, _, err := scanFirstCoverageCounts(s.db.Query(ctx, sqlf.Sprintf(coverageCountsQuery, graphKey)))
+	return counts, err
+}
+
+const coverageCountsQuery = `
+WITH
+targets AS (
+	SELECT uvt.upload_id
+	FROM lsif_uploads_visible_at_tip uvt
+	WHERE uvt.is_default_branch
+),
+exported AS (
+	SELECT re.id
+	FROM codeintel_ranking_exports re
+	WHERE
+		re.graph_key = %s AND
+		re.deleted_at IS NULL AND
+		EXISTS (
+			SELECT 1
+			FROM lsif_uploads_visible_at_tip uvt
+			WHERE
+				uvt.is_default_branch AND
+				uvt.upload_id = re.upload_id
+		)
+),
+progress AS (
+	SELECT pl.id
+	FROM codeintel_ranking_progress pl
+	WHERE pl.reducer_completed_at IS NOT NULL
+	ORDER BY pl.reducer_completed_at DESC
+	LIMIT 1
+),
+unindexed AS (
+	SELECT r.id
+	FROM repo r
+	JOIN codeintel_path_ranks pr ON pr.repository_id = r.id
+	JOIN codeintel_ranking_progress crp ON crp.graph_key = pr.graph_key
+	WHERE
+		r.deleted_at IS NULL AND
+		r.blocked IS NULL AND
+		crp.id = (SELECT id FROM progress) AND
+		NOT EXISTS (
+			SELECT 1
+			FROM zoekt_repos zr
+			WHERE
+				zr.repo_id = r.id AND
+				zr.index_status = 'indexed' AND
+				crp.reducer_completed_at < zr.last_indexed_at
+		)
+)
+SELECT
+	(SELECT COUNT(*) FROM targets) AS num_targets,
+	(SELECT COUNT(*) FROM exported) AS num_exported,
+	(SELECT COUNT(*) FROM unindexed) AS num_unindexed
+`
+
+var scanFirstCoverageCounts = basestore.NewFirstScanner[shared.CoverageCounts](func(s dbutil.Scanner) (c shared.CoverageCounts, _ error) {
+	err := s.Scan(&c.NumTargetIndexes, &c.NumExportedIndexes, &c.NumRepositoriesWithoutCurrentRanks)
+	return c, err
+})
 
 func (s *store) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (_ map[api.RepoID]time.Time, err error) {
 	ctx, _, endObservation := s.operations.lastUpdatedAt.With(ctx, &err, observation.Args{})

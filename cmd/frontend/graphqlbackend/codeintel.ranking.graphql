@@ -30,6 +30,22 @@ type GlobalRankingSummary {
     The time that the next ranking job is configured to begin.
     """
     nextJobStartsAt: DateTime
+
+    """
+    The current number of SCIP indexes that are visible to the ranking calculation.
+    """
+    numExportedIndexes: Int!
+
+    """
+    The target number of SCIP indexes that are visible to the ranking calculation.
+    """
+    numTargetIndexes: Int!
+
+    """
+    The number of repositories which have ranks but haven't been indexed since the
+    ranking scores became available.
+    """
+    numRepositoriesWithoutCurrentRanks: Int!
 }
 
 """

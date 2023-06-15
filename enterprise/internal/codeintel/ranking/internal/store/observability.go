@@ -12,6 +12,7 @@ type operations struct {
 	getStarRank                    *observation.Operation
 	getDocumentRanks               *observation.Operation
 	getReferenceCountStatistics    *observation.Operation
+	coverageCounts                 *observation.Operation
 	lastUpdatedAt                  *observation.Operation
 	getUploadsForRanking           *observation.Operation
 	vacuumAbandonedExportedUploads *observation.Operation
@@ -58,6 +59,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getStarRank:                    op("GetStarRank"),
 		getDocumentRanks:               op("GetDocumentRanks"),
 		getReferenceCountStatistics:    op("GetReferenceCountStatistics"),
+		coverageCounts:                 op("CoverageCounts"),
 		lastUpdatedAt:                  op("LastUpdatedAt"),
 		getUploadsForRanking:           op("GetUploadsForRanking"),
 		vacuumAbandonedExportedUploads: op("VacuumAbandonedExportedUploads"),

@@ -12,8 +12,8 @@ import (
 	"time"
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
-	shared1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
-	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
+	shared1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	conftypes "github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	schema "github.com/sourcegraph/sourcegraph/schema"
@@ -30,6 +30,9 @@ type MockStore struct {
 	// CoordinateFunc is an instance of a mock function object controlling
 	// the behavior of the method Coordinate.
 	CoordinateFunc *StoreCoordinateFunc
+	// CoverageCountsFunc is an instance of a mock function object
+	// controlling the behavior of the method CoverageCounts.
+	CoverageCountsFunc *StoreCoverageCountsFunc
 	// DeleteRankingProgressFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteRankingProgress.
 	DeleteRankingProgressFunc *StoreDeleteRankingProgressFunc
@@ -120,6 +123,11 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
+		CoverageCountsFunc: &StoreCoverageCountsFunc{
+			defaultHook: func(context.Context, string) (r0 shared.CoverageCounts, r1 error) {
+				return
+			},
+		},
 		DeleteRankingProgressFunc: &StoreDeleteRankingProgressFunc{
 			defaultHook: func(context.Context, string) (r0 error) {
 				return
@@ -146,12 +154,12 @@ func NewMockStore() *MockStore {
 			},
 		},
 		GetUploadsForRankingFunc: &StoreGetUploadsForRankingFunc{
-			defaultHook: func(context.Context, string, string, int) (r0 []shared.ExportedUpload, r1 error) {
+			defaultHook: func(context.Context, string, string, int) (r0 []shared1.ExportedUpload, r1 error) {
 				return
 			},
 		},
 		InsertDefinitionsForRankingFunc: &StoreInsertDefinitionsForRankingFunc{
-			defaultHook: func(context.Context, string, chan shared1.RankingDefinitions) (r0 error) {
+			defaultHook: func(context.Context, string, chan shared.RankingDefinitions) (r0 error) {
 				return
 			},
 		},
@@ -191,7 +199,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		SummariesFunc: &StoreSummariesFunc{
-			defaultHook: func(context.Context) (r0 []shared1.Summary, r1 error) {
+			defaultHook: func(context.Context) (r0 []shared.Summary, r1 error) {
 				return
 			},
 		},
@@ -247,6 +255,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.Coordinate")
 			},
 		},
+		CoverageCountsFunc: &StoreCoverageCountsFunc{
+			defaultHook: func(context.Context, string) (shared.CoverageCounts, error) {
+				panic("unexpected invocation of MockStore.CoverageCounts")
+			},
+		},
 		DeleteRankingProgressFunc: &StoreDeleteRankingProgressFunc{
 			defaultHook: func(context.Context, string) error {
 				panic("unexpected invocation of MockStore.DeleteRankingProgress")
@@ -273,12 +286,12 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		GetUploadsForRankingFunc: &StoreGetUploadsForRankingFunc{
-			defaultHook: func(context.Context, string, string, int) ([]shared.ExportedUpload, error) {
+			defaultHook: func(context.Context, string, string, int) ([]shared1.ExportedUpload, error) {
 				panic("unexpected invocation of MockStore.GetUploadsForRanking")
 			},
 		},
 		InsertDefinitionsForRankingFunc: &StoreInsertDefinitionsForRankingFunc{
-			defaultHook: func(context.Context, string, chan shared1.RankingDefinitions) error {
+			defaultHook: func(context.Context, string, chan shared.RankingDefinitions) error {
 				panic("unexpected invocation of MockStore.InsertDefinitionsForRanking")
 			},
 		},
@@ -318,7 +331,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		SummariesFunc: &StoreSummariesFunc{
-			defaultHook: func(context.Context) ([]shared1.Summary, error) {
+			defaultHook: func(context.Context) ([]shared.Summary, error) {
 				panic("unexpected invocation of MockStore.Summaries")
 			},
 		},
@@ -369,6 +382,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		CoordinateFunc: &StoreCoordinateFunc{
 			defaultHook: i.Coordinate,
+		},
+		CoverageCountsFunc: &StoreCoverageCountsFunc{
+			defaultHook: i.CoverageCounts,
 		},
 		DeleteRankingProgressFunc: &StoreDeleteRankingProgressFunc{
 			defaultHook: i.DeleteRankingProgress,
@@ -644,6 +660,114 @@ func (c StoreCoordinateFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreCoordinateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// StoreCoverageCountsFunc describes the behavior when the CoverageCounts
+// method of the parent MockStore instance is invoked.
+type StoreCoverageCountsFunc struct {
+	defaultHook func(context.Context, string) (shared.CoverageCounts, error)
+	hooks       []func(context.Context, string) (shared.CoverageCounts, error)
+	history     []StoreCoverageCountsFuncCall
+	mutex       sync.Mutex
+}
+
+// CoverageCounts delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) CoverageCounts(v0 context.Context, v1 string) (shared.CoverageCounts, error) {
+	r0, r1 := m.CoverageCountsFunc.nextHook()(v0, v1)
+	m.CoverageCountsFunc.appendCall(StoreCoverageCountsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CoverageCounts
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreCoverageCountsFunc) SetDefaultHook(hook func(context.Context, string) (shared.CoverageCounts, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CoverageCounts method of the parent MockStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreCoverageCountsFunc) PushHook(hook func(context.Context, string) (shared.CoverageCounts, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreCoverageCountsFunc) SetDefaultReturn(r0 shared.CoverageCounts, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (shared.CoverageCounts, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreCoverageCountsFunc) PushReturn(r0 shared.CoverageCounts, r1 error) {
+	f.PushHook(func(context.Context, string) (shared.CoverageCounts, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreCoverageCountsFunc) nextHook() func(context.Context, string) (shared.CoverageCounts, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreCoverageCountsFunc) appendCall(r0 StoreCoverageCountsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreCoverageCountsFuncCall objects
+// describing the invocations of this function.
+func (f *StoreCoverageCountsFunc) History() []StoreCoverageCountsFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreCoverageCountsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreCoverageCountsFuncCall is an object that describes an invocation of
+// method CoverageCounts on an instance of MockStore.
+type StoreCoverageCountsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 shared.CoverageCounts
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreCoverageCountsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreCoverageCountsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // StoreDeleteRankingProgressFunc describes the behavior when the
@@ -1191,15 +1315,15 @@ func (c StoreGetStarRankFuncCall) Results() []interface{} {
 // StoreGetUploadsForRankingFunc describes the behavior when the
 // GetUploadsForRanking method of the parent MockStore instance is invoked.
 type StoreGetUploadsForRankingFunc struct {
-	defaultHook func(context.Context, string, string, int) ([]shared.ExportedUpload, error)
-	hooks       []func(context.Context, string, string, int) ([]shared.ExportedUpload, error)
+	defaultHook func(context.Context, string, string, int) ([]shared1.ExportedUpload, error)
+	hooks       []func(context.Context, string, string, int) ([]shared1.ExportedUpload, error)
 	history     []StoreGetUploadsForRankingFuncCall
 	mutex       sync.Mutex
 }
 
 // GetUploadsForRanking delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) GetUploadsForRanking(v0 context.Context, v1 string, v2 string, v3 int) ([]shared.ExportedUpload, error) {
+func (m *MockStore) GetUploadsForRanking(v0 context.Context, v1 string, v2 string, v3 int) ([]shared1.ExportedUpload, error) {
 	r0, r1 := m.GetUploadsForRankingFunc.nextHook()(v0, v1, v2, v3)
 	m.GetUploadsForRankingFunc.appendCall(StoreGetUploadsForRankingFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -1208,7 +1332,7 @@ func (m *MockStore) GetUploadsForRanking(v0 context.Context, v1 string, v2 strin
 // SetDefaultHook sets function that is called when the GetUploadsForRanking
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreGetUploadsForRankingFunc) SetDefaultHook(hook func(context.Context, string, string, int) ([]shared.ExportedUpload, error)) {
+func (f *StoreGetUploadsForRankingFunc) SetDefaultHook(hook func(context.Context, string, string, int) ([]shared1.ExportedUpload, error)) {
 	f.defaultHook = hook
 }
 
@@ -1216,7 +1340,7 @@ func (f *StoreGetUploadsForRankingFunc) SetDefaultHook(hook func(context.Context
 // GetUploadsForRanking method of the parent MockStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *StoreGetUploadsForRankingFunc) PushHook(hook func(context.Context, string, string, int) ([]shared.ExportedUpload, error)) {
+func (f *StoreGetUploadsForRankingFunc) PushHook(hook func(context.Context, string, string, int) ([]shared1.ExportedUpload, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1224,20 +1348,20 @@ func (f *StoreGetUploadsForRankingFunc) PushHook(hook func(context.Context, stri
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetUploadsForRankingFunc) SetDefaultReturn(r0 []shared.ExportedUpload, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, string, int) ([]shared.ExportedUpload, error) {
+func (f *StoreGetUploadsForRankingFunc) SetDefaultReturn(r0 []shared1.ExportedUpload, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, string, int) ([]shared1.ExportedUpload, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetUploadsForRankingFunc) PushReturn(r0 []shared.ExportedUpload, r1 error) {
-	f.PushHook(func(context.Context, string, string, int) ([]shared.ExportedUpload, error) {
+func (f *StoreGetUploadsForRankingFunc) PushReturn(r0 []shared1.ExportedUpload, r1 error) {
+	f.PushHook(func(context.Context, string, string, int) ([]shared1.ExportedUpload, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreGetUploadsForRankingFunc) nextHook() func(context.Context, string, string, int) ([]shared.ExportedUpload, error) {
+func (f *StoreGetUploadsForRankingFunc) nextHook() func(context.Context, string, string, int) ([]shared1.ExportedUpload, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1284,7 +1408,7 @@ type StoreGetUploadsForRankingFuncCall struct {
 	Arg3 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared.ExportedUpload
+	Result0 []shared1.ExportedUpload
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -1306,15 +1430,15 @@ func (c StoreGetUploadsForRankingFuncCall) Results() []interface{} {
 // InsertDefinitionsForRanking method of the parent MockStore instance is
 // invoked.
 type StoreInsertDefinitionsForRankingFunc struct {
-	defaultHook func(context.Context, string, chan shared1.RankingDefinitions) error
-	hooks       []func(context.Context, string, chan shared1.RankingDefinitions) error
+	defaultHook func(context.Context, string, chan shared.RankingDefinitions) error
+	hooks       []func(context.Context, string, chan shared.RankingDefinitions) error
 	history     []StoreInsertDefinitionsForRankingFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertDefinitionsForRanking delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) InsertDefinitionsForRanking(v0 context.Context, v1 string, v2 chan shared1.RankingDefinitions) error {
+func (m *MockStore) InsertDefinitionsForRanking(v0 context.Context, v1 string, v2 chan shared.RankingDefinitions) error {
 	r0 := m.InsertDefinitionsForRankingFunc.nextHook()(v0, v1, v2)
 	m.InsertDefinitionsForRankingFunc.appendCall(StoreInsertDefinitionsForRankingFuncCall{v0, v1, v2, r0})
 	return r0
@@ -1323,7 +1447,7 @@ func (m *MockStore) InsertDefinitionsForRanking(v0 context.Context, v1 string, v
 // SetDefaultHook sets function that is called when the
 // InsertDefinitionsForRanking method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultHook(hook func(context.Context, string, chan shared1.RankingDefinitions) error) {
+func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultHook(hook func(context.Context, string, chan shared.RankingDefinitions) error) {
 	f.defaultHook = hook
 }
 
@@ -1332,7 +1456,7 @@ func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreInsertDefinitionsForRankingFunc) PushHook(hook func(context.Context, string, chan shared1.RankingDefinitions) error) {
+func (f *StoreInsertDefinitionsForRankingFunc) PushHook(hook func(context.Context, string, chan shared.RankingDefinitions) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1341,19 +1465,19 @@ func (f *StoreInsertDefinitionsForRankingFunc) PushHook(hook func(context.Contex
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreInsertDefinitionsForRankingFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string, chan shared1.RankingDefinitions) error {
+	f.SetDefaultHook(func(context.Context, string, chan shared.RankingDefinitions) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreInsertDefinitionsForRankingFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string, chan shared1.RankingDefinitions) error {
+	f.PushHook(func(context.Context, string, chan shared.RankingDefinitions) error {
 		return r0
 	})
 }
 
-func (f *StoreInsertDefinitionsForRankingFunc) nextHook() func(context.Context, string, chan shared1.RankingDefinitions) error {
+func (f *StoreInsertDefinitionsForRankingFunc) nextHook() func(context.Context, string, chan shared.RankingDefinitions) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1395,7 +1519,7 @@ type StoreInsertDefinitionsForRankingFuncCall struct {
 	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 chan shared1.RankingDefinitions
+	Arg2 chan shared.RankingDefinitions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -2212,15 +2336,15 @@ func (c StoreSoftDeleteStaleExportedUploadsFuncCall) Results() []interface{} {
 // StoreSummariesFunc describes the behavior when the Summaries method of
 // the parent MockStore instance is invoked.
 type StoreSummariesFunc struct {
-	defaultHook func(context.Context) ([]shared1.Summary, error)
-	hooks       []func(context.Context) ([]shared1.Summary, error)
+	defaultHook func(context.Context) ([]shared.Summary, error)
+	hooks       []func(context.Context) ([]shared.Summary, error)
 	history     []StoreSummariesFuncCall
 	mutex       sync.Mutex
 }
 
 // Summaries delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) Summaries(v0 context.Context) ([]shared1.Summary, error) {
+func (m *MockStore) Summaries(v0 context.Context) ([]shared.Summary, error) {
 	r0, r1 := m.SummariesFunc.nextHook()(v0)
 	m.SummariesFunc.appendCall(StoreSummariesFuncCall{v0, r0, r1})
 	return r0, r1
@@ -2228,7 +2352,7 @@ func (m *MockStore) Summaries(v0 context.Context) ([]shared1.Summary, error) {
 
 // SetDefaultHook sets function that is called when the Summaries method of
 // the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreSummariesFunc) SetDefaultHook(hook func(context.Context) ([]shared1.Summary, error)) {
+func (f *StoreSummariesFunc) SetDefaultHook(hook func(context.Context) ([]shared.Summary, error)) {
 	f.defaultHook = hook
 }
 
@@ -2236,7 +2360,7 @@ func (f *StoreSummariesFunc) SetDefaultHook(hook func(context.Context) ([]shared
 // Summaries method of the parent MockStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreSummariesFunc) PushHook(hook func(context.Context) ([]shared1.Summary, error)) {
+func (f *StoreSummariesFunc) PushHook(hook func(context.Context) ([]shared.Summary, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2244,20 +2368,20 @@ func (f *StoreSummariesFunc) PushHook(hook func(context.Context) ([]shared1.Summ
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreSummariesFunc) SetDefaultReturn(r0 []shared1.Summary, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]shared1.Summary, error) {
+func (f *StoreSummariesFunc) SetDefaultReturn(r0 []shared.Summary, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]shared.Summary, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreSummariesFunc) PushReturn(r0 []shared1.Summary, r1 error) {
-	f.PushHook(func(context.Context) ([]shared1.Summary, error) {
+func (f *StoreSummariesFunc) PushReturn(r0 []shared.Summary, r1 error) {
+	f.PushHook(func(context.Context) ([]shared.Summary, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreSummariesFunc) nextHook() func(context.Context) ([]shared1.Summary, error) {
+func (f *StoreSummariesFunc) nextHook() func(context.Context) ([]shared.Summary, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2295,7 +2419,7 @@ type StoreSummariesFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []shared1.Summary
+	Result0 []shared.Summary
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
