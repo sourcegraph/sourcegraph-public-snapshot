@@ -1,10 +1,12 @@
 package reposource
 
 import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestBitbucketCloud_cloneURLToRepoName(t *testing.T) {
