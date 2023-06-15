@@ -2,7 +2,6 @@ import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
@@ -13,6 +12,8 @@ import { getCurrentDocContext } from './document'
 import { History } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultilineMode } from './multiline'
+import { postProcess } from './post-process'
+import { Provider, ProviderConfig } from './providers/provider'
 import { SNIPPET_WINDOW_SIZE, lastNLines } from './utils'
 
 export const inlineCompletionsCache = new CompletionsCache()
@@ -32,29 +33,28 @@ export const inlineCompletionsCache = new CompletionsCache()
 // - Fix tests & productionize this. Land in nightly
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
-    private promptTokens: number
-    private maxPrefixTokens: number
-    private maxSuffixTokens: number
+    private promptChars: number
+    private maxPrefixChars: number
+    private maxSuffixChars: number
     private abortOpenInlineCompletions: () => void = () => {}
     private lastContentChanges: LRUCache<string, 'add' | 'del'> = new LRUCache<string, 'add' | 'del'>({
         max: 10,
     })
 
     constructor(
-        private completionsClient: SourcegraphNodeCompletionsClient,
+        private providerConfig: ProviderConfig,
         private history: History,
         private statusBar: CodyStatusBar,
         private codebaseContext: CodebaseContext,
-        private contextWindowTokens = 2048, // 8001
-        private charsPerToken = 4,
-        private responseTokens = 200,
+        private responsePercentage = 0.1,
         private prefixPercentage = 0.6,
         private suffixPercentage = 0.1,
         private disableTimeouts = false
     ) {
-        this.promptTokens = this.contextWindowTokens - this.responseTokens
-        this.maxPrefixTokens = Math.floor(this.promptTokens * this.prefixPercentage)
-        this.maxSuffixTokens = Math.floor(this.promptTokens * this.suffixPercentage)
+        this.promptChars =
+            providerConfig.maximumContextCharacters - providerConfig.maximumContextCharacters * responsePercentage
+        this.maxPrefixChars = Math.floor(this.promptChars * this.prefixPercentage)
+        this.maxSuffixChars = Math.floor(this.promptChars * this.suffixPercentage)
 
         vscode.workspace.onDidChangeTextDocument(event => {
             const document = event.document
@@ -87,10 +87,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
     }
 
-    private tokToChar(toks: number): number {
-        return toks * this.charsPerToken
-    }
-
     private async provideInlineCompletionItemsInner(
         document: vscode.TextDocument,
         position: vscode.Position,
@@ -109,12 +105,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        const docContext = getCurrentDocContext(
-            document,
-            position,
-            this.tokToChar(this.maxPrefixTokens),
-            this.tokToChar(this.maxSuffixTokens)
-        )
+        const docContext = getCurrentDocContext(document, position, this.maxPrefixChars, this.maxSuffixChars)
         if (!docContext) {
             return []
         }
@@ -142,32 +133,20 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
         }
 
-        const remainingChars = this.tokToChar(this.promptTokens)
-
-        const completionNoSnippets = new InlineCompletionProvider(
-            this.completionsClient,
-            remainingChars,
-            this.responseTokens,
-            [],
-            prefix,
-            suffix,
-            '\n',
-            document.languageId
-        )
-        const emptyPromptLength = completionNoSnippets.emptyPromptLength()
-
-        const contextChars = this.tokToChar(this.promptTokens) - emptyPromptLength
-
         const similarCode = await getContext({
             currentEditor,
             history: this.history,
             targetText: lastNLines(prefix, SNIPPET_WINDOW_SIZE),
             windowSize: SNIPPET_WINDOW_SIZE,
-            maxChars: contextChars,
+            // TODO: Document this as behavior change in the PR.
+            // To simplify the setup, we increase the context maximum character count to the whole
+            // prompt size. This means we slightly over-fetch context but I don't think this is
+            // going to be an issue since it's only for a fixed %.
+            maxChars: this.promptChars,
             codebaseContext: this.codebaseContext,
         })
 
-        const completers: CompletionProvider[] = []
+        const completers: Provider[] = []
         let timeout: number
         let multilineMode: null | 'block' = null
         // VS Code does not show completions if we are in the process of writing a word or if a
@@ -192,6 +171,17 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
+        const sharedProviderOptions = {
+            prefix,
+            suffix,
+            fileName: document.fileName,
+            languageId: document.languageId,
+            snippets: similarCode,
+            responsePercentage: this.responsePercentage,
+            prefixPercentage: this.prefixPercentage,
+            suffixPercentage: this.suffixPercentage,
+        }
+
         if (
             (multilineMode = detectMultilineMode(
                 prefix,
@@ -203,63 +193,31 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         ) {
             timeout = 200
             completers.push(
-                new InlineCompletionProvider(
-                    this.completionsClient,
-                    remainingChars,
-                    this.responseTokens,
-                    similarCode,
-                    prefix,
-                    suffix,
-                    '',
-                    document.languageId,
-                    3,
-                    multilineMode
-                )
+                this.providerConfig.create({
+                    ...sharedProviderOptions,
+                    n: 3,
+                    multilineMode,
+                })
             )
         } else if (sameLinePrefix.trim() === '') {
             // The current line is empty
             timeout = 20
             completers.push(
-                new InlineCompletionProvider(
-                    this.completionsClient,
-                    remainingChars,
-                    this.responseTokens,
-                    similarCode,
-                    prefix,
-                    suffix,
-                    '',
-                    document.languageId,
-                    3 // tries
-                )
+                this.providerConfig.create({
+                    ...sharedProviderOptions,
+                    n: 3,
+                    multilineMode: null,
+                })
             )
         } else {
             // The current line has a suffix
             timeout = 200
             completers.push(
-                new InlineCompletionProvider(
-                    this.completionsClient,
-                    remainingChars,
-                    this.responseTokens,
-                    similarCode,
-                    prefix,
-                    suffix,
-                    '',
-                    document.languageId,
-                    2 // tries
-                ),
-                // Create a completion request for the current prefix with a new line added. This
-                // will make for faster recommendations when the user presses enter.
-                new InlineCompletionProvider(
-                    this.completionsClient,
-                    remainingChars,
-                    this.responseTokens,
-                    similarCode,
-                    prefix,
-                    suffix,
-                    '\n', // force a new line in the case we are at end of line
-                    document.languageId,
-                    1 // tries
-                )
+                this.providerConfig.create({
+                    ...sharedProviderOptions,
+                    n: 3,
+                    multilineMode: null,
+                })
             )
         }
 
@@ -283,18 +241,33 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             await new Promise<void>(resolve => setTimeout(resolve, timeout))
         }
 
-        const results = rankCompletions(
-            (await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))).flat()
+        const completions = (
+            await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))
+        ).flat()
+
+        // Post process
+        const processedCompletions = completions.map(completion =>
+            postProcess({
+                prefix,
+                suffix,
+                multiline: multilineMode !== null,
+                languageId: document.languageId,
+                completion,
+            })
         )
 
-        const visibleResults = filterCompletions(results)
+        // Filter results
+        const visibleResults = filterCompletions(processedCompletions)
+
+        // Rank results
+        const rankedResults = rankCompletions(visibleResults)
 
         stopLoading()
 
-        if (visibleResults.length > 0) {
+        if (rankedResults.length > 0) {
             CompletionLogger.suggest(logId)
-            inlineCompletionsCache.add(logId, visibleResults)
-            return toInlineCompletionItems(logId, visibleResults)
+            inlineCompletionsCache.add(logId, rankedResults)
+            return toInlineCompletionItems(logId, rankedResults)
         }
 
         CompletionLogger.noResponse(logId)

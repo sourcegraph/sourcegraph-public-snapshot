@@ -7,29 +7,32 @@ import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api
 import { Completion } from '..'
 import { messagesToText } from '../utils'
 
-import { Provider, ProviderOptions } from './provider'
+import { Provider, ProviderConfig, ProviderOptions } from './provider'
 
 const COMPLETIONS_PREAMBLE = `You are Cody, a code completion AI developed by Sourcegraph.
 You only respond in a single Markdown code blocks to all questions.
 All answers must be valid {lang} programs.
 DO NOT respond with anything other than code.`
 
+const CHARS_PER_TOKEN = 4
+
+interface AnthropicOptions {
+    contextWindowTokens: number
+    completionsClient: SourcegraphNodeCompletionsClient
+}
+
 export class AnthropicProvider extends Provider {
     private promptChars: number
     private responseTokens: number
     private completionsClient: SourcegraphNodeCompletionsClient
 
-    constructor(
-        options: ProviderOptions,
-        anthropicOptions: {
-            promptChars: number
-            responseTokens: number
-            completionsClient: SourcegraphNodeCompletionsClient
-        }
-    ) {
+    constructor(options: ProviderOptions, anthropicOptions: AnthropicOptions) {
         super(options)
-        this.promptChars = anthropicOptions.promptChars
-        this.responseTokens = anthropicOptions.responseTokens
+        this.promptChars =
+            Math.ceil(anthropicOptions.contextWindowTokens / CHARS_PER_TOKEN) -
+            Math.floor((anthropicOptions.contextWindowTokens / CHARS_PER_TOKEN) * options.responsePercentage)
+        this.responseTokens = anthropicOptions.contextWindowTokens * options.responsePercentage
+        console.log({ THISMUSTBEAROUND200: this.responseTokens })
         this.completionsClient = anthropicOptions.completionsClient
     }
 
@@ -195,5 +198,14 @@ export class AnthropicProvider extends Provider {
                 },
             ]
         })
+    }
+}
+
+export function createProviderConfig(anthropicOptions: AnthropicOptions): ProviderConfig {
+    return {
+        create(options: ProviderOptions) {
+            return new AnthropicProvider(options, anthropicOptions)
+        },
+        maximumContextCharacters: anthropicOptions.contextWindowTokens / CHARS_PER_TOKEN,
     }
 }
