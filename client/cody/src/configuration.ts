@@ -6,6 +6,7 @@ import type {
     ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared/src/configuration'
 
+import { DOTCOM_URL } from './chat/protocol'
 import { LocalStorage } from './services/LocalStorageProvider'
 import { SecretStorage, getAccessToken } from './services/SecretStorageProvider'
 
@@ -31,7 +32,7 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
     }
 
     return {
-        serverEndpoint: sanitizeServerEndpoint(config.get('cody.serverEndpoint', '')),
+        serverEndpoint: sanitizeServerEndpoint(config.get('cody.serverEndpoint', DOTCOM_URL.href)),
         codebase: sanitizeCodebase(config.get('cody.codebase')),
         customHeaders: config.get<object>('cody.customHeaders', {}) as Record<string, string>,
         useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
@@ -48,7 +49,7 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
 
 function sanitizeCodebase(codebase: string | undefined): string {
     if (!codebase) {
-        return ''
+        return DOTCOM_URL.href
     }
     const protocolRegexp = /^(https?):\/\//
     const trailingSlashRegexp = /\/$/

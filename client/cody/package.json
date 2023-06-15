@@ -743,7 +743,7 @@
           "type": "string",
           "format": "uri",
           "description": "URL to the Sourcegraph instance.",
-          "deprecationMessage": "Please login following the instructions in the UI."
+          "examples": "https://example.sourcegraph.com"
         },
         "cody.codebase": {
           "order": 2,

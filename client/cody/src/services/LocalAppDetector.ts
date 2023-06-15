@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 
 export interface LocalProcess {
-    arch: string
-    homeDir: string | undefined
-    os: string
+    arch?: string
+    homeDir?: string | undefined
+    os?: string
     isAppInstalled: boolean
 }
 

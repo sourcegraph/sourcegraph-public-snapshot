@@ -5,15 +5,21 @@ import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 import { test } from './helpers'
 
 test('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
-    await sidebar.getByRole('textbox', { name: 'Sourcegraph Instance URL' }).fill(SERVER_URL)
-
-    await sidebar.getByRole('textbox', { name: 'Access Token (docs)' }).fill('test token')
-    await sidebar.getByRole('button', { name: 'Sign In' }).click()
+    await sidebar.getByRole('button', { name: 'Other Login Options...' }).click()
+    await page.getByRole('option', { name: 'Login with URL and Access Token, Login with URL and Access Token' }).click()
+    await page.getByRole('combobox', { name: 'input' }).fill(SERVER_URL)
+    await page.getByRole('combobox', { name: 'input' }).press('Enter')
+    await page.getByRole('combobox', { name: 'input' }).fill('abcdefghijklmnopqrstuvwxyz')
+    await page.getByRole('combobox', { name: 'input' }).press('Enter')
 
     await expect(sidebar.getByText('Invalid credentials')).toBeVisible()
 
-    await sidebar.getByRole('textbox', { name: 'Access Token (docs)' }).fill(VALID_TOKEN)
-    await sidebar.getByRole('button', { name: 'Sign In' }).click()
+    await sidebar.getByRole('button', { name: 'Other Login Options...' }).click()
+    await page.getByRole('option', { name: 'Login with URL and Access Token, Login with URL and Access Token' }).click()
+    await page.getByRole('combobox', { name: 'input' }).fill(SERVER_URL)
+    await page.getByRole('combobox', { name: 'input' }).press('Enter')
+    await page.getByRole('combobox', { name: 'input' }).fill(VALID_TOKEN)
+    await page.getByRole('combobox', { name: 'input' }).press('Enter')
 
     // Collapse the task tree view
     await page.getByRole('button', { name: 'Fixups Section' }).click()
@@ -28,6 +34,6 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
     await page.click('[aria-label="Settings"]')
     await sidebar.getByRole('button', { name: 'Logout' }).click()
 
-    await expect(sidebar.getByRole('button', { name: 'Sign In' })).toBeVisible()
+    await expect(sidebar.getByRole('button', { name: 'Other Login Options...' })).toBeVisible()
     await expect(sidebar.getByText('Invalid credentials')).not.toBeVisible()
 })

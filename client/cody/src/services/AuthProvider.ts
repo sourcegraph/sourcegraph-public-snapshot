@@ -17,10 +17,10 @@ import { newAuthStatus } from '../chat/utils'
 
 import { LoginMenuQuickPick, LoginStepInputBox } from './CodyMenus'
 import { LocalStorage } from './LocalStorageProvider'
-import { SecretStorage } from './SecretStorageProvider'
+import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from './SecretStorageProvider'
 
 export class AuthProvider {
-    private endpoint = DOTCOM_URL.href
+    private endpoint: string | null = null
     private endpointHistory: string[] = []
     private appScheme = vscode.env.uriScheme
     private authStatus: AuthStatus | null = null
@@ -33,6 +33,7 @@ export class AuthProvider {
     ) {
         this.loadEndpointHistory()
     }
+
     public async login(endpoint?: string): Promise<void> {
         this.setEndpoint(endpoint)
         const item = await LoginMenuQuickPick(this.endpointHistory)
@@ -74,6 +75,16 @@ export class AuthProvider {
                 await this.auth(selectedEndpoint, input?.token || null)
             }
         }
+    }
+
+    public async logout(): Promise<void> {
+        await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+        if (this.endpoint) {
+            await this.secretStorage.delete(this.endpoint)
+        }
+        await vscode.commands.executeCommand('setContext', 'cody.activated', false)
+        this.endpoint = null
+        this.authStatus = null
     }
 
     public async getAuthStatus(

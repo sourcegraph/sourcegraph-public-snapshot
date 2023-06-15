@@ -6,6 +6,8 @@ import { Memento } from 'vscode'
 
 import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
+import { updateConfiguration } from '../configuration'
+
 export class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     private KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
@@ -27,6 +29,7 @@ export class LocalStorage {
             const uri = new URL(endpoint).href
             await this.storage.update(this.LAST_USED_ENDPOINT, uri)
             await this.addEndpointHistory(uri)
+            await updateConfiguration('serverEndpoint', endpoint)
         } catch (error) {
             console.error(error)
         }
@@ -36,9 +39,14 @@ export class LocalStorage {
         return this.storage.get<string[] | null>(this.CODY_ENDPOINT_HISTORY, null)
     }
 
+    public async deleteEndpointHistory(): Promise<void> {
+        await this.storage.update(this.CODY_ENDPOINT_HISTORY, null)
+    }
+
     private async addEndpointHistory(endpoint: string): Promise<void> {
         const history = this.storage.get<string[] | null>(this.CODY_ENDPOINT_HISTORY, null)
         const historySet = new Set(history)
+        historySet.delete(endpoint)
         historySet.add(endpoint)
         await this.storage.update(this.CODY_ENDPOINT_HISTORY, [...historySet])
     }
