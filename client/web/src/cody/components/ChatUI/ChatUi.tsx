@@ -332,7 +332,7 @@ const CodyNotEnabledNotice: React.FunctionComponent = React.memo(function CodyNo
                 <CodyNotEnabledIcon className="flex-shrink-0" />
                 <Text className="ml-2">
                     Cody isn't available on this instance, but you can learn more about Cody{' '}
-                    <Link to="https://about.sourcegraph.com/cody">here</Link>.
+                    <Link to="https://about.sourcegraph.com/cody?utm_source=server">here</Link>.
                 </Text>
             </div>
         </div>
