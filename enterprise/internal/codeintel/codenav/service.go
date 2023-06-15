@@ -900,6 +900,16 @@ func (s *Service) GetScipDefinitionsLocation(ctx context.Context, document *scip
 	return s.lsifstore.GetScipDefinitionsLocation(ctx, document, occurrence, uploadID, path, limit, offset)
 }
 
+func (s *Service) GetLocationByExplodedSymbol(
+	ctx context.Context,
+	symbolName string,
+	uploadID int,
+	scipFieldName string,
+	path string,
+) (locations []shared.Location, err error) {
+	return s.lsifstore.GetLocationByExplodedSymbol(ctx, symbolName, uploadID, scipFieldName, path)
+}
+
 func (s *Service) GetDefinitionBySymbolName(
 	ctx context.Context,
 	orderedMonikers []precise.QualifiedMonikerData,

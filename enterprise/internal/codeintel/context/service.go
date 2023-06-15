@@ -93,33 +93,38 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		}
 	}
 
-	var scipDocs []*scip.Document
-	for _, upload := range uploads {
-		sd, err := s.codenavSvc.GetSCIPDocumentsBySymbolNames(ctx, upload.ID, symbolNames)
-		if err != nil {
-			return nil, err
-		}
-		scipDocs = append(scipDocs, sd...)
-	}
+	// var scipDocs []*scip.Document
+	// for _, upload := range uploads {
+	// 	sd, err := s.codenavSvc.GetSCIPDocumentsBySymbolNames(ctx, upload.ID, symbolNames)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	scipDocs = append(scipDocs, sd...)
+	// }
 
-	type filteredIndex struct {
-		Document   *scip.Document
-		Occurrence *scip.Occurrence
-	}
+	// type filteredIndex struct {
+	// 	Document   *scip.Document
+	// 	Occurrence *scip.Occurrence
+	// }
 
-	usersDescriptorToIndexMap := map[string][]filteredIndex{}
-	for _, sdoc := range scipDocs {
-		for _, occ := range sdoc.Occurrences {
-			e := strings.Split(occ.Symbol, "/")
-			key := e[len(e)-1]
+	// usersDescriptorToIndexMap := map[string][]filteredIndex{}
+	// for _, sdoc := range scipDocs {
+	// 	for _, occ := range sdoc.Occurrences {
+	// 		e := strings.Split(occ.Symbol, "/")
+	// 		key := e[len(e)-1]
 
-			if _, ok := usersDescriptorsMap[key]; ok {
-				usersDescriptorToIndexMap[key] = append(usersDescriptorToIndexMap[key], filteredIndex{
-					Document:   sdoc,
-					Occurrence: occ,
-				})
-			}
-		}
+	// 		if _, ok := usersDescriptorsMap[key]; ok {
+	// 			usersDescriptorToIndexMap[key] = append(usersDescriptorToIndexMap[key], filteredIndex{
+	// 				Document:   sdoc,
+	// 				Occurrence: occ,
+	// 			})
+	// 		}
+	// 	}
+	// }
+
+	index, err := s.codenavSvc.GetFullSCIPNameByDescriptor(ctx, []int{uploads[0].ID}, symbolNames)
+	if err != nil {
+		return nil, err
 	}
 
 	repo, err := s.repostore.GetByIDs(ctx, api.RepoID(repoID))
@@ -153,76 +158,136 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	seenOccurrences := map[string]struct{}{}
 	var defsList []codenavshared.UploadLocation
 	var preciseDataList []*preciseData
-	for _, oap := range usersDescriptorToIndexMap {
-		for _, el := range oap {
-			r := scip.NewRange(el.Occurrence.Range)
-			args := codenavtypes.RequestArgs{
-				RepositoryID: repoID,
-				Commit:       commitID,
-				Path:         el.Document.RelativePath,
-				Line:         int(r.Start.Line),
-				Character:    int(r.Start.Character),
-				Limit:        100, //! MAGIC NUMBER
-				RawCursor:    "",
-			}
-			hunkCache, err := codenav.NewHunkCache(hunkCacheSize)
+	for _, idx := range index {
+		// r := scip.NewRange(el.Occurrence.Range)
+		args := codenavtypes.RequestArgs{
+			RepositoryID: repoID,
+			Commit:       commitID,
+			Path:         "",
+			Line:         0,
+			Character:    0,
+			Limit:        100, //! MAGIC NUMBER
+			RawCursor:    "",
+		}
+		hunkCache, err := codenav.NewHunkCache(hunkCacheSize)
+		if err != nil {
+			return nil, err
+		}
+		reqState := codenavtypes.NewRequestState(
+			uploads,
+			s.repostore,
+			authz.DefaultSubRepoPermsChecker,
+			s.gitserverClient,
+			repo[0],
+			commitID,
+			"",
+			maximumIndexesPerMonikerSearch,
+			hunkCache,
+		)
+
+		if _, ok := seenOccurrences[idx.GetIdentifier()]; ok {
+			continue
+		}
+		seenOccurrences[idx.GetIdentifier()] = struct{}{}
+
+		for _, upload := range uploads {
+			// loc, _, err := s.codenavSvc.GetScipDefinitionsLocation(ctx, el.Document, el.Occurrence, upload.ID, el.Document.RelativePath, 100, 0)
+			// if err != nil {
+			// 	return nil, err
+			// }
+			loc, err := s.codenavSvc.GetLocationByExplodedSymbol(ctx, idx.GetIdentifier(), upload.ID, "definition_ranges", "")
 			if err != nil {
 				return nil, err
 			}
-			reqState := codenavtypes.NewRequestState(
-				uploads,
-				s.repostore,
-				authz.DefaultSubRepoPermsChecker,
-				s.gitserverClient,
-				repo[0],
-				commitID,
-				el.Document.RelativePath,
-				maximumIndexesPerMonikerSearch,
-				hunkCache,
-			)
 
-			if _, ok := seenOccurrences[el.Occurrence.Symbol]; ok {
-				continue
+			ul, err := s.codenavSvc.GetUploadLocations(ctx, args, reqState, loc, true)
+			if err != nil {
+				return nil, err
 			}
-			seenOccurrences[el.Occurrence.Symbol] = struct{}{}
+			fmt.Println("HERE IS THE ul \n", ul)
+			defsList = append(defsList, ul...)
+			pd := &preciseData{
+				symbolName: idx.GetIdentifier(),
+				repository: string(repo[0].Name),
+				// symbolRole: int32(el.Occurrence.SymbolRoles),
+				confidence: "PRECISE",
+				location:   ul,
+			}
+			preciseDataList = append(preciseDataList, pd)
+			e := strings.Split(idx.GetIdentifier(), "/")
+			key := e[len(e)-1]
+			definitionMap[key] = pd
+			// if key != "" {
 
-			// Shit still works
-			// test, err := s.codenavSvc.GetDefinitions(ctx, args, reqState)
-			// if err != nil {
-			// 	return "", err
 			// }
-			// defsList = append(defsList, test...)
-			for _, upload := range uploads {
-				loc, _, err := s.codenavSvc.GetScipDefinitionsLocation(ctx, el.Document, el.Occurrence, upload.ID, el.Document.RelativePath, 100, 0)
-				if err != nil {
-					return nil, err
-				}
 
-				ul, err := s.codenavSvc.GetUploadLocations(ctx, args, reqState, loc, true)
-				if err != nil {
-					return nil, err
-				}
-				fmt.Println("HERE IS THE ul \n", ul)
-				defsList = append(defsList, ul...)
-				pd := &preciseData{
-					symbolName: el.Occurrence.Symbol,
-					repository: string(repo[0].Name),
-					symbolRole: int32(el.Occurrence.SymbolRoles),
-					confidence: "PRECISE",
-					location:   ul,
-				}
-				preciseDataList = append(preciseDataList, pd)
-				e := strings.Split(el.Occurrence.Symbol, "/")
-				key := e[len(e)-1]
-				definitionMap[key] = pd
-				// if key != "" {
-
-				// }
-
-				fmt.Println("HERE IS THE defsList \n", defsList[0])
-			}
+			fmt.Println("HERE IS THE defsList \n", defsList[0])
 		}
 	}
+	// for _, oap := range usersDescriptorToIndexMap {
+	// 	for _, el := range oap {
+	// 		r := scip.NewRange(el.Occurrence.Range)
+	// 		args := codenavtypes.RequestArgs{
+	// 			RepositoryID: repoID,
+	// 			Commit:       commitID,
+	// 			Path:         el.Document.RelativePath,
+	// 			Line:         0,
+	// 			Character:    0,
+	// 			Limit:        100, //! MAGIC NUMBER
+	// 			RawCursor:    "",
+	// 		}
+	// 		hunkCache, err := codenav.NewHunkCache(hunkCacheSize)
+	// 		if err != nil {
+	// 			return nil, err
+	// 		}
+	// 		reqState := codenavtypes.NewRequestState(
+	// 			uploads,
+	// 			s.repostore,
+	// 			authz.DefaultSubRepoPermsChecker,
+	// 			s.gitserverClient,
+	// 			repo[0],
+	// 			commitID,
+	// 			el.Document.RelativePath,
+	// 			maximumIndexesPerMonikerSearch,
+	// 			hunkCache,
+	// 		)
+
+	// 		if _, ok := seenOccurrences[el.Occurrence.Symbol]; ok {
+	// 			continue
+	// 		}
+	// 		seenOccurrences[el.Occurrence.Symbol] = struct{}{}
+
+	// 		for _, upload := range uploads {
+	// 			loc, _, err := s.codenavSvc.GetScipDefinitionsLocation(ctx, el.Document, el.Occurrence, upload.ID, el.Document.RelativePath, 100, 0)
+	// 			if err != nil {
+	// 				return nil, err
+	// 			}
+
+	// 			ul, err := s.codenavSvc.GetUploadLocations(ctx, args, reqState, loc, true)
+	// 			if err != nil {
+	// 				return nil, err
+	// 			}
+	// 			fmt.Println("HERE IS THE ul \n", ul)
+	// 			defsList = append(defsList, ul...)
+	// 			pd := &preciseData{
+	// 				symbolName: el.Occurrence.Symbol,
+	// 				repository: string(repo[0].Name),
+	// 				symbolRole: int32(el.Occurrence.SymbolRoles),
+	// 				confidence: "PRECISE",
+	// 				location:   ul,
+	// 			}
+	// 			preciseDataList = append(preciseDataList, pd)
+	// 			e := strings.Split(el.Occurrence.Symbol, "/")
+	// 			key := e[len(e)-1]
+	// 			definitionMap[key] = pd
+	// 			// if key != "" {
+
+	// 			// }
+
+	// 			fmt.Println("HERE IS THE defsList \n", defsList[0])
+	// 		}
+	// 	}
+	// }
 
 	keysInString := []string{}
 	textInString := []string{}

@@ -40,4 +40,12 @@ type CodeNavService interface {
 	GetScipDefinitionsLocation(ctx context.Context, document *scip.Document, occ *scip.Occurrence, uploadID int, path string, limit, offset int) (_ []shared.Location, _ int, err error)
 
 	GetUploadLocations(ctx context.Context, args codenavtypes.RequestArgs, requestState codenavtypes.RequestState, locations []shared.Location, includeFallbackLocations bool) ([]shared.UploadLocation, error)
+
+	GetLocationByExplodedSymbol(
+		ctx context.Context,
+		symbolName string,
+		uploadID int,
+		scipFieldName string,
+		path string,
+	) (locations []shared.Location, err error)
 }
