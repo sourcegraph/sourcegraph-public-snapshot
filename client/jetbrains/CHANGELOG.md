@@ -41,6 +41,8 @@
 
 ### Fixed
 
+- Fixed font on the chat ui [#53540](https://github.com/sourcegraph/sourcegraph/pull/53540)
+
 ### Security
 
 ## [3.0.0-alpha.1]
