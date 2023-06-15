@@ -159,19 +159,21 @@ func (r *ownResolver) GitBlobOwnership(
 		rrs = append(rrs, viewerResolvers...)
 	}
 
-	// Retrieve assigned owners.
-	assignedOwners, err := r.computeAssignedOwners(ctx, blob, repoID)
-	if err != nil {
-		return nil, err
-	}
-	rrs = append(rrs, assignedOwners...)
+	if args.IncludeReason(graphqlbackend.AssignedOwner) {
+		// Retrieve assigned owners.
+		assignedOwners, err := r.computeAssignedOwners(ctx, blob, repoID)
+		if err != nil {
+			return nil, err
+		}
+		rrs = append(rrs, assignedOwners...)
 
-	// Retrieve assigned teams.
-	assignedTeams, err := r.computeAssignedTeams(ctx, blob, repoID)
-	if err != nil {
-		return nil, err
+		// Retrieve assigned teams.
+		assignedTeams, err := r.computeAssignedTeams(ctx, blob, repoID)
+		if err != nil {
+			return nil, err
+		}
+		rrs = append(rrs, assignedTeams...)
 	}
-	rrs = append(rrs, assignedTeams...)
 
 	return r.ownershipConnection(ctx, args, rrs, blob.Repository(), blob.Path())
 }
