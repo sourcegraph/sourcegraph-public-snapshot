@@ -25,12 +25,7 @@ const LOG_MANUAL = { type: 'manual' }
  * that is most similar to the 'targetText'. In essence, it sets the maximum number
  * of lines that the best match can be. A larger 'windowSize' means larger potential matches
  */
-const WINDOW_SIZE = 50
-
-function lastNLines(text: string, n: number): string {
-    const lines = text.split('\n')
-    return lines.slice(Math.max(0, lines.length - n)).join('\n')
-}
+const JACCARD_DISTANCE_WINDOW_SIZE = 50
 
 export const inlineCompletionsCache = new CompletionsCache()
 
@@ -154,6 +149,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const remainingChars = this.tokToChar(this.promptTokens)
 
+        // TODO(valery): do we create an InlineCompletionProvider here only to get the empty prompt?
         const completionNoSnippets = new InlineCompletionProvider(
             this.completionsClient,
             remainingChars,
@@ -170,9 +166,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const similarCode = await getContext({
             currentEditor,
+            prefix,
+            suffix,
             history: this.history,
-            targetText: lastNLines(prefix, WINDOW_SIZE),
-            windowSize: WINDOW_SIZE,
+            jaccardDistanceWindowSize: JACCARD_DISTANCE_WINDOW_SIZE,
             maxChars: contextChars,
             codebaseContext: this.codebaseContext,
         })
@@ -364,9 +361,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const similarCode = await getContext({
             currentEditor,
+            prefix,
+            suffix,
             history: this.history,
-            targetText: lastNLines(prefix, WINDOW_SIZE),
-            windowSize: WINDOW_SIZE,
+            jaccardDistanceWindowSize: JACCARD_DISTANCE_WINDOW_SIZE,
             maxChars: contextChars,
             codebaseContext: this.codebaseContext,
         })
