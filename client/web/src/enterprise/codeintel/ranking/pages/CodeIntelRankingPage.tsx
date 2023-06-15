@@ -101,7 +101,13 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                 <>
                     {data.rankingSummary.nextJobStartsAt && (
                         <Text size="small" className="text-right">
-                            Next job will begin <Timestamp date={data.rankingSummary.nextJobStartsAt} />.
+                            Next job is scheduled to begin{' '}
+                            {parseISO(data.rankingSummary.nextJobStartsAt).getTime() - Date.now() <= 60 * 1000 ? (
+                                <>shortly</>
+                            ) : (
+                                <Timestamp date={data.rankingSummary.nextJobStartsAt} />
+                            )}
+                            .
                         </Text>
                     )}
 
