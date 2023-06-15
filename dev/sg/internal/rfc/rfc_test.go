@@ -38,10 +38,11 @@ func TestAllocateRandomPort(t *testing.T) {
 }
 
 func TestAuthResponseHandler(t *testing.T) {
-	sendCode := make(chan string, 1)
+	receiveCode := make(chan string, 1)
+	receiveError := make(chan error, 1)
 	gracefulShutdown := false
 
-	handler := authResponseHandler(sendCode, &gracefulShutdown)
+	handler := authResponseHandler(receiveCode, receiveError, &gracefulShutdown)
 	req, _ := http.NewRequest("GET", "/?code=abc123", nil)
 	w := httptest.NewRecorder()
 
@@ -56,21 +57,28 @@ func TestAuthResponseHandler(t *testing.T) {
 	if gracefulShutdown != true {
 		t.Error("Expected gracefulShutdown to be true")
 	}
-	code := <-sendCode
+
+	err := <-receiveError
+	if err != nil {
+		t.Error("Did not expected an error", err)
+	}
+
+	code := <-receiveCode
 	if code != "abc123" {
 		t.Errorf("Expected auth code abc123, got %s", code)
 	}
 }
 
 func TestStartAuthHandlerServer(t *testing.T) {
-	sendCode := make(chan string, 1)
+	receiveCode := make(chan string, 1)
+	receiveError := make(chan error, 1)
 	socket, err := net.Listen("tcp", ":0")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer socket.Close()
 
-	startAuthHandlerServer(socket, "/auth", sendCode)
+	startAuthHandlerServer(socket, "/auth", receiveCode, receiveError)
 
 	const fakeAuthCode = "AAABBB"
 
@@ -85,14 +93,15 @@ func TestStartAuthHandlerServer(t *testing.T) {
 	}
 
 	// Check auth code is sent on channel
-	authCode := <-sendCode
+	<-receiveError
+	authCode := <-receiveCode
 	if authCode != fakeAuthCode {
 		t.Error("Expected non-empty auth code")
 	}
 }
 
 func TestHandleAuthResponse(t *testing.T) {
-	redirectUrl, sendCode, err := handleAuthResponse()
+	redirectUrl, receiveCode, receiveError, err := handleAuthResponse()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +128,8 @@ func TestHandleAuthResponse(t *testing.T) {
 	}
 
 	// Check auth code is sent on channel
-	authCode := <-sendCode
+	<-receiveError
+	authCode := <-receiveCode
 	if authCode != fakeAuthCode {
 		t.Error("Expected non-empty auth code")
 	}
@@ -147,9 +157,10 @@ func (th *mockConfig) Exchange(ctx context.Context, code string,
 
 func TestGetTokenFromWeb(t *testing.T) {
 	sendCode := make(chan string, 1)
+	sendError := make(chan error, 1)
 
-	responseFactory := func() (*url.URL, chan string, error) {
-		return &url.URL{Scheme: "http", Host: "localhost"}, sendCode, nil
+	responseFactory := func() (*url.URL, chan string, chan error, error) {
+		return &url.URL{Scheme: "http", Host: "localhost"}, sendCode, sendError, nil
 	}
 	ctx := context.Background()
 	config := &mockConfig{
@@ -167,6 +178,7 @@ func TestGetTokenFromWeb(t *testing.T) {
 
 	go func() {
 		sendCode <- config.code
+		sendError <- nil
 	}()
 
 	token, err := getTokenFromWeb(responseFactory, ctx, config, out)

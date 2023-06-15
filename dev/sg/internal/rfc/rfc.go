@@ -88,15 +88,17 @@ func allocateRandomPort() (net.Listener, error) {
 //
 // sendCode: A channel to send the authentication code received from the redirect to.
 // gracefulShutdown: Whether the server should shutdown gracefully after handling the request.
-func authResponseHandler(sendCode chan string, gracefulShutdown *bool) func(
+func authResponseHandler(sendCode chan string, sendError chan error, gracefulShutdown *bool) func(
 	rw http.ResponseWriter, r *http.Request) {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		authCode := r.URL.Query().Get("code")
 		if authCode == "" {
-			log.Fatal("Did not get authentication code from Google")
+			sendError <- errors.Errorf("Did not get authentication code from Google")
+			return
 		}
 		rw.Header().Add("Content-Type", "text/plain")
 		_, _ = rw.Write([]byte(`'sg' authentication complete. You may close this window.`))
+		sendError <- nil
 		sendCode <- authCode
 		*gracefulShutdown = true
 	}
@@ -112,14 +114,15 @@ func authResponseHandler(sendCode chan string, gracefulShutdown *bool) func(
 // gracefulShutdown: Whether the server shutdown gracefully after handling a request.
 // handler: The request handler for the server, containing the authEndpoint.
 func startAuthHandlerServer(socket net.Listener, authEndpoint string,
-	sendCode chan string) {
+	codeReceiver chan string, errorReceiver chan error) {
 	var server http.Server
 	var gracefulShutdown bool = false
 
 	// Creates a handler to handle response
 	handler := http.NewServeMux()
 	handler.Handle(authEndpoint,
-		http.HandlerFunc(authResponseHandler(sendCode, &gracefulShutdown)))
+		http.HandlerFunc(authResponseHandler(codeReceiver, errorReceiver,
+			&gracefulShutdown)))
 
 	server.Handler = handler
 
@@ -141,25 +144,27 @@ func startAuthHandlerServer(socket net.Listener, authEndpoint string,
 // socket: A listener for the local HTTP server.
 // redirectUrl: The URL to provide to Google for the OAuth redirect.
 // err: Any error encountered setting up the server.
-func handleAuthResponse() (*url.URL, chan string, error) {
-	sendCode := make(chan string, 1)
+func handleAuthResponse() (*url.URL, chan string, chan error, error) {
+	codeReceiver := make(chan string, 1)
+	errorReceiver := make(chan error, 1)
 
 	socket, err := allocateRandomPort()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	startAuthHandlerServer(socket, AuthEndpoint, sendCode)
+	startAuthHandlerServer(socket, AuthEndpoint, codeReceiver, errorReceiver)
 
 	redirectUrl := url.URL{
 		Host:   net.JoinHostPort("localhost", strconv.Itoa(socket.Addr().(*net.TCPAddr).Port)),
 		Path:   AuthEndpoint,
 		Scheme: "http",
 	}
-	return &redirectUrl, sendCode, nil
+
+	return &redirectUrl, codeReceiver, errorReceiver, nil
 }
 
-type authResponseHandlerFactory func() (*url.URL, chan string, error)
+type authResponseHandlerFactory func() (*url.URL, chan string, chan error, error)
 
 // tokenHandler implements a minimal surface required to retrieve a token.
 //
@@ -204,8 +209,9 @@ func getTokenFromWeb(responseFactory authResponseHandlerFactory, ctx context.Con
 
 	var redirectUrl *url.URL
 	var waitForCode chan string
+	var waitForError chan error
 
-	if redirectUrl, waitForCode, err = responseFactory(); err == nil {
+	if redirectUrl, waitForCode, waitForError, err = responseFactory(); err == nil {
 		config.SetRedirectURL(redirectUrl)
 	} else {
 		log.Fatal("Cannot create a response handler for Google authorization: ", err)
@@ -224,6 +230,11 @@ func getTokenFromWeb(responseFactory authResponseHandlerFactory, ctx context.Con
 			"      Please allow so the browser and sg can communicate.\n" +
 			"   2. Please accept the browser access request.\n\n" +
 			"   This process will resume automatically.")
+
+	authError := <-waitForError
+	if authError != nil {
+		return nil, authError
+	}
 
 	authCode := <-waitForCode
 	out.WriteSuccessf("Received confirmation. Continuing.")
