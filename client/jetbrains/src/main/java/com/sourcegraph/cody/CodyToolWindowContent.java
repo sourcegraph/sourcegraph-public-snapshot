@@ -26,6 +26,7 @@ import com.sourcegraph.cody.prompts.SupportedLanguages;
 import com.sourcegraph.cody.recipes.*;
 import com.sourcegraph.cody.ui.RoundedJBTextArea;
 import com.sourcegraph.cody.ui.SelectOptionManager;
+import com.sourcegraph.cody.vcs.*;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
 import java.awt.*;
@@ -96,7 +97,9 @@ class CodyToolWindowContent implements UpdatableChat {
                               editorSelection));
                 }));
     JButton gitHistoryButton = createWideButton("Summarize recent code changes");
-    gitHistoryButton.addActionListener(e -> recipeRunner.runGitHistory());
+    gitHistoryButton.addActionListener(
+        e ->
+            new SummarizeRecentChangesRecipe(project, this, recipeRunner).summarizeRecentChanges());
     JButton findCodeSmellsButton = createWideButton("Smell code");
     findCodeSmellsButton.addActionListener(
         e -> executeRecipeWithPromptProvider(recipeRunner, new FindCodeSmellsPromptProvider()));

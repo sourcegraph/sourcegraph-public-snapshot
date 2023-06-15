@@ -7,7 +7,7 @@ import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.editor.EditorContext;
 import com.sourcegraph.cody.editor.EditorContextGetter;
 import com.sourcegraph.cody.prompts.LanguageUtils;
-import java.util.Collections;
+import java.util.*;
 import org.jetbrains.annotations.NotNull;
 
 public class RecipeRunner {
@@ -20,17 +20,18 @@ public class RecipeRunner {
     this.chat = chat;
   }
 
-  public void runRecipe(@NotNull PromptProvider promptProvider, @NotNull String editorSelection) {
+  public void runRecipe(@NotNull PromptProvider promptProvider, @NotNull String textInputToPrompt) {
     EditorContext editorContext = EditorContextGetter.getEditorContext(project);
     Language language =
         new Language(
             LanguageUtils.getNormalizedLanguageName(editorContext.getCurrentFileExtension()));
 
-    TruncatedText truncatedSelectedText =
+    TruncatedText truncatedTextInputToPrompt =
         new TruncatedText(
-            TruncationUtils.truncateText(editorSelection, TruncationUtils.MAX_RECIPE_INPUT_TOKENS));
+            TruncationUtils.truncateText(
+                textInputToPrompt, TruncationUtils.MAX_RECIPE_INPUT_TOKENS));
 
-    SelectedText selectedText = new SelectedText(editorSelection);
+    OriginalText selectedText = new OriginalText(textInputToPrompt);
     String truncatedPrecedingText =
         editorContext.getPrecedingText() != null
             ? TruncationUtils.truncateTextStart(
@@ -43,7 +44,7 @@ public class RecipeRunner {
             : "";
 
     PromptContext promptContext =
-        promptProvider.getPromptContext(language, selectedText, truncatedSelectedText);
+        promptProvider.getPromptContext(language, selectedText, truncatedTextInputToPrompt);
 
     ChatMessage humanMessage =
         ChatMessage.createHumanMessage(
