@@ -34,7 +34,7 @@ type MultiHandler struct {
 	metricsStore          metricsstore.DistributedStore
 	CodeIntelQueueHandler QueueHandler[uploadsshared.Index]
 	BatchesQueueHandler   QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]
-	dequeueCache          *rcache.Cache
+	DequeueCache          *rcache.Cache
 	logger                log.Logger
 }
 
@@ -53,7 +53,7 @@ func NewMultiHandler(
 		metricsStore:          metricsStore,
 		CodeIntelQueueHandler: codeIntelQueueHandler,
 		BatchesQueueHandler:   batchesQueueHandler,
-		dequeueCache:          dequeueCache,
+		DequeueCache:          dequeueCache,
 		logger:                log.Scoped("executor-multi-queue-handler", "The route handler for all executor queues"),
 	}
 	return multiHandler
@@ -99,7 +99,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	}
 
 	// discard empty queues
-	nonEmptyQueues, err := m.filterNonEmptyQueues(ctx, req.Queues)
+	nonEmptyQueues, err := m.FilterNonEmptyQueues(ctx, req.Queues)
 	if err != nil {
 		return executortypes.Job{}, false, err
 	}
@@ -116,7 +116,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 		selectedQueue = nonEmptyQueues[0]
 	} else {
 		// multiple populated queues, discard queues at dequeue limit
-		candidateQueues, err := m.discardQueuesAtLimit(nonEmptyQueues)
+		candidateQueues, err := m.DiscardQueuesAtLimit(nonEmptyQueues)
 		if err != nil {
 			return executortypes.Job{}, false, err
 		}
@@ -216,7 +216,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	job.Token = token
 
 	// increment dequeue counter
-	err = m.dequeueCache.SetHashItem(selectedQueue, fmt.Sprint(time.Now().UnixNano()), job.Token)
+	err = m.DequeueCache.SetHashItem(selectedQueue, fmt.Sprint(time.Now().UnixNano()), job.Token)
 	if err != nil {
 		return executortypes.Job{}, false, errors.Wrapf(err, "failed to increment dequeue count for queue '%s'", selectedQueue)
 	}
@@ -224,6 +224,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	return job, true, nil
 }
 
+// SelectQueueForDequeueing selects a queue from the provided list with weighted randomness.
 func (m *MultiHandler) SelectQueueForDequeueing(candidateQueues []string) (string, error) {
 	// pick a queue based on the defined weights
 	var choices []weightedrand.Choice[string, int]
@@ -237,10 +238,12 @@ func (m *MultiHandler) SelectQueueForDequeueing(candidateQueues []string) (strin
 	return chooser.Pick(), nil
 }
 
-func (m *MultiHandler) discardQueuesAtLimit(queues []string) ([]string, error) {
+// DiscardQueuesAtLimit returns a list of queues that have not yet reached the limit of dequeues in the
+// current time window.
+func (m *MultiHandler) DiscardQueuesAtLimit(queues []string) ([]string, error) {
 	var candidateQueues []string
 	for _, queue := range queues {
-		dequeues, err := m.dequeueCache.GetHashAll(queue)
+		dequeues, err := m.DequeueCache.GetHashAll(queue)
 		//for key := range dequeues {
 		//	m.logger.Info("dequeues in cache", log.String("queue", queue), log.String("timestamp", key), log.String("job ID", dequeues[key]))
 		//}
@@ -255,7 +258,9 @@ func (m *MultiHandler) discardQueuesAtLimit(queues []string) ([]string, error) {
 	return candidateQueues, nil
 }
 
-func (m *MultiHandler) filterNonEmptyQueues(ctx context.Context, queueNames []string) ([]string, error) {
+// FilterNonEmptyQueues gets the queue size from the store of each provided queue name and returns
+// only those names that have at least one job queued.
+func (m *MultiHandler) FilterNonEmptyQueues(ctx context.Context, queueNames []string) ([]string, error) {
 	var nonEmptyQueues []string
 	for _, queue := range queueNames {
 		var err error
