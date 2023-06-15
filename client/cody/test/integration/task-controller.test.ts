@@ -33,12 +33,7 @@ suite('Cody Fixup Task Controller', function () {
 
         // Brings up the vscode input box
         const fixups = await getFixupController()
-        fixups.createTask(
-            textEditor.document.uri,
-            'Replace hello with goodbye',
-            textEditor.document.getText(textEditor.selection),
-            textEditor.selection
-        )
+        fixups.createTask(textEditor.document.uri, 'Replace hello with goodbye', textEditor.selection)
 
         // Check the chat transcript contains markdown
         const humanMessage = await getTranscript(0)

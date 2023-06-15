@@ -91,14 +91,9 @@ export class FixupController
 
     // Adds a new task to the list of tasks
     // Then mark it as pending before sending it to the tree view for tree item creation
-    public createTask(
-        documentUri: vscode.Uri,
-        instruction: string,
-        originalText: string,
-        selectionRange: vscode.Range
-    ): void {
+    public createTask(documentUri: vscode.Uri, instruction: string, selectionRange: vscode.Range): void {
         const fixupFile = this.files.forUri(documentUri)
-        const task = new FixupTask(fixupFile, instruction, originalText, selectionRange)
+        const task = new FixupTask(fixupFile, instruction, selectionRange)
         this.tasks.set(task.id, task)
         this.setTaskState(task, CodyTaskState.waiting)
     }
@@ -144,11 +139,24 @@ export class FixupController
             this.didUpdateDiff(task)
         }
         if (!diff?.clean) {
-            // TODO: Schedule a re-spin for diffs with conflicts.
-            void vscode.window.showWarningMessage('applying fixup with incomplete/conflict diff is not yet implemented')
+            this.scheduleRespin(task)
             return undefined
         }
         return diff
+    }
+
+    // Schedule a re-spin for diffs with conflicts.
+    private scheduleRespin(task: FixupTask): void {
+        const MAX_SPIN_COUNT_PER_TASK = 5
+        if (task.spinCount >= MAX_SPIN_COUNT_PER_TASK) {
+            // TODO: Report an error message
+            // task.error = `Cody tried ${task.spinCount} times but failed to edit the file`
+            this.setTaskState(task, CodyTaskState.error)
+            return
+        }
+        void vscode.window.showInformationMessage('Cody will rewrite to include your changes')
+        this.setTaskState(task, CodyTaskState.waiting)
+        return undefined
     }
 
     private async applyTask(task: FixupTask): Promise<void> {
@@ -249,7 +257,7 @@ export class FixupController
     }
 
     // Called by the non-stop recipe to gather current state for the task.
-    public getTaskRecipeData(id: string):
+    public async getTaskRecipeData(id: string): Promise<
         | {
               instruction: string
               fileName: string
@@ -257,20 +265,33 @@ export class FixupController
               selectedText: string
               followingText: string
           }
-        | undefined {
+        | undefined
+    > {
         const task = this.tasks.get(id)
         if (!task) {
             return undefined
         }
+        const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
+        const precedingText = document.getText(
+            new vscode.Range(
+                task.selectionRange.start.translate({ lineDelta: -Math.min(task.selectionRange.start.line, 50) }),
+                task.selectionRange.start
+            )
+        )
+        const selectedText = document.getText(task.selectionRange)
+        // TODO: original text should be a property of the diff so that we
+        // can apply diffs even while re-spinning
+        task.original = selectedText
+        const followingText = document.getText(
+            new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
+        )
+
         return {
             instruction: task.instruction,
-            // TODO: is this a full path or a short name?
             fileName: task.fixupFile.uri.fsPath,
-            // TODO: provide the preceeding and following text
-            precedingText: '',
-            // TODO: we should re-snapshot the original text now
-            selectedText: task.original,
-            followingText: '',
+            precedingText,
+            selectedText,
+            followingText,
         }
     }
 
@@ -469,6 +490,7 @@ export class FixupController
         // it is wrong for a single task to toggle the cody.fixup.running state.
         // There's more than one task.
         if (oldState !== CodyTaskState.asking && task.state === CodyTaskState.asking) {
+            task.spinCount++
             void vscode.commands.executeCommand('setContext', 'cody.fixup.running', true)
         } else if (oldState === CodyTaskState.asking && task.state !== CodyTaskState.asking) {
             void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)

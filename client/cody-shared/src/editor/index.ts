@@ -27,7 +27,7 @@ interface VsCodeInlineController {
 }
 
 interface VsCodeFixupController {
-    getTaskRecipeData(taskId: string):
+    getTaskRecipeData(taskId: string): Promise<
         | {
               instruction: string
               fileName: string
@@ -36,6 +36,7 @@ interface VsCodeFixupController {
               followingText: string
           }
         | undefined
+    >
 }
 
 export interface ActiveTextEditorViewControllers {

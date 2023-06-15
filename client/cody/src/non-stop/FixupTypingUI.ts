@@ -14,7 +14,6 @@ export class FixupTypingUI {
             return
         }
         const range = editor.selection
-        const text = editor.document.getText(editor.selection)
 
         // TODO: Do not require any text to be selected
         if (range.isEmpty) {
@@ -40,7 +39,7 @@ export class FixupTypingUI {
             return
         }
 
-        this.taskFactory.createTask(editor.document.uri, instruction, text, range)
+        this.taskFactory.createTask(editor.document.uri, instruction, range)
 
         // Return focus to the editor
         void vscode.window.showTextDocument(editor.document)

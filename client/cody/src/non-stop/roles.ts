@@ -34,7 +34,7 @@ export interface FixupIdleTaskRunner {
  * Creates and starts processing a task.
  */
 export interface FixupTaskFactory {
-    createTask(documentUri: vscode.Uri, instruction: string, originalText: string, selectionRange: vscode.Range): void
+    createTask(documentUri: vscode.Uri, instruction: string, selectionRange: vscode.Range): void
 }
 
 /**
