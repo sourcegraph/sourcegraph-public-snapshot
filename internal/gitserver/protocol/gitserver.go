@@ -663,6 +663,7 @@ func (c *CreateCommitFromPatchRequest) ToProto() *proto.CreateCommitFromPatchBin
 		GitApplyArgs: c.GitApplyArgs,
 		PushRef:      c.PushRef,
 	}
+  
 	if c.Push != nil {
 		cc.Push = c.Push.ToProto()
 	}
@@ -687,6 +688,7 @@ func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchB
 		CommitInfo:   PatchCommitInfoFromProto(p.GetCommitInfo()),
 		Push:         pushConfig,
 		GitApplyArgs: p.GetGitApplyArgs(),
+		PushRef:      p.PushRef,
 	}
 
 	if p != nil {
@@ -717,7 +719,7 @@ func (p *PatchCommitInfo) ToProto() *proto.PatchCommitInfo {
 
 func PatchCommitInfoFromProto(p *proto.PatchCommitInfo) PatchCommitInfo {
 	return PatchCommitInfo{
-		Messages:       p.GetMessages(), //TODO: @varsanojidan fix this
+		Messages:       p.GetMessages(), 
 		AuthorName:     p.GetAuthorName(),
 		AuthorEmail:    p.GetAuthorEmail(),
 		CommitterName:  p.GetCommitterName(),

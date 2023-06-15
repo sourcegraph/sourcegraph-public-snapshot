@@ -191,6 +191,38 @@ func BatchChangesRestrictedToAdmins() bool {
 	return false
 }
 
+// CodyEnabled returns whether Cody is enabled on this instance.
+//
+// If `cody.enabled` is not set or set to false, it's not enabled.
+// If `cody.enabled` is true but `completions` aren't set, it returns false.
+//
+// Legacy-support for `completions.enabled`:
+// If `cody.enabled` is NOT set, but `completions.enabled` is set, then cody is enabled.
+// If `cody.enabled` is set, but `completions.enabled` is set, then cody is enabled based on value of `cody.enabled`.
+func CodyEnabled() bool {
+	enabled := Get().CodyEnabled
+	completions := Get().Completions
+
+	// Support for Legacy configurations in which `completions` is set to
+	// `enabled`, but `cody.enabled` is not set.
+	if enabled == nil && completions != nil && completions.Enabled {
+		return true
+	}
+
+	if enabled == nil {
+		return false
+	}
+
+	return *enabled
+}
+
+func CodyRestrictUsersFeatureFlag() bool {
+	if restrict := Get().CodyRestrictUsersFeatureFlag; restrict != nil {
+		return *restrict
+	}
+	return false
+}
+
 func ExecutorsEnabled() bool {
 	return Get().ExecutorsAccessToken != ""
 }
@@ -404,12 +436,18 @@ func SearchDocumentRanksWeight() float64 {
 
 // SearchFlushWallTime controls the amount of time that Zoekt shards collect and rank results. For
 // larger codebases, it can be helpful to increase this to improve the ranking stability and quality.
-func SearchFlushWallTime() time.Duration {
+func SearchFlushWallTime(keywordScoring bool) time.Duration {
 	ranking := ExperimentalFeatures().Ranking
 	if ranking != nil && ranking.FlushWallTimeMS > 0 {
 		return time.Duration(ranking.FlushWallTimeMS) * time.Millisecond
 	} else {
-		return 500 * time.Millisecond
+		if keywordScoring {
+			// Keyword scoring takes longer than standard searches, so use a higher FlushWallTime
+			// to help ensure ranking is stable
+			return 2 * time.Second
+		} else {
+			return 500 * time.Millisecond
+		}
 	}
 }
 

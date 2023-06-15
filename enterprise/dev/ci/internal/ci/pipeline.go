@@ -16,6 +16,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
+var legacyDockerImages = []string{
+	"executor-vm",
+
+	// See RFC 793, those images will be dropped in 5.1.x.
+	"alpine-3.14",
+	"codeinsights-db",
+	"codeintel-db",
+	"postgres-12-alpine",
+}
+
 // GeneratePipeline is the main pipeline generation function. It defines the build pipeline for each of the
 // main CI cases, which are defined in the main switch statement in the function.
 func GeneratePipeline(c Config) (*bk.Pipeline, error) {
@@ -55,14 +65,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"CI_BUILDEVENT_DATASET": "buildkite",
 	}
 	bk.FeatureFlags.ApplyEnv(env)
-
-	// If we detect the author to be a folk from Aspect.dev, force the Bazel flag.
-	// This is to avoid incorrectly assuming that the CI will run Bazel task and
-	// missing regressions being introduced in a PR.
-	authorEmail := os.Getenv("BUILDKITE_BUILD_AUTHOR_EMAIL")
-	if strings.HasSuffix(authorEmail, "@aspect.dev") {
-		c.MessageFlags.NoBazel = false
-	}
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
 	if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) {
@@ -174,7 +176,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CreateBundleSizeDiff:      true,
-			ForceBazel:                !c.MessageFlags.NoBazel,
 		}))
 
 		// Now we set up conditional operations that only apply to pull requests.
@@ -188,17 +189,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
 
-	case runtype.BackendIntegrationTests:
-		ops.Append(
-			bazelBuildCandidateDockerImage("server", c.Version, c.candidateImageTag(), c.RunType),
-			backendIntegrationTests(c.candidateImageTag(), "server"),
-		)
-
 	case runtype.BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
 		ops = operations.NewSet(
-			addClientLintersForAllFiles,
 			addBrowserExtensionUnitTests,
 			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			frontendTests,
@@ -208,7 +202,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.VsceReleaseBranch:
 		// If this is a vs code extension release branch, run the vscode-extension tests and release
 		ops = operations.NewSet(
-			addClientLintersForAllFiles,
 			addVsceTests,
 			wait,
 			addVsceReleaseSteps)
@@ -216,16 +209,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.CodyReleaseBranch:
 		// If this is the Cody VS Code extension release branch, run the Cody tests and release
 		ops = operations.NewSet(
-			addClientLintersForAllFiles,
-			addCodyExtensionTests,
+			addCodyUnitIntegrationTests,
+			addCodyE2ETests,
 			wait,
 			addCodyReleaseSteps("stable"))
 
 	case runtype.CodyNightly:
 		// If this is a Cody VS Code extension nightly build, run the Cody tests and release
 		ops = operations.NewSet(
-			addClientLintersForAllFiles,
-			addCodyExtensionTests,
+			addCodyUnitIntegrationTests,
+			addCodyE2ETests,
 			wait,
 			addCodyReleaseSteps("nightly"))
 
@@ -233,7 +226,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
 		ops = operations.NewSet(
-			addClientLintersForAllFiles,
 			addBrowserExtensionUnitTests,
 			recordBrowserExtensionIntegrationTests,
 			frontendTests,
@@ -243,7 +235,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.VsceNightly:
 		// If this is a VS Code extension nightly build, run the vsce-extension integration tests
 		ops = operations.NewSet(
-			addClientLintersForAllFiles,
 			addVsceTests,
 		)
 
@@ -289,29 +280,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			bazelBuildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), c.RunType),
 			wait,
 			publishFinalDockerImage(c, patchImage))
-
-	case runtype.CandidatesNoTest:
-		imageBuildOps := operations.NewNamedSet("Image builds")
-		imageBuildOps.Append(buildCandidateDockerImage("syntax-highlighter", c.Version, c.candidateImageTag(), false))
-		imageBuildOps.Append(buildCandidateDockerImage("symbols", c.Version, c.candidateImageTag(), false))
-		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesTestDeps, c.Version, c.candidateImageTag(), c.RunType))
-		var deployImages = []string{}
-		for _, image := range images.DeploySourcegraphDockerImages {
-			if image == "syntax-highlighter" || image == "symbols" {
-				continue
-			}
-			deployImages = append(deployImages, image)
-		}
-		imageBuildOps.Append(bazelBuildCandidateDockerImages(deployImages, c.Version, c.candidateImageTag(), c.RunType))
-		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesMisc, c.Version, c.candidateImageTag(), c.RunType))
-		ops.Merge(imageBuildOps)
-		ops.Append(wait)
-
-		publishOps := operations.NewNamedSet("Publish images")
-		publishOps.Append(bazelPublishFinalDockerImage(c, images.SourcegraphDockerImages))
-
-		ops.Merge(publishOps)
-
 	case runtype.ExecutorPatchNoTest:
 		executorVMImage := "executor-vm"
 		ops = operations.NewSet(
@@ -336,39 +304,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
-		if c.MessageFlags.NoBazel {
-			for _, dockerImage := range images.SourcegraphDockerImages {
-				// Only upload sourcemaps for the "frontend" image, on the Main branch build
-				uploadSourcemaps := false
-				if c.RunType.Is(runtype.MainBranch) && dockerImage == "frontend" {
-					uploadSourcemaps = true
-				}
-				imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), uploadSourcemaps))
-			}
-			// Executor VM image
-			// skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
-			if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
-				imageBuildOps.Append(buildExecutorVM(c, skipHashCompare))
-				imageBuildOps.Append(buildExecutorBinary(c))
-				if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
-					imageBuildOps.Append(buildExecutorDockerMirror(c))
-				}
-			}
-		} else {
-			imageBuildOps.Append(buildCandidateDockerImage("syntax-highlighter", c.Version, c.candidateImageTag(), false))
-			imageBuildOps.Append(buildCandidateDockerImage("symbols", c.Version, c.candidateImageTag(), false))
-			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesTestDeps, c.Version, c.candidateImageTag(), c.RunType))
-			var deployImages = []string{}
-			for _, image := range images.DeploySourcegraphDockerImages {
-				if image == "syntax-highlighter" || image == "symbols" {
-					continue
-				}
-				deployImages = append(deployImages, image)
-			}
-			imageBuildOps.Append(bazelBuildCandidateDockerImages(deployImages, c.Version, c.candidateImageTag(), c.RunType))
-			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesMisc, c.Version, c.candidateImageTag(), c.RunType))
+		imageBuildOps.Append(bazelBuildCandidateDockerImages(legacyDockerImages, c.Version, c.candidateImageTag(), c.RunType))
 
-		}
 		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
 			imageBuildOps.Append(buildExecutorVM(c, skipHashCompare))
 			imageBuildOps.Append(buildExecutorBinary(c))
@@ -378,34 +315,23 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 		ops.Merge(imageBuildOps)
 
-		// Trivy security scans
-		imageScanOps := operations.NewNamedSet("Image security scans")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			imageScanOps.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
-		}
-		ops.Merge(imageScanOps)
-
 		// Core tests
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
 			ChromaticShouldAutoAccept: c.RunType.Is(runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease),
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
-			ForceBazel:                !c.MessageFlags.NoBazel,
 		}))
 
-		// Integration tests
-		// Temporary: on main branches, we build images with bazel binaries based on their toolchain and/or purpose. This step key is the first image in the array.
-		// This will be removed once we build images with wolfi.
-		ops.Merge(operations.NewNamedSet("Integration tests",
-			backendIntegrationTests(c.candidateImageTag(), "server"),
-			codeIntelQA(c.candidateImageTag()),
-		))
+		// Publish candidate images to dev registry
+		publishOpsDev := operations.NewNamedSet("Publish candidate images")
+		publishOpsDev.Append(bazelPushImagesCandidates(c.Version))
+		ops.Merge(publishOpsDev)
+
 		// End-to-end tests
 		ops.Merge(operations.NewNamedSet("End-to-end tests",
 			executorsE2E(c.candidateImageTag()),
-			serverE2E(c.candidateImageTag()),
-			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
+			// testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
 		))
 
 		// All operations before this point are required
@@ -414,7 +340,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Add final artifacts
 		publishOps := operations.NewNamedSet("Publish images")
 		// Add final artifacts
-		for _, dockerImage := range images.SourcegraphDockerImages {
+		for _, dockerImage := range legacyDockerImages {
 			publishOps.Append(publishFinalDockerImage(c, dockerImage))
 		}
 		// Executor VM image
@@ -425,7 +351,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				publishOps.Append(publishExecutorDockerMirror(c))
 			}
 		}
-		publishOps.Append(bazelPushImagesCmd(c.Version))
+		// Final Bazel images
+		publishOps.Append(bazelPushImagesFinal(c.Version))
 		ops.Merge(publishOps)
 	}
 

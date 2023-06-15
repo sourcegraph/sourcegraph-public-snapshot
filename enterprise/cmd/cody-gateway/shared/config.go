@@ -3,6 +3,7 @@ package shared
 import (
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -43,6 +44,7 @@ type Config struct {
 	AllowAnonymous bool
 
 	SourcesSyncInterval time.Duration
+	SourcesCacheTTL     time.Duration
 
 	BigQuery struct {
 		ProjectID string
@@ -55,6 +57,7 @@ type Config struct {
 	Trace TraceConfig
 
 	ActorConcurrencyLimit codygateway.ActorConcurrencyLimitConfig
+	ActorRateLimitNotify  codygateway.ActorRateLimitNotifyConfig
 }
 
 type TraceConfig struct {
@@ -65,7 +68,7 @@ type TraceConfig struct {
 func (c *Config) Load() {
 	c.InsecureDev = env.InsecureDev
 	c.Address = c.Get("CODY_GATEWAY_ADDR", ":9992", "Address to serve Cody Gateway on.")
-	c.DiagnosticsSecret = c.GetOptional("CODY_GATEWAY_DIAGNOSTICS_SECRET", "Secret for accessing diagnostics - "+
+	c.DiagnosticsSecret = c.Get("CODY_GATEWAY_DIAGNOSTICS_SECRET", "", "Secret for accessing diagnostics - "+
 		"should be used as 'Authorization: Bearer $secret' header when accessing diagnostics endpoints.")
 
 	c.Dotcom.AccessToken = c.Get("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN", "", "The Sourcegraph.com access token to be used.")
@@ -77,11 +80,16 @@ func (c *Config) Load() {
 	c.Anthropic.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_ANTHROPIC_ALLOWED_MODELS",
 		strings.Join([]string{
 			"claude-v1",
+			"claude-v1-100k",
 			"claude-v1.0",
 			"claude-v1.2",
 			"claude-v1.3",
+			"claude-v1.3-100k",
 			"claude-instant-v1",
+			"claude-instant-v1-100k",
 			"claude-instant-v1.0",
+			"claude-instant-v1.1",
+			"claude-instant-v1.1-100k",
 		}, ","),
 		"Anthropic models that can be used."))
 
@@ -96,6 +104,7 @@ func (c *Config) Load() {
 
 	c.AllowAnonymous = c.GetBool("CODY_GATEWAY_ALLOW_ANONYMOUS", "false", "Allow anonymous access to Cody Gateway.")
 	c.SourcesSyncInterval = c.GetInterval("CODY_GATEWAY_SOURCES_SYNC_INTERVAL", "2m", "The interval at which to sync actor sources.")
+	c.SourcesCacheTTL = c.GetInterval("CODY_GATEWAY_SOURCES_CACHE_TTL", "24h", "The TTL for caches used by actor sources.")
 
 	c.BigQuery.ProjectID = c.Get("CODY_GATEWAY_BIGQUERY_PROJECT_ID", os.Getenv("GOOGLE_CLOUD_PROJECT"), "The project ID for the BigQuery events.")
 	c.BigQuery.Dataset = c.Get("CODY_GATEWAY_BIGQUERY_DATASET", "cody_gateway", "The dataset for the BigQuery events.")
@@ -107,6 +116,14 @@ func (c *Config) Load() {
 
 	c.ActorConcurrencyLimit.Percentage = float32(c.GetPercent("CODY_GATEWAY_ACTOR_CONCURRENCY_LIMIT_PERCENTAGE", "50", "The percentage of daily rate limit to be allowed as concurrent requests limit from an actor.")) / 100
 	c.ActorConcurrencyLimit.Interval = c.GetInterval("CODY_GATEWAY_ACTOR_CONCURRENCY_LIMIT_INTERVAL", "10s", "The interval at which to check the concurrent requests limit from an actor.")
+
+	thresholds := c.Get("CODY_GATEWAY_ACTOR_RATE_LIMIT_NOTIFY_THRESHOLDS", "90,95,100", "The comma-separated list of the percentage of the rate limit usage to trigger an notification.")
+	c.ActorRateLimitNotify.Thresholds = make([]int, 0, len(thresholds))
+	for _, str := range strings.Split(thresholds, ",") {
+		threshold, _ := strconv.ParseInt(strings.TrimSpace(str), 10, 64)
+		c.ActorRateLimitNotify.Thresholds = append(c.ActorRateLimitNotify.Thresholds, int(threshold))
+	}
+	c.ActorRateLimitNotify.SlackWebhookURL = c.Get("CODY_GATEWAY_ACTOR_RATE_LIMIT_NOTIFY_SLACK_WEBHOOK_URL", "", "The Slack webhook URL to send notifications to.")
 }
 
 func (c *Config) Validate() error {
@@ -125,6 +142,12 @@ func (c *Config) Validate() error {
 
 	if len(c.AllowedEmbeddingsModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for embeddings generation"))
+	}
+
+	for _, threshold := range c.ActorRateLimitNotify.Thresholds {
+		if threshold <= 0 || threshold > 100 {
+			c.AddError(errors.Errorf("threshold out of range %d, should be (0, 100]", threshold))
+		}
 	}
 
 	return nil

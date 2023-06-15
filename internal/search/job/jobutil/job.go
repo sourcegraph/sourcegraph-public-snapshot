@@ -43,17 +43,22 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan, enterpriseJobs Enterpris
 	newJob := func(b query.Basic) (job.Job, error) {
 		return NewBasicJob(inputs, b, enterpriseJobs)
 	}
-	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky {
-		jobTree = smartsearch.NewSmartSearchJob(jobTree, newJob, plan)
-	} else if inputs.PatternType == query.SearchTypeKeyword && len(plan) == 1 {
-		// TODO(camdencheek): we should almost definitely not be doing plan[0] here
-		newJobTree, err := keyword.NewKeywordSearchJob(plan[0], newJob)
+
+	if inputs.PatternType == query.SearchTypeKeyword {
+		if inputs.SearchMode == search.SmartSearch {
+			return nil, errors.New("The 'keyword' patterntype is not compatible with Smart Search")
+		}
+
+		newJobTree, err := keyword.NewKeywordSearchJob(plan, newJob)
 		if err != nil {
 			return nil, err
 		}
-		if newJobTree != nil {
-			jobTree = newJobTree
-		}
+
+		jobTree = newJobTree
+	}
+
+	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky {
+		jobTree = smartsearch.NewSmartSearchJob(jobTree, newJob, plan)
 	}
 
 	alertJob := NewAlertJob(inputs, jobTree)
@@ -193,6 +198,14 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 	{ // Apply code ownership post-search filter
 		if includeOwners, excludeOwners, ok := isOwnershipSearch(b); ok {
 			basicJob = enterpriseJobs.FileHasOwnerJob(basicJob, inputs.Features, includeOwners, excludeOwners)
+		}
+	}
+
+	{ // Apply file:has.contributor() post-search filter
+		if includeContributors, excludeContributors, ok := isContributorSearch(b); ok {
+			includeRe := contributorsAsRegexp(includeContributors, b.IsCaseSensitive())
+			excludeRe := contributorsAsRegexp(excludeContributors, b.IsCaseSensitive())
+			basicJob = NewFileHasContributorsJob(basicJob, includeRe, excludeRe)
 		}
 	}
 
@@ -514,7 +527,7 @@ func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo) (pat
 
 func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 	// Temporary fix:
-	// If doing ownership search, we post-filter results so we may need more than
+	// If doing ownership or contributor search, we post-filter results so we may need more than
 	// b.Count() results from the search backends to end up with enough results
 	// sent down the stream.
 	//
@@ -524,6 +537,10 @@ func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 	// the stream once enough results have been consumed. We will revisit this
 	// post-Starship March 2023 as part of search performance improvements for
 	// ownership search.
+	if _, _, ok := isContributorSearch(b); ok {
+		// This is the int equivalent of count:all.
+		return query.CountAllLimit
+	}
 	if _, _, ok := isOwnershipSearch(b); ok {
 		// This is the int equivalent of count:all.
 		return query.CountAllLimit
@@ -559,6 +576,24 @@ func isOwnershipSearch(b query.Basic) (include, exclude []string, ok bool) {
 func isSelectOwnersSearch(sp filter.SelectPath) bool {
 	// If the filter is for file.owners, this is a select:file.owners search, and we should apply special limits.
 	return sp.Root() == filter.File && len(sp) == 2 && sp[1] == "owners"
+}
+
+func isContributorSearch(b query.Basic) (include, exclude []string, ok bool) {
+	if includeContributors, excludeContributors := b.FileHasContributor(); len(includeContributors) > 0 || len(excludeContributors) > 0 {
+		return includeContributors, excludeContributors, true
+	}
+	return nil, nil, false
+}
+
+func contributorsAsRegexp(contributors []string, isCaseSensitive bool) (res []*regexp.Regexp) {
+	for _, pattern := range contributors {
+		if isCaseSensitive {
+			res = append(res, regexp.MustCompile(pattern))
+		} else {
+			res = append(res, regexp.MustCompile(`(?i)`+pattern))
+		}
+	}
+	return res
 }
 
 func timeoutDuration(b query.Basic) time.Duration {

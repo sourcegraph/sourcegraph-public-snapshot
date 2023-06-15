@@ -1,0 +1,2 @@
+name: add revoke reason to product_licenses table
+parents: [1684207923, 1685727930, 1685984018, 1685999719, 1686042710]

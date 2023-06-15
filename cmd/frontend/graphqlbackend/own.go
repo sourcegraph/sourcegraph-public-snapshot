@@ -84,6 +84,8 @@ type OwnershipConnectionResolver interface {
 type OwnershipStatsResolver interface {
 	TotalFiles(context.Context) (int32, error)
 	TotalCodeownedFiles(context.Context) (int32, error)
+	TotalOwnedFiles(context.Context) (int32, error)
+	TotalAssignedOwnershipFiles(context.Context) (int32, error)
 }
 
 type Ownable interface {
@@ -135,6 +137,7 @@ type RecentViewOwnershipSignalResolver interface {
 type AssignedOwnerResolver interface {
 	Title() (string, error)
 	Description() (string, error)
+	IsDirectMatch() bool
 }
 
 type AssignedTeamResolver interface {

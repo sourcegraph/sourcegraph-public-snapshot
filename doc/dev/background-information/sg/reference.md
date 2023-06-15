@@ -38,7 +38,6 @@ Available comamndsets in `sg.config.yaml`:
 * codeintel-kubernetes
 * cody-gateway
 * dotcom
-* embeddings
 * enterprise
 * enterprise-bazel
 * enterprise-codeinsights
@@ -265,7 +264,6 @@ Supported run types when providing an argument for 'sg ci build [runtype]':
 * main-dry-run - Main dry run
 * docker-images-patch - Patch image
 * docker-images-patch-notest - Patch image without testing
-* docker-images-candidates-notest - Build all candidates without testing
 * executor-patch-notest - Build executor without testing
 * backend-integration - Backend integration tests
 

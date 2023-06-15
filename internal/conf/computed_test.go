@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -81,17 +82,17 @@ func TestGitMaxCodehostRequestsPerSecond(t *testing.T) {
 		},
 		{
 			name: "bad value should return default",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: intPtr(-100)}},
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(-100)}},
 			want: -1,
 		},
 		{
 			name: "set 0 should return 0",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: intPtr(0)}},
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(0)}},
 			want: 0,
 		},
 		{
 			name: "set non-0 should return non-0",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: intPtr(100)}},
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(100)}},
 			want: 100,
 		},
 	}
@@ -320,10 +321,56 @@ func TestIsAccessRequestEnabled(t *testing.T) {
 	}
 }
 
-func boolPtr(b bool) *bool {
-	return &b
-}
+func TestCodyEnabled(t *testing.T) {
+	tests := []struct {
+		name string
+		sc   schema.SiteConfiguration
+		want bool
+	}{
+		{
+			name: "nothing set",
+			sc:   schema.SiteConfiguration{},
+			want: false,
+		},
+		{
+			name: "cody enabled",
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(true)},
+			want: true,
+		},
+		{
+			name: "cody disabled",
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(false)},
+			want: false,
+		},
+		{
+			name: "cody enabled, completions configured",
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(true), Completions: &schema.Completions{Model: "foobar"}},
+			want: true,
+		},
+		{
+			name: "cody disabled, completions configured",
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(false), Completions: &schema.Completions{Model: "foobar"}},
+			want: false,
+		},
+		{
+			// Legacy support: remove this once completions.enabled is removed
+			name: "cody.enabled not set, completions configured but not enabled",
+			sc:   schema.SiteConfiguration{Completions: &schema.Completions{Model: "foobar"}},
+			want: false,
+		},
+		{
+			// Legacy support: remove this once completions.enabled is removed
+			name: "cody.enabled not set, completions configured and enabled",
+			sc:   schema.SiteConfiguration{Completions: &schema.Completions{Enabled: true, Model: "foobar"}},
+			want: true,
+		},
+	}
 
-func intPtr(i int) *int {
-	return &i
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			Mock(&Unified{SiteConfiguration: test.sc})
+			have := CodyEnabled()
+			assert.Equal(t, test.want, have)
+		})
+	}
 }

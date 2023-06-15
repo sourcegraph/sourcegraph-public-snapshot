@@ -9,11 +9,10 @@ go_library(
     deps = [
         "//enterprise/internal/completions/client/anthropic",
         "//enterprise/internal/completions/client/codygateway",
-        "//enterprise/internal/completions/client/dotcom",
         "//enterprise/internal/completions/client/openai",
         "//enterprise/internal/completions/types",
+        "//enterprise/internal/dotcomuser",
         "//enterprise/internal/licensing",
-        "//internal/conf",
         "//internal/conf/deploy",
         "//internal/httpcli",
         "//lib/errors",
@@ -26,6 +25,7 @@ go_test(
     srcs = ["client_test.go"],
     embed = [":client"],
     deps = [
+        "//internal/conf/deploy",
         "//schema",
         "@com_github_hexops_autogold_v2//:autogold",
     ],

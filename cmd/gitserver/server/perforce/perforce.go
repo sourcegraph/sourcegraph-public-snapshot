@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
@@ -18,14 +19,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type ChangelistMappingJob struct {
+type changelistMappingJob struct {
 	RepoName api.RepoName
 	RepoDir  common.GitDir
+}
+
+func NewChangelistMappingJob(repoName api.RepoName, repoDir common.GitDir) *changelistMappingJob {
+	return &changelistMappingJob{
+		RepoName: repoName,
+		RepoDir:  repoDir,
+	}
 }
 
 // Service is used to manage perforce depot related interactions from gitserver.
@@ -37,13 +46,13 @@ type Service struct {
 	DB     database.DB
 
 	ctx                    context.Context
-	changelistMappingQueue *common.Queue[ChangelistMappingJob]
+	changelistMappingQueue *common.Queue[*changelistMappingJob]
 }
 
 // NewService initializes a new service with a queue and starts a producer-consumer pipeline that
 // will read jobs from the queue and "produce" them for "consumption".
-func NewService(ctx context.Context, logger log.Logger, db database.DB, jobs *list.List) *Service {
-	queue := common.NewQueue[ChangelistMappingJob](jobs)
+func NewService(ctx context.Context, obctx *observation.Context, logger log.Logger, db database.DB, jobs *list.List) *Service {
+	queue := common.NewQueue[*changelistMappingJob](obctx, "perforce-changelist-mapper", jobs)
 
 	s := &Service{
 		Logger: logger,
@@ -61,7 +70,7 @@ func NewService(ctx context.Context, logger log.Logger, db database.DB, jobs *li
 // EnqueueChangelistMappingJob will push the ChangelistMappingJob onto the queue iff the
 // experimental config for PerforceChangelistMapping is enabled and if the repo belongs to a code
 // host of type PERFORCE.
-func (s *Service) EnqueueChangelistMappingJob(job *ChangelistMappingJob) {
+func (s *Service) EnqueueChangelistMappingJob(job *changelistMappingJob) {
 	if conf.Get().ExperimentalFeatures.PerforceChangelistMapping != "enabled" {
 		return
 	}
@@ -74,17 +83,17 @@ func (s *Service) EnqueueChangelistMappingJob(job *ChangelistMappingJob) {
 }
 
 func (s *Service) startPerforceChangelistMappingPipeline(ctx context.Context) {
-	jobs := make(chan *ChangelistMappingJob)
+	tasks := make(chan *changelistMappingTask)
 
 	// Protect against panics.
-	goroutine.Go(func() { s.changelistMappingConsumer(ctx, jobs) })
-	goroutine.Go(func() { s.changelistMappingProducer(ctx, jobs) })
+	goroutine.Go(func() { s.changelistMappingConsumer(ctx, tasks) })
+	goroutine.Go(func() { s.changelistMappingProducer(ctx, tasks) })
 }
 
 // changelistMappingProducer "pops" jobs from the FIFO queue of the "Service" and produce them
 // for "consumption".
-func (s *Service) changelistMappingProducer(ctx context.Context, jobs chan<- *ChangelistMappingJob) {
-	defer close(jobs)
+func (s *Service) changelistMappingProducer(ctx context.Context, tasks chan<- *changelistMappingTask) {
+	defer close(tasks)
 
 	for {
 		s.changelistMappingQueue.Mutex.Lock()
@@ -95,13 +104,16 @@ func (s *Service) changelistMappingProducer(ctx context.Context, jobs chan<- *Ch
 		s.changelistMappingQueue.Mutex.Unlock()
 
 		for {
-			job := s.changelistMappingQueue.Pop()
+			job, doneFunc := s.changelistMappingQueue.Pop()
 			if job == nil {
 				break
 			}
 
 			select {
-			case jobs <- job:
+			case tasks <- &changelistMappingTask{
+				changelistMappingJob: *job,
+				done:                 doneFunc,
+			}:
 			case <-ctx.Done():
 				s.Logger.Error("changelistMappingProducer: ", log.Error(ctx.Err()))
 				return
@@ -111,12 +123,12 @@ func (s *Service) changelistMappingProducer(ctx context.Context, jobs chan<- *Ch
 }
 
 // changelistMappingConsumer "consumes" jobs "produced" by the producer.
-func (s *Service) changelistMappingConsumer(ctx context.Context, jobs <-chan *ChangelistMappingJob) {
+func (s *Service) changelistMappingConsumer(ctx context.Context, tasks <-chan *changelistMappingTask) {
 	logger := s.Logger.Scoped("changelistMappingConsumer", "process perforce changelist mapping jobs")
 
 	// Process only one job at a time for a simpler pipeline at the moment.
-	for j := range jobs {
-		logger := logger.With(log.String("job.repo", string(j.RepoName)))
+	for task := range tasks {
+		logger := logger.With(log.String("job.repo", string(task.RepoName)))
 
 		select {
 		case <-ctx.Done():
@@ -125,15 +137,22 @@ func (s *Service) changelistMappingConsumer(ctx context.Context, jobs <-chan *Ch
 		default:
 		}
 
-		err := s.doChangelistMapping(ctx, j)
+		err := s.doChangelistMapping(ctx, task.changelistMappingJob)
 		if err != nil {
 			logger.Error("failed to map perforce changelists", log.Error(err))
+		}
+
+		timeTaken := task.done()
+		// NOTE: Hardcoded to log for tasks that run longer than 1 minute. Will revisit this if it
+		// becomes noisy under production loads.
+		if timeTaken > time.Duration(time.Second*60) {
+			s.Logger.Warn("mapping job took long to complete", log.Duration("duration", timeTaken))
 		}
 	}
 }
 
 // doChangelistMapping performs the commits -> changelist ID mapping for a new or existing repo.
-func (s *Service) doChangelistMapping(ctx context.Context, job *ChangelistMappingJob) error {
+func (s *Service) doChangelistMapping(ctx context.Context, job *changelistMappingJob) error {
 	logger := s.Logger.Scoped("doChangelistMapping", "").With(
 		log.String("repo", string(job.RepoName)),
 	)
@@ -218,16 +237,41 @@ func headCommitSHA(ctx context.Context, dir common.GitDir) (string, error) {
 	return string(bytes.TrimSpace(output)), nil
 }
 
-// logFormatWithCommitSHAAndCommitBodyOnly prints the commit SHA and the commit body (skips the
-// subject) separated by a space. These are the only two fields that we need to parse the changelist
+// logFormatWithCommitSHAAndCommitBodyOnly prints the commit SHA and the commit subject and body
+// separated by a single space. These are the only three fields that we need to parse the changelist
 // ID from the commit.
 //
-// Example:
-// $ git log --format='format:%H %b'
-// 4e5b9dbc6393b195688a93ea04b98fada50bfa03 [p4-fusion: depot-paths = "//rhia-depot-test/": change = 83733]
-// e2f6d6e306490831b0fdd908fdbee702d7074a66 [p4-fusion: depot-paths = "//rhia-depot-test/": change = 83732]
-// 90b9b9574517f30810346f0ab07f66c49c77ab0f [p4-fusion: depot-paths = "//rhia-depot-test/": change = 83731]
-var logFormatWithCommitSHAAndCommitBodyOnly = "--format=format:%H %b%x00"
+// Normally just the commit SHA and the commit body would suffice, but in practice we have noticed
+// some commits generated by p4-fusion end up not having a blank line between the subject and the
+// body. As a result, the body is empty and the subject contains the metadata that we're looking
+// for.
+//
+// For example:
+//
+// 48485 - test-5386
+// [p4-fusion: depot-paths = "//go/": change = 48485]
+//
+// VS:
+//
+// 1012 - :boar:
+//
+// [p4-fusion: depot-paths = "//go/": change = 1012]
+//
+// To handle such edge cases we print both the subject and the body together without any spaces.
+// This still ensures that we have only two parts per commit in the output:
+// <commit SHA, (commit subject + commit body)>
+//
+// And the regex pattern can still work because it is not anchored to look for the start or end of a
+// line and we search for a sub-string match so anything before the actual metadata is ignored.
+//
+// For both the cases when the p4-fusion metadata has or does not have a blank line between the
+// subject and the body, the output will look like:
+//
+// $ git log --format='format:%H %s%b'
+// 4e5b9dbc6393b195688a93ea04b98fada50bfa03 83733 - Removing this from the workspace[p4-fusion: depot-paths = "//rhia-depot-test/": change = 83733]
+// e2f6d6e306490831b0fdd908fdbee702d7074a66 83732 - adding sourcegraph repos[p4-fusion: depot-paths = "//rhia-depot-test/": change = 83732]
+// 90b9b9574517f30810346f0ab07f66c49c77ab0f 83731 - "initial commit"[p4-fusion: depot-paths = "//rhia-depot-test/": change = 83731]
+var logFormatWithCommitSHAAndCommitBodyOnly = "--format=format:%H %s%b%x00"
 
 // newMappableCommits executes git log with "logFormatWithCommitSHAAndCommitBodyOnly" as the format
 // specifier and return a list of commitsSHA -> changelistID for each commit between the range
@@ -310,4 +354,11 @@ func parseGitLogLine(line string) (*types.PerforceChangelist, error) {
 		CommitSHA:    api.CommitID(parts[0]),
 		ChangelistID: cid,
 	}, nil
+}
+
+// changelistMappingTask is a thin wrapper around a changelistMappingJob to associate the
+// doneFunc with each job.
+type changelistMappingTask struct {
+	*changelistMappingJob
+	done func() time.Duration
 }

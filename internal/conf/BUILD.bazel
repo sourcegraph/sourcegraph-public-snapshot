@@ -41,7 +41,6 @@ go_library(
         "@com_github_hashicorp_cronexpr//:cronexpr",
         "@com_github_sourcegraph_jsonx//:jsonx",
         "@com_github_sourcegraph_log//:log",
-        "@com_github_tidwall_gjson//:gjson",
         "@com_github_xeipuuv_gojsonschema//:gojsonschema",
     ],
 )
@@ -63,6 +62,7 @@ go_test(
         "//internal/api/internalapi",
         "//internal/conf/conftypes",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_log//:log",

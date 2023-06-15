@@ -5429,12 +5429,14 @@ def go_dependencies():
     )
 
     go_repository(
+        # This is no longer used but we keep it for backwards compatability
+        # tests while on 5.0.x.
         name = "com_github_opentracing_contrib_go_stdlib",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/opentracing-contrib/go-stdlib",
         sum = "h1:TBS7YuVotp8myLon4Pv7BtCBzOTo1DeZCld0Z63mW2w=",
         version = "v1.0.0",
-    )
+    )  # keep
     go_repository(
         name = "com_github_opentracing_opentracing_go",
         build_file_proto_mode = "disable_global",
@@ -6341,16 +6343,16 @@ def go_dependencies():
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/scip",
-        sum = "h1:nl0JdCmCkQYTM1gQWbDJkdaiXyoZiluUzJbyeBDGFe0=",
-        version = "v0.2.4-0.20230403145725-e720fb88e6fd",
+        sum = "h1:6PgJPdhDHRGskCu7+NxodNtX1z8umdC40QvoQt4FsP8=",
+        version = "v0.2.4-0.20230613194658-b62733841bc3",
     )
 
     go_repository(
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:bL2yabuRgnxPE16XHLAxfD3WFBZxSsOeC+wPnTW7DU0=",
-        version = "v0.0.0-20230606144326-bba2733daaec",
+        sum = "h1:hm6nFFwZohk97lIG3Z5NRJghrYjj50HYKicXqI4b2qY=",
+        version = "v0.0.0-20230614202706-0148e0248f66",
     )
 
     go_repository(

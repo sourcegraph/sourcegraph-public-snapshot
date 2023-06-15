@@ -39,7 +39,6 @@ go_library(
         "//lib/errors",
         "@com_github_sourcegraph_conc//:conc",
         "@com_github_sourcegraph_conc//pool",
-        "@com_github_sourcegraph_log//:log",
         "@org_golang_x_sync//errgroup",
     ] + select({
         "@io_bazel_rules_go//go/platform:amd64": [
@@ -54,7 +53,7 @@ go_library(
 
 go_test(
     name = "embeddings_test",
-    timeout = "short",
+    timeout = "moderate",
     srcs = [
         "dot_test.go",
         "index_storage_test.go",

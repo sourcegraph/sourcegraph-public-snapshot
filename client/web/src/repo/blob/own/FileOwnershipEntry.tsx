@@ -16,6 +16,7 @@ import {
 import { PersonLink } from '../../../person/PersonLink'
 
 import { OwnershipBadge } from './OwnershipBadge'
+import { RemoveOwnerButton } from './RemoveOwnerButton'
 
 import containerStyles from './OwnerList.module.scss'
 
@@ -23,6 +24,10 @@ interface Props {
     owner: OwnerFields
     reasons: OwnershipReason[]
     makeOwnerButton?: React.ReactElement
+    repoID: string
+    filePath: string
+    setRemoveOwnerError: any
+    refetch: any
 }
 
 type OwnershipReason =
@@ -31,7 +36,15 @@ type OwnershipReason =
     | RecentViewOwnershipSignalFields
     | AssignedOwnerFields
 
-export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons, makeOwnerButton }) => {
+export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
+    owner,
+    reasons,
+    makeOwnerButton,
+    repoID,
+    filePath,
+    refetch,
+    setRemoveOwnerError,
+}) => {
     const findEmail = (): string | undefined => {
         if (owner.__typename !== 'Person') {
             return undefined
@@ -42,25 +55,19 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
         return owner.email
     }
 
+    const userID = owner.__typename === 'Person' && owner.user?.__typename === 'User' ? owner.user.id : undefined
+    const teamID = owner.__typename === 'Team' ? owner.id : undefined
+
     const email = findEmail()
+
+    const assignedOwnerReasons: AssignedOwnerFields[] = reasons
+        .filter(value => value.__typename === 'AssignedOwner')
+        .map(val => val as AssignedOwnerFields)
+    const isDirectAssigned = assignedOwnerReasons.some(value => value.isDirectMatch)
+    const hasAssigned = assignedOwnerReasons.length > 0
 
     return (
         <tr>
-            <td className={containerStyles.fitting}>
-                <div className="d-flex">
-                    <Tooltip content={email ? `Email ${email}` : 'No email address'} placement="top">
-                        {email ? (
-                            <ButtonLink variant="icon" to={`mailto:${email}`}>
-                                <Icon svgPath={mdiEmail} aria-label="email" />
-                            </ButtonLink>
-                        ) : (
-                            <Button variant="icon" disabled={true}>
-                                <Icon svgPath={mdiEmail} aria-label="email" />
-                            </Button>
-                        )}
-                    </Tooltip>
-                </div>
-            </td>
             <td className={`${containerStyles.fitting} ${containerStyles.moreSpace}`}>
                 <div className="d-flex align-items-center mr-2">
                     {owner.__typename === 'Person' && (
@@ -89,7 +96,35 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                     <OwnershipBadge key={reason.title} reason={reason} />
                 ))}
             </td>
-            <td className={containerStyles.fitting}>{makeOwnerButton}</td>
+            <td className={containerStyles.fitting}>
+                <span className={containerStyles.editButtonColumn}>
+                    <div className={containerStyles.removeAddButton}>
+                        {makeOwnerButton ||
+                            (hasAssigned && (
+                                <RemoveOwnerButton
+                                    onSuccess={refetch}
+                                    onError={setRemoveOwnerError}
+                                    repoId={repoID}
+                                    path={filePath}
+                                    userID={userID}
+                                    teamID={teamID}
+                                    isDirectAssigned={isDirectAssigned}
+                                />
+                            ))}
+                    </div>
+                    <Tooltip content={email ? `Email ${email}` : 'No email address'} placement="top">
+                        {email ? (
+                            <ButtonLink variant="icon" to={`mailto:${email}`}>
+                                <Icon svgPath={mdiEmail} aria-label="email" />
+                            </ButtonLink>
+                        ) : (
+                            <Button variant="icon" disabled={true}>
+                                <Icon svgPath={mdiEmail} aria-label="email" />
+                            </Button>
+                        )}
+                    </Tooltip>
+                </span>
+            </td>
         </tr>
     )
 }

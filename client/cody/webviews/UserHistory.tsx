@@ -27,13 +27,25 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
     setView,
     vscodeAPI,
 }) => {
+    const onDeleteHistoryItemClick = useCallback(
+        (event: React.MouseEvent<HTMLElement, MouseEvent>, chatID: string) => {
+            event.stopPropagation()
+            if (userHistory) {
+                delete userHistory[chatID]
+                setUserHistory({ ...userHistory })
+                vscodeAPI.postMessage({ command: 'deleteHistory', chatID })
+            }
+        },
+        [userHistory, setUserHistory, vscodeAPI]
+    )
+
     const onRemoveHistoryClick = useCallback(() => {
         if (userHistory) {
             vscodeAPI.postMessage({ command: 'removeHistory' })
             setUserHistory(null)
             setInputHistory([])
         }
-    }, [setInputHistory, setUserHistory, userHistory, vscodeAPI])
+    }, [setInputHistory, userHistory, setUserHistory, vscodeAPI])
 
     function restoreMetadata(chatID: string): void {
         vscodeAPI.postMessage({ command: 'restoreHistory', chatID })
@@ -50,7 +62,7 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                             className={styles.clearButton}
                             type="button"
                             onClick={onRemoveHistoryClick}
-                            disabled={userHistory === null}
+                            disabled={!userHistory || !Object.keys(userHistory).length}
                         >
                             Clear History
                         </VSCodeButton>
@@ -63,22 +75,37 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                                 (a, b) =>
                                     +new Date(b[1].lastInteractionTimestamp) - +new Date(a[1].lastInteractionTimestamp)
                             )
-                            .map(chat => {
+                            .filter(
+                                ([, transcriptJSON]) =>
+                                    transcriptJSON.interactions && transcriptJSON.interactions.length > 0
+                            )
+                            .map(([id, transcriptJSON]) => {
                                 const lastMessage =
-                                    chat[1].interactions[chat[1].interactions.length - 1].assistantMessage
+                                    transcriptJSON.interactions[transcriptJSON.interactions.length - 1].humanMessage
                                 if (!lastMessage?.displayText) {
                                     return null
                                 }
 
                                 return (
                                     <VSCodeButton
-                                        key={chat[0]}
+                                        key={id}
                                         className={styles.itemButton}
-                                        onClick={() => restoreMetadata(chat[0])}
+                                        onClick={() => restoreMetadata(id)}
                                         type="button"
                                     >
                                         <div className={styles.itemButtonInnerContainer}>
-                                            <div className={styles.itemDate}>{new Date(chat[0]).toLocaleString()}</div>
+                                            <div className={styles.itemDate}>{new Date(id).toLocaleString()}</div>
+                                            <div className={styles.itemDelete}>
+                                                <VSCodeButton
+                                                    appearance="icon"
+                                                    type="button"
+                                                    onClick={event => {
+                                                        onDeleteHistoryItemClick(event, id)
+                                                    }}
+                                                >
+                                                    <i className="codicon codicon-trash" />
+                                                </VSCodeButton>
+                                            </div>
                                             <div className={styles.itemLastMessage}>{lastMessage.displayText}</div>
                                         </div>
                                     </VSCodeButton>

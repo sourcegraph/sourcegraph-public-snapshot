@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/util/homedir"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -190,12 +191,15 @@ func (c *Config) Validate() error {
 		c.AddError(errors.New("neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES is set"))
 	} else if c.QueueName != "" && c.QueueNamesStr != "" {
 		c.AddError(errors.New("both EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES are set"))
-	} else if c.QueueName != "" && c.QueueName != "batches" && c.QueueName != "codeintel" {
-		c.AddError(errors.New("EXECUTOR_QUEUE_NAME must be set to 'batches' or 'codeintel'"))
+	} else if c.QueueName != "" && !slices.Contains(types.ValidQueueNames, c.QueueName) {
+		c.AddError(errors.Newf("EXECUTOR_QUEUE_NAME must be set to one of '%v'", strings.Join(types.ValidQueueNames, ", ")))
 	} else {
 		for _, queueName := range c.QueueNames {
-			if queueName != "batches" && queueName != "codeintel" {
-				c.AddError(errors.Newf("EXECUTOR_QUEUE_NAMES contains invalid queue name '%s'", queueName))
+			if !slices.Contains(types.ValidQueueNames, queueName) {
+				c.AddError(errors.Newf("EXECUTOR_QUEUE_NAMES contains invalid queue name '%s', valid names are '%v' and should be comma-separated",
+					queueName,
+					strings.Join(types.ValidQueueNames, ", "),
+				))
 			}
 		}
 	}

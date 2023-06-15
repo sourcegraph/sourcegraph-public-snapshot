@@ -91,7 +91,7 @@ func TestContextResolver(t *testing.T) {
 	}
 
 	mockSearchClient := client.NewMockSearchClient()
-	mockSearchClient.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, query string, _ search.Mode, _ search.Protocol, _ *schema.Settings, _ bool) (*search.Inputs, error) {
+	mockSearchClient.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, query string, _ search.Mode, _ search.Protocol) (*search.Inputs, error) {
 		return &search.Inputs{OriginalQuery: query}, nil
 	})
 	mockSearchClient.ExecuteFunc.SetDefaultHook(func(_ context.Context, stream streaming.Sender, inputs *search.Inputs) (*search.Alert, error) {
@@ -139,15 +139,17 @@ func TestContextResolver(t *testing.T) {
 		contextClient,
 	)
 
+	truePtr := true
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
+			CodyEnabled: &truePtr,
 			Embeddings:  &schema.Embeddings{Enabled: true},
-			Completions: &schema.Completions{Enabled: true},
+			Completions: &schema.Completions{},
 		},
 	})
 
 	ctx = actor.WithActor(ctx, actor.FromMockUser(1))
-	ffs := featureflag.NewMemoryStore(map[string]bool{"cody-experimental": true}, nil, nil)
+	ffs := featureflag.NewMemoryStore(map[string]bool{"cody": true}, nil, nil)
 	ctx = featureflag.WithFlags(ctx, ffs)
 
 	results, err := resolver.GetCodyContext(ctx, graphqlbackend.GetContextArgs{

@@ -37,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -3999,7 +4000,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 			Name:   "TestPagination",
 			UserID: 555,
 			Args: &ListUserPermissionsArgs{
-				PaginationArgs: &database.PaginationArgs{First: toIntPtr(2), After: toStringPtr("'public_repo_5'"), OrderBy: database.OrderBy{{Field: "repo.name"}}},
+				PaginationArgs: &database.PaginationArgs{First: pointers.Ptr(2), After: pointers.Ptr("'public_repo_5'"), OrderBy: database.OrderBy{{Field: "repo.name"}}},
 			},
 			WantResults: []*listUserPermissionsResult{
 				{
@@ -4184,7 +4185,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			Name:   "TestPaginationWithPrivateRepo",
 			RepoID: 1,
 			Args: &ListRepoPermissionsArgs{
-				PaginationArgs: &database.PaginationArgs{First: toIntPtr(1), After: toStringPtr("555"), OrderBy: database.OrderBy{{Field: "users.id"}}, Ascending: true},
+				PaginationArgs: &database.PaginationArgs{First: pointers.Ptr(1), After: pointers.Ptr("555"), OrderBy: database.OrderBy{{Field: "users.id"}}, Ascending: true},
 			},
 			WantResults: []*listRepoPermissionsResult{
 				{
@@ -4362,14 +4363,6 @@ type listRepoPermissionsTest struct {
 type listRepoPermissionsResult struct {
 	UserID int32
 	Reason UserRepoPermissionReason
-}
-
-func toIntPtr(num int) *int {
-	return &num
-}
-
-func toStringPtr(str string) *string {
-	return &str
 }
 
 type fakeProvider struct {

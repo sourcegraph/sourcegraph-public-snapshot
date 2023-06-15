@@ -6,6 +6,8 @@ import { CodyClientScope } from '@sourcegraph/cody-shared/src/chat/useClient'
 import { useLazyQuery } from '@sourcegraph/http-client'
 
 import { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { EventName } from '../../../util/constants'
 
 import { ReposStatusQuery } from './backend'
 import { RepositoriesSelectorPopover, getFileName, IRepo } from './RepositoriesSelectorPopover'
@@ -74,6 +76,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     const addRepository = useCallback(
         (repoName: string) => {
             if (!scope.repositories.includes(repoName)) {
+                eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_ADDED)
                 setScope({ ...scope, repositories: [...scope.repositories, repoName] })
             }
         },
@@ -81,10 +84,17 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     )
 
     const removeRepository = useCallback(
-        (repoName: string) =>
-            setScope({ ...scope, repositories: scope.repositories.filter(repo => repo !== repoName) }),
+        (repoName: string) => {
+            eventLogger.log(EventName.CODY_CHAT_SCOPE_REPO_REMOVED)
+            setScope({ ...scope, repositories: scope.repositories.filter(repo => repo !== repoName) })
+        },
         [scope, setScope]
     )
+
+    const resetScope = useCallback(() => {
+        eventLogger.log(EventName.CODY_CHAT_SCOPE_RESET)
+        setScope({ ...scope, repositories: [], includeInferredRepository: true, includeInferredFile: true })
+    }, [scope, setScope])
 
     return (
         <div className={styles.wrapper}>
@@ -96,13 +106,14 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
                     inferredFilePath={activeEditor?.filePath || null}
                     additionalRepositories={additionalRepositories}
                     addRepository={addRepository}
+                    resetScope={resetScope}
                     removeRepository={removeRepository}
                     toggleIncludeInferredRepository={toggleIncludeInferredRepository}
                     toggleIncludeInferredFile={toggleIncludeInferredFile}
                 />
                 {scope.includeInferredFile && activeEditor?.filePath && (
                     <div className={classNames('d-flex align-items-center', styles.filepathText)}>
-                        <div className={classNames('mx-2', styles.separator)} />
+                        <div className={styles.separator} />
                         {getFileName(activeEditor.filePath)}
                     </div>
                 )}

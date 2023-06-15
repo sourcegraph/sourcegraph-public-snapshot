@@ -94,12 +94,17 @@ function getHighlightedTokenHTML(token: HighlightedToken, workspaceRootPath?: st
     let filePath = token.outerValue.trim()
     // Create workspace relative links for existing files (excluding directories)
     if (!token.isHallucinated && workspaceRootPath && filePath.includes('.')) {
-        const fileUri = `file://${workspaceRootPath}/${filePath}`
+        // Need to decode the file path because it's encoded in the markdown
+        filePath = decodeURIComponent(filePath.replace(/["'`]/g, ''))
+        const fileUri = `vscode://file${workspaceRootPath}/${filePath}`
         const uri = new URL(fileUri).href
         filePath = `<a href="${uri}">${filePath}</a>`
     }
     const isHallucinatedClassName = token.isHallucinated ? 'hallucinated' : 'not-hallucinated'
-    return ` <span class="token-${token.type} token-${isHallucinatedClassName}">${filePath}</span> `
+    const title = token.isHallucinated
+        ? 'Hallucination detected: file does not exist'
+        : 'No hallucination detected: file exists'
+    return ` <span class="token-${token.type} token-${isHallucinatedClassName}" title="${title}">${filePath}</span> `
 }
 
 export function findFilePaths(line: string): { fullMatch: string; pathMatch: string }[] {

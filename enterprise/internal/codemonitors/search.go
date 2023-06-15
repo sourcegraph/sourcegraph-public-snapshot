@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
@@ -23,10 +22,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func Search(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
+func Search(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, query string, monitorID int64) (_ []*result.CommitMatch, err error) {
 	searchClient := client.New(logger, db, enterpriseJobs)
 	inputs, err := searchClient.Plan(
 		ctx,
@@ -35,8 +33,6 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, enterpriseJo
 		query,
 		search.Precise,
 		search.Streaming,
-		settings,
-		envvar.SourcegraphDotComMode(),
 	)
 	if err != nil {
 		return nil, errcode.MakeNonRetryable(err)
@@ -79,7 +75,7 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, enterpriseJo
 // Snapshot runs a dummy search that just saves the current state of the searched repos in the database.
 // On subsequent runs, this allows us to treat all new repos or sets of args as something new that should
 // be searched from the beginning.
-func Snapshot(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, query string, monitorID int64, settings *schema.Settings) error {
+func Snapshot(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, query string, monitorID int64) error {
 	searchClient := client.New(logger, db, enterpriseJobs)
 	inputs, err := searchClient.Plan(
 		ctx,
@@ -88,8 +84,6 @@ func Snapshot(ctx context.Context, logger log.Logger, db database.DB, enterprise
 		query,
 		search.Precise,
 		search.Streaming,
-		settings,
-		envvar.SourcegraphDotComMode(),
 	)
 	if err != nil {
 		return err

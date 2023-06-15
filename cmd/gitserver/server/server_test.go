@@ -558,24 +558,25 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 	}
 
 	logger := logtest.Scoped(t)
+	obctx := observation.TestContextTB(t)
 
 	s := &Server{
 		Logger:           logger,
-		ObservationCtx:   observation.TestContextTB(t),
+		ObservationCtx:   obctx,
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return &GitRepoSyncer{}, nil
 		},
 		DB:                      db,
-		CloneQueue:              NewCloneQueue(list.New()),
+		CloneQueue:              NewCloneQueue(obctx, list.New()),
 		ctx:                     ctx,
 		locker:                  &RepositoryLocker{},
 		cloneLimiter:            limiter.NewMutable(1),
 		cloneableLimiter:        limiter.NewMutable(1),
 		rpsLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		recordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
-		Perforce:                perforce.NewService(ctx, logger, db, list.New()),
+		Perforce:                perforce.NewService(ctx, obctx, logger, db, list.New()),
 	}
 
 	s.StartClonePipeline(ctx)

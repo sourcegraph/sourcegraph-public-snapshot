@@ -57,7 +57,7 @@ message RepoCommit {
 }
 
 message PatchCommitInfo {
-  // message is the commit message to be used for the commit
+  // messages are the commit messages to be used for the commit
   repeated string messages = 1;
   // author_name is the name of the author to be used for the commit
   string author_name = 2;
@@ -104,7 +104,7 @@ message CreateCommitFromPatchBinaryRequest {
   PushConfig push = 7;
   // git_apply_args are the arguments to be passed to git apply
   repeated string git_apply_args = 8;
-  // push_ref is the ref to push to. If not set, the target_ref will be used.
+  // push_ref is the optional override for the ref that is pushed to
   optional string push_ref = 9;
 }
 

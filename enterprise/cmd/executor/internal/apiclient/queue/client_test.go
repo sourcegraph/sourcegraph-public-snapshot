@@ -371,6 +371,7 @@ func TestHeartbeat(t *testing.T) {
 		expectedUsername: "test",
 		expectedToken:    "hunter2",
 		expectedPayload: `{
+			"version":"V2",
 			"executorName": "deadbeef",
 			"jobIds": [1,2,3],
 
@@ -411,6 +412,7 @@ func TestHeartbeatBadResponse(t *testing.T) {
 		expectedUsername: "test",
 		expectedToken:    "hunter2",
 		expectedPayload: `{
+			"version":"V2",
 			"executorName": "deadbeef",
 			"jobIds": [1,2,3],
 
@@ -462,7 +464,8 @@ func TestMultiQueueHeartbeat(t *testing.T) {
 			"igniteVersion": "test-ignite-version",
 			"srcCliVersion": "test-src-cli-version",
 
-			"prometheusMetrics": ""
+			"prometheusMetrics": "",
+			"version": ""
 		}`,
 		responseStatus:  http.StatusOK,
 		responsePayload: `{"knownIDs": ["1-test_queue_one"], "cancelIDs": ["2-test_queue_two"]}`,
@@ -512,7 +515,8 @@ func TestMultiQueueHeartbeatBadResponse(t *testing.T) {
 			"igniteVersion": "test-ignite-version",
 			"srcCliVersion": "test-src-cli-version",
 
-			"prometheusMetrics": ""
+			"prometheusMetrics": "",
+			"version": ""
 		}`,
 		responseStatus:  http.StatusInternalServerError,
 		responsePayload: ``,
@@ -538,12 +542,12 @@ func Test_parseJobIDs(t *testing.T) {
 			jobIDs: []string{"1-foo", "2-foo", "3-bar", "44-foo"},
 			expected: []types.QueueJobIDs{
 				{
-					QueueName: "foo",
-					JobIDs:    []string{"1", "2", "44"},
-				},
-				{
 					QueueName: "bar",
 					JobIDs:    []string{"3"},
+				},
+				{
+					QueueName: "foo",
+					JobIDs:    []string{"1", "2", "44"},
 				},
 			},
 		},

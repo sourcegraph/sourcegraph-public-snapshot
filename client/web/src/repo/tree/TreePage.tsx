@@ -50,7 +50,9 @@ import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { RepositoryFields } from '../../graphql-operations'
+import { SourcegraphContext } from '../../jscontext'
 import { OwnConfigProps } from '../../own/OwnConfigProps'
+import { TryCodyWidget } from '../components/TryCodyWidget/TryCodyWidget'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
 
@@ -77,6 +79,7 @@ export interface Props
     isSourcegraphDotCom: boolean
     className?: string
     authenticatedUser: AuthenticatedUser | null
+    context: Pick<SourcegraphContext, 'authProviders'>
 }
 
 export const treePageRepositoryFragment = gql`
@@ -105,8 +108,10 @@ export const TreePage: FC<Props> = ({
     codeIntelligenceEnabled,
     batchChangesEnabled,
     isSourcegraphDotCom,
+    authenticatedUser,
     ownEnabled,
     className,
+    context,
     ...props
 }) => {
     const isRoot = filePath === ''
@@ -296,8 +301,8 @@ export const TreePage: FC<Props> = ({
                             </Button>
                         </Tooltip>
                     )}
-                    {window.context?.embeddingsEnabled && (
-                        <Tooltip content="Embeddings settings">
+                    {window.context?.codyEnabled && window.context?.embeddingsEnabled && (
+                        <Tooltip content="Embeddings">
                             <Button
                                 className="flex-shrink-0"
                                 to={`/${encodeURIPathComponent(repoName)}/-/embeddings`}
@@ -306,7 +311,7 @@ export const TreePage: FC<Props> = ({
                                 as={Link}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiVectorPolyline} />{' '}
-                                <span className={styles.text}>Embeddings settings</span>
+                                <span className={styles.text}>Embeddings</span>
                             </Button>
                         </Tooltip>
                     )}
@@ -356,6 +361,15 @@ export const TreePage: FC<Props> = ({
 
     return (
         <div className={classNames(styles.treePage, className)}>
+            {isSourcegraphDotCom && (
+                <TryCodyWidget
+                    className="mb-2"
+                    telemetryService={props.telemetryService}
+                    type="repo"
+                    authenticatedUser={authenticatedUser}
+                    context={context}
+                />
+            )}
             <Container className={styles.container}>
                 <div className={classNames(styles.header)}>
                     <PageTitle title={getPageTitle()} />
@@ -392,6 +406,7 @@ export const TreePage: FC<Props> = ({
                             revision={revision}
                             commitID={commitID}
                             isPackage={isPackage}
+                            authenticatedUser={authenticatedUser}
                             {...props}
                         />
                     )}

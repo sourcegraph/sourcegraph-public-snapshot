@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -51,8 +52,6 @@ func TestRepositoryMetadata(t *testing.T) {
 	schema := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs())
 	gqlID := MarshalRepositoryID(repo.ID)
 
-	strPtr := func(s string) *string { return &s }
-
 	t.Run("add", func(t *testing.T) {
 		_, err = schema.AddRepoMetadata(ctx, struct {
 			Repo  graphql.ID
@@ -61,7 +60,7 @@ func TestRepositoryMetadata(t *testing.T) {
 		}{
 			Repo:  gqlID,
 			Key:   "key1",
-			Value: strPtr("val1"),
+			Value: pointers.Ptr("val1"),
 		})
 		require.NoError(t, err)
 
@@ -72,7 +71,7 @@ func TestRepositoryMetadata(t *testing.T) {
 		}{
 			Repo:  gqlID,
 			Key:   "tag1",
-			Value: strPtr(" 	"),
+			Value: pointers.Ptr(" 	"),
 		})
 		require.Error(t, err)
 		require.Equal(t, emptyNonNilValueError{value: " 	"}, err)
@@ -98,7 +97,7 @@ func TestRepositoryMetadata(t *testing.T) {
 		})
 		require.Equal(t, []KeyValuePair{{
 			key:   "key1",
-			value: strPtr("val1"),
+			value: pointers.Ptr("val1"),
 		}, {
 			key:   "tag1",
 			value: nil,
@@ -113,7 +112,7 @@ func TestRepositoryMetadata(t *testing.T) {
 		}{
 			Repo:  gqlID,
 			Key:   "key1",
-			Value: strPtr("val2"),
+			Value: pointers.Ptr("val2"),
 		})
 		require.NoError(t, err)
 
@@ -124,7 +123,7 @@ func TestRepositoryMetadata(t *testing.T) {
 		}{
 			Repo:  gqlID,
 			Key:   "tag1",
-			Value: strPtr("val3"),
+			Value: pointers.Ptr("val3"),
 		})
 		require.NoError(t, err)
 
@@ -135,7 +134,7 @@ func TestRepositoryMetadata(t *testing.T) {
 		}{
 			Repo:  gqlID,
 			Key:   "tag1",
-			Value: strPtr("     "),
+			Value: pointers.Ptr("     "),
 		})
 		require.Error(t, err)
 		require.Equal(t, emptyNonNilValueError{value: "     "}, err)
@@ -150,10 +149,10 @@ func TestRepositoryMetadata(t *testing.T) {
 		})
 		require.Equal(t, []KeyValuePair{{
 			key:   "key1",
-			value: strPtr("val2"),
+			value: pointers.Ptr("val2"),
 		}, {
 			key:   "tag1",
-			value: strPtr("val3"),
+			value: pointers.Ptr("val3"),
 		}}, kvps)
 	})
 
@@ -197,7 +196,7 @@ func TestRepositoryMetadata(t *testing.T) {
 		}{
 			Repo:  gqlID,
 			Key:   "key1",
-			Value: strPtr("val1"),
+			Value: pointers.Ptr("val1"),
 		})
 		require.Error(t, err)
 		require.Equal(t, featureDisabledError, err)
@@ -209,7 +208,7 @@ func TestRepositoryMetadata(t *testing.T) {
 		}{
 			Repo:  gqlID,
 			Key:   "key1",
-			Value: strPtr("val2"),
+			Value: pointers.Ptr("val2"),
 		})
 		require.Error(t, err)
 		require.Equal(t, featureDisabledError, err)
@@ -236,7 +235,7 @@ func TestRepositoryMetadata(t *testing.T) {
 		}{
 			Repo:  gqlID,
 			Key:   "key1",
-			Value: strPtr("val1"),
+			Value: pointers.Ptr("val1"),
 		})
 		require.Error(t, err)
 		require.Equal(t, err, &rbac.ErrNotAuthorized{Permission: string(rbac.RepoMetadataWritePermission)})
@@ -249,7 +248,7 @@ func TestRepositoryMetadata(t *testing.T) {
 		}{
 			Repo:  gqlID,
 			Key:   "key1",
-			Value: strPtr("val2"),
+			Value: pointers.Ptr("val2"),
 		})
 		require.Error(t, err)
 		require.Equal(t, err, &rbac.ErrNotAuthorized{Permission: string(rbac.RepoMetadataWritePermission)})

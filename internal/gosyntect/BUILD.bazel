@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//internal/httpcli",
         "//internal/trace",
+        "//lib/codeintel/languages",
         "//lib/errors",
         "@io_opentelemetry_go_otel//attribute",
     ],

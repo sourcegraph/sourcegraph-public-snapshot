@@ -67,8 +67,16 @@ const REQUESTERS: Record<string, TokenRequester> = {
         forwardDestination: true,
     },
     CODY: {
-        name: 'Sourcegraph Cody - VS Code Extension',
+        name: 'Cody AI by Sourcegraph - VS Code Extension',
         redirectURL: 'vscode://sourcegraph.cody-ai?code=$TOKEN',
+        successMessage: 'Now opening VS Code...',
+        infoMessage:
+            'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
+        callbackType: 'new-tab',
+    },
+    CODY_INSIDERS: {
+        name: 'Cody AI by Sourcegraph - VS Code Insiders Extension',
+        redirectURL: 'vscode-insiders://sourcegraph.cody-ai?code=$TOKEN',
         successMessage: 'Now opening VS Code...',
         infoMessage:
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',

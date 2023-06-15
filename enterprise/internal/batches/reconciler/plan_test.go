@@ -6,6 +6,7 @@ import (
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestDetermineReconcilerPlan(t *testing.T) {
@@ -86,7 +87,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			currentSpec: &bt.TestSpecOpts{Published: nil},
 			changeset: bt.TestChangesetOpts{
 				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				UiPublicationState: uiPublicationStatePtr(btypes.ChangesetUiPublicationStateUnpublished),
+				UiPublicationState: pointers.Ptr(btypes.ChangesetUiPublicationStateUnpublished),
 			},
 			wantOperations: Operations{},
 		},
@@ -95,7 +96,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			currentSpec: &bt.TestSpecOpts{Published: nil},
 			changeset: bt.TestChangesetOpts{
 				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				UiPublicationState: uiPublicationStatePtr(btypes.ChangesetUiPublicationStateDraft),
+				UiPublicationState: pointers.Ptr(btypes.ChangesetUiPublicationStateDraft),
 			},
 			wantOperations: Operations{btypes.ReconcilerOperationPush, btypes.ReconcilerOperationPublishDraft},
 		},
@@ -105,7 +106,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			changeset: bt.TestChangesetOpts{
 				ExternalServiceType: extsvc.TypeBitbucketServer,
 				PublicationState:    btypes.ChangesetPublicationStateUnpublished,
-				UiPublicationState:  uiPublicationStatePtr(btypes.ChangesetUiPublicationStateDraft),
+				UiPublicationState:  pointers.Ptr(btypes.ChangesetUiPublicationStateDraft),
 			},
 			// Cannot draft on an unsupported code host, so this is a no-op.
 			wantOperations: Operations{},
@@ -115,7 +116,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			currentSpec: &bt.TestSpecOpts{Published: nil},
 			changeset: bt.TestChangesetOpts{
 				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				UiPublicationState: uiPublicationStatePtr(btypes.ChangesetUiPublicationStatePublished),
+				UiPublicationState: pointers.Ptr(btypes.ChangesetUiPublicationStatePublished),
 			},
 			wantOperations: Operations{btypes.ReconcilerOperationPush, btypes.ReconcilerOperationPublish},
 		},
@@ -125,7 +126,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			currentSpec:  &bt.TestSpecOpts{Published: nil},
 			changeset: bt.TestChangesetOpts{
 				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				UiPublicationState: uiPublicationStatePtr(btypes.ChangesetUiPublicationStatePublished),
+				UiPublicationState: pointers.Ptr(btypes.ChangesetUiPublicationStatePublished),
 			},
 			wantOperations: Operations{btypes.ReconcilerOperationUndraft},
 		},
@@ -135,7 +136,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			currentSpec:  &bt.TestSpecOpts{Published: nil},
 			changeset: bt.TestChangesetOpts{
 				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				UiPublicationState: uiPublicationStatePtr(btypes.ChangesetUiPublicationStateDraft),
+				UiPublicationState: pointers.Ptr(btypes.ChangesetUiPublicationStateDraft),
 			},
 			// No change to the actual state, so this is a no-op.
 			wantOperations: Operations{},
@@ -146,7 +147,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			currentSpec:  &bt.TestSpecOpts{Published: nil},
 			changeset: bt.TestChangesetOpts{
 				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				UiPublicationState: uiPublicationStatePtr(btypes.ChangesetUiPublicationStateUnpublished),
+				UiPublicationState: pointers.Ptr(btypes.ChangesetUiPublicationStateUnpublished),
 			},
 			// We can't unscramble an egg, nor can we unpublish a published
 			// changeset, so this is a no-op.
@@ -458,8 +459,4 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			}
 		})
 	}
-}
-
-func uiPublicationStatePtr(state btypes.ChangesetUiPublicationState) *btypes.ChangesetUiPublicationState {
-	return &state
 }

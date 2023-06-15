@@ -1,8 +1,7 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { useNavigate, useParams } from 'react-router-dom'
-import { Subject } from 'rxjs'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { logger } from '@sourcegraph/common'
@@ -19,6 +18,7 @@ import {
     SummaryContainer,
 } from '../../../../components/FilteredConnection/ui'
 import { PageTitle } from '../../../../components/PageTitle'
+import { useScrollToLocationHash } from '../../../../components/useScrollToLocationHash'
 import { useFeatureFlag } from '../../../../featureFlags/useFeatureFlag'
 import {
     DotComProductSubscriptionResult,
@@ -88,12 +88,21 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
 
     const toggleShowGenerate = useCallback((): void => setShowGenerate(previousValue => !previousValue), [])
 
-    const licenseUpdates = useMemo(() => new Subject<void>(), [])
+    const refetchRef = useRef<(() => void) | null>(null)
+    const setRefetchRef = useCallback(
+        (refetch: (() => void) | null) => {
+            refetchRef.current = refetch
+        },
+        [refetchRef]
+    )
+
     const onLicenseUpdate = useCallback(async () => {
-        licenseUpdates.next()
         await refetch()
+        if (refetchRef.current) {
+            refetchRef.current()
+        }
         setShowGenerate(false)
-    }, [refetch, licenseUpdates])
+    }, [refetch, refetchRef])
 
     // Feature flag only used as this is under development - will be enabled by default
     const [codyGatewayMananagementUI] = useFeatureFlag('cody-gateway-management-ui')
@@ -195,7 +204,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                 <Container className="mb-2">
                     <ProductSubscriptionLicensesConnection
                         subscriptionUUID={subscriptionUUID}
-                        licenseUpdates={licenseUpdates}
+                        setRefetch={setRefetchRef}
                     />
                 </Container>
             </div>
@@ -215,17 +224,25 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
 
 const ProductSubscriptionLicensesConnection: React.FunctionComponent<{
     subscriptionUUID: string
-    licenseUpdates: Subject<void>
-}> = ({ subscriptionUUID, licenseUpdates }) => {
+    setRefetch: (refetch: () => void) => void
+}> = ({ subscriptionUUID, setRefetch }) => {
     const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useProductSubscriptionLicensesConnection(
         subscriptionUUID,
         20
     )
 
     useEffect(() => {
-        const subscription = licenseUpdates.subscribe(() => refetchAll())
-        return () => subscription.unsubscribe()
-    }, [refetchAll, licenseUpdates])
+        setRefetch(refetchAll)
+    }, [setRefetch, refetchAll])
+
+    const location = useLocation()
+    const licenseIDFromLocationHash = useMemo(() => {
+        if (location.hash.length > 1) {
+            return decodeURIComponent(location.hash.slice(1))
+        }
+        return
+    }, [location.hash])
+    useScrollToLocationHash(location)
 
     return (
         <ConnectionContainer>
@@ -233,7 +250,13 @@ const ProductSubscriptionLicensesConnection: React.FunctionComponent<{
             {loading && !connection && <ConnectionLoading />}
             <ConnectionList as="ul" className="list-group list-group-flush mb-0" aria-label="Subscription licenses">
                 {connection?.nodes?.map(node => (
-                    <SiteAdminProductLicenseNode key={node.id} node={node} showSubscription={false} />
+                    <SiteAdminProductLicenseNode
+                        key={node.id}
+                        node={node}
+                        defaultExpanded={node.id === licenseIDFromLocationHash}
+                        showSubscription={false}
+                        onRevokeCompleted={refetchAll}
+                    />
                 ))}
             </ConnectionList>
             {connection && (

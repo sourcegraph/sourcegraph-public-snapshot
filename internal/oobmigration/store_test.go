@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestSynchronizeMetadata(t *testing.T) {
@@ -211,6 +212,39 @@ func TestListEnterprise(t *testing.T) {
 	}
 }
 
+func TestGetMultiple(t *testing.T) {
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := testStore(t, db)
+
+	migrations, err := store.GetByIDs(context.Background(), []int{1, 2, 3, 4, 5})
+	if err != nil {
+		t.Fatalf("unexpected error getting multiple migrations: %s", err)
+	}
+
+	for i, expectedMigration := range testMigrations {
+		if diff := cmp.Diff(expectedMigration, migrations[i]); diff != "" {
+			t.Errorf("unexpected migration (-want +got):\n%s", diff)
+		}
+	}
+
+	for i, expectedMigration := range testEnterpriseMigrations {
+		if diff := cmp.Diff(expectedMigration, migrations[i+len(testMigrations)]); diff != "" {
+			t.Errorf("unexpected enterprise migration (-want +got):\n%s", diff)
+		}
+	}
+
+	_, err = store.GetByIDs(context.Background(), []int{0, 1, 2, 3, 4, 5, 6})
+	if err == nil {
+		t.Fatalf("unexpected nil error getting multiple migrations")
+	}
+
+	if err.Error() != "unknown migration id(s) [0 6]" {
+		t.Fatalf("unexpected error, got=%q", err.Error())
+	}
+}
+
 func TestUpdateDirection(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
@@ -258,7 +292,7 @@ func TestUpdateProgress(t *testing.T) {
 
 	expectedMigration := testMigrations[2] // ID = 3
 	expectedMigration.Progress = 0.7
-	expectedMigration.LastUpdated = timePtr(now)
+	expectedMigration.LastUpdated = pointers.Ptr(now)
 
 	if diff := cmp.Diff(expectedMigration, migration); diff != "" {
 		t.Errorf("unexpected migration (-want +got):\n%s", diff)
@@ -297,7 +331,7 @@ func TestUpdateMetadata(t *testing.T) {
 	// Formatting can change so we just use the value returned and confirm
 	// unmarshalled value is the same lower down
 	expectedMigration.Metadata = migration.Metadata
-	expectedMigration.LastUpdated = timePtr(now)
+	expectedMigration.LastUpdated = pointers.Ptr(now)
 
 	if diff := cmp.Diff(expectedMigration, migration); diff != "" {
 		t.Errorf("unexpected migration (-want +got):\n%s", diff)
@@ -334,7 +368,7 @@ func TestAddError(t *testing.T) {
 	}
 
 	expectedMigration := testMigrations[1] // ID = 2
-	expectedMigration.LastUpdated = timePtr(now)
+	expectedMigration.LastUpdated = pointers.Ptr(now)
 	expectedMigration.Errors = []MigrationError{
 		{Message: "oops", Created: now},
 		{Message: "uh-oh 1", Created: testTime.Add(time.Hour*5 + time.Second*2)},
@@ -382,7 +416,7 @@ func TestAddErrorBounded(t *testing.T) {
 	}
 
 	expectedMigration := testMigrations[1] // ID = 2
-	expectedMigration.LastUpdated = timePtr(now)
+	expectedMigration.LastUpdated = pointers.Ptr(now)
 	expectedMigration.Errors = expectedErrors[:MaxMigrationErrors]
 
 	if diff := cmp.Diff(expectedMigration, migration); diff != "" {
@@ -421,7 +455,7 @@ var testMigrations = []Migration{
 		Deprecated:     newVersionPtr(3, 28),
 		Progress:       0.5,
 		Created:        testTime.Add(time.Hour * 1),
-		LastUpdated:    timePtr(testTime.Add(time.Hour * 2)),
+		LastUpdated:    pointers.Ptr(testTime.Add(time.Hour * 2)),
 		NonDestructive: true,
 		IsEnterprise:   false,
 		ApplyReverse:   false,
@@ -440,7 +474,7 @@ var testMigrations = []Migration{
 		Deprecated:     nil,
 		Progress:       0.4,
 		Created:        testTime.Add(time.Hour * 3),
-		LastUpdated:    timePtr(testTime.Add(time.Hour * 4)),
+		LastUpdated:    pointers.Ptr(testTime.Add(time.Hour * 4)),
 		NonDestructive: false,
 		IsEnterprise:   false,
 		ApplyReverse:   true,
@@ -478,7 +512,7 @@ var testEnterpriseMigrations = []Migration{
 		Deprecated:     newVersionPtr(3, 28),
 		Progress:       0.5,
 		Created:        testTime.Add(time.Hour * 1),
-		LastUpdated:    timePtr(testTime.Add(time.Hour * 2)),
+		LastUpdated:    pointers.Ptr(testTime.Add(time.Hour * 2)),
 		NonDestructive: true,
 		IsEnterprise:   true,
 		ApplyReverse:   false,
@@ -487,11 +521,8 @@ var testEnterpriseMigrations = []Migration{
 	},
 }
 
-func timePtr(t time.Time) *time.Time { return &t }
-
 func newVersionPtr(major, minor int) *Version {
-	v := NewVersion(major, minor)
-	return &v
+	return pointers.Ptr(NewVersion(major, minor))
 }
 
 func testEnterprise(t *testing.T) {

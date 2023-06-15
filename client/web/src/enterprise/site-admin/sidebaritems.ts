@@ -1,9 +1,9 @@
 import BrainIcon from 'mdi-react/BrainIcon'
 import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
 import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
-import RobotOutlineIcon from 'mdi-react/RobotOutlineIcon'
 
 import { BatchChangesIcon } from '../../batches/icons'
+import { CodyPageIcon } from '../../cody/chat/CodyPageIcon'
 import {
     apiConsoleGroup,
     analyticsGroup,
@@ -144,19 +144,21 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
 }
 
 export const codyGroup: SiteAdminSideBarGroup = {
-    header: { label: 'Cody', icon: RobotOutlineIcon },
+    header: { label: 'Cody', icon: CodyPageIcon },
     items: [
         {
-            label: 'Embeddings',
+            label: 'Embeddings jobs',
             to: '/site-admin/embeddings',
             exact: true,
+            condition: () => window.context?.embeddingsEnabled,
         },
         {
-            label: 'Configuration',
+            label: 'Embeddings policies',
             to: '/site-admin/embeddings/configuration',
+            condition: () => window.context?.embeddingsEnabled,
         },
     ],
-    condition: () => window.context?.embeddingsEnabled,
+    condition: () => window.context?.codyEnabled,
 }
 
 const usersGroup: SiteAdminSideBarGroup = {

@@ -62,14 +62,18 @@ func TestAggregateFileCounts(t *testing.T) {
 	repo1 := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
 	repo2 := mustCreate(ctx, t, d, &types.Repo{Name: "c/d"})
 
-	// Insert paths and counts for repo1
+	// Check counts without data.
+	count, err := d.RepoPaths().AggregateFileCount(ctx, TreeLocationOpts{})
+	require.NoError(t, err)
+	assert.Equal(t, int32(0), count)
+
 	counts1 := fakeRepoTreeCounts{
 		"":      30,
 		"path1": 10,
 		"path2": 20,
 	}
 	timestamp := time.Now()
-	_, err := d.RepoPaths().UpdateFileCounts(ctx, repo1.ID, counts1, timestamp)
+	_, err = d.RepoPaths().UpdateFileCounts(ctx, repo1.ID, counts1, timestamp)
 	require.NoError(t, err)
 	counts2 := fakeRepoTreeCounts{
 		"":      50,
@@ -79,7 +83,7 @@ func TestAggregateFileCounts(t *testing.T) {
 	require.NoError(t, err)
 
 	// Aggregate counts for single path in repo1
-	count, err := d.RepoPaths().AggregateFileCount(ctx, TreeLocationOpts{
+	count, err = d.RepoPaths().AggregateFileCount(ctx, TreeLocationOpts{
 		Path:   "path1",
 		RepoID: repo1.ID,
 	})

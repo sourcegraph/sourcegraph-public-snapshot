@@ -15,7 +15,7 @@ export const test = base
 
             const codyRoot = path.resolve(__dirname, '..', '..')
 
-            const vscodeExecutablePath = await downloadAndUnzipVSCode()
+            const vscodeExecutablePath = await downloadAndUnzipVSCode('1.78.2')
             const extensionDevelopmentPath = codyRoot
 
             const userDataDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
@@ -71,8 +71,8 @@ export const test = base
                 // Ensure we're logged out
                 // TODO(philipp-spiess): Find a way to access the extension host via the injected
                 // electron process so we can run the hidden command instead.
-                if (await page.isVisible('[aria-label="Cody: Settings"]')) {
-                    await page.click('[aria-label="Cody: Settings"]')
+                if (await page.isVisible('[aria-label="Settings"]')) {
+                    await page.click('[aria-label="Settings"]')
                     await sidebar.getByRole('button', { name: 'Logout' }).click()
                 }
 

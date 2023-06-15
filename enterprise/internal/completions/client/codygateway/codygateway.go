@@ -7,6 +7,9 @@ import (
 	"net/url"
 	"strings"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/openai"
@@ -50,7 +53,7 @@ func (c *codyGatewayClient) Stream(ctx context.Context, feature types.Completion
 	if err != nil {
 		return err
 	}
-	return cc.Stream(ctx, feature, requestParams, sendEvent)
+	return overwriteErrSource(cc.Stream(ctx, feature, requestParams, sendEvent))
 }
 
 func (c *codyGatewayClient) Complete(ctx context.Context, feature types.CompletionsFeature, requestParams types.CompletionRequestParameters) (*types.CompletionResponse, error) {
@@ -58,9 +61,20 @@ func (c *codyGatewayClient) Complete(ctx context.Context, feature types.Completi
 	if err != nil {
 		return nil, err
 	}
-	// Passthrough error directly, ErrStatusNotOK should be implemented by the
-	// underlying client.
-	return cc.Complete(ctx, feature, requestParams)
+	resp, err := cc.Complete(ctx, feature, requestParams)
+	return resp, overwriteErrSource(err)
+}
+
+// overwriteErrSource should be used on all errors returned by an underlying
+// types.CompletionsClient to avoid confusing error messages.
+func overwriteErrSource(err error) error {
+	if err == nil {
+		return nil
+	}
+	if statusErr, ok := types.IsErrStatusNotOK(err); ok {
+		statusErr.Source = "Sourcegraph Cody Gateway"
+	}
+	return err
 }
 
 func (c *codyGatewayClient) clientForParams(feature types.CompletionsFeature, requestParams *types.CompletionRequestParameters) (types.CompletionsClient, error) {
@@ -102,6 +116,21 @@ func gatewayDoer(upstream httpcli.Doer, feature types.CompletionsFeature, gatewa
 		req.URL.Path = path
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 		req.Header.Set(codygateway.FeatureHeaderName, string(feature))
-		return upstream.Do(req)
+
+		resp, err := upstream.Do(req)
+
+		// If we get a repsonse, record Cody Gateway's x-trace response header,
+		// so that we can link up to an event on our end if needed.
+		if resp != nil && resp.Header != nil {
+			if span := trace.SpanFromContext(req.Context()); span.SpanContext().IsValid() {
+				// Would be cool if we can make an OTEL trace link instead, but
+				// adding a link after a span has started is not supported yet:
+				// https://github.com/open-telemetry/opentelemetry-specification/issues/454
+				span.SetAttributes(attribute.String("cody-gateway.x-trace", resp.Header.Get("X-Trace")))
+				span.SetAttributes(attribute.String("cody-gateway.x-trace-span", resp.Header.Get("X-Trace-Span")))
+			}
+		}
+
+		return resp, err
 	})
 }

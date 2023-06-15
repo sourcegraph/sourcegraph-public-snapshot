@@ -88,9 +88,19 @@ type OwnershipStats {
     totalFiles: Int!
 
     """
-    Total files with ownership assigned by CODEOWNERS.
+    Total files with ownership stemming from CODEOWNERS files.
     """
     totalCodeownedFiles: Int!
+
+    """
+    Total files with any ownership defined (both CODEOWNERS and assigned).
+    """
+    totalOwnedFiles: Int!
+
+    """
+    Total files with assigned ownership.
+    """
+    totalAssignedOwnershipFiles: Int!
 }
 
 """
@@ -198,6 +208,11 @@ type AssignedOwner {
     More detailed description to display in the UI for the determination.
     """
     description: String!
+
+    """
+    Whether or not this rule matches a path directly, or is inherited from a parent path.
+    """
+    isDirectMatch: Boolean!
 }
 
 """

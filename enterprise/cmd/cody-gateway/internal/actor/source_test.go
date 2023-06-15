@@ -63,7 +63,7 @@ func TestSourcesWorkers(t *testing.T) {
 	s1 := &mockSourceSyncer{}
 	stop1 := make(chan struct{})
 	g.Go(func() {
-		w := (Sources{s1}).Worker(observation.NewContext(logger), sourceWorkerMutex1, time.Millisecond)
+		w := (NewSources(s1)).Worker(observation.NewContext(logger), sourceWorkerMutex1, time.Millisecond)
 		go func() {
 			<-stop1
 			w.Stop()
@@ -78,7 +78,7 @@ func TestSourcesWorkers(t *testing.T) {
 		sourceWorkerMutex := rs.NewMutex(lockName,
 			// Competing worker should only try once to avoid getting stuck
 			redsync.WithTries(1))
-		w := (Sources{s2}).Worker(observation.NewContext(logger), sourceWorkerMutex, time.Millisecond)
+		w := (NewSources(s2)).Worker(observation.NewContext(logger), sourceWorkerMutex, time.Millisecond)
 		go func() {
 			<-stop2
 			w.Stop()
@@ -115,6 +115,22 @@ func TestSourcesWorkers(t *testing.T) {
 
 	// Wait for everyone to go home for the weekend
 	g.Wait()
+}
+
+func TestSourcesSyncAll(t *testing.T) {
+	t.Parallel()
+
+	var s1, s2 mockSourceSyncer
+	sources := NewSources(&s1, &s2)
+	err := sources.SyncAll(context.Background(), logtest.Scoped(t))
+	require.NoError(t, err)
+	assert.Equal(t, int32(1), s1.syncCount.Load())
+	assert.Equal(t, int32(1), s2.syncCount.Load())
+
+	err = sources.SyncAll(context.Background(), logtest.Scoped(t))
+	require.NoError(t, err)
+	assert.Equal(t, int32(2), s1.syncCount.Load())
+	assert.Equal(t, int32(2), s2.syncCount.Load())
 }
 
 func TestIsErrNotFromSource(t *testing.T) {

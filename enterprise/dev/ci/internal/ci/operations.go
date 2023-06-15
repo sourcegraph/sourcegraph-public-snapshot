@@ -28,8 +28,6 @@ type CoreTestOperationsOptions struct {
 	// for addWebAppOSSBuild
 	CacheBundleSize      bool
 	CreateBundleSizeDiff bool
-	// ForceBazel replaces vanilla jobs with Bazel ones if enabled.
-	ForceBazel bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -45,10 +43,7 @@ type CoreTestOperationsOptions struct {
 func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *operations.Set {
 	// Base set
 	ops := operations.NewSet()
-
-	if opts.ForceBazel {
-		ops.Append(BazelOperations()...)
-	}
+	ops.Append(BazelOperations()...)
 
 	// Simple, fast-ish linter checks
 	linterOps := operations.NewNamedSet("Linters and static analysis")
@@ -58,56 +53,17 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	ops.Merge(linterOps)
 
 	if diff.Has(changed.Client | changed.GraphQL) {
-		var clientChecks *operations.Set
-		// TODO(Bazel) clean this once we go GA.
-		if opts.ForceBazel {
-			// If there are any Graphql changes, they are impacting the client as well.
-			clientChecks = operations.NewNamedSet("Client checks",
-				// clientIntegrationTests is now covered by Bazel
-				// clientIntegrationTests,
-				clientChromaticTests(opts),
-				// frontendTests is now covered by Bazel
-				// frontendTests,                // ~4.5m
-				// addWebAppOSSBuild is now covered by Bazel
-				// addWebAppOSSBuild(opts),
-				addWebAppEnterpriseBuild(opts),
-				// addWebAppTests is now covered by Bazel
-				// addWebAppTests(opts),
-				// addBrowserExtensionsUnitTests is now covered by Bazel
-				// addBrowserExtensionUnitTests, // ~4.5m
-				addJetBrainsUnitTests, // ~2.5m
-				// addTypescriptCheck is now covered by Bazel
-				addVsceTests,          // ~3.0m
-				addCodyExtensionTests, // ~2.5m
-				// addESLint,
-				addStylelint,
-			)
-		} else {
-			// If there are any Graphql changes, they are impacting the client as well.
-			clientChecks = operations.NewNamedSet("Client checks",
-				clientIntegrationTests,
-				clientChromaticTests(opts),
-				frontendTests, // ~4.5m
-				addWebAppOSSBuild(opts),
-				addWebAppTests(opts),
-				addBrowserExtensionUnitTests, // ~4.5m
-				addJetBrainsUnitTests,        // ~2.5m
-				addTypescriptCheck,           // ~4m
-				addVsceTests,                 // ~3.0m
-				addCodyExtensionTests,        // ~2.5m
-				addESLint,
-				addStylelint,
-			)
-		}
-
+		// If there are any Graphql changes, they are impacting the client as well.
+		clientChecks := operations.NewNamedSet("Client checks",
+			clientChromaticTests(opts),
+			addWebAppEnterpriseBuild(opts),
+			addJetBrainsUnitTests, // ~2.5m
+			addVsceTests,          // ~3.0m
+			addCodyUnitIntegrationTests,
+			addCodyE2ETests,
+			addStylelint,
+		)
 		ops.Merge(clientChecks)
-	}
-
-	if diff.Has(changed.Go|changed.GraphQL) && !opts.ForceBazel {
-		// If there are any Graphql changes, they are impacting the backend as well.
-		ops.Merge(operations.NewNamedSet("Go checks",
-			addGoTests,
-			addGoBuild))
 	}
 
 	return ops
@@ -170,21 +126,6 @@ func addStylelint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":stylelint: Stylelint (all)",
 		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:css:all"))
-}
-
-func addESLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":eslint: ESLint (all)",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:js:all"))
-
-	pipeline.AddStep(":eslint: ESLint (web)",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:js:web"))
-}
-
-func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
-	addStylelint(pipeline)
-	addESLint(pipeline)
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
@@ -260,17 +201,28 @@ func addVsceTests(pipeline *bk.Pipeline) {
 	)
 }
 
-func addCodyExtensionTests(pipeline *bk.Pipeline) {
+func addCodyUnitIntegrationTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
-		":vscode::robot_face: Unit, integration, and E2E tests for the Cody VS Code extension",
+		":vscode::robot_face: Unit and integration tests for the Cody VS Code extension",
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("client/cody/scripts/download-rg.sh x86_64-unknown-linux"),
 		bk.Cmd("pnpm --filter cody-ai run test:unit"),
 		bk.Cmd("pnpm --filter cody-shared run test"),
 		bk.Cmd("pnpm --filter cody-ai run test:integration"),
+	)
+}
+
+// Cody E2E tests are extracted into a separate step to auto-retry them on flaky failures.
+func addCodyE2ETests(pipeline *bk.Pipeline) {
+	pipeline.AddStep(
+		":vscode::robot_face: E2E tests for the Cody VS Code extension",
+		withPnpmCache(),
+		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+		bk.Cmd("client/cody/scripts/download-rg.sh x86_64-unknown-linux"),
 		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
 		bk.ArtifactPaths("./playwright/**/*"),
+		bk.AutomaticRetry(3),
 	)
 }
 
@@ -497,29 +449,6 @@ func addGoBuild(pipeline *bk.Pipeline) {
 	)
 }
 
-// Adds backend integration tests step.
-func backendIntegrationTests(candidateImageTag string, imageDep string) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		for _, enableGRPC := range []bool{true, false} {
-			description := ":bazel::docker: :chains: Backend integration tests"
-			if enableGRPC {
-				description += " (gRPC)"
-			}
-			pipeline.AddStep(
-				description,
-				// Run tests against the candidate server image
-				bk.DependsOn(candidateImageStepKey(imageDep)),
-				bk.AutomaticRetry(1), // TODO: @jhchabran, flaky, investigate
-				bk.Env("IMAGE",
-					images.DevRegistryImage("server", candidateImageTag)),
-				bk.Env("SG_FEATURE_FLAG_GRPC", strconv.FormatBool(enableGRPC)),
-				bk.Cmd("dev/ci/integration/backend/run.sh"),
-				bk.ArtifactPaths("./*.log"),
-				bk.Agent("queue", "bazel"))
-		}
-	}
-}
-
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome"} {
 		// Run e2e tests
@@ -686,7 +615,7 @@ func executorsE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":bazel::docker::packer: Executors E2E",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
+			bk.DependsOn("bazel-push-images-candidate"),
 			bk.Agent("queue", "bazel"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
@@ -700,25 +629,6 @@ func executorsE2E(candidateTag string) operations.Operation {
 			bk.Cmd("enterprise/dev/ci/integration/executors/run.sh"),
 			bk.ArtifactPaths("./*.log"),
 		)
-	}
-}
-
-func serverE2E(candidateTag string) operations.Operation {
-	return func(p *bk.Pipeline) {
-		p.AddStep(":chromium: Sourcegraph E2E",
-			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
-			bk.Env("CANDIDATE_VERSION", candidateTag),
-			bk.Env("DISPLAY", ":99"),
-			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
-			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
-			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
-			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.AnnotatedCmd("dev/ci/integration/e2e/run.sh", bk.AnnotatedCmdOpts{
-				Annotations: &bk.AnnotationOpts{},
-			}),
-			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
 
@@ -747,7 +657,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
+			bk.DependsOn("bazel-push-images-candidate"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
 			bk.Env("DISPLAY", ":99"),
@@ -942,7 +852,7 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 
 		var imgs []string
 		for _, image := range []string{publishImage, devImage} {
-			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest, runtype.CandidatesNoTest) {
+			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
 				imgs = append(imgs, fmt.Sprintf("%s:%s", image, c.Version))
 			}
 
