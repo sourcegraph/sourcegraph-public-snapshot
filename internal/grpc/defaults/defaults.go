@@ -105,6 +105,7 @@ func ServerOptions(logger log.Logger, additionalOptions ...grpc.ServerOption) []
 	out := []grpc.ServerOption{
 		grpc.ChainStreamInterceptor(
 			internalgrpc.NewStreamPanicCatcher(logger),
+			internalerrs.LoggingStreamServerInterceptor(logger),
 			grpc_prometheus.StreamServerInterceptor(metrics),
 			propagator.StreamServerPropagator(requestclient.Propagator{}),
 			propagator.StreamServerPropagator(actor.ActorPropagator{}),
@@ -113,6 +114,7 @@ func ServerOptions(logger log.Logger, additionalOptions ...grpc.ServerOption) []
 		),
 		grpc.ChainUnaryInterceptor(
 			internalgrpc.NewUnaryPanicCatcher(logger),
+			internalerrs.LoggingUnaryServerInterceptor(logger),
 			grpc_prometheus.UnaryServerInterceptor(metrics),
 			propagator.UnaryServerPropagator(requestclient.Propagator{}),
 			propagator.UnaryServerPropagator(actor.ActorPropagator{}),
