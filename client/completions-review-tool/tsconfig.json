@@ -1,0 +1,34 @@
+// {
+//   "compilerOptions": {
+//     "lib": ["DOM", "DOM.Iterable", "esnext"],
+//     "isolatedModules": true,
+//     "esModuleInterop": true,
+//     "jsx": "react-jsx",
+//     "moduleResolution": "node",
+//     "resolveJsonModule": true,
+//     "target": "esnext",
+//     "strict": true,
+//     "allowJs": true,
+//     "forceConsistentCasingInFileNames": true,
+//     "baseUrl": ".",
+
+//     // Remix takes care of building everything in `remix build`.
+//     "noEmit": true,
+//   },
+//   "include": ["remix.env.d.ts", "**/*.ts", "**/*.tsx", "*.js"],
+// }
+
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "module": "commonjs",
+    "sourceRoot": "src",
+    "rootDir": ".",
+    "outDir": "./out",
+    "baseUrl": "./src",
+    // Remix takes care of building everything in `remix build`.
+    // "noEmit": true,
+  },
+  "include": ["globals.d.ts", "remix.env.d.ts", "**/*.ts", "**/*.tsx", "*.js"],
+}
