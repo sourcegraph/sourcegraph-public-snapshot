@@ -21,6 +21,10 @@ For upgrade procedures or general info about sourcegraph versioning see the link
 
 - The Docker Single Container Deployment image has switched to a Wolfi-based container image. Upon upgrading, Sourcegraph will need to re-index the entire database. All users **must** read through the [5.1 upgrade guide](../migration/5_1.md) _before_ upgrading.
 
+## v5.0.5 ➔ v5.0.6
+
+#### Notes:
+
 ## v5.0.4 ➔ v5.0.5
 
 #### Notes:
