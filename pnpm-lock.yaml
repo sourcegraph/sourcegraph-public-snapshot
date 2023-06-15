@@ -10830,7 +10830,7 @@ packages:
       '@sveltejs/kit': ^1.0.0
     dependencies:
       '@sveltejs/kit': 1.5.6(svelte@3.58.0)(vite@4.1.4)
-      import-meta-resolve: 2.2.1
+      import-meta-resolve: 2.2.2
     dev: true
 
   /@sveltejs/adapter-static@2.0.1(@sveltejs/kit@1.5.6):
@@ -20812,10 +20812,6 @@ packages:
     dependencies:
       pkg-dir: 4.2.0
       resolve-cwd: 3.0.0
-
-  /import-meta-resolve@2.2.1:
-    resolution: {integrity: sha512-C6lLL7EJPY44kBvA80gq4uMsVFw5x3oSKfuMl1cuZ2RkI5+UJqQXgn+6hlUew0y4ig7Ypt4CObAAIzU53Nfpuw==}
-    dev: true
 
   /import-meta-resolve@2.2.2:
     resolution: {integrity: sha512-f8KcQ1D80V7RnqVm+/lirO9zkOxjGxhaTC1IPrBGd3MEfNgmNG67tSUO9gTi2F3Blr2Az6g1vocaxzkVnWl9MA==}
