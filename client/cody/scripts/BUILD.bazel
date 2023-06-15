@@ -17,6 +17,7 @@ ts_project(
     name = "scripts",
     srcs = [
         "bundle.ts",
+        "mock-server.ts"
         "release.ts",
     ],
     tsconfig = ":tsconfig",
