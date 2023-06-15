@@ -209,13 +209,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                     <hr className="my-3" />
                     <div className="d-flex flex-row justify-content-between">
                         <H3>Schema drift</H3>
-                        <Button
-                            onClick={() => refetch()}
-                            variant="primary"
-                            size="sm"
-                            aria-label="refresh drift check"
-                            q
-                        >
+                        <Button onClick={() => refetch()} variant="primary" size="sm" aria-label="refresh drift check">
                             {' '}
                             Refresh{' '}
                         </Button>
