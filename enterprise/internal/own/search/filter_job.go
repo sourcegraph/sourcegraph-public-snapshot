@@ -76,7 +76,6 @@ func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, 
 	})
 
 	alert, err = s.child.Run(ctx, clients, filteredStream)
-	// Add is nil-safe, we can just add an alert even if its pointer is nil.
 	maxAlerter.Add(alert)
 	return maxAlerter.Alert, err
 }
