@@ -61,7 +61,6 @@ describe('CompletionsCache', () => {
                 {
                     prefix: 'foo\n  ',
                     content: 'baz',
-                    messages: [],
                 },
             ],
         })
