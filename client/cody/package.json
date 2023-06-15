@@ -406,7 +406,7 @@
         "title": "Insert text at the current cursor position"
       },
       {
-        "command": "cody.recipe.non-stop",
+        "command": "cody.non-stop.fixup",
         "category": "Cody",
         "title": "Fixup (Experimental)",
         "icon": "resources/cody.png",
@@ -465,7 +465,7 @@
         "when": "cody.activated && editorTextFocus && !editorReadonly"
       },
       {
-        "command": "cody.recipe.non-stop",
+        "command": "cody.non-stop.fixup",
         "key": "ctrl+shift+v",
         "mac": "shift+cmd+v",
         "when": "cody.activated && editorHasSelection && !editorReadonly"
@@ -685,7 +685,7 @@
       ],
       "editor/title": [
         {
-          "command": "cody.recipe.non-stop",
+          "command": "cody.non-stop.fixup",
           "when": "cody.nonstop.fixups.enabled && cody.activated",
           "group": "navigation",
           "visibility": "visible"
