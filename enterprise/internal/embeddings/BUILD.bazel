@@ -35,6 +35,7 @@ go_library(
         "//internal/httpcli",
         "//internal/lazyregexp",
         "//internal/observation",
+        "//internal/trace",
         "//internal/uploadstore",
         "//lib/errors",
         "@com_github_sourcegraph_conc//:conc",
