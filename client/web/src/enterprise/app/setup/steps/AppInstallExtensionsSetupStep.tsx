@@ -1,6 +1,7 @@
 import { FC, useContext, useEffect, useState } from 'react'
 
 import { mdiDownload, mdiOpenInNew } from '@mdi/js'
+import { invoke } from '@tauri-apps/api/tauri'
 import classNames from 'classnames'
 
 import { Badge, Button, H1, H3, Link, Text, Icon, BadgeVariantType, LoadingSpinner } from '@sourcegraph/wildcard'
@@ -28,7 +29,9 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
     const { onNextStep } = useContext(SetupStepsContext)
     const [extensions, setExtensions] = useState<Extension[] | null>(null)
 
-    useEffect(() => {}, [fetchExtensionsConfiguration().then(extensions => setExtensions(extensions))])
+    useEffect(() => {
+        fetchExtensionsConfiguration().then(extensions => setExtensions(extensions))
+    }, [])
 
     return (
         <div className={classNames(styles.root, className)}>
@@ -68,13 +71,13 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
                                 size="sm"
                                 onClick={() => tauriShellOpen(extension.extensionDeepLink)}
                             >
-                                <Icon svgPath={mdiDownload} aria-hiden={true} /> Install
+                                <Icon svgPath={mdiDownload} aria-hidden={true} /> Install
                             </Button>
                         )}
 
                         {extension.docLink && (
                             <Link to={extension.docLink} target="_blank" className={styles.extensionsActionLink}>
-                                <Icon svgPath={mdiOpenInNew} aria-hiden={true} /> Repo
+                                <Icon svgPath={mdiOpenInNew} aria-hidden={true} /> Repo
                             </Link>
                         )}
                     </li>
@@ -113,10 +116,9 @@ function fetchExtensionsConfiguration(): Promise<Extension[]> {
         Promise.resolve(extensionCache)
     }
 
-    return fetch('https://storage.googleapis.com/sourcegraph-assets/setup/extensions.json')
-        .then(res => res.json())
-        .then(res => {
-            extensionCache = res
-            return res as Extension[]
-        })
+    return invoke<string>('get_extension_configuration').then(res => {
+        const data = JSON.parse(res)
+        extensionCache = data
+        return data as Extension[]
+    })
 }

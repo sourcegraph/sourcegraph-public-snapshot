@@ -6,6 +6,9 @@
 #[cfg(not(dev))]
 use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 
+use curl::easy::Easy;
+use std::str;
+
 mod cody;
 mod common;
 mod tray;
@@ -31,6 +34,32 @@ fn get_launch_path(window: tauri::Window) -> String {
 #[tauri::command]
 fn app_shell_loaded() -> Option<AppShellReadyPayload> {
     return APP_SHELL_READY_PAYLOAD.read().unwrap().clone();
+}
+
+#[tauri::command]
+async fn get_extension_configuration() -> Result<String, ()> {
+    let mut json = Vec::new();
+
+    let mut easy = Easy::new();
+    easy.url("https://storage.googleapis.com/sourcegraph-assets/setup/extensions.json")
+        .unwrap();
+    {
+        let mut transfer = easy.transfer();
+        transfer
+            .write_function(|data| {
+                json.extend_from_slice(data);
+                Ok(data.len())
+            })
+            .unwrap();
+        transfer.perform().unwrap();
+    }
+
+    let jsonString = match str::from_utf8(&json) {
+        Ok(v) => v,
+        Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
+    };
+
+    Ok(format!("{}", jsonString))
 }
 
 #[tauri::command]
@@ -170,6 +199,7 @@ fn main() {
             app_shell_loaded,
             show_main_window,
             reload_cody_window,
+            get_extension_configuration,
             show_logs,
             restart_app,
             clear_all_data
