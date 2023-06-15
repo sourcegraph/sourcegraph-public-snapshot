@@ -144,13 +144,13 @@ type UpdateProductSubscriptionInput struct {
 
 type UpdateCodyGatewayAccessInput struct {
 	Enabled                                 *bool
-	ChatCompletionsRateLimit                *int64
+	ChatCompletionsRateLimit                *BigInt
 	ChatCompletionsRateLimitIntervalSeconds *int32
 	ChatCompletionsAllowedModels            *[]string
-	CodeCompletionsRateLimit                *int64
+	CodeCompletionsRateLimit                *BigInt
 	CodeCompletionsRateLimitIntervalSeconds *int32
 	CodeCompletionsAllowedModels            *[]string
-	EmbeddingsRateLimit                     *int64
+	EmbeddingsRateLimit                     *BigInt
 	EmbeddingsRateLimitIntervalSeconds      *int32
 	EmbeddingsAllowedModels                 *[]string
 }

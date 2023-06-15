@@ -271,18 +271,18 @@ const RateLimitRow: React.FunctionComponent<RateLimitRowProps> = ({
                     access:
                         mode === 'chat'
                             ? {
-                                  chatCompletionsRateLimit: 0,
+                                  chatCompletionsRateLimit: '0',
                                   chatCompletionsRateLimitIntervalSeconds: 0,
                                   chatCompletionsAllowedModels: [],
                               }
                             : mode === 'code'
                             ? {
-                                  codeCompletionsRateLimit: 0,
+                                  codeCompletionsRateLimit: '0',
                                   codeCompletionsRateLimitIntervalSeconds: 0,
                                   codeCompletionsAllowedModels: [],
                               }
                             : {
-                                  embeddingsRateLimit: 0,
+                                  embeddingsRateLimit: '0',
                                   embeddingsRateLimitIntervalSeconds: 0,
                                   embeddingsAllowedModels: [],
                               },
