@@ -33,11 +33,16 @@ export const GitCommitNodeTableRow: React.FC<
         setShowCommitMessageBody(!showCommitMessageBody)
     }, [showCommitMessageBody])
 
+    const canonicalURL =
+        window.context.experimentalFeatures.perforceChangelistMapping && node.perforceChangelist?.canonicalURL
+            ? node.perforceChangelist.canonicalURL
+            : node.canonicalURL
+
     const messageElement = (
         <div className={classNames(styles.message, styles.messageSmall)} data-testid="git-commit-node-message">
             <span className={classNames('mr-2', styles.messageSubject)}>
                 <CommitMessageWithLinks
-                    to={node.canonicalURL}
+                    to={canonicalURL}
                     className={classNames(messageSubjectClassName, styles.messageLink)}
                     message={node.subject}
                     externalURLs={node.externalURLs}
@@ -89,7 +94,7 @@ export const GitCommitNodeTableRow: React.FC<
                 />
                 <td className="flex-1 overflow-hidden">{messageElement}</td>
                 <td className="text-right">
-                    <Link to={node.perforceChangelist?.canonicalURL ?? node.canonicalURL}>
+                    <Link to={canonicalURL}>
                         <Code data-testid="git-commit-node-oid">
                             {node.perforceChangelist?.cid ?? node.abbreviatedOID}
                         </Code>
