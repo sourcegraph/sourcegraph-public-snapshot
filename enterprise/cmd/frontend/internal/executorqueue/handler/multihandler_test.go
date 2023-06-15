@@ -914,7 +914,7 @@ func TestMultiHandler_DiscardQueuesAtLimit(t *testing.T) {
 		name             string
 		queues           []string
 		mockCacheEntries map[string]int
-		want             []string
+		expectedQueues   []string
 	}{
 		{
 			name:   "Nothing discarded",
@@ -924,7 +924,7 @@ func TestMultiHandler_DiscardQueuesAtLimit(t *testing.T) {
 				"batches":   5,
 				"codeintel": 5,
 			},
-			want: []string{"batches", "codeintel"},
+			expectedQueues: []string{"batches", "codeintel"},
 		},
 		{
 			name:   "All discarded",
@@ -934,7 +934,7 @@ func TestMultiHandler_DiscardQueuesAtLimit(t *testing.T) {
 				"batches":   executortypes.DequeuePropertiesPerQueue["batches"].Limit,
 				"codeintel": executortypes.DequeuePropertiesPerQueue["codeintel"].Limit,
 			},
-			want: nil,
+			expectedQueues: nil,
 		},
 		{
 			name:   "Batches discarded",
@@ -944,7 +944,7 @@ func TestMultiHandler_DiscardQueuesAtLimit(t *testing.T) {
 				"batches":   executortypes.DequeuePropertiesPerQueue["batches"].Limit,
 				"codeintel": 5,
 			},
-			want: []string{"codeintel"},
+			expectedQueues: []string{"codeintel"},
 		},
 	}
 
@@ -968,7 +968,63 @@ func TestMultiHandler_DiscardQueuesAtLimit(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error while discarding queues: %s", err)
 			}
-			assert.Equalf(t, tt.want, queues, "DiscardQueuesAtLimit(%v)", tt.queues)
+			assert.Equalf(t, tt.expectedQueues, queues, "DiscardQueuesAtLimit(%v)", tt.queues)
+		})
+	}
+}
+
+func TestMultiHandler_FilterNonEmptyQueues(t *testing.T) {
+	tests := []struct {
+		name           string
+		queueNames     []string
+		mockFunc       func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob])
+		expectedQueues []string
+	}{
+		{
+			name:       "Both contain jobs",
+			queueNames: []string{"batches", "codeintel"},
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				codeintelMockStore.QueuedCountFunc.PushReturn(5, nil)
+				batchesMockStore.QueuedCountFunc.PushReturn(5, nil)
+			},
+			expectedQueues: []string{"batches", "codeintel"},
+		},
+		{
+			name:       "Only batches contains jobs",
+			queueNames: []string{"batches", "codeintel"},
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				codeintelMockStore.QueuedCountFunc.PushReturn(0, nil)
+				batchesMockStore.QueuedCountFunc.PushReturn(5, nil)
+			},
+			expectedQueues: []string{"batches"},
+		},
+		{
+			name:       "None contain jobs",
+			queueNames: []string{"batches", "codeintel"},
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				codeintelMockStore.QueuedCountFunc.PushReturn(0, nil)
+				batchesMockStore.QueuedCountFunc.PushReturn(0, nil)
+			},
+			expectedQueues: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			codeIntelMockStore := dbworkerstoremocks.NewMockStore[uploadsshared.Index]()
+			batchesMockStore := dbworkerstoremocks.NewMockStore[*btypes.BatchSpecWorkspaceExecutionJob]()
+			m := &handler.MultiHandler{
+				CodeIntelQueueHandler: handler.QueueHandler[uploadsshared.Index]{Name: "codeintel", Store: codeIntelMockStore},
+				BatchesQueueHandler:   handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Name: "batches", Store: batchesMockStore},
+			}
+
+			tt.mockFunc(codeIntelMockStore, batchesMockStore)
+
+			got, err := m.FilterNonEmptyQueues(ctx, tt.queueNames)
+			if err != nil {
+				t.Fatalf("unexpected error while filtering non empty queues: %s", err)
+			}
+			assert.Equalf(t, tt.expectedQueues, got, "FilterNonEmptyQueues(%v)", tt.queueNames)
 		})
 	}
 }
