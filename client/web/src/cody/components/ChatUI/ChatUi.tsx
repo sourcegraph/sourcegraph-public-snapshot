@@ -331,7 +331,8 @@ const CodyNotEnabledNotice: React.FunctionComponent = React.memo(function CodyNo
             <div className="d-flex align-items-start">
                 <CodyNotEnabledIcon className="flex-shrink-0" />
                 <Text className="ml-2">
-                    Cody isn't available on this instance yet. Speak to a Sourcegraph admin to learn more.
+                    Cody isn't available on this instance, but you can learn more about Cody{' '}
+                    <Link to="https://about.sourcegraph.com/cody">here</Link>.
                 </Text>
             </div>
         </div>

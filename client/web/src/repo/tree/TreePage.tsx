@@ -362,7 +362,7 @@ export const TreePage: FC<Props> = ({
 
     return (
         <div className={classNames(styles.treePage, className)}>
-            {isCodyEnabled() && (
+            {(isSourcegraphDotCom || isCodyEnabled()) && (
                 <TryCodyWidget
                     className="mb-2"
                     telemetryService={props.telemetryService}

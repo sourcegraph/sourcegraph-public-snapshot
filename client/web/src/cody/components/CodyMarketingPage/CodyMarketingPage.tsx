@@ -9,6 +9,7 @@ import { MarketingBlock } from '../../../components/MarketingBlock'
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { SourcegraphContext } from '../../../jscontext'
+import { MeetCodySVG } from '../../../repo/components/TryCodyWidget/WidgetIcons'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { EventName } from '../../../util/constants'
 import { CodyColorIcon, CodyHelpIcon, CodyWorkIcon } from '../../chat/CodyPageIcon'
@@ -131,7 +132,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
             {/* Page content */}
             <div className={styles.headerSection}>
                 <div>
-                    <H1>Meet Cody, your AI assistant</H1>
+                    {isSourcegraphDotCom && <H1>Meet Cody, your AI assistant</H1>}
                     <div className="ml-3">
                         <Text className={styles.codyConversation}>Auto-generate unit tests</Text>
                         <Text className={styles.codyConversation}>Explain code</Text>
@@ -190,7 +191,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                         contentClassName={styles.codySignUpPanel}
                         wrapperClassName={styles.codySignUpPanelWrapper}
                     >
-                        <H2>Cody leverages your code graph</H2>
+                        <H2>Meet Cody, your AI assistant</H2>
                         <Text className="mt-3">
                             Cody is an AI assistant that leverages the code graph to know more about your code. Use it
                             to:
@@ -201,7 +202,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                             <li>Write code faster</li>
                         </ul>
                         <Text className="mb-0">
-                            Cody isn't available on this instance yet. Speak to a Sourcegraph admin to learn more.
+                            <Link to="https://about.sourcegraph.com/cody">Learn more about Cody &rarr;</Link>
                         </Text>
                     </MarketingBlock>
                 )}
@@ -228,16 +229,28 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                 </div>
 
                 <div className={styles.learnMoreItemsWrapper}>
-                    <div className={styles.learnMoreItems}>
-                        <H4 className={styles.learnMoreItemsTitle}>Overview</H4>
-                        <Text className="mb-0">
-                            Visit the{' '}
-                            <Link to="https://about.sourcegraph.com/cody" target="_blank" rel="noopener">
-                                product page
-                            </Link>{' '}
-                            and see what devs are building with Cody.
-                        </Text>
-                    </div>
+                    {isSourcegraphDotCom ? (
+                        <div className={styles.learnMoreItems}>
+                            <H4 className={styles.learnMoreItemsTitle}>Overview</H4>
+                            <Text className="mb-0">
+                                Visit the{' '}
+                                <Link to="https://about.sourcegraph.com/cody" target="_blank" rel="noopener">
+                                    product page
+                                </Link>{' '}
+                                and see what devs are building with Cody.
+                            </Text>
+                        </div>
+                    ) : (
+                        <div className="d-flex align-items-center">
+                            <div>
+                                <MeetCodySVG />
+                            </div>
+                            <Text className="ml-3">
+                                <Link to="https://about.sourcegraph.com/cody">Learn about Cody</Link>, Sourcegraph's AI
+                                coding assistant.
+                            </Text>
+                        </div>
+                    )}
 
                     <div className={styles.learnMoreItems}>
                         <H4 className={styles.learnMoreItemsTitle}>Documentation</H4>

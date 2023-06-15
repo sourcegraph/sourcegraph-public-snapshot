@@ -363,7 +363,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     const alwaysRender = (
         <>
             <PageTitle title={getPageTitle()} />
-            {isCodyEnabled() && (
+            {(props.isSourcegraphDotCom || isCodyEnabled()) && (
                 <TryCodyWidget
                     telemetryService={props.telemetryService}
                     type="blob"

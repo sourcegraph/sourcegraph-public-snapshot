@@ -78,7 +78,7 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
     return (
         <>
             <MeetCodySVG />
-            <div>
+            <div className="flex-grow-1">
                 <H2 className={styles.cardTitle}>{title}</H2>
                 <Text className={styles.cardDescription}>
                     Cody combines an LLM with the context of Sourcegraph's code graph on public code or your code at
@@ -197,6 +197,7 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
     type,
     isSourcegraphDotCom,
 }) => {
+    console.log('try cody widget')
     const isLightTheme = useIsLightTheme()
     const { isDismissed, onDismiss } = useTryCodyWidget(telemetryService)
     useEffect(() => {
@@ -208,6 +209,7 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
     }, [isDismissed, telemetryService, type])
 
     if (isDismissed) {
+        console.log('widget is dismissed')
         return null
     }
 

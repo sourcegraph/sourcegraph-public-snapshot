@@ -91,30 +91,19 @@ export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
 
     if (!isCodyEnabled()) {
         return (
-            <div className="d-flex justify-content-center mt-5">
-                <MarketingBlock
-                    wrapperClassName={styles.notEnabledBlock}
-                    contentClassName={classNames('d-flex p-3 align-items-center', styles.card)}
-                >
-                    <div className={classNames(styles.codyIllustration)}>
-                        <MeetCodySVG />
-                    </div>
-                    <div>
-                        <Text>Move faster with Cody, Sourcegraphs' AI coding assistant</Text>
-                        <div className="mb-2">
-                            <ButtonLink
-                                to="https://about.sourcegraph.com/cody"
-                                variant="primary"
-                                className="d-inline-flex align-items-center"
-                            >
-                                Learn more <Icon svgPath={mdiArrowRight} aria-hidden={true} size="md" />
-                            </ButtonLink>
-                        </div>
-                    </div>
-                    <Button className={classNames(styles.closeButton, 'position-absolute m-0')} onClick={onDismiss}>
-                        <Icon svgPath={mdiClose} aria-label="Close try Cody widget" />
-                    </Button>
-                </MarketingBlock>
+            <div
+                className={classNames(styles.notEnabledBlock, 'd-flex justify-content-center align-items-center mt-5')}
+            >
+                <div className={classNames(styles.codyIllustration)}>
+                    <MeetCodySVG />
+                </div>
+                <Text>
+                    <Link to="https://about.sourcegraph.com/cody">Learn about Cody</Link>, Sourcegraph's AI coding
+                    assistant
+                </Text>
+                <Button className={classNames(styles.closeButton, 'position-absolute m-0')} onClick={onDismiss}>
+                    <Icon svgPath={mdiClose} aria-label="Close try Cody widget" />
+                </Button>
             </div>
         )
     }
