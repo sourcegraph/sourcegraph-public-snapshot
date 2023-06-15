@@ -7,7 +7,7 @@ import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.editor.EditorContext;
 import com.sourcegraph.cody.editor.EditorContextGetter;
 import com.sourcegraph.cody.prompts.LanguageUtils;
-import java.util.ArrayList;
+import java.util.*;
 import org.jetbrains.annotations.NotNull;
 
 public class RecipeRunner {
@@ -20,24 +20,18 @@ public class RecipeRunner {
     this.chat = chat;
   }
 
-  private String getMarkdownFormatPrompt() {
-    return "Enclose code snippets with three backticks like so: ```.";
-  }
-
-  public void runExplainCodeDetailed() {
+  public void runRecipe(@NotNull PromptProvider promptProvider, @NotNull String textInputToPrompt) {
     EditorContext editorContext = EditorContextGetter.getEditorContext(project);
-    if (editorContext.getSelection() == null) {
-      chat.addMessage(
-          ChatMessage.createAssistantMessage(
-              "No code selected. Please select some code and try again."));
-      return;
-    }
-    String languageName =
-        LanguageUtils.getNormalizedLanguageName(editorContext.getCurrentFileExtension());
+    Language language =
+        new Language(
+            LanguageUtils.getNormalizedLanguageName(editorContext.getCurrentFileExtension()));
 
-    String truncatedSelectedText =
-        TruncationUtils.truncateText(
-            editorContext.getSelection(), TruncationUtils.MAX_RECIPE_INPUT_TOKENS);
+    TruncatedText truncatedTextInputToPrompt =
+        new TruncatedText(
+            TruncationUtils.truncateText(
+                textInputToPrompt, TruncationUtils.MAX_RECIPE_INPUT_TOKENS));
+
+    OriginalText selectedText = new OriginalText(textInputToPrompt);
     String truncatedPrecedingText =
         editorContext.getPrecedingText() != null
             ? TruncationUtils.truncateTextStart(
@@ -49,47 +43,17 @@ public class RecipeRunner {
                 editorContext.getFollowingText(), TruncationUtils.MAX_RECIPE_SURROUNDING_TOKENS)
             : "";
 
-    String promptMessage =
-        String.format(
-            "Please explain the following %s code. Be very detailed and specific, and indicate when it is not clear to you what is going on. Format your response as an ordered list.\n```\n%s\n```\n%s",
-            languageName, truncatedSelectedText, getMarkdownFormatPrompt());
+    PromptContext promptContext =
+        promptProvider.getPromptContext(language, selectedText, truncatedTextInputToPrompt);
 
-    String displayText =
-        String.format("Explain the following code:\n```\n%s\n```", editorContext.getSelection());
+    ChatMessage humanMessage =
+        ChatMessage.createHumanMessage(
+            promptContext.getPrompt(), promptContext.getDisplayText(), Collections.emptyList());
 
-    //        return new Interaction(
-    //            { speaker: 'human', text: promptMessage, displayText },
-    //        { speaker: 'assistant' },
-    //        getContextMessagesFromSelection(
-    //            truncatedSelectedText,
-    //            truncatedPrecedingText,
-    //            truncatedFollowingText,
-    //            selection.fileName,
-    //            context.codebaseContext
-    //        )
-    ChatMessage humanMessage = ChatMessage.createHumanMessage(promptMessage, new ArrayList<>());
-
-    chat.addMessage(humanMessage);
+    chat.respondToMessage(humanMessage, promptContext.getResponsePrefix());
   }
 
-  //    private ArrayList<ChatMessage> getContextMessagesFromSelection(EditorContext editorContext)
-  // {
-  //        return ChatMessage.createHumanMessage(editorContext, new ArrayList<String>());
-  //    }
-
-  public void runExplainCodeHighLevel() {}
-
-  public void runGenerateUnitTest() {}
-
-  public void runGenerateDocstring() {}
-
-  public void runImproveVariableNames() {}
-
-  public void runTranslateToLanguage() {}
-
   public void runGitHistory() {}
-
-  public void runFindCodeSmells() {}
 
   public void runFixup() {}
 

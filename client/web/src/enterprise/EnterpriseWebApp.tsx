@@ -15,6 +15,7 @@ import {
 import { AppShellInit } from '../storm/app-shell-init'
 import { routes } from '../storm/routes'
 
+import { APP_ROUTES } from './app/routes'
 import { BrainDot } from './codeintel/dashboard/components/BrainDot'
 import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
 import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
@@ -54,7 +55,7 @@ const injectedValuesConfig = {
     repoHeaderActionButtons: enterpriseRepoHeaderActionButtons,
     repoSettingsAreaRoutes: enterpriseRepoSettingsAreaRoutes,
     repoSettingsSidebarGroups: enterpriseRepoSettingsSidebarGroups,
-    routes: enterpriseRoutes,
+    routes: windowContextConfig.isSourcegraphApp ? APP_ROUTES : enterpriseRoutes,
 
     /**
      * Per feature injections

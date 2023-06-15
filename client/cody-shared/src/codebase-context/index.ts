@@ -1,9 +1,10 @@
 import { Configuration } from '../configuration'
 import { EmbeddingsSearch } from '../embeddings'
-import { KeywordContextFetcher, KeywordContextFetcherResult } from '../keyword-context'
+import { FilenameContextFetcher, KeywordContextFetcher, ContextResult } from '../local-context'
 import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
 import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
+import { UnifiedContextFetcher } from '../unified-context'
 import { isError } from '../utils'
 
 import { ContextMessage, ContextFile, getContextMessageWithResponse } from './messages'
@@ -19,7 +20,10 @@ export class CodebaseContext {
         private config: Pick<Configuration, 'useContext' | 'serverEndpoint'>,
         private codebase: string | undefined,
         private embeddings: EmbeddingsSearch | null,
-        private keywords: KeywordContextFetcher | null
+        private keywords: KeywordContextFetcher | null,
+        private filenames: FilenameContextFetcher | null,
+        private unifiedContextFetcher?: UnifiedContextFetcher | null,
+        private rerank?: (query: string, results: ContextResult[]) => Promise<ContextResult[]>
     ) {}
 
     public getCodebase(): string | undefined {
@@ -30,16 +34,28 @@ export class CodebaseContext {
         this.config = newConfig
     }
 
+    private mergeContextResults(keywordResults: ContextResult[], filenameResults: ContextResult[]): ContextResult[] {
+        // Just take the single most relevant filename suggestion for now. Otherwise, because our reranking relies solely
+        // on filename, the filename results would dominate the keyword results.
+        return filenameResults.slice(-1).concat(keywordResults)
+    }
+
+    /**
+     * Returns list of context messages for a given query, sorted in *reverse* order of importance (that is,
+     * the most important context message appears *last*)
+     */
     public async getContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
         switch (this.config.useContext) {
+            case 'unified':
+                return this.getUnifiedContextMessages(query, options)
             case 'keyword':
-                return this.getKeywordContextMessages(query, options)
+                return this.getLocalContextMessages(query, options)
             case 'none':
                 return []
             default:
                 return this.embeddings
                     ? this.getEmbeddingsContextMessages(query, options)
-                    : this.getKeywordContextMessages(query, options)
+                    : this.getLocalContextMessages(query, options)
         }
     }
 
@@ -48,13 +64,13 @@ export class CodebaseContext {
     }
 
     public getEmbeddingSearchErrors(): string {
-        return this.embeddingResultsError
+        return this.embeddingResultsError.trim()
     }
 
     public async getSearchResults(
         query: string,
         options: ContextSearchOptions
-    ): Promise<{ results: KeywordContextFetcherResult[] | EmbeddingsSearchResult[]; endpoint: string }> {
+    ): Promise<{ results: ContextResult[] | EmbeddingsSearchResult[]; endpoint: string }> {
         if (this.embeddings && this.config.useContext !== 'keyword') {
             return {
                 results: await this.getEmbeddingSearchResults(query, options),
@@ -115,22 +131,51 @@ export class CodebaseContext {
         )
     }
 
-    private async getKeywordContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
-        const results = await this.getKeywordSearchResults(query, options)
-        return results.flatMap(({ content, fileName, repoName, revision }) => {
-            const messageText = populateCodeContextTemplate(content, fileName)
-            return getContextMessageWithResponse(messageText, { fileName, repoName, revision })
+    private async getUnifiedContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
+        if (!this.unifiedContextFetcher) {
+            return []
+        }
+
+        const results = await this.unifiedContextFetcher.getContext(
+            query,
+            options.numCodeResults,
+            options.numTextResults
+        )
+
+        if (isError(results)) {
+            console.error('Error retrieving context:', results)
+            return []
+        }
+
+        return results.flatMap(({ content, filePath, repoName, revision }) => {
+            const messageText = populateCodeContextTemplate(content, filePath)
+            return getContextMessageWithResponse(messageText, { fileName: filePath, repoName, revision })
         })
     }
 
-    private async getKeywordSearchResults(
-        query: string,
-        options: ContextSearchOptions
-    ): Promise<KeywordContextFetcherResult[]> {
+    private async getLocalContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
+        const keywordResults = this.getKeywordSearchResults(query, options)
+        const filenameResults = this.getFilenameSearchResults(query, options)
+        const combinedResults = this.mergeContextResults(await keywordResults, await filenameResults)
+        const rerankedResults = await (this.rerank ? this.rerank(query, combinedResults) : combinedResults)
+        const messages = resultsToMessages(rerankedResults)
+        return messages
+    }
+
+    private async getKeywordSearchResults(query: string, options: ContextSearchOptions): Promise<ContextResult[]> {
         if (!this.keywords) {
             return []
         }
-        return this.keywords.getContext(query, options.numCodeResults + options.numTextResults)
+        const results = await this.keywords.getContext(query, options.numCodeResults + options.numTextResults)
+        return results
+    }
+
+    private async getFilenameSearchResults(query: string, options: ContextSearchOptions): Promise<ContextResult[]> {
+        if (!this.filenames) {
+            return []
+        }
+        const results = await this.filenames.getContext(query, options.numCodeResults + options.numTextResults)
+        return results
     }
 }
 
@@ -174,4 +219,11 @@ function mergeConsecutiveResults(results: EmbeddingsSearchResult[]): string[] {
     }
 
     return mergedResults
+}
+
+function resultsToMessages(results: ContextResult[]): ContextMessage[] {
+    return results.flatMap(({ content, fileName, repoName, revision }) => {
+        const messageText = populateCodeContextTemplate(content, fileName)
+        return getContextMessageWithResponse(messageText, { fileName, repoName, revision })
+    })
 }

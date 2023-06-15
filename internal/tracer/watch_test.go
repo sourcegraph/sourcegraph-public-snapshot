@@ -32,7 +32,7 @@ func TestConfigWatcher(t *testing.T) {
 		noopProcessor = oteltracesdk.NewBatchSpanProcessor(tracetest.NewNoopExporter())
 	)
 
-	otTracer, otelTracerProvider := newBridgeTracers(logger, provider, debugMode)
+	otelTracerProvider := newTracer(logger, provider, debugMode)
 	// otelTracer represents a tracer a caller might hold. All tracers should be updated
 	// by updating the underlying provider.
 	otelTracer := otelTracerProvider.Tracer(t.Name())
@@ -101,12 +101,6 @@ func TestConfigWatcher(t *testing.T) {
 
 		// span recorder must be registered, and spans from both tracers must go to it
 		var spanCount int
-		t.Run("ot bridge spans go to new processor", func(t *testing.T) {
-			span := otTracer.StartSpan("foo")
-			span.Finish()
-			spanCount++
-			assert.Len(t, spansRecorder.Ended(), spanCount)
-		})
 		t.Run("otel tracer spans go to new processor", func(t *testing.T) {
 			_, span := otelTracer.Start(policy.WithShouldTrace(ctx, true), "foo")
 			span.End()
@@ -133,11 +127,6 @@ func TestConfigWatcher(t *testing.T) {
 			doUpdate()
 
 			// no new spans should register
-			t.Run("ot bridge spans not go to processor", func(t *testing.T) {
-				span := otTracer.StartSpan("foo")
-				span.Finish()
-				assert.Len(t, spansRecorder.Ended(), spanCount)
-			})
 			t.Run("otel tracer spans not go to processor", func(t *testing.T) {
 				_, span := otelTracer.Start(policy.WithShouldTrace(ctx, true), "foo")
 				span.End()
@@ -181,12 +170,6 @@ func TestConfigWatcher(t *testing.T) {
 		// span recorder must be registered, and spans from both tracers must go to it
 		var spanCount1 int
 		{
-			span := otTracer.StartSpan("foo")
-			span.Finish()
-			spanCount1++
-			assert.Len(t, spansRecorder1.Ended(), spanCount1)
-		}
-		{
 			_, span := otelTracer.Start(ctx, "foo") // does not need ShouldTrace due to policy
 			span.End()
 			spanCount1++
@@ -194,7 +177,6 @@ func TestConfigWatcher(t *testing.T) {
 		}
 
 		// should have debug set
-		assert.True(t, otTracer.(*loggedOTTracer).debug.Load())
 		assert.True(t, otelTracerProvider.(*loggedOtelTracerProvider).debug.Load())
 
 		// should set global policy
@@ -217,12 +199,6 @@ func TestConfigWatcher(t *testing.T) {
 
 			// span recorder must be registered, and spans from both tracers must go to it
 			var spanCount2 int
-			{
-				span := otTracer.StartSpan("foo")
-				span.Finish()
-				spanCount2++
-				assert.Len(t, spansRecorder2.Ended(), spanCount2)
-			}
 			{
 				_, span := otelTracer.Start(ctx, "foo")
 				span.End()

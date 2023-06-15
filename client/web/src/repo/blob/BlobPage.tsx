@@ -12,6 +12,7 @@ import { Optional } from 'utility-types'
 
 import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
+import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
 import { asError, ErrorLike, isErrorLike, basename } from '@sourcegraph/common'
 import {
     createActiveSpan,
@@ -44,11 +45,14 @@ import {
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeIntelligenceProps } from '../../codeintel'
+import { FileContentEditor } from '../../cody/components/FileContentEditor'
+import { useCodySidebar } from '../../cody/sidebar/Provider'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { Scalars } from '../../graphql-operations'
+import { SourcegraphContext } from '../../jscontext'
 import { NotebookProps } from '../../notebooks'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
@@ -60,6 +64,7 @@ import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
 import { ToggleBlameAction } from '../actions/ToggleBlameAction'
 import { useBlameHunks } from '../blame/useBlameHunks'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
+import { TryCodyWidget } from '../components/TryCodyWidget/TryCodyWidget'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
 import { HoverThresholdProps } from '../RepoContainer'
@@ -77,7 +82,6 @@ import { GoToRawAction } from './GoToRawAction'
 import { HistoryAndOwnBar } from './own/HistoryAndOwnBar'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
-import { TryCodyWidget } from './TryCodyWidget'
 
 import styles from './BlobPage.module.scss'
 
@@ -109,6 +113,7 @@ interface BlobPageProps
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     className?: string
+    context: Pick<SourcegraphContext, 'authProviders'>
 }
 
 /**
@@ -119,7 +124,7 @@ interface BlobPageInfo extends Optional<BlobInfo, 'commitID'> {
     aborted: boolean
 }
 
-export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ...props }) => {
+export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, context, ...props }) => {
     const location = useLocation()
     const navigate = useNavigate()
 
@@ -340,12 +345,30 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                 : 'code'
     }
 
+    const { setEditorScope } = useCodySidebar()
+
+    useEffect(() => {
+        if (!isSearchNotebook && formattedBlobInfoOrError?.richHTML && renderMode === 'rendered') {
+            setEditorScope(new FileContentEditor(formattedBlobInfoOrError))
+        }
+        return () => {
+            if (!isSearchNotebook && formattedBlobInfoOrError?.richHTML && renderMode === 'rendered') {
+                setEditorScope(new NoopEditor())
+            }
+        }
+    }, [isSearchNotebook, formattedBlobInfoOrError, renderMode, setEditorScope])
+
     // Always render these to avoid UI jitter during loading when switching to a new file.
     const alwaysRender = (
         <>
             <PageTitle title={getPageTitle()} />
-            {!!props.isSourcegraphDotCom && !!props.authenticatedUser && (
-                <TryCodyWidget className="mb-4" telemetryService={props.telemetryService} />
+            {props.isSourcegraphDotCom && (
+                <TryCodyWidget
+                    telemetryService={props.telemetryService}
+                    type="blob"
+                    authenticatedUser={props.authenticatedUser}
+                    context={context}
+                />
             )}
             {window.context.isAuthenticatedUser && (
                 <RepoHeaderContributionPortal

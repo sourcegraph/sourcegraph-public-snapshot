@@ -53,7 +53,6 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Own',
             to: '/site-admin/analytics/own',
-            condition: context => context.ownAnalyticsEnabled,
         },
         {
             label: 'Feedback survey',
@@ -218,6 +217,7 @@ export const apiConsoleGroup: SiteAdminSideBarGroup = {
         label: 'API Console',
         icon: ConsoleIcon,
     },
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
         {
             label: 'API Console',

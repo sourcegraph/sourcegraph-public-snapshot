@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/contextdetection"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -22,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -63,7 +63,6 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	}, nil)
 
 	repoEmbeddingJobsStore := repo.NewMockRepoEmbeddingJobsStore()
-	contextDetectionJobsStore := contextdetection.NewMockContextDetectionEmbeddingJobsStore()
 
 	resolver := NewResolver(
 		mockDB,
@@ -71,18 +70,17 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 		mockGitserver,
 		mockEmbeddingsClient,
 		repoEmbeddingJobsStore,
-		contextDetectionJobsStore,
 	)
 
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
-			Embeddings:  &schema.Embeddings{Enabled: true},
-			Completions: &schema.Completions{Enabled: true},
+			CodyEnabled: pointers.Ptr(true),
+			LicenseKey:  "asdf",
 		},
 	})
 
 	ctx := actor.WithActor(context.Background(), actor.FromMockUser(1))
-	ffs := featureflag.NewMemoryStore(map[string]bool{"cody-experimental": true}, nil, nil)
+	ffs := featureflag.NewMemoryStore(map[string]bool{"cody": true}, nil, nil)
 	ctx = featureflag.WithFlags(ctx, ffs)
 
 	results, err := resolver.EmbeddingsMultiSearch(ctx, graphqlbackend.EmbeddingsMultiSearchInputArgs{

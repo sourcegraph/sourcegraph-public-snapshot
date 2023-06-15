@@ -37,6 +37,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -195,9 +196,15 @@ type cloneJob struct {
 	options   *cloneOptions
 }
 
+// cloneTask is a thin wrapper around a cloneJob to associate the doneFunc with each job.
+type cloneTask struct {
+	*cloneJob
+	done func() time.Duration
+}
+
 // NewCloneQueue initializes a new cloneQueue.
-func NewCloneQueue(jobs *list.List) *common.Queue[cloneJob] {
-	return common.NewQueue[cloneJob](jobs)
+func NewCloneQueue(obctx *observation.Context, jobs *list.List) *common.Queue[*cloneJob] {
+	return common.NewQueue[*cloneJob](obctx, "clone-queue", jobs)
 }
 
 // Server is a gitserver server.
@@ -243,7 +250,7 @@ type Server struct {
 
 	// CloneQueue is a threadsafe queue used by DoBackgroundClones to process incoming clone
 	// requests asynchronously.
-	CloneQueue *common.Queue[cloneJob]
+	CloneQueue *common.Queue[*cloneJob]
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -286,6 +293,9 @@ type Server struct {
 	// The factory creates recordable commands with a set predicate, which is used to determine whether a
 	// particular command should be recorded or not.
 	recordingCommandFactory *wrexec.RecordingCommandFactory
+
+	// Perforce is a plugin-like service attached to Server for all things Perforce.
+	Perforce *perforce.Service
 }
 
 type locks struct {
@@ -597,14 +607,14 @@ func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.Git
 // StartClonePipeline clones repos asynchronously. It creates a producer-consumer
 // pipeline.
 func (s *Server) StartClonePipeline(ctx context.Context) {
-	jobs := make(chan *cloneJob)
+	tasks := make(chan *cloneTask)
 
-	go s.cloneJobConsumer(ctx, jobs)
-	go s.cloneJobProducer(ctx, jobs)
+	go s.cloneJobConsumer(ctx, tasks)
+	go s.cloneJobProducer(ctx, tasks)
 }
 
-func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
-	defer close(jobs)
+func (s *Server) cloneJobProducer(ctx context.Context, tasks chan<- *cloneTask) {
+	defer close(tasks)
 
 	for {
 		// Acquire the cond mutex lock and wait for a signal if the queue is empty.
@@ -620,13 +630,16 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 		// Keep popping from the queue until the queue is empty again, in which case we start all
 		// over again from the top.
 		for {
-			job := s.CloneQueue.Pop()
+			job, doneFunc := s.CloneQueue.Pop()
 			if job == nil {
 				break
 			}
 
 			select {
-			case jobs <- job:
+			case tasks <- &cloneTask{
+				cloneJob: *job,
+				done:     doneFunc,
+			}:
 			case <-ctx.Done():
 				s.Logger.Error("cloneJobProducer: ", log.Error(ctx.Err()))
 				return
@@ -635,11 +648,11 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 	}
 }
 
-func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
+func (s *Server) cloneJobConsumer(ctx context.Context, tasks <-chan *cloneTask) {
 	logger := s.Logger.Scoped("cloneJobConsumer", "process clone jobs")
 
-	for j := range jobs {
-		logger := logger.With(log.String("job.repo", string(j.repo)))
+	for task := range tasks {
+		logger := logger.With(log.String("job.repo", string(task.repo)))
 
 		select {
 		case <-ctx.Done():
@@ -654,16 +667,17 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 			continue
 		}
 
-		go func(job *cloneJob) {
+		go func(task *cloneTask) {
 			defer cancel()
 
-			err := s.doClone(ctx, job.repo, job.dir, job.syncer, job.lock, job.remoteURL, job.options)
+			err := s.doClone(ctx, task.repo, task.dir, task.syncer, task.lock, task.remoteURL, task.options)
 			if err != nil {
 				logger.Error("failed to clone repo", log.Error(err))
 			}
 			// Use a different context in case we failed because the original context failed.
-			s.setLastErrorNonFatal(s.ctx, job.repo, err)
-		}(j)
+			s.setLastErrorNonFatal(s.ctx, task.repo, err)
+			_ = task.done()
+		}(task)
 	}
 }
 
@@ -1085,8 +1099,11 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 		// An update error "wins" over a status error.
 		if updateErr != nil {
 			resp.Error = updateErr.Error()
+		} else {
+			s.Perforce.EnqueueChangelistMappingJob(perforce.NewChangelistMappingJob(req.Repo, dir))
 		}
 	}
+
 	return resp
 }
 
@@ -2270,10 +2287,9 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	if !repoCloned(dir) {
 		s.setCloneStatusNonFatal(ctx, repo, types.CloneStatusCloning)
 	}
-	bgCtx := featureflag.WithFlags(context.Background(), s.DB.FeatureFlags())
 	defer func() {
 		// Use a background context to ensure we still update the DB even if we time out
-		s.setCloneStatusNonFatal(bgCtx, repo, cloneStatus(repoCloned(dir), false))
+		s.setCloneStatusNonFatal(context.Background(), repo, cloneStatus(repoCloned(dir), false))
 	}()
 
 	cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)
@@ -2291,9 +2307,9 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	pr, pw := io.Pipe()
 	defer pw.Close()
 
-	go readCloneProgress(bgCtx, s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
+	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
-	if output, err := runWith(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw); err != nil {
+	if output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw); err != nil {
 		return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 	}
 
@@ -2356,12 +2372,20 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	logger.Info("repo cloned")
 	repoClonedCounter.Inc()
 
+	if err == nil {
+		s.Perforce.EnqueueChangelistMappingJob(perforce.NewChangelistMappingJob(repo, dir))
+	}
+
 	return nil
 }
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(ctx context.Context, db database.DB, logger log.Logger, redactor *urlRedactor, lock *RepositoryLock, pr io.Reader, repo api.RepoName) {
+func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor, lock *RepositoryLock, pr io.Reader, repo api.RepoName) {
+	// Use a background context to ensure we still update the DB even if we
+	// time out. IE we intentionally don't take an input ctx.
+	ctx := featureflag.WithFlags(context.Background(), db.FeatureFlags())
+
 	var logFile *os.File
 	var err error
 
@@ -2775,7 +2799,7 @@ func setHEAD(ctx context.Context, logger log.Logger, rf *wrexec.RecordingCommand
 		return errors.Wrap(err, "get remote show command")
 	}
 	dir.Set(cmd)
-	output, err := runWith(ctx, rf.Wrap(ctx, logger, cmd), true, nil)
+	output, err := runRemoteGitCommand(ctx, rf.Wrap(ctx, logger, cmd), true, nil)
 	if err != nil {
 		logger.Error("Failed to fetch remote info", log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "failed to fetch remote info")

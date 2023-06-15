@@ -9,16 +9,18 @@ go_library(
     deps = [
         "//enterprise/cmd/cody-gateway/internal/actor",
         "//enterprise/cmd/cody-gateway/internal/dotcom",
-        "//enterprise/internal/codygateway",
-        "//enterprise/internal/completions/types",
         "//enterprise/internal/licensing",
         "//enterprise/internal/productsubscription",
+        "//internal/codygateway",
+        "//internal/licensing",
         "//internal/trace",
         "//lib/errors",
         "@com_github_gregjones_httpcache//:httpcache",
         "@com_github_khan_genqlient//graphql",
         "@com_github_sourcegraph_log//:log",
         "@com_github_vektah_gqlparser_v2//gqlerror",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_trace//:trace",
         "@org_golang_x_exp//slices",
     ],
 )
@@ -29,6 +31,7 @@ go_test(
     embed = [":productsubscription"],
     deps = [
         "//enterprise/cmd/cody-gateway/internal/dotcom",
+        "//internal/codygateway",
         "@com_github_stretchr_testify//assert",
     ],
 )

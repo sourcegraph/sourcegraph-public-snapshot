@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -80,8 +81,17 @@ func maybeEnableTracing(ctx context.Context, logger log.Logger, config TraceConf
 
 	logger.Info("tracing configured")
 	return func() {
-		if err := tp.ForceFlush(ctx); err != nil {
-			logger.Warn("error occurred shutting down tracing", log.Error(err))
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		start := time.Now()
+		logger.Info("Shutting down tracing")
+		if err := tp.ForceFlush(shutdownCtx); err != nil {
+			logger.Warn("error occurred force-flushing traces", log.Error(err))
 		}
+		if err := tp.Shutdown(shutdownCtx); err != nil {
+			logger.Warn("error occured shutting down tracing", log.Error(err))
+		}
+		logger.Info("Tracing shut down", log.Duration("elapsed", time.Since(start)))
 	}, nil
 }

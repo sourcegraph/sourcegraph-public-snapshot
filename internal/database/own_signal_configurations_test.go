@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -30,6 +31,11 @@ func Test_LoadConfigurations(t *testing.T) {
 			ID:          2,
 			Name:        "recent-views",
 			Description: "Indexes users that recently viewed files in Sourcegraph.",
+		},
+		{
+			ID:          3,
+			Name:        "analytics",
+			Description: "Indexes ownership data to present in aggregated views like Admin > Analytics > Own and Repo > Ownership",
 		},
 	}).Equal(t, configurations)
 
@@ -73,6 +79,11 @@ func Test_LoadConfigurations(t *testing.T) {
 				ID:          2,
 				Name:        "recent-views",
 				Description: "Indexes users that recently viewed files in Sourcegraph.",
+			},
+			{
+				ID:          3,
+				Name:        "analytics",
+				Description: "Indexes ownership data to present in aggregated views like Admin > Analytics > Own and Repo > Ownership",
 			},
 		}).Equal(t, configurations)
 	})

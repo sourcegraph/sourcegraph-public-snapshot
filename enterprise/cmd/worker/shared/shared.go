@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/auth"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/githubapps"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/own"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -15,8 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codemonitors"
-	contextdetectionembeddings "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/embeddings/contextdetection"
 	repoembeddings "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/embeddings/repo"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executormultiqueue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
 	workerinsights "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/permissions"
@@ -32,22 +33,23 @@ import (
 )
 
 var additionalJobs = map[string]job.Job{
-	"codehost-version-syncing":      versions.NewSyncingJob(),
-	"insights-job":                  workerinsights.NewInsightsJob(),
-	"insights-query-runner-job":     workerinsights.NewInsightsQueryRunnerJob(),
-	"insights-data-retention-job":   workerinsights.NewInsightsDataRetentionJob(),
-	"batches-janitor":               batches.NewJanitorJob(),
-	"batches-scheduler":             batches.NewSchedulerJob(),
-	"batches-reconciler":            batches.NewReconcilerJob(),
-	"batches-bulk-processor":        batches.NewBulkOperationProcessorJob(),
-	"batches-workspace-resolver":    batches.NewWorkspaceResolverJob(),
-	"executors-janitor":             executors.NewJanitorJob(),
-	"executors-metricsserver":       executors.NewMetricsServerJob(),
-	"codemonitors-job":              codemonitors.NewCodeMonitorJob(),
-	"bitbucket-project-permissions": permissions.NewBitbucketProjectPermissionsJob(),
-	"permission-sync-job-cleaner":   permissions.NewPermissionSyncJobCleaner(),
-	"permission-sync-job-scheduler": permissions.NewPermissionSyncJobScheduler(),
-	"export-usage-telemetry":        telemetry.NewTelemetryJob(),
+	"codehost-version-syncing":              versions.NewSyncingJob(),
+	"insights-job":                          workerinsights.NewInsightsJob(),
+	"insights-query-runner-job":             workerinsights.NewInsightsQueryRunnerJob(),
+	"insights-data-retention-job":           workerinsights.NewInsightsDataRetentionJob(),
+	"batches-janitor":                       batches.NewJanitorJob(),
+	"batches-scheduler":                     batches.NewSchedulerJob(),
+	"batches-reconciler":                    batches.NewReconcilerJob(),
+	"batches-bulk-processor":                batches.NewBulkOperationProcessorJob(),
+	"batches-workspace-resolver":            batches.NewWorkspaceResolverJob(),
+	"executors-janitor":                     executors.NewJanitorJob(),
+	"executors-metricsserver":               executors.NewMetricsServerJob(),
+	"executors-multiqueue-metrics-reporter": executormultiqueue.NewMultiqueueMetricsReporterJob(),
+	"codemonitors-job":                      codemonitors.NewCodeMonitorJob(),
+	"bitbucket-project-permissions":         permissions.NewBitbucketProjectPermissionsJob(),
+	"permission-sync-job-cleaner":           permissions.NewPermissionSyncJobCleaner(),
+	"permission-sync-job-scheduler":         permissions.NewPermissionSyncJobScheduler(),
+	"export-usage-telemetry":                telemetry.NewTelemetryJob(),
 
 	"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
 	"codeintel-autoindexing-summary-builder":      codeintel.NewAutoindexingSummaryBuilder(),
@@ -66,13 +68,13 @@ var additionalJobs = map[string]job.Job{
 
 	"auth-sourcegraph-operator-cleaner": auth.NewSourcegraphOperatorCleaner(),
 
-	"repo-embedding-janitor":              repoembeddings.NewRepoEmbeddingJanitorJob(),
-	"repo-embedding-job":                  repoembeddings.NewRepoEmbeddingJob(),
-	"repo-embedding-scheduler":            repoembeddings.NewRepoEmbeddingSchedulerJob(),
-	"context-detection-embedding-janitor": contextdetectionembeddings.NewContextDetectionEmbeddingJanitorJob(),
-	"context-detection-embedding-job":     contextdetectionembeddings.NewContextDetectionEmbeddingJob(),
+	"repo-embedding-janitor":   repoembeddings.NewRepoEmbeddingJanitorJob(),
+	"repo-embedding-job":       repoembeddings.NewRepoEmbeddingJob(),
+	"repo-embedding-scheduler": repoembeddings.NewRepoEmbeddingSchedulerJob(),
 
 	"own-repo-indexing-queue": own.NewOwnRepoIndexingQueue(),
+
+	"github-apps-installation-validation-job": githubapps.NewGitHubApsInstallationJob(),
 }
 
 // SetAuthzProviders waits for the database to be initialized, then periodically refreshes the

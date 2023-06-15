@@ -29,6 +29,7 @@ type PeriodicGoroutine struct {
 	jobName           string
 	recorder          *recorder.Recorder
 	getInterval       getIntervalFunc
+	initialDelay      time.Duration
 	getConcurrency    getConcurrencyFunc
 	handler           unifiedHandler
 	operation         *observation.Operation
@@ -128,6 +129,11 @@ func WithConcurrencyFunc(getConcurrency getConcurrencyFunc) Option {
 
 func WithOperation(operation *observation.Operation) Option {
 	return func(p *PeriodicGoroutine) { p.operation = operation }
+}
+
+// WithInitialDelay sets the initial delay before the first invocation of the handler.
+func WithInitialDelay(delay time.Duration) Option {
+	return func(p *PeriodicGoroutine) { p.initialDelay = delay }
 }
 
 func withClock(clock glock.Clock) Option {
@@ -277,8 +283,35 @@ func (r *PeriodicGoroutine) startPool(concurrency int) func() {
 }
 
 func (r *PeriodicGoroutine) runHandlerPeriodically(monitorCtx context.Context) {
+	// Create a ctx based on r.ctx that gets canceled when monitorCtx is canceled
+	// This ensures that we don't block inside of runHandlerAndDetermineBackoff
+	// below when one of the exit conditions are met.
+
+	handlerCtx, cancel := context.WithCancel(r.ctx)
+	defer cancel()
+
+	go func() {
+		<-monitorCtx.Done()
+		cancel()
+	}()
+
+	select {
+	// Initial delay sleep - might be a zero-duration value if it wasn't set,
+	// but this gives us a nice chance to check the context to see if we should
+	// exit naturally.
+	case <-r.clock.After(r.initialDelay):
+
+	case <-r.ctx.Done():
+		// Goroutine is shutting down
+		return
+
+	case <-monitorCtx.Done():
+		// Caller is requesting we return to resize the pool
+		return
+	}
+
 	for {
-		interval, ok := r.runHandlerAndDetermineBackoff()
+		interval, ok := r.runHandlerAndDetermineBackoff(handlerCtx)
 		if !ok {
 			// Goroutine is shutting down
 			// (the handler returned the context's error)
@@ -304,15 +337,15 @@ func (r *PeriodicGoroutine) runHandlerPeriodically(monitorCtx context.Context) {
 
 const maxConsecutiveReinvocations = 100
 
-func (r *PeriodicGoroutine) runHandlerAndDetermineBackoff() (time.Duration, bool) {
-	handlerErr := r.runHandler(r.ctx)
+func (r *PeriodicGoroutine) runHandlerAndDetermineBackoff(ctx context.Context) (time.Duration, bool) {
+	handlerErr := r.runHandler(ctx)
 	if handlerErr != nil {
-		if isShutdownError(r.ctx, handlerErr) {
+		if isShutdownError(ctx, handlerErr) {
 			// Caller is exiting
 			return 0, false
 		}
 
-		if filteredErr := errorFilter(r.ctx, handlerErr); filteredErr != nil {
+		if filteredErr := errorFilter(ctx, handlerErr); filteredErr != nil {
 			// It's a real error, see if we need to handle it
 			if h, ok := r.handler.(ErrorHandler); ok {
 				h.HandleError(filteredErr)

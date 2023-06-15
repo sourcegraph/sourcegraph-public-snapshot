@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 
 import { mdiClose, mdiSend, mdiArrowDown, mdiPencil, mdiThumbUp, mdiThumbDown, mdiCheck } from '@mdi/js'
 import classNames from 'classnames'
@@ -19,6 +19,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
 import { useCodySidebar } from '../../sidebar/Provider'
 import { CodyChatStore } from '../../useCodyChat'
+import { ScopeSelector } from '../ScopeSelector'
 
 import styles from './ChatUi.module.scss'
 
@@ -40,7 +41,11 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore }): JSX.Element =
         transcriptHistory,
         loaded,
         isCodyEnabled,
-        legacyChatContext,
+        scope,
+        setScope,
+        toggleIncludeInferredRepository,
+        toggleIncludeInferredFile,
+        abortMessageInProgress,
     } = codyChatStore
 
     const [formInput, setFormInput] = useState('')
@@ -56,44 +61,70 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore }): JSX.Element =
     const onSubmit = useCallback((text: string) => submitMessage(text), [submitMessage])
     const onEdit = useCallback((text: string) => editMessage(text), [editMessage])
 
+    const scopeSelectorProps = useMemo(
+        () => ({ scope, setScope, toggleIncludeInferredRepository, toggleIncludeInferredFile }),
+        [scope, setScope, toggleIncludeInferredRepository, toggleIncludeInferredFile]
+    )
+
     if (!loaded) {
         return <></>
     }
 
     return (
-        <Chat
-            key={transcript?.id}
-            messageInProgress={messageInProgress}
-            messageBeingEdited={messageBeingEdited}
-            setMessageBeingEdited={setMessageBeingEdited}
-            transcript={chatMessages}
-            formInput={formInput}
-            setFormInput={setFormInput}
-            inputHistory={inputHistory}
-            setInputHistory={setInputHistory}
-            onSubmit={onSubmit}
-            contextStatus={legacyChatContext}
-            submitButtonComponent={SubmitButton}
-            fileLinkComponent={FileLink}
-            className={styles.container}
-            afterTips={CODY_TERMS_MARKDOWN}
-            transcriptItemClassName={styles.transcriptItem}
-            humanTranscriptItemClassName={styles.humanTranscriptItem}
-            transcriptItemParticipantClassName="text-muted"
-            inputRowClassName={styles.inputRow}
-            chatInputClassName={styles.chatInput}
-            EditButtonContainer={EditButton}
-            editButtonOnSubmit={onEdit}
-            textAreaComponent={AutoResizableTextArea}
-            codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
-            transcriptActionClassName={styles.transcriptAction}
-            FeedbackButtonsContainer={FeedbackButtons}
-            feedbackButtonsOnSubmit={onFeedbackSubmit}
-            needsEmailVerification={isCodyEnabled.needsEmailVerification}
-            needsEmailVerificationNotice={NeedsEmailVerificationNotice}
-        />
+        <>
+            <Chat
+                key={transcript?.id}
+                messageInProgress={messageInProgress}
+                messageBeingEdited={messageBeingEdited}
+                setMessageBeingEdited={setMessageBeingEdited}
+                transcript={chatMessages}
+                formInput={formInput}
+                setFormInput={setFormInput}
+                inputHistory={inputHistory}
+                setInputHistory={setInputHistory}
+                onSubmit={onSubmit}
+                submitButtonComponent={SubmitButton}
+                fileLinkComponent={FileLink}
+                className={styles.container}
+                afterTips={transcriptHistory.length > 1 ? '' : CODY_TERMS_MARKDOWN}
+                transcriptItemClassName={styles.transcriptItem}
+                humanTranscriptItemClassName={styles.humanTranscriptItem}
+                transcriptItemParticipantClassName="text-muted"
+                inputRowClassName={styles.inputRow}
+                chatInputClassName={styles.chatInput}
+                EditButtonContainer={EditButton}
+                editButtonOnSubmit={onEdit}
+                textAreaComponent={AutoResizableTextArea}
+                codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
+                transcriptActionClassName={styles.transcriptAction}
+                FeedbackButtonsContainer={FeedbackButtons}
+                feedbackButtonsOnSubmit={onFeedbackSubmit}
+                needsEmailVerification={isCodyEnabled.needsEmailVerification}
+                needsEmailVerificationNotice={NeedsEmailVerificationNotice}
+                contextStatusComponent={ScopeSelector}
+                contextStatusComponentProps={scopeSelectorProps}
+                abortMessageInProgressComponent={AbortMessageInProgress}
+                onAbortMessageInProgress={abortMessageInProgress}
+            />
+        </>
     )
 }
+
+interface IAbortMessageInProgressProps {
+    onAbortMessageInProgress: () => void
+}
+
+const AbortMessageInProgress: React.FunctionComponent<IAbortMessageInProgressProps> = React.memo(
+    function AbortMessageInProgressButton({ onAbortMessageInProgress }) {
+        return (
+            <div className="d-flex justify-content-center w-100 mt-4 mb-2">
+                <Button onClick={onAbortMessageInProgress} variant="secondary" outline={true} size="sm">
+                    Stop generating
+                </Button>
+            </div>
+        )
+    }
+)
 
 export const ScrollDownButton = React.memo(function ScrollDownButtonContent({
     onClick,
@@ -197,7 +228,9 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = React.memo(funct
     revision,
 }) {
     return repoName ? (
-        <Link to={`/${repoName}${revision ? `@${revision}` : ''}/-/blob/${path}`}>{path}</Link>
+        <Tooltip content={`${repoName}/-/blob/${path}`}>
+            <Link to={`/${repoName}${revision ? `@${revision}` : ''}/-/blob/${path}`}>{path}</Link>
+        </Tooltip>
     ) : (
         <>{path}</>
     )

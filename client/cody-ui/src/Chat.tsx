@@ -24,6 +24,8 @@ interface ChatProps extends ChatClassNames {
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
     onSubmit: (text: string, submitType: 'user' | 'suggestion') => void
+    contextStatusComponent?: React.FunctionComponent<any>
+    contextStatusComponentProps?: any
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
@@ -39,6 +41,8 @@ interface ChatProps extends ChatClassNames {
     setSuggestions?: (suggestions: undefined | []) => void
     needsEmailVerification?: boolean
     needsEmailVerificationNotice?: React.FunctionComponent
+    abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
+    onAbortMessageInProgress?: () => void
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -124,6 +128,10 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     setSuggestions,
     needsEmailVerification = false,
     needsEmailVerificationNotice: NeedsEmailVerificationNotice,
+    contextStatusComponent: ContextStatusComponent,
+    contextStatusComponentProps = {},
+    abortMessageInProgressComponent,
+    onAbortMessageInProgress,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -250,6 +258,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     submitButtonComponent={SubmitButton}
                     chatInputClassName={chatInputClassName}
+                    abortMessageInProgressComponent={abortMessageInProgressComponent}
+                    onAbortMessageInProgress={onAbortMessageInProgress}
                 />
             )}
 
@@ -284,8 +294,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         disabled={!!messageInProgress || needsEmailVerification}
                     />
                 </div>
-                {contextStatus && (
-                    <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
+                {ContextStatusComponent ? (
+                    <ContextStatusComponent {...contextStatusComponentProps} />
+                ) : (
+                    contextStatus && (
+                        <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
+                    )
                 )}
             </form>
         </div>

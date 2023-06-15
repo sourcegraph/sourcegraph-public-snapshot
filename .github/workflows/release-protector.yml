@@ -16,7 +16,7 @@ jobs:
       - name: Check if latest release branch exists
         id: checkout
         run: |
-          branch="5.0"
+          branch="5.1"
           if curl --silent -I "https://api.github.com/repos/sourcegraph/sourcegraph/git/refs/heads/${branch}" | grep "HTTP/2 200"; then
             echo "::set-output name=exists::true"
           else

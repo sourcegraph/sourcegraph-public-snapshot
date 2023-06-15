@@ -179,7 +179,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 		return "deadbeef", nil
 	}
 	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -297,7 +297,7 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 		return "deadbeef", nil
 	}
 	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -384,6 +384,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
+	db.AssignedTeamsFunc.SetDefaultReturn(database.NewMockAssignedTeamsStore())
 	db.OwnSignalConfigurationsFunc.SetDefaultReturn(database.NewMockSignalConfigurationStore())
 	own := own.NewService(git, db)
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
@@ -397,10 +398,10 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 		}
 		return resolvedRevision, nil
 	}
-	if err := fakeDB.TeamStore.CreateTeam(ctx, team); err != nil {
+	if _, err := fakeDB.TeamStore.CreateTeam(ctx, team); err != nil {
 		t.Fatalf("failed to create fake team: %s", err)
 	}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -471,6 +472,7 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
+	db.AssignedTeamsFunc.SetDefaultReturn(database.NewMockAssignedTeamsStore())
 	db.OwnSignalConfigurationsFunc.SetDefaultReturn(database.NewMockSignalConfigurationStore())
 	own := own.NewService(git, db)
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
@@ -484,7 +486,7 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 		}
 		return resolvedRevision, nil
 	}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -501,8 +503,20 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 									nodes {
 										owner {
 											... on Team {
+												id
 												name
 												displayName
+												url
+												avatarURL
+												readonly
+												parentTeam {
+													id
+												}
+												viewerCanAdminister
+												creator {
+													id
+												}
+												external
 											}
 										}
 									}
@@ -520,8 +534,16 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 							"nodes": [
 								{
 									"owner": {
+										"id": "VGVhbTow",
 										"name": "sourcegraph/own",
-										"displayName": "sourcegraph/own"
+										"displayName": "sourcegraph/own",
+										"url": "",
+										"avatarURL": null,
+										"readonly": true,
+										"parentTeam": null,
+										"viewerCanAdminister": false,
+										"creator": null,
+										"external": true
 									}
 								}
 							]
@@ -530,6 +552,47 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 				}
 			}
 		}`,
+		Variables: map[string]any{
+			"repo":        string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+			"revision":    parameterRevision,
+			"currentPath": "foo/bar.js",
+		},
+	})
+
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Schema:  schema,
+		Context: ctx,
+		Query: `
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+				node(id: $repo) {
+					... on Repository {
+						commit(rev: $revision) {
+							blob(path: $currentPath) {
+								ownership {
+									nodes {
+										owner {
+											... on Team {
+												displayName
+												members(first: 10) {
+													totalCount
+												}
+												childTeams(first: 10) {
+													totalCount
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}`,
+		ExpectedResult: `{"node":{"commit":{"blob":null}}}`,
+		ExpectedErrors: []*gqlerrors.QueryError{
+			{Message: "cannot get child teams of external team", Path: []any{"node", "commit", "blob", "ownership", "nodes", 0, "owner", "childTeams"}},
+			{Message: "cannot get members of external team", Path: []any{"node", "commit", "blob", "ownership", "nodes", 0, "owner", "members"}},
+		},
 		Variables: map[string]any{
 			"repo":        string(graphqlbackend.MarshalRepositoryID(repo.ID)),
 			"revision":    parameterRevision,
@@ -645,7 +708,7 @@ func TestOwnershipPagination(t *testing.T) {
 		return "42", nil
 	}
 	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -735,6 +798,8 @@ func TestOwnership_WithSignals(t *testing.T) {
 	userEmails.GetPrimaryEmailFunc.SetDefaultReturn(santaEmail, true, nil)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
+	db.UserExternalAccountsFunc.SetDefaultReturn(database.NewMockUserExternalAccountsStore())
+
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
 	own := fakeOwnService{
@@ -761,7 +826,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 		return "deadbeef", nil
 	}
 	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -840,25 +905,25 @@ func TestOwnership_WithSignals(t *testing.T) {
 								},
 								{
 									"owner": {
-										"displayName": "santa claus",
-										"email": "santa@northpole.com"
-									},
-									"reasons": [
-										{
-											"title": "recent view",
-											"description": "Owner is associated because they have viewed this file in the last 90 days."
-										}
-									]
-								},
-								{
-									"owner": {
-										"displayName": "santa claus",
+										"displayName": "santa@northpole.com",
 										"email": "santa@northpole.com"
 									},
 									"reasons": [
 										{
 											"title": "recent contributor",
 											"description": "Owner is associated because they have contributed to this file in the last 90 days."
+										}
+									]
+								},
+								{
+									"owner": {
+										"displayName": "santa claus",
+										"email": ""
+									},
+									"reasons": [
+										{
+											"title": "recent view",
+											"description": "Owner is associated because they have viewed this file in the last 90 days."
 										}
 									]
 								}
@@ -898,8 +963,16 @@ func TestTreeOwnershipSignals(t *testing.T) {
 	db.RecentViewSignalFunc.SetDefaultReturn(recentViewStore)
 
 	userEmails := database.NewMockUserEmailsStore()
-	userEmails.GetPrimaryEmailFunc.SetDefaultReturn(santaEmail, true, nil)
+	userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{
+		{
+			UserID:  1,
+			Email:   santaEmail,
+			Primary: true,
+		},
+	}, nil)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+
+	db.UserExternalAccountsFunc.SetDefaultReturn(database.NewMockUserExternalAccountsStore())
 
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
@@ -935,7 +1008,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 			}: "some JS code",
 		},
 	}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -984,13 +1057,13 @@ func TestTreeOwnershipSignals(t *testing.T) {
 							"nodes": [
 								{
 									"owner": {
-										"displayName": "santa claus",
+										"displayName": "santa@northpole.com",
 										"email": "santa@northpole.com"
 									},
 									"reasons": [
 										{
-											"title": "recent view",
-											"description": "Owner is associated because they have viewed this file in the last 90 days."
+											"title": "recent contributor",
+											"description": "Owner is associated because they have contributed to this file in the last 90 days."
 										}
 									]
 								},
@@ -1001,8 +1074,8 @@ func TestTreeOwnershipSignals(t *testing.T) {
 									},
 									"reasons": [
 										{
-											"title": "recent contributor",
-											"description": "Owner is associated because they have contributed to this file in the last 90 days."
+											"title": "recent view",
+											"description": "Owner is associated because they have viewed this file in the last 90 days."
 										}
 									]
 								}
@@ -1077,7 +1150,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 							"nodes": [
 								{
 									"owner": {
-										"displayName": "santa claus",
+										"displayName": "santa@northpole.com",
 										"email": "santa@northpole.com"
 									},
 									"reasons": [
@@ -1124,7 +1197,7 @@ func TestCommitOwnershipSignals(t *testing.T) {
 	}
 	git := fakeGitserver{}
 	own := fakeOwnService{}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1163,7 +1236,7 @@ func TestCommitOwnershipSignals(t *testing.T) {
 						"nodes": [
 							{
 								"owner": {
-									"displayName": "santa claus",
+									"displayName": "santa@northpole.com",
 									"email": "santa@northpole.com"
 								},
 								"reasons": [
@@ -1192,13 +1265,13 @@ func Test_SignalConfigurations(t *testing.T) {
 
 	ctx := context.Background()
 
-	admin, err := db.Users().Create(context.Background(), database.NewUser{Username: "admin"})
+	admin, err := db.Users().Create(ctx, database.NewUser{Username: "admin"})
 	require.NoError(t, err)
 
-	user, err := db.Users().Create(context.Background(), database.NewUser{Username: "non-admin"})
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "non-admin"})
 	require.NoError(t, err)
 
-	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1229,6 +1302,12 @@ func Test_SignalConfigurations(t *testing.T) {
 			{
 			  "name": "recent-views",
 			  "description": "Indexes users that recently viewed files in Sourcegraph.",
+			  "isEnabled": false,
+			  "excludedRepoPatterns": []
+			},
+			{
+			  "name": "analytics",
+			  "description": "Indexes ownership data to present in aggregated views like Admin > Analytics > Own and Repo > Ownership",
 			  "isEnabled": false,
 			  "excludedRepoPatterns": []
 			}
@@ -1287,6 +1366,11 @@ func Test_SignalConfigurations(t *testing.T) {
 				Name:        owntypes.SignalRecentViews,
 				Description: "Indexes users that recently viewed files in Sourcegraph.",
 			},
+			{
+				ID:          3,
+				Name:        "analytics",
+				Description: "Indexes ownership data to present in aggregated views like Admin > Analytics > Own and Repo > Ownership",
+			},
 		}).Equal(t, configsFromDb)
 
 		readTest := baseReadTest
@@ -1313,6 +1397,12 @@ func Test_SignalConfigurations(t *testing.T) {
 			  "description": "Indexes users that recently viewed files in Sourcegraph.",
 			  "isEnabled": false,
 			  "excludedRepoPatterns": []
+			},
+			{
+			  "name": "analytics",
+			  "description": "Indexes ownership data to present in aggregated views like Admin > Analytics > Own and Repo > Ownership",
+			  "isEnabled": false,
+			  "excludedRepoPatterns": []
 			}
 		  ]
 		}`
@@ -1321,15 +1411,15 @@ func Test_SignalConfigurations(t *testing.T) {
 	})
 }
 
-func TestOwnership_WithAssignedOwners(t *testing.T) {
+func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
 	db := fakeOwnDb()
 
 	userEmails := database.NewMockUserEmailsStore()
-	userEmails.GetPrimaryEmailFunc.SetDefaultHook(func(_ context.Context, id int32) (email string, verified bool, err error) {
-		verified = true
-		switch id {
+	userEmails.ListByUserFunc.SetDefaultHook(func(ctx context.Context, opts database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+		var email string
+		switch opts.UserID {
 		case 1:
 			email = "assigned@owner1.com"
 		case 2:
@@ -1337,7 +1427,12 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 		default:
 			email = santaEmail
 		}
-		return
+		return []*database.UserEmail{
+			{
+				UserID: opts.UserID,
+				Email:  email,
+			},
+		}, nil
 	})
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
@@ -1345,6 +1440,8 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 	repoID := api.RepoID(1)
 	assignedOwnerID1 := fakeDB.AddUser(types.User{Username: "assigned owner 1", DisplayName: "I am an assigned owner #1"})
 	assignedOwnerID2 := fakeDB.AddUser(types.User{Username: "assigned owner 2", DisplayName: "I am an assigned owner #2"})
+	assignedTeamID1 := fakeDB.AddTeam(&types.Team{Name: "assigned team 1"})
+	assignedTeamID2 := fakeDB.AddTeam(&types.Team{Name: "assigned team 2"})
 	own := fakeOwnService{
 		Ruleset: codeowners.NewRuleset(
 			codeowners.IngestedRulesetSource{ID: int32(repoID)},
@@ -1364,6 +1461,10 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 			"foo/bar.js": []database.AssignedOwnerSummary{{OwnerUserID: assignedOwnerID1, FilePath: "foo/bar.js", RepoID: repoID}},
 			"foo":        []database.AssignedOwnerSummary{{OwnerUserID: assignedOwnerID2, FilePath: "foo", RepoID: repoID}},
 		},
+		Teams: own.AssignedTeams{
+			"foo/bar.js": []database.AssignedTeamSummary{{OwnerTeamID: assignedTeamID1, FilePath: "foo/bar.js", RepoID: repoID}},
+			"foo":        []database.AssignedTeamSummary{{OwnerTeamID: assignedTeamID2, FilePath: "foo", RepoID: repoID}},
+		},
 	}
 	ctx := userCtx(fakeDB.AddUser(types.User{Username: santaName, DisplayName: santaName, SiteAdmin: true}))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
@@ -1373,8 +1474,9 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
 		return "deadbeef", nil
 	}
+	db.UserExternalAccountsFunc.SetDefaultReturn(database.NewMockUserExternalAccountsStore())
 	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1407,6 +1509,9 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 												displayName
 												email
 											}
+											...on Team {
+												name
+											}
 										}
 										reasons {
 											...CodeownersFileEntryFields
@@ -1435,8 +1540,8 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 				"commit": {
 					"blob": {
 						"ownership": {
-							"totalOwners": 3,
-							"totalCount": 3,
+							"totalOwners": 5,
+							"totalCount": 5,
 							"nodes": [
 								{
 									"owner": {
@@ -1454,6 +1559,28 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 									"owner": {
 										"displayName": "I am an assigned owner #2",
 										"email": "assigned@owner2.com"
+									},
+									"reasons": [
+										{
+											"title": "assigned owner",
+											"description": "Owner is manually assigned."
+										}
+									]
+								},
+								{
+									"owner": {
+										"name": "assigned team 1"
+									},
+									"reasons": [
+										{
+											"title": "assigned owner",
+											"description": "Owner is manually assigned."
+										}
+									]
+								},
+								{
+									"owner": {
+										"name": "assigned team 2"
 									},
 									"reasons": [
 										{
@@ -1510,6 +1637,9 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 												displayName
 												email
 											}
+											...on Team {
+												name
+											}
 										}
 										reasons {
 											...on RecentContributorOwnershipSignal {
@@ -1537,13 +1667,24 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 				"commit": {
 					"blob": {
 						"ownership": {
-							"totalOwners": 1,
-							"totalCount": 1,
+							"totalOwners": 2,
+							"totalCount": 2,
 							"nodes": [
 								{
 									"owner": {
 										"displayName": "I am an assigned owner #2",
 										"email": "assigned@owner2.com"
+									},
+									"reasons": [
+										{
+											"title": "assigned owner",
+											"description": "Owner is manually assigned."
+										}
+									]
+								},
+								{
+									"owner": {
+										"name": "assigned team 2"
 									},
 									"reasons": [
 										{
@@ -1577,9 +1718,9 @@ func TestAssignOwner(t *testing.T) {
 	err := db.Repos().Create(ctx, &repo)
 	require.NoError(t, err)
 	// Creating 2 users, only "hasPermission" user has rights to assign owners.
-	hasPermission, err := db.Users().Create(context.Background(), database.NewUser{Username: "has-permission"})
+	hasPermission, err := db.Users().Create(ctx, database.NewUser{Username: "has-permission"})
 	require.NoError(t, err)
-	noPermission, err := db.Users().Create(context.Background(), database.NewUser{Username: "no-permission"})
+	noPermission, err := db.Users().Create(ctx, database.NewUser{Username: "no-permission"})
 	require.NoError(t, err)
 	// RBAC stuff below.
 	permission, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
@@ -1600,7 +1741,7 @@ func TestAssignOwner(t *testing.T) {
 	})
 	require.NoError(t, err)
 	// RBAC stuff finished. Creating a GraphQL schema.
-	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1613,7 +1754,7 @@ func TestAssignOwner(t *testing.T) {
 			Context: userCtx,
 			Schema:  schema,
 			Query: `
-				mutation assignOwner($input:AssignOwnerInput!) {
+				mutation assignOwner($input:AssignOwnerOrTeamInput!) {
 				  assignOwner(input:$input) {
 					alwaysNil
 				  }
@@ -1704,9 +1845,9 @@ func TestDeleteAssignedOwner(t *testing.T) {
 	err := db.Repos().Create(ctx, &repo)
 	require.NoError(t, err)
 	// Creating 2 users, only "hasPermission" user has rights to assign owners.
-	hasPermission, err := db.Users().Create(context.Background(), database.NewUser{Username: "has-permission"})
+	hasPermission, err := db.Users().Create(ctx, database.NewUser{Username: "has-permission"})
 	require.NoError(t, err)
-	noPermission, err := db.Users().Create(context.Background(), database.NewUser{Username: "non-permission"})
+	noPermission, err := db.Users().Create(ctx, database.NewUser{Username: "non-permission"})
 	require.NoError(t, err)
 	// Creating an existing assigned owner.
 	require.NoError(t, db.AssignedOwners().Insert(ctx, noPermission.ID, repo.ID, "", hasPermission.ID))
@@ -1729,7 +1870,7 @@ func TestDeleteAssignedOwner(t *testing.T) {
 	})
 	require.NoError(t, err)
 	// RBAC stuff finished. Creating a GraphQL schema.
-	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1742,7 +1883,7 @@ func TestDeleteAssignedOwner(t *testing.T) {
 			Context: userCtx,
 			Schema:  schema,
 			Query: `
-				mutation removeAssignedOwner($input:AssignOwnerInput!) {
+				mutation removeAssignedOwner($input:AssignOwnerOrTeamInput!) {
 				  removeAssignedOwner(input:$input) {
 					alwaysNil
 				  }
@@ -1830,10 +1971,317 @@ func TestDeleteAssignedOwner(t *testing.T) {
 	})
 }
 
-func Test(t *testing.T) {
-	fmt.Println(string(graphqlbackend.MarshalUserID(1)))
-	fmt.Println(string(graphqlbackend.MarshalUserID(62)))
-	fmt.Println(string(graphqlbackend.MarshalUserID(69)))
-	fmt.Println(string(graphqlbackend.MarshalUserID(70)))
-	fmt.Println(string(graphqlbackend.MarshalRepositoryID(7)))
+func TestAssignTeam(t *testing.T) {
+	logger := logtest.Scoped(t)
+	testDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDB)
+	git := fakeGitserver{}
+	own := fakeOwnService{}
+	ctx := context.Background()
+	repo := types.Repo{Name: "test-repo-1", ID: 101}
+	err := db.Repos().Create(ctx, &repo)
+	require.NoError(t, err)
+	// Creating 2 users, only "hasPermission" user has rights to assign owners.
+	hasPermission, err := db.Users().Create(ctx, database.NewUser{Username: "has-permission"})
+	require.NoError(t, err)
+	noPermission, err := db.Users().Create(ctx, database.NewUser{Username: "no-permission"})
+	require.NoError(t, err)
+	// Creating a team.
+	team := createTeam(t, ctx, db, "team-A")
+	// RBAC stuff below.
+	permission, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
+		Namespace: rbactypes.OwnershipNamespace,
+		Action:    rbactypes.OwnershipAssignAction,
+	})
+	require.NoError(t, err)
+	role, err := db.Roles().Create(ctx, "Can assign owners", false)
+	require.NoError(t, err)
+	err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
+		RoleID:       role.ID,
+		PermissionID: permission.ID,
+	})
+	require.NoError(t, err)
+	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
+		UserID: hasPermission.ID,
+		RoleID: role.ID,
+	})
+	require.NoError(t, err)
+	// RBAC stuff finished. Creating a GraphQL schema.
+	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	adminCtx := actor.WithActor(ctx, actor.FromUser(hasPermission.ID))
+	userCtx := actor.WithActor(ctx, actor.FromUser(noPermission.ID))
+
+	getBaseTest := func() *graphqlbackend.Test {
+		return &graphqlbackend.Test{
+			Context: userCtx,
+			Schema:  schema,
+			Query: `
+				mutation assignTeam($input:AssignOwnerOrTeamInput!) {
+				  assignTeam(input:$input) {
+					alwaysNil
+				  }
+				}`,
+			Variables: map[string]any{"input": map[string]any{
+				"assignedOwnerID": string(graphqlbackend.MarshalTeamID(team.ID)),
+				"repoID":          string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+				"absolutePath":    "",
+			}},
+		}
+	}
+
+	removeTeams := func() {
+		t.Helper()
+		_, err := testDB.ExecContext(ctx, "DELETE FROM assigned_teams")
+		require.NoError(t, err)
+	}
+
+	assertAssignedTeam := func(t *testing.T, ownerID, whoAssigned int32, repoID api.RepoID, path string) {
+		t.Helper()
+		owners, err := db.AssignedTeams().ListAssignedTeamsForRepo(ctx, repoID)
+		require.NoError(t, err)
+		require.Len(t, owners, 1)
+		owner := owners[0]
+		assert.Equal(t, ownerID, owner.OwnerTeamID)
+		assert.Equal(t, whoAssigned, owner.WhoAssignedUserID)
+		assert.Equal(t, path, owner.FilePath)
+	}
+
+	assertNoAssignedOwners := func(t *testing.T, repoID api.RepoID) {
+		t.Helper()
+		owners, err := db.AssignedTeams().ListAssignedTeamsForRepo(ctx, repoID)
+		require.NoError(t, err)
+		require.Empty(t, owners)
+	}
+
+	t.Run("non-admin cannot assign a team", func(t *testing.T) {
+		t.Cleanup(removeTeams)
+		baseTest := getBaseTest()
+		expectedErrs := []*gqlerrors.QueryError{{
+			Message: "user is missing permission OWNERSHIP#ASSIGN",
+			Path:    []any{"assignTeam"},
+		}}
+		baseTest.ExpectedErrors = expectedErrs
+		baseTest.ExpectedResult = `{"assignTeam":null}`
+		graphqlbackend.RunTest(t, baseTest)
+		assertNoAssignedOwners(t, repo.ID)
+	})
+
+	t.Run("bad request", func(t *testing.T) {
+		t.Cleanup(removeTeams)
+		baseTest := getBaseTest()
+		baseTest.Context = adminCtx
+		expectedErrs := []*gqlerrors.QueryError{{
+			Message: "assigned team ID should not be 0",
+			Path:    []any{"assignTeam"},
+		}}
+		baseTest.ExpectedErrors = expectedErrs
+		baseTest.ExpectedResult = `{"assignTeam":null}`
+		baseTest.Variables = map[string]any{"input": map[string]any{
+			"assignedOwnerID":   string(graphqlbackend.MarshalTeamID(0)),
+			"repoID":            string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+			"absolutePath":      "",
+			"whoAssignedUserID": string(graphqlbackend.MarshalUserID(hasPermission.ID)),
+		}}
+		graphqlbackend.RunTest(t, baseTest)
+		assertNoAssignedOwners(t, repo.ID)
+	})
+
+	t.Run("successfully assigned a team", func(t *testing.T) {
+		t.Cleanup(removeTeams)
+		baseTest := getBaseTest()
+		baseTest.Context = adminCtx
+		baseTest.ExpectedResult = `{"assignTeam":{"alwaysNil": null}}`
+		graphqlbackend.RunTest(t, baseTest)
+		assertAssignedTeam(t, team.ID, hasPermission.ID, repo.ID, "")
+	})
+}
+
+func TestDeleteAssignedTeam(t *testing.T) {
+	logger := logtest.Scoped(t)
+	testDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDB)
+	git := fakeGitserver{}
+	own := fakeOwnService{}
+	ctx := context.Background()
+	repo := types.Repo{Name: "test-repo-1", ID: 101}
+	err := db.Repos().Create(ctx, &repo)
+	require.NoError(t, err)
+	// Creating 2 users, only "hasPermission" user has rights to assign owners.
+	hasPermission, err := db.Users().Create(ctx, database.NewUser{Username: "has-permission"})
+	require.NoError(t, err)
+	noPermission, err := db.Users().Create(ctx, database.NewUser{Username: "non-permission"})
+	require.NoError(t, err)
+	// Creating a team.
+	team := createTeam(t, ctx, db, "team-A")
+	// Creating an existing assigned team.
+	require.NoError(t, db.AssignedTeams().Insert(ctx, team.ID, repo.ID, "", hasPermission.ID))
+	// RBAC stuff below.
+	permission, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
+		Namespace: rbactypes.OwnershipNamespace,
+		Action:    rbactypes.OwnershipAssignAction,
+	})
+	require.NoError(t, err)
+	role, err := db.Roles().Create(ctx, "Can assign owners", false)
+	require.NoError(t, err)
+	err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
+		RoleID:       role.ID,
+		PermissionID: permission.ID,
+	})
+	require.NoError(t, err)
+	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
+		UserID: hasPermission.ID,
+		RoleID: role.ID,
+	})
+	require.NoError(t, err)
+	// RBAC stuff finished. Creating a GraphQL schema.
+	schema, err := graphqlbackend.NewSchema(db, git, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	adminCtx := actor.WithActor(ctx, actor.FromUser(hasPermission.ID))
+	userCtx := actor.WithActor(ctx, actor.FromUser(noPermission.ID))
+
+	getBaseTest := func() *graphqlbackend.Test {
+		return &graphqlbackend.Test{
+			Context: userCtx,
+			Schema:  schema,
+			Query: `
+				mutation removeAssignedTeam($input:AssignOwnerOrTeamInput!) {
+				  removeAssignedTeam(input:$input) {
+					alwaysNil
+				  }
+				}`,
+			Variables: map[string]any{"input": map[string]any{
+				"assignedOwnerID": string(graphqlbackend.MarshalTeamID(team.ID)),
+				"repoID":          string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+				"absolutePath":    "",
+			}},
+		}
+	}
+
+	assertTeamExists := func(t *testing.T) {
+		t.Helper()
+		teams, err := db.AssignedTeams().ListAssignedTeamsForRepo(ctx, repo.ID)
+		require.NoError(t, err)
+		require.Len(t, teams, 1)
+		owner := teams[0]
+		assert.Equal(t, team.ID, owner.OwnerTeamID)
+		assert.Equal(t, hasPermission.ID, owner.WhoAssignedUserID)
+		assert.Equal(t, "", owner.FilePath)
+	}
+
+	assertNoAssignedTeams := func(t *testing.T) {
+		t.Helper()
+		owners, err := db.AssignedTeams().ListAssignedTeamsForRepo(ctx, repo.ID)
+		require.NoError(t, err)
+		require.Empty(t, owners)
+	}
+
+	t.Run("cannot delete assigned owner without permission", func(t *testing.T) {
+		baseTest := getBaseTest()
+		expectedErrs := []*gqlerrors.QueryError{{
+			Message: "user is missing permission OWNERSHIP#ASSIGN",
+			Path:    []any{"removeAssignedTeam"},
+		}}
+		baseTest.ExpectedErrors = expectedErrs
+		baseTest.ExpectedResult = `{"removeAssignedTeam":null}`
+		graphqlbackend.RunTest(t, baseTest)
+		assertTeamExists(t)
+	})
+
+	t.Run("bad request", func(t *testing.T) {
+		baseTest := getBaseTest()
+		baseTest.Context = adminCtx
+		expectedErrs := []*gqlerrors.QueryError{{
+			Message: "assigned team ID should not be 0",
+			Path:    []any{"removeAssignedTeam"},
+		}}
+		baseTest.ExpectedErrors = expectedErrs
+		baseTest.ExpectedResult = `{"removeAssignedTeam":null}`
+		baseTest.Variables = map[string]any{"input": map[string]any{
+			"assignedOwnerID": string(graphqlbackend.MarshalUserID(0)),
+			"repoID":          string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+			"absolutePath":    "",
+		}}
+		graphqlbackend.RunTest(t, baseTest)
+		assertTeamExists(t)
+	})
+
+	t.Run("assigned owner not found", func(t *testing.T) {
+		baseTest := getBaseTest()
+		baseTest.Context = adminCtx
+		expectedErrs := []*gqlerrors.QueryError{{
+			Message: `deleting assigned team: cannot delete assigned owner team with ID=1337 for "" path for repo with ID=1`,
+			Path:    []any{"removeAssignedTeam"},
+		}}
+		baseTest.ExpectedErrors = expectedErrs
+		baseTest.ExpectedResult = `{"removeAssignedTeam":null}`
+		baseTest.Variables = map[string]any{"input": map[string]any{
+			"assignedOwnerID": string(graphqlbackend.MarshalUserID(1337)),
+			"repoID":          string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+			"absolutePath":    "",
+		}}
+		graphqlbackend.RunTest(t, baseTest)
+		assertTeamExists(t)
+	})
+
+	t.Run("assigned owner successfully deleted", func(t *testing.T) {
+		baseTest := getBaseTest()
+		baseTest.Context = adminCtx
+		baseTest.ExpectedResult = `{"removeAssignedTeam":{"alwaysNil": null}}`
+		graphqlbackend.RunTest(t, baseTest)
+		assertNoAssignedTeams(t)
+	})
+}
+
+func TestDisplayOwnershipStats(t *testing.T) {
+	db := database.NewMockDB()
+	fakeRepoPaths := database.NewMockRepoPathStore()
+	fakeRepoPaths.AggregateFileCountFunc.SetDefaultReturn(350000, nil)
+	db.RepoPathsFunc.SetDefaultReturn(fakeRepoPaths)
+	fakeOwnershipStats := database.NewMockOwnershipStatsStore()
+	fakeOwnershipStats.QueryAggregateCountsFunc.SetDefaultReturn(
+		database.PathAggregateCounts{
+			CodeownedFileCount:         150000,
+			AssignedOwnershipFileCount: 20000,
+			TotalOwnedFileCount:        165000,
+		}, nil)
+	db.OwnershipStatsFunc.SetDefaultReturn(fakeOwnershipStats)
+	ctx := context.Background()
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, nil, nil, logtest.NoOp(t))}})
+	require.NoError(t, err)
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Schema:  schema,
+		Context: ctx,
+		Query: `
+			query GetInstanceOwnStats {
+				instanceOwnershipStats {
+					totalFiles
+					totalCodeownedFiles
+					totalOwnedFiles
+					totalAssignedOwnershipFiles
+				}
+			}`,
+		ExpectedResult: `
+			{
+				"instanceOwnershipStats": {
+					"totalFiles": 350000,
+					"totalCodeownedFiles" : 150000,
+					"totalOwnedFiles" : 165000,
+					"totalAssignedOwnershipFiles" : 20000
+				}
+			}`,
+	})
+}
+
+func createTeam(t *testing.T, ctx context.Context, db database.DB, teamName string) *types.Team {
+	t.Helper()
+	team, err := db.Teams().CreateTeam(ctx, &types.Team{Name: teamName})
+	require.NoError(t, err)
+	return team
 }

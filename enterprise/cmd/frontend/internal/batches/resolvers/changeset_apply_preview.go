@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/reconciler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/rewirer"
@@ -20,6 +22,7 @@ import (
 type changesetApplyPreviewResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
+	logger          log.Logger
 
 	mapping              *btypes.RewirerMapping
 	preloadedNextSync    time.Time
@@ -40,6 +43,7 @@ func (r *changesetApplyPreviewResolver) ToVisibleChangesetApplyPreview() (graphq
 		return &visibleChangesetApplyPreviewResolver{
 			store:                r.store,
 			gitserverClient:      r.gitserverClient,
+			logger:               r.logger,
 			mapping:              r.mapping,
 			preloadedNextSync:    r.preloadedNextSync,
 			preloadedBatchChange: r.preloadedBatchChange,
@@ -94,6 +98,7 @@ func (r *hiddenChangesetApplyPreviewResolver) Targets() graphqlbackend.HiddenApp
 type hiddenApplyPreviewTargetsResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
+	logger          log.Logger
 
 	mapping           *btypes.RewirerMapping
 	preloadedNextSync time.Time
@@ -134,12 +139,13 @@ func (r *hiddenApplyPreviewTargetsResolver) Changeset(ctx context.Context) (grap
 	if r.mapping.Changeset == nil {
 		return nil, nil
 	}
-	return NewChangesetResolverWithNextSync(r.store, r.gitserverClient, r.mapping.Changeset, nil, r.preloadedNextSync), nil
+	return NewChangesetResolverWithNextSync(r.store, r.gitserverClient, r.logger, r.mapping.Changeset, nil, r.preloadedNextSync), nil
 }
 
 type visibleChangesetApplyPreviewResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
+	logger          log.Logger
 
 	mapping              *btypes.RewirerMapping
 	preloadedNextSync    time.Time
@@ -186,6 +192,7 @@ func (r *visibleChangesetApplyPreviewResolver) Targets() graphqlbackend.VisibleA
 	return &visibleApplyPreviewTargetsResolver{
 		store:             r.store,
 		gitserverClient:   r.gitserverClient,
+		logger:            r.logger,
 		mapping:           r.mapping,
 		preloadedNextSync: r.preloadedNextSync,
 	}
@@ -308,6 +315,7 @@ func (r *visibleChangesetApplyPreviewResolver) computeBatchChange(ctx context.Co
 type visibleApplyPreviewTargetsResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
+	logger          log.Logger
 
 	mapping           *btypes.RewirerMapping
 	preloadedNextSync time.Time
@@ -348,7 +356,7 @@ func (r *visibleApplyPreviewTargetsResolver) Changeset(ctx context.Context) (gra
 	if r.mapping.Changeset == nil {
 		return nil, nil
 	}
-	return NewChangesetResolverWithNextSync(r.store, r.gitserverClient, r.mapping.Changeset, r.mapping.Repo, r.preloadedNextSync), nil
+	return NewChangesetResolverWithNextSync(r.store, r.gitserverClient, r.logger, r.mapping.Changeset, r.mapping.Repo, r.preloadedNextSync), nil
 }
 
 type changesetSpecDeltaResolver struct {

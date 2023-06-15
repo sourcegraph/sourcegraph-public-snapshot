@@ -12,6 +12,7 @@ go_library(
         "//internal/env",
         "//internal/httpcli",
         "//internal/trace",
+        "//lib/codeintel/languages",
         "//lib/errors",
         "@io_opentelemetry_go_otel//attribute",
     ],

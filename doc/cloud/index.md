@@ -112,9 +112,17 @@ More details about the locations and data storage can be found in [our handbook]
 
 Private Code Hosts refer to code hosts that are not publicly accessible, such as a GitHub or GitLab instance protected by a VPN.
 
-Sourcegraph Cloud connects to customer code hosts from 2 public NAT IPs. Customers can add the dedicated IPs for their Sourcegraph Cloud instance to an IP allowlist on their private code host.
+Sourcegraph Cloud connects to customer code hosts from Google Cloud Platform using NAT Gateway with 2 customer dedicated public NAT IPs. Customers can add the dedicated IPs for their Sourcegraph Cloud instance to an IP allowlist on their private code host.
 
 #### Code host on AWS without public access
+
+<aside class="experimental">
+<p>
+<span class="badge badge-experimental">Experimental</span> This feature is experimental
+</p>
+
+<p>Please contact Sourcegraph directly via <a href="https://about.sourcegraph.com/contact">prefered contact method</a> for more informations</p>
+</aside>
 
 As part of the [Enterprise tier](https://about.sourcegraph.com/pricing), Sourcegraph Cloud offers customers that have code hosts without public access deployed on AWS a [highly available site-to-site VPN solution](https://cloud.google.com/network-connectivity/docs/vpn/tutorials/create-ha-vpn-connections-google-cloud-aws) with [AWS Private Link](https://docs.aws.amazon.com/vpc/latest/privatelink/what-is-privatelink.html) inside AWS's network, so that access to a private code host never occurs over the public internet.
 

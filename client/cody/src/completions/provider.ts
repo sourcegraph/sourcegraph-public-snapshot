@@ -86,9 +86,9 @@ export abstract class CompletionProvider {
                 {
                     speaker: 'human',
                     text:
-                        `Add the following code snippet (from file ${snippet.filename}) to your knowledge base:\n` +
+                        `Add the following code snippet (from file ${snippet.fileName}) to your knowledge base:\n` +
                         '```' +
-                        `\n${snippet.text}\n` +
+                        `\n${snippet.content}\n` +
                         '```',
                 },
                 {
@@ -308,17 +308,17 @@ export class InlineCompletionProvider extends CompletionProvider {
             hasOddIndentation = true
         }
 
+        // Insert the injected prefix back in
+        if (this.injectPrefix.length > 0) {
+            completion = this.injectPrefix + completion
+        }
+
         // Experimental: Trim start of the completion to remove all trailing whitespace nonsense
         completion = completion.trimStart()
 
         // Detect bad completion start
         if (BAD_COMPLETION_START.test(completion)) {
             completion = completion.replace(BAD_COMPLETION_START, '')
-        }
-
-        // Insert the injected prefix back in
-        if (this.injectPrefix.length > 0) {
-            completion = this.injectPrefix + completion
         }
 
         // Strip out trailing markdown block and trim trailing whitespace

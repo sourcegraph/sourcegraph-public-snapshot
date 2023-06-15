@@ -168,8 +168,7 @@ require (
 	github.com/moby/buildkit v0.11.3
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opentracing-contrib/go-stdlib v1.0.0
-	github.com/opentracing/opentracing-go v1.2.0
+	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/peterbourgon/ff v1.7.1
 	github.com/peterbourgon/ff/v3 v3.3.0
 	github.com/peterhellberg/link v1.1.0
@@ -198,9 +197,9 @@ require (
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/sourcegraph/log v0.0.0-20230523201558-ad2d71b4d2ee
 	github.com/sourcegraph/run v0.12.0
-	github.com/sourcegraph/scip v0.2.4-0.20230403145725-e720fb88e6fd
+	github.com/sourcegraph/scip v0.2.4-0.20230613194658-b62733841bc3
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
-	github.com/sourcegraph/sourcegraph/lib v0.0.0-20230124150142-7833ec00539f
+	github.com/sourcegraph/sourcegraph/lib v0.0.0-20230613175844-f031949c72f5
 	github.com/stretchr/testify v1.8.2
 	github.com/temoto/robotstxt v1.1.2
 	github.com/throttled/throttled/v2 v2.9.0
@@ -226,7 +225,7 @@ require (
 	go.opentelemetry.io/contrib/propagators/jaeger v1.14.0
 	go.opentelemetry.io/contrib/propagators/ot v1.14.0
 	go.opentelemetry.io/otel v1.13.0
-	go.opentelemetry.io/otel/bridge/opentracing v1.13.0
+	go.opentelemetry.io/otel/bridge/opentracing v1.13.0 // indirect
 	go.opentelemetry.io/otel/exporters/jaeger v1.13.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.13.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.13.0
@@ -267,6 +266,7 @@ require (
 	github.com/go-redsync/redsync/v4 v4.8.1
 	github.com/hashicorp/cronexpr v1.1.1
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
+	github.com/mitchellh/go-homedir v1.1.0
 	github.com/vektah/gqlparser/v2 v2.4.5
 )
 
@@ -508,7 +508,7 @@ require (
 	github.com/sourcegraph/conc v0.2.0
 	github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6
-	github.com/sourcegraph/zoekt v0.0.0-20230606144326-bba2733daaec
+	github.com/sourcegraph/zoekt v0.0.0-20230614202706-0148e0248f66
 	github.com/spf13/cobra v1.6.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect

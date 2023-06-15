@@ -2,25 +2,17 @@ package actor
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 )
-
-type RateLimit struct {
-	AllowedModels []string      `json:"allowedModels"`
-	Limit         int           `json:"limit"`
-	Interval      time.Duration `json:"interval"`
-}
-
-func (r *RateLimit) IsValid() bool {
-	return r != nil && r.Interval > 0 && r.Limit > 0 && len(r.AllowedModels) > 0
-}
 
 type Actor struct {
 	// Key is the original key used to identify the actor. It may be a sensitive value
@@ -29,7 +21,8 @@ type Actor struct {
 	// For example, for product subscriptions this is the license-based access token.
 	Key string `json:"key"`
 	// ID is the identifier for this actor's rate-limiting pool. It is not a sensitive
-	// value.
+	// value. It must be set for all valid actors - if empty, the actor must be invalid
+	// and must not not have any feature access.
 	//
 	// For example, for product subscriptions this is the subscription UUID. For
 	// Sourcegraph.com users, this is the string representation of the user ID.
@@ -40,8 +33,8 @@ type Actor struct {
 	// For example, for product subscriptions it is based on whether the subscription is
 	// archived, if access is enabled, and if any rate limits are set.
 	AccessEnabled bool `json:"accessEnabled"`
-	// RateLimits holds the rate limits for Cody Gateway access for this actor.
-	RateLimits map[types.CompletionsFeature]RateLimit `json:"rateLimits"`
+	// RateLimits holds the rate limits for Cody Gateway features for this actor.
+	RateLimits map[codygateway.Feature]RateLimit `json:"rateLimits"`
 	// LastUpdated indicates when this actor's state was last updated.
 	LastUpdated *time.Time `json:"lastUpdated"`
 	// Source is a reference to the source of this actor's state.
@@ -64,12 +57,24 @@ func FromContext(ctx context.Context) *Actor {
 
 // Logger returns a logger that has metadata about the actor attached to it.
 func (a *Actor) Logger(logger log.Logger) log.Logger {
-	if a == nil {
-		return logger
+	// If there's no ID and no source and no key, this is probably just no
+	// actor available. Possible in actor-less endpoints like diagnostics.
+	if a == nil || (a.ID == "" && a.Source == nil && a.Key == "") {
+		return logger.With(log.String("actor.ID", "<nil>"))
 	}
+
+	// TODO: We shouldn't ever have a nil source, but check just in case, since
+	// we don't want to panic on some instrumentation.
+	var sourceName string
+	if a.Source != nil {
+		sourceName = a.Source.Name()
+	} else {
+		sourceName = "<nil>"
+	}
+
 	return logger.With(
 		log.String("actor.ID", a.ID),
-		log.String("actor.Source", a.Source.Name()),
+		log.String("actor.Source", sourceName),
 		log.Bool("actor.AccessEnabled", a.AccessEnabled),
 		log.Timep("actor.LastUpdated", a.LastUpdated),
 	)
@@ -88,12 +93,40 @@ func (a *Actor) Update(ctx context.Context) {
 	}
 }
 
+func (a *Actor) TraceAttributes() []attribute.KeyValue {
+	if a == nil {
+		return []attribute.KeyValue{attribute.String("actor", "<nil>")}
+	}
+
+	attrs := []attribute.KeyValue{
+		attribute.String("actor.id", a.ID),
+		attribute.Bool("actor.accessEnabled", a.AccessEnabled),
+	}
+	if a.LastUpdated != nil {
+		attrs = append(attrs, attribute.String("actor.lastUpdated", a.LastUpdated.String()))
+	}
+	for f, rl := range a.RateLimits {
+		key := fmt.Sprintf("actor.rateLimits.%s", f)
+		if rlJSON, err := json.Marshal(rl); err != nil {
+			attrs = append(attrs, attribute.String(key, err.Error()))
+		} else {
+			attrs = append(attrs, attribute.String(key, string(rlJSON)))
+		}
+	}
+	return attrs
+}
+
 // WithActor returns a new context with the given Actor instance.
 func WithActor(ctx context.Context, a *Actor) context.Context {
 	return context.WithValue(ctx, actorKey, a)
 }
 
-func (a *Actor) Limiter(redis limiter.RedisStore, feature types.CompletionsFeature) (limiter.Limiter, bool) {
+func (a *Actor) Limiter(
+	logger log.Logger,
+	redis limiter.RedisStore,
+	feature codygateway.Feature,
+	rateLimitNotifier notify.RateLimitNotifier,
+) (limiter.Limiter, bool) {
 	if a == nil {
 		// Not logged in, no limit applicable.
 		return nil, false
@@ -102,33 +135,48 @@ func (a *Actor) Limiter(redis limiter.RedisStore, feature types.CompletionsFeatu
 	if !ok {
 		return nil, false
 	}
-	// The redis store has to use a prefix for the given feature because we need
-	// to rate limit by feature.
-	rs := limiter.NewPrefixRedisStore(fmt.Sprintf("%s:", string(feature)), redis)
-	return updateOnFailureLimiter{Redis: rs, RateLimit: limit, Actor: a}, true
-}
 
-type updateOnFailureLimiter struct {
-	Redis     limiter.RedisStore
-	RateLimit RateLimit
-	*Actor
-}
-
-func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func() error, error) {
-	commit, err := (limiter.StaticLimiter{
-		Identifier: u.ID,
-		Redis:      u.Redis,
-		Limit:      u.RateLimit.Limit,
-		Interval:   u.RateLimit.Interval,
-		// Only update rate limit TTL if the actor has been updated recently.
-		UpdateRateLimitTTL: u.LastUpdated != nil && time.Since(*u.LastUpdated) < 5*time.Minute,
-	}).TryAcquire(ctx)
-
-	if errors.Is(err, limiter.NoAccessError{}) || errors.Is(err, limiter.RateLimitExceededError{}) {
-		u.Actor.Update(ctx) // TODO: run this in goroutine+background context maybe?
+	if !limit.IsValid() {
+		// No valid limit, cannot provide limiter.
+		return nil, false
 	}
 
-	return commit, err
+	// The redis store has to use a prefix for the given feature because we need to
+	// rate limit by feature.
+	featurePrefix := fmt.Sprintf("%s:", feature)
+
+	// baseLimiter is the core Limiter that naively applies the specified
+	// rate limits. This will get wrapped in various other layers of limiter
+	// behaviour.
+	baseLimiter := limiter.StaticLimiter{
+		LimiterName: "actor.Limiter",
+		Identifier:  a.ID,
+		Redis:       limiter.NewPrefixRedisStore(featurePrefix, redis),
+		Limit:       limit.Limit,
+		Interval:    limit.Interval,
+		// Only update rate limit TTL if the actor has been updated recently.
+		UpdateRateLimitTTL: a.LastUpdated != nil && time.Since(*a.LastUpdated) < 5*time.Minute,
+		NowFunc:            time.Now,
+		RateLimitAlerter: func(usagePercentage float32, ttl time.Duration) {
+			rateLimitNotifier(a.ID, codygateway.ActorSource(a.Source.Name()), feature, usagePercentage, ttl)
+		},
+	}
+
+	return &concurrencyLimiter{
+		logger:             logger.Scoped("concurrency", "concurrency limiter"),
+		actor:              a,
+		feature:            feature,
+		redis:              limiter.NewPrefixRedisStore(fmt.Sprintf("concurrent:%s", featurePrefix), redis),
+		concurrentRequests: limit.ConcurrentRequests,
+		concurrentInterval: limit.ConcurrentRequestsInterval,
+
+		nextLimiter: updateOnErrorLimiter{
+			actor: a,
+
+			nextLimiter: baseLimiter,
+		},
+		nowFunc: time.Now,
+	}, true
 }
 
 // ErrAccessTokenDenied is returned when the access token is denied due to the

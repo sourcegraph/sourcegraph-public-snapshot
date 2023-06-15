@@ -1,0 +1,5 @@
+filegroup(
+    name = "scripts",
+    srcs = glob(["*.sh"]),
+    visibility = ["//enterprise/cmd/server:__pkg__"],
+)

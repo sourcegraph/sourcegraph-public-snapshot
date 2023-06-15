@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -64,7 +65,11 @@ func embedQueries(queries []string, siteConfigPath string) error {
 
 	for _, query := range queries {
 		fmt.Printf("Embedding query %s\n", query)
-		v, err := embed.GetEmbeddings(ctx, []string{query}, siteConfig.Embeddings)
+		c, err := embed.NewEmbeddingsClient(conf.GetEmbeddingsConfig(*siteConfig))
+		if err != nil {
+			return err
+		}
+		v, err := c.GetEmbeddingsWithRetries(ctx, []string{query}, 0)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get embeddings for query %s", query)
 		}

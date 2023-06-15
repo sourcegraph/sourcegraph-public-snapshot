@@ -8,7 +8,6 @@ import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { FetchTreeOwnershipResult, FetchTreeOwnershipVariables } from '../../../graphql-operations'
 import { OwnershipAssignPermission } from '../../../rbac/constants'
 
@@ -44,7 +43,7 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
             },
         }
     )
-    const [ownPromotionEnabled] = useFeatureFlag('own-promote')
+    const [makeOwnerError, setMakeOwnerError] = React.useState<Error | undefined>(undefined)
 
     if (loading) {
         return (
@@ -56,18 +55,17 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
     const canAssignOwners = (data?.currentUser?.permissions?.nodes || []).some(
         permission => permission.displayName === OwnershipAssignPermission
     )
-    const makeOwnerButton =
-        canAssignOwners && ownPromotionEnabled
-            ? (userId: string | undefined) => (
-                  <MakeOwnerButton
-                      onSuccess={refetch}
-                      onError={() => {}} // TODO(#52911)
-                      repoId={repoID}
-                      path={filePath}
-                      userId={userId}
-                  />
-              )
-            : undefined
+    const makeOwnerButton = canAssignOwners
+        ? (userId: string | undefined) => (
+              <MakeOwnerButton
+                  onSuccess={refetch}
+                  onError={setMakeOwnerError}
+                  repoId={repoID}
+                  path={filePath}
+                  userId={userId}
+              />
+          )
+        : undefined
 
     if (error) {
         logger.log(error)
@@ -84,8 +82,12 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
                 data={data?.node?.commit?.tree?.ownership}
                 isDirectory={true}
                 makeOwnerButton={makeOwnerButton}
+                repoID={repoID}
+                filePath={filePath}
+                refetch={refetch}
+                makeOwnerError={makeOwnerError}
             />
         )
     }
-    return <OwnerList />
+    return <OwnerList repoID={repoID} filePath={filePath} refetch={refetch} />
 }

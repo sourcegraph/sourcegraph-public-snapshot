@@ -17,6 +17,11 @@ commandTests:
     command: "/usr/local/bin/src"
     args:
       - -v
+  - name: "batcheshelper binary is runnable"
+    command: "/usr/local/bin/batcheshelper"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
 
   - name: "not running as root"
     command: "/usr/bin/id"

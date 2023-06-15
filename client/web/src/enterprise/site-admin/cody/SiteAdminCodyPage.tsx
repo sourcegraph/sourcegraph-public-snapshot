@@ -1,5 +1,10 @@
-import { FC, useCallback, useEffect, useState } from 'react'
+import { FC, useCallback, useEffect, useState, useMemo } from 'react'
 
+import { mdiMapSearch } from '@mdi/js'
+import { capitalize } from 'lodash'
+import { useLocation } from 'react-router-dom'
+
+import { RepoEmbeddingJobState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -14,8 +19,11 @@ import {
     ErrorAlert,
     Form,
     useDebounce,
+    Icon,
 } from '@sourcegraph/wildcard'
 
+import { CodyColorIcon } from '../../../cody/chat/CodyPageIcon'
+import { FilteredConnectionFilter, FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -26,15 +34,11 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
+import { getFilterFromURL } from '../../../components/FilteredConnection/utils'
 import { PageTitle } from '../../../components/PageTitle'
 import { RepositoriesField } from '../../insights/components'
 
-import {
-    useCancelRepoEmbeddingJob,
-    useRepoEmbeddingJobsConnection,
-    useScheduleContextDetectionEmbeddingJob,
-    useScheduleRepoEmbeddingJobs,
-} from './backend'
+import { useCancelRepoEmbeddingJob, useRepoEmbeddingJobsConnection, useScheduleRepoEmbeddingJobs } from './backend'
 import { RepoEmbeddingJobNode } from './RepoEmbeddingJobNode'
 
 import styles from './SiteAdminCodyPage.module.scss'
@@ -54,33 +58,73 @@ const repositoriesValidator: Validator<string[]> = value => {
     return
 }
 
+// Helper function to convert an enum to a list of FilteredConnectionFilterValue
+const enumToFilterValues = <T extends string>(enumeration: { [key in T]: T }): FilteredConnectionFilterValue[] => {
+    const values: FilteredConnectionFilterValue[] = []
+    for (const key of Object.keys(enumeration)) {
+        values.push({
+            value: key.toLowerCase(),
+            label: capitalize(key),
+            args: {},
+            tooltip: `Show ${key.toLowerCase()} jobs`,
+        })
+    }
+    return values
+}
+
 export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService }) => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminCodyPage')
     }, [telemetryService])
 
-    const [searchValue, setSearchValue] = useState('')
+    const location = useLocation()
+    const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search])
+    const queryParam = searchParams.get('query')
+
+    const [searchValue, setSearchValue] = useState(queryParam || '')
     const query = useDebounce(searchValue, 200)
 
-    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useRepoEmbeddingJobsConnection(query)
+    const defaultStateFilterValue = 'all'
+    const filters: FilteredConnectionFilter[] = [
+        {
+            id: 'state',
+            label: 'State',
+            type: 'select',
+            values: [
+                {
+                    label: 'All',
+                    value: defaultStateFilterValue,
+                    tooltip: 'Show all jobs',
+                    args: {},
+                },
+                ...enumToFilterValues(RepoEmbeddingJobState),
+            ],
+        },
+    ]
+
+    const [filterValues, setFilterValues] = useState<Map<string, FilteredConnectionFilterValue>>(() =>
+        getFilterFromURL(searchParams, filters)
+    )
+
+    const getStateFilterValue = (filterValues: Map<string, FilteredConnectionFilterValue>): string | null => {
+        const val = filterValues.get('state')?.value || defaultStateFilterValue
+        return val === defaultStateFilterValue ? null : val
+    }
+
+    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useRepoEmbeddingJobsConnection(
+        query,
+        getStateFilterValue(filterValues)
+    )
 
     const [scheduleRepoEmbeddingJobs, { loading: repoEmbeddingJobsLoading, error: repoEmbeddingJobsError }] =
         useScheduleRepoEmbeddingJobs()
 
-    const [
-        scheduleContextDetectionEmbeddingJob,
-        { loading: contextDetectionEmbeddingJobLoading, error: contextDetectionEmbeddingJobError },
-    ] = useScheduleContextDetectionEmbeddingJob()
-
     const onSubmit = useCallback(
         async (repoNames: string[]) => {
-            await Promise.all([
-                scheduleContextDetectionEmbeddingJob(),
-                scheduleRepoEmbeddingJobs({ variables: { repoNames } }),
-            ])
+            await scheduleRepoEmbeddingJobs({ variables: { repoNames } })
             refetchAll()
         },
-        [refetchAll, scheduleContextDetectionEmbeddingJob, scheduleRepoEmbeddingJobs]
+        [refetchAll, scheduleRepoEmbeddingJobs]
     )
 
     const form = useForm<RepoEmbeddingJobsFormValues>({
@@ -95,6 +139,18 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
         validators: { sync: repositoriesValidator },
     })
 
+    const updateQueryParams = (key: string, value: string): void => {
+        if (value === '') {
+            searchParams.delete(key)
+        } else {
+            searchParams.set(key, value)
+        }
+
+        const queryString = searchParams.toString()
+        const newUrl = queryString === '' ? window.location.pathname : `${window.location.pathname}?${queryString}`
+        window.history.replaceState(null, '', newUrl)
+    }
+
     const [cancelRepoEmbeddingJob, { error: cancelRepoEmbeddingJobError }] = useCancelRepoEmbeddingJob()
 
     const onCancel = useCallback(
@@ -107,8 +163,12 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
 
     return (
         <>
-            <PageTitle title="Cody" />
-            <PageHeader path={[{ text: 'Cody' }]} className="mb-3" headingElement="h2" />
+            <PageTitle title="Embeddings jobs" />
+            <PageHeader
+                path={[{ icon: CodyColorIcon, text: 'Cody' }, { text: 'Embeddings jobs' }]}
+                className="mb-3"
+                headingElement="h2"
+            />
             <Container className="mb-3">
                 <H3>Schedule repositories for embedding</H3>
                 <Form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit}>
@@ -128,39 +188,48 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                                 type="submit"
                                 variant="secondary"
                                 className={styles.scheduleButton}
-                                disabled={repoEmbeddingJobsLoading || contextDetectionEmbeddingJobLoading}
+                                disabled={repoEmbeddingJobsLoading}
                             >
-                                {repoEmbeddingJobsLoading || contextDetectionEmbeddingJobLoading
-                                    ? 'Scheduling...'
-                                    : 'Schedule Embedding'}
+                                {repoEmbeddingJobsLoading ? 'Scheduling...' : 'Schedule Embedding'}
                             </Button>
                         </div>
                     </div>
                 </Form>
-                {(repoEmbeddingJobsError || contextDetectionEmbeddingJobError || cancelRepoEmbeddingJobError) && (
+                {(repoEmbeddingJobsError || cancelRepoEmbeddingJobError) && (
                     <div className="mt-1">
                         <ErrorAlert
-                            prefix="Error scheduling embedding jobs"
-                            error={
-                                repoEmbeddingJobsError ||
-                                contextDetectionEmbeddingJobError ||
-                                cancelRepoEmbeddingJobError
-                            }
+                            prefix="Error scheduling embeddings jobs"
+                            error={repoEmbeddingJobsError || cancelRepoEmbeddingJobError}
                         />
                     </div>
                 )}
             </Container>
             <Container>
-                <H3 className="mt-3">Repository embedding jobs</H3>
+                <H3 className="mt-3">Repository embeddings jobs</H3>
                 <ConnectionContainer>
                     <ConnectionForm
+                        formClassName="mb-2"
+                        inputClassName="flex-1 ml-2"
                         inputValue={searchValue}
-                        onInputChange={event => setSearchValue(event.target.value)}
-                        inputPlaceholder="Filter embedding jobs..."
+                        onInputChange={event => {
+                            setSearchValue(event.target.value)
+                            updateQueryParams('query', event.target.value)
+                        }}
+                        inputPlaceholder="Filter embeddings jobs..."
+                        filters={filters}
+                        filterValues={filterValues}
+                        onFilterSelect={(filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => {
+                            setFilterValues(values => {
+                                const newValues = new Map(values)
+                                newValues.set(filter.id, value)
+                                return newValues
+                            })
+                            updateQueryParams(filter.id, value.value)
+                        }}
                     />
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
-                    <ConnectionList as="ul" className="list-group" aria-label="Repository embedding jobs">
+                    <ConnectionList as="ul" className="list-group" aria-label="Repository embeddings jobs">
                         {connection?.nodes?.map(node => (
                             <RepoEmbeddingJobNode key={node.id} {...node} onCancel={onCancel} />
                         ))}
@@ -173,8 +242,8 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                                 centered={true}
                                 connection={connection}
                                 connectionQuery={query}
-                                noun="repository embedding job"
-                                pluralNoun="repository embedding jobs"
+                                noun="repository embeddings job"
+                                pluralNoun="repository embeddings jobs"
                                 hasNextPage={hasNextPage}
                                 emptyElement={<EmptyList />}
                             />
@@ -189,6 +258,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
 
 const EmptyList: FC<{}> = () => (
     <div className="text-muted text-center mb-3 w-100">
-        <div className="pt-2">No repository embedding jobs have been created so far.</div>
+        <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
+        <div className="pt-2">No repository embeddings jobs found.</div>
     </div>
 )

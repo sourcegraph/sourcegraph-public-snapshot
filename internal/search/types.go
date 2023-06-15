@@ -8,15 +8,12 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
-	"github.com/opentracing/opentracing-go" //nolint:staticcheck // Drop once we get rid of OpenTracing
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot" //nolint:staticcheck // Drop once we get rid of OpenTracing
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -187,12 +184,10 @@ type ZoektParameters struct {
 }
 
 // ToSearchOptions converts the parameters to options for the Zoekt search API.
-func (o *ZoektParameters) ToSearchOptions(ctx context.Context, logger log.Logger) *zoekt.SearchOptions {
-	shouldTrace, spanContext := getSpanContext(ctx, logger)
+func (o *ZoektParameters) ToSearchOptions(ctx context.Context) *zoekt.SearchOptions {
 	defaultTimeout := 20 * time.Second
 	searchOpts := &zoekt.SearchOptions{
-		Trace:             shouldTrace,
-		SpanContext:       spanContext,
+		Trace:             policy.ShouldTrace(ctx),
 		MaxWallTime:       defaultTimeout,
 		ChunkMatches:      true,
 		UseKeywordScoring: o.KeywordScoring,
@@ -202,6 +197,12 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context, logger log.Logger
 	// replica respectively.
 	searchOpts.ShardMaxMatchCount = 10_000
 	searchOpts.TotalMaxMatchCount = 100_000
+	if o.KeywordScoring {
+		// Keyword searches tends to match much more broadly than code searches, so we need to
+		// consider more candidates to ensure we don't miss highly-ranked documents
+		searchOpts.ShardMaxMatchCount *= 10
+		searchOpts.TotalMaxMatchCount *= 10
+	}
 
 	// Tell each zoekt replica to not send back more than limit results.
 	limit := int(o.FileMatchLimit)
@@ -229,7 +230,7 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context, logger log.Logger
 	if o.Features.Ranking {
 		// This enables our stream based ranking, where we wait a certain amount
 		// of time to collect results before ranking.
-		searchOpts.FlushWallTime = conf.SearchFlushWallTime()
+		searchOpts.FlushWallTime = conf.SearchFlushWallTime(o.KeywordScoring)
 
 		// This enables the use of document ranks in scoring, if they are available.
 		searchOpts.UseDocumentRanks = true
@@ -237,21 +238,6 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context, logger log.Logger
 	}
 
 	return searchOpts
-}
-
-func getSpanContext(ctx context.Context, logger log.Logger) (shouldTrace bool, spanContext map[string]string) {
-	if !policy.ShouldTrace(ctx) {
-		return false, nil
-	}
-
-	spanContext = make(map[string]string)
-	if span := opentracing.SpanFromContext(ctx); span != nil {
-		if err := ot.GetTracer(ctx).Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil { //nolint:staticcheck // Drop once we get rid of OpenTracing
-			logger.Warn("Error injecting span context into map", log.Error(err))
-			return true, nil
-		}
-	}
-	return true, spanContext
 }
 
 // SearcherParameters the inputs for a search fulfilled by the Searcher service

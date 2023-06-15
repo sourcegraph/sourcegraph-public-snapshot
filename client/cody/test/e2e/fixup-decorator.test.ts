@@ -30,10 +30,10 @@ test('decorations from un-applied Cody changes appear', async ({ page, sidebar }
     await page.keyboard.press('ArrowDown')
 
     // Open the command palette by clicking on the Cody Icon
-    await page.getByRole('button', { name: /Cody: Fixup.*/ }).click()
+    await page.getByRole('button', { name: 'Fixup (Experimental)' }).click()
 
     // Wait for the input box to appear
-    await page.getByPlaceholder('Ask Cody to edit your code, or use /chat to ask a question.').click()
+    await page.getByText('Ask Cody to edit your code, or use /chat to ask a question').click()
     // Type in the instruction for fixup
     await page.keyboard.type('replace hello with goodbye')
     // Press enter to submit the fixup
@@ -48,8 +48,11 @@ test('decorations from un-applied Cody changes appear', async ({ page, sidebar }
         .find(className => className.includes('TextEditorDecorationType'))
     expect(decorationClassName).toBeDefined()
 
-    // Edit where Cody planned to type
-    await page.keyboard.type('who needs titles?')
+    // Spray edits over where Cody planned to type to cause conflicts
+    for (const ch of 'who needs titles?') {
+        await page.keyboard.type(ch)
+        await page.keyboard.press('ArrowRight')
+    }
 
     // The decorations should change to conflict markers.
     await page.waitForSelector(`${DECORATION_SELECTOR}:not([class*="${decorationClassName}"])`)

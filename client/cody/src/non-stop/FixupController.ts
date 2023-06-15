@@ -1,45 +1,50 @@
 import * as vscode from 'vscode'
 
-import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
-
-import { computeDiff } from './diff'
+import { computeDiff, Diff } from './diff'
+import { FixupCodeLenses } from './FixupCodeLenses'
+import { ContentProvider } from './FixupContentStore'
 import { FixupDecorator } from './FixupDecorator'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
 import { FixupScheduler } from './FixupScheduler'
-import { FixupTask } from './FixupTask'
-import { FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
+import { FixupTask, taskID } from './FixupTask'
+import { FixupTypingUI } from './FixupTypingUI'
+import { FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged, IdleRecipeRunner } from './roles'
 import { TaskViewProvider, FixupTaskTreeItem } from './TaskViewProvider'
 import { CodyTaskState } from './utils'
 
-type taskID = string
-
 // This class acts as the factory for Fixup Tasks and handles communication between the Tree View and editor
-export class FixupController implements FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged {
+export class FixupController
+    implements FixupFileCollection, FixupIdleTaskRunner, FixupTaskFactory, FixupTextChanged, vscode.Disposable
+{
     private tasks = new Map<taskID, FixupTask>()
     private readonly taskViewProvider: TaskViewProvider
     private readonly files: FixupFileObserver
     private readonly editObserver: FixupDocumentEditObserver
     // TODO: Make the fixup scheduler use a cooldown timer with a longer delay
-    private readonly scheduler: FixupScheduler = new FixupScheduler(10)
-    private readonly decorator: FixupDecorator = new FixupDecorator()
+    private readonly scheduler = new FixupScheduler(10)
+    private readonly decorator = new FixupDecorator()
+    private readonly codelenses = new FixupCodeLenses(this)
+    private readonly contentStore = new ContentProvider()
+    private readonly typingUI = new FixupTypingUI(this)
+    public recipeRunner: IdleRecipeRunner | undefined
 
     private _disposables: vscode.Disposable[] = []
 
     constructor() {
         // Register commands
-        this._disposables.push(vscode.commands.registerCommand('cody.fixup.open', id => this.showThisFixup(id)))
         this._disposables.push(
-            vscode.commands.registerCommand('cody.fixup.apply', treeItem => this.applyFixup(treeItem))
+            vscode.workspace.registerTextDocumentContentProvider('cody-fixup', this.contentStore),
+            vscode.commands.registerCommand('cody.fixup.open', id => this.showThisFixup(id)),
+            vscode.commands.registerCommand('cody.fixup.apply', treeItem => this.applyFixups(treeItem)),
+            vscode.commands.registerCommand('cody.fixup.apply-by-file', treeItem => this.applyFixups(treeItem)),
+            vscode.commands.registerCommand('cody.fixup.apply-all', () => this.applyFixups()),
+            vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)),
+            vscode.commands.registerCommand('cody.fixup.codelens.apply', id => this.apply(id)),
+            vscode.commands.registerCommand('cody.fixup.codelens.diff', id => this.diff(id)),
+            vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => this.cancel(id))
         )
-        this._disposables.push(
-            vscode.commands.registerCommand('cody.fixup.apply-by-file', treeItem => this.applyDirFixups(treeItem))
-        )
-        this._disposables.push(
-            vscode.commands.registerCommand('cody.fixup.apply-all', treeItem => this.applyAllFixups(treeItem))
-        )
-        this._disposables.push(vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)))
         // Observe file renaming and deletion
         this.files = new FixupFileObserver()
         this._disposables.push(vscode.workspace.onDidRenameFiles(this.files.didRenameFiles.bind(this.files)))
@@ -52,6 +57,17 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         this.editObserver = new FixupDocumentEditObserver(this)
         this._disposables.push(
             vscode.workspace.onDidChangeTextDocument(this.editObserver.textDocumentChanged.bind(this.editObserver))
+        )
+    }
+
+    /**
+     * Register commands and views which are entrypoints to the feature. Call this if the feature
+     * is enabled.
+     */
+    public register(): void {
+        this._disposables.push(
+            vscode.window.registerTreeDataProvider('cody.fixup.tree.view', this.taskViewProvider),
+            vscode.commands.registerCommand('cody.non-stop.fixup', () => this.typingUI.show())
         )
     }
 
@@ -71,51 +87,15 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         return this.scheduler.scheduleIdle(callback)
     }
 
+    // FixupTaskFactory
+
     // Adds a new task to the list of tasks
     // Then mark it as pending before sending it to the tree view for tree item creation
-    public add(input: string, selection: ActiveTextEditorSelection): string | null {
-        const editor = vscode.window.activeTextEditor
-        if (!editor) {
-            void vscode.window.showInformationMessage('No active editor found...')
-            return null
-        }
-
-        // Create a task and then mark it as started
-        const fixupFile = this.files.forUri(editor.document.uri)
-        const task = new FixupTask(fixupFile, input, selection, editor)
-        task.start()
-        void vscode.commands.executeCommand('setContext', 'cody.fixup.running', true)
-        // Save states of the task
+    public createTask(documentUri: vscode.Uri, instruction: string, selectionRange: vscode.Range): void {
+        const fixupFile = this.files.forUri(documentUri)
+        const task = new FixupTask(fixupFile, instruction, selectionRange)
         this.tasks.set(task.id, task)
-        this.taskViewProvider.setTreeItem(task)
-        return task.id
-    }
-
-    // Replaces content of the file before mark the task as done
-    // Then update the tree view with the new task state
-    public stop(taskID: taskID): void {
-        const task = this.tasks.get(taskID)
-        if (!task) {
-            return
-        }
-        task.stop()
-        // Save states of the task
-        this.tasks.set(task.id, task)
-        this.taskViewProvider.setTreeItem(task)
-        void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
-        this.getFilesWithApplicableFixups()
-    }
-
-    private getFilesWithApplicableFixups(): string[] {
-        const filePaths: string[] = []
-        for (const task of this.tasks.values()) {
-            if (task.state === CodyTaskState.done) {
-                // TODO: Handle unnamed files; grep this controller for other instances of fsPath
-                filePaths.push(task.fixupFile.uri.fsPath)
-            }
-        }
-        void vscode.commands.executeCommand('setContext', 'cody.fixup.filesWithApplicableFixups', filePaths.length > 0)
-        return filePaths
+        this.setTaskState(task, CodyTaskState.waiting)
     }
 
     // Open fsPath at the selected line in editor on tree item click
@@ -129,98 +109,201 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         void vscode.window.showTextDocument(task.fixupFile.uri, { selection: task.selectionRange })
     }
 
-    // TODO: Add support for applying fixup
-    // Placeholder function for applying fixup
-    private applyFixup(treeItem?: FixupTaskTreeItem): void {
-        void vscode.window.showInformationMessage(`Applying fixup for task #${treeItem?.id} is not implemented yet...`)
-
-        if (treeItem?.contextValue === 'task' && treeItem?.id) {
-            const task = this.tasks.get(treeItem.id)
-            task?.apply()
+    // Apply single fixup from task ID. Public for testing.
+    public async apply(id: taskID): Promise<void> {
+        console.log(id + ' applying')
+        const task = this.tasks.get(id)
+        if (!task) {
+            console.error('cannot find task')
             return
         }
+        await this.applyTask(task)
     }
 
-    // TODO: Add support for applying fixup to all tasks in a directory
-    // Placeholder function for applying fixup to all tasks in a directory
-    private applyDirFixups(treeItem: FixupTaskTreeItem): void {
-        void vscode.window.showInformationMessage('Applying fixups to a directory is not implemented yet...')
+    // Tries to get a clean, up-to-date diff to apply. If the diff is not
+    // up-to-date, it is synchronously recomputed. If the diff is not clean,
+    // will return undefined. This may update the task with the newly computed
+    // diff.
+    private applicableDiffOrRespin(task: FixupTask, document: vscode.TextDocument): Diff | undefined {
+        if (!(task.state === CodyTaskState.ready || task.state === CodyTaskState.applying)) {
+            // We haven't received a response from the LLM yet, so there is
+            // no diff.
+            console.warn('no response cached from LLM so no applicable diff')
+            return undefined
+        }
+        const bufferText = document.getText(task.selectionRange)
+        let diff = task.diff
+        if (task.replacement !== undefined && bufferText !== diff?.bufferText) {
+            // The buffer changed since we last computed the diff.
+            task.diff = diff = computeDiff(task.original, task.replacement, bufferText, task.selectionRange.start)
+            this.didUpdateDiff(task)
+        }
+        if (!diff?.clean) {
+            this.scheduleRespin(task)
+            return undefined
+        }
+        return diff
+    }
 
-        if (treeItem?.contextValue === 'fsPath') {
+    // Schedule a re-spin for diffs with conflicts.
+    private scheduleRespin(task: FixupTask): void {
+        const MAX_SPIN_COUNT_PER_TASK = 5
+        if (task.spinCount >= MAX_SPIN_COUNT_PER_TASK) {
+            // TODO: Report an error message
+            // task.error = `Cody tried ${task.spinCount} times but failed to edit the file`
+            this.setTaskState(task, CodyTaskState.error)
+            return
+        }
+        void vscode.window.showInformationMessage('Cody will rewrite to include your changes')
+        this.setTaskState(task, CodyTaskState.waiting)
+        return undefined
+    }
+
+    private async applyTask(task: FixupTask): Promise<void> {
+        if (task.state !== CodyTaskState.ready) {
+            return
+        }
+        this.setTaskState(task, CodyTaskState.applying)
+
+        let editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
+        if (!editor) {
+            editor = await vscode.window.showTextDocument(task.fixupFile.uri)
+        }
+
+        const diff = this.applicableDiffOrRespin(task, editor.document)
+        if (!diff) {
+            return
+        }
+
+        editor.revealRange(task.selectionRange)
+        const editOk = await editor.edit(editBuilder => {
+            for (const edit of diff.edits) {
+                editBuilder.replace(
+                    new vscode.Range(
+                        new vscode.Position(edit.range.start.line, edit.range.start.character),
+                        new vscode.Position(edit.range.end.line, edit.range.end.character)
+                    ),
+                    edit.text
+                )
+            }
+        })
+
+        if (!editOk) {
+            // TODO: Try to recover, for example by respinning
+            void vscode.window.showWarningMessage('edit did not apply')
+            return
+        }
+
+        // TODO: is this the right transition for being all done?
+        // TODO: Consider keeping tasks around to resurrect them if the user
+        // hits undo.
+        // TODO: See if we can discard a FixupFile now.
+        this.setTaskState(task, CodyTaskState.fixed)
+    }
+
+    // Applying fixups from tree item click
+    private async applyFixups(treeItem?: FixupTaskTreeItem): Promise<void> {
+        // TODO: Add support for applying all fixups
+        // applying fixup to all tasks
+        if (!treeItem) {
+            void vscode.window.showInformationMessage(
+                'Applying all fixups is not implemented yet...',
+                String(this.tasks.size)
+            )
+            return
+        }
+        // applying fixup to a single task
+        if (treeItem.contextValue === 'task' && treeItem.id) {
+            await this.apply(treeItem.id)
+            return
+        }
+        // TODO: Add support for applying fixups from a directory
+        // applying fixup to all tasks in a directory
+        if (treeItem.contextValue === 'fsPath') {
             for (const task of this.tasks.values()) {
-                if (task.fixupFile.uri.fsPath === treeItem.fsPath && task.state === CodyTaskState.done) {
-                    task.apply()
+                void vscode.window.showInformationMessage(
+                    'Applying fixups from a directory is not implemented yet...',
+                    String(this.tasks.size)
+                )
+                if (task.fixupFile.uri.fsPath.endsWith(treeItem.fsPath)) {
+                    return
                 }
             }
+            return
         }
-
-        this.getFilesWithApplicableFixups()
+        console.error('cannot apply fixups')
     }
 
-    // TODO: Add support for applying all fixup
-    // Placeholder function for applying fixup
-    private applyAllFixups(treeItem?: FixupTaskTreeItem): void {
-        void vscode.window.showInformationMessage('Applying fixup for all tasks is not implemented yet...')
-
-        // Apply all fixups
-        for (const task of this.tasks.values()) {
-            if (task.state === CodyTaskState.done) {
-                task.apply()
-            }
+    private cancel(id: taskID): void {
+        const task = this.tasks.get(id)
+        if (!task) {
+            return
         }
-        // Clear task view after applying fixups
-        // TODO Catch errors
-        this.reset()
+        this.setTaskState(task, task.state === CodyTaskState.error ? CodyTaskState.error : CodyTaskState.fixed)
+        this.discard(task)
     }
 
-    // TODO: Add support for showing diff
-    // Placeholder function for showing diff
-    private showDiff(treeItem: FixupTaskTreeItem): string {
-        if (!treeItem?.id) {
-            void vscode.window.showInformationMessage('No fixup was found...')
-            return ''
-        }
-        const task = this.tasks.get(treeItem?.id)
-        // TODO: Implement diff view
-        void vscode.window.showInformationMessage(`Diff view for task #${task?.id} is not implemented yet...`)
-        return task?.selection.selectedText || ''
-    }
-
-    public getTaskView(): TaskViewProvider {
-        return this.taskViewProvider
+    private discard(task: FixupTask): void {
+        this.needsDiffUpdate_.delete(task)
+        this.codelenses.didDeleteTask(task)
+        this.contentStore.delete(task.id)
+        this.decorator.didCompleteTask(task)
+        this.tasks.delete(task.id)
+        this.taskViewProvider.removeTreeItemByID(task.id)
     }
 
     public getTasks(): FixupTask[] {
         return Array.from(this.tasks.values())
     }
 
-    private reset(): void {
-        this.tasks = new Map<taskID, FixupTask>()
-        this.taskViewProvider.reset()
-    }
-
-    /**
-     * Dispose the disposables
-     */
-    public dispose(): void {
-        this.decorator.dispose()
-        this.taskViewProvider.dispose()
-        for (const disposable of this._disposables) {
-            disposable.dispose()
+    // Called by the non-stop recipe to gather current state for the task.
+    public async getTaskRecipeData(id: string): Promise<
+        | {
+              instruction: string
+              fileName: string
+              precedingText: string
+              selectedText: string
+              followingText: string
+          }
+        | undefined
+    > {
+        const task = this.tasks.get(id)
+        if (!task) {
+            return undefined
         }
-        this._disposables = []
+        const document = await vscode.workspace.openTextDocument(task.fixupFile.uri)
+        const precedingText = document.getText(
+            new vscode.Range(
+                task.selectionRange.start.translate({ lineDelta: -Math.min(task.selectionRange.start.line, 50) }),
+                task.selectionRange.start
+            )
+        )
+        const selectedText = document.getText(task.selectionRange)
+        // TODO: original text should be a property of the diff so that we
+        // can apply diffs even while re-spinning
+        task.original = selectedText
+        const followingText = document.getText(
+            new vscode.Range(task.selectionRange.end, task.selectionRange.end.translate({ lineDelta: 50 }))
+        )
+
+        return {
+            instruction: task.instruction,
+            fileName: task.fixupFile.uri.fsPath,
+            precedingText,
+            selectedText,
+            followingText,
+        }
     }
 
-    public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
+    public async didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
         const task = this.tasks.get(id)
         if (!task) {
             return Promise.resolve()
         }
-        if (task.state !== CodyTaskState.pending) {
+        if (task.state !== CodyTaskState.asking) {
             // TODO: Update this when we re-spin tasks with conflicts so that
             // we store the new text but can also display something reasonably
             // stable in the editor
-            task.state = CodyTaskState.error
             return Promise.resolve()
         }
 
@@ -231,10 +314,9 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             case 'complete':
                 task.inProgressReplacement = undefined
                 task.replacement = text
-                task.state = CodyTaskState.done
+                this.setTaskState(task, CodyTaskState.ready)
                 break
         }
-
         this.textDidChange(task)
         return Promise.resolve()
     }
@@ -242,12 +324,23 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
     // Handles changes to the source document in the fixup selection, or the
     // replacement text generated by Cody.
     public textDidChange(task: FixupTask): void {
+        if (task.state === CodyTaskState.fixed) {
+            this.needsDiffUpdate_.delete(task)
+        }
         if (this.needsDiffUpdate_.size === 0) {
             void this.scheduler.scheduleIdle(() => this.updateDiffs())
         }
         if (!this.needsDiffUpdate_.has(task)) {
             this.needsDiffUpdate_.add(task)
         }
+    }
+
+    // Handles when the range associated with a fixup task changes.
+    public rangeDidChange(task: FixupTask): void {
+        this.codelenses.didUpdateTask(task)
+        // We don't notify the decorator about this range change; vscode
+        // updates any text decorations and we can recompute them, lazily,
+        // if the diff is dirtied.
     }
 
     // Tasks where the text of the buffer, or the text provided by Cody, has
@@ -293,7 +386,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         const deadlineMsec = Date.now() + 500
 
         while (this.needsDiffUpdate_.size && Date.now() < deadlineMsec) {
-            const task = this.needsDiffUpdate_.keys().next().value
+            const task = this.needsDiffUpdate_.keys().next().value as FixupTask
             this.needsDiffUpdate_.delete(task)
             const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
             if (!editor) {
@@ -309,11 +402,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
                 continue
             }
             const bufferText = editor.document.getText(task.selectionRange)
-            // TODO: The selection range needs to be updated for edits.
-            // Switch to using a gross line-based range and updating it in the
-            // FixupDocumentEditObserver.
-            const diff = computeDiff(task.original, botText, bufferText, task.selectionRange.start)
-            task.diff = diff
+            task.diff = computeDiff(task.original, botText, bufferText, task.selectionRange.start)
             this.didUpdateDiff(task)
         }
 
@@ -336,5 +425,109 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             // a re-spin or notify failure
             return
         }
+    }
+
+    // Callback function for the Fixup Task Tree View item Diff button
+    private async showDiff(treeItem: FixupTaskTreeItem): Promise<void> {
+        if (!treeItem?.id) {
+            return
+        }
+        await this.diff(treeItem.id)
+    }
+
+    // Show diff between before and after edits
+    private async diff(id: taskID): Promise<void> {
+        const task = this.tasks.get(id)
+        if (!task) {
+            return
+        }
+        // Get an up-to-date diff
+        const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
+        if (!editor) {
+            return
+        }
+        const diff = this.applicableDiffOrRespin(task, editor.document)
+        if (!diff || diff.mergedText === undefined) {
+            return
+        }
+        // show diff view between the current document and replacement
+        // Add replacement content to the temp document
+        await this.contentStore.set(task.id, task.fixupFile.uri)
+        const tempDocUri = vscode.Uri.parse(`cody-fixup:${task.fixupFile.uri.fsPath}#${task.id}`)
+        const doc = await vscode.workspace.openTextDocument(tempDocUri)
+        const edit = new vscode.WorkspaceEdit()
+        const range = task.selectionRange
+        edit.replace(tempDocUri, range, diff.mergedText)
+        await vscode.workspace.applyEdit(edit)
+        await doc.save()
+
+        // Show diff between current document and replacement content
+        await vscode.commands.executeCommand(
+            'vscode.diff',
+            task.fixupFile.uri,
+            tempDocUri,
+            'Cody Fixup Diff View - ' + task.id,
+            {
+                preview: true,
+                preserveFocus: false,
+                selection: range,
+                label: 'Cody Fixup Diff View',
+                description: 'Cody Fixup Diff View: ' + task.fixupFile.uri.fsPath,
+            }
+        )
+    }
+
+    private setTaskState(task: FixupTask, state: CodyTaskState): void {
+        const oldState = task.state
+        if (oldState === state) {
+            // Not a transition--nothing to do.
+            return
+        }
+        console.log(task.id, 'changing state from', oldState, 'to', state)
+        task.state = state
+
+        // TODO: These state transition actions were moved from FixupTask, but
+        // it is wrong for a single task to toggle the cody.fixup.running state.
+        // There's more than one task.
+        if (oldState !== CodyTaskState.asking && task.state === CodyTaskState.asking) {
+            task.spinCount++
+            void vscode.commands.executeCommand('setContext', 'cody.fixup.running', true)
+        } else if (oldState === CodyTaskState.asking && task.state !== CodyTaskState.asking) {
+            void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
+        }
+
+        if (task.state === CodyTaskState.waiting && this.recipeRunner) {
+            // TODO: Move this to the scheduler, have one outstanding callback
+            // at a time, and pick the most advantageous recipe to execute.
+            this.recipeRunner.onIdle(() => {
+                this.setTaskState(task, CodyTaskState.asking)
+                void this.recipeRunner?.runIdleRecipe('non-stop', task.id)
+            })
+        }
+
+        if (task.state === CodyTaskState.fixed) {
+            this.discard(task)
+            return
+        }
+        // Save states of the task
+        this.codelenses.didUpdateTask(task)
+        this.taskViewProvider.setTreeItem(task)
+        return
+    }
+
+    private reset(): void {
+        this.tasks = new Map<taskID, FixupTask>()
+        this.taskViewProvider.reset()
+    }
+
+    public dispose(): void {
+        this.reset()
+        this.codelenses.dispose()
+        this.decorator.dispose()
+        this.taskViewProvider.dispose()
+        for (const disposable of this._disposables) {
+            disposable.dispose()
+        }
+        this._disposables = []
     }
 }

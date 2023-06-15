@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 
-import { Transcript, TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { Transcript, TranscriptJSON, TranscriptJSONScope } from '@sourcegraph/cody-shared/src/chat/transcript'
 import {
     useClient,
     CodyClient,
@@ -8,9 +8,12 @@ import {
     CodyClientConfig,
     CodyClientEvent,
 } from '@sourcegraph/cody-shared/src/chat/useClient'
+import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import { CodeMirrorEditor } from './components/CodeMirrorEditor'
+import { eventLogger } from '../tracking/eventLogger'
+import { EventName } from '../util/constants'
+
 import { useIsCodyEnabled, IsCodyEnabled, notEnabled } from './useIsCodyEnabled'
 
 export type { CodyClientScope } from '@sourcegraph/cody-shared/src/chat/useClient'
@@ -29,7 +32,9 @@ export interface CodyChatStore
         | 'scope'
         | 'setScope'
         | 'setEditorScope'
-        | 'legacyChatContext'
+        | 'toggleIncludeInferredRepository'
+        | 'toggleIncludeInferredFile'
+        | 'abortMessageInProgress'
     > {
     readonly transcriptHistory: TranscriptJSON[]
     readonly loaded: boolean
@@ -48,16 +53,23 @@ export const codyChatStoreMock: CodyChatStore = {
     editMessage: () => Promise.resolve(null),
     initializeNewChat: () => null,
     executeRecipe: () => Promise.resolve(null),
-    scope: { type: 'Automatic', repositories: [], editor: new CodeMirrorEditor() },
+    scope: {
+        repositories: [],
+        editor: new NoopEditor(),
+        includeInferredRepository: true,
+        includeInferredFile: true,
+    },
     setScope: () => {},
     setEditorScope: () => {},
-    legacyChatContext: {},
     transcriptHistory: [],
     loaded: true,
     isCodyEnabled: notEnabled,
     clearHistory: () => {},
     deleteHistoryItem: () => {},
     loadTranscriptFromHistory: () => Promise.resolve(),
+    toggleIncludeInferredRepository: () => {},
+    toggleIncludeInferredFile: () => {},
+    abortMessageInProgress: () => {},
 }
 
 interface CodyChatProps {
@@ -96,10 +108,12 @@ export const useCodyChat = ({
         messageInProgress,
         chatMessages,
         scope,
-        setScope,
+        setScope: setScopeInternal,
         setEditorScope,
         setTranscript,
-        legacyChatContext,
+        abortMessageInProgress,
+        toggleIncludeInferredRepository: toggleIncludeInferredRepositoryInternal,
+        toggleIncludeInferredFile: toggleIncludeInferredFileInternal,
         initializeNewChat: initializeNewChatInternal,
         submitMessage: submitMessageInternal,
         editMessage: editMessageInternal,
@@ -108,7 +122,7 @@ export const useCodyChat = ({
     } = useClient({
         config: initialConfig || {
             serverEndpoint: window.location.origin,
-            useContext: 'embeddings',
+            useContext: 'unified',
             accessToken: null,
             customHeaders: window.context.xhrHeaders,
             debugEnable: false,
@@ -116,7 +130,6 @@ export const useCodyChat = ({
         },
         scope: initialScope,
         onEvent,
-        web: true,
     })
 
     const loadTranscriptFromHistory = useCallback(
@@ -128,15 +141,21 @@ export const useCodyChat = ({
             const transcriptToLoad = transcriptHistory.find(item => item.id === id)
             if (transcriptToLoad) {
                 await setTranscript(Transcript.fromJSON(transcriptToLoad))
+
+                if (transcriptToLoad.scope) {
+                    setScopeInternal({ ...scope, ...transcriptToLoad.scope })
+                }
             }
         },
-        [transcriptHistory, transcript?.id, setTranscript]
+        [transcriptHistory, transcript?.id, setTranscript, setScopeInternal, scope]
     )
 
     const clearHistory = useCallback(() => {
         if (client.config.needsEmailVerification) {
             return
         }
+
+        eventLogger.log(EventName.CODY_CHAT_HISTORY_CLEARED)
 
         const newTranscript = initializeNewChatInternal()
         if (newTranscript) {
@@ -151,6 +170,8 @@ export const useCodyChat = ({
             if (client.config.needsEmailVerification) {
                 return
             }
+
+            eventLogger.log(EventName.CODY_CHAT_HISTORY_ITEM_DELETED)
 
             setTranscriptHistoryState((history: TranscriptJSON[]) => {
                 const updatedHistory = [...history.filter(transcript => transcript.id !== id)]
@@ -180,8 +201,8 @@ export const useCodyChat = ({
     )
 
     const updateTranscriptInHistory = useCallback(
-        async (transcript: Transcript) => {
-            const transcriptJSON = await transcript.toJSON()
+        async (transcript: Transcript, transcriptScope?: TranscriptJSONScope) => {
+            const transcriptJSON = await transcript.toJSON(transcriptScope || scope)
 
             setTranscriptHistoryState((history: TranscriptJSON[]) => {
                 const index = history.findIndex(item => item.id === transcript.id)
@@ -192,22 +213,23 @@ export const useCodyChat = ({
                 return [...history]
             })
         },
-        [setTranscriptHistoryState]
+        [setTranscriptHistoryState, scope]
     )
 
     const pushTranscriptToHistory = useCallback(
-        async (transcript: Transcript) => {
-            const transcriptJSON = await transcript.toJSON()
+        async (transcript: Transcript, transcriptScope?: TranscriptJSONScope) => {
+            const transcriptJSON = await transcript.toJSON(transcriptScope || scope)
 
             setTranscriptHistoryState((history: TranscriptJSON[] = []) =>
                 sortSliceTranscriptHistory([transcriptJSON, ...history])
             )
         },
-        [setTranscriptHistoryState]
+        [setTranscriptHistoryState, scope]
     )
 
     const submitMessage = useCallback<typeof submitMessageInternal>(
         async (humanInputText, scope): Promise<Transcript | null> => {
+            eventLogger.log(EventName.CODY_CHAT_SUBMIT)
             const transcript = await submitMessageInternal(humanInputText, scope)
 
             if (transcript) {
@@ -220,6 +242,7 @@ export const useCodyChat = ({
     )
     const editMessage = useCallback<typeof editMessageInternal>(
         async (humanInputText, messageId?, scope?): Promise<Transcript | null> => {
+            eventLogger.log(EventName.CODY_CHAT_EDIT)
             const transcript = await editMessageInternal(humanInputText, messageId, scope)
 
             if (transcript) {
@@ -232,6 +255,7 @@ export const useCodyChat = ({
     )
 
     const initializeNewChat = useCallback((): Transcript | null => {
+        eventLogger.log(EventName.CODY_CHAT_INITIALIZED)
         const transcript = initializeNewChatInternal()
 
         if (transcript) {
@@ -243,6 +267,8 @@ export const useCodyChat = ({
 
     const executeRecipe = useCallback<typeof executeRecipeInternal>(
         async (recipeId, options): Promise<Transcript | null> => {
+            eventLogger.log(EventName.CODY_CHAT_RECIPE_EXECUTED, { recipeId })
+
             const transcript = await executeRecipeInternal(recipeId, options)
 
             if (transcript) {
@@ -266,7 +292,13 @@ export const useCodyChat = ({
 
             if (autoLoadTranscriptFromHistory) {
                 if (history.length > 0) {
-                    setTranscript(Transcript.fromJSON(history[0])).catch(() => null)
+                    const transcriptToLoad = history[0]
+
+                    setTranscript(Transcript.fromJSON(transcriptToLoad)).catch(() => null)
+
+                    if (transcriptToLoad.scope) {
+                        setScopeInternal({ ...scope, ...transcriptToLoad.scope })
+                    }
                 } else {
                     const newTranscript = new Transcript()
                     history.push({ interactions: [], id: newTranscript.id, lastInteractionTimestamp: newTranscript.id })
@@ -290,7 +322,54 @@ export const useCodyChat = ({
         setTranscriptHistoryState,
         loadTranscriptFromHistory,
         initializeNewChat,
+        scope,
+        setScopeInternal,
     ])
+
+    const setScope = useCallback<CodyClient['setScope']>(
+        scope => {
+            setScopeInternal(scope)
+
+            if (transcript) {
+                updateTranscriptInHistory(transcript, scope).catch(() => null)
+            }
+        },
+        [setScopeInternal, transcript, updateTranscriptInHistory]
+    )
+
+    const toggleIncludeInferredRepository = useCallback<CodyClient['toggleIncludeInferredRepository']>(() => {
+        eventLogger.log(
+            scope.includeInferredRepository
+                ? EventName.CODY_CHAT_SCOPE_INFERRED_REPO_DISABLED
+                : EventName.CODY_CHAT_SCOPE_INFERRED_REPO_ENABLED
+        )
+
+        toggleIncludeInferredRepositoryInternal()
+
+        if (transcript) {
+            updateTranscriptInHistory(transcript, {
+                ...scope,
+                includeInferredRepository: !scope.includeInferredRepository,
+            }).catch(() => null)
+        }
+    }, [transcript, updateTranscriptInHistory, scope, toggleIncludeInferredRepositoryInternal])
+
+    const toggleIncludeInferredFile = useCallback<CodyClient['toggleIncludeInferredRepository']>(() => {
+        eventLogger.log(
+            scope.includeInferredRepository
+                ? EventName.CODY_CHAT_SCOPE_INFERRED_FILE_DISABLED
+                : EventName.CODY_CHAT_SCOPE_INFERRED_FILE_ENABLED
+        )
+
+        toggleIncludeInferredFileInternal()
+
+        if (transcript) {
+            updateTranscriptInHistory(transcript, {
+                ...scope,
+                includeInferredFile: !scope.includeInferredFile,
+            }).catch(() => null)
+        }
+    }, [transcript, updateTranscriptInHistory, scope, toggleIncludeInferredFileInternal])
 
     return {
         loaded,
@@ -305,12 +384,14 @@ export const useCodyChat = ({
         initializeNewChat,
         clearHistory,
         deleteHistoryItem,
+        loadTranscriptFromHistory,
         executeRecipe,
         scope,
         setScope,
         setEditorScope,
-        loadTranscriptFromHistory,
-        legacyChatContext,
+        toggleIncludeInferredRepository,
+        toggleIncludeInferredFile,
+        abortMessageInProgress,
     }
 }
 

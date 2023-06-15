@@ -38,9 +38,16 @@ public class SettingsConfigurable implements Configurable {
   public boolean isModified() {
     return !mySettingsComponent.getInstanceType().equals(ConfigUtil.getInstanceType(project))
         || !mySettingsComponent.getEnterpriseUrl().equals(ConfigUtil.getEnterpriseUrl(project))
-        || !(mySettingsComponent.getAccessToken().equals(ConfigUtil.getAccessToken(project))
-            || mySettingsComponent.getAccessToken().isEmpty()
-                && ConfigUtil.getAccessToken(project) == null)
+        || !(mySettingsComponent
+                .getDotComAccessToken()
+                .equals(ConfigUtil.getDotComAccessToken(project))
+            || mySettingsComponent.getDotComAccessToken().isEmpty()
+                && ConfigUtil.getDotComAccessToken(project) == null)
+        || !(mySettingsComponent
+                .getEnterpriseAccessToken()
+                .equals(ConfigUtil.getEnterpriseAccessToken(project))
+            || mySettingsComponent.getEnterpriseAccessToken().isEmpty()
+                && ConfigUtil.getEnterpriseAccessToken(project) == null)
         || !mySettingsComponent
             .getCustomRequestHeaders()
             .equals(ConfigUtil.getCustomRequestHeaders(project))
@@ -51,7 +58,9 @@ public class SettingsConfigurable implements Configurable {
             .getRemoteUrlReplacements()
             .equals(ConfigUtil.getRemoteUrlReplacements(project))
         || mySettingsComponent.isUrlNotificationDismissed()
-            != ConfigUtil.isUrlNotificationDismissed();
+            != ConfigUtil.isUrlNotificationDismissed()
+        || mySettingsComponent.areCodyCompletionsEnabled()
+            != ConfigUtil.areCodyCompletionsEnabled();
   }
 
   @Override
@@ -64,13 +73,21 @@ public class SettingsConfigurable implements Configurable {
     SourcegraphProjectService pSettings = SourcegraphService.getInstance(project);
 
     String oldUrl = ConfigUtil.getSourcegraphUrl(project);
-    String oldAccessToken = ConfigUtil.getAccessToken(project);
+    String oldDotComAccessToken = ConfigUtil.getDotComAccessToken(project);
+    String oldEnterpriseAccessToken = ConfigUtil.getEnterpriseAccessToken(project);
     String newUrl = mySettingsComponent.getEnterpriseUrl();
-    String newAccessToken = mySettingsComponent.getAccessToken();
+    String newDotComAccessToken = mySettingsComponent.getDotComAccessToken();
+    String newEnterpriseAccessToken = mySettingsComponent.getEnterpriseAccessToken();
     String newCustomRequestHeaders = mySettingsComponent.getCustomRequestHeaders();
     PluginSettingChangeContext context =
         new PluginSettingChangeContext(
-            oldUrl, oldAccessToken, newUrl, newAccessToken, newCustomRequestHeaders);
+            oldUrl,
+            oldDotComAccessToken,
+            oldEnterpriseAccessToken,
+            newUrl,
+            newDotComAccessToken,
+            newEnterpriseAccessToken,
+            newCustomRequestHeaders);
 
     publisher.beforeAction(context);
 
@@ -84,10 +101,15 @@ public class SettingsConfigurable implements Configurable {
     } else {
       aSettings.url = newUrl;
     }
-    if (pSettings.accessToken != null) {
-      pSettings.accessToken = newAccessToken;
+    if (pSettings.dotComAccessToken != null) {
+      pSettings.dotComAccessToken = newDotComAccessToken;
     } else {
-      aSettings.accessToken = newAccessToken;
+      aSettings.dotComAccessToken = newDotComAccessToken;
+    }
+    if (pSettings.enterpriseAccessToken != null) {
+      pSettings.enterpriseAccessToken = newEnterpriseAccessToken;
+    } else {
+      aSettings.enterpriseAccessToken = newEnterpriseAccessToken;
     }
     if (pSettings.customRequestHeaders != null) {
       pSettings.customRequestHeaders = mySettingsComponent.getCustomRequestHeaders();
@@ -105,6 +127,7 @@ public class SettingsConfigurable implements Configurable {
       aSettings.remoteUrlReplacements = mySettingsComponent.getRemoteUrlReplacements();
     }
     aSettings.isUrlNotificationDismissed = mySettingsComponent.isUrlNotificationDismissed();
+    aSettings.areCodyCompletionsEnabled = mySettingsComponent.areCodyCompletionsEnabled();
 
     publisher.afterAction(context);
   }
@@ -113,14 +136,18 @@ public class SettingsConfigurable implements Configurable {
   public void reset() {
     mySettingsComponent.setInstanceType(ConfigUtil.getInstanceType(project));
     mySettingsComponent.setEnterpriseUrl(ConfigUtil.getEnterpriseUrl(project));
-    String accessToken = ConfigUtil.getAccessToken(project);
-    mySettingsComponent.setAccessToken(accessToken != null ? accessToken : "");
+    String dotComAccessToken = ConfigUtil.getDotComAccessToken(project);
+    mySettingsComponent.setDotComAccessToken(dotComAccessToken != null ? dotComAccessToken : "");
+    String enterpriseAccessToken = ConfigUtil.getEnterpriseAccessToken(project);
+    mySettingsComponent.setEnterpriseAccessToken(
+        enterpriseAccessToken != null ? enterpriseAccessToken : "");
     mySettingsComponent.setCustomRequestHeaders(ConfigUtil.getCustomRequestHeaders(project));
     String defaultBranchName = ConfigUtil.getDefaultBranchName(project);
     mySettingsComponent.setDefaultBranchName(defaultBranchName);
     String remoteUrlReplacements = ConfigUtil.getRemoteUrlReplacements(project);
     mySettingsComponent.setRemoteUrlReplacements(remoteUrlReplacements);
     mySettingsComponent.setUrlNotificationDismissedEnabled(ConfigUtil.isUrlNotificationDismissed());
+    mySettingsComponent.setCodyCompletionsEnabled(ConfigUtil.areCodyCompletionsEnabled());
   }
 
   @Override

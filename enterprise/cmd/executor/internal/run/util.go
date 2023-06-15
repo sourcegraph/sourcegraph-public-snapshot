@@ -18,6 +18,7 @@ import (
 	apiworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
+	executorutil "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/util"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -85,19 +86,13 @@ func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOpt
 }
 
 func workerOptions(c *config.Config) workerutil.WorkerOptions {
-	var identity string
-	if len(c.QueueNames) > 0 {
-		identity = strings.Replace(c.QueueNamesStr, ",", "_", -1)
-	} else {
-		identity = c.QueueName
-	}
-
+	queueStr := executorutil.FormatQueueNamesForMetrics(c.QueueName, c.QueueNames)
 	return workerutil.WorkerOptions{
-		Name:                 fmt.Sprintf("executor_%s_worker", identity),
+		Name:                 fmt.Sprintf("executor_%s_worker", queueStr),
 		NumHandlers:          c.MaximumNumJobs,
 		Interval:             c.QueuePollInterval,
 		HeartbeatInterval:    5 * time.Second,
-		Metrics:              makeWorkerMetrics(identity),
+		Metrics:              makeWorkerMetrics(queueStr),
 		NumTotalJobs:         c.NumTotalJobs,
 		MaxActiveTime:        c.MaxActiveTime,
 		WorkerHostname:       c.WorkerHostname,
@@ -214,6 +209,11 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 		Enabled:    config.IsKubernetes(),
 		ConfigPath: c.KubernetesConfigPath,
 		ContainerOptions: command.KubernetesContainerOptions{
+			CloneOptions: command.KubernetesCloneOptions{
+				ExecutorName:   c.WorkerHostname,
+				EndpointURL:    c.FrontendURL,
+				GitServicePath: "/.executors/git",
+			},
 			NodeName:     c.KubernetesNodeName,
 			NodeSelector: nodeSelector,
 			RequiredNodeAffinity: command.KubernetesNodeAffinity{
@@ -233,6 +233,14 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 				RunAsUser:  runAsUser,
 				RunAsGroup: runAsGroup,
 				FSGroup:    fsGroup,
+			},
+			SingleJobPod: c.KubernetesSingleJobPod,
+			StepImage:    c.KubernetesSingleJobStepImage,
+			JobVolume: command.KubernetesJobVolume{
+				Type:    command.KubernetesVolumeType(c.KubernetesJobVolumeType),
+				Size:    resource.MustParse(c.KubernetesJobVolumeSize),
+				Volumes: c.KubernetesAdditionalJobVolumes,
+				Mounts:  c.KubernetesAdditionalJobVolumeMounts,
 			},
 		},
 	}

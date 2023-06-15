@@ -82,6 +82,10 @@ extend type Query {
         Filter by the name of the repository.
         """
         query: String
+        """
+        Filter by the state of the job.
+        """
+        state: String
     ): RepoEmbeddingJobsConnection!
 }
 
@@ -91,10 +95,6 @@ extend type Mutation {
     If force is set to true, then the repo will be re-embedded even if there's already an up-to-date embeddings index.
     """
     scheduleRepositoriesForEmbedding(repoNames: [String!]!, force: Boolean): EmptyResponse!
-    """
-    Experimental: Schedules a job to create an embedding index used for context detection. The index is used to determine wheter a query requires additional context.
-    """
-    scheduleContextDetectionForEmbedding: EmptyResponse!
     """
     Experimental: Cancels the embedding job with the given ID. The job must exist and be in either 'processing' or 'queued' state.
     """
@@ -217,6 +217,35 @@ type RepoEmbeddingJob implements Node {
     The revision at which the repo was embedded.
     """
     revision: GitCommit
+
+    """
+    Statistics about the embeddings index job.
+    This will be updated periodically while the embeddings job is processing.
+    """
+    stats: RepoEmbeddingsStats!
+}
+
+"""
+Statistics about an embeddings index job.
+This will be updated periodically while the embeddings job is processing.
+"""
+type RepoEmbeddingsStats {
+    """
+    The number of files scheduled to be embedded.
+    """
+    filesScheduled: Int!
+
+    """
+    The number of files we generated embeddings for.
+    This will be updated periodically while the embeddings job is processing.
+    """
+    filesEmbedded: Int!
+
+    """
+    The number of files skipped.
+    This will be updated periodically while the embeddings job is processing.
+    """
+    filesSkipped: Int!
 }
 
 """
@@ -235,4 +264,36 @@ type RepoEmbeddingJobsConnection implements Connection {
     Pagination information.
     """
     pageInfo: ConnectionPageInfo!
+}
+
+extend type Repository {
+    """
+    Returns all embedding jobs for the repo.
+    """
+    embeddingJobs(
+        """
+        Number of jobs returned. Up to 100 jobs are returned by default.
+        """
+        first: Int
+        """
+        The number of nodes to return starting from the end (latest).
+        Note: Use either last or first (see above) in the query. Setting both will
+        return an error.
+        """
+        last: Int
+        """
+        Opaque pagination cursor to be used when paginating forwards that may be also used
+        in conjunction with "first" to return the first N nodes.
+        """
+        after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards that may be
+        also used in conjunction with "last" to return the last N nodes.
+        """
+        before: String
+        """
+        Filter by the state of the job.
+        """
+        state: String
+    ): RepoEmbeddingJobsConnection!
 }

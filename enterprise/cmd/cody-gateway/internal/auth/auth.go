@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/response"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -16,7 +16,7 @@ import (
 type Authenticator struct {
 	Logger      log.Logger
 	EventLogger events.Logger
-	Sources     actor.Sources
+	Sources     *actor.Sources
 }
 
 func (a *Authenticator) Middleware(next http.Handler) http.Handler {

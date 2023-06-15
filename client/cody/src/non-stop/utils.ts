@@ -1,53 +1,63 @@
-// TODO: Refine these states.
-// - "done" means (presumably?) the LLM is done, not the whole task is done,
-//   so use a clearer name
-// - tasks can be both "done" (LLM turns completed) and turning if we are
-//   running the task again
-// - these states don't capture whether the diff (probably) applies cleanly
 export enum CodyTaskState {
     'idle' = 0,
-    'queued' = 1,
-    'pending' = 2,
-    'done' = 3,
+    'waiting' = 1,
+    'asking' = 2,
+    'ready' = 3,
     'applying' = 4,
-    'error' = 5,
+    'fixed' = 5,
+    'error' = 6,
 }
 
-export type CodyTaskIcon = {
+export type CodyTaskList = {
     [key in CodyTaskState]: {
         id: string
         icon: string
+        description: string
     }
 }
+
 /**
  * Icon for each task state
  */
-export const fixupTaskIcon: CodyTaskIcon = {
+export const fixupTaskList: CodyTaskList = {
     [CodyTaskState.idle]: {
         id: 'idle',
-        icon: 'smiley',
+        icon: 'clock',
+        description: 'Initial state',
     },
-    [CodyTaskState.pending]: {
-        id: 'pending',
+    [CodyTaskState.waiting]: {
+        id: 'waiting',
+        // TODO: Per Figma, this should be a Cody wink
+        icon: 'debug-pause',
+        description: 'The task is waiting to be processed by Cody',
+    },
+    [CodyTaskState.asking]: {
+        id: 'asking',
         icon: 'sync~spin',
+        description: 'Cody is preparing a response',
     },
-    [CodyTaskState.done]: {
-        id: 'done',
-        icon: 'issue-closed',
+    [CodyTaskState.ready]: {
+        id: 'ready',
+        icon: 'pencil',
+        description: 'Cody has responsed with suggestions and is ready to apply them',
+    },
+    [CodyTaskState.applying]: {
+        id: 'applying',
+        icon: 'pencil',
+        description: 'The fixup is being applied to the document',
+    },
+    [CodyTaskState.fixed]: {
+        id: 'fixed',
+        icon: 'pass-filled',
+        description: 'Suggestions from Cody have been applied or discarded',
     },
     [CodyTaskState.error]: {
         id: 'error',
         icon: 'stop',
-    },
-    [CodyTaskState.queued]: {
-        id: 'queue',
-        icon: 'clock',
-    },
-    [CodyTaskState.applying]: {
-        id: 'applying',
-        icon: 'sync~spin',
+        description: 'The task failed',
     },
 }
+
 /**
  * Get the last part of the file path after the last slash
  */

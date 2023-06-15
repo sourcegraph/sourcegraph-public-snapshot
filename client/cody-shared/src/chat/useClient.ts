@@ -4,16 +4,15 @@ import { CodebaseContext } from '../codebase-context'
 import { ConfigurationWithAccessToken } from '../configuration'
 import { Editor, NoopEditor } from '../editor'
 import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselectedOptions'
-import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
+import { UnifiedContextFetcherClient } from '../unified-context/client'
 import { isError } from '../utils'
 
 import { BotResponseMultiplexer } from './bot-response-multiplexer'
 import { ChatClient } from './chat'
-import { ChatContextStatus } from './context'
-import { getPreamble } from './preamble'
+import { getMultiRepoPreamble } from './preamble'
 import { getRecipe } from './recipes/browser-recipes'
 import { RecipeID } from './recipes/recipe'
 import { Transcript } from './transcript'
@@ -26,9 +25,15 @@ export type CodyClientConfig = Pick<
 > & { debugEnable: boolean; needsEmailVerification: boolean }
 
 export interface CodyClientScope {
-    type: 'Automatic' | 'None' | 'Repositories'
+    includeInferredRepository: boolean
+    includeInferredFile: boolean
     repositories: string[]
     editor: Editor
+}
+
+export interface CodyClientScopePartial {
+    repositories?: string[]
+    editor?: Editor
 }
 
 export type CodyClientEvent = 'submit' | 'initializedNewChat' | 'error'
@@ -40,7 +45,6 @@ export interface CodyClient {
     readonly isMessageInProgress: boolean
     readonly scope: CodyClientScope
     readonly config: CodyClientConfig
-    readonly legacyChatContext: ChatContextStatus
     setTranscript: (transcript: Transcript) => Promise<void>
     setScope: (scope: CodyClientScope) => void
     setConfig: (config: CodyClientConfig) => void
@@ -56,10 +60,15 @@ export interface CodyClient {
         options?: {
             prefilledOptions?: PrefilledOptions
             humanChatInput?: string
-            scope?: CodyClientScope
+            scope?: {
+                editor?: Editor
+            }
         }
     ) => Promise<Transcript | null>
     setEditorScope: (editor: Editor) => void
+    toggleIncludeInferredRepository: () => void
+    toggleIncludeInferredFile: () => void
+    abortMessageInProgress: () => void
 }
 
 interface CodyClientProps {
@@ -67,23 +76,23 @@ interface CodyClientProps {
     scope?: CodyClientScope
     initialTranscript?: Transcript | null
     onEvent?: (event: CodyClientEvent) => void
-    web?: boolean
 }
 
 export const useClient = ({
     config: initialConfig,
     initialTranscript = null,
     scope: initialScope = {
-        type: 'None',
+        includeInferredRepository: true,
+        includeInferredFile: true,
         repositories: [],
         editor: new NoopEditor(),
     },
     onEvent,
-    web = false,
 }: CodyClientProps): CodyClient => {
     const [transcript, setTranscriptState] = useState<Transcript | null>(initialTranscript)
     const [chatMessages, setChatMessagesState] = useState<ChatMessage[]>([])
     const [isMessageInProgress, setIsMessageInProgressState] = useState<boolean>(false)
+    const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
     const messageInProgress: ChatMessage | null = useMemo(() => {
         if (isMessageInProgress) {
@@ -96,6 +105,18 @@ export const useClient = ({
 
         return null
     }, [chatMessages, isMessageInProgress])
+
+    const abortMessageInProgress = useCallback(() => {
+        abortMessageInProgressInternal()
+
+        transcript
+            ?.toChatPromise()
+            .then(messages => {
+                setChatMessagesState(messages)
+                setIsMessageInProgressState(false)
+            })
+            .catch(error => console.error(`aborting in progress message failed: ${error}`))
+    }, [abortMessageInProgressInternal, transcript, setChatMessagesState, setIsMessageInProgressState])
 
     const setTranscript = useCallback(async (transcript: Transcript): Promise<void> => {
         const messages = await transcript.toChatPromise()
@@ -130,30 +151,69 @@ export const useClient = ({
     }, [config])
 
     const [scope, setScopeState] = useState<CodyClientScope>(initialScope)
-    const setScope = useCallback((scope: CodyClientScope) => {
-        setScopeState(scope)
-    }, [])
-    const setEditorScope = useCallback((editor: Editor) => {
-        setScopeState(scope => ({ ...scope, editor }))
-    }, [])
+    const setScope = useCallback((scope: CodyClientScope) => setScopeState(scope), [setScopeState])
 
-    // TODO(naman): temporarily set codebase to the first repository in the list until multi-repo context is implemented throughout.
-    const codebase: string | null = useMemo(() => scope.repositories[0] || null, [scope])
-    const codebaseId: Promise<string | null> = useMemo(async () => {
-        if (codebase === null) {
-            return null
+    const setEditorScope = useCallback(
+        (editor: Editor) => {
+            const newRepoName = editor.getActiveTextEditor()?.repoName
+
+            return setScopeState(scope => {
+                const oldRepoName = scope.editor.getActiveTextEditor()?.repoName
+
+                const resetInferredScope = newRepoName !== oldRepoName
+
+                return {
+                    ...scope,
+                    editor,
+                    includeInferredRepository: resetInferredScope ? true : scope.includeInferredRepository,
+                    includeInferredFile: resetInferredScope ? true : scope.includeInferredFile,
+                }
+            })
+        },
+        [setScopeState]
+    )
+
+    const toggleIncludeInferredRepository = useCallback(
+        () =>
+            setScopeState(scope => ({
+                ...scope,
+                includeInferredRepository: !scope.includeInferredRepository,
+                includeInferredFile: !scope.includeInferredRepository,
+            })),
+        [setScopeState]
+    )
+
+    const toggleIncludeInferredFile = useCallback(
+        () => setScopeState(scope => ({ ...scope, includeInferredFile: !scope.includeInferredFile })),
+        [setScopeState]
+    )
+
+    const activeEditor = useMemo(() => scope.editor.getActiveTextEditor(), [scope.editor])
+
+    const codebases: string[] = useMemo(() => {
+        const repos = [...scope.repositories]
+        if (scope.includeInferredRepository && activeEditor?.repoName) {
+            repos.push(activeEditor.repoName)
         }
 
-        const id = (await graphqlClient.getRepoIdIfEmbeddingExists(codebase)) || null
-        if (isError(id)) {
+        return repos
+    }, [scope, activeEditor])
+
+    const codebaseIds: Promise<string[]> = useMemo(async () => {
+        if (!codebases.length) {
+            return []
+        }
+
+        const results = await graphqlClient.getRepoIds(codebases)
+        if (isError(results)) {
             console.error(
-                `Cody could not access the '${codebase}' repository on your Sourcegraph instance. Details: ${id.message}`
+                `Cody could not access the repositories on your Sourcegraph instance. Details: ${results.message}`
             )
-            return null
+            return []
         }
 
-        return id
-    }, [codebase, graphqlClient])
+        return results.map(({ id }) => id)
+    }, [codebases, graphqlClient])
 
     const executeRecipe = useCallback(
         async (
@@ -161,8 +221,7 @@ export const useClient = ({
             options?: {
                 prefilledOptions?: PrefilledOptions
                 humanChatInput?: string
-                // TODO(naman): accept scope with execute recipe
-                scope?: CodyClientScope
+                scope?: CodyClientScopePartial
             }
         ): Promise<Transcript | null> => {
             const recipe = getRecipe(recipeId)
@@ -170,14 +229,41 @@ export const useClient = ({
                 return Promise.resolve(null)
             }
 
-            const repoId = await codebaseId
-            const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, web) : null
-            const codebaseContext = new CodebaseContext(config, codebase || undefined, embeddingsSearch, null)
+            const repoNames = [...codebases]
+            const repoIds = [...(await codebaseIds)]
+            const editor = options?.scope?.editor || (scope.includeInferredFile ? scope.editor : new NoopEditor())
+            const activeEditor = editor.getActiveTextEditor()
+            if (activeEditor?.repoName && !repoNames.includes(activeEditor.repoName)) {
+                // NOTE(naman): We allow users to disable automatic inferrence of current file & repo
+                // using `includeInferredFile` and `includeInferredRepository` options. But for editor recipes
+                // like "Explain code at high level", we need to pass the current repo & file context.
+                // Here we are passing the current repo & file context based on `options.scope.editor`
+                // if present.
+                const additionalRepoId = await graphqlClient.getRepoId(activeEditor.repoName)
+                if (isError(additionalRepoId)) {
+                    console.error(
+                        `Cody could not access the ${activeEditor.repoName} repository on your Sourcegraph instance. Details: ${additionalRepoId.message}`
+                    )
+                } else {
+                    repoIds.push(additionalRepoId)
+                    repoNames.push(activeEditor.repoName)
+                }
+            }
+
+            const unifiedContextFetcherClient = new UnifiedContextFetcherClient(graphqlClient, repoIds)
+            const codebaseContext = new CodebaseContext(
+                config,
+                undefined,
+                null,
+                null,
+                null,
+                unifiedContextFetcherClient
+            )
 
             const { humanChatInput = '', prefilledOptions } = options ?? {}
             // TODO(naman): save scope with each interaction
             const interaction = await recipe.getInteraction(humanChatInput, {
-                editor: prefilledOptions ? withPreselectedOptions(scope.editor, prefilledOptions) : scope.editor,
+                editor: prefilledOptions ? withPreselectedOptions(editor, prefilledOptions) : editor,
                 intentDetector,
                 codebaseContext,
                 responseMultiplexer: new BotResponseMultiplexer(),
@@ -192,12 +278,16 @@ export const useClient = ({
             setIsMessageInProgressState(true)
             onEvent?.('submit')
 
-            const prompt = await transcript.toPrompt(getPreamble(codebase || undefined))
+            const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
+                getMultiRepoPreamble(repoNames)
+            )
+            transcript.setUsedContextFilesForLastInteraction(contextFiles)
+
             const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
             let rawText = ''
 
-            return new Promise(resolve => {
-                chatClient.chat(prompt, {
+            const updatedTranscript = await new Promise<Transcript | null>(resolve => {
+                const abort = chatClient.chat(prompt, {
                     onChange(_rawText) {
                         rawText = _rawText
 
@@ -221,9 +311,7 @@ export const useClient = ({
                     },
                     onError(error) {
                         // Display error message as assistant response
-                        transcript.addErrorAsAssistantResponse(
-                            `<div class="cody-chat-error"><span>Request failed: </span>${error}</div>`
-                        )
+                        transcript.addErrorAsAssistantResponse(error)
 
                         console.error(`Completion request failed: ${error}`)
 
@@ -239,20 +327,29 @@ export const useClient = ({
                         resolve(transcript)
                     },
                 })
+
+                setAbortMessageInProgress(() => () => {
+                    abort()
+                    resolve(transcript)
+                })
             })
+
+            setAbortMessageInProgress(() => () => undefined)
+
+            return updatedTranscript
         },
         [
             config,
             scope,
-            codebase,
-            codebaseId,
+            codebases,
+            codebaseIds,
             graphqlClient,
             transcript,
             intentDetector,
             chatClient,
             isMessageInProgress,
             onEvent,
-            web,
+            setAbortMessageInProgress,
         ]
     )
 
@@ -283,16 +380,6 @@ export const useClient = ({
         [transcript, submitMessage]
     )
 
-    // TODO(naman): usage of `chatContext` in Chat UI component will be replaced by `scope`. Remove this once done.
-    const legacyChatContext = useMemo<ChatContextStatus>(
-        () => ({
-            codebase: codebase || undefined,
-            filePath: scope.editor.getActiveTextEditorSelectionOrEntireFile()?.fileName,
-            connection: true,
-        }),
-        [codebase, scope]
-    )
-
     const returningChatMessages = useMemo(
         () => (messageInProgress ? chatMessages.slice(0, -1) : chatMessages),
         [chatMessages, messageInProgress]
@@ -314,7 +401,9 @@ export const useClient = ({
             submitMessage,
             initializeNewChat,
             editMessage,
-            legacyChatContext,
+            toggleIncludeInferredRepository,
+            toggleIncludeInferredFile,
+            abortMessageInProgress,
         }),
         [
             transcript,
@@ -331,7 +420,9 @@ export const useClient = ({
             submitMessage,
             initializeNewChat,
             editMessage,
-            legacyChatContext,
+            toggleIncludeInferredRepository,
+            toggleIncludeInferredFile,
+            abortMessageInProgress,
         ]
     )
 }

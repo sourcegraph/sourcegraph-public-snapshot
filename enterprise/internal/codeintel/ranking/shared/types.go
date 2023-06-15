@@ -16,15 +16,21 @@ type Progress struct {
 	Total       int
 }
 
+type CoverageCounts struct {
+	NumTargetIndexes                   int
+	NumExportedIndexes                 int
+	NumRepositoriesWithoutCurrentRanks int
+}
+
 type RankingDefinitions struct {
 	UploadID         int
 	ExportedUploadID int
-	SymbolName       string
+	SymbolChecksum   [16]byte
 	DocumentPath     string
 }
 
 type RankingReferences struct {
 	UploadID         int
 	ExportedUploadID int
-	SymbolNames      []string
+	SymbolChecksums  [][16]byte
 }

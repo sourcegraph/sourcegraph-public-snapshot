@@ -125,11 +125,6 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "codyRestrictUsersFeatureFlag": {
-          "description": "Restrict Cody to only be enabled for users that have a feature flag labeled \"cody-experimental\" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag.",
-          "type": "boolean",
-          "default": false
-        },
         "rateLimitAnonymous": {
           "description": "Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.",
           "type": "integer",
@@ -197,6 +192,12 @@
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
+        },
+        "perforceChangelistMapping": {
+          "description": "Allow mapping of Perforce changelists to their commit SHAs in the DB",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
         },
         "goPackages": {
           "description": "Allow adding Go package host connections",
@@ -449,7 +450,7 @@
               "group": "Search"
             },
             "documentRanksWeight": {
-              "description": "Controls the impact of document ranks on the final ranking when the 'search-ranking' feature is enabled. This is intended for internal testing purposes only, it's not recommended for users to change this.",
+              "description": "Controls the impact of document ranks on the final ranking. This is intended for internal testing purposes only, it's not recommended for users to change this.",
               "type": "number",
               "default": 4500,
               "group": "Search",
@@ -458,7 +459,7 @@
               }
             },
             "flushWallTimeMS": {
-              "description": "Controls the amount of time that Zoekt shards collect and rank results when the 'search-ranking' feature is enabled. Larger values give a more stable ranking, but searches can take longer to return an initial result.",
+              "description": "Controls the amount of time that Zoekt shards collect and rank results. Larger values give a more stable ranking, but searches can take longer to return an initial result.",
               "type": "integer",
               "default": 500,
               "group": "Search"
@@ -1908,6 +1909,11 @@
           "type": "string",
           "group": "Sourcegraph.com"
         },
+        "slackLicenseAnomallyWebhook": {
+          "description": "Slack webhook for when there is an anomaly detected with license key usage.",
+          "type": "string",
+          "group": "Sourcegraph.com"
+        },
         "srcCliVersionCache": {
           "description": "Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.",
           "type": "object",
@@ -2325,31 +2331,61 @@
         }
       ]
     },
+    "cody.enabled": {
+      "description": "Enable or disable Cody instance-wide. When Cody is disabled, all Cody endpoints and GraphQL queries will return errors, Cody will not show up in the site-admin sidebar, and Cody in the global navbar will only show a call-to-action for site-admins to enable Cody.",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      },
+      "group": "Cody"
+    },
+    "cody.restrictUsersFeatureFlag": {
+      "description": "Restrict Cody to only be enabled for users that have a feature flag labeled \"cody\" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      },
+      "group": "Cody"
+    },
     "embeddings": {
       "description": "Configuration for embeddings service.",
       "type": "object",
-      "required": ["enabled", "dimensions", "model", "accessToken", "url"],
       "properties": {
         "enabled": {
           "description": "Toggles whether embedding service is enabled.",
           "type": "boolean",
-          "default": false
+          "!go": {
+            "pointer": true
+          },
+          "default": true
         },
         "dimensions": {
-          "description": "The dimensionality of the embedding vectors.",
+          "description": "The dimensionality of the embedding vectors. Required field if not using the sourcegraph provider.",
           "type": "integer",
           "minimum": 0
         },
         "model": {
-          "description": "The model used for embedding.",
+          "description": "The model used for embedding. A default model will be used for each provider, if not set.",
           "type": "string"
         },
         "accessToken": {
-          "description": "The access token used to authenticate with the external embedding API service.",
+          "description": "The access token used to authenticate with the external embedding API service. For provider sourcegraph, this is optional.",
           "type": "string"
         },
+        "provider": {
+          "type": "string",
+          "description": "The provider to use for generating embeddings. Defaults to sourcegraph.",
+          "enum": ["openai", "sourcegraph"]
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "The endpoint under which to reach the provider. Sensible default will be used for each provider.",
+          "format": "uri"
+        },
         "url": {
-          "description": "The url to the external embedding API service.",
+          "description": "The url to the external embedding API service. Deprecated, use endpoint instead.",
           "type": "string",
           "format": "uri"
         },
@@ -2371,14 +2407,25 @@
           "minimum": 0
         },
         "incremental": {
-          "description": "Experimental: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.",
+          "description": "Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.",
           "type": "boolean",
-          "default": false
+          "!go": {
+            "pointer": true
+          },
+          "default": true
         },
         "minimumInterval": {
           "description": "The time to wait between runs. Valid time units are \"s\", \"m\", \"h\". Example values: \"30s\", \"5m\", \"1h\".",
           "type": "string",
           "default": "24h"
+        },
+        "policyRepositoryMatchLimit": {
+          "description": "The maximum number of repositories that can be matched by a global embeddings policy",
+          "type": "integer",
+          "!go": {
+            "pointer": true
+          },
+          "default": "5000"
         }
       },
       "examples": [
@@ -2395,32 +2442,38 @@
     "completions": {
       "description": "Configuration for the completions service.",
       "type": "object",
-      "required": ["enabled", "model", "accessToken", "provider"],
       "properties": {
         "enabled": {
-          "description": "Toggles whether completions are enabled.",
+          "description": "DEPRECATED. Use cody.enabled instead to turn Cody on/off.",
           "type": "boolean",
-          "default": false
+          "!go": {
+            "pointer": true
+          },
+          "default": true
         },
         "model": {
           "description": "DEPRECATED. Use chatModel instead.",
           "type": "string"
         },
+        "fastChatModel": {
+          "description": "The model used for fast chat completions.",
+          "type": "string"
+        },
         "chatModel": {
-          "description": "The model used for chat completions.",
+          "description": "The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.",
           "type": "string"
         },
         "completionModel": {
-          "description": "The model used for code completion.",
+          "description": "The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.",
           "type": "string"
         },
         "accessToken": {
-          "description": "The access token used to authenticate with the external completions provider.",
+          "description": "The access token used to authenticate with the external completions provider. If using the default provider 'sourcegraph', and if 'licenseKey' is set, a default access token is generated.",
           "type": "string"
         },
         "provider": {
           "type": "string",
-          "description": "The external completions provider.",
+          "description": "The external completions provider. Defaults to 'sourcegraph'.",
           "default": "anthropic",
           "enum": ["anthropic", "openai", "sourcegraph"]
         },

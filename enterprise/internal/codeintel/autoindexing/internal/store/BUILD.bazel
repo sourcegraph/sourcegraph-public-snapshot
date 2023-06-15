@@ -36,7 +36,7 @@ go_library(
 
 go_test(
     name = "store_test",
-    size = "large",
+    timeout = "moderate",
     srcs = [
         "config_inference_test.go",
         "config_repo_test.go",

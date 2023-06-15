@@ -34,6 +34,7 @@ go_library(
 
 go_test(
     name = "lsifstore_test",
+    timeout = "moderate",
     srcs = [
         "cleanup_test.go",
         "insert_test.go",

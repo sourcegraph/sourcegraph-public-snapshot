@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
@@ -78,21 +79,17 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	getQueryEmbedding, err := getCachedQueryEmbeddingFn()
 	if err != nil {
 		return err
 	}
 
 	weaviate := newWeaviateClient(
 		logger,
-		getQueryEmbedding,
 		config.WeaviateURL,
 	)
 
-	getContextDetectionEmbeddingIndex := getCachedContextDetectionEmbeddingIndex(uploadStore)
-
 	// Create HTTP server
-	handler := NewHandler(logger, indexGetter.Get, getQueryEmbedding, weaviate, getContextDetectionEmbeddingIndex)
+	handler := NewHandler(logger, indexGetter.Get, getQueryEmbedding, weaviate)
 	handler = handlePanic(logger, handler)
 	handler = featureflag.Middleware(db.FeatureFlags(), handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
@@ -117,7 +114,6 @@ func NewHandler(
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
 	weaviate *weaviateClient,
-	getContextDetectionEmbeddingIndex getContextDetectionEmbeddingIndexFn,
 ) http.Handler {
 	// Initialize the legacy JSON API server
 	mux := http.NewServeMux()
@@ -162,18 +158,29 @@ func NewHandler(
 			return
 		}
 
-		isRequired, err := isContextRequiredForChatQuery(r.Context(), getQueryEmbedding, getContextDetectionEmbeddingIndex, args.Query)
-		if err != nil {
-			logger.Error("error detecting if context is required for query", log.Error(err))
-			http.Error(w, fmt.Sprintf("error detecting if context is required for query: %s", err.Error()), http.StatusInternalServerError)
-			return
-		}
-
+		isRequired := isContextRequiredForChatQuery(args.Query)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(embeddings.IsContextRequiredForChatQueryResult{IsRequired: isRequired})
 	})
 
 	return mux
+}
+
+func getQueryEmbedding(ctx context.Context, query string) ([]float32, string, error) {
+	c := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	if c == nil {
+		return nil, "", errors.New("embeddings not configured or disabled")
+	}
+	client, err := embed.NewEmbeddingsClient(c)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "getting embeddings client")
+	}
+
+	floatQuery, err := client.GetEmbeddingsWithRetries(ctx, []string{query}, queryEmbeddingRetries)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "getting query embedding")
+	}
+	return floatQuery, client.GetModelIdentifier(), nil
 }
 
 func mustInitializeFrontendDB(observationCtx *observation.Context) *sql.DB {
