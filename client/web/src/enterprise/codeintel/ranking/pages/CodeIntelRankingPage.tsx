@@ -130,7 +130,7 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                                         styles.summaryNumber,
                                         data.rankingSummary.numTargetIndexes === 0
                                             ? 'text-muted'
-                                            : data.rankingSummary.numExportedIndexes !=
+                                            : data.rankingSummary.numExportedIndexes !==
                                               data.rankingSummary.numTargetIndexes
                                             ? 'text-warning'
                                             : 'text-success'
