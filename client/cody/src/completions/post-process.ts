@@ -27,11 +27,6 @@ export function postProcess({
             .split('\n')
             .find(line => line.trim().length > 0) ?? ''
 
-    // Single-line completions should be trimmed to only return one line
-    if (!multiline) {
-        content = content.slice(0, content.indexOf('\n'))
-    }
-
     // Sometimes Claude emits a single space in the completion. We call this an "odd indentation"
     // completion and try to fix the response.
     let hasOddIndentation = false
@@ -61,6 +56,8 @@ export function postProcess({
 
     if (multiline) {
         content = truncateMultilineCompletion(content, hasOddIndentation, prefix, nextNonEmptyLine, languageId)
+    } else if (content.includes('\n')) {
+        content = content.slice(0, content.indexOf('\n'))
     }
 
     // If a completed line matches the next non-empty line of the suffix 1:1, we remove

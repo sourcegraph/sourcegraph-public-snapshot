@@ -8,6 +8,7 @@ import {
 import { mockVSCodeExports } from '../testSetup/vscode'
 
 import { CodyCompletionItemProvider, inlineCompletionsCache } from '.'
+import { createProviderConfig } from './providers/anthropic'
 
 jest.mock('vscode', () => ({
     ...mockVSCodeExports(),
@@ -70,7 +71,7 @@ async function complete(
 
     const requests: CompletionParameters[] = []
     let requestCounter = 0
-    const completionsClient = {
+    const completionsClient: any = {
         complete(params: CompletionParameters): Promise<CompletionResponse> {
             requests.push(params)
             const response = responses ? responses[requestCounter++] : undefined
@@ -82,17 +83,15 @@ async function complete(
             )
         },
     }
+    const providerConfig = createProviderConfig({
+        completionsClient,
+        contextWindowTokens: 2048,
+    })
     const completionProvider = new CodyCompletionItemProvider(
-        error => {
-            throw new Error(error)
-        },
-        completionsClient as any,
-        null as any,
+        providerConfig,
         null as any,
         noopStatusBar,
         null as any,
-        undefined,
-        undefined,
         undefined,
         undefined,
         undefined,
