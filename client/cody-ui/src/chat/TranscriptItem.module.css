@@ -42,21 +42,23 @@
 .header-container {
     position: absolute;
     top: var(--spacing);
-    right: 0;
+    right: var(--spacing);
+
+    visibility: hidden;
+    z-index: 10;
+}
+
+.footer-container {
+    position: absolute;
+    bottom: var(--spacing);
+    right: var(--spacing);
 
     visibility: hidden;
 }
 
-.row:hover > .header-container {
+.row:hover > .header-container,
+.row:hover > .footer-container {
     visibility: visible;
-}
-
-.footer-container {
-    width: 100%;
-    display: flex;
-    justify-content: flex-end;
-
-    padding-top: var(--spacing);
 }
 
 .actions {
@@ -91,7 +93,6 @@
 .feedback-edit-buttons-container {
     display: flex;
     gap: 0.25rem;
-    align-items: center;
 
     margin: 0;
     padding: 0 var(--spacing) var(--spacing) var(--spacing);
