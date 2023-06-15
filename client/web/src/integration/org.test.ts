@@ -165,6 +165,9 @@ describe('Organizations', () => {
                 await driver.page.goto(driver.sourcegraphBaseUrl + `/organizations/${testOrg.name}/settings`)
                 const updatedSettings = '// updated'
                 const editor = await createEditorAPI(driver, '.test-settings-file .test-editor')
+
+                // Take snapshot before updating text in the editor to avoid flakiness.
+                await percySnapshotWithVariants(driver.page, 'Organization settings page')
                 await editor.replace(updatedSettings, 'paste')
 
                 const variables = await testContext.waitForGraphQLRequest(async () => {
@@ -177,7 +180,6 @@ describe('Organizations', () => {
                     contents: updatedSettings,
                 })
 
-                await percySnapshotWithVariants(driver.page, 'Organization settings page')
                 await accessibilityAudit(driver.page)
             })
         })
