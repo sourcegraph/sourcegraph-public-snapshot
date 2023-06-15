@@ -19,7 +19,7 @@ export const leadingAtSymbolPattern = /^\s*@/
 export const leadingHashPattern = /^\s*#/
 
 /** Matches one or more apostrophes followed by one optional space. */
-export const apostrophePattern = /\'+\s?/
+export const apostrophePattern = /'+\s?/
 
 export const cStyleBlockComment: BlockCommentStyle = {
     startRegex: /\/\*\*?/,
