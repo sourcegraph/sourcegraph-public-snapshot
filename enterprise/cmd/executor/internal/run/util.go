@@ -209,6 +209,11 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 		Enabled:    config.IsKubernetes(),
 		ConfigPath: c.KubernetesConfigPath,
 		ContainerOptions: command.KubernetesContainerOptions{
+			CloneOptions: command.KubernetesCloneOptions{
+				ExecutorName:   c.WorkerHostname,
+				EndpointURL:    c.FrontendURL,
+				GitServicePath: "/.executors/git",
+			},
 			NodeName:     c.KubernetesNodeName,
 			NodeSelector: nodeSelector,
 			RequiredNodeAffinity: command.KubernetesNodeAffinity{
@@ -228,6 +233,14 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 				RunAsUser:  runAsUser,
 				RunAsGroup: runAsGroup,
 				FSGroup:    fsGroup,
+			},
+			SingleJobPod: c.KubernetesSingleJobPod,
+			StepImage:    c.KubernetesSingleJobStepImage,
+			JobVolume: command.KubernetesJobVolume{
+				Type:    command.KubernetesVolumeType(c.KubernetesJobVolumeType),
+				Size:    resource.MustParse(c.KubernetesJobVolumeSize),
+				Volumes: c.KubernetesAdditionalJobVolumes,
+				Mounts:  c.KubernetesAdditionalJobVolumeMounts,
 			},
 		},
 	}
