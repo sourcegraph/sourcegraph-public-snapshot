@@ -135,7 +135,7 @@ func (r codyUserGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Cont
 	}, nil
 }
 
-const tokensPerDollar = int(1 / (0.0004 / 1_000))
+const tokensPerDollar = int(1 / (0.0001 / 1_000))
 
 func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) (graphqlbackend.CodyGatewayRateLimit, error) {
 	// If the user isn't enabled return no rate limit
