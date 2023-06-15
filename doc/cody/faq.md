@@ -48,7 +48,7 @@ In the future, here are the steps that Sourcegraph will follow:
 
 #### What is the default `sourcegraph` provider for completions and embeddings?
 
-The default `"provider": "sourcegraph"` for completions and embeddings is the [Sourcegraph Cody Gateway](./explanations/cody_gateway.md). Cody Gateway forwards completions and embeddings requests to third-party services.
+The default `"provider": "sourcegraph"` for completions and embeddings is the [Sourcegraph Cody Gateway](./explanations/cody_gateway.md). Cody Gateway provides Sourcegraph enterprise instances access to completions and embeddings using third-party services like Anthropic and OpenAI.
 
 #### What third-party cloud services does Cody depend on today?
 
