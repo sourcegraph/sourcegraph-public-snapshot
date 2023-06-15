@@ -47,6 +47,7 @@ type OwnResolver interface {
 
 	GitTreeOwnershipStats(ctx context.Context, tree *GitTreeEntryResolver) (OwnershipStatsResolver, error)
 	InstanceOwnershipStats(ctx context.Context) (OwnershipStatsResolver, error)
+	OwnershipUsageStats(ctx context.Context, args *struct{ DateRange string }) (OwnershipUsageStatsResolver, error)
 
 	PersonOwnerField(person *PersonResolver) string
 	UserOwnerField(user *UserResolver) string
@@ -86,6 +87,12 @@ type OwnershipStatsResolver interface {
 	TotalCodeownedFiles(context.Context) (int32, error)
 	TotalOwnedFiles(context.Context) (int32, error)
 	TotalAssignedOwnershipFiles(context.Context) (int32, error)
+}
+
+type OwnershipUsageStatsResolver interface {
+	FileHasOwnerSearches() int32
+	SelectFileOwnersSearches() int32
+	OwnershipPanelViewed() int32
 }
 
 type Ownable interface {

@@ -7,10 +7,12 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -265,6 +267,42 @@ func (r *ownResolver) GitTreeOwnershipStats(ctx context.Context, tree *graphqlba
 
 func (r *ownResolver) InstanceOwnershipStats(ctx context.Context) (graphqlbackend.OwnershipStatsResolver, error) {
 	return &ownStatsResolver{db: r.db}, nil
+}
+
+func (r *ownResolver) OwnershipUsageStats(ctx context.Context, args *struct{ DateRange string }) (graphqlbackend.OwnershipUsageStatsResolver, error) {
+	upperBound := time.Now()
+	lowerBound := upperBound
+	if args != nil {
+		switch args.DateRange {
+		case adminanalytics.LastThreeMonths:
+			lowerBound = lowerBound.AddDate(0, -3, 0)
+		case adminanalytics.LastMonth:
+			lowerBound = lowerBound.AddDate(0, -1, 0)
+		case adminanalytics.LastWeek:
+			lowerBound = lowerBound.AddDate(0, 0, -7)
+		}
+	}
+	m, err := r.db.EventLogs().CountByEventNames(ctx, lowerBound, upperBound, []string{
+		"SelectFileOwnersSearch",
+		"FileHasOwnerSearch",
+		"OwnershipPanelOpened",
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ownershipUsageStatsResolver(m), nil
+}
+
+type ownershipUsageStatsResolver map[string]int
+
+func (m ownershipUsageStatsResolver) FileHasOwnerSearches() int32 {
+	return int32(m["FileHasOwnerSearch"])
+}
+func (m ownershipUsageStatsResolver) SelectFileOwnersSearches() int32 {
+	return int32(m["SelectFileOwnersSearch"])
+}
+func (m ownershipUsageStatsResolver) OwnershipPanelViewed() int32 {
+	return int32(m["OwnershipPanelOpened"])
 }
 
 func (r *ownResolver) PersonOwnerField(_ *graphqlbackend.PersonResolver) string {

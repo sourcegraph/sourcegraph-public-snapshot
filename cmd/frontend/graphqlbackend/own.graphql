@@ -104,6 +104,26 @@ type OwnershipStats {
 }
 
 """
+Usage information on various own features
+"""
+type OwnershipUsageStats {
+    """
+    Number of times search with `file:has.owner(...)` was issued.
+    """
+    fileHasOwnerSearches: Int!
+
+    """
+    Number of times search with `select:file.owners` was issued.
+    """
+    selectFileOwnersSearches: Int!
+
+    """
+    Number of times ownership panel in file, repo or directory view was opened.
+    """
+    ownershipPanelViewed: Int!
+}
+
+"""
 A list of ownership entries.
 """
 type OwnershipConnection {
@@ -347,6 +367,11 @@ extend type Query {
     Returns ownership stats for the whole Sourcegraph instance
     """
     instanceOwnershipStats: OwnershipStats!
+
+    """
+    Returns ownership usage stats for given time period.
+    """
+    ownershipUsageStats(dateRange: AnalyticsDateRange!): OwnershipUsageStats!
 }
 
 """
