@@ -65,6 +65,10 @@ const NUM_TEXT_RESULTS = 1
 async function fetchAndSaveEmbeddings(options: FetchEmbeddingsOptions): Promise<void> {
     const { currentFilePath, text, codebaseContext } = options
 
+    if (!codebaseContext.checkEmbeddingsConnection()) {
+        return
+    }
+
     logCompletionEvent('fetchEmbeddings')
 
     // TODO: add comment on how big are the embedding results
