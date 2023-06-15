@@ -1,7 +1,6 @@
-import { FC, useContext, useEffect, useState } from 'react'
+import { FC, useContext } from 'react'
 
 import { mdiDownload, mdiOpenInNew } from '@mdi/js'
-import { invoke } from '@tauri-apps/api/tauri'
 import classNames from 'classnames'
 
 import { Badge, Button, H1, H3, Link, Text, Icon, BadgeVariantType, LoadingSpinner } from '@sourcegraph/wildcard'
@@ -25,13 +24,32 @@ enum ExtensionStatus {
     Unknown = 'Unknown',
 }
 
+const EXTENSIONS: Extension[] = [
+    {
+        name: 'Visual Studio Code',
+        status: ExtensionStatus.Beta,
+        iconURL: 'https://storage.googleapis.com/sourcegraph-assets/setup/vscode-icon.png',
+        docLink: null,
+        extensionDeepLink: 'vscode:extension/sourcegraph.cody-ai',
+    },
+    {
+        name: 'IntelliJ Idea',
+        status: ExtensionStatus.ComingSoon,
+        iconURL: 'https://storage.googleapis.com/sourcegraph-assets/setup/idea-icon.png',
+        docLink: null,
+        extensionDeepLink: null,
+    },
+    {
+        name: 'NeoVim',
+        status: ExtensionStatus.ComingSoon,
+        iconURL: 'https://storage.googleapis.com/sourcegraph-assets/setup/neovim-icon.png',
+        docLink: null,
+        extensionDeepLink: null,
+    },
+]
+
 export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ className }) => {
     const { onNextStep } = useContext(SetupStepsContext)
-    const [extensions, setExtensions] = useState<Extension[] | null>(null)
-
-    useEffect(() => {
-        fetchExtensionsConfiguration().then(extensions => setExtensions(extensions))
-    }, [])
 
     return (
         <div className={classNames(styles.root, className)}>
@@ -48,13 +66,7 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
             </div>
 
             <ul className={styles.extensions}>
-                {extensions === null && (
-                    <li className={styles.loading}>
-                        <LoadingSpinner /> Loading extensions
-                    </li>
-                )}
-
-                {extensions?.map(extension => (
+                {EXTENSIONS.map(extension => (
                     <li key={extension.name} className={styles.extensionsItem}>
                         <img src={extension.iconURL} alt="" className={styles.extensionsIcon} />
                         <div className={styles.extensionsName}>
@@ -83,16 +95,14 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
                     </li>
                 ))}
 
-                {extensions && (
-                    <li className={styles.extensionsSuggestionLink}>
-                        <Link
-                            to="https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&title=Cody%20extension%20suggestion"
-                            target="_blank"
-                        >
-                            Suggest our next extension
-                        </Link>
-                    </li>
-                )}
+                <li className={styles.extensionsSuggestionLink}>
+                    <Link
+                        to="https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&title=Cody%20extension%20suggestion"
+                        target="_blank"
+                    >
+                        Suggest our next extension
+                    </Link>
+                </li>
             </ul>
         </div>
     )
@@ -107,18 +117,4 @@ function getBadgeStatus(status: ExtensionStatus): BadgeVariantType {
         default:
             return 'outlineSecondary'
     }
-}
-
-let extensionCache: Extension[] | null = null
-
-function fetchExtensionsConfiguration(): Promise<Extension[]> {
-    if (extensionCache) {
-        Promise.resolve(extensionCache)
-    }
-
-    return invoke<string>('get_extension_configuration').then(res => {
-        const data = JSON.parse(res)
-        extensionCache = data
-        return data as Extension[]
-    })
 }
