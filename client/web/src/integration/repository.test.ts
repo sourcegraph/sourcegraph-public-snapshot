@@ -92,7 +92,7 @@ describe('Repository', () => {
             testContext.server
                 .get(new URL('sourcegraph-assets/*', 'https://storage.googleapis.com').href)
                 .intercept((request, response) => {
-                    response.sendStatus(404)
+                    response.send('<svg ></svg>') // Mock external asset request
                 })
             const shortRepositoryName = 'sourcegraph/jsonrpc2'
             const repositoryName = `github.com/${shortRepositoryName}`
