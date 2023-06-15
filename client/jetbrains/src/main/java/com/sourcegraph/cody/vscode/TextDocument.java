@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.vscode;
 
+import com.sourcegraph.cody.completions.CompletionDocumentContext;
 import java.net.URI;
 
 public interface TextDocument {
@@ -14,4 +15,6 @@ public interface TextDocument {
   String getText(Range range);
 
   Position positionAt(int offset);
+
+  CompletionDocumentContext getCompletionContext(int offset);
 }
