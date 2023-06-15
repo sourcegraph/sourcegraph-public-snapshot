@@ -10,6 +10,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//internal/codeintel/resolvers",
+        "//internal/codeintel/types",
         "//internal/observation",
     ],
 )
