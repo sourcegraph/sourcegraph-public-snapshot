@@ -202,8 +202,11 @@ type Args struct {
 	// MetricLabelValues that apply only to this invocation of the operation.
 	MetricLabelValues []string
 
-	// Attributes that only apply to this invocation of the operation
+	// Attributes that only apply to this invocation of the operation.
 	Attrs []attribute.KeyValue
+
+	// If set, errors will not be logged at the endObservation stage.
+	Quiet bool
 }
 
 // WithErrors prepares the necessary timers, loggers, and metrics to observe the invocation of an
@@ -303,8 +306,10 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 			emitToSentry = op.applyErrorFilter(err, EmitForSentry) != nil
 		)
 
-		// already has all the other log fields
-		op.emitErrorLogs(trLogger, logErr, finishAttrs, emitToSentry)
+		if !finishArgs.Quiet {
+			// already has all the other log fields
+			op.emitErrorLogs(trLogger, logErr, finishAttrs, emitToSentry)
+		}
 		// op. and args.LogFields already added at start
 		op.emitHoneyEvent(honeyErr, snakecaseOpName, event, finishArgs.Attrs, elapsedMs)
 

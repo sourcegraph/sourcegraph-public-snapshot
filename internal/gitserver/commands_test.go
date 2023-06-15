@@ -2606,7 +2606,7 @@ func TestRead(t *testing.T) {
 		}
 
 		t.Run(name+"-ReadFile", func(t *testing.T) {
-			data, err := client.ReadFile(ctx, nil, repo, commitID, test.file)
+			data, err := client.ReadFile(ctx, nil, repo, commitID, test.file, false)
 			checkFn(t, err, data)
 		})
 		t.Run(name+"-ReadFile-with-sub-repo-permissions-no-op", func(t *testing.T) {
@@ -2619,7 +2619,7 @@ func TestRead(t *testing.T) {
 				}
 				return authz.None, nil
 			})
-			data, err := client.ReadFile(ctx, checker, repo, commitID, test.file)
+			data, err := client.ReadFile(ctx, checker, repo, commitID, test.file, false)
 			checkFn(t, err, data)
 		})
 		t.Run(name+"-ReadFile-with-sub-repo-permissions-filters-file", func(t *testing.T) {
@@ -2629,7 +2629,7 @@ func TestRead(t *testing.T) {
 			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 				return authz.None, nil
 			})
-			data, err := client.ReadFile(ctx, checker, repo, commitID, test.file)
+			data, err := client.ReadFile(ctx, checker, repo, commitID, test.file, false)
 			if err != os.ErrNotExist {
 				t.Errorf("unexpected error reading file: %s", err)
 			}
@@ -2659,7 +2659,7 @@ func TestRead(t *testing.T) {
 			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 				return authz.None, nil
 			})
-			rc, err := client.NewFileReader(ctx, checker, repo, commitID, test.file)
+			rc, err := client.NewFileReader(ctx, checker, repo, commitID, test.file, false)
 			if err != os.ErrNotExist {
 				t.Fatalf("unexpected error: %s", err)
 			}
@@ -2673,7 +2673,7 @@ func TestRead(t *testing.T) {
 func runNewFileReaderTest(ctx context.Context, t *testing.T, repo api.RepoName, commitID api.CommitID, file string,
 	checker authz.SubRepoPermissionChecker, checkFn func(*testing.T, error, []byte)) {
 	t.Helper()
-	rc, err := NewClient().NewFileReader(ctx, checker, repo, commitID, file)
+	rc, err := NewClient().NewFileReader(ctx, checker, repo, commitID, file, false)
 	if err != nil {
 		checkFn(t, err, nil)
 		return

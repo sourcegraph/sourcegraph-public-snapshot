@@ -210,7 +210,7 @@ func embeddingsSearchResultsToResolvers(
 		for i, result := range results {
 			i, result := i, result
 			p.Go(func() {
-				content, err := gs.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, result.RepoName, result.Revision, result.FileName)
+				content, err := gs.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, result.RepoName, result.Revision, result.FileName, false)
 				allContents[i] = content
 				allErrors[i] = err
 			})

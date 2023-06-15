@@ -192,7 +192,7 @@ func (s *JobSelector) getIndexRecordsFromConfigurationInRepository(ctx context.C
 		return nil, false, err
 	}
 
-	content, err := s.gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, api.CommitID(commit), "sourcegraph.yaml")
+	content, err := s.gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, api.CommitID(commit), "sourcegraph.yaml", false)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, false, nil

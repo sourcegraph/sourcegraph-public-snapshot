@@ -112,7 +112,7 @@ func fakeOwnDb() *database.MockDB {
 
 type repoFiles map[repoPath]string
 
-func (g fakeGitserver) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
+func (g fakeGitserver) ReadFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string, quiet bool) ([]byte, error) {
 	if g.files == nil {
 		return nil, os.ErrNotExist
 	}

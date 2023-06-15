@@ -180,7 +180,7 @@ type revisionFetcher struct {
 }
 
 func (r *revisionFetcher) Read(ctx context.Context, fileName string) ([]byte, error) {
-	return r.gitserver.ReadFile(ctx, nil, r.repo, r.revision, fileName)
+	return r.gitserver.ReadFile(ctx, nil, r.repo, r.revision, fileName, false)
 }
 
 func (r *revisionFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {

@@ -112,20 +112,19 @@ func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, rep
 		return nil, err
 	}
 	if ingestedCodeowners != nil {
-		return codeowners.NewRuleset(codeowners.IngestedRulesetSource{ID: int32(ingestedCodeowners.RepoID)}, ingestedCodeowners.Proto), nil
-	}
-	for _, path := range codeownersLocations {
-		content, err := s.gitserverClient.ReadFile(
-			ctx,
-			authz.DefaultSubRepoPermsChecker,
-			repoName,
-			commitID,
-			path,
-		)
-		if content != nil && err == nil {
-			pbfile, err := codeowners.Parse(bytes.NewReader(content))
-			if err != nil {
-				return nil, err
+		rs = codeowners.NewRuleset(codeowners.IngestedRulesetSource{ID: int32(ingestedCodeowners.RepoID)}, ingestedCodeowners.Proto)
+	} else {
+		for _, path := range codeownersLocations {
+			content, err := s.gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, repoName, commitID, path, true)
+			if content != nil && err == nil {
+				pbfile, err := codeowners.Parse(bytes.NewReader(content))
+				if err != nil {
+					return nil, err
+				}
+				rs = codeowners.NewRuleset(codeowners.GitRulesetSource{Repo: repoID, Commit: commitID, Path: path}, pbfile)
+				break
+			} else if os.IsNotExist(err) {
+				continue
 			}
 			return codeowners.NewRuleset(codeowners.GitRulesetSource{Repo: repoID, Commit: commitID, Path: path}, pbfile), nil
 		} else if os.IsNotExist(err) {

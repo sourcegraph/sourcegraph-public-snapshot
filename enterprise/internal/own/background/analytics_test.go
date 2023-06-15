@@ -32,7 +32,7 @@ func (f fakeGitServer) ResolveRevision(ctx context.Context, repo api.RepoName, s
 	return api.CommitID(""), nil
 }
 
-func (f fakeGitServer) ReadFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) ([]byte, error) {
+func (f fakeGitServer) ReadFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string, quiet bool) ([]byte, error) {
 	if f.fileContents == nil {
 		return nil, os.ErrNotExist
 	}

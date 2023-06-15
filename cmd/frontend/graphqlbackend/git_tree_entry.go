@@ -106,13 +106,7 @@ func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {
 
 func (r *GitTreeEntryResolver) Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
 	r.contentOnce.Do(func() {
-		r.fullContentBytes, r.contentErr = r.gitserverClient.ReadFile(
-			ctx,
-			authz.DefaultSubRepoPermsChecker,
-			r.commit.repoResolver.RepoName(),
-			api.CommitID(r.commit.OID()),
-			r.Path(),
-		)
+		r.fullContentBytes, r.contentErr = r.gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), r.Path(), false)
 	})
 
 	return pageContent(strings.Split(string(r.fullContentBytes), "\n"), args.StartLine, args.EndLine), r.contentErr

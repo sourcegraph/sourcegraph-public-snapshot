@@ -1371,15 +1371,15 @@ func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 
 // ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
 // file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
-func (c *clientImplementor) ReadFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) (_ []byte, err error) {
+func (c *clientImplementor) ReadFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string, quiet bool) (_ []byte, err error) {
 	ctx, _, endObservation := c.operations.readFile.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("repo", string(repo)),
 		attribute.String("commit", string(commit)),
 		attribute.String("name", name),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservation(1, observation.Args{Quiet: quiet})
 
-	br, err := c.NewFileReader(ctx, checker, repo, commit, name)
+	br, err := c.NewFileReader(ctx, checker, repo, commit, name, quiet)
 	if err != nil {
 		return nil, err
 	}
@@ -1395,14 +1395,14 @@ func (c *clientImplementor) ReadFile(ctx context.Context, checker authz.SubRepoP
 
 // NewFileReader returns an io.ReadCloser reading from the named file at commit.
 // The caller should always close the reader after use
-func (c *clientImplementor) NewFileReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) (_ io.ReadCloser, err error) {
+func (c *clientImplementor) NewFileReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string, quiet bool) (_ io.ReadCloser, err error) {
 	// TODO: this does not capture the lifetime of the request since we return a reader
 	ctx, _, endObservation := c.operations.newFileReader.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("repo", string(repo)),
 		attribute.String("commit", string(commit)),
 		attribute.String("name", name),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservation(1, observation.Args{Quiet: quiet})
 
 	a := actor.FromContext(ctx)
 	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, name); err != nil {

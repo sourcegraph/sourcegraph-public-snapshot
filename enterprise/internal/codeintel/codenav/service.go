@@ -1400,7 +1400,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 		return nil, err
 	}
 
-	file, err := s.gitserver.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, api.RepoName(dump.RepositoryName), api.CommitID(dump.Commit), path)
+	file, err := s.gitserver.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, api.RepoName(dump.RepositoryName), api.CommitID(dump.Commit), path, false)
 	if err != nil {
 		return nil, err
 	}

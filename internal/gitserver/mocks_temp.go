@@ -363,7 +363,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		NewFileReaderFunc: &ClientNewFileReaderFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) (r0 io.ReadCloser, r1 error) {
+			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) (r0 io.ReadCloser, r1 error) {
 				return
 			},
 		},
@@ -378,7 +378,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		ReadFileFunc: &ClientReadFileFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) (r0 []byte, r1 error) {
+			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) (r0 []byte, r1 error) {
 				return
 			},
 		},
@@ -630,7 +630,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		NewFileReaderFunc: &ClientNewFileReaderFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) (io.ReadCloser, error) {
+			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) (io.ReadCloser, error) {
 				panic("unexpected invocation of MockClient.NewFileReader")
 			},
 		},
@@ -645,7 +645,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		ReadFileFunc: &ClientReadFileFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) ([]byte, error) {
+			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]byte, error) {
 				panic("unexpected invocation of MockClient.ReadFile")
 			},
 		},
@@ -4821,23 +4821,23 @@ func (c ClientMergeBaseFuncCall) Results() []interface{} {
 // ClientNewFileReaderFunc describes the behavior when the NewFileReader
 // method of the parent MockClient instance is invoked.
 type ClientNewFileReaderFunc struct {
-	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) (io.ReadCloser, error)
-	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) (io.ReadCloser, error)
+	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) (io.ReadCloser, error)
+	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) (io.ReadCloser, error)
 	history     []ClientNewFileReaderFuncCall
 	mutex       sync.Mutex
 }
 
 // NewFileReader delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockClient) NewFileReader(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 api.CommitID, v4 string) (io.ReadCloser, error) {
-	r0, r1 := m.NewFileReaderFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.NewFileReaderFunc.appendCall(ClientNewFileReaderFuncCall{v0, v1, v2, v3, v4, r0, r1})
+func (m *MockClient) NewFileReader(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 api.CommitID, v4 string, v5 bool) (io.ReadCloser, error) {
+	r0, r1 := m.NewFileReaderFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.NewFileReaderFunc.appendCall(ClientNewFileReaderFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the NewFileReader method
 // of the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientNewFileReaderFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) (io.ReadCloser, error)) {
+func (f *ClientNewFileReaderFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) (io.ReadCloser, error)) {
 	f.defaultHook = hook
 }
 
@@ -4845,7 +4845,7 @@ func (f *ClientNewFileReaderFunc) SetDefaultHook(hook func(context.Context, auth
 // NewFileReader method of the parent MockClient instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientNewFileReaderFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) (io.ReadCloser, error)) {
+func (f *ClientNewFileReaderFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) (io.ReadCloser, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4854,19 +4854,19 @@ func (f *ClientNewFileReaderFunc) PushHook(hook func(context.Context, authz.SubR
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientNewFileReaderFunc) SetDefaultReturn(r0 io.ReadCloser, r1 error) {
-	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) (io.ReadCloser, error) {
+	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientNewFileReaderFunc) PushReturn(r0 io.ReadCloser, r1 error) {
-	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) (io.ReadCloser, error) {
+	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) (io.ReadCloser, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientNewFileReaderFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) (io.ReadCloser, error) {
+func (f *ClientNewFileReaderFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) (io.ReadCloser, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4914,6 +4914,9 @@ type ClientNewFileReaderFuncCall struct {
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
 	Arg4 string
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 io.ReadCloser
@@ -4925,7 +4928,7 @@ type ClientNewFileReaderFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientNewFileReaderFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
 }
 
 // Results returns an interface slice containing the results of this
@@ -5182,23 +5185,23 @@ func (c ClientReadDirFuncCall) Results() []interface{} {
 // ClientReadFileFunc describes the behavior when the ReadFile method of the
 // parent MockClient instance is invoked.
 type ClientReadFileFunc struct {
-	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) ([]byte, error)
-	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) ([]byte, error)
+	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]byte, error)
+	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]byte, error)
 	history     []ClientReadFileFuncCall
 	mutex       sync.Mutex
 }
 
 // ReadFile delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockClient) ReadFile(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 api.CommitID, v4 string) ([]byte, error) {
-	r0, r1 := m.ReadFileFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.ReadFileFunc.appendCall(ClientReadFileFuncCall{v0, v1, v2, v3, v4, r0, r1})
+func (m *MockClient) ReadFile(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 api.CommitID, v4 string, v5 bool) ([]byte, error) {
+	r0, r1 := m.ReadFileFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.ReadFileFunc.appendCall(ClientReadFileFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the ReadFile method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientReadFileFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) ([]byte, error)) {
+func (f *ClientReadFileFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]byte, error)) {
 	f.defaultHook = hook
 }
 
@@ -5206,7 +5209,7 @@ func (f *ClientReadFileFunc) SetDefaultHook(hook func(context.Context, authz.Sub
 // ReadFile method of the parent MockClient instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *ClientReadFileFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) ([]byte, error)) {
+func (f *ClientReadFileFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]byte, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5215,19 +5218,19 @@ func (f *ClientReadFileFunc) PushHook(hook func(context.Context, authz.SubRepoPe
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientReadFileFunc) SetDefaultReturn(r0 []byte, r1 error) {
-	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) ([]byte, error) {
+	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]byte, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientReadFileFunc) PushReturn(r0 []byte, r1 error) {
-	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) ([]byte, error) {
+	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]byte, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientReadFileFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) ([]byte, error) {
+func (f *ClientReadFileFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]byte, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5275,6 +5278,9 @@ type ClientReadFileFuncCall struct {
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
 	Arg4 string
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []byte
@@ -5286,7 +5292,7 @@ type ClientReadFileFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientReadFileFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
 }
 
 // Results returns an interface slice containing the results of this
