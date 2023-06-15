@@ -1,65 +1,119 @@
-import { FC, useContext } from 'react'
+import { FC, useContext, useEffect, useState } from 'react'
 
+import { mdiDownload, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, H1, H2, H3, Link, Text } from '@sourcegraph/wildcard'
+import { Badge, Button, H1, H3, Link, Text, Icon, BadgeVariantType, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { tauriShellOpen } from '../../../../app/tauriIcpUtils'
 import { SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
 
 import styles from './AppInstallExtensionsSetupStep.module.scss'
 
+interface Extension {
+    name: string
+    status: string
+    iconURL: string
+    docLink: string | null
+    extensionDeepLink: string | null
+}
+
+enum ExtensionStatus {
+    Beta = 'Beta',
+    ComingSoon = 'Coming soon',
+    Unknown = 'Unknown',
+}
+
 export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ className }) => {
     const { onNextStep } = useContext(SetupStepsContext)
+    const [extensions, setExtensions] = useState<Extension[] | null>(null)
+
+    useEffect(() => {}, [fetchExtensionsConfiguration().then(extensions => setExtensions(extensions))])
 
     return (
         <div className={classNames(styles.root, className)}>
-            <div className={styles.content}>
-                <div className={styles.description}>
-                    <H1 className={styles.descriptionHeading}>Get the extension</H1>
-                    <Text className={styles.descriptionText}>
-                        Ask Cody questions right within your editor. The Cody extension also has a fixup code feature,
-                        recipes, and experimental completions.
-                    </Text>
-                </div>
+            <div className={styles.description}>
+                <H1 className={styles.descriptionHeading}>Meet the extensions</H1>
+                <Text className={styles.descriptionText}>
+                    Ask Cody questions right within your editor. The Cody extension also has a fixup code feature,
+                    recipes, and experimental completions.
+                </Text>
 
-                <div className={styles.actions}>
-                    <div className={styles.actionsCard}>
-                        <H3 as={H2}>You’ll need a Sourcegraph.com account in order to connect Cody.</H3>
-
-                        <div className={styles.actionsButtonsGroup}>
-                            <Button
-                                size="lg"
-                                variant="primary"
-                                className={styles.actionsButton}
-                                onClick={() => tauriShellOpen('vscode:extension/sourcegraph.cody-ai')}
-                            >
-                                VS Code Extension
-                            </Button>
-
-                            <Button
-                                as={Link}
-                                to="https://docs.sourcegraph.com/cody#get-cody"
-                                target="_blank"
-                                size="lg"
-                                variant="secondary"
-                            >
-                                Other editors (Coming soon)
-                            </Button>
-
-                            <Button variant="secondary" size="lg" className={styles.actionsButton} onClick={onNextStep}>
-                                Next →
-                            </Button>
-                        </div>
-                    </div>
-                </div>
+                <Button size="lg" variant="primary" className={styles.descriptionNext} onClick={() => onNextStep()}>
+                    Next →
+                </Button>
             </div>
 
-            <img
-                src="https://storage.googleapis.com/sourcegraph-assets/cody-extension.png"
-                alt=""
-                className={styles.image}
-            />
+            <ul className={styles.extensions}>
+                {extensions === null && (
+                    <li className={styles.loading}>
+                        <LoadingSpinner /> Loading extensions
+                    </li>
+                )}
+
+                {extensions?.map(extension => (
+                    <li key={extension.name} className={styles.extensionsItem}>
+                        <img src={extension.iconURL} alt="" className={styles.extensionsIcon} />
+                        <div className={styles.extensionsName}>
+                            <H3 className="m-0">{extension.name}</H3>
+                            <Badge variant={getBadgeStatus(extension.status)} small={true}>
+                                {extension.status}
+                            </Badge>
+                        </div>
+
+                        {extension.extensionDeepLink && (
+                            <Button
+                                variant="secondary"
+                                outline={true}
+                                size="sm"
+                                onClick={() => tauriShellOpen(extension.extensionDeepLink)}
+                            >
+                                <Icon svgPath={mdiDownload} aria-hiden={true} /> Install
+                            </Button>
+                        )}
+
+                        {extension.docLink && (
+                            <Link to={extension.docLink} target="_blank" className={styles.extensionsActionLink}>
+                                <Icon svgPath={mdiOpenInNew} aria-hiden={true} /> Repo
+                            </Link>
+                        )}
+                    </li>
+                ))}
+
+                {extensions && (
+                    <li className={styles.extensionsSuggestionLink}>
+                        <Link to="https://sourcegraph.com" target="_blank">
+                            Suggest our next extension
+                        </Link>
+                    </li>
+                )}
+            </ul>
         </div>
     )
+}
+
+function getBadgeStatus(status: ExtensionStatus): BadgeVariantType {
+    switch (status) {
+        case ExtensionStatus.Beta:
+            return 'secondary'
+        case ExtensionStatus.ComingSoon:
+            return 'outlineSecondary'
+        default:
+            return 'outlineSecondary'
+    }
+}
+
+let extensionCache: Extension[] | null = null
+
+function fetchExtensionsConfiguration(): Promise<Extension[]> {
+    if (extensionCache) {
+        Promise.resolve(extensionCache)
+    }
+
+    return fetch('https://storage.googleapis.com/sourcegraph-assets/setup/extensions.json')
+        .then(res => res.json())
+        .then(res => {
+            extensionCache = res
+            return res as Extension[]
+        })
 }
