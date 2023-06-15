@@ -18,10 +18,6 @@ import { SNIPPET_WINDOW_SIZE } from './utils'
 
 export const inlineCompletionsCache = new CompletionsCache()
 
-// TODO:
-//
-// - Fix tests & productionize this. Land in nightly
-
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptChars: number
     private maxPrefixChars: number
