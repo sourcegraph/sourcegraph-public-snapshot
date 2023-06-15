@@ -11,23 +11,28 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
+	ghaauth "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
+	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	authcheck "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -81,8 +86,9 @@ func checkSiteAdmin(db edb.EnterpriseDB, w http.ResponseWriter, req *http.Reques
 	return err
 }
 
-// randomState returns a random sha256 hash that can be used as a state parameter
-func randomState(n int) (string, error) {
+// RandomState returns a random sha256 hash that can be used as a state parameter. It is only
+// exported for testing purposes.
+func RandomState(n int) (string, error) {
 	data := make([]byte, n)
 	if _, err := io.ReadFull(rand.Reader, data); err != nil {
 		return "", err
@@ -106,24 +112,39 @@ type GitHubAppResponse struct {
 	Events        []string          `json:"events"`
 }
 
+type gitHubAppStateDetails struct {
+	WebhookUUID string `json:"webhookUUID,omitempty"`
+	Domain      string `json:"domain"`
+	AppID       int    `json:"app_id,omitempty"`
+}
+
 func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.Handler {
 	r := mux.NewRouter()
 
 	r.Path(prefix + "/state").Methods("GET").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		// 🚨 SECURITY: only site admins can create github apps
 		if err := checkSiteAdmin(db, w, req); err != nil {
+			http.Error(w, "User must be site admin", http.StatusForbidden)
 			return
 		}
 
-		s, err := randomState(128)
+		s, err := RandomState(128)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Unexpected error when creating redirect URL: %s", err.Error()), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Unexpected error when generating state parameter: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
 
 		gqlID := req.URL.Query().Get("id")
+		domain := req.URL.Query().Get("domain")
 		if gqlID == "" {
-			cache.Set(s, []byte{1})
+			// we marshal an empty `gitHubAppStateDetails` struct because we want the values saved in the cache
+			// to always conform to the same structure.
+			stateDetails, err := json.Marshal(gitHubAppStateDetails{})
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
+				return
+			}
+			cache.Set(s, stateDetails)
 
 			_, _ = w.Write([]byte(s))
 			return
@@ -134,9 +155,16 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Error(w, fmt.Sprintf("Unexpected error while unmarshalling App ID: %s", err.Error()), http.StatusBadRequest)
 			return
 		}
-		id := int(id64)
+		stateDetails, err := json.Marshal(gitHubAppStateDetails{
+			AppID:  int(id64),
+			Domain: domain,
+		})
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
+			return
+		}
 
-		cache.Set(s, []byte(strconv.Itoa(id)))
+		cache.Set(s, stateDetails)
 
 		_, _ = w.Write([]byte(s))
 	})
@@ -144,29 +172,40 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 	r.Path(prefix + "/new-app-state").Methods("GET").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		// 🚨 SECURITY: only site admins can create github apps
 		if err := checkSiteAdmin(db, w, req); err != nil {
+			http.Error(w, "User must be site admin", http.StatusForbidden)
 			return
 		}
 
 		webhookURN := req.URL.Query().Get("webhookURN")
 		appName := req.URL.Query().Get("appName")
+		domain := req.URL.Query().Get("domain")
 		var webhookUUID string
 		if webhookURN != "" {
 			ws := backend.NewWebhookService(db, keyring.Default())
 			hook, err := ws.CreateWebhook(req.Context(), appName, extsvc.KindGitHub, webhookURN, nil)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("Unexpected error while setting up webhook endpiont: %s", err.Error()), http.StatusInternalServerError)
+				http.Error(w, fmt.Sprintf("Unexpected error while setting up webhook endpoint: %s", err.Error()), http.StatusInternalServerError)
 				return
 			}
 			webhookUUID = hook.UUID.String()
 		}
 
-		s, err := randomState(128)
+		s, err := RandomState(128)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Unexpected error when creating redirectURL: %s", err.Error()), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Unexpected error when generating state parameter: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
 
-		cache.Set(s, []byte(webhookUUID))
+		stateDetails, err := json.Marshal(gitHubAppStateDetails{
+			WebhookUUID: webhookUUID,
+			Domain:      domain,
+		})
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
+			return
+		}
+
+		cache.Set(s, stateDetails)
 
 		resp := struct {
 			State       string `json:"state"`
@@ -184,6 +223,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 	r.Path(prefix + "/redirect").Methods("GET").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		// 🚨 SECURITY: only site admins can setup github apps
 		if err := checkSiteAdmin(db, w, req); err != nil {
+			http.Error(w, "User must be site admin", http.StatusForbidden)
 			return
 		}
 
@@ -195,25 +235,46 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
+		// Check that the length of state is the expected length
+		if len(state) != 64 {
+			http.Error(w, "Bad request, state query param is wrong length", http.StatusBadRequest)
+			return
+		}
+
 		stateValue, ok := cache.Get(state)
 		if !ok {
 			http.Error(w, "Bad request, state query param does not match", http.StatusBadRequest)
 			return
 		}
+
+		var stateDetails gitHubAppStateDetails
+		err := json.Unmarshal(stateValue, &stateDetails)
+		if err != nil {
+			http.Error(w, "Bad request, invalid state", http.StatusBadRequest)
+			return
+		}
+		// Wait until we've validated the type of state before deleting it from the cache.
 		cache.Delete(state)
 
-		webhookUUID, err := uuid.Parse(string(stateValue))
+		webhookUUID, err := uuid.Parse(stateDetails.WebhookUUID)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Bad request, could not parse webhook UUID: %s", err.Error()), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Bad request, could not parse webhook UUID: %v", err), http.StatusBadRequest)
 			return
 		}
 
 		u, err := getAPIUrl(req, code)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Unexpected error when creating github API url: %s", err.Error()), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Unexpected error when creating github API URL: %v", err), http.StatusInternalServerError)
 			return
 		}
-		app, err := createGitHubApp(u)
+
+		domain, err := parseDomain(&stateDetails.Domain)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Unable to parse domain: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		app, err := createGitHubApp(u, *domain)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error while converting github app: %s", err.Error()), http.StatusInternalServerError)
 			return
@@ -238,13 +299,26 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
-		state, err = randomState(128)
+		state, err = RandomState(128)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error when creating state param: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
-		cache.Set(state, []byte(strconv.Itoa(id)))
 
+		newStateDetails, err := json.Marshal(gitHubAppStateDetails{
+			Domain: stateDetails.Domain,
+			AppID:  id,
+		})
+		if err != nil {
+			http.Error(w, fmt.Sprintf("unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
+			return
+		}
+		cache.Set(state, newStateDetails)
+
+		// The installations page often takes a few seconds to become available after the
+		// app is first created, so we sleep for a bit to give it time to load. The exact
+		// length of time to sleep was determined empirically.
+		time.Sleep(3 * time.Second)
 		redirectURL, err := url.JoinPath(app.AppURL, "installations/new")
 		if err != nil {
 			// if there is an error, try to redirect to app url, which should show Install button as well
@@ -256,6 +330,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 	r.HandleFunc(prefix+"/setup", func(w http.ResponseWriter, req *http.Request) {
 		// 🚨 SECURITY: only site admins can setup github apps
 		if err := checkSiteAdmin(db, w, req); err != nil {
+			http.Error(w, "User must be site admin", http.StatusForbidden)
 			return
 		}
 
@@ -269,34 +344,95 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Redirect(w, req, "/site-admin/github-apps", http.StatusFound)
 			return
 		}
-		idBytes, ok := cache.Get(state)
-		if !ok {
-			http.Error(w, "Bad request, state query param does not match", http.StatusBadRequest)
+
+		// Check that the length of state is the expected length
+		if len(state) != 64 {
+			http.Error(w, "Bad request, state query param is wrong length", http.StatusBadRequest)
 			return
 		}
-		cache.Delete(state)
 
-		id, err := strconv.Atoi(string(idBytes))
-		if err != nil {
-			http.Error(w, "Bad request, cannot parse appID", http.StatusBadRequest)
+		setupInfo, ok := cache.Get(state)
+		if !ok {
+			redirectURL := generateRedirectURL(nil, nil, nil, nil, errors.New("Bad request, state query param does not match"))
+			http.Redirect(w, req, redirectURL, http.StatusFound)
+			return
 		}
+
+		var stateDetails gitHubAppStateDetails
+		err := json.Unmarshal(setupInfo, &stateDetails)
+		if err != nil {
+			redirectURL := generateRedirectURL(nil, nil, nil, nil, errors.New("Bad request, invalid state"))
+			http.Redirect(w, req, redirectURL, http.StatusFound)
+			return
+		}
+		// Wait until we've validated the type of state before deleting it from the cache.
+		cache.Delete(state)
 
 		installationID, err := strconv.Atoi(instID)
 		if err != nil {
-			http.Error(w, "Bad request, cannot parse installation_id", http.StatusBadRequest)
+			redirectURL := generateRedirectURL(&stateDetails.Domain, nil, &stateDetails.AppID, nil, errors.New("Bad request, could not parse installation ID"))
+			http.Redirect(w, req, redirectURL, http.StatusFound)
 			return
 		}
 
 		action := query.Get("setup_action")
 		if action == "install" {
 			ctx := req.Context()
-			app, err := db.GitHubApps().GetByID(ctx, id)
+			app, err := db.GitHubApps().GetByID(ctx, stateDetails.AppID)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("Unexpected error while fetching github app data: %s", err.Error()), http.StatusInternalServerError)
+				redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, nil, errors.Newf("Unexpected error while fetching GitHub App from DB: %s", err.Error()))
+				http.Redirect(w, req, redirectURL, http.StatusFound)
 				return
 			}
 
-			http.Redirect(w, req, fmt.Sprintf("/site-admin/github-apps/%s?installation_id=%d", MarshalGitHubAppID(int64(app.ID)), installationID), http.StatusFound)
+			auther, err := ghaauth.NewGitHubAppAuthenticator(app.AppID, []byte(app.PrivateKey))
+			if err != nil {
+				redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, nil, errors.Newf("Unexpected error while creating GitHubAppAuthenticator: %s", err.Error()))
+				http.Redirect(w, req, redirectURL, http.StatusFound)
+				return
+			}
+
+			baseURL, err := url.Parse(app.BaseURL)
+			if err != nil {
+				redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, nil, errors.Newf("Unexpected error while parsing App base URL: %s", err.Error()))
+				http.Redirect(w, req, redirectURL, http.StatusFound)
+				return
+			}
+
+			apiURL, _ := github.APIRoot(baseURL)
+
+			logger := log.NoOp()
+			client := github.NewV3Client(logger, "", apiURL, auther, nil)
+
+			// The installation often takes a few seconds to become available after the
+			// app is first installed, so we sleep for a bit to give it time to load. The exact
+			// length of time to sleep was determined empirically.
+			time.Sleep(3 * time.Second)
+
+			remoteInstall, err := client.GetAppInstallation(ctx, int64(installationID))
+			if err != nil {
+				redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, nil, errors.Newf("Unexpected error while fetching App installation details from GitHub: %s", err.Error()))
+				http.Redirect(w, req, redirectURL, http.StatusFound)
+				return
+			}
+
+			_, err = db.GitHubApps().Install(ctx, ghtypes.GitHubAppInstallation{
+				InstallationID:   installationID,
+				AppID:            app.ID,
+				URL:              remoteInstall.GetHTMLURL(),
+				AccountLogin:     remoteInstall.Account.GetLogin(),
+				AccountAvatarURL: remoteInstall.Account.GetAvatarURL(),
+				AccountURL:       remoteInstall.Account.GetHTMLURL(),
+				AccountType:      remoteInstall.Account.GetType(),
+			})
+			if err != nil {
+				redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &stateDetails.AppID, &app.Name, errors.Newf("Unexpected error while creating GitHub App installation: %s", err.Error()))
+				http.Redirect(w, req, redirectURL, http.StatusFound)
+				return
+			}
+
+			redirectURL := generateRedirectURL(&stateDetails.Domain, &installationID, &app.ID, &app.Name, nil)
+			http.Redirect(w, req, redirectURL, http.StatusFound)
 			return
 		} else {
 			http.Error(w, fmt.Sprintf("Bad request; unsupported setup action: %s", action), http.StatusBadRequest)
@@ -305,6 +441,45 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 	})
 
 	return r
+}
+
+func generateRedirectURL(domain *string, installationID, appID *int, appName *string, creationErr error) string {
+	// If we got an error but didn't even get far enough to parse a domain for the new
+	// GitHub App, we still want to route the user back to somewhere useful, so we send
+	// them back to the main site admin GitHub Apps page.
+	if domain == nil && creationErr != nil {
+		return fmt.Sprintf("/site-admin/github-apps?success=false&error=%s", url.QueryEscape(creationErr.Error()))
+	}
+
+	parsedDomain, err := parseDomain(domain)
+	if err != nil {
+		return fmt.Sprintf("/site-admin/github-apps?success=false&error=%s", url.QueryEscape(fmt.Sprintf("invalid domain: %s", *domain)))
+	}
+
+	switch *parsedDomain {
+	case types.ReposGitHubAppDomain:
+		if creationErr != nil {
+			return fmt.Sprintf("/site-admin/github-apps?success=false&error=%s", url.QueryEscape(creationErr.Error()))
+		}
+		if installationID == nil || appID == nil {
+			return fmt.Sprintf("/site-admin/github-apps?success=false&error=%s", url.QueryEscape("missing installation ID or app ID"))
+		}
+
+		return fmt.Sprintf("/site-admin/github-apps/%s?installation_id=%d", MarshalGitHubAppID(int64(*appID)), *installationID)
+	case types.BatchesGitHubAppDomain:
+		if creationErr != nil {
+			return fmt.Sprintf("/site-admin/batch-changes?success=false&error=%s", url.QueryEscape(creationErr.Error()))
+		}
+
+		// This shouldn't really happen unless we also had an error, but we handle it just
+		// in case
+		if appName == nil {
+			return "/site-admin/batch-changes?success=true"
+		}
+		return fmt.Sprintf("/site-admin/batch-changes?success=true&app_name=%s", *appName)
+	default:
+		return fmt.Sprintf("/site-admin/github-apps?success=false&error=%s", url.QueryEscape(fmt.Sprintf("unsupported github apps domain: %v", parsedDomain)))
+	}
 }
 
 func getAPIUrl(req *http.Request, code string) (string, error) {
@@ -320,7 +495,12 @@ func getAPIUrl(req *http.Request, code string) (string, error) {
 	return u, nil
 }
 
-func createGitHubApp(conversionURL string) (*types.GitHubApp, error) {
+var MockCreateGitHubApp func(conversionURL string, domain types.GitHubAppDomain) (*ghtypes.GitHubApp, error)
+
+func createGitHubApp(conversionURL string, domain types.GitHubAppDomain) (*ghtypes.GitHubApp, error) {
+	if MockCreateGitHubApp != nil {
+		return MockCreateGitHubApp(conversionURL, domain)
+	}
 	r, err := http.NewRequest("POST", conversionURL, http.NoBody)
 	if err != nil {
 		return nil, err
@@ -345,7 +525,7 @@ func createGitHubApp(conversionURL string) (*types.GitHubApp, error) {
 		return nil, err
 	}
 
-	return &types.GitHubApp{
+	return &ghtypes.GitHubApp{
 		AppID:         response.AppID,
 		Name:          response.Name,
 		Slug:          response.Slug,
@@ -355,6 +535,7 @@ func createGitHubApp(conversionURL string) (*types.GitHubApp, error) {
 		PrivateKey:    response.PEM,
 		BaseURL:       htmlURL.Scheme + "://" + htmlURL.Host,
 		AppURL:        htmlURL.String(),
+		Domain:        domain,
 		Logo:          fmt.Sprintf("%s://%s/identicons/app/app/%s", htmlURL.Scheme, htmlURL.Host, response.Slug),
 	}, nil
 }

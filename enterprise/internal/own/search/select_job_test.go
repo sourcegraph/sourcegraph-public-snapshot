@@ -46,10 +46,13 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 	setupDB := func() *edb.MockEnterpriseDB {
 		codeownersStore := edb.NewMockCodeownersStore()
 		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
+		repoStore := database.NewMockRepoStore()
+		repoStore.GetFunc.SetDefaultReturn(&types.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
 		db := edb.NewMockEnterpriseDB()
 		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
 		db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
 		db.AssignedTeamsFunc.SetDefaultReturn(database.NewMockAssignedTeamsStore())
+		db.ReposFunc.SetDefaultReturn(repoStore)
 		return db
 	}
 

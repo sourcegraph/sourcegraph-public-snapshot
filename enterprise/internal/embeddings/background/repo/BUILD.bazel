@@ -13,7 +13,6 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/conf",
-        "//internal/conf/conftypes",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbutil",
@@ -43,6 +42,7 @@ go_test(
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/types",
+        "//lib/pointers",
         "//schema",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//logtest",

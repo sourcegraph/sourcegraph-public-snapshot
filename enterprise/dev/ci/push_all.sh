@@ -8,7 +8,7 @@ function preview_tags() {
 
   for tag in "${tags[@]}"; do
     for registry in "${registries[@]}"; do
-      echo -e "\t ${registry}/\$IMAGE:${qa_prefix}-${tag}"
+      echo -e "\t ${registry}/\$IMAGE:${tag}"
     done
   done
 }
@@ -45,8 +45,6 @@ prod_registries=(
 
 date_fragment="$(date +%Y-%m-%d)"
 
-qa_prefix="bazel"
-
 dev_tags=(
   "${BUILDKITE_COMMIT:0:12}"
   "${BUILDKITE_COMMIT:0:12}_${date_fragment}"
@@ -55,6 +53,8 @@ dev_tags=(
 prod_tags=(
   "${PUSH_VERSION}"
 )
+
+CANDIDATE_ONLY=${CANDIDATE_ONLY:-""}
 
 push_prod=false
 
@@ -70,6 +70,12 @@ if [[ "$BUILDKITE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   push_prod=true
 fi
 
+# If CANDIDATE_ONLY is set, only push the candidate tag to the dev repo
+if [ -n "$CANDIDATE_ONLY" ]; then
+  dev_tags=("${BUILDKITE_COMMIT}_${BUILDKITE_BUILD_NUMBER}_candidate")
+  push_prod=false
+fi
+
 preview_tags "${dev_registries[*]}" "${dev_tags[*]}"
 if $push_prod; then
   preview_tags "${prod_registries[*]}" "${prod_tags[*]}"
@@ -79,12 +85,12 @@ echo "--- done"
 
 dev_tags_args=""
 for t in "${dev_tags[@]}"; do
-  dev_tags_args="$dev_tags_args --tag ${qa_prefix}-${t}"
+  dev_tags_args="$dev_tags_args --tag ${t}"
 done
 prod_tags_args=""
 if $push_prod; then
   for t in "${prod_tags[@]}"; do
-    prod_tags_args="$prod_tags_args --tag ${qa_prefix}-${t}"
+    prod_tags_args="$prod_tags_args --tag ${t}"
   done
 fi
 

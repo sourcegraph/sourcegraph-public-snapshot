@@ -24,6 +24,7 @@ type Store interface {
 	GetStarRank(ctx context.Context, repoName api.RepoName) (float64, error)
 	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string]float64, bool, error)
 	GetReferenceCountStatistics(ctx context.Context) (logmean float64, _ error)
+	CoverageCounts(ctx context.Context, graphKey string) (_ shared.CoverageCounts, err error)
 	LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
 
 	// Export uploads (metadata tracking) + cleanup

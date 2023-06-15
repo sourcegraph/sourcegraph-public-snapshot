@@ -123,18 +123,14 @@ query LegacyEmbeddingsSearch($repo: ID!, $query: String!, $codeResultsCount: Int
 	}
 }`
 
-export const SEARCH_TYPE_REPO_QUERY = `
-query SearchTypeRepo($query: String!) {
-	search(query: $query, version: V3) {
-        results {
-            limitHit
-            results {
-                ... on Repository {
-                    name
-                }
-            }
+export const SEARCH_ATTRIBUTION_QUERY = `
+query SnippetAttribution($snippet: String!) {
+    snippetAttribution(snippet: $snippet) {
+        limitHit
+        nodes {
+            repositoryName
         }
-	}
+    }
 }`
 
 export const IS_CONTEXT_REQUIRED_QUERY = `

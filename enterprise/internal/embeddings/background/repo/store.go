@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -201,53 +200,20 @@ type ListOpts struct {
 	*database.PaginationArgs
 	Query *string
 	State *string
-}
-
-func init() {
-	conf.ContributeValidator(embeddingConfigValidator)
-}
-
-func embeddingConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
-	embeddingsConf := q.SiteConfig().Embeddings
-	if embeddingsConf == nil {
-		return nil
-	}
-
-	minimumIntervalString := embeddingsConf.MinimumInterval
-	_, err := time.ParseDuration(minimumIntervalString)
-	if err != nil && minimumIntervalString != "" {
-		return conf.NewSiteProblems(fmt.Sprintf("Could not parse \"embeddings.minimumInterval: %s\". %s", minimumIntervalString, err))
-	}
-
-	return nil
-}
-
-var defaultPolicyRepositoryMatchLimit = 5000
-
-var defaultOpts = EmbeddableRepoOpts{
-	MinimumInterval:            24 * time.Hour,
-	PolicyRepositoryMatchLimit: &defaultPolicyRepositoryMatchLimit,
+	Repo  *api.RepoID
 }
 
 func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
-	opts := defaultOpts
-
-	embeddingsConf := conf.Get().Embeddings
+	embeddingsConf := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	// Embeddings are disabled, nothing we can do.
 	if embeddingsConf == nil {
-		return opts
+		return EmbeddableRepoOpts{}
 	}
 
-	minimumIntervalString := embeddingsConf.MinimumInterval
-	d, err := time.ParseDuration(minimumIntervalString)
-	if err == nil {
-		opts.MinimumInterval = d
+	return EmbeddableRepoOpts{
+		MinimumInterval:            embeddingsConf.MinimumInterval,
+		PolicyRepositoryMatchLimit: embeddingsConf.PolicyRepositoryMatchLimit,
 	}
-
-	if embeddingsConf.PolicyRepositoryMatchLimit != nil {
-		opts.PolicyRepositoryMatchLimit = embeddingsConf.PolicyRepositoryMatchLimit
-	}
-
-	return opts
 }
 
 func (s *repoEmbeddingJobsStore) GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error) {
@@ -468,6 +434,10 @@ func (s *repoEmbeddingJobsStore) CountRepoEmbeddingJobs(ctx context.Context, opt
 		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.state = %s", strings.ToLower(*opts.State)))
 	}
 
+	if opts.Repo != nil {
+		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.repo_id = %d", *opts.Repo))
+	}
+
 	var whereClause *sqlf.Query
 	if len(conds) != 0 {
 		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
@@ -508,6 +478,10 @@ func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, opts
 
 	if opts.State != nil && *opts.State != "" {
 		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.state = %s", strings.ToLower(*opts.State)))
+	}
+
+	if opts.Repo != nil {
+		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.repo_id = %d", *opts.Repo))
 	}
 
 	var whereClause *sqlf.Query

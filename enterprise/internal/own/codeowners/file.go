@@ -32,9 +32,10 @@ type IngestedRulesetSource struct {
 func (IngestedRulesetSource) rulesetSource() {}
 
 type Ruleset struct {
-	proto  *codeownerspb.File
-	rules  []*CompiledRule
-	source RulesetSource
+	proto        *codeownerspb.File
+	rules        []*CompiledRule
+	source       RulesetSource
+	codeHostType string
 }
 
 func NewRuleset(source RulesetSource, proto *codeownerspb.File) *Ruleset {
@@ -54,6 +55,14 @@ func (r *Ruleset) GetFile() *codeownerspb.File {
 
 func (r *Ruleset) GetSource() RulesetSource {
 	return r.source
+}
+
+func (r *Ruleset) GetCodeHostType() string {
+	return r.codeHostType
+}
+
+func (r *Ruleset) SetCodeHostType(cht string) {
+	r.codeHostType = cht
 }
 
 // Match returns the rule matching the given path as per this CODEOWNERS ruleset.

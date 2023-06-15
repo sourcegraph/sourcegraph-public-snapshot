@@ -320,7 +320,7 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			}),
 		},
 		{
-			name: "selects results with AND-ed owners specified",
+			name: "selects results with AND-ed include owners specified",
 			args: args{
 				includeOwners: []string{"assigned", "codeowner"},
 				excludeOwners: []string{},
@@ -367,6 +367,110 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 				},
 			}),
 		},
+		{
+			name: "selects results with exclude owner and include owner specified",
+			args: args{
+				includeOwners: []string{"codeowner"},
+				excludeOwners: []string{"assigned"},
+				matches: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							// assigned owns src/main,
+							// but @codeowner does not own the file
+							Path: "src/main/onlyAssigned.md",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							// @codeowner owns all go files,
+							// and assigned owns src/main
+							Path: "src/main/bothMatch.go",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							// @codeowner owns all go files
+							// but assigned only owns src/main
+							// and this is in src/test.
+							Path: "src/test/onlyCodeowner.go",
+						},
+					},
+				},
+				repoContent: map[string]string{
+					"CODEOWNERS": "*.go @codeowner",
+				},
+			},
+			setup: assignedOwnerSetup(
+				"src/main",
+				&types.User{
+					ID:       42,
+					Username: "assigned",
+				},
+			),
+			want: autogold.Expect([]result.Match{
+				&result.FileMatch{
+					File: result.File{
+						Path: "src/test/onlyCodeowner.go",
+					},
+				},
+			}),
+		},
+		{
+			name: "selects results with AND-ed exclude owners specified",
+			args: args{
+				includeOwners: []string{},
+				excludeOwners: []string{"assigned", "codeowner"},
+				matches: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							// assigned owns src/main,
+							// but @codeowner does not own the file
+							Path: "src/main/onlyAssigned.md",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							// @codeowner owns all go files,
+							// and assigned owns src/main
+							Path: "src/main/bothMatch.go",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							// @codeowner owns all go files
+							// but assigned only owns src/main
+							// and this is in src/test.
+							Path: "src/test/onlyCodeowner.go",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							// @codeowner owns all go files
+							// but assigned only owns src/main
+							// and this is in src/test.
+							Path: "src/test/noOwners.txt",
+						},
+					},
+				},
+				repoContent: map[string]string{
+					"CODEOWNERS": "*.go @codeowner",
+				},
+			},
+			setup: assignedOwnerSetup(
+				"src/main",
+				&types.User{
+					ID:       42,
+					Username: "assigned",
+				},
+			),
+			want: autogold.Expect([]result.Match{
+				&result.FileMatch{
+					File: result.File{
+						Path: "src/test/noOwners.txt",
+					},
+				},
+			}),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -402,6 +506,9 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			userExternalAccountsStore.ListFunc.SetDefaultReturn(nil, nil)
 			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
 			db.TeamsFunc.SetDefaultReturn(database.NewMockTeamStore())
+			repoStore := database.NewMockRepoStore()
+			repoStore.GetFunc.SetDefaultReturn(&types.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
+			db.ReposFunc.SetDefaultReturn(repoStore)
 			if tt.setup != nil {
 				tt.setup(db)
 			}
