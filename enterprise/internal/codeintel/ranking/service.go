@@ -8,9 +8,9 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/lsifstore"
-	shared2 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
+	internalshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
-	shared1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -121,13 +121,13 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 	}, nil
 }
 
-func (s *Service) Summaries(ctx context.Context) ([]shared1.Summary, error) {
+func (s *Service) Summaries(ctx context.Context) ([]shared.Summary, error) {
 	return s.store.Summaries(ctx)
 }
 
 func (s *Service) DerivativeGraphKey(ctx context.Context) (string, bool, error) {
 	derivativeGraphKeyPrefix, _, ok, err := s.store.DerivativeGraphKey(ctx)
-	return shared2.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix), ok, err
+	return internalshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix), ok, err
 }
 
 func (s *Service) BumpDerivativeGraphKey(ctx context.Context) error {
@@ -138,7 +138,7 @@ func (s *Service) DeleteRankingProgress(ctx context.Context, graphKey string) er
 	return s.store.DeleteRankingProgress(ctx, graphKey)
 }
 
-func (s *Service) CoverageCounts(ctx context.Context, graphKey string) (shared1.CoverageCounts, error) {
+func (s *Service) CoverageCounts(ctx context.Context, graphKey string) (shared.CoverageCounts, error) {
 	return s.store.CoverageCounts(ctx, graphKey)
 }
 
