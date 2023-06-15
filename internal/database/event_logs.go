@@ -103,6 +103,10 @@ type EventLogStore interface {
 	// CountUniqueUsersByEventNames provides a count of unique active users in a given time span that logged any event that matches a list of given event names
 	CountUniqueUsersByEventNames(ctx context.Context, startDate, endDate time.Time, names []string) (int, error)
 
+	// CountByEventNames provides a total count of each of given events in a time period.
+	// The result is a map from event name to count.
+	CountByEventNames(ctx context.Context, startDate, endDate time.Time, names []string) (map[string]int, error)
+
 	// SiteUsageMultiplePeriods provides a count of unique active users in given time spans, broken up into periods of
 	// a given type. The value of `now` should be the current time in UTC.
 	SiteUsageMultiplePeriods(ctx context.Context, now time.Time, dayPeriods int, weekPeriods int, monthPeriods int, opt *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error)
@@ -821,6 +825,36 @@ func (l *eventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, en
 	var count int
 	err := r.Scan(&count)
 	return count, err
+}
+
+var countByEventNamesFmtstr = `
+	SELECT name, COUNT(*)
+	FROM event_logs
+	WHERE timestamp BETWEEN %s AND %s
+	AND name IN (%s)
+	GROUP BY 1
+`
+
+func (l *eventLogStore) CountByEventNames(ctx context.Context, startDate, endDate time.Time, eventNames []string) (map[string]int, error) {
+	var eventNamesSQL []*sqlf.Query
+	for _, name := range eventNames {
+		eventNamesSQL = append(eventNamesSQL, sqlf.Sprintf("%s", name))
+	}
+	q := sqlf.Sprintf(countByEventNamesFmtstr, startDate, endDate, sqlf.Join(eventNamesSQL, ","))
+	rs, err := l.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	m := map[string]int{}
+	for rs.Next() {
+		var name string
+		var count int
+		if err := rs.Scan(&name, &count); err != nil {
+			return nil, err
+		}
+		m[name] = count
+	}
+	return m, nil
 }
 
 func (l *eventLogStore) ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error) {

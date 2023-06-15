@@ -2099,3 +2099,72 @@ func TestMakeDateTruncExpression(t *testing.T) {
 		})
 	}
 }
+
+func TestEventLogs_CountByEventNames(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	now := time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC)
+	events := []*Event{
+		{
+			UserID:    1,
+			Name:      "RepoMetadataAdded",
+			Source:    "BACKEND",
+			Timestamp: now.Add(-24 * time.Hour),  // outside of [-1h,+1h] range
+		},
+		{
+			UserID:    1,
+			Name:      "RepoMetadataAdded",
+			Source:    "BACKEND",
+			Timestamp: now,
+		},
+		{
+			UserID:    1,
+			Name:      "RepoMetadataAdded",
+			Source:    "BACKEND",
+			Timestamp: now.Add(time.Minute),
+		},
+		{
+			UserID:    1,
+			Name:      "RepoMetadataUpdated",  // not querying for this event name
+			Source:    "BACKEND",
+			Timestamp: now.Add(2*time.Minute),
+		},
+		{
+			UserID:    1,
+			Name:      "RepoMetadataDeleted",  // not querying for this event name
+			Source:    "BACKEND",
+			Timestamp: now.Add(2*time.Minute),
+		},
+		{
+			UserID:    1,
+			Name:      "SearchSubmitted",
+			Argument:  json.RawMessage(`{"query": "repo:has(some:meta)"}`),
+			Source:    "BACKEND",
+			Timestamp: now,
+		},
+	}
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	for _, e := range events {
+		if err := db.EventLogs().Insert(ctx, e); err != nil {
+			t.Fatalf("failed inserting test data: %s", err)
+		}
+	}
+
+	eventNames := []string{"RepoMetadataAdded", "RepoMetadataUpdated"}
+	counts, err := db.EventLogs().CountByEventNames(ctx, now.Add(-1*time.Hour), now.Add(1*time.Hour), eventNames)
+	if err != nil {
+		t.Fatalf("failed counting events: %s", err)
+	}
+
+	want := map[string]int{
+		"RepoMetadataAdded":   2,
+		"RepoMetadataUpdated": 1,
+	}
+	if diff := cmp.Diff(want, counts); diff != "" {
+		t.Errorf("unexpected event counts:\n%s", diff)
+	}
+}
