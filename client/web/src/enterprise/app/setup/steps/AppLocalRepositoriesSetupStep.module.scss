@@ -30,6 +30,7 @@
 
         &[aria-disabled='true'] {
             filter: brightness(0.75);
+
             --btn-light-color-variant: var(--primary-3);
         }
     }
