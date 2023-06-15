@@ -20,14 +20,14 @@ set_version() {
   tauri_conf="./src-tauri/tauri.conf.json"
   tmp=$(mktemp)
   echo "--- Updating package version in '${tauri_conf}' to ${version}"
-  jq --arg version "${version}" '.package.version = $version' "${tauri_conf}" > "${tmp}"
+  jq --arg version "${version}" '.package.version = $version' "${tauri_conf}" >"${tmp}"
   mv "${tmp}" ./src-tauri/tauri.conf.json
 }
 
 bundle_path() {
   local platform
   platform="$(./enterprise/dev/app/detect-platform.sh)"
-  echo  "./src-tauri/target/${platform}/release/bundle"
+  echo "./src-tauri/target/${platform}/release/bundle"
 }
 
 upload_dist() {
@@ -35,7 +35,7 @@ upload_dist() {
   local target_dir
   path="$(bundle_path)"
   echo "searching for artefacts in '${path}' and moving them to dist/"
-  src=$(find "${path}" -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.tar.gz" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" -o -name "*.sig" \));
+  src=$(find "${path}" -type f \( -name "Cody*.dmg" -o -name "Cody*.tar.gz" -o -name "Cody*.deb" -o -name "cody*.AppImage" -o -name "cody*.tar.gz" -o -name "*.sig" \))
   target_dir="./${DIST_DIR}"
 
   mkdir -p "${target_dir}"
@@ -59,8 +59,8 @@ create_app_archive() {
   version=$1
   platform=$2
   path="$(bundle_path)"
-  app_path=$(find "${path}" -type d -name "Sourcegraph.app")
-  app_tar_gz=$(find "${path}" -type f -name "Sourcegraph.app.tar.gz")
+  app_path=$(find "${path}" -type d -name "Cody.app")
+  app_tar_gz=$(find "${path}" -type f -name "Cody.app.tar.gz")
 
   # we extract the arch from the platform
   arch=$(echo "${platform}" | cut -d '-' -f1)
@@ -68,14 +68,13 @@ create_app_archive() {
     arch=$(uname -m)
   fi
 
-
-  target="Sourcegraph.${version}.${arch}.app.tar.gz"
-  # # we have to handle Sourcegraph.App differently since it is a dir
-  if [[ -d  ${app_path} && -z ${app_tar_gz} ]]; then
+  target="Cody.${version}.${arch}.app.tar.gz"
+  # # we have to handle Cody.app differently since it is a dir
+  if [[ -d ${app_path} && -z ${app_tar_gz} ]]; then
     pushd .
     cd "${path}/macos/"
     echo "--- :file_cabinet: Creating archive ${target}"
-    tar -czvf "${target}" "Sourcegraph.app"
+    tar -czvf "${target}" "Cody.app"
     popd
   elif [[ -e ${app_tar_gz} ]]; then
     echo "--- :file_cabinet: Moving existing archive/signatures to ${target}"
@@ -85,13 +84,13 @@ create_app_archive() {
 }
 
 cleanup_codesigning() {
-    # shellcheck disable=SC2143
-    if [[ $(security list-keychains -d user | grep -q "my_temporary_keychain") ]]; then
-      set +e
-      echo "--- :broom: cleaning up keychains"
-      security delete-keychain my_temporary_keychain.keychain
-      set -e
-    fi
+  # shellcheck disable=SC2143
+  if [[ $(security list-keychains -d user | grep -q "my_temporary_keychain") ]]; then
+    set +e
+    echo "--- :broom: cleaning up keychains"
+    security delete-keychain my_temporary_keychain.keychain
+    set -e
+  fi
 }
 
 pre_codesign() {
@@ -108,7 +107,7 @@ pre_codesign() {
     secrets=$(aws secretsmanager get-secret-value --secret-id sourcegraph/mac-codesigning | jq '.SecretString |  fromjson')
     APPLE_SIGNING_IDENTITY="$(echo "${secrets}" | jq -r '.APPLE_SIGNING_IDENTITY')"
     APPLE_CERTIFICATE="$(echo "${secrets}" | jq -r '.APPLE_CERTIFICATE')"
-    APPLE_CERTIFICATE_PASSWORD="$(echo "${secrets}" | jq -r  '.APPLE_CERTIFICATE_PASSWORD')"
+    APPLE_CERTIFICATE_PASSWORD="$(echo "${secrets}" | jq -r '.APPLE_CERTIFICATE_PASSWORD')"
     APPLE_ID="$(echo "${secrets}" | jq -r '.APPLE_ID')"
     APPLE_PASSWORD="$(echo "${secrets}" | jq -r '.APPLE_PASSWORD')"
 
@@ -193,7 +192,6 @@ fi
 VERSION=$(./enterprise/dev/app/app-version.sh)
 set_version "${VERSION}"
 PLATFORM="$(./enterprise/dev/app/detect-platform.sh)"
-
 
 if [[ ${CODESIGNING:-"0"} == 1 && $(uname -s) == "Darwin" ]]; then
   # We want any xcode related tools to be picked up first so inject it here in the path
