@@ -6,7 +6,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const similaritySearchMinRowsToSplit = 1000
@@ -21,7 +23,10 @@ func searchRepoEmbeddingIndexes(
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
 	weaviate *weaviateClient,
-) (*embeddings.EmbeddingCombinedSearchResults, error) {
+) (_ *embeddings.EmbeddingCombinedSearchResults, err error) {
+	tr, ctx := trace.New(ctx, "searchRepoEmbeddingIndexes", "", params.Attrs()...)
+	defer tr.FinishWithErr(&err)
+
 	floatQuery, queryModel, err := getQueryEmbedding(ctx, params.Query)
 	if err != nil {
 		return nil, err
@@ -38,6 +43,11 @@ func searchRepoEmbeddingIndexes(
 	}
 
 	searchRepo := func(repoID api.RepoID, repoName api.RepoName) (codeResults, textResults []embeddings.EmbeddingSearchResult, err error) {
+		tr, ctx := trace.New(ctx, "searchRepo", "",
+			attribute.String("repoName", string(repoName)),
+		)
+		defer tr.FinishWithErr(&err)
+
 		if weaviate.Use(ctx) {
 			return weaviate.Search(ctx, repoName, repoID, floatQuery, params.CodeResultsCount, params.TextResultsCount)
 		}
