@@ -20,6 +20,7 @@ go_library(
         "//enterprise/cmd/executor/internal/janitor",
         "//enterprise/cmd/executor/internal/util",
         "//enterprise/cmd/executor/internal/worker",
+        "//enterprise/cmd/executor/internal/worker/cmdlogger",
         "//enterprise/cmd/executor/internal/worker/command",
         "//enterprise/cmd/executor/internal/worker/runner",
         "//enterprise/cmd/executor/internal/worker/workspace",

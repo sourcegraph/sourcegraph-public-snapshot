@@ -4,10 +4,11 @@ import "github.com/sourcegraph/sourcegraph/internal/extsvc"
 
 // CodeHost represents one configured external code host available on this Sourcegraph instance.
 type CodeHost struct {
-	ExternalServiceType string
-	ExternalServiceID   string
-	RequiresSSH         bool
-	HasWebhooks         bool
+	ExternalServiceType   string
+	ExternalServiceID     string
+	RequiresSSH           bool
+	SupportsCommitSigning bool
+	HasWebhooks           bool
 }
 
 // IsSupported returns true, when this code host is supported by

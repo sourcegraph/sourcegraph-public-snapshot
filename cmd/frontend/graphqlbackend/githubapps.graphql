@@ -8,9 +8,9 @@ extend type Mutation {
 
 extend type Query {
     """
-    All configured GitHub Apps.
+    All configured GitHub Apps, optionally filtered by the domain in which they are used.
     """
-    gitHubApps: GitHubAppConnection!
+    gitHubApps(domain: GitHubAppDomain): GitHubAppConnection!
     """
     Looks up a GitHub App by its ID.
     """
@@ -19,6 +19,20 @@ extend type Query {
     Looks up a GitHub App by its AppID and BaseURL.
     """
     gitHubAppByAppID(appID: Int!, baseURL: String!): GitHubApp
+}
+
+"""
+GitHubAppDomain enumerates the domains in which GitHub Apps can be used.
+"""
+enum GitHubAppDomain {
+    """
+    GitHub Apps that are configured for repository syncing.
+    """
+    REPOS
+    """
+    GitHub Apps that are configured for batch changes commit signing.
+    """
+    BATCHES
 }
 
 """
@@ -51,6 +65,10 @@ type GitHubApp implements Node {
     The name of the GitHub App
     """
     name: String!
+    """
+    The domain of the GitHub App (e.g. "repos" or "batches")
+    """
+    domain: String!
     """
     The slug of the GitHub App
     """

@@ -25,8 +25,9 @@ container_structure_test(
     ],
 )
 
-oci_push(
-    name = "candidate_push",
-    image = ":image",
-    repository = image_repository("codeintel-db"),
-)
+# RFC 793: We are not publishing those images for the 5.1 release, but will the next minor version.
+# oci_push(
+#     name = "candidate_push",
+#     image = ":image",
+#     repository = image_repository("codeintel-db"),
+# )

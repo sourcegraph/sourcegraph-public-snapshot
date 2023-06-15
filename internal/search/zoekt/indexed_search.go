@@ -272,8 +272,8 @@ func PartitionRepos(
 	return indexed, unindexed, nil
 }
 
-func DoZoektSearchGlobal(ctx context.Context, logger log.Logger, client zoekt.Streamer, params *search.ZoektParameters, pathRegexps []*regexp.Regexp, c streaming.Sender) error {
-	searchOpts := params.ToSearchOptions(ctx, logger)
+func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, params *search.ZoektParameters, pathRegexps []*regexp.Regexp, c streaming.Sender) error {
+	searchOpts := params.ToSearchOptions(ctx)
 
 	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -304,7 +304,7 @@ func DoZoektSearchGlobal(ctx context.Context, logger log.Logger, client zoekt.St
 }
 
 // zoektSearch searches repositories using zoekt.
-func zoektSearch(ctx context.Context, logger log.Logger, repos *IndexedRepoRevs, q zoektquery.Q, pathRegexps []*regexp.Regexp, typ search.IndexedRequestType, client zoekt.Streamer, zoektParams *search.ZoektParameters, since func(t time.Time) time.Duration, c streaming.Sender) error {
+func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pathRegexps []*regexp.Regexp, typ search.IndexedRequestType, client zoekt.Streamer, zoektParams *search.ZoektParameters, since func(t time.Time) time.Duration, c streaming.Sender) error {
 	if len(repos.RepoRevs) == 0 {
 		return nil
 	}
@@ -312,7 +312,7 @@ func zoektSearch(ctx context.Context, logger log.Logger, repos *IndexedRepoRevs,
 	brs := repos.BranchRepos()
 
 	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
-	searchOpts := zoektParams.ToSearchOptions(ctx, logger)
+	searchOpts := zoektParams.ToSearchOptions(ctx)
 
 	// Start event stream.
 	t0 := time.Now()
@@ -670,7 +670,7 @@ func (z *RepoSubsetTextSearchJob) Run(ctx context.Context, clients job.RuntimeCl
 		since = z.Since
 	}
 
-	return nil, zoektSearch(ctx, clients.Logger, z.Repos, z.Query, z.ZoektQueryRegexps, z.Typ, clients.Zoekt, z.ZoektParams, since, stream)
+	return nil, zoektSearch(ctx, z.Repos, z.Query, z.ZoektQueryRegexps, z.Typ, clients.Zoekt, z.ZoektParams, since, stream)
 }
 
 func (*RepoSubsetTextSearchJob) Name() string {
@@ -720,7 +720,7 @@ func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClient
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektParams.Query = t.GlobalZoektQuery.Generate()
 
-	return nil, DoZoektSearchGlobal(ctx, clients.Logger, clients.Zoekt, t.ZoektParams, t.GlobalZoektQueryRegexps, stream)
+	return nil, DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektParams, t.GlobalZoektQueryRegexps, stream)
 }
 
 func (*GlobalTextSearchJob) Name() string {

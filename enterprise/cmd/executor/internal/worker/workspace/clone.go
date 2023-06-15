@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -32,7 +33,7 @@ func cloneRepo(
 	workspaceDir string,
 	job types.Job,
 	cmd command.Command,
-	logger command.Logger,
+	logger cmdlogger.Logger,
 	options CloneOptions,
 	operations *command.Operations,
 ) (err error) {

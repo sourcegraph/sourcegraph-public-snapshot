@@ -3,6 +3,7 @@ import { MockReranker, Reranker } from '@sourcegraph/cody-shared/src/codebase-co
 import { ContextResult } from '@sourcegraph/cody-shared/src/local-context'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
+import { FixupController } from './non-stop/FixupController'
 import { FixupTask } from './non-stop/FixupTask'
 
 // A one-slot channel which lets readers block on a value being
@@ -40,6 +41,7 @@ export class TestSupport {
     public static instance: TestSupport | undefined
 
     public chatViewProvider = new Rendezvous<ChatViewProvider>()
+    public fixupController = new Rendezvous<FixupController>()
 
     public reranker: Reranker | undefined
 

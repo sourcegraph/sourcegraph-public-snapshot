@@ -782,6 +782,162 @@ func TestV3Client_Fork(t *testing.T) {
 	})
 }
 
+func TestV3Client_GetRef(t *testing.T) {
+	ctx := context.Background()
+	t.Run("success", func(t *testing.T) {
+		cli, save := newV3TestClient(t, "TestV3Client_GetRef_success")
+		defer save()
+
+		// For this test, we need the ref for a branch that exists. We'll use the
+		// "always-open-pr" branch of https://github.com/sourcegraph/automation-testing.
+		commit, err := cli.GetRef(ctx, "sourcegraph", "automation-testing", "refs/heads/always-open-pr")
+		assert.Nil(t, err)
+		assert.NotNil(t, commit)
+
+		// Check that a couple properties on the commit are what we expect.
+		assert.Equal(t, commit.SHA, "37406e7dfa4466b80d1da183d6477aac16b1e58c")
+		assert.Equal(t, commit.URL, "https://api.github.com/repos/sourcegraph/automation-testing/commits/37406e7dfa4466b80d1da183d6477aac16b1e58c")
+		assert.Equal(t, commit.Commit.Author.Name, "Thorsten Ball")
+
+		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_GetRef_success"), update("TestV3Client_GetRef_success"), commit)
+	})
+
+	t.Run("failure", func(t *testing.T) {
+		cli, save := newV3TestClient(t, "TestV3Client_GetRef_failure")
+		defer save()
+
+		// For this test, we need the ref for a branch that definitely does not exist.
+		nonexistentBranch := "refs/heads/butterfly-sponge-sandwich-rotation-technique-12345678-lol"
+		commit, err := cli.GetRef(ctx, "sourcegraph", "automation-testing", nonexistentBranch)
+		assert.Nil(t, commit)
+		assert.NotNil(t, err)
+		assert.ErrorContains(t, err, "No commit found for SHA: "+nonexistentBranch)
+
+		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_GetRef_failure"), update("TestV3Client_GetRef_failure"), err)
+	})
+}
+
+func TestV3Client_CreateCommit(t *testing.T) {
+	ctx := context.Background()
+	t.Run("success", func(t *testing.T) {
+		cli, save := newV3TestClient(t, "TestV3Client_CreateCommit_success")
+		defer save()
+
+		// For this test, we'll create a commit on
+		// https://github.com/sourcegraph/automation-testing based on this existing commit:
+		// https://github.com/sourcegraph/automation-testing/commit/37406e7dfa4466b80d1da183d6477aac16b1e58c.
+		treeSha := "851e666a00cd0cf74f1558ac5664fe431d3b1935"
+		parentSha := "9d04a0d8733dafbb5d75e594a9ec525c49dfc975"
+		author := &restAuthorCommiter{
+			Name:  "Sourcegraph VCR Test",
+			Email: "dev@sourcegraph.com",
+			Date:  "2023-06-01T12:00:00Z",
+		}
+		commit, err := cli.CreateCommit(ctx, "sourcegraph", "automation-testing", "I'm a new commit from a VCR test!", treeSha, []string{parentSha}, author, author)
+		assert.Nil(t, err)
+		assert.NotNil(t, commit)
+
+		// Check that a couple properties on the commit are what we expect.
+		// The SHA will be different every time, so we just check that it's not the
+		// same as the commit we based this one on.
+		assert.NotEqual(t, commit.SHA, "37406e7dfa4466b80d1da183d6477aac16b1e58c")
+		assert.Equal(t, commit.Message, "I'm a new commit from a VCR test!")
+		assert.Equal(t, commit.Tree.SHA, treeSha)
+		assert.Len(t, commit.Parents, 1)
+		assert.Equal(t, commit.Parents[0].SHA, parentSha)
+		assert.Equal(t, commit.Author, author)
+		assert.Equal(t, commit.Committer, author)
+
+		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_CreateCommit_success"), update("TestV3Client_CreateCommit_success"), commit)
+	})
+
+	t.Run("failure", func(t *testing.T) {
+		cli, save := newV3TestClient(t, "TestV3Client_CreateCommit_failure")
+		defer save()
+
+		// For this test, we'll create a commit on
+		// https://github.com/sourcegraph/automation-testing with bogus values for several of its properties.
+		commit, err := cli.CreateCommit(ctx, "sourcegraph", "automation-testing", "I'm not going to work!", "loltotallynotatree", []string{"loltotallynotacommit"}, nil, nil)
+		assert.Nil(t, commit)
+		assert.NotNil(t, err)
+		assert.ErrorContains(t, err, "The tree parameter must be exactly 40 characters and contain only [0-9a-f]")
+
+		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_CreateCommit_failure"), update("TestV3Client_CreateCommit_failure"), err)
+	})
+}
+
+func TestV3Client_UpdateRef(t *testing.T) {
+	ctx := context.Background()
+	t.Run("success", func(t *testing.T) {
+		cli, save := newV3TestClient(t, "TestV3Client_UpdateRef_success")
+		defer save()
+
+		// For this test, we'll use the "ready-to-update" branch of
+		// https://github.com/sourcegraph/automation-testing, duplicate the commit that's
+		// currently at its HEAD, and update the branch to point to the new commit. Then
+		// we'll put it back to the original commit so this test can easily be run again.
+
+		originalCommit := &restCommit{
+			URL: "https://api.github.com/repos/sourcegraph/automation-testing/commits/c2f0a019668a800df480f07dba5d9dcaa0f64350",
+			SHA: "c2f0a019668a800df480f07dba5d9dcaa0f64350",
+			Tree: restCommitTree{
+				SHA: "9398082230ccd0ea7249b601d364e518dcd89271",
+			},
+			Parents: []restCommitParent{
+				{SHA: "58dd8da9d9099a823c814c528b29b72c9b2ac98b"},
+			},
+		}
+		author := &restAuthorCommiter{
+			Name:  "Sourcegraph VCR Test",
+			Email: "dev@sourcegraph.com",
+			Date:  "2023-06-01T12:00:00Z",
+		}
+
+		// Create the new commit we'll use to update the branch with.
+		newCommit, err := cli.CreateCommit(ctx, "sourcegraph", "automation-testing", "New commit from VCR test!", originalCommit.Tree.SHA, []string{originalCommit.Parents[0].SHA}, author, author)
+
+		assert.Nil(t, err)
+		assert.NotNil(t, newCommit)
+		assert.NotEqual(t, originalCommit.SHA, newCommit.SHA)
+		assert.Equal(t, newCommit.Message, "New commit from VCR test!")
+
+		updatedRef, err := cli.UpdateRef(ctx, "sourcegraph", "automation-testing", "refs/heads/ready-to-update", newCommit.SHA)
+		assert.Nil(t, err)
+		assert.NotNil(t, updatedRef)
+
+		// Check that a couple properties on the updated ref are what we expect.
+		assert.Equal(t, updatedRef.Ref, "refs/heads/ready-to-update")
+		assert.Equal(t, updatedRef.Object.Type, "commit")
+		assert.Equal(t, updatedRef.Object.SHA, newCommit.SHA)
+
+		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_UpdateRef_success"), update("TestV3Client_UpdateRef_success"), updatedRef)
+
+		// Now put the branch back to its original commit.
+		updatedRef, err = cli.UpdateRef(ctx, "sourcegraph", "automation-testing", "refs/heads/ready-to-update", originalCommit.SHA)
+		assert.Nil(t, err)
+		assert.NotNil(t, updatedRef)
+
+		// Check that a couple properties on the updated ref are what we expect.
+		assert.Equal(t, updatedRef.Ref, "refs/heads/ready-to-update")
+		assert.Equal(t, updatedRef.Object.Type, "commit")
+		assert.Equal(t, updatedRef.Object.SHA, originalCommit.SHA)
+	})
+
+	t.Run("failure", func(t *testing.T) {
+		cli, save := newV3TestClient(t, "TestV3Client_UpdateRef_failure")
+		defer save()
+
+		// For this test, we'll try to update the "ready-to-update" branch of
+		// https://github.com/sourcegraph/automation-testing to point to a bogus commit
+		updatedRef, err := cli.UpdateRef(ctx, "sourcegraph", "automation-testing", "refs/heads/ready-to-update", "fakeshalolfakeshalolfakeshalolfakeshalol")
+		assert.Nil(t, updatedRef)
+		assert.NotNil(t, err)
+		assert.ErrorContains(t, err, "The sha parameter must be exactly 40 characters and contain only [0-9a-f]")
+
+		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_UpdateRef_failure"), update("TestV3Client_UpdateRef_failure"), err)
+	})
+}
+
 func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 	t.Helper()
 

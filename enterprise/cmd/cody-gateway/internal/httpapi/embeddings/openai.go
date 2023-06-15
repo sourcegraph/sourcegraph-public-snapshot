@@ -9,7 +9,7 @@ import (
 	"sort"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/response"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
