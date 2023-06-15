@@ -339,11 +339,20 @@ type BatchLogResult struct {
 }
 
 func (bl *BatchLogResult) ToProto() *proto.BatchLogResult {
-	return &proto.BatchLogResult{
+	result := &proto.BatchLogResult{
 		RepoCommit:    bl.RepoCommit.ToProto(),
 		CommandOutput: bl.CommandOutput,
-		CommandError:  &bl.CommandError,
 	}
+
+	var cmdErr string
+
+	if bl.CommandError != "" {
+		cmdErr = bl.CommandError
+		result.CommandError = &cmdErr
+	}
+
+	return result
+
 }
 
 func (bl *BatchLogResult) FromProto(p *proto.BatchLogResult) {
@@ -644,17 +653,21 @@ type CreateCommitFromPatchRequest struct {
 }
 
 func (c *CreateCommitFromPatchRequest) ToProto() *proto.CreateCommitFromPatchBinaryRequest {
-	return &proto.CreateCommitFromPatchBinaryRequest{
+	cc := &proto.CreateCommitFromPatchBinaryRequest{
 		Repo:         string(c.Repo),
 		BaseCommit:   string(c.BaseCommit),
 		Patch:        c.Patch,
 		TargetRef:    c.TargetRef,
 		UniqueRef:    c.UniqueRef,
 		CommitInfo:   c.CommitInfo.ToProto(),
-		Push:         c.Push.ToProto(),
 		GitApplyArgs: c.GitApplyArgs,
 		PushRef:      c.PushRef,
 	}
+	if c.Push != nil {
+		cc.Push = c.Push.ToProto()
+	}
+
+	return cc
 }
 
 func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchBinaryRequest) {
@@ -665,8 +678,6 @@ func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchB
 		pushConfig.FromProto(gp)
 	}
 
-	pr := p.GetPushRef()
-
 	*c = CreateCommitFromPatchRequest{
 		Repo:         api.RepoName(p.GetRepo()),
 		BaseCommit:   api.CommitID(p.GetBaseCommit()),
@@ -676,7 +687,10 @@ func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchB
 		CommitInfo:   PatchCommitInfoFromProto(p.GetCommitInfo()),
 		Push:         pushConfig,
 		GitApplyArgs: p.GetGitApplyArgs(),
-		PushRef:      &pr,
+	}
+
+	if p != nil {
+		c.PushRef = p.PushRef
 	}
 }
 
@@ -731,6 +745,10 @@ type PushConfig struct {
 }
 
 func (p *PushConfig) ToProto() *proto.PushConfig {
+	if p == nil {
+		return nil
+	}
+
 	return &proto.PushConfig{
 		RemoteUrl:  p.RemoteURL,
 		PrivateKey: p.PrivateKey,
