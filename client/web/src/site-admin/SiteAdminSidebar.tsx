@@ -14,7 +14,6 @@ import styles from './SiteAdminSidebar.module.scss'
 export interface SiteAdminSideBarGroupContext extends BatchChangesProps {
     isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
-    ownAnalyticsEnabled: boolean
 }
 
 export interface SiteAdminSideBarGroup extends NavGroupDescriptor<SiteAdminSideBarGroupContext> {}
@@ -27,7 +26,6 @@ export interface SiteAdminSidebarProps extends BatchChangesProps {
     /** The items for the side bar, by group */
     groups: SiteAdminSideBarGroups
     className?: string
-    ownAnalyticsEnabled: boolean
 }
 
 /**
