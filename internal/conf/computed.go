@@ -19,6 +19,7 @@ import (
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -821,7 +822,7 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 
 	// The default value for incremental is true.
 	if embeddingsConfig.Incremental == nil {
-		embeddingsConfig.Incremental = pointify(true)
+		embeddingsConfig.Incremental = pointers.Ptr(true)
 	}
 
 	// Set default values for max embeddings counts.
@@ -951,8 +952,4 @@ func defaultTo(val, def int) int {
 		return def
 	}
 	return val
-}
-
-func pointify[T any](v T) *T {
-	return &v
 }

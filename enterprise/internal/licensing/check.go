@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	olicensing "github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -156,7 +156,7 @@ func StartLicenseCheck(originalCtx context.Context, logger log.Logger, siteID st
 		ctxWithCancel, cancel = context.WithCancel(originalCtx)
 
 		prevLicenseToken, _ := store.Get(prevLicenseTokenKey).String()
-		licenseToken := hex.EncodeToString(olicensing.GenerateHashedLicenseKeyAccessToken(conf.Get().LicenseKey))
+		licenseToken := hex.EncodeToString(licensing.GenerateHashedLicenseKeyAccessToken(conf.Get().LicenseKey))
 		var initialWaitInterval time.Duration = 0
 		if prevLicenseToken == licenseToken {
 			initialWaitInterval, _ = calcDurationSinceLastCalled(glock.NewRealClock())

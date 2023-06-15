@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -306,7 +307,7 @@ func TestGetEmbeddableRepoOpts(t *testing.T) {
 	conf.Mock(&conf.Unified{})
 	defer conf.Mock(nil)
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		CodyEnabled: pointify(true),
+		CodyEnabled: pointers.Ptr(true),
 		LicenseKey:  "asdf",
 	}})
 
@@ -320,7 +321,7 @@ func TestGetEmbeddableRepoOpts(t *testing.T) {
 
 	limit := 5
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		CodyEnabled: pointify(true),
+		CodyEnabled: pointers.Ptr(true),
 		Embeddings: &schema.Embeddings{
 			Provider:                   "openai",
 			AccessToken:                "asdf",
@@ -375,8 +376,4 @@ func createGlobalPolicy(ctx context.Context, store RepoEmbeddingJobsStore) error
 		true, // Embeddings enabled
 	)
 	return store.Exec(ctx, q)
-}
-
-func pointify[T any](v T) *T {
-	return &v
 }
