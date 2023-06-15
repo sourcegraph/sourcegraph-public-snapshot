@@ -15,6 +15,10 @@ const READ_TIMEOUT = 750
 
 const displayedCompletions: Map<string, CompletionEvent> = new Map()
 
+export function logCompletionEvent(name: string, params?: unknown): void {
+    logEvent(`CodyVSCodeExtension:completion:${name}`, params, params)
+}
+
 export function start(
     { type, multilineMode }: { type: CompletionEvent['type']; multilineMode: CompletionEvent['multilineMode'] } = {
         type: 'inline',
@@ -30,8 +34,7 @@ export function start(
         forceRead: false,
     })
 
-    const logParams = { type, multilineMode }
-    logEvent('CodyVSCodeExtension:completion:started', logParams, logParams)
+    logCompletionEvent('started', { type, multilineMode })
 
     return id
 }
@@ -52,15 +55,13 @@ export function accept(id: string): void {
         return
     }
     completionEvent.forceRead = true
-    const logParams = { type: completionEvent.type, multilineMode: completionEvent.multilineMode }
     logSuggestionEvent()
-    logEvent('CodyVSCodeExtension:completion:accepted', logParams, logParams)
+    logCompletionEvent('accepted', { type: completionEvent.type, multilineMode: completionEvent.multilineMode })
 }
 
 export function noResponse(id: string): void {
     const completionEvent = displayedCompletions.get(id)
-    const logParams = { type: completionEvent?.type, multilineMode: completionEvent?.multilineMode }
-    logEvent('CodyVSCodeExtension:completion:noResponse', logParams, logParams)
+    logCompletionEvent('noResponse', { type: completionEvent?.type, multilineMode: completionEvent?.multilineMode })
 }
 
 /**
@@ -87,15 +88,14 @@ function logSuggestionEvent(): void {
         const latency = suggestedAt - startedAt
         const displayDuration = now - suggestedAt
         const read = displayDuration >= READ_TIMEOUT
-        const logParams = {
+
+        logCompletionEvent('suggested', {
             type,
             multilineMode,
             latency,
             displayDuration,
             read: forceRead || read,
-        }
-
-        logEvent('CodyVSCodeExtension:completion:suggested', logParams, logParams)
+        })
     }
     displayedCompletions.clear()
 }

@@ -5,7 +5,6 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
-import { logEvent } from '../event-logger'
 import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
@@ -25,12 +24,7 @@ const LOG_MANUAL = { type: 'manual' }
  * that is most similar to the 'targetText'. In essence, it sets the maximum number
  * of lines that the best match can be. A larger 'windowSize' means larger potential matches
  */
-const WINDOW_SIZE = 50
-
-function lastNLines(text: string, n: number): string {
-    const lines = text.split('\n')
-    return lines.slice(Math.max(0, lines.length - n)).join('\n')
-}
+const JACCARD_DISTANCE_WINDOW_SIZE = 50
 
 export const inlineCompletionsCache = new CompletionsCache()
 
@@ -154,6 +148,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const remainingChars = this.tokToChar(this.promptTokens)
 
+        // TODO(valery): do we create an InlineCompletionProvider here only to get the empty prompt?
         const completionNoSnippets = new InlineCompletionProvider(
             this.completionsClient,
             remainingChars,
@@ -170,9 +165,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const similarCode = await getContext({
             currentEditor,
+            prefix,
+            suffix,
             history: this.history,
-            targetText: lastNLines(prefix, WINDOW_SIZE),
-            windowSize: WINDOW_SIZE,
+            jaccardDistanceWindowSize: JACCARD_DISTANCE_WINDOW_SIZE,
             maxChars: contextChars,
             codebaseContext: this.codebaseContext,
         })
@@ -364,9 +360,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const similarCode = await getContext({
             currentEditor,
+            prefix,
+            suffix,
             history: this.history,
-            targetText: lastNLines(prefix, WINDOW_SIZE),
-            windowSize: WINDOW_SIZE,
+            jaccardDistanceWindowSize: JACCARD_DISTANCE_WINDOW_SIZE,
             maxChars: contextChars,
             codebaseContext: this.codebaseContext,
         })
@@ -383,14 +380,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         )
 
         try {
-            logEvent('CodyVSCodeExtension:completion:started', LOG_MANUAL, LOG_MANUAL)
+            CompletionLogger.logCompletionEvent('started', LOG_MANUAL)
             const completions = await completer.generateCompletions(abortController.signal, 3)
             this.documentProvider.addCompletions(completionsUri, ext, completions, {
                 suffix: '',
                 elapsedMillis: 0,
                 llmOptions: null,
             })
-            logEvent('CodyVSCodeExtension:completion:suggested', LOG_MANUAL, LOG_MANUAL)
+            CompletionLogger.logCompletionEvent('suggested', LOG_MANUAL)
         } catch (error) {
             if (error.message === 'aborted') {
                 return
