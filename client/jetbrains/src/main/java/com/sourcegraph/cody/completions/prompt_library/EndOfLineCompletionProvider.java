@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import org.apache.commons.lang.StringUtils;
 
 public class EndOfLineCompletionProvider extends CompletionProvider {
   public EndOfLineCompletionProvider(
@@ -71,7 +72,7 @@ public class EndOfLineCompletionProvider extends CompletionProvider {
 
   @Override
   public CompletableFuture<List<Completion>> generateCompletions(
-      CancellationToken abortSignal, Optional<Integer> n) {
+      CancellationToken abortSignal, Optional<Integer> n, DocContext docContext) {
     String prefix = this.prefix + this.injectPrefix;
 
     // Create prompt
@@ -100,11 +101,14 @@ public class EndOfLineCompletionProvider extends CompletionProvider {
                 .map(
                     resp ->
                         new Completion(
-                            prefix, prompt, this.postProcess(resp.completion), resp.stopReason))
+                            prefix,
+                            prompt,
+                            this.postProcess(resp.completion, docContext),
+                            resp.stopReason))
                 .collect(Collectors.toList()));
   }
 
-  private String postProcess(String completion) {
+  private String postProcess(String completion, DocContext docContext) {
     // Sometimes Claude emits an extra space
     if (completion.startsWith(" ") && this.prefix.endsWith(" ")) {
       completion = completion.substring(1);
@@ -118,6 +122,17 @@ public class EndOfLineCompletionProvider extends CompletionProvider {
     if (endBlockIndex != -1) {
       return completion.substring(0, endBlockIndex).trim();
     }
-    return completion.trim();
+    String trimmedCompletion = completion.trim();
+    String sameLineSuffix = docContext.nextNonEmptyLine;
+    if (trimmedCompletion.endsWith(sameLineSuffix)) {
+      // if the completion already has the same line suffix, we strip it
+      return StringUtils.stripEnd(trimmedCompletion, sameLineSuffix);
+    } else if (trimmedCompletion.contains(sameLineSuffix)) {
+      // if the completion already contains the same line suffix
+      // but it doesn't strictly end with it we cut the end of the completion starting with the
+      // suffix
+      int index = trimmedCompletion.lastIndexOf(sameLineSuffix);
+      return trimmedCompletion.substring(0, index);
+    } else return trimmedCompletion;
   }
 }

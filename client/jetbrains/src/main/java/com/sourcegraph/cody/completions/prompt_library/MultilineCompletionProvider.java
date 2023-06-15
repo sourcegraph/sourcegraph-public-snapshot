@@ -83,7 +83,7 @@ public class MultilineCompletionProvider extends CompletionProvider {
 
   @Override
   public CompletableFuture<List<Completion>> generateCompletions(
-      CancellationToken abortSignal, Optional<Integer> n) {
+      CancellationToken abortSignal, Optional<Integer> n, DocContext docContext) {
     String prefix = this.prefix.trim();
 
     // Create prompt

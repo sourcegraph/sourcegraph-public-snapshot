@@ -166,7 +166,7 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
     }
     List<CompletableFuture<List<Completion>>> promises =
         completers.stream()
-            .map(c -> c.generateCompletions(token, Optional.empty()))
+            .map(c -> c.generateCompletions(token, Optional.empty(), docContext))
             .collect(Collectors.toList());
     CompletableFuture<List<InlineCompletionItem>> all =
         Promises.all(promises)

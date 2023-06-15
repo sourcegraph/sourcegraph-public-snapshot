@@ -42,7 +42,7 @@ public abstract class CompletionProvider {
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   public abstract CompletableFuture<List<Completion>> generateCompletions(
-      CancellationToken token, Optional<Integer> n);
+      CancellationToken abortSignal, Optional<Integer> n, DocContext docContext);
 
   public int emptyPromptLength() {
     String promptNoSnippets =
