@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+	types2 "github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
@@ -73,9 +74,12 @@ func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
 			git := gitserver.NewMockClient()
 			git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
 
+			reposStore := database.NewMockRepoStore()
+			reposStore.GetFunc.SetDefaultReturn(&types2.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
 			codeownersStore := edb.NewMockCodeownersStore()
 			codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
 			db := edb.NewMockEnterpriseDB()
+			db.ReposFunc.SetDefaultReturn(reposStore)
 			db.CodeownersFunc.SetDefaultReturn(codeownersStore)
 
 			got, err := NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
@@ -107,7 +111,9 @@ func TestOwnersCannotFindFile(t *testing.T) {
 	codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, edb.CodeownersFileNotFoundError{})
 	db := edb.NewMockEnterpriseDB()
 	db.CodeownersFunc.SetDefaultReturn(codeownersStore)
-
+	reposStore := database.NewMockRepoStore()
+	reposStore.GetFunc.SetDefaultReturn(&types2.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
+	db.ReposFunc.SetDefaultReturn(reposStore)
 	got, err := NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
 	require.NoError(t, err)
 	assert.Nil(t, got)
@@ -133,6 +139,9 @@ func TestOwnersServesIngestedFile(t *testing.T) {
 		}, nil)
 		db := edb.NewMockEnterpriseDB()
 		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+		reposStore := database.NewMockRepoStore()
+		reposStore.GetFunc.SetDefaultReturn(&types2.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
+		db.ReposFunc.SetDefaultReturn(reposStore)
 
 		got, err := NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
 		require.NoError(t, err)
@@ -146,6 +155,9 @@ func TestOwnersServesIngestedFile(t *testing.T) {
 		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, edb.CodeownersFileNotFoundError{})
 		db := edb.NewMockEnterpriseDB()
 		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+		reposStore := database.NewMockRepoStore()
+		reposStore.GetFunc.SetDefaultReturn(&types2.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
+		db.ReposFunc.SetDefaultReturn(reposStore)
 
 		got, err := NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
 		require.NoError(t, err)
