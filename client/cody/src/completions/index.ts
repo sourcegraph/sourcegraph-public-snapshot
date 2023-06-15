@@ -128,10 +128,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             suffix,
             history: this.history,
             jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
-            // TODO: Document this as behavior change in the PR.
-            // To simplify the setup, we increase the context maximum character count to the whole
-            // prompt size. This means we slightly over-fetch context but I don't think this is
-            // going to be an issue since it's only for a fixed %.
             maxChars: this.promptChars,
             codebaseContext: this.codebaseContext,
         })
