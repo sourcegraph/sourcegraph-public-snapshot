@@ -3,14 +3,14 @@ package com.sourcegraph.cody.recipes;
 public class GenerateDocStringPromptProvider implements PromptProvider {
   @Override
   public PromptContext getPromptContext(
-      Language language, SelectedText selectedText, TruncatedText truncatedSelectedText) {
+      Language language, OriginalText originalText, TruncatedText truncatedText) {
     MessageBuilder promptMessageBuilder =
         new MessageBuilder(language)
             .appendText(
                 "Generate a comment documenting the parameters and functionality of the following"
                     + language.getValue()
                     + " code:")
-            .appendCodeSnippet(truncatedSelectedText);
+            .appendCodeSnippet(truncatedText);
     if (language.getValue().equals("Java")) {
       promptMessageBuilder.appendText(
           "Use the JavaDoc documentation style to generate a Java comment.");
@@ -32,7 +32,7 @@ public class GenerateDocStringPromptProvider implements PromptProvider {
     String displayText =
         new MessageBuilder(language)
             .appendText("Generate documentation for the following code:")
-            .appendCodeSnippet(selectedText)
+            .appendCodeSnippet(originalText)
             .build();
 
     return new PromptContext(promptMessage, displayText, "Here is the generated documentation:\n");

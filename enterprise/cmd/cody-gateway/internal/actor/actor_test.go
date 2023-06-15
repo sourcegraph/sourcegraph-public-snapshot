@@ -1,195 +1,61 @@
 package actor
 
 import (
-	"context"
+	"encoding/json"
+	"sort"
 	"testing"
-	"time"
 
 	"github.com/hexops/autogold/v2"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 )
 
-func TestNewRateLimitWithPercentageConcurrency(t *testing.T) {
-	concurrencyLimitConfig := codygateway.ActorConcurrencyLimitConfig{
-		Percentage: 0.1,
-		Interval:   10 * time.Second,
-	}
+func TestActor_TraceAttributes(t *testing.T) {
 	tests := []struct {
-		name                 string
-		limit                int
-		interval             time.Duration
-		wantConcurrencyLimit int
+		name     string
+		actor    *Actor
+		wantAttr autogold.Value
 	}{
 		{
-			name:                 "feature limit internal is daily",
-			limit:                100,
-			interval:             24 * time.Hour,
-			wantConcurrencyLimit: 10,
+			name:     "nil actor",
+			actor:    nil,
+			wantAttr: autogold.Expect(`[{"Key":"actor","Value":{"Type":"STRING","Value":"\u003cnil\u003e"}}]`),
 		},
 		{
-			name:                 "feature limit internal is more than a day",
-			limit:                210,
-			interval:             7 * 24 * time.Hour,
-			wantConcurrencyLimit: 3,
+			name: "with ID and access enabled",
+			actor: &Actor{
+				ID:            "abc123",
+				AccessEnabled: true,
+			},
+			wantAttr: autogold.Expect(`[{"Key":"actor.id","Value":{"Type":"STRING","Value":"abc123"}},{"Key":"actor.accessEnabled","Value":{"Type":"BOOL","Value":true}}]`),
 		},
 		{
-			name:                 "feature limit internal is less than a day",
-			limit:                10,
-			interval:             time.Hour,
-			wantConcurrencyLimit: 24,
-		},
-		{
-			name:                 "computed concurrency limit is less than 1",
-			limit:                3,
-			interval:             24 * time.Hour,
-			wantConcurrencyLimit: 1,
+			name: "with rate limits",
+			actor: &Actor{
+				ID: "abc123",
+				RateLimits: map[codygateway.Feature]RateLimit{
+					codygateway.FeatureCodeCompletions: {
+						Limit: 50,
+					},
+					codygateway.FeatureEmbeddings: {
+						Limit: 50,
+					},
+				},
+			},
+			wantAttr: autogold.Expect(`[{"Key":"actor.rateLimits.embeddings","Value":{"Type":"STRING","Value":"{\"allowedModels\":null,\"limit\":50,\"interval\":0,\"concurrentRequests\":0,\"concurrentRequestsInterval\":0}"}},{"Key":"actor.rateLimits.code_completions","Value":{"Type":"STRING","Value":"{\"allowedModels\":null,\"limit\":50,\"interval\":0,\"concurrentRequests\":0,\"concurrentRequestsInterval\":0}"}},{"Key":"actor.id","Value":{"Type":"STRING","Value":"abc123"}},{"Key":"actor.accessEnabled","Value":{"Type":"BOOL","Value":false}}]`),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := NewRateLimitWithPercentageConcurrency(test.limit, test.interval, []string{"model"}, concurrencyLimitConfig)
-			assert.Equal(t, test.wantConcurrencyLimit, got.ConcurrentRequests)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotAttr := tt.actor.TraceAttributes()
+			sort.Slice(gotAttr, func(i, j int) bool {
+				return string(gotAttr[i].Key) > string(gotAttr[j].Key)
+			})
+			// Just a sanity check, keep in one line for test stability
+			b, err := json.Marshal(gotAttr)
+			require.NoError(t, err)
+			tt.wantAttr.Equal(t, string(b))
 		})
 	}
-}
-
-func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
-	// Stable time for testing
-	now := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
-	nowFunc := func() time.Time { return now }
-	featureLimiter := limiter.StaticLimiter{
-		Identifier: "foobar",
-		Redis:      limiter.MockRedisStore{},
-		Limit:      10,
-		Interval:   24 * time.Hour,
-	}
-
-	tests := []struct {
-		name      string
-		limiter   *concurrencyLimiter
-		wantErr   autogold.Value
-		wantStore autogold.Value
-	}{
-		{
-			name: "new entry",
-			limiter: &concurrencyLimiter{
-				actor: &Actor{ID: "foobar"},
-				redis: limiter.MockRedisStore{},
-				rateLimit: RateLimit{
-					Limit:    2,
-					Interval: 10 * time.Second,
-				},
-				featureLimiter: featureLimiter,
-				nowFunc:        nowFunc,
-			},
-			wantErr: nil,
-			wantStore: autogold.Expect(limiter.MockRedisStore{
-				"foobar": limiter.MockRedisEntry{Value: 1},
-			}),
-		},
-		{
-			name: "increments existing entry",
-			limiter: &concurrencyLimiter{
-				actor: &Actor{ID: "foobar"},
-				redis: limiter.MockRedisStore{
-					"foobar": limiter.MockRedisEntry{Value: 1, TTL: 10},
-				},
-				rateLimit: RateLimit{
-					Limit:    2,
-					Interval: 10 * time.Second,
-				},
-				featureLimiter: featureLimiter,
-				nowFunc:        nowFunc,
-			},
-			wantErr: nil,
-			wantStore: autogold.Expect(limiter.MockRedisStore{
-				"foobar": limiter.MockRedisEntry{Value: 2, TTL: 10},
-			}),
-		},
-		{
-			name: "existing limit's TTL is longer than desired interval but UpdateRateLimitTTL=false",
-			limiter: &concurrencyLimiter{
-				actor: &Actor{ID: "foobar"},
-				redis: limiter.MockRedisStore{
-					"foobar": limiter.MockRedisEntry{Value: 1, TTL: 999},
-				},
-				rateLimit: RateLimit{
-					Limit:    2,
-					Interval: 10 * time.Second,
-				},
-				featureLimiter: featureLimiter,
-				nowFunc:        nowFunc,
-			},
-			wantErr: nil,
-			wantStore: autogold.Expect(limiter.MockRedisStore{
-				"foobar": limiter.MockRedisEntry{Value: 2, TTL: 999},
-			}),
-		},
-		{
-			name: "existing limit's TTL is longer than desired interval",
-			limiter: &concurrencyLimiter{
-				actor: &Actor{
-					ID:          "foobar",
-					LastUpdated: &now,
-				},
-				redis: limiter.MockRedisStore{
-					"foobar": limiter.MockRedisEntry{Value: 1, TTL: 999},
-				},
-				rateLimit: RateLimit{
-					Limit:    2,
-					Interval: 10 * time.Second,
-				},
-				featureLimiter: featureLimiter,
-				nowFunc:        nowFunc,
-			},
-			wantErr: nil,
-			wantStore: autogold.Expect(limiter.MockRedisStore{
-				"foobar": limiter.MockRedisEntry{Value: 2, TTL: 10},
-			}),
-		},
-		{
-			name: "rejects request over quota",
-			limiter: &concurrencyLimiter{
-				actor:   &Actor{ID: "foobar"},
-				feature: codygateway.FeatureCodeCompletions,
-				redis: limiter.MockRedisStore{
-					"foobar": limiter.MockRedisEntry{Value: 2, TTL: 10},
-				},
-				rateLimit: RateLimit{
-					Limit:    2,
-					Interval: 10 * time.Second,
-				},
-				featureLimiter: featureLimiter,
-				nowFunc:        nowFunc,
-			},
-			wantErr: autogold.Expect(`"code_completions": concurrency limit exceeded`),
-			wantStore: autogold.Expect(limiter.MockRedisStore{
-				"foobar": limiter.MockRedisEntry{Value: 2, TTL: 10},
-			}),
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			_, err := test.limiter.TryAcquire(context.Background())
-			if test.wantErr != nil {
-				require.Error(t, err)
-				test.wantErr.Equal(t, err.Error())
-			} else {
-				require.NoError(t, err)
-			}
-			test.wantStore.Equal(t, test.limiter.redis)
-		})
-	}
-}
-
-func TestAsErrConcurrencyLimitExceeded(t *testing.T) {
-	var err error
-	err = ErrConcurrencyLimitExceeded{}
-	assert.True(t, errors.As(err, &ErrConcurrencyLimitExceeded{}))
-	assert.True(t, errors.As(errors.Wrap(err, "foo"), &ErrConcurrencyLimitExceeded{}))
 }

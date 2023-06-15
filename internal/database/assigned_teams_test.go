@@ -170,9 +170,7 @@ func TestAssignedTeamsStore_Delete(t *testing.T) {
 
 func createTeam(t *testing.T, ctx context.Context, db DB, teamName string) *types.Team {
 	t.Helper()
-	err := db.Teams().CreateTeam(ctx, &types.Team{Name: teamName})
-	require.NoError(t, err)
-	team, err := db.Teams().GetTeamByName(ctx, teamName)
+	team, err := db.Teams().CreateTeam(ctx, &types.Team{Name: teamName})
 	require.NoError(t, err)
 	return team
 }

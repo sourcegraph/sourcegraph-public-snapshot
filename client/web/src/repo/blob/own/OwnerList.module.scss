@@ -53,7 +53,10 @@
     }
 }
 
-.edit-button {
+.edit-button-column {
     display: flex;
     justify-content: right;
+}
+.remove-add-button {
+    margin-right: 0.5rem;
 }

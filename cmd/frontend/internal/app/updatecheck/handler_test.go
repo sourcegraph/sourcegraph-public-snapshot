@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestLatestDockerVersionPushed(t *testing.T) {
@@ -536,9 +537,9 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 
 	testUsage, err := json.Marshal(types.NewCodeIntelUsageStatistics{
 		StartOfWeek:                now,
-		WAUs:                       int32Ptr(25),
-		SearchBasedWAUs:            int32Ptr(10),
-		PreciseCrossRepositoryWAUs: int32Ptr(40),
+		WAUs:                       pointers.Ptr(int32(25)),
+		SearchBasedWAUs:            pointers.Ptr(int32(10)),
+		PreciseCrossRepositoryWAUs: pointers.Ptr(int32(40)),
 		EventSummaries: []types.CodeIntelEventSummary{
 			{
 				Action:          types.HoverAction,
@@ -589,28 +590,28 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 				TotalActions:    3,
 			},
 		},
-		NumRepositories:                                  int32Ptr(50 + 85),
-		NumRepositoriesWithUploadRecords:                 int32Ptr(50),
-		NumRepositoriesWithFreshUploadRecords:            int32Ptr(40),
-		NumRepositoriesWithIndexRecords:                  int32Ptr(30),
-		NumRepositoriesWithFreshIndexRecords:             int32Ptr(20),
-		NumRepositoriesWithAutoIndexConfigurationRecords: int32Ptr(7),
+		NumRepositories:                                  pointers.Ptr(int32(50 + 85)),
+		NumRepositoriesWithUploadRecords:                 pointers.Ptr(int32(50)),
+		NumRepositoriesWithFreshUploadRecords:            pointers.Ptr(int32(40)),
+		NumRepositoriesWithIndexRecords:                  pointers.Ptr(int32(30)),
+		NumRepositoriesWithFreshIndexRecords:             pointers.Ptr(int32(20)),
+		NumRepositoriesWithAutoIndexConfigurationRecords: pointers.Ptr(int32(7)),
 		CountsByLanguage: map[string]types.CodeIntelRepositoryCountsByLanguage{
 			"go": {
-				NumRepositoriesWithUploadRecords:      int32Ptr(10),
-				NumRepositoriesWithFreshUploadRecords: int32Ptr(20),
-				NumRepositoriesWithIndexRecords:       int32Ptr(30),
-				NumRepositoriesWithFreshIndexRecords:  int32Ptr(40),
+				NumRepositoriesWithUploadRecords:      pointers.Ptr(int32(10)),
+				NumRepositoriesWithFreshUploadRecords: pointers.Ptr(int32(20)),
+				NumRepositoriesWithIndexRecords:       pointers.Ptr(int32(30)),
+				NumRepositoriesWithFreshIndexRecords:  pointers.Ptr(int32(40)),
 			},
 			"typescript": {
-				NumRepositoriesWithUploadRecords:      int32Ptr(15),
-				NumRepositoriesWithFreshUploadRecords: int32Ptr(25),
-				NumRepositoriesWithIndexRecords:       int32Ptr(35),
-				NumRepositoriesWithFreshIndexRecords:  int32Ptr(45),
+				NumRepositoriesWithUploadRecords:      pointers.Ptr(int32(15)),
+				NumRepositoriesWithFreshUploadRecords: pointers.Ptr(int32(25)),
+				NumRepositoriesWithIndexRecords:       pointers.Ptr(int32(35)),
+				NumRepositoriesWithFreshIndexRecords:  pointers.Ptr(int32(45)),
 			},
 		},
-		SettingsPageViewCount:            int32Ptr(1489),
-		UsersWithRefPanelRedesignEnabled: int32Ptr(46),
+		SettingsPageViewCount:            pointers.Ptr(int32(1489)),
+		UsersWithRefPanelRedesignEnabled: pointers.Ptr(int32(46)),
 		LanguageRequests: []types.LanguageRequest{
 			{
 				LanguageID:  "frob",
@@ -799,16 +800,16 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 	testPeriod, err := json.Marshal(&types.OldCodeIntelUsagePeriod{
 		StartTime: now,
 		Hover: &types.OldCodeIntelEventCategoryStatistics{
-			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 1, EventsCount: int32Ptr(1)},
-			Search: &types.OldCodeIntelEventStatistics{UsersCount: 2, EventsCount: int32Ptr(2)},
+			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 1, EventsCount: pointers.Ptr(int32(1))},
+			Search: &types.OldCodeIntelEventStatistics{UsersCount: 2, EventsCount: pointers.Ptr(int32(2))},
 		},
 		Definitions: &types.OldCodeIntelEventCategoryStatistics{
-			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 3, EventsCount: int32Ptr(3)},
-			Search: &types.OldCodeIntelEventStatistics{UsersCount: 4, EventsCount: int32Ptr(4)},
+			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 3, EventsCount: pointers.Ptr(int32(3))},
+			Search: &types.OldCodeIntelEventStatistics{UsersCount: 4, EventsCount: pointers.Ptr(int32(4))},
 		},
 		References: &types.OldCodeIntelEventCategoryStatistics{
-			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 5, EventsCount: int32Ptr(1)},
-			Search: &types.OldCodeIntelEventStatistics{UsersCount: 6, EventsCount: int32Ptr(3)},
+			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 5, EventsCount: pointers.Ptr(int32(1))},
+			Search: &types.OldCodeIntelEventStatistics{UsersCount: 6, EventsCount: pointers.Ptr(int32(3))},
 		},
 	})
 	if err != nil {
@@ -1242,8 +1243,4 @@ func compareJSON(t *testing.T, actual []byte, expected string) {
 	if diff := cmp.Diff(o2, o1); diff != "" {
 		t.Fatalf("mismatch (-want +got):\n%s", diff)
 	}
-}
-
-func int32Ptr(v int32) *int32 {
-	return &v
 }

@@ -129,7 +129,7 @@ function useBlobPanelViews({
                     ? {
                           id: 'ownership',
                           title: 'Ownership',
-                          productStatus: 'experimental' as const,
+                          productStatus: 'beta' as const,
                           element: (
                               <PanelContent>
                                   <FileOwnershipPanel

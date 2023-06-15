@@ -259,4 +259,6 @@ var noVersionFormatter = scip.SymbolFormatter{
 	IncludePackageName:    func(_ string) bool { return true },
 	IncludePackageVersion: func(_ string) bool { return false },
 	IncludeDescriptor:     func(_ string) bool { return true },
+	IncludeRawDescriptor:  func(_ *scip.Descriptor) bool { return true },
+	IncludeDisambiguator:  func(_ string) bool { return true },
 }
