@@ -10,6 +10,7 @@ import {
     mdiRefresh,
     mdiSecurity,
     mdiVectorPolyline,
+    mdiListStatus,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
@@ -73,6 +74,9 @@ const parseRepositoryStatus = (repo: SiteAdminRepositoryFields): string => {
 
 const repoClonedAndHealthy = (repo: SiteAdminRepositoryFields): boolean =>
     repo.mirrorInfo.cloned && !repo.mirrorInfo.lastError && !repo.mirrorInfo.cloneInProgress
+
+const repoCloned = (repo: SiteAdminRepositoryFields): boolean =>
+    repo.mirrorInfo.cloned && !repo.mirrorInfo.cloneInProgress
 
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
@@ -202,6 +206,15 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiDatabaseRefresh} className="mr-1" />
                                     Reclone
+                                </MenuItem>
+                                <MenuItem
+                                    as={Button}
+                                    disabled={!repoCloned(node)}
+                                    onSelect={() => navigate(`/${node.name}/-/settings/mirror`)}
+                                    className="p-2"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiListStatus} className="mr-1" />
+                                    Last sync log
                                 </MenuItem>
                                 <MenuItem
                                     as={Button}

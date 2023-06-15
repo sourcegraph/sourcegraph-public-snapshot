@@ -771,6 +771,7 @@ var ignoreVolatileGitserverRepoFields = cmpopts.IgnoreFields(
 	"UpdatedAt",
 	"CorruptionLogs",
 	"CloningProgress",
+	"LastSyncOutput",
 )
 
 func TestHandleRepoDelete(t *testing.T) {

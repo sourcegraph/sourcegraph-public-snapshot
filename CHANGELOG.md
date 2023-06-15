@@ -38,6 +38,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added `isCodyEnabled` as a new GraphQL field to `Site`. [#52941](https://github.com/sourcegraph/sourcegraph/pull/52941)
 - Enabled improved search ranking by default. This feature can be disabled through the `search-ranking` feature flag.[#53031](https://github.com/sourcegraph/sourcegraph/pull/53031)
 - Added token callback route for Cody in VS Code and VS Code insiders. [#53313](https://github.com/sourcegraph/sourcegraph/pull/53313)
+- Latest repository clone/sync output is surfaced in the "Mirroring and cloning" page (`{REPO}/-/settings/mirror`). Added primarily to enable easier debugging of issues with Perforce depots, it can also be useful for other code hosts. [#51598](https://github.com/sourcegraph/sourcegraph/pull/51598)
 - New `file:has.contributor(...)` predicate for filtering files based on contributors. [#53206](https://github.com/sourcegraph/sourcegraph/pull/53206)
 - Added multi-repo scope selector for Cody on the web supporting unified context generation API which uses combination of embeddings search and keyword search as fallback for context generation. [53046](https://github.com/sourcegraph/sourcegraph/pull/53046)
 

@@ -4136,6 +4136,10 @@ type MirrorRepositoryInfo {
     """
     lastError: String
     """
+    The output of the most recent repo sync job
+    """
+    lastSyncOutput: String
+    """
     The byte size of the repo.
     """
     byteSize: BigInt!

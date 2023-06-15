@@ -13713,6 +13713,73 @@
       "Triggers": []
     },
     {
+      "Name": "gitserver_repos_sync_output",
+      "Comment": "Contains the most recent output from gitserver repository sync jobs.",
+      "Columns": [
+        {
+          "Name": "last_output",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 3,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "gitserver_repos_sync_output_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX gitserver_repos_sync_output_pkey ON gitserver_repos_sync_output USING btree (repo_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (repo_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "gitserver_repos_sync_output_repo_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "global_state",
       "Comment": "",
       "Columns": [
