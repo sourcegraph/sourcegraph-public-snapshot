@@ -55,7 +55,7 @@ export const useRankingSummary = (
     useQuery<RankingSummaryResult, RankingSummaryVariables>(RANKING_SUMMARY, {
         variables,
         fetchPolicy: 'cache-first',
-        pollInterval: 100,
+        pollInterval: 5000,
     })
 
 export const BUMP_DERIVATIVE_GRAPH_KEY = gql`
