@@ -18,12 +18,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestKubernetesRunner_Setup(t *testing.T) {
-	kubernetesRunner := runner.NewKubernetesRunner(nil, nil, "", command.KubernetesContainerOptions{})
+	filesStore := runner.NewMockStore()
+	kubernetesRunner := runner.NewKubernetesRunner(nil, nil, "", filesStore, command.KubernetesContainerOptions{})
 
 	ctx := context.Background()
 	err := kubernetesRunner.Setup(ctx)
@@ -31,7 +33,8 @@ func TestKubernetesRunner_Setup(t *testing.T) {
 }
 
 func TestKubernetesRunner_TempDir(t *testing.T) {
-	kubernetesRunner := runner.NewKubernetesRunner(nil, nil, "", command.KubernetesContainerOptions{})
+	filesStore := runner.NewMockStore()
+	kubernetesRunner := runner.NewKubernetesRunner(nil, nil, "", filesStore, command.KubernetesContainerOptions{})
 	dir := kubernetesRunner.TempDir()
 	assert.Empty(t, dir)
 }
@@ -61,7 +64,7 @@ func TestKubernetesRunner_Run(t *testing.T) {
 				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
 			},
 			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
-				require.Len(t, actions, 4)
+				require.Len(t, actions, 3)
 
 				assert.Equal(t, "create", actions[0].GetVerb())
 				assert.Equal(t, "jobs", actions[0].GetResource().Resource)
@@ -70,14 +73,9 @@ func TestKubernetesRunner_Run(t *testing.T) {
 				assert.Equal(t, "watch", actions[1].GetVerb())
 				assert.Equal(t, "pods", actions[1].GetResource().Resource)
 
-				assert.Equal(t, "get", actions[2].GetVerb())
-				assert.Equal(t, "pods", actions[2].GetResource().Resource)
-				assert.Equal(t, "log", actions[2].GetSubresource())
-				assert.Equal(t, "sg-executor-job-container", actions[2].(k8stesting.GenericAction).GetValue().(*corev1.PodLogOptions).Container)
-
-				assert.Equal(t, "delete", actions[3].GetVerb())
-				assert.Equal(t, "jobs", actions[3].GetResource().Resource)
-				assert.Equal(t, "sg-executor-job-some-queue-42-some-key", actions[3].(k8stesting.DeleteAction).GetName())
+				assert.Equal(t, "delete", actions[2].GetVerb())
+				assert.Equal(t, "jobs", actions[2].GetResource().Resource)
+				assert.Equal(t, "sg-executor-job-some-queue-42-some-key", actions[2].(k8stesting.DeleteAction).GetName())
 			},
 		},
 		{
@@ -121,7 +119,10 @@ func TestKubernetesRunner_Run(t *testing.T) {
 			cmd := &command.KubernetesCommand{Logger: logtest.Scoped(t), Clientset: clientset, Operations: command.NewOperations(&observation.TestContext)}
 			logger := runner.NewMockLogger()
 			logEntry := runner.NewMockLogEntry()
+			teardownLogEntry := runner.NewMockLogEntry()
 			logger.LogEntryFunc.PushReturn(logEntry)
+			logger.LogEntryFunc.PushReturn(teardownLogEntry)
+			fileStore := runner.NewMockStore()
 
 			dir := t.TempDir()
 			options := command.KubernetesContainerOptions{
@@ -137,23 +138,27 @@ func TestKubernetesRunner_Run(t *testing.T) {
 					Memory: resource.MustParse("1Gi"),
 				},
 			}
-			kubernetesRunner := runner.NewKubernetesRunner(cmd, logger, dir, options)
+			kubernetesRunner := runner.NewKubernetesRunner(cmd, logger, dir, fileStore, options)
 
 			if test.mockFunc != nil {
 				test.mockFunc(clientset)
 			}
 
 			spec := runner.Spec{
-				Queue: "some-queue",
-				JobID: 42,
-				CommandSpec: command.Spec{
-					Key:     "some-key",
-					Command: []string{"echo", "hello"},
-					Dir:     "/workingdir",
-					Env:     []string{"FOO=bar"},
+				CommandSpecs: []command.Spec{
+					{
+						Key:     "some-key",
+						Command: []string{"echo", "hello"},
+						Dir:     "/workingdir",
+						Env:     []string{"FOO=bar"},
+					},
 				},
 				Image:      "alpine",
 				ScriptPath: "/some/script",
+				Job: types.Job{
+					ID:    42,
+					Queue: "some-queue",
+				},
 			}
 
 			err := kubernetesRunner.Run(context.Background(), spec)
@@ -178,7 +183,10 @@ func TestKubernetesRunner_Teardown(t *testing.T) {
 	clientset := fake.NewSimpleClientset()
 	cmd := &command.KubernetesCommand{Logger: logtest.Scoped(t), Clientset: clientset, Operations: command.NewOperations(&observation.TestContext)}
 	logger := runner.NewMockLogger()
-	kubernetesRunner := runner.NewKubernetesRunner(cmd, logger, "", command.KubernetesContainerOptions{})
+	logEntry := runner.NewMockLogEntry()
+	logger.LogEntryFunc.PushReturn(logEntry)
+	filesStore := runner.NewMockStore()
+	kubernetesRunner := runner.NewKubernetesRunner(cmd, logger, "", filesStore, command.KubernetesContainerOptions{})
 
 	err := kubernetesRunner.Teardown(context.Background())
 	require.NoError(t, err)

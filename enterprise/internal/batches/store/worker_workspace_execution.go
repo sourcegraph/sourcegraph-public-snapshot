@@ -343,7 +343,7 @@ func logEventsFromLogEntries(logs []executor.ExecutionLogEntry) []*batcheslib.Lo
 		return nil
 	}
 
-	entries := []*batcheslib.LogEvent{}
+	var entries []*batcheslib.LogEvent
 
 	for _, e := range logs {
 		// V1 executions used either `step.src.0` or `step.src.batch-exec` (after named keys were introduced).

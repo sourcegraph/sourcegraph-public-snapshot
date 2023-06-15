@@ -6,27 +6,35 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 )
 
 type kubernetesWorkspace struct {
 	scriptFilenames []string
 	workspaceDir    string
-	logger          command.Logger
+	logger          cmdlogger.Logger
 }
 
 // NewKubernetesWorkspace creates a new workspace for a job.
 func NewKubernetesWorkspace(
 	ctx context.Context,
-	filesStore FilesStore,
+	filesStore files.Store,
 	job types.Job,
 	cmd command.Command,
-	logger command.Logger,
+	logger cmdlogger.Logger,
 	cloneOpts CloneOptions,
 	mountPath string,
+	singleJob bool,
 	operations *command.Operations,
 ) (Workspace, error) {
+	// TODO switch to the single job in 5.2
+	if singleJob {
+		return &kubernetesWorkspace{logger: logger}, nil
+	}
+
 	workspaceDir := filepath.Join(mountPath, fmt.Sprintf("job-%d", job.ID))
 
 	if err := os.MkdirAll(workspaceDir, os.ModePerm); err != nil {
@@ -79,8 +87,10 @@ func (w kubernetesWorkspace) Remove(ctx context.Context, keepWorkspace bool) {
 		return
 	}
 
-	fmt.Fprintf(handle, "Removing %s\n", w.workspaceDir)
-	if rmErr := os.RemoveAll(w.workspaceDir); rmErr != nil {
-		fmt.Fprintf(handle, "Operation failed: %s\n", rmErr.Error())
+	if w.workspaceDir != "" {
+		fmt.Fprintf(handle, "Removing %s\n", w.workspaceDir)
+		if rmErr := os.RemoveAll(w.workspaceDir); rmErr != nil {
+			fmt.Fprintf(handle, "Operation failed: %s\n", rmErr.Error())
+		}
 	}
 }

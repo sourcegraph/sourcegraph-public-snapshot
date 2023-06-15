@@ -151,18 +151,18 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 		name           string
 		options        Options
 		job            types.Job
-		mockFunc       func(cmdRunner *MockCmdRunner, command *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore)
+		mockFunc       func(cmdRunner *MockCmdRunner, command *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore)
 		expectedErr    error
-		assertMockFunc func(t *testing.T, cmdRunner *MockCmdRunner, command *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore)
+		assertMockFunc func(t *testing.T, cmdRunner *MockCmdRunner, command *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore)
 	}{
 		{
 			name:    "Success with no steps",
 			options: Options{},
 			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
-			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 6)
 				require.Len(t, filesStore.GetFunc.History(), 0)
@@ -184,10 +184,10 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 					},
 				},
 			},
-			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 
 				require.Len(t, cmd.RunFunc.History(), 7)
@@ -216,10 +216,10 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 					},
 				},
 			},
-			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 
 				require.Len(t, cmd.RunFunc.History(), 7)
@@ -245,10 +245,10 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 					},
 				},
 			},
-			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 
 				require.Len(t, cmd.RunFunc.History(), 7)
@@ -280,10 +280,10 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 					},
 				},
 			},
-			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 
 				require.Len(t, cmd.RunFunc.History(), 7)
@@ -296,11 +296,11 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 			name:    "failed to setup workspace",
 			options: Options{},
 			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
-			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				// fail on first clone step
 				cmd.RunFunc.PushReturn(errors.New("failed"))
 			},
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 1)
 				require.Len(t, filesStore.GetFunc.History(), 0)
@@ -323,7 +323,7 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 					},
 				},
 			},
-			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				// cloning repo needs to be successful
 				cmd.RunFunc.PushReturn(nil)
 				cmd.RunFunc.PushReturn(nil)
@@ -334,7 +334,7 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 				// Error on running the actual command
 				cmd.RunFunc.PushReturn(errors.New("failed"))
 			},
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 7)
 				require.Len(t, filesStore.GetFunc.History(), 0)
@@ -358,7 +358,7 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 					},
 				},
 			},
-			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				// cloning repo needs to be successful
 				cmd.RunFunc.PushReturn(nil)
 				cmd.RunFunc.PushReturn(nil)
@@ -369,7 +369,7 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 				// Error on running the actual command
 				cmd.RunFunc.PushReturn(errors.New("failed"))
 			},
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockFilesStore) {
+			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 7)
 				require.Len(t, filesStore.GetFunc.History(), 0)
@@ -387,7 +387,7 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 			// Used in NewLogger
 			logStore := NewMockExecutionLogEntryStore()
 			// Used in prepareWorkspace
-			filesStore := NewMockFilesStore()
+			filesStore := NewMockStore()
 
 			h := &handler{
 				nameSet:    nameSet,
@@ -444,7 +444,7 @@ func TestHandler_Handle(t *testing.T) {
 				require.Len(t, jobRuntime.NewRunnerFunc.History(), 1)
 				require.Len(t, jobRunner.TeardownFunc.History(), 1)
 				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History(), 1)
-				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1, 0)
+				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps, 0)
 				require.Len(t, jobRunner.RunFunc.History(), 0)
 			},
 		},
@@ -470,12 +470,14 @@ func TestHandler_Handle(t *testing.T) {
 				jobRuntime.NewRunnerFunc.PushReturn(jobRunner, nil)
 				jobRuntime.NewRunnerSpecsFunc.PushReturn([]runner.Spec{
 					{
-						CommandSpec: command.Spec{
-							Key:       "my-key",
-							Command:   []string{"echo", "hello"},
-							Dir:       ".",
-							Env:       []string{"FOO=bar"},
-							Operation: operations.Exec,
+						CommandSpecs: []command.Spec{
+							{
+								Key:       "my-key",
+								Command:   []string{"echo", "hello"},
+								Dir:       ".",
+								Env:       []string{"FOO=bar"},
+								Operation: operations.Exec,
+							},
 						},
 						Image:      "my-image",
 						ScriptPath: "./foo",
@@ -487,19 +489,20 @@ func TestHandler_Handle(t *testing.T) {
 				require.Len(t, jobRuntime.PrepareWorkspaceFunc.History(), 1)
 				require.Len(t, jobWorkspace.RemoveFunc.History(), 1)
 				require.Len(t, jobRuntime.NewRunnerFunc.History(), 1)
-				assert.NotEmpty(t, jobRuntime.NewRunnerFunc.History()[0].Arg2.Name)
+				assert.NotEmpty(t, jobRuntime.NewRunnerFunc.History()[0].Arg3.Name)
 				require.Len(t, jobRunner.TeardownFunc.History(), 1)
 				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History(), 1)
-				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1, 1)
-				assert.Equal(t, "some-step", jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1[0].Key)
-				assert.Equal(t, "my-image", jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1[0].Image)
-				assert.Equal(t, []string{"echo", "hello"}, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1[0].Commands)
-				assert.Equal(t, ".", jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1[0].Dir)
-				assert.Equal(t, []string{"FOO=bar"}, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1[0].Env)
+				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps, 1)
+				assert.Equal(t, "some-step", jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps[0].Key)
+				assert.Equal(t, "my-image", jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps[0].Image)
+				assert.Equal(t, []string{"echo", "hello"}, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps[0].Commands)
+				assert.Equal(t, ".", jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps[0].Dir)
+				assert.Equal(t, []string{"FOO=bar"}, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps[0].Env)
 				require.Len(t, jobRunner.RunFunc.History(), 1)
 				assert.Equal(t, "my-image", jobRunner.RunFunc.History()[0].Arg1.Image)
 				assert.Equal(t, "./foo", jobRunner.RunFunc.History()[0].Arg1.ScriptPath)
-				assert.Equal(t, []string{"echo", "hello"}, jobRunner.RunFunc.History()[0].Arg1.CommandSpec.Command)
+				require.Len(t, jobRunner.RunFunc.History()[0].Arg1.CommandSpecs, 1)
+				assert.Equal(t, []string{"echo", "hello"}, jobRunner.RunFunc.History()[0].Arg1.CommandSpecs[0].Command)
 			},
 		},
 		{
@@ -565,12 +568,14 @@ func TestHandler_Handle(t *testing.T) {
 				jobRuntime.NewRunnerFunc.PushReturn(jobRunner, nil)
 				jobRuntime.NewRunnerSpecsFunc.PushReturn([]runner.Spec{
 					{
-						CommandSpec: command.Spec{
-							Key:       "my-key",
-							Command:   []string{"echo", "hello"},
-							Dir:       ".",
-							Env:       []string{"FOO=bar"},
-							Operation: operations.Exec,
+						CommandSpecs: []command.Spec{
+							{
+								Key:       "my-key",
+								Command:   []string{"echo", "hello"},
+								Dir:       ".",
+								Env:       []string{"FOO=bar"},
+								Operation: operations.Exec,
+							},
 						},
 						Image:      "my-image",
 						ScriptPath: "./foo",

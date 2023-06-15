@@ -35,7 +35,7 @@ spec:
             - name: EXECUTOR_MAXIMUM_NUM_JOBS
               value: "5"
             - name: SRC_LOG_LEVEL
-              value: dbug
+              value: info
             - name: SRC_LOG_FORMAT
               value: condensed
             - name: SRC_TRACE_LOG
@@ -61,6 +61,12 @@ spec:
 #              value: "true"
 #            - name: EXECUTOR_KEEP_WORKSPACES
 #              value: "true"
+            # Check executor-batches.Role.yml to ensure the correct rules are enabled.
+#            - name: KUBERNETES_SINGLE_JOB_POD
+#              value: "true"
+            # Check executor-batches.Role.yml to ensure the correct rules are enabled.
+#            - name: KUBERNETES_JOB_VOLUME_TYPE
+#              value: "pvc"
           volumeMounts:
             - mountPath: /data
               name: sg-executor-batches-volume

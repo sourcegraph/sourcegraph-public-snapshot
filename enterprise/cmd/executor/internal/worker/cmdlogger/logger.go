@@ -1,4 +1,4 @@
-package command
+package cmdlogger
 
 import (
 	"bytes"
@@ -105,6 +105,7 @@ func (l *logger) writeEntries() {
 			"Writing log entry",
 			log.Int("jobID", l.job.ID),
 			log.Int("entryID", entryID),
+			log.String("entryKey", initialLogEntry.Key),
 			log.String("repositoryName", l.job.RepositoryName),
 			log.String("commit", l.job.Commit),
 		)

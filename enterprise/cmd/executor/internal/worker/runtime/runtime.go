@@ -9,7 +9,9 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
@@ -21,11 +23,11 @@ type Runtime interface {
 	// Name returns the name of the runtime.
 	Name() Name
 	// PrepareWorkspace sets up the workspace for the Job.
-	PrepareWorkspace(ctx context.Context, logger command.Logger, job types.Job) (workspace.Workspace, error)
+	PrepareWorkspace(ctx context.Context, logger cmdlogger.Logger, job types.Job) (workspace.Workspace, error)
 	// NewRunner creates a runner that will execute the steps.
-	NewRunner(ctx context.Context, logger command.Logger, options RunnerOptions) (runner.Runner, error)
+	NewRunner(ctx context.Context, logger cmdlogger.Logger, filesStore files.Store, options RunnerOptions) (runner.Runner, error)
 	// NewRunnerSpecs builds and returns the commands that the runner will execute.
-	NewRunnerSpecs(ws workspace.Workspace, steps []types.DockerStep) ([]runner.Spec, error)
+	NewRunnerSpecs(ws workspace.Workspace, job types.Job) ([]runner.Spec, error)
 	//CommandKey() string
 }
 
@@ -40,7 +42,7 @@ type RunnerOptions struct {
 func New(
 	logger log.Logger,
 	ops *command.Operations,
-	filesStore workspace.FilesStore,
+	filesStore files.Store,
 	cloneOpts workspace.CloneOptions,
 	runnerOpts runner.Options,
 	runner util.CmdRunner,

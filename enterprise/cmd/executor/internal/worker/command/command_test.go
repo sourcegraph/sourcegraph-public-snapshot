@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -123,9 +124,9 @@ func (m *mockLogger) Flush() error {
 	return args.Error(0)
 }
 
-func (m *mockLogger) LogEntry(key string, cmd []string) command.LogEntry {
+func (m *mockLogger) LogEntry(key string, cmd []string) cmdlogger.LogEntry {
 	args := m.Called(key, cmd)
-	return args.Get(0).(command.LogEntry)
+	return args.Get(0).(cmdlogger.LogEntry)
 }
 
 type mockLogEntry struct {

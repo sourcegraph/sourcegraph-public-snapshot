@@ -11,7 +11,7 @@ go_library(
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
     deps = [
         "//enterprise/cmd/executor/internal/apiclient",
-        "//enterprise/cmd/executor/internal/worker/workspace",
+        "//enterprise/cmd/executor/internal/worker/files",
         "//enterprise/internal/executor/types",
         "//internal/metrics",
         "//internal/observation",

@@ -26,8 +26,8 @@ func TestNewDockerWorkspace(t *testing.T) {
 		name                   string
 		job                    types.Job
 		cloneOptions           workspace.CloneOptions
-		mockFunc               func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand)
-		assertMockFunc         func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string)
+		mockFunc               func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand)
+		assertMockFunc         func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string)
 		expectedWorkspaceFiles map[string]string
 		expectedDockerScripts  map[string][]string
 		expectedErr            error
@@ -39,10 +39,10 @@ func TestNewDockerWorkspace(t *testing.T) {
 				Token:  "token",
 				Commit: "commit",
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 0)
 			},
@@ -55,11 +55,11 @@ func TestNewDockerWorkspace(t *testing.T) {
 				Commit:         "commit",
 				RepositoryName: "my-repo",
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 6)
 				// Init
@@ -149,11 +149,11 @@ func TestNewDockerWorkspace(t *testing.T) {
 				Commit:         "commit",
 				RepositoryName: "my-repo",
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(errors.New("failed"))
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 1)
 			},
@@ -168,11 +168,11 @@ func TestNewDockerWorkspace(t *testing.T) {
 				RepositoryName:      "my-repo",
 				RepositoryDirectory: "/my/dir",
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 6)
 				repoDir := path.Join(tempDir, "/my/dir")
@@ -241,11 +241,11 @@ func TestNewDockerWorkspace(t *testing.T) {
 				RepositoryName: "my-repo",
 				FetchTags:      true,
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 6)
 				assert.Equal(t, []string{
@@ -272,11 +272,11 @@ func TestNewDockerWorkspace(t *testing.T) {
 				RepositoryName: "my-repo",
 				ShallowClone:   true,
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 6)
 				assert.Equal(t, []string{
@@ -304,11 +304,11 @@ func TestNewDockerWorkspace(t *testing.T) {
 				RepositoryName: "my-repo",
 				SparseCheckout: []string{"foo/bar/**"},
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				cmd.RunFunc.SetDefaultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 8)
 				// Fetch
@@ -384,11 +384,11 @@ func TestNewDockerWorkspace(t *testing.T) {
 					},
 				},
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				filesStore.GetFunc.SetDefaultReturn(io.NopCloser(strings.NewReader("content2")), nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, logger.LogEntryFunc.History(), 1)
 				require.Len(t, cmd.RunFunc.History(), 0)
 				require.Len(t, filesStore.GetFunc.History(), 1)
@@ -424,11 +424,11 @@ func TestNewDockerWorkspace(t *testing.T) {
 					},
 				},
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand) {
+			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
 				filesStore.GetFunc.SetDefaultReturn(io.NopCloser(strings.NewReader("content2")), nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmd *workspace.MockCommand, tempDir string) {
+			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
 				require.Len(t, logger.LogEntryFunc.History(), 1)
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 0)
@@ -441,7 +441,7 @@ func TestNewDockerWorkspace(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			filesStore := workspace.NewMockFilesStore()
+			filesStore := workspace.NewMockStore()
 			cmd := workspace.NewMockCommand()
 			logger := workspace.NewMockLogger()
 

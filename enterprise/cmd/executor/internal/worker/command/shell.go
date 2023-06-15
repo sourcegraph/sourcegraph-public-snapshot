@@ -2,6 +2,8 @@ package command
 
 import (
 	"path/filepath"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 )
 
 // NewShellSpec creates a new spec for a shell command.
@@ -29,7 +31,7 @@ func NewShellSpec(workingDir string, image string, scriptPath string, spec Spec,
 		Env: spec.Env,
 		Command: Flatten(
 			"/bin/sh",
-			filepath.Join(hostDir, ScriptsPath, scriptPath),
+			filepath.Join(hostDir, files.ScriptsPath, scriptPath),
 		),
 		Operation: spec.Operation,
 	}

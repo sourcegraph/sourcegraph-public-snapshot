@@ -5,12 +5,9 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 )
-
-// ScriptsPath is the location relative to the executor workspace where the executor
-// will write scripts required for the execution of the job.
-const ScriptsPath = ".sourcegraph-executor"
 
 // DockerOptions are the options that are specific to running a container.
 type DockerOptions struct {
@@ -88,7 +85,7 @@ func formatDockerCommand(hostDir string, image string, scriptPath string, spec S
 		dockerEnvFlags(spec.Env),
 		dockerEntrypointFlags,
 		image,
-		filepath.Join("/data", ScriptsPath, scriptPath),
+		filepath.Join("/data", files.ScriptsPath, scriptPath),
 	)
 }
 

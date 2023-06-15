@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -24,7 +24,7 @@ type Client struct {
 }
 
 // Compile time validation.
-var _ workspace.FilesStore = &Client{}
+var _ files.Store = &Client{}
 
 // New creates a new Client based on the provided Options.
 func New(observationCtx *observation.Context, options apiclient.BaseClientOptions) (*Client, error) {

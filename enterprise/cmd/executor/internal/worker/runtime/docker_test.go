@@ -22,7 +22,7 @@ func TestDockerRuntime_NewRunnerSpecs(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		steps          []types.DockerStep
+		job            types.Job
 		mockFunc       func(ws *MockWorkspace)
 		expected       []runner.Spec
 		expectedErr    error
@@ -30,7 +30,7 @@ func TestDockerRuntime_NewRunnerSpecs(t *testing.T) {
 	}{
 		{
 			name:     "No steps",
-			steps:    []types.DockerStep{},
+			job:      types.Job{},
 			expected: []runner.Spec{},
 			assertMockFunc: func(t *testing.T, ws *MockWorkspace) {
 				require.Len(t, ws.ScriptFilenamesFunc.History(), 0)
@@ -38,25 +38,29 @@ func TestDockerRuntime_NewRunnerSpecs(t *testing.T) {
 		},
 		{
 			name: "Single step",
-			steps: []types.DockerStep{
-				{
-					Key:      "key-1",
-					Image:    "my-image",
-					Commands: []string{"echo", "hello"},
-					Dir:      ".",
-					Env:      []string{"FOO=bar"},
+			job: types.Job{
+				DockerSteps: []types.DockerStep{
+					{
+						Key:      "key-1",
+						Image:    "my-image",
+						Commands: []string{"echo", "hello"},
+						Dir:      ".",
+						Env:      []string{"FOO=bar"},
+					},
 				},
 			},
 			mockFunc: func(ws *MockWorkspace) {
 				ws.ScriptFilenamesFunc.SetDefaultReturn([]string{"script.sh"})
 			},
 			expected: []runner.Spec{{
-				CommandSpec: command.Spec{
-					Key:       "step.docker.key-1",
-					Command:   []string(nil),
-					Dir:       ".",
-					Env:       []string{"FOO=bar"},
-					Operation: operations.Exec,
+				CommandSpecs: []command.Spec{
+					{
+						Key:       "step.docker.key-1",
+						Command:   []string(nil),
+						Dir:       ".",
+						Env:       []string{"FOO=bar"},
+						Operation: operations.Exec,
+					},
 				},
 				Image:      "my-image",
 				ScriptPath: "script.sh",
@@ -67,20 +71,22 @@ func TestDockerRuntime_NewRunnerSpecs(t *testing.T) {
 		},
 		{
 			name: "Multiple steps",
-			steps: []types.DockerStep{
-				{
-					Key:      "key-1",
-					Image:    "my-image",
-					Commands: []string{"echo", "hello"},
-					Dir:      ".",
-					Env:      []string{"FOO=bar"},
-				},
-				{
-					Key:      "key-2",
-					Image:    "my-image",
-					Commands: []string{"echo", "hello"},
-					Dir:      ".",
-					Env:      []string{"FOO=bar"},
+			job: types.Job{
+				DockerSteps: []types.DockerStep{
+					{
+						Key:      "key-1",
+						Image:    "my-image",
+						Commands: []string{"echo", "hello"},
+						Dir:      ".",
+						Env:      []string{"FOO=bar"},
+					},
+					{
+						Key:      "key-2",
+						Image:    "my-image",
+						Commands: []string{"echo", "hello"},
+						Dir:      ".",
+						Env:      []string{"FOO=bar"},
+					},
 				},
 			},
 			mockFunc: func(ws *MockWorkspace) {
@@ -88,23 +94,27 @@ func TestDockerRuntime_NewRunnerSpecs(t *testing.T) {
 			},
 			expected: []runner.Spec{
 				{
-					CommandSpec: command.Spec{
-						Key:       "step.docker.key-1",
-						Command:   []string(nil),
-						Dir:       ".",
-						Env:       []string{"FOO=bar"},
-						Operation: operations.Exec,
+					CommandSpecs: []command.Spec{
+						{
+							Key:       "step.docker.key-1",
+							Command:   []string(nil),
+							Dir:       ".",
+							Env:       []string{"FOO=bar"},
+							Operation: operations.Exec,
+						},
 					},
 					Image:      "my-image",
 					ScriptPath: "script1.sh",
 				},
 				{
-					CommandSpec: command.Spec{
-						Key:       "step.docker.key-2",
-						Command:   []string(nil),
-						Dir:       ".",
-						Env:       []string{"FOO=bar"},
-						Operation: operations.Exec,
+					CommandSpecs: []command.Spec{
+						{
+							Key:       "step.docker.key-2",
+							Command:   []string(nil),
+							Dir:       ".",
+							Env:       []string{"FOO=bar"},
+							Operation: operations.Exec,
+						},
 					},
 					Image:      "my-image",
 					ScriptPath: "script2.sh",
@@ -116,24 +126,28 @@ func TestDockerRuntime_NewRunnerSpecs(t *testing.T) {
 		},
 		{
 			name: "Default key",
-			steps: []types.DockerStep{
-				{
-					Image:    "my-image",
-					Commands: []string{"echo", "hello"},
-					Dir:      ".",
-					Env:      []string{"FOO=bar"},
+			job: types.Job{
+				DockerSteps: []types.DockerStep{
+					{
+						Image:    "my-image",
+						Commands: []string{"echo", "hello"},
+						Dir:      ".",
+						Env:      []string{"FOO=bar"},
+					},
 				},
 			},
 			mockFunc: func(ws *MockWorkspace) {
 				ws.ScriptFilenamesFunc.SetDefaultReturn([]string{"script.sh"})
 			},
 			expected: []runner.Spec{{
-				CommandSpec: command.Spec{
-					Key:       "step.docker.0",
-					Command:   []string(nil),
-					Dir:       ".",
-					Env:       []string{"FOO=bar"},
-					Operation: operations.Exec,
+				CommandSpecs: []command.Spec{
+					{
+						Key:       "step.docker.0",
+						Command:   []string(nil),
+						Dir:       ".",
+						Env:       []string{"FOO=bar"},
+						Operation: operations.Exec,
+					},
 				},
 				Image:      "my-image",
 				ScriptPath: "script.sh",
@@ -152,13 +166,26 @@ func TestDockerRuntime_NewRunnerSpecs(t *testing.T) {
 			}
 
 			r := &dockerRuntime{operations: operations}
-			actual, err := r.NewRunnerSpecs(ws, test.steps)
+			actual, err := r.NewRunnerSpecs(ws, test.job)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, test.expected, actual)
+				require.Len(t, actual, len(test.expected))
+				for _, expected := range test.expected {
+					// find the matching actual spec based on the command spec key. There will only ever be one command spec per spec.
+					var actualSpec runner.Spec
+					for _, spec := range actual {
+						if spec.CommandSpecs[0].Key == expected.CommandSpecs[0].Key {
+							actualSpec = spec
+							break
+						}
+					}
+					assert.Equal(t, expected.Image, actualSpec.Image)
+					assert.Equal(t, expected.ScriptPath, actualSpec.ScriptPath)
+					assert.Equal(t, expected.CommandSpecs[0], actualSpec.CommandSpecs[0])
+				}
 			}
 
 			test.assertMockFunc(t, ws)
