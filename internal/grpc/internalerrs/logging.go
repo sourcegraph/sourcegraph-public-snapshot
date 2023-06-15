@@ -286,15 +286,13 @@ func truncate(s string, maxBytes int) string {
 		return s
 	}
 
-	bs := []byte(s)
-
-	bytesToTruncate := len(bs) - maxBytes
+	bytesToTruncate := len(s) - maxBytes
 	if bytesToTruncate > 0 {
-		bs = bs[:maxBytes]
-		bs = append(bs, []byte(fmt.Sprintf("...(truncated %d bytes)", bytesToTruncate))...)
+		s = s[:maxBytes]
+		s = fmt.Sprintf("%s...(truncated %d bytes)", s, bytesToTruncate)
 	}
 
-	return string(bs)
+	return s
 }
 
 func isNonUTF8StringError(s *status.Status) bool {
