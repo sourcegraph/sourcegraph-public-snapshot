@@ -138,7 +138,7 @@ func TestCodyGatewayEmbeddingsRateLimit(t *testing.T) {
 			userCount: pointers.Ptr(50),
 			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"openai/text-embedding-ada-002"},
-				Limit:           20 * 50 * 2_500_000 / 30,
+				Limit:           20 * 50 * 10_000_000 / 30,
 				IntervalSeconds: 60 * 60 * 24,
 			},
 		},
@@ -147,7 +147,7 @@ func TestCodyGatewayEmbeddingsRateLimit(t *testing.T) {
 			plan: PlanEnterprise1,
 			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"openai/text-embedding-ada-002"},
-				Limit:           1 * 20 * 2_500_000 / 30,
+				Limit:           1 * 20 * 10_000_000 / 30,
 				IntervalSeconds: 60 * 60 * 24,
 			},
 		},
@@ -156,7 +156,7 @@ func TestCodyGatewayEmbeddingsRateLimit(t *testing.T) {
 			plan: "unknown",
 			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"openai/text-embedding-ada-002"},
-				Limit:           1 * 10 * 2_500_000 / 30,
+				Limit:           1 * 10 * 10_000_000 / 30,
 				IntervalSeconds: 60 * 60 * 24,
 			},
 		},

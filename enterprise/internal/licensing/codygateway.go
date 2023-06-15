@@ -84,7 +84,7 @@ func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string
 
 // tokensPerDollar is the number of tokens that will cost us roughly $1. It's used
 // below for some better illustration of math.
-const tokensPerDollar = int(1 / (0.0004 / 1_000))
+const tokensPerDollar = int(1 / (0.0001 / 1_000))
 
 // NewCodyGatewayEmbeddingsRateLimit applies default Cody Gateway access based on the plan.
 func NewCodyGatewayEmbeddingsRateLimit(plan Plan, userCount *int, licenseTags []string) CodyGatewayRateLimit {
