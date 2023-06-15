@@ -58,10 +58,14 @@ func LanguageSupportsParserType(language string, parserType ParserType) bool {
 }
 
 var supportedLanguages = map[string]struct{}{
+	// TODO: Will support these after 5.1 release
+	// "c":          {},
+	// "cpp":        {},
 	"c_sharp":    {},
 	"go":         {},
 	"java":       {},
 	"javascript": {},
+	"kotlin":     {},
 	"python":     {},
 	"ruby":       {},
 	"rust":       {},
@@ -76,6 +80,7 @@ var DefaultEngines = map[string]ParserType{
 	"c_sharp":    ScipCtags,
 	"go":         ScipCtags,
 	"javascript": ScipCtags,
+	"kotlin":     ScipCtags,
 	"python":     ScipCtags,
 	"ruby":       ScipCtags,
 	"rust":       ScipCtags,
@@ -85,8 +90,7 @@ var DefaultEngines = map[string]ParserType{
 
 	// TODO: Not ready to turn on the following yet. Worried about not handling enough cases.
 	// May wait until after next release
-	// "c"
-	// "c++"
+	// "c" / "c++"
 	// "java":   ScipCtags,
 }
 
