@@ -16,21 +16,18 @@ export class UnstableCodeGenProvider extends Provider {
     }
 
     public async generateCompletions(abortSignal: AbortSignal): Promise<Completion[]> {
-        const fileExtension = this.fileName.split('.').pop()
         const params = {
-            debug_ext_path: fileExtension,
+            debug_ext_path: 'cody',
             // TODO: Are there unsupported languages?
             lang_prefix: `<|${this.languageId}|>`,
             prefix: this.prefix,
             suffix: this.suffix,
             top_p: 0.95,
             temperature: 0.2,
-            max_tokens: 64,
-            batch_size: Math.max(this.n, 4),
+            max_tokens: this.multilineMode === null ? 40 : 128,
+            batch_size: 4, // this.n,
             // TODO: Figure out the exact format to attach context
             context: '',
-            // TODO: Can we pass a stop signal? E.g. to terminate early when we
-            // only need single-line completions?
         }
 
         const response = await fetch(this.serverEndpoint, {
@@ -44,6 +41,8 @@ export class UnstableCodeGenProvider extends Provider {
 
         const data = (await response.json()) as { completions: { completion: string }[] }
 
+        console.log(params, data, [...response.headers.entries()])
+
         return data.completions.map(c => ({
             prefix: this.prefix,
             content: c.completion,
@@ -54,8 +53,7 @@ export class UnstableCodeGenProvider extends Provider {
 export function createProviderConfig(
     unstableCodeGenOptions: Omit<UnstableCodeGenOptions, 'contextWindowChars'>
 ): ProviderConfig {
-    // TODO: Find out how long we can make the whole context (including prefix + suffix)
-    const contextWindowChars = 10_000
+    const contextWindowChars = 8_000 // ~ 2k token limit
     return {
         create(options: ProviderOptions) {
             return new UnstableCodeGenProvider(options, { ...unstableCodeGenOptions, contextWindowChars })

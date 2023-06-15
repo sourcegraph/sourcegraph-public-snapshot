@@ -42,6 +42,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         this.maxPrefixChars = Math.floor(this.promptChars * this.prefixPercentage)
         this.maxSuffixChars = Math.floor(this.promptChars * this.suffixPercentage)
 
+        debug('CodyCompletionProvider:initialized', `provider: ${providerConfig.identifier}`)
+
         vscode.workspace.onDidChangeTextDocument(event => {
             const document = event.document
             const changes = event.contentChanges
@@ -65,9 +67,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
         } catch (error) {
-            if (error.message === 'aborted') {
+            if (isAbortError(error)) {
                 return []
             }
+
             console.error(error)
             debug('CodyCompletionProvider:inline:error', `${error.toString()}\n${error.stack}`)
             return []
@@ -289,4 +292,14 @@ function rankCompletions(completions: Completion[]): Completion[] {
 
 function filterCompletions(completions: Completion[]): Completion[] {
     return completions.filter(c => c.content.trim() !== '')
+}
+
+function isAbortError(error: Error): boolean {
+    return (
+        // http module
+        error.message === 'aborted' ||
+        // fetch
+        error.message.includes('The operation was aborted') ||
+        error.message.includes('The user aborted a request')
+    )
 }
