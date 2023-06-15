@@ -16,7 +16,6 @@ import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, ButtonLink, useWindowSize, Tooltip, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -311,24 +310,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 </NavAction>
                             )}
                         </>
-                    )}
-                    {isSourcegraphApp && (
-                        <ButtonLink
-                            variant="secondary"
-                            outline={true}
-                            to={addSourcegraphAppOutboundUrlParameters(
-                                'https://about.sourcegraph.com/get-started?t=enterprise',
-                                'navbar'
-                            )}
-                            size="sm"
-                            target="_blank"
-                            className="d-none d-sm-block"
-                            onClick={() =>
-                                eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NavBarSourcegraphApp' })
-                            }
-                        >
-                            Try Sourcegraph Enterprise
-                        </ButtonLink>
                     )}
                     {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (
