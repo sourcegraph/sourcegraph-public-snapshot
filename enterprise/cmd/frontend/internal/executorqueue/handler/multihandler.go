@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -408,27 +407,4 @@ func markRecordAsFailed[T workerutil.Record](context context.Context, store dbwo
 			log.Error(markErr))
 	}
 	return markErr
-}
-
-// RandomGenerator is a wrapper for generating random numbers to support simple queue fairness.
-// Its functions can be mocked out for consistent dequeuing in unit tests.
-type RandomGenerator interface {
-	Seed(seed int64)
-	Intn(n int) int
-}
-
-type realRandom struct{}
-
-func newRealRandom() *realRandom {
-	rRandom := &realRandom{}
-	rRandom.Seed(time.Now().UnixNano())
-	return rRandom
-}
-
-func (r *realRandom) Seed(seed int64) {
-	rand.Seed(seed)
-}
-
-func (r *realRandom) Intn(n int) int {
-	return rand.Intn(n)
 }
