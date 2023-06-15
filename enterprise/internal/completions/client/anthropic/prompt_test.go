@@ -3,7 +3,7 @@ package anthropic
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 )
 
 func TestGetPrompt(t *testing.T) {

@@ -22,7 +22,7 @@ go_library(
         "//enterprise/cmd/cody-gateway/internal/httpapi",
         "//enterprise/cmd/cody-gateway/internal/limiter",
         "//enterprise/cmd/cody-gateway/internal/notify",
-        "//enterprise/internal/codygateway",
+        "//internal/codygateway",
         "//internal/debugserver",
         "//internal/env",
         "//internal/goroutine",

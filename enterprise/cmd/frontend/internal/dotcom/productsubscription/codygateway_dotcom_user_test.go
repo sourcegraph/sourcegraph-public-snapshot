@@ -29,9 +29,13 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 	var chatOverrideLimit int = 200
 	var codeOverrideLimit int = 400
 
+	tru := true
 	cfg := &conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
+			CodyEnabled: &tru,
+			LicenseKey:  "asdf",
 			Completions: &schema.Completions{
+				Provider:                         "sourcegraph",
 				PerUserCodeCompletionsDailyLimit: 20,
 				PerUserDailyLimit:                10,
 			},

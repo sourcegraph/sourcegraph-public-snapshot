@@ -6,13 +6,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/sourcegraph",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/codygateway",
-        "//enterprise/internal/dotcomuser",
         "//enterprise/internal/embeddings/embed/client",
-        "//enterprise/internal/licensing",
-        "//internal/conf/deploy",
+        "//internal/codygateway",
+        "//internal/conf/conftypes",
         "//internal/httpcli",
         "//lib/errors",
-        "//schema",
     ],
 )

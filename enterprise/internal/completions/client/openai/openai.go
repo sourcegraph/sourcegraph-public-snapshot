@@ -7,25 +7,18 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const ProviderName = "openai"
-
 func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
-	if endpoint == "" {
-		endpoint = defaultAPIURL
-	}
 	return &openAIChatCompletionStreamClient{
 		cli:         cli,
 		accessToken: accessToken,
 		endpoint:    endpoint,
 	}
 }
-
-const defaultAPIURL = "https://api.openai.com/v1/chat/completions"
 
 type openAIChatCompletionStreamClient struct {
 	cli         httpcli.Doer

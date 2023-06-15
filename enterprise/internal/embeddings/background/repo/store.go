@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -203,51 +202,17 @@ type ListOpts struct {
 	State *string
 }
 
-func init() {
-	conf.ContributeValidator(embeddingConfigValidator)
-}
-
-func embeddingConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
-	embeddingsConf := q.SiteConfig().Embeddings
-	if embeddingsConf == nil {
-		return nil
-	}
-
-	minimumIntervalString := embeddingsConf.MinimumInterval
-	_, err := time.ParseDuration(minimumIntervalString)
-	if err != nil && minimumIntervalString != "" {
-		return conf.NewSiteProblems(fmt.Sprintf("Could not parse \"embeddings.minimumInterval: %s\". %s", minimumIntervalString, err))
-	}
-
-	return nil
-}
-
-var defaultPolicyRepositoryMatchLimit = 5000
-
-var defaultOpts = EmbeddableRepoOpts{
-	MinimumInterval:            24 * time.Hour,
-	PolicyRepositoryMatchLimit: &defaultPolicyRepositoryMatchLimit,
-}
-
 func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
-	opts := defaultOpts
-
-	embeddingsConf := conf.Get().Embeddings
+	embeddingsConf := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	// Embeddings are disabled, nothing we can do.
 	if embeddingsConf == nil {
-		return opts
+		return EmbeddableRepoOpts{}
 	}
 
-	minimumIntervalString := embeddingsConf.MinimumInterval
-	d, err := time.ParseDuration(minimumIntervalString)
-	if err == nil {
-		opts.MinimumInterval = d
+	return EmbeddableRepoOpts{
+		MinimumInterval:            embeddingsConf.MinimumInterval,
+		PolicyRepositoryMatchLimit: embeddingsConf.PolicyRepositoryMatchLimit,
 	}
-
-	if embeddingsConf.PolicyRepositoryMatchLimit != nil {
-		opts.PolicyRepositoryMatchLimit = embeddingsConf.PolicyRepositoryMatchLimit
-	}
-
-	return opts
 }
 
 func (s *repoEmbeddingJobsStore) GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error) {

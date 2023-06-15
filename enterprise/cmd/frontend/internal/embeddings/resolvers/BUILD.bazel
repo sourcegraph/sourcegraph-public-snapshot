@@ -49,6 +49,7 @@ go_test(
         "//internal/featureflag",
         "//internal/gitserver",
         "//internal/types",
+        "//lib/pointers",
         "//schema",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_sourcegraph_log//logtest",

@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration"
@@ -527,31 +528,31 @@ func (r *schemaResolver) SetAutoUpgrade(ctx context.Context, args *struct {
 }
 
 func (r *siteResolver) PerUserCompletionsQuota() *int32 {
-	c := conf.Get()
-	if c.Completions != nil && c.Completions.PerUserDailyLimit > 0 {
-		i := int32(c.Completions.PerUserDailyLimit)
+	c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+	if c != nil && c.PerUserDailyLimit > 0 {
+		i := int32(c.PerUserDailyLimit)
 		return &i
 	}
 	return nil
 }
 
 func (r *siteResolver) PerUserCodeCompletionsQuota() *int32 {
-	c := conf.Get()
-	if c.Completions != nil && c.Completions.PerUserCodeCompletionsDailyLimit > 0 {
-		i := int32(c.Completions.PerUserCodeCompletionsDailyLimit)
+	c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+	if c != nil && c.PerUserCodeCompletionsDailyLimit > 0 {
+		i := int32(c.PerUserCodeCompletionsDailyLimit)
 		return &i
 	}
 	return nil
 }
 
 func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
-	// App is typically forwarding Cody requests to dotcom.
 	// This section can be removed if dotcom stops requiring verified emails
 	if deploy.IsApp() {
-		// App users can specify their own keys
-		// if they use their own keys requests are not forwarded to dotcom
-		// which means a verified email is not needed
-		return conf.Get().Completions == nil
+		c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+		// App users can specify their own keys using one of the regular providers.
+		// If they use their own keys requests are not going through Cody Gateway
+		// which means a verified email is not needed.
+		return c == nil || c.Provider == conftypes.CompletionsProviderNameSourcegraph
 	}
 
 	// We only require this on dotcom

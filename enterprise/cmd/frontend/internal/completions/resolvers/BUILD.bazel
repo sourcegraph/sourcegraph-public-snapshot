@@ -10,7 +10,7 @@ go_library(
         "//enterprise/internal/cody",
         "//enterprise/internal/completions/client",
         "//enterprise/internal/completions/httpapi",
-        "//enterprise/internal/completions/types",
+        "//internal/completions/types",
         "//internal/conf",
         "//internal/database",
         "//internal/redispool",

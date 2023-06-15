@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/httpapi"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -40,7 +40,7 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", err
 	}
 
-	completionsConfig := client.GetCompletionsConfig(conf.Get().SiteConfig())
+	completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 	if completionsConfig == nil {
 		return "", errors.New("completions are not configured")
 	}

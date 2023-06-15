@@ -10,19 +10,13 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/openai"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-)
-
-const (
-	// ProviderName is 'sourcegraph', since this is a Sourcegraph-provided service,
-	// backed by Cody Gateway. This is the value accepted in site configuration.
-	ProviderName    = "sourcegraph"
-	DefaultEndpoint = "https://cody-gateway.sourcegraph.com"
 )
 
 // NewClient instantiates a completions provider backed by Sourcegraph's managed
@@ -31,9 +25,6 @@ func NewClient(cli httpcli.Doer, endpoint, accessToken string) (types.Completion
 	gatewayURL, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, err
-	}
-	if accessToken == "" {
-		return nil, errors.New("no access token is configured - make sure `licenseKey` is set, or provide an access token in `completions.accessToken`")
 	}
 	return &codyGatewayClient{
 		upstream:    cli,
@@ -86,9 +77,9 @@ func (c *codyGatewayClient) clientForParams(feature types.CompletionsFeature, re
 	// Based on the provider, instantiate the appropriate client backed by a
 	// gatewayDoer that authenticates against the Gateway's API.
 	switch provider {
-	case anthropic.ProviderName:
+	case string(conftypes.CompletionsProviderNameAnthropic):
 		return anthropic.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/anthropic"), "", ""), nil
-	case openai.ProviderName:
+	case string(conftypes.CompletionsProviderNameOpenAI):
 		return openai.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/openai"), "", ""), nil
 	case "":
 		return nil, errors.Newf("no provider provided in model %s - a model in the format '$PROVIDER/$MODEL_NAME' is expected", model)

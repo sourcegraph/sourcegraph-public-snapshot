@@ -12,54 +12,28 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func NewClient(config *schema.Embeddings) *openaiEmbeddingsClient {
+func NewClient(config *conftypes.EmbeddingsConfig) *openaiEmbeddingsClient {
 	return &openaiEmbeddingsClient{
 		dimensions:  config.Dimensions,
 		accessToken: config.AccessToken,
-		model:       getModel(config),
-		url:         getURL(config),
+		model:       config.Model,
+		endpoint:    config.Endpoint,
 	}
-}
-
-func getModel(config *schema.Embeddings) string {
-	if config.Model == "" {
-		return "text-embedding-ada-002"
-	}
-	return strings.ToLower(config.Model)
-}
-
-const defaultAPIURL = "https://api.openai.com/v1/embeddings"
-
-func getURL(config *schema.Embeddings) string {
-	url := config.Endpoint
-	// Fallback to URL, it's the previous name of the setting.
-	if url == "" {
-		url = config.Url
-	}
-	// If that is also not set, use a sensible default.
-	if url == "" {
-		url = defaultAPIURL
-	}
-	return url
 }
 
 type openaiEmbeddingsClient struct {
 	model       string
 	dimensions  int
-	url         string
+	endpoint    string
 	accessToken string
 }
 
 func (c *openaiEmbeddingsClient) GetDimensions() (int, error) {
-	// Use some good default for the only model we supported so far.
-	if c.dimensions == 0 && strings.EqualFold(c.model, "text-embedding-ada-002") {
-		return 1536, nil
-	}
 	if c.dimensions <= 0 {
 		return 0, errors.New("invalid config for embeddings.dimensions, must be > 0")
 	}
@@ -119,7 +93,7 @@ func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []stri
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.url, bytes.NewReader(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.endpoint, bytes.NewReader(bodyBytes))
 	if err != nil {
 		return nil, err
 	}

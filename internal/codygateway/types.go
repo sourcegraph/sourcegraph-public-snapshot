@@ -3,7 +3,7 @@ package codygateway
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 )
 
 type Feature string

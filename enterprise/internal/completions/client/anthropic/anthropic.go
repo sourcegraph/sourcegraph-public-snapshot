@@ -6,17 +6,12 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const ProviderName = "anthropic"
-
 func NewClient(cli httpcli.Doer, apiURL, accessToken string) types.CompletionsClient {
-	if apiURL == "" {
-		apiURL = defaultAPIURL
-	}
 	return &anthropicClient{
 		cli:         cli,
 		accessToken: accessToken,
@@ -25,8 +20,7 @@ func NewClient(cli httpcli.Doer, apiURL, accessToken string) types.CompletionsCl
 }
 
 const (
-	defaultAPIURL = "https://api.anthropic.com/v1/complete"
-	clientID      = "sourcegraph/1.0"
+	clientID = "sourcegraph/1.0"
 )
 
 type anthropicClient struct {

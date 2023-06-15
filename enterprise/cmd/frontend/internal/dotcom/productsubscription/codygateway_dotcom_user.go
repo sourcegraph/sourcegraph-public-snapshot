@@ -6,9 +6,9 @@ import (
 	"math"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -176,15 +176,15 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	if limit == nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		// Otherwise, fall back to the global limit.
-		cfg := conf.Get()
+		cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 		switch scope {
 		case types.CompletionsFeatureChat:
-			if cfg.Completions != nil && cfg.Completions.PerUserDailyLimit > 0 {
-				limit = pointers.Ptr(cfg.Completions.PerUserDailyLimit)
+			if cfg != nil && cfg.PerUserDailyLimit > 0 {
+				limit = pointers.Ptr(cfg.PerUserDailyLimit)
 			}
 		case types.CompletionsFeatureCode:
-			if cfg.Completions != nil && cfg.Completions.PerUserCodeCompletionsDailyLimit > 0 {
-				limit = pointers.Ptr(cfg.Completions.PerUserCodeCompletionsDailyLimit)
+			if cfg != nil && cfg.PerUserCodeCompletionsDailyLimit > 0 {
+				limit = pointers.Ptr(cfg.PerUserCodeCompletionsDailyLimit)
 			}
 		default:
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Newf("unknown scope: %s", scope)

@@ -10,7 +10,7 @@ import (
 	"github.com/slack-go/slack"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/redislock"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )

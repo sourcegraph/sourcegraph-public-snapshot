@@ -14,43 +14,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func NewEmbeddingsClient(siteConfig *schema.SiteConfiguration) (client.EmbeddingsClient, error) {
-	if !isEmbeddingsEnabled(siteConfig) {
-		return nil, errors.New("embeddings are not configured or disabled")
-	}
-	c := siteConfig.Embeddings
-	switch c.Provider {
+func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsClient, error) {
+	switch config.Provider {
 	case "sourcegraph":
-		// TODO(eseliger): Readd empty string defaulting to sourcegraph.
-		// For a transition period until we have configured S2 and dotcom with the
-		// new config, this will have to be in here.
-		return sourcegraph.NewClient(siteConfig), nil
-	case "openai", "":
-		return openai.NewClient(c), nil
+		return sourcegraph.NewClient(config), nil
+	case "openai":
+		return openai.NewClient(config), nil
 	default:
-		return nil, errors.Newf("invalid provider %q", c.Provider)
+		return nil, errors.Newf("invalid provider %q", config.Provider)
 	}
-}
-
-func isEmbeddingsEnabled(siteConfig *schema.SiteConfiguration) bool {
-	c := siteConfig.Embeddings
-	if c == nil || !c.Enabled {
-		return false
-	}
-
-	// Additionally Embeddings in App are disabled if there is no dotcom auth token
-	// and the user hasn't provided their own api token
-	if deploy.IsApp() {
-		if (siteConfig.App == nil || len(siteConfig.App.DotcomAuthToken) == 0) && c.AccessToken == "" {
-			return false
-		}
-	}
-	return true
 }
 
 const (

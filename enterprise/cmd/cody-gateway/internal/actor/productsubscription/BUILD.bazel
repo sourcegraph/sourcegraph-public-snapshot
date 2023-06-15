@@ -9,9 +9,10 @@ go_library(
     deps = [
         "//enterprise/cmd/cody-gateway/internal/actor",
         "//enterprise/cmd/cody-gateway/internal/dotcom",
-        "//enterprise/internal/codygateway",
         "//enterprise/internal/licensing",
         "//enterprise/internal/productsubscription",
+        "//internal/codygateway",
+        "//internal/licensing",
         "//internal/trace",
         "//lib/errors",
         "@com_github_gregjones_httpcache//:httpcache",
@@ -30,7 +31,7 @@ go_test(
     embed = [":productsubscription"],
     deps = [
         "//enterprise/cmd/cody-gateway/internal/dotcom",
-        "//enterprise/internal/codygateway",
+        "//internal/codygateway",
         "@com_github_stretchr_testify//assert",
     ],
 )

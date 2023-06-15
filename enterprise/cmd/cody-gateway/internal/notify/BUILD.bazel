@@ -7,7 +7,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify",
     visibility = ["//enterprise/cmd/cody-gateway:__subpackages__"],
     deps = [
-        "//enterprise/internal/codygateway",
+        "//internal/codygateway",
         "//internal/redislock",
         "//internal/redispool",
         "@com_github_gomodule_redigo//redis",
@@ -21,7 +21,7 @@ go_test(
     srcs = ["rate_limit_test.go"],
     embed = [":notify"],
     deps = [
-        "//enterprise/internal/codygateway",
+        "//internal/codygateway",
         "//internal/redispool",
         "@com_github_slack_go_slack//:slack",
         "@com_github_sourcegraph_log//logtest",

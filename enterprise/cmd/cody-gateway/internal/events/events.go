@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/log"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
