@@ -147,10 +147,7 @@ You must create your own key with OpenAI [here](https://beta.openai.com/account/
   "cody.enabled": true,
   "embeddings": {
     "provider": "openai",
-    "url": "https://api.openai.com/v1/embeddings",
     "accessToken": "<token>",
-    "model": "text-embedding-ada-002",
-    "dimensions": 1536,
     "excludedFilePathPatterns": []
   }
 }
