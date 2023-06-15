@@ -41,13 +41,7 @@ type LsifStore interface {
 	// GetDefinitions(ctx context.Context, document *scip.Document, symbolName string, uploadID int, path string, limit, offset int) (_ []shared.Location, _ int, err error)
 	GetScipDefinitionsLocation(ctx context.Context, document *scip.Document, occ *scip.Occurrence, uploadID int, path string, limit, offset int) (_ []shared.Location, _ int, err error)
 
-	GetLocationByExplodedSymbol(
-		ctx context.Context,
-		symbolName string,
-		uploadID int,
-		scipFieldName string,
-		path string,
-	) (locations []shared.Location, err error)
+	GetLocationByExplodedSymbol(ctx context.Context, symbolName string, uploadID int, scipFieldName string, path string) (locations []shared.Location, err error)
 }
 
 type store struct {

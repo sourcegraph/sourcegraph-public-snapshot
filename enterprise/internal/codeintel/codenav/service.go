@@ -905,9 +905,8 @@ func (s *Service) GetLocationByExplodedSymbol(
 	symbolName string,
 	uploadID int,
 	scipFieldName string,
-	path string,
 ) (locations []shared.Location, err error) {
-	return s.lsifstore.GetLocationByExplodedSymbol(ctx, symbolName, uploadID, scipFieldName, path)
+	return s.lsifstore.GetLocationByExplodedSymbol(ctx, symbolName, uploadID, scipFieldName, "")
 }
 
 func (s *Service) GetDefinitionBySymbolName(
