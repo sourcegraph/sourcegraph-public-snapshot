@@ -16,7 +16,6 @@ import (
 // Trace is a combined version of opentelemetry.Span and (optionally)
 // golang.org/x/net/trace.Trace, applying its various API functions to both
 // underlying trace types. Use New to construct one.
-// A nil trace can safely be used as a no-op trace.
 type Trace struct {
 	family string
 
@@ -35,10 +34,6 @@ func New(ctx context.Context, family, title string, attrs ...attribute.KeyValue)
 
 // SetAttributes sets kv as attributes of the Span.
 func (t *Trace) SetAttributes(attributes ...attribute.KeyValue) {
-	if t == nil {
-		return
-	}
-
 	t.oteltraceSpan.SetAttributes(attributes...)
 	if t.nettraceTrace != nil {
 		t.nettraceTrace.LazyLog(attributesStringer(attributes), false)
@@ -50,9 +45,6 @@ func (t *Trace) SetAttributes(attributes ...attribute.KeyValue) {
 // Note that it differs from the underlying (oteltrace.Span).AddEvent slightly, and only
 // accepts attributes for simplicity, and for ease of adapting to nettrace.
 func (t *Trace) AddEvent(name string, attributes ...attribute.KeyValue) {
-	if t == nil {
-		return
-	}
 	t.oteltraceSpan.AddEvent(name, oteltrace.WithAttributes(attributes...))
 	if t.nettraceTrace != nil {
 		t.nettraceTrace.LazyLog(attributesStringer(attributes), false)
@@ -63,9 +55,6 @@ func (t *Trace) AddEvent(name string, attributes ...attribute.KeyValue) {
 // /debug/requests page is rendered. Any memory referenced by a will be
 // pinned until the trace is finished and later discarded.
 func (t *Trace) LazyPrintf(format string, a ...any) {
-	if t == nil {
-		return
-	}
 	t.oteltraceSpan.AddEvent("LazyPrintf", oteltrace.WithAttributes(
 		attribute.Stringer("message", stringerFunc(func() string {
 			return fmt.Sprintf(format, a...)
@@ -78,7 +67,7 @@ func (t *Trace) LazyPrintf(format string, a ...any) {
 
 // SetError declares that this trace and span resulted in an error.
 func (t *Trace) SetError(err error) {
-	if t == nil || err == nil {
+	if err == nil {
 		return
 	}
 
@@ -97,9 +86,6 @@ func (t *Trace) SetError(err error) {
 // SetErrorIfNotContext calls SetError unless err is context.Canceled or
 // context.DeadlineExceeded.
 func (t *Trace) SetErrorIfNotContext(err error) {
-	if t == nil {
-		return
-	}
 	if errors.IsAny(err, context.Canceled, context.DeadlineExceeded) {
 		err = truncateError(err, defaultErrorRuneLimit)
 		t.oteltraceSpan.RecordError(err)
@@ -115,9 +101,6 @@ func (t *Trace) SetErrorIfNotContext(err error) {
 // Finish declares that this trace and span is complete.
 // The trace should not be used after calling this method.
 func (t *Trace) Finish() {
-	if t == nil {
-		return
-	}
 	t.oteltraceSpan.End()
 	if t.nettraceTrace != nil {
 		t.nettraceTrace.Finish()
@@ -128,9 +111,6 @@ func (t *Trace) Finish() {
 // It takes a pointer to an error so it can be used directly
 // in a defer statement.
 func (t *Trace) FinishWithErr(err *error) {
-	if t == nil {
-		return
-	}
 	t.SetError(*err)
 	t.Finish()
 }
