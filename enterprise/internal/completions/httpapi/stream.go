@@ -38,17 +38,20 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 		}()
 
 		err = cc.Stream(ctx, types.CompletionsFeatureChat, requestParams,
-			func(event types.CompletionResponse) error { return eventWriter.Event("completion", event) })
+			func(event types.CompletionResponse) error {
+				return eventWriter.Event("completion", event)
+			})
 		if err != nil {
-			trace.Logger(ctx, logger).Error("error while streaming completions", log.Error(err))
+			l := trace.Logger(ctx, logger)
+			l.Error("error while streaming completions", log.Error(err))
 
-			// Propagate the upstream headers to the client if available.
-			if errNotOK, ok := types.IsErrStatusNotOK(err); ok {
-				errNotOK.WriteHeader(w)
-			} else {
-				w.WriteHeader(http.StatusInternalServerError)
+			// Note that we do NOT attempt to forward the status code to the
+			// client here, since we are using streamhttp.Writer - see
+			// streamhttp.NewWriter for more details. Instead, we send an error
+			// event, which clients should check as appropriate.
+			if err := eventWriter.Event("error", map[string]string{"error": err.Error()}); err != nil {
+				l.Error("error reporting streaming completion error", log.Error(err))
 			}
-			_ = eventWriter.Event("error", map[string]string{"error": err.Error()})
 			return
 		}
 	})

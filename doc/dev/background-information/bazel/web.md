@@ -1,6 +1,6 @@
 # Bazel for client/*
 
-See [bazel.md](./bazel.md) for general bazel info/setup.
+See [Bazel at Sourcegraph](./index.md) for general bazel info/setup.
 
 ## Tools
 

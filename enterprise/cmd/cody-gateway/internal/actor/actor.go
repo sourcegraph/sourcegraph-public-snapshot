@@ -2,10 +2,12 @@ package actor
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
@@ -89,6 +91,29 @@ func (a *Actor) Update(ctx context.Context) {
 	if su, ok := a.Source.(SourceUpdater); ok && su != nil {
 		su.Update(ctx, a)
 	}
+}
+
+func (a *Actor) TraceAttributes() []attribute.KeyValue {
+	if a == nil {
+		return []attribute.KeyValue{attribute.String("actor", "<nil>")}
+	}
+
+	attrs := []attribute.KeyValue{
+		attribute.String("actor.id", a.ID),
+		attribute.Bool("actor.accessEnabled", a.AccessEnabled),
+	}
+	if a.LastUpdated != nil {
+		attrs = append(attrs, attribute.String("actor.lastUpdated", a.LastUpdated.String()))
+	}
+	for f, rl := range a.RateLimits {
+		key := fmt.Sprintf("actor.rateLimits.%s", f)
+		if rlJSON, err := json.Marshal(rl); err != nil {
+			attrs = append(attrs, attribute.String(key, err.Error()))
+		} else {
+			attrs = append(attrs, attribute.String(key, string(rlJSON)))
+		}
+	}
+	return attrs
 }
 
 // WithActor returns a new context with the given Actor instance.
