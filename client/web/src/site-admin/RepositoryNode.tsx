@@ -21,7 +21,7 @@ import {
     Badge,
     Button,
     H4,
-    Icon,
+    Icon, Link,
     LinkOrSpan,
     LoadingSpinner,
     Menu,
@@ -133,7 +133,9 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                         <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
                         {node.embeddingExists && (
                             <div className="ml-2">
-                                <RepositoryStatusBadge status="embedded" />
+                                <Link to={`/site-admin/embeddings?query=${encodeURIComponent(node.name)}`}>
+                                    <RepositoryStatusBadge status="embeddings" />
+                                </Link>
                             </div>
                         )}
                         {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}
