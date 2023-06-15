@@ -8,10 +8,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -121,23 +123,40 @@ func applyCodeOwnershipFiltering(
 
 matchesLoop:
 	for _, m := range matches {
-		// Code ownership is currently only implemented for files.
-		mm, ok := m.(*result.FileMatch)
-		if !ok {
-			continue
+		var (
+			filePaths []string
+			commitID  api.CommitID
+			repo      types.MinimalRepo
+		)
+		fmt.Printf("MATCHES TYPEZ %T\n", m)
+		switch mm := m.(type) {
+		case *result.FileMatch:
+			filePaths = []string{mm.File.Path}
+			commitID = mm.CommitID
+			repo = mm.Repo
+			fmt.Println("FILE MATCH CASE", filePaths)
+		case *result.CommitMatch:
+			filePaths = mm.ModifiedFiles
+			commitID = mm.Commit.ID
+			repo = mm.Repo
+			fmt.Println("COMMIT MATCH CASE", filePaths)
 		}
-
-		file, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.Repo.ID, mm.CommitID)
+		if len(filePaths) == 0 {
+			continue matchesLoop
+		}
+		file, err := rules.GetFromCacheOrFetch(ctx, repo.Name, repo.ID, commitID)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue matchesLoop
 		}
-		fileOwners := file.Match(mm.File.Path)
-		if len(includeTerms) > 0 && !ownersFilters(fileOwners, includeTerms, includeBags, false) {
-			continue matchesLoop
-		}
-		if len(excludeTerms) > 0 && !ownersFilters(fileOwners, excludeTerms, excludeBags, true) {
-			continue matchesLoop
+		for _, path := range filePaths {
+			fileOwners := file.Match(path)
+			if len(includeTerms) > 0 && !ownersFilters(fileOwners, includeTerms, includeBags, false) {
+				continue matchesLoop
+			}
+			if len(excludeTerms) > 0 && !ownersFilters(fileOwners, excludeTerms, excludeBags, true) {
+				continue matchesLoop
+			}
 		}
 
 		filtered = append(filtered, m)
