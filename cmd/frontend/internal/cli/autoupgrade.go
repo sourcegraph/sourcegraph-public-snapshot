@@ -92,10 +92,6 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 
 	ready()
 
-	if err := blockForDisconnects(ctx, obsvCtx.Logger, db); err != nil {
-		return errors.Wrap(err, "error blocking on postgres client disconnects")
-	}
-
 	toVersionStr := version.Version()
 	toVersion, toPatch, ok := oobmigration.NewVersionAndPatchFromString(toVersionStr)
 	if !ok {
@@ -107,7 +103,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 		return errors.Wrap(err, "autoupgradestore.EnsureUpgradeTable")
 	}
 
-	stillNeedsMVU, err := claimAutoUpgradeLock(ctx, obsvCtx, upgradestore, toVersion)
+	stillNeedsMVU, err := claimAutoUpgradeLock(ctx, obsvCtx, db, toVersion)
 	if err != nil {
 		return err
 	}
@@ -240,15 +236,14 @@ func finalMileMigrations(obsvCtx *observation.Context) error {
 	return nil
 }
 
-type UpgradeStore interface {
-	GetServiceVersion(ctx context.Context) (string, bool, error)
-	ClaimAutoUpgrade(ctx context.Context, from, to string) (claimed bool, err error)
-}
-
 // claims a "lock" to prevent other frontends from attempting to autoupgrade concurrently, looping while the lock couldn't be claimed until either
 // 1) the version is where we want to be at or
 // 2) the lock was claimed by us
-func claimAutoUpgradeLock(ctx context.Context, obsvCtx *observation.Context, upgradestore UpgradeStore, toVersion oobmigration.Version) (stillNeedsUpgrade bool, err error) {
+// and
+// there are no named connections in pg_stat_activity besides frontend-autoupgrader.
+func claimAutoUpgradeLock(ctx context.Context, obsvCtx *observation.Context, db database.DB, toVersion oobmigration.Version) (stillNeedsUpgrade bool, err error) {
+	upgradestore := upgradestore.New(db)
+
 	// try to claim
 	for {
 		obsvCtx.Logger.Info("attempting to claim autoupgrade lock")
@@ -266,6 +261,23 @@ func claimAutoUpgradeLock(ctx context.Context, obsvCtx *observation.Context, upg
 		if cmp := oobmigration.CompareVersions(currentVersion, toVersion); cmp == oobmigration.VersionOrderAfter || cmp == oobmigration.VersionOrderEqual {
 			obsvCtx.Logger.Info("installation is up-to-date, nothing to do!")
 			return false, nil
+		}
+
+		// we want to block until all named connections (which we make use of) besides 'frontend-autoupgrader' are no longer connected,
+		// so that:
+		// 1) we know old frontends are retired and not coming back (due to new frontends running health/ready server)
+		// 2) dependent services have picked up the magic DSN and restarted
+		// TODO: can we surface this in the UI?
+		remainingConnections, err := checkForDisconnects(ctx, obsvCtx.Logger, db)
+		if err != nil {
+			return false, err
+		}
+		if len(remainingConnections) > 0 {
+			obsvCtx.Logger.Warn("named postgres connections found, waiting for them to shutdown, manually shutdown any unexpected ones", log.Strings("applications", remainingConnections))
+
+			time.Sleep(time.Second * 10)
+
+			continue
 		}
 
 		claimed, err := upgradestore.ClaimAutoUpgrade(ctx, currentVersionStr, toVersion.String())
@@ -364,28 +376,15 @@ func serveExternalServer(obsvCtx *observation.Context, sqlDB *sql.DB, db databas
 	return progressServer.Stop, nil
 }
 
-// we want to block until all named connections (which we make use of) besides 'frontend-autoupgrader' are no longer connected,
-// so that:
-// 1) we know old frontends are retired and not coming back (due to new frontends running health/ready server)
-// 2) dependent services have picked up the magic DSN and restarted
-// TODO: can we surface this in the UI?
-func blockForDisconnects(ctx context.Context, logger log.Logger, db database.DB) error {
-	for {
-		query := sqlf.Sprintf(`SELECT DISTINCT(application_name) FROM pg_stat_activity
+func checkForDisconnects(ctx context.Context, _ log.Logger, db database.DB) (remaining []string, err error) {
+	query := sqlf.Sprintf(`SELECT DISTINCT(application_name) FROM pg_stat_activity
 			WHERE application_name <> '' AND application_name <> %s AND application_name <> 'psql'`,
-			appName)
-		store := basestore.NewWithHandle(db.Handle())
-		applications, err := basestore.ScanStrings(store.Query(ctx, query))
-		if err != nil {
-			return err
-		}
-
-		if len(applications) == 0 {
-			return nil
-		}
-
-		logger.Warn("named postgres connections found, waiting for them to shutdown, manually shutdown any unexpected ones", log.Strings("applications", applications))
-
-		time.Sleep(time.Second * 10)
+		appName)
+	store := basestore.NewWithHandle(db.Handle())
+	remaining, err = basestore.ScanStrings(store.Query(ctx, query))
+	if err != nil {
+		return nil, err
 	}
+
+	return remaining, nil
 }
