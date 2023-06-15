@@ -11,6 +11,7 @@ import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
 import { ManualCompletionService } from './completions/manual'
+import { createProviderConfig } from './completions/providers/anthropic'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
@@ -296,12 +297,13 @@ const register = async (
             history,
             codebaseContext
         )
-        const completionsProvider = new CodyCompletionItemProvider(
+
+        const providerConfig = createProviderConfig({
             completionsClient,
-            history,
-            statusBar,
-            codebaseContext
-        )
+            contextWindowTokens: 2048,
+        })
+
+        const completionsProvider = new CodyCompletionItemProvider(providerConfig, history, statusBar, codebaseContext)
         disposables.push(
             vscode.commands.registerCommand('cody.manual-completions', async () => {
                 await manualCompletionService.fetchAndShowManualCompletions()

@@ -20,7 +20,6 @@ export const inlineCompletionsCache = new CompletionsCache()
 
 // TODO:
 //
-// - Wire it up so completions work again
 // - Add new `cody.completions.advanced.provider` option and add `experimental-codegen` setting.
 // - Add new `cody.completions.advanced.serverEndpoint` option
 // - Add new `ExperimentalCodeGenProvider` that does a fetch()

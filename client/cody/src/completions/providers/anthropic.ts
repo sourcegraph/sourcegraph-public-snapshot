@@ -16,6 +16,10 @@ DO NOT respond with anything other than code.`
 
 const CHARS_PER_TOKEN = 4
 
+function tokensToChars(tokens: number): number {
+    return tokens * CHARS_PER_TOKEN
+}
+
 interface AnthropicOptions {
     contextWindowTokens: number
     completionsClient: SourcegraphNodeCompletionsClient
@@ -29,10 +33,9 @@ export class AnthropicProvider extends Provider {
     constructor(options: ProviderOptions, anthropicOptions: AnthropicOptions) {
         super(options)
         this.promptChars =
-            Math.ceil(anthropicOptions.contextWindowTokens / CHARS_PER_TOKEN) -
-            Math.floor((anthropicOptions.contextWindowTokens / CHARS_PER_TOKEN) * options.responsePercentage)
-        this.responseTokens = anthropicOptions.contextWindowTokens * options.responsePercentage
-        console.log({ THISMUSTBEAROUND200: this.responseTokens })
+            tokensToChars(anthropicOptions.contextWindowTokens) -
+            Math.floor(tokensToChars(anthropicOptions.contextWindowTokens) * options.responsePercentage)
+        this.responseTokens = Math.floor(anthropicOptions.contextWindowTokens * options.responsePercentage)
         this.completionsClient = anthropicOptions.completionsClient
     }
 
@@ -180,24 +183,14 @@ export class AnthropicProvider extends Provider {
         for (let i = 0; i < this.n; i++) {
             requests.push(this.completionsClient.complete(params, abortSignal))
         }
+
         const responses = await Promise.all(requests)
 
-        // Post-process
-        return responses.flatMap(resp => {
-            const content = resp.completion
-
-            if (content === null) {
-                return []
-            }
-
-            return [
-                {
-                    prefix: this.prefix,
-                    content,
-                    stopReason: resp.stopReason,
-                },
-            ]
-        })
+        return responses.map(resp => ({
+            prefix: this.prefix,
+            content: resp.completion,
+            stopReason: resp.stopReason,
+        }))
     }
 }
 
@@ -206,6 +199,6 @@ export function createProviderConfig(anthropicOptions: AnthropicOptions): Provid
         create(options: ProviderOptions) {
             return new AnthropicProvider(options, anthropicOptions)
         },
-        maximumContextCharacters: anthropicOptions.contextWindowTokens / CHARS_PER_TOKEN,
+        maximumContextCharacters: tokensToChars(anthropicOptions.contextWindowTokens),
     }
 }
