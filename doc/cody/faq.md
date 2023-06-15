@@ -55,7 +55,7 @@ The default `"provider": "sourcegraph"` for completions and embeddings is the [S
 - Cody has one third-party dependency, which is Anthropic's Claude API. In the config, this can be replaced with OpenAI API.
 - Cody can optionally use OpenAI to generate embeddings, that are then used to improve the quality of its context snippets, but this is not required.
 
-The above is also the case even when using [the default `sourcegraph` provider, Cody Gateway](./explanations/cody_gateway.md), which forwards requests to third-party providers.
+The above is also the case even when using [the default `sourcegraph` provider, Cody Gateway](./explanations/cody_gateway.md), which uses the same third-party providers.
 
 #### What's the retention policy for Anthropic/OpenAI?
 
