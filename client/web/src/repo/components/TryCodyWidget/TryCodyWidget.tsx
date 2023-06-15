@@ -175,7 +175,7 @@ const AuthUserWidgetContent: React.FC<WidgetContentProps> = ({ type, theme, isSo
                 </div>
             </div>
             <div className={classNames('d-flex justify-content-center', styles.cardImages)}>
-                <img src={image} alt="Cody" className={styles.cardImage} />
+                <img src={image} alt="Cody" className={classNames(styles.cardImage, 'percy-hide')} />
             </div>
         </>
     )
