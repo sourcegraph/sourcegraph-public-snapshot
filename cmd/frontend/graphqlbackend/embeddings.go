@@ -60,6 +60,7 @@ type ListRepoEmbeddingJobsArgs struct {
 	graphqlutil.ConnectionResolverArgs
 	Query *string
 	State *string
+	Repo  *graphql.ID
 }
 
 type CancelRepoEmbeddingJobArgs struct {

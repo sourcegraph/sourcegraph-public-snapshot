@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	repobg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -41,8 +42,25 @@ type repoEmbeddingJobsConnectionStore struct {
 	args            graphqlbackend.ListRepoEmbeddingJobsArgs
 }
 
+func withRepoID(o *repobg.ListOpts, id graphql.ID) error {
+	var repoID api.RepoID
+	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
+		return err
+	}
+	o.Repo = &repoID
+	return nil
+}
+
 func (s *repoEmbeddingJobsConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := s.store.CountRepoEmbeddingJobs(ctx, repobg.ListOpts{Query: s.args.Query, State: s.args.State})
+	opts := repobg.ListOpts{Query: s.args.Query, State: s.args.State}
+	if s.args.Repo != nil {
+		err := withRepoID(&opts, *s.args.Repo)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	count, err := s.store.CountRepoEmbeddingJobs(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +69,15 @@ func (s *repoEmbeddingJobsConnectionStore) ComputeTotal(ctx context.Context) (*i
 }
 
 func (s *repoEmbeddingJobsConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.RepoEmbeddingJobResolver, error) {
-	jobs, err := s.store.ListRepoEmbeddingJobs(ctx, repobg.ListOpts{PaginationArgs: args, Query: s.args.Query, State: s.args.State})
+	opts := repobg.ListOpts{PaginationArgs: args, Query: s.args.Query, State: s.args.State}
+	if s.args.Repo != nil {
+		err := withRepoID(&opts, *s.args.Repo)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	jobs, err := s.store.ListRepoEmbeddingJobs(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
