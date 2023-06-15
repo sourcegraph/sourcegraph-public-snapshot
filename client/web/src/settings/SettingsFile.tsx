@@ -139,7 +139,12 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
         return (
-            <div className={classNames('test-settings-file d-flex flex-grow-1 flex-column', styles.settingsFile)}>
+            <div
+                className={classNames(
+                    'test-settings-file percy-hide d-flex flex-grow-1 flex-column',
+                    styles.settingsFile
+                )}
+            >
                 <BeforeUnloadPrompt when={this.state.saving || this.dirty} message="Discard settings changes?" />
                 <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
