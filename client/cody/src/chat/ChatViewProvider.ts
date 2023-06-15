@@ -195,6 +195,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
                 break
+            case 'abort':
+                this.cancelCompletion()
+                this.onCompletionEnd()
+                break
             case 'executeRecipe':
                 await this.executeRecipe(message.recipe)
                 break

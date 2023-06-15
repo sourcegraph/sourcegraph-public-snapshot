@@ -74,9 +74,10 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
     outline: none;
 }
 
-:global(.token-hallucinated), :global(.token-not-hallucinated) {
+:global(.token-hallucinated),
+:global(.token-not-hallucinated) {
     word-break: break-all;
-    text-underline-offset: .125rem;
+    text-underline-offset: 0.125rem;
 }
 
 :global(.token-hallucinated) {
@@ -105,4 +106,17 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
 .suggestion-button {
     border-radius: 1rem;
     font-size: 0.7rem;
+}
+
+.stop-generating-button-container {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+}
+
+.stop-generating-button {
+    padding: 0 var(--spacing);
+    border-radius: 1rem;
+
+    letter-spacing: 0.1rem;
 }

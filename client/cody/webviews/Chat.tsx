@@ -49,6 +49,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     suggestions,
     setSuggestions,
 }) => {
+    const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
+
+    const abortMessageInProgress = useCallback(() => {
+        abortMessageInProgressInternal()
+        vscodeAPI.postMessage({ command: 'abort' })
+        setAbortMessageInProgress(() => () => undefined)
+    }, [abortMessageInProgressInternal, vscodeAPI])
+
     const onSubmit = useCallback(
         (text: string, submitType: 'user' | 'suggestion') => {
             vscodeAPI.postMessage({ command: 'submit', text, submitType })
@@ -114,9 +122,31 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             copyButtonOnSubmit={onCopyBtnClick}
             suggestions={suggestions}
             setSuggestions={setSuggestions}
+            abortMessageInProgressComponent={AbortMessageInProgress}
+            onAbortMessageInProgress={abortMessageInProgress}
         />
     )
 }
+
+interface IAbortMessageInProgressProps {
+    onAbortMessageInProgress: () => void
+}
+
+const AbortMessageInProgress: React.FunctionComponent<IAbortMessageInProgressProps> = React.memo(
+    function AbortMessageInProgressButton({ onAbortMessageInProgress }) {
+        return (
+            <div className={classNames(styles.stopGeneratingButtonContainer)}>
+                <VSCodeButton
+                    className={classNames(styles.stopGeneratingButton)}
+                    onClick={onAbortMessageInProgress}
+                    appearance="secondary"
+                >
+                    <i className="codicon codicon-stop-circle" /> Stop generating
+                </VSCodeButton>
+            </div>
+        )
+    }
+)
 
 const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     className,
