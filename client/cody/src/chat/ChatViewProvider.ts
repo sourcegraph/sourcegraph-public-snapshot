@@ -316,6 +316,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 void this.multiplexer.notifyTurnComplete()
             },
             onError: (err, statusCode) => {
+                if (err === 'aborted') {
+                    this.onCompletionEnd()
+                    return
+                }
                 // Display error message as assistant response
                 this.transcript.addErrorAsAssistantResponse(err)
                 // Log users out on unauth error
