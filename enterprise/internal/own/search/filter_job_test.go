@@ -506,6 +506,9 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			userExternalAccountsStore.ListFunc.SetDefaultReturn(nil, nil)
 			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
 			db.TeamsFunc.SetDefaultReturn(database.NewMockTeamStore())
+			repoStore := database.NewMockRepoStore()
+			repoStore.GetFunc.SetDefaultReturn(&types.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
+			db.ReposFunc.SetDefaultReturn(repoStore)
 			if tt.setup != nil {
 				tt.setup(db)
 			}
