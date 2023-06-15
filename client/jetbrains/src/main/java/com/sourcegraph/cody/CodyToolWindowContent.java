@@ -309,6 +309,7 @@ class CodyToolWindowContent implements UpdatableChat {
 
   private void sendMessage(@NotNull Project project) {
     String messageText = promptInput.getText();
+    promptInput.setText("");
     sendMessage(
         project,
         ChatMessage.createHumanMessage(messageText, messageText, Collections.emptyList()),

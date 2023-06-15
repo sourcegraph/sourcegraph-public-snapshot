@@ -42,6 +42,8 @@
 ### Fixed
 
 - Fixed font on the chat ui [#53540](https://github.com/sourcegraph/sourcegraph/pull/53540)
+- Fixed line breaks in the chat ui [#53543](https://github.com/sourcegraph/sourcegraph/pull/53543)
+- Reset prompt input on message send [#53543](https://github.com/sourcegraph/sourcegraph/pull/53543)
 
 ### Security
 
