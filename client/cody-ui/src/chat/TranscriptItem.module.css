@@ -39,23 +39,6 @@
     border-bottom: none;
 }
 
-.header-container {
-    position: absolute;
-    top: var(--spacing);
-    right: var(--spacing);
-
-    visibility: hidden;
-    z-index: 10;
-}
-
-.footer-container {
-    position: absolute;
-    bottom: var(--spacing);
-    right: var(--spacing);
-
-    visibility: hidden;
-}
-
 .row:hover > .header-container,
 .row:hover > .footer-container {
     visibility: visible;
@@ -88,6 +71,37 @@
 
 .content > div:first-child > *:last-child {
     margin-bottom: 0;
+}
+
+.header-container {
+    position: absolute;
+    right: var(--spacing);
+    top: calc(var(--spacing) / 4);
+
+    visibility: hidden;
+}
+
+.editing-container {
+    position: absolute;
+    right: var(--spacing);
+    top: var(--spacing);
+
+    visibility: visible;
+}
+
+.editing-label {
+    margin: 0;
+    padding-top: 0.1rem;
+    padding-bottom: 0.5rem;
+    opacity: 0.5;
+}
+
+.footer-container {
+    position: absolute;
+    bottom: calc(var(--spacing) / 4);
+    right: var(--spacing);
+
+    visibility: hidden;
 }
 
 .feedback-edit-buttons-container {

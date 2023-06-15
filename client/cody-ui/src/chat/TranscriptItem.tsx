@@ -125,9 +125,15 @@ export const TranscriptItem: React.FunctionComponent<
                 message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow
             )}
         >
+            {EditButtonContainer && beingEdited && <p className={classNames(styles.editingLabel)}>Editing...</p>}
+            {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
             {showEditButton && EditButtonContainer && editButtonOnSubmit && TextArea && message.speaker === 'human' && (
-                <header className={classNames(styles.headerContainer, transcriptItemParticipantClassName)}>
-                    {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
+                <header
+                    className={classNames(
+                        beingEdited ? styles.editingContainer : styles.headerContainer,
+                        transcriptItemParticipantClassName
+                    )}
+                >
                     <EditButtonContainer
                         className={styles.FeedbackEditButtonsContainer}
                         messageBeingEdited={beingEdited}

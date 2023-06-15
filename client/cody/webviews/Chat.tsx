@@ -128,24 +128,20 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 }
 
-interface IAbortMessageInProgressProps {
+interface AbortMessageInProgressProps {
     onAbortMessageInProgress: () => void
 }
 
-const AbortMessageInProgress: React.FunctionComponent<IAbortMessageInProgressProps> = React.memo(
-    function AbortMessageInProgressButton({ onAbortMessageInProgress }) {
-        return (
-            <div className={classNames(styles.stopGeneratingButtonContainer)}>
-                <VSCodeButton
-                    className={classNames(styles.stopGeneratingButton)}
-                    onClick={onAbortMessageInProgress}
-                    appearance="secondary"
-                >
-                    <i className="codicon codicon-stop-circle" /> Stop generating
-                </VSCodeButton>
-            </div>
-        )
-    }
+const AbortMessageInProgress: React.FC<AbortMessageInProgressProps> = ({ onAbortMessageInProgress }) => (
+    <div className={classNames(styles.stopGeneratingButtonContainer)}>
+        <VSCodeButton
+            className={classNames(styles.stopGeneratingButton)}
+            onClick={onAbortMessageInProgress}
+            appearance="secondary"
+        >
+            <i className="codicon codicon-stop-circle" /> Stop generating
+        </VSCodeButton>
+    </div>
 )
 
 const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
