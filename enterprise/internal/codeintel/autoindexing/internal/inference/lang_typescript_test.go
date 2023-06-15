@@ -18,6 +18,7 @@ fi`
 	nodeMemoryStep := `if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`
 
 	expectedLocalSteps := []string{nodeMemoryStep, npmrcStep}
+	expectedEnvVars := []string{"NPM_TOKEN", "NPMRC_DATA"}
 
 	testGenerators(t,
 		generatorTestCase{
@@ -39,7 +40,7 @@ fi`
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index", "--infer-tsconfig"},
 					Outfile:          "index.scip",
-					RequestedEnvVars: []string{"NPM_TOKEN"},
+					RequestedEnvVars: expectedEnvVars,
 				},
 			},
 		},
@@ -63,7 +64,7 @@ fi`
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index", "--infer-tsconfig"},
 					Outfile:          "index.scip",
-					RequestedEnvVars: []string{"NPM_TOKEN"},
+					RequestedEnvVars: expectedEnvVars,
 				},
 			},
 		},
@@ -80,7 +81,7 @@ fi`
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
 					Outfile:          "index.scip",
-					RequestedEnvVars: []string{"NPM_TOKEN"},
+					RequestedEnvVars: expectedEnvVars,
 				},
 			},
 		},
@@ -99,7 +100,7 @@ fi`
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
 					Outfile:          "index.scip",
-					RequestedEnvVars: []string{"NPM_TOKEN"},
+					RequestedEnvVars: expectedEnvVars,
 				},
 				{
 					Steps:            nil,
@@ -108,7 +109,7 @@ fi`
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
 					Outfile:          "index.scip",
-					RequestedEnvVars: []string{"NPM_TOKEN"},
+					RequestedEnvVars: expectedEnvVars,
 				},
 				{
 					Steps:            nil,
@@ -117,7 +118,7 @@ fi`
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
 					Outfile:          "index.scip",
-					RequestedEnvVars: []string{"NPM_TOKEN"},
+					RequestedEnvVars: expectedEnvVars,
 				},
 			},
 		},
@@ -147,7 +148,7 @@ fi`
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
 					Outfile:          "index.scip",
-					RequestedEnvVars: []string{"NPM_TOKEN"},
+					RequestedEnvVars: expectedEnvVars,
 				},
 				{
 					Steps: []config.DockerStep{
@@ -167,7 +168,7 @@ fi`
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
 					Outfile:          "index.scip",
-					RequestedEnvVars: []string{"NPM_TOKEN"},
+					RequestedEnvVars: expectedEnvVars,
 				},
 				{
 					Steps: []config.DockerStep{
@@ -192,7 +193,7 @@ fi`
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
 					Outfile:          "index.scip",
-					RequestedEnvVars: []string{"NPM_TOKEN"},
+					RequestedEnvVars: expectedEnvVars,
 				},
 				{
 					Steps: []config.DockerStep{
@@ -207,7 +208,7 @@ fi`
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
 					Outfile:          "index.scip",
-					RequestedEnvVars: []string{"NPM_TOKEN"},
+					RequestedEnvVars: expectedEnvVars,
 				},
 			},
 		},
@@ -232,7 +233,7 @@ fi`
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
 					Outfile:          "index.scip",
-					RequestedEnvVars: []string{"NPM_TOKEN"},
+					RequestedEnvVars: expectedEnvVars,
 				},
 			},
 		},
@@ -260,7 +261,7 @@ fi`
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
 					Outfile:          "index.scip",
-					RequestedEnvVars: []string{"NPM_TOKEN"},
+					RequestedEnvVars: expectedEnvVars,
 				},
 			},
 		},
