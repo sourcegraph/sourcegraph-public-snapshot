@@ -1,0 +1,17 @@
+{
+  "name": "lsp-cody",
+  "version": "0.0.1",
+  "description": "A Client to Connect to the Cody LSP Gateway",
+  "scripts": {
+    "package": "eask package",
+    "install-deps": "eask install-deps --dev",
+    "build": "eask compile",
+    "test": "eask test buttercup",
+    "lint": "./lint.sh",
+    "autoloads": "eask generate autoloads",
+    "clean": "eask clean all"
+  },
+  "devDependencies": {
+    "@emacs-eask/cli": "^0.8.1"
+  }
+}

@@ -1,14 +1,5 @@
 lockfileVersion: '6.0'
 
-overrides:
-  '@types/webpack': '5'
-  history: 4.5.1
-  cssnano: 4.1.10
-  webpack: '5'
-  tslib: 2.1.0
-
-packageExtensionsChecksum: 9e8693fa0eff1900df58a4812d139722
-
 importers:
 
   .:
@@ -1505,6 +1496,12 @@ importers:
       '@sourcegraph/extension-api-types':
         specifier: workspace:*
         version: link:../extension-api-types
+
+  client/emacs/lsp-cody:
+    devDependencies:
+      '@emacs-eask/cli':
+        specifier: ^0.8.1
+        version: 0.8.1
 
   client/eslint-plugin-wildcard:
     dependencies:
@@ -3530,6 +3527,13 @@ packages:
   /@dqbd/tiktoken@1.0.7:
     resolution: {integrity: sha512-bhR5k5W+8GLzysjk8zTMVygQZsgvf7W1F0IlL4ZQ5ugjo5rCyiwGM5d8DYriXspytfu98tv59niang3/T+FoDw==}
     dev: false
+
+  /@emacs-eask/cli@0.8.1:
+    resolution: {integrity: sha512-+Z54Sh/vHWOXcbb495SjH5+4h9D3c5wNPebz83yfZIUHQ4DqxSB53l//Dse5P3UVt3okQeXdwGNuRN1VBf3brg==}
+    hasBin: true
+    dependencies:
+      yargs: 17.7.2
+    dev: true
 
   /@esbuild/android-arm64@0.16.17:
     resolution: {integrity: sha512-MIGl6p5sc3RDTLLkYL1MyL8BMRN4tLMRCn+yRJJmEDvYZ2M7tmAf80hx1kbNEUX2KJ50RRtxZ4JHLvCfuB6kBg==}
