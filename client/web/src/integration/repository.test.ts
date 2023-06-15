@@ -89,6 +89,11 @@ describe('Repository', () => {
 
     describe('index page', () => {
         it('loads when accessed with a repo url', async () => {
+            testContext.server
+                .get(new URL('sourcegraph-assets/*', 'https://storage.googleapis.com').href)
+                .intercept((request, response) => {
+                    response.sendStatus(404)
+                })
             const shortRepositoryName = 'sourcegraph/jsonrpc2'
             const repositoryName = `github.com/${shortRepositoryName}`
             const repositorySourcegraphUrl = `/${repositoryName}`

@@ -164,7 +164,9 @@ const AuthUserWidgetContent: React.FC<WidgetContentProps> = ({ type, theme, isSo
             <div className="d-flex pb-3">
                 <GlowingCodySVG />
                 <div className="d-flex flex-column flex-grow-1 justify-content-center flex-shrink-0">
-                    <H4 className={styles.cardTitle}>{title}</H4>
+                    <H4 as="h2" className={styles.cardTitle}>
+                        {title}
+                    </H4>
                     <ol className={classNames('m-0 pl-4', styles.cardList)}>
                         {useCases.map(useCase => (
                             <Text key={useCase} as="li">
