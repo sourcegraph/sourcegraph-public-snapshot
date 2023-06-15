@@ -27,6 +27,7 @@ import {
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
 import { createStatusBar } from './services/StatusBar'
+import { TestSupport } from './test-support'
 
 const CODY_FEEDBACK_URL =
     'https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode'
@@ -88,6 +89,9 @@ const register = async (
 
     const fixup = new FixupController()
     disposables.push(fixup)
+    if (TestSupport.instance) {
+        TestSupport.instance.fixupController.set(fixup)
+    }
     const controllers = { inline: commentController, fixups: fixup }
 
     const editor = new VSCodeEditor(controllers)

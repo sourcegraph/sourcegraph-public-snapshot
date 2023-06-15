@@ -33,7 +33,7 @@ test('decorations from un-applied Cody changes appear', async ({ page, sidebar }
     await page.getByRole('button', { name: 'Fixup (Experimental)' }).click()
 
     // Wait for the input box to appear
-    await page.getByPlaceholder('Ask Cody to edit your code, or use /chat to ask a question.').click()
+    await page.getByText('Ask Cody to edit your code, or use /chat to ask a question').click()
     // Type in the instruction for fixup
     await page.keyboard.type('replace hello with goodbye')
     // Press enter to submit the fixup

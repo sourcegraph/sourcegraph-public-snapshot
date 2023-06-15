@@ -130,7 +130,7 @@ export class FixupController
     // will return undefined. This may update the task with the newly computed
     // diff.
     private applicableDiffOrRespin(task: FixupTask, document: vscode.TextDocument): Diff | undefined {
-        if (!(task.state == CodyTaskState.ready || task.state == CodyTaskState.applying)) {
+        if (!(task.state === CodyTaskState.ready || task.state === CodyTaskState.applying)) {
             // We haven't received a response from the LLM yet, so there is
             // no diff.
             console.warn('no response cached from LLM so no applicable diff')
