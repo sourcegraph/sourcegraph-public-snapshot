@@ -3,7 +3,7 @@
          "A Client to Connect to the Cody LSP Gateway")
 
 (website-url "https://sourcegraph.com/")
-(keywords "")
+(keywords "languages")
 
 (package-file "lsp-cody.el")
 
