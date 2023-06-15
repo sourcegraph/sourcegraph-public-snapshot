@@ -116,7 +116,8 @@ export class TaskViewProvider implements vscode.TreeDataProvider<FixupTaskTreeIt
 }
 
 export class FixupTaskTreeItem extends vscode.TreeItem {
-    private state: CodyTaskState = CodyTaskState.idle
+    // TODO: Don't duplicate the task state here; use the FixupTask directly.
+    private state: CodyTaskState = CodyTaskState.waiting
     public fsPath: string
 
     // state for parent node

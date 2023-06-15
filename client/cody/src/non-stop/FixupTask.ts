@@ -8,10 +8,10 @@ export type taskID = string
 
 export class FixupTask {
     public id: taskID
-    public selectionRange: vscode.Range
     public state_: CodyTaskState = CodyTaskState.idle
-    // The original text that we're working on updating
-    public readonly original: string
+    // The original text that we're working on updating. Set when we start an
+    // LLM spin.
+    public original = ''
     // The text of the streaming turn of the LLM, if any
     public inProgressReplacement: string | undefined
     // The text of the last completed turn of the LLM, if any
@@ -19,11 +19,15 @@ export class FixupTask {
     // If text has been received from the LLM and a diff has been computed, it
     // is cached here. Diffs are recomputed lazily and may be stale.
     public diff: Diff | undefined
+    // The number of times we've submitted this to the LLM.
+    public spinCount = 0
 
-    constructor(public readonly fixupFile: FixupFile, public readonly instruction: string, editor: vscode.TextEditor) {
+    constructor(
+        public readonly fixupFile: FixupFile,
+        public readonly instruction: string,
+        public selectionRange: vscode.Range
+    ) {
         this.id = Date.now().toString(36).replace(/\d+/g, '')
-        this.selectionRange = editor.selection
-        this.original = editor.document.getText(this.selectionRange)
     }
 
     /**

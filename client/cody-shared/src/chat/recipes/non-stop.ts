@@ -10,58 +10,45 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 export class NonStop implements Recipe {
     public id: RecipeID = 'non-stop'
 
-    public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+    public async getInteraction(taskId: string, context: RecipeContext): Promise<Interaction | null> {
         const controllers = context.editor.controllers
-        const selection = context.editor.getActiveTextEditorSelection()
-
-        // TODO: Make this work with unsaved documents
-        // TODO: Do not require any text to be selected
-        if (!controllers || !selection) {
-            await context.editor.showWarningMessage('Cody Fixups: Failed to start.')
+        if (!controllers) {
             return null
         }
-
-        // TODO: Remove dependency on human input and use input box only
-        const humanInput =
-            humanChatInput ||
-            (await context.editor.showInputBox('Ask Cody to edit your code, or use /chat to ask a question.')) ||
-            ''
-
-        const taskID = controllers.task.add(humanInput, selection)
-        if ((!humanInput && !selection.selectedText.trim()) || !taskID) {
-            await context.editor.showWarningMessage(
-                'Cody Fixups: Failed to start due to missing instruction with empty selection.'
-            )
+        const taskParameters = await controllers.fixups.getTaskRecipeData(taskId)
+        if (!taskParameters) {
+            // Nothing to do.
             return null
         }
+        const { instruction, fileName, precedingText, selectedText, followingText } = taskParameters
 
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
-        if (truncateText(selection.selectedText, quarterFileContext * 2) !== selection.selectedText) {
+        if (truncateText(selectedText, quarterFileContext * 2) !== selectedText) {
             const msg = "The amount of text selected exceeds Cody's current capacity."
             await context.editor.showWarningMessage(msg)
+            // TODO: Communicate this error back to the FixupController
             return null
         }
 
         // Reconstruct Cody's prompt using user's context
         // Replace placeholders in reverse order to avoid collisions if a placeholder occurs in the input
         const promptText = NonStop.prompt
-            .replace('{humanInput}', truncateText(humanInput, MAX_HUMAN_INPUT_TOKENS))
+            .replace('{humanInput}', truncateText(instruction, MAX_HUMAN_INPUT_TOKENS))
             .replace('{responseMultiplexerPrompt}', context.responseMultiplexer.prompt())
-            .replace('{truncateFollowingText}', truncateText(selection.followingText, quarterFileContext))
-            .replace('{selectedText}', selection.selectedText)
-            .replace('{truncateTextStart}', truncateTextStart(selection.precedingText, quarterFileContext))
-            .replace('{fileName}', selection.fileName)
+            .replace('{truncateFollowingText}', truncateText(followingText, quarterFileContext))
+            .replace('{selectedText}', selectedText)
+            .replace('{truncateTextStart}', truncateTextStart(precedingText, quarterFileContext))
+            .replace('{fileName}', fileName)
 
         let text = ''
 
         context.responseMultiplexer.sub('selection', {
             onResponse: async (content: string) => {
                 text += content
-                await context.editor.didReceiveFixupText(taskID, text, 'streaming')
+                await context.editor.didReceiveFixupText(taskId, text, 'streaming')
             },
             onTurnComplete: async () => {
-                await context.editor.didReceiveFixupText(taskID, text, 'complete')
-                controllers.task.stop(taskID)
+                await context.editor.didReceiveFixupText(taskId, text, 'complete')
             },
         })
 
@@ -70,13 +57,13 @@ export class NonStop implements Recipe {
                 {
                     speaker: 'human',
                     text: promptText,
-                    displayText: 'Cody Fixups: ' + humanInput,
+                    displayText: 'Cody Fixups: ' + instruction,
                 },
                 {
                     speaker: 'assistant',
                     prefix: 'Check your document for updates from Cody.',
                 },
-                this.getContextMessages(selection.selectedText, context.codebaseContext),
+                this.getContextMessages(selectedText, context.codebaseContext),
                 []
             )
         )

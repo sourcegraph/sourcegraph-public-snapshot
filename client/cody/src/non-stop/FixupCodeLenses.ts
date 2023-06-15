@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { getLensesByState } from './codelenses'
+import { getLensesForTask } from './codelenses'
 import { FixupTask } from './FixupTask'
 import { FixupFileCollection } from './roles'
 import { CodyTaskState } from './utils'
@@ -44,7 +44,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider {
             this.removeLensesFor(task)
             return
         }
-        this.taskLenses.set(task, getLensesByState(task.id, task.state, task.selectionRange))
+        this.taskLenses.set(task, getLensesForTask(task))
         this.notifyCodeLensesChanged()
     }
 
