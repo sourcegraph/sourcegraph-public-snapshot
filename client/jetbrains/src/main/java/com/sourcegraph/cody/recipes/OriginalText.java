@@ -2,11 +2,11 @@ package com.sourcegraph.cody.recipes;
 
 import org.jetbrains.annotations.NotNull;
 
-public class SelectedText {
+public class OriginalText {
 
   private final @NotNull String value;
 
-  public SelectedText(@NotNull String value) {
+  public OriginalText(@NotNull String value) {
     this.value = value;
   }
 

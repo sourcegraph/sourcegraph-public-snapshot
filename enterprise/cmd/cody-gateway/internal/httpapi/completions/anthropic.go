@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/anthropic"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
 const anthropicAPIURL = "https://api.anthropic.com/v1/complete"
@@ -29,7 +30,7 @@ func NewAnthropicHandler(
 		eventLogger,
 		rs,
 		rateLimitNotifier,
-		anthropic.ProviderName,
+		string(conftypes.CompletionsProviderNameAnthropic),
 		anthropicAPIURL,
 		allowedModels,
 		upstreamHandlerMethods[anthropicRequest]{
