@@ -28,18 +28,6 @@ export type Requests = {
     'recipes/execute': [ExecuteRecipeParams, void]
 
     // Server -> Client
-    'editor/quickPick': [string[], string | null]
-    'editor/prompt': [string, string | null]
-
-    // 'editor/active': [void, ActiveTextEditor | null]
-    // 'editor/selection': [void, ActiveTextEditorSelection | null]
-    // 'editor/selectionOrEntireFile': [void, ActiveTextEditorSelection | null]
-    // 'editor/visibleContent': [void, ActiveTextEditorVisibleContent | null]
-
-    // 'intent/isCodebaseContextRequired': [string, boolean]
-    // 'intent/isEditorContextRequired': [string, boolean]
-
-    'editor/replaceSelection': [ReplaceSelectionParams, ReplaceSelectionResult]
 }
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
@@ -49,16 +37,21 @@ export type Notifications = {
     exit: [void]
 
     'workspaceRootPath/didChange': [string]
+    'configuration/didChange': [Configuration]
     'textDocument/didFocus': [TextDocument]
     'textDocument/didOpen': [TextDocument]
     'textDocument/didChange': [TextDocument]
     'textDocument/didClose': [TextDocument]
 
     // Server -> Client
-    'editor/warning': [string]
-
     'chat/updateMessageInProgress': [ChatMessage | null]
     'chat/updateTranscript': [TranscriptJSON]
+}
+
+export interface Configuration {
+    serverEndpoint: string
+    accessToken: string
+    customHeaders: Record<string, string>
 }
 
 export interface Position {

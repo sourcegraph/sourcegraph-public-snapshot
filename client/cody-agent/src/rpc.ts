@@ -180,11 +180,24 @@ export class MessageHandler {
                         const data: ResponseMessage<any> = {
                             jsonrpc: '2.0',
                             id: msg.id,
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                             result,
                         }
                         this.messageEncoder.send(data)
                     },
-                    error => console.error(error)
+                    error => {
+                        const message = error instanceof Error ? error.message : `${error}`
+                        const data: ResponseMessage<any> = {
+                            jsonrpc: '2.0',
+                            id: msg.id,
+                            error: {
+                                code: ErrorCode.InternalError,
+                                message,
+                                data: JSON.stringify(error),
+                            },
+                        }
+                        this.messageEncoder.send(data)
+                    }
                 )
             } else {
                 console.error(`No handler for request with method ${msg.method}`)

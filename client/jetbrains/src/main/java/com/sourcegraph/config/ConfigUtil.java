@@ -5,7 +5,11 @@ import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
+import com.sourcegraph.agent.Configuration;
 import com.sourcegraph.find.Search;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -15,14 +19,18 @@ public class ConfigUtil {
   public static final String DOTCOM_URL = "https://sourcegraph.com/";
 
   @NotNull
+  public static Configuration getAgentConfiguration(@NotNull Project project) {
+    return new Configuration()
+        .setServerEndpoint(getSourcegraphUrl(project))
+        .setAccessToken(getProjectAccessToken(project))
+        .setCustomHeaders(getCustomRequestHeadersAsMap(project));
+  }
+
+  @NotNull
   public static JsonObject getConfigAsJson(@NotNull Project project) {
     JsonObject configAsJson = new JsonObject();
     configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(project));
-    configAsJson.addProperty(
-        "accessToken",
-        ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.ENTERPRISE
-            ? ConfigUtil.getDotComAccessToken(project)
-            : ConfigUtil.getEnterpriseAccessToken(project));
+    configAsJson.addProperty("accessToken", ConfigUtil.getProjectAccessToken(project));
     configAsJson.addProperty(
         "customRequestHeadersAsString", ConfigUtil.getCustomRequestHeaders(project));
     configAsJson.addProperty("pluginVersion", ConfigUtil.getPluginVersion());
@@ -82,6 +90,15 @@ public class ConfigUtil {
     // User level or default
     String userLevelUrl = UserLevelConfig.getSourcegraphUrl();
     return !userLevelUrl.equals("") ? addSlashIfNeeded(userLevelUrl) : "";
+  }
+
+  public static Map<String, String> getCustomRequestHeadersAsMap(@NotNull Project project) {
+    Map<String, String> result = new HashMap<>();
+    String[] pairs = getCustomRequestHeaders(project).split(",");
+    for (int i = 0; i + 1 < pairs.length; i = i + 2) {
+      result.put(pairs[i], pairs[i + 1]);
+    }
+    return result;
   }
 
   @NotNull
@@ -240,6 +257,12 @@ public class ConfigUtil {
   @NotNull
   private static SourcegraphProjectService getProjectLevelConfig(@NotNull Project project) {
     return Objects.requireNonNull(SourcegraphService.getInstance(project));
+  }
+
+  public static String getProjectAccessToken(Project project) {
+    return ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.ENTERPRISE
+        ? ConfigUtil.getEnterpriseAccessToken(project)
+        : ConfigUtil.getProjectAccessToken(project);
   }
 
   public static String getEnterpriseAccessToken(Project project) {

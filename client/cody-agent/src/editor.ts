@@ -15,7 +15,7 @@ export class AgentEditor implements Editor {
 
     constructor(private agent: Agent) {}
 
-    public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
+    public didReceiveFixupText(): Promise<void> {
         throw new Error('Method not implemented.')
     }
 
@@ -81,26 +81,19 @@ export class AgentEditor implements Editor {
         }
     }
 
-    public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
-        // Handle possible failure
-        await this.agent.request('editor/replaceSelection', {
-            fileName,
-            selectedText,
-            replacement,
-        })
+    public replaceSelection(): Promise<void> {
+        throw new Error('Not implemented')
     }
 
-    public async showQuickPick(labels: string[]): Promise<string | undefined> {
-        const result = await this.agent.request('editor/quickPick', labels)
-        return result || undefined
+    public showQuickPick(): Promise<string | undefined> {
+        throw new Error('Not implemented')
     }
 
-    public showWarningMessage(message: string): Promise<void> {
-        this.agent.notify('editor/warning', message)
-        return Promise.resolve()
+    public showWarningMessage(): Promise<void> {
+        throw new Error('Not implemented')
     }
 
-    public async showInputBox(prompt?: string | undefined): Promise<string | undefined> {
-        return (await this.agent.request('editor/prompt', prompt || '')) || undefined
+    public showInputBox(): Promise<string | undefined> {
+        throw new Error('Not implemented')
     }
 }

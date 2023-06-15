@@ -1,5 +1,7 @@
 import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.nio.file.Files
+import java.nio.file.Paths
 
 fun properties(key: String) = project.findProperty(key).toString()
 
@@ -77,15 +79,15 @@ tasks {
 
         // Extract the <!-- Plugin description --> section from README.md and provide for the plugin's manifest
         pluginDescription.set(
-                projectDir.resolve("README.md").readText().lines().run {
-                    val start = "<!-- Plugin description -->"
-                    val end = "<!-- Plugin description end -->"
+            projectDir.resolve("README.md").readText().lines().run {
+                val start = "<!-- Plugin description -->"
+                val end = "<!-- Plugin description end -->"
 
-                    if (!containsAll(listOf(start, end))) {
-                        throw GradleException("Plugin description section not found in README.md:\n$start ... $end")
-                    }
-                    subList(indexOf(start) + 1, indexOf(end))
-                }.joinToString("\n").run { markdownToHTML(this) }
+                if (!containsAll(listOf(start, end))) {
+                    throw GradleException("Plugin description section not found in README.md:\n$start ... $end")
+                }
+                subList(indexOf(start) + 1, indexOf(end))
+            }.joinToString("\n").run { markdownToHTML(this) }
         )
 
         // Get the latest available change notes from the changelog file
@@ -96,8 +98,44 @@ tasks {
         })
     }
 
+    val agentSourceDirectory = Paths.get("..", "cody-agent").normalize()
+    val agentTargetDirectory =
+        buildDir.resolve("idea-sandbox").resolve("plugins").resolve("Sourcegraph").resolve("agent").toPath()
+
+    fun cleanAgentTargetDirectory() {
+        if (Files.isDirectory(agentTargetDirectory)) {
+            agentTargetDirectory.toFile().deleteRecursively()
+        }
+    }
+
+    fun copyAgentBinariesToPluginPath(targetPath: String) {
+
+        val shouldBuildBinaries =
+            findProperty("forceAgentBuild") == "true" ||
+                !Files.isDirectory(agentTargetDirectory) ||
+                agentTargetDirectory.toFile().list().isEmpty()
+        if (shouldBuildBinaries) {
+            exec {
+                commandLine("pnpm", "install")
+                workingDir(agentSourceDirectory.toString())
+            }
+            exec {
+                commandLine("pnpm", "run", "build-agent-binaries")
+                workingDir(agentSourceDirectory.toString())
+                environment("AGENT_EXECUTABLE_TARGET_DIRECTORY", targetPath)
+            }
+        }
+    }
+    register("copyAgentBinariesToPluginPath") {
+        doLast {
+            copyAgentBinariesToPluginPath(agentTargetDirectory.toString())
+        }
+    }
+
+
 
     runIde {
+        dependsOn("copyAgentBinariesToPluginPath")
         jvmArgs("-Djdk.module.illegalAccess.silent=true")
         systemProperty("cody-agent.trace-path", "$buildDir/sourcegraph/cody-agent-trace.json")
     }
@@ -115,6 +153,17 @@ tasks {
         certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
         privateKey.set(System.getenv("PRIVATE_KEY"))
         password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
+    }
+
+
+    buildPlugin {
+        dependsOn("copyAgentBinariesToPluginPath")
+        // Copy agent binaries into the zip file that `buildPlugin` produces.
+        from(fileTree(agentTargetDirectory.parent.toString()) {
+            include("agent/*")
+        }) {
+            into("agent")
+        }
     }
 
     publishPlugin {

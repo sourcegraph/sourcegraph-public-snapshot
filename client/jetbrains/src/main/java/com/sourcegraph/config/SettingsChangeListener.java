@@ -16,6 +16,7 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
 import com.sourcegraph.cody.completions.CodyCompletionsManager;
+import com.sourcegraph.agent.CodyAgent;
 import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.awt.event.InputEvent;
@@ -53,6 +54,14 @@ public class SettingsChangeListener implements Disposable {
             // Notify JCEF about the config changes
             if (javaToJSBridge != null) {
               javaToJSBridge.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project));
+            }
+
+            // Notify Cody Agent about config changes.
+            if (CodyAgent.isConnected()) {
+              CodyAgent.getServer()
+                  .configurationDidChange(ConfigUtil.getAgentConfiguration(project));
+            } else {
+              System.out.println("NOT CONNECTED CODY");
             }
 
             // Log install events

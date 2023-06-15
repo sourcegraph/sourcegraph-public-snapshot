@@ -39,6 +39,10 @@ New issues and feature requests can be filed through our [issue tracker](https:/
   See https://youtrack.jetbrains.com/issue/IDEA-291946 for more details.
 - To debug communication between the IntelliJ plugin and Cody agent, it's useful to keep an open terminal tab that's
   running the command `fail -f build/sourcegraph/cody-agent-trace.json`.
+- The Cody agent is a JSON-RPC server that implements the promt logic for Cody. The JetBrains plugin needs access to the
+  agent binary to function propertly. This agent binary is automatically built from source if it does not exist. To
+  speed up edit/test/debug feedback loops, the agent binary does not get rebuilt unless you provdide the 
+  `-PforceAgentBuild=true` flag when running Gradle. For example, `./gradlew :runIde -PforceAgentBuild=true`.
 
 ## Publishing a new version
 
