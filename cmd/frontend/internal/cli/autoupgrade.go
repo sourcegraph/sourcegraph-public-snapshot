@@ -78,6 +78,17 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 		return errors.Newf("unexpected string for desired instance schema version, skipping auto-upgrade (%s)", currentVersionStr)
 	}
 
+	toVersionStr := version.Version()
+	toVersion, toPatch, ok := oobmigration.NewVersionAndPatchFromString(toVersionStr)
+	if !ok {
+		obsvCtx.Logger.Warn("unexpected string for desired instance schema version, skipping auto-upgrade", log.String("version", toVersionStr))
+		return nil
+	}
+
+	if oobmigration.CompareVersions(currentVersion, toVersion) == oobmigration.VersionOrderEqual && currentPatch >= toPatch {
+		return nil
+	}
+
 	stopFunc, err := serveInternalServer(obsvCtx)
 	if err != nil {
 		return errors.Wrap(err, "failed to start configuration server")
@@ -91,13 +102,6 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 	defer stopFunc()
 
 	ready()
-
-	toVersionStr := version.Version()
-	toVersion, toPatch, ok := oobmigration.NewVersionAndPatchFromString(toVersionStr)
-	if !ok {
-		obsvCtx.Logger.Warn("unexpected string for desired instance schema version, skipping auto-upgrade", log.String("version", toVersionStr))
-		return nil
-	}
 
 	if err := upgradestore.EnsureUpgradeTable(ctx); err != nil {
 		return errors.Wrap(err, "autoupgradestore.EnsureUpgradeTable")
