@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -163,6 +164,70 @@ func TestGetReferenceCountStatistics(t *testing.T) {
 	}
 	if expected := 7.8181; !cmpFloat(logmean, expected) {
 		t.Errorf("unexpected logmean. want=%.5f have=%.5f", expected, logmean)
+	}
+}
+
+func TestCoverageCounts(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	// Create three visible uploads and export a pair
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO repo (id, name, deleted_at) VALUES (50, 'foo', NULL);
+		INSERT INTO repo (id, name, deleted_at) VALUES (51, 'bar', NULL);
+		INSERT INTO repo (id, name, deleted_at) VALUES (52, 'baz', NULL);
+		INSERT INTO lsif_uploads (id, repository_id, commit, indexer, num_parts, uploaded_parts, state) VALUES (100, 50, '0000000000000000000000000000000000000001', 'lsif-test', 1, '{}', 'completed');
+		INSERT INTO lsif_uploads (id, repository_id, commit, indexer, num_parts, uploaded_parts, state) VALUES (101, 50, '0000000000000000000000000000000000000002', 'lsif-test', 1, '{}', 'completed');
+		INSERT INTO lsif_uploads (id, repository_id, commit, indexer, num_parts, uploaded_parts, state) VALUES (102, 51, '0000000000000000000000000000000000000003', 'lsif-test', 1, '{}', 'completed');
+		INSERT INTO lsif_uploads (id, repository_id, commit, indexer, num_parts, uploaded_parts, state) VALUES (103, 52, '0000000000000000000000000000000000000004', 'lsif-test', 1, '{}', 'completed');
+		INSERT INTO lsif_uploads_visible_at_tip (upload_id, repository_id, is_default_branch) VALUES (100, 50, true);
+		INSERT INTO lsif_uploads_visible_at_tip (upload_id, repository_id, is_default_branch) VALUES (102, 51, true);
+		INSERT INTO lsif_uploads_visible_at_tip (upload_id, repository_id, is_default_branch) VALUES (103, 52, true);
+	`); err != nil {
+		t.Fatalf("unexpected error setting up test: %s", err)
+	}
+	if _, err := store.GetUploadsForRanking(ctx, "test", "ranking", 2); err != nil {
+		t.Fatalf("unexpected error getting uploads for ranking: %s", err)
+	}
+
+	// Fake ranking results and have one repo indexed after the reducers complete
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO codeintel_path_ranks(graph_key, repository_id, payload) VALUES ('test', 50, '{}');
+		INSERT INTO codeintel_path_ranks(graph_key, repository_id, payload) VALUES ('test', 51, '{}');
+		INSERT INTO codeintel_path_ranks(graph_key, repository_id, payload) VALUES ('test', 52, '{}');
+		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at) VALUES (
+			'test',
+			0,
+			'2023-06-15 05:30:00',
+			'2023-06-15 05:30:00'
+		);
+
+		UPDATE zoekt_repos SET index_status = 'indexed', last_indexed_at = '2023-06-15 04:30:00' WHERE repo_id = 50; -- indexed less recently
+		UPDATE zoekt_repos SET index_status = 'indexed', last_indexed_at = '2023-06-15 05:30:00' WHERE repo_id = 51; -- indexed same time
+		UPDATE zoekt_repos SET index_status = 'indexed', last_indexed_at = '2023-06-15 06:30:00' WHERE repo_id = 52; -- indexed more recently
+	`); err != nil {
+		t.Fatalf("unexpected error setting up test: %s", err)
+	}
+
+	// Test coverage
+	counts, err := store.CoverageCounts(ctx, "test")
+	if err != nil {
+		t.Fatalf("unexpected error getting coverage counts: %s", err)
+	}
+
+	expected := shared.CoverageCounts{
+		NumTargetIndexes:                   3, // 100, 102, 103
+		NumExportedIndexes:                 2, // 100, 102
+		NumRepositoriesWithoutCurrentRanks: 2, // 50, 51
+	}
+	if diff := cmp.Diff(expected, counts); diff != "" {
+		t.Errorf("unexpected coverage counts (-want +got):\n%s", diff)
 	}
 }
 

@@ -33,6 +33,9 @@ export const RANKING_SUMMARY = gql`
                 ...RankingSummaryFields
             }
             nextJobStartsAt
+            numExportedIndexes
+            numTargetIndexes
+            numRepositoriesWithoutCurrentRanks
         }
     }
 

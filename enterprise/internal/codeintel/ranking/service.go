@@ -132,6 +132,10 @@ func (s *Service) DeleteRankingProgress(ctx context.Context, graphKey string) er
 	return s.store.DeleteRankingProgress(ctx, graphKey)
 }
 
+func (s *Service) CoverageCounts(ctx context.Context, graphKey string) (shared.CoverageCounts, error) {
+	return s.store.CoverageCounts(ctx, graphKey)
+}
+
 func (s *Service) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
 	return s.store.LastUpdatedAt(ctx, repoIDs)
 }
