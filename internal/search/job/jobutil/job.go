@@ -153,7 +153,6 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 			}
 		}
 
-		// TODO
 		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
 			_, _, own := isOwnershipSearch(b)
 			diff := resultTypes.Has(result.TypeDiff)
@@ -164,7 +163,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
 				Limit:                int(fileMatchLimit),
-				IncludeModifiedFiles: own,
+				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker) || own,
 				Concurrency:          4,
 			})
 		}

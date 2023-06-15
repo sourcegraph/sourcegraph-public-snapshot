@@ -128,18 +128,15 @@ matchesLoop:
 			commitID  api.CommitID
 			repo      types.MinimalRepo
 		)
-		fmt.Printf("MATCHES TYPEZ %T\n", m)
 		switch mm := m.(type) {
 		case *result.FileMatch:
 			filePaths = []string{mm.File.Path}
 			commitID = mm.CommitID
 			repo = mm.Repo
-			fmt.Println("FILE MATCH CASE", filePaths)
 		case *result.CommitMatch:
 			filePaths = mm.ModifiedFiles
 			commitID = mm.Commit.ID
 			repo = mm.Repo
-			fmt.Println("COMMIT MATCH CASE", filePaths)
 		}
 		if len(filePaths) == 0 {
 			continue matchesLoop
