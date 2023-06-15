@@ -8,7 +8,7 @@ export interface LocalProcess {
 }
 
 const LOCAL_APP_LOCATIONS: { [key: string]: string[] } = {
-    // Only apply silicon is supported
+    // Only Apple silicon is supported
     darwin: [
         '~/Library/Application Support/com.sourcegraph.cody',
         '/Applications/Sourcegraph.app',
@@ -65,12 +65,9 @@ export class LocalAppDetector implements vscode.Disposable {
         if (!startCondition || !this.localAppMarkers) {
             return
         }
-        for (const marker of this.localAppMarkers) {
-            const markerExists = await pathExists(expandHomeDir(marker))
-            if (markerExists) {
-                this.fire(true)
-            }
-        }
+if (Promise.any(this.localAppMarkers.map(marker => pathExists(expandHomeDir(marker))))) {
+  this.fire(true)
+}
     }
 
     private fire(condition: boolean): void {
@@ -97,10 +94,7 @@ export class LocalAppDetector implements vscode.Disposable {
     }
 
     private canStart(): boolean {
-        if (!this.isSupported || !this.homeDir) {
-            return false
-        }
-        return true
+        return this.isSupported && this.homeDir
     }
 
     public getProcessInfo(): LocalProcess {

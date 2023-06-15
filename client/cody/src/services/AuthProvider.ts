@@ -112,7 +112,7 @@ export class AuthProvider {
             : newAuthStatus(endpoint, isDotComOrApp, !!userInfo.id, userInfo.hasVerifiedEmail, true, version)
     }
 
-    // It process the authetication steps and store the login info.
+    // It processes the authentication steps and stores the login info.
     // Returns Auth state
     public async auth(endpoint: string, token: string | null, customHeaders?: {}): Promise<boolean> {
         await this.storeAuthInfo(endpoint, token)
