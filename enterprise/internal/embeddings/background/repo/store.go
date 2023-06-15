@@ -200,6 +200,7 @@ type ListOpts struct {
 	*database.PaginationArgs
 	Query *string
 	State *string
+	Repo  *api.RepoID
 }
 
 func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
@@ -433,6 +434,10 @@ func (s *repoEmbeddingJobsStore) CountRepoEmbeddingJobs(ctx context.Context, opt
 		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.state = %s", strings.ToLower(*opts.State)))
 	}
 
+	if opts.Repo != nil {
+		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.repo_id = %d", *opts.Repo))
+	}
+
 	var whereClause *sqlf.Query
 	if len(conds) != 0 {
 		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
@@ -473,6 +478,10 @@ func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, opts
 
 	if opts.State != nil && *opts.State != "" {
 		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.state = %s", strings.ToLower(*opts.State)))
+	}
+
+	if opts.Repo != nil {
+		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.repo_id = %d", *opts.Repo))
 	}
 
 	var whereClause *sqlf.Query
