@@ -120,8 +120,6 @@ FROM codeintel_path_ranks pr
 WHERE pr.graph_key IN (SELECT graph_key FROM last_completed_progress)
 `
 
-// TODO - unit test
-// TODO - scale test
 func (s *store) CoverageCounts(ctx context.Context, graphKey string) (_ shared.CoverageCounts, err error) {
 	ctx, _, endObservation := s.operations.coverageCounts.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
