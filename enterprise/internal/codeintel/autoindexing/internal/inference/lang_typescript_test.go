@@ -9,6 +9,15 @@ import (
 
 func TestTypeScriptGenerator(t *testing.T) {
 	expectedIndexerImage, _ := libs.DefaultIndexerForLang("typescript")
+	npmrcStep := `if [ "$NPMRC_DATA" ]; then
+  echo "Writing npmrc config to $HOME/.npmrc"
+  echo "$NPMRC_DATA" > ~/.npmrc
+else
+  echo "No npmrc config set, continuing"
+fi`
+	nodeMemoryStep := `if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`
+
+	expectedLocalSteps := []string{nodeMemoryStep, npmrcStep}
 
 	testGenerators(t,
 		generatorTestCase{
@@ -25,7 +34,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 							Commands: []string{"npm install --ignore-scripts"},
 						},
 					},
-					LocalSteps:       []string{`if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`},
+					LocalSteps:       expectedLocalSteps,
 					Root:             "",
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index", "--infer-tsconfig"},
@@ -49,7 +58,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 							Commands: []string{"yarn --ignore-scripts"},
 						},
 					},
-					LocalSteps:       []string{`if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`},
+					LocalSteps:       expectedLocalSteps,
 					Root:             "",
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index", "--infer-tsconfig"},
@@ -66,7 +75,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 			expected: []config.IndexJob{
 				{
 					Steps:            nil,
-					LocalSteps:       []string{`if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`},
+					LocalSteps:       expectedLocalSteps,
 					Root:             "",
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
@@ -85,7 +94,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 			expected: []config.IndexJob{
 				{
 					Steps:            nil,
-					LocalSteps:       []string{`if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`},
+					LocalSteps:       expectedLocalSteps,
 					Root:             "a",
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
@@ -94,7 +103,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 				},
 				{
 					Steps:            nil,
-					LocalSteps:       []string{`if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`},
+					LocalSteps:       expectedLocalSteps,
 					Root:             "b",
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
@@ -103,7 +112,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 				},
 				{
 					Steps:            nil,
-					LocalSteps:       []string{`if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`},
+					LocalSteps:       expectedLocalSteps,
 					Root:             "c",
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
@@ -133,7 +142,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 							Commands: []string{"npm install"},
 						},
 					},
-					LocalSteps:       []string{`if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`},
+					LocalSteps:       expectedLocalSteps,
 					Root:             "",
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
@@ -153,7 +162,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 							Commands: []string{"yarn"},
 						},
 					},
-					LocalSteps:       []string{`if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`},
+					LocalSteps:       expectedLocalSteps,
 					Root:             "foo/bar/baz",
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
@@ -178,7 +187,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 							Commands: []string{"npm install"},
 						},
 					},
-					LocalSteps:       []string{`if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`},
+					LocalSteps:       expectedLocalSteps,
 					Root:             "foo/bar/bonk",
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
@@ -193,7 +202,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 							Commands: []string{"npm install"},
 						},
 					},
-					LocalSteps:       []string{`if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`},
+					LocalSteps:       expectedLocalSteps,
 					Root:             "foo/baz",
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
@@ -218,7 +227,7 @@ func TestTypeScriptGenerator(t *testing.T) {
 							Commands: []string{"yarn"},
 						},
 					},
-					LocalSteps:       []string{`if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`},
+					LocalSteps:       expectedLocalSteps,
 					Root:             "",
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
@@ -243,10 +252,10 @@ func TestTypeScriptGenerator(t *testing.T) {
 							Commands: []string{"N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto", "npm install"},
 						},
 					},
-					LocalSteps: []string{
-						"N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto",
-						`if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi`,
-					},
+					LocalSteps: append(
+						[]string{"N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto"},
+						expectedLocalSteps...,
+					),
 					Root:             "",
 					Indexer:          expectedIndexerImage,
 					IndexerArgs:      []string{"scip-typescript", "index"},
