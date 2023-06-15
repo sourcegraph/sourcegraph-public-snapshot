@@ -145,6 +145,9 @@ matchesLoop:
 			errs = errors.Append(errs, err)
 			continue matchesLoop
 		}
+		// For multiple files considered for ownership in single result (CommitMatch case) we:
+		// * exclude a result if none of the files is owned by all included owners,
+		// * exclude a result if any of the files is owned by all excluded owners.
 		var fileMatchesIncludeTerms bool
 		for _, path := range filePaths {
 			fileOwners := file.Match(path)
