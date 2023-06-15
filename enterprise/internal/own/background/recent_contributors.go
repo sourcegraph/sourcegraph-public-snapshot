@@ -51,7 +51,7 @@ func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.Re
 	if err != nil {
 		return errcode.MakeNonRetryable(err)
 	} else if isSubRepoPermsRepo {
-		r.logger.Debug("skipping own contributor signal due to the repo having subrepo perms enabled")
+		r.logger.Debug("skipping own contributor signal due to the repo having subrepo perms enabled", logger.Int32("repoID", int32(repoId)))
 		return nil
 	}
 
@@ -89,35 +89,25 @@ func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.Re
 	return nil
 }
 
-func isSubRepoPermsRepo(ctx context.Context, repoID api.RepoID, cache rcache.Cache, checker authz.SubRepoPermissionChecker) (isSubRepoPermsRepo bool, err error) {
+func isSubRepoPermsRepo(ctx context.Context, repoID api.RepoID, cache rcache.Cache, checker authz.SubRepoPermissionChecker) (bool, error) {
 	cacheKey := strconv.Itoa(int(repoID))
 	// Look for the repo in cache to see if we have seen it before instead of hitting the DB.
 	val, ok := cache.Get(cacheKey)
 	if ok {
 		var isSubRepoPermsRepo bool
-		if err := json.Unmarshal(val, &isSubRepoPermsRepo); err != nil {
-			return false, err
-		}
-		return isSubRepoPermsRepo, nil
+		err := json.Unmarshal(val, &isSubRepoPermsRepo)
+		return isSubRepoPermsRepo, err
 	}
 
 	// No entry in cache, so we need to look up whether this is a sub-repo perms repo in the DB.
-	ok, err = authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
+	isSubRepoPermsRepo, err := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
 	if err != nil {
 		return false, err
 	}
-	if ok {
-		b, err := json.Marshal(true)
-		if err != nil {
-			return false, err
-		}
-		cache.Set(cacheKey, b)
-		return true, nil
-	}
-	b, err := json.Marshal(false)
+	b, err := json.Marshal(isSubRepoPermsRepo)
 	if err != nil {
 		return false, err
 	}
 	cache.Set(cacheKey, b)
-	return false, nil
+	return isSubRepoPermsRepo, nil
 }

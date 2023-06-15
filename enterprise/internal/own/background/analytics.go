@@ -54,7 +54,7 @@ func (r *analyticsIndexer) indexRepo(ctx context.Context, repoId api.RepoID, che
 	if err != nil {
 		return errcode.MakeNonRetryable(err)
 	} else if isSubRepoPermsRepo {
-		r.logger.Debug("skipping own contributor signal due to the repo having subrepo perms enabled")
+		r.logger.Debug("skipping own contributor signal due to the repo having subrepo perms enabled", log.Int32("repoID", int32(repoId)))
 		return nil
 	}
 
