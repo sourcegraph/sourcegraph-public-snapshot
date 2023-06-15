@@ -47,6 +47,7 @@ func (m *multiqueueCacheCleaner) Handle(ctx context.Context) error {
 		if err != nil {
 			return errors.Wrap(err, "multiqueue.cachecleaner")
 		}
+
 		for key := range all {
 			timestampMillis, err := strconv.ParseInt(key, 10, 64)
 			if err != nil {
@@ -54,11 +55,9 @@ func (m *multiqueueCacheCleaner) Handle(ctx context.Context) error {
 			}
 			t := time.Unix(0, timestampMillis*int64(time.Millisecond))
 			interval := time.Now().Add(-m.windowSize)
-			m.logger.Info("checking key", log.String("key", key), log.Int64("timestampMillis", timestampMillis), log.Time("t", t), log.Time("interval", interval))
 			if t.Before(interval) {
 				// expired cache entry, delete
 				deletedItems, err := m.cache.DeleteHashItem(queueName, key)
-				m.logger.Info("deleted key", log.String("key", key), log.Int("deletedItems", deletedItems))
 				if err != nil {
 					return err
 				}
