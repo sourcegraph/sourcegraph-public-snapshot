@@ -64,7 +64,7 @@ Rate limits, quotas, and model availability is tied to one of:
 All successful requests to Cody Gateway will count towards your rate limits.
 Unsuccesful requests are not counted as usage.
 
-In addition to the above, we also throttle concurrent requests to Cody Gateway per Sourcegraph Enterprise instance or Sourcegraph App user.
+In addition to the above, we may throttle concurrent requests to Cody Gateway per Sourcegraph Enterprise instance or Sourcegraph App user, to prevent excessive burst consumption.
 
 ## Privacy and security
 
