@@ -3,15 +3,20 @@ package resolvers
 import (
 	"context"
 	"path/filepath"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -19,16 +24,18 @@ import (
 )
 
 type appResolver struct {
-	logger log.Logger
-	db     database.DB
+	logger    log.Logger
+	db        database.DB
+	gitClient gitserver.Client
 }
 
 var _ graphqlbackend.AppResolver = &appResolver{}
 
-func NewAppResolver(logger log.Logger, db database.DB) *appResolver {
+func NewAppResolver(logger log.Logger, db database.DB, gitClient gitserver.Client) *appResolver {
 	return &appResolver{
-		logger: logger,
-		db:     db,
+		logger:    logger,
+		db:        db,
+		gitClient: gitClient,
 	}
 }
 
@@ -57,6 +64,53 @@ func (r *appResolver) LocalDirectories(ctx context.Context, args *graphqlbackend
 	}
 
 	return &localDirectoryResolver{paths: absPaths}, nil
+}
+
+func (r *appResolver) SetupNewAppRepositoriesForEmbedding(ctx context.Context, args graphqlbackend.SetupNewAppRepositoriesForEmbeddingArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins may schedule embedding jobs.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	repoEmbeddingsStore := repo.NewRepoEmbeddingJobsStore(r.db)
+	jobContext, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Second))
+	defer cancel()
+	p := pool.New().WithMaxGoroutines(10).WithContext(jobContext)
+	for _, repo := range args.RepoNames {
+		repoName := api.RepoName(repo)
+		p.Go(func(ctx context.Context) error {
+			ticker := time.NewTicker(100 * time.Millisecond)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-jobContext.Done():
+					return errors.New("time limit exceeded unable to schedule repo")
+				case <-ticker.C:
+					r.logger.Debug("Checking repo")
+					branch, _, err := r.gitClient.GetDefaultBranch(ctx, repoName, true)
+					if err == nil && branch != "" {
+						if err := embeddings.ScheduleRepositoriesForEmbedding(
+							ctx,
+							[]api.RepoName{repoName},
+							false,
+							r.db,
+							repoEmbeddingsStore,
+							r.gitClient,
+						); err == nil {
+							r.logger.Debug("Repo scheduled")
+							return nil
+						}
+					}
+					r.logger.Debug("Repo not cloned")
+				}
+			}
+		})
+	}
+	err := p.Wait()
+	if err != nil {
+		r.logger.Warn("error scheduling repos for embedding", log.Error(err))
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 type localDirectoryResolver struct {
@@ -140,21 +194,6 @@ func (r *appResolver) LocalExternalServices(ctx context.Context) ([]graphqlbacke
 	}
 
 	return localExternalServices, nil
-}
-
-func (r *appResolver) ScheduleNewRepositoriesForEmbedding(ctx context.Context, args graphqlbackend.ScheduleRepositoriesForEmbeddingArgs) (*graphqlbackend.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins may schedule embedding jobs.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-
-	var repoNames []api.RepoName
-	for _, repo := range args.RepoNames {
-		repoNames = append(repoNames, api.RepoName(repo))
-	}
-	//forceReschedule := args.Force != nil && *args.Force
-
-	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 type localExternalServiceResolver struct {

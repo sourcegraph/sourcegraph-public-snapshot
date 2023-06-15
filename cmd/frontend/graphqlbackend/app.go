@@ -10,9 +10,15 @@ type LocalDirectoryArgs struct {
 	Paths []string
 }
 
+type SetupNewAppRepositoriesForEmbeddingArgs struct {
+	RepoNames []string
+}
+
 type AppResolver interface {
 	LocalDirectories(ctx context.Context, args *LocalDirectoryArgs) (LocalDirectoryResolver, error)
 	LocalExternalServices(ctx context.Context) ([]LocalExternalServiceResolver, error)
+
+	SetupNewAppRepositoriesForEmbedding(ctx context.Context, args SetupNewAppRepositoriesForEmbeddingArgs) (*EmptyResponse, error)
 }
 
 type LocalDirectoryResolver interface {
