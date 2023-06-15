@@ -133,10 +133,10 @@ matchesLoop:
 			continue matchesLoop
 		}
 		fileOwners := file.Match(mm.File.Path)
-		if len(includeTerms) > 0 && !containsOwner(fileOwners, includeTerms, includeBags) {
+		if len(includeTerms) > 0 && !ownersFilters(fileOwners, includeTerms, includeBags, false) {
 			continue matchesLoop
 		}
-		if len(excludeTerms) > 0 && containsOwner(fileOwners, excludeTerms, excludeBags) {
+		if len(excludeTerms) > 0 && !ownersFilters(fileOwners, excludeTerms, excludeBags, true) {
 			continue matchesLoop
 		}
 
@@ -146,20 +146,19 @@ matchesLoop:
 	return filtered, errs
 }
 
-// containsOwner searches within emails and handles in a case-insensitive
-// manner.
-//
-//   - Empty string passed as search term means any, so the predicate
-//     returns true if there is at least one owner, and false otherwise.
-//   - Multiple bags have AND semantics, so ownership data needs to be within
-//     all of the search term bags.
-func containsOwner(ownership fileOwnershipData, searchTerms []string, allBags []own.Bag) bool {
+// ownersFilters searches within emails to determine if ownership passes filtering by searchTerms and allBags.
+//   - Multiple bags have AND semantics, so ownership data needs to pass filtering criteria of each Bag.
+//   - If exclude is true then we expect ownership to not be within a bag (i.e. IsWithin() is false)
+//   - Empty string passed as search term means any, so the ownership is a match if there is at least one owner,
+//     and false otherwise.
+//   - Filtering is handled in a case-insensitive manner.
+func ownersFilters(ownership fileOwnershipData, searchTerms []string, allBags []own.Bag, exclude bool) bool {
 	// Empty search terms means any owner matches.
 	if len(searchTerms) == 1 && searchTerms[0] == "" {
-		return ownership.NonEmpty()
+		return ownership.NonEmpty() == !exclude
 	}
 	for _, bag := range allBags {
-		if !ownership.IsWithin(bag) {
+		if ownership.IsWithin(bag) == exclude {
 			return false
 		}
 	}
