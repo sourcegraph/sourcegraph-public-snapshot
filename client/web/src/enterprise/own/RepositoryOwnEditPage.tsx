@@ -1,17 +1,14 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 
 import { mdiAccount } from '@mdi/js'
-import { Navigate } from 'react-router-dom'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { H1, Icon, Link, LoadingSpinner, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { H1, Icon, Link, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { RepositoryFields } from '../../graphql-operations'
 
 import { RepositoryOwnPageContents } from './RepositoryOwnPageContents'
@@ -19,7 +16,7 @@ import { RepositoryOwnPageContents } from './RepositoryOwnPageContents'
 /**
  * Properties passed to all page components in the repository code navigation area.
  */
-export interface RepositoryOwnAreaPageProps extends Pick<BreadcrumbSetters, 'useBreadcrumb'>, TelemetryProps {
+export interface RepositoryOwnAreaPageProps extends Pick<BreadcrumbSetters, 'useBreadcrumb'> {
     /** The active repository. */
     repo: RepositoryFields
     authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'> | null
@@ -30,30 +27,9 @@ export const RepositoryOwnEditPage: React.FunctionComponent<RepositoryOwnAreaPag
     useBreadcrumb,
     repo,
     authenticatedUser,
-    telemetryService,
 }) => {
     const breadcrumbSetters = useBreadcrumb({ key: 'own', element: <Link to={`/${repo.name}/-/own`}>Ownership</Link> })
     breadcrumbSetters.useBreadcrumb(EDIT_PAGE_BREADCRUMB)
-
-    const [ownEnabled, status] = useFeatureFlag('search-ownership')
-
-    useEffect(() => {
-        if (status !== 'initial' && ownEnabled) {
-            telemetryService.log('repoPage:ownershipPage:viewed')
-        }
-    }, [status, ownEnabled, telemetryService])
-
-    if (status === 'initial') {
-        return (
-            <div className="container d-flex justify-content-center mt-3">
-                <LoadingSpinner /> Loading...
-            </div>
-        )
-    }
-
-    if (!ownEnabled) {
-        return <Navigate to={repo.url} replace={true} />
-    }
 
     return (
         <Page>

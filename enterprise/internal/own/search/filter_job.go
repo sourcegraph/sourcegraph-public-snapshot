@@ -2,7 +2,6 @@ package search
 
 import (
 	"context"
-	"fmt"
 
 	"go.opentelemetry.io/otel/attribute"
 
@@ -17,35 +16,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type featureFlagError struct {
-	predicate string
-}
-
-func (e *featureFlagError) Error() string {
-	return fmt.Sprintf("`%s` searches are not enabled on this instance. <a href=\"/help/own\">Learn more about Own.</a>", e.predicate)
-}
-
-func NewFileHasOwnersJob(child job.Job, features *search.Features, includeOwners, excludeOwners []string) job.Job {
+func NewFileHasOwnersJob(child job.Job, includeOwners, excludeOwners []string) job.Job {
 	return &fileHasOwnersJob{
 		child:         child,
-		features:      features,
 		includeOwners: includeOwners,
 		excludeOwners: excludeOwners,
 	}
 }
 
 type fileHasOwnersJob struct {
-	child    job.Job
-	features *search.Features
+	child job.Job
 
 	includeOwners []string
 	excludeOwners []string
 }
 
 func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	if s.features == nil || !s.features.CodeOwnershipSearch {
-		return nil, &featureFlagError{predicate: "file:has.owner()"}
-	}
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer finish(alert, err)
 
