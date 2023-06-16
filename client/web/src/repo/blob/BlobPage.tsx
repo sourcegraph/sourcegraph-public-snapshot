@@ -138,8 +138,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     )
     const isPackage = useMemo(() => isPackageServiceType(repoServiceType), [repoServiceType])
 
-    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
-    const enableOwnershipPanel = ownFeatureFlagEnabled && props.ownEnabled
+    const [enableOwnershipPanels] = useFeatureFlag('enable-ownership-panels', true)
+    const enableOwnershipPanel = enableOwnershipPanels && props.ownEnabled
 
     const lineOrRange = useMemo(
         () => parseQueryAndHash(location.search, location.hash),
