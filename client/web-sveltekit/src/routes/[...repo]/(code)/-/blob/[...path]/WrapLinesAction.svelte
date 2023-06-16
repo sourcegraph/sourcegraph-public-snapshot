@@ -1,11 +1,13 @@
 <script lang="ts" context="module">
     import { writable } from 'svelte/store'
+
     export const lineWrap = writable<boolean>(false)
 </script>
 
 <script lang="ts">
-    import Icon from '$lib/Icon.svelte'
     import { mdiWrap, mdiWrapDisabled } from '@mdi/js'
+
+    import Icon from '$lib/Icon.svelte'
 </script>
 
 <button on:click={() => lineWrap.update(wrap => !wrap)}

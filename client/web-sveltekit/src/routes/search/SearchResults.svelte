@@ -19,20 +19,20 @@
     import { setContext, tick } from 'svelte'
 
     import { beforeNavigate } from '$app/navigation'
-    import { SearchSidebarSectionID, type AggregateStreamingSearchResults, type SearchMatch } from '$lib/shared'
     import { preserveScrollPosition } from '$lib/app'
     import { observeIntersection } from '$lib/intersection-observer'
-    import SearchBox from '$lib/search/SearchBox.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import { submitSearch, type QueryStateStore } from '$lib/search/state'
+    import SearchBox from '$lib/search/SearchBox.svelte'
     import { searchTypes } from '$lib/search/sidebar'
+    import { submitSearch, type QueryStateStore } from '$lib/search/state'
     import type { SidebarFilter } from '$lib/search/utils'
+    import { SearchSidebarSectionID, type AggregateStreamingSearchResults, type SearchMatch } from '$lib/shared'
 
-    import Section from './SidebarSection.svelte'
-    import SymbolSearchResult from './SymbolSearchResult.svelte'
-    import StreamingProgress from './StreamingProgress.svelte'
     import FileSearchResult from './FileSearchResult.svelte'
     import RepoSearchResult from './RepoSearchResult.svelte'
+    import Section from './SidebarSection.svelte'
+    import StreamingProgress from './StreamingProgress.svelte'
+    import SymbolSearchResult from './SymbolSearchResult.svelte'
 
     export let stream: Observable<AggregateStreamingSearchResults | undefined>
     export let queryFromURL: string

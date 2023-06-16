@@ -91,25 +91,25 @@
         min-width: 0;
         display: none;
 
-        &:global([data-popper-placement^='top']) > .arrow {
-            bottom: -4px;
-        }
-
-        &:global([data-popper-placement^='bottom']) > .arrow {
-            top: -4px;
-        }
-
-        &:global([data-popper-placement^='left']) > .arrow {
-            right: -4px;
-        }
-
-        &:global([data-popper-placement^='right']) > .arrow {
-            left: -4px;
-        }
-
         &.visible {
             display: block;
         }
+    }
+
+    :global([data-popper-placement^='top']) > .arrow {
+        bottom: -4px;
+    }
+
+    :global([data-popper-placement^='bottom']) > .arrow {
+        top: -4px;
+    }
+
+    :global([data-popper-placement^='left']) > .arrow {
+        right: -4px;
+    }
+
+    :global([data-popper-placement^='right']) > .arrow {
+        left: -4px;
     }
 
     .arrow,

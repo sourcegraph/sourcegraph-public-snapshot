@@ -14,9 +14,9 @@
 </script>
 
 <script lang="ts">
-    import * as uuid from 'uuid'
     import { setContext } from 'svelte'
     import { derived, writable, type Readable, type Writable } from 'svelte/store'
+    import * as uuid from 'uuid'
 
     /**
      * The index of the tab that should be selected by default.

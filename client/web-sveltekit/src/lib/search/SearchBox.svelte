@@ -2,10 +2,10 @@
     import { mdiClose, mdiCodeBrackets, mdiFormatLetterCase, mdiLightningBolt, mdiMagnify, mdiRegex } from '@mdi/js'
 
     import { invalidate } from '$app/navigation'
+    import { SearchPatternType } from '$lib/graphql-operations'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
-    import { SearchPatternType } from '$lib/graphql-operations'
 
     import CodeMirrorQueryInput from './CodeMirrorQueryInput.svelte'
     import { SearchMode, submitSearch, type QueryStateStore } from './state'

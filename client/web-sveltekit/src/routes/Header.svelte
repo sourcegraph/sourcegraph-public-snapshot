@@ -2,8 +2,8 @@
     import { mdiBookOutline, mdiChartBar, mdiMagnify } from '@mdi/js'
 
     import { mark } from '$lib/images'
-    import UserAvatar from '$lib/UserAvatar.svelte'
     import type { AuthenticatedUser } from '$lib/shared'
+    import UserAvatar from '$lib/UserAvatar.svelte'
 
     import HeaderNavLink from './HeaderNavLink.svelte'
 

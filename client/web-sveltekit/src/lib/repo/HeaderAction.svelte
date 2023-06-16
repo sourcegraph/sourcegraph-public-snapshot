@@ -1,5 +1,6 @@
 <script lang="ts">
     import { getContext, type ComponentType } from 'svelte'
+
     import type { ActionStore } from './actions'
 
     export let key: string

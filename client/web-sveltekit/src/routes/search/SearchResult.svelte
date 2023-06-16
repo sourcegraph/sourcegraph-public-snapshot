@@ -1,9 +1,9 @@
 <script lang="ts">
     import { mdiBitbucket, mdiGithub, mdiGitlab, mdiStar } from '@mdi/js'
 
-    import type { SearchMatch } from '$lib/shared'
-    import Icon from '$lib/Icon.svelte'
     import { formatRepositoryStarCount } from '$lib/branded'
+    import Icon from '$lib/Icon.svelte'
+    import type { SearchMatch } from '$lib/shared'
     import Tooltip from '$lib/Tooltip.svelte'
 
     function codeHostIcon(repoName: string): { hostName: string; svgPath?: string } {

@@ -1,7 +1,9 @@
 <script lang="ts">
     import React from 'react'
+
     import { createRoot, type Root } from 'react-dom/client'
     import { onDestroy, onMount } from 'svelte'
+
     import { ReactAdapter } from './react-interop'
 
     type ComponentProps = $$Generic<{}>

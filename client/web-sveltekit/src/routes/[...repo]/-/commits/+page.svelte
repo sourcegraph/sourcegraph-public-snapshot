@@ -1,6 +1,7 @@
 <script lang="ts">
-    import type { PageData } from './$types'
     import Commit from '$lib/Commit.svelte'
+
+    import type { PageData } from './$types'
 
     export let data: PageData
 

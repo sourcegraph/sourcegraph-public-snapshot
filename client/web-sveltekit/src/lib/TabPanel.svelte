@@ -1,7 +1,8 @@
 <script lang="ts">
     import { getContext } from 'svelte'
-    import { type TabsContext, KEY } from './Tabs.svelte'
     import * as uuid from 'uuid'
+
+    import { type TabsContext, KEY } from './Tabs.svelte'
 
     export let title: string
 

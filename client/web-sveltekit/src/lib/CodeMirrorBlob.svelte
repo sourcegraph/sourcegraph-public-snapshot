@@ -5,8 +5,8 @@
     import { EditorView, lineNumbers } from '@codemirror/view'
 
     import { browser } from '$app/environment'
-    import { syntaxHighlight } from '$lib/web'
     import type { BlobFileFields } from '$lib/graphql-operations'
+    import { syntaxHighlight } from '$lib/web'
 
     export let blob: BlobFileFields
     export let highlights: string

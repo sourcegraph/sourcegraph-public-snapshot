@@ -2,9 +2,9 @@
     import { mdiLink } from '@mdi/js'
 
     import { page } from '$app/stores'
-    import { replaceRevisionInURL } from '$lib/web'
     import { isErrorLike } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
+    import { replaceRevisionInURL } from '$lib/web'
 
     $: resolvedRevision = isErrorLike($page.data.resolvedRevision) ? null : $page.data.resolvedRevision
 

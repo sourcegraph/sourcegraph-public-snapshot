@@ -1,10 +1,10 @@
 <script lang="ts">
     import { map } from 'rxjs/operators'
 
-    import { platformContext } from '$lib/stores'
-    import type { MatchGroup, ContentMatch } from '$lib/shared'
     import { HighlightResponseFormat, type HighlightLineRange } from '$lib/graphql-operations'
     import { fetchFileRangeMatches } from '$lib/search/results'
+    import type { MatchGroup, ContentMatch } from '$lib/shared'
+    import { platformContext } from '$lib/stores'
 
     import CodeExcerpt from './CodeExcerpt.svelte'
 

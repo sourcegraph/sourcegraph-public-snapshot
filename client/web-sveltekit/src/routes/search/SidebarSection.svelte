@@ -1,11 +1,12 @@
 <script lang="ts">
+    import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
+
     import Icon from '$lib/Icon.svelte'
     import type { SidebarFilter } from '$lib/search/utils'
+    import type { SearchSidebarSectionID } from '$lib/shared'
     import { temporarySetting } from '$lib/temporarySettings'
     import Tooltip from '$lib/Tooltip.svelte'
     import Button from '$lib/wildcard/Button.svelte'
-    import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
-    import type { SearchSidebarSectionID } from '$lib/shared'
 
     export let id: SearchSidebarSectionID
     export let items: SidebarFilter[]

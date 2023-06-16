@@ -4,14 +4,14 @@
 
     import { page } from '$app/stores'
     import { isErrorLike } from '$lib/common'
-    import { displayRepoName, isRepoNotFoundErrorLike } from '$lib/shared'
+    import Icon from '$lib/Icon.svelte'
     import { createActionStore, type ActionStore } from '$lib/repo/actions'
     import { getRevisionLabel, navFromPath } from '$lib/repo/utils'
-    import Icon from '$lib/Icon.svelte'
+    import { displayRepoName, isRepoNotFoundErrorLike } from '$lib/shared'
 
-    import RepoNotFoundError from './RepoNotFoundError.svelte'
-    import Permalink from './Permalink.svelte'
     import type { LayoutData } from './$types'
+    import Permalink from './Permalink.svelte'
+    import RepoNotFoundError from './RepoNotFoundError.svelte'
 
     export let data: LayoutData
 

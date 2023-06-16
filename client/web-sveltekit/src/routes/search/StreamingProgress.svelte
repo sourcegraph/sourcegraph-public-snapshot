@@ -1,11 +1,11 @@
 <script lang="ts">
     import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 
+    import { limitHit, sortBySeverity } from '$lib/branded'
     import { renderMarkdown, pluralize } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
     import SyntaxHighlightedQuery from '$lib/search/SyntaxHighlightedQuery.svelte'
-    import { limitHit, sortBySeverity } from '$lib/branded'
     import type { Progress, Skipped } from '$lib/shared'
     import { Button } from '$lib/wildcard'
 

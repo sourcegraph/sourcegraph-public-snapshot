@@ -2,10 +2,10 @@
     import { mdiMapSearch } from '@mdi/js'
     import { map, catchError } from 'rxjs/operators'
 
-    import { logViewEvent } from '$lib/logger'
     import { asError, isErrorLike, type ErrorLike } from '$lib/common'
-    import { checkMirrorRepositoryConnection } from '$lib/web'
     import HeroPage from '$lib/HeroPage.svelte'
+    import { logViewEvent } from '$lib/logger'
+    import { checkMirrorRepositoryConnection } from '$lib/web'
 
     export let repoName: string
     export let viewerCanAdminister: boolean
