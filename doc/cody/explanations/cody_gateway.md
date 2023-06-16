@@ -24,7 +24,6 @@ To enable completions and embeddings provided by Cody Gateway on your Sourcegrap
 {
   "licenseKey": "<...>",
   "cody.enabled": true,
-  "embeddings": { "enabled": true } // if desired, for Code Graph Context embeddings
 }
 ```
 
@@ -63,6 +62,7 @@ Rate limits, quotas, and model availability is tied to one of:
 
 All successful requests to Cody Gateway will count towards your rate limits.
 Unsuccesful requests are not counted as usage.
+Rate limits, quotas, and model availability are also configured per Cody feature - for example, you will have a separate rate limits for Cody chat, Cody completions, and Cody embeddings.
 
 In addition to the above, we may throttle concurrent requests to Cody Gateway per Sourcegraph Enterprise instance or Sourcegraph App user, to prevent excessive burst consumption.
 

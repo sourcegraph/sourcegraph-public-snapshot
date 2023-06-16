@@ -14,24 +14,17 @@ Embeddings for relevant code files must be enabled for each repository that you'
 
 ### Configuring embeddings
 
-> NOTE: Enterprise Cloud customers should reach out to their Sourcegraph representative to enable embeddings. 
-> See [Enabling Cody Enterprise](./enabling_cody_enterprise.md#cody-on-sourcegraph-cloud)
+> NOTE: Enterprise Cloud customers should reach out to their Sourcegraph representative to enable embeddings.
+> See [Enabling Cody Enterprise: Cody on Sourcegraph Cloud](./enabling_cody_enterprise.md#cody-on-sourcegraph-cloud)
 
-1. Go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance
-2. Add the following to configure [Cody Gateway](./cody_gateway.md) embeddings:
-    ```json
-    {
-      // [...]
-      "embeddings": { "enabled": true }
-    }
-    ```
-3. Navigate to **Site admin > Cody** (`/site-admin/cody`) and schedule repositories for embedding.
+Embeddings are automatically enabled and configured once [Cody is enabled](../quickstart.md).
+After enabling Cody, navigate to **Site admin > Cody** (`/site-admin/cody`) and schedule repositories for embedding.
 
 > NOTE: By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice).
 
 <span class="virtual-br"></span>
 
-> NOTE: You can also [use third-party LLM directly](#using-a-third-party-llm-directly) for embeddings.
+> NOTE: You can also [use third-party embeddings provider directly](#using-a-third-party-embeddings-provider-directly) for embeddings.
 
 ### Excluding files from embeddings
 
@@ -150,5 +143,15 @@ You must create your own key with OpenAI [here](https://beta.openai.com/account/
     "accessToken": "<token>",
     "excludedFilePathPatterns": []
   }
+}
+```
+
+### Disabling embeddings
+
+Embeddings can currently be disabled, even with Cody enabled, using the following site configuration:
+
+```jsonc
+{
+  "embeddings": { "enabled": false }
 }
 ```
