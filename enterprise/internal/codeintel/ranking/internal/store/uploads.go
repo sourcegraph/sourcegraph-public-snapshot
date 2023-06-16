@@ -37,18 +37,19 @@ WITH candidates AS (
 	FROM lsif_uploads u
 	JOIN repo r ON r.id = u.repository_id
 	WHERE
-		u.id IN (
-			SELECT uvt.upload_id
+		EXISTS (
+			SELECT 1
 			FROM lsif_uploads_visible_at_tip uvt
 			WHERE
 				uvt.is_default_branch AND
-				NOT EXISTS (
-					SELECT 1
-					FROM codeintel_ranking_exports re
-					WHERE
-						re.graph_key = %s AND
-						re.upload_id = uvt.upload_id
-				)
+				uvt.upload_id = u.id
+		) AND
+		NOT EXISTS (
+			SELECT 1
+			FROM codeintel_ranking_exports re
+			WHERE
+				re.graph_key = %s AND
+				re.upload_id = u.id
 		) AND
 		r.deleted_at IS NULL AND
 		r.blocked IS NULL
