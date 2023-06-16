@@ -12,7 +12,7 @@ import styles from './AppInstallExtensionsSetupStep.module.scss'
 
 interface Extension {
     name: string
-    status: string
+    status: ExtensionStatus
     iconURL: string
     docLink: string | null
     extensionDeepLink: string | null
@@ -51,6 +51,12 @@ const EXTENSIONS: Extension[] = [
 export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ className }) => {
     const { onNextStep } = useContext(SetupStepsContext)
 
+    const handleInstallExtensionClick = (extension: Extension): void => {
+        if (extension.extensionDeepLink) {
+            tauriShellOpen(extension.extensionDeepLink)
+        }
+    }
+
     return (
         <div className={classNames(styles.root, className)}>
             <div className={styles.description}>
@@ -81,7 +87,7 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
                                 variant="secondary"
                                 outline={true}
                                 size="sm"
-                                onClick={() => tauriShellOpen(extension.extensionDeepLink)}
+                                onClick={() => handleInstallExtensionClick(extension)}
                             >
                                 <Icon svgPath={mdiDownload} aria-hidden={true} /> Install
                             </Button>
