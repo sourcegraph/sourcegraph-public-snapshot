@@ -31,6 +31,9 @@ func init() {
 
         Output advice to file
         $ src scout advise --o path/to/file
+
+        Output with warnings
+        $ src scout advise --warnings
     `
 
 	flagSet := flag.NewFlagSet("advise", flag.ExitOnError)
@@ -45,6 +48,7 @@ func init() {
 		namespace  = flagSet.String("namespace", "", "(optional) specify the kubernetes namespace to use")
 		pod        = flagSet.String("pod", "", "(optional) specify a single pod")
 		output     = flagSet.String("o", "", "(optional) output advice to file")
+		warnings   = flagSet.Bool("warnings", false, "(optional) output advice with warnings")
 	)
 
 	if home := homedir.HomeDir(); home != "" {
@@ -88,6 +92,9 @@ func init() {
 		if *output != "" {
 			options = append(options, advise.WithOutput(*output))
 		}
+		if *warnings {
+			options = append(options, advise.WithWarnings(true))
+		}
 
 		return advise.K8s(
 			context.Background(),
@@ -103,5 +110,4 @@ func init() {
 		handler:   handler,
 		usageFunc: usage,
 	})
-
 }

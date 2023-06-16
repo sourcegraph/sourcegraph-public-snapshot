@@ -3,6 +3,7 @@ package advise
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/src-cli/internal/scout"
@@ -24,6 +25,7 @@ func K8s(
 		Namespace:     "default",
 		Pod:           "",
 		Output:        "",
+		Warnings:      false,
 		RestConfig:    restConfig,
 		K8sClient:     k8sClient,
 		MetricsClient: metricsClient,
@@ -51,6 +53,10 @@ func K8s(
 		return nil
 	}
 
+	if cfg.Output != "" {
+		fmt.Printf("writing to %s. This can take a few minutes...", cfg.Output)
+	}
+
 	for _, pod := range pods {
 		err = Advise(ctx, cfg, pod)
 		if err != nil {
@@ -67,29 +73,42 @@ func K8s(
 // of a resource is needed. Advice is generated and either printed to the console
 // or output to a file depending on the cfg.Output field.
 func Advise(ctx context.Context, cfg *scout.Config, pod v1.Pod) error {
-	var advice []string
+	var advice []scout.Advice
 	usageMetrics, err := getUsageMetrics(ctx, cfg, pod)
 	if err != nil {
 		return errors.Wrap(err, "could not get usage metrics")
 	}
-
 	for _, metrics := range usageMetrics {
 		cpuAdvice := CheckUsage(metrics.CpuUsage, "CPU", metrics.ContainerName)
-		advice = append(advice, cpuAdvice)
+		if cfg.Warnings {
+			advice = append(advice, cpuAdvice)
+		} else if !cfg.Warnings && cpuAdvice.Kind != scout.WARNING {
+			advice = append(advice, cpuAdvice)
+		}
 
 		memoryAdvice := CheckUsage(metrics.MemoryUsage, "memory", metrics.ContainerName)
-		advice = append(advice, memoryAdvice)
+		if cfg.Warnings {
+			advice = append(advice, memoryAdvice)
+		} else if !cfg.Warnings && memoryAdvice.Kind != scout.WARNING {
+			advice = append(advice, memoryAdvice)
+		}
 
 		if metrics.Storage != nil {
 			storageAdvice := CheckUsage(metrics.StorageUsage, "storage", metrics.ContainerName)
-			advice = append(advice, storageAdvice)
+			if cfg.Warnings {
+				advice = append(advice, storageAdvice)
+			} else if !cfg.Warnings && storageAdvice.Kind != scout.WARNING {
+				advice = append(advice, storageAdvice)
+			}
 		}
 
 		if cfg.Output != "" {
 			OutputToFile(ctx, cfg, pod.Name, advice)
 		} else {
-			for _, msg := range advice {
-				fmt.Println(msg)
+			fmt.Printf("%s %s: advising...\n", scout.EmojiFingerPointRight, pod.Name)
+			time.Sleep(time.Millisecond * 300)
+			for _, adv := range advice {
+				fmt.Printf("\t%s\n", adv.Msg)
 			}
 		}
 	}

@@ -6,4 +6,7 @@ const (
 	FlashingLightEmoji            = "🚨"
 	SuccessEmoji                  = "✅"
 	WarningSign                   = "⚠️ " // why does this need an extra space to align?!?!
+	HEALTHY                       = "HEALTHY"
+	WARNING                       = "WARNING"
+	DANGER                        = "DANGER"
 )

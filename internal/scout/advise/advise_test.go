@@ -16,35 +16,47 @@ func TestCheckUsage(t *testing.T) {
 		usage        float64
 		resourceType string
 		container    string
-		want         string
+		want         scout.Advice
 	}{
 		{
 			name:         "should return correct message for usage over 100",
 			usage:        110,
 			resourceType: "cpu",
 			container:    "gitserver-0",
-			want:         "\t🚨 gitserver-0: Your cpu usage is over 100% (110.00%). Add more cpu.",
+			want: scout.Advice{
+				Kind: scout.DANGER,
+				Msg:  "🚨 gitserver-0: cpu is under-provisioned (110.00% usage). Add resources.",
+			},
 		},
 		{
 			name:         "should return correct message for usage over 80 and under 100",
 			usage:        87,
 			resourceType: "memory",
 			container:    "gitserver-0",
-			want:         "\t⚠️  gitserver-0: Your memory usage is over 80% (87.00%). Consider raising limits.",
+			want: scout.Advice{
+				Kind: scout.DANGER,
+				Msg:  "🚨 gitserver-0: memory is under-provisioned (87.00% usage). Add resources.",
+			},
 		},
 		{
 			name:         "should return correct message for usage over 40 and under 80",
 			usage:        63.4,
 			resourceType: "memory",
 			container:    "gitserver-0",
-			want:         "\t✅ gitserver-0: Your memory usage is under 80% (63.40%). Keep memory allocation the same.",
+			want: scout.Advice{
+				Kind: scout.HEALTHY,
+				Msg:  "✅ gitserver-0: memory is well-provisioned (63.40% usage). No action needed.",
+			},
 		},
 		{
 			name:         "should return correct message for usage under 40",
-			usage:        22.33,
+			usage:        12.33,
 			resourceType: "memory",
 			container:    "gitserver-0",
-			want:         "\t⚠️  gitserver-0: Your memory usage is under 40% (22.33%). Consider lowering limits.",
+			want: scout.Advice{
+				Kind: scout.WARNING,
+				Msg:  "⚠️  gitserver-0: memory is over-provisioned (12.33% usage). Trim resources.",
+			},
 		},
 	}
 
@@ -65,9 +77,15 @@ func TestOutputToFile(t *testing.T) {
 		Output: os.TempDir() + string(os.PathSeparator) + "test.txt",
 	}
 	name := "gitserver-0"
-	advice := []string{
-		"Add more CPU",
-		"Add more memory",
+	advice := []scout.Advice{
+		{
+			Kind: scout.WARNING,
+			Msg:  "Add more CPU",
+		},
+		{
+			Kind: scout.WARNING,
+			Msg:  "Add more memory",
+		},
 	}
 
 	err := OutputToFile(context.Background(), cfg, name, advice)
@@ -82,13 +100,14 @@ func TestOutputToFile(t *testing.T) {
 		want    string
 	}{
 		{1, "- gitserver-0"},
-		{2, "Add more CPU"},
-		{3, "Add more memory"},
+		{2, advice[0].Msg},
+		{3, advice[1].Msg},
 	}
 
 	for _, tc := range cases {
 		tc := tc
-		if lines[tc.lineNum-1] != tc.want {
+		got := lines[tc.lineNum-1]
+		if got != tc.want {
 			t.Errorf("Expected %q, got %q", tc.want, lines[tc.lineNum-1])
 		}
 	}

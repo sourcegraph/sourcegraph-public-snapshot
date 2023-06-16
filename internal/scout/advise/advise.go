@@ -12,10 +12,9 @@ import (
 type Option = func(config *scout.Config)
 
 const (
-	OVER_100 = "\t%s %s: Your %s usage is over 100%% (%.2f%%). Add more %s."
-	OVER_80  = "\t%s %s: Your %s usage is over 80%% (%.2f%%). Consider raising limits."
-	OVER_40  = "\t%s %s: Your %s usage is under 80%% (%.2f%%). Keep %s allocation the same."
-	UNDER_40 = "\t%s %s: Your %s usage is under 40%% (%.2f%%). Consider lowering limits."
+	UNDER_PROVISIONED = "%s %s: %s is under-provisioned (%.2f%% usage). Add resources."
+	WELL_PROVISIONED  = "%s %s: %s is well-provisioned (%.2f%% usage). No action needed."
+	OVER_PROVISIONED  = "%s %s: %s is over-provisioned (%.2f%% usage). Trim resources."
 )
 
 func WithNamespace(namespace string) Option {
@@ -36,38 +35,37 @@ func WithOutput(pathToFile string) Option {
 	}
 }
 
-func CheckUsage(usage float64, resourceType string, container string) string {
-	var message string
+func WithWarnings(includeWarnings bool) Option {
+	return func(config *scout.Config) {
+		config.Warnings = includeWarnings
+	}
+}
+
+func CheckUsage(usage float64, resourceType string, container string) scout.Advice {
+	var advice scout.Advice
 	switch {
-	case usage >= 100:
-		message = fmt.Sprintf(
-			OVER_100,
+	case usage >= 80:
+		advice.Kind = scout.DANGER
+		advice.Msg = fmt.Sprintf(
+			UNDER_PROVISIONED,
 			scout.FlashingLightEmoji,
 			container,
 			resourceType,
 			usage,
-			resourceType,
 		)
-	case usage >= 80 && usage < 100:
-		message = fmt.Sprintf(
-			OVER_80,
-			scout.WarningSign,
-			container,
-			resourceType,
-			usage,
-		)
-	case usage >= 40 && usage < 80:
-		message = fmt.Sprintf(
-			OVER_40,
+	case usage >= 20 && usage < 80:
+		advice.Kind = scout.HEALTHY
+		advice.Msg = fmt.Sprintf(
+			WELL_PROVISIONED,
 			scout.SuccessEmoji,
 			container,
 			resourceType,
 			usage,
-			resourceType,
 		)
 	default:
-		message = fmt.Sprintf(
-			UNDER_40,
+		advice.Kind = scout.WARNING
+		advice.Msg = fmt.Sprintf(
+			OVER_PROVISIONED,
 			scout.WarningSign,
 			container,
 			resourceType,
@@ -75,11 +73,11 @@ func CheckUsage(usage float64, resourceType string, container string) string {
 		)
 	}
 
-	return message
+	return advice
 }
 
 // outputToFile writes resource allocation advice for a Kubernetes pod to a file.
-func OutputToFile(ctx context.Context, cfg *scout.Config, name string, advice []string) error {
+func OutputToFile(ctx context.Context, cfg *scout.Config, name string, advice []scout.Advice) error {
 	file, err := os.OpenFile(cfg.Output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return errors.Wrap(err, "failed to open file")
@@ -90,8 +88,8 @@ func OutputToFile(ctx context.Context, cfg *scout.Config, name string, advice []
 		return errors.Wrap(err, "failed to write service name to file")
 	}
 
-	for _, msg := range advice {
-		if _, err := fmt.Fprintf(file, "%s\n", msg); err != nil {
+	for _, adv := range advice {
+		if _, err := fmt.Fprintf(file, "%s\n", adv.Msg); err != nil {
 			return errors.Wrap(err, "failed to write container advice to file")
 		}
 	}

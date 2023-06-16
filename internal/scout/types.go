@@ -11,6 +11,7 @@ type Config struct {
 	Namespace     string
 	Pod           string
 	Output        string
+	Warnings      bool
 	RestConfig    *rest.Config
 	K8sClient     *kubernetes.Clientset
 	MetricsClient *metricsv.Clientset
@@ -35,4 +36,9 @@ type UsageStats struct {
 	CpuUsage      float64
 	MemoryUsage   float64
 	StorageUsage  float64
+}
+
+type Advice struct {
+	Kind string
+	Msg  string
 }
