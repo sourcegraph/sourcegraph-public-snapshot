@@ -12767,6 +12767,9 @@ type MockEventLogStore struct {
 	// CodeIntelligenceWAUsFunc is an instance of a mock function object
 	// controlling the behavior of the method CodeIntelligenceWAUs.
 	CodeIntelligenceWAUsFunc *EventLogStoreCodeIntelligenceWAUsFunc
+	// CountByEventNamesFunc is an instance of a mock function object
+	// controlling the behavior of the method CountByEventNames.
+	CountByEventNamesFunc *EventLogStoreCountByEventNamesFunc
 	// CountByUserIDFunc is an instance of a mock function object
 	// controlling the behavior of the method CountByUserID.
 	CountByUserIDFunc *EventLogStoreCountByUserIDFunc
@@ -12924,6 +12927,11 @@ func NewMockEventLogStore() *MockEventLogStore {
 		},
 		CodeIntelligenceWAUsFunc: &EventLogStoreCodeIntelligenceWAUsFunc{
 			defaultHook: func(context.Context) (r0 int, r1 error) {
+				return
+			},
+		},
+		CountByEventNamesFunc: &EventLogStoreCountByEventNamesFunc{
+			defaultHook: func(context.Context, time.Time, time.Time, []string) (r0 map[string]int, r1 error) {
 				return
 			},
 		},
@@ -13129,6 +13137,11 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 				panic("unexpected invocation of MockEventLogStore.CodeIntelligenceWAUs")
 			},
 		},
+		CountByEventNamesFunc: &EventLogStoreCountByEventNamesFunc{
+			defaultHook: func(context.Context, time.Time, time.Time, []string) (map[string]int, error) {
+				panic("unexpected invocation of MockEventLogStore.CountByEventNames")
+			},
+		},
 		CountByUserIDFunc: &EventLogStoreCountByUserIDFunc{
 			defaultHook: func(context.Context, int32) (int, error) {
 				panic("unexpected invocation of MockEventLogStore.CountByUserID")
@@ -13301,6 +13314,9 @@ func NewMockEventLogStoreFrom(i EventLogStore) *MockEventLogStore {
 		},
 		CodeIntelligenceWAUsFunc: &EventLogStoreCodeIntelligenceWAUsFunc{
 			defaultHook: i.CodeIntelligenceWAUs,
+		},
+		CountByEventNamesFunc: &EventLogStoreCountByEventNamesFunc{
+			defaultHook: i.CountByEventNames,
 		},
 		CountByUserIDFunc: &EventLogStoreCountByUserIDFunc{
 			defaultHook: i.CountByUserID,
@@ -15025,6 +15041,122 @@ func (c EventLogStoreCodeIntelligenceWAUsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EventLogStoreCodeIntelligenceWAUsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EventLogStoreCountByEventNamesFunc describes the behavior when the
+// CountByEventNames method of the parent MockEventLogStore instance is
+// invoked.
+type EventLogStoreCountByEventNamesFunc struct {
+	defaultHook func(context.Context, time.Time, time.Time, []string) (map[string]int, error)
+	hooks       []func(context.Context, time.Time, time.Time, []string) (map[string]int, error)
+	history     []EventLogStoreCountByEventNamesFuncCall
+	mutex       sync.Mutex
+}
+
+// CountByEventNames delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEventLogStore) CountByEventNames(v0 context.Context, v1 time.Time, v2 time.Time, v3 []string) (map[string]int, error) {
+	r0, r1 := m.CountByEventNamesFunc.nextHook()(v0, v1, v2, v3)
+	m.CountByEventNamesFunc.appendCall(EventLogStoreCountByEventNamesFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CountByEventNames
+// method of the parent MockEventLogStore instance is invoked and the hook
+// queue is empty.
+func (f *EventLogStoreCountByEventNamesFunc) SetDefaultHook(hook func(context.Context, time.Time, time.Time, []string) (map[string]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountByEventNames method of the parent MockEventLogStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *EventLogStoreCountByEventNamesFunc) PushHook(hook func(context.Context, time.Time, time.Time, []string) (map[string]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EventLogStoreCountByEventNamesFunc) SetDefaultReturn(r0 map[string]int, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Time, time.Time, []string) (map[string]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EventLogStoreCountByEventNamesFunc) PushReturn(r0 map[string]int, r1 error) {
+	f.PushHook(func(context.Context, time.Time, time.Time, []string) (map[string]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *EventLogStoreCountByEventNamesFunc) nextHook() func(context.Context, time.Time, time.Time, []string) (map[string]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EventLogStoreCountByEventNamesFunc) appendCall(r0 EventLogStoreCountByEventNamesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EventLogStoreCountByEventNamesFuncCall
+// objects describing the invocations of this function.
+func (f *EventLogStoreCountByEventNamesFunc) History() []EventLogStoreCountByEventNamesFuncCall {
+	f.mutex.Lock()
+	history := make([]EventLogStoreCountByEventNamesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EventLogStoreCountByEventNamesFuncCall is an object that describes an
+// invocation of method CountByEventNames on an instance of
+// MockEventLogStore.
+type EventLogStoreCountByEventNamesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Time
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Time
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[string]int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EventLogStoreCountByEventNamesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EventLogStoreCountByEventNamesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
