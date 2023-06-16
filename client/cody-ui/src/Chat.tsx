@@ -41,8 +41,10 @@ interface ChatProps extends ChatClassNames {
     setSuggestions?: (suggestions: undefined | []) => void
     needsEmailVerification?: boolean
     needsEmailVerificationNotice?: React.FunctionComponent
+    codyNotEnabledNotice?: React.FunctionComponent
     abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
     onAbortMessageInProgress?: () => void
+    isCodyEnabled: boolean
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -127,11 +129,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     suggestions,
     setSuggestions,
     needsEmailVerification = false,
+    codyNotEnabledNotice: CodyNotEnabledNotice,
     needsEmailVerificationNotice: NeedsEmailVerificationNotice,
     contextStatusComponent: ContextStatusComponent,
     contextStatusComponentProps = {},
     abortMessageInProgressComponent,
     onAbortMessageInProgress,
+    isCodyEnabled,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -232,7 +236,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
     return (
         <div className={classNames(className, styles.innerContainer)}>
-            {needsEmailVerification && NeedsEmailVerificationNotice ? (
+            {!isCodyEnabled && CodyNotEnabledNotice ? (
+                <div className="flex-1">
+                    <CodyNotEnabledNotice />
+                </div>
+            ) : needsEmailVerification && NeedsEmailVerificationNotice ? (
                 <div className="flex-1">
                     <NeedsEmailVerificationNotice />
                 </div>
@@ -281,17 +289,17 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     <TextArea
                         className={classNames(styles.chatInput, chatInputClassName)}
                         rows={inputRows}
-                        value={formInput}
+                        value={isCodyEnabled ? formInput : 'Cody is disabled on this instance'}
                         autoFocus={true}
                         required={true}
-                        disabled={needsEmailVerification}
+                        disabled={needsEmailVerification || !isCodyEnabled}
                         onInput={onChatInput}
                         onKeyDown={onChatKeyDown}
                     />
                     <SubmitButton
                         className={styles.submitButton}
                         onClick={onChatSubmit}
-                        disabled={!!messageInProgress || needsEmailVerification}
+                        disabled={!!messageInProgress || needsEmailVerification || !isCodyEnabled}
                     />
                 </div>
                 {ContextStatusComponent ? (
