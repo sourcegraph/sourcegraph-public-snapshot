@@ -32,6 +32,7 @@ public class RecipeRunner {
                 textInputToPrompt, TruncationUtils.MAX_RECIPE_INPUT_TOKENS));
 
     OriginalText selectedText = new OriginalText(textInputToPrompt);
+    // TODO: Use or remove these
     String truncatedPrecedingText =
         editorContext.getPrecedingText() != null
             ? TruncationUtils.truncateTextStart(
