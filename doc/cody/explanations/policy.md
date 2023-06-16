@@ -25,7 +25,7 @@ The new policy will be shown in the list of policies.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/context/new-policy-saved.png" class="screenshot" alt="policy-saved">
 
-## Lifecycle of an auto-indexing policy
+## Lifecycle of an embeddings policy
 
 Once a policy has been created, it is active.
 To deactivate a policy, simply delete it.
