@@ -3,7 +3,7 @@ import { FC, useContext } from 'react'
 import { mdiDownload, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Badge, Button, H1, H3, Link, Text, Icon, BadgeVariantType, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Badge, Button, H1, H3, Link, Text, Icon, BadgeVariantType } from '@sourcegraph/wildcard'
 
 import { tauriShellOpen } from '../../../../app/tauriIcpUtils'
 import { SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
@@ -88,7 +88,12 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
                         )}
 
                         {extension.docLink && (
-                            <Link to={extension.docLink} target="_blank" className={styles.extensionsActionLink}>
+                            <Link
+                                to={extension.docLink}
+                                target="_blank"
+                                rel="noopener"
+                                className={styles.extensionsActionLink}
+                            >
                                 <Icon svgPath={mdiOpenInNew} aria-hidden={true} /> Repo
                             </Link>
                         )}
@@ -99,6 +104,7 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
                     <Link
                         to="https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&title=Cody%20extension%20suggestion"
                         target="_blank"
+                        rel="noopener"
                     >
                         Suggest our next extension
                     </Link>
