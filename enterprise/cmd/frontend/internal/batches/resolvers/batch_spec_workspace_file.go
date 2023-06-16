@@ -122,6 +122,10 @@ func (r *batchSpecWorkspaceFileResolver) CanonicalURL() string {
 	return ""
 }
 
+func (r *batchSpecWorkspaceFileResolver) ChangelistURL(_ context.Context) (*string, error) {
+	return nil, nil
+}
+
 func (r *batchSpecWorkspaceFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return nil, errors.New("not implemented")
 }

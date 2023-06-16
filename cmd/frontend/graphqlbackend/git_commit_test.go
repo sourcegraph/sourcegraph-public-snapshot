@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"io/ioutil"
+	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
@@ -26,7 +28,7 @@ func TestGitCommitResolver(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewMockDB()
 
-	client := gitserver.NewClient()
+	client := gitserver.NewMockClient()
 
 	commit := &gitdomain.Commit{
 		ID:      "c1",
@@ -154,6 +156,24 @@ func TestGitCommitResolver(t *testing.T) {
 				pf, err := r.PerforceChangelist(ctx)
 				require.NoError(t, err)
 				require.Nil(t, pf)
+
+				f, err := ioutil.TempFile("/tmp", "foo")
+				require.NoError(t, err)
+
+				fs, err := f.Stat()
+				require.NoError(t, err)
+				client.StatFunc.SetDefaultReturn(fs, nil)
+
+				path, err := filepath.Abs(filepath.Dir(f.Name()))
+				require.NoError(t, err)
+
+				gitTree, err := r.Blob(ctx, &struct{ Path string }{Path: path})
+				require.NoError(t, err)
+				require.NotNil(t, gitTree)
+
+				cl, err := gitTree.ChangelistURL(ctx)
+				require.NoError(t, err)
+				require.Nil(t, cl)
 			})
 		}
 	})
@@ -171,7 +191,7 @@ func TestGitCommitResolver(t *testing.T) {
 		repos.GetFunc.SetDefaultReturn(repo, nil)
 		db.ReposFunc.SetDefaultReturn(repos)
 
-		commitResolver := NewGitCommitResolver(db, client, repoResolver, "c1", commit)
+		commitResolver := NewGitCommitResolver(db, client, repoResolver, "8aa15f6a85c07a882821053f361b538f404f238e", commit)
 
 		ctx := actor.WithInternalActor(context.Background())
 
@@ -188,6 +208,29 @@ func TestGitCommitResolver(t *testing.T) {
 		subject, err := commitResolver.Subject(ctx)
 		require.NoError(t, err)
 		require.Equal(t, "subject: Changes things", subject)
+
+		f, err := ioutil.TempFile("/tmp", "foo")
+		require.NoError(t, err)
+
+		fs, err := f.Stat()
+		require.NoError(t, err)
+		client.StatFunc.SetDefaultReturn(fs, nil)
+
+		path, err := filepath.Abs(filepath.Dir(f.Name()))
+		require.NoError(t, err)
+
+		gitTree, err := commitResolver.Blob(ctx, &struct{ Path string }{Path: path})
+		require.NoError(t, err)
+
+		gotURL, err := gitTree.ChangelistURL(ctx)
+		require.NoError(t, err)
+
+		_, fileName := filepath.Split(f.Name())
+		require.Equal(
+			t,
+			filepath.Join("/perforce/test-depot@123/-/blob", fileName),
+			*gotURL,
+		)
 	}
 
 	t.Run("perforce depot, git-p4 commit", func(t *testing.T) {

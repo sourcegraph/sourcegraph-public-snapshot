@@ -998,9 +998,10 @@ func TestFileDiffHighlighter(t *testing.T) {
 type dummyFileResolver struct {
 	path, name string
 
-	richHTML     string
-	url          string
-	canonicalURL string
+	richHTML      string
+	url           string
+	canonicalURL  string
+	changelistURL string
 
 	content func(context.Context, *GitTreeContentPageArgs) (string, error)
 }
@@ -1041,6 +1042,10 @@ func (d *dummyFileResolver) URL(ctx context.Context) (string, error) {
 
 func (d *dummyFileResolver) CanonicalURL() string {
 	return d.canonicalURL
+}
+
+func (d *dummyFileResolver) ChangelistURL(ctx context.Context) (*string, error) {
+	return &d.changelistURL, nil
 }
 
 func (d *dummyFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {

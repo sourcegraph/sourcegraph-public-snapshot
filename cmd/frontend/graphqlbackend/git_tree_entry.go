@@ -221,6 +221,38 @@ func (r *GitTreeEntryResolver) CanonicalURL() string {
 	return r.urlPath(canonicalUrl).String()
 }
 
+func (r *GitTreeEntryResolver) ChangelistURL(ctx context.Context) (*string, error) {
+	repo := r.Repository()
+	source, err := repo.SourceType(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if *source != PerforceDepotSourceType {
+		return nil, nil
+	}
+
+	cl, err := r.commit.PerforceChangelist(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// This is an oddity. We have checked above that this repository is a perforce depot. Then this
+	// commit of this blob must also have a changelist ID associated with it.
+	//
+	// If we ever hit this check, this is a bug and the error should be propagated out.
+	if cl == nil {
+		return nil, errors.Newf(
+			"failed to retrieve changelist from commit %q in repo %q",
+			string(r.commit.OID()),
+			string(repo.RepoName()),
+		)
+	}
+
+	u := r.urlPath(cl.cidURL()).String()
+	return &u, nil
+}
+
 func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
 	// Dereference to copy to avoid mutating the input
 	u := *prefix

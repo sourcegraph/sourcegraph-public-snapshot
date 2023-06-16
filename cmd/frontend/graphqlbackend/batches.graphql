@@ -3680,6 +3680,12 @@ type BatchSpecWorkspaceFile implements File2 & Node {
     The canonical URL to this file (using an immutable revision specifier).
     """
     canonicalURL: String!
+
+    """
+    Not implemented.
+    """
+    changelistURL: String
+
     """
     The URLs to this file on external services.
     """

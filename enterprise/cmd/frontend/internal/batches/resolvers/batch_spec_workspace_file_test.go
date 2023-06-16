@@ -43,7 +43,13 @@ func (m *mockFileResolver) RichHTML(ctx context.Context, args *graphqlbackend.Gi
 func (m *mockFileResolver) URL(ctx context.Context) (string, error) {
 	return "", errors.New("not implemented")
 }
+
 func (m *mockFileResolver) CanonicalURL() string { return "" }
+
+func (r *mockFileResolver) ChangelistURL(_ context.Context) (*string, error) {
+	return nil, nil
+}
+
 func (m *mockFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return nil, errors.New("not implemented")
 }

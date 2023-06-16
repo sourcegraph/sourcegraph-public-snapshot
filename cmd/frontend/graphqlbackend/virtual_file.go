@@ -59,6 +59,10 @@ func (r *VirtualFileResolver) CanonicalURL() string {
 	return r.opts.CanonicalURL
 }
 
+func (r *VirtualFileResolver) ChangelistURL(_ context.Context) (*string, error) {
+	return nil, nil
+}
+
 func (r *VirtualFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return r.opts.ExternalURLs, nil
 }
