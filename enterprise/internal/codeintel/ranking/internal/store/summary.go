@@ -35,6 +35,7 @@ func scanSummary(s dbutil.Scanner) (shared.Summary, error) {
 		numPathRecordsProcessed      int
 		numReferenceRecordsProcessed int
 		numCountRecordsProcessed     int
+		visibleToZoekt               bool
 	)
 	if err := s.Scan(
 		&graphKey,
@@ -49,6 +50,7 @@ func scanSummary(s dbutil.Scanner) (shared.Summary, error) {
 		&dbutil.NullInt{N: &numPathRecordsProcessed},
 		&dbutil.NullInt{N: &numReferenceRecordsProcessed},
 		&dbutil.NullInt{N: &numCountRecordsProcessed},
+		&visibleToZoekt,
 	); err != nil {
 		return shared.Summary{}, err
 	}
@@ -79,14 +81,12 @@ func scanSummary(s dbutil.Scanner) (shared.Summary, error) {
 
 	return shared.Summary{
 		GraphKey:                graphKey,
+		VisibleToZoekt:          visibleToZoekt,
 		PathMapperProgress:      pathMapperProgress,
 		ReferenceMapperProgress: referenceMapperProgress,
 		ReducerProgress:         reducerProgress,
 	}, nil
 }
-
-//
-// TODO - progress janitor
 
 const summariesQuery = `
 SELECT
@@ -101,7 +101,14 @@ SELECT
 	p.num_count_records_total,
 	p.num_path_records_processed,
 	p.num_reference_records_processed,
-	p.num_count_records_processed
+	p.num_count_records_processed,
+	COALESCE(p.id = (
+		SELECT pl.id
+		FROM codeintel_ranking_progress pl
+		WHERE pl.reducer_completed_at IS NOT NULL
+		ORDER BY pl.reducer_completed_at DESC
+		LIMIT 1
+	), false) AS visible_to_zoekt
 FROM codeintel_ranking_progress p
 ORDER BY p.mappers_started_at DESC
 `

@@ -77,16 +77,19 @@ func TestCoordinateAndSummaries(t *testing.T) {
 	expectedSummaries := []shared.Summary{
 		{
 			GraphKey:                key3,
+			VisibleToZoekt:          false,
 			PathMapperProgress:      shared.Progress{StartedAt: now4},
 			ReferenceMapperProgress: shared.Progress{StartedAt: now4},
 		},
 		{
 			GraphKey:                key2,
+			VisibleToZoekt:          false,
 			PathMapperProgress:      shared.Progress{StartedAt: now3},
 			ReferenceMapperProgress: shared.Progress{StartedAt: now3},
 		},
 		{
 			GraphKey:                key1,
+			VisibleToZoekt:          true,
 			PathMapperProgress:      shared.Progress{StartedAt: now1, CompletedAt: &now2},
 			ReferenceMapperProgress: shared.Progress{StartedAt: now1, CompletedAt: &now2},
 			ReducerProgress:         &shared.Progress{StartedAt: now2, CompletedAt: &now3},

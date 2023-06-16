@@ -7,7 +7,18 @@ import { format, formatDistance, parseISO } from 'date-fns'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Code, Container, ErrorAlert, H4, Icon, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
+import {
+    Badge,
+    Button,
+    Code,
+    Container,
+    ErrorAlert,
+    H4,
+    Icon,
+    LoadingSpinner,
+    PageHeader,
+    Text,
+} from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
 import {
@@ -101,25 +112,50 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                 <>
                     {data.rankingSummary.nextJobStartsAt && (
                         <Text size="small" className="text-right">
-                            Next job will begin <Timestamp date={data.rankingSummary.nextJobStartsAt} />.
+                            Next job is scheduled to begin{' '}
+                            {parseISO(data.rankingSummary.nextJobStartsAt).getTime() - Date.now() <= 60 * 1000 ? (
+                                <>shortly</>
+                            ) : (
+                                <Timestamp date={data.rankingSummary.nextJobStartsAt} />
+                            )}
+                            .
                         </Text>
                     )}
 
                     <Container className="mb-3">
                         <div className={styles.summary}>
                             <span className={styles.summaryItem}>
-                                <div className={classNames(styles.summaryNumber)}>
+                                <div
+                                    className={classNames(
+                                        styles.summaryNumber,
+                                        data.rankingSummary.numTargetIndexes === 0
+                                            ? 'text-muted'
+                                            : data.rankingSummary.numExportedIndexes !==
+                                              data.rankingSummary.numTargetIndexes
+                                            ? 'text-warning'
+                                            : 'text-success'
+                                    )}
+                                >
                                     {data.rankingSummary.numExportedIndexes} of {data.rankingSummary.numTargetIndexes}
                                 </div>
                                 <div className={styles.summaryLabel}>SCIP indexes have been exported</div>
                             </span>
 
                             <span className={styles.summaryItem}>
-                                <div className={classNames(styles.summaryNumber)}>
+                                <div
+                                    className={classNames(
+                                        styles.summaryNumber,
+                                        data.rankingSummary.numTargetIndexes === 0
+                                            ? 'text-muted'
+                                            : data.rankingSummary.numRepositoriesWithoutCurrentRanks > 0
+                                            ? 'text-warning'
+                                            : 'text-success'
+                                    )}
+                                >
                                     {data.rankingSummary.numRepositoriesWithoutCurrentRanks}
                                 </div>
                                 <div className={classNames(styles.summaryLabel, styles.summaryItemExtended)}>
-                                    repositories have not been indexed with the most recent scores
+                                    Repositories must be indexed to include the most recent scores
                                 </div>
                             </span>
                         </div>
@@ -134,8 +170,8 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                             <Summary
                                 key={summary.graphKey}
                                 summary={summary}
+                                derivativeGraphKey={data.rankingSummary.derivativeGraphKey}
                                 onDelete={index > 0 ? () => onDelete(summary.graphKey) : undefined}
-                                expanded={index === 0}
                                 className="mb-3"
                             />
                         ))
@@ -148,6 +184,7 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
 
 interface Summary {
     graphKey: string
+    visibleToZoekt: boolean
     pathMapperProgress: Progress
     referenceMapperProgress: Progress
     reducerProgress: Progress | null
@@ -162,21 +199,32 @@ interface Progress {
 
 interface SummaryProps {
     summary: Summary
+    derivativeGraphKey: string | null
     onDelete?: () => Promise<void>
-    expanded?: boolean
     className?: string
 }
 
-const Summary: FunctionComponent<SummaryProps> = ({ summary, onDelete, expanded = true, className = '' }) => (
+const Summary: FunctionComponent<SummaryProps> = ({ summary, derivativeGraphKey, onDelete, className = '' }) => (
     <Container className={className}>
         <Collapsible
             title={
                 <>
-                    <Code>{summary.graphKey}</Code>
+                    Ranking job <Code>{summary.graphKey}</Code>
+                    {summary.visibleToZoekt ? (
+                        <Badge variant="primary" className="ml-4">
+                            Visible
+                        </Badge>
+                    ) : (
+                        summary.graphKey === derivativeGraphKey && (
+                            <Badge variant="info" className="ml-4">
+                                Calculating...
+                            </Badge>
+                        )
+                    )}
                 </>
             }
             titleAtStart={true}
-            defaultExpanded={expanded}
+            defaultExpanded={summary.visibleToZoekt || summary.graphKey === derivativeGraphKey}
         >
             <div className="pt-4">
                 <Progress

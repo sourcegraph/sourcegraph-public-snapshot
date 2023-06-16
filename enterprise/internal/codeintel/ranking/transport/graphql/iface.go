@@ -8,6 +8,7 @@ import (
 )
 
 type RankingService interface {
+	DerivativeGraphKey(ctx context.Context) (string, bool, error)
 	BumpDerivativeGraphKey(ctx context.Context) error
 	Summaries(ctx context.Context) ([]shared.Summary, error)
 	NextJobStartsAt(ctx context.Context) (time.Time, bool, error)

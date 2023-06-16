@@ -7,6 +7,7 @@ import { RankingSummaryResult, RankingSummaryVariables } from '../../../../graph
 export const RankingSummaryFieldsFragment = gql`
     fragment RankingSummaryFields on RankingSummary {
         graphKey
+        visibleToZoekt
         pathMapperProgress {
             ...RankingSummaryProgressFields
         }
@@ -32,6 +33,7 @@ export const RANKING_SUMMARY = gql`
             rankingSummary {
                 ...RankingSummaryFields
             }
+            derivativeGraphKey
             nextJobStartsAt
             numExportedIndexes
             numTargetIndexes
