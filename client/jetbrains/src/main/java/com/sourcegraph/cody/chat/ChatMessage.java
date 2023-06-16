@@ -8,16 +8,16 @@ import org.jetbrains.annotations.NotNull;
 
 public class ChatMessage extends Message {
   private final @NotNull String displayText;
-  private final @NotNull List<String> contextFiles;
+  private final @NotNull List<String> contextFileContents;
 
   ChatMessage(
       @NotNull Speaker speaker,
       @NotNull String text,
       @NotNull String displayText,
-      @NotNull List<String> contextFiles) {
+      @NotNull List<String> contextFileContents) {
     super(speaker, text);
     this.displayText = displayText;
-    this.contextFiles = contextFiles;
+    this.contextFileContents = contextFileContents;
   }
 
   public static @NotNull ChatMessage createAssistantMessage(@NotNull String text) {
@@ -25,8 +25,8 @@ public class ChatMessage extends Message {
   }
 
   public static @NotNull ChatMessage createHumanMessage(
-      @NotNull String prompt, @NotNull String displayText, @NotNull List<String> contextFiles) {
-    return new ChatMessage(Speaker.HUMAN, prompt, displayText, contextFiles);
+      @NotNull String prompt, @NotNull String displayText, @NotNull List<String> contextFileContents) {
+    return new ChatMessage(Speaker.HUMAN, prompt, displayText, contextFileContents);
   }
 
   @NotNull
@@ -35,7 +35,7 @@ public class ChatMessage extends Message {
   }
 
   @NotNull
-  public List<String> getContextFiles() {
-    return contextFiles;
+  public List<String> getContextFileContents() {
+    return contextFileContents;
   }
 }

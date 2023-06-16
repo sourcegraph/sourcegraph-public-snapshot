@@ -386,10 +386,10 @@ class CodyToolWindowContent implements UpdatableChat {
             : ConfigUtil.getDotComAccessToken(project);
 
     var chat = new Chat("", instanceUrl, accessToken != null ? accessToken : "");
-    ArrayList<String> contextFiles =
+    ArrayList<String> contextFileContents =
         EditorContextGetter.getEditorContext(project).getCurrentFileContentAsArrayList();
     ChatMessage humanMessage =
-        ChatMessage.createHumanMessage(message.prompt(), message.getDisplayText(), contextFiles);
+        ChatMessage.createHumanMessage(message.prompt(), message.getDisplayText(), contextFileContents);
     addMessageToChat(humanMessage);
 
     // Get assistant message

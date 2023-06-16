@@ -42,10 +42,10 @@ public class Chat {
     // TODO: Usethe context getting logic from VS Code
     List<Message> preamble = Preamble.getPreamble(codebase);
     var codeContext = "";
-    if (humanMessage.getContextFiles().size() == 0) {
+    if (humanMessage.getContextFileContents().size() == 0) {
       codeContext = "I have no file open in the editor right now.";
     } else {
-      codeContext = "Here is my current file\n" + humanMessage.getContextFiles().get(0);
+      codeContext = "Here is my current file\n" + humanMessage.getContextFileContents().get(0);
     }
 
     var input = new CompletionsInput(new ArrayList<>(), 0.5f, null, 1000, -1, -1);
