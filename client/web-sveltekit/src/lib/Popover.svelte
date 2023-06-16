@@ -1,5 +1,6 @@
 <script lang="ts">
     import { createPopper, type Placement } from '@popperjs/core'
+
     import { onClickOutside } from './dom'
 
     export let placement: Placement = 'bottom'

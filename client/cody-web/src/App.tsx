@@ -106,6 +106,7 @@ export const App: React.FunctionComponent = () => {
                             setFormInput={setFormInput}
                             inputHistory={inputHistory}
                             setInputHistory={setInputHistory}
+                            isCodyEnabled={true}
                             onSubmit={onSubmit}
                         />
                     </>

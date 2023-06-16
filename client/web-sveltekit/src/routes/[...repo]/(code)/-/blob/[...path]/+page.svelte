@@ -1,11 +1,12 @@
 <script lang="ts">
-    import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
-    import type { PageData } from './$types'
     import { page } from '$app/stores'
-    import WrapLinesAction, { lineWrap } from './WrapLinesAction.svelte'
-    import FormatAction from './FormatAction.svelte'
+    import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
     import type { BlobFileFields } from '$lib/graphql-operations'
     import HeaderAction from '$lib/repo/HeaderAction.svelte'
+
+    import type { PageData } from './$types'
+    import FormatAction from './FormatAction.svelte'
+    import WrapLinesAction, { lineWrap } from './WrapLinesAction.svelte'
 
     export let data: PageData
 
