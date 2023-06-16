@@ -22,11 +22,16 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
     repoID: string
     revision?: string
     filePath: string
-}> = ({ repoID, revision, filePath }) => {
+    enableOwnershipPanel: boolean
+}> = ({ repoID, revision, filePath, enableOwnershipPanel }) => {
     const navigate = useNavigate()
 
     const openOwnershipPanel = useCallback(() => {
         navigate({ hash: '#tab=ownership' })
+    }, [navigate])
+
+    const openHistoryPanel = useCallback(() => {
+        navigate({ hash: '#tab=history' })
     }, [navigate])
 
     const { data, error, loading } = useQuery<FetchOwnersAndHistoryResult, FetchOwnersAndHistoryVariables>(
@@ -36,6 +41,7 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                 repo: repoID,
                 revision: revision ?? '',
                 currentPath: filePath,
+                includeOwn: enableOwnershipPanel,
             },
         }
     )
@@ -71,12 +77,23 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
     return (
         <div className={styles.wrapper}>
             {history && (
-                <GitCommitNode
-                    node={history}
-                    extraCompact={true}
-                    hideExpandCommitMessageBody={true}
-                    className={styles.history}
-                />
+                <div className={styles.historyPanel}>
+                    <GitCommitNode
+                        node={history}
+                        extraCompact={true}
+                        hideExpandCommitMessageBody={true}
+                        className={styles.history}
+                    />
+                    <Button
+                        variant="link"
+                        size="sm"
+                        display="inline"
+                        className="pt-0 pb-0 border-0"
+                        onClick={openHistoryPanel}
+                    >
+                        Show history
+                    </Button>
+                </div>
             )}
             {ownership && (
                 <Tooltip content="Show ownership details" placement="left">
