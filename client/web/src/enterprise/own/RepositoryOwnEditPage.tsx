@@ -24,7 +24,7 @@ export interface RepositoryOwnAreaPageProps extends Pick<BreadcrumbSetters, 'use
     repo: RepositoryFields
     authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'> | null
 }
-const EDIT_PAGE_BREADCRUMB = { key: 'edit-own', element: 'Edit ownership' }
+const EDIT_PAGE_BREADCRUMB = { key: 'edit-own', element: 'Upload CODEOWNERS' }
 
 export const RepositoryOwnEditPage: React.FunctionComponent<RepositoryOwnAreaPageProps> = ({
     useBreadcrumb,
