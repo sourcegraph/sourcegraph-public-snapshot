@@ -13,6 +13,8 @@ export interface Configuration {
     experimentalInline: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
+    completionsAdvancedProvider: 'anthropic' | 'unstable-codegen'
+    completionsAdvancedServerEndpoint: string | null
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {

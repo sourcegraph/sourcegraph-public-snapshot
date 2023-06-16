@@ -27,6 +27,11 @@ type GlobalRankingSummary {
     rankingSummary: [RankingSummary!]!
 
     """
+    The key of the current ranking summary.
+    """
+    derivativeGraphKey: String
+
+    """
     The time that the next ranking job is configured to begin.
     """
     nextJobStartsAt: DateTime
@@ -56,14 +61,22 @@ type RankingSummary {
     Identifier of the current ranking job. Corresponds to values in the site configuration.
     """
     graphKey: String!
+
+    """
+    True if the output of this ranking job is currently visible to the Zoekt indexserver.
+    """
+    visibleToZoekt: Boolean!
+
     """
     Progress of the path mapping stage.
     """
     pathMapperProgress: RankingSummaryProgress!
+
     """
     Progress of the reference mapping stage.
     """
     referenceMapperProgress: RankingSummaryProgress!
+
     """
     Progress of the reducer stage.
     """

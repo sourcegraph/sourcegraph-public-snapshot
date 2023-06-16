@@ -51,6 +51,5 @@ go_test(
         "//internal/types",
         "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
     ],
 )

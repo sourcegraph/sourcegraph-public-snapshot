@@ -13,6 +13,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 ### Changed
 
 - Completions: Updating configuration no longer requires reloading the extension. [pull/53401](https://github.com/sourcegraph/sourcegraph/pull/53401)
+- Completions: Completions can now be used on unsaved files. [pull/53495](https://github.com/sourcegraph/sourcegraph/pull/53495)
 
 ## [0.2.4]
 

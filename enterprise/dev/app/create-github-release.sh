@@ -11,7 +11,7 @@ download_artifacts() {
 }
 
 # check that the directory exists and that is has files in it
-if [[ ! -d "./dist" ||  -z $(ls dist/) ]]; then
+if [[ ! -d "./dist" || -z $(ls dist/) ]]; then
   download_artifacts "dist/*" dist/
 else
   echo "missing dist artefacts - not creating release"
@@ -19,7 +19,7 @@ else
 fi
 
 VERSION=$(./enterprise/dev/app/app-version.sh)
-echo "--- :github: Creating GitHub release for Sourcegraph App (${VERSION})"
+echo "--- :github: Creating GitHub release for Cody App (${VERSION})"
 echo "Release will have to following assets:"
 ls -al ./dist
 
@@ -27,6 +27,6 @@ ls -al ./dist
 gh release create "app-v${VERSION}" \
   --prerelease \
   --draft \
-  --title "Sourcegraph App v${VERSION}" \
-  --notes "A new Sourcegraph App version is available" \
+  --title "Cody App v${VERSION}" \
+  --notes "A new Cody App version is available" \
   ./dist/*

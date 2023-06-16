@@ -2,7 +2,6 @@ package usagestats
 
 import (
 	"context"
-	"database/sql"
 	_ "embed"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -33,15 +32,6 @@ func GetOwnershipUsageStats(ctx context.Context, db database.DB) (*types.Ownersh
 		// computationally intensive (get all repos and query gitserver for each).
 		// This will become very easy once we have versioned CODEOWNERS in the database.
 	}
-	featureFlagOn := false
-	ff, err := db.FeatureFlags().GetFeatureFlag(ctx, "search-ownership")
-	if err != nil && err != sql.ErrNoRows {
-		return nil, err
-	}
-	if err != sql.ErrNoRows {
-		featureFlagOn = ff.Bool.Value
-	}
-	stats.FeatureFlagOn = &featureFlagOn
 	activity, err := db.EventLogs().OwnershipFeatureActivity(ctx, timeNow(),
 		selectFileOwnersEventName,
 		fileHasOwnerEventName,

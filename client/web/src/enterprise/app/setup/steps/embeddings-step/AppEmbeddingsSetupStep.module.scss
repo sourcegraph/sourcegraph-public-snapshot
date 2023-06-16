@@ -18,7 +18,7 @@
 }
 
 .description {
-    padding: 4.5rem 3.5rem;
+    padding: 9.5rem 3.5rem 3.5rem;
 
     background-blend-mode: normal, multiply, normal, normal;
     background: radial-gradient(12.06% 9.77% at 17.73% 26.07%, rgba(198, 88, 255, 0.114) 0%, rgba(191, 68, 255, 0) 100%),
@@ -38,13 +38,8 @@
 
     &-text {
         color: #dedede;
-        font-size: 1.5rem;
-        margin-bottom: 1.5rem;
-
-        &--small {
-            font-size: 1rem;
-            margin-bottom: 1rem;
-        }
+        font-size: 1rem;
+        margin-bottom: 1rem;
     }
 
     &-next {
@@ -93,6 +88,11 @@
             background: linear-gradient(0deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.88)),
                 linear-gradient(90deg, #a414fb -26%, #fd5745 26.55%, #06c9e9 73.65%);
         }
+    }
+
+    &--disabled {
+        opacity: 0.8;
+        color: var(--text-muted);
     }
 
     &-content {

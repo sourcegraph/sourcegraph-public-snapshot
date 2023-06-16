@@ -26,7 +26,6 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
         messageInProgress,
         clearHistory,
         loaded,
-        isCodyEnabled,
         transcriptHistory,
         deleteHistoryItem,
         loadTranscriptFromHistory,
@@ -76,7 +75,7 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
         [loadTranscriptFromHistory, setShowHistory]
     )
 
-    if (!(loaded && isCodyEnabled.sidebar)) {
+    if (!loaded) {
         return null
     }
 

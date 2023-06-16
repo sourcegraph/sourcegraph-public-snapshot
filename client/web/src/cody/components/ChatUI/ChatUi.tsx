@@ -17,6 +17,7 @@ import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourceg
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
+import { isCodyEnabled, isEmailVerificationNeededForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
 import { CodyChatStore } from '../../useCodyChat'
 import { ScopeSelector } from '../ScopeSelector'
@@ -40,7 +41,6 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore }): JSX.Element =
         transcript,
         transcriptHistory,
         loaded,
-        isCodyEnabled,
         scope,
         setScope,
         toggleIncludeInferredRepository,
@@ -99,12 +99,14 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore }): JSX.Element =
                 transcriptActionClassName={styles.transcriptAction}
                 FeedbackButtonsContainer={FeedbackButtons}
                 feedbackButtonsOnSubmit={onFeedbackSubmit}
-                needsEmailVerification={isCodyEnabled.needsEmailVerification}
+                needsEmailVerification={isEmailVerificationNeededForCody()}
                 needsEmailVerificationNotice={NeedsEmailVerificationNotice}
+                codyNotEnabledNotice={CodyNotEnabledNotice}
                 contextStatusComponent={ScopeSelector}
                 contextStatusComponentProps={scopeSelectorProps}
                 abortMessageInProgressComponent={AbortMessageInProgress}
                 onAbortMessageInProgress={abortMessageInProgress}
+                isCodyEnabled={isCodyEnabled()}
             />
         </>
     )
@@ -240,7 +242,7 @@ interface AutoResizableTextAreaProps extends ChatUITextAreaProps {}
 
 export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = React.memo(
     function AutoResizableTextAreaContent({ value, onInput, onKeyDown, className, disabled = false }) {
-        const { inputNeedsFocus, setFocusProvided, isCodyEnabled } = useCodySidebar() || {
+        const { inputNeedsFocus, setFocusProvided } = useCodySidebar() || {
             inputNeedsFocus: false,
             setFocusProvided: () => null,
         }
@@ -280,7 +282,7 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = React
         }
 
         return (
-            <Tooltip content={isCodyEnabled.needsEmailVerification ? 'Verify your email to use Cody.' : ''}>
+            <Tooltip content={isEmailVerificationNeededForCody() ? 'Verify your email to use Cody.' : ''}>
                 <TextArea
                     ref={textAreaRef}
                     className={className}
@@ -318,4 +320,52 @@ const NeedsEmailVerificationNotice: React.FunctionComponent = React.memo(
             </div>
         )
     }
+)
+
+const CodyNotEnabledNotice: React.FunctionComponent = React.memo(function CodyNotEnabledNoticeContent() {
+    return (
+        <div className={classNames('p-3', styles.notEnabledBlock)}>
+            <H2 className={classNames('d-flex gap-1 align-items-center mb-3', styles.codyMessageHeader)}>
+                <CodyPageIcon /> Cody
+            </H2>
+            <div className="d-flex align-items-start">
+                <CodyNotEnabledIcon className="flex-shrink-0" />
+                <Text className="ml-2">
+                    Cody isn't available on this instance, but you can learn more about Cody{' '}
+                    <Link to="https://about.sourcegraph.com/cody?utm_source=server">here</Link>.
+                </Text>
+            </div>
+        </div>
+    )
+})
+
+const CodyNotEnabledIcon: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+    <svg
+        width="36"
+        height="43"
+        viewBox="0 0 36 43"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={className}
+    >
+        <rect y="4" width="36" height="35" rx="4.125" fill="#E8D1FF" />
+        <path
+            fillRule="evenodd"
+            clipRule="evenodd"
+            d="M21.368 15.2742C22.1732 15.2742 22.826 15.9206 22.826 16.7179V19.2844C22.826 20.0818 22.1732 20.7281 21.368 20.7281C20.5628 20.7281 19.91 20.0818 19.91 19.2844V16.7179C19.91 15.9206 20.5628 15.2742 21.368 15.2742Z"
+            fill="#A305E1"
+        />
+        <path
+            fillRule="evenodd"
+            clipRule="evenodd"
+            d="M12.1339 18.6427C12.1339 17.8454 12.7866 17.199 13.5919 17.199H16.1838C16.989 17.199 17.6418 17.8454 17.6418 18.6427C17.6418 19.4401 16.989 20.0864 16.1838 20.0864H13.5919C12.7866 20.0864 12.1339 19.4401 12.1339 18.6427Z"
+            fill="#A305E1"
+        />
+        <path
+            fillRule="evenodd"
+            clipRule="evenodd"
+            d="M24.8523 22.8456C25.3712 23.3338 25.3923 24.146 24.8993 24.6599L24.4406 25.138C20.851 28.8795 14.7994 28.7863 11.3291 24.9361C10.8525 24.4073 10.899 23.5961 11.433 23.1241C11.967 22.6522 12.7863 22.6983 13.2629 23.2271C15.724 25.9576 20.0157 26.0237 22.5614 23.3703L23.0201 22.8922C23.5131 22.3783 24.3334 22.3575 24.8523 22.8456Z"
+            fill="#A305E1"
+        />
+    </svg>
 )

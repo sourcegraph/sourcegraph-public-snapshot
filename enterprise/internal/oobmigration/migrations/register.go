@@ -10,12 +10,8 @@ import (
 	workerCodeIntel "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 	internalInsights "github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/batches"
-<<<<<<< Updated upstream
 	lsifMigrations "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel/lsif"
-=======
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel/scip"
->>>>>>> Stashed changes
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/iam"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights"
 	insightsBackfiller "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights/backfillv2"
@@ -102,20 +98,12 @@ func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps
 		batches.NewSSHMigratorWithDB(deps.store, deps.keyring.BatchChangesCredentialKey, 5),
 		batches.NewExternalForkNameMigrator(deps.store, 500),
 		batches.NewEmptySpecIDMigrator(deps.store),
-<<<<<<< Updated upstream
 		lsifMigrations.NewDiagnosticsCountMigrator(deps.codeIntelStore, 1000, 0),
 		lsifMigrations.NewDefinitionLocationsCountMigrator(deps.codeIntelStore, 1000, 0),
 		lsifMigrations.NewReferencesLocationsCountMigrator(deps.codeIntelStore, 1000, 0),
 		lsifMigrations.NewDocumentColumnSplitMigrator(deps.codeIntelStore, 100, 0),
 		lsifMigrations.NewSCIPMigrator(deps.store, deps.codeIntelStore),
-=======
-		codeintel.NewDiagnosticsCountMigrator(deps.codeIntelStore, 1000, 0),
-		codeintel.NewDefinitionLocationsCountMigrator(deps.codeIntelStore, 1000, 0),
-		codeintel.NewReferencesLocationsCountMigrator(deps.codeIntelStore, 1000, 0),
-		codeintel.NewDocumentColumnSplitMigrator(deps.codeIntelStore, 100, 0),
-		codeintel.NewSCIPMigrator(deps.store, deps.codeIntelStore),
 		scip.NewSCIPSymbolsMigrator(deps.codeIntelStore),
->>>>>>> Stashed changes
 	}
 	if deps.insightsStore != nil {
 		migrators = append(migrators,

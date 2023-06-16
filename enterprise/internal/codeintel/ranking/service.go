@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/lsifstore"
+	internalshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -122,6 +123,11 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 
 func (s *Service) Summaries(ctx context.Context) ([]shared.Summary, error) {
 	return s.store.Summaries(ctx)
+}
+
+func (s *Service) DerivativeGraphKey(ctx context.Context) (string, bool, error) {
+	derivativeGraphKeyPrefix, _, ok, err := s.store.DerivativeGraphKey(ctx)
+	return internalshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix), ok, err
 }
 
 func (s *Service) BumpDerivativeGraphKey(ctx context.Context) error {

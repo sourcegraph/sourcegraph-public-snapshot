@@ -9,8 +9,10 @@
 
 <script lang="ts">
     import { getContext } from 'svelte'
-    import type { SearchPageContext } from './utils'
+
     import SyntaxHighlightedQuery from '$lib/search/SyntaxHighlightedQuery.svelte'
+
+    import type { SearchPageContext } from './utils'
 
     export let queryExample: QueryExample
 

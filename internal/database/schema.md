@@ -520,6 +520,7 @@ Referenced by:
  computed_state           | text                                         |           | not null | 
  external_fork_name       | citext                                       |           |          | 
  previous_failure_message | text                                         |           |          | 
+ commit_verification      | jsonb                                        |           | not null | '{}'::jsonb
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -1883,6 +1884,22 @@ Indexes:
 
 **total**: Number of repositories in gitserver_repos table on this shard
 
+# Table "public.gitserver_repos_sync_output"
+```
+   Column    |           Type           | Collation | Nullable | Default  
+-------------+--------------------------+-----------+----------+----------
+ repo_id     | integer                  |           | not null | 
+ last_output | text                     |           | not null | ''::text
+ updated_at  | timestamp with time zone |           | not null | now()
+Indexes:
+    "gitserver_repos_sync_output_pkey" PRIMARY KEY, btree (repo_id)
+Foreign-key constraints:
+    "gitserver_repos_sync_output_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+
+```
+
+Contains the most recent output from gitserver repository sync jobs.
+
 # Table "public.global_state"
 ```
    Column    |  Type   | Collation | Nullable | Default 
@@ -2093,6 +2110,7 @@ Indexes:
     "lsif_dependency_repos_unique_scheme_name" UNIQUE, btree (scheme, name)
     "lsif_dependency_repos_blocked" btree (blocked)
     "lsif_dependency_repos_last_checked_at" btree (last_checked_at NULLS FIRST)
+    "lsif_dependency_repos_name_gin" gin (name gin_trgm_ops)
     "lsif_dependency_repos_name_id" btree (name, id)
     "lsif_dependency_repos_scheme_id" btree (scheme, id)
 Referenced by:
@@ -3282,13 +3300,13 @@ Foreign-key constraints:
  archived_at                                       | timestamp with time zone |           |          | 
  account_number                                    | text                     |           |          | 
  cody_gateway_enabled                              | boolean                  |           | not null | false
- cody_gateway_chat_rate_limit                      | integer                  |           |          | 
+ cody_gateway_chat_rate_limit                      | bigint                   |           |          | 
  cody_gateway_chat_rate_interval_seconds           | integer                  |           |          | 
- cody_gateway_embeddings_api_rate_limit            | integer                  |           |          | 
+ cody_gateway_embeddings_api_rate_limit            | bigint                   |           |          | 
  cody_gateway_embeddings_api_rate_interval_seconds | integer                  |           |          | 
  cody_gateway_embeddings_api_allowed_models        | text[]                   |           |          | 
  cody_gateway_chat_rate_limit_allowed_models       | text[]                   |           |          | 
- cody_gateway_code_rate_limit                      | integer                  |           |          | 
+ cody_gateway_code_rate_limit                      | bigint                   |           |          | 
  cody_gateway_code_rate_interval_seconds           | integer                  |           |          | 
  cody_gateway_code_rate_limit_allowed_models       | text[]                   |           |          | 
 Indexes:
@@ -3438,6 +3456,7 @@ Referenced by:
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "gitserver_repos_sync_output" CONSTRAINT "gitserver_repos_sync_output_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -4757,6 +4776,7 @@ Foreign-key constraints:
     c.external_state,
     c.external_review_state,
     c.external_check_state,
+    c.commit_verification,
     c.diff_stat_added,
     c.diff_stat_deleted,
     c.sync_state,
