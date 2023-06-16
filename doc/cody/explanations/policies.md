@@ -31,7 +31,7 @@ Once a policy has been created, it is active.
 To deactivate a policy, simply delete it.
 A worker process periodically checks the embeddings policies and resolves them into a list of repositories to index.
 Another worker then creates a new index job for each repository and queues it for processing.
-A repository cannot be queued for indexing if
+A repository cannot be queued for processing if
 
 - it is already queued or being processed
 - a job for the same repository and the same revision already completed successfully
