@@ -72,4 +72,18 @@ public class InlineCompletionsPostProcessingTest {
         outputCompletion.range,
         inputCompletion.range.withEnd(inputCompletion.range.end.withCharacter(7)));
   }
+
+  @Test
+  public void completionContainsLineSeparatorChar() {
+    String suggestionText = "\u2028 \u2028world!\u2028";
+    Range inputRange = new Range(new Position(0, 0), new Position(0, 10));
+    InlineCompletionItem inputCompletion =
+        new InlineCompletionItem(suggestionText, sameLineSuffix, inputRange, null);
+    InlineCompletionItem outputCompletion =
+        CodyCompletionsManager.removeUndesiredCharacters(inputCompletion);
+    assertEquals(outputCompletion.insertText, " world!");
+    assertEquals(
+        outputCompletion.range,
+        inputCompletion.range.withEnd(inputCompletion.range.end.withCharacter(7)));
+  }
 }

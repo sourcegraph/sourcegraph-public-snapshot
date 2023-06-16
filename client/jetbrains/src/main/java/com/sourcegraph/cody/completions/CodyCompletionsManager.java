@@ -169,7 +169,8 @@ public class CodyCompletionsManager {
   }
 
   public static InlineCompletionItem removeUndesiredCharacters(InlineCompletionItem item) {
-    String newInsertText = item.insertText.replaceAll("\u200b", ""); // no zero-width spaces, pls
+    // no zero-width spaces or line separator chars, pls
+    String newInsertText = item.insertText.replaceAll("[\u200b\u2028]", "");
     int rangeDiff = item.insertText.length() - newInsertText.length();
     Range newRange =
         item.range.withEnd(item.range.end.withCharacter(item.range.end.character - rangeDiff));
