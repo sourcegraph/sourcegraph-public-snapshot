@@ -69,6 +69,8 @@ on:
 
 A Sourcegraph search query that matches a set of repositories (and branches). Each matched repository branch is added to the list of repositories that the batch change will be run on.
 
+Your search query should answer the question "where do I want to run this batch change?". Search result matches for things like commits, symbols, or file owners will be ignored.
+
 See "[Code search](../../code_search/index.md)" for more information on Sourcegraph search queries.
 
 ### Examples
