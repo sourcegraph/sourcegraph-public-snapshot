@@ -60,17 +60,52 @@ public class Chat {
     // Create completions input and add preamble
     var input = new CompletionsInput(new ArrayList<>(), 0.5f, null, 1000, -1, -1);
     input.addMessages(preamble);
-    input.addMessage(Speaker.HUMAN, codeContext);
+
+    // Get context
+    List<ContextMessage> context = null;
+    if (repoName != null) {
+      try {
+        context = new ContextGetter(repoName, instanceUrl, accessToken,
+            customRequestHeaders).getContextMessages(
+            humanMessage.getText(), 8, 2, true);
+      } catch (IOException e) {
+        chat.addMessageToChat(ChatMessage.createAssistantMessage(
+            "I didn't get a correct response. This is what I encountered while trying to get some context for your ask: \""
+                + e.getMessage() + "\". I'll try to answer without further context."));
+      }
+    }
+
+    // Use context
+    if (context != null) {
+      if (context.size() == 0) {
+        input.addMessage(Speaker.ASSISTANT,
+            "I didn't find any context for your ask. I'll try to answer without further context.");
+      } else {
+        for (ContextMessage message : context) {
+          input.addMessage(message.getSpeaker(), message.getText());
+        }
+
+        // Collect file names
+        List<String> contextFileNames = context.stream().map(ContextMessage::getFile)
+            .filter(Objects::nonNull).map(ContextFile::getFileName).collect(Collectors.toList());
+
+        // Build and add message
+        StringBuilder contextMessageText = new StringBuilder(
+            "I found some context for your ask. I'll try to answer with the context of these "
+                + contextFileNames.size() + " files:\n");
+        contextFileNames.forEach(fileName -> contextMessageText.append(fileName).append("\n"));
+        chat.addMessageToChat(ChatMessage.createAssistantMessage(contextMessageText.toString()));
+      }
+    }
+
+    // Add editor context
+    input.addMessage(Speaker.HUMAN, editorContext);
     input.addMessage(Speaker.ASSISTANT, "Ok.");
 
     // Add human message
     input.addMessage(Speaker.HUMAN, humanMessage.getText());
     input.addMessage(Speaker.ASSISTANT, "");
 
-    input.messages.forEach(System.out::println);
-
-    // ConfigUtil.getAccessToken(project) TODO: Get the access token from the plugin config
-    // TODO: Don't create this each time
     completionsService.streamCompletion(
         input,
         new ChatUpdaterCallbacks(chat, prefix),
