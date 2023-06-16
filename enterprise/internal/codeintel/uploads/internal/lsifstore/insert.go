@@ -344,44 +344,47 @@ func (s *scipWriter) flush(ctx context.Context) error {
 	descriptors := make(map[string]int)
 	descriptorsNoSuffix := make(map[string]int)
 
+	type explodedIDs struct {
+		schemeID             int
+		packageManagerID     int
+		packageNameID        int
+		packageVersionID     int
+		descriptorID         int
+		descriptorNoSuffixID int
+	}
+	cache := map[string]explodedIDs{}
+
+	getOrSetID := func(m map[string]int, key string) int {
+		if v, ok := m[key]; ok {
+			return v
+		}
+
+		id := s.nextSymbolLookupID
+		s.nextSymbolLookupID++
+		m[key] = id
+		return id
+	}
+
 	for _, symbolName := range symbolNames {
-		p, err := scip.ParseSymbol(symbolName)
+		symbol, err := symbols.NewExplodedSymbol(symbolName)
 		if err != nil {
 			return err
 		}
 
-		if _, ok := schemes[p.Scheme]; !ok {
-			schemes[p.Scheme] = s.nextSymbolLookupID
-			s.nextSymbolLookupID++
+		schemeID := getOrSetID(schemes, symbol.Scheme)
+		packageManagerID := getOrSetID(managers, symbol.PackageManager)
+		packageNameID := getOrSetID(packageNames, symbol.PackageName)
+		packageVersionID := getOrSetID(packageVersions, symbol.PackageVersion)
+		descriptorID := getOrSetID(descriptors, symbol.Descriptor)
+		descriptorNoSuffixID := getOrSetID(descriptorsNoSuffix, symbol.DescriptorNoSuffix)
+		cache[symbolName] = explodedIDs{
+			schemeID:             schemeID,
+			packageManagerID:     packageManagerID,
+			packageNameID:        packageNameID,
+			packageVersionID:     packageVersionID,
+			descriptorID:         descriptorID,
+			descriptorNoSuffixID: descriptorNoSuffixID,
 		}
-
-		if _, ok := managers[p.Package.Manager]; !ok {
-			managers[p.Package.Manager] = s.nextSymbolLookupID
-			s.nextSymbolLookupID++
-		}
-
-		if _, ok := packageNames[p.Package.Name]; !ok {
-			packageNames[p.Package.Name] = s.nextSymbolLookupID
-			s.nextSymbolLookupID++
-		}
-
-		if _, ok := packageVersions[p.Package.Version]; !ok {
-			packageVersions[p.Package.Version] = s.nextSymbolLookupID
-			s.nextSymbolLookupID++
-		}
-
-		desc := scip.DescriptorOnlyFormatter.FormatSymbol(p)
-		if _, ok := descriptors[desc]; !ok {
-			descriptors[desc] = s.nextSymbolLookupID
-			s.nextSymbolLookupID++
-		}
-
-		descNoSuffix := symbols.ReducedDescriptorOnlyFormatter.FormatSymbol(p)
-		if _, ok := descriptorsNoSuffix[descNoSuffix]; !ok {
-			descriptorsNoSuffix[descNoSuffix] = s.nextSymbolLookupID
-			s.nextSymbolLookupID++
-		}
-
 	}
 
 	maps := map[string]map[string]int{
@@ -420,19 +423,9 @@ func (s *scipWriter) flush(ctx context.Context) error {
 				return err
 			}
 
-			p, err := scip.ParseSymbol(index.SymbolName)
-			if err != nil {
-				return err
-			}
-
-			schemeID := schemes[p.Scheme]
-			packageManagerID := managers[p.Package.Manager]
-			packageNameID := packageNames[p.Package.Name]
-			packageVersionID := packageVersions[p.Package.Version]
-			descriptorID := descriptors[scip.DescriptorOnlyFormatter.FormatSymbol(p)]
-			descriptorNoDisambiguatorID := descriptors[symbols.ReducedDescriptorOnlyFormatter.FormatSymbol(p)]
-
 			s.nextSymbolID++
+			ids := cache[index.SymbolName]
+
 			if err := s.symbolInserter.Insert(
 				ctx,
 				documentLookupIDs[i],
@@ -442,12 +435,12 @@ func (s *scipWriter) flush(ctx context.Context) error {
 				implementationRanges,
 				typeDefinitionRanges,
 
-				schemeID,
-				packageManagerID,
-				packageNameID,
-				packageVersionID,
-				descriptorID,
-				descriptorNoDisambiguatorID,
+				ids.schemeID,
+				ids.packageManagerID,
+				ids.packageNameID,
+				ids.packageVersionID,
+				ids.descriptorID,
+				ids.descriptorNoSuffixID,
 			); err != nil {
 				return err
 			}

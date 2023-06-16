@@ -134,6 +134,16 @@ func (m *scipSymbolsMigrator) MigrateUp(ctx context.Context, uploadID int, tx *b
 	descriptors := make(map[string]int)
 	descriptorsNoSuffix := make(map[string]int)
 
+	type explodedIDs struct {
+		schemeID             int
+		packageManagerID     int
+		packageNameID        int
+		packageVersionID     int
+		descriptorID         int
+		descriptorNoSuffixID int
+	}
+	cache := map[string]explodedIDs{}
+
 	getOrSetID := func(m map[string]int, key string) int {
 		if v, ok := m[key]; ok {
 			return v
@@ -145,20 +155,26 @@ func (m *scipSymbolsMigrator) MigrateUp(ctx context.Context, uploadID int, tx *b
 		return id
 	}
 
-	cache := map[string][6]int{}
 	for _, symbolName := range symbolNames {
 		symbol, err := symbols.NewExplodedSymbol(symbolName)
 		if err != nil {
-			panic(err.Error()) // TODO
+			return nil, err
 		}
 
-		id1 := getOrSetID(schemes, symbol.Scheme)
-		id2 := getOrSetID(managers, symbol.PackageManager)
-		id3 := getOrSetID(packageNames, symbol.PackageName)
-		id4 := getOrSetID(packageVersions, symbol.PackageVersion)
-		id5 := getOrSetID(descriptors, symbol.Descriptor)
-		id6 := getOrSetID(descriptorsNoSuffix, symbol.DescriptorNoSuffix)
-		cache[symbolName] = [6]int{id1, id2, id3, id4, id5, id6}
+		schemeID := getOrSetID(schemes, symbol.Scheme)
+		packageManagerID := getOrSetID(managers, symbol.PackageManager)
+		packageNameID := getOrSetID(packageNames, symbol.PackageName)
+		packageVersionID := getOrSetID(packageVersions, symbol.PackageVersion)
+		descriptorID := getOrSetID(descriptors, symbol.Descriptor)
+		descriptorNoSuffixID := getOrSetID(descriptorsNoSuffix, symbol.DescriptorNoSuffix)
+		cache[symbolName] = explodedIDs{
+			schemeID:             schemeID,
+			packageManagerID:     packageManagerID,
+			packageNameID:        packageNameID,
+			packageVersionID:     packageVersionID,
+			descriptorID:         descriptorID,
+			descriptorNoSuffixID: descriptorNoSuffixID,
+		}
 	}
 
 	maps := map[string]map[string]int{
@@ -212,12 +228,12 @@ func (m *scipSymbolsMigrator) MigrateUp(ctx context.Context, uploadID int, tx *b
 		values = append(values, []any{
 			pair.symbolID,
 			pair.documentLookupID,
-			ids[0], // scheme_id
-			ids[1], // package_manager_id
-			ids[2], // package_name_id
-			ids[3], // package_version_id
-			ids[4], // descriptor_id
-			ids[5], // descriptor_no_suffix_id
+			ids.schemeID,
+			ids.packageManagerID,
+			ids.packageNameID,
+			ids.packageVersionID,
+			ids.descriptorID,
+			ids.descriptorNoSuffixID,
 		})
 	}
 
