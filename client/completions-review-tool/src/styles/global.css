@@ -1,0 +1,9 @@
+html {
+    font-family: sfmono-regular, consolas, menlo, dejavu sans mono, monospace;
+    -ms-scroll-chaining: none;
+    overscroll-behavior: contain;
+}
+
+body {
+    margin: 0;
+}
