@@ -833,9 +833,17 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 	// If after setting defaults for no `embeddings` config given there still is no
 	// provider configured.
 	// Before, this meant "use OpenAI", but it's easy to accidentally send Cody Gateway
-	// auth tokens to OpenAI by that, so we want to be explicit going forward.
+	// auth tokens to OpenAI by that, so if an access token is explicitly set we
+	// are careful and require the provider to be explicit. This lets us have good
+	// support for optional Provider in most cases (token is generated for
+	// default provider Sourcegraph)
 	if embeddingsConfig.Provider == "" {
-		return nil
+		if embeddingsConfig.AccessToken != "" {
+			return nil
+		}
+
+		// Otherwise, assume Provider, since it is optional
+		embeddingsConfig.Provider = string(conftypes.EmbeddingsProviderNameSourcegraph)
 	}
 
 	// The default value for incremental is true.
