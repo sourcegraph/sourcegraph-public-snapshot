@@ -5928,6 +5928,8 @@ CREATE INDEX lsif_dependency_repos_blocked ON lsif_dependency_repos USING btree 
 
 CREATE INDEX lsif_dependency_repos_last_checked_at ON lsif_dependency_repos USING btree (last_checked_at NULLS FIRST);
 
+CREATE INDEX lsif_dependency_repos_name_gin ON lsif_dependency_repos USING gin (name gin_trgm_ops);
+
 CREATE INDEX lsif_dependency_repos_name_id ON lsif_dependency_repos USING btree (name, id);
 
 CREATE INDEX lsif_dependency_repos_scheme_id ON lsif_dependency_repos USING btree (scheme, id);

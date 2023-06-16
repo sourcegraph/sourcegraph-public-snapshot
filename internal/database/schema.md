@@ -2109,6 +2109,7 @@ Indexes:
     "lsif_dependency_repos_unique_scheme_name" UNIQUE, btree (scheme, name)
     "lsif_dependency_repos_blocked" btree (blocked)
     "lsif_dependency_repos_last_checked_at" btree (last_checked_at NULLS FIRST)
+    "lsif_dependency_repos_name_gin" gin (name gin_trgm_ops)
     "lsif_dependency_repos_name_id" btree (name, id)
     "lsif_dependency_repos_scheme_id" btree (scheme, id)
 Referenced by:
