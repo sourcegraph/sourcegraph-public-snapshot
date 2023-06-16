@@ -448,8 +448,13 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                     />
                 )}
             </RepoHeaderContributionPortal>
-            {enableOwnershipPanel && repoID && (
-                <HistoryAndOwnBar repoID={repoID} revision={revision} filePath={filePath} />
+            {repoID && (
+                <HistoryAndOwnBar
+                    repoID={repoID}
+                    revision={revision}
+                    filePath={filePath}
+                    enableOwnershipPanel={enableOwnershipPanel}
+                />
             )}
         </>
     )
