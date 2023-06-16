@@ -8,12 +8,21 @@ import static javax.swing.KeyStroke.getKeyStroke;
 
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI;
 import com.intellij.ide.ui.laf.darcula.ui.DarculaTextAreaUI;
-import com.intellij.openapi.actionSystem.*;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.CustomShortcutSet;
+import com.intellij.openapi.actionSystem.KeyboardShortcut;
+import com.intellij.openapi.actionSystem.ShortcutSet;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
@@ -22,22 +31,42 @@ import com.sourcegraph.cody.chat.*;
 import com.sourcegraph.cody.editor.EditorContext;
 import com.sourcegraph.cody.editor.EditorContextGetter;
 import com.sourcegraph.cody.prompts.SupportedLanguages;
-import com.sourcegraph.cody.recipes.*;
+import com.sourcegraph.cody.recipes.ExplainCodeDetailedPromptProvider;
+import com.sourcegraph.cody.recipes.ExplainCodeHighLevelPromptProvider;
+import com.sourcegraph.cody.recipes.FindCodeSmellsPromptProvider;
+import com.sourcegraph.cody.recipes.GenerateDocStringPromptProvider;
+import com.sourcegraph.cody.recipes.GenerateUnitTestPromptProvider;
+import com.sourcegraph.cody.recipes.ImproveVariableNamesPromptProvider;
+import com.sourcegraph.cody.recipes.Language;
+import com.sourcegraph.cody.recipes.OptimizeCodePromptProvider;
+import com.sourcegraph.cody.recipes.PromptProvider;
+import com.sourcegraph.cody.recipes.RecipeRunner;
+import com.sourcegraph.cody.recipes.SummarizeRecentChangesRecipe;
+import com.sourcegraph.cody.recipes.TranslateToLanguagePromptProvider;
 import com.sourcegraph.cody.ui.RoundedJBTextArea;
 import com.sourcegraph.cody.ui.SelectOptionManager;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
-import java.awt.*;
+import com.sourcegraph.vcs.RepoUtil;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.GridLayout;
 import java.awt.event.AdjustmentListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.function.Consumer;
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.ButtonUI;
 import javax.swing.plaf.basic.BasicTextAreaUI;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 class CodyToolWindowContent implements UpdatableChat {
   public static Logger logger = Logger.getInstance(CodyToolWindowContent.class);
@@ -373,7 +402,9 @@ class CodyToolWindowContent implements UpdatableChat {
   }
 
   private void sendMessage(@NotNull Project project, ChatMessage message, String responsePrefix) {
-    if (!sendButton.isEnabled()) return;
+    if (!sendButton.isEnabled()) {
+      return;
+    }
     startMessageProcessing();
     // Build message
     boolean isEnterprise =
@@ -385,26 +416,49 @@ class CodyToolWindowContent implements UpdatableChat {
             ? ConfigUtil.getEnterpriseAccessToken(project)
             : ConfigUtil.getDotComAccessToken(project);
 
-    var chat = new Chat("", instanceUrl, accessToken != null ? accessToken : "");
+    VirtualFile currentFile = getCurrentFile(project);
     ArrayList<String> contextFileContents =
         EditorContextGetter.getEditorContext(project).getCurrentFileContentAsArrayList();
-    ChatMessage humanMessage =
-        ChatMessage.createHumanMessage(message.prompt(), message.getDisplayText(), contextFileContents);
-    addMessageToChat(humanMessage);
 
-    // Get assistant message
-    // Note: A separate thread is needed because it's a long-running task. If we did the back-end
-    // call
-    //       in the main thread and then waited, we wouldn't see the messages streamed back to us.
-    new Thread(
+    // This cannot run on EDT (Event Dispatch Thread) because it may block for a long time.
+    // Also, if we did the back-end call in the main thread and then waited, we wouldn't see the messages streamed back to us.
+    ApplicationManager.getApplication()
+        .executeOnPooledThread(
             () -> {
-              try {
-                chat.sendMessage(project, humanMessage, responsePrefix, this);
-              } catch (Exception e) {
-                logger.error("Error sending message '" + humanMessage + "' to chat", e);
-              }
-            })
-        .start();
+              var chat = new Chat(getRepoName(project, currentFile), instanceUrl,
+                  accessToken != null ? accessToken : "",
+                  ConfigUtil.getCustomRequestHeaders(project));
+              ChatMessage humanMessage =
+                  ChatMessage.createHumanMessage(message.prompt(), message.getDisplayText(),
+                      contextFileContents);
+              addMessageToChat(humanMessage);
+
+              chat.sendMessage(humanMessage, responsePrefix, this);
+            });
+
+  }
+
+  @Nullable
+  private static VirtualFile getCurrentFile(@NotNull Project project) {
+    VirtualFile currentFile = null;
+    Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
+    if (editor != null) {
+      Document currentDocument = editor.getDocument();
+      currentFile = FileDocumentManager.getInstance().getFile(currentDocument);
+    }
+    return currentFile;
+  }
+
+  @Nullable
+  private static String getRepoName(@NotNull Project project, @Nullable VirtualFile currentFile) {
+    if (currentFile == null) {
+      return null;
+    }
+    try {
+      return RepoUtil.getRemoteRepoUrlWithoutScheme(project, currentFile);
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   public @NotNull JComponent getContentPanel() {

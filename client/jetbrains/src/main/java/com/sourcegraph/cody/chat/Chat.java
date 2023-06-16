@@ -4,11 +4,21 @@ import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.UpdatableChat;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.protocol.ExecuteRecipeParams;
-import com.sourcegraph.cody.api.*;
+import com.sourcegraph.cody.api.ChatUpdaterCallbacks;
+import com.sourcegraph.cody.api.CompletionsInput;
+import com.sourcegraph.cody.api.CompletionsService;
+import com.sourcegraph.cody.api.Message;
+import com.sourcegraph.cody.api.Speaker;
+import com.sourcegraph.cody.context.ContextFile;
+import com.sourcegraph.cody.context.ContextGetter;
+import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.prompts.Preamble;
 import com.sourcegraph.cody.vscode.CancellationToken;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -16,42 +26,44 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class Chat {
-  private final @Nullable String codebase;
+  private final @Nullable String repoName;
+  private final @NotNull String instanceUrl;
+  private final @NotNull String accessToken;
+  private final @NotNull String customRequestHeaders;
   private final @NotNull CompletionsService completionsService;
 
-  public Chat(@Nullable String codebase, @NotNull String instanceUrl, @NotNull String accessToken) {
-    this.codebase = codebase;
+  /**
+   * @param repoName    Like "github.com/sourcegraph/cody"
+   * @param instanceUrl Like "https://sourcegraph.com/", with a slash at the end
+   */
+  public Chat(@Nullable String repoName, @NotNull String instanceUrl, @NotNull String accessToken,
+      @NotNull String customRequestHeaders) {
+    this.repoName = repoName;
+    this.instanceUrl = instanceUrl;
+    this.accessToken = accessToken;
+    this.customRequestHeaders = customRequestHeaders;
     completionsService = new CompletionsService(instanceUrl, accessToken);
   }
 
   public void sendMessage(
-      @NotNull Project project,
-      @NotNull ChatMessage humanMessage,
-      @Nullable String prefix,
-      @NotNull UpdatableChat chat)
-      throws ExecutionException, InterruptedException {
-    if (CodyAgent.isConnected(project)) {
-      sendMessageViaAgent(project, humanMessage, chat);
-    } else {
-      sendMessageWithoutAgent(humanMessage, prefix, chat);
-    }
-  }
-
-  private void sendMessageWithoutAgent(
       @NotNull ChatMessage humanMessage, @Nullable String prefix, @NotNull UpdatableChat chat) {
-    // TODO: Usethe context getting logic from VS Code
-    List<Message> preamble = Preamble.getPreamble(codebase);
-    var codeContext = "";
+    List<Message> preamble = Preamble.getPreamble(repoName);
+
+    // TODO: Use the context getting logic from VS Code
+    var editorContext = "";
     if (humanMessage.getContextFileContents().size() == 0) {
-      codeContext = "I have no file open in the editor right now.";
+      editorContext = "I have no file open in the editor right now.";
     } else {
-      codeContext = "Here is my current file\n" + humanMessage.getContextFileContents().get(0);
+      editorContext = "Here is my current file\n" + humanMessage.getContextFileContents().get(0);
     }
 
+    // Create completions input and add preamble
     var input = new CompletionsInput(new ArrayList<>(), 0.5f, null, 1000, -1, -1);
     input.addMessages(preamble);
     input.addMessage(Speaker.HUMAN, codeContext);
     input.addMessage(Speaker.ASSISTANT, "Ok.");
+
+    // Add human message
     input.addMessage(Speaker.HUMAN, humanMessage.getText());
     input.addMessage(Speaker.ASSISTANT, "");
 
