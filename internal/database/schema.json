@@ -15046,6 +15046,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "lsif_dependency_repos_name_gin",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_dependency_repos_name_gin ON lsif_dependency_repos USING gin (name gin_trgm_ops)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "lsif_dependency_repos_name_id",
           "IsPrimaryKey": false,
           "IsUnique": false,

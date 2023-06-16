@@ -64,11 +64,19 @@ func (s *store) WithTransact(ctx context.Context, f func(tx Store) error) error 
 	})
 }
 
+type fuzziness int
+
+const (
+	FuzzinessExactMatch fuzziness = iota
+	FuzzinessWildcard
+	FuzzinessRegex
+)
+
 // ListDependencyReposOpts are options for listing dependency repositories.
 type ListDependencyReposOpts struct {
 	Scheme         string
 	Name           reposource.PackageName
-	ExactNameOnly  bool
+	Fuzziness      fuzziness
 	After          int
 	Limit          int
 	IncludeBlocked bool
@@ -154,10 +162,15 @@ func makeListDependencyReposConds(opts ListDependencyReposOpts) *sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("scheme = %s", opts.Scheme))
 	}
 
-	if opts.Name != "" && opts.ExactNameOnly {
-		conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
-	} else if opts.Name != "" {
-		conds = append(conds, sqlf.Sprintf("name LIKE ('%%%%' || %s || '%%%%')", opts.Name))
+	if opts.Name != "" {
+		switch opts.Fuzziness {
+		case FuzzinessExactMatch:
+			conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
+		case FuzzinessWildcard:
+			conds = append(conds, sqlf.Sprintf("name LIKE ('%%%%' || %s || '%%%%')", opts.Name))
+		case FuzzinessRegex:
+			conds = append(conds, sqlf.Sprintf("name ~ %s", opts.Name))
+		}
 	}
 
 	if !opts.IncludeBlocked {

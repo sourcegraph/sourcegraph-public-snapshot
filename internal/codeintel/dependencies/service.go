@@ -65,7 +65,21 @@ func (s *Service) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRe
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts(opts))
+	storeopts := store.ListDependencyReposOpts{
+		Scheme:         opts.Scheme,
+		Name:           opts.Name,
+		After:          opts.After,
+		Limit:          opts.Limit,
+		IncludeBlocked: opts.IncludeBlocked,
+	}
+
+	if opts.ExactNameOnly {
+		storeopts.Fuzziness = store.FuzzinessExactMatch
+	} else {
+		storeopts.Fuzziness = store.FuzzinessWildcard
+	}
+
+	return s.store.ListPackageRepoRefs(ctx, storeopts)
 }
 
 func (s *Service) InsertPackageRepoRefs(ctx context.Context, deps []MinimalPackageRepoRef) (_ []shared.PackageRepoReference, _ []shared.PackageRepoRefVersion, err error) {
@@ -214,29 +228,25 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 	defer endObservation(1, observation.Args{})
 
 	var (
-		matcher     packagefilters.PackageMatcher
-		nameToMatch string
-	)
-	if filter.NameFilter != nil {
-		matcher, err = packagefilters.NewPackageNameGlob(filter.NameFilter.PackageGlob)
-	} else {
-		matcher, err = packagefilters.NewVersionGlob(filter.VersionFilter.PackageName, filter.VersionFilter.VersionGlob)
-		nameToMatch = filter.VersionFilter.PackageName
-	}
-	if err != nil {
-		return nil, 0, false, errors.Wrap(err, "failed to compile glob")
-	}
-
-	var (
 		totalCount   int
 		matchingPkgs = make([]shared.PackageRepoReference, 0, limit)
 	)
 
 	if filter.NameFilter != nil {
+		// we dont use a compiled glob when checking name filters as we can do a hugely more efficient regex search
+		// in postgres instead of paging through every single package to do a glob check here
+		nameRegex, err := packagefilters.GlobToRegex(filter.NameFilter.PackageGlob)
+		if err != nil {
+			return nil, 0, false, errors.Wrap(err, "failed to compile glob")
+		}
+
 		var lastID int
 		for {
 			pkgs, _, _, err := s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
 				Scheme: filter.PackageScheme,
+				// we filter down here else we have to page through a potentially huge number of non-matching packages
+				Name:      reposource.PackageName(nameRegex),
+				Fuzziness: store.FuzzinessRegex,
 				// doing this so we don't have to load everything in at once
 				Limit:          500,
 				After:          lastID,
@@ -252,27 +262,32 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 
 			lastID = pkgs[len(pkgs)-1].ID
 
+			totalCount += len(pkgs)
+
 			for _, pkg := range pkgs {
-				if matcher.Matches(pkg.Name, "") {
-					totalCount++
-					if pkg.ID <= after {
-						continue
-					}
-					if len(matchingPkgs) == limit {
-						// once we've reached the limit but are hitting more, we know theres more
-						hasMore = true
-						continue
-					}
-					pkg.Versions = nil
-					matchingPkgs = append(matchingPkgs, pkg)
+				if pkg.ID <= after {
+					continue
 				}
+				if len(matchingPkgs) == limit {
+					// once we've reached the limit but are hitting more, we know theres more
+					hasMore = true
+					continue
+				}
+				pkg.Versions = nil
+				matchingPkgs = append(matchingPkgs, pkg)
 			}
 		}
 	} else {
+		matcher, err := packagefilters.NewVersionGlob(filter.VersionFilter.PackageName, filter.VersionFilter.VersionGlob)
+		if err != nil {
+			return nil, 0, false, errors.Wrap(err, "failed to compile glob")
+		}
+		nameToMatch := filter.VersionFilter.PackageName
+
 		pkgs, _, _, err := s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
-			Scheme:        filter.PackageScheme,
-			Name:          reposource.PackageName(nameToMatch),
-			ExactNameOnly: true,
+			Scheme:    filter.PackageScheme,
+			Name:      reposource.PackageName(nameToMatch),
+			Fuzziness: store.FuzzinessExactMatch,
 			// should only have 1 matching package ref
 			Limit:          1,
 			IncludeBlocked: true,
