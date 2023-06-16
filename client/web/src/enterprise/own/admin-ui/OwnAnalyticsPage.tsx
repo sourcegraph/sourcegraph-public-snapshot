@@ -39,28 +39,42 @@ export const OwnAnalyticsPage: FC = () => {
 const OwnAnalyticsPanel: FC = () => {
     const { data, loading, error } = useQuery<GetInstanceOwnStatsResult>(GET_INSTANCE_OWN_STATS, {})
 
+    if (!data?.instanceOwnershipStats?.totalFiles) {
+        return <>{error && <ErrorAlert prefix="Error getting own analytics" error={error} />}</>
+    }
+
+    const totalFiles = data.instanceOwnershipStats.totalFiles
+    const totalCodeownedFiles = data.instanceOwnershipStats.totalCodeownedFiles
+    const totalAssignedOwnershipFiles = data.instanceOwnershipStats.totalAssignedOwnershipFiles
+    const totalOwnedFiles = data.instanceOwnershipStats.totalOwnedFiles
+
+    const totalCodeownedFilesPercent = Math.round((totalCodeownedFiles / totalFiles) * 100)
+    const totalAssignedOwnershipFilesPercent = Math.round((totalAssignedOwnershipFiles / totalFiles) * 100)
+    const totalOwnedFilesPercent = Math.round((totalOwnedFiles / totalFiles) * 100)
+
     const ownSignalsData: OwnCoverageDatum[] = [
         {
             name: 'CODEOWNERS',
-            count: data?.instanceOwnershipStats?.totalCodeownedFiles || 0,
+            count: totalCodeownedFilesPercent,
             fill: 'var(--info-2)',
-            tooltip: 'Total number of files owned through CODEOWNERS',
+            tooltip: `Files owned through CODEOWNERS:${totalCodeownedFiles}/${totalFiles}`,
         },
         {
             name: 'Assigned ownership',
-            count: data?.instanceOwnershipStats?.totalAssignedOwnershipFiles || 0,
+            count: totalAssignedOwnershipFilesPercent,
             fill: 'var(--info)',
-            tooltip: 'Total number of files with assigned owners',
+            tooltip: `Files with assigned owners: ${totalAssignedOwnershipFiles}/${totalFiles}`,
         },
         {
             name: 'All owned files',
-            count: data?.instanceOwnershipStats?.totalOwnedFiles || 0,
+            count: totalOwnedFilesPercent,
             fill: 'var(--info-3)',
-            tooltip: 'Total number of owned files',
+            tooltip: `Owned files: ${totalOwnedFiles}/${totalFiles}`,
         },
+        // TODO decide whether we remove or keep all files
         {
             name: 'All files',
-            count: data?.instanceOwnershipStats?.totalFiles || 0,
+            count: 100,
             fill: 'var(--text-muted)',
             tooltip: 'Total number of files',
         },
@@ -76,7 +90,11 @@ const OwnAnalyticsPanel: FC = () => {
                     <Card className="p-3 position-relative">
                         {ownSignalsData && (
                             <div>
-                                <ChartContainer title="Ownership coverage" labelX="Status" labelY="File count">
+                                <ChartContainer
+                                    title="Ownership coverage in %"
+                                    labelX="Ownership type"
+                                    labelY="Files percentage"
+                                >
                                     {width => (
                                         <BarChart
                                             width={width}
@@ -85,8 +103,9 @@ const OwnAnalyticsPanel: FC = () => {
                                             getDatumName={datum => datum.name}
                                             getDatumValue={datum => datum.count}
                                             getDatumColor={datum => datum.fill}
-                                            getDatumLink={datum => ''}
+                                            getDatumFadeColor={() => 'var(--gray-04)'}
                                             getDatumHover={datum => datum.tooltip}
+                                            getDatumHoverValueLabel={datum => `${datum.count}%`}
                                         />
                                     )}
                                 </ChartContainer>
