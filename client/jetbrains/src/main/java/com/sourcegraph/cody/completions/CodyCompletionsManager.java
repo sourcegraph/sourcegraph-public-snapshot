@@ -85,7 +85,7 @@ public class CodyCompletionsManager {
       // debouncing the completion trigger
       cancelCurrentJob();
       this.currentJob.set(
-          Optional.of(this.scheduler.schedule(callable, 200, TimeUnit.MILLISECONDS)));
+          Optional.of(this.scheduler.schedule(callable, 20, TimeUnit.MILLISECONDS)));
     }
   }
 
