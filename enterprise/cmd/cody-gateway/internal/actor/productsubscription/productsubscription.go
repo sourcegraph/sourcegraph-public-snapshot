@@ -16,9 +16,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	elicensing "github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/productsubscription"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -140,6 +141,12 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 
 	for _, sub := range resp.Dotcom.ProductSubscriptions.Nodes {
 		for _, token := range sub.SourcegraphAccessTokens {
+			select {
+			case <-ctx.Done():
+				return seen, ctx.Err()
+			default:
+			}
+
 			act := newActor(s, token, sub.ProductSubscriptionState, s.internalMode, s.concurrencyConfig)
 			data, err := json.Marshal(act)
 			if err != nil {
@@ -211,7 +218,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 	// In internal mode, only allow dev and internal licenses.
 	disallowedLicense := internalMode &&
 		(s.ActiveLicense == nil || s.ActiveLicense.Info == nil ||
-			!containsOneOf(s.ActiveLicense.Info.Tags, licensing.DevTag, licensing.InternalTag))
+			!containsOneOf(s.ActiveLicense.Info.Tags, elicensing.DevTag, elicensing.InternalTag))
 
 	now := time.Now()
 	a := &actor.Actor{
@@ -225,7 +232,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 
 	if rl := s.CodyGatewayAccess.ChatCompletionsRateLimit; rl != nil {
 		a.RateLimits[codygateway.FeatureChatCompletions] = actor.NewRateLimitWithPercentageConcurrency(
-			rl.Limit,
+			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
 			rl.AllowedModels,
 			concurrencyConfig,
@@ -234,7 +241,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 
 	if rl := s.CodyGatewayAccess.CodeCompletionsRateLimit; rl != nil {
 		a.RateLimits[codygateway.FeatureCodeCompletions] = actor.NewRateLimitWithPercentageConcurrency(
-			rl.Limit,
+			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
 			rl.AllowedModels,
 			concurrencyConfig,
@@ -243,7 +250,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 
 	if rl := s.CodyGatewayAccess.EmbeddingsRateLimit; rl != nil {
 		a.RateLimits[codygateway.FeatureEmbeddings] = actor.NewRateLimitWithPercentageConcurrency(
-			rl.Limit,
+			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
 			rl.AllowedModels,
 			// TODO: Once we split interactive and on-interactive, we want to apply

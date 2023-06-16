@@ -36,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // StreamHandler is an http handler which streams back search results.
@@ -101,7 +102,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 	inputs, err := h.searchClient.Plan(
 		ctx,
 		args.Version,
-		strPtr(args.PatternType),
+		pointers.NonZeroPtr(args.PatternType),
 		args.Query,
 		search.Mode(args.SearchMode),
 		search.Streaming,
@@ -255,13 +256,6 @@ func parseURLQuery(q url.Values) (*args, error) {
 	}
 
 	return &a, nil
-}
-
-func strPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }
 
 func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {

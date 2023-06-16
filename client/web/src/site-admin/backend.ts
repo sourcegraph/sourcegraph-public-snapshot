@@ -148,6 +148,7 @@ const siteAdminRepositoryFieldsFragment = gql`
         externalRepository {
             ...ExternalRepositoryFields
         }
+        embeddingExists
     }
 `
 export const REPOSITORIES_QUERY = gql`
@@ -641,6 +642,22 @@ export const SITE_UPGRADE_READINESS = gql`
                     description
                 }
             }
+            autoUpgradeEnabled
+        }
+    }
+`
+export const GET_AUTO_UPGRADE = gql`
+    query AutoUpgradeEnabled {
+        site {
+            autoUpgradeEnabled
+        }
+    }
+`
+
+export const SET_AUTO_UPGRADE = gql`
+    mutation SetAutoUpgrade($enable: Boolean!) {
+        setAutoUpgrade(enable: $enable) {
+            alwaysNil
         }
     }
 `

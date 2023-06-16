@@ -5,9 +5,10 @@ import {
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { mockVSCodeExports } from '../testSetup/vscode'
+import { mockVSCodeExports } from '../testutils/vscode'
 
 import { CodyCompletionItemProvider, inlineCompletionsCache } from '.'
+import { createProviderConfig } from './providers/anthropic'
 
 jest.mock('vscode', () => ({
     ...mockVSCodeExports(),
@@ -16,6 +17,9 @@ jest.mock('vscode', () => ({
         Automatic: 1,
     },
     workspace: {
+        asRelativePath(path: string) {
+            return path
+        },
         getConfiguration() {
             return {
                 get(key: string) {
@@ -34,12 +38,20 @@ jest.mock('vscode', () => ({
     },
 }))
 
+jest.mock('./context-embeddings.ts', () => ({
+    getContextFromEmbeddings: () => [],
+}))
+
 function createCompletionResponse(completion: string): CompletionResponse {
     return {
         completion: truncateMultilineString(completion),
         stopReason: 'unknown',
     }
 }
+
+const noopStatusBar = {
+    startLoading: () => () => {},
+} as any
 
 const CURSOR_MARKER = '<cursor>'
 
@@ -66,7 +78,7 @@ async function complete(
 
     const requests: CompletionParameters[] = []
     let requestCounter = 0
-    const completionsClient = {
+    const completionsClient: any = {
         complete(params: CompletionParameters): Promise<CompletionResponse> {
             requests.push(params)
             const response = responses ? responses[requestCounter++] : undefined
@@ -78,15 +90,15 @@ async function complete(
             )
         },
     }
+    const providerConfig = createProviderConfig({
+        completionsClient,
+        contextWindowTokens: 2048,
+    })
     const completionProvider = new CodyCompletionItemProvider(
-        error => {
-            throw new Error(error)
-        },
-        completionsClient as any,
+        providerConfig,
         null as any,
+        noopStatusBar,
         null as any,
-        undefined,
-        undefined,
         undefined,
         undefined,
         undefined,
@@ -108,6 +120,7 @@ async function complete(
         },
     }
     const document: any = {
+        filename: 'test.ts',
         languageId,
         offsetAt(): number {
             return 0

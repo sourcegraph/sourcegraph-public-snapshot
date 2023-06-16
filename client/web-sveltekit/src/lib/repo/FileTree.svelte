@@ -3,7 +3,6 @@
 
     import { isErrorLike, type ErrorLike } from '$lib/common'
     import type { TreeFields } from '$lib/graphql/shared'
-
     import Icon from '$lib/Icon.svelte'
 
     export let treeOrError: TreeFields | ErrorLike | null

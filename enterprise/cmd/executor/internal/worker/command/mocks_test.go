@@ -10,6 +10,7 @@ import (
 	"context"
 	"sync"
 
+	cmdlogger "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	executor "github.com/sourcegraph/sourcegraph/internal/executor"
 )
@@ -29,7 +30,7 @@ type MockCommand struct {
 func NewMockCommand() *MockCommand {
 	return &MockCommand{
 		RunFunc: &CommandRunFunc{
-			defaultHook: func(context.Context, Logger, Spec) (r0 error) {
+			defaultHook: func(context.Context, cmdlogger.Logger, Spec) (r0 error) {
 				return
 			},
 		},
@@ -41,7 +42,7 @@ func NewMockCommand() *MockCommand {
 func NewStrictMockCommand() *MockCommand {
 	return &MockCommand{
 		RunFunc: &CommandRunFunc{
-			defaultHook: func(context.Context, Logger, Spec) error {
+			defaultHook: func(context.Context, cmdlogger.Logger, Spec) error {
 				panic("unexpected invocation of MockCommand.Run")
 			},
 		},
@@ -61,15 +62,15 @@ func NewMockCommandFrom(i Command) *MockCommand {
 // CommandRunFunc describes the behavior when the Run method of the parent
 // MockCommand instance is invoked.
 type CommandRunFunc struct {
-	defaultHook func(context.Context, Logger, Spec) error
-	hooks       []func(context.Context, Logger, Spec) error
+	defaultHook func(context.Context, cmdlogger.Logger, Spec) error
+	hooks       []func(context.Context, cmdlogger.Logger, Spec) error
 	history     []CommandRunFuncCall
 	mutex       sync.Mutex
 }
 
 // Run delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockCommand) Run(v0 context.Context, v1 Logger, v2 Spec) error {
+func (m *MockCommand) Run(v0 context.Context, v1 cmdlogger.Logger, v2 Spec) error {
 	r0 := m.RunFunc.nextHook()(v0, v1, v2)
 	m.RunFunc.appendCall(CommandRunFuncCall{v0, v1, v2, r0})
 	return r0
@@ -77,7 +78,7 @@ func (m *MockCommand) Run(v0 context.Context, v1 Logger, v2 Spec) error {
 
 // SetDefaultHook sets function that is called when the Run method of the
 // parent MockCommand instance is invoked and the hook queue is empty.
-func (f *CommandRunFunc) SetDefaultHook(hook func(context.Context, Logger, Spec) error) {
+func (f *CommandRunFunc) SetDefaultHook(hook func(context.Context, cmdlogger.Logger, Spec) error) {
 	f.defaultHook = hook
 }
 
@@ -85,7 +86,7 @@ func (f *CommandRunFunc) SetDefaultHook(hook func(context.Context, Logger, Spec)
 // Run method of the parent MockCommand instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *CommandRunFunc) PushHook(hook func(context.Context, Logger, Spec) error) {
+func (f *CommandRunFunc) PushHook(hook func(context.Context, cmdlogger.Logger, Spec) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -94,19 +95,19 @@ func (f *CommandRunFunc) PushHook(hook func(context.Context, Logger, Spec) error
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *CommandRunFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, Logger, Spec) error {
+	f.SetDefaultHook(func(context.Context, cmdlogger.Logger, Spec) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *CommandRunFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, Logger, Spec) error {
+	f.PushHook(func(context.Context, cmdlogger.Logger, Spec) error {
 		return r0
 	})
 }
 
-func (f *CommandRunFunc) nextHook() func(context.Context, Logger, Spec) error {
+func (f *CommandRunFunc) nextHook() func(context.Context, cmdlogger.Logger, Spec) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -144,7 +145,7 @@ type CommandRunFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 Logger
+	Arg1 cmdlogger.Logger
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 Spec
@@ -167,7 +168,7 @@ func (c CommandRunFuncCall) Results() []interface{} {
 
 // MockExecutionLogEntryStore is a mock implementation of the
 // ExecutionLogEntryStore interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger)
 // used for unit testing.
 type MockExecutionLogEntryStore struct {
 	// AddExecutionLogEntryFunc is an instance of a mock function object
@@ -217,7 +218,7 @@ func NewStrictMockExecutionLogEntryStore() *MockExecutionLogEntryStore {
 // NewMockExecutionLogEntryStoreFrom creates a new mock of the
 // MockExecutionLogEntryStore interface. All methods delegate to the given
 // implementation, unless overwritten.
-func NewMockExecutionLogEntryStoreFrom(i ExecutionLogEntryStore) *MockExecutionLogEntryStore {
+func NewMockExecutionLogEntryStoreFrom(i cmdlogger.ExecutionLogEntryStore) *MockExecutionLogEntryStore {
 	return &MockExecutionLogEntryStore{
 		AddExecutionLogEntryFunc: &ExecutionLogEntryStoreAddExecutionLogEntryFunc{
 			defaultHook: i.AddExecutionLogEntry,
@@ -460,7 +461,7 @@ func (c ExecutionLogEntryStoreUpdateExecutionLogEntryFuncCall) Results() []inter
 
 // MockLogEntry is a mock implementation of the LogEntry interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger)
 // used for unit testing.
 type MockLogEntry struct {
 	// CloseFunc is an instance of a mock function object controlling the
@@ -533,7 +534,7 @@ func NewStrictMockLogEntry() *MockLogEntry {
 
 // NewMockLogEntryFrom creates a new mock of the MockLogEntry interface. All
 // methods delegate to the given implementation, unless overwritten.
-func NewMockLogEntryFrom(i LogEntry) *MockLogEntry {
+func NewMockLogEntryFrom(i cmdlogger.LogEntry) *MockLogEntry {
 	return &MockLogEntry{
 		CloseFunc: &LogEntryCloseFunc{
 			defaultHook: i.Close,
@@ -951,7 +952,7 @@ func (c LogEntryWriteFuncCall) Results() []interface{} {
 
 // MockLogger is a mock implementation of the Logger interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command)
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger)
 // used for unit testing.
 type MockLogger struct {
 	// FlushFunc is an instance of a mock function object controlling the
@@ -972,7 +973,7 @@ func NewMockLogger() *MockLogger {
 			},
 		},
 		LogEntryFunc: &LoggerLogEntryFunc{
-			defaultHook: func(string, []string) (r0 LogEntry) {
+			defaultHook: func(string, []string) (r0 cmdlogger.LogEntry) {
 				return
 			},
 		},
@@ -989,7 +990,7 @@ func NewStrictMockLogger() *MockLogger {
 			},
 		},
 		LogEntryFunc: &LoggerLogEntryFunc{
-			defaultHook: func(string, []string) LogEntry {
+			defaultHook: func(string, []string) cmdlogger.LogEntry {
 				panic("unexpected invocation of MockLogger.LogEntry")
 			},
 		},
@@ -998,7 +999,7 @@ func NewStrictMockLogger() *MockLogger {
 
 // NewMockLoggerFrom creates a new mock of the MockLogger interface. All
 // methods delegate to the given implementation, unless overwritten.
-func NewMockLoggerFrom(i Logger) *MockLogger {
+func NewMockLoggerFrom(i cmdlogger.Logger) *MockLogger {
 	return &MockLogger{
 		FlushFunc: &LoggerFlushFunc{
 			defaultHook: i.Flush,
@@ -1110,15 +1111,15 @@ func (c LoggerFlushFuncCall) Results() []interface{} {
 // LoggerLogEntryFunc describes the behavior when the LogEntry method of the
 // parent MockLogger instance is invoked.
 type LoggerLogEntryFunc struct {
-	defaultHook func(string, []string) LogEntry
-	hooks       []func(string, []string) LogEntry
+	defaultHook func(string, []string) cmdlogger.LogEntry
+	hooks       []func(string, []string) cmdlogger.LogEntry
 	history     []LoggerLogEntryFuncCall
 	mutex       sync.Mutex
 }
 
 // LogEntry delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockLogger) LogEntry(v0 string, v1 []string) LogEntry {
+func (m *MockLogger) LogEntry(v0 string, v1 []string) cmdlogger.LogEntry {
 	r0 := m.LogEntryFunc.nextHook()(v0, v1)
 	m.LogEntryFunc.appendCall(LoggerLogEntryFuncCall{v0, v1, r0})
 	return r0
@@ -1126,7 +1127,7 @@ func (m *MockLogger) LogEntry(v0 string, v1 []string) LogEntry {
 
 // SetDefaultHook sets function that is called when the LogEntry method of
 // the parent MockLogger instance is invoked and the hook queue is empty.
-func (f *LoggerLogEntryFunc) SetDefaultHook(hook func(string, []string) LogEntry) {
+func (f *LoggerLogEntryFunc) SetDefaultHook(hook func(string, []string) cmdlogger.LogEntry) {
 	f.defaultHook = hook
 }
 
@@ -1134,7 +1135,7 @@ func (f *LoggerLogEntryFunc) SetDefaultHook(hook func(string, []string) LogEntry
 // LogEntry method of the parent MockLogger instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *LoggerLogEntryFunc) PushHook(hook func(string, []string) LogEntry) {
+func (f *LoggerLogEntryFunc) PushHook(hook func(string, []string) cmdlogger.LogEntry) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1142,20 +1143,20 @@ func (f *LoggerLogEntryFunc) PushHook(hook func(string, []string) LogEntry) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LoggerLogEntryFunc) SetDefaultReturn(r0 LogEntry) {
-	f.SetDefaultHook(func(string, []string) LogEntry {
+func (f *LoggerLogEntryFunc) SetDefaultReturn(r0 cmdlogger.LogEntry) {
+	f.SetDefaultHook(func(string, []string) cmdlogger.LogEntry {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LoggerLogEntryFunc) PushReturn(r0 LogEntry) {
-	f.PushHook(func(string, []string) LogEntry {
+func (f *LoggerLogEntryFunc) PushReturn(r0 cmdlogger.LogEntry) {
+	f.PushHook(func(string, []string) cmdlogger.LogEntry {
 		return r0
 	})
 }
 
-func (f *LoggerLogEntryFunc) nextHook() func(string, []string) LogEntry {
+func (f *LoggerLogEntryFunc) nextHook() func(string, []string) cmdlogger.LogEntry {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1196,7 +1197,7 @@ type LoggerLogEntryFuncCall struct {
 	Arg1 []string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 LogEntry
+	Result0 cmdlogger.LogEntry
 }
 
 // Args returns an interface slice containing the arguments of this

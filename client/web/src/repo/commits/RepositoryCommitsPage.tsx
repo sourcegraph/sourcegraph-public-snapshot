@@ -44,7 +44,7 @@ export const gitCommitFragment = gql`
         oid
         abbreviatedOID
         perforceChangelist {
-            ...PerforceChangelistFields
+            ...PerforceChangelistFieldsWithoutCommit
         }
         message
         subject
@@ -59,7 +59,7 @@ export const gitCommitFragment = gql`
             oid
             abbreviatedOID
             perforceChangelist {
-                ...PerforceChangelistFields
+                ...PerforceChangelistFieldsWithoutCommit
             }
             url
         }
@@ -73,8 +73,9 @@ export const gitCommitFragment = gql`
         }
     }
 
-    fragment PerforceChangelistFields on PerforceChangelist {
+    fragment PerforceChangelistFieldsWithoutCommit on PerforceChangelist {
         cid
+        canonicalURL
     }
 
     fragment SignatureFields on Signature {

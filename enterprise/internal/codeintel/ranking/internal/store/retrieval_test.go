@@ -4,11 +4,13 @@ import (
 	"context"
 	"math"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -165,6 +167,70 @@ func TestGetReferenceCountStatistics(t *testing.T) {
 	}
 }
 
+func TestCoverageCounts(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	// Create three visible uploads and export a pair
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO repo (id, name, deleted_at) VALUES (50, 'foo', NULL);
+		INSERT INTO repo (id, name, deleted_at) VALUES (51, 'bar', NULL);
+		INSERT INTO repo (id, name, deleted_at) VALUES (52, 'baz', NULL);
+		INSERT INTO lsif_uploads (id, repository_id, commit, indexer, num_parts, uploaded_parts, state) VALUES (100, 50, '0000000000000000000000000000000000000001', 'lsif-test', 1, '{}', 'completed');
+		INSERT INTO lsif_uploads (id, repository_id, commit, indexer, num_parts, uploaded_parts, state) VALUES (101, 50, '0000000000000000000000000000000000000002', 'lsif-test', 1, '{}', 'completed');
+		INSERT INTO lsif_uploads (id, repository_id, commit, indexer, num_parts, uploaded_parts, state) VALUES (102, 51, '0000000000000000000000000000000000000003', 'lsif-test', 1, '{}', 'completed');
+		INSERT INTO lsif_uploads (id, repository_id, commit, indexer, num_parts, uploaded_parts, state) VALUES (103, 52, '0000000000000000000000000000000000000004', 'lsif-test', 1, '{}', 'completed');
+		INSERT INTO lsif_uploads_visible_at_tip (upload_id, repository_id, is_default_branch) VALUES (100, 50, true);
+		INSERT INTO lsif_uploads_visible_at_tip (upload_id, repository_id, is_default_branch) VALUES (102, 51, true);
+		INSERT INTO lsif_uploads_visible_at_tip (upload_id, repository_id, is_default_branch) VALUES (103, 52, true);
+	`); err != nil {
+		t.Fatalf("unexpected error setting up test: %s", err)
+	}
+	if _, err := store.GetUploadsForRanking(ctx, "test", "ranking", 2); err != nil {
+		t.Fatalf("unexpected error getting uploads for ranking: %s", err)
+	}
+
+	// Fake ranking results and have one repo indexed after the reducers complete
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO codeintel_path_ranks(graph_key, repository_id, payload) VALUES ('test', 50, '{}');
+		INSERT INTO codeintel_path_ranks(graph_key, repository_id, payload) VALUES ('test', 51, '{}');
+		INSERT INTO codeintel_path_ranks(graph_key, repository_id, payload) VALUES ('test', 52, '{}');
+		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at) VALUES (
+			'test',
+			0,
+			'2023-06-15 05:30:00',
+			'2023-06-15 05:30:00'
+		);
+
+		UPDATE zoekt_repos SET index_status = 'indexed', last_indexed_at = '2023-06-15 04:30:00' WHERE repo_id = 50; -- indexed less recently
+		UPDATE zoekt_repos SET index_status = 'indexed', last_indexed_at = '2023-06-15 05:30:00' WHERE repo_id = 51; -- indexed same time
+		UPDATE zoekt_repos SET index_status = 'indexed', last_indexed_at = '2023-06-15 06:30:00' WHERE repo_id = 52; -- indexed more recently
+	`); err != nil {
+		t.Fatalf("unexpected error setting up test: %s", err)
+	}
+
+	// Test coverage
+	counts, err := store.CoverageCounts(ctx, "test")
+	if err != nil {
+		t.Fatalf("unexpected error getting coverage counts: %s", err)
+	}
+
+	expected := shared.CoverageCounts{
+		NumTargetIndexes:                   3, // 100, 102, 103
+		NumExportedIndexes:                 2, // 100, 102
+		NumRepositoriesWithoutCurrentRanks: 2, // 50, 51
+	}
+	if diff := cmp.Diff(expected, counts); diff != "" {
+		t.Errorf("unexpected coverage counts (-want +got):\n%s", diff)
+	}
+}
+
 func TestLastUpdatedAt(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -175,20 +241,22 @@ func TestLastUpdatedAt(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
+	now := time.Unix(1686695462, 0)
 	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
 
 	if _, err := db.ExecContext(ctx, `
 		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at)
 		VALUES
-			($1, 1000, NOW(), NOW())
+			($1, 1000, NOW(), $2)
 	`,
-		key,
+		key, now,
 	); err != nil {
 		t.Fatalf("failed to insert metadata: %s", err)
 	}
 
 	idFoo := api.RepoID(1)
 	idBar := api.RepoID(2)
+	idBaz := api.RepoID(3)
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (id, name) VALUES (1, 'foo'), (2, 'bar'), (3, 'baz')`); err != nil {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
@@ -212,12 +280,12 @@ func TestLastUpdatedAt(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected 'bar' in result: %v", pairs)
 	}
-	if _, ok := pairs[999]; ok {
-		t.Fatalf("unexpected 'bonk' in result: %v", pairs)
+	if _, ok := pairs[idBaz]; ok {
+		t.Fatalf("unexpected repo 'baz' in result: %v", pairs)
 	}
 
-	if !fooUpdatedAt.Before(barUpdatedAt) {
-		t.Errorf("unexpected timestamp ordering: %v and %v", fooUpdatedAt, barUpdatedAt)
+	if !fooUpdatedAt.Equal(now) || !barUpdatedAt.Equal(now) {
+		t.Errorf("unexpected timestamps: expected=%v, got %v and %v", now, fooUpdatedAt, barUpdatedAt)
 	}
 }
 

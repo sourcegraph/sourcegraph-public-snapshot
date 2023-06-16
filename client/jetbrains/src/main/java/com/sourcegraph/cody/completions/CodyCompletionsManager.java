@@ -21,16 +21,17 @@ import com.sourcegraph.config.NotificationActivity;
 import com.sourcegraph.config.SettingsComponent;
 import java.util.Optional;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 /** Responsible for triggering and clearing inline code completions. */
 public class CodyCompletionsManager {
   private static final Key<Boolean> KEY_EDITOR_SUPPORTED = Key.create("cody.editorSupported");
-  private final ExecutorService executor = Executors.newSingleThreadExecutor();
+  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   // TODO: figure out how to avoid the ugly nested `Future<CompletableFuture<T>>` type.
-  private final ConcurrentLinkedQueue<Future<CompletableFuture<Void>>> jobs =
-      new ConcurrentLinkedQueue<>();
+  private final AtomicReference<Optional<Future<CompletableFuture<Void>>>> currentJob =
+      new AtomicReference<>(Optional.empty());
 
   public static @NotNull CodyCompletionsManager getInstance() {
     return ApplicationManager.getApplication().getService(CodyCompletionsManager.class);
@@ -38,7 +39,7 @@ public class CodyCompletionsManager {
 
   @RequiresEdt
   public void clearCompletions(Editor editor) {
-    this.cancelRunningJobs();
+    cancelCurrentJob();
     for (Inlay<?> inlay :
         editor.getInlayModel().getInlineElementsInRange(0, editor.getDocument().getTextLength())) {
       if (!(inlay.getRenderer() instanceof CodyCompletionElementRenderer)) {
@@ -75,10 +76,44 @@ public class CodyCompletionsManager {
             0.6,
             0.1);
     TextDocument textDocument = new IntelliJTextDocument(editor);
-    Future<CompletableFuture<Void>> job =
-        this.executor.submit(
-            () -> triggerCompletionAsync(editor, offset, token, provider, textDocument));
-    this.jobs.add(job);
+    CompletionDocumentContext documentCompletionContext = textDocument.getCompletionContext(offset);
+    if (documentCompletionContext.isCompletionTriggerValid()) {
+      Callable<CompletableFuture<Void>> callable =
+          () ->
+              triggerCompletionAsync(
+                  editor, offset, token, provider, textDocument, documentCompletionContext);
+      // debouncing the completion trigger
+      cancelCurrentJob();
+      this.currentJob.set(
+          Optional.of(this.scheduler.schedule(callable, 20, TimeUnit.MILLISECONDS)));
+    }
+  }
+
+  public static InlineCompletionItem postProcessInlineCompletionBasedOnDocumentContext(
+      InlineCompletionItem resultItem, CompletionDocumentContext documentCompletionContext) {
+    String sameLineSuffix = documentCompletionContext.getSameLineSuffix();
+    if (resultItem.insertText.endsWith(sameLineSuffix)) {
+      // if the completion already has the same line suffix, we strip it
+      String newInsertText = StringUtils.stripEnd(resultItem.insertText, sameLineSuffix);
+      // adjusting the range to account for the shorter completion
+      Range newRange =
+          resultItem.range.withEnd(
+              resultItem.range.end.withCharacter(
+                  resultItem.range.end.character - sameLineSuffix.length()));
+      return resultItem.withRange(newRange).withInsertText(newInsertText);
+    } else if (resultItem.insertText.contains(sameLineSuffix)) {
+      // if the completion already contains the same line suffix
+      // but it doesn't strictly end with it
+      // we cut the end of the completion starting with the suffix
+      int index = resultItem.insertText.lastIndexOf(sameLineSuffix);
+      String newInsertText = resultItem.insertText.substring(0, index);
+      // adjusting the range to account for the shorter completion
+      int rangeDiff = resultItem.insertText.length() - newInsertText.length();
+      Range newRange =
+          resultItem.range.withEnd(
+              resultItem.range.end.withCharacter(resultItem.range.end.character - rangeDiff));
+      return resultItem.withRange(newRange).withInsertText(newInsertText);
+    } else return resultItem;
   }
 
   private CompletableFuture<Void> triggerCompletionAsync(
@@ -86,7 +121,8 @@ public class CodyCompletionsManager {
       int offset,
       CancellationToken token,
       CodyCompletionItemProvider provider,
-      TextDocument textDocument) {
+      TextDocument textDocument,
+      CompletionDocumentContext documentCompletionContext) {
     return provider
         .provideInlineCompletions(
             textDocument,
@@ -105,6 +141,11 @@ public class CodyCompletionsManager {
               // TODO: smarter logic around selecting the best completion item.
               Optional<InlineCompletionItem> maybeItem =
                   result.items.stream()
+                      .map(CodyCompletionsManager::removeUndesiredCharacters)
+                      .map(
+                          resultItem ->
+                              postProcessInlineCompletionBasedOnDocumentContext(
+                                  resultItem, documentCompletionContext))
                       .filter(resultItem -> !resultItem.insertText.isEmpty())
                       .findFirst();
               if (maybeItem.isEmpty()) {
@@ -125,6 +166,15 @@ public class CodyCompletionsManager {
                 e.printStackTrace();
               }
             });
+  }
+
+  public static InlineCompletionItem removeUndesiredCharacters(InlineCompletionItem item) {
+    // no zero-width spaces or line separator chars, pls
+    String newInsertText = item.insertText.replaceAll("[\u200b\u2028]", "");
+    int rangeDiff = item.insertText.length() - newInsertText.length();
+    Range newRange =
+        item.range.withEnd(item.range.end.withCharacter(item.range.end.character - rangeDiff));
+    return item.withRange(newRange).withInsertText(newInsertText);
   }
 
   private boolean isProjectAvailable(Project project) {
@@ -183,24 +233,26 @@ public class CodyCompletionsManager {
     return new CompletionsService(instanceUrl, accessToken);
   }
 
-  private void cancelRunningJobs() {
+  private void cancelCurrentJob() {
     // TODO: change this implementation when we avoid nested `Future<CompletableFuture<T>>`
-    int size = jobs.size();
-    for (int i = 0; i < size; i++) {
-      Future<CompletableFuture<Void>> job = jobs.poll();
-      if (job != null) {
-        if (job.isDone()) {
-          try {
-            job.get().cancel(true);
-          } catch (ExecutionException | InterruptedException ignored) {
-          }
-        } else if (!job.cancel(true)) {
-          // Cancelling the toplevel `Future<>` appears to cancel the nested `CompletableFuture<>`.
-          // Feel free to reimplement this entire method if it's causing problems because this logic
-          // is not bulletproof.
-          jobs.add(job);
-        }
-      }
-    }
+    this.currentJob
+        .get()
+        .ifPresent(
+            job -> {
+              if (job.isDone()) {
+                try {
+                  job.get().cancel(true);
+                } catch (ExecutionException
+                    | InterruptedException
+                    | CancellationException ignored) {
+                }
+              } else {
+                // Cancelling the toplevel `Future<>` appears to cancel the nested
+                // `CompletableFuture<>`.
+                // Feel free to reimplement this entire method if it's causing problems because this
+                // logic is not bulletproof.
+                job.cancel(true);
+              }
+            });
   }
 }

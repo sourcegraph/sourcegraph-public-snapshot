@@ -2,6 +2,7 @@ package upgradestore
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -147,8 +148,7 @@ func isMissingRelation(err error) bool {
 // GetAutoUpgrade gets the current value of versions.version and versions.auto_upgrade in the frontend database.
 func (s *store) GetAutoUpgrade(ctx context.Context) (version string, enabled bool, err error) {
 	if err = s.db.QueryRow(ctx, sqlf.Sprintf(getAutoUpgradeQuery)).Scan(&version, &enabled); err != nil {
-		var pgerr *pgconn.PgError
-		if errors.As(err, &pgerr) && pgerr.Code == pgerrcode.UndefinedColumn {
+		if errors.HasPostgresCode(err, pgerrcode.UndefinedColumn) {
 			if err = s.db.QueryRow(ctx, sqlf.Sprintf(getAutoUpgradeFallbackQuery)).Scan(&version); err != nil {
 				return "", false, errors.Wrap(err, "failed to get frontend version from fallback")
 			}
@@ -188,6 +188,7 @@ func (s *store) EnsureUpgradeTable(ctx context.Context) (err error) {
 		sqlf.Sprintf(`ALTER TABLE upgrade_logs ADD COLUMN IF NOT EXISTS from_version text NOT NULL`),
 		sqlf.Sprintf(`ALTER TABLE upgrade_logs ADD COLUMN IF NOT EXISTS to_version text NOT NULL`),
 		sqlf.Sprintf(`ALTER TABLE upgrade_logs ADD COLUMN IF NOT EXISTS upgrader_hostname text NOT NULL`),
+		sqlf.Sprintf(`ALTER TABLE upgrade_logs ADD COLUMN IF NOT EXISTS plan json NOT NULL DEFAULT '{}'::json`),
 	}
 
 	if err := s.db.WithTransact(ctx, func(tx *basestore.Store) error {
@@ -256,6 +257,31 @@ WITH claim_attempt AS (
 SELECT COALESCE((
 	SELECT claimed FROM claim_attempt
 ), false)`
+
+type UpgradePlan struct {
+	OutOfBandMigrationIDs []int
+	Migrations            map[string][]int
+	MigrationNames        map[string]map[int]string
+}
+
+// TODO(efritz) - probably want to pass a claim id here as well instead of just hitting the max from upgrade logs
+func (s *store) SetUpgradePlan(ctx context.Context, plan UpgradePlan) error {
+	serialized, err := json.Marshal(plan)
+	if err != nil {
+		return err
+	}
+
+	return s.db.Exec(ctx, sqlf.Sprintf(setUpgradePlanQuery, serialized))
+}
+
+const setUpgradePlanQuery = `
+UPDATE upgrade_logs
+SET
+	plan = %s
+WHERE id = (
+	SELECT MAX(id) FROM upgrade_logs
+)
+`
 
 // TODO(efritz) - probably want to pass a claim id here as well instead of just hitting the max from upgrade logs
 func (s *store) SetUpgradeStatus(ctx context.Context, success bool) error {

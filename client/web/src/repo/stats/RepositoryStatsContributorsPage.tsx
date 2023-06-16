@@ -330,7 +330,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
             <SummaryContainer className="justify-content-center pt-3">
                 <PageSwitcher
                     totalCount={connection?.totalCount ?? null}
-                    totalLabel={connection?.totalCount === 1 ? 'contributor' : 'contributors'}
+                    totalLabel={pluralize('contributor', connection?.totalCount ?? 0)}
                     {...paginationArgs}
                 />
             </SummaryContainer>

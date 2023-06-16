@@ -17,18 +17,24 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
+import com.sourcegraph.cody.editor.EditorContext;
 import com.sourcegraph.cody.editor.EditorContextGetter;
+import com.sourcegraph.cody.prompts.SupportedLanguages;
 import com.sourcegraph.cody.recipes.*;
 import com.sourcegraph.cody.ui.RoundedJBTextArea;
+import com.sourcegraph.cody.ui.SelectOptionManager;
+import com.sourcegraph.cody.vcs.*;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
 import java.awt.*;
 import java.awt.event.AdjustmentListener;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.function.Consumer;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.ButtonUI;
@@ -58,26 +64,46 @@ class CodyToolWindowContent implements UpdatableChat {
     RecipeRunner recipeRunner = new RecipeRunner(this.project, this);
     JButton explainCodeDetailedButton = createWideButton("Explain selected code (detailed)");
     explainCodeDetailedButton.addActionListener(
-        e -> recipeRunner.runRecipe(new ExplainCodeDetailedPromptProvider()));
+        e ->
+            executeRecipeWithPromptProvider(recipeRunner, new ExplainCodeDetailedPromptProvider()));
     JButton explainCodeHighLevelButton = createWideButton("Explain selected code (high level)");
     explainCodeHighLevelButton.addActionListener(
-        e -> recipeRunner.runRecipe(new ExplainCodeHighLevelPromptProvider()));
+        e ->
+            executeRecipeWithPromptProvider(
+                recipeRunner, new ExplainCodeHighLevelPromptProvider()));
     JButton generateUnitTestButton = createWideButton("Generate a unit test");
     generateUnitTestButton.addActionListener(
-        e -> recipeRunner.runRecipe(new GenerateUnitTestPromptProvider()));
+        e -> executeRecipeWithPromptProvider(recipeRunner, new GenerateUnitTestPromptProvider()));
     JButton generateDocstringButton = createWideButton("Generate a docstring");
     generateDocstringButton.addActionListener(
-        e -> recipeRunner.runRecipe(new GenerateDocStringPromptProvider()));
+        e -> executeRecipeWithPromptProvider(recipeRunner, new GenerateDocStringPromptProvider()));
     JButton improveVariableNamesButton = createWideButton("Improve variable names");
     improveVariableNamesButton.addActionListener(
-        e -> recipeRunner.runRecipe(new ImproveVariableNamesPromptProvider()));
+        e ->
+            executeRecipeWithPromptProvider(
+                recipeRunner, new ImproveVariableNamesPromptProvider()));
     JButton translateToLanguageButton = createWideButton("Translate to different language");
-    translateToLanguageButton.addActionListener(e -> recipeRunner.runTranslateToLanguage());
+    translateToLanguageButton.addActionListener(
+        e ->
+            runIfCodeSelected(
+                (editorSelection) -> {
+                  SelectOptionManager selectOptionManager =
+                      SelectOptionManager.getInstance(project);
+                  selectOptionManager.show(
+                      project,
+                      SupportedLanguages.LANGUAGE_NAMES,
+                      (selectedLanguage) ->
+                          recipeRunner.runRecipe(
+                              new TranslateToLanguagePromptProvider(new Language(selectedLanguage)),
+                              editorSelection));
+                }));
     JButton gitHistoryButton = createWideButton("Summarize recent code changes");
-    gitHistoryButton.addActionListener(e -> recipeRunner.runGitHistory());
+    gitHistoryButton.addActionListener(
+        e ->
+            new SummarizeRecentChangesRecipe(project, this, recipeRunner).summarizeRecentChanges());
     JButton findCodeSmellsButton = createWideButton("Smell code");
     findCodeSmellsButton.addActionListener(
-        e -> recipeRunner.runRecipe(new FindCodeSmellsPromptProvider()));
+        e -> executeRecipeWithPromptProvider(recipeRunner, new FindCodeSmellsPromptProvider()));
     JButton fixupButton = createWideButton("Fixup code from inline instructions");
     fixupButton.addActionListener(e -> recipeRunner.runFixup());
     JButton contextSearchButton = createWideButton("Codebase context search");
@@ -86,7 +112,7 @@ class CodyToolWindowContent implements UpdatableChat {
     releaseNotesButton.addActionListener(e -> recipeRunner.runReleaseNotes());
     JButton optimizeCodeButton = createWideButton("Optimize code");
     optimizeCodeButton.addActionListener(
-        e -> recipeRunner.runRecipe(new OptimizeCodePromptProvider()));
+        e -> executeRecipeWithPromptProvider(recipeRunner, new OptimizeCodePromptProvider()));
     recipesPanel.add(explainCodeDetailedButton);
     recipesPanel.add(explainCodeHighLevelButton);
     recipesPanel.add(generateUnitTestButton);
@@ -126,7 +152,13 @@ class CodyToolWindowContent implements UpdatableChat {
     promptInput = createPromptInput(this.project);
 
     JPanel messagePanel = new JPanel(new BorderLayout());
-    messagePanel.add(promptInput, BorderLayout.CENTER);
+
+    JBScrollPane promptInputWithScroll =
+        new JBScrollPane(
+            promptInput,
+            JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+            JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    messagePanel.add(promptInputWithScroll, BorderLayout.CENTER);
     messagePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
 
     controlsPanel.add(messagePanel, BorderLayout.NORTH);
@@ -140,6 +172,24 @@ class CodyToolWindowContent implements UpdatableChat {
 
     // Add welcome message
     addWelcomeMessage();
+  }
+
+  private void executeRecipeWithPromptProvider(
+      RecipeRunner recipeRunner, PromptProvider promptProvider) {
+    runIfCodeSelected((editorSelection) -> recipeRunner.runRecipe(promptProvider, editorSelection));
+  }
+
+  private void runIfCodeSelected(@NotNull Consumer<String> runIfCodeSelected) {
+    EditorContext editorContext = EditorContextGetter.getEditorContext(project);
+    String editorSelection = editorContext.getSelection();
+    if (editorSelection == null) {
+      this.activateChatTab();
+      this.addMessageToChat(
+          ChatMessage.createAssistantMessage(
+              "No code selected. Please select some code and try again."));
+      return;
+    }
+    runIfCodeSelected.accept(editorSelection);
   }
 
   @NotNull
@@ -173,7 +223,9 @@ class CodyToolWindowContent implements UpdatableChat {
     JBTextArea promptInput = new RoundedJBTextArea(4, 0, 10);
     BasicTextAreaUI textUI = (BasicTextAreaUI) DarculaTextAreaUI.createUI(promptInput);
     promptInput.setUI(textUI);
+    promptInput.setFont(UIUtil.getLabelFont());
     promptInput.setLineWrap(true);
+    promptInput.setWrapStyleWord(true);
     KeyboardShortcut CTRL_ENTER =
         new KeyboardShortcut(getKeyStroke(VK_ENTER, CTRL_DOWN_MASK), null);
     KeyboardShortcut META_ENTER =
@@ -266,6 +318,7 @@ class CodyToolWindowContent implements UpdatableChat {
 
   private void sendMessage(@NotNull Project project) {
     String messageText = promptInput.getText();
+    promptInput.setText("");
     sendMessage(
         project,
         ChatMessage.createHumanMessage(messageText, messageText, Collections.emptyList()),

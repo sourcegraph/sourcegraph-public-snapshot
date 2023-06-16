@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -186,9 +188,6 @@ func TestRewirerMappings(t *testing.T) {
 
 		rw.resolvers[mapping] = resolver
 	}
-	opPtr := func(op btypes.ReconcilerOperation) *btypes.ReconcilerOperation {
-		return &op
-	}
 	ctx := context.Background()
 
 	t.Run("Page", func(t *testing.T) {
@@ -200,7 +199,8 @@ func TestRewirerMappings(t *testing.T) {
 			publishA = &btypes.RewirerMapping{ChangesetSpecID: 4}
 			publishB = &btypes.RewirerMapping{ChangesetSpecID: 5}
 		)
-		rmf := newRewirerMappingsFacade(nil, gitserver.NewMockClient(), 0, nil)
+		logger := logtest.Scoped(t)
+		rmf := newRewirerMappingsFacade(nil, gitserver.NewMockClient(), logger, 0, nil)
 		rmf.All = btypes.RewirerMappings{detach, hidden, noAction, publishA, publishB}
 		addResolverFixture(rmf, detach, &mockChangesetApplyPreviewResolver{
 			visible: &mockVisibleChangesetApplyPreviewResolver{
@@ -296,7 +296,7 @@ func TestRewirerMappings(t *testing.T) {
 			},
 			"non-existent op": {
 				opts: rewirerMappingPageOpts{
-					Op: opPtr(btypes.ReconcilerOperationClose),
+					Op: pointers.Ptr(btypes.ReconcilerOperationClose),
 				},
 				want: rewirerMappingPage{
 					Mappings:   btypes.RewirerMappings{},
@@ -305,7 +305,7 @@ func TestRewirerMappings(t *testing.T) {
 			},
 			"extant op, no limit": {
 				opts: rewirerMappingPageOpts{
-					Op: opPtr(btypes.ReconcilerOperationPublish),
+					Op: pointers.Ptr(btypes.ReconcilerOperationPublish),
 				},
 				want: rewirerMappingPage{
 					Mappings:   btypes.RewirerMappings{publishA, publishB},
@@ -315,7 +315,7 @@ func TestRewirerMappings(t *testing.T) {
 			"extant op, high limit": {
 				opts: rewirerMappingPageOpts{
 					LimitOffset: &database.LimitOffset{Limit: 5},
-					Op:          opPtr(btypes.ReconcilerOperationPublish),
+					Op:          pointers.Ptr(btypes.ReconcilerOperationPublish),
 				},
 				want: rewirerMappingPage{
 					Mappings:   btypes.RewirerMappings{publishA, publishB},
@@ -325,7 +325,7 @@ func TestRewirerMappings(t *testing.T) {
 			"extant op, low limit": {
 				opts: rewirerMappingPageOpts{
 					LimitOffset: &database.LimitOffset{Limit: 1},
-					Op:          opPtr(btypes.ReconcilerOperationPublish),
+					Op:          pointers.Ptr(btypes.ReconcilerOperationPublish),
 				},
 				want: rewirerMappingPage{
 					Mappings:   btypes.RewirerMappings{publishA},
@@ -335,7 +335,7 @@ func TestRewirerMappings(t *testing.T) {
 			"extant op, low limit and offset": {
 				opts: rewirerMappingPageOpts{
 					LimitOffset: &database.LimitOffset{Limit: 1, Offset: 1},
-					Op:          opPtr(btypes.ReconcilerOperationPublish),
+					Op:          pointers.Ptr(btypes.ReconcilerOperationPublish),
 				},
 				want: rewirerMappingPage{
 					Mappings:   btypes.RewirerMappings{publishB},
@@ -374,7 +374,7 @@ func TestRewirerMappings(t *testing.T) {
 		})
 
 		if _, err := rmf.Page(ctx, rewirerMappingPageOpts{
-			Op: opPtr(btypes.ReconcilerOperationClose),
+			Op: pointers.Ptr(btypes.ReconcilerOperationClose),
 		}); err == nil {
 			t.Error("unexpected nil error")
 		}
@@ -402,7 +402,8 @@ func TestRewirerMappings(t *testing.T) {
 		}
 
 		s := &store.Store{}
-		rmf := newRewirerMappingsFacade(s, gitserver.NewMockClient(), 1, nil)
+		logger := logtest.Scoped(t)
+		rmf := newRewirerMappingsFacade(s, gitserver.NewMockClient(), logger, 1, nil)
 		rmf.batchChange = &btypes.BatchChange{}
 
 		mapping := &btypes.RewirerMapping{}

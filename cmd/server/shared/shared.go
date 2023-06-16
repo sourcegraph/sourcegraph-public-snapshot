@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -236,6 +237,11 @@ func run(procfile, postgresProcfile []string, runMigrations bool, procDiedAction
 
 	group, _ := errgroup.WithContext(context.Background())
 
+	// Check whether database reindex is required, and run it if so
+	if shouldPostgresReindex() {
+		runPostgresReindex()
+	}
+
 	options := goreman.Options{
 		RPCAddr:        "127.0.0.1:5005",
 		ProcDiedAction: procDiedAction,
@@ -283,4 +289,61 @@ func runMigrator() {
 	}
 
 	log.Println("Migrated postgres schemas.")
+}
+
+func shouldPostgresReindex() (shouldReindex bool) {
+	fmt.Printf("Checking whether a Postgres reindex is required...\n")
+
+	// Check for presence of the reindex marker file
+	postgresReindexMarkerFile := postgresReindexMarkerFile()
+	_, err := os.Stat(postgresReindexMarkerFile)
+	if err == nil {
+		fmt.Printf("5.1 reindex marker file '%s' found\n", postgresReindexMarkerFile)
+		return false
+	}
+	fmt.Printf("5.1 reindex marker file '%s' not found\n", postgresReindexMarkerFile)
+
+	// Check PGHOST variable to see whether it refers to a local address or path
+	// If an external database is used, reindexing can be skipped
+	pgHost := os.Getenv("PGHOST")
+	if !(pgHost == "" || pgHost == "127.0.0.1" || pgHost == "localhost" || string(pgHost[0]) == "/") {
+		fmt.Printf("Using a non-local Postgres database '%s', reindexing not required\n", pgHost)
+		return false
+	}
+	fmt.Printf("Using a local Postgres database '%s', reindexing required\n", pgHost)
+
+	return true
+}
+
+func runPostgresReindex() {
+	fmt.Printf("Starting Postgres reindex process\n")
+
+	performMigration := os.Getenv("SOURCEGRAPH_5_1_DB_MIGRATION")
+	if performMigration != "true" {
+		fmt.Printf("\n**************** MIGRATION REQUIRED **************\n\n")
+		fmt.Printf("Upgrading to Sourcegraph 5.1 or later from an earlier release requires a database reindex.\n\n")
+		fmt.Printf("This process may take several hours, depending on the size of your database.\n\n")
+		fmt.Printf("If you do not wish to perform the reindex process now, you should switch back to a release before Sourcegraph 5.1.\n\n")
+		fmt.Printf("To perform the reindexing process now, please review the instructions at https://docs.sourcegraph.com/admin/migration/5_1 and restart the container with the environment variable `SOURCEGRAPH_5_1_DB_MIGRATION=true` set.\n")
+		fmt.Printf("\n**************** MIGRATION REQUIRED **************\n\n")
+
+		os.Exit(101)
+	}
+
+	cmd := exec.Command("/bin/bash", "/reindex.sh")
+	cmd.Env = append(
+		os.Environ(),
+		fmt.Sprintf("REINDEX_COMPLETED_FILE=%s", postgresReindexMarkerFile()),
+		// PGDATA is set as an ENVAR in standalone container
+		fmt.Sprintf("PGDATA=%s", postgresDataPath()),
+		// Unset PGHOST so connections go over unix socket; we've already confirmed the database being reindexed is local
+		"PGHOST=",
+	)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Error running database migration: %s\n", err)
+		os.Exit(1)
+	}
 }

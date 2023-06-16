@@ -17,13 +17,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func teamByID(ctx context.Context, db database.DB, id graphql.ID) (Node, error) {
-	if err := areTeamEndpointsAvailable(ctx); err != nil {
+	if err := areTeamEndpointsAvailable(); err != nil {
 		return nil, err
 	}
 
@@ -166,6 +165,9 @@ func (r *TeamResolver) Name() string {
 }
 
 func (r *TeamResolver) URL() string {
+	if r.External() {
+		return ""
+	}
 	absolutePath := fmt.Sprintf("/teams/%s", r.team.Name)
 	u := &url.URL{Path: absolutePath}
 	return u.String()
@@ -191,7 +193,7 @@ func (r *TeamResolver) DisplayName() *string {
 }
 
 func (r *TeamResolver) Readonly() bool {
-	return r.team.ReadOnly
+	return r.team.ReadOnly || r.External()
 }
 
 func (r *TeamResolver) ParentTeam(ctx context.Context) (*TeamResolver, error) {
@@ -210,6 +212,9 @@ func (r *TeamResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 }
 
 func (r *TeamResolver) Members(_ context.Context, args *ListTeamMembersArgs) (*teamMemberConnection, error) {
+	if r.External() {
+		return nil, errors.New("cannot get members of external team")
+	}
 	c := &teamMemberConnection{
 		db:     r.db,
 		teamID: r.team.ID,
@@ -221,6 +226,9 @@ func (r *TeamResolver) Members(_ context.Context, args *ListTeamMembersArgs) (*t
 }
 
 func (r *TeamResolver) ChildTeams(_ context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
+	if r.External() {
+		return nil, errors.New("cannot get child teams of external team")
+	}
 	c := &teamConnectionResolver{
 		db:       r.db,
 		parentID: r.team.ID,
@@ -374,7 +382,7 @@ type CreateTeamArgs struct {
 }
 
 func (r *schemaResolver) CreateTeam(ctx context.Context, args *CreateTeamArgs) (*TeamResolver, error) {
-	if err := areTeamEndpointsAvailable(ctx); err != nil {
+	if err := areTeamEndpointsAvailable(); err != nil {
 		return nil, err
 	}
 
@@ -407,10 +415,11 @@ func (r *schemaResolver) CreateTeam(ctx context.Context, args *CreateTeamArgs) (
 		}
 	}
 	t.CreatorID = actor.FromContext(ctx).UID
-	if err := teams.CreateTeam(ctx, &t); err != nil {
+	team, err := teams.CreateTeam(ctx, &t)
+	if err != nil {
 		return nil, err
 	}
-	return NewTeamResolver(r.db, &t), nil
+	return NewTeamResolver(r.db, team), nil
 }
 
 type UpdateTeamArgs struct {
@@ -423,7 +432,7 @@ type UpdateTeamArgs struct {
 }
 
 func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (*TeamResolver, error) {
-	if err := areTeamEndpointsAvailable(ctx); err != nil {
+	if err := areTeamEndpointsAvailable(); err != nil {
 		return nil, err
 	}
 
@@ -531,7 +540,7 @@ type DeleteTeamArgs struct {
 }
 
 func (r *schemaResolver) DeleteTeam(ctx context.Context, args *DeleteTeamArgs) (*EmptyResponse, error) {
-	if err := areTeamEndpointsAvailable(ctx); err != nil {
+	if err := areTeamEndpointsAvailable(); err != nil {
 		return nil, err
 	}
 
@@ -607,7 +616,7 @@ func (t TeamMemberInput) String() string {
 }
 
 func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
-	if err := areTeamEndpointsAvailable(ctx); err != nil {
+	if err := areTeamEndpointsAvailable(); err != nil {
 		return nil, err
 	}
 
@@ -660,7 +669,7 @@ func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersAr
 }
 
 func (r *schemaResolver) SetTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
-	if err := areTeamEndpointsAvailable(ctx); err != nil {
+	if err := areTeamEndpointsAvailable(); err != nil {
 		return nil, err
 	}
 
@@ -748,7 +757,7 @@ func (r *schemaResolver) SetTeamMembers(ctx context.Context, args *TeamMembersAr
 }
 
 func (r *schemaResolver) RemoveTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
-	if err := areTeamEndpointsAvailable(ctx); err != nil {
+	if err := areTeamEndpointsAvailable(); err != nil {
 		return nil, err
 	}
 
@@ -802,7 +811,7 @@ type QueryTeamsArgs struct {
 }
 
 func (r *schemaResolver) Teams(ctx context.Context, args *QueryTeamsArgs) (*teamConnectionResolver, error) {
-	if err := areTeamEndpointsAvailable(ctx); err != nil {
+	if err := areTeamEndpointsAvailable(); err != nil {
 		return nil, err
 	}
 	c := &teamConnectionResolver{db: r.db}
@@ -828,7 +837,7 @@ type TeamArgs struct {
 }
 
 func (r *schemaResolver) Team(ctx context.Context, args *TeamArgs) (*TeamResolver, error) {
-	if err := areTeamEndpointsAvailable(ctx); err != nil {
+	if err := areTeamEndpointsAvailable(); err != nil {
 		return nil, err
 	}
 
@@ -844,7 +853,7 @@ func (r *schemaResolver) Team(ctx context.Context, args *TeamArgs) (*TeamResolve
 }
 
 func (r *UserResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
-	if err := areTeamEndpointsAvailable(ctx); err != nil {
+	if err := areTeamEndpointsAvailable(); err != nil {
 		return nil, err
 	}
 
@@ -987,17 +996,17 @@ func extractMembers(members []TeamMemberInput, pred func(member TeamMemberInput)
 
 var ErrNoAccessToTeam = errors.New("user cannot modify team")
 
-func areTeamEndpointsAvailable(ctx context.Context) error {
+func areTeamEndpointsAvailable() error {
 	if envvar.SourcegraphDotComMode() {
 		return errors.New("teams are not available on sourcegraph.com")
-	}
-	if !featureflag.FromContext(ctx).GetBoolOr("search-ownership", false) {
-		return errors.New("teams are not available yet")
 	}
 	return nil
 }
 
 func canModifyTeam(ctx context.Context, db database.DB, team *types.Team) (bool, error) {
+	if team.ID == 0 {
+		return false, nil
+	}
 	if isSiteAdmin(ctx, db) {
 		return true, nil
 	}

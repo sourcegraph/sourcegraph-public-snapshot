@@ -3,6 +3,7 @@ import { logEvent } from '../event-logger'
 interface CompletionEvent {
     type: 'inline' | 'manual'
     multilineMode: null | 'block'
+    providerIdentifier: string
     startedAt: number
     suggestedAt: number | null
     // When set, the completion will always be marked as `read`. This helps us
@@ -15,23 +16,36 @@ const READ_TIMEOUT = 750
 
 const displayedCompletions: Map<string, CompletionEvent> = new Map()
 
+export function logCompletionEvent(name: string, params?: unknown): void {
+    logEvent(`CodyVSCodeExtension:completion:${name}`, params, params)
+}
+
 export function start(
-    { type, multilineMode }: { type: CompletionEvent['type']; multilineMode: CompletionEvent['multilineMode'] } = {
+    {
+        type,
+        multilineMode,
+        providerIdentifier,
+    }: {
+        type: CompletionEvent['type']
+        multilineMode: CompletionEvent['multilineMode']
+        providerIdentifier: CompletionEvent['providerIdentifier']
+    } = {
         type: 'inline',
         multilineMode: null,
+        providerIdentifier: '',
     }
 ): string {
     const id = createId()
     displayedCompletions.set(id, {
         type,
         multilineMode,
+        providerIdentifier,
         startedAt: Date.now(),
         suggestedAt: null,
         forceRead: false,
     })
 
-    const logParams = { type, multilineMode }
-    logEvent('CodyVSCodeExtension:completion:started', logParams, logParams)
+    logCompletionEvent('started', { type, multilineMode, providerIdentifier })
 
     return id
 }
@@ -52,15 +66,22 @@ export function accept(id: string): void {
         return
     }
     completionEvent.forceRead = true
-    const logParams = { type: completionEvent.type, multilineMode: completionEvent.multilineMode }
+
     logSuggestionEvent()
-    logEvent('CodyVSCodeExtension:completion:accepted', logParams, logParams)
+    logCompletionEvent('accepted', {
+        type: completionEvent.type,
+        multilineMode: completionEvent.multilineMode,
+        providerIdentifier: completionEvent.providerIdentifier,
+    })
 }
 
 export function noResponse(id: string): void {
     const completionEvent = displayedCompletions.get(id)
-    const logParams = { type: completionEvent?.type, multilineMode: completionEvent?.multilineMode }
-    logEvent('CodyVSCodeExtension:completion:noResponse', logParams, logParams)
+    logCompletionEvent('noResponse', {
+        type: completionEvent?.type,
+        multilineMode: completionEvent?.multilineMode,
+        providerIdentifier: completionEvent?.providerIdentifier,
+    })
 }
 
 /**
@@ -78,7 +99,7 @@ function createId(): string {
 function logSuggestionEvent(): void {
     const now = Date.now()
     for (const completionEvent of displayedCompletions.values()) {
-        const { suggestedAt, startedAt, type, multilineMode, forceRead } = completionEvent
+        const { suggestedAt, startedAt, type, multilineMode, providerIdentifier, forceRead } = completionEvent
 
         if (!suggestedAt) {
             continue
@@ -87,15 +108,15 @@ function logSuggestionEvent(): void {
         const latency = suggestedAt - startedAt
         const displayDuration = now - suggestedAt
         const read = displayDuration >= READ_TIMEOUT
-        const logParams = {
+
+        logCompletionEvent('suggested', {
             type,
             multilineMode,
+            providerIdentifier,
             latency,
             displayDuration,
             read: forceRead || read,
-        }
-
-        logEvent('CodyVSCodeExtension:completion:suggested', logParams, logParams)
+        })
     }
     displayedCompletions.clear()
 }

@@ -154,6 +154,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 		}
 
 		if resultTypes.Has(result.TypeCommit) || resultTypes.Has(result.TypeDiff) {
+			_, _, own := isOwnershipSearch(b)
 			diff := resultTypes.Has(result.TypeDiff)
 			repoOptionsCopy := repoOptions
 			repoOptionsCopy.OnlyCloned = true
@@ -162,7 +163,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
 				Limit:                int(fileMatchLimit),
-				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
+				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker) || own,
 				Concurrency:          4,
 			})
 		}
@@ -197,7 +198,15 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 
 	{ // Apply code ownership post-search filter
 		if includeOwners, excludeOwners, ok := isOwnershipSearch(b); ok {
-			basicJob = enterpriseJobs.FileHasOwnerJob(basicJob, inputs.Features, includeOwners, excludeOwners)
+			basicJob = enterpriseJobs.FileHasOwnerJob(basicJob, includeOwners, excludeOwners)
+		}
+	}
+
+	{ // Apply file:has.contributor() post-search filter
+		if includeContributors, excludeContributors, ok := isContributorSearch(b); ok {
+			includeRe := contributorsAsRegexp(includeContributors, b.IsCaseSensitive())
+			excludeRe := contributorsAsRegexp(excludeContributors, b.IsCaseSensitive())
+			basicJob = NewFileHasContributorsJob(basicJob, includeRe, excludeRe)
 		}
 	}
 
@@ -213,7 +222,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
 			if isSelectOwnersSearch(sp) {
 				// the select owners job is ran separately as it requires state and can return multiple owners from one match.
-				basicJob = enterpriseJobs.SelectFileOwnerJob(basicJob, inputs.Features)
+				basicJob = enterpriseJobs.SelectFileOwnerJob(basicJob)
 			} else {
 				basicJob = NewSelectJob(sp, basicJob)
 			}
@@ -519,7 +528,7 @@ func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo) (pat
 
 func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 	// Temporary fix:
-	// If doing ownership search, we post-filter results so we may need more than
+	// If doing ownership or contributor search, we post-filter results so we may need more than
 	// b.Count() results from the search backends to end up with enough results
 	// sent down the stream.
 	//
@@ -529,6 +538,10 @@ func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 	// the stream once enough results have been consumed. We will revisit this
 	// post-Starship March 2023 as part of search performance improvements for
 	// ownership search.
+	if _, _, ok := isContributorSearch(b); ok {
+		// This is the int equivalent of count:all.
+		return query.CountAllLimit
+	}
 	if _, _, ok := isOwnershipSearch(b); ok {
 		// This is the int equivalent of count:all.
 		return query.CountAllLimit
@@ -564,6 +577,24 @@ func isOwnershipSearch(b query.Basic) (include, exclude []string, ok bool) {
 func isSelectOwnersSearch(sp filter.SelectPath) bool {
 	// If the filter is for file.owners, this is a select:file.owners search, and we should apply special limits.
 	return sp.Root() == filter.File && len(sp) == 2 && sp[1] == "owners"
+}
+
+func isContributorSearch(b query.Basic) (include, exclude []string, ok bool) {
+	if includeContributors, excludeContributors := b.FileHasContributor(); len(includeContributors) > 0 || len(excludeContributors) > 0 {
+		return includeContributors, excludeContributors, true
+	}
+	return nil, nil, false
+}
+
+func contributorsAsRegexp(contributors []string, isCaseSensitive bool) (res []*regexp.Regexp) {
+	for _, pattern := range contributors {
+		if isCaseSensitive {
+			res = append(res, regexp.MustCompile(pattern))
+		} else {
+			res = append(res, regexp.MustCompile(`(?i)`+pattern))
+		}
+	}
+	return res
 }
 
 func timeoutDuration(b query.Basic) time.Duration {

@@ -19,6 +19,18 @@ const getIcon = (isExpired: boolean, isRevoked: boolean): string => {
     return mdiCheckCircle
 }
 
+const ValidityIcon: React.FC<{ isExpired: boolean; isRevoked: boolean }> = ({ isExpired, isRevoked }) => (
+    <Icon
+        svgPath={getIcon(isExpired, isRevoked)}
+        aria-hidden={true}
+        className={classNames('mr-1', {
+            ['text-success']: !isExpired && !isRevoked,
+            ['text-muted']: isExpired && !isRevoked,
+            ['text-danger']: isRevoked,
+        })}
+    />
+)
+
 const getText = (isExpired: boolean, isRevoked: boolean): string => {
     if (isExpired) {
         return 'Expired'
@@ -35,32 +47,31 @@ const getText = (isExpired: boolean, isRevoked: boolean): string => {
 export const ProductLicenseValidity: React.FunctionComponent<
     React.PropsWithChildren<{
         license: ProductLicenseFields
+        variant?: 'icon-only' | 'no-icon'
         className?: string
     }>
-> = ({ license: { info, revokedAt, revokeReason }, className = '' }) => {
+> = ({ license: { info, revokedAt, revokeReason }, variant, className = '' }) => {
     const expiresAt = info?.expiresAt ?? 0
     const isExpired = isProductLicenseExpired(expiresAt)
     const isRevoked = !!revokedAt
     const timestamp = revokedAt ?? expiresAt
     const timestampSuffix = isExpired || isRevoked ? 'ago' : 'remaining'
 
+    if (variant === 'icon-only') {
+        return (
+            <div className={className}>
+                <ValidityIcon isExpired={isExpired} isRevoked={isRevoked} />
+            </div>
+        )
+    }
     return (
         <div className={className}>
-            <Icon
-                svgPath={getIcon(isExpired, isRevoked)}
-                aria-hidden={true}
-                className={classNames('mr-1', {
-                    ['text-success']: !isExpired && !isRevoked,
-                    ['text-danger']: isExpired || isRevoked,
-                })}
-            />
-            <strong>{getText(isExpired, isRevoked)}</strong> (
-            <Timestamp date={timestamp} noAbout={true} noAgo={true} /> {timestampSuffix})
+            {variant !== 'no-icon' && <ValidityIcon isExpired={isExpired} isRevoked={isRevoked} />}
+            {getText(isExpired, isRevoked)} <Timestamp date={timestamp} noAbout={true} noAgo={true} /> {timestampSuffix}
             {!isExpired && isRevoked && revokeReason && (
-                <div className="mt-1 d-flex">
-                    <Label>Reason to revoke</Label>
-                    <span className="ml-3">{revokeReason}</span>
-                </div>
+                <>
+                    <Label className="ml-2 mb-0 d-inline">Reason:</Label> {revokeReason}
+                </>
             )}
         </div>
     )

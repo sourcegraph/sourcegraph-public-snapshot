@@ -40,7 +40,7 @@ func (z *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	err = zoektSearch(ctx, clients.Logger, z.Repos, z.Query, nil, search.SymbolRequest, clients.Zoekt, z.ZoektParams, since, stream)
+	err = zoektSearch(ctx, z.Repos, z.Query, nil, search.SymbolRequest, clients.Zoekt, z.ZoektParams, since, stream)
 	if err != nil {
 		tr.SetAttributes(trace.Error(err))
 		// Only record error if we haven't timed out.
@@ -97,7 +97,7 @@ func (s *GlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClie
 	s.ZoektParams.Query = s.GlobalZoektQuery.Generate()
 
 	// always search for symbols in indexed repositories when searching the repo universe.
-	err = DoZoektSearchGlobal(ctx, clients.Logger, clients.Zoekt, s.ZoektParams, nil, stream)
+	err = DoZoektSearchGlobal(ctx, clients.Zoekt, s.ZoektParams, nil, stream)
 	if err != nil {
 		tr.SetAttributes(trace.Error(err))
 		// Only record error if we haven't timed out.

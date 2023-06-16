@@ -55,6 +55,9 @@ func newOperations(observationCtx *observation.Context) *operations {
 			Name:              fmt.Sprintf("gitserver.client.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           redMetrics,
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+				return observation.EmitForAllExceptLogs
+			},
 		})
 	}
 
@@ -64,6 +67,9 @@ func newOperations(observationCtx *observation.Context) *operations {
 	subOp := func(name string) *observation.Operation {
 		return observationCtx.Operation(observation.Op{
 			Name: fmt.Sprintf("gitserver.client.%s", name),
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+				return observation.EmitForAllExceptLogs
+			},
 		})
 	}
 

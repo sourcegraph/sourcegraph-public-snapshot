@@ -73,7 +73,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         isSourcegraphDotCom,
         searchAggregationEnabled,
         codeMonitoringEnabled,
-        ownEnabled,
         platformContext,
     } = props
 
@@ -83,8 +82,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     // Feature flags
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
-    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership', false)
-    const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
@@ -512,7 +509,6 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
 
                         <StreamingSearchResultsList
                             {...props}
-                            enableOwnershipSearch={enableOwnershipSearch}
                             enableRepositoryMetadata={enableRepositoryMetadata}
                             results={results}
                             allExpanded={allExpanded}
