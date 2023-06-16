@@ -18,7 +18,6 @@ export type FeatureFlagName =
     | 'accessible-file-tree'
     | 'accessible-symbol-tree'
     | 'accessible-file-tree-always-load-ancestors'
-    | 'search-ownership'
     | 'enable-ownership-panels'
     | 'search-ranking'
     | 'blob-page-switch-areas-shortcuts'
