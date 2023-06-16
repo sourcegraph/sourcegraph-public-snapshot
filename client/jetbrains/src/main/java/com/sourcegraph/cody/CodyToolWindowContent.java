@@ -17,6 +17,7 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
@@ -151,7 +152,13 @@ class CodyToolWindowContent implements UpdatableChat {
     promptInput = createPromptInput(this.project);
 
     JPanel messagePanel = new JPanel(new BorderLayout());
-    messagePanel.add(promptInput, BorderLayout.CENTER);
+
+    JBScrollPane promptInputWithScroll =
+        new JBScrollPane(
+            promptInput,
+            JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+            JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    messagePanel.add(promptInputWithScroll, BorderLayout.CENTER);
     messagePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
 
     controlsPanel.add(messagePanel, BorderLayout.NORTH);
@@ -214,9 +221,11 @@ class CodyToolWindowContent implements UpdatableChat {
   @NotNull
   private JBTextArea createPromptInput(@NotNull Project project) {
     JBTextArea promptInput = new RoundedJBTextArea(4, 0, 10);
+    promptInput.setFont(UIUtil.getLabelFont());
     BasicTextAreaUI textUI = (BasicTextAreaUI) DarculaTextAreaUI.createUI(promptInput);
     promptInput.setUI(textUI);
     promptInput.setLineWrap(true);
+    promptInput.setWrapStyleWord(true);
     KeyboardShortcut CTRL_ENTER =
         new KeyboardShortcut(getKeyStroke(VK_ENTER, CTRL_DOWN_MASK), null);
     KeyboardShortcut META_ENTER =
