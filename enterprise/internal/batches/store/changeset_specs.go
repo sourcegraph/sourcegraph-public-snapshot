@@ -175,35 +175,6 @@ func (s *Store) UpdateChangesetSpecBatchSpecID(ctx context.Context, cs []int64, 
 	return s.Exec(ctx, q)
 }
 
-// UpdateChangesetSpecCommitVerification updates the given ChangesetSpecs CommitVerification if commit signing is applied and successful.
-func (s *Store) UpdateChangesetSpecCommitVerification(ctx context.Context, specID int64, commit *github.RestCommit) (err error) {
-	ctx, _, endObservation := s.operations.updateChangesetSpecCommitVerification.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("specID", int(specID)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	var cv json.RawMessage
-	if commit.Verification.Verified {
-		cv, err = jsonbColumn(commit.Verification)
-	} else {
-		cv, err = jsonbColumn(nil)
-	}
-
-	if err != nil {
-		return err
-	}
-
-	q := sqlf.Sprintf(`
-		UPDATE changeset_specs
-		SET commit_verification = %s
-		WHERE id = %s`,
-		cv,
-		specID,
-	)
-
-	return s.Exec(ctx, q)
-}
-
 var updateChangesetSpecBatchSpecIDQueryFmtstr = `
 UPDATE changeset_specs
 SET batch_spec_id = %s
@@ -216,6 +187,30 @@ func (s *Store) updateChangesetSpecQuery(cs []int64, batchSpec int64) *sqlf.Quer
 		batchSpec,
 		pq.Array(cs),
 	)
+}
+
+// UpdateChangesetSpecCommitVerification records the commit verification object for a
+// commit to the ChangesetSepc if it was signed and verified.
+func (s *Store) UpdateChangesetSpecCommitVerification(ctx context.Context, specID int64, commit *github.RestCommit) (err error) {
+	ctx, _, endObservation := s.operations.updateChangesetSpecCommitVerification.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("specID", int(specID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	var cv json.RawMessage
+	// Don't bother to record the result of verification if it's not even verified.
+	if commit.Verification.Verified {
+		cv, err = jsonbColumn(commit.Verification)
+	} else {
+		cv, err = jsonbColumn(nil)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	q := sqlf.Sprintf("UPDATE changeset_specs SET commit_verification = %s WHERE id = %s", cv, specID)
+	return s.Exec(ctx, q)
 }
 
 // DeleteChangesetSpec deletes the ChangesetSpec with the given ID.
