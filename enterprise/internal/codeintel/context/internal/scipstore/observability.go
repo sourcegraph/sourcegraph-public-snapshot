@@ -8,10 +8,7 @@ import (
 )
 
 type operations struct {
-	getSCIPDocumentsByFuzzySelector   *observation.Operation
-	getSCIPDocumentsByPreciseSelector *observation.Operation
-
-	getFullSCIPNameByDescriptor *observation.Operation
+	// getFullSCIPNameByDescriptor *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -35,9 +32,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		getSCIPDocumentsByFuzzySelector:   op("GetSCIPDocumentsByFuzzySelector"),
-		getSCIPDocumentsByPreciseSelector: op("GetSCIPDocumentsByPreciseSelector"),
-
-		getFullSCIPNameByDescriptor: op("GetFullSCIPNameByDescriptor"),
+		// getFullSCIPNameByDescriptor: op("GetFullSCIPNameByDescriptor"),
 	}
 }
