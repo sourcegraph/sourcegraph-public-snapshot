@@ -52,7 +52,6 @@ export class UnstableCodeGenProvider extends Provider {
         try {
             const data = (await response.json()) as { completions: { completion: string }[] }
 
-            console.log(response.status, data)
             const completions: string[] = data.completions.map(c => c.completion)
             log?.onComplete(completions)
 

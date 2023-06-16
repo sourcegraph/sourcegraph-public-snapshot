@@ -165,7 +165,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const sharedProviderOptions = {
             prefix,
             suffix,
-            fileName: path.normalize(vscode.workspace.asRelativePath(document.fileName)),
+            fileName: path.normalize(vscode.workspace.asRelativePath(document.fileName ?? '')),
             languageId: document.languageId,
             snippets: similarCode,
             responsePercentage: this.responsePercentage,

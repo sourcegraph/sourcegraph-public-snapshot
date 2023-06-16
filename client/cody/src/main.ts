@@ -436,7 +436,7 @@ function createCompletionsProvider(
         vscode.commands.registerCommand('cody.completions.inline.accepted', ({ codyLogId }) => {
             CompletionsLogger.accept(codyLogId)
         }),
-        vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
+        vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider)
     )
     return {
         dispose: () => {
