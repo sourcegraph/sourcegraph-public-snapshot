@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -16,7 +14,6 @@ type multiqueueCacheCleaner struct {
 	queueNames []string
 	cache      *rcache.Cache
 	windowSize time.Duration
-	logger     log.Logger
 }
 
 var _ goroutine.Handler = &multiqueueCacheCleaner{}
@@ -32,7 +29,6 @@ func NewMultiqueueCacheCleaner(queueNames []string, cache *rcache.Cache, windowS
 			queueNames: queueNames,
 			cache:      cache,
 			windowSize: windowSize,
-			logger:     log.Scoped("executors.multiqueue-cache-cleaner", "deletes entries from the dequeue cache older than the configured window"),
 		},
 		goroutine.WithName("executors.multiqueue-cache-cleaner"),
 		goroutine.WithDescription("deletes entries from the dequeue cache older than the configured window"),
@@ -54,7 +50,7 @@ func (m *multiqueueCacheCleaner) Handle(ctx context.Context) error {
 				return err
 			}
 			t := time.Unix(0, timestampMillis*int64(time.Millisecond))
-			interval := time.Now().Add(-m.windowSize)
+			interval := timeNow().Add(-m.windowSize)
 			if t.Before(interval) {
 				// expired cache entry, delete
 				deletedItems, err := m.cache.DeleteHashItem(queueName, key)
@@ -69,3 +65,5 @@ func (m *multiqueueCacheCleaner) Handle(ctx context.Context) error {
 	}
 	return nil
 }
+
+var timeNow = time.Now
