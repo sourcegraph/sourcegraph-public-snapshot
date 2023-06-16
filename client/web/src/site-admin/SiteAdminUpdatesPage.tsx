@@ -280,16 +280,14 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                                                 <div className="d-flex flex-row justify-content-between">
                                                     <div className={styles.label}>Suggested statements to repair:</div>
                                                     <Button
-                                                        onClick={() => {
+                                                        onClick={async () => {
                                                             if (summary.statements) {
-                                                                navigator.clipboard.writeText(
+                                                                await navigator.clipboard.writeText(
                                                                     summary.statements.join('\n')
                                                                 )
-                                                            } else {
-                                                                // Handle null case
-                                                                console.log('summary.statements was null or undefined')
                                                             }
-                                                            return Promise.resolve(null)
+
+                                                            return null
                                                         }}
                                                         variant="primary"
                                                         size="sm"
