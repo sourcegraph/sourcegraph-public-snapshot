@@ -21,16 +21,6 @@ go_library(
 )
 
 go_test(
-    name = "glob_test",
-    timeout = "short",
-    srcs = ["glob_test.go"],
-    embed = [":glob"],
-    deps = [
-        "@com_github_gobwas_glob//:glob",
-    ],
-)
-
-go_test(
     name = "packagefilters_test",
     srcs = ["glob_test.go"],
     embed = [":packagefilters"],
