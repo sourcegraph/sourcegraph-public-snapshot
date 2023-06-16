@@ -31,7 +31,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
-## 5.1.0 5.1.0
+## 5.1.0
+
+> **Note**: As of 5.1.0, Sourcegraph OSS is removed and has been relicensed to Sourcegraph Enterprise. A blog post with much more detail will come soon!
 
 ### Added
 
