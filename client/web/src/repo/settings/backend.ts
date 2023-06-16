@@ -37,6 +37,7 @@ export const settingsAreaRepositoryFragment = gql`
                 reason
             }
             lastError
+            lastSyncOutput
             updateSchedule {
                 due
                 index

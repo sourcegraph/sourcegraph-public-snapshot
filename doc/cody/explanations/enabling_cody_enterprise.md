@@ -9,36 +9,32 @@
 
 ### Prerequisites
 
-- Sourcegraph 5.0.1 or above
-- An Anthropic or OpenAI API key (we can help you get one, see below)
-- Optionally: An OpenAI API key for embeddings to power code graph context
+- Sourcegraph 5.1.0 or above
+- A Sourcegraph Enterprise subscription with [Cody Gateway access](./cody_gateway.md), or [an account with a third-party LLM provider](#using-a-third-party-llm-provider-directly).
 
 There are two steps required to enable Cody on your enterprise instance:
 
-1. Enable your Sourcegraph instance
+1. Enable Cody on your Sourcegraph instance
 2. Configure the VS Code extension
 
 ### Step 1: Enable Cody on your Sourcegraph instance
 
-Note that this requires site-admin privileges.
+> NOTE: Cody uses one or more third-party LLM (Large Language Model) providers. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). In particular, code snippets will be sent to a third-party language model provider when you use the Cody extension or when embeddings are enabled.
 
-1. Cody uses one or more third-party LLM (Large Language Model) providers. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). In particular, code snippets will be sent to a third-party language model provider when you use the Cody extension.
-2. To turn Cody on, you will need to set an access token for Sourcegraph to authenticate with the third-party large language model provider. Currently, this can be Anthropic or OpenAI. Reach out to your Sourcegraph Technical Advisor or Customer Engineer to get an Anthropic key through Sourcegraph with our zero-retention policy. Alternatively, you can create your own key with Anthropic [here](https://console.anthropic.com/account/keys) or with OpenAI [here](https://beta.openai.com/account/api-keys).
-3. Once you have the key, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
+Note that this requires site-admin privileges. First, configure your desired LLM provider:
 
-    ```json
-    {
-      // [...]
-      "cody.enabled": true,
-      "completions": {
-        "provider": "anthropic", // or "openai" if you use OpenAI
-        "model": "claude-v1", // or one of the models listed [here](https://platform.openai.com/docs/models) if you use OpenAI
-        "accessToken": "<key>"
-      }
-    }
-    ```
-4. You're done! 
-5. Cody can be configured to use embeddings for code graph context to significantly improve the quality of its responses. This involves sending your entire codebase to a third-party service to generate a low-dimensional semantic representation, that is used for improved context fetching. See the [codebase-aware answers](#enabling-codebase-aware-answers) section for more.
+- [Using Sourcegraph Cody Gateway](./cody_gateway.md#using-cody-gateway-in-sourcegraph-enterprise)
+- [Using a third-party LLM provider directly](#using-a-third-party-llm-provider-directly)
+
+Once your provider is set up, make sure Cody is enabled in your site configuration:
+
+```json
+{
+  "cody.enabled": true,
+}
+```
+
+Cody can also be configured to use embeddings for code graph context to significantly improve the quality of its responses. This involves sending your entire codebase to a third-party service to generate a low-dimensional semantic representation, that is used for improved context fetching. See the [codebase-aware answers](#enabling-codebase-aware-answers) section for more.
 
 ### Step 2: Configure the VS Code extension
 
@@ -78,7 +74,7 @@ These are a few things you can ask Cody:
 
 ## Cody on Sourcegraph Cloud
 
-On Sourcegraph Cloud, Cody is a managed service and you do not need to follow the step 1 of the self-hosted guide above. 
+On [Sourcegraph Cloud](../../cloud/index.md), Cody is a managed service and you do not need to follow step 1 of the self-hosted guide above.
 
 ### Step 1: Enable Cody for your instance
 
@@ -94,7 +90,7 @@ Cody can be enabled on demand on your Sourcegraph instance by contacting your ac
 
 ## Enabling codebase-aware answers
 
-**Pre-requisite: In order to enable codebase-aware answers for Cody, you must first [configure code graph context](code_graph_context.md).**
+> NOTE: In order to enable codebase-aware answers for Cody, you must first [configure code graph context](code_graph_context.md).
 
 The `Cody: Codebase` setting in VS Code enables codebase-aware answers for the Cody extension. By setting this configuration option to the repository name on your Sourcegraph instance, Cody will be able to provide more accurate and relevant answers to your coding questions, based on the context of the codebase you are currently working in.
 
@@ -137,5 +133,22 @@ To do so:
 
 <img width="979" alt="Add overides" src="https://user-images.githubusercontent.com/25070988/235454594-9f1a6b27-6882-44d9-be32-258d6c244880.png">
 
+## Using a third-party LLM provider directly
 
+Instead of [Sourcegraph Cody Gateway](./cody_gateway.md), you can configure Sourcegraph to use a third-party provider directly. Currently, this can only be Anthropic or OpenAI.
 
+You must create your own key with Anthropic [here](https://console.anthropic.com/account/keys) or with OpenAI [here](https://beta.openai.com/account/api-keys). Once you have the key, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
+
+```jsonc
+{
+  // [...]
+  "cody.enabled": true,
+  "completions": {
+    "provider": "anthropic", // or "openai" if you use OpenAI
+    "model": "claude-v1", // or one of the models listed [here](https://platform.openai.com/docs/models) if you use OpenAI
+    "accessToken": "<key>"
+  }
+}
+```
+
+Similarly, you can also [use a third-party LLM provider directly for embeddings](./code_graph_context.md#using-a-third-party-llm-directly).

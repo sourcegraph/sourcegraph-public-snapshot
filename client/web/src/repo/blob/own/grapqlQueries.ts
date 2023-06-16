@@ -162,7 +162,7 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
                 sourceType
                 commit(rev: $revision) {
                     blob(path: $currentPath) {
-                        ownership(first: 2, reasons: [CODEOWNERS_FILE_ENTRY]) {
+                        ownership(first: 2, reasons: [CODEOWNERS_FILE_ENTRY, ASSIGNED_OWNER]) {
                             nodes {
                                 owner {
                                     ...OwnerFields

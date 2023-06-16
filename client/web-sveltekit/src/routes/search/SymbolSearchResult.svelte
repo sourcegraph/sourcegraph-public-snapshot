@@ -3,12 +3,12 @@
 <script lang="ts">
     import { map } from 'rxjs/operators'
 
-    import { displayRepoName, splitPath, getFileMatchUrl, getRepositoryUrl, type SymbolMatch } from '$lib/shared'
     import { HighlightResponseFormat } from '$lib/graphql-operations'
-    import { platformContext } from '$lib/stores'
+    import Icon from '$lib/Icon.svelte'
     import { fetchFileRangeMatches } from '$lib/search/results'
     import { getSymbolIconPath } from '$lib/search/symbolIcons'
-    import Icon from '$lib/Icon.svelte'
+    import { displayRepoName, splitPath, getFileMatchUrl, getRepositoryUrl, type SymbolMatch } from '$lib/shared'
+    import { platformContext } from '$lib/stores'
 
     import CodeExcerpt from './CodeExcerpt.svelte'
     import SearchResult from './SearchResult.svelte'

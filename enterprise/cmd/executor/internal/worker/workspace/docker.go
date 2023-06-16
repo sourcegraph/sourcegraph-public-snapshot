@@ -6,24 +6,26 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 )
 
 type dockerWorkspace struct {
 	scriptFilenames []string
 	workspaceDir    string
-	logger          command.Logger
+	logger          cmdlogger.Logger
 }
 
 // NewDockerWorkspace creates a new workspace for docker-based execution. A path on
 // the host will be used to set up the workspace, clone the repo and put script files.
 func NewDockerWorkspace(
 	ctx context.Context,
-	filesStore FilesStore,
+	filesStore files.Store,
 	job types.Job,
 	cmd command.Command,
-	logger command.Logger,
+	logger cmdlogger.Logger,
 	cloneOpts CloneOptions,
 	operations *command.Operations,
 ) (Workspace, error) {
