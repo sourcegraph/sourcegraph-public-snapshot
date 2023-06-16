@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class ContextMessage extends Message {
-  @Nullable private final ContextFile file;
+  private final @Nullable ContextFile file;
 
   public ContextMessage(
       @NotNull Speaker speaker, @NotNull String text, @Nullable ContextFile file) {
