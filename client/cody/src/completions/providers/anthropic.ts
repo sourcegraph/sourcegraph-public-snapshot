@@ -39,12 +39,12 @@ export class AnthropicProvider extends Provider {
         this.completionsClient = anthropicOptions.completionsClient
     }
 
-    private emptyPromptLength(injectPrefix: string): number {
+    private emptyPromptLength(injectPrefix?: string): number {
         const promptNoSnippets = messagesToText(this.createPromptPrefix(injectPrefix))
         return promptNoSnippets.length - 10 // extra 10 chars of buffer cuz who knows
     }
 
-    private createPromptPrefix(injectPrefix: string): Message[] {
+    private createPromptPrefix(injectPrefix: string = ''): Message[] {
         // TODO(beyang): escape 'Human:' and 'Assistant:'
         const prefixLines = this.prefix.split('\n')
         if (prefixLines.length === 0) {
@@ -94,7 +94,7 @@ export class AnthropicProvider extends Provider {
 
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
-    protected createPrompt(injectPrefix: string): Message[] {
+    protected createPrompt(injectPrefix?: string): Message[] {
         const prefixMessages = this.createPromptPrefix(injectPrefix)
         const referenceSnippetMessages: Message[] = []
 
@@ -163,7 +163,7 @@ export class AnthropicProvider extends Provider {
         // TODO: Bring back the logic with injectPrefix \n when the current line is non empty
 
         // Create prompt
-        const prompt = this.createPrompt('')
+        const prompt = this.createPrompt()
         if (prompt.length > this.promptChars) {
             throw new Error('prompt length exceeded maximum alloted chars')
         }

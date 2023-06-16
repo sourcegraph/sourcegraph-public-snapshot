@@ -108,10 +108,10 @@ function makeEven(number: number): number {
 //         similarity: number
 //     }[]
 // }
-
+//
 // function prepareContext(snippets: ReferenceSnippet[], fileName: string): Context {
 //     const windows: Context['windows'] = []
-
+//
 //     // the model expects a similarly to rank the order and priority to insert
 //     // snippets. Since we already have ranked results and do not expose the
 //     // score, we can create an artificial score for simplicity.
@@ -125,7 +125,7 @@ function makeEven(number: number): number {
 //             similarity,
 //         })
 //     }
-
+//
 //     return {
 //         current_file_path: fileName,
 //         windows,
