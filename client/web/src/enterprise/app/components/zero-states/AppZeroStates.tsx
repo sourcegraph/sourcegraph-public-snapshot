@@ -1,6 +1,8 @@
 import { FC, ReactNode } from 'react'
 
-import { Text } from '@sourcegraph/wildcard'
+import { mdiGit } from '@mdi/js'
+
+import { Text, Icon } from '@sourcegraph/wildcard'
 
 import styles from './AppZeroStates.module.scss'
 
@@ -48,5 +50,13 @@ export const AppNoItemsState: FC<AppNoItemsStateProps> = ({ title, subTitle }) =
                 </Text>
             )}
         </span>
+    </div>
+)
+
+export const NoReposAddedState: FC = () => (
+    <div className={styles.noRepoState}>
+        <Icon svgPath={mdiGit} aria-hidden={true} className={styles.noRepoStateIcon} />
+
+        <Text className="mb-0">No repos added yet</Text>
     </div>
 )

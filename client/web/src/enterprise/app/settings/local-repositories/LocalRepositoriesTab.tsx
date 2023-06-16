@@ -19,7 +19,7 @@ import {
 
 import { LocalRepository } from '../../../../graphql-operations'
 import { callFilePicker, useLocalRepositories, useNewLocalRepositoriesPaths } from '../../../../setup-wizard/components'
-import { AppNoItemsState } from '../../components'
+import { NoReposAddedState } from '../../components'
 
 import styles from './LocalRepositoriesTab.module.scss'
 
@@ -89,12 +89,7 @@ export const LocalRepositoriesWidget: FC<LocalRepositoriesWidgetProps> = props =
                 {anyError && <ErrorAlert error={anyError} />}
 
                 {!anyError && anyLoading && !allLoaded && <LoadingSpinner />}
-                {!anyError && allLoaded && repositories.length === 0 && (
-                    <AppNoItemsState
-                        title="No local repositories"
-                        subTitle="Pick local repositories with buttons above"
-                    />
-                )}
+                {!anyError && allLoaded && repositories.length === 0 && <NoReposAddedState />}
                 {!anyError && allLoaded && (
                     <LocalRepositoriesList
                         paths={paths}

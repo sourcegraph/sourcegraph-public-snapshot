@@ -224,9 +224,11 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
             )}
 
             <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphApp={props.isSourcegraphApp} />
-            {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
-                <SurveyToast authenticatedUser={props.authenticatedUser} />
-            )}
+            {!isSiteInit &&
+                !isSignInOrUp &&
+                !props.isSourcegraphDotCom &&
+                !disableFeedbackSurvey &&
+                !props.isSourcegraphApp && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {props.isSourcegraphDotCom && props.authenticatedUser && (
                 <CodySurveyToast
                     authenticatedUser={props.authenticatedUser}

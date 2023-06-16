@@ -2,37 +2,27 @@
 
 .root {
     display: flex;
-    flex-direction: column;
-    padding: 4.5rem 3.5rem 0;
 
     // Tablet and "mobile" (small) layout
-    @media (--md-breakpoint-down) {
-        .content {
-            grid-template-areas:
-                'description description'
-                'actions actions';
-            margin-bottom: 2.5rem;
+    @media (--sm-breakpoint-down) {
+        flex-direction: column;
+
+        .description-image {
+            display: none;
         }
 
-        .image {
-            max-width: 100%;
-            margin: auto 0 0 0;
+        .actions {
+            padding: 2.5rem 3.5rem;
+            flex-grow: 1;
         }
     }
 }
 
-.content {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    row-gap: 1.5rem;
-    column-gap: 3rem;
-    grid-template-areas: 'description actions';
-}
-
 .description {
-    grid-area: description;
+    flex-basis: 50%;
     display: flex;
     flex-direction: column;
+    padding: 6rem 3.5rem 0;
 
     &-heading {
         font-size: 2.25rem;
@@ -42,34 +32,26 @@
     &-text {
         color: #dedede;
         font-size: 1.25rem;
+        margin-bottom: 2rem;
     }
 
-    &-footer {
-        color: #dedede;
-        font-size: 1rem;
+    &-image {
+        margin-top: auto;
+        max-width: calc(100% + 7rem);
+        margin-left: -3.5rem;
+        margin-right: -3.5rem;
     }
 }
 
 .actions {
-    grid-area: actions;
+    flex-basis: 50%;
+    flex-shrink: 0;
+    padding: 9.5rem 2.5rem 2.5rem;
+    background-color: var(--gray-02);
 
-    &-card {
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-        padding: 2rem;
-        border-radius: 3px;
-        border: 1px solid #785198;
-        color: var(--white);
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    &-buttons-group {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.75rem;
+    &-heading {
+        margin-bottom: 1.25rem;
+        color: var(--body-color);
     }
 
     &-button {
@@ -80,18 +62,11 @@
     }
 
     &-footer {
+        margin-top: 3rem;
         margin-bottom: 0;
-        margin-top: 1rem;
     }
 
     &-term-link {
-        color: var(--white);
         text-decoration: underline;
     }
-}
-
-.image {
-    max-width: calc(55% + 3.5rem);
-    margin-top: auto;
-    margin-left: -3.5rem;
 }

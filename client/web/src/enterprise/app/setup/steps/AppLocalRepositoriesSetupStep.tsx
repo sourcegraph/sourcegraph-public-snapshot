@@ -51,12 +51,12 @@ export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ classNam
                     Choose the local repositories you’d like to add to the app.
                 </Text>
 
-                <Text className={classNames(styles.descriptionText, styles.descriptionTextSmall)}>
+                <Text className={styles.descriptionText}>
                     Consider adding your most recent projects, or the repositories you edit the most. You can always add
                     more later.
                 </Text>
 
-                <Tooltip content={repositories.length === 0 ? 'Select one repo to continue' : undefined}>
+                <Tooltip content={repositories.length === 0 ? 'Select at least one repo to continue' : undefined}>
                     <Button
                         size="lg"
                         variant="primary"
