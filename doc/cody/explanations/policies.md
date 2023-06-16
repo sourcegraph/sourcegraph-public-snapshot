@@ -19,7 +19,7 @@ Provide a descriptive name for the policy and click on **Add repository pattern*
 
 The pattern matches exactly, unless you use an asterisk _*_ to match any sequence of characters.
 The policy will be applied to all repositories that match the pattern.
-If you choose not to define a pattern, the policy will be applied to up to [embeddings.policyRepositoryMatchLimit](./code_graph_context.md#configuring-global-policy-match-limit) repositories.
+If you choose not to define a pattern, the policy will be applied to up to [embeddings.policyRepositoryMatchLimit](./code_graph_context.md#configuring-the-global-policy-match-limit) repositories.
 Finally, click on **Create policy**.
 The new policy will be shown in the list of policies.
 

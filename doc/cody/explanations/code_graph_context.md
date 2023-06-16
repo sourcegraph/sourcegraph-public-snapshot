@@ -156,7 +156,7 @@ Embeddings can currently be disabled, even with Cody enabled, using the followin
 }
 ```
 
-### Configuring global policy match limit
+### Configuring the global policy match limit
 
 By default, a global policy, that means an embeddings policy without a pattern, is applied to up to 5000 repositories. 
 The repositories matching the policy are first sorted by star count (descending) and id (descending) and then the first 5000 repositories are selected.
