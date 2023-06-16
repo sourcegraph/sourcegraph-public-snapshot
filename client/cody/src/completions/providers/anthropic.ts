@@ -2,7 +2,6 @@ import * as anthropic from '@anthropic-ai/sdk'
 
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
-import { CompletionResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { Completion } from '..'
 import { messagesToText } from '../utils'
