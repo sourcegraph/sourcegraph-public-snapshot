@@ -371,7 +371,7 @@ class CodyToolWindowContent implements UpdatableChat {
 
   @NotNull
   private JBTextArea createPromptInput(@NotNull Project project) {
-    JBTextArea promptInput = new RoundedJBTextArea(4, 0, 10);
+    JBTextArea promptInput = new RoundedJBTextArea(2, 9, 10);
     BasicTextAreaUI textUI = (BasicTextAreaUI) DarculaTextAreaUI.createUI(promptInput);
     promptInput.setUI(textUI);
     promptInput.setFont(UIUtil.getLabelFont());
