@@ -111,6 +111,8 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	preciseDataList := []*preciseData{}
 	definitionMap := map[string]*preciseData{}
 	for _, name := range scipNames {
+		ident := name.GetIdentifier()
+
 		args := codenavtypes.RequestArgs{
 			RepositoryID: repoID,
 			Commit:       commitID,
@@ -136,13 +138,8 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			hunkCache,
 		)
 
-		// if _, ok := seenOccurrences[name.GetIdentifier()]; ok {
-		// 	continue
-		// }
-		// seenOccurrences[name.GetIdentifier()] = struct{}{}
-
 		for _, upload := range uploads {
-			loc, err := s.codenavSvc.GetLocationByExplodedSymbol(ctx, name.GetIdentifier(), upload.ID, "definition_ranges")
+			loc, err := s.codenavSvc.GetLocationByExplodedSymbol(ctx, ident, upload.ID, "definition_ranges")
 			if err != nil {
 				return nil, err
 			}
@@ -153,14 +150,14 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			}
 
 			pd := &preciseData{
-				symbolName: name.GetIdentifier(),
+				symbolName: ident,
 				repository: string(repo[0].Name),
 				// symbolRole: int32(el.Occurrence.SymbolRoles),
 				confidence: "PRECISE",
 				location:   ul,
 			}
 
-			e := strings.Split(name.GetIdentifier(), "/")
+			e := strings.Split(ident, "/")
 			key := e[len(e)-1]
 			definitionMap[key] = pd
 

@@ -10,6 +10,7 @@ type SCIPNames struct {
 	Descriptor     string
 }
 
+// TODO - replace with scip formatter
 func (s *SCIPNames) GetIdentifier() string {
 	scheme := "."
 	if s.Scheme != "" {
