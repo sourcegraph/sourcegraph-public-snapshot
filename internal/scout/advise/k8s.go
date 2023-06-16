@@ -3,7 +3,6 @@ package advise
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/src-cli/internal/scout"
@@ -75,19 +74,19 @@ func Advise(ctx context.Context, cfg *scout.Config, pod v1.Pod) error {
 	}
 
 	for _, metrics := range usageMetrics {
-		cpuAdvice := checkUsage(metrics.CpuUsage, "CPU", metrics.ContainerName, pod.Name)
+		cpuAdvice := CheckUsage(metrics.CpuUsage, "CPU", metrics.ContainerName)
 		advice = append(advice, cpuAdvice)
 
-		memoryAdvice := checkUsage(metrics.MemoryUsage, "memory", metrics.ContainerName, pod.Name)
+		memoryAdvice := CheckUsage(metrics.MemoryUsage, "memory", metrics.ContainerName)
 		advice = append(advice, memoryAdvice)
 
 		if metrics.Storage != nil {
-			storageAdvice := checkUsage(metrics.StorageUsage, "storage", metrics.ContainerName, pod.Name)
+			storageAdvice := CheckUsage(metrics.StorageUsage, "storage", metrics.ContainerName)
 			advice = append(advice, storageAdvice)
 		}
 
 		if cfg.Output != "" {
-			outputToFile(ctx, cfg, pod, advice)
+			OutputToFile(ctx, cfg, pod.Name, advice)
 		} else {
 			for _, msg := range advice {
 				fmt.Println(msg)
@@ -95,26 +94,6 @@ func Advise(ctx context.Context, cfg *scout.Config, pod v1.Pod) error {
 		}
 	}
 
-	return nil
-}
-
-// outputToFile writes resource allocation advice for a Kubernetes pod to a file.
-func outputToFile(ctx context.Context, cfg *scout.Config, pod v1.Pod, advice []string) error {
-	file, err := os.OpenFile(cfg.Output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return errors.Wrap(err, "failed to open file")
-	}
-	defer file.Close()
-
-	if _, err := fmt.Fprintf(file, "- %s\n", pod.Name); err != nil {
-		return errors.Wrap(err, "failed to write pod name to file")
-	}
-
-	for _, msg := range advice {
-		if _, err := fmt.Fprintf(file, "%s\n", msg); err != nil {
-			return errors.Wrap(err, "failed to write container advice to file")
-		}
-	}
 	return nil
 }
 
@@ -145,47 +124,4 @@ func getUsageMetrics(ctx context.Context, cfg *scout.Config, pod v1.Pod) ([]scou
 	}
 
 	return usages, nil
-}
-
-func checkUsage(usage float64, resourceType, container, pod string) string {
-	var message string
-
-	switch {
-	case usage >= 100:
-		message = fmt.Sprintf(
-			OVER_100,
-			scout.FlashingLightEmoji,
-			container,
-			resourceType,
-			usage,
-			resourceType,
-		)
-	case usage >= 80 && usage < 100:
-		message = fmt.Sprintf(
-			OVER_80,
-			scout.WarningSign,
-			container,
-			resourceType,
-			usage,
-		)
-	case usage >= 40 && usage < 80:
-		message = fmt.Sprintf(
-			OVER_40,
-			scout.SuccessEmoji,
-			container,
-			resourceType,
-			usage,
-			resourceType,
-		)
-	default:
-		message = fmt.Sprintf(
-			UNDER_40,
-			scout.WarningSign,
-			container,
-			resourceType,
-			usage,
-		)
-	}
-
-	return message
 }
