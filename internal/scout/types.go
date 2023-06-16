@@ -1,7 +1,6 @@
 package scout
 
 import (
-	"github.com/docker/docker/client"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -11,13 +10,9 @@ import (
 type Config struct {
 	Namespace     string
 	Pod           string
-	Container     string
 	Output        string
-	Spy           bool
-	Docker        bool
 	RestConfig    *rest.Config
 	K8sClient     *kubernetes.Clientset
-	DockerClient  *client.Client
 	MetricsClient *metricsv.Clientset
 }
 

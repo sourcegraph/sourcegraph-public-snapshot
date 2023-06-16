@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/docker/docker/client"
 	"github.com/sourcegraph/src-cli/internal/scout/advise"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -45,9 +44,7 @@ func init() {
 		kubeConfig *string
 		namespace  = flagSet.String("namespace", "", "(optional) specify the kubernetes namespace to use")
 		pod        = flagSet.String("pod", "", "(optional) specify a single pod")
-		container  = flagSet.String("container", "", "(optional) specify a single container")
 		output     = flagSet.String("o", "", "(optional) output advice to file")
-		docker     = flagSet.Bool("docker", false, "(optional) using docker deployment")
 	)
 
 	if home := homedir.HomeDir(); home != "" {
@@ -90,18 +87,6 @@ func init() {
 		}
 		if *output != "" {
 			options = append(options, advise.WithOutput(*output))
-		}
-		if *container != "" || *docker {
-			if *container != "" {
-				options = append(options, advise.WithContainer(*container))
-			}
-
-			dockerClient, err := client.NewClientWithOpts(client.FromEnv)
-			if err != nil {
-				return errors.Wrap(err, "error creating docker client: ")
-			}
-
-			return advise.Docker(context.Background(), *dockerClient, options...)
 		}
 
 		return advise.K8s(

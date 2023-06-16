@@ -105,7 +105,6 @@ func AddLimits(ctx context.Context, cfg *scout.Config, pod *corev1.Pod, containe
 		}
 		containerMetrics.Limits[containerName] = rsrcs
 	}
-
 	return nil
 }
 
@@ -287,6 +286,7 @@ func GetStorageUsage(
 		"worker",
 	}
 
+	// if pod is stateless, return 0 for capacity and usage
 	if scout.Contains(stateless, containerName) {
 		return storageCapacity, storageUsage, nil
 	}

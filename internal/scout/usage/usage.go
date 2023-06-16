@@ -17,15 +17,3 @@ func WithPod(podname string) Option {
 		config.Pod = podname
 	}
 }
-
-func WithContainer(containerName string) Option {
-	return func(config *scout.Config) {
-		config.Container = containerName
-	}
-}
-
-func WithSpy(spy bool) Option {
-	return func(config *scout.Config) {
-		config.Spy = true
-	}
-}

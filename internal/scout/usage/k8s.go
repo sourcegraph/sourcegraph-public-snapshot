@@ -25,13 +25,9 @@ func K8s(
 ) error {
 	cfg := &scout.Config{
 		Namespace:     "default",
-		Docker:        false,
 		Pod:           "",
-		Container:     "",
-		Spy:           false,
 		RestConfig:    restConfig,
 		K8sClient:     clientSet,
-		DockerClient:  nil,
 		MetricsClient: metricsClient,
 	}
 

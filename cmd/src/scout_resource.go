@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/docker/docker/client"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -23,9 +22,6 @@ func init() {
         List pods and resource allocations in a Kubernetes deployment:
         $ src scout resource
 
-        List containers and resource allocations in a Docker deployment:
-        $ src scout resource --docker
-
         Add namespace if using namespace in a Kubernetes cluster
         $ src scout resource --namespace sg
     `
@@ -40,7 +36,6 @@ func init() {
 	var (
 		kubeConfig *string
 		namespace  = flagSet.String("namespace", "", "(optional) specify the kubernetes namespace to use")
-		docker     = flagSet.Bool("docker", false, "(optional) using docker deployment")
 		// TODO: option for getting resource allocation of the Node
 		// nodes      = flagSet.Bool("node", false, "(optional) view resources for node(s)")
 	)
@@ -74,15 +69,6 @@ func init() {
 
 		if *namespace != "" {
 			options = append(options, resource.WithNamespace(*namespace))
-		}
-
-		if *docker {
-			dockerClient, err := client.NewClientWithOpts(client.FromEnv)
-			if err != nil {
-				return errors.Wrap(err, "error creating docker client: ")
-			}
-
-			return resource.Docker(context.Background(), *dockerClient)
 		}
 
 		return resource.K8s(context.Background(), clientSet, config, options...)

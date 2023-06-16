@@ -23,12 +23,6 @@ func WithPod(podname string) Option {
 	}
 }
 
-func WithContainer(containerName string) Option {
-	return func(config *scout.Config) {
-		config.Container = containerName
-	}
-}
-
 func WithOutput(pathToFile string) Option {
 	return func(config *scout.Config) {
 		config.Output = pathToFile
