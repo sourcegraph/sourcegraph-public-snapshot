@@ -92,12 +92,12 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                 <PageTitle title={`Ownership for ${displayRepoName(repo.name)}`} />
                 <div className={styles.actionButtons}>
                     <ButtonLink
-                        aria-label="Navigate to edit ownership page"
+                        aria-label="Navigate to upload CODEOWNERS page"
                         className="mr-2"
                         variant="secondary"
                         to={`${repo.url}/-/own/edit`}
                     >
-                        <Icon aria-hidden={true} svgPath={mdiPencil} /> Edit Ownership
+                        <Icon aria-hidden={true} svgPath={mdiPencil} /> Upload CODEOWNERS
                     </ButtonLink>
                     <Button aria-label="Add an owner" variant="success" onClick={onClickAdd}>
                         <Icon aria-hidden={true} svgPath={mdiPlus} /> Add owner
