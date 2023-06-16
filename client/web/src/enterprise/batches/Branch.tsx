@@ -30,6 +30,7 @@ export const Branch: React.FunctionComponent<React.PropsWithChildren<BranchProps
         className={classNames('text-monospace', className)}
         as={deleted ? 'del' : 'span'}
         aria-label={deleted ? 'Deleted' : ''}
+        pill={true}
     >
         {!forkTarget || forkTarget.namespace === null ? (
             name

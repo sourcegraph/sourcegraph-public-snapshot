@@ -675,7 +675,7 @@ func (c *V4Client) GetRef(ctx context.Context, owner, repo, ref string) (*restCo
 }
 
 // CreateCommit creates a commit in the given repository based on a tree object.
-func (c *V4Client) CreateCommit(ctx context.Context, owner, repo, message, tree string, parents []string, author, committer *restAuthorCommiter) (*restCommit, error) {
+func (c *V4Client) CreateCommit(ctx context.Context, owner, repo, message, tree string, parents []string, author, committer *restAuthorCommiter) (*RestCommit, error) {
 	logger := c.log.Scoped("CreateCommit", "temporary client for creating a commit on GitHub")
 	// As of May 2023, the GraphQL API does not expose any mutations for creating commits
 	// other than one which requires sending the entire file contents for any files

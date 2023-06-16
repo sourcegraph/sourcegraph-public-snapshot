@@ -833,7 +833,7 @@ func (c *V3Client) GetRef(ctx context.Context, owner, repo, ref string) (*restCo
 }
 
 // CreateCommit creates a commit in the given repository based on a tree object.
-func (c *V3Client) CreateCommit(ctx context.Context, owner, repo, message, tree string, parents []string, author, committer *restAuthorCommiter) (*restCommit, error) {
+func (c *V3Client) CreateCommit(ctx context.Context, owner, repo, message, tree string, parents []string, author, committer *restAuthorCommiter) (*RestCommit, error) {
 	payload := struct {
 		Message   string              `json:"message"`
 		Tree      string              `json:"tree"`
@@ -842,7 +842,7 @@ func (c *V3Client) CreateCommit(ctx context.Context, owner, repo, message, tree 
 		Committer *restAuthorCommiter `json:"committer,omitempty"`
 	}{Message: message, Tree: tree, Parents: parents, Author: author, Committer: committer}
 
-	var commit restCommit
+	var commit RestCommit
 	if _, err := c.post(ctx, "repos/"+owner+"/"+repo+"/git/commits", payload, &commit); err != nil {
 		return nil, err
 	}

@@ -662,9 +662,17 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 			// We use the existing commit as the basis for the new commit, duplicating it
 			// over the REST API in order to produce a signed version of it to replace the
 			// original one with.
-			err = gcss.DuplicateCommit(ctx, opts, remoteRepo, rev)
+			newCommit, err := gcss.DuplicateCommit(ctx, opts, remoteRepo, rev)
 			if err != nil {
 				return errors.Wrap(err, "failed to duplicate commit")
+			}
+			if newCommit.Verification.Verified {
+				err = e.tx.UpdateChangesetCommitVerification(ctx, e.ch, newCommit)
+				if err != nil {
+					return errors.Wrap(err, "failed to update changeset with commit verification")
+				}
+			} else {
+				log15.Warn("Commit created with GitHub App was not signed", "changeset", e.ch.ID, "commit", newCommit.SHA)
 			}
 		}
 	}

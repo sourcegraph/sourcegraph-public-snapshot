@@ -520,6 +520,7 @@ Referenced by:
  computed_state           | text                                         |           | not null | 
  external_fork_name       | citext                                       |           |          | 
  previous_failure_message | text                                         |           |          | 
+ commit_verification      | jsonb                                        |           | not null | '{}'::jsonb
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -4775,6 +4776,7 @@ Foreign-key constraints:
     c.external_state,
     c.external_review_state,
     c.external_check_state,
+    c.commit_verification,
     c.diff_stat_added,
     c.diff_stat_deleted,
     c.sync_state,

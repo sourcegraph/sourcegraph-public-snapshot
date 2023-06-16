@@ -539,6 +539,7 @@ func deleteChangesetSpecsQuery(opts *DeleteChangesetSpecsOpts) *sqlf.Query {
 func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 	var published []byte
 	var typ string
+
 	err := s.Scan(
 		&c.ID,
 		&c.RandID,

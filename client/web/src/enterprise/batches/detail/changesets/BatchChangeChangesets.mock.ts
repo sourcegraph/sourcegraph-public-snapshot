@@ -25,6 +25,7 @@ export const BATCH_CHANGE_CHANGESETS: (ExternalChangesetFields | HiddenExternalC
             body: 'This changeset does the following things:\nIs awesome\nIs useful',
             checkState: ChangesetCheckState.PENDING,
             createdAt: now.toISOString(),
+            commitVerification: null,
             externalID: '123',
             externalURL: {
                 url: 'http://test.test/pr/123',

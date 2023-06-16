@@ -124,6 +124,13 @@ type ExternalURL struct {
 	ServiceType string
 }
 
+type GitHubCommitVerification struct {
+	Verified  bool
+	Reason    string
+	Signature string
+	Payload   string
+}
+
 type Changeset struct {
 	Typename   string `json:"__typename"`
 	ID         string
@@ -147,6 +154,8 @@ type Changeset struct {
 	ReviewState        string
 	CheckState         string
 	Events             ChangesetEventConnection
+
+	CommitVerification *GitHubCommitVerification
 
 	Diff Comparison
 

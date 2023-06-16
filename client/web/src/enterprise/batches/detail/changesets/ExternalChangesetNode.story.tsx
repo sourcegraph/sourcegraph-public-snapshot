@@ -27,6 +27,14 @@ const config: Meta = {
             control: { type: 'boolean' },
             defaultValue: true,
         },
+        labeled: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+        commitsSigned: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
     },
 }
 
@@ -56,6 +64,7 @@ export const AllStates: Story = args => {
                                     body: 'This changeset does the following things:\nIs awesome\nIs useful',
                                     checkState: ChangesetCheckState.PENDING,
                                     createdAt: now.toISOString(),
+                                    commitVerification: args.commitsSigned ? { verified: true } : null,
                                     externalID: '123',
                                     externalURL: {
                                         url: 'http://test.test/pr/123',
@@ -66,14 +75,16 @@ export const AllStates: Story = args => {
                                         added: 30,
                                         deleted: 28,
                                     },
-                                    labels: [
-                                        {
-                                            __typename: 'ChangesetLabel',
-                                            color: '93ba13',
-                                            description: 'Very awesome description',
-                                            text: 'Some label',
-                                        },
-                                    ],
+                                    labels: args.labeled
+                                        ? [
+                                              {
+                                                  __typename: 'ChangesetLabel',
+                                                  color: '93ba13',
+                                                  description: 'Very awesome description',
+                                                  text: 'Some label',
+                                              },
+                                          ]
+                                        : [],
                                     repository: {
                                         id: 'repoid',
                                         name: 'github.com/sourcegraph/sourcegraph',
@@ -142,6 +153,7 @@ export const Unpublished: Story = args => {
                         body: 'This changeset does the following things:\nIs awesome\nIs useful',
                         checkState: null,
                         createdAt: now.toISOString(),
+                        commitVerification: null,
                         externalID: null,
                         externalURL: null,
                         forkNamespace: null,
@@ -217,6 +229,7 @@ export const Importing: Story = args => {
                         body: null,
                         checkState: null,
                         createdAt: now.toISOString(),
+                        commitVerification: null,
                         externalID: '12345',
                         externalURL: null,
                         forkNamespace: null,
@@ -279,6 +292,7 @@ export const ImportingFailed: Story = args => {
                         body: null,
                         checkState: null,
                         createdAt: now.toISOString(),
+                        commitVerification: null,
                         externalID: '99999',
                         externalURL: null,
                         forkNamespace: null,
@@ -333,6 +347,7 @@ export const SyncFailed: Story = args => {
                         body: null,
                         checkState: null,
                         createdAt: now.toISOString(),
+                        commitVerification: null,
                         externalID: '99999',
                         externalURL: null,
                         forkNamespace: null,
