@@ -227,39 +227,17 @@ func extractSnippet(lines []string, startLine, endLine, startChar, endChar int32
 		return ""
 	}
 
-	result := make([]string, 0)
+	c := make([]string, endLine-startLine+1)
+	copy(c, lines[startLine:endLine+1])
 
-	for i := startLine; i <= endLine; i++ {
-		line := lines[i]
-		if startChar == 0 && endChar == 0 {
-			result = append(result, line)
-			continue
-		}
-
-		if i == startLine {
-			if startChar < 0 || startChar >= int32(len(line)) {
-				return ""
-			}
-
-			if i == endLine {
-				if endChar < startChar || endChar > int32(len(line)) {
-					return ""
-				}
-				result = append(result, line[startChar:endChar])
-			} else {
-				result = append(result, line[startChar:])
-			}
-		} else if i == endLine {
-			if endChar < 0 || endChar > int32(len(line)) {
-				return ""
-			}
-			result = append(result, line[:endChar])
-		} else {
-			result = append(result, line)
-		}
+	n := len(c) - 1
+	if n == 0 {
+		endChar -= startChar
 	}
+	c[0] = c[0][startChar:]
+	c[n] = c[n][:endChar]
 
-	return strings.Join(result, "\n")
+	return strings.Join(c, "\n")
 }
 
 func (s *Service) getSCIPDocumentByContent(ctx context.Context, content, fileName string) (*scip.Document, error) {
