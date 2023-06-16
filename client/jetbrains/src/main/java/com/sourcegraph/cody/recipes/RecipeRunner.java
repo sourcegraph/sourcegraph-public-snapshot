@@ -29,19 +29,15 @@ public class RecipeRunner {
     TruncatedText truncatedTextInputToPrompt = TruncatedText.of(textInputToPrompt,
         TruncationUtils.MAX_RECIPE_INPUT_TOKENS);
 
-    OriginalText selectedText = new OriginalText(textInputToPrompt);
     // TODO: Use or remove these
-    String truncatedPrecedingText =
-        editorContext.getPrecedingText() != null
-            ? TruncatedText.ofEndOf(editorContext.getPrecedingText(),
-            TruncationUtils.MAX_RECIPE_SURROUNDING_TOKENS).getValue()
-            : "";
-    String truncatedFollowingText =
-        editorContext.getFollowingText() != null
-            ? TruncatedText.of(editorContext.getFollowingText(),
-            TruncationUtils.MAX_RECIPE_SURROUNDING_TOKENS).getValue()
-            : "";
+    String precedingText = editorContext.getPrecedingText();
+    String truncatedPrecedingText = precedingText != null ? TruncatedText.ofEndOf(precedingText,
+        TruncationUtils.MAX_RECIPE_SURROUNDING_TOKENS).getValue() : "";
+    String followingText = editorContext.getFollowingText();
+    String truncatedFollowingText = followingText != null ? TruncatedText.of(followingText,
+        TruncationUtils.MAX_RECIPE_SURROUNDING_TOKENS).getValue() : "";
 
+    OriginalText selectedText = new OriginalText(textInputToPrompt);
     PromptContext promptContext =
         promptProvider.getPromptContext(language, selectedText, truncatedTextInputToPrompt);
 
