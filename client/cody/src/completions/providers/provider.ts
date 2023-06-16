@@ -31,6 +31,7 @@ export interface ProviderOptions {
     languageId: string
     snippets: ReferenceSnippet[]
     multilineMode: null | 'block'
+    // Relative length to `maximumContextCharacters`
     responsePercentage: number
     prefixPercentage: number
     suffixPercentage: number
