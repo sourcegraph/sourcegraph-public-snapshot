@@ -357,14 +357,9 @@ func (r *changesetResolver) ForkName() *string {
 func (r *changesetResolver) CommitVerification(ctx context.Context) (graphqlbackend.CommitVerificationResolver, error) {
 	switch r.changeset.ExternalServiceType {
 	case extsvc.TypeGitHub:
-		spec, err := r.computeSpec(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		if spec.CommitVerification != nil {
+		if r.changeset.CommitVerification != nil {
 			return &commitVerificationResolver{
-				commitVerification: spec.CommitVerification,
+				commitVerification: r.changeset.CommitVerification,
 			}, nil
 		}
 	}
