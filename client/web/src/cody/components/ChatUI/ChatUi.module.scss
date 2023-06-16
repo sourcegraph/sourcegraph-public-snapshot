@@ -6,10 +6,7 @@
 }
 
 .transcript-item {
-    border-color: transparent;
-    border-top-width: 1px;
-    border-top-style: solid;
-    border-bottom-style: none !important; // Override the Transcript...last-child row
+    border: none !important; // Override the Transcript...last-child row
 }
 
 .transcript-action > ol {
