@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -115,9 +114,6 @@ type ChangesetSpec struct {
 	CommitMessage     string
 	CommitAuthorName  string
 	CommitAuthorEmail string
-	// If the commit created for a changeset is signed, commit verification is the
-	// signature verification result from the code host.
-	CommitVerification *github.Verification
 
 	ForkNamespace *string
 }
