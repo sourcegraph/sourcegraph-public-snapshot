@@ -148,6 +148,7 @@ const siteAdminRepositoryFieldsFragment = gql`
         externalRepository {
             ...ExternalRepositoryFields
         }
+        embeddingExists
     }
 `
 export const REPOSITORIES_QUERY = gql`
