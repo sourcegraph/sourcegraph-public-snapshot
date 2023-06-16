@@ -27,17 +27,18 @@ import (
 func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret string, sources *actor.Sources) http.Handler {
 	baseLogger = baseLogger.Scoped("diagnostics", "healthz checks")
 
-	mustHaveSecret := func(l log.Logger, w http.ResponseWriter, r *http.Request) {
+	hasValidSecret := func(l log.Logger, w http.ResponseWriter, r *http.Request) (yes bool) {
 		token, err := auth.ExtractBearer(r.Header)
 		if err != nil {
 			response.JSONError(l, w, http.StatusBadRequest, err)
-			return
+			return false
 		}
 
 		if token != secret {
 			w.WriteHeader(http.StatusUnauthorized)
-			return
+			return false
 		}
+		return true
 	}
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +52,9 @@ func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret stri
 		// For service liveness and readiness probes
 		case "/-/healthz":
 			logger := sgtrace.Logger(r.Context(), baseLogger)
-			mustHaveSecret(logger, w, r)
+			if !hasValidSecret(logger, w, r) {
+				return
+			}
 
 			if err := healthz(r.Context()); err != nil {
 				logger.Error("check failed", log.Error(err))
@@ -67,7 +70,9 @@ func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret stri
 		// Escape hatch to sync all sources.
 		case "/-/actor/sync-all-sources":
 			logger := sgtrace.Logger(r.Context(), baseLogger)
-			mustHaveSecret(logger, w, r)
+			if !hasValidSecret(logger, w, r) {
+				return
+			}
 
 			// Tee log output into "jq --slurp '.[].Body'"-compatible output
 			// for ease of use
