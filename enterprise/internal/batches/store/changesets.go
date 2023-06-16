@@ -10,11 +10,12 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+
 	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
-	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -53,6 +54,7 @@ var changesetStringColumns = SQLColumns{
 	"external_state",
 	"external_review_state",
 	"external_check_state",
+	"commit_verification",
 	"diff_stat_added",
 	"diff_stat_deleted",
 	"sync_state",
@@ -97,6 +99,7 @@ var ChangesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.external_state"),
 	sqlf.Sprintf("changesets.external_review_state"),
 	sqlf.Sprintf("changesets.external_check_state"),
+	sqlf.Sprintf("changesets.commit_verification"),
 	sqlf.Sprintf("changesets.diff_stat_added"),
 	sqlf.Sprintf("changesets.diff_stat_deleted"),
 	sqlf.Sprintf("changesets.sync_state"),
@@ -140,6 +143,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("external_state"),
 	sqlf.Sprintf("external_review_state"),
 	sqlf.Sprintf("external_check_state"),
+	sqlf.Sprintf("commit_verification"),
 	sqlf.Sprintf("diff_stat_added"),
 	sqlf.Sprintf("diff_stat_deleted"),
 	sqlf.Sprintf("sync_state"),
@@ -205,6 +209,7 @@ var changesetInsertStringColumns = []string{
 	"external_state",
 	"external_review_state",
 	"external_check_state",
+	"commit_verification",
 	"diff_stat_added",
 	"diff_stat_deleted",
 	"sync_state",
@@ -277,6 +282,17 @@ func (s *Store) CreateChangeset(ctx context.Context, cs ...*btypes.Changeset) (e
 				return err
 			}
 
+			var cv json.RawMessage
+			// Don't bother to record the result of verification if it's not even verified.
+			if c.CommitVerification != nil && c.CommitVerification.Verified {
+				cv, err = jsonbColumn(c.CommitVerification)
+			} else {
+				cv, err = jsonbColumn(nil)
+			}
+			if err != nil {
+				return err
+			}
+
 			// Not being able to find a title is fine, we just have a NULL in the database then.
 			title, _ := c.Title()
 
@@ -300,6 +316,7 @@ func (s *Store) CreateChangeset(ctx context.Context, cs ...*btypes.Changeset) (e
 				dbutil.NullStringColumn(string(c.ExternalState)),
 				dbutil.NullStringColumn(string(c.ExternalReviewState)),
 				dbutil.NullStringColumn(string(c.ExternalCheckState)),
+				cv,
 				c.DiffStatAdded,
 				c.DiffStatDeleted,
 				syncState,
@@ -858,6 +875,17 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		return nil, err
 	}
 
+	var cv json.RawMessage
+	// Don't bother to record the result of verification if it's not even verified.
+	if c.CommitVerification != nil && c.CommitVerification.Verified {
+		cv, err = jsonbColumn(c.CommitVerification)
+	} else {
+		cv, err = jsonbColumn(nil)
+	}
+	if err != nil {
+		return nil, err
+	}
+
 	// Not being able to find a title is fine, we just have a NULL in the database then.
 	title, _ := c.Title()
 
@@ -881,6 +909,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		dbutil.NullStringColumn(string(c.ExternalState)),
 		dbutil.NullStringColumn(string(c.ExternalReviewState)),
 		dbutil.NullStringColumn(string(c.ExternalCheckState)),
+		cv,
 		c.DiffStatAdded,
 		c.DiffStatDeleted,
 		syncState,
@@ -913,7 +942,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 
 var updateChangesetQueryFmtstr = `
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -1052,6 +1081,28 @@ func (s *Store) UpdateChangesetUiPublicationState(ctx context.Context, cs *btype
 
 	uiPublicationState := uiPublicationStateColumn(cs)
 	return s.updateChangesetColumn(ctx, cs, "ui_publication_state", uiPublicationState)
+}
+
+// UpdateChangesetSCommitVerification records the commit verification object for a commit
+// to the Changeset if it was signed and verified.
+func (s *Store) UpdateChangesetCommitVerification(ctx context.Context, cs *btypes.Changeset, commit *github.RestCommit) (err error) {
+	ctx, _, endObservation := s.operations.updateChangesetCommitVerification.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(cs.ID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	var cv json.RawMessage
+	// Don't bother to record the result of verification if it's not even verified.
+	if commit.Verification.Verified {
+		cv, err = jsonbColumn(commit.Verification)
+	} else {
+		cv, err = jsonbColumn(nil)
+	}
+	if err != nil {
+		return err
+	}
+
+	return s.updateChangesetColumn(ctx, cs, "commit_verification", cv)
 }
 
 // updateChangesetColumn updates the column with the given name, setting it to
@@ -1385,7 +1436,7 @@ func (n jsonBatchChangeChangesetSet) Value() (driver.Value, error) {
 }
 
 func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
-	var metadata, syncState json.RawMessage
+	var metadata, syncState, commitVerification json.RawMessage
 
 	var (
 		externalState          string
@@ -1413,6 +1464,7 @@ func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		&dbutil.NullString{S: &externalState},
 		&dbutil.NullString{S: &externalReviewState},
 		&dbutil.NullString{S: &externalCheckState},
+		&commitVerification,
 		&t.DiffStatAdded,
 		&t.DiffStatDeleted,
 		&syncState,
@@ -1482,6 +1534,14 @@ func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 	}
 	if err = json.Unmarshal(syncState, &t.SyncState); err != nil {
 		return errors.Wrapf(err, "scanChangeset: failed to unmarshal sync state: %s", syncState)
+	}
+	var cv *github.Verification
+	if err = json.Unmarshal(commitVerification, &cv); err != nil {
+		return errors.Wrapf(err, "scanChangesetSpecs: failed to unmarshal commitVerification: %s", commitVerification)
+	}
+	// Only set the commit verification if it's actually verified.
+	if cv.Verified {
+		t.CommitVerification = cv
 	}
 
 	return nil

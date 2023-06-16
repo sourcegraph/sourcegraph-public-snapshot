@@ -10,7 +10,7 @@ type CodyGatewayRateLimit struct {
 	// format "$PROVIDER/$MODEL_NAME", for example "anthropic/claude-v1".
 	AllowedModels []string
 
-	Limit           int32
+	Limit           int64
 	IntervalSeconds int32
 }
 
@@ -34,7 +34,7 @@ func NewCodyGatewayChatRateLimit(plan Plan, userCount *int, licenseTags []string
 		PlanEnterprise0:
 		return CodyGatewayRateLimit{
 			AllowedModels:   models,
-			Limit:           int32(50 * uc),
+			Limit:           int64(50 * uc),
 			IntervalSeconds: 60 * 60 * 24, // day
 		}
 
@@ -42,7 +42,7 @@ func NewCodyGatewayChatRateLimit(plan Plan, userCount *int, licenseTags []string
 	default:
 		return CodyGatewayRateLimit{
 			AllowedModels:   models,
-			Limit:           int32(10 * uc),
+			Limit:           int64(10 * uc),
 			IntervalSeconds: 60 * 60 * 24, // day
 		}
 	}
@@ -68,7 +68,7 @@ func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string
 		PlanEnterprise0:
 		return CodyGatewayRateLimit{
 			AllowedModels:   models,
-			Limit:           int32(1000 * uc),
+			Limit:           int64(1000 * uc),
 			IntervalSeconds: 60 * 60 * 24, // day
 		}
 
@@ -76,7 +76,7 @@ func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string
 	default:
 		return CodyGatewayRateLimit{
 			AllowedModels:   models,
-			Limit:           int32(100 * uc),
+			Limit:           int64(100 * uc),
 			IntervalSeconds: 60 * 60 * 24, // day
 		}
 	}
@@ -103,7 +103,7 @@ func NewCodyGatewayEmbeddingsRateLimit(plan Plan, userCount *int, licenseTags []
 		PlanEnterprise0:
 		return CodyGatewayRateLimit{
 			AllowedModels:   models,
-			Limit:           int32(20 * uc * tokensPerDollar / 30),
+			Limit:           int64(20 * uc * tokensPerDollar / 30),
 			IntervalSeconds: 60 * 60 * 24, // day
 		}
 
@@ -111,7 +111,7 @@ func NewCodyGatewayEmbeddingsRateLimit(plan Plan, userCount *int, licenseTags []
 	default:
 		return CodyGatewayRateLimit{
 			AllowedModels:   models,
-			Limit:           int32(10 * uc * tokensPerDollar / 30),
+			Limit:           int64(10 * uc * tokensPerDollar / 30),
 			IntervalSeconds: 60 * 60 * 24, // day
 		}
 	}

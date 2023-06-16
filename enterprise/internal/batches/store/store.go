@@ -244,6 +244,7 @@ type operations struct {
 	updateChangesetBatchChanges       *observation.Operation
 	updateChangesetUIPublicationState *observation.Operation
 	updateChangesetCodeHostState      *observation.Operation
+	updateChangesetCommitVerification *observation.Operation
 	getChangesetExternalIDs           *observation.Operation
 	cancelQueuedBatchChangeChangesets *observation.Operation
 	enqueueChangesetsToClose          *observation.Operation
@@ -388,6 +389,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 			updateChangesetBatchChanges:       op("UpdateChangesetBatchChanges"),
 			updateChangesetUIPublicationState: op("UpdateChangesetUIPublicationState"),
 			updateChangesetCodeHostState:      op("UpdateChangesetCodeHostState"),
+			updateChangesetCommitVerification: op("UpdateChangesetCommitVerification"),
 			getChangesetExternalIDs:           op("GetChangesetExternalIDs"),
 			cancelQueuedBatchChangeChangesets: op("CancelQueuedBatchChangeChangesets"),
 			enqueueChangesetsToClose:          op("EnqueueChangesetsToClose"),

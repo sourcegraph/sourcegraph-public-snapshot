@@ -46,6 +46,7 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { FileContentEditor } from '../../cody/components/FileContentEditor'
+import { isCodyEnabled } from '../../cody/isCodyEnabled'
 import { useCodySidebar } from '../../cody/sidebar/Provider'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
@@ -137,8 +138,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     )
     const isPackage = useMemo(() => isPackageServiceType(repoServiceType), [repoServiceType])
 
-    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
-    const enableOwnershipPanel = ownFeatureFlagEnabled && props.ownEnabled
+    const [enableOwnershipPanels] = useFeatureFlag('enable-ownership-panels', true)
+    const enableOwnershipPanel = enableOwnershipPanels && props.ownEnabled
 
     const lineOrRange = useMemo(
         () => parseQueryAndHash(location.search, location.hash),
@@ -362,12 +363,13 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     const alwaysRender = (
         <>
             <PageTitle title={getPageTitle()} />
-            {props.isSourcegraphDotCom && (
+            {(props.isSourcegraphDotCom || isCodyEnabled()) && (
                 <TryCodyWidget
                     telemetryService={props.telemetryService}
                     type="blob"
                     authenticatedUser={props.authenticatedUser}
                     context={context}
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
                 />
             )}
             {window.context.isAuthenticatedUser && (
@@ -446,8 +448,13 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                     />
                 )}
             </RepoHeaderContributionPortal>
-            {enableOwnershipPanel && repoID && (
-                <HistoryAndOwnBar repoID={repoID} revision={revision} filePath={filePath} />
+            {repoID && (
+                <HistoryAndOwnBar
+                    repoID={repoID}
+                    revision={revision}
+                    filePath={filePath}
+                    enableOwnershipPanel={enableOwnershipPanel}
+                />
             )}
         </>
     )

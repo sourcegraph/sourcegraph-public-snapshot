@@ -7,7 +7,7 @@
     "withGlobalTauri": true
   },
   "package": {
-    "productName": "Sourcegraph",
+    "productName": "Cody",
     "version": "2023.0.0+dev"
   },
   "tauri": {
@@ -82,7 +82,7 @@
         "fullscreen": false,
         "height": 768,
         "resizable": true,
-        "title": "Sourcegraph",
+        "title": "Cody",
         "width": 1024
       }
     ]

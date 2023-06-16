@@ -20,6 +20,8 @@ describe('getConfiguration', () => {
             debugEnable: false,
             debugVerbose: false,
             debugFilter: null,
+            completionsAdvancedProvider: 'anthropic',
+            completionsAdvancedServerEndpoint: null,
         })
     })
 
@@ -54,6 +56,10 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.debug.filter':
                         return /.*/
+                    case 'cody.completions.advanced.provider':
+                        return 'unstable-codegen'
+                    case 'cody.completions.advanced.serverEndpoint':
+                        return 'https://example.com/llm'
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -75,6 +81,8 @@ describe('getConfiguration', () => {
             debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,
+            completionsAdvancedProvider: 'unstable-codegen',
+            completionsAdvancedServerEndpoint: 'https://example.com/llm',
         })
     })
 })

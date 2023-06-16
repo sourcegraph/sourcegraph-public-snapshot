@@ -228,6 +228,12 @@ func codyEnabled(siteConfig schema.SiteConfiguration) bool {
 	return *enabled
 }
 
+// newCodyEnabled checks only for the new CodyEnabled flag. If you need back
+// compat, use codyEnabled instead.
+func newCodyEnabled(siteConfig schema.SiteConfiguration) bool {
+	return siteConfig.CodyEnabled != nil && *siteConfig.CodyEnabled
+}
+
 func CodyRestrictUsersFeatureFlag() bool {
 	if restrict := Get().CodyRestrictUsersFeatureFlag; restrict != nil {
 		return *restrict
@@ -670,10 +676,16 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		}
 	}
 
-	// If after setting defaults for no `completions` config given there still is no
-	// provider configured.
+	// If no provider is configured, we assume the Sourcegraph provider. Prior
+	// to provider becoming an optional field, provider was required, so unset
+	// provider is definitely with the understanding that the Sourcegraph
+	// provider is the default. Since this is new, we also enforce that the new
+	// CodyEnabled config is set (instead of relying on backcompat)
 	if completionsConfig.Provider == "" {
-		return nil
+		if !newCodyEnabled(siteConfig) {
+			return nil
+		}
+		completionsConfig.Provider = string(conftypes.CompletionsProviderNameSourcegraph)
 	}
 
 	// If ChatModel is not set, fall back to the deprecated Model field.
@@ -821,9 +833,17 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 	// If after setting defaults for no `embeddings` config given there still is no
 	// provider configured.
 	// Before, this meant "use OpenAI", but it's easy to accidentally send Cody Gateway
-	// auth tokens to OpenAI by that, so we want to be explicit going forward.
+	// auth tokens to OpenAI by that, so if an access token is explicitly set we
+	// are careful and require the provider to be explicit. This lets us have good
+	// support for optional Provider in most cases (token is generated for
+	// default provider Sourcegraph)
 	if embeddingsConfig.Provider == "" {
-		return nil
+		if embeddingsConfig.AccessToken != "" {
+			return nil
+		}
+
+		// Otherwise, assume Provider, since it is optional
+		embeddingsConfig.Provider = string(conftypes.EmbeddingsProviderNameSourcegraph)
 	}
 
 	// The default value for incremental is true.

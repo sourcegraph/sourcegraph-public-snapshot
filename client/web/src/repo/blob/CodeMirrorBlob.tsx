@@ -28,6 +28,7 @@ import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shar
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { CodeMirrorEditor } from '../../cody/components/CodeMirrorEditor'
+import { isCodyEnabled } from '../../cody/isCodyEnabled'
 import { useCodySidebar } from '../../cody/sidebar/Provider'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { ExternalLinkFields, Scalars } from '../../graphql-operations'
@@ -275,7 +276,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     )
 
     // Added fallback to take care of ReferencesPanel/Simple storybook
-    const { isCodyEnabled, setEditorScope } = useCodySidebar()
+    const { setEditorScope } = useCodySidebar()
 
     const editorRef = useRef<EditorView | null>(null)
 
@@ -295,7 +296,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             }),
             scipSnapshot(blobInfo.snapshotData),
             codeFoldingExtension(),
-            isCodyEnabled.editorRecipes
+            isCodyEnabled()
                 ? codyWidgetExtension(
                       editorRef.current
                           ? new CodeMirrorEditor({

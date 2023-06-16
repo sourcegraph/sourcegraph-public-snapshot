@@ -233,6 +233,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                         },
                     ],
                     nextSyncAt: null,
+                    commitVerification: null,
                     repository: {
                         id: 'repo123',
                         name: 'github.com/sourcegraph/repo',

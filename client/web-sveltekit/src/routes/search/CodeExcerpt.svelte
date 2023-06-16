@@ -6,8 +6,8 @@
     import { catchError } from 'rxjs/operators'
 
     import { asError, isErrorLike, highlightNodeMultiline } from '$lib/common'
-    import type { MatchGroupMatch } from '$lib/shared'
     import { observeIntersection } from '$lib/intersection-observer'
+    import type { MatchGroupMatch } from '$lib/shared'
 
     export let startLine: number
     export let endLine: number

@@ -1,8 +1,12 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "packagefilters",
-    srcs = ["package_filters.go"],
+    srcs = [
+        "glob.go",
+        "package_filters.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/packagefilters",
     visibility = ["//:__subpackages__"],
     deps = [
@@ -10,5 +14,18 @@ go_library(
         "//internal/conf/reposource",
         "//lib/errors",
         "@com_github_gobwas_glob//:glob",
+        "@com_github_gobwas_glob//syntax",
+        "@com_github_gobwas_glob//syntax/ast",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)
+
+go_test(
+    name = "packagefilters_test",
+    srcs = ["glob_test.go"],
+    embed = [":packagefilters"],
+    deps = [
+        "@com_github_gobwas_glob//:glob",
+        "@com_github_grafana_regexp//:regexp",
     ],
 )

@@ -102,6 +102,7 @@ message CreateCommitFromPatchBinaryRequest {
   PatchCommitInfo commit_info = 6;
   // push_config is the configuration to be used for pushing the commit
   PushConfig push = 7;
+  // git_apply_args are the arguments to be passed to git apply
   repeated string git_apply_args = 8;
   // push_ref is the optional override for the ref that is pushed to
   optional string push_ref = 9;

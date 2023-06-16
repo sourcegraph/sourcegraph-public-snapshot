@@ -1,12 +1,12 @@
 <script lang="ts">
     import { mdiFolderOutline, mdiFileDocumentOutline } from '@mdi/js'
 
-    import { isErrorLike } from '$lib/common'
     import Commit from '$lib/Commit.svelte'
+    import { isErrorLike } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
+    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
 
     import type { PageData } from './$types'
-    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
 
     export let data: PageData
 

@@ -1,8 +1,9 @@
 <script lang="ts">
-    import Icon from '$lib/Icon.svelte'
     import { mdiEye } from '@mdi/js'
-    import { page } from '$app/stores'
+
     import { goto } from '$app/navigation'
+    import { page } from '$app/stores'
+    import Icon from '$lib/Icon.svelte'
 
     $: formatted = $page.url.searchParams.get('view') !== 'raw'
     let url: string

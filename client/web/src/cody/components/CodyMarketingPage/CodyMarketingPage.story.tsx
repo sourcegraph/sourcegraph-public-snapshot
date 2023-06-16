@@ -30,4 +30,9 @@ const context: Pick<SourcegraphContext, 'authProviders'> = {
     ],
 }
 
-export const Default: Story = () => <WebStory>{() => <CodyMarketingPage context={context} />}</WebStory>
+export const SourcegraphDotCom: Story = () => (
+    <WebStory>{() => <CodyMarketingPage context={context} isSourcegraphDotCom={true} />}</WebStory>
+)
+export const Enterprise: Story = () => (
+    <WebStory>{() => <CodyMarketingPage context={context} isSourcegraphDotCom={false} />}</WebStory>
+)
