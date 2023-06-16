@@ -36,11 +36,7 @@ type LsifStore interface {
 	SCIPDocument(ctx context.Context, id int, path string) (_ *scip.Document, err error)
 
 	// Fetch document by symbol name
-	GetSCIPDocumentsBySymbolNames(ctx context.Context, uploadID int, symbolNames []string) (documents []*scip.Document, err error)
 	GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*types.SCIPNames, err error)
-	// GetDefinitions(ctx context.Context, document *scip.Document, symbolName string, uploadID int, path string, limit, offset int) (_ []shared.Location, _ int, err error)
-	GetScipDefinitionsLocation(ctx context.Context, document *scip.Document, occ *scip.Occurrence, uploadID int, path string, limit, offset int) (_ []shared.Location, _ int, err error)
-
 	GetLocationByExplodedSymbol(ctx context.Context, symbolName string, uploadID int, scipFieldName string, path string) (locations []shared.Location, err error)
 }
 

@@ -214,12 +214,6 @@ JOIN codeintel_scip_document_lookup dl ON dl.id = ss.document_lookup_id
 ORDER BY ss.upload_id, msn.symbol_name
 `
 
-func (s *store) GetScipDefinitionsLocation(ctx context.Context, document *scip.Document, occ *scip.Occurrence, uploadID int, path string, limit, offset int) (_ []shared.Location, _ int, err error) {
-	qdd := qualifiedDocumentData{UploadID: uploadID, Path: path, SCIPData: document}
-	ocs := []*scip.Occurrence{occ}
-	return s.getLocations(ctx, "definition_ranges", extractDefinitionRanges, qdd, ocs, uploadID, path, 100, 0)
-}
-
 // WORKS
 // TODO: call getLocations in here, then use this method from the context api
 // func (s *store) GetDefinitions(ctx context.Context, document *scip.Document, symbolName string, uploadID int, path string, limit, offset int) (_ []shared.Location, _ int, err error) {
