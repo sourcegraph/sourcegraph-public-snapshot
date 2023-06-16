@@ -168,7 +168,6 @@ DELETE FROM codeintel_last_reconcile
 WHERE dump_id IN (SELECT dump_id FROM locked_rows)
 `
 
-// TODO - test
 func (s *store) DeleteAbandonedSchemaVersionsRecords(ctx context.Context) (_ int, err error) {
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
