@@ -18,7 +18,10 @@ import {
     Label,
 } from '@sourcegraph/wildcard'
 
-import { ScheduleRepoEmbeddingJobsResult, ScheduleRepoEmbeddingJobsVariables } from '../../../../../graphql-operations'
+import {
+    ScheduleLocalRepoEmbeddingJobsResult,
+    ScheduleLocalRepoEmbeddingJobsVariables,
+} from '../../../../../graphql-operations'
 import { EnterprisePageRoutes } from '../../../../../routes.constants'
 import {
     SetupStepsContext,
@@ -42,10 +45,10 @@ const SCHEDULE_REPO_EMBEDDING_JOBS = gql`
 `
 
 export function useScheduleRepoEmbeddingJobs(): MutationTuple<
-    ScheduleRepoEmbeddingJobsResult,
-    ScheduleRepoEmbeddingJobsVariables
+    ScheduleLocalRepoEmbeddingJobsResult,
+    ScheduleLocalRepoEmbeddingJobsVariables
 > {
-    return useMutation<ScheduleRepoEmbeddingJobsResult, ScheduleRepoEmbeddingJobsVariables>(
+    return useMutation<ScheduleLocalRepoEmbeddingJobsResult, ScheduleLocalRepoEmbeddingJobsVariables>(
         SCHEDULE_REPO_EMBEDDING_JOBS
     )
 }
