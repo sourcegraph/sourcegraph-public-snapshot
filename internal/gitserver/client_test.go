@@ -74,7 +74,7 @@ func newMockDB() database.DB {
 func TestClient_Archive_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
-	a := func(original gitserver.ArchiveOptions) bool {
+	fn := func(original gitserver.ArchiveOptions) bool {
 
 		var converted gitserver.ArchiveOptions
 		converted.FromProto(original.ToProto("test"))
@@ -86,7 +86,7 @@ func TestClient_Archive_ProtoRoundTrip(t *testing.T) {
 		return true
 	}
 
-	if err := quick.Check(a, nil); err != nil {
+	if err := quick.Check(fn, nil); err != nil {
 		t.Errorf("ArchiveOptions proto roundtrip failed (-want +got):\n%s", diff)
 	}
 }
@@ -94,7 +94,7 @@ func TestClient_Archive_ProtoRoundTrip(t *testing.T) {
 func TestClient_IsRepoCloneale_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
-	c := func(original protocol.IsRepoCloneableResponse) bool {
+	fn := func(original protocol.IsRepoCloneableResponse) bool {
 		var converted protocol.IsRepoCloneableResponse
 		converted.FromProto(original.ToProto())
 
@@ -105,7 +105,7 @@ func TestClient_IsRepoCloneale_ProtoRoundTrip(t *testing.T) {
 		return true
 	}
 
-	if err := quick.Check(c, nil); err != nil {
+	if err := quick.Check(fn, nil); err != nil {
 		t.Errorf("IsRepoCloneableResponse proto roundtrip failed (-want +got):\n%s", diff)
 	}
 }
@@ -113,7 +113,7 @@ func TestClient_IsRepoCloneale_ProtoRoundTrip(t *testing.T) {
 func TestClient_RepoStats_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
-	rs := func(updatedAt fuzzTime, gitDirBytes int64) bool {
+	fn := func(updatedAt fuzzTime, gitDirBytes int64) bool {
 		original := protocol.ReposStats{
 			UpdatedAt:   time.Time(updatedAt),
 			GitDirBytes: gitDirBytes,
@@ -129,164 +129,176 @@ func TestClient_RepoStats_ProtoRoundTrip(t *testing.T) {
 		return true
 	}
 
-	if err := quick.Check(rs, nil); err != nil {
+	if err := quick.Check(fn, nil); err != nil {
 		t.Errorf("ReposStats proto roundtrip failed (-want +got):\n%s", diff)
 	}
 }
 
 func TestClient_RepoUpdateRequest_ProtoRoundTrip(t *testing.T) {
 	var diff string
-	ruReq := func(repo api.RepoName, since int64, cloneFromShard string) bool {
-		original := protocol.RepoUpdateRequest{
-			Repo:           repo,
-			Since:          time.Duration(since),
-			CloneFromShard: cloneFromShard,
+	t.Run("request", func(t *testing.T) {
+		fn := func(repo api.RepoName, since int64, cloneFromShard string) bool {
+			original := protocol.RepoUpdateRequest{
+				Repo:           repo,
+				Since:          time.Duration(since),
+				CloneFromShard: cloneFromShard,
+			}
+
+			var converted protocol.RepoUpdateRequest
+			converted.FromProto(original.ToProto())
+
+			if diff = cmp.Diff(original, converted); diff != "" {
+				return false
+			}
+
+			return true
 		}
 
-		var converted protocol.RepoUpdateRequest
-		converted.FromProto(original.ToProto())
+		if err := quick.Check(fn, nil); err != nil {
+			t.Errorf("RepoUpdateRequest proto roundtrip failed (-want +got):\n%s", diff)
+		}
+	})
 
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
+	t.Run("response", func(t *testing.T) {
+		fn := func(lastFetched fuzzTime, lastChange fuzzTime, err string) bool {
+			lf := time.Time(lastFetched)
+			lc := time.Time(lastChange)
+
+			original := protocol.RepoUpdateResponse{
+				LastFetched: &lf,
+				LastChanged: &lc,
+				Error:       err,
+			}
+			var converted protocol.RepoUpdateResponse
+			converted.FromProto(original.ToProto())
+
+			if diff = cmp.Diff(original, converted); diff != "" {
+				return false
+			}
+
+			return true
 		}
 
-		return true
-	}
-
-	if err := quick.Check(ruReq, nil); err != nil {
-		t.Errorf("RepoUpdateRequest proto roundtrip failed (-want +got):\n%s", diff)
-	}
-
-	ruRes := func(lastFetched fuzzTime, lastChange fuzzTime, err string) bool {
-		lf := time.Time(lastFetched)
-		lc := time.Time(lastChange)
-
-		original := protocol.RepoUpdateResponse{
-			LastFetched: &lf,
-			LastChanged: &lc,
-			Error:       err,
+		if err := quick.Check(fn, nil); err != nil {
+			t.Errorf("RepoUpdateResponse proto roundtrip failed (-want +got):\n%s", diff)
 		}
-		var converted protocol.RepoUpdateResponse
-		converted.FromProto(original.ToProto())
-
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
-		}
-
-		return true
-	}
-
-	if err := quick.Check(ruRes, nil); err != nil {
-		t.Errorf("RepoUpdateResponse proto roundtrip failed (-want +got):\n%s", diff)
-	}
+	})
 }
 
 func TestClient_CreateCommitFromPatchRequest_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
-	fn := func(
-		repo string,
-		baseCommit string,
-		patch []byte,
-		targetRef string,
-		uniqueRef bool,
-		pushRef *string,
+	t.Run("request", func(t *testing.T) {
+		fn := func(
+			repo string,
+			baseCommit string,
+			patch []byte,
+			targetRef string,
+			uniqueRef bool,
+			pushRef *string,
 
-		commitInfo struct {
-			Messages    []string
-			AuthorName  string
-			AuthorEmail string
-			Date        fuzzTime
-		},
-
-		pushConfig *protocol.PushConfig,
-		gitApplyArgs []string,
-	) bool {
-		original := protocol.CreateCommitFromPatchRequest{
-			Repo:       api.RepoName(repo),
-			BaseCommit: api.CommitID(baseCommit),
-			Patch:      patch,
-			TargetRef:  targetRef,
-			UniqueRef:  uniqueRef,
-			CommitInfo: protocol.PatchCommitInfo{
-				Messages:    commitInfo.Messages,
-				AuthorName:  commitInfo.AuthorName,
-				AuthorEmail: commitInfo.AuthorEmail,
-				Date:        time.Time(commitInfo.Date),
+			commitInfo struct {
+				Messages    []string
+				AuthorName  string
+				AuthorEmail string
+				Date        fuzzTime
 			},
-			Push:         pushConfig,
-			PushRef:      pushRef,
-			GitApplyArgs: gitApplyArgs,
+
+			pushConfig *protocol.PushConfig,
+			gitApplyArgs []string,
+		) bool {
+			original := protocol.CreateCommitFromPatchRequest{
+				Repo:       api.RepoName(repo),
+				BaseCommit: api.CommitID(baseCommit),
+				Patch:      patch,
+				TargetRef:  targetRef,
+				UniqueRef:  uniqueRef,
+				CommitInfo: protocol.PatchCommitInfo{
+					Messages:    commitInfo.Messages,
+					AuthorName:  commitInfo.AuthorName,
+					AuthorEmail: commitInfo.AuthorEmail,
+					Date:        time.Time(commitInfo.Date),
+				},
+				Push:         pushConfig,
+				PushRef:      pushRef,
+				GitApplyArgs: gitApplyArgs,
+			}
+			var converted protocol.CreateCommitFromPatchRequest
+			converted.FromProto(original.ToProto())
+
+			if diff = cmp.Diff(original, converted); diff != "" {
+				return false
+			}
+
+			return true
 		}
-		var converted protocol.CreateCommitFromPatchRequest
-		converted.FromProto(original.ToProto())
 
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
+		if err := quick.Check(fn, nil); err != nil {
+			t.Errorf("CreateCommitFromPatchRequest proto roundtrip failed (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("response", func(t *testing.T) {
+		fn := func(original protocol.CreateCommitFromPatchResponse) bool {
+			var converted protocol.CreateCommitFromPatchResponse
+			converted.FromProto(original.ToProto())
+
+			if diff = cmp.Diff(original, converted); diff != "" {
+				return false
+			}
+
+			return true
 		}
 
-		return true
-	}
-
-	if err := quick.Check(fn, nil); err != nil {
-		t.Errorf("CreateCommitFromPatchRequest proto roundtrip failed (-want +got):\n%s", diff)
-	}
-
-	res := func(original protocol.CreateCommitFromPatchResponse) bool {
-		var converted protocol.CreateCommitFromPatchResponse
-		converted.FromProto(original.ToProto())
-
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
+		if err := quick.Check(fn, nil); err != nil {
+			t.Errorf("CreateCommitFromPatchResponse proto roundtrip failed (-want +got):\n%s", diff)
 		}
-
-		return true
-	}
-
-	if err := quick.Check(res, nil); err != nil {
-		t.Errorf("CreateCommitFromPatchResponse proto roundtrip failed (-want +got):\n%s", diff)
-	}
+	})
 }
 
 func TestClient_BatchLog_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
-	req := func(original protocol.BatchLogRequest) bool {
-		var converted protocol.BatchLogRequest
-		converted.FromProto(original.ToProto())
+	t.Run("request", func(t *testing.T) {
+		fn := func(original protocol.BatchLogRequest) bool {
+			var converted protocol.BatchLogRequest
+			converted.FromProto(original.ToProto())
 
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
+			if diff = cmp.Diff(original, converted); diff != "" {
+				return false
+			}
+
+			return true
 		}
 
-		return true
-	}
+		if err := quick.Check(fn, nil); err != nil {
+			t.Errorf("BatchChangesLogResponse proto roundtrip failed (-want +got):\n%s", diff)
+		}
+	})
 
-	if err := quick.Check(req, nil); err != nil {
-		t.Errorf("BatchChangesLogResponse proto roundtrip failed (-want +got):\n%s", diff)
-	}
+	t.Run("response", func(t *testing.T) {
+		fn := func(original protocol.BatchLogResponse) bool {
+			var converted protocol.BatchLogResponse
+			converted.FromProto(original.ToProto())
 
-	res := func(original protocol.BatchLogResponse) bool {
-		var converted protocol.BatchLogResponse
-		converted.FromProto(original.ToProto())
+			if diff = cmp.Diff(original, converted); diff != "" {
+				return false
+			}
 
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
+			return true
 		}
 
-		return true
-	}
-
-	if err := quick.Check(res, nil); err != nil {
-		t.Errorf("BatchChangesLogResponse proto roundtrip failed (-want +got):\n%s", diff)
-	}
+		if err := quick.Check(fn, nil); err != nil {
+			t.Errorf("BatchChangesLogResponse proto roundtrip failed (-want +got):\n%s", diff)
+		}
+	})
 
 }
 
 func TestClient_RepoCloneProgress_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
-	req := func(original protocol.RepoCloneProgress) bool {
+	fn := func(original protocol.RepoCloneProgress) bool {
 		var converted protocol.RepoCloneProgress
 		converted.FromProto(original.ToProto())
 
@@ -297,7 +309,7 @@ func TestClient_RepoCloneProgress_ProtoRoundTrip(t *testing.T) {
 		return true
 	}
 
-	if err := quick.Check(req, nil); err != nil {
+	if err := quick.Check(fn, nil); err != nil {
 		t.Errorf("RepoCloneProgress proto roundtrip failed (-want +got):\n%s", diff)
 	}
 }
@@ -305,7 +317,7 @@ func TestClient_RepoCloneProgress_ProtoRoundTrip(t *testing.T) {
 func TestClient_P4ExecRequest_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
-	req := func(original protocol.P4ExecRequest) bool {
+	fn := func(original protocol.P4ExecRequest) bool {
 		var converted protocol.P4ExecRequest
 		converted.FromProto(original.ToProto())
 
@@ -316,7 +328,7 @@ func TestClient_P4ExecRequest_ProtoRoundTrip(t *testing.T) {
 		return true
 	}
 
-	if err := quick.Check(req, nil); err != nil {
+	if err := quick.Check(fn, nil); err != nil {
 		t.Errorf("P4ExecRequest proto roundtrip failed (-want +got):\n%s", diff)
 	}
 }
@@ -324,7 +336,7 @@ func TestClient_P4ExecRequest_ProtoRoundTrip(t *testing.T) {
 func TestClient_RepoClone_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
-	res := func(original protocol.RepoCloneResponse) bool {
+	fn := func(original protocol.RepoCloneResponse) bool {
 		var converted protocol.RepoCloneResponse
 		converted.FromProto(original.ToProto())
 
@@ -335,7 +347,7 @@ func TestClient_RepoClone_ProtoRoundTrip(t *testing.T) {
 		return true
 	}
 
-	if err := quick.Check(res, nil); err != nil {
+	if err := quick.Check(fn, nil); err != nil {
 		t.Errorf("RepoCloneResponse proto roundtrip failed (-want +got):\n%s", diff)
 	}
 }
@@ -343,7 +355,7 @@ func TestClient_RepoClone_ProtoRoundTrip(t *testing.T) {
 func TestClient_ListGitolite_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
-	req := func(original gitolite.Repo) bool {
+	fn := func(original gitolite.Repo) bool {
 		var converted gitolite.Repo
 		converted.FromProto(original.ToProto())
 
@@ -354,7 +366,7 @@ func TestClient_ListGitolite_ProtoRoundTrip(t *testing.T) {
 		return true
 	}
 
-	if err := quick.Check(req, nil); err != nil {
+	if err := quick.Check(fn, nil); err != nil {
 		t.Errorf("ListGitoliteRepo proto roundtrip failed (-want +got):\n%s", diff)
 	}
 }
