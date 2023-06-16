@@ -2,10 +2,10 @@
     import { mdiDotsHorizontal } from '@mdi/js'
 
     import type { GitCommitFields } from '$lib/graphql-operations'
-    import { currentDate as now } from '$lib/stores'
-    import { getRelativeTime } from '$lib/relativeTime'
-    import UserAvatar from '$lib/UserAvatar.svelte'
     import Icon from '$lib/Icon.svelte'
+    import { getRelativeTime } from '$lib/relativeTime'
+    import { currentDate as now } from '$lib/stores'
+    import UserAvatar from '$lib/UserAvatar.svelte'
 
     export let commit: GitCommitFields
     export let alwaysExpanded: boolean = false
