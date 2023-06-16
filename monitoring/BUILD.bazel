@@ -31,6 +31,26 @@ genrule(
     visibility = ["//docker-images/grafana:__pkg__"],
 )
 
+genrule(
+    name = "generate_grafana_config_tar",
+    srcs = [],
+    outs = ["monitoring.tar"],
+    cmd = """
+        $(location //monitoring:monitoring) generate \
+                --all.dir monitoring && \
+
+        mkdir -p usr/share/grafana/public/dashboards/ && \
+        mv monitoring/grafana/home.json usr/share/grafana/public/dashboards/ && \
+
+        mkdir -p sg_config_grafana/provisioning/dashboards/sourcegraph/ && \
+        mv monitoring/grafana/* sg_config_grafana/provisioning/dashboards/sourcegraph/ &&\
+
+        tar -cf $@ usr/share/grafana/public/dashboards/ sg_config_grafana/provisioning/dashboards/sourcegraph/
+        """,
+    tools = ["//monitoring"],
+    visibility = ["//docker-images/grafana:__pkg__"],
+)
+
 # Bazel expects all outputs to be explicitly defined. Therefore we have
 # to manually list them here. This so we can use this target as inputs to a
 # pkg_tar rule. Using the zip variant from above would not work, as we

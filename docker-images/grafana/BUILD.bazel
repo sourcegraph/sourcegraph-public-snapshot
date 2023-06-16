@@ -13,11 +13,9 @@ pkg_tar(
     srcs = [
         ":config_files",
         "//docker-images/grafana/config",
-        "//monitoring:generate_config_zip",
     ],
     remap_paths = {
         "docker-images/grafana/config": "/sg_config_grafana",
-        "monitoring/outputs/grafana": "/sg_config_grafana/provisioning/dashboards/sourcegraph",
         "/entry-bazel.sh": "/entry.sh",
     },
 )
@@ -26,7 +24,10 @@ oci_image(
     name = "image",
     base = "@wolfi_grafana_base",
     entrypoint = ["/entry.sh"],
-    tars = [":config_tar"],
+    tars = [
+        ":config_tar",
+        "//monitoring:generate_grafana_config_tar",
+    ],
     user = "grafana",
 )
 
