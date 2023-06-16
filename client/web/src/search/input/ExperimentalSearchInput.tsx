@@ -21,8 +21,6 @@ import { resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/util
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-
 import { createSuggestionsSource, type SuggestionsSourceConfig } from './suggestions'
 import { useRecentSearches } from './useRecentSearches'
 
@@ -68,25 +66,6 @@ const examples: Example[] = [
         valid: tokens => !tokens.some(token => token.type === 'filter' && token.value?.value.startsWith('commit.diff')),
     },
 ]
-
-const ownershipExamples: Example[] = [
-    {
-        label: 'file:has.owner()',
-        snippet: 'file:has.owner(${}) ${}',
-        description: 'Search code ownership',
-        valid: tokens => !tokens.some(token => token.type === 'filter' && token.value?.value.startsWith('has.owner(')),
-    },
-]
-
-function buildExamples(config: { enableOwnershipSearch: boolean }): Example[] {
-    let final = examples
-
-    if (config.enableOwnershipSearch) {
-        final = final.concat(ownershipExamples)
-    }
-
-    return final
-}
 
 function useUsedExamples(): [Set<string>, (value: string) => void] {
     const [usedExamples = [], setUsedExamples] = useTemporarySetting('search.input.usedExamples', [])
@@ -153,8 +132,6 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
         getSearchContextRef.current = () => selectedSearchContextSpec
     }, [selectedSearchContextSpec])
 
-    const [enableOwnershipSearch] = useFeatureFlag('search-ownership')
-
     const editorRef = useRef<Editor | null>(null)
 
     const suggestionSource = useMemo(
@@ -197,11 +174,11 @@ export const ExperimentalSearchInput: FC<PropsWithChildren<ExperimentalSearchInp
                 exampleSuggestions({
                     getUsedExamples: () => usedExamplesRef.current,
                     markExampleUsed: addExample,
-                    examples: buildExamples({ enableOwnershipSearch }),
+                    examples,
                 })
             ),
         ],
-        [telemetryService, addExample, enableOwnershipSearch]
+        [telemetryService, addExample]
     )
 
     return (

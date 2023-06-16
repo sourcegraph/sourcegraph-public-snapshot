@@ -58,10 +58,7 @@ func TestOwnSearchEventNames(t *testing.T) {
 				PatternType:         query.SearchTypeLiteral,
 				Protocol:            search.Streaming,
 				OnSourcegraphDotCom: true,
-				Features: &search.Features{
-					CodeOwnershipSearch: true,
-				},
-				Query: q,
+				Query:               q,
 			}
 			db := database.NewMockDB()
 			eventStore := &fakeEventLogStore{}

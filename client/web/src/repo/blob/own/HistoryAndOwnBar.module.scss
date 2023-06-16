@@ -9,16 +9,28 @@
     margin-bottom: 0.25rem;
 }
 
-.history {
-    min-width: 0;
+.history-panel {
     padding: 0;
+    display: flex;
+    align-items: stretch;
+    vertical-align: middle;
+    font-weight: normal;
+    letter-spacing: normal;
+    line-height: normal;
     font-size: 0.75rem;
-    flex-shrink: 1000000; // Very high value to shink this before shrinking the ownership side.
+    overflow: hidden;
 
     // Hide on small screen sizes
     @media (--sm-breakpoint-down) {
         display: none;
     }
+}
+
+.history {
+    min-width: 0;
+    padding: 0;
+    font-size: 0.75rem;
+    flex-shrink: 1000000; // Very high value to shrink this before shrinking the ownership side.
 }
 
 .own {
