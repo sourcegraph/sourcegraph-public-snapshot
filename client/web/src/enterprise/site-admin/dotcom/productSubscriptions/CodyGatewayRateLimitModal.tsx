@@ -29,7 +29,7 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
 > = ({ onCancel, afterSave, productSubscriptionID, current, mode }) => {
     const labelId = 'codyGatewayRateLimit'
 
-    const [limit, setLimit] = useState<number>(current?.limit ?? 100)
+    const [limit, setLimit] = useState<number>(Number(current?.limit) ?? 100)
     const onChangeLimit = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setLimit(parseInt(event.target.value, 10))
     }, [])
