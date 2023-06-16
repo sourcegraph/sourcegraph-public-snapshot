@@ -269,7 +269,7 @@ func NewAbandonedSchemaVersionsRecordsTask(
 	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
 		Name:        name,
 		Description: "Deletes schema version metadata records for indexes that no longer exist.",
-		Interval:    config.Interval, // TODO - can be REALLY LONG
+		Interval:    config.AbandonedSchemaVersionsInterval,
 		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			numDeleted, err := lsifStore.DeleteAbandonedSchemaVersionsRecords(ctx)
