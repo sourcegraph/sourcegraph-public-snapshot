@@ -24,24 +24,12 @@ While in experimental state, Cody completions need to be enabled manually. To do
 
 ### Configuring on Sourcegraph Enterprise
 
-Please follow the steps in [Enabling Cody on Sourcegraph Enterprise](explanations/enabling_cody_enterprise.md#enabling-cody-on-sourcegraph-enterprise) to enable Cody on Sourcegraph Enterprise.
+Please follow the steps in [Enabling Cody on Sourcegraph Enterprise](explanations/enabling_cody_enterprise.md) to enable Cody on Sourcegraph Enterprise.
 
-You have to configure the model used for Cody completions via the `completionModel` option inside the `completions` site config.
-
-```json
-{
-  // [...]
-  "cody.enabled": true,
-  "completions": {
-    "provider": "anthropic",
-    "completionModel": "claude-instant-v1.0",
-    "accessToken": "<key>"
-  }
-}
-```
+By default, a fully configured Sourcegraph instance picks a default LLM to generate code completions. Custom models can be used for Cody completions via the `completionModel` option inside the `completions` site config.
 
 > NOTE: Self-hosted customers need to update to a minimum of version 5.0.4 to use completions.
 
 <br />
 
-> NOTE: Cody completions currently only work with Claude Instant or our Cody Gateway configured with Claude Instant. Support for other models will be coming later.
+> NOTE: Cody completions currently only work with Anthropic's Claude Instant model. Support for other models will be coming later.
