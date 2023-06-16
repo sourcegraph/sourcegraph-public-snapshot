@@ -3,7 +3,8 @@ package com.sourcegraph.cody.completions.prompt_library;
 import com.sourcegraph.cody.api.Promises;
 import com.sourcegraph.cody.vscode.*;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -13,6 +14,9 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings({"unused", "FieldCanBeLocal", "CommentedOutCode"})
 public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
+  int nThreads = 3; // up to 3 completion API calls to run in parallel
+  // should we reuse the scheduler from CodyCompletionsManager here later on?
+  private final ExecutorService executor = Executors.newFixedThreadPool(nThreads);
   private final int promptTokens;
   private final int maxPrefixTokens;
   private final int maxSuffixTokens;
@@ -166,7 +170,11 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
     }
     List<CompletableFuture<List<Completion>>> promises =
         completers.stream()
-            .map(c -> c.generateCompletions(token, Optional.empty()))
+            .map(
+                c -> // ensure completions are called for asynchronously
+                CompletableFuture.supplyAsync(
+                        () -> c.generateCompletions(token, Optional.empty()), executor))
+            .map(cf -> cf.thenCompose(Function.identity())) // flatten the CompletableFutures
             .collect(Collectors.toList());
     CompletableFuture<List<InlineCompletionItem>> all =
         Promises.all(promises)

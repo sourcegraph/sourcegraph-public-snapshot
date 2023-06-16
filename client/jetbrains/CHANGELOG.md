@@ -35,6 +35,8 @@
 
 ### Changed
 
+- Parallelized completion API calls and reduced debounce down to 20ms [#53592](https://github.com/sourcegraph/sourcegraph/pull/53592)
+
 ### Deprecated
 
 ### Removed
