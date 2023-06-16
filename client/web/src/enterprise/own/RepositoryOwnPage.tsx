@@ -1,23 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiAccount, mdiPencil, mdiPlus } from '@mdi/js'
-import { Navigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import {
-    Button,
-    H1,
-    Icon,
-    Link,
-    LoadingSpinner,
-    PageHeader,
-    ProductStatusBadge,
-    ButtonLink,
-} from '@sourcegraph/wildcard'
+import { Button, H1, Icon, Link, PageHeader, ProductStatusBadge, ButtonLink } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { TreeOwnershipPanel } from '../../repo/blob/own/TreeOwnershipPanel'
 import { FilePathBreadcrumbs } from '../../repo/FilePathBreadcrumbs'
 
@@ -58,7 +48,6 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
 
     useBreadcrumb({ key: 'own', element: 'Ownership' })
 
-    const [ownEnabled, status] = useFeatureFlag('search-ownership')
     const [openAddOwnerModal, setOpenAddOwnerModal] = useState<boolean>(false)
     const onClickAdd = useCallback<React.MouseEventHandler>(event => {
         event.preventDefault()
@@ -69,23 +58,8 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
     }, [])
 
     useEffect(() => {
-        if (status !== 'initial' && ownEnabled) {
-            telemetryService.log('repoPage:ownershipPage:viewed')
-        }
-    }, [status, ownEnabled, telemetryService])
-
-    if (status === 'initial') {
-        return (
-            <div className="container d-flex justify-content-center mt-3">
-                <LoadingSpinner /> Loading...
-            </div>
-        )
-    }
-
-    if (!ownEnabled) {
-        return <Navigate to={repo.url} replace={true} />
-    }
-
+        telemetryService.log('repoPage:ownershipPage:viewed')
+    }, [telemetryService])
     return (
         <>
             <Page>

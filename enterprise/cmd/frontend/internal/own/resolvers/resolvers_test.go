@@ -31,7 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -171,7 +170,6 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 			}),
 	}
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
@@ -289,7 +287,6 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 			}),
 	}
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
@@ -388,7 +385,6 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 	db.OwnSignalConfigurationsFunc.SetDefaultReturn(database.NewMockSignalConfigurationStore())
 	own := own.NewService(git, db)
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(repo, nil)
@@ -476,7 +472,6 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 	db.OwnSignalConfigurationsFunc.SetDefaultReturn(database.NewMockSignalConfigurationStore())
 	own := own.NewService(git, db)
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(repo, nil)
@@ -700,7 +695,6 @@ func TestOwnershipPagination(t *testing.T) {
 			}),
 	}
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{}, nil)
@@ -818,7 +812,6 @@ func TestOwnership_WithSignals(t *testing.T) {
 			}),
 	}
 	ctx := userCtx(fakeDB.AddUser(types.User{Username: santaName, DisplayName: santaName, SiteAdmin: true}))
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
@@ -992,7 +985,6 @@ func TestTreeOwnershipSignals(t *testing.T) {
 			}),
 	}
 	ctx := userCtx(fakeDB.AddUser(types.User{Username: santaName, DisplayName: santaName, SiteAdmin: true}))
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
@@ -1188,7 +1180,6 @@ func TestCommitOwnershipSignals(t *testing.T) {
 	repoID := api.RepoID(1)
 
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
@@ -1467,7 +1458,6 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 		},
 	}
 	ctx := userCtx(fakeDB.AddUser(types.User{Username: santaName, DisplayName: santaName, SiteAdmin: true}))
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)

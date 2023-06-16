@@ -20,7 +20,6 @@ import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settin
 import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { SearchPatternType } from '../graphql-operations'
 import { OwnConfigProps } from '../own/OwnConfigProps'
 import { setSearchMode, useNavbarQueryState } from '../stores'
@@ -32,10 +31,7 @@ import styles from './SearchConsolePage.module.scss'
 
 interface SearchConsolePageProps
     extends SearchStreamingProps,
-        Omit<
-            StreamingSearchResultsListProps,
-            'allExpanded' | 'executedQuery' | 'showSearchContext' | 'enableOwnershipSearch'
-        >,
+        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'executedQuery' | 'showSearchContext'>,
         OwnConfigProps {
     isMacPlatform: boolean
 }
@@ -43,13 +39,10 @@ interface SearchConsolePageProps
 export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
     const location = useLocation()
     const navigate = useNavigate()
-    const { streamSearch, isSourcegraphDotCom, ownEnabled } = props
+    const { streamSearch, isSourcegraphDotCom } = props
     const { applySuggestionsOnEnter } = useExperimentalFeatures(features => ({
         applySuggestionsOnEnter: features.applySearchQuerySuggestionOnEnter ?? true,
     }))
-    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership', false)
-    const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
-
     const searchQuery = useMemo(
         () => new BehaviorSubject<string>(parseSearchURLQuery(location.search) ?? ''),
         [location.search]
@@ -133,7 +126,6 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                         ) : (
                             <StreamingSearchResultsList
                                 {...props}
-                                enableOwnershipSearch={enableOwnershipSearch}
                                 allExpanded={false}
                                 results={results}
                                 executedQuery={location.search}

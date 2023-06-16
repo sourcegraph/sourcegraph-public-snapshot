@@ -8,9 +8,6 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold/v2"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -22,25 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/stretchr/testify/assert"
 )
-
-func TestFeatureFlaggedSelectOwnerJob(t *testing.T) {
-	// We can run a quick exit check on the job runner since we don't need to use any clients or sender.
-	t.Run("does not run if no features attached to job", func(t *testing.T) {
-		selectJob := NewSelectOwnersJob(nil, nil)
-		alert, err := selectJob.Run(context.Background(), job.RuntimeClients{}, nil)
-		require.Nil(t, alert)
-		var expectedErr *featureFlagError
-		assert.ErrorAs(t, err, &expectedErr)
-	})
-	t.Run("does not run if own feature is false", func(t *testing.T) {
-		selectJob := NewSelectOwnersJob(nil, &search.Features{CodeOwnershipSearch: false})
-		alert, err := selectJob.Run(context.Background(), job.RuntimeClients{}, nil)
-		require.Nil(t, alert)
-		var expectedErr *featureFlagError
-		assert.ErrorAs(t, err, &expectedErr)
-	})
-}
 
 func TestGetCodeOwnersFromMatches(t *testing.T) {
 	setupDB := func() *edb.MockEnterpriseDB {
@@ -178,8 +158,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 			return nil, nil
 		})
 		j := &selectOwnersJob{
-			child:    mockJob,
-			features: &search.Features{CodeOwnershipSearch: true},
+			child: mockJob,
 		}
 		clients := job.RuntimeClients{
 			Gitserver: gitserverClient,

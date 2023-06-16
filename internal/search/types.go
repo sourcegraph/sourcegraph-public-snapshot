@@ -412,10 +412,6 @@ type Features struct {
 	// Debug when true will set the Debug field on FileMatches. This may grow
 	// from here. For now we treat this like a feature flag for convenience.
 	Debug bool `json:"debug"`
-
-	// CodeOwnershipSearch when true will enable searching through code ownership
-	// using `file:has.owner({owner})` and `select:file.owners` filters.
-	CodeOwnershipSearch bool `json:"codeownership"`
 }
 
 func (f *Features) String() string {

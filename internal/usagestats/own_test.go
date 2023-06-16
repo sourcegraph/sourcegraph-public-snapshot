@@ -138,57 +138,6 @@ func TestGetOwnershipUsageStatsReposCountStatsNotCompacted(t *testing.T) {
 	}
 }
 
-func TestGetOwnershipUsageStatsFeatureFlagOn(t *testing.T) {
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	if _, err := db.FeatureFlags().CreateBool(ctx, "search-ownership", true); err != nil {
-		t.Fatal(err)
-	}
-	stats, err := GetOwnershipUsageStats(ctx, db)
-	if err != nil {
-		t.Fatalf("GetOwnershipUsageStats err: %s", err)
-	}
-	want := true
-	if diff := cmp.Diff(&want, stats.FeatureFlagOn); diff != "" {
-		t.Errorf("GetOwnershipFeatureFlagOn, -want+got: %s", diff)
-	}
-}
-
-func TestGetOwnershipUsageStatsFeatureFlagOff(t *testing.T) {
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	if _, err := db.FeatureFlags().CreateBool(ctx, "search-ownership", false); err != nil {
-		t.Fatal(err)
-	}
-	stats, err := GetOwnershipUsageStats(ctx, db)
-	if err != nil {
-		t.Fatalf("GetOwnershipUsageStats err: %s", err)
-	}
-	want := false
-	if diff := cmp.Diff(&want, stats.FeatureFlagOn); diff != "" {
-		t.Errorf("GetOwnershipFeatureFlagOn, -want+got: %s", diff)
-	}
-}
-
-func TestGetOwnershipUsageStatsFeatureFlagAbsent(t *testing.T) {
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	stats, err := GetOwnershipUsageStats(ctx, db)
-	if err != nil {
-		t.Fatalf("GetOwnershipUsageStats err: %s", err)
-	}
-	want := false
-	if diff := cmp.Diff(&want, stats.FeatureFlagOn); diff != "" {
-		t.Errorf("GetOwnershipFeatureFlagOn, -want+got: %s", diff)
-	}
-}
-
 func TestGetOwnershipUsageStatsAggregatedStats(t *testing.T) {
 	// Not parallel as we're replacing timeNow.
 	now := time.Date(2020, 10, 13, 12, 0, 0, 0, time.UTC) // Tuesday

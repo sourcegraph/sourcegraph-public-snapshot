@@ -1832,9 +1832,6 @@ type NotebooksUsageStatistics struct {
 }
 
 type OwnershipUsageStatistics struct {
-	// Whether the `search-ownership` feature flag is on anywhere on the instance.
-	FeatureFlagOn *bool `json:"feature_flag_on,omitempty"`
-
 	// Statistics about ownership data in repositories
 	ReposCount *OwnershipUsageReposCounts `json:"repos_count,omitempty"`
 

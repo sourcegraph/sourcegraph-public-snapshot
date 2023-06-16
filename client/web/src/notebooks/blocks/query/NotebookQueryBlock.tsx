@@ -23,7 +23,6 @@ import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../auth'
-import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { SearchPatternType } from '../../../graphql-operations'
 import { OwnConfigProps } from '../../../own/OwnConfigProps'
 import { submitSearch } from '../../../search/helpers'
@@ -80,8 +79,6 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         const [executedQuery, setExecutedQuery] = useState<string>(input.query)
         const applySuggestionsOnEnter =
             useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
-        const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership', false)
-        const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
 
         const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
         const searchMode = useNavbarQueryState(state => state.searchMode)
@@ -200,7 +197,6 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                         <div className={styles.results}>
                             <StreamingSearchResultsList
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                enableOwnershipSearch={enableOwnershipSearch}
                                 searchContextsEnabled={searchContextsEnabled}
                                 allExpanded={false}
                                 results={searchResults}

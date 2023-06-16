@@ -35,7 +35,7 @@ var (
 )
 
 func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbackend.CodeownersFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
-	if err := isIngestionAvailable(ctx); err != nil {
+	if err := isIngestionAvailable(); err != nil {
 		return nil, err
 	}
 	if err := r.viewerCanAdminister(ctx); err != nil {
@@ -68,7 +68,7 @@ func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbacken
 }
 
 func (r *ownResolver) UpdateCodeownersFile(ctx context.Context, args *graphqlbackend.CodeownersFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
-	if err := isIngestionAvailable(ctx); err != nil {
+	if err := isIngestionAvailable(); err != nil {
 		return nil, err
 	}
 	if err := r.viewerCanAdminister(ctx); err != nil {
@@ -130,7 +130,7 @@ func (r *ownResolver) getRepo(ctx context.Context, input graphqlbackend.Codeowne
 }
 
 func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, args *graphqlbackend.DeleteCodeownersFileArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := isIngestionAvailable(ctx); err != nil {
+	if err := isIngestionAvailable(); err != nil {
 		return nil, err
 	}
 	if err := r.viewerCanAdminister(ctx); err != nil {
@@ -175,7 +175,7 @@ func (r *ownResolver) logBackendEvent(ctx context.Context, eventName string) {
 }
 
 func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, args *graphqlbackend.CodeownersIngestedFilesArgs) (graphqlbackend.CodeownersIngestedFileConnectionResolver, error) {
-	if err := isIngestionAvailable(ctx); err != nil {
+	if err := isIngestionAvailable(); err != nil {
 		return nil, err
 	}
 	if err := r.viewerCanAdminister(ctx); err != nil {
@@ -203,7 +203,7 @@ func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, args *graphql
 func (r *ownResolver) RepoIngestedCodeowners(ctx context.Context, repoID api.RepoID) (graphqlbackend.CodeownersIngestedFileResolver, error) {
 	// This endpoint is open to anyone.
 	// The repository store makes sure the viewer has access to the repository.
-	if err := isIngestionAvailable(ctx); err != nil {
+	if err := isIngestionAvailable(); err != nil {
 		return nil, err
 	}
 	repo, err := r.db.Repos().Get(ctx, repoID)
@@ -311,11 +311,11 @@ func (r *codeownersIngestedFileConnectionResolver) PageInfo(ctx context.Context)
 	return r.pageInfo, r.err
 }
 
-func isIngestionAvailable(ctx context.Context) error {
+func isIngestionAvailable() error {
 	if envvar.SourcegraphDotComMode() {
 		return errors.New("codeownership ingestion is not available on sourcegraph.com")
 	}
-	return areOwnEndpointsAvailable(ctx)
+	return nil
 }
 
 func (r *ownResolver) viewerCanAdminister(ctx context.Context) error {

@@ -198,7 +198,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 
 	{ // Apply code ownership post-search filter
 		if includeOwners, excludeOwners, ok := isOwnershipSearch(b); ok {
-			basicJob = enterpriseJobs.FileHasOwnerJob(basicJob, inputs.Features, includeOwners, excludeOwners)
+			basicJob = enterpriseJobs.FileHasOwnerJob(basicJob, includeOwners, excludeOwners)
 		}
 	}
 
@@ -222,7 +222,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 			sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
 			if isSelectOwnersSearch(sp) {
 				// the select owners job is ran separately as it requires state and can return multiple owners from one match.
-				basicJob = enterpriseJobs.SelectFileOwnerJob(basicJob, inputs.Features)
+				basicJob = enterpriseJobs.SelectFileOwnerJob(basicJob)
 			} else {
 				basicJob = NewSelectJob(sp, basicJob)
 			}
