@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 const HUMAN_MESSAGE_SPEAKER = "human"
@@ -57,6 +58,18 @@ type CompletionRequestParameters struct {
 	TopK              int       `json:"topK,omitempty"`
 	TopP              float32   `json:"topP,omitempty"`
 	Model             string    `json:"model,omitempty"`
+}
+
+func (p *CompletionRequestParameters) Attrs() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.Int("promptLength", len(p.Prompt)),
+		attribute.Int("numMessages", len(p.Messages)),
+		attribute.Int("maxTokensToSample", p.MaxTokensToSample),
+		attribute.Float64("temperature", float64(p.Temperature)),
+		attribute.Int("topK", p.TopK),
+		attribute.Float64("topP", float64(p.TopP)),
+		attribute.String("model", p.Model),
+	}
 }
 
 type CompletionResponse struct {
