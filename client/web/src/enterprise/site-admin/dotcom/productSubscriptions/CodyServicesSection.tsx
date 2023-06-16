@@ -96,19 +96,6 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                 Cody services <ProductStatusBadge status="beta" />
             </H3>
             <Container className="mb-3">
-                <H4>Access token</H4>
-                <Text className="mb-2">Access tokens can be used for Cody Gateway access</Text>
-                {currentSourcegraphAccessToken && (
-                    <CopyableText
-                        label="Access token"
-                        secret={true}
-                        flex={true}
-                        text={currentSourcegraphAccessToken}
-                        className="mb-2"
-                    />
-                )}
-                {accessTokenError && <ErrorAlert error={accessTokenError} className="mb-0" />}
-
                 {currentSourcegraphAccessToken && (
                     <>
                         <div className="form-group mb-2">
@@ -199,8 +186,26 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                                 />
                             </>
                         )}
+
+                        <hr className="my-3" />
                     </>
                 )}
+
+                <H4>Access token</H4>
+                <Text className="mb-2">
+                    Access tokens can be used for Cody Gateway access. In most cases this is not needed, since access
+                    tokens are automatically generated from each instance's configured license key.
+                </Text>
+                {currentSourcegraphAccessToken && (
+                    <CopyableText
+                        label="Access token"
+                        secret={true}
+                        flex={true}
+                        text={currentSourcegraphAccessToken}
+                        className="mb-2"
+                    />
+                )}
+                {accessTokenError && <ErrorAlert error={accessTokenError} className="mb-0" />}
             </Container>
         </>
     )
