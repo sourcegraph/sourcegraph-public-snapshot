@@ -84,3 +84,13 @@ export async function batchCompletions(
     }
     return Promise.all(responses)
 }
+
+export function isAbortError(error: Error): boolean {
+    return (
+        // http module
+        error.message === 'aborted' ||
+        // fetch
+        error.message.includes('The operation was aborted') ||
+        error.message.includes('The user aborted a request')
+    )
+}

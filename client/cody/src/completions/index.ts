@@ -1,3 +1,5 @@
+import path from 'path'
+
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
@@ -14,7 +16,7 @@ import * as CompletionLogger from './logger'
 import { detectMultilineMode } from './multiline'
 import { postProcess } from './post-process'
 import { Provider, ProviderConfig } from './providers/provider'
-import { SNIPPET_WINDOW_SIZE } from './utils'
+import { SNIPPET_WINDOW_SIZE, isAbortError } from './utils'
 
 export const inlineCompletionsCache = new CompletionsCache()
 
@@ -163,7 +165,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const sharedProviderOptions = {
             prefix,
             suffix,
-            fileName: document.fileName,
+            fileName: path.normalize(vscode.workspace.asRelativePath(document.fileName)),
             languageId: document.languageId,
             snippets: similarCode,
             responsePercentage: this.responsePercentage,
@@ -292,14 +294,4 @@ function rankCompletions(completions: Completion[]): Completion[] {
 
 function filterCompletions(completions: Completion[]): Completion[] {
     return completions.filter(c => c.content.trim() !== '')
-}
-
-function isAbortError(error: Error): boolean {
-    return (
-        // http module
-        error.message === 'aborted' ||
-        // fetch
-        error.message.includes('The operation was aborted') ||
-        error.message.includes('The user aborted a request')
-    )
 }
