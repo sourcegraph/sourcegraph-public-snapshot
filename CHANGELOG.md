@@ -13,7 +13,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
-## Unreleased
+## Unreleased 5.2.0
 
 ### Added
 
