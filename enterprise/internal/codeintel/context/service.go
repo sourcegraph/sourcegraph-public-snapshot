@@ -7,11 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"google.golang.org/protobuf/proto"
-
-	//"github.com/sourcegraph/scip/bindings/go/scip"
-
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	codenavtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
