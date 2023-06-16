@@ -72,22 +72,22 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 	tests := []struct {
 		name        string
 		user        *types.User
-		wantChat    int32
-		wantCode    int32
+		wantChat    graphqlbackend.BigInt
+		wantCode    graphqlbackend.BigInt
 		wantEnabled bool
 	}{
 		{
 			name:        "admin user",
 			user:        adminUser,
-			wantChat:    int32(cfg.Completions.PerUserDailyLimit),
-			wantCode:    int32(cfg.Completions.PerUserCodeCompletionsDailyLimit),
+			wantChat:    graphqlbackend.BigInt(cfg.Completions.PerUserDailyLimit),
+			wantCode:    graphqlbackend.BigInt(cfg.Completions.PerUserCodeCompletionsDailyLimit),
 			wantEnabled: true,
 		},
 		{
 			name:        "verified user default limits",
 			user:        verifiedUser,
-			wantChat:    int32(cfg.Completions.PerUserDailyLimit),
-			wantCode:    int32(cfg.Completions.PerUserCodeCompletionsDailyLimit),
+			wantChat:    graphqlbackend.BigInt(cfg.Completions.PerUserDailyLimit),
+			wantCode:    graphqlbackend.BigInt(cfg.Completions.PerUserCodeCompletionsDailyLimit),
 			wantEnabled: true,
 		},
 		{
@@ -100,8 +100,8 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 		{
 			name:        "override user",
 			user:        overrideUser,
-			wantChat:    int32(chatOverrideLimit),
-			wantCode:    int32(codeOverrideLimit),
+			wantChat:    graphqlbackend.BigInt(chatOverrideLimit),
+			wantCode:    graphqlbackend.BigInt(codeOverrideLimit),
 			wantEnabled: true,
 		},
 	}

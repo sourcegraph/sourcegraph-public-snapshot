@@ -3298,13 +3298,13 @@ Foreign-key constraints:
  archived_at                                       | timestamp with time zone |           |          | 
  account_number                                    | text                     |           |          | 
  cody_gateway_enabled                              | boolean                  |           | not null | false
- cody_gateway_chat_rate_limit                      | integer                  |           |          | 
+ cody_gateway_chat_rate_limit                      | bigint                   |           |          | 
  cody_gateway_chat_rate_interval_seconds           | integer                  |           |          | 
- cody_gateway_embeddings_api_rate_limit            | integer                  |           |          | 
+ cody_gateway_embeddings_api_rate_limit            | bigint                   |           |          | 
  cody_gateway_embeddings_api_rate_interval_seconds | integer                  |           |          | 
  cody_gateway_embeddings_api_allowed_models        | text[]                   |           |          | 
  cody_gateway_chat_rate_limit_allowed_models       | text[]                   |           |          | 
- cody_gateway_code_rate_limit                      | integer                  |           |          | 
+ cody_gateway_code_rate_limit                      | bigint                   |           |          | 
  cody_gateway_code_rate_interval_seconds           | integer                  |           |          | 
  cody_gateway_code_rate_limit_allowed_models       | text[]                   |           |          | 
 Indexes:
