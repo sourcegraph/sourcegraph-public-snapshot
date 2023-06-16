@@ -13,13 +13,14 @@ import (
 	"os/signal"
 	pathpkg "path"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 	"syscall"
 	"time"
 
 	"golang.org/x/exp/slices"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/log"
 
