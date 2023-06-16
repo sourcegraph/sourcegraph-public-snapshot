@@ -29,6 +29,17 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
         debugRegex = new RegExp('.*')
     }
 
+    let completionsAdvancedProvider = config.get<'anthropic' | 'unstable-codegen'>(
+        'cody.completions.advanced.provider',
+        'anthropic'
+    )
+    if (completionsAdvancedProvider !== 'anthropic' && completionsAdvancedProvider !== 'unstable-codegen') {
+        completionsAdvancedProvider = 'anthropic'
+        void vscode.window.showInformationMessage(
+            "Unrecognized cody.completions.advanced.provider, defaulting to 'anthropic'"
+        )
+    }
+
     return {
         serverEndpoint: sanitizeServerEndpoint(config.get('cody.serverEndpoint', '')),
         codebase: sanitizeCodebase(config.get('cody.codebase')),
@@ -42,6 +53,8 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
         experimentalInline: config.get('cody.experimental.inline', isTesting),
         experimentalGuardrails: config.get('cody.experimental.guardrails', isTesting),
         experimentalNonStop: config.get('cody.experimental.nonStop', isTesting),
+        completionsAdvancedProvider,
+        completionsAdvancedServerEndpoint: config.get<string | null>('cody.completions.advanced.serverEndpoint', null),
     }
 }
 
