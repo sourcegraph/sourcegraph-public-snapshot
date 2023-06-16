@@ -32,7 +32,8 @@ export class UnstableCodeGenProvider extends Provider {
             // divide it into two different batches.
             batch_size: makeEven(4),
             // TODO: Figure out the exact format to attach context
-            context: prepareContext(this.snippets, this.fileName),
+            context: JSON.stringify(prepareContext(this.snippets, this.fileName)),
+            completion_type: 'automatic',
         }
 
         const log = logger.startCompletion({
