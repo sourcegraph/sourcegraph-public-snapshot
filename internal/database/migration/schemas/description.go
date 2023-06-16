@@ -252,13 +252,10 @@ func (d ColumnDescription) AlterToTarget(table TableDescription, target ColumnDe
 		d.IsNullable = target.IsNullable
 	}
 	if d.Default != target.Default {
-		var verb string
 		if target.Default == "" {
-			verb = "DROP"
-			statements = append(statements, fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s %s DEFAULT;", table.Name, target.Name, verb))
+			statements = append(statements, fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s DROP DEFAULT;", table.Name, target.Name))
 		} else {
-			verb = "SET"
-			statements = append(statements, fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s %s DEFAULT %s;", table.Name, target.Name, verb, target.Default))
+			statements = append(statements, fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s;", table.Name, target.Name, target.Default))
 		}
 
 		// Remove from diff below
