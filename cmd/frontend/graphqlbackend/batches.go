@@ -798,6 +798,8 @@ type ExternalChangesetResolver interface {
 	// If the changeset is a fork, this corresponds to the name of the fork.
 	ForkName() *string
 
+	CommitVerification(context.Context) (CommitVerificationResolver, error)
+
 	// ReviewState returns a value of type *btypes.ChangesetReviewState.
 	ReviewState(context.Context) *string
 	// CheckState returns a value of type *btypes.ChangesetCheckState.
@@ -814,6 +816,18 @@ type ExternalChangesetResolver interface {
 	ScheduleEstimateAt(ctx context.Context) (*gqlutil.DateTime, error)
 
 	CurrentSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
+}
+
+// Only GitHubApps are supported for commit signing for now.
+type CommitVerificationResolver interface {
+	ToGitHubCommitVerification() (GitHubCommitVerificationResolver, bool)
+}
+
+type GitHubCommitVerificationResolver interface {
+	Verified() bool
+	Reason() string
+	Signature() string
+	Payload() string
 }
 
 type ChangesetEventsConnectionResolver interface {

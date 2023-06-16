@@ -319,6 +319,11 @@ export const externalChangesetFieldsFragment = gql`
         createdAt
         updatedAt
         nextSyncAt
+        commitVerification {
+            ... on GitHubCommitVerification {
+                verified
+            }
+        }
         currentSpec {
             id
             type
