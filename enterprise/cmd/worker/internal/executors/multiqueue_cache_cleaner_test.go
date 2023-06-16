@@ -20,13 +20,11 @@ type cacheEntry struct {
 
 func Test_multiqueueCacheCleaner_Handle(t *testing.T) {
 	tests := []struct {
-		name string
-		//queueNames   []string
+		name         string
 		cacheEntries map[string][]cacheEntry
 	}{
 		{
 			name: "nothing deleted",
-			//queueNames: []string{"batches", "codeintel"},
 			cacheEntries: map[string][]cacheEntry{
 				"batches": {{
 					timestamp:       fmt.Sprint(defaultTime.Add(-time.Minute * 2).UnixNano()),
@@ -39,6 +37,31 @@ func Test_multiqueueCacheCleaner_Handle(t *testing.T) {
 				}},
 				"codeintel": {{
 					timestamp:       fmt.Sprint(defaultTime.Add(-time.Minute * 2).UnixNano()),
+					jobId:           "codeintel-1",
+					shouldBeDeleted: false,
+				}, {
+					timestamp:       fmt.Sprint(defaultTime.Add(-time.Minute * 1).UnixNano()),
+					jobId:           "codeintel-2",
+					shouldBeDeleted: false,
+				}},
+			},
+		},
+		{
+			name: "one entry for each deleted",
+			cacheEntries: map[string][]cacheEntry{
+				"batches": {{
+					// past the 5 minute TTL
+					timestamp:       fmt.Sprint(defaultTime.Add(-time.Minute * 6).UnixNano()),
+					jobId:           "batches-1",
+					shouldBeDeleted: false,
+				}, {
+					timestamp:       fmt.Sprint(defaultTime.Add(-time.Minute * 1).UnixNano()),
+					jobId:           "batches-2",
+					shouldBeDeleted: false,
+				}},
+				"codeintel": {{
+					// past the 5 minute TTL
+					timestamp:       fmt.Sprint(defaultTime.Add(-time.Minute * 6).UnixNano()),
 					jobId:           "codeintel-1",
 					shouldBeDeleted: false,
 				}, {
