@@ -15,7 +15,8 @@ import { GET_INSTANCE_OWN_STATS, GET_OWN_JOB_CONFIGURATIONS } from './query'
 
 interface OwnCoverageDatum {
     name: string
-    count: number
+    percent: number
+    absoluteCount: number
     fill: string
     tooltip: string
 }
@@ -39,30 +40,36 @@ export const OwnAnalyticsPage: FC = () => {
 const OwnAnalyticsPanel: FC = () => {
     const { data, loading, error } = useQuery<GetInstanceOwnStatsResult>(GET_INSTANCE_OWN_STATS, {})
 
+    const totalFilesNonZero: number = data?.instanceOwnershipStats?.totalFiles || 1
+    const ratioPerCent = (count: number): number => Math.round((10000 * count) / totalFilesNonZero) / 100
     const ownSignalsData: OwnCoverageDatum[] = [
         {
-            name: 'CODEOWNERS',
-            count: data?.instanceOwnershipStats?.totalCodeownedFiles || 0,
+            name: 'CODEOWNERS coverage',
+            percent: ratioPerCent(data?.instanceOwnershipStats?.totalCodeownedFiles || 0),
+            absoluteCount: data?.instanceOwnershipStats?.totalCodeownedFiles || 0,
             fill: 'var(--info-2)',
-            tooltip: 'Total number of files owned through CODEOWNERS',
+            tooltip: 'Files with owners in CODEOWNERS',
         },
         {
-            name: 'Assigned ownership',
-            count: data?.instanceOwnershipStats?.totalAssignedOwnershipFiles || 0,
-            fill: 'var(--info)',
-            tooltip: 'Total number of files with assigned owners',
+            name: 'Assigned Ownership coverage',
+            percent: ratioPerCent(data?.instanceOwnershipStats?.totalAssignedOwnershipFiles || 0),
+            absoluteCount: data?.instanceOwnershipStats?.totalAssignedOwnershipFiles || 0,
+            fill: 'var(--merged)',
+            tooltip: 'Files with Assigned Ownership',
         },
         {
-            name: 'All owned files',
-            count: data?.instanceOwnershipStats?.totalOwnedFiles || 0,
+            name: 'Any ownership coverage',
+            percent: ratioPerCent(data?.instanceOwnershipStats?.totalOwnedFiles || 0),
+            absoluteCount: data?.instanceOwnershipStats?.totalOwnedFiles || 0,
             fill: 'var(--info-3)',
-            tooltip: 'Total number of owned files',
+            tooltip: 'Files that have an owner',
         },
         {
             name: 'All files',
-            count: data?.instanceOwnershipStats?.totalFiles || 0,
+            percent: ratioPerCent(data?.instanceOwnershipStats?.totalFiles || 0),
+            absoluteCount: data?.instanceOwnershipStats?.totalFiles || 0,
             fill: 'var(--text-muted)',
-            tooltip: 'Total number of files',
+            tooltip: 'All files',
         },
     ]
 
@@ -76,17 +83,18 @@ const OwnAnalyticsPanel: FC = () => {
                     <Card className="p-3 position-relative">
                         {ownSignalsData && (
                             <div>
-                                <ChartContainer title="Ownership coverage" labelX="Status" labelY="File count">
+                                <ChartContainer title="Ownership coverage" labelX="Status" labelY="% files">
                                     {width => (
                                         <BarChart
                                             width={width}
                                             height={300}
                                             data={ownSignalsData}
                                             getDatumName={datum => datum.name}
-                                            getDatumValue={datum => datum.count}
+                                            getDatumValue={datum => datum.percent}
+                                            getDatumHoverValueLabel={datum => `${datum.absoluteCount}`}
                                             getDatumColor={datum => datum.fill}
-                                            getDatumLink={datum => ''}
-                                            getDatumHover={datum => datum.tooltip}
+                                            getDatumLink={() => ''}
+                                            getDatumHover={datum => `${datum.percent}% ${datum.tooltip}`}
                                         />
                                     )}
                                 </ChartContainer>
