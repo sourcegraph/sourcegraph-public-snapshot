@@ -221,9 +221,9 @@ class CodyToolWindowContent implements UpdatableChat {
   @NotNull
   private JBTextArea createPromptInput(@NotNull Project project) {
     JBTextArea promptInput = new RoundedJBTextArea(4, 0, 10);
-    promptInput.setFont(UIUtil.getLabelFont());
     BasicTextAreaUI textUI = (BasicTextAreaUI) DarculaTextAreaUI.createUI(promptInput);
     promptInput.setUI(textUI);
+    promptInput.setFont(UIUtil.getLabelFont());
     promptInput.setLineWrap(true);
     promptInput.setWrapStyleWord(true);
     KeyboardShortcut CTRL_ENTER =
