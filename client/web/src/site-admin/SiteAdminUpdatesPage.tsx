@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 
-import { mdiOpenInNew, mdiCheckCircle, mdiChevronUp, mdiChevronDown, mdiAlertOctagram } from '@mdi/js'
+import { mdiOpenInNew, mdiCheckCircle, mdiChevronUp, mdiChevronDown, mdiAlertOctagram, mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
@@ -209,7 +209,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                     <hr className="my-3" />
                     <div className="d-flex flex-row justify-content-between">
                         <H3>Schema drift</H3>
-                        <Button onClick={() => refetch()} variant="primary" size="sm">
+                        <Button onClick={() => refetch()} variant="primary" size="sm" aria-label="refresh drift check">
                             {' '}
                             Refresh{' '}
                         </Button>
@@ -277,7 +277,26 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                                             </div>
 
                                             <div className={styles.infoContainer}>
-                                                <div className={styles.label}>Suggested statements to repair:</div>
+                                                <div className="d-flex flex-row justify-content-between">
+                                                    <div className={styles.label}>Suggested statements to repair:</div>
+                                                    <Button
+                                                        onClick={async () => {
+                                                            if (summary.statements) {
+                                                                await navigator.clipboard.writeText(
+                                                                    summary.statements.join('\n')
+                                                                )
+                                                            }
+
+                                                            return null
+                                                        }}
+                                                        variant="primary"
+                                                        size="sm"
+                                                        aria-label="copy sql statements to repair"
+                                                        className="mb-1"
+                                                    >
+                                                        <Icon aria-hidden={true} svgPath={mdiContentCopy} />
+                                                    </Button>
+                                                </div>
                                                 <div>
                                                     <LogOutput
                                                         text={
