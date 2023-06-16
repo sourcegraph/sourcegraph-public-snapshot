@@ -74,19 +74,20 @@ func NewJanitor(
 	config *janitor.Config,
 ) []goroutine.BackgroundRoutine {
 	jobsByName := map[string]goroutine.BackgroundRoutine{
-		"DeletedRepositoryJanitor":      janitor.NewDeletedRepositoryJanitor(store, config, observationCtx),
-		"UnknownCommitJanitor":          janitor.NewUnknownCommitJanitor(store, gitserverClient, config, observationCtx),
-		"AbandonedUploadJanitor":        janitor.NewAbandonedUploadJanitor(store, config, observationCtx),
-		"ExpiredUploadJanitor":          janitor.NewExpiredUploadJanitor(store, config, observationCtx),
-		"ExpiredUploadTraversalJanitor": janitor.NewExpiredUploadTraversalJanitor(store, config, observationCtx),
-		"HardDeleter":                   janitor.NewHardDeleter(store, lsifstore, config, observationCtx),
-		"AuditLogJanitor":               janitor.NewAuditLogJanitor(store, config, observationCtx),
-		"SCIPExpirationTask":            janitor.NewSCIPExpirationTask(lsifstore, config, observationCtx),
-		"UnknownRepositoryJanitor":      janitor.NewUnknownRepositoryJanitor(store, config, observationCtx),
-		"UnknownCommitJanitor2":         janitor.NewUnknownCommitJanitor2(store, gitserverClient, config, observationCtx),
-		"ExpiredRecordJanitor":          janitor.NewExpiredRecordJanitor(store, config, observationCtx),
-		"FrontendDBReconciler":          janitor.NewFrontendDBReconciler(store, lsifstore, config, observationCtx),
-		"CodeIntelDBReconciler":         janitor.NewCodeIntelDBReconciler(store, lsifstore, config, observationCtx),
+		"DeletedRepositoryJanitor":           janitor.NewDeletedRepositoryJanitor(store, config, observationCtx),
+		"UnknownCommitJanitor":               janitor.NewUnknownCommitJanitor(store, gitserverClient, config, observationCtx),
+		"AbandonedUploadJanitor":             janitor.NewAbandonedUploadJanitor(store, config, observationCtx),
+		"ExpiredUploadJanitor":               janitor.NewExpiredUploadJanitor(store, config, observationCtx),
+		"ExpiredUploadTraversalJanitor":      janitor.NewExpiredUploadTraversalJanitor(store, config, observationCtx),
+		"HardDeleter":                        janitor.NewHardDeleter(store, lsifstore, config, observationCtx),
+		"AuditLogJanitor":                    janitor.NewAuditLogJanitor(store, config, observationCtx),
+		"SCIPExpirationTask":                 janitor.NewSCIPExpirationTask(lsifstore, config, observationCtx),
+		"AbandonedSchemaVersionsRecordsTask": janitor.NewAbandonedSchemaVersionsRecordsTask(lsifstore, config, observationCtx),
+		"UnknownRepositoryJanitor":           janitor.NewUnknownRepositoryJanitor(store, config, observationCtx),
+		"UnknownCommitJanitor2":              janitor.NewUnknownCommitJanitor2(store, gitserverClient, config, observationCtx),
+		"ExpiredRecordJanitor":               janitor.NewExpiredRecordJanitor(store, config, observationCtx),
+		"FrontendDBReconciler":               janitor.NewFrontendDBReconciler(store, lsifstore, config, observationCtx),
+		"CodeIntelDBReconciler":              janitor.NewCodeIntelDBReconciler(store, lsifstore, config, observationCtx),
 	}
 
 	disabledJobs := map[string]struct{}{}

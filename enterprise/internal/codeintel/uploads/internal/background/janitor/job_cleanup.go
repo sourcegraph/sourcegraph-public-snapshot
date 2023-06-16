@@ -258,3 +258,22 @@ func NewSCIPExpirationTask(
 		},
 	})
 }
+
+func NewAbandonedSchemaVersionsRecordsTask(
+	lsifStore lsifstore.Store,
+	config *Config,
+	observationCtx *observation.Context,
+) goroutine.BackgroundRoutine {
+	name := "codeintel.uploads.janitor.abandoned-schema-versions-records"
+
+	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+		Name:        name,
+		Description: "Deletes schema version metadata records for indexes that no longer exist.",
+		Interval:    config.AbandonedSchemaVersionsInterval,
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
+		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
+			numDeleted, err := lsifStore.DeleteAbandonedSchemaVersionsRecords(ctx)
+			return numDeleted, numDeleted, err
+		},
+	})
+}

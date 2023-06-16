@@ -94,6 +94,12 @@ func (s *store) DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int)
 		if err := tx.db.Exec(ctx, sqlf.Sprintf(deleteSCIPSymbolNamesQuery, pq.Array(bundleIDs), pq.Array(bundleIDs))); err != nil {
 			return err
 		}
+		if err := tx.db.Exec(ctx, sqlf.Sprintf(deleteSCIPDocumentLookupSchemaVersionsQuery, pq.Array(bundleIDs))); err != nil {
+			return err
+		}
+		if err := tx.db.Exec(ctx, sqlf.Sprintf(deleteSCIPSymbolsSchemaVersionsQuery, pq.Array(bundleIDs))); err != nil {
+			return err
+		}
 
 		if err := s.db.Exec(ctx, sqlf.Sprintf(deleteLastReconcileQuery, pq.Array(bundleIDs))); err != nil {
 			return err
@@ -131,7 +137,7 @@ WHERE id IN (SELECT id FROM locked_document_lookup)
 
 const deleteSCIPSymbolNamesQuery = `
 WITH
-locked_document_lookup AS (
+locked_symbol_names AS (
 	SELECT id
 	FROM codeintel_scip_symbol_names
 	WHERE upload_id = ANY(%s)
@@ -139,7 +145,15 @@ locked_document_lookup AS (
 	FOR UPDATE
 )
 DELETE FROM codeintel_scip_symbol_names
-WHERE upload_id = ANY(%s) AND id IN (SELECT id FROM locked_document_lookup)
+WHERE upload_id = ANY(%s) AND id IN (SELECT id FROM locked_symbol_names)
+`
+
+const deleteSCIPDocumentLookupSchemaVersionsQuery = `
+DELETE FROM codeintel_scip_document_lookup_schema_versions WHERE upload_id = ANY(%s)
+`
+
+const deleteSCIPSymbolsSchemaVersionsQuery = `
+DELETE FROM codeintel_scip_symbols_schema_versions WHERE upload_id = ANY(%s)
 `
 
 const deleteLastReconcileQuery = `
@@ -152,6 +166,52 @@ WITH locked_rows AS (
 )
 DELETE FROM codeintel_last_reconcile
 WHERE dump_id IN (SELECT dump_id FROM locked_rows)
+`
+
+func (s *store) DeleteAbandonedSchemaVersionsRecords(ctx context.Context) (_ int, err error) {
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	count1, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(deleteAbandonedSymbolsSchemaVersionsQuery)))
+	if err != nil {
+		return 0, err
+	}
+
+	count2, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(deleteAbandonedDocumentLookupSchemaVersionsQuery)))
+	if err != nil {
+		return 0, err
+	}
+
+	return count1 + count2, nil
+}
+
+const deleteAbandonedSymbolsSchemaVersionsQuery = `
+WITH del AS (
+	DELETE FROM codeintel_scip_symbols_schema_versions sv
+	WHERE NOT EXISTS (
+		SELECT 1
+		FROM codeintel_scip_metadata m
+		WHERE m.upload_id = sv.upload_id
+	)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM del
+`
+
+const deleteAbandonedDocumentLookupSchemaVersionsQuery = `
+WITH del AS (
+	DELETE FROM codeintel_scip_document_lookup_schema_versions sv
+	WHERE NOT EXISTS (
+		SELECT 1
+		FROM codeintel_scip_metadata m
+		WHERE m.upload_id = sv.upload_id
+	)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM del
 `
 
 func (s *store) DeleteUnreferencedDocuments(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (_, _ int, err error) {

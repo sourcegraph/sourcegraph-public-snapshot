@@ -9,17 +9,18 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	Interval                       time.Duration
-	MinimumTimeSinceLastCheck      time.Duration
-	CommitResolverBatchSize        int
-	AuditLogMaxAge                 time.Duration
-	UnreferencedDocumentBatchSize  int
-	UnreferencedDocumentMaxAge     time.Duration
-	CommitResolverMaximumCommitLag time.Duration
-	UploadTimeout                  time.Duration
-	ReconcilerBatchSize            int
-	FailedIndexBatchSize           int
-	FailedIndexMaxAge              time.Duration
+	Interval                        time.Duration
+	AbandonedSchemaVersionsInterval time.Duration
+	MinimumTimeSinceLastCheck       time.Duration
+	CommitResolverBatchSize         int
+	AuditLogMaxAge                  time.Duration
+	UnreferencedDocumentBatchSize   int
+	UnreferencedDocumentMaxAge      time.Duration
+	CommitResolverMaximumCommitLag  time.Duration
+	UploadTimeout                   time.Duration
+	ReconcilerBatchSize             int
+	FailedIndexBatchSize            int
+	FailedIndexMaxAge               time.Duration
 }
 
 func (c *Config) Load() {
@@ -30,6 +31,7 @@ func (c *Config) Load() {
 	uploadTimeoutName := env.ChooseFallbackVariableName("CODEINTEL_UPLOADS_UPLOAD_TIMEOUT", "PRECISE_CODE_INTEL_UPLOAD_TIMEOUT")
 
 	c.Interval = c.GetInterval("CODEINTEL_UPLOADS_CLEANUP_INTERVAL", "1m", "How frequently to run the updater janitor routine.")
+	c.AbandonedSchemaVersionsInterval = c.GetInterval("CODEINTEL_UPLOADS_ABANDONED_SCHEMA_VERSIONS_CLEANUP_INTERVAL", "24h", "How frequently to run the query to clean up *_schema_version records that are not tracked by foreign key.")
 	c.MinimumTimeSinceLastCheck = c.GetInterval(minimumTimeSinceLastCheckName, "24h", "The minimum time the commit resolver will re-check an upload or index record.")
 	c.CommitResolverBatchSize = c.GetInt(commitResolverBatchSizeName, "100", "The maximum number of unique commits to resolve at a time.")
 	c.AuditLogMaxAge = c.GetInterval(auditLogMaxAgeName, "720h", "The maximum time a code intel audit log record can remain on the database.")

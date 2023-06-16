@@ -49,6 +49,79 @@ func TestDeleteLsifDataByUploadIds(t *testing.T) {
 	})
 }
 
+func TestDeleteAbandonedSchemaVersionsRecords(t *testing.T) {
+	logger := logtest.ScopedWith(t, logtest.LoggerOptions{
+		Level: log.LevelError,
+	})
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, codeIntelDB)
+	ctx := context.Background()
+
+	assertCounts := func(expectedNumSymbols, expectedNumDocuments int) {
+		numSymbols, _, err := basestore.ScanFirstInt(codeIntelDB.QueryContext(ctx, "SELECT COUNT(*) FROM codeintel_scip_symbols_schema_versions"))
+		if err != nil {
+			t.Fatalf("unexpected error fetching count: %s", err)
+		}
+		if numSymbols != expectedNumSymbols {
+			t.Errorf("unexpected number of symbols schema version records. want=%d have=%d", expectedNumSymbols, numSymbols)
+		}
+
+		numDocuments, _, err := basestore.ScanFirstInt(codeIntelDB.QueryContext(ctx, "SELECT COUNT(*) FROM codeintel_scip_document_lookup_schema_versions"))
+		if err != nil {
+			t.Fatalf("unexpected error fetching count: %s", err)
+		}
+		if numDocuments != expectedNumDocuments {
+			t.Errorf("unexpected number of documents schema version records. want=%d have=%d", expectedNumDocuments, numDocuments)
+		}
+	}
+
+	// Insert records backed by a live source
+	if _, err := codeIntelDB.ExecContext(ctx, `
+		INSERT INTO codeintel_scip_metadata (upload_id, tool_name, tool_version, tool_arguments, text_document_encoding, protocol_version)
+		VALUES
+			(100, '', '', '{}', '', 1),
+			(102, '', '', '{}', '', 1),
+			(104, '', '', '{}', '', 1),
+			(200, '', '', '{}', '', 1),
+			(202, '', '', '{}', '', 1),
+			(204, '', '', '{}', '', 1),
+			(206, '', '', '{}', '', 1);
+
+		INSERT INTO codeintel_scip_symbols_schema_versions (upload_id, min_schema_version, max_schema_version) VALUES
+			(100, 1, 1), -- live
+			(101, 1, 1), -- abandoned
+			(102, 1, 1), -- live
+			(103, 1, 1), -- abandoned
+			(104, 1, 1); -- live
+
+		INSERT INTO codeintel_scip_document_lookup_schema_versions (upload_id, min_schema_version, max_schema_version) VALUES
+			(200, 1, 1), -- live
+			(201, 1, 1), -- abandoned
+			(202, 1, 1), -- live
+			(203, 1, 1), -- abandoned
+			(204, 1, 1), -- live
+			(205, 1, 1), -- abandoned
+			(206, 1, 1); -- live
+	`); err != nil {
+		t.Fatalf("failed to prepare data: %s", err)
+	}
+
+	// Assert test count
+	assertCounts(5, 7)
+
+	// Prune all abandoned records
+	count, err := store.DeleteAbandonedSchemaVersionsRecords(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error deleting abandoned schema version records: %s", err)
+	}
+	if expected := 5; count != expected {
+		t.Errorf("Unexpected count. want=%d have=%d", expected, count)
+	}
+
+	// Assert count of records backed by a metadata record
+	assertCounts(3, 4)
+}
+
 func TestDeleteUnreferencedDocuments(t *testing.T) {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))

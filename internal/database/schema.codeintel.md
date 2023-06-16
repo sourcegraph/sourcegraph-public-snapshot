@@ -109,26 +109,6 @@ A list of document rows that were recently dereferenced by the deletion of an in
 
 **last_removal_time**: The time that the log entry was inserted.
 
-# Table "public.codeintel_scip_documents_schema_versions"
-```
-       Column       |  Type   | Collation | Nullable | Default 
---------------------+---------+-----------+----------+---------
- upload_id          | integer |           | not null | 
- min_schema_version | integer |           |          | 
- max_schema_version | integer |           |          | 
-Indexes:
-    "codeintel_scip_documents_schema_versions_pkey" PRIMARY KEY, btree (upload_id)
-
-```
-
-Tracks the range of `schema_versions` values associated with each document referenced from the [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) table.
-
-**max_schema_version**: An upper-bound on the `schema_version` values of the document records referenced from the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.
-
-**min_schema_version**: A lower-bound on the `schema_version` values of the document records referenced from the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.
-
-**upload_id**: The identifier of the associated SCIP index.
-
 # Table "public.codeintel_scip_metadata"
 ```
          Column         |  Type   | Collation | Nullable |                       Default                       
