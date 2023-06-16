@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"strconv"
+	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
@@ -14,6 +15,7 @@ import (
 	codenavtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	codenavshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	scipstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context/internal/scipstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -64,15 +66,43 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	content := args.Input.ActiveFileContent
 	commitID := args.Input.CommitID
 
-	repoID, err := strconv.Atoi(args.Input.Repository)
+	repo, err := s.repostore.GetByName(ctx, api.RepoName(args.Input.Repository))
 	if err != nil {
 		return nil, err
 	}
 
-	uploads, err := s.codenavSvc.GetClosestDumpsForBlob(ctx, repoID, commitID, filename, true, "")
+	uploads, err := s.codenavSvc.GetClosestDumpsForBlob(ctx, int(repo.ID), commitID, filename, true, "")
 	if err != nil {
 		return nil, err
 	}
+
+	requestArgs := codenavtypes.RequestArgs{
+		RepositoryID: int(repo.ID),
+		Commit:       commitID,
+		Path:         "",
+		Line:         0,
+		Character:    0,
+		Limit:        100, //! MAGIC NUMBER
+		RawCursor:    "",
+	}
+	hunkCache, err := codenav.NewHunkCache(hunkCacheSize)
+	if err != nil {
+		return nil, err
+	}
+	reqState := codenavtypes.NewRequestState(
+		uploads,
+		s.repostore,
+		authz.DefaultSubRepoPermsChecker,
+		s.gitserverClient,
+		repo,
+		commitID,
+		"",
+		maximumIndexesPerMonikerSearch,
+		hunkCache,
+	)
+
+	fmt.Printf("PHASE 1\n")
+	// PHASE 1: Run current scope through treesitter
 
 	syntectDocument, err := s.getSCIPDocumentByContent(ctx, content, filename)
 	if err != nil {
@@ -83,91 +113,113 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	for _, occurrence := range syntectDocument.Occurrences {
 		symbolNames = append(symbolNames, occurrence.Symbol)
 	}
+	sort.Strings(symbolNames)
 
-	// TODO: Either pass a slice of uploads or loop thru uploads and pass the ids to fix this hardcoding of the first
-	scipNames, err := s.codenavSvc.GetFullSCIPNameByDescriptor(ctx, []int{uploads[0].ID}, symbolNames)
-	if err != nil {
-		return nil, err
-	}
+	fmt.Printf("PHASE 2\n")
+	// PHASE 2: Run treesitter output through a translation layer so we can do
+	// the graph navigation in "SCIP-world" using proper identifiers. The following
+	// code is pretty sloppy right now since we haven't consolidated on a single way
+	// to "match" descriptors together. This should align in the db layer as well.
+	//
+	// This isn't a deep technical problem, just one of deciding on a thing and
+	// conforming to/communicating it in the codebase.
 
-	repo, err := s.repostore.GetByIDs(ctx, api.RepoID(repoID))
-	if err != nil {
-		return nil, err
-	}
-	if len(repo) == 0 {
-		return nil, fmt.Errorf("repo not found")
-	}
+	// Construct a map from syntect name to a list of SCIP names matching the syntect
+	// output. I'd like to have the `GetFullSCIPNameByDescriptor` method create this
+	// mapping instead. This block should become a single function call after that
+	// transformation.
 
-	type preciseData struct {
-		symbolName string
-		// syntectDescriptor string
-		repository string
-		symbolRole int32
-		confidence string
-		// text              string
-		location []codenavshared.UploadLocation
-	}
-
-	preciseDataList := []*preciseData{}
-	definitionMap := map[string]*preciseData{}
-	for _, name := range scipNames {
-		ident := name.GetIdentifier()
-
-		args := codenavtypes.RequestArgs{
-			RepositoryID: repoID,
-			Commit:       commitID,
-			Path:         "",
-			Line:         0,
-			Character:    0,
-			Limit:        100, //! MAGIC NUMBER
-			RawCursor:    "",
-		}
-		hunkCache, err := codenav.NewHunkCache(hunkCacheSize)
+	scipNamesBySyntectName, err := func() (map[string][]*types.SCIPNames, error) {
+		// TODO: Either pass a slice of uploads or loop thru uploads and pass the ids to fix this hardcoding of the first
+		scipNames, err := s.codenavSvc.GetFullSCIPNameByDescriptor(ctx, []int{uploads[0].ID}, symbolNames)
 		if err != nil {
 			return nil, err
 		}
-		reqState := codenavtypes.NewRequestState(
-			uploads,
-			s.repostore,
-			authz.DefaultSubRepoPermsChecker,
-			s.gitserverClient,
-			repo[0],
-			commitID,
-			"",
-			maximumIndexesPerMonikerSearch,
-			hunkCache,
-		)
 
-		for _, upload := range uploads {
-			loc, err := s.codenavSvc.GetLocationByExplodedSymbol(ctx, ident, upload.ID, "definition_ranges")
-			if err != nil {
-				return nil, err
+		strip := func(s string) string {
+			parts := strings.Split(s, "/")
+			return parts[len(parts)-1]
+		}
+		scipNamesBySyntectName := map[string][]*types.SCIPNames{}
+		for _, syntectName := range symbolNames {
+			ex, _ := symbols.NewExplodedSymbol(syntectName)
+			var symbolNames []*types.SCIPNames
+			for _, scipName := range scipNames {
+				// We do a `descriptor ILIKE %syntectName%` in Postgres today, so this
+				// is a bit of a less lenient (we do suffix here instead of contains).
+				if strings.HasSuffix(strip(scipName.Descriptor), strip(ex.Descriptor)) {
+					symbolNames = append(symbolNames, scipName)
+				}
 			}
 
-			ul, err := s.codenavSvc.GetUploadLocations(ctx, args, reqState, loc, true)
-			if err != nil {
-				return nil, err
+			if len(symbolNames) > 0 {
+				scipNamesBySyntectName[syntectName] = symbolNames
 			}
+		}
 
-			pd := &preciseData{
-				symbolName: ident,
-				repository: string(repo[0].Name),
-				// symbolRole: int32(el.Occurrence.SymbolRoles),
-				confidence: "PRECISE",
-				location:   ul,
+		return scipNamesBySyntectName, nil
+	}()
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("PHASE 3\n")
+	// PHASE 3: Gather definitions for each relevant SCIP symbol
+
+	type preciseData struct {
+		syntectName string
+		symbolName  string
+		location    []codenavshared.UploadLocation
+	}
+	preciseDataList := []*preciseData{}
+
+	for syntectName, names := range scipNamesBySyntectName {
+		for _, name := range names {
+			ident := name.GetIdentifier()
+
+			// TODO - these are duplicated and should also be batched
+			fmt.Printf("> Fetching definitions of %q\n", ident)
+
+			for _, upload := range uploads {
+				loc, err := s.codenavSvc.GetLocationByExplodedSymbol(ctx, ident, upload.ID, "definition_ranges")
+				if err != nil {
+					return nil, err
+				}
+				ul, err := s.codenavSvc.GetUploadLocations(ctx, requestArgs, reqState, loc, true)
+				if err != nil {
+					return nil, err
+				}
+
+				preciseDataList = append(preciseDataList, &preciseData{
+					syntectName: syntectName,
+					symbolName:  ident,
+					location:    ul,
+				})
 			}
-
-			e := strings.Split(ident, "/")
-			key := e[len(e)-1]
-			definitionMap[key] = pd
-
-			preciseDataList = append(preciseDataList, pd)
 		}
 	}
 
-	snippetToPreciseDataMap := map[string]*preciseData{}
+	fmt.Printf("PHASE 4\n")
+	// PHASE 4: Read the files that contain a definition
+
+	type DocumentAndText struct {
+		Content string
+		SCIP    *scip.Document
+	}
+	cache := map[string]DocumentAndText{}
 	for _, pd := range preciseDataList {
 		for _, l := range pd.location {
+			key := fmt.Sprintf("%s@%s:%s", l.Dump.RepositoryName, l.Dump.Commit, filepath.Join(l.Dump.Root, l.Path))
+			if _, ok := cache[key]; ok {
+				continue
+			}
+
+			fmt.Printf("> Parsing file %q\n", key)
+
+			// TODO - archive where possible when we fetch multiple files from the
+			// same repo. Cut round trips down from one per file to one per repo,
+			// and we'll likely have a lot of shared definition sources.
+
 			file, err := s.gitserverClient.ReadFile(
 				ctx,
 				authz.DefaultSubRepoPermsChecker,
@@ -178,51 +230,62 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			if err != nil {
 				return nil, err
 			}
-			c := strings.Split(string(file), "\n")
 
 			syntectDocs, err := s.getSCIPDocumentByContent(ctx, string(file), l.Path)
 			if err != nil {
 				return nil, err
 			}
-
-			for _, occ := range syntectDocs.Occurrences {
-				r := scip.NewRange(occ.EnclosingRange)
-				snpt := extractSnippet(c, r.Start.Line, r.End.Line, r.Start.Character, r.End.Character)
-
-				e := strings.Split(occ.Symbol, "/")
-				key := e[len(e)-1]
-
-				keyLookup := fmt.Sprintf("%s$$$$%s", key, snpt)
-
-				data := &preciseData{
-					confidence: "SEARCH",
-				}
-				if _, ok := definitionMap[key]; ok {
-					data = definitionMap[key]
-				}
-				snippetToPreciseDataMap[keyLookup] = data
+			cache[key] = DocumentAndText{
+				Content: string(file),
+				SCIP:    syntectDocs,
 			}
 		}
 	}
 
+	fmt.Printf("PHASE 5\n")
+	// PHASE 5: Extract the definitions for each of the relevant syntect symbols
+	// we originally requested.
+	//
+	// NOTE: I make an assumption here that the symbols will be equal as
+	// they were both generated by the same treesitter process. See the
+	// inline note below.
+
 	preciseResponse := []*types.PreciseData{}
-	for k, v := range snippetToPreciseDataMap {
-		compositeKey := strings.Split(k, "$$$$")
-		syntectDescriptor, text := compositeKey[0], compositeKey[1]
-		preciseResponse = append(preciseResponse, &types.PreciseData{
-			SymbolName:        v.symbolName,
-			SyntectDescriptor: syntectDescriptor,
-			Repository:        v.repository,
-			SymbolRole:        v.symbolRole,
-			Confidence:        v.confidence,
-			Text:              text,
-		})
+	for _, pd := range preciseDataList {
+		for _, l := range pd.location {
+			key := fmt.Sprintf("%s@%s:%s", l.Dump.RepositoryName, l.Dump.Commit, filepath.Join(l.Dump.Root, l.Path))
+			documentAndText := cache[key]
+
+			for _, occ := range documentAndText.SCIP.Occurrences {
+				// NOTE: assumption made; we may want to look at the precise
+				// range as an alternate or additional indicator for which
+				// syntect occurrences we are interested in
+				if occ.Symbol != pd.syntectName {
+					continue
+				}
+
+				r := scip.NewRange(occ.EnclosingRange)
+				snippet := extractSnippet(documentAndText.Content, r.Start.Line, r.End.Line, r.Start.Character, r.End.Character)
+
+				preciseResponse = append(preciseResponse, &types.PreciseData{
+					SymbolName:        pd.symbolName,
+					SyntectDescriptor: pd.syntectName,
+					Repository:        l.Dump.RepositoryName,
+					SymbolRole:        0, // TODO
+					Confidence:        "PRECISE",
+					Text:              snippet,
+				})
+			}
+		}
 	}
 
+	fmt.Printf("DONE\n")
 	return preciseResponse, nil
 }
 
-func extractSnippet(lines []string, startLine, endLine, startChar, endChar int32) string {
+func extractSnippet(file string, startLine, endLine, startChar, endChar int32) string {
+	lines := strings.Split(file, "\n")
+
 	if startLine > endLine || startLine < 0 || endLine >= int32(len(lines)) {
 		return ""
 	}
