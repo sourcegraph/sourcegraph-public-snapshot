@@ -486,13 +486,13 @@ type ExternalChangeset implements Node & Changeset {
 }
 
 """
-Commit signing verification for a code host, e.g. GitHubApp or SSHKey. Today, the
-only supported form of commit signing is via a GitHub App.
+Commit signing verification for a code host, e.g. if it was signed via GitHub App or
+an SSH key.
 """
 union CommitVerification = GitHubCommitVerification
 
 """
-The verification object for a GitHubApp created for Batch Changes commit signing.
+The verification object describing the result of verifying the commit's signature.
 https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#create-a-commit
 """
 type GitHubCommitVerification {
