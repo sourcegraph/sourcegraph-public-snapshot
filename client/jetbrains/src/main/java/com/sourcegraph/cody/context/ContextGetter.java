@@ -15,9 +15,9 @@ public class ContextGetter {
   }
 
   public @NotNull List<ContextMessage> getContextMessages(
-      @NotNull String query, int codeResultCount, int textResultCount, @NotNull String useContext)
+      @NotNull String query, int codeResultCount, int textResultCount, boolean useEmbeddings)
       throws IOException {
-    if (useContext.equals("embeddings")) {
+    if (useEmbeddings) {
       return EmbeddingsSearcher.getContextMessages(
           codebase, query, codeResultCount, textResultCount);
     } else {
