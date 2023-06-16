@@ -165,7 +165,7 @@ export class AnthropicProvider extends Provider {
         // Create prompt
         const prompt = this.createPrompt()
         if (prompt.length > this.promptChars) {
-            throw new Error('prompt length exceeded maximum alloted chars')
+            throw new Error('prompt length exceeded maximum allowed chars')
         }
 
         const params = {
