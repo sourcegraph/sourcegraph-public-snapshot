@@ -667,7 +667,12 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 				return errors.Wrap(err, "failed to duplicate commit")
 			}
 			if newCommit.Verification.Verified {
-				e.tx.UpdateChangesetSpecCommitVerification(ctx, e.spec.ID, newCommit)
+				err = e.tx.UpdateChangesetCommitVerification(ctx, e.ch, newCommit)
+				if err != nil {
+					return errors.Wrap(err, "failed to update changeset with commit verification")
+				}
+			} else {
+				log15.Warn("Commit created with GitHub App was not signed", "changeset", e.ch.ID, "commit", newCommit.SHA)
 			}
 		}
 	}
