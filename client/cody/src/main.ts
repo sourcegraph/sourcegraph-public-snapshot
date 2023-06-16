@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
@@ -12,6 +12,10 @@ import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
 import * as CompletionsLogger from './completions/logger'
+import { ManualCompletionService } from './completions/manual'
+import { createProviderConfig as createAnthropicProviderConfig } from './completions/providers/anthropic'
+import { ProviderConfig } from './completions/providers/provider'
+import { createProviderConfig as createUnstableCodeGenProviderConfig } from './completions/providers/unstable-codegen'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger, eventLogger } from './event-logger'
@@ -138,7 +142,7 @@ const register = async (
         await chatProvider.executeRecipe(recipe, '', showTab)
     }
 
-    const webviewErrorMessager = async (error: string): Promise<void> => {
+    const webviewErrorMessenger = async (error: string): Promise<void> => {
         if (error.includes('rate limit')) {
             const currentTime: number = Date.now()
             const userPref = localStorage.get('rateLimitError')
@@ -293,7 +297,8 @@ const register = async (
     let completionsProvider: vscode.Disposable | null = null
     if (initialConfig.experimentalSuggest) {
         completionsProvider = createCompletionsProvider(
-            webviewErrorMessager,
+            config,
+            webviewErrorMessenger,
             completionsClient,
             statusBar,
             codebaseContext
@@ -309,20 +314,30 @@ const register = async (
     disposables.push(disposeCompletions)
 
     vscode.workspace.onDidChangeConfiguration(event => {
-        if (event.affectsConfiguration('cody.experimental.suggestions')) {
+        if (
+            event.affectsConfiguration('cody.experimental.suggestions') ||
+            event.affectsConfiguration('cody.completions')
+        ) {
             const config = getConfiguration(vscode.workspace.getConfiguration())
 
             if (!config.experimentalSuggest) {
                 completionsProvider?.dispose()
                 completionsProvider = null
-            } else if (completionsProvider === null) {
-                completionsProvider = createCompletionsProvider(
-                    webviewErrorMessager,
-                    completionsClient,
-                    statusBar,
-                    codebaseContext
-                )
+                return
             }
+
+            if (completionsProvider !== null) {
+                // If completions are already initialized and still enabled, we
+                // need to reset the completion provider.
+                completionsProvider.dispose()
+            }
+            completionsProvider = createCompletionsProvider(
+                config,
+                webviewErrorMessenger,
+                completionsClient,
+                statusBar,
+                codebaseContext
+            )
         }
     })
 
@@ -371,35 +386,58 @@ const register = async (
 }
 
 function createCompletionsProvider(
-    webviewErrorMessager: (error: string) => Promise<void>,
+    config: Configuration,
+    webviewErrorMessenger: (error: string) => Promise<void>,
     completionsClient: SourcegraphNodeCompletionsClient,
     statusBar: CodyStatusBar,
     codebaseContext: CodebaseContext
 ): vscode.Disposable {
     const disposables: vscode.Disposable[] = []
 
-    const docprovider = new CompletionsDocumentProvider()
-    disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))
+    const documentProvider = new CompletionsDocumentProvider()
+    disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', documentProvider))
 
     const history = new History()
-    const completionsProvider = new CodyCompletionItemProvider(
-        webviewErrorMessager,
+    const manualCompletionService = new ManualCompletionService(
+        webviewErrorMessenger,
         completionsClient,
-        docprovider,
+        documentProvider,
         history,
-        statusBar,
         codebaseContext
     )
+
+    let providerConfig: ProviderConfig
+    switch (config.completionsAdvancedProvider) {
+        case 'unstable-codegen': {
+            if (config.completionsAdvancedServerEndpoint !== null) {
+                providerConfig = createUnstableCodeGenProviderConfig({
+                    serverEndpoint: config.completionsAdvancedServerEndpoint,
+                })
+                break
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            webviewErrorMessenger(
+                'Provider `unstable-codegen` can not be used without configuring `cody.completions.advanced.serverEndpoint`. Falling back to `anthropic`.'
+            )
+        }
+        default:
+            providerConfig = createAnthropicProviderConfig({
+                completionsClient,
+                contextWindowTokens: 2048,
+            })
+    }
+    const completionsProvider = new CodyCompletionItemProvider(providerConfig, history, statusBar, codebaseContext)
+
     disposables.push(
         vscode.commands.registerCommand('cody.manual-completions', async () => {
-            await completionsProvider.fetchAndShowManualCompletions()
+            await manualCompletionService.fetchAndShowManualCompletions()
         }),
         vscode.commands.registerCommand('cody.completions.inline.accepted', ({ codyLogId }) => {
             CompletionsLogger.accept(codyLogId)
         }),
-        vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
+        vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider)
     )
-
     return {
         dispose: () => {
             for (const disposable of disposables) {

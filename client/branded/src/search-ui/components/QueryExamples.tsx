@@ -58,18 +58,13 @@ export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
     queryState = { query: '' },
     setQueryState,
     isSourcegraphDotCom = false,
-    enableOwnershipSearch = false,
 }) => {
     const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
     const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()
     const [queryExampleTabActive, setQueryExampleTabActive] = useState<boolean>(false)
     const navigate = useNavigate()
 
-    const exampleSyntaxColumns = useQueryExamples(
-        selectedSearchContextSpec ?? 'global',
-        isSourcegraphDotCom,
-        enableOwnershipSearch
-    )
+    const exampleSyntaxColumns = useQueryExamples(selectedSearchContextSpec ?? 'global', isSourcegraphDotCom)
 
     const handleTabChange = (selectedTab: number): void => {
         setQueryExampleTabActive(!!selectedTab)

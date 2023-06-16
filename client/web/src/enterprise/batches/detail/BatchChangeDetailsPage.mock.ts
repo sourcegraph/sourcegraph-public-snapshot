@@ -287,6 +287,7 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                         text: 'Some label',
                     },
                 ],
+                commitVerification: null,
                 repository: {
                     id: 'repoid',
                     name: 'github.com/sourcegraph/awesome',
@@ -330,6 +331,7 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                     name: 'github.com/sourcegraph/awesome',
                     url: 'http://test.test/awesome',
                 },
+                commitVerification: null,
                 reviewState: null,
                 title: 'Add prettier to all projects',
                 createdAt: subDays(now, 5).toISOString(),
