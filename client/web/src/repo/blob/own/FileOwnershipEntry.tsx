@@ -26,7 +26,6 @@ interface Props {
     makeOwnerButton?: React.ReactElement
     repoID: string
     filePath: string
-    userID?: string
     setRemoveOwnerError: any
     refetch: any
 }
@@ -43,7 +42,6 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
     makeOwnerButton,
     repoID,
     filePath,
-    userID,
     refetch,
     setRemoveOwnerError,
 }) => {
@@ -57,6 +55,9 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
         return owner.email
     }
 
+    const userID = owner.__typename === 'Person' && owner.user?.__typename === 'User' ? owner.user.id : undefined
+    const teamID = owner.__typename === 'Team' ? owner.id : undefined
+
     const email = findEmail()
 
     const assignedOwnerReasons: AssignedOwnerFields[] = reasons
@@ -65,23 +66,11 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
     const isDirectAssigned = assignedOwnerReasons.some(value => value.isDirectMatch)
     const hasAssigned = assignedOwnerReasons.length > 0
 
+    const sortReasons = () => (reason1: OwnershipReason, reason2: OwnershipReason) =>
+        getOwnershipReasonPriority(reason2) - getOwnershipReasonPriority(reason1)
+
     return (
         <tr>
-            <td className={containerStyles.fitting}>
-                <div className="d-flex">
-                    <Tooltip content={email ? `Email ${email}` : 'No email address'} placement="top">
-                        {email ? (
-                            <ButtonLink variant="icon" to={`mailto:${email}`}>
-                                <Icon svgPath={mdiEmail} aria-label="email" />
-                            </ButtonLink>
-                        ) : (
-                            <Button variant="icon" disabled={true}>
-                                <Icon svgPath={mdiEmail} aria-label="email" />
-                            </Button>
-                        )}
-                    </Tooltip>
-                </div>
-            </td>
             <td className={`${containerStyles.fitting} ${containerStyles.moreSpace}`}>
                 <div className="d-flex align-items-center mr-2">
                     {owner.__typename === 'Person' && (
@@ -106,25 +95,57 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
                 </div>
             </td>
             <td className={containerStyles.expanding}>
-                {reasons.map(reason => (
-                    <OwnershipBadge key={reason.title} reason={reason} />
-                ))}
+                {reasons
+                    .slice()
+                    .sort(sortReasons())
+                    .map(reason => (
+                        <OwnershipBadge key={reason.title} reason={reason} />
+                    ))}
             </td>
             <td className={containerStyles.fitting}>
-                <span className={containerStyles.editButton}>
-                    {makeOwnerButton ||
-                        (hasAssigned && (
-                            <RemoveOwnerButton
-                                onSuccess={refetch}
-                                onError={setRemoveOwnerError}
-                                repoId={repoID}
-                                path={filePath}
-                                userId={userID}
-                                isDirectAssigned={isDirectAssigned}
-                            />
-                        ))}
+                <span className={containerStyles.editButtonColumn}>
+                    <div className={containerStyles.removeAddButton}>
+                        {makeOwnerButton ||
+                            (hasAssigned && (
+                                <RemoveOwnerButton
+                                    onSuccess={refetch}
+                                    onError={setRemoveOwnerError}
+                                    repoId={repoID}
+                                    path={filePath}
+                                    userID={userID}
+                                    teamID={teamID}
+                                    isDirectAssigned={isDirectAssigned}
+                                />
+                            ))}
+                    </div>
+                    <Tooltip content={email ? `Email ${email}` : 'No email address'} placement="top">
+                        {email ? (
+                            <ButtonLink variant="icon" to={`mailto:${email}`}>
+                                <Icon svgPath={mdiEmail} aria-label="email" />
+                            </ButtonLink>
+                        ) : (
+                            <Button variant="icon" disabled={true}>
+                                <Icon svgPath={mdiEmail} aria-label="email" />
+                            </Button>
+                        )}
+                    </Tooltip>
                 </span>
             </td>
         </tr>
     )
+}
+
+const getOwnershipReasonPriority = (reason: OwnershipReason): number => {
+    switch (reason.__typename ?? '') {
+        case 'CodeownersFileEntry':
+            return 4
+        case 'AssignedOwner':
+            return 3
+        case 'RecentContributorOwnershipSignal':
+            return 2
+        case 'RecentViewOwnershipSignal':
+            return 1
+        default:
+            return 0
+    }
 }

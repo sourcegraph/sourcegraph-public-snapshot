@@ -2,13 +2,13 @@
     import { goto } from '$app/navigation'
     import { page } from '$app/stores'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import Paginator from '$lib/Paginator.svelte'
     import { getRelativeTime } from '$lib/relativeTime'
-    import UserAvatar from '$lib/UserAvatar.svelte'
     import { currentDate } from '$lib/stores'
+    import UserAvatar from '$lib/UserAvatar.svelte'
+    import { Button, ButtonGroup } from '$lib/wildcard'
 
     import type { PageData } from './$types'
-    import Paginator from '$lib/Paginator.svelte'
-    import { Button, ButtonGroup } from '$lib/wildcard'
 
     export let data: PageData
 

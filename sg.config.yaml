@@ -124,6 +124,10 @@ env:
   # OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
   # OTEL_EXPORTER_OTLP_PROTOCOL: http/json
 
+  # Enable full protobuf message logging when a non-utf8 string error occurs
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES_ENABLED: "true"
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_NON_UTF8_PROTOBUF_MESSAGES_MAX_SIZE_BYTES: 1024
+
 commands:
   server:
     description: Run an all-in-one sourcegraph/server image
@@ -628,11 +632,12 @@ commands:
     cmd: |
       cd $MANIFEST_PATH
       cleanup() {
+        kubectl delete jobs --all
         kubectl delete -f .
       }
       kubectl delete -f . --ignore-not-found
       kubectl apply -f .
-      trap cleanup EXIT
+      trap cleanup EXIT SIGINT
       while true; do
         sleep 1
       done
@@ -1220,6 +1225,7 @@ commandsets:
       - gitserver-1
       - searcher
       - caddy
+      - symbols
       - docsite
       - syntax-highlighter
       - github-proxy

@@ -27267,6 +27267,9 @@ type MockGitserverRepoStore struct {
 	// SetLastFetchedFunc is an instance of a mock function object
 	// controlling the behavior of the method SetLastFetched.
 	SetLastFetchedFunc *GitserverRepoStoreSetLastFetchedFunc
+	// SetLastOutputFunc is an instance of a mock function object
+	// controlling the behavior of the method SetLastOutput.
+	SetLastOutputFunc *GitserverRepoStoreSetLastOutputFunc
 	// SetRepoSizeFunc is an instance of a mock function object controlling
 	// the behavior of the method SetRepoSize.
 	SetRepoSizeFunc *GitserverRepoStoreSetRepoSizeFunc
@@ -27352,6 +27355,11 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 		},
 		SetLastFetchedFunc: &GitserverRepoStoreSetLastFetchedFunc{
 			defaultHook: func(context.Context, api.RepoName, GitserverFetchData) (r0 error) {
+				return
+			},
+		},
+		SetLastOutputFunc: &GitserverRepoStoreSetLastOutputFunc{
+			defaultHook: func(context.Context, api.RepoName, string) (r0 error) {
 				return
 			},
 		},
@@ -27453,6 +27461,11 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 				panic("unexpected invocation of MockGitserverRepoStore.SetLastFetched")
 			},
 		},
+		SetLastOutputFunc: &GitserverRepoStoreSetLastOutputFunc{
+			defaultHook: func(context.Context, api.RepoName, string) error {
+				panic("unexpected invocation of MockGitserverRepoStore.SetLastOutput")
+			},
+		},
 		SetRepoSizeFunc: &GitserverRepoStoreSetRepoSizeFunc{
 			defaultHook: func(context.Context, api.RepoName, int64, string) error {
 				panic("unexpected invocation of MockGitserverRepoStore.SetRepoSize")
@@ -27524,6 +27537,9 @@ func NewMockGitserverRepoStoreFrom(i GitserverRepoStore) *MockGitserverRepoStore
 		},
 		SetLastFetchedFunc: &GitserverRepoStoreSetLastFetchedFunc{
 			defaultHook: i.SetLastFetched,
+		},
+		SetLastOutputFunc: &GitserverRepoStoreSetLastOutputFunc{
+			defaultHook: i.SetLastOutput,
 		},
 		SetRepoSizeFunc: &GitserverRepoStoreSetRepoSizeFunc{
 			defaultHook: i.SetRepoSize,
@@ -28980,6 +28996,117 @@ func (c GitserverRepoStoreSetLastFetchedFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverRepoStoreSetLastFetchedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverRepoStoreSetLastOutputFunc describes the behavior when the
+// SetLastOutput method of the parent MockGitserverRepoStore instance is
+// invoked.
+type GitserverRepoStoreSetLastOutputFunc struct {
+	defaultHook func(context.Context, api.RepoName, string) error
+	hooks       []func(context.Context, api.RepoName, string) error
+	history     []GitserverRepoStoreSetLastOutputFuncCall
+	mutex       sync.Mutex
+}
+
+// SetLastOutput delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) SetLastOutput(v0 context.Context, v1 api.RepoName, v2 string) error {
+	r0 := m.SetLastOutputFunc.nextHook()(v0, v1, v2)
+	m.SetLastOutputFunc.appendCall(GitserverRepoStoreSetLastOutputFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetLastOutput method
+// of the parent MockGitserverRepoStore instance is invoked and the hook
+// queue is empty.
+func (f *GitserverRepoStoreSetLastOutputFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetLastOutput method of the parent MockGitserverRepoStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverRepoStoreSetLastOutputFunc) PushHook(hook func(context.Context, api.RepoName, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverRepoStoreSetLastOutputFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverRepoStoreSetLastOutputFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, api.RepoName, string) error {
+		return r0
+	})
+}
+
+func (f *GitserverRepoStoreSetLastOutputFunc) nextHook() func(context.Context, api.RepoName, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverRepoStoreSetLastOutputFunc) appendCall(r0 GitserverRepoStoreSetLastOutputFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverRepoStoreSetLastOutputFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverRepoStoreSetLastOutputFunc) History() []GitserverRepoStoreSetLastOutputFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverRepoStoreSetLastOutputFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverRepoStoreSetLastOutputFuncCall is an object that describes an
+// invocation of method SetLastOutput on an instance of
+// MockGitserverRepoStore.
+type GitserverRepoStoreSetLastOutputFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverRepoStoreSetLastOutputFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverRepoStoreSetLastOutputFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -44795,6 +44922,9 @@ type MockRepoCommitsChangelistsStore struct {
 	// GetLatestForRepoFunc is an instance of a mock function object
 	// controlling the behavior of the method GetLatestForRepo.
 	GetLatestForRepoFunc *RepoCommitsChangelistsStoreGetLatestForRepoFunc
+	// GetRepoCommitChangelistFunc is an instance of a mock function object
+	// controlling the behavior of the method GetRepoCommitChangelist.
+	GetRepoCommitChangelistFunc *RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc
 }
 
 // NewMockRepoCommitsChangelistsStore creates a new mock of the
@@ -44809,6 +44939,11 @@ func NewMockRepoCommitsChangelistsStore() *MockRepoCommitsChangelistsStore {
 		},
 		GetLatestForRepoFunc: &RepoCommitsChangelistsStoreGetLatestForRepoFunc{
 			defaultHook: func(context.Context, api.RepoID) (r0 *types.RepoCommit, r1 error) {
+				return
+			},
+		},
+		GetRepoCommitChangelistFunc: &RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc{
+			defaultHook: func(context.Context, api.RepoID, int64) (r0 *types.RepoCommit, r1 error) {
 				return
 			},
 		},
@@ -44830,6 +44965,11 @@ func NewStrictMockRepoCommitsChangelistsStore() *MockRepoCommitsChangelistsStore
 				panic("unexpected invocation of MockRepoCommitsChangelistsStore.GetLatestForRepo")
 			},
 		},
+		GetRepoCommitChangelistFunc: &RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc{
+			defaultHook: func(context.Context, api.RepoID, int64) (*types.RepoCommit, error) {
+				panic("unexpected invocation of MockRepoCommitsChangelistsStore.GetRepoCommitChangelist")
+			},
+		},
 	}
 }
 
@@ -44843,6 +44983,9 @@ func NewMockRepoCommitsChangelistsStoreFrom(i RepoCommitsChangelistsStore) *Mock
 		},
 		GetLatestForRepoFunc: &RepoCommitsChangelistsStoreGetLatestForRepoFunc{
 			defaultHook: i.GetLatestForRepo,
+		},
+		GetRepoCommitChangelistFunc: &RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc{
+			defaultHook: i.GetRepoCommitChangelist,
 		},
 	}
 }
@@ -45072,6 +45215,122 @@ func (c RepoCommitsChangelistsStoreGetLatestForRepoFuncCall) Args() []interface{
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RepoCommitsChangelistsStoreGetLatestForRepoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc describes the
+// behavior when the GetRepoCommitChangelist method of the parent
+// MockRepoCommitsChangelistsStore instance is invoked.
+type RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc struct {
+	defaultHook func(context.Context, api.RepoID, int64) (*types.RepoCommit, error)
+	hooks       []func(context.Context, api.RepoID, int64) (*types.RepoCommit, error)
+	history     []RepoCommitsChangelistsStoreGetRepoCommitChangelistFuncCall
+	mutex       sync.Mutex
+}
+
+// GetRepoCommitChangelist delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockRepoCommitsChangelistsStore) GetRepoCommitChangelist(v0 context.Context, v1 api.RepoID, v2 int64) (*types.RepoCommit, error) {
+	r0, r1 := m.GetRepoCommitChangelistFunc.nextHook()(v0, v1, v2)
+	m.GetRepoCommitChangelistFunc.appendCall(RepoCommitsChangelistsStoreGetRepoCommitChangelistFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetRepoCommitChangelist method of the parent
+// MockRepoCommitsChangelistsStore instance is invoked and the hook queue is
+// empty.
+func (f *RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc) SetDefaultHook(hook func(context.Context, api.RepoID, int64) (*types.RepoCommit, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetRepoCommitChangelist method of the parent
+// MockRepoCommitsChangelistsStore instance invokes the hook at the front of
+// the queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc) PushHook(hook func(context.Context, api.RepoID, int64) (*types.RepoCommit, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc) SetDefaultReturn(r0 *types.RepoCommit, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID, int64) (*types.RepoCommit, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc) PushReturn(r0 *types.RepoCommit, r1 error) {
+	f.PushHook(func(context.Context, api.RepoID, int64) (*types.RepoCommit, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc) nextHook() func(context.Context, api.RepoID, int64) (*types.RepoCommit, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc) appendCall(r0 RepoCommitsChangelistsStoreGetRepoCommitChangelistFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RepoCommitsChangelistsStoreGetRepoCommitChangelistFuncCall objects
+// describing the invocations of this function.
+func (f *RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc) History() []RepoCommitsChangelistsStoreGetRepoCommitChangelistFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoCommitsChangelistsStoreGetRepoCommitChangelistFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoCommitsChangelistsStoreGetRepoCommitChangelistFuncCall is an object
+// that describes an invocation of method GetRepoCommitChangelist on an
+// instance of MockRepoCommitsChangelistsStore.
+type RepoCommitsChangelistsStoreGetRepoCommitChangelistFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.RepoCommit
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoCommitsChangelistsStoreGetRepoCommitChangelistFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoCommitsChangelistsStoreGetRepoCommitChangelistFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -57623,7 +57882,7 @@ func NewMockTeamStore() *MockTeamStore {
 			},
 		},
 		CreateTeamFunc: &TeamStoreCreateTeamFunc{
-			defaultHook: func(context.Context, *types.Team) (r0 error) {
+			defaultHook: func(context.Context, *types.Team) (r0 *types.Team, r1 error) {
 				return
 			},
 		},
@@ -57705,7 +57964,7 @@ func NewStrictMockTeamStore() *MockTeamStore {
 			},
 		},
 		CreateTeamFunc: &TeamStoreCreateTeamFunc{
-			defaultHook: func(context.Context, *types.Team) error {
+			defaultHook: func(context.Context, *types.Team) (*types.Team, error) {
 				panic("unexpected invocation of MockTeamStore.CreateTeam")
 			},
 		},
@@ -58148,23 +58407,23 @@ func (c TeamStoreCountTeamsFuncCall) Results() []interface{} {
 // TeamStoreCreateTeamFunc describes the behavior when the CreateTeam method
 // of the parent MockTeamStore instance is invoked.
 type TeamStoreCreateTeamFunc struct {
-	defaultHook func(context.Context, *types.Team) error
-	hooks       []func(context.Context, *types.Team) error
+	defaultHook func(context.Context, *types.Team) (*types.Team, error)
+	hooks       []func(context.Context, *types.Team) (*types.Team, error)
 	history     []TeamStoreCreateTeamFuncCall
 	mutex       sync.Mutex
 }
 
 // CreateTeam delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockTeamStore) CreateTeam(v0 context.Context, v1 *types.Team) error {
-	r0 := m.CreateTeamFunc.nextHook()(v0, v1)
-	m.CreateTeamFunc.appendCall(TeamStoreCreateTeamFuncCall{v0, v1, r0})
-	return r0
+func (m *MockTeamStore) CreateTeam(v0 context.Context, v1 *types.Team) (*types.Team, error) {
+	r0, r1 := m.CreateTeamFunc.nextHook()(v0, v1)
+	m.CreateTeamFunc.appendCall(TeamStoreCreateTeamFuncCall{v0, v1, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the CreateTeam method of
 // the parent MockTeamStore instance is invoked and the hook queue is empty.
-func (f *TeamStoreCreateTeamFunc) SetDefaultHook(hook func(context.Context, *types.Team) error) {
+func (f *TeamStoreCreateTeamFunc) SetDefaultHook(hook func(context.Context, *types.Team) (*types.Team, error)) {
 	f.defaultHook = hook
 }
 
@@ -58172,7 +58431,7 @@ func (f *TeamStoreCreateTeamFunc) SetDefaultHook(hook func(context.Context, *typ
 // CreateTeam method of the parent MockTeamStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *TeamStoreCreateTeamFunc) PushHook(hook func(context.Context, *types.Team) error) {
+func (f *TeamStoreCreateTeamFunc) PushHook(hook func(context.Context, *types.Team) (*types.Team, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -58180,20 +58439,20 @@ func (f *TeamStoreCreateTeamFunc) PushHook(hook func(context.Context, *types.Tea
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *TeamStoreCreateTeamFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *types.Team) error {
-		return r0
+func (f *TeamStoreCreateTeamFunc) SetDefaultReturn(r0 *types.Team, r1 error) {
+	f.SetDefaultHook(func(context.Context, *types.Team) (*types.Team, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *TeamStoreCreateTeamFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *types.Team) error {
-		return r0
+func (f *TeamStoreCreateTeamFunc) PushReturn(r0 *types.Team, r1 error) {
+	f.PushHook(func(context.Context, *types.Team) (*types.Team, error) {
+		return r0, r1
 	})
 }
 
-func (f *TeamStoreCreateTeamFunc) nextHook() func(context.Context, *types.Team) error {
+func (f *TeamStoreCreateTeamFunc) nextHook() func(context.Context, *types.Team) (*types.Team, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -58234,7 +58493,10 @@ type TeamStoreCreateTeamFuncCall struct {
 	Arg1 *types.Team
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 *types.Team
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -58246,7 +58508,7 @@ func (c TeamStoreCreateTeamFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c TeamStoreCreateTeamFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // TeamStoreCreateTeamMemberFunc describes the behavior when the

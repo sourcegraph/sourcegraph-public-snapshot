@@ -52,6 +52,14 @@
     color: var(--input-focus-border-color);
 }
 
+.input-container {
+    position: relative;
+
+    input {
+        padding-right: 2rem;
+    }
+}
+
 .repository-selector-content {
     width: 20rem;
     height: 100%;
@@ -93,7 +101,7 @@
         visibility: hidden;
     }
     &:hover {
-        background-color: var(--gray-01);
+        background-color: var(--body-bg);
 
         .remove-repo-icon {
             visibility: visible;
@@ -107,7 +115,7 @@
 }
 
 .disabled-search-result {
-    opacity: 50%;
+    opacity: 0.5;
 }
 
 .not-included-in-context {
@@ -116,12 +124,12 @@
         color: var(--text-disabled);
     }
     .embedding-icon-no-embeddings {
-        color: var(--gray-05);
+        color: var(--gray-07);
     }
 }
 
 .not-included-in-context:hover {
-    opacity: 100%;
+    opacity: 1;
 }
 
 .embedding-icon-no-embeddings {

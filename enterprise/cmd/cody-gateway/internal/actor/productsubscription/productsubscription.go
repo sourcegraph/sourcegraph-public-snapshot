@@ -10,16 +10,23 @@ import (
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
 	"github.com/vektah/gqlparser/v2/gqlerror"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	elicensing "github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/productsubscription"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// SourceVersion should be bumped whenever the format of any cached data in this
+// actor source implementation is changed. This effectively expires all entries.
+const SourceVersion = "v1"
 
 // product subscription tokens are always a prefix of 4 characters (sgs_ or slk_)
 // followed by a 64-character hex-encoded SHA256 hash
@@ -33,7 +40,7 @@ var (
 
 type Source struct {
 	log    log.Logger
-	cache  httpcache.Cache // TODO: add something to regularly clean up the cache
+	cache  httpcache.Cache // cache is expected to be something with automatic TTL
 	dotcom graphql.Client
 
 	// internalMode, if true, indicates only dev and internal licenses may use
@@ -65,8 +72,12 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	if token == "" {
 		return nil, actor.ErrNotFromSource{}
 	}
-	if !strings.HasPrefix(token, productsubscription.AccessTokenPrefix) &&
-		!strings.HasPrefix(token, licensing.LicenseKeyBasedAccessTokenPrefix) {
+
+	// NOTE: For back-compat, we support both the old and new token prefixes.
+	// However, as we use the token as part of the cache key, we need to be
+	// consistent with the prefix we use.
+	token = strings.Replace(token, productsubscription.AccessTokenPrefix, licensing.LicenseKeyBasedAccessTokenPrefix, 1)
+	if !strings.HasPrefix(token, licensing.LicenseKeyBasedAccessTokenPrefix) {
 		return nil, actor.ErrNotFromSource{Reason: "unknown token prefix"}
 	}
 
@@ -74,14 +85,18 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 		return nil, errors.New("invalid token format")
 	}
 
+	span := trace.SpanFromContext(ctx)
+
 	data, hit := s.cache.Get(token)
 	if !hit {
+		span.SetAttributes(attribute.Bool("actor-cache-miss", true))
 		return s.fetchAndCache(ctx, token)
 	}
 
 	var act *actor.Actor
 	if err := json.Unmarshal(data, &act); err != nil {
-		s.log.Error("failed to unmarshal subscription", log.Error(err))
+		span.SetAttributes(attribute.Bool("actor-corrupted", true))
+		sgtrace.Logger(ctx, s.log).Error("failed to unmarshal subscription", log.Error(err))
 
 		// Delete the corrupted record.
 		s.cache.Delete(token)
@@ -90,6 +105,7 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	}
 
 	if act.LastUpdated != nil && time.Since(*act.LastUpdated) > defaultUpdateInterval {
+		span.SetAttributes(attribute.Bool("actor-expired", true))
 		return s.fetchAndCache(ctx, token)
 	}
 
@@ -104,7 +120,7 @@ func (s *Source) Update(ctx context.Context, actor *actor.Actor) {
 	}
 
 	if _, err := s.fetchAndCache(ctx, actor.Key); err != nil {
-		s.log.Info("failed to update actor", log.Error(err))
+		sgtrace.Logger(ctx, s.log).Info("failed to update actor", log.Error(err))
 	}
 }
 
@@ -125,6 +141,12 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 
 	for _, sub := range resp.Dotcom.ProductSubscriptions.Nodes {
 		for _, token := range sub.SourcegraphAccessTokens {
+			select {
+			case <-ctx.Done():
+				return seen, ctx.Err()
+			default:
+			}
+
 			act := newActor(s, token, sub.ProductSubscriptionState, s.internalMode, s.concurrencyConfig)
 			data, err := json.Marshal(act)
 			if err != nil {
@@ -179,7 +201,7 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 	}
 
 	if data, err := json.Marshal(act); err != nil {
-		s.log.Error("failed to marshal actor",
+		sgtrace.Logger(ctx, s.log).Error("failed to marshal actor",
 			log.Error(err))
 	} else {
 		s.cache.Set(token, data)
@@ -196,7 +218,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 	// In internal mode, only allow dev and internal licenses.
 	disallowedLicense := internalMode &&
 		(s.ActiveLicense == nil || s.ActiveLicense.Info == nil ||
-			!containsOneOf(s.ActiveLicense.Info.Tags, licensing.DevTag, licensing.InternalTag))
+			!containsOneOf(s.ActiveLicense.Info.Tags, elicensing.DevTag, elicensing.InternalTag))
 
 	now := time.Now()
 	a := &actor.Actor{
@@ -210,7 +232,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 
 	if rl := s.CodyGatewayAccess.ChatCompletionsRateLimit; rl != nil {
 		a.RateLimits[codygateway.FeatureChatCompletions] = actor.NewRateLimitWithPercentageConcurrency(
-			rl.Limit,
+			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
 			rl.AllowedModels,
 			concurrencyConfig,
@@ -219,7 +241,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 
 	if rl := s.CodyGatewayAccess.CodeCompletionsRateLimit; rl != nil {
 		a.RateLimits[codygateway.FeatureCodeCompletions] = actor.NewRateLimitWithPercentageConcurrency(
-			rl.Limit,
+			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
 			rl.AllowedModels,
 			concurrencyConfig,
@@ -228,7 +250,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 
 	if rl := s.CodyGatewayAccess.EmbeddingsRateLimit; rl != nil {
 		a.RateLimits[codygateway.FeatureEmbeddings] = actor.NewRateLimitWithPercentageConcurrency(
-			rl.Limit,
+			int64(rl.Limit),
 			time.Duration(rl.IntervalSeconds)*time.Second,
 			rl.AllowedModels,
 			// TODO: Once we split interactive and on-interactive, we want to apply

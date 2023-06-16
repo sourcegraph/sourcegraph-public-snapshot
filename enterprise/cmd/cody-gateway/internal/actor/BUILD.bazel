@@ -5,13 +5,15 @@ go_library(
     name = "actor",
     srcs = [
         "actor.go",
+        "limits.go",
         "source.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor",
     visibility = ["//enterprise/cmd/cody-gateway:__subpackages__"],
     deps = [
         "//enterprise/cmd/cody-gateway/internal/limiter",
-        "//enterprise/internal/codygateway",
+        "//enterprise/cmd/cody-gateway/internal/notify",
+        "//internal/codygateway",
         "//internal/goroutine",
         "//internal/observation",
         "//internal/trace",
@@ -30,6 +32,7 @@ go_test(
     name = "actor_test",
     srcs = [
         "actor_test.go",
+        "limits_test.go",
         "source_test.go",
     ],
     embed = [":actor"],
@@ -39,7 +42,7 @@ go_test(
     ],
     deps = [
         "//enterprise/cmd/cody-gateway/internal/limiter",
-        "//enterprise/internal/codygateway",
+        "//internal/codygateway",
         "//internal/observation",
         "//internal/redispool",
         "//lib/errors",

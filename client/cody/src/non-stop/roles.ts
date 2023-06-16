@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+
 import { FixupFile } from './FixupFile'
 import { FixupTask } from './FixupTask'
 
@@ -29,10 +31,32 @@ export interface FixupIdleTaskRunner {
 }
 
 /**
+ * Creates and starts processing a task.
+ */
+export interface FixupTaskFactory {
+    createTask(documentUri: vscode.Uri, instruction: string, selectionRange: vscode.Range): void
+}
+
+/**
  * Sink for notifications that text related to the fixup task--either the text
  * in the file, or the text provided by Cody--has changed.
  */
 export interface FixupTextChanged {
     textDidChange(task: FixupTask): void
     rangeDidChange(task: FixupTask): void
+}
+
+/**
+ * Runs recipes. Can call you back when no recipes are running.
+ */
+export interface IdleRecipeRunner {
+    /**
+     * Calls callback once when the recipe run loop is idle.
+     */
+    onIdle(callback: () => void): void
+
+    /**
+     * Runs the specified recipe. Rejects if the recipe runner is busy.
+     */
+    runIdleRecipe(recipeId: RecipeID, humanChatInput?: string): Promise<void>
 }

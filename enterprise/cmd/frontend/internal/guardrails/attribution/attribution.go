@@ -5,27 +5,28 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // Service is an attribution service which searches for matches on snippets of
 // code.
 type Service struct {
-	// CurrentUserFinal is settings.CurrentUserFinal without the DB parameter.
-	// This is temporary since we intend on moving the settings package into a
-	// service.
-	CurrentUserFinal func(context.Context) (*schema.Settings, error)
-
 	// SearchClient is used to find attribution on the local instance.
 	SearchClient client.SearchClient
 
-	// SourcegraphDotComMode is true if this instance is sourcegraph.com
-	SourcegraphDotComMode bool
+	// SourcegraphDotComClient is a graphql client that is queried if
+	// federating out to sourcegraph.com is enabled.
+	SourcegraphDotComClient dotcom.Client
+
+	// SourcegraphDotComFederate is true if this instance should also federate
+	// to sourcegraph.com.
+	SourcegraphDotComFederate bool
 }
 
 // SnippetAttributions is holds the collection of attributions for a snippet.
@@ -57,16 +58,62 @@ type SnippetAttributions struct {
 // SnippetAttribution will search the instances indexed code for code matching
 // snippet and return the attribution results.
 func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit int) (*SnippetAttributions, error) {
+	// TODO(keegancsmith) how should we handle partial errors?
+	p := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
+
+	//  We don't use NewWithResults since we want local results to come before dotcom
+	var local, dotcom *SnippetAttributions
+
+	p.Go(func(ctx context.Context) error {
+		var err error
+		local, err = c.snippetAttributionLocal(ctx, snippet, limit)
+		return err
+	})
+
+	if c.SourcegraphDotComFederate {
+		p.Go(func(ctx context.Context) error {
+			var err error
+			dotcom, err = c.snippetAttributionDotCom(ctx, snippet, limit)
+			return err
+		})
+	}
+
+	if err := p.Wait(); err != nil {
+		return nil, err
+	}
+
+	var agg SnippetAttributions
+	seen := map[string]struct{}{}
+	for _, result := range []*SnippetAttributions{local, dotcom} {
+		if result == nil {
+			continue
+		}
+
+		// Limitation: We just add to TotalCount even though that may mean we
+		// overcount (both dotcom and local instance have the repo)
+		agg.TotalCount += result.TotalCount
+		agg.LimitHit = agg.LimitHit || result.LimitHit
+		for _, name := range result.RepositoryNames {
+			if _, ok := seen[name]; ok {
+				// We have already counted this repo in the above TotalCount
+				// increment, so undo that.
+				agg.TotalCount--
+				continue
+			}
+			seen[name] = struct{}{}
+			agg.RepositoryNames = append(agg.RepositoryNames, name)
+		}
+	}
+
+	return &agg, nil
+}
+
+func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, limit int) (*SnippetAttributions, error) {
 	const (
 		version    = "V3"
 		searchMode = search.Precise
 		protocol   = search.Batch
 	)
-
-	settings, err := c.CurrentUserFinal(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get user settings")
-	}
 
 	patternType := "literal"
 	searchQuery := fmt.Sprintf("type:file select:repo index:only count:%d content:%q", limit, snippet)
@@ -78,8 +125,6 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 		searchQuery,
 		searchMode,
 		protocol,
-		settings,
-		c.SourcegraphDotComMode,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create search plan")
@@ -95,7 +140,7 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 	// something like sorting by name from the map.
 	var (
 		mu        sync.Mutex
-		seen      map[api.RepoID]struct{}
+		seen      = map[api.RepoID]struct{}{}
 		repoNames []string
 		limitHit  bool
 	)
@@ -129,5 +174,23 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 		RepositoryNames: repoNames,
 		TotalCount:      totalCount,
 		LimitHit:        limitHit,
+	}, nil
+}
+
+func (c *Service) snippetAttributionDotCom(ctx context.Context, snippet string, limit int) (*SnippetAttributions, error) {
+	resp, err := dotcom.SnippetAttribution(ctx, c.SourcegraphDotComClient, snippet, limit)
+	if err != nil {
+		return nil, err
+	}
+
+	var repoNames []string
+	for _, node := range resp.SnippetAttribution.Nodes {
+		repoNames = append(repoNames, node.RepositoryName)
+	}
+
+	return &SnippetAttributions{
+		RepositoryNames: repoNames,
+		TotalCount:      resp.SnippetAttribution.TotalCount,
+		LimitHit:        resp.SnippetAttribution.LimitHit,
 	}, nil
 }

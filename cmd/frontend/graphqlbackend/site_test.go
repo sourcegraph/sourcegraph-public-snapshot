@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestSiteConfiguration(t *testing.T) {
@@ -50,95 +51,95 @@ func TestSiteConfigurationHistory(t *testing.T) {
 	}{
 		{
 			name:                  "first: 2",
-			args:                  &graphqlutil.ConnectionResolverArgs{First: int32Ptr(2)},
+			args:                  &graphqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(2))},
 			expectedSiteConfigIDs: []int32{6, 4},
 		},
 		{
 			name:                  "first: 6 (exact number of items that exist in the database)",
-			args:                  &graphqlutil.ConnectionResolverArgs{First: int32Ptr(6)},
+			args:                  &graphqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(6))},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
 			name:                  "first: 20 (more items than what exists in the database)",
-			args:                  &graphqlutil.ConnectionResolverArgs{First: int32Ptr(20)},
+			args:                  &graphqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(20))},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
 			name:                  "last: 2",
-			args:                  &graphqlutil.ConnectionResolverArgs{Last: int32Ptr(2)},
+			args:                  &graphqlutil.ConnectionResolverArgs{Last: pointers.Ptr(int32(2))},
 			expectedSiteConfigIDs: []int32{2, 1},
 		},
 		{
 			name:                  "last: 6 (exact number of items that exist in the database)",
-			args:                  &graphqlutil.ConnectionResolverArgs{Last: int32Ptr(6)},
+			args:                  &graphqlutil.ConnectionResolverArgs{Last: pointers.Ptr(int32(6))},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
 			name:                  "last: 20 (more items than what exists in the database)",
-			args:                  &graphqlutil.ConnectionResolverArgs{Last: int32Ptr(20)},
+			args:                  &graphqlutil.ConnectionResolverArgs{Last: pointers.Ptr(int32(20))},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
 			name: "first: 2, after: 4",
 			args: &graphqlutil.ConnectionResolverArgs{
-				First: int32Ptr(2),
-				After: stringPtr(string(marshalSiteConfigurationChangeID(4))),
+				First: pointers.Ptr(int32(2)),
+				After: pointers.Ptr(string(marshalSiteConfigurationChangeID(4))),
 			},
 			expectedSiteConfigIDs: []int32{3, 2},
 		},
 		{
 			name: "first: 10, after: 4 (overflow)",
 			args: &graphqlutil.ConnectionResolverArgs{
-				First: int32Ptr(10),
-				After: stringPtr(string(marshalSiteConfigurationChangeID(4))),
+				First: pointers.Ptr(int32(10)),
+				After: pointers.Ptr(string(marshalSiteConfigurationChangeID(4))),
 			},
 			expectedSiteConfigIDs: []int32{3, 2, 1},
 		},
 		{
 			name: "first: 10, after: 7 (same as get all items, but latest ID in DB is 6)",
 			args: &graphqlutil.ConnectionResolverArgs{
-				First: int32Ptr(10),
-				After: stringPtr(string(marshalSiteConfigurationChangeID(7))),
+				First: pointers.Ptr(int32(10)),
+				After: pointers.Ptr(string(marshalSiteConfigurationChangeID(7))),
 			},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
 			name: "first: 10, after: 1 (beyond the last cursor in DB which is 1)",
 			args: &graphqlutil.ConnectionResolverArgs{
-				First: int32Ptr(10),
-				After: stringPtr(string(marshalSiteConfigurationChangeID(1))),
+				First: pointers.Ptr(int32(10)),
+				After: pointers.Ptr(string(marshalSiteConfigurationChangeID(1))),
 			},
 			expectedSiteConfigIDs: []int32{},
 		},
 		{
 			name: "last: 2, before: 1",
 			args: &graphqlutil.ConnectionResolverArgs{
-				Last:   int32Ptr(2),
-				Before: stringPtr(string(marshalSiteConfigurationChangeID(1))),
+				Last:   pointers.Ptr(int32(2)),
+				Before: pointers.Ptr(string(marshalSiteConfigurationChangeID(1))),
 			},
 			expectedSiteConfigIDs: []int32{3, 2},
 		},
 		{
 			name: "last: 10, before: 1 (overflow)",
 			args: &graphqlutil.ConnectionResolverArgs{
-				Last:   int32Ptr(10),
-				Before: stringPtr(string(marshalSiteConfigurationChangeID(1))),
+				Last:   pointers.Ptr(int32(10)),
+				Before: pointers.Ptr(string(marshalSiteConfigurationChangeID(1))),
 			},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2},
 		},
 		{
 			name: "last: 10, before: 0 (same as get all items, but oldest ID in DB is 1)",
 			args: &graphqlutil.ConnectionResolverArgs{
-				Last:   int32Ptr(10),
-				Before: stringPtr(string(marshalSiteConfigurationChangeID(0))),
+				Last:   pointers.Ptr(int32(10)),
+				Before: pointers.Ptr(string(marshalSiteConfigurationChangeID(0))),
 			},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
 			name: "last: 10, before: 7 (beyond the latest cursor in DB which is 6)",
 			args: &graphqlutil.ConnectionResolverArgs{
-				Last:   int32Ptr(10),
-				Before: stringPtr(string(marshalSiteConfigurationChangeID(7))),
+				Last:   pointers.Ptr(int32(10)),
+				Before: pointers.Ptr(string(marshalSiteConfigurationChangeID(7))),
 			},
 			expectedSiteConfigIDs: []int32{},
 		},

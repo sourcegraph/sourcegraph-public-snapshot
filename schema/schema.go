@@ -560,10 +560,12 @@ type Completions struct {
 	ChatModel string `json:"chatModel,omitempty"`
 	// CompletionModel description: The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.
 	CompletionModel string `json:"completionModel,omitempty"`
-	// Enabled description: Toggles whether completions are enabled.
-	Enabled bool `json:"enabled"`
+	// Enabled description: DEPRECATED. Use cody.enabled instead to turn Cody on/off.
+	Enabled *bool `json:"enabled,omitempty"`
 	// Endpoint description: The endpoint under which to reach the provider. Currently only used for provider types "sourcegraph", "openai" and "anthropic". The default values are "https://cody-gateway.sourcegraph.com", "https://api.openai.com/v1/chat/completions", and "https://api.anthropic.com/v1/complete" for Sourcegraph, OpenAI, and Anthropic, respectively.
 	Endpoint string `json:"endpoint,omitempty"`
+	// FastChatModel description: The model used for fast chat completions.
+	FastChatModel string `json:"fastChatModel,omitempty"`
 	// Model description: DEPRECATED. Use chatModel instead.
 	Model string `json:"model,omitempty"`
 	// PerUserCodeCompletionsDailyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
@@ -594,6 +596,8 @@ type Dotcom struct {
 	AppNotifications []*AppNotifications `json:"app.notifications,omitempty"`
 	// CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
 	CodyGateway *CodyGateway `json:"codyGateway,omitempty"`
+	// SlackLicenseAnomallyWebhook description: Slack webhook for when there is an anomaly detected with license key usage.
+	SlackLicenseAnomallyWebhook string `json:"slackLicenseAnomallyWebhook,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
 	// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
@@ -623,13 +627,13 @@ type Embeddings struct {
 	// Dimensions description: The dimensionality of the embedding vectors. Required field if not using the sourcegraph provider.
 	Dimensions int `json:"dimensions,omitempty"`
 	// Enabled description: Toggles whether embedding service is enabled.
-	Enabled bool `json:"enabled"`
+	Enabled *bool `json:"enabled,omitempty"`
 	// Endpoint description: The endpoint under which to reach the provider. Sensible default will be used for each provider.
 	Endpoint string `json:"endpoint,omitempty"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
-	// Incremental description: Experimental: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.
-	Incremental bool `json:"incremental,omitempty"`
+	// Incremental description: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.
+	Incremental *bool `json:"incremental,omitempty"`
 	// MaxCodeEmbeddingsPerRepo description: The maximum number of embeddings for code files to generate per repo
 	MaxCodeEmbeddingsPerRepo int `json:"maxCodeEmbeddingsPerRepo,omitempty"`
 	// MaxTextEmbeddingsPerRepo description: The maximum number of embeddings for text files to generate per repo
@@ -638,6 +642,8 @@ type Embeddings struct {
 	MinimumInterval string `json:"minimumInterval,omitempty"`
 	// Model description: The model used for embedding. A default model will be used for each provider, if not set.
 	Model string `json:"model,omitempty"`
+	// PolicyRepositoryMatchLimit description: The maximum number of repositories that can be matched by a global embeddings policy
+	PolicyRepositoryMatchLimit *int `json:"policyRepositoryMatchLimit,omitempty"`
 	// Provider description: The provider to use for generating embeddings. Defaults to sourcegraph.
 	Provider string `json:"provider,omitempty"`
 	// Url description: The url to the external embedding API service. Deprecated, use endpoint instead.
@@ -783,8 +789,6 @@ type ExpandedGitCommitDescription struct {
 
 // ExperimentalFeatures description: Experimental features and settings.
 type ExperimentalFeatures struct {
-	// CodyRestrictUsersFeatureFlag description: Restrict Cody to only be enabled for users that have a feature flag labeled "cody-experimental" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag.
-	CodyRestrictUsersFeatureFlag bool `json:"codyRestrictUsersFeatureFlag,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
@@ -877,7 +881,6 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
-	delete(m, "codyRestrictUsersFeatureFlag")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
 	delete(m, "enableGRPC")
@@ -2408,6 +2411,10 @@ type SiteConfiguration struct {
 	CodeIntelRankingDocumentReferenceCountsGraphKey string `json:"codeIntelRanking.documentReferenceCountsGraphKey,omitempty"`
 	// CodeIntelRankingStaleResultsAge description: The interval at which to run the reduce job that computes document reference counts. Default is 24hrs.
 	CodeIntelRankingStaleResultsAge int `json:"codeIntelRanking.staleResultsAge,omitempty"`
+	// CodyEnabled description: Enable or disable Cody instance-wide. When Cody is disabled, all Cody endpoints and GraphQL queries will return errors, Cody will not show up in the site-admin sidebar, and Cody in the global navbar will only show a call-to-action for site-admins to enable Cody.
+	CodyEnabled *bool `json:"cody.enabled,omitempty"`
+	// CodyRestrictUsersFeatureFlag description: Restrict Cody to only be enabled for users that have a feature flag labeled "cody" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.
+	CodyRestrictUsersFeatureFlag *bool `json:"cody.restrictUsersFeatureFlag,omitempty"`
 	// Completions description: Configuration for the completions service.
 	Completions *Completions `json:"completions,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
@@ -2658,6 +2665,8 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelRanking.documentReferenceCountsEnabled")
 	delete(m, "codeIntelRanking.documentReferenceCountsGraphKey")
 	delete(m, "codeIntelRanking.staleResultsAge")
+	delete(m, "cody.enabled")
+	delete(m, "cody.restrictUsersFeatureFlag")
 	delete(m, "completions")
 	delete(m, "corsOrigin")
 	delete(m, "debug.search.symbolsParallelism")

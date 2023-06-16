@@ -73,8 +73,16 @@ func (l *BufferedLogger) LogEvent(spanCtx context.Context, event Event) error {
 		return nil
 
 	case <-time.After(l.timeout):
-		return errors.Newf("failed to insert event in %s: buffer full: %d items pending",
-			l.timeout.String(), len(l.bufferC))
+		// The buffer is full, which is indicative of a problem. We try to
+		// submit the event immediately anyway, because we don't want to
+		// silently drop anything, and log an error so that we ge notified.
+		trace.Logger(spanCtx, l.log).
+			Error("failed to queue event within timeout, submitting event directly",
+				log.Error(errors.New("buffer is full")), // real error needed for Sentry
+				log.Int("buffer.capacity", cap(l.bufferC)),
+				log.Int("buffer.backlog", len(l.bufferC)),
+				log.Duration("timeout", l.timeout))
+		return l.handler.LogEvent(spanCtx, event)
 	}
 }
 
@@ -83,7 +91,8 @@ func (l *BufferedLogger) LogEvent(spanCtx context.Context, event Event) error {
 func (l *BufferedLogger) Start() {
 	for event := range l.bufferC {
 		if err := l.handler.LogEvent(event.spanCtx, event.Event); err != nil {
-			l.log.Error("failed to log buffered event", log.Error(err))
+			trace.Logger(event.spanCtx, l.log).
+				Error("failed to log buffered event", log.Error(err))
 		}
 	}
 
@@ -97,6 +106,16 @@ func (l *BufferedLogger) Stop() {
 	close(l.bufferC)
 	l.log.Info("buffer closed - waiting for events to flush")
 
-	<-l.flushedC
-	l.log.Info("shutdown complete")
+	start := time.Now()
+	select {
+	case <-l.flushedC:
+		l.log.Info("shutdown complete",
+			log.Duration("elapsed", time.Since(start)))
+
+	// We may lose some events, but it won't be a lot since traffic should
+	// already be routing to new instances when work is stopping.
+	case <-time.After(10 * time.Second):
+		l.log.Error("failed to shut down within shutdown deadline",
+			log.Error(errors.Newf("unflushed events: %d", len(l.bufferC)))) // real error for Sentry
+	}
 }

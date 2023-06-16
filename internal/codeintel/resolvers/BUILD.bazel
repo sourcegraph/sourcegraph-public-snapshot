@@ -22,6 +22,7 @@ go_library(
         "//internal/markdown",
         "//internal/types",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//relay",
     ],

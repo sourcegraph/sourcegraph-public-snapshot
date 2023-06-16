@@ -11,6 +11,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/ranking",
+        "//enterprise/internal/codeintel/ranking/internal/shared",
         "//enterprise/internal/codeintel/ranking/shared",
         "//enterprise/internal/codeintel/shared/resolvers",
         "//internal/codeintel/resolvers",

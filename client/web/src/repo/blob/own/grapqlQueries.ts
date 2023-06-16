@@ -20,6 +20,7 @@ export const OWNER_FIELDS = gql`
             }
         }
         ... on Team {
+            id
             name
             teamDisplayName: displayName
             avatarURL
@@ -155,13 +156,13 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
     ${OWNER_FIELDS}
     ${gitCommitFragment}
 
-    query FetchOwnersAndHistory($repo: ID!, $revision: String!, $currentPath: String!) {
+    query FetchOwnersAndHistory($repo: ID!, $revision: String!, $currentPath: String!, $includeOwn: Boolean!) {
         node(id: $repo) {
             ... on Repository {
                 sourceType
                 commit(rev: $revision) {
-                    blob(path: $currentPath) {
-                        ownership(first: 2, reasons: [CODEOWNERS_FILE_ENTRY]) {
+                    blob(path: $currentPath) @include(if: $includeOwn) {
+                        ownership(first: 2, reasons: [CODEOWNERS_FILE_ENTRY, ASSIGNED_OWNER]) {
                             nodes {
                                 owner {
                                     ...OwnerFields
@@ -195,6 +196,14 @@ export const ASSIGN_OWNER = gql`
 export const REMOVE_ASSIGNED_OWNER = gql`
     mutation RemoveAssignedOwner($input: AssignOwnerOrTeamInput!) {
         removeAssignedOwner(input: $input) {
+            alwaysNil
+        }
+    }
+`
+
+export const REMOVE_ASSIGNED_TEAM = gql`
+    mutation RemoveAssignedTeam($input: AssignOwnerOrTeamInput!) {
+        removeAssignedTeam(input: $input) {
             alwaysNil
         }
     }

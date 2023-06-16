@@ -11,6 +11,9 @@ import { FileOwnershipPanel } from './FileOwnershipPanel'
 import { FETCH_OWNERS } from './grapqlQueries'
 
 const response: FetchOwnershipResult = {
+    currentUser: {
+        permissions: { nodes: [] },
+    },
     node: {
         __typename: 'Repository',
         commit: {
@@ -48,6 +51,7 @@ const response: FetchOwnershipResult = {
                                 avatarURL: 'https://avatars.githubusercontent.com/u/5090588?v=4',
                                 displayName: 'Bob the Builder',
                                 user: {
+                                    id: 'user1',
                                     __typename: 'User',
                                     displayName: 'Bob the Builder',
                                     url: '/users/bob',
@@ -81,6 +85,7 @@ const response: FetchOwnershipResult = {
                             __typename: 'Ownership',
                             owner: {
                                 __typename: 'Team',
+                                id: 'asdf',
                                 avatarURL: null,
                                 teamDisplayName: 'Delta Team',
                                 name: 'delta',

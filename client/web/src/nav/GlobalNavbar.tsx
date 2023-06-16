@@ -16,18 +16,14 @@ import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, ButtonLink, useWindowSize, Tooltip, ProductStatusBadge } from '@sourcegraph/wildcard'
 
-import { TauriNavigation } from '../app/TauriNavigation'
-import { HistoryStack } from '../app/useHistoryStack'
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
 import { CodyLogo } from '../cody/components/CodyLogo'
-import { useIsCodyEnabled } from '../cody/useIsCodyEnabled'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
@@ -73,8 +69,6 @@ export interface GlobalNavbarProps
     showFeedbackModal: () => void
 
     setFuzzyFinderIsVisible: React.Dispatch<SetStateAction<boolean>>
-
-    historyStack: HistoryStack
 }
 
 /**
@@ -137,7 +131,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     notebooksEnabled,
     ownEnabled,
     showFeedbackModal,
-    historyStack,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -156,7 +149,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showSearchNotebook = notebooksEnabled && !isSourcegraphApp
     const isLicensed = !!window.context?.licenseInfo || isSourcegraphApp // Assume licensed when running as a native app
     const showBatchChanges = ((props.batchChangesEnabled && isLicensed) || isSourcegraphDotCom) && !isSourcegraphApp // Batch changes are enabled on sourcegraph.com so users can see the Getting Started page
-    const codyEnabled = useIsCodyEnabled()
+    const [codySearchEnabled] = useFeatureFlag('cody-web-search')
 
     const [isSentinelEnabled] = useFeatureFlag('sentinel')
     // TODO: Include isSourcegraphDotCom in subsequent PR
@@ -183,7 +176,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
             ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
-            codyEnabled.search && {
+            codySearchEnabled && {
                 path: EnterprisePageRoutes.CodySearch,
                 content: (
                     <>
@@ -193,7 +186,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [ownEnabled, showSearchContext, codyEnabled.search])
+    }, [ownEnabled, showSearchContext, codySearchEnabled])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
@@ -212,8 +205,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     />
                 }
             >
-                {isSourcegraphApp && <TauriNavigation historyStack={historyStack} />}
-
                 <NavGroup>
                     {!isSourcegraphApp &&
                         (searchNavBarItems.length > 0 ? (
@@ -237,13 +228,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 </NavLink>
                             </NavItem>
                         ))}
-                    {codyEnabled.chat && (
-                        <NavItem icon={CodyLogo}>
-                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Cody}>
-                                Cody AI
-                            </NavLink>
-                        </NavItem>
-                    )}
+                    <NavItem icon={CodyLogo}>
+                        <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Cody}>
+                            Cody AI
+                        </NavLink>
+                    </NavItem>
                     {showSearchNotebook && (
                         <NavItem icon={BookOutlineIcon}>
                             <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Notebooks}>
@@ -318,24 +307,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 </NavAction>
                             )}
                         </>
-                    )}
-                    {isSourcegraphApp && (
-                        <ButtonLink
-                            variant="secondary"
-                            outline={true}
-                            to={addSourcegraphAppOutboundUrlParameters(
-                                'https://about.sourcegraph.com/get-started?t=enterprise',
-                                'navbar'
-                            )}
-                            size="sm"
-                            target="_blank"
-                            className="d-none d-sm-block"
-                            onClick={() =>
-                                eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NavBarSourcegraphApp' })
-                            }
-                        >
-                            Try Sourcegraph Enterprise
-                        </ButtonLink>
                     )}
                     {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (

@@ -1,9 +1,12 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import { getContext } from 'svelte'
     import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
+    import { getContext } from 'svelte'
 
+    import { pluralize } from '$lib/common'
+    import Icon from '$lib/Icon.svelte'
+    import { resultToMatchItems } from '$lib/search/utils'
     import {
         displayRepoName,
         splitPath,
@@ -13,13 +16,10 @@
         type MatchItem,
         ZoektRanking,
     } from '$lib/shared'
-    import Icon from '$lib/Icon.svelte'
-    import { pluralize } from '$lib/common'
-    import { resultToMatchItems } from '$lib/search/utils'
 
     import FileMatchChildren from './FileMatchChildren.svelte'
-    import type { Context } from './SearchResults.svelte'
     import SearchResult from './SearchResult.svelte'
+    import type { Context } from './SearchResults.svelte'
 
     export let result: ContentMatch
 

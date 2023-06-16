@@ -11,22 +11,25 @@ import com.intellij.openapi.editor.highlighter.EditorHighlighter;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
-import com.intellij.ui.BrowserHyperlinkListener;
-import com.intellij.ui.ColorUtil;
 import com.intellij.util.ui.JBInsets;
+import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
 import java.awt.*;
+import java.util.List;
 import java.util.Optional;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.*;
 import org.commonmark.node.Image;
 import org.commonmark.renderer.html.HtmlRenderer;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   private static final int TEXT_MARGIN = 14;
-  private final HtmlRenderer htmlRenderer = HtmlRenderer.builder().build();
+  private final HtmlRenderer htmlRenderer =
+      HtmlRenderer.builder().extensions(List.of(TablesExtension.create())).build();
   private final JPanel messagePanel;
   private final int gradientWidth;
   private StringBuilder htmlContent = new StringBuilder();
@@ -41,12 +44,8 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
 
   @NotNull
   private JEditorPane createNewEmptyTextPane() {
-    JEditorPane jEditorPane = new JEditorPane();
-    jEditorPane.setFont(UIUtil.getLabelFont());
-    jEditorPane.setContentType("text/html");
-    jEditorPane.setEditable(false);
-    jEditorPane.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);
-    jEditorPane.setOpaque(false);
+    JEditorPane jEditorPane = SwingHelper.createHtmlViewer(true, null, null, null);
+    jEditorPane.setFocusable(true);
     jEditorPane.setMargin(
         JBInsets.create(new Insets(TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN)));
     textPane = jEditorPane;
@@ -55,9 +54,13 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   }
 
   @Override
+  public void visit(Paragraph paragraph) {
+    addContentOfNodeAsHtml(htmlRenderer.render(paragraph));
+  }
+
+  @Override
   public void visit(Code code) {
     addContentOfNodeAsHtml(htmlRenderer.render(code));
-
     super.visit(code);
   }
 
@@ -82,6 +85,11 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   @Override
   public void visit(BulletList bulletList) {
     addContentOfNodeAsHtml(htmlRenderer.render(bulletList));
+  }
+
+  @Override
+  public void visit(OrderedList orderedList) {
+    addContentOfNodeAsHtml(htmlRenderer.render(orderedList));
   }
 
   @Override
@@ -144,9 +152,7 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
 
   @Override
   public void visit(Image image) {
-    String html = htmlRenderer.render(image);
-    htmlContent.append(html);
-    textPane.setText(wrapWithHtmlTag(htmlContent.toString()));
+    addContentOfNodeAsHtml(htmlRenderer.render(image));
     super.visit(image);
   }
 
@@ -159,12 +165,6 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   public void visit(ListItem listItem) {
     addContentOfNodeAsHtml(htmlRenderer.render(listItem));
     super.visit(listItem);
-  }
-
-  @Override
-  public void visit(OrderedList orderedList) {
-    addContentOfNodeAsHtml(htmlRenderer.render(orderedList));
-    super.visit(orderedList);
   }
 
   @Override
@@ -188,30 +188,19 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   @Override
   public void visit(CustomBlock customBlock) {
     addContentOfNodeAsHtml(htmlRenderer.render(customBlock));
-    super.visit(customBlock);
   }
 
   private void addContentOfNodeAsHtml(String renderedHtml) {
     htmlContent.append(renderedHtml);
-    textPane.setText(wrapWithHtmlTag(htmlContent.toString()));
+    textPane.setText(buildHtmlContent(htmlContent.toString()));
   }
 
-  private @NotNull String wrapWithHtmlTag(@NotNull String htmlContent) {
-    String labelTextColor = ColorUtil.toHex(UIUtil.getLabelForeground());
-    String linkColor = ColorUtil.toHex(UIUtil.getHeaderActiveColor());
-
-    // Build HTML
-    return "<html data-gramm=\"false\"><head><style>"
-        + "body{ color:"
-        + labelTextColor
-        + "; },"
-        + " p { margin:0; },"
-        + " a { color:"
-        + linkColor
-        + "; }"
-        + "</style></head><body>"
-        + htmlContent
-        + "</body></html>";
+  @NotNull
+  private static @Nls String buildHtmlContent(String bodyContent) {
+    return SwingHelper.buildHtml(
+        UIUtil.getCssFontDeclaration(
+            UIUtil.getLabelFont(), UIUtil.getActiveTextColor(), null, null),
+        bodyContent);
   }
 
   private static void setHighlighting(EditorEx editor, String languageName) {

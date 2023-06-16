@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -147,24 +148,15 @@ type Client struct {
 	httpClient    *http.Client
 }
 
-func normalizeFiletype(filetype string) string {
-	normalized := strings.ToLower(filetype)
-	if mapped, ok := enryLanguageMappings[normalized]; ok {
-		normalized = mapped
-	}
-
-	return normalized
-}
-
 func IsTreesitterSupported(filetype string) bool {
-	_, contained := treesitterSupportedFiletypes[normalizeFiletype(filetype)]
+	_, contained := treesitterSupportedFiletypes[languages.NormalizeLanguage(filetype)]
 	return contained
 }
 
 // Highlight performs a query to highlight some code.
 func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightResponseType) (_ *Response, err error) {
 	// Normalize filetype
-	q.Filetype = normalizeFiletype(q.Filetype)
+	q.Filetype = languages.NormalizeLanguage(q.Filetype)
 
 	tr, ctx := trace.New(ctx, "gosyntect", "Highlight",
 		attribute.String("filepath", q.Filepath),

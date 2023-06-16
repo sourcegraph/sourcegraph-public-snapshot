@@ -9,7 +9,7 @@ import (
 	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	repoembeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
+	bgrepo "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -27,10 +27,10 @@ type handler struct {
 	uploadStore            uploadstore.Store
 	gitserverClient        gitserver.Client
 	contextService         embed.ContextService
-	repoEmbeddingJobsStore repoembeddingsbg.RepoEmbeddingJobsStore
+	repoEmbeddingJobsStore bgrepo.RepoEmbeddingJobsStore
 }
 
-var _ workerutil.Handler[*repoembeddingsbg.RepoEmbeddingJob] = &handler{}
+var _ workerutil.Handler[*bgrepo.RepoEmbeddingJob] = &handler{}
 
 // The threshold to embed the entire file is slightly larger than the chunk threshold to
 // avoid splitting small files unnecessarily.
@@ -38,9 +38,6 @@ const (
 	embedEntireFileTokensThreshold          = 384
 	embeddingChunkTokensThreshold           = 256
 	embeddingChunkEarlySplitTokensThreshold = embeddingChunkTokensThreshold - 32
-
-	defaultMaxCodeEmbeddingsPerRepo = 3_072_000
-	defaultMaxTextEmbeddingsPerRepo = 512_000
 )
 
 var splitOptions = codeintelContext.SplitOptions{
@@ -49,8 +46,9 @@ var splitOptions = codeintelContext.SplitOptions{
 	ChunkEarlySplitTokensThreshold: embeddingChunkEarlySplitTokensThreshold,
 }
 
-func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoembeddingsbg.RepoEmbeddingJob) error {
-	if !conf.EmbeddingsEnabled() {
+func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.RepoEmbeddingJob) error {
+	embeddingsConfig := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	if embeddingsConfig == nil {
 		return errors.New("embeddings are not configured or disabled")
 	}
 
@@ -61,42 +59,53 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		return err
 	}
 
-	// lastSuccessfulJobRevision is the revision of the last successful embeddings
-	// job for this repo. If we can find one, we'll attempt a delta index, otherwise
-	// we fall back to a full index.
-	var lastSuccessfulJobRevision api.CommitID
-	var previousEmbeddingsIndex *embeddings.RepoEmbeddingIndex
-	if conf.Get().Embeddings.Incremental {
-		lastSuccessfulJobRevision, previousEmbeddingsIndex = h.getPreviousEmbeddingIndex(ctx, logger, repo)
-	}
-
-	embeddingsClient, err := embed.NewEmbeddingsClient(&conf.Get().SiteConfiguration)
+	embeddingsClient, err := embed.NewEmbeddingsClient(embeddingsConfig)
 	if err != nil {
 		return err
 	}
+
+	// lastSuccessfulJobRevision is the revision of the last successful embeddings
+	// job for this repo. If we can find one, we'll attempt an incremental index,
+	// otherwise we fall back to a full index.
+	var lastSuccessfulJobRevision api.CommitID
+	var previousIndex *embeddings.RepoEmbeddingIndex
+	if embeddingsConfig.Incremental {
+		lastSuccessfulJobRevision, previousIndex = h.getPreviousEmbeddingIndex(ctx, logger, repo)
+
+		if previousIndex != nil && !previousIndex.IsModelCompatible(embeddingsClient.GetModelIdentifier()) {
+			logger.Info("Embeddings model has changed in config. Performing a full index")
+			lastSuccessfulJobRevision, previousIndex = "", nil
+		}
+	}
+
 	fetcher := &revisionFetcher{
 		repo:      repo.Name,
 		revision:  record.Revision,
 		gitserver: h.gitserverClient,
 	}
 
-	config := conf.Get().Embeddings
 	excludedGlobPatterns := embed.GetDefaultExcludedFilePathPatterns()
-	excludedGlobPatterns = append(excludedGlobPatterns, embed.CompileGlobPatterns(config.ExcludedFilePathPatterns)...)
+	excludedGlobPatterns = append(excludedGlobPatterns, embed.CompileGlobPatterns(embeddingsConfig.ExcludedFilePathPatterns)...)
 
 	opts := embed.EmbedRepoOpts{
 		RepoName:          repo.Name,
 		Revision:          record.Revision,
 		ExcludePatterns:   excludedGlobPatterns,
 		SplitOptions:      splitOptions,
-		MaxCodeEmbeddings: defaultTo(config.MaxCodeEmbeddingsPerRepo, defaultMaxCodeEmbeddingsPerRepo),
-		MaxTextEmbeddings: defaultTo(config.MaxTextEmbeddingsPerRepo, defaultMaxTextEmbeddingsPerRepo),
+		MaxCodeEmbeddings: embeddingsConfig.MaxCodeEmbeddingsPerRepo,
+		MaxTextEmbeddings: embeddingsConfig.MaxTextEmbeddingsPerRepo,
 		IndexedRevision:   lastSuccessfulJobRevision,
 	}
 
 	ranks, err := getDocumentRanks(ctx, string(repo.Name))
 	if err != nil {
 		return err
+	}
+
+	reportStats := func(stats *bgrepo.EmbedRepoStats) {
+		if err := h.repoEmbeddingJobsStore.UpdateRepoEmbeddingJobStats(ctx, record.ID, stats); err != nil {
+			logger.Error("failed to update embedding stats", log.Error(err))
+		}
 	}
 
 	repoEmbeddingIndex, toRemove, stats, err := embed.EmbedRepo(
@@ -107,10 +116,13 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		ranks,
 		opts,
 		logger,
+		reportStats,
 	)
 	if err != nil {
 		return err
 	}
+
+	reportStats(stats) // final, complete report
 
 	logger.Info(
 		"finished generating repo embeddings",
@@ -121,7 +133,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 
 	indexName := string(embeddings.GetRepoEmbeddingIndexName(repo.Name))
 	if stats.IsIncremental {
-		return embeddings.UpdateRepoEmbeddingIndex(ctx, h.uploadStore, indexName, previousEmbeddingsIndex, repoEmbeddingIndex, toRemove, ranks)
+		return embeddings.UpdateRepoEmbeddingIndex(ctx, h.uploadStore, indexName, previousIndex, repoEmbeddingIndex, toRemove, ranks)
 	} else {
 		return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, indexName, repoEmbeddingIndex)
 	}
@@ -145,17 +157,10 @@ func (h *handler) getPreviousEmbeddingIndex(ctx context.Context, logger log.Logg
 	}
 
 	logger.Info(
-		"found previous successful embeddings job. Attempting delta index",
+		"Found previous successful embeddings job. Attempting incremental index",
 		log.String("old revision", string(lastSuccessfulJob.Revision)),
 	)
 	return lastSuccessfulJob.Revision, index
-}
-
-func defaultTo(input, def int) int {
-	if input == 0 {
-		return def
-	}
-	return input
 }
 
 type revisionFetcher struct {

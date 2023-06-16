@@ -2,17 +2,35 @@ package productsubscription
 
 import (
 	"context"
+	"fmt"
 	"math"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+type ErrDotcomUserNotFound struct {
+	err error
+}
+
+func (e ErrDotcomUserNotFound) Error() string {
+	if e.err == nil {
+		return "dotcom user not found"
+	}
+	return fmt.Sprintf("dotcom user not found: %v", e.err)
+}
+
+func (e ErrDotcomUserNotFound) Extensions() map[string]any {
+	return map[string]any{"code": codygateway.GQLErrCodeDotcomUserNotFound}
+}
 
 // CodyGatewayDotcomUserResolver implements the GraphQL Query and Mutation fields related to Cody gateway users.
 type CodyGatewayDotcomUserResolver struct {
@@ -21,17 +39,23 @@ type CodyGatewayDotcomUserResolver struct {
 
 func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.Context, args *graphqlbackend.CodyGatewayUsersByAccessTokenArgs) (graphqlbackend.CodyGatewayUser, error) {
 	// 🚨 SECURITY: Only site admins or the service accounts may check users.
-	if err := serviceAccountOrSiteAdmin(ctx, r.DB, true); err != nil {
+	if err := serviceAccountOrSiteAdmin(ctx, r.DB, false); err != nil {
 		return nil, err
 	}
 	dbTokens := newDBTokens(r.DB)
 	userID, err := dbTokens.LookupDotcomUserIDByAccessToken(ctx, args.Token)
 	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, ErrDotcomUserNotFound{err}
+		}
 		return nil, err
 	}
 
 	user, err := r.DB.Users().GetByID(ctx, int32(userID))
 	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, ErrDotcomUserNotFound{err}
+		}
 		return nil, err
 	}
 	verified, err := r.DB.UserEmails().HasVerifiedEmail(ctx, user.ID)
@@ -111,7 +135,7 @@ func (r codyUserGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Cont
 	}, nil
 }
 
-const tokensPerDollar = int(1 / (0.0004 / 1_000))
+const tokensPerDollar = int(1 / (0.0001 / 1_000))
 
 func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) (graphqlbackend.CodyGatewayRateLimit, error) {
 	// If the user isn't enabled return no rate limit
@@ -152,22 +176,22 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	if limit == nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		// Otherwise, fall back to the global limit.
-		cfg := conf.Get()
+		cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 		switch scope {
 		case types.CompletionsFeatureChat:
-			if cfg.Completions != nil && cfg.Completions.PerUserDailyLimit > 0 {
-				limit = iPtr(cfg.Completions.PerUserDailyLimit)
+			if cfg != nil && cfg.PerUserDailyLimit > 0 {
+				limit = pointers.Ptr(cfg.PerUserDailyLimit)
 			}
 		case types.CompletionsFeatureCode:
-			if cfg.Completions != nil && cfg.Completions.PerUserCodeCompletionsDailyLimit > 0 {
-				limit = iPtr(cfg.Completions.PerUserCodeCompletionsDailyLimit)
+			if cfg != nil && cfg.PerUserCodeCompletionsDailyLimit > 0 {
+				limit = pointers.Ptr(cfg.PerUserCodeCompletionsDailyLimit)
 			}
 		default:
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Newf("unknown scope: %s", scope)
 		}
 	}
 	if limit == nil {
-		limit = iPtr(0)
+		limit = pointers.Ptr(0)
 	}
 	return licensing.CodyGatewayRateLimit{
 		AllowedModels:   allowedModels(scope),
@@ -185,8 +209,4 @@ func allowedModels(scope types.CompletionsFeature) []string {
 	default:
 		return []string{}
 	}
-}
-
-func iPtr(i int) *int {
-	return &i
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 )
 
 func TestNewActor(t *testing.T) {

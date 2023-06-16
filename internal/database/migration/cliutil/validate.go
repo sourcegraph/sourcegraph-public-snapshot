@@ -5,6 +5,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -39,7 +40,7 @@ func Validate(commandName string, factory RunnerFactory, outFactory OutputFactor
 		out.WriteLine(output.Emoji(output.EmojiSuccess, "schema okay!"))
 
 		if !skipOutOfBandMigrationsFlag.Get(cmd) {
-			db, err := extractDatabase(ctx, r)
+			db, err := store.ExtractDatabase(ctx, r)
 			if err != nil {
 				return err
 			}

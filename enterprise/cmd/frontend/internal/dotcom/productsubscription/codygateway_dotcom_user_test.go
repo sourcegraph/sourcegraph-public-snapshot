@@ -18,8 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -27,9 +29,13 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 	var chatOverrideLimit int = 200
 	var codeOverrideLimit int = 400
 
+	tru := true
 	cfg := &conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
+			CodyEnabled: &tru,
+			LicenseKey:  "asdf",
 			Completions: &schema.Completions{
+				Provider:                         "sourcegraph",
 				PerUserCodeCompletionsDailyLimit: 20,
 				PerUserDailyLimit:                10,
 			},
@@ -58,9 +64,9 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 	// User with rate limit overrides
 	overrideUser, err := db.Users().Create(ctx, database.NewUser{Username: "override", EmailIsVerified: true, Email: "override@test.com"})
 	require.NoError(t, err)
-	err = db.Users().SetChatCompletionsQuota(context.Background(), overrideUser.ID, iPtr(chatOverrideLimit))
+	err = db.Users().SetChatCompletionsQuota(context.Background(), overrideUser.ID, pointers.Ptr(chatOverrideLimit))
 	require.NoError(t, err)
-	err = db.Users().SetCodeCompletionsQuota(context.Background(), overrideUser.ID, iPtr(codeOverrideLimit))
+	err = db.Users().SetCodeCompletionsQuota(context.Background(), overrideUser.ID, pointers.Ptr(codeOverrideLimit))
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -138,6 +144,24 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 	}
 }
 
+func TestCodyGatewayDotcomUserResolverUserNotFound(t *testing.T) {
+	ctx := context.Background()
+	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(logtest.Scoped(t), t))
+
+	// admin user to make request
+	adminUser, err := db.Users().Create(ctx, database.NewUser{Username: "admin", EmailIsVerified: true, Email: "admin@test.com"})
+	require.NoError(t, err)
+
+	// Create an admin context to use for the request
+	adminContext := actor.WithActor(context.Background(), actor.FromActualUser(adminUser))
+
+	r := productsubscription.CodyGatewayDotcomUserResolver{DB: db}
+	_, err = r.CodyGatewayDotcomUserByToken(adminContext, &graphqlbackend.CodyGatewayUsersByAccessTokenArgs{Token: "NOT_A_TOKEN"})
+
+	_, got := err.(productsubscription.ErrDotcomUserNotFound)
+	assert.True(t, got, "should have error type ErrDotcomUserNotFound")
+}
+
 func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(logtest.Scoped(t), t))
@@ -159,9 +183,10 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		name    string
-		user    *types.User
-		wantErr error
+		name     string
+		user     *types.User
+		features map[string]bool
+		wantErr  error
 	}{
 		{
 			name:    "admin user",
@@ -169,7 +194,13 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name:    "not admin user",
+			name:     "service account",
+			user:     notAdminUser,
+			features: map[string]bool{"product-subscriptions-reader-service-account": true},
+			wantErr:  nil,
+		},
+		{
+			name:    "not admin or service account user",
 			user:    notAdminUser,
 			wantErr: auth.ErrMustBeSiteAdmin,
 		},
@@ -179,7 +210,8 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 
 			// Create a request context from the user
-			requestContext := actor.WithActor(context.Background(), actor.FromActualUser(test.user))
+			userContext := actor.WithActor(context.Background(), actor.FromActualUser(test.user))
+			requestContext := featureflag.WithFlags(userContext, featureflag.NewMemoryStore(test.features, nil, nil))
 
 			// Make request from the test user
 			r := productsubscription.CodyGatewayDotcomUserResolver{DB: db}
@@ -189,10 +221,6 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 
 		})
 	}
-}
-
-func iPtr(i int) *int {
-	return &i
 }
 
 func makeGatewayToken(apiToken string) string {

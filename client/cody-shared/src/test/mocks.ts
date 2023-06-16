@@ -4,7 +4,7 @@ import { CodebaseContext } from '../codebase-context'
 import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../editor'
 import { EmbeddingsSearch } from '../embeddings'
 import { IntentDetector } from '../intent-detector'
-import { KeywordContextFetcher, KeywordContextFetcherResult } from '../keyword-context'
+import { KeywordContextFetcher, ContextResult } from '../local-context'
 import { EmbeddingsSearchResults } from '../sourcegraph-api/graphql'
 
 export class MockEmbeddingsClient implements EmbeddingsSearch {
@@ -37,11 +37,11 @@ export class MockIntentDetector implements IntentDetector {
 export class MockKeywordContextFetcher implements KeywordContextFetcher {
     constructor(private mocks: Partial<KeywordContextFetcher> = {}) {}
 
-    public getContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
+    public getContext(query: string, numResults: number): Promise<ContextResult[]> {
         return this.mocks.getContext?.(query, numResults) ?? Promise.resolve([])
     }
 
-    public getSearchContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
+    public getSearchContext(query: string, numResults: number): Promise<ContextResult[]> {
         return this.mocks.getSearchContext?.(query, numResults) ?? Promise.resolve([])
     }
 }
@@ -111,7 +111,8 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
                 { useContext: 'none', serverEndpoint: 'https://example.com' },
                 'dummy-codebase',
                 defaultEmbeddingsClient,
-                defaultKeywordContextFetcher
+                defaultKeywordContextFetcher,
+                null
             ),
         responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),
         firstInteraction: args.firstInteraction ?? false,

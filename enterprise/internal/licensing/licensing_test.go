@@ -24,18 +24,18 @@ func TestIsLicenseValid(t *testing.T) {
 
 	t.Run("unset key returns true", func(t *testing.T) {
 		cleanupStore(t, store)
-		require.True(t, isLicenseValid())
+		require.True(t, IsLicenseValid())
 	})
 
 	t.Run("set false key returns false", func(t *testing.T) {
 		cleanupStore(t, store)
 		require.NoError(t, store.Set(licenseValidityStoreKey, false))
-		require.False(t, isLicenseValid())
+		require.False(t, IsLicenseValid())
 	})
 
 	t.Run("set true key returns true", func(t *testing.T) {
 		cleanupStore(t, store)
 		require.NoError(t, store.Set(licenseValidityStoreKey, true))
-		require.True(t, isLicenseValid())
+		require.True(t, IsLicenseValid())
 	})
 }

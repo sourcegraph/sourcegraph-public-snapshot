@@ -2,56 +2,17 @@ package actor
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 )
-
-func NewRateLimitWithPercentageConcurrency(limit int, interval time.Duration, allowedModels []string, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) RateLimit {
-	// The actual type of time.Duration is int64, so we can use it to compute the
-	// ratio of the rate limit interval to a day (24 hours).
-	ratioToDay := float32(interval) / float32(24*time.Hour)
-	// Then use the ratio to compute the rate limit for a day.
-	dailyLimit := float32(limit) / ratioToDay
-	// Finally, compute the concurrency limit with the given percentage of the daily limit.
-	concurrencyLimit := int(dailyLimit * concurrencyConfig.Percentage)
-	// Just in case a poor choice of percentage results in a concurrency limit less than 1.
-	if concurrencyLimit < 1 {
-		concurrencyLimit = 1
-	}
-
-	return RateLimit{
-		AllowedModels:              allowedModels,
-		Limit:                      limit,
-		Interval:                   interval,
-		ConcurrentRequests:         concurrencyLimit,
-		ConcurrentRequestsInterval: concurrencyConfig.Interval,
-	}
-}
-
-type RateLimit struct {
-	// AllowedModels is a set of models in Cody Gateway's model configuration
-	// format, "$PROVIDER/$MODEL_NAME".
-	AllowedModels []string `json:"allowedModels"`
-
-	Limit    int           `json:"limit"`
-	Interval time.Duration `json:"interval"`
-
-	ConcurrentRequests         int           `json:"concurrentRequests"`
-	ConcurrentRequestsInterval time.Duration `json:"concurrentRequestsInterval"`
-}
-
-func (r *RateLimit) IsValid() bool {
-	return r != nil && r.Interval > 0 && r.Limit > 0 && len(r.AllowedModels) > 0
-}
 
 type Actor struct {
 	// Key is the original key used to identify the actor. It may be a sensitive value
@@ -96,12 +57,24 @@ func FromContext(ctx context.Context) *Actor {
 
 // Logger returns a logger that has metadata about the actor attached to it.
 func (a *Actor) Logger(logger log.Logger) log.Logger {
-	if a == nil {
+	// If there's no ID and no source and no key, this is probably just no
+	// actor available. Possible in actor-less endpoints like diagnostics.
+	if a == nil || (a.ID == "" && a.Source == nil && a.Key == "") {
 		return logger.With(log.String("actor.ID", "<nil>"))
 	}
+
+	// TODO: We shouldn't ever have a nil source, but check just in case, since
+	// we don't want to panic on some instrumentation.
+	var sourceName string
+	if a.Source != nil {
+		sourceName = a.Source.Name()
+	} else {
+		sourceName = "<nil>"
+	}
+
 	return logger.With(
 		log.String("actor.ID", a.ID),
-		log.String("actor.Source", a.Source.Name()),
+		log.String("actor.Source", sourceName),
 		log.Bool("actor.AccessEnabled", a.AccessEnabled),
 		log.Timep("actor.LastUpdated", a.LastUpdated),
 	)
@@ -120,6 +93,29 @@ func (a *Actor) Update(ctx context.Context) {
 	}
 }
 
+func (a *Actor) TraceAttributes() []attribute.KeyValue {
+	if a == nil {
+		return []attribute.KeyValue{attribute.String("actor", "<nil>")}
+	}
+
+	attrs := []attribute.KeyValue{
+		attribute.String("actor.id", a.ID),
+		attribute.Bool("actor.accessEnabled", a.AccessEnabled),
+	}
+	if a.LastUpdated != nil {
+		attrs = append(attrs, attribute.String("actor.lastUpdated", a.LastUpdated.String()))
+	}
+	for f, rl := range a.RateLimits {
+		key := fmt.Sprintf("actor.rateLimits.%s", f)
+		if rlJSON, err := json.Marshal(rl); err != nil {
+			attrs = append(attrs, attribute.String(key, err.Error()))
+		} else {
+			attrs = append(attrs, attribute.String(key, string(rlJSON)))
+		}
+	}
+	return attrs
+}
+
 // WithActor returns a new context with the given Actor instance.
 func WithActor(ctx context.Context, a *Actor) context.Context {
 	return context.WithValue(ctx, actorKey, a)
@@ -129,6 +125,7 @@ func (a *Actor) Limiter(
 	logger log.Logger,
 	redis limiter.RedisStore,
 	feature codygateway.Feature,
+	rateLimitNotifier notify.RateLimitNotifier,
 ) (limiter.Limiter, bool) {
 	if a == nil {
 		// Not logged in, no limit applicable.
@@ -147,111 +144,39 @@ func (a *Actor) Limiter(
 	// The redis store has to use a prefix for the given feature because we need to
 	// rate limit by feature.
 	featurePrefix := fmt.Sprintf("%s:", feature)
-	concurrencyLimiter := &concurrencyLimiter{
-		logger:  logger,
-		actor:   a,
-		feature: feature,
-		redis:   limiter.NewPrefixRedisStore(fmt.Sprintf("concurrent:%s", featurePrefix), redis),
-		rateLimit: RateLimit{
-			Limit:    limit.ConcurrentRequests,
-			Interval: limit.ConcurrentRequestsInterval,
+
+	// baseLimiter is the core Limiter that naively applies the specified
+	// rate limits. This will get wrapped in various other layers of limiter
+	// behaviour.
+	baseLimiter := limiter.StaticLimiter{
+		LimiterName: "actor.Limiter",
+		Identifier:  a.ID,
+		Redis:       limiter.NewPrefixRedisStore(featurePrefix, redis),
+		Limit:       limit.Limit,
+		Interval:    limit.Interval,
+		// Only update rate limit TTL if the actor has been updated recently.
+		UpdateRateLimitTTL: a.LastUpdated != nil && time.Since(*a.LastUpdated) < 5*time.Minute,
+		NowFunc:            time.Now,
+		RateLimitAlerter: func(usagePercentage float32, ttl time.Duration) {
+			rateLimitNotifier(a.ID, codygateway.ActorSource(a.Source.Name()), feature, usagePercentage, ttl)
 		},
-		featureLimiter: updateOnFailureLimiter{
-			Redis:     limiter.NewPrefixRedisStore(featurePrefix, redis),
-			RateLimit: limit,
-			Actor:     a,
+	}
+
+	return &concurrencyLimiter{
+		logger:             logger.Scoped("concurrency", "concurrency limiter"),
+		actor:              a,
+		feature:            feature,
+		redis:              limiter.NewPrefixRedisStore(fmt.Sprintf("concurrent:%s", featurePrefix), redis),
+		concurrentRequests: limit.ConcurrentRequests,
+		concurrentInterval: limit.ConcurrentRequestsInterval,
+
+		nextLimiter: updateOnErrorLimiter{
+			actor: a,
+
+			nextLimiter: baseLimiter,
 		},
 		nowFunc: time.Now,
-	}
-	return concurrencyLimiter, true
-}
-
-type concurrencyLimiter struct {
-	logger         log.Logger
-	actor          *Actor
-	feature        codygateway.Feature
-	redis          limiter.RedisStore
-	rateLimit      RateLimit
-	featureLimiter limiter.Limiter
-	nowFunc        func() time.Time
-}
-
-func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func(int) error, error) {
-	commit, err := (limiter.StaticLimiter{
-		Identifier: l.actor.ID,
-		Redis:      l.redis,
-		Limit:      l.rateLimit.Limit,
-		Interval:   l.rateLimit.Interval,
-		// Only update rate limit TTL if the actor has been updated recently.
-		UpdateRateLimitTTL: l.actor.LastUpdated != nil && l.nowFunc().Sub(*l.actor.LastUpdated) < 5*time.Minute,
-		NowFunc:            l.nowFunc,
-	}).TryAcquire(ctx)
-	if err != nil {
-		if errors.As(err, &limiter.NoAccessError{}) || errors.As(err, &limiter.RateLimitExceededError{}) {
-			retryAfter, err := limiter.RetryAfterWithTTL(l.redis, l.nowFunc, l.actor.ID)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to get TTL for rate limit counter")
-			}
-			return nil, ErrConcurrencyLimitExceeded{
-				feature:    l.feature,
-				limit:      l.rateLimit.Limit,
-				retryAfter: retryAfter,
-			}
-		}
-		return nil, errors.Wrap(err, "check concurrent limit")
-	}
-	if err = commit(1); err != nil {
-		trace.Logger(ctx, l.logger).Error("failed to commit concurrency limit consumption", log.Error(err))
-	}
-
-	featureCommit, err := l.featureLimiter.TryAcquire(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "check feature rate limit")
-	}
-	return featureCommit, nil
-}
-
-type ErrConcurrencyLimitExceeded struct {
-	feature    codygateway.Feature
-	limit      int
-	retryAfter time.Time
-}
-
-func (e ErrConcurrencyLimitExceeded) Error() string {
-	return fmt.Sprintf("you exceeded the concurrency limit of %d requests for %q. Retry after %s",
-		e.limit, e.feature, e.retryAfter.Truncate(time.Second))
-}
-
-func (e ErrConcurrencyLimitExceeded) WriteResponse(w http.ResponseWriter) {
-	// Rate limit exceeded, write well known headers and return correct status code.
-	w.Header().Set("x-ratelimit-limit", strconv.Itoa(e.limit))
-	w.Header().Set("x-ratelimit-remaining", "0")
-	w.Header().Set("retry-after", e.retryAfter.Format(time.RFC1123))
-	http.Error(w, e.Error(), http.StatusTooManyRequests)
-}
-
-type updateOnFailureLimiter struct {
-	Redis     limiter.RedisStore
-	RateLimit RateLimit
-	*Actor
-}
-
-func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func(int) error, error) {
-	commit, err := (limiter.StaticLimiter{
-		Identifier: u.ID,
-		Redis:      u.Redis,
-		Limit:      u.RateLimit.Limit,
-		Interval:   u.RateLimit.Interval,
-		// Only update rate limit TTL if the actor has been updated recently.
-		UpdateRateLimitTTL: u.LastUpdated != nil && time.Since(*u.LastUpdated) < 5*time.Minute,
-		NowFunc:            time.Now,
-	}).TryAcquire(ctx)
-
-	if errors.As(err, &limiter.NoAccessError{}) || errors.As(err, &limiter.RateLimitExceededError{}) {
-		u.Actor.Update(ctx) // TODO: run this in goroutine+background context maybe?
-	}
-
-	return commit, err
+	}, true
 }
 
 // ErrAccessTokenDenied is returned when the access token is denied due to the

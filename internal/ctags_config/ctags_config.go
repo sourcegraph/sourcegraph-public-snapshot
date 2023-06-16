@@ -1,6 +1,12 @@
 package ctags_config
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import (
+	"strings"
+
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
+)
 
 type ParserType = uint8
 
@@ -11,8 +17,8 @@ const (
 	ScipCtags
 )
 
-func ParserTypeToName(pType ParserType) string {
-	switch pType {
+func ParserTypeToName(parserType ParserType) string {
+	switch parserType {
 	case NoCtags:
 		return "off"
 	case UniversalCtags:
@@ -37,19 +43,76 @@ func ParserNameToParserType(name string) (ParserType, error) {
 	}
 }
 
-type ParserConfiguration struct {
-	Default ParserType
-	Engine  map[string]ParserType
+func ParserIsNoop(parserType ParserType) bool {
+	return parserType == UnknownCtags || parserType == NoCtags
 }
 
-var SupportLanguages = map[string]struct{}{
-	"Zig": {},
+func LanguageSupportsParserType(language string, parserType ParserType) bool {
+	switch parserType {
+	case ScipCtags:
+		_, ok := supportedLanguages[strings.ToLower(language)]
+		return ok
+	default:
+		return true
+	}
 }
 
-var BaseParserConfig = ParserConfiguration{
-	Engine: map[string]ParserType{
-		// TODO: put our other languages here
-		// TODO: also list the languages we support
-		"Zig": ScipCtags,
-	},
+var supportedLanguages = map[string]struct{}{
+	// TODO: Will support these after 5.1 release
+	// "c":          {},
+	// "cpp":        {},
+	"c_sharp":    {},
+	"go":         {},
+	"java":       {},
+	"javascript": {},
+	"kotlin":     {},
+	"python":     {},
+	"ruby":       {},
+	"rust":       {},
+	"scala":      {},
+	"typescript": {},
+	"zig":        {},
+}
+
+var DefaultEngines = map[string]ParserType{
+	// Add the languages we want to turn on by default (you'll need to
+	// update the ctags_config module for supported languages as well)
+	"c_sharp":    ScipCtags,
+	"go":         ScipCtags,
+	"javascript": ScipCtags,
+	"kotlin":     ScipCtags,
+	"python":     ScipCtags,
+	"ruby":       ScipCtags,
+	"rust":       ScipCtags,
+	"scala":      ScipCtags,
+	"typescript": ScipCtags,
+	"zig":        ScipCtags,
+
+	// TODO: Not ready to turn on the following yet. Worried about not handling enough cases.
+	// May wait until after next release
+	// "c" / "c++"
+	// "java":   ScipCtags,
+}
+
+func CreateEngineMap(siteConfig schema.SiteConfiguration) map[string]ParserType {
+	// Set the defaults
+	engines := make(map[string]ParserType)
+	for lang, engine := range DefaultEngines {
+		lang = languages.NormalizeLanguage(lang)
+		engines[lang] = engine
+	}
+
+	// Set any relevant overrides
+	configuration := siteConfig.SyntaxHighlighting
+	if configuration != nil {
+		for lang, engine := range configuration.Symbols.Engine {
+			lang = languages.NormalizeLanguage(lang)
+
+			if engine, err := ParserNameToParserType(engine); err != nil {
+				engines[lang] = engine
+			}
+		}
+	}
+
+	return engines
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strconv"
 	"sync"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -26,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -94,6 +97,14 @@ func (r *RepositoryResolver) EmbeddingExists(ctx context.Context) (bool, error) 
 	}
 
 	return r.db.Repos().RepoEmbeddingExists(ctx, r.IDInt32())
+}
+
+func (r *RepositoryResolver) EmbeddingJobs(ctx context.Context, args ListRepoEmbeddingJobsArgs) (*graphqlutil.ConnectionResolver[RepoEmbeddingJobResolver], error) {
+	// Ensure that we only return jobs for this repository.
+	gqlID := r.ID()
+	args.Repo = &gqlID
+
+	return EnterpriseResolvers.embeddingsResolver.RepoEmbeddingJobs(ctx, args)
 }
 
 func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
@@ -249,6 +260,40 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 	}
 
 	return r.CommitFromID(ctx, args, commitID)
+}
+
+type RepositoryChangelistArgs struct {
+	CID string
+}
+
+func (r *RepositoryResolver) Changelist(ctx context.Context, args *RepositoryChangelistArgs) (_ *PerforceChangelistResolver, err error) {
+	tr, ctx := trace.New(ctx, "RepositoryResolver", "Changelist",
+		attribute.String("changelist", args.CID))
+	defer tr.FinishWithErr(&err)
+
+	cid, err := strconv.ParseInt(args.CID, 10, 64)
+	if err != nil {
+		return nil, &perforce.BadChangelistError{}
+	}
+
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rc, err := r.db.RepoCommitsChangelists().GetRepoCommitChangelist(ctx, repo.ID, cid)
+	if err != nil {
+		if errors.HasType(err, &perforce.ChangelistNotFoundError{}) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return newPerforceChangelistResolver(
+		r,
+		fmt.Sprintf("%d", rc.PerforceChangelistID),
+		string(rc.CommitSHA),
+	), nil
 }
 
 func (r *RepositoryResolver) FirstEverCommit(ctx context.Context) (_ *GitCommitResolver, err error) {

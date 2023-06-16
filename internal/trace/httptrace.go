@@ -122,8 +122,11 @@ func HTTPMiddleware(l log.Logger, next http.Handler, siteConfig conftypes.SiteCo
 		trace := Context(ctx)
 		var traceURL string
 		if trace.TraceID != "" {
+			// We set X-Trace-URL to a configured URL template for traces.
+			// X-Trace for the trace ID is set in instrumentation.HTTPMiddleware,
+			// which is a more bare-bones OpenTelemetry handler.
 			traceURL = URL(trace.TraceID, siteConfig)
-			rw.Header().Set("X-Trace", traceURL)
+			rw.Header().Set("X-Trace-URL", traceURL)
 			logger = logger.WithTrace(trace)
 		}
 
@@ -249,6 +252,14 @@ func loggingRecoverer(logger log.Logger, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if r := recover(); r != nil {
+				// ErrAbortHandler is a sentinal error which is used to stop an
+				// http handler but not report the error. In practice we have only
+				// seen this used by httputil.ReverseProxy when the server goes
+				// down.
+				if r == http.ErrAbortHandler {
+					return
+				}
+
 				err := errors.Errorf("handler panic: %v", redact.Safe(r))
 				logger.Error("handler panic", log.Error(err), log.String("stacktrace", string(debug.Stack())))
 				w.WriteHeader(http.StatusInternalServerError)

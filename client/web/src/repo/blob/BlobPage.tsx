@@ -46,12 +46,14 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { FileContentEditor } from '../../cody/components/FileContentEditor'
+import { isCodyEnabled } from '../../cody/isCodyEnabled'
 import { useCodySidebar } from '../../cody/sidebar/Provider'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { Scalars } from '../../graphql-operations'
+import { SourcegraphContext } from '../../jscontext'
 import { NotebookProps } from '../../notebooks'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
@@ -63,6 +65,7 @@ import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
 import { ToggleBlameAction } from '../actions/ToggleBlameAction'
 import { useBlameHunks } from '../blame/useBlameHunks'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
+import { TryCodyWidget } from '../components/TryCodyWidget/TryCodyWidget'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
 import { HoverThresholdProps } from '../RepoContainer'
@@ -80,7 +83,6 @@ import { GoToRawAction } from './GoToRawAction'
 import { HistoryAndOwnBar } from './own/HistoryAndOwnBar'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
-import { TryCodyWidget } from './TryCodyWidget'
 
 import styles from './BlobPage.module.scss'
 
@@ -112,6 +114,7 @@ interface BlobPageProps
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     className?: string
+    context: Pick<SourcegraphContext, 'authProviders'>
 }
 
 /**
@@ -122,7 +125,7 @@ interface BlobPageInfo extends Optional<BlobInfo, 'commitID'> {
     aborted: boolean
 }
 
-export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ...props }) => {
+export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, context, ...props }) => {
     const location = useLocation()
     const navigate = useNavigate()
 
@@ -135,8 +138,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     )
     const isPackage = useMemo(() => isPackageServiceType(repoServiceType), [repoServiceType])
 
-    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
-    const enableOwnershipPanel = ownFeatureFlagEnabled && props.ownEnabled
+    const [enableOwnershipPanels] = useFeatureFlag('enable-ownership-panels', true)
+    const enableOwnershipPanel = enableOwnershipPanels && props.ownEnabled
 
     const lineOrRange = useMemo(
         () => parseQueryAndHash(location.search, location.hash),
@@ -360,8 +363,14 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
     const alwaysRender = (
         <>
             <PageTitle title={getPageTitle()} />
-            {!!props.isSourcegraphDotCom && !!props.authenticatedUser && (
-                <TryCodyWidget className="mb-4" telemetryService={props.telemetryService} />
+            {(props.isSourcegraphDotCom || isCodyEnabled()) && (
+                <TryCodyWidget
+                    telemetryService={props.telemetryService}
+                    type="blob"
+                    authenticatedUser={props.authenticatedUser}
+                    context={context}
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
+                />
             )}
             {window.context.isAuthenticatedUser && (
                 <RepoHeaderContributionPortal
@@ -439,8 +448,13 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, ..
                     />
                 )}
             </RepoHeaderContributionPortal>
-            {enableOwnershipPanel && repoID && (
-                <HistoryAndOwnBar repoID={repoID} revision={revision} filePath={filePath} />
+            {repoID && (
+                <HistoryAndOwnBar
+                    repoID={repoID}
+                    revision={revision}
+                    filePath={filePath}
+                    enableOwnershipPanel={enableOwnershipPanel}
+                />
             )}
         </>
     )

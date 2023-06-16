@@ -91,7 +91,7 @@ input_ranks AS (
 processed AS (
 	UPDATE codeintel_ranking_path_counts_inputs
 	SET processed = true
-	WHERE id IN (SELECT ir.id FROM input_ranks ir)
+	WHERE id IN (SELECT ir.id FROM rank_ids ir)
 	RETURNING 1
 ),
 inserted AS (

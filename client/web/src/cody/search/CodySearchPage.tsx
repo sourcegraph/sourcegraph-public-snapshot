@@ -11,10 +11,12 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Alert, Form, Input, LoadingSpinner, Text, Badge, Link, useSessionStorage } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { useURLSyncedString } from '../../hooks/useUrlSyncedString'
 import { eventLogger } from '../../tracking/eventLogger'
+import { DOTCOM_URL } from '../../tracking/util'
 import { CodyIcon } from '../components/CodyIcon'
-import { useIsCodyEnabled } from '../useIsCodyEnabled'
+import { isEmailVerificationNeededForCody } from '../isCodyEnabled'
 
 import { translateToQuery } from './translateToQuery'
 
@@ -50,12 +52,18 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
 
     const onSubmit = useCallback(() => {
         const sanitizedInput = input.trim()
+        const dotcomHost = DOTCOM_URL.href
+        const isPrivateInstance = window.location.host !== dotcomHost
 
         if (!sanitizedInput) {
             return
         }
 
-        eventLogger.log('web:codySearch:submit', { input: sanitizedInput }, { input: sanitizedInput })
+        eventLogger.log(
+            'web:codySearch:submit',
+            !isPrivateInstance ? { input: sanitizedInput } : null,
+            !isPrivateInstance ? { input: sanitizedInput } : null
+        )
         setLoading(true)
         translateToQuery(sanitizedInput, authenticatedUser).then(
             query => {
@@ -64,8 +72,8 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
                 if (query) {
                     eventLogger.log(
                         'web:codySearch:submitSucceeded',
-                        { input: sanitizedInput, translatedQuery: query },
-                        { input: sanitizedInput, translatedQuery: query }
+                        !isPrivateInstance ? { input: sanitizedInput, translatedQuery: query } : null,
+                        !isPrivateInstance ? { input: sanitizedInput, translatedQuery: query } : null
                     )
                     setCodySearchInput(JSON.stringify({ input: sanitizedInput, translatedQuery: query }))
                     navigate({
@@ -75,8 +83,8 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
                 } else {
                     eventLogger.log(
                         'web:codySearch:submitFailed',
-                        { input: sanitizedInput, reason: 'untranslatable' },
-                        { input: sanitizedInput, reason: 'untranslatable' }
+                        !isPrivateInstance ? { input: sanitizedInput, reason: 'untranslatable' } : null,
+                        !isPrivateInstance ? { input: sanitizedInput, reason: 'untranslatable' } : null
                     )
                     setInputError('Cody does not understand this query. Try rephrasing it.')
                 }
@@ -84,16 +92,20 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
             error => {
                 eventLogger.log(
                     'web:codySearch:submitFailed',
-                    {
-                        input: sanitizedInput,
-                        reason: 'unreachable',
-                        error: error?.message,
-                    },
-                    {
-                        input: sanitizedInput,
-                        reason: 'unreachable',
-                        error: error?.message,
-                    }
+                    !isPrivateInstance
+                        ? {
+                              input: sanitizedInput,
+                              reason: 'unreachable',
+                              error: error?.message,
+                          }
+                        : null,
+                    !isPrivateInstance
+                        ? {
+                              input: sanitizedInput,
+                              reason: 'unreachable',
+                              error: error?.message,
+                          }
+                        : null
                 )
                 setLoading(false)
                 setInputError(`Unable to reach Cody. Error: ${error?.message}`)
@@ -127,7 +139,6 @@ const SearchInput: React.FunctionComponent<{
     onSubmit: () => void
     className?: string
 }> = ({ value, loading, error, onChange, onSubmit: parentOnSubmit, className }) => {
-    const cody = useIsCodyEnabled()
     const onInput = useCallback<React.FormEventHandler<HTMLInputElement>>(
         event => {
             onChange(event.currentTarget.value)
@@ -143,9 +154,11 @@ const SearchInput: React.FunctionComponent<{
         [parentOnSubmit]
     )
 
-    return cody.search ? (
+    const [codySearchEnabled] = useFeatureFlag('cody-web-search')
+
+    return codySearchEnabled ? (
         <Form onSubmit={onSubmit} className={className}>
-            {cody.needsEmailVerification && (
+            {isEmailVerificationNeededForCody() && (
                 <Alert variant="warning">
                     <Text className="mb-0">Verify email</Text>
                     <Text className="mb-0">
@@ -161,7 +174,7 @@ const SearchInput: React.FunctionComponent<{
                 inputClassName={styles.input}
                 value={value}
                 onInput={onInput}
-                disabled={loading || cody.needsEmailVerification}
+                disabled={loading || isEmailVerificationNeededForCody()}
                 autoFocus={true}
                 placeholder="Search for code or files in natural language..."
             />

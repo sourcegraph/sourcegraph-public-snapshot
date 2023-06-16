@@ -24,6 +24,7 @@ type Store interface {
 	GetStarRank(ctx context.Context, repoName api.RepoName) (float64, error)
 	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string]float64, bool, error)
 	GetReferenceCountStatistics(ctx context.Context) (logmean float64, _ error)
+	CoverageCounts(ctx context.Context, graphKey string) (_ shared.CoverageCounts, err error)
 	LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
 
 	// Export uploads (metadata tracking) + cleanup
@@ -34,7 +35,7 @@ type Store interface {
 
 	// Exported data (raw)
 	InsertDefinitionsForRanking(ctx context.Context, graphKey string, definitions chan shared.RankingDefinitions) error
-	InsertReferencesForRanking(ctx context.Context, graphKey string, batchSize int, exportedUploadID int, references chan string) error
+	InsertReferencesForRanking(ctx context.Context, graphKey string, batchSize int, exportedUploadID int, references chan [16]byte) error
 	InsertInitialPathRanks(ctx context.Context, exportedUploadID int, documentPaths []string, batchSize int, graphKey string) error
 
 	// Graph keys

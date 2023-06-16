@@ -77,6 +77,13 @@ A mutation.
 """
 type Mutation {
     """
+    INTERNAL ONLY: Sets the value of versions.auto_upgrade in the frontend db.
+    Determines behavior of multiversion upgrades.
+
+    Only site admins may perform this mutation.
+    """
+    setAutoUpgrade(enable: Boolean!): EmptyResponse!
+    """
     Updates the user profile information for the user with the given ID.
 
     Only the user and site admins may perform this mutation.
@@ -3553,6 +3560,13 @@ type Repository implements Node & GenericSearchResultInterface {
         """
         inputRevspec: String
     ): GitCommit
+
+    """
+    EXPERIMENTAL: Returns infomration about the given changelist of the perforce depot, or null if
+    no changelist exists with the given cid or it is not a perforce depot.
+    """
+    changelist(cid: String!): PerforceChangelist
+
     """
     The first commit inside the repo
     """
@@ -4121,6 +4135,10 @@ type MirrorRepositoryInfo {
     The last error message, if any, returned when fetching or cloning the repo
     """
     lastError: String
+    """
+    The output of the most recent repo sync job
+    """
+    lastSyncOutput: String
     """
     The byte size of the repo.
     """
@@ -4983,7 +5001,7 @@ type GitCommit implements Node {
     """
     abbreviatedOID: String!
     """
-    The perforce changelist ID if this git commit was originally converted from a perforce depot.
+    EXPERIMENTAL: The perforce changelist ID if this git commit was originally converted from a perforce depot.
     """
     perforceChangelist: PerforceChangelist
     """
@@ -7053,6 +7071,10 @@ type Site implements SettingsSubject {
     FOR INTERNAL USE ONLY: Returns information about instance upgrade readiness.
     """
     upgradeReadiness: UpgradeReadiness!
+    """
+    FOR INTERNAL USE ONLY: The state of readiness to auto upgrade the Sourcegraph instance via migrator commands.
+    """
+    autoUpgradeEnabled: Boolean!
 
     """
     Wether the current App installation has a connected Sourcegraph.com account.
@@ -10232,11 +10254,19 @@ type CodeIntelCommit {
 }
 
 """
-A Perforce changelist.
+EXPERIMENTAL: A Perforce changelist.
 """
 type PerforceChangelist {
     """
     The changelist ID.
     """
     cid: String!
+    """
+    The canonical URL to this changelist.
+    """
+    canonicalURL: String!
+    """
+    The corresponding git commit of this changelist.
+    """
+    commit: GitCommit!
 }

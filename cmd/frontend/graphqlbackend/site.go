@@ -24,10 +24,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/drift"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/multiversion"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
@@ -321,16 +325,16 @@ type upgradeReadinessResolver struct {
 
 	initOnce    sync.Once
 	initErr     error
-	runner      cliutil.Runner
+	runner      *runner.Runner
 	version     string
 	schemaNames []string
 }
 
-var devSchemaFactory = cliutil.NewExpectedSchemaFactory(
+var devSchemaFactory = schemas.NewExpectedSchemaFactory(
 	"Local file",
-	[]cliutil.NamedRegexp{{Regexp: lazyregexp.New(`^dev$`)}},
+	[]schemas.NamedRegexp{{Regexp: lazyregexp.New(`^dev$`)}},
 	func(filename, _ string) string { return filename },
-	cliutil.ReadSchemaFromFile,
+	schemas.ReadSchemaFromFile,
 )
 
 var schemaFactories = append(
@@ -341,9 +345,9 @@ var schemaFactories = append(
 
 var insidersVersionPattern = lazyregexp.New(`^[\w-]+_\d{4}-\d{2}-\d{2}_\d+\.\d+-(\w+)$`)
 
-func (r *upgradeReadinessResolver) init(ctx context.Context) (_ cliutil.Runner, version string, schemaNames []string, _ error) {
+func (r *upgradeReadinessResolver) init(ctx context.Context) (_ *runner.Runner, version string, schemaNames []string, _ error) {
 	r.initOnce.Do(func() {
-		r.runner, r.version, r.schemaNames, r.initErr = func() (cliutil.Runner, string, []string, error) {
+		r.runner, r.version, r.schemaNames, r.initErr = func() (*runner.Runner, string, []string, error) {
 			schemaNames := []string{schemas.Frontend.Name, schemas.CodeIntel.Name}
 			schemaList := []*schemas.Schema{schemas.Frontend, schemas.CodeIntel}
 			if insights.IsCodeInsightsEnabled() {
@@ -351,7 +355,7 @@ func (r *upgradeReadinessResolver) init(ctx context.Context) (_ cliutil.Runner, 
 				schemaList = append(schemaList, schemas.CodeInsights)
 			}
 			observationCtx := observation.NewContext(r.logger)
-			runner, err := migratorshared.NewRunnerWithSchemas(observationCtx, r.logger, schemaNames, schemaList)
+			runner, err := migration.NewRunnerWithSchemas(observationCtx, output.OutputFromLogger(r.logger), "frontend-upgradereadiness", schemaNames, schemaList)
 			if err != nil {
 				return nil, "", nil, errors.Wrap(err, "new runner")
 			}
@@ -447,12 +451,12 @@ func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) ([]*schemaDr
 		var buf bytes.Buffer
 		driftOut := output.NewOutput(&buf, output.OutputOpts{})
 
-		expectedSchema, err := cliutil.FetchExpectedSchema(ctx, schemaName, version, driftOut, schemaFactories)
+		expectedSchema, err := multiversion.FetchExpectedSchema(ctx, schemaName, version, driftOut, schemaFactories)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, summary := range drift.CompareSchemaDescriptions(schemaName, version, cliutil.Canonicalize(schema), cliutil.Canonicalize(expectedSchema)) {
+		for _, summary := range drift.CompareSchemaDescriptions(schemaName, version, multiversion.Canonicalize(schema), multiversion.Canonicalize(expectedSchema)) {
 			resolvers = append(resolvers, &schemaDriftResolver{
 				summary: summary,
 			})
@@ -524,31 +528,31 @@ func (r *schemaResolver) SetAutoUpgrade(ctx context.Context, args *struct {
 }
 
 func (r *siteResolver) PerUserCompletionsQuota() *int32 {
-	c := conf.Get()
-	if c.Completions != nil && c.Completions.PerUserDailyLimit > 0 {
-		i := int32(c.Completions.PerUserDailyLimit)
+	c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+	if c != nil && c.PerUserDailyLimit > 0 {
+		i := int32(c.PerUserDailyLimit)
 		return &i
 	}
 	return nil
 }
 
 func (r *siteResolver) PerUserCodeCompletionsQuota() *int32 {
-	c := conf.Get()
-	if c.Completions != nil && c.Completions.PerUserCodeCompletionsDailyLimit > 0 {
-		i := int32(c.Completions.PerUserCodeCompletionsDailyLimit)
+	c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+	if c != nil && c.PerUserCodeCompletionsDailyLimit > 0 {
+		i := int32(c.PerUserCodeCompletionsDailyLimit)
 		return &i
 	}
 	return nil
 }
 
 func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
-	// App is typically forwarding Cody requests to dotcom.
 	// This section can be removed if dotcom stops requiring verified emails
 	if deploy.IsApp() {
-		// App users can specify their own keys
-		// if they use their own keys requests are not forwarded to dotcom
-		// which means a verified email is not needed
-		return conf.Get().Completions == nil
+		c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+		// App users can specify their own keys using one of the regular providers.
+		// If they use their own keys requests are not going through Cody Gateway
+		// which means a verified email is not needed.
+		return c == nil || c.Provider == conftypes.CompletionsProviderNameSourcegraph
 	}
 
 	// We only require this on dotcom
