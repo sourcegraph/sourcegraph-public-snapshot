@@ -2111,7 +2111,7 @@ func TestEventLogs_CountByEventNames(t *testing.T) {
 			UserID:    1,
 			Name:      "RepoMetadataAdded",
 			Source:    "BACKEND",
-			Timestamp: now.Add(-24 * time.Hour),  // outside of [-1h,+1h] range
+			Timestamp: now.Add(-24 * time.Hour), // outside of [-1h,+1h] range
 		},
 		{
 			UserID:    1,
@@ -2127,15 +2127,15 @@ func TestEventLogs_CountByEventNames(t *testing.T) {
 		},
 		{
 			UserID:    1,
-			Name:      "RepoMetadataUpdated",  // not querying for this event name
+			Name:      "RepoMetadataUpdated", // not querying for this event name
 			Source:    "BACKEND",
-			Timestamp: now.Add(2*time.Minute),
+			Timestamp: now.Add(2 * time.Minute),
 		},
 		{
 			UserID:    1,
-			Name:      "RepoMetadataDeleted",  // not querying for this event name
+			Name:      "RepoMetadataDeleted", // not querying for this event name
 			Source:    "BACKEND",
-			Timestamp: now.Add(2*time.Minute),
+			Timestamp: now.Add(2 * time.Minute),
 		},
 		{
 			UserID:    1,
