@@ -352,12 +352,12 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 	t.Run("UpdateChangesetSpecCommitVerification with a signed commit", func(t *testing.T) {
 		for _, c := range changesetSpecs {
+			// Once with a verified commit
 			commitVerification := github.Verification{
 				Verified:  true,
 				Reason:    "valid",
 				Signature: "*********",
 			}
-			c.CommitVerification = &commitVerification
 			commit := github.RestCommit{
 				URL:          "https://api.github.com/repos/Birth-control-tech/birth-control-tech-BE/git/commits/dabd9bb07fdb5b580f168e942f2160b1719fc98f",
 				SHA:          "dabd9bb07fdb5b580f168e942f2160b1719fc98f",
@@ -366,7 +366,9 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				Verification: commitVerification,
 			}
 
+			c.CommitVerification = &commitVerification
 			want := c.Clone()
+
 			if err := s.UpdateChangesetSpecCommitVerification(ctx, c.ID, &commit); err != nil {
 				t.Fatal(err)
 			}
@@ -375,36 +377,29 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				t.Fatal(err)
 			}
 			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+				t.Fatalf("found diff in spec with signed commit: %s", diff)
 			}
-		}
-	})
 
-	t.Run("UpdateChangesetSpecCommitVerification with an unsigned commit", func(t *testing.T) {
-		for _, c := range changesetSpecs {
-			commitVerification := github.Verification{
+			// Once with a commit that's not verified
+			commitVerification = github.Verification{
 				Verified: false,
 				Reason:   "unsigned",
 			}
+			commit.Verification = commitVerification
+			// A changeset spec with an unsigned commit should not have a commit
+			// verification set.
 			c.CommitVerification = nil
-			commit := github.RestCommit{
-				URL:          "https://api.github.com/repos/Birth-control-tech/birth-control-tech-BE/git/commits/dabd9bb07fdb5b580f168e942f2160b1719fc98f",
-				SHA:          "dabd9bb07fdb5b580f168e942f2160b1719fc98f",
-				NodeID:       "C_kwDOEW0OxtoAKGRhYmQ5YmIwN2ZkYjViNTgwZjE2OGU5NDJmMjE2MGIxNzE5ZmM5OGY",
-				Message:      "Append Hello World to all README.md files",
-				Verification: commitVerification,
-			}
+			want = c.Clone()
 
-			want := c.Clone()
 			if err := s.UpdateChangesetSpecCommitVerification(ctx, c.ID, &commit); err != nil {
 				t.Fatal(err)
 			}
-			have, err := s.GetChangesetSpecByID(ctx, c.ID)
+			have, err = s.GetChangesetSpecByID(ctx, c.ID)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+				t.Fatalf("found diff in spec with unsigned commit: %s", diff)
 			}
 		}
 	})

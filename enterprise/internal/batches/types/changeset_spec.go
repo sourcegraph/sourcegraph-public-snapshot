@@ -7,7 +7,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-
 	godiff "github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -105,17 +104,19 @@ type ChangesetSpec struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	ExternalID         string
-	BaseRev            string
-	BaseRef            string
-	HeadRef            string
-	Title              string
-	Body               string
-	Published          batcheslib.PublishedValue
-	Diff               []byte
-	CommitMessage      string
-	CommitAuthorName   string
-	CommitAuthorEmail  string
+	ExternalID        string
+	BaseRev           string
+	BaseRef           string
+	HeadRef           string
+	Title             string
+	Body              string
+	Published         batcheslib.PublishedValue
+	Diff              []byte
+	CommitMessage     string
+	CommitAuthorName  string
+	CommitAuthorEmail string
+	// If the commit created for a changeset is signed, commit verification is the
+	// signature verification result from the code host.
 	CommitVerification *github.Verification
 
 	ForkNamespace *string
