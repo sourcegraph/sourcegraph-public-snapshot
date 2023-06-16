@@ -39,7 +39,7 @@ export const OwnAnalyticsPage: FC = () => {
 const OwnAnalyticsPanel: FC = () => {
     const { data, loading, error } = useQuery<GetInstanceOwnStatsResult>(GET_INSTANCE_OWN_STATS, {})
 
-    if (!data || !data?.instanceOwnershipStats?.totalFiles) {
+    if (!data?.instanceOwnershipStats?.totalFiles) {
         return <>{error && <ErrorAlert prefix="Error getting own analytics" error={error} />}</>
     }
 
@@ -76,7 +76,7 @@ const OwnAnalyticsPanel: FC = () => {
             name: 'All files',
             count: 100,
             fill: 'var(--text-muted)',
-            tooltip: `Total number of files`,
+            tooltip: 'Total number of files',
         },
     ]
 
