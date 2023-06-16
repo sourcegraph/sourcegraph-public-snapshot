@@ -415,7 +415,7 @@ const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productS
                                         return parseISO(datum.date)
                                     },
                                     getYValue(datum) {
-                                        return datum.count
+                                        return Number(datum.count)
                                     },
                                     id: 'chat-usage',
                                     name: 'Chat completions: ' + model,
@@ -429,7 +429,7 @@ const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productS
                                         return parseISO(datum.date)
                                     },
                                     getYValue(datum) {
-                                        return datum.count
+                                        return Number(datum.count)
                                     },
                                     id: 'code-completions-usage',
                                     name: 'Code completions: ' + model,
@@ -486,7 +486,7 @@ const EmbeddingsRateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = (
                                         return parseISO(datum.date)
                                     },
                                     getYValue(datum) {
-                                        return datum.count
+                                        return Number(datum.count)
                                     },
                                     id: 'chat-usage',
                                     name: 'Embedded tokens: ' + model,

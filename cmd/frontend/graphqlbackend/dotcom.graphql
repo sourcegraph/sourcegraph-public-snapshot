@@ -354,7 +354,7 @@ type CodyGatewayUsageDatapoint {
     """
     The number of requests made.
     """
-    count: Int!
+    count: BigInt!
     """
     The model that was used.
     """

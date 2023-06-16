@@ -201,7 +201,7 @@ func (r codyGatewayRateLimitResolver) Usage(ctx context.Context) ([]graphqlbacke
 type codyGatewayUsageDatapoint struct {
 	date  time.Time
 	model string
-	count int
+	count int64
 }
 
 func (r *codyGatewayUsageDatapoint) Date() gqlutil.DateTime {
@@ -212,6 +212,6 @@ func (r *codyGatewayUsageDatapoint) Model() string {
 	return r.model
 }
 
-func (r *codyGatewayUsageDatapoint) Count() int32 {
-	return int32(r.count)
+func (r *codyGatewayUsageDatapoint) Count() graphqlbackend.BigInt {
+	return graphqlbackend.BigInt(r.count)
 }

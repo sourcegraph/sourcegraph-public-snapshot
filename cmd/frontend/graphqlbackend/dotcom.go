@@ -174,7 +174,7 @@ type CodyGatewayAccess interface {
 type CodyGatewayUsageDatapoint interface {
 	Date() gqlutil.DateTime
 	Model() string
-	Count() int32
+	Count() BigInt
 }
 
 type CodyGatewayRateLimitSource string
