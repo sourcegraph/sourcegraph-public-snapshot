@@ -11,8 +11,10 @@ mod common;
 mod tray;
 use common::{extract_path_from_scheme_url, show_window};
 use std::sync::RwLock;
-use tauri::Manager;
+use tauri::{Context, Manager};
+use tauri::{CustomMenuItem, Menu, MenuItem, Submenu};
 use tauri_utils::config::RemoteDomainAccessScope;
+use tauri_utils::PackageInfo;
 
 #[cfg(not(target_os = "macos"))]
 use common::is_scheme_url;
@@ -69,6 +71,20 @@ fn set_launch_path(url: String) {
 const SCHEME: &str = "sourcegraph";
 const BUNDLE_IDENTIFIER: &str = "com.sourcegraph.cody";
 
+fn create_menu(package_info: &PackageInfo) -> Menu {
+    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
+    let close = CustomMenuItem::new("close".to_string(), "Close");
+    let submenu = Submenu::new(
+        "Troubleshooting",
+        Menu::new().add_item(quit).add_item(close),
+    );
+    let menu = tauri::Menu::os_default(&package_info.name)
+        .add_native_item(MenuItem::Copy)
+        .add_item(CustomMenuItem::new("hide", "Hide"))
+        .add_submenu(submenu);
+    menu
+}
+
 fn main() {
     // Prepare handler for sourcegraph:// scheme urls.
     tauri_plugin_deep_link::prepare(BUNDLE_IDENTIFIER);
@@ -97,6 +113,8 @@ fn main() {
         .dangerous_remote_domain_ipc_access = vec![scope];
 
     tauri::Builder::default()
+        // .menu()
+        .menu(create_menu(context.package_info()))
         .system_tray(tray)
         .on_system_tray_event(tray::on_system_tray_event)
         .on_system_tray_event(|app, event| {
