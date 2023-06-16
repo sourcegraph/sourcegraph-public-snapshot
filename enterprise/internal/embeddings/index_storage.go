@@ -105,7 +105,7 @@ func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 	tr, ctx := trace.New(ctx, "DownloadRepoEmbeddingIndex", "", attribute.String("key", key))
 	defer tr.FinishWithErr(&err)
 
-	dec, err := newDecoder(ctx, tr, uploadStore, key)
+	dec, err := newDecoder(ctx, uploadStore, key)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ type decoder struct {
 	formatVersion IndexFormatVersion
 }
 
-func newDecoder(ctx context.Context, tr *trace.Trace, uploadStore uploadstore.Store, key string) (*decoder, error) {
+func newDecoder(ctx context.Context, uploadStore uploadstore.Store, key string) (*decoder, error) {
 	f, err := uploadStore.Get(ctx, key)
 	if err != nil {
 		return nil, err
@@ -144,7 +144,9 @@ func newDecoder(ctx context.Context, tr *trace.Trace, uploadStore uploadstore.St
 	if err := dec.Decode(&formatVersion); err != nil {
 		// If there's an error, assume this is an old index that doesn't encode the
 		// version. Open the file again to reset the reader.
-		tr.AddEvent("failed to decode IndexFormatVersion, assuming that this is an old index that doesn't start with a version", trace.Error(err))
+		if tr := trace.TraceFromContext(ctx); tr != nil {
+			tr.AddEvent("failed to decode IndexFormatVersion, assuming that this is an old index that doesn't start with a version", trace.Error(err))
+		}
 
 		if err := f.Close(); err != nil {
 			return nil, err
