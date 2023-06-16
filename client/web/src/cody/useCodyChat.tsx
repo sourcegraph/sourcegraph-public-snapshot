@@ -264,7 +264,7 @@ export const useCodyChat = ({
 
     const executeRecipe = useCallback<typeof executeRecipeInternal>(
         async (recipeId, options): Promise<Transcript | null> => {
-            eventLogger.log(EventName.CODY_CHAT_RECIPE_EXECUTED, { recipeId })
+            eventLogger.log(`web:codyChat:recipe:${recipeId}:executed`, { recipeId })
 
             const transcript = await executeRecipeInternal(recipeId, options)
 

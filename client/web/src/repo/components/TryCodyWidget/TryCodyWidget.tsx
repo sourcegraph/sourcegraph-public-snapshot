@@ -18,11 +18,7 @@ import { GlowingCodySVG, MeetCodySVG } from './WidgetIcons'
 
 import styles from './TryCodyWidget.module.scss'
 
-const AUTO_DISMISS_ON_EVENTS = new Set([
-    EventName.CODY_SIDEBAR_CHAT_OPENED,
-    EventName.CODY_CHAT_SUBMIT,
-    EventName.CODY_CHAT_RECIPE_EXECUTED,
-])
+const AUTO_DISMISS_ON_EVENTS = new Set([EventName.CODY_SIDEBAR_CHAT_OPENED, EventName.CODY_CHAT_SUBMIT])
 
 interface WidgetContentProps extends TelemetryProps {
     type: 'blob' | 'repo'
