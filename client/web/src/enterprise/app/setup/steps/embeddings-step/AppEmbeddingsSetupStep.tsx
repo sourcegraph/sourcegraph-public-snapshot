@@ -1,8 +1,10 @@
-import { FC, useContext, ChangeEvent, useState, useMemo, forwardRef } from 'react'
+import { FC, useContext, ChangeEvent, useState, useMemo } from 'react'
 
+import { MutationTuple } from '@apollo/client'
 import { mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
+import { gql, useMutation } from '@sourcegraph/http-client'
 import {
     Button,
     H1,
@@ -16,6 +18,7 @@ import {
     Label,
 } from '@sourcegraph/wildcard'
 
+import { ScheduleRepoEmbeddingJobsResult, ScheduleRepoEmbeddingJobsVariables } from '../../../../../graphql-operations'
 import { EnterprisePageRoutes } from '../../../../../routes.constants'
 import {
     SetupStepsContext,
@@ -23,13 +26,29 @@ import {
     useLocalRepositories,
     useNewLocalRepositoriesPaths,
 } from '../../../../../setup-wizard/components'
-import { useScheduleRepoEmbeddingJobs } from '../../../../site-admin/cody/backend'
 import { AppNoItemsState } from '../../../components'
 
 import styles from './AppEmbeddingsSetupStep.module.scss'
 
 type RepoName = string
 type EmbeddingsMap = Record<RepoName, boolean>
+
+const SCHEDULE_REPO_EMBEDDING_JOBS = gql`
+    mutation ScheduleLocalRepoEmbeddingJobs($repoNames: [String!]!) {
+        setupNewAppRepositoriesForEmbedding(repoNames: $repoNames) {
+            alwaysNil
+        }
+    }
+`
+
+export function useScheduleRepoEmbeddingJobs(): MutationTuple<
+    ScheduleRepoEmbeddingJobsResult,
+    ScheduleRepoEmbeddingJobsVariables
+> {
+    return useMutation<ScheduleRepoEmbeddingJobsResult, ScheduleRepoEmbeddingJobsVariables>(
+        SCHEDULE_REPO_EMBEDDING_JOBS
+    )
+}
 
 export const AppEmbeddingsSetupStep: FC<StepComponentProps> = ({ className }) => {
     const { onNextStep } = useContext(SetupStepsContext)
