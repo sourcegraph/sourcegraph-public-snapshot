@@ -4775,6 +4775,7 @@ Foreign-key constraints:
     c.external_state,
     c.external_review_state,
     c.external_check_state,
+    c.commit_verification,
     c.diff_stat_added,
     c.diff_stat_deleted,
     c.sync_state,
