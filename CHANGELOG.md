@@ -13,7 +13,27 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
-## Unreleased 5.1.0
+## Unreleased 5.2.0
+
+### Added
+
+-
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+## 5.1.0
+
+> **Note**: As of 5.1.0, Sourcegraph OSS is removed and has been relicensed to Sourcegraph Enterprise. A blog post with much more detail will come soon!
 
 ### Added
 
