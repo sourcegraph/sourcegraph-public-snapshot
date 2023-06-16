@@ -10,7 +10,7 @@ import { Checkbox, Form, H3, Modal, Text, Button, Icon, useLocalStorage } from '
 
 import { AuthenticatedUser } from '../../auth'
 import { CodyPageIcon } from '../../cody/chat/CodyPageIcon'
-import { useIsCodyEnabled } from '../../cody/useIsCodyEnabled'
+import { isEmailVerificationNeededForCody } from '../../cody/isCodyEnabled'
 import { LoaderButton } from '../../components/LoaderButton'
 import { SubmitCodySurveyResult, SubmitCodySurveyVariables } from '../../graphql-operations'
 import { resendVerificationEmail } from '../../user/settings/emails/UserEmail'
@@ -195,8 +195,7 @@ export const CodySurveyToast: React.FC<
     } & TelemetryProps
 > = ({ authenticatedUser, telemetryService }) => {
     const { show, dismiss } = useCodySurveyToast()
-    const codyEnabled = useIsCodyEnabled()
-    const [showVerifyEmail, setShowVerifyEmail] = useState(show && codyEnabled.needsEmailVerification)
+    const [showVerifyEmail, setShowVerifyEmail] = useState(show && isEmailVerificationNeededForCody())
     const dismissVerifyEmail = useCallback(() => {
         telemetryService.log('VerifyEmailToastDismissed')
         setShowVerifyEmail(false)

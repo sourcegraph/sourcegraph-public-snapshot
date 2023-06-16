@@ -46,6 +46,7 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { FileContentEditor } from '../../cody/components/FileContentEditor'
+import { isCodyEnabled } from '../../cody/isCodyEnabled'
 import { useCodySidebar } from '../../cody/sidebar/Provider'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
@@ -362,12 +363,13 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     const alwaysRender = (
         <>
             <PageTitle title={getPageTitle()} />
-            {props.isSourcegraphDotCom && (
+            {(props.isSourcegraphDotCom || isCodyEnabled()) && (
                 <TryCodyWidget
                     telemetryService={props.telemetryService}
                     type="blob"
                     authenticatedUser={props.authenticatedUser}
                     context={context}
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
                 />
             )}
             {window.context.isAuthenticatedUser && (

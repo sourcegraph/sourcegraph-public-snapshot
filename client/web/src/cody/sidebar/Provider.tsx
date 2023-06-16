@@ -55,7 +55,7 @@ export const CodySidebarStoreProvider: React.FC<ICodySidebarStoreProviderProps> 
             ...codyChatStore,
             isSidebarOpen: isSidebarOpen ?? false,
             inputNeedsFocus,
-            sidebarSize: isSidebarOpen && codyChatStore.isCodyEnabled.sidebar ? sidebarSize : 0,
+            sidebarSize: isSidebarOpen ? sidebarSize : 0,
             setIsSidebarOpen,
             setFocusProvided,
             setSidebarSize,

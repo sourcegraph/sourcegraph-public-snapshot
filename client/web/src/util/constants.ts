@@ -20,6 +20,7 @@ export const enum EventName {
     CODY_SIGNUP = 'CodySignup',
     CODY_CHAT_DOWNLOAD_VSCODE = 'web:codyChat:downloadVSCode',
     CODY_CHAT_TRY_ON_PUBLIC_CODE = 'web:codyChat:tryOnPublicCode',
+    VIEW_EDITOR_EXTENSIONS = 'CodyClickViewEditorExtensions',
     TRY_CODY_VSCODE = 'VSCodeInstall',
     TRY_CODY_MARKETPLACE = 'VSCodeMarketplace',
     TRY_CODY_WEB = 'TryCodyWeb',

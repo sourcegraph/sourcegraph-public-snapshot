@@ -18,7 +18,6 @@ import { CodyLogo } from '@sourcegraph/cody-ui/src/icons/CodyLogo'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import {
-    Alert,
     Badge,
     Button,
     Icon,
@@ -33,6 +32,7 @@ import {
     H4,
     H3,
     Text,
+    ButtonLink,
     Tooltip,
 } from '@sourcegraph/wildcard'
 
@@ -45,6 +45,7 @@ import { EventName } from '../../util/constants'
 import { ChatUI } from '../components/ChatUI'
 import { CodyMarketingPage } from '../components/CodyMarketingPage'
 import { HistoryList } from '../components/HistoryList'
+import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyChatStore, useCodyChat } from '../useCodyChat'
 
 import { CodyColorIcon } from './CodyPageIcon'
@@ -52,6 +53,7 @@ import { CodyColorIcon } from './CodyPageIcon'
 import styles from './CodyChatPage.module.scss'
 
 interface CodyChatPageProps {
+    isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphApp: boolean
     context: Pick<SourcegraphContext, 'authProviders'>
@@ -94,6 +96,7 @@ const onTranscriptHistoryLoad = (
 export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     authenticatedUser,
     context,
+    isSourcegraphDotCom,
     isSourcegraphApp,
 }) => {
     const { pathname } = useLocation()
@@ -106,7 +109,6 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     const {
         initializeNewChat,
         clearHistory,
-        isCodyEnabled,
         loaded,
         transcript,
         transcriptHistory,
@@ -146,22 +148,40 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
         return null
     }
 
-    if (!authenticatedUser) {
-        return <CodyMarketingPage context={context} />
-    }
-
-    if (!isCodyEnabled.chat) {
-        return (
-            <Page className="overflow-hidden">
-                <PageTitle title="Cody AI Chat" />
-                <Alert variant="info">Cody is not enabled. Please contact your site admin to enable Cody.</Alert>
-            </Page>
-        )
+    if (!authenticatedUser || !isCodyEnabled()) {
+        return <CodyMarketingPage isSourcegraphDotCom={isSourcegraphDotCom} context={context} />
     }
 
     return (
         <Page className={classNames('d-flex flex-column', styles.page)}>
             <PageTitle title="Cody AI Chat" />
+            {!isSourcegraphDotCom && !isCTADismissed && (
+                <MarketingBlock
+                    wrapperClassName="mb-5"
+                    contentClassName={classNames(styles.ctaWrapper, styles.ctaContent)}
+                >
+                    <div className="d-flex">
+                        <CodyCTAIcon className="flex-shrink-0" />
+                        <div className="ml-3">
+                            <H3>Cody is more powerful in your IDE</H3>
+                            <Text>
+                                Cody adds powerful AI assistant functionality like inline completions and assist, and
+                                powerful recipes to help you understand codebases and generate and fix code more
+                                accurately.
+                            </Text>
+                            <ButtonLink variant="primary" to="/help/cody#get-cody">
+                                View editor extensions &rarr;
+                            </ButtonLink>
+                        </div>
+                    </div>
+                    <Icon
+                        svgPath={mdiClose}
+                        aria-label="Close Cody editor extensions CTA"
+                        className={classNames(styles.closeButton, 'position-absolute m-0')}
+                        onClick={onCTADismiss}
+                    />
+                </MarketingBlock>
+            )}
             <PageHeader
                 actions={
                     <div className="d-flex">
@@ -173,8 +193,14 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                 }
                 description={
                     <>
-                        Cody answers code questions and writes code for you by reading your entire codebase and the code
-                        graph.
+                        Cody answers code questions and writes code for you by leveraging your entire codebase and the
+                        code graph.
+                        {!isSourcegraphDotCom && isCTADismissed && (
+                            <>
+                                {' '}
+                                <Link to="/help/cody#get-cody">Cody is more powerful in the IDE</Link>.
+                            </>
+                        )}
                     </>
                 }
                 className={styles.pageHeader}
@@ -192,7 +218,6 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                     </PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
-
             {/* Page content */}
             <div className={classNames('row flex-1 overflow-hidden', styles.pageWrapper)}>
                 <div className={classNames('col-md-3', styles.sidebarWrapper)}>
@@ -230,7 +255,8 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                             deleteHistoryItem={deleteHistoryItem}
                         />
                     </div>
-                    {!isCTADismissed &&
+                    {isSourcegraphDotCom &&
+                        !isCTADismissed &&
                         (showVSCodeCTA ? (
                             <MarketingBlock
                                 wrapperClassName="d-flex"
@@ -426,3 +452,38 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
         </Page>
     )
 }
+
+const CodyCTAIcon: React.FunctionComponent<{ className?: string }> = ({ className }) => (
+    <svg
+        width="146"
+        height="112"
+        viewBox="0 0 146 112"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className={className}
+    >
+        <rect x="24" y="24" width="98" height="64" rx="6" fill="#E8D1FF" />
+        <path
+            d="M56.25 65.3333C56.25 65.687 56.3817 66.0261 56.6161 66.2761C56.8505 66.5262 57.1685 66.6667 57.5 66.6667H60V69.3333H56.875C56.1875 69.3333 55 68.7333 55 68C55 68.7333 53.8125 69.3333 53.125 69.3333H50V66.6667H52.5C52.8315 66.6667 53.1495 66.5262 53.3839 66.2761C53.6183 66.0261 53.75 65.687 53.75 65.3333V46.6667C53.75 46.313 53.6183 45.9739 53.3839 45.7239C53.1495 45.4738 52.8315 45.3333 52.5 45.3333H50V42.6667H53.125C53.8125 42.6667 55 43.2667 55 44C55 43.2667 56.1875 42.6667 56.875 42.6667H60V45.3333H57.5C57.1685 45.3333 56.8505 45.4738 56.6161 45.7239C56.3817 45.9739 56.25 46.313 56.25 46.6667V65.3333Z"
+            fill="#A305E1"
+        />
+        <path
+            fillRule="evenodd"
+            clipRule="evenodd"
+            d="M88.9095 45C90.3781 45 91.5686 46.1789 91.5686 47.6331V52.314C91.5686 53.7682 90.3781 54.9471 88.9095 54.9471C87.4409 54.9471 86.2504 53.7682 86.2504 52.314V47.6331C86.2504 46.1789 87.4409 45 88.9095 45Z"
+            fill="#A305E1"
+        />
+        <path
+            fillRule="evenodd"
+            clipRule="evenodd"
+            d="M72.068 51.1437C72.068 49.6895 73.2585 48.5106 74.7271 48.5106H79.4544C80.923 48.5106 82.1135 49.6895 82.1135 51.1437C82.1135 52.5978 80.923 53.7767 79.4544 53.7767H74.7271C73.2585 53.7767 72.068 52.5978 72.068 51.1437Z"
+            fill="#A305E1"
+        />
+        <path
+            fillRule="evenodd"
+            clipRule="evenodd"
+            d="M95.2643 58.8091C96.2107 59.6994 96.2491 61.1808 95.35 62.1179L94.5134 62.99C87.9666 69.8138 76.9295 69.6438 70.6002 62.6216C69.731 61.6572 69.8159 60.1777 70.7898 59.317C71.7637 58.4563 73.2579 58.5403 74.1271 59.5047C78.6157 64.4848 86.4432 64.6053 91.0861 59.7659L91.9227 58.8939C92.8218 57.9568 94.3179 57.9188 95.2643 58.8091Z"
+            fill="#A305E1"
+        />
+    </svg>
+)

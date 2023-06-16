@@ -99,6 +99,9 @@ describe('TreePage', () => {
         it('Should displays cody CTA', () => {
             const repo = repoDefaults()
             const props = treePagePropsDefaults(repo)
+            window.context = window.context || {}
+            window.context.codyEnabled = true
+            window.context.codyEnabledForCurrentUser = true
 
             const mockUser = {
                 id: 'userID',

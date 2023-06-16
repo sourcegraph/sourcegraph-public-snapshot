@@ -86,17 +86,14 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                 ) : (
                     <>
                         <SearchPageInput queryState={queryState} setQueryState={setQueryState} />
-                        {isSourcegraphDotCom && (
-                            <>
-                                {authenticatedUser ? (
-                                    <TryCodyCtaSection className="mx-auto my-5" telemetryService={telemetryService} />
-                                ) : (
-                                    <TryCodySignUpCtaSection
-                                        className="mx-auto my-5"
-                                        telemetryService={telemetryService}
-                                    />
-                                )}
-                            </>
+                        {authenticatedUser ? (
+                            <TryCodyCtaSection
+                                className="mx-auto my-5"
+                                telemetryService={telemetryService}
+                                isSourcegraphDotCom={isSourcegraphDotCom}
+                            />
+                        ) : (
+                            <TryCodySignUpCtaSection className="mx-auto my-5" telemetryService={telemetryService} />
                         )}
                     </>
                 )}

@@ -49,6 +49,7 @@ export const Chat: React.FunctionComponent<
         transcriptActionClassName={styles.transcriptAction}
         inputRowClassName={styles.inputRow}
         chatInputClassName={styles.chatInput}
+        isCodyEnabled={true}
     />
 )
 
