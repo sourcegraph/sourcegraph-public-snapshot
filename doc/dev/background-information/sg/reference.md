@@ -35,6 +35,7 @@ Available comamndsets in `sg.config.yaml`:
 * batches-kubernetes
 * codeintel
 * codeintel-bazel
+* codeintel-kubernetes
 * cody-gateway
 * dotcom
 * enterprise

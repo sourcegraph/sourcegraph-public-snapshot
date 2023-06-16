@@ -30,14 +30,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var client *gosyntect.Client
-
 func LoadConfig() {
 	client = gosyntect.GetSyntectClient()
 }
 
 var (
 	clientOnce      sync.Once
+	client          *gosyntect.Client
 	highlightOpOnce sync.Once
 	highlightOp     *observation.Operation
 )
@@ -511,6 +510,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	if p.Format == gosyntect.FormatJSONSCIP || filetypeQuery.Engine.isTreesitterBased() {
 		document := new(scip.Document)
 		data, err := base64.StdEncoding.DecodeString(resp.Data)
+
 		if err != nil {
 			return unhighlightedCode(err, code)
 		}
@@ -550,20 +550,6 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		document: nil,
 	}, false, nil
 }
-
-// func Highlight(ctx context.Context, fileName, content string) error {
-// 	q := &gosyntect.SymbolsQuery{
-// 		FileName: fileName,
-// 		Content:  content,
-// 	}
-
-// 	resp, err := client.Symbols(ctx, q)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return
-// }
 
 // TODO (Dax): Determine if Histogram provides value and either use only histogram or counter, not both
 var requestCounter = promauto.NewCounterVec(prometheus.CounterOpts{
