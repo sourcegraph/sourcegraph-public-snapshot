@@ -108,19 +108,32 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
     font-size: 0.7rem;
 }
 
-.stop-generating-button-container {
-    display: flex;
-    width: 100%;
-    justify-content: center;
+.submit-button-disabled {
+    cursor: not-allowed;
 }
 
 .stop-generating-button {
-    padding: 0 var(--spacing);
+    padding: 0;
     border-radius: 1rem;
 
-    letter-spacing: 0.1rem;
+    animation: fadeInSlideUp 1s 1;
 }
 
-.submit-button-disabled {
-    cursor: not-allowed;
+.stop-generating-button > i {
+    margin-right: 0.25rem;
+}
+
+.stop-generating-button:active {
+    transition: all 0.5s linear;
+}
+
+@keyframes fadeInSlideUp {
+    from {
+        opacity: 0;
+        margin-top: var(--spacing);
+    }
+    to {
+        opacity: 1;
+        margin: 0;
+    }
 }

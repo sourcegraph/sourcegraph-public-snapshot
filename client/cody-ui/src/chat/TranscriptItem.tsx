@@ -75,8 +75,6 @@ export const TranscriptItem: React.FunctionComponent<
     copyButtonOnSubmit,
     submitButtonComponent: SubmitButton,
     chatInputClassName,
-    abortMessageInProgressComponent: AbortMessageInProgressButton,
-    onAbortMessageInProgress = () => {},
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const textarea =
@@ -125,8 +123,8 @@ export const TranscriptItem: React.FunctionComponent<
                 message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow
             )}
         >
-            {EditButtonContainer && beingEdited && <p className={classNames(styles.editingLabel)}>Editing...</p>}
             {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
+            {EditButtonContainer && beingEdited && <p className={classNames(styles.editingLabel)}>Editing...</p>}
             {showEditButton && EditButtonContainer && editButtonOnSubmit && TextArea && message.speaker === 'human' && (
                 <header
                     className={classNames(
@@ -163,9 +161,6 @@ export const TranscriptItem: React.FunctionComponent<
                 ) : inProgress ? (
                     <BlinkingCursor />
                 ) : null}
-                {inProgress && AbortMessageInProgressButton && (
-                    <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
-                )}
             </div>
             {showFeedbackButtons &&
                 FeedbackButtonsContainer &&
