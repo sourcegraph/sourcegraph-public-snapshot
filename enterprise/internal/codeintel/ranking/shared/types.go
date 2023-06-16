@@ -4,6 +4,7 @@ import "time"
 
 type Summary struct {
 	GraphKey                string
+	VisibleToZoekt          bool
 	PathMapperProgress      Progress
 	ReferenceMapperProgress Progress
 	ReducerProgress         *Progress
