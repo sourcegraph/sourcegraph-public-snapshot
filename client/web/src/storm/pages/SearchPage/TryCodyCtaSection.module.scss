@@ -23,10 +23,6 @@
     background-color: var(--color-bg-1);
 }
 
-.vscode-icon {
-    color: var(--primary);
-}
-
 .try-cody-link {
     font-size: 1rem;
     font-weight: 600;
@@ -36,4 +32,12 @@
 .close-button {
     top: 0;
     right: 0;
+}
+
+.not-enabled-block {
+    margin: 0 auto;
+    position: relative;
+    max-width: 720px;
+    padding: 2rem;
+    padding-top: 0;
 }

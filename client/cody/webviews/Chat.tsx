@@ -120,6 +120,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             setSuggestions={setSuggestions}
             abortMessageInProgressComponent={AbortMessageInProgress}
             onAbortMessageInProgress={abortMessageInProgress}
+            // TODO: We should fetch this from the server and pass a pretty component
+            // down here to render cody is disabled on the instance nicely.
+            isCodyEnabled={true}
+            codyNotEnabledNotice={undefined}
         />
     )
 }
