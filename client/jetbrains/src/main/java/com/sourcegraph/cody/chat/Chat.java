@@ -36,7 +36,10 @@ public class Chat {
    * @param repoName    Like "github.com/sourcegraph/cody"
    * @param instanceUrl Like "https://sourcegraph.com/", with a slash at the end
    */
-  public Chat(@Nullable String repoName, @NotNull String instanceUrl, @NotNull String accessToken,
+  public Chat(
+      @Nullable String repoName,
+      @NotNull String instanceUrl,
+      @NotNull String accessToken,
       @NotNull String customRequestHeaders) {
     this.repoName = repoName;
     this.instanceUrl = instanceUrl;
@@ -65,20 +68,23 @@ public class Chat {
     List<ContextMessage> context = null;
     if (repoName != null) {
       try {
-        context = new ContextGetter(repoName, instanceUrl, accessToken,
-            customRequestHeaders).getContextMessages(
-            humanMessage.getText(), 8, 2, true);
+        context =
+            new ContextGetter(repoName, instanceUrl, accessToken, customRequestHeaders)
+                .getContextMessages(humanMessage.getText(), 8, 2, true);
       } catch (IOException e) {
-        chat.addMessageToChat(ChatMessage.createAssistantMessage(
-            "I didn't get a correct response. This is what I encountered while trying to get some context for your ask: \""
-                + e.getMessage() + "\". I'll try to answer without further context."));
+        chat.addMessageToChat(
+            ChatMessage.createAssistantMessage(
+                "I didn't get a correct response. This is what I encountered while trying to get some context for your ask: \""
+                    + e.getMessage()
+                    + "\". I'll try to answer without further context."));
       }
     }
 
     // Use context
     if (context != null) {
       if (context.size() == 0) {
-        input.addMessage(Speaker.ASSISTANT,
+        input.addMessage(
+            Speaker.ASSISTANT,
             "I didn't find any context for your ask. I'll try to answer without further context.");
       } else {
         for (ContextMessage message : context) {
@@ -86,13 +92,19 @@ public class Chat {
         }
 
         // Collect file names
-        List<String> contextFileNames = context.stream().map(ContextMessage::getFile)
-            .filter(Objects::nonNull).map(ContextFile::getFileName).collect(Collectors.toList());
+        List<String> contextFileNames =
+            context.stream()
+                .map(ContextMessage::getFile)
+                .filter(Objects::nonNull)
+                .map(ContextFile::getFileName)
+                .collect(Collectors.toList());
 
         // Build and add message
-        StringBuilder contextMessageText = new StringBuilder(
-            "I found some context for your ask. I'll try to answer with the context of these "
-                + contextFileNames.size() + " files:\n");
+        StringBuilder contextMessageText =
+            new StringBuilder(
+                "I found some context for your ask. I'll try to answer with the context of these "
+                    + contextFileNames.size()
+                    + " files:\n");
         contextFileNames.forEach(fileName -> contextMessageText.append(fileName).append("\n"));
         chat.addMessageToChat(ChatMessage.createAssistantMessage(contextMessageText.toString()));
       }

@@ -14,8 +14,11 @@ public class ContextGetter {
    * @param repoName    Like "github.com/sourcegraph/cody"
    * @param instanceUrl Like "https://sourcegraph.com/", with a slash at the end
    */
-  public ContextGetter(@NotNull String repoName, @NotNull String instanceUrl,
-      @NotNull String accessToken, @NotNull String customRequestHeaders) {
+  public ContextGetter(
+      @NotNull String repoName,
+      @NotNull String instanceUrl,
+      @NotNull String accessToken,
+      @NotNull String customRequestHeaders) {
     this.repoName = repoName;
     embeddingsSearcher = new EmbeddingsSearcher(instanceUrl, accessToken, customRequestHeaders);
   }

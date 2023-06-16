@@ -421,21 +421,24 @@ class CodyToolWindowContent implements UpdatableChat {
         EditorContextGetter.getEditorContext(project).getCurrentFileContentAsArrayList();
 
     // This cannot run on EDT (Event Dispatch Thread) because it may block for a long time.
-    // Also, if we did the back-end call in the main thread and then waited, we wouldn't see the messages streamed back to us.
+    // Also, if we did the back-end call in the main thread and then waited, we wouldn't see the
+    // messages streamed back to us.
     ApplicationManager.getApplication()
         .executeOnPooledThread(
             () -> {
-              var chat = new Chat(getRepoName(project, currentFile), instanceUrl,
-                  accessToken != null ? accessToken : "",
-                  ConfigUtil.getCustomRequestHeaders(project));
+              var chat =
+                  new Chat(
+                      getRepoName(project, currentFile),
+                      instanceUrl,
+                      accessToken != null ? accessToken : "",
+                      ConfigUtil.getCustomRequestHeaders(project));
               ChatMessage humanMessage =
-                  ChatMessage.createHumanMessage(message.prompt(), message.getDisplayText(),
-                      contextFileContents);
+                  ChatMessage.createHumanMessage(
+                      message.prompt(), message.getDisplayText(), contextFileContents);
               addMessageToChat(humanMessage);
 
               chat.sendMessage(humanMessage, responsePrefix, this);
             });
-
   }
 
   @Nullable

@@ -25,7 +25,9 @@ public class ChatMessage extends Message {
   }
 
   public static @NotNull ChatMessage createHumanMessage(
-      @NotNull String prompt, @NotNull String displayText, @NotNull List<String> contextFileContents) {
+      @NotNull String prompt,
+      @NotNull String displayText,
+      @NotNull List<String> contextFileContents) {
     return new ChatMessage(Speaker.HUMAN, prompt, displayText, contextFileContents);
   }
 

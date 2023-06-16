@@ -26,16 +26,22 @@ public class RecipeRunner {
         new Language(
             LanguageUtils.getNormalizedLanguageName(editorContext.getCurrentFileExtension()));
 
-    TruncatedText truncatedTextInputToPrompt = TruncatedText.of(textInputToPrompt,
-        TruncationUtils.MAX_RECIPE_INPUT_TOKENS);
+    TruncatedText truncatedTextInputToPrompt =
+        TruncatedText.of(textInputToPrompt, TruncationUtils.MAX_RECIPE_INPUT_TOKENS);
 
     // TODO: Use or remove these
     String precedingText = editorContext.getPrecedingText();
-    String truncatedPrecedingText = precedingText != null ? TruncatedText.ofEndOf(precedingText,
-        TruncationUtils.MAX_RECIPE_SURROUNDING_TOKENS).getValue() : "";
+    String truncatedPrecedingText =
+        precedingText != null
+            ? TruncatedText.ofEndOf(precedingText, TruncationUtils.MAX_RECIPE_SURROUNDING_TOKENS)
+            .getValue()
+            : "";
     String followingText = editorContext.getFollowingText();
-    String truncatedFollowingText = followingText != null ? TruncatedText.of(followingText,
-        TruncationUtils.MAX_RECIPE_SURROUNDING_TOKENS).getValue() : "";
+    String truncatedFollowingText =
+        followingText != null
+            ? TruncatedText.of(followingText, TruncationUtils.MAX_RECIPE_SURROUNDING_TOKENS)
+            .getValue()
+            : "";
 
     OriginalText selectedText = new OriginalText(textInputToPrompt);
     PromptContext promptContext =
@@ -48,6 +54,7 @@ public class RecipeRunner {
     chat.respondToMessage(humanMessage, promptContext.getResponsePrefix());
   }
 
+  // TODO: Implement or remove it
   public void runGitHistory() {
   }
 

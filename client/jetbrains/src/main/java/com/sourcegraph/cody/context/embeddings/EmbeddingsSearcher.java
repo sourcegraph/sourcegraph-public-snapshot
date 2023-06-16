@@ -21,7 +21,9 @@ public class EmbeddingsSearcher {
   private final @NotNull String accessToken;
   private final @NotNull String customRequestHeaders;
 
-  public EmbeddingsSearcher(@NotNull String instanceUrl, @NotNull String accessToken,
+  public EmbeddingsSearcher(
+      @NotNull String instanceUrl,
+      @NotNull String accessToken,
       @NotNull String customRequestHeaders) {
     this.instanceUrl = instanceUrl;
     this.accessToken = accessToken;
@@ -95,8 +97,9 @@ public class EmbeddingsSearcher {
     variables.add("textResultsCount", new JsonPrimitive(textResultsCount));
 
     // Call GraphQL service
-    GraphQlResponse response = GraphQlClient.callGraphQLService(instanceUrl, accessToken,
-        customRequestHeaders, graphQlQuery, variables);
+    GraphQlResponse response =
+        GraphQlClient.callGraphQLService(
+            instanceUrl, accessToken, customRequestHeaders, graphQlQuery, variables);
 
     // Parse response
     if (response.getStatusCode() != 200) {
@@ -175,8 +178,8 @@ public class EmbeddingsSearcher {
     JsonObject variables = new JsonObject();
     variables.add("name", new JsonPrimitive(repoName));
     GraphQlResponse response =
-        GraphQlClient.callGraphQLService(instanceUrl, accessToken, customRequestHeaders, query,
-            variables);
+        GraphQlClient.callGraphQLService(
+            instanceUrl, accessToken, customRequestHeaders, query, variables);
     if (response.getStatusCode() != 200) {
       throw new IOException("GraphQL request failed with status code " + response.getStatusCode());
     } else {
