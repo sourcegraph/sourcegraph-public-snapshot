@@ -27,7 +27,6 @@ export type FeatureFlagName =
     | 'clone-progress-logging'
     | 'sourcegraph-operator-site-admin-hide-maintenance'
     | 'repository-metadata'
-    | 'cody-gateway-management-ui'
     | 'cody-web-search'
     | 'own-promote'
     | 'own-analytics'
