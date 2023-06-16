@@ -14,10 +14,9 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings({"unused", "FieldCanBeLocal", "CommentedOutCode"})
 public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
-
+  int nThreads = 3; // up to 3 completion API calls to run in parallel
   // should we reuse the scheduler from CodyCompletionsManager here later on?
-  // nThreads = 3 to have up to 3 completion API calls to run in parallel
-  private final ExecutorService executor = Executors.newFixedThreadPool(3);
+  private final ExecutorService executor = Executors.newFixedThreadPool(nThreads);
   private final int promptTokens;
   private final int maxPrefixTokens;
   private final int maxSuffixTokens;
