@@ -479,12 +479,6 @@ Keep this process running in a terminal window to keep the databases running. Fo
 sg start
 ```
 
-**If you are not a Sourcegraph employee and don't have access to [the `dev-private` repository](#get-the-code)**: you want to start Sourcegraph OSS, do this:
-
-```
-sg start oss
-```
-
 This will continuously compile your code and live reload your locally running instance of Sourcegraph.
 
 Navigate your browser to https://sourcegraph.test:3443 to see if everything worked.
@@ -493,7 +487,7 @@ If `sg` exits with errors or outputs errors, take a look at [Troubleshooting](tr
 
 ### Running the server in different configurations
 
-If you want to run the server in different configurations (with the monitoring stack, with code insights enabled, Sourcegraph OSS, ...), run the following:
+If you want to run the server in different configurations (with the monitoring stack, with code insights enabled, ...), run the following:
 
 ```
 sg start -help

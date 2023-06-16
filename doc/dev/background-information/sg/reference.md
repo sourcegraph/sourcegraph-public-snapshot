@@ -48,10 +48,6 @@ Available comamndsets in `sg.config.yaml`:
 * iam
 * monitoring
 * monitoring-alerts
-* oss
-* oss-bazel
-* oss-web-standalone
-* oss-web-standalone-prod
 * otel
 * web-standalone
 * web-standalone-prod
@@ -124,14 +120,6 @@ Available commands in `sg.config.yaml`:
 * loki
 * monitoring-generator
 * multiqueue-executor
-* oss-frontend
-* oss-gitserver-0
-* oss-gitserver-1
-* oss-gitserver-template
-* oss-repo-updater
-* oss-symbols
-* oss-web: Open source version of the web app
-* oss-worker
 * otel-collector: OpenTelemetry collector
 * postgres_exporter
 * prometheus
@@ -139,7 +127,6 @@ Available commands in `sg.config.yaml`:
 * repo-updater
 * searcher
 * server: Run an all-in-one sourcegraph/server image
-* sourcegraph-oss: Single program (Go static binary) distribution, OSS variant
 * sourcegraph: Single program (Go static binary) distribution
 * storybook
 * symbols

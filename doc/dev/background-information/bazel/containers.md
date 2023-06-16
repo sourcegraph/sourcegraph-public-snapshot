@@ -40,7 +40,7 @@ Containers are composed of multiple layers (conceptually, not talking about cont
   - Check that binaries are runnable inside the image
 - Default publishing target (`oci_push` rules) 
   - They all refer to our internal registry.
-  - Please note that only enterprise and necessary OSS variants are published. 
+  - Please note that only enterprise variant is published. 
 
 The first two layers are handled by Wolfi and the rest if handled by Bazel.
 

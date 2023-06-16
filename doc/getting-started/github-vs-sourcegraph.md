@@ -720,11 +720,6 @@ GitHub does not currently offer functionality to embed code search within notebo
 
 GitHub is closed source, while Sourcegraph’s code is publicly available. 
 
-Sourcegraph offers two versions of its product: Sourcegraph OSS (just universal code search) and Sourcegraph Enterprise (full code intelligence platform). 
-
-Sourcegraph OSS is Apache 2 licensed and allows any developer to use, modify, and redistribute.
-
-
 ## Availability
 
 GitHub code search is currently available through a beta preview (you can sign up for their [waitlist](https://github.com/features/code-search-code-view/signup) to request access). The beta preview is not yet available for GitHub Enterprise. 

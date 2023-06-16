@@ -1,6 +1,6 @@
 # Licensing
 
-[Sourcegraph Enterprise](../../getting-started/oss-enterprise.md) requires a valid license key to enable many Enterprise-specific features.
+Sourcegraph Enterprise requires a valid license key to enable many Enterprise-specific features.
 
 Sourcegraph will periodically perform a license validation check by contacting sourcegraph.com. This check sends no information other than a unique site ID and information about the configured Sourcegraph license. This check is mandatory, and if the check fails Sourcegraph will disable all Enterprise features until a successful license check is completed.
 

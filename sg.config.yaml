@@ -48,19 +48,13 @@ env:
   SRC_PROF_HTTP: ""
   SRC_PROF_SERVICES: |
     [
-      { "Name": "oss-frontend", "Host": "127.0.0.1:6063" },
       { "Name": "frontend", "Host": "127.0.0.1:6063" },
       { "Name": "gitserver-0", "Host": "127.0.0.1:3551" },
       { "Name": "gitserver-1", "Host": "127.0.0.1:3552" },
-      { "Name": "oss-gitserver-0", "Host": "127.0.0.1:3551" },
-      { "Name": "oss-gitserver-1", "Host": "127.0.0.1:3552" },
       { "Name": "searcher", "Host": "127.0.0.1:6069" },
-      { "Name": "oss-symbols", "Host": "127.0.0.1:6071" },
       { "Name": "symbols", "Host": "127.0.0.1:6071" },
-      { "Name": "oss-repo-updater", "Host": "127.0.0.1:6074" },
       { "Name": "repo-updater", "Host": "127.0.0.1:6074" },
       { "Name": "codeintel-worker", "Host": "127.0.0.1:6088" },
-      { "Name": "oss-worker", "Host": "127.0.0.1:6089" },
       { "Name": "github-proxy", "Host": "127.0.0.1:6090" },
       { "Name": "worker", "Host": "127.0.0.1:6089" },
       { "Name": "worker-executors", "Host": "127.0.0.1:6996" },
@@ -138,24 +132,6 @@ commands:
       DATA: "/tmp/sourcegraph-data"
       URL: "http://localhost:7080"
 
-  oss-frontend:
-    cmd: .bin/oss-frontend
-    install: |
-      if [ -n "$DELVE" ]; then
-        export GCFLAGS='-N -l'
-      fi
-      go build -gcflags="$GCFLAGS" -o .bin/oss-frontend github.com/sourcegraph/sourcegraph/cmd/frontend
-    checkBinary: .bin/oss-frontend
-    env:
-      CONFIGURATION_MODE: server
-      USE_ENHANCED_LANGUAGE_DETECTION: false
-      # frontend processes need this to be so that the paths to the assets are rendered correctly
-      WEBPACK_DEV_SERVER: 1
-    watch:
-      - lib
-      - internal
-      - cmd/frontend
-
   frontend:
     description: Enterprise frontend
     cmd: |
@@ -203,39 +179,6 @@ commands:
       - enterprise/internal
       - enterprise/cmd/gitserver
 
-  oss-gitserver-template: &oss_gitserver_template
-    cmd: .bin/oss-gitserver
-    install: |
-      if [ -n "$DELVE" ]; then
-        export GCFLAGS='-N -l'
-      fi
-      go build -gcflags="$GCFLAGS" -o .bin/oss-gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
-    checkBinary: .bin/oss-gitserver
-    env: &oss_gitserverenv
-      HOSTNAME: 127.0.0.1:3178
-    watch:
-      - lib
-      - internal
-      - cmd/gitserver
-
-  oss-gitserver-0:
-    <<: *oss_gitserver_template
-    env:
-      <<: *gitserverenv
-      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
-      GITSERVER_ADDR: 127.0.0.1:3501
-      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
-      SRC_PROF_HTTP: 127.0.0.1:3551
-
-  oss-gitserver-1:
-    <<: *oss_gitserver_template
-    env:
-      <<: *oss_gitserverenv
-      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3502
-      GITSERVER_ADDR: 127.0.0.1:3502
-      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
-      SRC_PROF_HTTP: 127.0.0.1:3552
-
   # This is only here to stay backwards-compatible with people's custom
   # `sg.config.overwrite.yaml` files
   gitserver:
@@ -272,47 +215,6 @@ commands:
       - internal
       - cmd/github-proxy
 
-  oss-worker:
-    cmd: .bin/oss-worker
-    install: |
-      if [ -n "$DELVE" ]; then
-        export GCFLAGS='-N -l'
-      fi
-      go build -gcflags="$GCFLAGS" -o .bin/oss-worker github.com/sourcegraph/sourcegraph/cmd/worker
-    watch:
-      - lib
-      - internal
-      - cmd/worker
-
-  worker:
-    cmd: |
-      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
-      .bin/worker
-    install: |
-      if [ -n "$DELVE" ]; then
-        export GCFLAGS='-N -l'
-      fi
-      go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
-    watch:
-      - lib
-      - internal
-      - enterprise/internal
-      - cmd/worker
-      - enterprise/cmd/worker
-
-  oss-repo-updater:
-    cmd: .bin/oss-repo-updater
-    install: |
-      if [ -n "$DELVE" ]; then
-        export GCFLAGS='-N -l'
-      fi
-      go build -gcflags="$GCFLAGS" -o .bin/oss-repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
-    checkBinary: .bin/oss-repo-updater
-    watch:
-      - lib
-      - internal
-      - cmd/repo-updater
-
   repo-updater:
     cmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -331,25 +233,6 @@ commands:
       - cmd/repo-updater
       - enterprise/internal
       - enterprise/cmd/repo-updater
-
-  oss-symbols:
-    cmd: .bin/oss-symbols
-    install: |
-      if [ -n "$DELVE" ]; then
-        export GCFLAGS='-N -l'
-      fi
-
-      ./cmd/symbols/build-ctags.sh &&
-      go build -gcflags="$GCFLAGS" -o .bin/oss-symbols github.com/sourcegraph/sourcegraph/cmd/symbols
-    checkBinary: .bin/oss-symbols
-    env:
-      CTAGS_COMMAND: dev/universal-ctags-dev
-      SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
-      CTAGS_PROCESSES: 2
-    watch:
-      - lib
-      - internal
-      - cmd/symbols
 
   symbols:
     cmd: .bin/symbols
@@ -389,6 +272,21 @@ commands:
       - internal
       - enterprise/cmd/embeddings
       - enterprise/internal/embeddings
+  worker:
+    cmd: |
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/worker
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
+    watch:
+      - lib
+      - internal
+      - enterprise/internal
+      - cmd/worker
+      - enterprise/cmd/worker
 
   cody-gateway:
     cmd: |
@@ -432,11 +330,6 @@ commands:
     install_func: installCaddy
     env:
       CADDY_VERSION: 2.4.5
-
-  oss-web:
-    description: Open source version of the web app
-    cmd: ./node_modules/.bin/gulp --color dev
-    install: pnpm install
 
   web:
     description: Enterprise version of the web app
@@ -972,58 +865,7 @@ commands:
     description: App shell (Tauri)
     cmd: pnpm tauri dev --config src-tauri/tauri.dev.conf.json
 
-  sourcegraph-oss:
-    description: Single program (Go static binary) distribution, OSS variant
-    cmd: |
-      unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS
-      .bin/sourcegraph-oss
-    install: |
-      if [ -n "$DELVE" ]; then
-        export GCFLAGS='-N -l'
-      fi
-      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app" -o .bin/sourcegraph-oss github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss
-    checkBinary: .bin/sourcegraph-oss
-    env:
-      WEBPACK_DEV_SERVER: 1
-    watch:
-      - cmd
-      - internal
-      - schema
-
 bazelCommands:
-  oss-frontend:
-    target: //cmd/frontend
-    env:
-      CONFIGURATION_MODE: server
-      USE_ENHANCED_LANGUAGE_DETECTION: false
-      # frontend processes need this to be so that the paths to the assets are rendered correctly
-      WEBPACK_DEV_SERVER: 1
-  oss-worker:
-    target: //cmd/worker
-  oss-repo-updater:
-    target: //cmd/repo-updater
-  oss-symbols:
-    target: //cmd/symbols
-    env:
-      CTAGS_COMMAND: dev/universal-ctags-dev
-      SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
-      CTAGS_PROCESSES: 2
-  oss-gitserver-0:
-    target: //cmd/gitserver
-    env:
-      <<: *gitserverenv
-      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
-      GITSERVER_ADDR: 127.0.0.1:3501
-      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
-      SRC_PROF_HTTP: 127.0.0.1:3551
-  oss-gitserver-1:
-    target: //cmd/gitserver
-    env:
-      <<: *gitserverenv
-      GITSERVER_EXTERNAL_ADDR: 127.0.0.1:3501
-      GITSERVER_ADDR: 127.0.0.1:3501
-      SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
-      SRC_PROF_HTTP: 127.0.0.1:3551
   blobstore:
     target: //cmd/blobstore:blobstore
   searcher:
@@ -1127,60 +969,6 @@ bazelCommands:
 #
 defaultCommandset: enterprise
 commandsets:
-  oss-bazel:
-    # open-source version doesn't require the dev-private repository
-    requiresDevPrivate: false
-    checks:
-      - docker
-      - redis
-      - postgres
-      - git
-      - bazelisk
-      - ibazel
-    bazelCommands:
-      - oss-frontend
-      - oss-worker
-      - oss-repo-updater
-      - oss-symbols
-      - oss-gitserver-0
-      - oss-gitserver-1
-      - github-proxy
-      - searcher
-      - syntax-highlighter
-    commands:
-      - oss-web
-      - caddy
-      - zoekt-index-0
-      - zoekt-index-1
-      - zoekt-web-0
-      - zoekt-web-1
-      - docsite
-  oss:
-    # open-source version doesn't require the dev-private repository
-    requiresDevPrivate: false
-    checks:
-      - docker
-      - redis
-      - postgres
-      - git
-    commands:
-      - oss-frontend
-      - oss-worker
-      - oss-repo-updater
-      - oss-symbols
-      - oss-gitserver-0
-      - oss-gitserver-1
-      - searcher
-      - oss-web
-      - caddy
-      - docsite
-      - syntax-highlighter
-      - github-proxy
-      - zoekt-index-0
-      - zoekt-index-1
-      - zoekt-web-0
-      - zoekt-web-1
-
   enterprise-bazel: &enterprise_bazel_set
     requiresDevPrivate: true
     checks:
@@ -1594,22 +1382,12 @@ commandsets:
     env:
       ENTERPRISE: 1
 
-  oss-web-standalone:
-    commands:
-      - web-standalone-http
-      - caddy
-
   web-standalone-prod:
     commands:
       - web-standalone-http-prod
       - caddy
     env:
       ENTERPRISE: 1
-
-  oss-web-standalone-prod:
-    commands:
-      - web-standalone-http-prod
-      - caddy
 
   # For testing our OpenTelemetry stack
   otel:
