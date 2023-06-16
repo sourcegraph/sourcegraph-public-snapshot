@@ -157,6 +157,9 @@ func computeReviewState(c *btypes.Changeset, history []changesetStatesAtTime) (b
 	// GitHub only stores the ReviewState in events, we can't look at the
 	// Changeset.
 	if c.ExternalServiceType == extsvc.TypeGitHub {
+		if c.Metadata.(*github.PullRequest).MergeableState != "clean" {
+			return btypes.ChangesetReviewStatePending, nil
+		}
 		return newestDataPoint.reviewState, nil
 	}
 

@@ -10,6 +10,7 @@ import (
 	"github.com/goware/urlx"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-diff/diff"
+
 	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
@@ -270,9 +271,10 @@ type Changeset struct {
 	ExternalState         ChangesetExternalState
 	ExternalReviewState   ChangesetReviewState
 	ExternalCheckState    ChangesetCheckState
-	DiffStatAdded         *int32
-	DiffStatDeleted       *int32
-	SyncState             ChangesetSyncState
+	// Mergeable             string
+	DiffStatAdded   *int32
+	DiffStatDeleted *int32
+	SyncState       ChangesetSyncState
 
 	// The batch change that "owns" this changeset: it can create/close
 	// it on code host. If this is 0, it is imported/tracked by a batch change.
@@ -392,6 +394,7 @@ func (c *Changeset) SetMetadata(meta any) error {
 		c.ExternalServiceType = extsvc.TypeGitHub
 		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.HeadRefName)
 		c.ExternalUpdatedAt = pr.UpdatedAt
+		// c.Mergeable = pr.MergeableState
 
 		if pr.BaseRepository.ID != pr.HeadRepository.ID {
 			c.ExternalForkNamespace = pr.HeadRepository.Owner.Login
