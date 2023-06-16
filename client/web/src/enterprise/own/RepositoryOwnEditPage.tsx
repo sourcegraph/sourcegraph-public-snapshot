@@ -3,6 +3,7 @@ import React from 'react'
 import { mdiAccount } from '@mdi/js'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { H1, Icon, Link, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -16,7 +17,7 @@ import { RepositoryOwnPageContents } from './RepositoryOwnPageContents'
 /**
  * Properties passed to all page components in the repository code navigation area.
  */
-export interface RepositoryOwnAreaPageProps extends Pick<BreadcrumbSetters, 'useBreadcrumb'> {
+export interface RepositoryOwnAreaPageProps extends Pick<BreadcrumbSetters, 'useBreadcrumb'>, TelemetryProps {
     /** The active repository. */
     repo: RepositoryFields
     authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'> | null

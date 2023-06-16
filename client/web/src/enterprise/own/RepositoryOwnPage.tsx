@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiAccount, mdiPencil, mdiPlus } from '@mdi/js'
 import { useSearchParams } from 'react-router-dom'
@@ -57,6 +57,9 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
         setOpenAddOwnerModal(false)
     }, [])
 
+    useEffect(() => {
+        telemetryService.log('repoPage:ownershipPage:viewed')
+    }, [telemetryService])
     return (
         <>
             <Page>
