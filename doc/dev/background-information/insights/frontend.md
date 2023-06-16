@@ -262,7 +262,7 @@ But this page uses a slightly different approach how to load insights data. The 
 component. This component is different from the OSS to Enterprise version (note, the OSS version is removed as of 5.1). But in both cases, this component is responsible for loading
 extension and insight-like views and render them into the grid layout views component as it's shown in the picture above.
 
-- In OSS version (removed in 5.1)) it renders only extension views [source](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/insights/sections/ExtensionViewsSection.tsx)
+- In OSS version (removed in 5.1) it renders only extension views [source](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/insights/sections/ExtensionViewsSection.tsx)
 - In Enterprise it renders extension and insight like views together. (Code insights is part of enterprise version)
 [source](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/enterprise/insights/sections/ExtensionViewsSection.tsx)
 
