@@ -29,21 +29,15 @@ go_library(
     srcs = [
         "observability.go",
         "store.go",
-        "store_documents.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context/internal/scipstore",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/shared",
-        "//enterprise/internal/codeintel/uploads/shared",
         "//internal/database/basestore",
         "//internal/metrics",
         "//internal/observation",
-        "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//:log",
-        "@com_github_sourcegraph_scip//bindings/go/scip",
-        "@io_opentelemetry_go_otel//attribute",
-        "@org_golang_google_protobuf//proto",
     ],
 )
 
