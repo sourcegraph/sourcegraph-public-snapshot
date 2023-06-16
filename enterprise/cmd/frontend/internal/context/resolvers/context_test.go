@@ -143,8 +143,6 @@ func TestContextResolver(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			CodyEnabled: &truePtr,
-			Embeddings:  &schema.Embeddings{Enabled: true},
-			Completions: &schema.Completions{},
 		},
 	})
 

@@ -66,6 +66,9 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
     const isDirectAssigned = assignedOwnerReasons.some(value => value.isDirectMatch)
     const hasAssigned = assignedOwnerReasons.length > 0
 
+    const sortReasons = () => (reason1: OwnershipReason, reason2: OwnershipReason) =>
+        getOwnershipReasonPriority(reason2) - getOwnershipReasonPriority(reason1)
+
     return (
         <tr>
             <td className={`${containerStyles.fitting} ${containerStyles.moreSpace}`}>
@@ -92,9 +95,12 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
                 </div>
             </td>
             <td className={containerStyles.expanding}>
-                {reasons.map(reason => (
-                    <OwnershipBadge key={reason.title} reason={reason} />
-                ))}
+                {reasons
+                    .slice()
+                    .sort(sortReasons())
+                    .map(reason => (
+                        <OwnershipBadge key={reason.title} reason={reason} />
+                    ))}
             </td>
             <td className={containerStyles.fitting}>
                 <span className={containerStyles.editButtonColumn}>
@@ -127,4 +133,19 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
             </td>
         </tr>
     )
+}
+
+const getOwnershipReasonPriority = (reason: OwnershipReason): number => {
+    switch (reason.__typename ?? '') {
+        case 'CodeownersFileEntry':
+            return 4
+        case 'AssignedOwner':
+            return 3
+        case 'RecentContributorOwnershipSignal':
+            return 2
+        case 'RecentViewOwnershipSignal':
+            return 1
+        default:
+            return 0
+    }
 }

@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
@@ -117,7 +118,7 @@ type writerLogger struct {
 
 func (*writerLogger) Flush() error { return nil }
 
-func (l *writerLogger) LogEntry(key string, command []string) command.LogEntry {
+func (l *writerLogger) LogEntry(key string, command []string) cmdlogger.LogEntry {
 	fmt.Fprintf(l.w, "%s: %s", key, strings.Join(command, " "))
 	return &writerLogEntry{w: l.w}
 }

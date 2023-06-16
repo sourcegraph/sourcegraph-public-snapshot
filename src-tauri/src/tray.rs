@@ -21,7 +21,7 @@ fn create_system_tray_menu() -> SystemTrayMenu {
     );
 
     SystemTrayMenu::new()
-        .add_item(CustomMenuItem::new("open".to_string(), "Open Sourcegraph"))
+        .add_item(CustomMenuItem::new("open".to_string(), "Open Cody"))
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(
             CustomMenuItem::new("settings".to_string(), "Settings").accelerator("CmdOrCtrl+,"),
@@ -51,7 +51,9 @@ pub fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
             }
             "settings" => {
                 let window = app.get_window("main").unwrap();
-                window.eval("window.location.href = '/user/app-settings'").unwrap();
+                window
+                    .eval("window.location.href = '/user/app-settings'")
+                    .unwrap();
                 show_window(app, "main");
             }
             "view_logs" => show_logs(app),

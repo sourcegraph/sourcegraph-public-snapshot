@@ -2723,6 +2723,14 @@ COMMENT ON COLUMN gitserver_repos_statistics.failed_fetch IS 'Number of reposito
 
 COMMENT ON COLUMN gitserver_repos_statistics.corrupted IS 'Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table';
 
+CREATE TABLE gitserver_repos_sync_output (
+    repo_id integer NOT NULL,
+    last_output text DEFAULT ''::text NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE gitserver_repos_sync_output IS 'Contains the most recent output from gitserver repository sync jobs.';
+
 CREATE TABLE global_state (
     site_id uuid NOT NULL,
     initialized boolean DEFAULT false NOT NULL
@@ -5361,6 +5369,9 @@ ALTER TABLE ONLY gitserver_repos
 ALTER TABLE ONLY gitserver_repos_statistics
     ADD CONSTRAINT gitserver_repos_statistics_pkey PRIMARY KEY (shard_id);
 
+ALTER TABLE ONLY gitserver_repos_sync_output
+    ADD CONSTRAINT gitserver_repos_sync_output_pkey PRIMARY KEY (repo_id);
+
 ALTER TABLE ONLY global_state
     ADD CONSTRAINT global_state_pkey PRIMARY KEY (site_id);
 
@@ -6525,6 +6536,9 @@ ALTER TABLE ONLY github_apps
 
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY gitserver_repos_sync_output
+    ADD CONSTRAINT gitserver_repos_sync_output_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY insights_query_runner_jobs_dependencies
     ADD CONSTRAINT insights_query_runner_jobs_dependencies_fk_job_id FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE;

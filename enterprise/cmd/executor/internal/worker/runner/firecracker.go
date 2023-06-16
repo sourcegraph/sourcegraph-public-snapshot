@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -25,7 +26,7 @@ type firecrackerRunner struct {
 	vmName           string
 	workspaceDevice  string
 	internalLogger   log.Logger
-	cmdLogger        command.Logger
+	cmdLogger        cmdlogger.Logger
 	options          FirecrackerOptions
 	dockerAuthConfig types.DockerAuthConfig
 	// tmpDir is used to store temporary files used for firecracker execution.
@@ -63,7 +64,7 @@ var _ Runner = &firecrackerRunner{}
 
 func NewFirecrackerRunner(
 	cmd command.Command,
-	logger command.Logger,
+	logger cmdlogger.Logger,
 	workspaceDevice string,
 	vmName string,
 	options FirecrackerOptions,
@@ -351,6 +352,6 @@ func (r *firecrackerRunner) newCommandSpec(key string, cmd []string, env []strin
 }
 
 func (r *firecrackerRunner) Run(ctx context.Context, spec Spec) error {
-	firecrackerSpec := command.NewFirecrackerSpec(r.vmName, spec.Image, spec.ScriptPath, spec.CommandSpec, r.options.DockerOptions)
+	firecrackerSpec := command.NewFirecrackerSpec(r.vmName, spec.Image, spec.ScriptPath, spec.CommandSpecs[0], r.options.DockerOptions)
 	return r.cmd.Run(ctx, r.cmdLogger, firecrackerSpec)
 }

@@ -1,7 +1,9 @@
 import * as vscode from 'vscode'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { DOTCOM_URL, LOCAL_APP_URL, isLoggedIn } from './chat/protocol'
@@ -26,7 +28,8 @@ import {
     SecretStorage,
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
-import { createStatusBar } from './services/StatusBar'
+import { CodyStatusBar, createStatusBar } from './services/StatusBar'
+import { TestSupport } from './test-support'
 
 const CODY_FEEDBACK_URL =
     'https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode'
@@ -87,7 +90,11 @@ const register = async (
     disposables.push(commentController.get())
 
     const fixup = new FixupController()
-    const controllers = { inline: commentController, task: fixup, fixup }
+    disposables.push(fixup)
+    if (TestSupport.instance) {
+        TestSupport.instance.fixupController.set(fixup)
+    }
+    const controllers = { inline: commentController, fixups: fixup }
 
     const editor = new VSCodeEditor(controllers)
     const workspaceConfig = vscode.workspace.getConfiguration()
@@ -116,6 +123,7 @@ const register = async (
         rgPath
     )
     disposables.push(chatProvider)
+    fixup.recipeRunner = chatProvider
 
     disposables.push(
         vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
@@ -282,30 +290,41 @@ const register = async (
         statusBar
     )
 
+    let completionsProvider: vscode.Disposable | null = null
     if (initialConfig.experimentalSuggest) {
-        // TODO(sqs): make this listen to config and not just use initialConfig
-        const docprovider = new CompletionsDocumentProvider()
-        disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))
-
-        const history = new History()
-        const completionsProvider = new CodyCompletionItemProvider(
+        completionsProvider = createCompletionsProvider(
             webviewErrorMessager,
             completionsClient,
-            docprovider,
-            history,
             statusBar,
             codebaseContext
         )
-        disposables.push(
-            vscode.commands.registerCommand('cody.manual-completions', async () => {
-                await completionsProvider.fetchAndShowManualCompletions()
-            }),
-            vscode.commands.registerCommand('cody.completions.inline.accepted', ({ codyLogId }) => {
-                CompletionsLogger.accept(codyLogId)
-            }),
-            vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
-        )
     }
+
+    // Create a disposable to clean up completions when the extension reloads.
+    const disposeCompletions: vscode.Disposable = {
+        dispose: () => {
+            completionsProvider?.dispose()
+        },
+    }
+    disposables.push(disposeCompletions)
+
+    vscode.workspace.onDidChangeConfiguration(event => {
+        if (event.affectsConfiguration('cody.experimental.suggestions')) {
+            const config = getConfiguration(vscode.workspace.getConfiguration())
+
+            if (!config.experimentalSuggest) {
+                completionsProvider?.dispose()
+                completionsProvider = null
+            } else if (completionsProvider === null) {
+                completionsProvider = createCompletionsProvider(
+                    webviewErrorMessager,
+                    completionsClient,
+                    statusBar,
+                    codebaseContext
+                )
+            }
+        }
+    })
 
     // Initiate inline assist when feature flag is on
     if (initialConfig.experimentalInline) {
@@ -328,12 +347,7 @@ const register = async (
     }
     // Register task view and non-stop cody command when feature flag is on
     if (initialConfig.experimentalNonStop || process.env.CODY_TESTING === 'true') {
-        disposables.push(vscode.window.registerTreeDataProvider('cody.fixup.tree.view', fixup.getTaskView()))
-        disposables.push(
-            vscode.commands.registerCommand('cody.recipe.non-stop', async () => {
-                await chatProvider.executeRecipe('non-stop', '', false)
-            })
-        )
+        fixup.register()
         await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
     }
 
@@ -351,6 +365,45 @@ const register = async (
             externalServicesOnDidConfigurationChange(newConfig)
             if (eventLogger) {
                 eventLogger.onConfigurationChange(vscode.workspace.getConfiguration())
+            }
+        },
+    }
+}
+
+function createCompletionsProvider(
+    webviewErrorMessager: (error: string) => Promise<void>,
+    completionsClient: SourcegraphNodeCompletionsClient,
+    statusBar: CodyStatusBar,
+    codebaseContext: CodebaseContext
+): vscode.Disposable {
+    const disposables: vscode.Disposable[] = []
+
+    const docprovider = new CompletionsDocumentProvider()
+    disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', docprovider))
+
+    const history = new History()
+    const completionsProvider = new CodyCompletionItemProvider(
+        webviewErrorMessager,
+        completionsClient,
+        docprovider,
+        history,
+        statusBar,
+        codebaseContext
+    )
+    disposables.push(
+        vscode.commands.registerCommand('cody.manual-completions', async () => {
+            await completionsProvider.fetchAndShowManualCompletions()
+        }),
+        vscode.commands.registerCommand('cody.completions.inline.accepted', ({ codyLogId }) => {
+            CompletionsLogger.accept(codyLogId)
+        }),
+        vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
+    )
+
+    return {
+        dispose: () => {
+            for (const disposable of disposables) {
+                disposable.dispose()
             }
         },
     }

@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -96,6 +97,14 @@ func (r *RepositoryResolver) EmbeddingExists(ctx context.Context) (bool, error) 
 	}
 
 	return r.db.Repos().RepoEmbeddingExists(ctx, r.IDInt32())
+}
+
+func (r *RepositoryResolver) EmbeddingJobs(ctx context.Context, args ListRepoEmbeddingJobsArgs) (*graphqlutil.ConnectionResolver[RepoEmbeddingJobResolver], error) {
+	// Ensure that we only return jobs for this repository.
+	gqlID := r.ID()
+	args.Repo = &gqlID
+
+	return EnterpriseResolvers.embeddingsResolver.RepoEmbeddingJobs(ctx, args)
 }
 
 func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }

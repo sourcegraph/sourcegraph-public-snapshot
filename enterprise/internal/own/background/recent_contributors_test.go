@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -24,6 +25,7 @@ import (
 )
 
 func Test_RecentContributorIndexFromGitserver(t *testing.T) {
+	rcache.SetupForTest(t)
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
@@ -60,9 +62,11 @@ func Test_RecentContributorIndexFromGitserver(t *testing.T) {
 
 	client := gitserver.NewMockClient()
 	client.CommitLogFunc.SetDefaultReturn(fakeCommitsToLog(commits), nil)
-
-	indexer := newRecentContributorsIndexer(client, db, logger)
-	err = indexer.indexRepo(ctx, api.RepoID(1))
+	indexer := newRecentContributorsIndexer(client, db, logger, rcache.New("testing_own_signals"))
+	checker := authz.NewMockSubRepoPermissionChecker()
+	checker.EnabledFunc.SetDefaultReturn(true)
+	checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
+	err = indexer.indexRepo(ctx, api.RepoID(1), checker)
 	require.NoError(t, err)
 
 	for p, w := range map[string][]database.RecentContributorSummary{
@@ -111,6 +115,7 @@ func Test_RecentContributorIndexFromGitserver(t *testing.T) {
 }
 
 func Test_RecentContributorIndex_CanSeePrivateRepos(t *testing.T) {
+	rcache.SetupForTest(t)
 	logger := logtest.Scoped(t)
 	db := database2.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 	ctx := context.Background()
@@ -133,21 +138,79 @@ func Test_RecentContributorIndex_CanSeePrivateRepos(t *testing.T) {
 	require.NoError(t, err)
 
 	client := gitserver.NewMockClient()
-	indexer := newRecentContributorsIndexer(client, db, logger)
+	indexer := newRecentContributorsIndexer(client, db, logger, rcache.New("testing_own_signals"))
 
 	t.Run("non-internal user", func(t *testing.T) {
 		// this is kind of an unrelated test just to provide a baseline that there is actually a difference when
 		// we use the internal context. Otherwise, we could accidentally break this and not know it.
 		newCtx := actor.WithActor(ctx, actor.FromUser(userNoAccess.ID)) // just to make sure this is a different user
-		err := indexer.indexRepo(newCtx, api.RepoID(1))
+		checker := authz.NewMockSubRepoPermissionChecker()
+		checker.EnabledFunc.SetDefaultReturn(true)
+		checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
+		err := indexer.indexRepo(newCtx, api.RepoID(1), checker)
 		assert.ErrorContains(t, err, "repo not found: id=1")
 	})
 
 	t.Run("internal user", func(t *testing.T) {
 		newCtx := actor.WithInternalActor(ctx)
-		err := indexer.indexRepo(newCtx, api.RepoID(1))
+		checker := authz.NewMockSubRepoPermissionChecker()
+		checker.EnabledFunc.SetDefaultReturn(true)
+		checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
+		err := indexer.indexRepo(newCtx, api.RepoID(1), checker)
 		assert.NoError(t, err)
 	})
+}
+
+func Test_RecentContributorIndexSkipsSubrepoPermsRepos(t *testing.T) {
+	rcache.SetupForTest(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	ctx := context.Background()
+
+	err := db.Repos().Create(ctx, &types.Repo{
+		ID:   1,
+		Name: "own/repo1",
+	})
+	require.NoError(t, err)
+
+	commits := []fakeCommit{
+		{
+			name:         "alice",
+			email:        "alice@example.com",
+			changedFiles: []string{"file1.txt", "dir/file2.txt"},
+		},
+		{
+			name:         "alice",
+			email:        "alice@example.com",
+			changedFiles: []string{"file1.txt", "dir/file3.txt"},
+		},
+		{
+			name:         "alice",
+			email:        "alice@example.com",
+			changedFiles: []string{"file1.txt", "dir/file2.txt", "dir/subdir/file.txt"},
+		},
+		{
+			name:         "bob",
+			email:        "bob@example.com",
+			changedFiles: []string{"file1.txt", "dir2/file2.txt", "dir2/subdir/file.txt"},
+		},
+	}
+
+	client := gitserver.NewMockClient()
+	client.CommitLogFunc.SetDefaultReturn(fakeCommitsToLog(commits), nil)
+	indexer := newRecentContributorsIndexer(client, db, logger, rcache.New("testing_own_signals"))
+	checker := authz.NewMockSubRepoPermissionChecker()
+	checker.EnabledFunc.SetDefaultReturn(true)
+	checker.EnabledForRepoIDFunc.SetDefaultReturn(true, nil)
+	err = indexer.indexRepo(ctx, api.RepoID(1), checker)
+	require.NoError(t, err)
+	got, err := db.RecentContributionSignals().FindRecentAuthors(ctx, 1, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("%+v\n", got)
+	assert.Equal(t, 0, len(got))
 }
 
 func fakeCommitsToLog(commits []fakeCommit) (results []gitserver.CommitLog) {

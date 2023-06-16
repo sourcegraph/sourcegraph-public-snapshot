@@ -17,12 +17,17 @@ type DeleteRankingProgressArgs struct {
 }
 
 type GlobalRankingSummaryResolver interface {
+	DerivativeGraphKey() *string
 	RankingSummary() []RankingSummaryResolver
 	NextJobStartsAt() *gqlutil.DateTime
+	NumExportedIndexes() int32
+	NumTargetIndexes() int32
+	NumRepositoriesWithoutCurrentRanks() int32
 }
 
 type RankingSummaryResolver interface {
 	GraphKey() string
+	VisibleToZoekt() bool
 	PathMapperProgress() RankingSummaryProgressResolver
 	ReferenceMapperProgress() RankingSummaryProgressResolver
 	ReducerProgress() RankingSummaryProgressResolver

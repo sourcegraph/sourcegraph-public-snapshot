@@ -13,10 +13,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -194,19 +197,28 @@ func BatchChangesRestrictedToAdmins() bool {
 // CodyEnabled returns whether Cody is enabled on this instance.
 //
 // If `cody.enabled` is not set or set to false, it's not enabled.
-// If `cody.enabled` is true but `completions` aren't set, it returns false.
 //
 // Legacy-support for `completions.enabled`:
-// If `cody.enabled` is NOT set, but `completions.enabled` is set, then cody is enabled.
-// If `cody.enabled` is set, but `completions.enabled` is set, then cody is enabled based on value of `cody.enabled`.
+// If `cody.enabled` is NOT set, but `completions.enabled` is true, then cody is enabled.
+// If `cody.enabled` is set, and `completions.enabled` is set to false, cody is disabled.
 func CodyEnabled() bool {
-	enabled := Get().CodyEnabled
-	completions := Get().Completions
+	return codyEnabled(Get().SiteConfig())
+}
+
+func codyEnabled(siteConfig schema.SiteConfiguration) bool {
+	enabled := siteConfig.CodyEnabled
+	completions := siteConfig.Completions
+
+	// If the cody.enabled flag is explicitly false, disable all cody features.
+	if enabled != nil && !*enabled {
+		return false
+	}
 
 	// Support for Legacy configurations in which `completions` is set to
 	// `enabled`, but `cody.enabled` is not set.
-	if enabled == nil && completions != nil && completions.Enabled {
-		return true
+	if enabled == nil && completions != nil {
+		// Unset means false.
+		return completions.Enabled != nil && *completions.Enabled
 	}
 
 	if enabled == nil {
@@ -344,8 +356,7 @@ func CodeIntelRankingStaleResultAge() time.Duration {
 }
 
 func EmbeddingsEnabled() bool {
-	embeddingsConfig := Get().Embeddings
-	return embeddingsConfig != nil && embeddingsConfig.Enabled
+	return GetEmbeddingsConfig(Get().SiteConfiguration) != nil
 }
 
 func ProductResearchPageEnabled() bool {
@@ -629,4 +640,322 @@ func GitMaxConcurrentClones() int {
 		return 5
 	}
 	return v
+}
+
+// GetCompletionsConfig evaluates a complete completions configuration based on
+// site configuration. The configuration may be nil if completions is disabled.
+func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.CompletionsConfig) {
+	// If cody is disabled, don't use completions.
+	if !codyEnabled(siteConfig) {
+		return nil
+	}
+
+	// Additionally, completions in App are disabled if there is no dotcom auth token
+	// and the user hasn't provided their own api token.
+	if deploy.IsApp() {
+		if (siteConfig.App == nil || len(siteConfig.App.DotcomAuthToken) == 0) && (siteConfig.Completions == nil || siteConfig.Completions.AccessToken == "") {
+			return nil
+		}
+	}
+
+	completionsConfig := siteConfig.Completions
+	// If no completions configuration is set at all, but cody is enabled, assume
+	// a default configuration.
+	if completionsConfig == nil {
+		completionsConfig = &schema.Completions{
+			Provider:        string(conftypes.CompletionsProviderNameSourcegraph),
+			ChatModel:       "anthropic/claude-v1",
+			FastChatModel:   "anthropic/claude-instant-v1",
+			CompletionModel: "anthropic/claude-instant-v1",
+		}
+	}
+
+	// If after setting defaults for no `completions` config given there still is no
+	// provider configured.
+	if completionsConfig.Provider == "" {
+		return nil
+	}
+
+	// If ChatModel is not set, fall back to the deprecated Model field.
+	// Note: It might also be empty.
+	if completionsConfig.ChatModel == "" {
+		completionsConfig.ChatModel = completionsConfig.Model
+	}
+
+	if completionsConfig.Provider == string(conftypes.CompletionsProviderNameSourcegraph) {
+		// If no endpoint is configured, use a default value.
+		if completionsConfig.Endpoint == "" {
+			completionsConfig.Endpoint = "https://cody-gateway.sourcegraph.com"
+		}
+
+		// Set the access token, either use the configured one, or generate one for the platform.
+		completionsConfig.AccessToken = getSourcegraphProviderAccessToken(completionsConfig.AccessToken, siteConfig)
+		// If we weren't able to generate an access token of some sort, authing with
+		// Cody Gateway is not possible and we cannot use completions.
+		if completionsConfig.AccessToken == "" {
+			return nil
+		}
+
+		// Set a default chat model.
+		if completionsConfig.ChatModel == "" {
+			completionsConfig.ChatModel = "anthropic/claude-v1"
+		}
+
+		// Set a default fast chat model.
+		if completionsConfig.FastChatModel == "" {
+			completionsConfig.FastChatModel = "anthropic/claude-instant-v1"
+		}
+
+		// Set a default completions model.
+		if completionsConfig.CompletionModel == "" {
+			completionsConfig.CompletionModel = "anthropic/claude-instant-v1"
+		}
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameOpenAI) {
+		// If no endpoint is configured, use a default value.
+		if completionsConfig.Endpoint == "" {
+			completionsConfig.Endpoint = "https://api.openai.com/v1/chat/completions"
+		}
+
+		// If not access token is set, we cannot talk to OpenAI. Bail.
+		if completionsConfig.AccessToken == "" {
+			return nil
+		}
+
+		// Set a default chat model.
+		if completionsConfig.ChatModel == "" {
+			completionsConfig.ChatModel = "gpt-4"
+		}
+
+		// Set a default fast chat model.
+		if completionsConfig.FastChatModel == "" {
+			completionsConfig.FastChatModel = "gpt-3.5-turbo"
+		}
+
+		// Set a default completions model.
+		if completionsConfig.CompletionModel == "" {
+			completionsConfig.CompletionModel = "gpt-3.5-turbo"
+		}
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAnthropic) {
+		// If no endpoint is configured, use a default value.
+		if completionsConfig.Endpoint == "" {
+			completionsConfig.Endpoint = "https://api.anthropic.com/v1/complete"
+		}
+
+		// If not access token is set, we cannot talk to Anthropic. Bail.
+		if completionsConfig.AccessToken == "" {
+			return nil
+		}
+
+		// Set a default chat model.
+		if completionsConfig.ChatModel == "" {
+			completionsConfig.ChatModel = "claude-v1"
+		}
+
+		// Set a default fast chat model.
+		if completionsConfig.FastChatModel == "" {
+			completionsConfig.FastChatModel = "claude-instant-v1"
+		}
+
+		// Set a default completions model.
+		if completionsConfig.CompletionModel == "" {
+			completionsConfig.CompletionModel = "claude-instant-v1"
+		}
+	}
+
+	// Make sure models are always treated case-insensitive.
+	completionsConfig.ChatModel = strings.ToLower(completionsConfig.ChatModel)
+	completionsConfig.FastChatModel = strings.ToLower(completionsConfig.FastChatModel)
+	completionsConfig.CompletionModel = strings.ToLower(completionsConfig.CompletionModel)
+
+	// If after trying to set default we still have not all models configured, completions are
+	// not available.
+	if completionsConfig.ChatModel == "" || completionsConfig.FastChatModel == "" || completionsConfig.CompletionModel == "" {
+		return nil
+	}
+
+	computedConfig := &conftypes.CompletionsConfig{
+		Provider:                         conftypes.CompletionsProviderName(completionsConfig.Provider),
+		AccessToken:                      completionsConfig.AccessToken,
+		ChatModel:                        completionsConfig.ChatModel,
+		FastChatModel:                    completionsConfig.FastChatModel,
+		CompletionModel:                  completionsConfig.CompletionModel,
+		Endpoint:                         completionsConfig.Endpoint,
+		PerUserDailyLimit:                completionsConfig.PerUserDailyLimit,
+		PerUserCodeCompletionsDailyLimit: completionsConfig.PerUserCodeCompletionsDailyLimit,
+	}
+
+	return computedConfig
+}
+
+// GetEmbeddingsConfig evaluates a complete embeddings configuration based on
+// site configuration. The configuration may be nil if completions is disabled.
+func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.EmbeddingsConfig {
+	// If cody is disabled, don't use embeddings.
+	if !codyEnabled(siteConfig) {
+		return nil
+	}
+
+	// Additionally Embeddings in App are disabled if there is no dotcom auth token
+	// and the user hasn't provided their own api token.
+	if deploy.IsApp() {
+		if (siteConfig.App == nil || len(siteConfig.App.DotcomAuthToken) == 0) && (siteConfig.Embeddings == nil || siteConfig.Embeddings.AccessToken == "") {
+			return nil
+		}
+	}
+
+	// If embeddings are explicitly disabled (legacy flag, TODO: remove after 5.1),
+	// don't use embeddings either.
+	if siteConfig.Embeddings != nil && siteConfig.Embeddings.Enabled != nil && !*siteConfig.Embeddings.Enabled {
+		return nil
+	}
+
+	embeddingsConfig := siteConfig.Embeddings
+	// If no embeddings configuration is set at all, but cody is enabled, assume
+	// a default configuration.
+	if embeddingsConfig == nil {
+		embeddingsConfig = &schema.Embeddings{
+			Provider: string(conftypes.EmbeddingsProviderNameSourcegraph),
+		}
+	}
+
+	// If after setting defaults for no `embeddings` config given there still is no
+	// provider configured.
+	// Before, this meant "use OpenAI", but it's easy to accidentally send Cody Gateway
+	// auth tokens to OpenAI by that, so we want to be explicit going forward.
+	if embeddingsConfig.Provider == "" {
+		return nil
+	}
+
+	// The default value for incremental is true.
+	if embeddingsConfig.Incremental == nil {
+		embeddingsConfig.Incremental = pointers.Ptr(true)
+	}
+
+	// Set default values for max embeddings counts.
+	embeddingsConfig.MaxCodeEmbeddingsPerRepo = defaultTo(embeddingsConfig.MaxCodeEmbeddingsPerRepo, defaultMaxCodeEmbeddingsPerRepo)
+	embeddingsConfig.MaxTextEmbeddingsPerRepo = defaultTo(embeddingsConfig.MaxTextEmbeddingsPerRepo, defaultMaxTextEmbeddingsPerRepo)
+
+	// The default value for MinimumInterval is 24h.
+	if embeddingsConfig.MinimumInterval == "" {
+		embeddingsConfig.MinimumInterval = defaultMinimumInterval.String()
+	}
+
+	// Set the default for PolicyRepositoryMatchLimit.
+	if embeddingsConfig.PolicyRepositoryMatchLimit == nil {
+		v := defaultPolicyRepositoryMatchLimit
+		embeddingsConfig.PolicyRepositoryMatchLimit = &v
+	}
+
+	// If endpoint is not set, fall back to URL, it's the previous name of the setting.
+	// Note: It might also be empty.
+	if embeddingsConfig.Endpoint == "" {
+		embeddingsConfig.Endpoint = embeddingsConfig.Url
+	}
+
+	if embeddingsConfig.Provider == string(conftypes.EmbeddingsProviderNameSourcegraph) {
+		// If no endpoint is configured, use a default value.
+		if embeddingsConfig.Endpoint == "" {
+			embeddingsConfig.Endpoint = "https://cody-gateway.sourcegraph.com/v1/embeddings"
+		}
+
+		// Set the access token, either use the configured one, or generate one for the platform.
+		embeddingsConfig.AccessToken = getSourcegraphProviderAccessToken(embeddingsConfig.AccessToken, siteConfig)
+		// If we weren't able to generate an access token of some sort, authing with
+		// Cody Gateway is not possible and we cannot use embeddings.
+		if embeddingsConfig.AccessToken == "" {
+			return nil
+		}
+
+		// Set a default model.
+		if embeddingsConfig.Model == "" {
+			embeddingsConfig.Model = "openai/text-embedding-ada-002"
+		}
+		// Make sure models are always treated case-insensitive.
+		embeddingsConfig.Model = strings.ToLower(embeddingsConfig.Model)
+
+		// Set a default for model dimensions if using the default model.
+		if embeddingsConfig.Dimensions <= 0 && embeddingsConfig.Model == "openai/text-embedding-ada-002" {
+			embeddingsConfig.Dimensions = 1536
+		}
+	} else if embeddingsConfig.Provider == string(conftypes.EmbeddingsProviderNameOpenAI) {
+		// If no endpoint is configured, use a default value.
+		if embeddingsConfig.Endpoint == "" {
+			embeddingsConfig.Endpoint = "https://api.openai.com/v1/embeddings"
+		}
+
+		// If not access token is set, we cannot talk to OpenAI. Bail.
+		if embeddingsConfig.AccessToken == "" {
+			return nil
+		}
+
+		// Set a default model.
+		if embeddingsConfig.Model == "" {
+			embeddingsConfig.Model = "text-embedding-ada-002"
+		}
+		// Make sure models are always treated case-insensitive.
+		embeddingsConfig.Model = strings.ToLower(embeddingsConfig.Model)
+
+		// Set a default for model dimensions if using the default model.
+		if embeddingsConfig.Dimensions <= 0 && embeddingsConfig.Model == "text-embedding-ada-002" {
+			embeddingsConfig.Dimensions = 1536
+		}
+	} else {
+		// Unknown provider value.
+		return nil
+	}
+
+	computedConfig := &conftypes.EmbeddingsConfig{
+		Provider:    conftypes.EmbeddingsProviderName(embeddingsConfig.Provider),
+		AccessToken: embeddingsConfig.AccessToken,
+		Model:       embeddingsConfig.Model,
+		Endpoint:    embeddingsConfig.Endpoint,
+		Dimensions:  embeddingsConfig.Dimensions,
+		// This is definitely set at this point.
+		Incremental:                *embeddingsConfig.Incremental,
+		ExcludedFilePathPatterns:   embeddingsConfig.ExcludedFilePathPatterns,
+		MaxCodeEmbeddingsPerRepo:   embeddingsConfig.MaxCodeEmbeddingsPerRepo,
+		MaxTextEmbeddingsPerRepo:   embeddingsConfig.MaxTextEmbeddingsPerRepo,
+		PolicyRepositoryMatchLimit: embeddingsConfig.PolicyRepositoryMatchLimit,
+	}
+	d, err := time.ParseDuration(embeddingsConfig.MinimumInterval)
+	if err != nil {
+		computedConfig.MinimumInterval = defaultMinimumInterval
+	} else {
+		computedConfig.MinimumInterval = d
+	}
+
+	return computedConfig
+}
+
+func getSourcegraphProviderAccessToken(accessToken string, config schema.SiteConfiguration) string {
+	// If an access token is configured, use it.
+	if accessToken != "" {
+		return accessToken
+	}
+	// App generates a token from the api token the user used to connect app to dotcom.
+	if deploy.IsApp() && config.App != nil {
+		if config.App.DotcomAuthToken == "" {
+			return ""
+		}
+		return dotcomuser.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
+	}
+	// Otherwise, use the current license key to compute an access token.
+	if config.LicenseKey == "" {
+		return ""
+	}
+	return licensing.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)
+}
+
+const (
+	defaultPolicyRepositoryMatchLimit = 5000
+	defaultMinimumInterval            = 24 * time.Hour
+	defaultMaxCodeEmbeddingsPerRepo   = 3_072_000
+	defaultMaxTextEmbeddingsPerRepo   = 512_000
+)
+
+func defaultTo(val, def int) int {
+	if val == 0 {
+		return def
+	}
+	return val
 }

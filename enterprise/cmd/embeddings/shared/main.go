@@ -167,7 +167,11 @@ func NewHandler(
 }
 
 func getQueryEmbedding(ctx context.Context, query string) ([]float32, string, error) {
-	client, err := embed.NewEmbeddingsClient(&conf.Get().SiteConfiguration)
+	c := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	if c == nil {
+		return nil, "", errors.New("embeddings not configured or disabled")
+	}
+	client, err := embed.NewEmbeddingsClient(c)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "getting embeddings client")
 	}

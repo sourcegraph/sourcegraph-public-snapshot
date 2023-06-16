@@ -10,6 +10,8 @@ import { GitCommitNode } from './GitCommitNode'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
+window.context.experimentalFeatures = { perforceChangelistMapping: 'enabled' }
+
 const config: Meta = {
     title: 'web/GitCommitNode',
     parameters: {
@@ -191,6 +193,7 @@ const perforceChangelistNode: GitCommitFields = {
     perforceChangelist: {
         __typename: 'PerforceChangelist',
         cid: '12345',
+        canonicalURL: '/go/-/changelist/12345',
     },
     author: {
         date: subDays(new Date(), 5).toISOString(),
@@ -230,6 +233,7 @@ const perforceChangelistNode: GitCommitFields = {
             perforceChangelist: {
                 __typename: 'PerforceChangelist',
                 cid: '12344',
+                canonicalURL: '/go/-/changelist/12344',
             },
             url: '/commits/987654',
         },
