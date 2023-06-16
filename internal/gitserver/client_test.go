@@ -160,13 +160,13 @@ func TestClient_RepoUpdateRequest_ProtoRoundTrip(t *testing.T) {
 	})
 
 	t.Run("response", func(t *testing.T) {
-		fn := func(lastFetched fuzzTime, lastChange fuzzTime, err string) bool {
-			lf := time.Time(lastFetched)
-			lc := time.Time(lastChange)
+		fn := func(lastFetched fuzzTime, lastChanged fuzzTime, err string) bool {
+			lastFetchedPtr := time.Time(lastFetched)
+			lastChangedPtr := time.Time(lastChanged)
 
 			original := protocol.RepoUpdateResponse{
-				LastFetched: &lf,
-				LastChanged: &lc,
+				LastFetched: &lastFetchedPtr,
+				LastChanged: &lastChangedPtr,
 				Error:       err,
 			}
 			var converted protocol.RepoUpdateResponse
