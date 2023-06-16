@@ -19,12 +19,8 @@ func completionsConfigValidator(q conftypes.SiteConfigQuerier) Problems {
 		return nil
 	}
 
-	if completionsConf.Provider == "" {
-		problems = append(problems, "completions.provider is required")
-	}
-
 	if completionsConf.Enabled != nil && q.SiteConfig().CodyEnabled == nil {
-		problems = append(problems, "completions.enabled has been renamed to cody.enabled, please migrate")
+		problems = append(problems, "'completions.enabled' has been superceded by 'cody.enabled', please migrate to the new configuration.")
 	}
 
 	if len(problems) > 0 {
