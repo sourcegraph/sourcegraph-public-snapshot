@@ -69,9 +69,7 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
         getOwnershipReasonPriority(reason2) - getOwnershipReasonPriority(reason1)
 
     const navigate = useNavigate()
-    const refreshPage = () => {
-        return Promise.resolve(navigate(0))
-    }
+    const refreshPage = (): Promise<any> => Promise.resolve(navigate(0))
 
     return (
         <tr>

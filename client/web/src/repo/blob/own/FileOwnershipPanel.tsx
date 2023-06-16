@@ -37,9 +37,7 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
     })
     const [makeOwnerError, setMakeOwnerError] = React.useState<Error | undefined>(undefined)
     const navigate = useNavigate()
-    const refreshPage = () => {
-        return Promise.resolve(navigate(0))
-    }
+    const refreshPage = (): Promise<any> => Promise.resolve(navigate(0))
 
     if (loading) {
         return (
