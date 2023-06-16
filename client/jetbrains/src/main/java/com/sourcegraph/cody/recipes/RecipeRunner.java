@@ -7,7 +7,7 @@ import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.editor.EditorContext;
 import com.sourcegraph.cody.editor.EditorContextGetter;
 import com.sourcegraph.cody.prompts.LanguageUtils;
-import java.util.*;
+import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 
 public class RecipeRunner {
@@ -26,22 +26,20 @@ public class RecipeRunner {
         new Language(
             LanguageUtils.getNormalizedLanguageName(editorContext.getCurrentFileExtension()));
 
-    TruncatedText truncatedTextInputToPrompt =
-        new TruncatedText(
-            TruncationUtils.truncateText(
-                textInputToPrompt, TruncationUtils.MAX_RECIPE_INPUT_TOKENS));
+    TruncatedText truncatedTextInputToPrompt = TruncatedText.of(textInputToPrompt,
+        TruncationUtils.MAX_RECIPE_INPUT_TOKENS);
 
     OriginalText selectedText = new OriginalText(textInputToPrompt);
     // TODO: Use or remove these
     String truncatedPrecedingText =
         editorContext.getPrecedingText() != null
-            ? TruncationUtils.truncateTextStart(
-                editorContext.getPrecedingText(), TruncationUtils.MAX_RECIPE_SURROUNDING_TOKENS)
+            ? TruncatedText.ofEndOf(editorContext.getPrecedingText(),
+            TruncationUtils.MAX_RECIPE_SURROUNDING_TOKENS).getValue()
             : "";
     String truncatedFollowingText =
         editorContext.getFollowingText() != null
-            ? TruncationUtils.truncateText(
-                editorContext.getFollowingText(), TruncationUtils.MAX_RECIPE_SURROUNDING_TOKENS)
+            ? TruncatedText.of(editorContext.getFollowingText(),
+            TruncationUtils.MAX_RECIPE_SURROUNDING_TOKENS).getValue()
             : "";
 
     PromptContext promptContext =
@@ -54,11 +52,15 @@ public class RecipeRunner {
     chat.respondToMessage(humanMessage, promptContext.getResponsePrefix());
   }
 
-  public void runGitHistory() {}
+  public void runGitHistory() {
+  }
 
-  public void runFixup() {}
+  public void runFixup() {
+  }
 
-  public void runContextSearch() {}
+  public void runContextSearch() {
+  }
 
-  public void runReleaseNotes() {}
+  public void runReleaseNotes() {
+  }
 }
