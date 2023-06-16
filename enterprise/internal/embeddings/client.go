@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -63,6 +64,16 @@ type EmbeddingsSearchParameters struct {
 	TextResultsCount int            `json:"textResultsCount"`
 
 	UseDocumentRanks bool `json:"useDocumentRanks"`
+}
+
+func (p *EmbeddingsSearchParameters) Attrs() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.Int("numRepos", len(p.RepoNames)),
+		attribute.String("query", p.Query),
+		attribute.Int("codeResultsCount", p.CodeResultsCount),
+		attribute.Int("textResultsCount", p.TextResultsCount),
+		attribute.Bool("useDocumentRanks", p.UseDocumentRanks),
+	}
 }
 
 type IsContextRequiredForChatQueryParameters struct {

@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -28,7 +29,7 @@ type Resolver struct {
 	contextClient   *codycontext.CodyContextClient
 }
 
-func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetContextArgs) ([]graphqlbackend.ContextResultResolver, error) {
+func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetContextArgs) (_ []graphqlbackend.ContextResultResolver, err error) {
 	repoIDs, err := graphqlbackend.UnmarshalRepositoryIDs(args.Repos)
 	if err != nil {
 		return nil, err
@@ -59,6 +60,9 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 	if err != nil {
 		return nil, err
 	}
+
+	tr, ctx := trace.New(ctx, "resolveChunks", "")
+	defer tr.FinishWithErr(&err)
 
 	return iter.MapErr(fileChunks, func(fileChunk *codycontext.FileChunkContext) (graphqlbackend.ContextResultResolver, error) {
 		return r.fileChunkToResolver(ctx, fileChunk)

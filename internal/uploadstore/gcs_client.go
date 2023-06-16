@@ -80,14 +80,14 @@ func (s *gcsStore) Get(ctx context.Context, key string) (_ io.ReadCloser, err er
 	ctx, _, endObservation := s.operations.Get.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("key", key),
 	}})
-	defer endObservation(1, observation.Args{})
+	done := func() { endObservation(1, observation.Args{}) }
 
 	rc, err := s.client.Bucket(s.bucket).Object(key).NewRangeReader(ctx, 0, -1)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get object")
 	}
 
-	return rc, nil
+	return NewExtraCloser(rc, done), nil
 }
 
 func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (_ int64, err error) {

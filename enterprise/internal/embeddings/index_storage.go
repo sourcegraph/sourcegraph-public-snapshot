@@ -6,9 +6,11 @@ import (
 	"encoding/gob"
 	"io"
 
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -99,7 +101,10 @@ func UpdateRepoEmbeddingIndex(
 	return UploadRepoEmbeddingIndex(ctx, uploadStore, key, previous)
 }
 
-func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string) (*RepoEmbeddingIndex, error) {
+func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string) (_ *RepoEmbeddingIndex, err error) {
+	tr, ctx := trace.New(ctx, "DownloadRepoEmbeddingIndex", "", attribute.String("key", key))
+	defer tr.FinishWithErr(&err)
+
 	dec, err := newDecoder(ctx, uploadStore, key)
 	if err != nil {
 		return nil, err
@@ -108,8 +113,10 @@ func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 
 	rei, err := dec.decode()
 
-	// If decoding fails, assume it is an old index and decode with a generic dec.
 	if err != nil {
+		// If decoding fails, assume it is an old index and decode with a generic dec.
+		tr.AddEvent("failed to decode index, assuming that this is an old version and trying again", trace.Error(err))
+
 		oldRei, err2 := DownloadIndex[OldRepoEmbeddingIndex](ctx, uploadStore, key)
 		if err2 != nil {
 			return nil, errors.Append(err, err2)
@@ -137,6 +144,10 @@ func newDecoder(ctx context.Context, uploadStore uploadstore.Store, key string) 
 	if err := dec.Decode(&formatVersion); err != nil {
 		// If there's an error, assume this is an old index that doesn't encode the
 		// version. Open the file again to reset the reader.
+		if tr := trace.TraceFromContext(ctx); tr != nil {
+			tr.AddEvent("failed to decode IndexFormatVersion, assuming that this is an old index that doesn't start with a version", trace.Error(err))
+		}
+
 		if err := f.Close(); err != nil {
 			return nil, err
 		}

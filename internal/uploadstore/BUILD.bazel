@@ -11,6 +11,7 @@ go_library(
         "lazy_client.go",
         "observability.go",
         "pool.go",
+        "reader.go",
         "s3_api.go",
         "s3_client.go",
         "store.go",

@@ -47,6 +47,7 @@ func Run(searcher embeddingsSearcher) (float64, error) {
 
 		args := embeddings.EmbeddingsSearchParameters{
 			RepoNames:        []api.RepoName{"github.com/sourcegraph/sourcegraph"},
+			RepoIDs:          []api.RepoID{0},
 			Query:            query,
 			CodeResultsCount: 20,
 			TextResultsCount: 2,
