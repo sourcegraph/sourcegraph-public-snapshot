@@ -4,9 +4,9 @@ export const enum EventName {
     CODY_CHAT_EDIT = 'web:codyChat:edit',
     CODY_CHAT_INITIALIZED = 'web:codyChat:initialized',
     CODY_CHAT_EDITOR_WIDGET_VIEWED = 'web:codyChat:editorWidgetViewed',
-    CODY_CHAT_RECIPE_EXECUTED = 'web:codyChat:recipeExecuted',
     CODY_CHAT_HISTORY_CLEARED = 'web:codyChat:historyCleared',
     CODY_CHAT_HISTORY_ITEM_DELETED = 'web:codyChat:historyItemDeleted',
+
     CODY_CHAT_SCOPE_REPO_ADDED = 'web:codyChat:scopeRepoAdded',
     CODY_CHAT_SCOPE_REPO_REMOVED = 'web:codyChat:scopeRepoRemoved',
     CODY_CHAT_SCOPE_RESET = 'web:codyChat:scopeReset',

@@ -1,6 +1,7 @@
 <script lang="ts">
-    import { mdiChevronRight, mdiChevronDown } from '@mdi/js'
     import { dirname } from 'path'
+
+    import { mdiChevronRight, mdiChevronDown } from '@mdi/js'
 
     import { numberWithCommas } from '$lib/common'
     import type { FileDiffFields } from '$lib/graphql-operations'

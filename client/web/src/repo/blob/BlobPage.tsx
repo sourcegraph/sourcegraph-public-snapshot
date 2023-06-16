@@ -138,8 +138,8 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     )
     const isPackage = useMemo(() => isPackageServiceType(repoServiceType), [repoServiceType])
 
-    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
-    const enableOwnershipPanel = ownFeatureFlagEnabled && props.ownEnabled
+    const [enableOwnershipPanels] = useFeatureFlag('enable-ownership-panels', true)
+    const enableOwnershipPanel = enableOwnershipPanels && props.ownEnabled
 
     const lineOrRange = useMemo(
         () => parseQueryAndHash(location.search, location.hash),
@@ -448,8 +448,13 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                     />
                 )}
             </RepoHeaderContributionPortal>
-            {enableOwnershipPanel && repoID && (
-                <HistoryAndOwnBar repoID={repoID} revision={revision} filePath={filePath} />
+            {repoID && (
+                <HistoryAndOwnBar
+                    repoID={repoID}
+                    revision={revision}
+                    filePath={filePath}
+                    enableOwnershipPanel={enableOwnershipPanel}
+                />
             )}
         </>
     )
