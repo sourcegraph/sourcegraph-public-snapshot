@@ -83,25 +83,12 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 		return nil, errors.New("WriteSCIPSymbols must be called in a transaction")
 	}
 
-	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolNamesTableQuery)); err != nil {
-		return nil, err
-	}
 	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolsTableQuery)); err != nil {
 		return nil, err
 	}
 	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolLookupTableQuery)); err != nil {
 		return nil, err
 	}
-
-	symbolNameInserter := batch.NewInserter(
-		ctx,
-		s.db.Handle(),
-		"t_codeintel_scip_symbol_names",
-		batch.MaxNumPostgresParameters,
-		"id",
-		"name_segment",
-		"prefix_id",
-	)
 
 	symbolInserter := batch.NewInserter(
 		ctx,
@@ -137,7 +124,6 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 	scipWriter := &scipWriter{
 		uploadID:             uploadID,
 		db:                   s.db,
-		symbolNameInserter:   symbolNameInserter,
 		symbolInserter:       symbolInserter,
 		symbolLookupInserter: symbolLookupInserter,
 		count:                0,
@@ -145,14 +131,6 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 
 	return scipWriter, nil
 }
-
-const newSCIPWriterTemporarySymbolNamesTableQuery = `
-CREATE TEMPORARY TABLE t_codeintel_scip_symbol_names (
-	id integer NOT NULL,
-	name_segment text NOT NULL,
-	prefix_id integer
-) ON COMMIT DROP
-`
 
 const newSCIPWriterTemporarySymbolsTableQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
@@ -186,7 +164,6 @@ type scipWriter struct {
 	nextSymbolLookupID   int
 	nextSymbolID         int
 	db                   *basestore.Store
-	symbolNameInserter   *batch.Inserter
 	symbolInserter       *batch.Inserter
 	symbolLookupInserter *batch.Inserter
 	count                uint32
@@ -467,44 +444,23 @@ func (s *scipWriter) Flush(ctx context.Context) (uint32, error) {
 	}
 
 	// Flush all data into temp tables
-	if err := s.symbolNameInserter.Flush(ctx); err != nil {
+	if err := s.symbolLookupInserter.Flush(ctx); err != nil {
 		return 0, err
 	}
 	if err := s.symbolInserter.Flush(ctx); err != nil {
 		return 0, err
 	}
-	if err := s.symbolLookupInserter.Flush(ctx); err != nil {
-		return 0, err
-	}
 
 	// Move all data from temp tables into target tables
-	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolNamesQuery, s.uploadID)); err != nil {
+	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolLookupQuery, s.uploadID)); err != nil {
 		return 0, err
 	}
 	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uploadID, 1)); err != nil {
 		return 0, err
 	}
-	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolLookupQuery, s.uploadID)); err != nil {
-		return 0, err
-	}
 
 	return s.count, nil
 }
-
-const scipWriterFlushSymbolNamesQuery = `
-INSERT INTO codeintel_scip_symbol_names (
-	upload_id,
-	id,
-	name_segment,
-	prefix_id
-)
-SELECT
-	%s,
-	source.id,
-	source.name_segment,
-	source.prefix_id
-FROM t_codeintel_scip_symbol_names source
-`
 
 const scipWriterFlushSymbolLookupQuery = `
 INSERT INTO codeintel_scip_symbols_lookup (
