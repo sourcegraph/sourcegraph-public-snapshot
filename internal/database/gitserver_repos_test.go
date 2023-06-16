@@ -321,6 +321,60 @@ func TestListReposWithLastError(t *testing.T) {
 	}
 }
 
+func TestReposWithLastOutput(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	type testRepo struct {
+		title      string
+		name       string
+		lastOutput string
+	}
+	testRepos := []testRepo{
+		{
+			title:      "1kb-last-output",
+			name:       "github.com/sourcegraph/repo1",
+			lastOutput: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.\nNulla tincidunt at turpis ut rhoncus.\nQuisque sollicitudin bibendum libero a interdum.\nMauris efficitur, nunc ac consectetur dapibus, tortor velit sollicitudin justo, varius faucibus purus tellus eu ex.\nProin bibendum feugiat ornare..\nDonec placerat vestibulum hendrerit.\nInteger quis mattis justo.\nFusce eu arcu mollis magna rutrum porttitor.\nUt quis tristique enim..\nDonec suscipit nisl sit amet nulla cursus, ac vulputate justo ornare.\nNam non nisl aliquam, porta ligula vitae, sodales sapien.\nVestibulum et dictum tortor.\nAenean nec risus ac justo luctus posuere et in massa.\nVivamus nec ultricies est, a pulvinar ante.\nSed semper rutrum lorem.\nNulla ut metus ornare, dapibus justo et, sagittis lacus.\nIn massa felis, pellentesque pretium mauris id, pretium pellentesque augue.\nNulla feugiat est sit amet ex rhoncus, ut dapibus massa viverra.\nSuspendisse ullamcorper orci nec mauris vulputate vestibulum.\nInteger luctus tincidunt augue, ut congue neque dapibus sit amet.\nEtiam eu justo in dui ornare ultricies.\nNam fermentum ultricies sagittis.\nMorbi ultricies maximus tortor ut aliquet.\nNullam eget venenatis nunc.\nNam ultricies neque ac blandit eleifend.\nPhasellus pharetra, augue ac semper feugiat, lorem nulla consectetur purus, nec malesuada nisi sem id erat.\nFusce mollis, est vel maximus convallis, eros magna convallis turpis, ac fermentum ipsum nulla in mi.",
+		},
+		{
+			title:      "56b-last-output",
+			name:       "github.com/sourcegraph/repo2",
+			lastOutput: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+		},
+		{
+			title:      "empty-last-output",
+			name:       "github.com/sourcegraph/repo3",
+			lastOutput: "",
+		},
+	}
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	now := time.Now()
+	cloudDefaultService := createTestExternalService(ctx, t, now, db, true)
+	for i, tr := range testRepos {
+		t.Run(tr.title, func(t *testing.T) {
+			testRepo := &types.Repo{
+				Name:        api.RepoName(tr.name),
+				URI:         tr.name,
+				Description: "",
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          fmt.Sprintf("repo%d-external", i),
+					ServiceType: extsvc.TypeGitHub,
+					ServiceID:   "https://github.com",
+				},
+			}
+			testRepo = testRepo.With(
+				typestest.Opt.RepoSources(cloudDefaultService.URN()),
+			)
+			createTestRepos(ctx, t, db, types.Repos{testRepo})
+			if err := db.GitserverRepos().SetLastOutput(ctx, testRepo.Name, tr.lastOutput); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
 func createTestExternalService(ctx context.Context, t *testing.T, now time.Time, db DB, cloudDefault bool) types.ExternalService {
 	service := types.ExternalService{
 		Kind:         extsvc.KindGitHub,

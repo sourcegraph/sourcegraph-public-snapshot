@@ -510,7 +510,7 @@ WHERE
 }
 
 func (s *gitserverRepoStore) SetLastOutput(ctx context.Context, name api.RepoName, output string) error {
-	ns := dbutil.NewNullString(sanitizeToUTF8(output))
+	ns := sanitizeToUTF8(output)
 
 	err := s.Exec(ctx, sqlf.Sprintf(`
 INSERT INTO gitserver_repos_sync_output(repo_id, last_output)
