@@ -77,7 +77,7 @@ The first step is to declare metadata for a new migration. Add a new entry to th
   component: db.skunk_payloads            -- Component being migrated
   description: Re-encode our skunky data  -- Human-readable description
   non_destructive: true                   -- Can be read with previous version without down migration
-  is_enterprise: true                     -- Should not run in OSS versions or the migration code is only available in enterprise (as of 5.1, OSS is deprecated)
+  is_enterprise: true                     -- Should not run in OSS versions or the migration code is only available in enterprise (as of 5.1, OSS is removed)
   introduced_major_version: 3             -- The current major release
   introduced_minor_version: 34            -- The current minor release
 ```
