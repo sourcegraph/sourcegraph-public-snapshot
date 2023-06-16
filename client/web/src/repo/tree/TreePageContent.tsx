@@ -305,10 +305,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         return () => subscription.unsubscribe()
     }, [repo.name, revision, filePath])
 
-    const [recentContributorsComputed] = useFeatureFlag('own-background-index-repo-recent-contributors', false)
-    const [recentViewsComputed] = useFeatureFlag('own-background-index-repo-recent-views', false)
-
-    const ownSignalsEnabled = recentContributorsComputed || recentViewsComputed
+    const [enableOwnershipPanels] = useFeatureFlag('enable-ownership-panels', true)
     const hasRepoMetaWritePermissions = canWriteRepoMetadata(props.authenticatedUser)
 
     return (
@@ -346,14 +343,13 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
                 {!isPackage && (
                     <div className={styles.contributors}>
-                        {/* TODO(#53160): use settings instead of feature flags to show Ownership */}
-                        {ownSignalsEnabled && (
+                        {enableOwnershipPanels && (
                             <Card>
                                 <CardHeader className={panelStyles.cardColHeaderWrapper}>Own</CardHeader>
                                 <Ownership {...props} />
                             </Card>
                         )}
-                        <Card className={ownSignalsEnabled ? 'mt-3' : undefined}>
+                        <Card className={enableOwnershipPanels ? 'mt-3' : undefined}>
                             <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
                             <Contributors {...props} />
                         </Card>

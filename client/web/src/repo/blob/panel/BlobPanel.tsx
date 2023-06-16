@@ -71,7 +71,7 @@ function useBlobPanelViews({
             : undefined
     }, [location.hash, location.search])
 
-    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
+    const [enableOwnershipPanels] = useFeatureFlag('enable-ownership-panels', true)
 
     useBuiltinTabbedPanelViews(
         useMemo(() => {
@@ -125,7 +125,7 @@ function useBlobPanelViews({
                               </PanelContent>
                           ),
                       },
-                ownEnabled && ownFeatureFlagEnabled
+                ownEnabled && enableOwnershipPanels
                     ? {
                           id: 'ownership',
                           title: 'Ownership',
@@ -161,7 +161,7 @@ function useBlobPanelViews({
             preferAbsoluteTimestamps,
             defaultPageSize,
             ownEnabled,
-            ownFeatureFlagEnabled,
+            enableOwnershipPanels,
         ])
     )
 
