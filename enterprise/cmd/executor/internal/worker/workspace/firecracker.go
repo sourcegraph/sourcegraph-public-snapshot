@@ -12,7 +12,9 @@ import (
 	"github.com/c2h5oh/datasize"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -23,7 +25,7 @@ type firecrackerWorkspace struct {
 	blockDeviceFile string
 	blockDevice     string
 	tmpMountDir     string
-	logger          command.Logger
+	logger          cmdlogger.Logger
 }
 
 // NewFirecrackerWorkspace creates a new workspace for firecracker-based execution.
@@ -33,13 +35,13 @@ type firecrackerWorkspace struct {
 // VM can mount this loopback device. This prevents host file system access.
 func NewFirecrackerWorkspace(
 	ctx context.Context,
-	filesStore FilesStore,
+	filesStore files.Store,
 	job types.Job,
 	diskSpace string,
 	keepWorkspace bool,
 	cmdRunner util.CmdRunner,
 	cmd command.Command,
-	logger command.Logger,
+	logger cmdlogger.Logger,
 	cloneOpts CloneOptions,
 	operations *command.Operations,
 ) (Workspace, error) {
@@ -96,7 +98,7 @@ func setupLoopDevice(
 	jobID int,
 	diskSpace string,
 	keepWorkspace bool,
-	logger command.Logger,
+	logger cmdlogger.Logger,
 ) (blockDeviceFile, tmpMountDir, blockDevice string, err error) {
 	handle := logger.LogEntry("setup.fs.workspace", nil)
 	defer func() {
@@ -178,7 +180,7 @@ func setupLoopDevice(
 }
 
 // detachLoopDevice detaches a loop device by path (/dev/loopX).
-func detachLoopDevice(ctx context.Context, cmdRunner util.CmdRunner, blockDevice string, handle command.LogEntry) error {
+func detachLoopDevice(ctx context.Context, cmdRunner util.CmdRunner, blockDevice string, handle cmdlogger.LogEntry) error {
 	out, err := commandLogger(ctx, cmdRunner, handle, "losetup", "--detach", blockDevice)
 	if err != nil {
 		return errors.Wrapf(err, "failed to detach loop device: %s", out)
@@ -232,7 +234,7 @@ func (w firecrackerWorkspace) Remove(ctx context.Context, keepWorkspace bool) {
 
 // mountLoopDevice takes a path to a loop device (/dev/loopX) and mounts it at a
 // random temporary mount point. The mount point is returned.
-func mountLoopDevice(ctx context.Context, cmdRunner util.CmdRunner, blockDevice string, handle command.LogEntry) (string, error) {
+func mountLoopDevice(ctx context.Context, cmdRunner util.CmdRunner, blockDevice string, handle cmdlogger.LogEntry) (string, error) {
 	tmpMountDir, err := MakeMountDirectory("workspace-mountpoints")
 	if err != nil {
 		return "", err

@@ -24,9 +24,11 @@
 </script>
 
 <script lang="ts">
-    import Icon from './Icon.svelte'
     import { mdiPageFirst, mdiPageLast, mdiChevronRight, mdiChevronLeft } from '@mdi/js'
+
     import { page } from '$app/stores'
+
+    import Icon from './Icon.svelte'
     import { Button } from './wildcard'
 
     export let pageInfo: {

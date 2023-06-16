@@ -8,7 +8,7 @@ import { useSettings } from '@sourcegraph/shared/src/settings/settings'
 import { Alert, AlertProps, Markdown } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { useIsCodyEnabled } from '../cody/useIsCodyEnabled'
+import { isEmailVerificationNeededForCody } from '../cody/isCodyEnabled'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 
 import styles from './Notices.module.scss'
@@ -96,9 +96,7 @@ export const VerifyEmailNotices: React.FunctionComponent<VerifyEmailNoticesProps
     alertClassName,
     authenticatedUser,
 }) => {
-    const codyEnabled = useIsCodyEnabled()
-
-    if (codyEnabled.needsEmailVerification && authenticatedUser) {
+    if (isEmailVerificationNeededForCody() && authenticatedUser) {
         return (
             <div className={classNames(styles.notices, className)}>
                 <NoticeAlert

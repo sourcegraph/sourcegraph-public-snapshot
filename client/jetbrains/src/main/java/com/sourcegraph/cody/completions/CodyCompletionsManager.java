@@ -76,14 +76,44 @@ public class CodyCompletionsManager {
             0.6,
             0.1);
     TextDocument textDocument = new IntelliJTextDocument(editor);
-    if (textDocument.getCompletionContext(offset).isCompletionTriggerValid()) {
+    CompletionDocumentContext documentCompletionContext = textDocument.getCompletionContext(offset);
+    if (documentCompletionContext.isCompletionTriggerValid()) {
       Callable<CompletableFuture<Void>> callable =
-          () -> triggerCompletionAsync(editor, offset, token, provider, textDocument);
+          () ->
+              triggerCompletionAsync(
+                  editor, offset, token, provider, textDocument, documentCompletionContext);
       // debouncing the completion trigger
       cancelCurrentJob();
       this.currentJob.set(
-          Optional.of(this.scheduler.schedule(callable, 200, TimeUnit.MILLISECONDS)));
+          Optional.of(this.scheduler.schedule(callable, 20, TimeUnit.MILLISECONDS)));
     }
+  }
+
+  public static InlineCompletionItem postProcessInlineCompletionBasedOnDocumentContext(
+      InlineCompletionItem resultItem, CompletionDocumentContext documentCompletionContext) {
+    String sameLineSuffix = documentCompletionContext.getSameLineSuffix();
+    if (resultItem.insertText.endsWith(sameLineSuffix)) {
+      // if the completion already has the same line suffix, we strip it
+      String newInsertText = StringUtils.stripEnd(resultItem.insertText, sameLineSuffix);
+      // adjusting the range to account for the shorter completion
+      Range newRange =
+          resultItem.range.withEnd(
+              resultItem.range.end.withCharacter(
+                  resultItem.range.end.character - sameLineSuffix.length()));
+      return resultItem.withRange(newRange).withInsertText(newInsertText);
+    } else if (resultItem.insertText.contains(sameLineSuffix)) {
+      // if the completion already contains the same line suffix
+      // but it doesn't strictly end with it
+      // we cut the end of the completion starting with the suffix
+      int index = resultItem.insertText.lastIndexOf(sameLineSuffix);
+      String newInsertText = resultItem.insertText.substring(0, index);
+      // adjusting the range to account for the shorter completion
+      int rangeDiff = resultItem.insertText.length() - newInsertText.length();
+      Range newRange =
+          resultItem.range.withEnd(
+              resultItem.range.end.withCharacter(resultItem.range.end.character - rangeDiff));
+      return resultItem.withRange(newRange).withInsertText(newInsertText);
+    } else return resultItem;
   }
 
   private CompletableFuture<Void> triggerCompletionAsync(
@@ -91,7 +121,8 @@ public class CodyCompletionsManager {
       int offset,
       CancellationToken token,
       CodyCompletionItemProvider provider,
-      TextDocument textDocument) {
+      TextDocument textDocument,
+      CompletionDocumentContext documentCompletionContext) {
     return provider
         .provideInlineCompletions(
             textDocument,
@@ -110,6 +141,11 @@ public class CodyCompletionsManager {
               // TODO: smarter logic around selecting the best completion item.
               Optional<InlineCompletionItem> maybeItem =
                   result.items.stream()
+                      .map(CodyCompletionsManager::removeUndesiredCharacters)
+                      .map(
+                          resultItem ->
+                              postProcessInlineCompletionBasedOnDocumentContext(
+                                  resultItem, documentCompletionContext))
                       .filter(resultItem -> !resultItem.insertText.isEmpty())
                       .findFirst();
               if (maybeItem.isEmpty()) {
@@ -130,6 +166,15 @@ public class CodyCompletionsManager {
                 e.printStackTrace();
               }
             });
+  }
+
+  public static InlineCompletionItem removeUndesiredCharacters(InlineCompletionItem item) {
+    // no zero-width spaces or line separator chars, pls
+    String newInsertText = item.insertText.replaceAll("[\u200b\u2028]", "");
+    int rangeDiff = item.insertText.length() - newInsertText.length();
+    Range newRange =
+        item.range.withEnd(item.range.end.withCharacter(item.range.end.character - rangeDiff));
+    return item.withRange(newRange).withInsertText(newInsertText);
   }
 
   private boolean isProjectAvailable(Project project) {

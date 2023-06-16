@@ -11,11 +11,12 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Alert, Form, Input, LoadingSpinner, Text, Badge, Link, useSessionStorage } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { useURLSyncedString } from '../../hooks/useUrlSyncedString'
 import { eventLogger } from '../../tracking/eventLogger'
 import { DOTCOM_URL } from '../../tracking/util'
 import { CodyIcon } from '../components/CodyIcon'
-import { useIsCodyEnabled } from '../useIsCodyEnabled'
+import { isEmailVerificationNeededForCody } from '../isCodyEnabled'
 
 import { translateToQuery } from './translateToQuery'
 
@@ -138,7 +139,6 @@ const SearchInput: React.FunctionComponent<{
     onSubmit: () => void
     className?: string
 }> = ({ value, loading, error, onChange, onSubmit: parentOnSubmit, className }) => {
-    const cody = useIsCodyEnabled()
     const onInput = useCallback<React.FormEventHandler<HTMLInputElement>>(
         event => {
             onChange(event.currentTarget.value)
@@ -154,9 +154,11 @@ const SearchInput: React.FunctionComponent<{
         [parentOnSubmit]
     )
 
-    return cody.search ? (
+    const [codySearchEnabled] = useFeatureFlag('cody-web-search')
+
+    return codySearchEnabled ? (
         <Form onSubmit={onSubmit} className={className}>
-            {cody.needsEmailVerification && (
+            {isEmailVerificationNeededForCody() && (
                 <Alert variant="warning">
                     <Text className="mb-0">Verify email</Text>
                     <Text className="mb-0">
@@ -172,7 +174,7 @@ const SearchInput: React.FunctionComponent<{
                 inputClassName={styles.input}
                 value={value}
                 onInput={onInput}
-                disabled={loading || cody.needsEmailVerification}
+                disabled={loading || isEmailVerificationNeededForCody()}
                 autoFocus={true}
                 placeholder="Search for code or files in natural language..."
             />

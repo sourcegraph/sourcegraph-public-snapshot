@@ -44,7 +44,8 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
 
   @NotNull
   private JEditorPane createNewEmptyTextPane() {
-    JEditorPane jEditorPane = SwingHelper.createHtmlLabel("", null, null);
+    JEditorPane jEditorPane = SwingHelper.createHtmlViewer(true, null, null, null);
+    jEditorPane.setFocusable(true);
     jEditorPane.setMargin(
         JBInsets.create(new Insets(TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN)));
     textPane = jEditorPane;
@@ -53,9 +54,13 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   }
 
   @Override
+  public void visit(Paragraph paragraph) {
+    addContentOfNodeAsHtml(htmlRenderer.render(paragraph));
+  }
+
+  @Override
   public void visit(Code code) {
     addContentOfNodeAsHtml(htmlRenderer.render(code));
-
     super.visit(code);
   }
 

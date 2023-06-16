@@ -159,9 +159,17 @@ func getCodeOwnersFromMatches(
 			hasResultWithNoOwners = true
 			continue
 		}
+		refs := rule.References()
+		for i := range refs {
+			refs[i].RepoContext = &own.RepoContext{
+				Name:         mm.Repo.Name,
+				CodeHostKind: rs.codeowners.GetCodeHostType(),
+			}
+		}
+
 		ownerMatches = append(ownerMatches, ownerFileMatch{
 			fileMatch:  mm,
-			references: rule.References(),
+			references: refs,
 		})
 	}
 	return ownerMatches, hasResultWithNoOwners, errs

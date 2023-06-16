@@ -19,8 +19,7 @@ export type FeatureFlagName =
     | 'accessible-symbol-tree'
     | 'accessible-file-tree-always-load-ancestors'
     | 'search-ownership'
-    | 'own-background-index-repo-recent-contributors'
-    | 'own-background-index-repo-recent-views'
+    | 'enable-ownership-panels'
     | 'search-ranking'
     | 'blob-page-switch-areas-shortcuts'
     | 'sentinel'
@@ -28,11 +27,9 @@ export type FeatureFlagName =
     | 'sourcegraph-operator-site-admin-hide-maintenance'
     | 'repository-metadata'
     | 'cody-gateway-management-ui'
-    | 'cody-web-chat'
     | 'cody-web-search'
-    | 'cody-web-sidebar'
-    | 'cody-web-all'
-    | 'cody-web-editor-recipes'
+    | 'own-promote'
+    | 'own-analytics'
 
 interface OrgFlagOverride {
     orgID: string

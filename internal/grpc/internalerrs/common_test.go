@@ -7,9 +7,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
-	newspb "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news/v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	newspb "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news/v1"
 
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/grpc"
@@ -81,6 +82,38 @@ func TestCallBackClientStream(t *testing.T) {
 	})
 }
 
+func TestRequestSavingClientStream_InitialRequest(t *testing.T) {
+	// Setup: create a mock ClientStream that returns a sentinel error on SendMsg
+	sentinelErr := errors.New("send error")
+	mockClientStream := &mockClientStream{
+		sendErr: sentinelErr,
+	}
+
+	// Setup: create a requestSavingClientStream with the mock ClientStream
+	stream := &requestSavingClientStream{
+		ClientStream: mockClientStream,
+	}
+
+	// Setup: create a sample proto.Message for the request
+	request := &newspb.BinaryAttachment{
+		Name: "sample_request",
+		Data: []byte("sample data"),
+	}
+
+	// Test: call SendMsg with the request
+	err := stream.SendMsg(request)
+
+	// Check: assert SendMsg propagates the error
+	if !errors.Is(err, sentinelErr) {
+		t.Errorf("got %v, want %v", err, sentinelErr)
+	}
+
+	// Check: assert InitialRequest returns the request
+	if diff := cmp.Diff(request, *stream.InitialRequest(), cmpopts.IgnoreUnexported(newspb.BinaryAttachment{})); diff != "" {
+		t.Fatalf("InitialRequest() (-want +got):\n%s", diff)
+	}
+}
+
 // mockClientStream is a grpc.ClientStream that returns a given error on SendMsg and RecvMsg.
 type mockClientStream struct {
 	grpc.ClientStream
@@ -93,6 +126,117 @@ func (s *mockClientStream) SendMsg(any) error {
 }
 
 func (s *mockClientStream) RecvMsg(any) error {
+	return s.recvErr
+}
+
+func TestCallBackServerStream(t *testing.T) {
+	t.Run("SendMsg calls postMessageSend with message and error", func(t *testing.T) {
+		sentinelMessage := struct{}{}
+		sentinelErr := errors.New("send error")
+
+		var called bool
+		stream := callBackServerStream{
+			ServerStream: &mockServerStream{
+				sendErr: sentinelErr,
+			},
+			postMessageSend: func(message any, err error) {
+				called = true
+
+				if diff := cmp.Diff(message, sentinelMessage); diff != "" {
+					t.Errorf("postMessageSend called with unexpected message (-want +got):\n%s", diff)
+				}
+				if !errors.Is(err, sentinelErr) {
+					t.Errorf("got %v, want %v", err, sentinelErr)
+				}
+			},
+		}
+
+		sendErr := stream.SendMsg(sentinelMessage)
+		if !called {
+			t.Error("postMessageSend not called")
+		}
+
+		if !errors.Is(sendErr, sentinelErr) {
+			t.Errorf("got %v, want %v", sendErr, sentinelErr)
+		}
+	})
+
+	t.Run("RecvMsg calls postMessageReceive with message and error", func(t *testing.T) {
+		sentinelMessage := struct{}{}
+		sentinelErr := errors.New("receive error")
+
+		var called bool
+		stream := callBackServerStream{
+			ServerStream: &mockServerStream{
+				recvErr: sentinelErr,
+			},
+			postMessageReceive: func(message any, err error) {
+				called = true
+
+				if diff := cmp.Diff(message, sentinelMessage); diff != "" {
+					t.Errorf("postMessageReceive called with unexpected message (-want +got):\n%s", diff)
+				}
+				if !errors.Is(err, sentinelErr) {
+					t.Errorf("got %v, want %v", err, sentinelErr)
+				}
+			},
+		}
+
+		receiveErr := stream.RecvMsg(sentinelMessage)
+		if !called {
+			t.Error("postMessageReceive not called")
+		}
+
+		if !errors.Is(receiveErr, sentinelErr) {
+			t.Errorf("got %v, want %v", receiveErr, sentinelErr)
+		}
+	})
+}
+
+func TestRequestSavingServerStream_InitialRequest(t *testing.T) {
+	// Setup: create a mock ServerStream that returns a sentinel error on SendMsg
+	sentinelErr := errors.New("receive error")
+	mockServerStream := &mockServerStream{
+		recvErr: sentinelErr,
+	}
+
+	// Setup: create a requestSavingServerStream with the mock ServerStream
+	stream := &requestSavingServerStream{
+		ServerStream: mockServerStream,
+	}
+
+	// Setup: create a sample proto.Message for the request
+	request := &newspb.BinaryAttachment{
+		Name: "sample_request",
+		Data: []byte("sample data"),
+	}
+
+	// Test: call RecvMsg with the request
+	err := stream.RecvMsg(request)
+
+	// Check: assert RecvMsg propagates the error
+	if !errors.Is(err, sentinelErr) {
+		t.Errorf("got %v, want %v", err, sentinelErr)
+	}
+
+	// Check: assert InitialRequest returns the request
+	if diff := cmp.Diff(request, *stream.InitialRequest(), cmpopts.IgnoreUnexported(newspb.BinaryAttachment{})); diff != "" {
+		t.Fatalf("InitialRequest() (-want +got):\n%s", diff)
+	}
+}
+
+// mockServerStream is a grpc.ServerStream that returns a given error on SendMsg and RecvMsg.
+type mockServerStream struct {
+	grpc.ServerStream
+	sendErr error
+	recvErr error
+}
+
+func (s *mockServerStream) SendMsg(any) error {
+	return s.sendErr
+}
+
+func (s *mockServerStream) RecvMsg(any) error {
 	return s.recvErr
 }
 

@@ -2066,6 +2066,12 @@ func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, er
 	}
 }
 
+func (s *Server) setLastOutput(ctx context.Context, name api.RepoName, output string) {
+	if err := s.DB.GitserverRepos().SetLastOutput(ctx, name, output); err != nil {
+		s.Logger.Warn("Setting last output in DB", log.Error(err))
+	}
+}
+
 func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus) (err error) {
 	return s.DB.GitserverRepos().SetCloneStatus(ctx, name, status, s.Hostname)
 }
@@ -2307,10 +2313,17 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	pr, pw := io.Pipe()
 	defer pw.Close()
 
+	redactor := newURLRedactor(remoteURL)
+
 	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
-	if output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw); err != nil {
-		return errors.Wrapf(err, "clone failed. Output: %s", string(output))
+	output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw)
+
+	// best-effort update the output of the clone
+	go s.setLastOutput(context.Background(), repo, redactor.redact(string(output)))
+
+	if err != nil {
+		return errors.Wrapf(err, "clone failed. Output: %s", redactor.redact(string(output)))
 	}
 
 	if testRepoCorrupter != nil {
@@ -2698,10 +2711,16 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
+	redactor := newURLRedactor(remoteURL)
+
 	output, err := syncer.Fetch(ctx, remoteURL, dir, revspec)
+
+	// best-effort update the output of the fetch
+	go s.setLastOutput(context.Background(), repo, redactor.redact(string(output)))
+
 	if err != nil {
 		if output != nil {
-			return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, newURLRedactor(remoteURL).redact(string(output)))
+			return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, redactor.redact(string(output)))
 		} else {
 			return errors.Wrapf(err, "failed to fetch repo %q", repo)
 		}
