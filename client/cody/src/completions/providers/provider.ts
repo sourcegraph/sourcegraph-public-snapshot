@@ -34,6 +34,7 @@ export interface ProviderOptions {
     responsePercentage: number
     prefixPercentage: number
     suffixPercentage: number
+    // Number of parallel LLM requests per completion.
     n: number
 }
 
