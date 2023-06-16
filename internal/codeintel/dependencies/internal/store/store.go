@@ -64,12 +64,12 @@ func (s *store) WithTransact(ctx context.Context, f func(tx Store) error) error 
 	})
 }
 
-type fuzziness string
+type fuzziness int
 
 const (
-	ExactMatch fuzziness = "exactomundo"
-	Wildcard   fuzziness = "wonky"
-	Regex      fuzziness = "notsoregular"
+	FuzzinessExactMatch fuzziness = iota
+	FuzzinessWildcard
+	FuzzinessRegex
 )
 
 // ListDependencyReposOpts are options for listing dependency repositories.
@@ -164,11 +164,11 @@ func makeListDependencyReposConds(opts ListDependencyReposOpts) *sqlf.Query {
 
 	if opts.Name != "" {
 		switch opts.Fuzziness {
-		case ExactMatch:
+		case FuzzinessExactMatch:
 			conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
-		case Wildcard:
+		case FuzzinessWildcard:
 			conds = append(conds, sqlf.Sprintf("name LIKE ('%%%%' || %s || '%%%%')", opts.Name))
-		case Regex:
+		case FuzzinessRegex:
 			conds = append(conds, sqlf.Sprintf("name ~ %s", opts.Name))
 		}
 	}

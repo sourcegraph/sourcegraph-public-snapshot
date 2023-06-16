@@ -74,9 +74,9 @@ func (s *Service) ListPackageRepoRefs(ctx context.Context, opts ListDependencyRe
 	}
 
 	if opts.ExactNameOnly {
-		storeopts.Fuzziness = store.ExactMatch
+		storeopts.Fuzziness = store.FuzzinessExactMatch
 	} else {
-		storeopts.Fuzziness = store.Wildcard
+		storeopts.Fuzziness = store.FuzzinessWildcard
 	}
 
 	return s.store.ListPackageRepoRefs(ctx, storeopts)
@@ -246,7 +246,7 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 				Scheme: filter.PackageScheme,
 				// we filter down here else we have to page through a potentially huge number of non-matching packages
 				Name:      reposource.PackageName(nameRegex),
-				Fuzziness: store.Regex,
+				Fuzziness: store.FuzzinessRegex,
 				// doing this so we don't have to load everything in at once
 				Limit:          500,
 				After:          lastID,
@@ -287,7 +287,7 @@ func (s *Service) PackagesOrVersionsMatchingFilter(ctx context.Context, filter s
 		pkgs, _, _, err := s.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
 			Scheme:    filter.PackageScheme,
 			Name:      reposource.PackageName(nameToMatch),
-			Fuzziness: store.ExactMatch,
+			Fuzziness: store.FuzzinessExactMatch,
 			// should only have 1 matching package ref
 			Limit:          1,
 			IncludeBlocked: true,
