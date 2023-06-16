@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -72,7 +71,6 @@ var changesetSpecColumns = SQLColumns{
 	"changeset_specs.commit_message",
 	"changeset_specs.commit_author_name",
 	"changeset_specs.commit_author_email",
-	"changeset_specs.commit_verification",
 	"changeset_specs.type",
 }
 
@@ -187,30 +185,6 @@ func (s *Store) updateChangesetSpecQuery(cs []int64, batchSpec int64) *sqlf.Quer
 		batchSpec,
 		pq.Array(cs),
 	)
-}
-
-// UpdateChangesetSpecCommitVerification records the commit verification object for a
-// commit to the ChangesetSepc if it was signed and verified.
-func (s *Store) UpdateChangesetSpecCommitVerification(ctx context.Context, specID int64, commit *github.RestCommit) (err error) {
-	ctx, _, endObservation := s.operations.updateChangesetSpecCommitVerification.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("specID", int(specID)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	var cv json.RawMessage
-	// Don't bother to record the result of verification if it's not even verified.
-	if commit.Verification.Verified {
-		cv, err = jsonbColumn(commit.Verification)
-	} else {
-		cv, err = jsonbColumn(nil)
-	}
-
-	if err != nil {
-		return err
-	}
-
-	q := sqlf.Sprintf("UPDATE changeset_specs SET commit_verification = %s WHERE id = %s", cv, specID)
-	return s.Exec(ctx, q)
 }
 
 // DeleteChangesetSpec deletes the ChangesetSpec with the given ID.
@@ -565,7 +539,6 @@ func deleteChangesetSpecsQuery(opts *DeleteChangesetSpecsOpts) *sqlf.Query {
 func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 	var published []byte
 	var typ string
-	var commitVerification json.RawMessage
 
 	err := s.Scan(
 		&c.ID,
@@ -589,7 +562,6 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 		&dbutil.NullString{S: &c.CommitMessage},
 		&dbutil.NullString{S: &c.CommitAuthorName},
 		&dbutil.NullString{S: &c.CommitAuthorEmail},
-		&commitVerification,
 		&typ,
 	)
 	if err != nil {
@@ -597,16 +569,6 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 	}
 
 	c.Type = btypes.ChangesetSpecType(typ)
-
-	var cv *github.Verification
-
-	if err = json.Unmarshal(commitVerification, &cv); err != nil {
-		return errors.Wrapf(err, "scanChangesetSpecs: failed to unmarshal commitVerification: %s", commitVerification)
-	}
-
-	if cv.Verified {
-		c.CommitVerification = cv
-	}
 
 	if len(published) != 0 {
 		if err := json.Unmarshal(published, &c.Published); err != nil {

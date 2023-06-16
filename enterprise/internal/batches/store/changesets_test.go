@@ -1594,6 +1594,62 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.C
 			t.Fatalf("invalid changeset: %s", diff)
 		}
 	})
+
+	t.Run("UpdateChangesetCommitVerification", func(t *testing.T) {
+		c1 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{Repo: repo.ID})
+
+		// Once with a verified commit
+		commitVerification := github.Verification{
+			Verified:  true,
+			Reason:    "valid",
+			Signature: "*********",
+			Payload:   "*********",
+		}
+		commit := github.RestCommit{
+			URL:          "https://api.github.com/repos/Birth-control-tech/birth-control-tech-BE/git/commits/dabd9bb07fdb5b580f168e942f2160b1719fc98f",
+			SHA:          "dabd9bb07fdb5b580f168e942f2160b1719fc98f",
+			NodeID:       "C_kwDOEW0OxtoAKGRhYmQ5YmIwN2ZkYjViNTgwZjE2OGU5NDJmMjE2MGIxNzE5ZmM5OGY",
+			Message:      "Append Hello World to all README.md files",
+			Verification: commitVerification,
+		}
+
+		c1.CommitVerification = &commitVerification
+		want := c1.Clone()
+
+		if err := s.UpdateChangesetCommitVerification(ctx, c1, &commit); err != nil {
+			t.Fatal(err)
+		}
+		have, err := s.GetChangesetByID(ctx, c1.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatalf("found diff with signed commit: %s", diff)
+		}
+
+		// Once with a commit that's not verified
+		commitVerification = github.Verification{
+			Verified: false,
+			Reason:   "unsigned",
+		}
+		commit.Verification = commitVerification
+		// A changeset spec with an unsigned commit should not have a commit
+		// verification set.
+		c1.CommitVerification = nil
+		want = c1.Clone()
+
+		if err := s.UpdateChangesetCommitVerification(ctx, c1, &commit); err != nil {
+			t.Fatal(err)
+		}
+		have, err = s.GetChangesetByID(ctx, c1.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(have, want); diff != "" {
+			t.Fatalf("found diff with unsigned commit: %s", diff)
+		}
+	})
 }
 
 func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {

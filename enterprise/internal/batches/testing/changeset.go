@@ -11,6 +11,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
@@ -30,6 +31,7 @@ type TestChangesetOpts struct {
 	ExternalState         btypes.ChangesetExternalState
 	ExternalReviewState   btypes.ChangesetReviewState
 	ExternalCheckState    btypes.ChangesetCheckState
+	CommitVerified        bool
 
 	DiffStatAdded   int32
 	DiffStatDeleted int32
@@ -124,6 +126,15 @@ func BuildChangeset(opts TestChangesetOpts) *btypes.Changeset {
 
 	if opts.ExternalForkName != "" {
 		changeset.ExternalForkName = opts.ExternalForkName
+	}
+
+	if opts.CommitVerified {
+		changeset.CommitVerification = &github.Verification{
+			Verified:  true,
+			Reason:    "valid",
+			Signature: "*********",
+			Payload:   "*********",
+		}
 	}
 
 	if opts.FailureMessage != "" {

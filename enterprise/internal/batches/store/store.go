@@ -223,7 +223,6 @@ type operations struct {
 
 	createChangesetSpec                      *observation.Operation
 	updateChangesetSpecBatchSpecID           *observation.Operation
-	updateChangesetSpecCommitVerification    *observation.Operation
 	deleteChangesetSpec                      *observation.Operation
 	countChangesetSpecs                      *observation.Operation
 	getChangesetSpec                         *observation.Operation
@@ -245,6 +244,7 @@ type operations struct {
 	updateChangesetBatchChanges       *observation.Operation
 	updateChangesetUIPublicationState *observation.Operation
 	updateChangesetCodeHostState      *observation.Operation
+	updateChangesetCommitVerification *observation.Operation
 	getChangesetExternalIDs           *observation.Operation
 	cancelQueuedBatchChangeChangesets *observation.Operation
 	enqueueChangesetsToClose          *observation.Operation
@@ -368,7 +368,6 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 			createChangesetSpec:                      op("CreateChangesetSpec"),
 			updateChangesetSpecBatchSpecID:           op("UpdateChangesetSpecBatchSpecID"),
-			updateChangesetSpecCommitVerification:    op("UpdateChangesetSpecCommitVerification"),
 			deleteChangesetSpec:                      op("DeleteChangesetSpec"),
 			countChangesetSpecs:                      op("CountChangesetSpecs"),
 			getChangesetSpec:                         op("GetChangesetSpec"),
@@ -390,6 +389,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 			updateChangesetBatchChanges:       op("UpdateChangesetBatchChanges"),
 			updateChangesetUIPublicationState: op("UpdateChangesetUIPublicationState"),
 			updateChangesetCodeHostState:      op("UpdateChangesetCodeHostState"),
+			updateChangesetCommitVerification: op("UpdateChangesetCommitVerification"),
 			getChangesetExternalIDs:           op("GetChangesetExternalIDs"),
 			cancelQueuedBatchChangeChangesets: op("CancelQueuedBatchChangeChangesets"),
 			enqueueChangesetsToClose:          op("EnqueueChangesetsToClose"),
