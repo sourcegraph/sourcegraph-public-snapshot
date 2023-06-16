@@ -42,7 +42,9 @@ func embeddingsConfigValidator(q conftypes.SiteConfigQuerier) Problems {
 	}
 
 	if embeddingsConf.Provider == "" {
-		problems = append(problems, "embeddings.provider is required")
+		if embeddingsConf.AccessToken != "" {
+			problems = append(problems, "Because 'embeddings.accessToken' is set, 'embeddings.provider' is required")
+		}
 	}
 
 	minimumIntervalString := embeddingsConf.MinimumInterval
