@@ -141,6 +141,7 @@ public class CodyCompletionsManager {
               // TODO: smarter logic around selecting the best completion item.
               Optional<InlineCompletionItem> maybeItem =
                   result.items.stream()
+                      .map(CodyCompletionsManager::removeUndesiredCharacters)
                       .map(
                           resultItem ->
                               postProcessInlineCompletionBasedOnDocumentContext(
@@ -165,6 +166,15 @@ public class CodyCompletionsManager {
                 e.printStackTrace();
               }
             });
+  }
+
+  public static InlineCompletionItem removeUndesiredCharacters(InlineCompletionItem item) {
+    // no zero-width spaces or line separator chars, pls
+    String newInsertText = item.insertText.replaceAll("[\u200b\u2028]", "");
+    int rangeDiff = item.insertText.length() - newInsertText.length();
+    Range newRange =
+        item.range.withEnd(item.range.end.withCharacter(item.range.end.character - rangeDiff));
+    return item.withRange(newRange).withInsertText(newInsertText);
   }
 
   private boolean isProjectAvailable(Project project) {
