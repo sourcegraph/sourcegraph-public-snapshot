@@ -178,13 +178,10 @@ export class AnthropicProvider extends Provider {
             topP: -1,
         }
 
-        // Issue request
-        const requests: Promise<CompletionResponse>[] = []
-        for (let i = 0; i < this.n; i++) {
-            requests.push(this.completionsClient.complete(params, abortSignal))
-        }
-
-        const responses = await Promise.all(requests)
+        // Issue requests
+        const responses = await Promise.all(
+            Array.from({ length: this.n }).map(() => this.completionsClient.complete(params, abortSignal))
+        )
 
         return responses.map(resp => ({
             prefix: this.prefix,
