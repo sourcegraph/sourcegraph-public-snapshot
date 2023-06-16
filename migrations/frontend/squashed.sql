@@ -1233,7 +1233,6 @@ CREATE TABLE changeset_specs (
     commit_author_name text,
     commit_author_email text,
     type text NOT NULL,
-    commit_verification jsonb DEFAULT '{}'::jsonb NOT NULL,
     CONSTRAINT changeset_specs_published_valid_values CHECK (((published = 'true'::text) OR (published = 'false'::text) OR (published = '"draft"'::text) OR (published IS NULL)))
 );
 
@@ -1281,6 +1280,7 @@ CREATE TABLE changesets (
     computed_state text NOT NULL,
     external_fork_name citext,
     previous_failure_message text,
+    commit_verification jsonb DEFAULT '{}'::jsonb NOT NULL,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),

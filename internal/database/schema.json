@@ -4521,19 +4521,6 @@
           "Comment": ""
         },
         {
-          "Name": "commit_verification",
-          "Index": 25,
-          "TypeName": "jsonb",
-          "IsNullable": false,
-          "Default": "'{}'::jsonb",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "created_at",
           "Index": 10,
           "TypeName": "timestamp with time zone",
@@ -4882,6 +4869,19 @@
           "TypeName": "boolean",
           "IsNullable": false,
           "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "commit_verification",
+          "Index": 45,
+          "TypeName": "jsonb",
+          "IsNullable": false,
+          "Default": "'{}'::jsonb",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",

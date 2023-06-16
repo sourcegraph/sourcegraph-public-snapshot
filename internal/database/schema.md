@@ -453,7 +453,6 @@ Foreign-key constraints:
  commit_author_name  | text                     |           |          | 
  commit_author_email | text                     |           |          | 
  type                | text                     |           | not null | 
- commit_verification | jsonb                    |           | not null | '{}'::jsonb
 Indexes:
     "changeset_specs_pkey" PRIMARY KEY, btree (id)
     "changeset_specs_unique_rand_id" UNIQUE, btree (rand_id)
@@ -521,6 +520,7 @@ Referenced by:
  computed_state           | text                                         |           | not null | 
  external_fork_name       | citext                                       |           |          | 
  previous_failure_message | text                                         |           |          | 
+ commit_verification      | jsonb                                        |           | not null | '{}'::jsonb
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
