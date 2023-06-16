@@ -13,6 +13,9 @@ const vscodeMock = {
         Automatic: 1,
     },
     workspace: {
+        asRelativePath(path: string) {
+            return path
+        },
         getConfiguration() {
             return {
                 get(key: string) {

@@ -27,3 +27,11 @@ ts_project(
         "//:node_modules/semver",
     ],
 )
+
+ts_project(
+    name = "scripts_tests",
+    testonly = True,
+    srcs = ["mock-server.ts"],
+    tsconfig = ":tsconfig",
+    deps = ["//:node_modules/@types/node"],
+)

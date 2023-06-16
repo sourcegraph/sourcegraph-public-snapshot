@@ -823,6 +823,15 @@
           "order": 99,
           "type": "string",
           "markdownDescription": "Regular expression to filter debug output. If empty, defaults to '.*', which prints all messages."
+        },
+        "cody.completions.advanced.provider": {
+          "type": "string",
+          "default": "anthropic",
+          "markdownDescription": "Overwrite the provider used for generating code completions. Only supported values at the moment are `anthropic` (default) or `unstable-codegen`."
+        },
+        "cody.completions.advanced.serverEndpoint": {
+          "type": "string",
+          "markdownDescription": "Overwrite the server endpoint used for generating code completions. This is only supported with the `unstable-codegen` provider right now."
         }
       }
     },

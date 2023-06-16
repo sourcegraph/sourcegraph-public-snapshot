@@ -1,4 +1,4 @@
-import { sliceUntilFirstNLinesOfSuffixMatch } from './provider'
+import { sliceUntilFirstNLinesOfSuffixMatch } from './utils'
 
 describe('sliceUntilFirstNLinesOfSuffixMatch', () => {
     it('returns the right text', () => {

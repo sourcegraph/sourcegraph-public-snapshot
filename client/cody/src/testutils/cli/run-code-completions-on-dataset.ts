@@ -10,16 +10,20 @@ import { URI } from 'vscode-uri'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { CodyCompletionItemProvider } from '../../completions'
-import { CompletionsDocumentProvider } from '../../completions/docprovider'
 import { History } from '../../completions/history'
+import { createProviderConfig } from '../../completions/providers/anthropic'
 import { getFullConfig } from '../../configuration'
 import { logger } from '../../log'
 import { InMemorySecretStorage } from '../../services/SecretStorageProvider'
 
 import { CURSOR, completionsDataset } from './completions-dataset'
 import { ENVIRONMENT_CONFIG } from './environment-config'
-import { webviewErrorMessager, findSubstringPosition } from './utils'
+import { findSubstringPosition } from './utils'
 import { TextDocument } from './vscode-text-document'
+
+const noopStatusBar = {
+    startLoading: () => () => {},
+} as any
 
 async function initCompletionsProvider(): Promise<CodyCompletionItemProvider> {
     const secretStorage = new InMemorySecretStorage()
@@ -34,23 +38,21 @@ async function initCompletionsProvider(): Promise<CodyCompletionItemProvider> {
         throw new Error('`cody.experimental.suggestions` is not true!')
     }
 
-    const docprovider = new CompletionsDocumentProvider()
     const history = new History()
 
-    // TODO: convert this args to an object for readability
-    const completionsProvider = new CodyCompletionItemProvider(
-        webviewErrorMessager,
+    const providerConfig = createProviderConfig({
         completionsClient,
-        docprovider,
+        contextWindowTokens: 2048,
+    })
+    const completionsProvider = new CodyCompletionItemProvider(
+        providerConfig,
         history,
+        noopStatusBar,
         null as any,
-        null as any,
-        2048,
-        4,
-        200,
-        0.6,
-        0.1,
-        true
+        undefined,
+        undefined,
+        undefined,
+        true // disable timeouts
     )
 
     return completionsProvider
