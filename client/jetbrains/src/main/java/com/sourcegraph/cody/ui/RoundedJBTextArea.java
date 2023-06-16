@@ -30,48 +30,52 @@ public class RoundedJBTextArea extends JBTextArea {
 
     updateRowHeightAndMaxSize();
 
-    getDocument().addDocumentListener(new DocumentListener() {
-      @Override
-      public void insertUpdate(DocumentEvent e) {
-        updateSize();
-      }
+    getDocument()
+        .addDocumentListener(
+            new DocumentListener() {
+              @Override
+              public void insertUpdate(DocumentEvent e) {
+                updateSize();
+              }
 
-      @Override
-      public void removeUpdate(DocumentEvent e) {
-        updateSize();
-      }
+              @Override
+              public void removeUpdate(DocumentEvent e) {
+                updateSize();
+              }
 
-      @Override
-      public void changedUpdate(DocumentEvent e) {
-        updateSize();
-      }
+              @Override
+              public void changedUpdate(DocumentEvent e) {
+                updateSize();
+              }
 
-      private void updateSize() {
-        int totalLines = 0;
-        try {
-          for (int i = 0; i < getLineCount(); i++) {
-            int lineStart = getLineStartOffset(i);
-            int lineEnd = getLineEndOffset(i);
-            String line = getDocument().getText(lineStart, lineEnd - lineStart);
-            int lineWidth = getFontMetrics(getFont()).stringWidth(line);
-            totalLines += lineWidth / getWidth() + 1;
-          }
-        } catch (BadLocationException e) {
-          e.printStackTrace();
-        }
-        totalLines = Math.max(Math.min(totalLines, maxRows), minRows);
-        setRows(totalLines);
+              private void updateSize() {
+                int totalLines = 0;
+                try {
+                  for (int i = 0; i < getLineCount(); i++) {
+                    int lineStart = getLineStartOffset(i);
+                    int lineEnd = getLineEndOffset(i);
+                    String line = getDocument().getText(lineStart, lineEnd - lineStart);
+                    int lineWidth = getFontMetrics(getFont()).stringWidth(line);
+                    totalLines += lineWidth / getWidth() + 1;
+                  }
+                } catch (BadLocationException e) {
+                  e.printStackTrace();
+                }
+                totalLines = Math.max(Math.min(totalLines, maxRows), minRows);
+                setRows(totalLines);
 
-        // Post a runnable to the EDT to refresh the parent after revalidate
-        ApplicationManager.getApplication().invokeLater(() -> {
-          revalidate();
-          Container parent = getParent();
-          if (parent != null) {
-            parent.repaint();
-          }
-        });
-      }
-    });
+                // Post a runnable to the EDT to refresh the parent after revalidate
+                ApplicationManager.getApplication()
+                    .invokeLater(
+                        () -> {
+                          revalidate();
+                          Container parent = getParent();
+                          if (parent != null) {
+                            parent.repaint();
+                          }
+                        });
+              }
+            });
   }
 
   @Override
