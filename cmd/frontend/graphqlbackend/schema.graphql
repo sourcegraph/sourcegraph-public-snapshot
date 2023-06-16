@@ -5520,6 +5520,10 @@ interface File2 {
     """
     canonicalURL: String!
     """
+    The URL to this file using the changelist ID if this file is inside a perforce depot.
+    """
+    changelistURL: String
+    """
     The URLs to this file on external services.
     """
     externalURLs: [ExternalLink!]!
@@ -5618,6 +5622,10 @@ type VirtualFile implements File2 {
     Not implemented.
     """
     canonicalURL: String!
+    """
+    Not impleemented.
+    """
+    changelistURL: String
     """
     Not implemented.
     """
@@ -5751,6 +5759,12 @@ type GitBlob implements TreeEntry & File2 {
     The canonical URL to this blob (using an immutable revision specifier).
     """
     canonicalURL: String!
+
+    """
+    The URL to this file using the changelist ID if this file is inside a perforce depot.
+    """
+    changelistURL: String
+
     """
     The URLs to this blob on its repository's external services.
     """
