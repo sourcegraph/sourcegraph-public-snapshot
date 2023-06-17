@@ -1,6 +1,6 @@
 import { Completion } from '..'
 import { logger } from '../../log'
-// import { ReferenceSnippet } from '../context'
+import { ReferenceSnippet } from '../context'
 import { isAbortError } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
@@ -32,7 +32,8 @@ export class UnstableCodeGenProvider extends Provider {
             // divide it into two different batches.
             batch_size: makeEven(4),
             // TODO: Figure out the exact format to attach context
-            context: '', // prepareContext(this.snippets, this.fileName),
+            context: JSON.stringify(prepareContext(this.snippets, this.fileName)),
+            completion_type: 'automatic',
         }
 
         const log = logger.startCompletion({
@@ -99,37 +100,37 @@ function makeEven(number: number): number {
     return number
 }
 
-// interface Context {
-//     current_file_path: string
-//     windows: {
-//         file_path: string
-//         text: string
-//         similarity: number
-//     }[]
-// }
-//
-// function prepareContext(snippets: ReferenceSnippet[], fileName: string): Context {
-//     const windows: Context['windows'] = []
-//
-//     // the model expects a similarly to rank the order and priority to insert
-//     // snippets. Since we already have ranked results and do not expose the
-//     // score, we can create an artificial score for simplicity.
-//     let similarity = 0.5
-//     for (const snippet of snippets) {
-//         // Slightly decrease similarity between subsequent windows
-//         similarity *= 0.99
-//         windows.push({
-//             file_path: snippet.fileName,
-//             text: snippet.content,
-//             similarity,
-//         })
-//     }
-//
-//     return {
-//         current_file_path: fileName,
-//         windows,
-//     }
-// }
+interface Context {
+    current_file_path: string
+    windows: {
+        file_path: string
+        text: string
+        similarity: number
+    }[]
+}
+
+function prepareContext(snippets: ReferenceSnippet[], fileName: string): Context {
+    const windows: Context['windows'] = []
+
+    // the model expects a similarly to rank the order and priority to insert
+    // snippets. Since we already have ranked results and do not expose the
+    // score, we can create an artificial score for simplicity.
+    let similarity = 0.5
+    for (const snippet of snippets) {
+        // Slightly decrease similarity between subsequent windows
+        similarity *= 0.99
+        windows.push({
+            file_path: snippet.fileName,
+            text: snippet.content,
+            similarity,
+        })
+    }
+
+    return {
+        current_file_path: fileName,
+        windows,
+    }
+}
 
 export function createProviderConfig(unstableCodeGenOptions: UnstableCodeGenOptions): ProviderConfig {
     const contextWindowChars = 8_000 // ~ 2k token limit
