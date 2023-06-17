@@ -16,7 +16,7 @@ def server_integration_test(name, port, runner_src, **kwargs):
     args = ["$(location //enterprise/cmd/server:image_tarball)", "server:candidate"] + args
 
     # Explicitly define the port, needs to be different for each test so we can run them concurrently.
-    env.append("PORT", port)
+    env["PORT"] = port
 
     # These tests are making network calls to the running server image, so we need the network.
     tags.append("requires-network")
@@ -30,5 +30,7 @@ def server_integration_test(name, port, runner_src, **kwargs):
         args = args,
         data = data,
         env = env,
-        env_inherit = env_inherit
+        env_inherit = env_inherit,
+        deps = deps,
+        tags = tags,
     )

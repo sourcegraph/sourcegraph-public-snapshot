@@ -2,7 +2,6 @@ load(":defs.bzl", "server_integration_test")
 
 server_integration_test(
     name = "e2e_test",
-    runner_src = ":e2e_test.sh",
     args = [
         "$(location //client/web/src/end-to-end:e2e)",
         "$(rootpath //:mocha_config)",
@@ -37,12 +36,12 @@ server_integration_test(
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
     ],
-    port = 7080,
+    port = "7080",
+    runner_src = ":e2e_test.sh",
 )
 
 server_integration_test(
     name = "backend_integration_test",
-    runner_src = ":backend_integration_test.sh",
     args = [
         "$(location //dev/gqltest:gqltest_test)",  # actual test
         "$(location //dev/authtest:authtest_test)",  # actual test
@@ -71,12 +70,12 @@ server_integration_test(
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
     ],
-    port = 7081,
+    port = "7081",
+    runner_src = ":backend_integration_test.sh",
 )
 
 server_integration_test(
     name = "codeintel_integration_test",
-    runner_src = [":codeintel_integration_test.sh"],
     args = [
         "$(location //internal/cmd/init-sg)",
         "$(rlocationpath @src-cli-linux-amd64//:src-cli-linux-amd64)",
@@ -118,7 +117,8 @@ server_integration_test(
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
     ],
-    port = 7082,
+    port = "7082",
+    runner_src = ":codeintel_integration_test.sh",
     tags = [
         "manual",
     ],
