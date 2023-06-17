@@ -191,10 +191,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await this.executeRecipe(message.recipe)
                 break
             case 'auth':
+                // cody.auth.login or cody.auth.signout
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
                 break
             case 'settings': {
-                await this.login(message.serverEndpoint, message.accessToken)
+                await this.authProvider.auth(message.serverEndpoint, message.accessToken, this.config.customHeaders)
                 break
             }
             case 'insert':
@@ -311,7 +312,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                         authStatus.showInvalidAccessTokenError = true
                     }
                     debug('ChatViewProvider:onError:unauth', err, { verbose: { authStatus } })
-                    void this.sendLogin(authStatus)
+                    void this.authProvider.setAuthStatus(authStatus)
                     void this.clearAndRestartSession()
                 }
                 this.onCompletionEnd()
@@ -561,24 +562,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
-     * Save authStatus state to webview
+     * Save, verify, and share authStatus state with webview
      */
     public async sendLogin(authStatus: AuthStatus): Promise<void> {
         // activate extension when user has valid login
         await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
         await this.webview?.postMessage({ type: 'login', authStatus })
         this.sendEvent('auth', 'login')
-    }
-
-    public async login(endpoint: string, token: string): Promise<void> {
-        const config = {
-            serverEndpoint: endpoint,
-            accessToken: token,
-            customHeaders: this.config.customHeaders,
-        }
-        const authStatus = await this.authProvider.getAuthStatus(config)
-        await this.authProvider.storeAuthInfo(endpoint, token)
-        await this.sendLogin(authStatus)
     }
 
     /**
@@ -684,18 +674,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         const send = async (): Promise<void> => {
             // update codebase context on configuration change
             void this.updateCodebaseContext()
-            // check if new configuration change is valid or not
-            // log user out if config is invalid
-            const authStatus = await this.authProvider.getAuthStatus({
-                serverEndpoint: this.config.serverEndpoint,
-                accessToken: this.config.accessToken,
-                customHeaders: this.config.customHeaders,
-            })
+            // check if the new configuration change is valid or not
+            const userState = await this.authProvider.auth(
+                this.config.serverEndpoint,
+                this.config.accessToken,
+                this.config.customHeaders
+            )
+            const authStatus = userState.authStatus
             const localProcess = this.localAppDetector.getProcessInfo()
-            // Remove local app detector if user is logged in
-            if (isLoggedIn(authStatus)) {
-                this.localAppDetector.dispose()
-            }
             this.sendLocalAppState(localProcess.isAppInstalled)
             const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
                 ...localProcess,

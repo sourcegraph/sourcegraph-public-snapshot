@@ -5,6 +5,7 @@ export interface LoginMenuItem {
     label: string
     description: string
     totalSteps: number
+    uri: string
 }
 
 export interface LoginInput {
@@ -12,12 +13,15 @@ export interface LoginInput {
     token: string | null | undefined
 }
 
-export const QuickAuth = async (type: 'signin' | 'signout', historyItems: string[]): Promise<LoginMenuItem | null> => {
+export const AuthMenu = async (type: 'signin' | 'signout', historyItems: string[]): Promise<LoginMenuItem | null> => {
     // Create option items
     const isSignin = type === 'signin'
+    const icon = isSignin ? '$(sign-in) ' : '$(sign-out) '
     const history =
         historyItems?.length > 0
-            ? historyItems?.map((uri, i) => ({ id: uri, label: uri, description: i === 0 ? 'current' : '' })).reverse()
+            ? historyItems
+                  ?.map((uri, i) => ({ id: uri, label: `${icon} ${uri}`, description: i === 0 ? 'current' : '', uri }))
+                  .reverse()
             : ([] as LoginMenuItem[])
     const seperator = [{ label: 'Last connected...', kind: -1 }]
     const optionItems = isSignin ? [...LoginMenuOptionItems, ...seperator, ...history] : history
@@ -47,6 +51,7 @@ export const AuthMenuOptions = {
     signout: {
         title: 'Sign Out',
         placeHolder: 'Select an account to sign out',
+        ignoreFocusOut: true,
     },
 }
 

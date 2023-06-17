@@ -160,7 +160,6 @@ const register = async (
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             commentController.delete(thread)
         }),
-        vscode.commands.registerCommand('cody.recipe.file-touch', () => executeRecipe('file-touch', false)),
         // Tests
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (args: any[]) => {
@@ -170,9 +169,9 @@ const register = async (
         }),
         // Auth
         vscode.commands.registerCommand('cody.auth.verify', (state: AuthStatus) => chatProvider.sendLogin(state)),
-        vscode.commands.registerCommand('cody.auth.login', (endpoint: string) => authProvider.login(endpoint)),
+        vscode.commands.registerCommand('cody.auth.login', () => authProvider.login()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.logout()),
-        vscode.commands.registerCommand('cody.auth.switch', () => chatProvider.logout()),
+        vscode.commands.registerCommand('cody.auth.switch', () => authProvider.login()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         // Commands
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
@@ -206,16 +205,14 @@ const register = async (
         vscode.commands.registerCommand('cody.recipe.improve-variable-names', () =>
             executeRecipe('improve-variable-names')
         ),
+        vscode.commands.registerCommand('cody.recipe.file-touch', () => executeRecipe('file-touch', false)),
         vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
         vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
         vscode.commands.registerCommand('cody.recipe.optimize-code', () => executeRecipe('optimize-code')),
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
-                const authStatus = await authProvider.tokenCallbackHandler(uri, config.customHeaders)
-                if (authStatus) {
-                    await chatProvider.sendLogin(authStatus)
-                }
+                await authProvider.tokenCallbackHandler(uri, config.customHeaders)
             },
         }),
         statusBar,
