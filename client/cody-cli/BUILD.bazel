@@ -19,7 +19,8 @@ ts_config(
 )
 
 ts_project(
-    name = "cody-cli",
+    name = "cody-cli_tests",
+    testonly = True,
     srcs = [
         "src/app.ts",
         "src/completions.ts",
@@ -28,7 +29,6 @@ ts_project(
         "src/interactions.ts",
         "src/preamble.ts",
     ],
-    tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@sourcegraph/cody-shared",
         ":node_modules/@types/prompts",

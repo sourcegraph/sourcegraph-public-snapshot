@@ -16,22 +16,19 @@ ts_config(
     ],
 )
 
-ts_project(
-    name = "testing_lib",
-    srcs = [
-        "src/aria-asserts.ts",
-        "src/index.ts",
-    ],
-    tsconfig = ":tsconfig",
-    deps = [
-        "//:node_modules/@types/jest",  #keep
-    ],
-)
-
 npm_package(
     name = "testing_pkg",
     srcs = [
         "package.json",
         ":testing_lib",
+    ],
+)
+
+ts_project(
+    name = "testing_tests",
+    testonly = True,
+    srcs = [
+        "src/aria-asserts.ts",
+        "src/index.ts",
     ],
 )

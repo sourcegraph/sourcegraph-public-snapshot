@@ -101,11 +101,16 @@ ts_project(
 )
 
 ts_project(
-    name = "vscode",
+    name = "vscode_tests",
+    testonly = True,
     srcs = [
         "code-intel-extensions.json",
         "globals.d.ts",
         "package.json",
+        "scripts/build.ts",
+        "scripts/package.ts",
+        "scripts/publish.ts",
+        "scripts/release.ts",
         "src/backend/authenticatedUser.ts",
         "src/backend/blobContent.ts",
         "src/backend/eventLogger.ts",
@@ -196,37 +201,40 @@ ts_project(
         "src/webview/theming/monacoTheme.ts",
         "src/webview/theming/sourcegraphTheme.ts",
     ],
-    tsconfig = ":tsconfig",
-    # TODO(bazel): type-only #keep imports
     deps = [
         ":graphql_operations",
         ":module_style_typings",
         ":node_modules/@sourcegraph/branded",
-        ":node_modules/@sourcegraph/client-api",  #keep
-        ":node_modules/@sourcegraph/codeintellify",  #keep
+        ":node_modules/@sourcegraph/build-config",
+        ":node_modules/@sourcegraph/client-api",
+        ":node_modules/@sourcegraph/codeintellify",
         ":node_modules/@sourcegraph/common",
-        ":node_modules/@sourcegraph/extension-api-types",  #keep
+        ":node_modules/@sourcegraph/extension-api-types",
         ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/wildcard",
         "//:node_modules/@mdi/js",
         "//:node_modules/@reach/visually-hidden",
         "//:node_modules/@types/classnames",
+        "//:node_modules/@types/history",
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/node",
         "//:node_modules/@types/node-fetch",
         "//:node_modules/@types/react",
         "//:node_modules/@types/react-dom",
+        "//:node_modules/@types/semver",
+        "//:node_modules/@types/shelljs",
         "//:node_modules/@types/uuid",
         "//:node_modules/@types/vscode",
-        "//:node_modules/@types/vscode-webview",  #keep
         "//:node_modules/@vscode/webview-ui-toolkit",
-        "//:node_modules/agent-base",  #keep
+        "//:node_modules/agent-base",
         "//:node_modules/classnames",
         "//:node_modules/comlink",
         "//:node_modules/core-js",
+        "//:node_modules/esbuild",
         "//:node_modules/execa",
         "//:node_modules/graphql",
+        "//:node_modules/history",
         "//:node_modules/http-proxy-agent",
         "//:node_modules/https-proxy-agent",
         "//:node_modules/lodash",
@@ -237,10 +245,11 @@ ts_project(
         "//:node_modules/react-dom",
         "//:node_modules/react-router-dom",
         "//:node_modules/rxjs",
+        "//:node_modules/semver",
+        "//:node_modules/shelljs",
         "//:node_modules/use-deep-compare-effect",
+        "//:node_modules/utility-types",
         "//:node_modules/uuid",
         "//:node_modules/zustand",
-        "//client/common:common_lib",  #keep
-        "//client/shared:shared_lib",  #keep
     ],
 )

@@ -25,8 +25,17 @@ filegroup(
     srcs = glob(["**/*.css"]),
 )
 
+npm_package(
+    name = "cody-ui_pkg",
+    srcs = [
+        "package.json",
+        ":cody-ui_lib",
+    ],
+)
+
 ts_project(
-    name = "cody-ui_lib",
+    name = "cody-ui_tests",
+    testonly = True,
     srcs = [
         "src/Chat.tsx",
         "src/chat/BlinkingCursor.tsx",
@@ -47,27 +56,14 @@ ts_project(
         "src/utils/Icon.tsx",
         "src/utils/icons.tsx",
     ],
-    data = [
-        ":cody-ui_styles",
-    ],
-    tsconfig = ":tsconfig",
-    # TODO(bazel): "#keep"s required for type-only imports
     deps = [
         ":node_modules/@sourcegraph/cody-shared",
         ":node_modules/@sourcegraph/common",
         "//:node_modules/@mdi/js",
-        "//:node_modules/@storybook/react",  #keep
+        "//:node_modules/@storybook/react",
         "//:node_modules/@types/classnames",
         "//:node_modules/@types/react",
         "//:node_modules/classnames",
         "//:node_modules/react",
-    ],
-)
-
-npm_package(
-    name = "cody-ui_pkg",
-    srcs = [
-        "package.json",
-        ":cody-ui_lib",
     ],
 )

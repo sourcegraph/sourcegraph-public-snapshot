@@ -20,9 +20,19 @@ ts_config(
     ],
 )
 
-ts_project(
-    name = "cody-shared_lib",
+npm_package(
+    name = "cody-shared_pkg",
     srcs = [
+        "package.json",
+        ":cody-shared_lib",
+    ],
+)
+
+ts_project(
+    name = "cody-shared_tests",
+    testonly = True,
+    srcs = [
+        "src/chat/bot-response-multiplexer.test.ts",
         "src/chat/bot-response-multiplexer.ts",
         "src/chat/chat.ts",
         "src/chat/client.ts",
@@ -54,6 +64,7 @@ ts_project(
         "src/chat/transcript/index.ts",
         "src/chat/transcript/interaction.ts",
         "src/chat/transcript/messages.ts",
+        "src/chat/transcript/transcript.test.ts",
         "src/chat/useClient.ts",
         "src/chat/viewHelpers.ts",
         "src/codebase-context/index.ts",
@@ -65,7 +76,9 @@ ts_project(
         "src/embeddings/client.ts",
         "src/embeddings/index.ts",
         "src/guardrails/client.ts",
+        "src/guardrails/index.test.ts",
         "src/guardrails/index.ts",
+        "src/hallucinations-detector/index.test.ts",
         "src/hallucinations-detector/index.ts",
         "src/intent-detector/client.ts",
         "src/intent-detector/index.ts",
@@ -83,14 +96,15 @@ ts_project(
         "src/sourcegraph-api/graphql/index.ts",
         "src/sourcegraph-api/graphql/queries.ts",
         "src/sourcegraph-api/index.ts",
+        "src/sourcegraph-api/utils.test.ts",
         "src/sourcegraph-api/utils.ts",
         "src/telemetry/EventLogger.ts",
+        "src/test/mocks.ts",
         "src/unified-context/client.ts",
         "src/unified-context/index.ts",
         "src/utils.ts",
     ],
     tsconfig = ":tsconfig",
-    # TODO(bazel): "#keep"s required for type-only imports
     deps = [
         ":node_modules/@sourcegraph/common",
         ":node_modules/@sourcegraph/http-client",
@@ -101,36 +115,9 @@ ts_project(
         "//:node_modules/@types/marked",
         "//:node_modules/@types/node",
         "//:node_modules/@types/react",
-        "//:node_modules/@types/vscode",  #keep
         "//:node_modules/@vscode",
         "//:node_modules/isomorphic-fetch",
         "//:node_modules/marked",
         "//:node_modules/react",
-    ],
-)
-
-npm_package(
-    name = "cody-shared_pkg",
-    srcs = [
-        "package.json",
-        ":cody-shared_lib",
-    ],
-)
-
-ts_project(
-    name = "cody-shared_tests",
-    testonly = True,
-    srcs = [
-        "src/chat/bot-response-multiplexer.test.ts",
-        "src/chat/transcript/transcript.test.ts",
-        "src/guardrails/index.test.ts",
-        "src/hallucinations-detector/index.test.ts",
-        "src/sourcegraph-api/utils.test.ts",
-        "src/test/mocks.ts",
-    ],
-    tsconfig = ":tsconfig",
-    deps = [
-        ":cody-shared_lib",
-        "//:node_modules/@types/node",
     ],
 )

@@ -35,9 +35,11 @@ sass(
 )
 
 ts_project(
-    name = "storybook_lib",
+    name = "storybook_tests",
+    testonly = True,
     srcs = [
         "globals.d.ts",
+        "src/coverage.test.ts",
         "src/decorators/withChromaticThemes/ChromaticRoot/ChromaticRoot.tsx",
         "src/decorators/withChromaticThemes/ChromaticRoot/index.ts",
         "src/decorators/withChromaticThemes/index.ts",
@@ -58,12 +60,15 @@ ts_project(
     deps = [
         ":module_style_typings",
         ":node_modules/@sourcegraph/build-config",
+        ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/wildcard",
         "//:node_modules/@storybook/addon-actions",
         "//:node_modules/@storybook/addon-console",
-        "//:node_modules/@storybook/addons",  #keep
-        "//:node_modules/@storybook/core-common",  #keep
-        "//:node_modules/@storybook/react",  #keep
+        "//:node_modules/@storybook/addon-storyshots",
+        "//:node_modules/@storybook/addon-storyshots-puppeteer",
+        "//:node_modules/@storybook/addons",
+        "//:node_modules/@storybook/core-common",
+        "//:node_modules/@storybook/react",
         "//:node_modules/@storybook/theming",
         "//:node_modules/@types/case-sensitive-paths-webpack-plugin",
         "//:node_modules/@types/classnames",
@@ -82,23 +87,9 @@ ts_project(
         "//:node_modules/signale",
         "//:node_modules/speed-measure-webpack-plugin",
         "//:node_modules/storybook-addon-designs",
+        "//:node_modules/url",
         "//:node_modules/webpack",
         "//:node_modules/webpack-manifest-plugin",
-    ],
-)
-
-ts_project(
-    name = "storybook_tests",
-    testonly = True,
-    srcs = ["src/coverage.test.ts"],
-    tsconfig = ":tsconfig",
-    # TODO(bazel): "#keep"s required for type-only imports
-    deps = [
-        ":node_modules/@sourcegraph/shared",
-        "//:node_modules/@storybook/addon-storyshots",
-        "//:node_modules/@storybook/addon-storyshots-puppeteer",
-        "//:node_modules/@types/node",
-        "//:node_modules/url",
     ],
 )
 
@@ -106,7 +97,6 @@ npm_package(
     name = "storybook_pkg",
     srcs = [
         "package.json",
-        ":module_styles",  #keep
         ":storybook_lib",
     ],
 )

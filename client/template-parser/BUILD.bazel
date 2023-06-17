@@ -17,28 +17,20 @@ ts_config(
 )
 
 ts_project(
-    name = "template-parser_lib",
+    name = "template-parser_tests",
+    testonly = True,
     srcs = [
+        "src/expr/evaluator.test.ts",
         "src/expr/evaluator.ts",
         "src/expr/index.ts",
+        "src/expr/lexer.test.ts",
         "src/expr/lexer.ts",
+        "src/expr/parser.test.ts",
         "src/expr/parser.ts",
         "src/index.ts",
         "src/types.ts",
     ],
     tsconfig = ":tsconfig",
-)
-
-ts_project(
-    name = "template-parser_tests",
-    testonly = True,
-    srcs = [
-        "src/expr/evaluator.test.ts",
-        "src/expr/lexer.test.ts",
-        "src/expr/parser.test.ts",
-    ],
-    tsconfig = ":tsconfig",
-    deps = [":template-parser_lib"],
 )
 
 npm_package(

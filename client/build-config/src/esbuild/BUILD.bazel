@@ -1,5 +1,7 @@
 # TODO(bazel): esbuild build disabled, mocked for now
 
+# gazelle:js disabled
+
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 
 genrule(

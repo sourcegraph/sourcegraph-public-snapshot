@@ -18,12 +18,14 @@ ts_config(
 )
 
 ts_project(
-    name = "observability-server",
+    name = "observability-server_tests",
+    testonly = True,
     srcs = [
         "src/constants.ts",
         "src/honeycomb/clone-boards.ts",
         "src/libhoney.d.ts",
         "src/sdk.ts",
+        "src/webBundleSize/getBundleSizeStats.test.ts",
         "src/webBundleSize/getBundleSizeStats.ts",
         "src/webBundleSize/index.ts",
     ],
@@ -42,17 +44,6 @@ ts_project(
         "//:node_modules/lodash",
         "//:node_modules/node-fetch",
         "//:node_modules/signale",
-    ],
-)
-
-ts_project(
-    name = "observability-server_tests",
-    testonly = True,
-    srcs = ["src/webBundleSize/getBundleSizeStats.test.ts"],
-    tsconfig = ":tsconfig",
-    deps = [
-        ":observability-server",
-        "//:node_modules/@types/node",
     ],
 )
 

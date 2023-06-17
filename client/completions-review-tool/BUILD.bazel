@@ -19,16 +19,17 @@ ts_config(
 )
 
 ts_project(
-    name = "completions-review-tool",
+    name = "completions-review-tool_tests",
+    testonly = True,
     srcs = [
         "globals.d.ts",
+        "remix.env.d.ts",
         "src/entry.client.tsx",
         "src/entry.server.tsx",
         "src/models/completions.server.ts",
         "src/root.tsx",
         "src/routes/_index.tsx",
     ],
-    tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@remix-run/css-bundle",
         ":node_modules/@remix-run/node",
@@ -38,7 +39,6 @@ ts_project(
         ":node_modules/react",
         ":node_modules/react-dom",
         ":node_modules/react-table",
-        "//:node_modules/@remix-run/server-runtime",  #keep
         "//:node_modules/@types/marked",
         "//:node_modules/@types/node",
         "//:node_modules/@types/react",

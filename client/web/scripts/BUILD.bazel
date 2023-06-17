@@ -9,7 +9,7 @@ ts_project(
     module = "commonjs",
     tsconfig = "//client/web:tsconfig",
     deps = [
-        "//:node_modules/@types/shelljs",  #keep
+        "//:node_modules/@types/shelljs",
         "//:node_modules/octokit",
         "//:node_modules/shelljs",
     ],
@@ -34,4 +34,14 @@ js_test(
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:bundle-enterprise)",
     },
     tags = ["manual"],
+)
+
+ts_project(
+    name = "scripts_tests",
+    testonly = True,
+    srcs = ["report-bundle-diff.ts"],
+    deps = [
+        "//:node_modules/@types/node",
+        "//:node_modules/octokit",
+    ],
 )

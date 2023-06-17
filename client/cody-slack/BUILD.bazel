@@ -20,38 +20,6 @@ ts_config(
     ],
 )
 
-ts_project(
-    name = "cody-slack",
-    srcs = [
-        "src/app.ts",
-        "src/constants.ts",
-        "src/mention-handler.ts",
-        "src/services/codebase-context.ts",
-        "src/services/github-client.ts",
-        "src/services/local-vector-store.ts",
-        "src/services/openai-completions-client.ts",
-        "src/services/sourcegraph-client.ts",
-        "src/services/stream-completions.ts",
-        "src/slack/helpers.ts",
-        "src/slack/init.ts",
-        "src/slack/message-interaction.ts",
-        "src/slack/preamble.ts",
-    ],
-    tsconfig = ":tsconfig",
-    deps = [
-        ":node_modules/@slack/bolt",
-        ":node_modules/@slack/web-api",
-        ":node_modules/@sourcegraph/cody-shared",
-        ":node_modules/langchain",
-        ":node_modules/openai",
-        ":node_modules/slackify-markdown",
-        "//:node_modules/@types/lodash",
-        "//:node_modules/envalid",
-        "//:node_modules/lodash",
-        "//:node_modules/octokit",
-    ],
-)
-
 copy_to_bin(
     name = "package_json_prod",
     srcs = ["package/package.json"],
@@ -71,4 +39,37 @@ esbuild(
     sourcemap = "linked",
     target = "node16",
     deps = [":cody-slack"],
+)
+
+ts_project(
+    name = "cody-slack_tests",
+    testonly = True,
+    srcs = [
+        "src/app.ts",
+        "src/constants.ts",
+        "src/mention-handler.ts",
+        "src/services/codebase-context.ts",
+        "src/services/github-client.ts",
+        "src/services/local-vector-store.ts",
+        "src/services/openai-completions-client.ts",
+        "src/services/sourcegraph-client.ts",
+        "src/services/stream-completions.ts",
+        "src/slack/helpers.ts",
+        "src/slack/init.ts",
+        "src/slack/message-interaction.ts",
+        "src/slack/preamble.ts",
+    ],
+    deps = [
+        ":node_modules/@slack/bolt",
+        ":node_modules/@slack/web-api",
+        ":node_modules/@sourcegraph/cody-shared",
+        ":node_modules/langchain",
+        ":node_modules/openai",
+        ":node_modules/slackify-markdown",
+        "//:node_modules/@types/lodash",
+        "//:node_modules/@types/node",
+        "//:node_modules/envalid",
+        "//:node_modules/lodash",
+        "//:node_modules/octokit",
+    ],
 )

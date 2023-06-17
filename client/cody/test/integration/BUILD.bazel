@@ -40,7 +40,7 @@ ts_project(
         "//:node_modules/@vscode/test-electron",
         "//:node_modules/glob",
         "//:node_modules/mocha",
-        "//client/cody",
         "//client/cody:cody_tests",
+        "//client/cody:node_modules/@sourcegraph/cody-shared",
     ],
 )

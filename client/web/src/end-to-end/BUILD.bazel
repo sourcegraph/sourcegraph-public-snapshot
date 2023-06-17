@@ -19,37 +19,25 @@ ts_config(
 )
 
 ts_project(
-    name = "end-to-end",
-    srcs = [
-        "utils/cloneRepos.ts",
-        "utils/initEndToEndTest.ts",
-    ],
-    tsconfig = ":tsconfig",
-    use_preset_env = False,
-    deps = [
-        "//:node_modules/@types/mockdate",
-        "//:node_modules/mockdate",
-        "//client/web:node_modules/@sourcegraph/shared",
-    ],
-)
-
-ts_project(
     name = "end-to-end_tests",
     testonly = True,
     srcs = [
         "code-intel/repository-component.test.ts",
         "frontend-platform/site-admin.test.ts",
         "frontend-platform/theme-switcher.test.ts",
+        "utils/cloneRepos.ts",
+        "utils/initEndToEndTest.ts",
     ],
     tsconfig = ":tsconfig",
     use_preset_env = False,
     deps = [
-        ":end-to-end",
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/mocha",
+        "//:node_modules/@types/mockdate",
         "//:node_modules/expect",
         "//:node_modules/lodash",
         "//:node_modules/mocha",
+        "//:node_modules/mockdate",
         "//client/web:node_modules/@sourcegraph/shared",
     ],
 )

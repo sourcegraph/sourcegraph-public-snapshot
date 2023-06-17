@@ -17,8 +17,17 @@ ts_config(
     ],
 )
 
+npm_package(
+    name = "observability-client_pkg",
+    srcs = [
+        "package.json",
+        ":observability-client_lib",
+    ],
+)
+
 ts_project(
-    name = "observability-client_lib",
+    name = "observability-client_tests",
+    testonly = True,
     srcs = [
         "src/constants.ts",
         "src/exporters/consoleBatchSpanExporter.ts",
@@ -35,6 +44,7 @@ ts_project(
         "src/react/constants.ts",
         "src/react/index.ts",
         "src/react/useCurrentSpan.ts",
+        "src/sdk/__tests__/getTracingUrl.test.ts",
         "src/sdk/createActiveSpan.ts",
         "src/sdk/createFinishedSpan.ts",
         "src/sdk/getTracingUrl.ts",
@@ -58,9 +68,7 @@ ts_project(
         ":node_modules/@sourcegraph/common",
         "//:node_modules/@opentelemetry/api",
         "//:node_modules/@opentelemetry/core",
-        "//:node_modules/@opentelemetry/exporter-trace-otlp-http",
         "//:node_modules/@opentelemetry/instrumentation",
-        "//:node_modules/@opentelemetry/resources",
         "//:node_modules/@opentelemetry/sdk-trace-base",
         "//:node_modules/@opentelemetry/sdk-trace-web",
         "//:node_modules/@opentelemetry/semantic-conventions",
@@ -70,22 +78,6 @@ ts_project(
         "//:node_modules/lodash",
         "//:node_modules/react",
     ],
-)
-
-npm_package(
-    name = "observability-client_pkg",
-    srcs = [
-        "package.json",
-        ":observability-client_lib",
-    ],
-)
-
-ts_project(
-    name = "observability-client_tests",
-    testonly = True,
-    srcs = ["src/sdk/__tests__/getTracingUrl.test.ts"],
-    tsconfig = ":tsconfig",
-    deps = [":observability-client_lib"],
 )
 
 jest_test(
