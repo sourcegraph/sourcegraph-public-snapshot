@@ -1,48 +1,47 @@
 load(":defs.bzl", "server_integration_test")
 
 server_integration_test(
-  name = "e2e_test",
-  port = 7080,
-  srcs = [":e2e_test.sh"],
-  args = [
-    "$(location //client/web/src/end-to-end:e2e)",
-    "$(rootpath //:mocha_config)",
-    "'$(rootpath //client/web/src/end-to-end:testing_e2e_bundle)/**/*.test.js'",
-  ],
-  data = [
-    "//:mocha_config",
-    "//client/web/src/end-to-end:e2e",
-    "//client/web/src/end-to-end:testing_e2e_bundle",
-  ],
-  env = {
-    "SG_FEATURE_FLAG_GRPC": "false",
-    "TEST_USER_EMAIL": "test@sourcegraph.com",
-    "TEST_USER_PASSWORD": "supersecurepassword",
-    "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
-    "NO_CLEANUP": "false",
-    "KEEP_BROWSER": "false",
-    "DEVTOOLS": "false",
-    "BROWSER": "chrome",
-    "WINDOW_WIDTH": "1280",
-    "WINDOW_HEIGHT": "1024",
-    "LOG_BROWSER_CONSOLE": "false",
-    # Enable findDom on CodeMirror
-    "INTEGRATION_TESTS": "true",
-  },
-  env_inherit = [
-    "DISPLAY",
-    "E2E_HEADLESS",
-    "E2E_SOURCEGRAPH_BASE_URL",
-    "GHE_GITHUB_TOKEN",
-    "GH_TOKEN",
-    "SOURCEGRAPH_LICENSE_GENERATION_KEY",
-    "SOURCEGRAPH_LICENSE_KEY",
-  ],
+    name = "e2e_test",
+    srcs = [":e2e_test.sh"],
+    args = [
+        "$(location //client/web/src/end-to-end:e2e)",
+        "$(rootpath //:mocha_config)",
+        "'$(rootpath //client/web/src/end-to-end:testing_e2e_bundle)/**/*.test.js'",
+    ],
+    data = [
+        "//:mocha_config",
+        "//client/web/src/end-to-end:e2e",
+        "//client/web/src/end-to-end:testing_e2e_bundle",
+    ],
+    env = {
+        "SG_FEATURE_FLAG_GRPC": "false",
+        "TEST_USER_EMAIL": "test@sourcegraph.com",
+        "TEST_USER_PASSWORD": "supersecurepassword",
+        "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
+        "NO_CLEANUP": "false",
+        "KEEP_BROWSER": "false",
+        "DEVTOOLS": "false",
+        "BROWSER": "chrome",
+        "WINDOW_WIDTH": "1280",
+        "WINDOW_HEIGHT": "1024",
+        "LOG_BROWSER_CONSOLE": "false",
+        # Enable findDom on CodeMirror
+        "INTEGRATION_TESTS": "true",
+    },
+    env_inherit = [
+        "DISPLAY",
+        "E2E_HEADLESS",
+        "E2E_SOURCEGRAPH_BASE_URL",
+        "GHE_GITHUB_TOKEN",
+        "GH_TOKEN",
+        "SOURCEGRAPH_LICENSE_GENERATION_KEY",
+        "SOURCEGRAPH_LICENSE_KEY",
+    ],
+    port = 7080,
 )
 
 server_integration_test(
     name = "backend_integration_test",
-    port = 7081,
     srcs = [":backend_integration_test.sh"],
     args = [
         "$(location //dev/gqltest:gqltest_test)",  # actual test
@@ -72,11 +71,11 @@ server_integration_test(
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
     ],
+    port = 7081,
 )
 
 server_integration_test(
     name = "codeintel_integration_test",
-    port = 7082,
     srcs = [":codeintel_integration_test.sh"],
     args = [
         "$(location //internal/cmd/init-sg)",
@@ -119,6 +118,7 @@ server_integration_test(
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
     ],
+    port = 7082,
     tags = [
         "manual",
     ],

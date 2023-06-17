@@ -16,6 +16,12 @@ cmd_query="$8"
 
 testdata_repos="$9"
 
+PORT="$PORT"
+if [ -n "$PORT" ]; then
+  echo "❌ PORT is undefined, aborting"
+  exit 10
+fi
+
 url="http://localhost:$PORT"
 
 SOURCEGRAPH_BASE_URL="$url"

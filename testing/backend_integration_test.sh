@@ -9,6 +9,11 @@ image_name="$2"
 gqltest="$3"
 authtest="$4"
 
+PORT="$PORT"
+if [ -n "$PORT" ]; then
+  echo "❌ PORT is undefined, aborting"
+  exit 10
+fi
 url="http://localhost:$PORT"
 
 # Backend integration tests uses a specific GITHUB_TOKEN that is available as GHE_GITHUB_TOKEN
