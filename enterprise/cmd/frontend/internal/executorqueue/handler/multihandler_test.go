@@ -471,6 +471,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			},
 		},
 	}
+	realSelect := handler.DoSelectQueueForDequeueing
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			rcache.SetupForTest(t)
@@ -516,6 +517,8 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			}
 		})
 	}
+	// reset method to original for other tests
+	handler.DoSelectQueueForDequeueing = realSelect
 }
 
 func TestMultiHandler_HandleHeartbeat(t *testing.T) {
@@ -975,8 +978,8 @@ func TestMultiHandler_DiscardQueuesAtLimit(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		rcache.SetupForTest(t)
 		t.Run(tt.name, func(t *testing.T) {
+			rcache.SetupForTest(t)
 			for key, value := range tt.mockCacheEntries {
 				for i := 0; i < value; i++ {
 					// mock dequeues
