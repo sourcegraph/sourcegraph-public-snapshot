@@ -194,7 +194,7 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = React.mem
                         <Icon aria-label="Thumbs up" svgPath={mdiThumbUp} />
                     </Button>
                     <Button
-                        title="Thumbs up"
+                        title="Thumbs down"
                         className="ml-1 p-1"
                         type="button"
                         onClick={() => onFeedbackBtnSubmit('negative')}
