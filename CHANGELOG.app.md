@@ -15,6 +15,10 @@ All notable changes to the Cody app are documented in this file.
 
 ## Unreleased
 
+## v2023.6.2
+- Clear all data and reset everything in app to default settings https://github.com/sourcegraph/sourcegraph/pull/52726
+- Support for Intel Mac OS
+
 ## v2023.5.30
 
 - Users upgrading from the old Sourcegraph app version no longer need to delete directories / manually migrate.
