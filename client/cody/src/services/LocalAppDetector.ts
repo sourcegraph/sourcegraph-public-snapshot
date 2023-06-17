@@ -42,9 +42,10 @@ export class LocalAppDetector implements vscode.Disposable {
     private platformName: string
     private homeDir: string | undefined
 
+    // Check if the platform is supported and the user has a home directory
     private isSupported: boolean
     private isInstalled = false
-    private localAppMarkers: string[] | undefined
+    private localAppMarkers: string[]
 
     private onChange: OnChangeCallback
     private _watchers: vscode.Disposable[] = []
@@ -54,47 +55,35 @@ export class LocalAppDetector implements vscode.Disposable {
         this.platformName = process.platform
         this.arch = process.arch
         this.homeDir = process.env.HOME
-        this.localAppMarkers = LOCAL_APP_LOCATIONS[this.platformName]
-        // Only Mac Silicon (M1 chip) is supported
-        this.isSupported = this.platformName === 'darwin' && this.arch === 'arm64'
+        this.localAppMarkers = LOCAL_APP_LOCATIONS[this.platformName] || []
+        // Only Mac is supported for now
+        this.isSupported = this.platformName === 'darwin' && this.homeDir !== undefined
         this.start()
     }
 
     public async detect(): Promise<void> {
-        const startCondition = this.canStart()
-        if (!startCondition || !this.localAppMarkers) {
+        if (!this.isSupported) {
             return
         }
-if (Promise.any(this.localAppMarkers.map(marker => pathExists(expandHomeDir(marker))))) {
-  this.fire(true)
-}
-    }
-
-    private fire(condition: boolean): void {
-        const state = this.isInstalled || (condition && this.isSupported)
-        this.onChange(state)
-        this.isInstalled = state
+        if (await Promise.any(this.localAppMarkers.map(marker => pathExists(expandHomeDir(marker))))) {
+            this.isInstalled = true
+        }
+        this.fire()
     }
 
     public start(): void {
-        const markers = this.localAppMarkers
-        const startCondition = this.canStart()
-        if (!startCondition || !markers || !this.homeDir) {
+        if (this._watchers.length || !this.isSupported || !this.homeDir || this.isInstalled) {
             return
         }
         void this.detect()
+        const markers = this.localAppMarkers
         for (const marker of markers) {
-            const watchPattern = new vscode.RelativePattern(this.homeDir, `${marker}`)
+            const watchPattern = new vscode.RelativePattern(this.homeDir, marker)
             const watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
-            watcher.onDidChange(() => this.detect())
             watcher.onDidCreate(() => this.detect())
             watcher.onDidDelete(() => this.detect())
             this._watchers.push(watcher)
         }
-    }
-
-    private canStart(): boolean {
-        return this.isSupported && this.homeDir
     }
 
     public getProcessInfo(): LocalProcess {
@@ -106,8 +95,11 @@ if (Promise.any(this.localAppMarkers.map(marker => pathExists(expandHomeDir(mark
         }
     }
 
-    public get isLocalAppInstalled(): boolean {
-        return this.isInstalled
+    private fire(): void {
+        this.onChange(this.isInstalled)
+        if (this.isInstalled) {
+            this.dispose()
+        }
     }
 
     public dispose(): void {

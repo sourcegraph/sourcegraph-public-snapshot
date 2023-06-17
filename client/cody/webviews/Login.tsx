@@ -69,10 +69,16 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                 <section className={classNames(styles.section, isOSSupported ? styles.codyGradient : null)}>
                     <h2 className={styles.sectionHeader}>{isAppInstalled ? 'Connect to Cody App' : 'Get Started'}</h2>
                     <p className={styles.openMessage}>{isAppInstalled ? messages.connectApp : messages.getStarted}</p>
-                    <ConnectApp isAppInstalled={isAppInstalled} vscodeAPI={vscodeAPI} isOSSupported={isOSSupported} />
+                    <ConnectApp
+                        isAppInstalled={isAppInstalled}
+                        vscodeAPI={vscodeAPI}
+                        isOSSupported={isOSSupported}
+                        appOS={appOS || ''}
+                        appArch={appArch || ''}
+                    />
                     {!isOSSupported && (
                         <small>
-                            Sorry, {appOS}-{appArch} is not yet supported.
+                            Sorry, {appOS} {appArch} is not yet supported.
                         </small>
                     )}
                 </section>

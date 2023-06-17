@@ -123,11 +123,8 @@ const register = async (
         })
     )
 
-    const executeRecipe = async (recipe: RecipeID, showTab = true): Promise<void> => {
-        if (showTab) {
-            await vscode.commands.executeCommand('cody.chat.focus')
-        }
-        await chatProvider.executeRecipe(recipe, '', showTab)
+    const executeRecipe = async (recipe: RecipeID, openChatView = true): Promise<void> => {
+        await chatProvider.executeRecipe(recipe, '', openChatView)
     }
 
     const webviewErrorMessager = async (error: string): Promise<void> => {
@@ -153,12 +150,6 @@ const register = async (
     const statusBar = createStatusBar()
 
     disposables.push(
-        vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
-            // Insert copiedText to the current cursor position
-            await vscode.commands.executeCommand('editor.action.insertSnippet', {
-                snippet: copiedText,
-            })
-        }),
         // Inline Assist Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
             const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
@@ -170,31 +161,71 @@ const register = async (
             commentController.delete(thread)
         }),
         vscode.commands.registerCommand('cody.recipe.file-touch', () => executeRecipe('file-touch', false)),
+        // Tests
         // Access token - this is only used in configuration tests
-        vscode.commands.registerCommand('cody.set-access-token', async (args: any[]) => {
+        vscode.commands.registerCommand('cody.test.token', async (args: any[]) => {
             if (args?.length && (args[0] as string)) {
                 await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, args[0])
             }
         }),
-        vscode.commands.registerCommand('cody.delete-access-token', async () => {
-            await chatProvider.logout()
-        }),
+        // Auth
         vscode.commands.registerCommand('cody.auth.verify', (state: AuthStatus) => chatProvider.sendLogin(state)),
         vscode.commands.registerCommand('cody.auth.login', (endpoint: string) => authProvider.login(endpoint)),
+        vscode.commands.registerCommand('cody.auth.signout', () => authProvider.logout()),
+        vscode.commands.registerCommand('cody.auth.switch', () => chatProvider.logout()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
-        vscode.commands.registerCommand('cody.clear-chat-history', async () => {
-            await chatProvider.clearHistory()
-        }),
         // Commands
-        vscode.commands.registerCommand('cody.welcome', () =>
-            vscode.commands.executeCommand('workbench.action.openWalkthrough', 'sourcegraph.cody-ai#welcome', false)
-        ),
-        vscode.commands.registerCommand('cody.feedback', () =>
-            vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(CODY_FEEDBACK_URL.href))
-        ),
+        vscode.commands.registerCommand('cody.interactive.clear', async () => {
+            await chatProvider.clearAndRestartSession()
+            chatProvider.setWebviewView('chat')
+        }),
+        vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
+            // Insert copiedText to the current cursor position
+            await vscode.commands.executeCommand('editor.action.insertSnippet', {
+                snippet: copiedText,
+            })
+        }),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings', () => chatProvider.setWebviewView('settings')),
         vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
+        vscode.commands.registerCommand('cody.history.clear', async () => {
+            await chatProvider.clearHistory()
+        }),
+        // Recipes
+        vscode.commands.registerCommand('cody.recipe.explain-code', () => executeRecipe('explain-code-detailed')),
+        vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
+            executeRecipe('explain-code-high-level')
+        ),
+        vscode.commands.registerCommand('cody.recipe.generate-unit-test', () => executeRecipe('generate-unit-test')),
+        vscode.commands.registerCommand('cody.recipe.generate-docstring', () => executeRecipe('generate-docstring')),
+        vscode.commands.registerCommand('cody.recipe.fixup', () => executeRecipe('fixup')),
+        vscode.commands.registerCommand('cody.recipe.translate-to-language', () =>
+            executeRecipe('translate-to-language')
+        ),
+        vscode.commands.registerCommand('cody.recipe.git-history', () => executeRecipe('git-history')),
+        vscode.commands.registerCommand('cody.recipe.improve-variable-names', () =>
+            executeRecipe('improve-variable-names')
+        ),
+        vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
+        vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
+        vscode.commands.registerCommand('cody.recipe.optimize-code', () => executeRecipe('optimize-code')),
+        // Register URI Handler (vscode://sourcegraph.cody-ai)
+        vscode.window.registerUriHandler({
+            handleUri: async (uri: vscode.Uri) => {
+                const authStatus = await authProvider.tokenCallbackHandler(uri, config.customHeaders)
+                if (authStatus) {
+                    await chatProvider.sendLogin(authStatus)
+                }
+            },
+        }),
+        statusBar,
+        // Walkthrough / Support
+        vscode.commands.registerCommand('cody.feedback', () =>
+            vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
+        ),
+        vscode.commands.registerCommand('cody.welcome', () =>
+            vscode.commands.executeCommand('workbench.action.openWalkthrough', 'sourcegraph.cody-ai#welcome', false)
+        ),
         vscode.commands.registerCommand('cody.walkthrough.showLogin', () =>
             vscode.commands.executeCommand('workbench.view.extension.cody')
         ),
@@ -216,42 +247,10 @@ const register = async (
                 query: 'cody.experimental.suggestions',
                 openToSide: true,
             })
-        }),
-        vscode.commands.registerCommand('cody.interactive.clear', async () => {
-            await chatProvider.clearAndRestartSession()
-            chatProvider.setWebviewView('chat')
-        }),
-        vscode.commands.registerCommand('cody.recipe.explain-code', () => executeRecipe('explain-code-detailed')),
-        vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
-            executeRecipe('explain-code-high-level')
-        ),
-        vscode.commands.registerCommand('cody.recipe.generate-unit-test', () => executeRecipe('generate-unit-test')),
-        vscode.commands.registerCommand('cody.recipe.generate-docstring', () => executeRecipe('generate-docstring')),
-        vscode.commands.registerCommand('cody.recipe.fixup', () => executeRecipe('fixup')),
-        vscode.commands.registerCommand('cody.recipe.translate-to-language', () =>
-            executeRecipe('translate-to-language')
-        ),
-        vscode.commands.registerCommand('cody.recipe.git-history', () => executeRecipe('git-history')),
-        vscode.commands.registerCommand('cody.recipe.improve-variable-names', () =>
-            executeRecipe('improve-variable-names')
-        ),
-        vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
-        vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
-        vscode.commands.registerCommand('cody.recipe.optimize-code', () => executeRecipe('optimize-code')),
-        // Register URI Handler (vscode://sourcegraph.cody-ai) for:
-        // - Deep linking into VS Code with Cody focused (e.g. from the App setup)
-        // - Resolving token sending back from sourcegraph.com and App
-        vscode.window.registerUriHandler({
-            handleUri: async (uri: vscode.Uri) => {
-                const authStatus = await authProvider.tokenCallbackHandler(uri, config.customHeaders)
-                if (authStatus) {
-                    await chatProvider.sendLogin(authStatus)
-                }
-            },
-        }),
-        statusBar
+        })
     )
 
+    // Register Cody Experimental Features
     if (initialConfig.experimentalSuggest) {
         // TODO(sqs): make this listen to config and not just use initialConfig
         const docprovider = new CompletionsDocumentProvider()

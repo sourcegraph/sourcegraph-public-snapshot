@@ -15,7 +15,7 @@ import {
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
 
-import { LoginMenuQuickPick, LoginStepInputBox } from './CodyMenus'
+import { QuickAuth, LoginStepInputBox } from './CodyMenus'
 import { LocalStorage } from './LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from './SecretStorageProvider'
 
@@ -36,7 +36,7 @@ export class AuthProvider {
 
     public async login(endpoint?: string): Promise<void> {
         this.setEndpoint(endpoint)
-        const item = await LoginMenuQuickPick(this.endpointHistory)
+        const item = await QuickAuth('signin', this.endpointHistory)
         if (!item) {
             return
         }
@@ -78,6 +78,11 @@ export class AuthProvider {
     }
 
     public async logout(): Promise<void> {
+        const quickPickItem = this.endpoint ? [`$(sign-out) ${this.endpoint}`] : []
+        const userChoice = await QuickAuth('signout', quickPickItem)
+        if (!userChoice) {
+            return
+        }
         await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
         if (this.endpoint) {
             await this.secretStorage.delete(this.endpoint)
@@ -126,7 +131,9 @@ export class AuthProvider {
         return isLoggedIn(authStatus)
     }
 
-    // For Uri Handler
+    // Register URI Handler (vscode://sourcegraph.cody-ai) for:
+    // - Deep linking into VS Code with Cody focused (e.g. from the App setup)
+    // - Resolving token sending back from sourcegraph.com and App
     public async tokenCallbackHandler(uri: vscode.Uri, customHeaders: {}): Promise<AuthStatus | null> {
         const params = new URLSearchParams(uri.query)
         const isApp = params.get('type') === 'app'
@@ -142,7 +149,7 @@ export class AuthProvider {
         const authStatus = await this.auth(endpoint, token, customHeaders)
         if (authStatus) {
             const actionButtonLabel = 'Get Started'
-            const successMessage = isApp ? 'Connected to Cody App' : 'Logged in to sourcegraph.com'
+            const successMessage = isApp ? 'Connected to Cody App' : 'Signed in to Sourcegraph.com'
             const action = await vscode.window.showInformationMessage(successMessage, actionButtonLabel)
             if (action === actionButtonLabel) {
                 await vscode.commands.executeCommand('cody.chat.focus')

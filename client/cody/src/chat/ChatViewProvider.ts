@@ -414,6 +414,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.transcript.addInteraction(interaction)
 
         if (showTab) {
+            await vscode.commands.executeCommand('cody.chat.focus')
             this.showTab('chat')
         }
 
@@ -712,7 +713,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
-     * Log Events
+     * Log Events - naming convention: source:feature:action
      */
     public sendEvent(event: string, value: string): void {
         const isPrivateInstance = new URL(this.config.serverEndpoint).href !== DOTCOM_URL.href

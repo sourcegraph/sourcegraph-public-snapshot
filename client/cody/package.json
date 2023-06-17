@@ -291,19 +291,20 @@
         "title": "Codebase Context Search"
       },
       {
-        "command": "cody.set-access-token",
+        "command": "cody.test.token",
         "category": "Cody",
         "title": "Set Access Token"
       },
       {
-        "command": "cody.delete-access-token",
+        "command": "cody.auth.signout",
         "category": "Cody",
-        "title": "Sign out"
+        "title": "Sign out...",
+        "icon": "$(sign-out)"
       },
       {
-        "command": "cody.clear-chat-history",
+        "command": "cody.auth.switch",
         "category": "Cody",
-        "title": "Clear chat history"
+        "title": "Switch Account..."
       },
       {
         "command": "cody.manual-completions",
@@ -526,7 +527,7 @@
           "when": "cody.activated"
         },
         {
-          "command": "cody.set-access-token",
+          "command": "cody.test.token",
           "when": "false"
         },
         {
@@ -668,14 +669,24 @@
           "group": "navigation@3"
         },
         {
-          "command": "cody.settings",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@4"
-        },
-        {
           "command": "cody.welcome",
           "when": "view == cody.chat",
           "group": "navigation@5"
+        },
+        {
+          "command": "cody.auth.signout",
+          "when": "view == cody.chat && cody.activated",
+          "group": "9_cody@2"
+        },
+        {
+          "command": "cody.auth.switch",
+          "when": "view == cody.chat && cody.activated",
+          "group": "9_cody@0"
+        },
+        {
+          "command": "cody.settings",
+          "when": "view == cody.chat && cody.activated",
+          "group": "8_cody@0"
         },
         {
           "command": "cody.fixup.apply-all",

@@ -64,13 +64,16 @@ export function newAuthStatus(
     if (!user) {
         return { ...unauthenticatedStatus, endpoint }
     }
-    const newAuthStatus = { ...defaultAuthStatus, endpoint }
+    const authStatus = { ...defaultAuthStatus, endpoint }
     // Set values and return early
-    newAuthStatus.authenticated = user
-    newAuthStatus.showInvalidAccessTokenError = !user
-    newAuthStatus.requiresVerifiedEmail = isDotComOrApp
-    newAuthStatus.hasVerifiedEmail = isDotComOrApp && isEmailVerified
-    newAuthStatus.siteHasCodyEnabled = isCodyEnabled
-    newAuthStatus.siteVersion = version
-    return newAuthStatus
+    authStatus.authenticated = user
+    authStatus.showInvalidAccessTokenError = !user
+    authStatus.requiresVerifiedEmail = isDotComOrApp
+    authStatus.hasVerifiedEmail = isDotComOrApp && isEmailVerified
+    authStatus.siteHasCodyEnabled = isCodyEnabled
+    authStatus.siteVersion = version
+    const isLoggedIn = authStatus.siteHasCodyEnabled && authStatus.authenticated
+    const isAllowed = authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true
+    authStatus.isLoggedIn = isLoggedIn && isAllowed
+    return authStatus
 }
