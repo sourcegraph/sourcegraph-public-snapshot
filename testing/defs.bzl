@@ -1,4 +1,7 @@
-def server_integration_test(name, port, srcs, **kwargs):
+def server_integration_test(name, port, runner_src, **kwargs):
+    if not port:
+        fail("port must be specified")
+
     args = kwargs.get("args", [])
     data = kwargs.get("data", [])
     env = kwargs.get("env", {})
@@ -23,7 +26,7 @@ def server_integration_test(name, port, srcs, **kwargs):
 
     native.sh_test(
         name = name,
-        srcs = srcs,
+        srcs = [runner_src],
         args = args,
         data = data,
         env = env,

@@ -2,7 +2,7 @@ load(":defs.bzl", "server_integration_test")
 
 server_integration_test(
     name = "e2e_test",
-    srcs = [":e2e_test.sh"],
+    runner_src = ":e2e_test.sh",
     args = [
         "$(location //client/web/src/end-to-end:e2e)",
         "$(rootpath //:mocha_config)",
@@ -42,7 +42,7 @@ server_integration_test(
 
 server_integration_test(
     name = "backend_integration_test",
-    srcs = [":backend_integration_test.sh"],
+    runner_src = ":backend_integration_test.sh",
     args = [
         "$(location //dev/gqltest:gqltest_test)",  # actual test
         "$(location //dev/authtest:authtest_test)",  # actual test
@@ -76,7 +76,7 @@ server_integration_test(
 
 server_integration_test(
     name = "codeintel_integration_test",
-    srcs = [":codeintel_integration_test.sh"],
+    runner_src = [":codeintel_integration_test.sh"],
     args = [
         "$(location //internal/cmd/init-sg)",
         "$(rlocationpath @src-cli-linux-amd64//:src-cli-linux-amd64)",

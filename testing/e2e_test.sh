@@ -9,16 +9,6 @@ e2e_test="$3"
 mocha_config="$4"
 files="$5"
 
-PORT="$PORT"
-if [ -n "$PORT" ]; then
-  echo "❌ PORT is undefined, aborting".
-  exit 10PORT="$PORT"
-if [ -n "$PORT" ]; then
-  echo "❌ PORT is undefined, aborting"
-  exit 10
-fi
-
-fi
 url="http://localhost:$PORT"
 
 SOURCEGRAPH_BASE_URL="$url"
