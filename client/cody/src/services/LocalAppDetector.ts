@@ -7,12 +7,28 @@ export interface LocalProcess {
     isAppInstalled: boolean
 }
 
-const LOCAL_APP_LOCATIONS: { [key: string]: string[] } = {
+export interface LocalAppPaths {
+    [os: string]: {
+        dir: string
+        file: string
+    }[]
+}
+
+const LOCAL_APP_LOCATIONS: LocalAppPaths = {
     // Only Apple silicon is supported
     darwin: [
-        '~/Library/Application Support/com.sourcegraph.cody',
-        '/Applications/Sourcegraph.app',
-        '/Applications/Cody.app',
+        {
+            dir: '/Applications/',
+            file: 'Sourcegraph.app',
+        },
+        {
+            dir: '/Applications/',
+            file: 'Cody.app',
+        },
+        {
+            dir: '~/Library/Application Support/com.sourcegraph.cody/',
+            file: 'site.config.json',
+        },
     ],
 }
 
@@ -23,13 +39,6 @@ async function pathExists(path: string): Promise<boolean> {
     } catch {
         return false
     }
-}
-
-function expandHomeDir(path: string): string {
-    if (path.startsWith('~/')) {
-        return path.replace('~', process.env.HOME || '')
-    }
-    return path
 }
 
 type OnChangeCallback = (value: boolean) => void
@@ -45,7 +54,8 @@ export class LocalAppDetector implements vscode.Disposable {
     // Check if the platform is supported and the user has a home directory
     private isSupported: boolean
     private isInstalled = false
-    private localAppMarkers: string[]
+    private localAppMarkers
+    private appFsPaths: string[] = []
 
     private onChange: OnChangeCallback
     private _watchers: vscode.Disposable[] = []
@@ -55,34 +65,37 @@ export class LocalAppDetector implements vscode.Disposable {
         this.platformName = process.platform
         this.arch = process.arch
         this.homeDir = process.env.HOME
-        this.localAppMarkers = LOCAL_APP_LOCATIONS[this.platformName] || []
+        this.localAppMarkers = LOCAL_APP_LOCATIONS[this.platformName]
         // Only Mac is supported for now
         this.isSupported = this.platformName === 'darwin' && this.homeDir !== undefined
-        this.start()
+        this.init()
     }
 
-    public async detect(): Promise<void> {
-        if (!this.isSupported) {
-            return
-        }
-        if (await Promise.any(this.localAppMarkers.map(marker => pathExists(expandHomeDir(marker))))) {
-            this.isInstalled = true
-        }
-        this.fire()
-    }
-
-    public start(): void {
+    private init(): void {
+        // if conditions are not met, this will be a noop
         if (this._watchers.length || !this.isSupported || !this.homeDir || this.isInstalled) {
             return
         }
-        void this.detect()
-        const markers = this.localAppMarkers
-        for (const marker of markers) {
-            const watchPattern = new vscode.RelativePattern(this.homeDir, marker)
+        // Create filePaths and file watchers
+        const makers = this.localAppMarkers
+        for (const maker of makers) {
+            const dirPath = this.expandHomeDir(maker.dir)
+            const dirUri = vscode.Uri.file(dirPath)
+            const watchPattern = new vscode.RelativePattern(dirUri, maker.file)
             const watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
-            watcher.onDidCreate(() => this.detect())
-            watcher.onDidDelete(() => this.detect())
+            watcher.onDidChange(() => this.detect())
             this._watchers.push(watcher)
+            this.appFsPaths.push(dirPath + maker.file)
+        }
+        void this.detect()
+    }
+
+    private async detect(): Promise<void> {
+        if (!this.isSupported || !this.appFsPaths.length) {
+            return
+        }
+        if (await Promise.any(this.appFsPaths.map(file => pathExists(file)))) {
+            this.fire()
         }
     }
 
@@ -95,11 +108,19 @@ export class LocalAppDetector implements vscode.Disposable {
         }
     }
 
-    private fire(): void {
-        this.onChange(this.isInstalled)
-        if (this.isInstalled) {
-            this.dispose()
+    private expandHomeDir(path: string): string {
+        if (path.startsWith('~/')) {
+            return path.replace('~', process.env.HOME || '')
         }
+        return path
+    }
+
+    // We can dispose the file watcher when app is found or when user has logged in
+    private fire(): void {
+        console.info('app found')
+        this.isInstalled = true
+        this.onChange(this.isInstalled)
+        this.dispose()
     }
 
     public dispose(): void {
@@ -107,5 +128,6 @@ export class LocalAppDetector implements vscode.Disposable {
             watcher.dispose()
         }
         this._watchers = []
+        this.appFsPaths = []
     }
 }
