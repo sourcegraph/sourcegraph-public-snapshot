@@ -250,6 +250,38 @@ func TestEmbedRepo(t *testing.T) {
 		// b.md has 2 chunks
 		require.Len(t, index.TextIndex.Embeddings, index.CodeIndex.ColumnDimension*2)
 	})
+
+	t.Run("misbehaving embeddings service", func(t *testing.T) {
+		// We should not trust the embeddings service to return the correct number of dimensions.
+		// We've had multiple issues in the past where the embeddings call succeeds, but returns
+		// the wrong number of dimensions either because the model changed or because there was
+		// some sort of uncaught error.
+		optsCopy := opts
+		optsCopy.MaxCodeEmbeddings = 3
+		optsCopy.MaxTextEmbeddings = 1
+		rl := newReadLister("a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin")
+
+		misbehavingClient := &misbehavingEmbeddingsClient{client, 32} // too many dimensions
+		_, _, _, err := EmbedRepo(ctx, misbehavingClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+		require.ErrorContains(t, err, "expected embeddings for batch to have length")
+
+		misbehavingClient = &misbehavingEmbeddingsClient{client, 32} // too few dimensions
+		_, _, _, err = EmbedRepo(ctx, misbehavingClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+		require.ErrorContains(t, err, "expected embeddings for batch to have length")
+
+		misbehavingClient = &misbehavingEmbeddingsClient{client, 0} // empty return
+		_, _, _, err = EmbedRepo(ctx, misbehavingClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+		require.ErrorContains(t, err, "expected embeddings for batch to have length")
+	})
+}
+
+type misbehavingEmbeddingsClient struct {
+	client.EmbeddingsClient
+	returnedDimsPerInput int
+}
+
+func (c *misbehavingEmbeddingsClient) GetEmbeddingsWithRetries(_ context.Context, texts []string, _ int) ([]float32, error) {
+	return make([]float32, len(texts)*c.returnedDimsPerInput), nil
 }
 
 func NewMockEmbeddingsClient() client.EmbeddingsClient {
