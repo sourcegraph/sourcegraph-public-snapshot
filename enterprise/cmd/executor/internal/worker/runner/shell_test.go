@@ -90,11 +90,13 @@ func TestShellRunner_Run(t *testing.T) {
 		},
 	}
 	spec := runner.Spec{
-		CommandSpec: command.Spec{
-			Key:     "some-key",
-			Command: []string{"echo", "hello"},
-			Dir:     "/workingdir",
-			Env:     []string{"FOO=bar"},
+		CommandSpecs: []command.Spec{
+			{
+				Key:     "some-key",
+				Command: []string{"echo", "hello"},
+				Dir:     "/workingdir",
+				Env:     []string{"FOO=bar"},
+			},
 		},
 		Image:      "alpine",
 		ScriptPath: "/some/script",

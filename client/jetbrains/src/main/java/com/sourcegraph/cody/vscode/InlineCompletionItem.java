@@ -13,6 +13,22 @@ public class InlineCompletionItem {
     this.command = command;
   }
 
+  public InlineCompletionItem withInsertText(String newInsertText) {
+    return new InlineCompletionItem(newInsertText, this.filterText, this.range, this.command);
+  }
+
+  public InlineCompletionItem withFilterText(String newFilterText) {
+    return new InlineCompletionItem(this.insertText, newFilterText, this.range, this.command);
+  }
+
+  public InlineCompletionItem withRange(Range newRange) {
+    return new InlineCompletionItem(this.insertText, this.filterText, newRange, this.command);
+  }
+
+  public InlineCompletionItem withCommand(Command newCommand) {
+    return new InlineCompletionItem(this.insertText, this.filterText, this.range, newCommand);
+  }
+
   public static InlineCompletionItem fromCompletion(Completion completion) {
     return new InlineCompletionItem(
         completion.content,

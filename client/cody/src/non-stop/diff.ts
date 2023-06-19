@@ -222,6 +222,7 @@ export interface Edit {
 }
 
 export interface Diff {
+    originalText: string
     bufferText: string
     mergedText: string | undefined
     // TODO: We can use the presence of mergedText to indicate clean
@@ -298,6 +299,7 @@ export function computeDiff(original: string, a: string, b: string, bStart: Posi
         originalPos = originalEnd
     }
     return {
+        originalText: original,
         bufferText: b,
         mergedText: clean ? mergedText.join('') : undefined,
         clean,

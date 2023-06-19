@@ -1,9 +1,10 @@
 <script lang="ts">
-    import { page } from '$app/stores'
-
-    import FileTree from '$lib/repo/FileTree.svelte'
-    import Icon from '$lib/Icon.svelte'
     import { mdiChevronDoubleLeft, mdiChevronDoubleRight } from '@mdi/js'
+
+    import { page } from '$app/stores'
+    import Icon from '$lib/Icon.svelte'
+    import FileTree from '$lib/repo/FileTree.svelte'
+
     import type { PageData } from './$types'
 
     export let data: PageData

@@ -148,8 +148,7 @@ func isMissingRelation(err error) bool {
 // GetAutoUpgrade gets the current value of versions.version and versions.auto_upgrade in the frontend database.
 func (s *store) GetAutoUpgrade(ctx context.Context) (version string, enabled bool, err error) {
 	if err = s.db.QueryRow(ctx, sqlf.Sprintf(getAutoUpgradeQuery)).Scan(&version, &enabled); err != nil {
-		var pgerr *pgconn.PgError
-		if errors.As(err, &pgerr) && pgerr.Code == pgerrcode.UndefinedColumn {
+		if errors.HasPostgresCode(err, pgerrcode.UndefinedColumn) {
 			if err = s.db.QueryRow(ctx, sqlf.Sprintf(getAutoUpgradeFallbackQuery)).Scan(&version); err != nil {
 				return "", false, errors.Wrap(err, "failed to get frontend version from fallback")
 			}

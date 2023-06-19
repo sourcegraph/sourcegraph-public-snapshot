@@ -20,6 +20,10 @@ No applicable notes for unreleased versions.
 
 <!-- Add changes changes to this section before release. -->
 
+## v5.0.5 ➔ v5.0.6
+
+#### Notes:
+
 ## v5.0.4 ➔ v5.0.5
 
 #### Notes:

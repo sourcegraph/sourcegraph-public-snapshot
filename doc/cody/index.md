@@ -87,3 +87,4 @@ See [Cody troubleshooting guide](troubleshooting.md).
 - [Enabling Cody for open source Sourcegraph.com users](explanations/enabling_cody.md)
 - [Installing the Cody VS Code extension](explanations/installing_vs_code.md)
 - [Configuring code graph context](explanations/code_graph_context.md)
+- [Sourcegraph Cody Gateway](explanations/cody_gateway.md)

@@ -61,8 +61,7 @@ export function createStatusBar(): CodyStatusBar {
                     'Beta',
                     'Experimental Cody completions in your editor',
                     'cody.experimental.suggestions',
-                    c => c.experimentalSuggest,
-                    true
+                    c => c.experimentalSuggest
                 ),
                 createFeatureToggle(
                     'Inline Assist',

@@ -12,7 +12,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
@@ -27,8 +29,8 @@ type handler struct {
 	nameSet      *janitor.NameSet
 	cmdRunner    util.CmdRunner
 	cmd          command.Command
-	logStore     command.ExecutionLogEntryStore
-	filesStore   workspace.FilesStore
+	logStore     cmdlogger.ExecutionLogEntryStore
+	filesStore   files.Store
 	options      Options
 	cloneOptions workspace.CloneOptions
 	operations   *command.Operations
@@ -87,7 +89,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	// interpolate into the command. No command that we run on the host leaks environment
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
-	commandLogger := command.NewLogger(logger, h.logStore, job, union(h.options.RedactedValues, job.RedactedValues))
+	commandLogger := cmdlogger.NewLogger(logger, h.logStore, job, union(h.options.RedactedValues, job.RedactedValues))
 	defer func() {
 		if flushErr := commandLogger.Flush(); flushErr != nil {
 			err = errors.Append(err, flushErr)
@@ -127,6 +129,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	runtimeRunner, err := h.jobRuntime.NewRunner(
 		ctx,
 		commandLogger,
+		h.filesStore,
 		runtime.RunnerOptions{Path: ws.Path(), DockerAuthConfig: job.DockerAuthConfig, Name: name},
 	)
 	if err != nil {
@@ -143,7 +146,8 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 
 	// Get the commands we will execute.
 	logger.Info("Creating commands")
-	commands, err := h.jobRuntime.NewRunnerSpecs(ws, job.DockerSteps)
+	job.Queue = h.options.QueueName
+	commands, err := h.jobRuntime.NewRunnerSpecs(ws, job)
 	if err != nil {
 		return errors.Wrap(err, "creating commands")
 	}
@@ -152,18 +156,16 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	logger.Info("Running commands")
 	skipKey := ""
 	for i, spec := range commands {
-		if len(skipKey) > 0 && skipKey != spec.CommandSpec.Key {
+		if len(skipKey) > 0 && skipKey != spec.CommandSpecs[0].Key {
 			continue
 		} else if len(skipKey) > 0 {
 			// We have a match, so reset the skip key.
 			skipKey = ""
 		}
-		spec.Queue = h.options.QueueName
-		spec.JobID = job.ID
 		if err := runtimeRunner.Run(ctx, spec); err != nil {
-			return errors.Wrapf(err, "running command %q", spec.CommandSpec.Key)
+			return errors.Wrapf(err, "running command %q", spec.CommandSpecs[0].Key)
 		}
-		if executorutil.IsPreStepKey(spec.CommandSpec.Key) {
+		if executorutil.IsPreStepKey(spec.CommandSpecs[0].Key) {
 			// Check if there is a skip file. and if so, what the next step is.
 			nextStep, err := runner.NextStep(ws.WorkingDirectory())
 			if err != nil {
@@ -211,7 +213,7 @@ func union(a, b map[string]string) map[string]string {
 
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
-func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger command.Logger, job types.Job) error {
+func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger cmdlogger.Logger, job types.Job) error {
 	// Create a working directory for this job which will be removed once the job completes.
 	// If a repository is supplied as part of the job configuration, it will be cloned into
 	// the working directory.
@@ -256,14 +258,17 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 			key = fmt.Sprintf("step.docker.%d", i)
 		}
 		dockerStepCommand := runner.Spec{
-			CommandSpec: command.Spec{
-				Key:       key,
-				Dir:       dockerStep.Dir,
-				Env:       dockerStep.Env,
-				Operation: h.operations.Exec,
+			CommandSpecs: []command.Spec{
+				{
+					Key:       key,
+					Dir:       dockerStep.Dir,
+					Env:       dockerStep.Env,
+					Operation: h.operations.Exec,
+				},
 			},
 			Image:      dockerStep.Image,
 			ScriptPath: ws.ScriptFilenames()[i],
+			Job:        job,
 		}
 
 		logger.Info(fmt.Sprintf("Running docker step #%d", i))
@@ -283,13 +288,16 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 		}
 
 		cliStepCommand := runner.Spec{
-			CommandSpec: command.Spec{
-				Key:       key,
-				Command:   append([]string{"src"}, cliStep.Commands...),
-				Dir:       cliStep.Dir,
-				Env:       cliStep.Env,
-				Operation: h.operations.Exec,
+			CommandSpecs: []command.Spec{
+				{
+					Key:       key,
+					Command:   append([]string{"src"}, cliStep.Commands...),
+					Dir:       cliStep.Dir,
+					Env:       cliStep.Env,
+					Operation: h.operations.Exec,
+				},
 			},
+			Job: job,
 		}
 
 		logger.Info(fmt.Sprintf("Running src-cli step #%d", i))
@@ -310,7 +318,7 @@ func (h *handler) prepareWorkspace(
 	ctx context.Context,
 	cmd command.Command,
 	job types.Job,
-	commandLogger command.Logger,
+	commandLogger cmdlogger.Logger,
 ) (workspace.Workspace, error) {
 	if h.options.RunnerOptions.FirecrackerOptions.Enabled {
 		return workspace.NewFirecrackerWorkspace(

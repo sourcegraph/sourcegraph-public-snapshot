@@ -3,16 +3,18 @@
     import { readable, writable, type Readable } from 'svelte/store'
 
     import { browser } from '$app/environment'
-    import { KEY, type SourcegraphContext } from '$lib/stores'
     import { isErrorLike } from '$lib/common'
     import { TemporarySettingsStorage } from '$lib/shared'
+    import { KEY, type SourcegraphContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
 
     import Header from './Header.svelte'
+
     import './styles.scss'
-    import type { LayoutData, Snapshot } from './$types'
-    import { setExperimentalFeaturesFromSettings } from '$lib/web'
+
     import { beforeNavigate } from '$app/navigation'
+
+    import type { LayoutData, Snapshot } from './$types'
 
     export let data: LayoutData
 
@@ -60,8 +62,6 @@
     $: $user = data.user ?? null
     $: $settings = isErrorLike(data.settings) ? null : data.settings.final
     $: $platformContext = data.platformContext
-    // Sync React stores
-    $: setExperimentalFeaturesFromSettings(data.settings)
 
     $: if (browser) {
         document.documentElement.classList.toggle('theme-light', $isLightTheme)

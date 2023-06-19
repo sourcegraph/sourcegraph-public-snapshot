@@ -7,38 +7,15 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold/v2"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-func TestFeatureFlaggedFileHasOwnerJob(t *testing.T) {
-	// We can run a quick exit check on the job runner since we don't need to use any clients or sender.
-	t.Run("does not run if no features attached to job", func(t *testing.T) {
-		selectJob := NewFileHasOwnersJob(nil, nil, nil, nil)
-		alert, err := selectJob.Run(context.Background(), job.RuntimeClients{}, nil)
-		require.Nil(t, alert)
-		var expectedErr *featureFlagError
-		assert.ErrorAs(t, err, &expectedErr)
-	})
-	t.Run("does not run if own feature is false", func(t *testing.T) {
-		selectJob := NewFileHasOwnersJob(nil, &search.Features{CodeOwnershipSearch: false}, nil, nil)
-		alert, err := selectJob.Run(context.Background(), job.RuntimeClients{}, nil)
-		require.Nil(t, alert)
-		var expectedErr *featureFlagError
-		assert.ErrorAs(t, err, &expectedErr)
-	})
-}
 
 func TestApplyCodeOwnershipFiltering(t *testing.T) {
 	type args struct {
@@ -320,7 +297,7 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			}),
 		},
 		{
-			name: "selects results with AND-ed owners specified",
+			name: "selects results with AND-ed include owners specified",
 			args: args{
 				includeOwners: []string{"assigned", "codeowner"},
 				excludeOwners: []string{},
@@ -367,6 +344,194 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 				},
 			}),
 		},
+		{
+			name: "selects results with exclude owner and include owner specified",
+			args: args{
+				includeOwners: []string{"codeowner"},
+				excludeOwners: []string{"assigned"},
+				matches: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							// assigned owns src/main,
+							// but @codeowner does not own the file
+							Path: "src/main/onlyAssigned.md",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							// @codeowner owns all go files,
+							// and assigned owns src/main
+							Path: "src/main/bothMatch.go",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							// @codeowner owns all go files
+							// but assigned only owns src/main
+							// and this is in src/test.
+							Path: "src/test/onlyCodeowner.go",
+						},
+					},
+				},
+				repoContent: map[string]string{
+					"CODEOWNERS": "*.go @codeowner",
+				},
+			},
+			setup: assignedOwnerSetup(
+				"src/main",
+				&types.User{
+					ID:       42,
+					Username: "assigned",
+				},
+			),
+			want: autogold.Expect([]result.Match{
+				&result.FileMatch{
+					File: result.File{
+						Path: "src/test/onlyCodeowner.go",
+					},
+				},
+			}),
+		},
+		{
+			name: "selects results with AND-ed exclude owners specified",
+			args: args{
+				includeOwners: []string{},
+				excludeOwners: []string{"assigned", "codeowner"},
+				matches: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							// assigned owns src/main,
+							// but @codeowner does not own the file
+							Path: "src/main/onlyAssigned.md",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							// @codeowner owns all go files,
+							// and assigned owns src/main
+							Path: "src/main/bothMatch.go",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							// @codeowner owns all go files
+							// but assigned only owns src/main
+							// and this is in src/test.
+							Path: "src/test/onlyCodeowner.go",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							// @codeowner owns all go files
+							// but assigned only owns src/main
+							// and this is in src/test.
+							Path: "src/test/noOwners.txt",
+						},
+					},
+				},
+				repoContent: map[string]string{
+					"CODEOWNERS": "*.go @codeowner",
+				},
+			},
+			setup: assignedOwnerSetup(
+				"src/main",
+				&types.User{
+					ID:       42,
+					Username: "assigned",
+				},
+			),
+			want: autogold.Expect([]result.Match{
+				&result.FileMatch{
+					File: result.File{
+						Path: "src/test/noOwners.txt",
+					},
+				},
+			}),
+		},
+		{
+			name: "match commits where any file is owned by included owner",
+			args: args{
+				includeOwners: []string{"@owner"},
+				excludeOwners: []string{},
+				matches: []result.Match{
+					&result.CommitMatch{
+						ModifiedFiles: []string{"file1.notOwned", "file2.owned"},
+					},
+					&result.CommitMatch{
+						ModifiedFiles: []string{"file3.notOwned", "file4.notOwned"},
+					},
+					&result.CommitMatch{
+						ModifiedFiles: []string{"file5.owned"},
+					},
+				},
+				repoContent: map[string]string{
+					"CODEOWNERS": "*.owned @owner\n",
+				},
+			},
+			want: autogold.Expect([]result.Match{
+				&result.CommitMatch{
+					ModifiedFiles: []string{"file1.notOwned", "file2.owned"},
+				},
+				&result.CommitMatch{
+					ModifiedFiles: []string{"file5.owned"},
+				},
+			}),
+		},
+		{
+			name: "discard commits where any file is owned by excluded owner",
+			args: args{
+				includeOwners: []string{},
+				excludeOwners: []string{"@owner"},
+				matches: []result.Match{
+					&result.CommitMatch{
+						ModifiedFiles: []string{"file1.notOwned", "file2.owned"},
+					},
+					&result.CommitMatch{
+						ModifiedFiles: []string{"file3.notOwned", "file4.notOwned"},
+					},
+					&result.CommitMatch{
+						ModifiedFiles: []string{"file5.owned"},
+					},
+				},
+				repoContent: map[string]string{
+					"CODEOWNERS": "*.owned @owner\n",
+				},
+			},
+			want: autogold.Expect([]result.Match{
+				&result.CommitMatch{
+					ModifiedFiles: []string{"file3.notOwned", "file4.notOwned"},
+				},
+			}),
+		},
+		{
+			name: "discard commits through exclude owners despite having include owners",
+			args: args{
+				includeOwners: []string{"@includeOwner"},
+				excludeOwners: []string{"@excludeOwner"},
+				matches: []result.Match{
+					&result.CommitMatch{
+						ModifiedFiles: []string{"file1.included", "file2"},
+					},
+					&result.CommitMatch{
+						ModifiedFiles: []string{"file3.included", "file4.excluded"},
+					},
+					&result.CommitMatch{
+						ModifiedFiles: []string{"file5.excluded", "file3"},
+					},
+				},
+				repoContent: map[string]string{
+					"CODEOWNERS": strings.Join([]string{
+						"*.included @includeOwner",
+						"*.excluded @excludeOwner",
+					}, "\n"),
+				},
+			},
+			want: autogold.Expect([]result.Match{
+				&result.CommitMatch{
+					ModifiedFiles: []string{"file1.included", "file2"},
+				},
+			}),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -402,6 +567,9 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			userExternalAccountsStore.ListFunc.SetDefaultReturn(nil, nil)
 			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
 			db.TeamsFunc.SetDefaultReturn(database.NewMockTeamStore())
+			repoStore := database.NewMockRepoStore()
+			repoStore.GetFunc.SetDefaultReturn(&types.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
+			db.ReposFunc.SetDefaultReturn(repoStore)
 			if tt.setup != nil {
 				tt.setup(db)
 			}

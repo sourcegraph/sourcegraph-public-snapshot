@@ -96,19 +96,6 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                 Cody services <ProductStatusBadge status="beta" />
             </H3>
             <Container className="mb-3">
-                <H4>Access token</H4>
-                <Text className="mb-2">Access tokens can be used for Cody Gateway access</Text>
-                {currentSourcegraphAccessToken && (
-                    <CopyableText
-                        label="Access token"
-                        secret={true}
-                        flex={true}
-                        text={currentSourcegraphAccessToken}
-                        className="mb-2"
-                    />
-                )}
-                {accessTokenError && <ErrorAlert error={accessTokenError} className="mb-0" />}
-
                 {currentSourcegraphAccessToken && (
                     <>
                         <div className="form-group mb-2">
@@ -199,8 +186,26 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                                 />
                             </>
                         )}
+
+                        <hr className="my-3" />
                     </>
                 )}
+
+                <H4>Access token</H4>
+                <Text className="mb-2">
+                    Access tokens can be used for Cody Gateway access. In most cases this is not needed, since access
+                    tokens are automatically generated from each instance's configured license key.
+                </Text>
+                {currentSourcegraphAccessToken && (
+                    <CopyableText
+                        label="Access token"
+                        secret={true}
+                        flex={true}
+                        text={currentSourcegraphAccessToken}
+                        className="mb-2"
+                    />
+                )}
+                {accessTokenError && <ErrorAlert error={accessTokenError} className="mb-0" />}
             </Container>
         </>
     )
@@ -271,18 +276,18 @@ const RateLimitRow: React.FunctionComponent<RateLimitRowProps> = ({
                     access:
                         mode === 'chat'
                             ? {
-                                  chatCompletionsRateLimit: 0,
+                                  chatCompletionsRateLimit: '0',
                                   chatCompletionsRateLimitIntervalSeconds: 0,
                                   chatCompletionsAllowedModels: [],
                               }
                             : mode === 'code'
                             ? {
-                                  codeCompletionsRateLimit: 0,
+                                  codeCompletionsRateLimit: '0',
                                   codeCompletionsRateLimitIntervalSeconds: 0,
                                   codeCompletionsAllowedModels: [],
                               }
                             : {
-                                  embeddingsRateLimit: 0,
+                                  embeddingsRateLimit: '0',
                                   embeddingsRateLimitIntervalSeconds: 0,
                                   embeddingsAllowedModels: [],
                               },
@@ -415,7 +420,7 @@ const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productS
                                         return parseISO(datum.date)
                                     },
                                     getYValue(datum) {
-                                        return datum.count
+                                        return Number(datum.count)
                                     },
                                     id: 'chat-usage',
                                     name: 'Chat completions: ' + model,
@@ -429,7 +434,7 @@ const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productS
                                         return parseISO(datum.date)
                                     },
                                     getYValue(datum) {
-                                        return datum.count
+                                        return Number(datum.count)
                                     },
                                     id: 'code-completions-usage',
                                     name: 'Code completions: ' + model,
@@ -486,7 +491,7 @@ const EmbeddingsRateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = (
                                         return parseISO(datum.date)
                                     },
                                     getYValue(datum) {
-                                        return datum.count
+                                        return Number(datum.count)
                                     },
                                     id: 'chat-usage',
                                     name: 'Embedded tokens: ' + model,

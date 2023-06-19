@@ -24,6 +24,7 @@ type Store interface {
 	ReconcileCandidates(ctx context.Context, batchSize int) ([]int, error)
 	ReconcileCandidatesWithTime(ctx context.Context, batchSize int, now time.Time) (_ []int, err error)
 	DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error)
+	DeleteAbandonedSchemaVersionsRecords(ctx context.Context) (_ int, err error)
 	DeleteUnreferencedDocuments(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (numScanned, numDeleted int, err error)
 
 	// Scan/export document data

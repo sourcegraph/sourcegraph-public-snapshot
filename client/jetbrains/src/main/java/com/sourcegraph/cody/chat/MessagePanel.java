@@ -15,7 +15,7 @@ public class MessagePanel extends JPanel {
   private final boolean isHuman;
   private final int gradientWidth;
 
-  public MessagePanel(ChatMessage message, int gradientWidth) {
+  public MessagePanel(Speaker speaker, int gradientWidth) {
     super();
     this.gradientWidth = gradientWidth;
     Border emptyBorder = BorderFactory.createEmptyBorder(0, 0, 0, 0);
@@ -26,7 +26,7 @@ public class MessagePanel extends JPanel {
         BorderFactory.createMatteBorder(0, 0, 1, 0, ColorUtil.brighter(background, 3));
     Border topAndBottomBorder = BorderFactory.createCompoundBorder(topBorder, bottomBorder);
 
-    isHuman = message.getSpeaker().equals(Speaker.HUMAN);
+    isHuman = speaker.equals(Speaker.HUMAN);
     this.setBorder(isHuman ? emptyBorder : topAndBottomBorder);
     this.setBackground(isHuman ? ColorUtil.darker(background, 2) : background);
     this.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));

@@ -41,6 +41,7 @@ type UploadLocation struct {
 type SnapshotData struct {
 	DocumentOffset int
 	Symbol         string
+	AdditionalData []string
 }
 
 type Range struct {

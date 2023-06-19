@@ -8,17 +8,19 @@
     the default browser behavior to take place.
 -->
 <script lang="ts">
+    import type { Observable } from 'rxjs'
+
     import { PUBLIC_DOTCOM } from '$env/static/public'
-    import { GlobalNotebooksArea, type GlobalNotebooksAreaProps } from '$lib/web'
-    import type { PageData } from './$types'
+    import { eventLogger } from '$lib/logger'
+    import ReactComponent from '$lib/ReactComponent.svelte'
     import {
         aggregateStreamingSearch,
         fetchHighlightedFileLineRanges as _fetchHighlightedFileLineRanges,
         type FetchFileParameters,
     } from '$lib/shared'
-    import type { Observable } from 'rxjs'
-    import ReactComponent from '$lib/ReactComponent.svelte'
-    import { eventLogger } from '$lib/logger'
+    import { GlobalNotebooksArea, type GlobalNotebooksAreaProps } from '$lib/web'
+
+    import type { PageData } from './$types'
 
     export let data: PageData
 

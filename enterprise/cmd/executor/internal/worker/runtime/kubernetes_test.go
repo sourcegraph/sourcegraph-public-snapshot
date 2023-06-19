@@ -22,7 +22,8 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		steps          []types.DockerStep
+		job            types.Job
+		singleJob      bool
 		mockFunc       func(ws *MockWorkspace)
 		expected       []runner.Spec
 		expectedErr    error
@@ -30,7 +31,7 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 	}{
 		{
 			name:     "No steps",
-			steps:    []types.DockerStep{},
+			job:      types.Job{},
 			expected: []runner.Spec{},
 			assertMockFunc: func(t *testing.T, ws *MockWorkspace) {
 				require.Len(t, ws.ScriptFilenamesFunc.History(), 0)
@@ -38,25 +39,30 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 		},
 		{
 			name: "Single step",
-			steps: []types.DockerStep{
-				{
-					Key:      "key-1",
-					Image:    "my-image",
-					Commands: []string{"echo", "hello"},
-					Dir:      ".",
-					Env:      []string{"FOO=bar"},
+			job: types.Job{
+				DockerSteps: []types.DockerStep{
+					{
+						Key:      "key-1",
+						Image:    "my-image",
+						Commands: []string{"echo", "hello"},
+						Dir:      ".",
+						Env:      []string{"FOO=bar"},
+					},
 				},
 			},
 			mockFunc: func(ws *MockWorkspace) {
 				ws.ScriptFilenamesFunc.SetDefaultReturn([]string{"script.sh"})
 			},
 			expected: []runner.Spec{{
-				CommandSpec: command.Spec{
-					Key:       "step.kubernetes.key-1",
-					Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script.sh"},
-					Dir:       ".",
-					Env:       []string{"FOO=bar"},
-					Operation: operations.Exec,
+				CommandSpecs: []command.Spec{
+					{
+						Key:       "step.kubernetes.key-1",
+						Name:      "step-kubernetes-key-1",
+						Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script.sh"},
+						Dir:       ".",
+						Env:       []string{"FOO=bar"},
+						Operation: operations.Exec,
+					},
 				},
 				Image: "my-image",
 			}},
@@ -66,20 +72,22 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 		},
 		{
 			name: "Multiple steps",
-			steps: []types.DockerStep{
-				{
-					Key:      "key-1",
-					Image:    "my-image",
-					Commands: []string{"echo", "hello"},
-					Dir:      ".",
-					Env:      []string{"FOO=bar"},
-				},
-				{
-					Key:      "key-2",
-					Image:    "my-image",
-					Commands: []string{"echo", "hello"},
-					Dir:      ".",
-					Env:      []string{"FOO=bar"},
+			job: types.Job{
+				DockerSteps: []types.DockerStep{
+					{
+						Key:      "key-1",
+						Image:    "my-image",
+						Commands: []string{"echo", "hello"},
+						Dir:      ".",
+						Env:      []string{"FOO=bar"},
+					},
+					{
+						Key:      "key-2",
+						Image:    "my-image",
+						Commands: []string{"echo", "hello"},
+						Dir:      ".",
+						Env:      []string{"FOO=bar"},
+					},
 				},
 			},
 			mockFunc: func(ws *MockWorkspace) {
@@ -87,22 +95,28 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 			},
 			expected: []runner.Spec{
 				{
-					CommandSpec: command.Spec{
-						Key:       "step.kubernetes.key-1",
-						Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script1.sh"},
-						Dir:       ".",
-						Env:       []string{"FOO=bar"},
-						Operation: operations.Exec,
+					CommandSpecs: []command.Spec{
+						{
+							Key:       "step.kubernetes.key-1",
+							Name:      "step-kubernetes-key-1",
+							Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script1.sh"},
+							Dir:       ".",
+							Env:       []string{"FOO=bar"},
+							Operation: operations.Exec,
+						},
 					},
 					Image: "my-image",
 				},
 				{
-					CommandSpec: command.Spec{
-						Key:       "step.kubernetes.key-2",
-						Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script2.sh"},
-						Dir:       ".",
-						Env:       []string{"FOO=bar"},
-						Operation: operations.Exec,
+					CommandSpecs: []command.Spec{
+						{
+							Key:       "step.kubernetes.key-2",
+							Name:      "step-kubernetes-key-2",
+							Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script2.sh"},
+							Dir:       ".",
+							Env:       []string{"FOO=bar"},
+							Operation: operations.Exec,
+						},
 					},
 					Image: "my-image",
 				},
@@ -113,29 +127,70 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 		},
 		{
 			name: "Default key",
-			steps: []types.DockerStep{
-				{
-					Image:    "my-image",
-					Commands: []string{"echo", "hello"},
-					Dir:      ".",
-					Env:      []string{"FOO=bar"},
+			job: types.Job{
+				DockerSteps: []types.DockerStep{
+					{
+						Image:    "my-image",
+						Commands: []string{"echo", "hello"},
+						Dir:      ".",
+						Env:      []string{"FOO=bar"},
+					},
 				},
 			},
 			mockFunc: func(ws *MockWorkspace) {
 				ws.ScriptFilenamesFunc.SetDefaultReturn([]string{"script.sh"})
 			},
 			expected: []runner.Spec{{
-				CommandSpec: command.Spec{
-					Key:       "step.kubernetes.0",
-					Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script.sh"},
-					Dir:       ".",
-					Env:       []string{"FOO=bar"},
-					Operation: operations.Exec,
+				CommandSpecs: []command.Spec{
+					{
+						Key:       "step.kubernetes.0",
+						Name:      "step-kubernetes-0",
+						Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script.sh"},
+						Dir:       ".",
+						Env:       []string{"FOO=bar"},
+						Operation: operations.Exec,
+					},
 				},
 				Image: "my-image",
 			}},
 			assertMockFunc: func(t *testing.T, ws *MockWorkspace) {
 				require.Len(t, ws.ScriptFilenamesFunc.History(), 1)
+			},
+		},
+		{
+			name:      "Single job",
+			singleJob: true,
+			job: types.Job{
+				ID:             42,
+				RepositoryName: "github.com/sourcegraph/sourcegraph",
+				Commit:         "deadbeef",
+				DockerSteps: []types.DockerStep{
+					{
+						Key:      "my-key",
+						Image:    "my-image",
+						Commands: []string{"echo", "hello"},
+						Dir:      ".",
+						Env:      []string{"FOO=bar"},
+					},
+				},
+			},
+			mockFunc: func(ws *MockWorkspace) {
+				ws.ScriptFilenamesFunc.SetDefaultReturn([]string{"script.sh"})
+			},
+			expected: []runner.Spec{{
+				CommandSpecs: []command.Spec{
+					{
+						Key:     "step.kubernetes.my-key",
+						Name:    "step-kubernetes-my-key",
+						Command: []string{"/bin/sh -c /job/.sourcegraph-executor/42.0_github.com_sourcegraph_sourcegraph@deadbeef.sh"},
+						Dir:     ".",
+						Env:     []string{"FOO=bar"},
+						Image:   "my-image",
+					},
+				},
+			}},
+			assertMockFunc: func(t *testing.T, ws *MockWorkspace) {
+				require.Len(t, ws.ScriptFilenamesFunc.History(), 0)
 			},
 		},
 	}
@@ -147,14 +202,29 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 				test.mockFunc(ws)
 			}
 
-			r := &kubernetesRuntime{operations: operations}
-			actual, err := r.NewRunnerSpecs(ws, test.steps)
+			r := &kubernetesRuntime{options: command.KubernetesContainerOptions{SingleJobPod: test.singleJob}, operations: operations}
+			actual, err := r.NewRunnerSpecs(ws, test.job)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, test.expected, actual)
+				require.Len(t, actual, len(test.expected))
+				for _, expected := range test.expected {
+					// find the matching actual spec based on the command spec key. There will only ever be one command spec per spec.
+					var actualSpec runner.Spec
+					for _, spec := range actual {
+						if spec.CommandSpecs[0].Key == expected.CommandSpecs[0].Key {
+							actualSpec = spec
+							break
+						}
+					}
+					require.Greater(t, len(actualSpec.CommandSpecs), 0)
+
+					assert.Equal(t, expected.Image, actualSpec.Image)
+					assert.Equal(t, expected.ScriptPath, actualSpec.ScriptPath)
+					assert.Equal(t, expected.CommandSpecs[0], actualSpec.CommandSpecs[0])
+				}
 			}
 
 			test.assertMockFunc(t, ws)
