@@ -14,6 +14,7 @@ import { History } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultilineMode } from './multiline'
 import { CompletionProvider, InlineCompletionProvider, ManualCompletionProvider } from './provider'
+import { NewCompletionProvider } from './provider2'
 
 const LOG_MANUAL = { type: 'manual' }
 const WINDOW_SIZE = 50
@@ -117,24 +118,27 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const { prefix, suffix, prevLine: sameLinePrefix, prevNonEmptyLine } = docContext
         const sameLineSuffix = suffix.slice(0, suffix.indexOf('\n'))
 
-        // Avoid showing completions when we're deleting code (Cody can only insert code at the
-        // moment)
-        const lastChange = this.lastContentChanges.get(document.fileName) ?? 'add'
-        if (lastChange === 'del') {
-            // When a line was deleted, only look up cached items and only include them if the
-            // untruncated prefix matches. This fixes some weird issues where the completion would
-            // render if you insert whitespace but not on the original place when you delete it
-            // again
-            const cachedCompletions = inlineCompletionsCache.get(prefix, false)
-            if (cachedCompletions?.isExactPrefix) {
+        // Bypass cache if explicitly triggered
+        if (context.triggerKind !== vscode.InlineCompletionTriggerKind.Invoke) {
+            // Avoid showing completions when we're deleting code (Cody can only insert code at the
+            // moment)
+            const lastChange = this.lastContentChanges.get(document.fileName) ?? 'add'
+            if (lastChange === 'del') {
+                // When a line was deleted, only look up cached items and only include them if the
+                // untruncated prefix matches. This fixes some weird issues where the completion would
+                // render if you insert whitespace but not on the original place when you delete it
+                // again
+                const cachedCompletions = inlineCompletionsCache.get(prefix, false)
+                if (cachedCompletions?.isExactPrefix) {
+                    return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
+                }
+                return []
+            }
+
+            const cachedCompletions = inlineCompletionsCache.get(prefix)
+            if (cachedCompletions) {
                 return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
             }
-            return []
-        }
-
-        const cachedCompletions = inlineCompletionsCache.get(prefix)
-        if (cachedCompletions) {
-            return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
         }
 
         const remainingChars = this.tokToChar(this.promptTokens)
@@ -163,7 +167,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const completers: CompletionProvider[] = []
         let timeout: number
-        let multilineMode: null | 'block' = null
         // VS Code does not show completions if we are in the process of writing a word or if a
         // selected completion info is present (so something is selected from the completions
         // dropdown list based on the lang server) and the returned completion range does not
@@ -171,6 +174,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         if (context.selectedCompletionInfo || /[A-Za-z]$/.test(sameLinePrefix)) {
             return []
         }
+
         // If we have a suffix in the same line as the cursor and the suffix contains any word
         // characters, do not attempt to make a completion. This means we only make completions if
         // we have a suffix in the same line for special characters like `)]}` etc.
@@ -180,79 +184,46 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         if (/\w/.test(sameLineSuffix)) {
             return []
         }
+
         // In this case, VS Code won't be showing suggestions anyway and we are more likely to want
         // suggested method names from the language server instead.
-        if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || sameLinePrefix.endsWith('.')) {
+        if (sameLinePrefix.endsWith('.')) {
             return []
         }
 
-        if (
-            (multilineMode = detectMultilineMode(
-                prefix,
-                prevNonEmptyLine,
-                sameLinePrefix,
-                sameLineSuffix,
-                document.languageId
-            ))
-        ) {
-            timeout = 200
+        const multilineMode = detectMultilineMode(
+            prefix,
+            prevNonEmptyLine,
+            sameLinePrefix,
+            sameLineSuffix,
+            document.languageId
+        )
+        if (multilineMode === 'block') {
             completers.push(
-                new InlineCompletionProvider(
+                new NewCompletionProvider(
                     this.completionsClient,
                     remainingChars,
                     this.responseTokens,
                     similarCode,
                     prefix,
                     suffix,
-                    '',
                     document.languageId,
-                    3,
-                    multilineMode
-                )
-            )
-        } else if (sameLinePrefix.trim() === '') {
-            // The current line is empty
-            timeout = 20
-            completers.push(
-                new InlineCompletionProvider(
-                    this.completionsClient,
-                    remainingChars,
-                    this.responseTokens,
-                    similarCode,
-                    prefix,
-                    suffix,
-                    '',
-                    document.languageId,
-                    3 // tries
+                    1,
+                    'multi-line'
                 )
             )
         } else {
-            // The current line has a suffix
-            timeout = 200
             completers.push(
-                new InlineCompletionProvider(
+                new NewCompletionProvider(
                     this.completionsClient,
                     remainingChars,
                     this.responseTokens,
                     similarCode,
                     prefix,
                     suffix,
-                    '',
                     document.languageId,
-                    2 // tries
-                ),
-                // Create a completion request for the current prefix with a new line added. This
-                // will make for faster recommendations when the user presses enter.
-                new InlineCompletionProvider(
-                    this.completionsClient,
-                    remainingChars,
-                    this.responseTokens,
-                    similarCode,
-                    prefix,
-                    suffix,
-                    '\n', // force a new line in the case we are at end of line
-                    document.languageId,
-                    1 // tries
+                    2,
+                    'single-line'
                 )
             )
         }
@@ -269,9 +240,11 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const logId = CompletionLogger.start({ type: 'inline', multilineMode })
 
-        const results = rankCompletions(
-            (await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))).flat()
-        )
+        const unrankedResults = (
+            await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))
+        ).flat()
+
+        const results = rankCompletions(unrankedResults)
 
         const visibleResults = filterCompletions(results)
 
