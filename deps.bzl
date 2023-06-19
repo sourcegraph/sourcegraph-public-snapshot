@@ -3969,8 +3969,8 @@ def go_dependencies():
         name = "com_github_jackc_pgconn",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/jackc/pgconn",
-        sum = "h1:DzdIHIjG1AxGwoEEqS+mGsURyjt4enSmqzACXvVzOT8=",
-        version = "v1.10.1",
+        sum = "h1:rsDFzIpRk7xT4B8FufgpCCeyjdNpKyghZeSefViE5W8=",
+        version = "v1.12.1",
     )
     go_repository(
         name = "com_github_jackc_pgerrcode",
@@ -4012,8 +4012,8 @@ def go_dependencies():
         name = "com_github_jackc_pgproto3_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/jackc/pgproto3/v2",
-        sum = "h1:r7JypeP2D3onoQTCxWdTpCtJ4D+qpKr0TxvoyMhZ5ns=",
-        version = "v2.2.0",
+        sum = "h1:brH0pCGBDkBW07HWlN/oSBXrmo3WB0UvZd1pIuDcL8Y=",
+        version = "v2.3.0",
     )
     go_repository(
         name = "com_github_jackc_pgservicefile",
@@ -4033,15 +4033,15 @@ def go_dependencies():
         name = "com_github_jackc_pgx_v4",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/jackc/pgx/v4",
-        sum = "h1:71oo1KAGI6mXhLiTMn6iDFcp3e7+zon/capWjl2OEFU=",
-        version = "v4.14.1",
+        sum = "h1:JzTglcal01DrghUqt+PmzWsZx/Yh7SC/CTQmSBMTd0Y=",
+        version = "v4.16.1",
     )
     go_repository(
         name = "com_github_jackc_puddle",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/jackc/puddle",
-        sum = "h1:DNDKdn/pDrWvDWyT2FYvpZVE81OAhWrjCv19I9n108Q=",
-        version = "v1.2.0",
+        sum = "h1:gI8os0wpRXFd4FiAY2dWiqRK037tjj3t7rKFeO4X5iw=",
+        version = "v1.2.1",
     )
 
     go_repository(
@@ -5856,6 +5856,13 @@ def go_dependencies():
         importpath = "github.com/rhnvrm/simples3",
         sum = "h1:H0DJwybR6ryQE+Odi9eqkHuzjYAeJgtGcGtuBwOhsH8=",
         version = "v0.6.1",
+    )
+    go_repository(
+        name = "com_github_ricochet2200_go_disk_usage_du",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/ricochet2200/go-disk-usage/du",
+        sum = "h1:d54EL9l+XteliUfUCGsEwwuk65dmmxX85VXF+9T6+50=",
+        version = "v0.0.0-20210707232629-ac9918953285",
     )
 
     go_repository(
@@ -8409,15 +8416,15 @@ def go_dependencies():
         name = "io_k8s_api",
         build_file_proto_mode = "disable_global",
         importpath = "k8s.io/api",
-        sum = "h1:Q1v5UFfYe87vi5H7NU0p4RXC26PPMT8KOpr1TLQbCMQ=",
-        version = "v0.25.3",
+        sum = "h1:3YO8J4RtmG7elEgaWMb4HgmpS2CfY1QlaOz9nwB+ZSs=",
+        version = "v0.25.4",
     )
     go_repository(
         name = "io_k8s_apimachinery",
         build_file_proto_mode = "disable_global",
         importpath = "k8s.io/apimachinery",
-        sum = "h1:7o9ium4uyUOM76t6aunP0nZuex7gDf8VGwkR5RcJnQc=",
-        version = "v0.25.3",
+        sum = "h1:CtXsuaitMESSu339tfhVXhQrPET+EiWnIY1rcurKnAc=",
+        version = "v0.25.4",
     )
     go_repository(
         name = "io_k8s_apiserver",
@@ -8431,8 +8438,8 @@ def go_dependencies():
         name = "io_k8s_client_go",
         build_file_proto_mode = "disable_global",
         importpath = "k8s.io/client-go",
-        sum = "h1:oB4Dyl8d6UbfDHD8Bv8evKylzs3BXzzufLiO27xuPs0=",
-        version = "v0.25.3",
+        sum = "h1:3RNRDffAkNU56M/a7gUfXaEzdhZlYhoW8dgViGy5fn8=",
+        version = "v0.25.4",
     )
     go_repository(
         name = "io_k8s_code_generator",
