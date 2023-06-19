@@ -245,9 +245,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'event':
                 this.sendEvent(message.event, message.value)
                 break
-            case 'removeToken':
-                await this.authProvider.signoutMenu()
-                break
             case 'removeHistory':
                 await this.clearHistory()
                 break

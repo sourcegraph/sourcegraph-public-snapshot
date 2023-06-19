@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { isLocalApp } from '../chat/protocol'
+
 export interface LoginMenuItem {
     id: string
     label: string
@@ -15,6 +17,13 @@ export interface LoginInput {
 
 export type AuthMenuType = 'signin' | 'signout' | 'switch'
 
+function getItemLabel(uri: string, icon: string): string {
+    if (isLocalApp(uri)) {
+        return `${icon} Cody App`
+    }
+    return `${icon} ${uri}`
+}
+
 export const AuthMenu = async (type: AuthMenuType, historyItems: string[]): Promise<LoginMenuItem | null> => {
     // Create option items
     const menu = AuthMenuOptions[type]
@@ -22,7 +31,12 @@ export const AuthMenu = async (type: AuthMenuType, historyItems: string[]): Prom
     const history =
         historyItems?.length > 0
             ? historyItems
-                  ?.map((uri, i) => ({ id: uri, label: `${icon} ${uri}`, description: i === 0 ? 'current' : '', uri }))
+                  ?.map((uri, i) => ({
+                      id: uri,
+                      label: getItemLabel(uri, icon),
+                      description: i === 0 ? 'current' : '',
+                      uri,
+                  }))
                   .reverse()
             : []
     const seperator = [{ label: 'previously used', kind: -1 }]

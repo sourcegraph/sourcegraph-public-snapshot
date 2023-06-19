@@ -107,9 +107,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     const onLogout = useCallback(() => {
-        vscodeAPI.postMessage({ command: 'removeToken' })
-        setView('login')
-        setAuthStatus(undefined)
+        vscodeAPI.postMessage({ command: 'auth', type: 'signout' })
     }, [vscodeAPI])
 
     if (!view) {
