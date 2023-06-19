@@ -52,7 +52,9 @@ interface FetchBlobOptions {
 export const fetchBlob = memoizeObservable(
     (
         options: FetchBlobOptions
-    ): Observable<(BlobFileFields & { snapshot?: { offset: number; data: string }[] | null }) | null> => {
+    ): Observable<
+        (BlobFileFields & { snapshot?: { offset: number; data: string; additional: string[] | null }[] | null }) | null
+    > => {
         const {
             repoName,
             revision,

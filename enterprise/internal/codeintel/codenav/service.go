@@ -1429,9 +1429,9 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 	formatter := scip.LenientVerboseSymbolFormatter
 	symtab := document.SymbolTable()
 
-	var snapshotData shared.SnapshotData
-
 	for _, occ := range document.Occurrences {
+		var snapshotData shared.SnapshotData
+
 		formatted, err := formatter.Format(occ.Symbol)
 		if err != nil {
 			formatted = fmt.Sprintf("error formatting %q", occ.Symbol)
@@ -1479,7 +1479,7 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 				var b strings.Builder
 				b.WriteString(strings.Repeat(" ", (int(originalRange.Start.Character)-tabCount)+(tabCount*4)))
 				b.WriteString(strings.Repeat("^", int(originalRange.End.Character-originalRange.Start.Character)))
-				b.WriteString("relationship ")
+				b.WriteString(" relationship ")
 
 				formatted, err = formatter.Format(relationship.Symbol)
 				if err != nil {
