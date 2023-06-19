@@ -47,6 +47,14 @@ type EmbeddingsSetupProgress {
     oneRepositoryReady: Boolean!
 }
 
+extend type Mutation {
+    """
+    Create one or more local repository services for the provided paths. A path may
+    also point to a directory containing repositories.
+    """
+    addLocalRepositories(paths: [String!]!): [LocalExternalService!]!
+}
+
 """
 LocalDirectories represents a list of directories on the host machine. This is an API
 specific to Sourcegraph App.
