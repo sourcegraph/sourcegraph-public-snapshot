@@ -304,7 +304,7 @@ class CodyToolWindowContent implements UpdatableChat {
       this.addMessageToChat(
           ChatMessage.createAssistantMessage(
               "I'm sorry, I can't connect to the server. Please make sure that the server is running and try again."));
-    } else if (errorMessage.startsWith("Got error response 401: Invalid access token.")) {
+    } else if (errorMessage.startsWith("Got error response 401")) {
       String invalidAccessTokenText =
           "<p>It looks like your Sourcegraph Access Token is invalid or not configured.</p>"
               + "<p>See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> how to create one and configure it in the settings to use Cody.</p>";
