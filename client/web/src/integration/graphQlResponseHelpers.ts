@@ -38,6 +38,8 @@ export const createFileTreeEntriesResult = (url: string, toplevelFiles: string[]
 export const createBlobContentResult = (content: string, lsif?: JsonDocument): BlobResult => ({
     repository: {
         commit: {
+            __typename: 'GitCommit',
+            oid: '1',
             file: {
                 __typename: 'VirtualFile',
                 content,
@@ -49,6 +51,7 @@ export const createBlobContentResult = (content: string, lsif?: JsonDocument): B
                 },
             },
         },
+        changelist: null,
     },
 })
 

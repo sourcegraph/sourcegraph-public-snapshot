@@ -143,7 +143,7 @@ export const resolveRepoRevision = memoizeObservable(
                     throw new CloneInProgressError(repoName, 'queued for cloning')
                 }
 
-                // The ""revision" we queried for could be a commit or a changelist.
+                // The "revision" we queried for could be a commit or a changelist.
                 const commit = data.repositoryRedirect.commit || data.repositoryRedirect.changelist?.commit
                 if (!commit) {
                     throw new RevisionNotFoundError(revision)
