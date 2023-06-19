@@ -3,7 +3,6 @@ package completions
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const anthropicAPIURL = "https://api.anthropic.com/v1/complete"
@@ -93,7 +93,7 @@ func NewAnthropicHandler(
 			},
 			validateRequest: func(ar anthropicRequest) error {
 				if ar.MaxTokensToSample > int32(maxTokensToSample) {
-					return fmt.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokensToSample)
+					return errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokensToSample)
 				}
 				return nil
 			},
