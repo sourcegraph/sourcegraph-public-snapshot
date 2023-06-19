@@ -1,6 +1,6 @@
 # Server integration tests with Bazel
 
-Integration tests are very useful as they allow to exert much wider codepaths that traditional unit testing. There are trade-offs though: it's harder to decipher from the failures what exactly went wrong and they take longer to set up. 
+Integration tests are very useful as they allow you to explore much wider codepaths than traditional unit testing. There are trade-offs though: it's harder to decipher from the failures what exactly went wrong and they take longer to set up. 
 
 ## Tests running against the server image (`server:candidate`) 
 
@@ -8,7 +8,7 @@ Every CI build produces a `server:candidate` container image, containing the Sou
 
 It's very common to run tests against the server, as it's the most practical way to test in an environment similar to what the customers will run. 
 
-To ease the process of setting it up, we provide under the `testing/` folder a helper shell script that takes care of setting up and tearing down the server container, only requiring you to provide the required environment variables and the various binaries or scripts required for your e2e test. 
+To ease the process of setting it up, we provide under the `testing/` folder a helper shell script that takes care of setting up and tearing down the server container, requiring only environment variables, binaries and/or scripts relevant to your e2e test. 
  
 ## Overview 
 
@@ -27,7 +27,7 @@ See this [tracking-issue](https://github.com/sourcegraph/sourcegraph/issues/5363
 
 ### Environment variables 
 
-Right now, most of the tests requires precise environment variables which are only available in CI or stored in secrets. Unless you're the owner of the test in question, we recommend you to iterate in CI if you're fixing a test or adding a new one. 
+Right now, most of the tests require precise environment variables which are only available in CI or stored in secrets. Unless you're the owner of the test in question, we recommend you iterate in CI if you're fixing a test or adding a new one. 
 
 ### Cross-compilation issues
 
@@ -120,7 +120,7 @@ set -eu
 source ./testing/tools/integration_runner.sh || exit 1
 
 # We're getting those values from the `args` attribute. The first two ones are always provided by the 
-# `server_integration_test` macro. It's a bit unconvenient, as the numbering starts at $3 for your arguments,
+# `server_integration_test` macro. It's a bit inconvenient and awkward, as the numbering starts at $3 for your arguments,
 # but we'll revisit this at some point.
 tarball="$1"
 image_name="$2"
@@ -132,7 +132,7 @@ footest="$3"
 url="http://localhost:$PORT"
 
 # If you need to use a different name for environment variables, you can do it here. 
-# Typically, this is because we're exposing a secret with a different name that the one
+# Typically, this is because we're exposing a secret with a different name than the one
 # being used by the server. 
 # 
 # See the following example: 
