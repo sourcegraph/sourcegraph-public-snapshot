@@ -36,4 +36,5 @@ go_test(
         "//enterprise/internal/executor/types",
         "//internal/rcache",
     ],
+    tags = ["requires-network"]
 )
