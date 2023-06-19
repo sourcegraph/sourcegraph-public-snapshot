@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
@@ -2235,11 +2236,13 @@ func TestDisplayOwnershipStats(t *testing.T) {
 	fakeRepoPaths.AggregateFileCountFunc.SetDefaultReturn(350000, nil)
 	db.RepoPathsFunc.SetDefaultReturn(fakeRepoPaths)
 	fakeOwnershipStats := database.NewMockOwnershipStatsStore()
+	updateTime := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
 	fakeOwnershipStats.QueryAggregateCountsFunc.SetDefaultReturn(
 		database.PathAggregateCounts{
 			CodeownedFileCount:         150000,
 			AssignedOwnershipFileCount: 20000,
 			TotalOwnedFileCount:        165000,
+			UpdatedAt:                  updateTime,
 		}, nil)
 	db.OwnershipStatsFunc.SetDefaultReturn(fakeOwnershipStats)
 	ctx := context.Background()
@@ -2255,15 +2258,17 @@ func TestDisplayOwnershipStats(t *testing.T) {
 					totalCodeownedFiles
 					totalOwnedFiles
 					totalAssignedOwnershipFiles
+					updatedAt
 				}
 			}`,
 		ExpectedResult: `
 			{
 				"instanceOwnershipStats": {
 					"totalFiles": 350000,
-					"totalCodeownedFiles" : 150000,
-					"totalOwnedFiles" : 165000,
-					"totalAssignedOwnershipFiles" : 20000
+					"totalCodeownedFiles": 150000,
+					"totalOwnedFiles": 165000,
+					"totalAssignedOwnershipFiles": 20000,
+					"updatedAt": "2023-01-01T00:00:00Z"
 				}
 			}`,
 	})
