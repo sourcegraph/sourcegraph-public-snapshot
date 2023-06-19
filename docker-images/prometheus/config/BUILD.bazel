@@ -1,8 +1,24 @@
-filegroup(
+load("@rules_pkg//:mappings.bzl", "pkg_attributes", "pkg_files")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+
+# Use pkg_files as these files need mode=777 setting
+pkg_files(
     name = "base_config",
     srcs = [
         "alertmanager.yml",
         "prometheus.yml",
     ],
+    attributes = pkg_attributes(
+        mode = "0777",
+    ),
     visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "config_tar_min",
+    srcs = [
+        ":base_config",
+    ],
+    mode = "0777",
+    modes = {"prometheus.yml": "0777"},
 )
