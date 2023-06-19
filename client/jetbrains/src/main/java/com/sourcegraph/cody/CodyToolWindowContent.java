@@ -132,12 +132,12 @@ class CodyToolWindowContent implements UpdatableChat {
     JButton findCodeSmellsButton = createWideButton("Smell code");
     findCodeSmellsButton.addActionListener(
         e -> executeRecipeWithPromptProvider(recipeRunner, new FindCodeSmellsPromptProvider()));
-    JButton fixupButton = createWideButton("Fixup code from inline instructions");
-    fixupButton.addActionListener(e -> recipeRunner.runFixup());
-    JButton contextSearchButton = createWideButton("Codebase context search");
-    contextSearchButton.addActionListener(e -> recipeRunner.runContextSearch());
-    JButton releaseNotesButton = createWideButton("Generate release notes");
-    releaseNotesButton.addActionListener(e -> recipeRunner.runReleaseNotes());
+    // JButton fixupButton = createWideButton("Fixup code from inline instructions");
+    // fixupButton.addActionListener(e -> recipeRunner.runFixup());
+    // JButton contextSearchButton = createWideButton("Codebase context search");
+    // contextSearchButton.addActionListener(e -> recipeRunner.runContextSearch());
+    // JButton releaseNotesButton = createWideButton("Generate release notes");
+    // releaseNotesButton.addActionListener(e -> recipeRunner.runReleaseNotes());
     JButton optimizeCodeButton = createWideButton("Optimize code");
     optimizeCodeButton.addActionListener(
         e -> executeRecipeWithPromptProvider(recipeRunner, new OptimizeCodePromptProvider()));
@@ -149,9 +149,9 @@ class CodyToolWindowContent implements UpdatableChat {
     recipesPanel.add(translateToLanguageButton);
     recipesPanel.add(gitHistoryButton);
     recipesPanel.add(findCodeSmellsButton);
-    recipesPanel.add(fixupButton);
-    recipesPanel.add(contextSearchButton);
-    recipesPanel.add(releaseNotesButton);
+//    recipesPanel.add(fixupButton);
+//    recipesPanel.add(contextSearchButton);
+//    recipesPanel.add(releaseNotesButton);
     recipesPanel.add(optimizeCodeButton);
 
     // Chat panel
