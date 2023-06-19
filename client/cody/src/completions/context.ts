@@ -22,16 +22,17 @@ interface GetContextOptions {
     jaccardDistanceWindowSize: number
     maxChars: number
     codebaseContext: CodebaseContext
+    isEmbeddingsContextEnabled?: boolean
 }
 
 export async function getContext(options: GetContextOptions): Promise<ReferenceSnippet[]> {
-    const { maxChars } = options
+    const { maxChars, isEmbeddingsContextEnabled } = options
 
     /**
      * The embeddings context is sync to retrieve to keep the completions latency minumal.
      * If it's not available in cache yet, we'll retrieve it in the background and cache it for future use.
      */
-    const embeddingsMatches = getContextFromEmbeddings(options)
+    const embeddingsMatches = isEmbeddingsContextEnabled ? getContextFromEmbeddings(options) : []
     const editorMatches = await getContextFromCurrentEditor(options)
 
     const usedFilenames = new Set<string>()

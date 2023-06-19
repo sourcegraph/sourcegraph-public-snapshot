@@ -23,6 +23,8 @@ describe('getConfiguration', () => {
             completionsAdvancedProvider: 'anthropic',
             completionsAdvancedServerEndpoint: null,
             completionsAdvancedAccessToken: null,
+            completionsAdvancedCache: true,
+            completionsAdvancedEmbeddings: true,
         })
     })
 
@@ -63,6 +65,10 @@ describe('getConfiguration', () => {
                         return 'https://example.com/llm'
                     case 'cody.completions.advanced.accessToken':
                         return 'foobar'
+                    case 'cody.completions.advanced.cache':
+                        return false
+                    case 'cody.completions.advanced.embeddings':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -87,6 +93,8 @@ describe('getConfiguration', () => {
             completionsAdvancedProvider: 'unstable-codegen',
             completionsAdvancedServerEndpoint: 'https://example.com/llm',
             completionsAdvancedAccessToken: 'foobar',
+            completionsAdvancedCache: false,
+            completionsAdvancedEmbeddings: false,
         })
     })
 })
