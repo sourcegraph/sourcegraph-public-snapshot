@@ -294,7 +294,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
-            scipSnapshot(blobInfo.snapshotData),
+            scipSnapshot(blobInfo.content, blobInfo.snapshotData),
             codeFoldingExtension(),
             isCodyEnabled()
                 ? codyWidgetExtension(
