@@ -146,7 +146,6 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                         responseText = text
                     },
                     onComplete: () => {
-                        console.log(responseText)
                         resolve(responseText.split(/\s+/).filter(e => e.length > 0))
                     },
                     onError: (message: string, statusCode?: number) => {
