@@ -113,13 +113,14 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
 	handler := httpapi.NewHandler(obctx.Logger, eventLogger, rs, authr, &httpapi.Config{
-		RateLimitNotifier:       rateLimitNotifier,
-		AnthropicAccessToken:    config.Anthropic.AccessToken,
-		AnthropicAllowedModels:  config.Anthropic.AllowedModels,
-		OpenAIAccessToken:       config.OpenAI.AccessToken,
-		OpenAIOrgID:             config.OpenAI.OrgID,
-		OpenAIAllowedModels:     config.OpenAI.AllowedModels,
-		EmbeddingsAllowedModels: config.AllowedEmbeddingsModels,
+		RateLimitNotifier:          rateLimitNotifier,
+		AnthropicAccessToken:       config.Anthropic.AccessToken,
+		AnthropicAllowedModels:     config.Anthropic.AllowedModels,
+		AnthropicMaxTokensToSample: config.Anthropic.MaxTokensToSample,
+		OpenAIAccessToken:          config.OpenAI.AccessToken,
+		OpenAIOrgID:                config.OpenAI.OrgID,
+		OpenAIAllowedModels:        config.OpenAI.AllowedModels,
+		EmbeddingsAllowedModels:    config.AllowedEmbeddingsModels,
 	})
 
 	// Diagnostic layers

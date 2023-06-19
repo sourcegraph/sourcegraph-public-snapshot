@@ -16,13 +16,14 @@ import (
 )
 
 type Config struct {
-	RateLimitNotifier       notify.RateLimitNotifier
-	AnthropicAccessToken    string
-	AnthropicAllowedModels  []string
-	OpenAIAccessToken       string
-	OpenAIOrgID             string
-	OpenAIAllowedModels     []string
-	EmbeddingsAllowedModels []string
+	RateLimitNotifier          notify.RateLimitNotifier
+	AnthropicAccessToken       string
+	AnthropicAllowedModels     []string
+	AnthropicMaxTokensToSample int
+	OpenAIAccessToken          string
+	OpenAIOrgID                string
+	OpenAIAllowedModels        []string
+	EmbeddingsAllowedModels    []string
 }
 
 func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, authr *auth.Authenticator, config *Config) http.Handler {
@@ -42,6 +43,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 						config.RateLimitNotifier,
 						config.AnthropicAccessToken,
 						config.AnthropicAllowedModels,
+						config.AnthropicMaxTokensToSample,
 					),
 				),
 			),
