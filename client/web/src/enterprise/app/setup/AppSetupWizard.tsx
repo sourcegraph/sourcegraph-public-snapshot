@@ -53,7 +53,7 @@ const APP_SETUP_STEPS: StepConfiguration[] = [
         },
         onNext: async () => {
             await appWindow.setResizable(true)
-            await appWindow.setSize(new LogicalSize(1024, 760))
+            await appWindow.setSize(new LogicalSize(1024, 768)
         },
     },
 ]
