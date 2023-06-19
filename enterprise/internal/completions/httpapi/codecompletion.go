@@ -26,15 +26,22 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 	}, func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
 		completion, err := cc.Complete(ctx, types.CompletionsFeatureCode, requestParams)
 		if err != nil {
-			trace.Logger(ctx, logger).Error("error on completion", log.Error(err))
+			logFields := []log.Field{log.Error(err)}
 
 			// Propagate the upstream headers to the client if available.
 			if errNotOK, ok := types.IsErrStatusNotOK(err); ok {
 				errNotOK.WriteHeader(w)
+				if tc := errNotOK.SourceTraceContext; tc != nil {
+					logFields = append(logFields,
+						log.String("sourceTraceContext.traceID", tc.TraceID),
+						log.String("sourceTraceContext.spanID", tc.SpanID))
+				}
 			} else {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 			_, _ = w.Write([]byte(err.Error()))
+
+			trace.Logger(ctx, logger).Error("error on completion", logFields...)
 			return
 		}
 
