@@ -73,11 +73,10 @@ func Test_multiqueueCacheCleaner_Handle(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		rcache.SetupForTest(t)
 		ctx := context.TODO()
 		t.Run(tt.name, func(t *testing.T) {
+			rcache.SetupForTest(t)
 			m := &multiqueueCacheCleaner{
-				//queueNames: tt.queueNames,
 				cache:      rcache.New(executortypes.DequeueCachePrefix),
 				windowSize: executortypes.DequeueTtl,
 			}
