@@ -8,6 +8,20 @@
 - Autofocus Cody chat prompt input [#53836](https://github.com/sourcegraph/sourcegraph/pull/53836)
 - Basic integration with the local Cody App [#54061](https://github.com/sourcegraph/sourcegraph/pull/54061)
 - Onboarding of the user when using local Cody App [#54298](https://github.com/sourcegraph/sourcegraph/pull/54298)
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [3.0.0-alpha.6]
+
+### Added
+
 - Chat message when access token is invalid or not
   configured [#53659](https://github.com/sourcegraph/sourcegraph/pull/53659)
 
