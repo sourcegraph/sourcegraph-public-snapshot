@@ -41,6 +41,7 @@ type GitBlobLSIFDataResolver interface {
 type SnapshotDataResolver interface {
 	Offset() int32
 	Data() string
+	Additional() *[]string
 }
 
 type LSIFRangesArgs struct {
