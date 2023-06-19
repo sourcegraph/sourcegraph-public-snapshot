@@ -7,7 +7,6 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"time"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
@@ -115,7 +114,7 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (StopPostgresF
 			RuntimePath(filepath.Join(pgRootDir, "runtime")).
 			Username(vars.PGUSER).
 			Database(vars.PGDATABASE).
-			UseUnixSocket(strings.ReplaceAll(unixSocketDir, "\\", "/")).
+			UseUnixSocket(unixSocketDir).
 			StartTimeout(120 * time.Second).
 			Logger(debugLogLinesWriter(logger, "postgres output line")),
 	)
