@@ -35,6 +35,10 @@ export class LocalStorage {
         }
     }
 
+    public async deleteEndpoint(): Promise<void> {
+        await this.storage.update(this.LAST_USED_ENDPOINT, null)
+    }
+
     public getEndpointHistory(): string[] | null {
         return this.storage.get<string[] | null>(this.CODY_ENDPOINT_HISTORY, null)
     }

@@ -21,7 +21,7 @@ export const ConnectApp: React.FunctionComponent<ConnectAppProps> = ({
 }) => {
     const buttonText = !isAppInstalled && isOSSupported ? 'Download Cody App' : 'Connect Cody App'
     // Open landing page if download link for user's arch cannot be found
-    const DOWNLOAD_URL = APP_DOWNLOAD_URLS[appOS][appArch] || APP_LANDING_URL.href
+    const DOWNLOAD_URL = APP_DOWNLOAD_URLS[appOS] ? APP_DOWNLOAD_URLS[appOS][appArch] : APP_LANDING_URL.href
     // Use postMessage to open because it won't open otherwise due to the sourcegraph:// scheme.
     const openLink = (url: string): void =>
         vscodeAPI.postMessage({

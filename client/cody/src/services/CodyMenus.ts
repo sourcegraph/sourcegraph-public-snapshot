@@ -13,18 +13,20 @@ export interface LoginInput {
     token: string | null | undefined
 }
 
-export const AuthMenu = async (type: 'signin' | 'signout', historyItems: string[]): Promise<LoginMenuItem | null> => {
+export type AuthMenuType = 'signin' | 'signout' | 'switch'
+
+export const AuthMenu = async (type: AuthMenuType, historyItems: string[]): Promise<LoginMenuItem | null> => {
     // Create option items
-    const isSignin = type === 'signin'
-    const icon = isSignin ? '$(sign-in) ' : '$(sign-out) '
+    const menu = AuthMenuOptions[type]
+    const icon = menu.icon
     const history =
         historyItems?.length > 0
             ? historyItems
                   ?.map((uri, i) => ({ id: uri, label: `${icon} ${uri}`, description: i === 0 ? 'current' : '', uri }))
                   .reverse()
-            : ([] as LoginMenuItem[])
-    const seperator = [{ label: 'Last connected...', kind: -1 }]
-    const optionItems = isSignin ? [...LoginMenuOptionItems, ...seperator, ...history] : history
+            : []
+    const seperator = [{ label: 'previously used', kind: -1 }]
+    const optionItems = type === 'signout' ? history : [...LoginMenuOptionItems, ...seperator, ...history]
     const option = (await vscode.window.showQuickPick(optionItems, AuthMenuOptions[type])) as LoginMenuItem
     return option
 }
@@ -47,11 +49,19 @@ export const AuthMenuOptions = {
         title: 'Other Sign in Options',
         placeholder: 'Select a sign in option',
         ignoreFocusOut: true,
+        icon: '$(sign-in)',
     },
     signout: {
         title: 'Sign Out',
         placeHolder: 'Select an account to sign out',
         ignoreFocusOut: true,
+        icon: '$(sign-out)',
+    },
+    switch: {
+        title: 'Switch Account',
+        placeHolder: 'Press Esc to cancel',
+        ignoreFocusOut: true,
+        icon: '$(sign-in)',
     },
 }
 

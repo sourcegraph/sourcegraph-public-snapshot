@@ -38,7 +38,8 @@ export class AuthProvider {
     }
 
     public async login(): Promise<void> {
-        const item = await AuthMenu('signin', this.endpointHistory)
+        const mode = this.authStatus.isLoggedIn ? 'switch' : 'signin'
+        const item = await AuthMenu(mode, this.endpointHistory)
         if (!item) {
             return
         }
@@ -66,11 +67,12 @@ export class AuthProvider {
             }
             default: {
                 // Auto log user if token for the selected instance was found in secret
+                console.log('Signing in...', item.uri)
                 const selectedEndpoint = item.uri
                 this.authStatus.endpoint = selectedEndpoint
                 const token = await this.secretStorage.get(selectedEndpoint)
-                const authedUser = await this.auth(selectedEndpoint, token || null)
-                if (authedUser) {
+                const authState = await this.auth(selectedEndpoint, token || null)
+                if (authState.isLoggedIn) {
                     return
                 }
                 const input = await LoginStepInputBox(item.uri, 2, false)
@@ -86,6 +88,7 @@ export class AuthProvider {
         if (!endpoint) {
             return
         }
+        await this.localStorage.deleteEndpoint()
         await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
         await this.secretStorage.delete(endpoint.label)
         this.authStatus = unauthenticatedStatus
@@ -119,6 +122,9 @@ export class AuthProvider {
 
     // Verify and share auth status with chatview
     public async setAuthStatus(authStatus: AuthStatus): Promise<void> {
+        if (this.authStatus === authStatus) {
+            return
+        }
         this.authStatus = authStatus
         await vscode.commands.executeCommand('cody.auth.verify', authStatus)
     }
@@ -129,7 +135,6 @@ export class AuthProvider {
         token: string | null,
         customHeaders?: {}
     ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean }> {
-        await this.storeAuthInfo(endpoint, token)
         const config = {
             serverEndpoint: endpoint,
             accessToken: token,

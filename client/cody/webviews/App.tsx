@@ -119,7 +119,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     return (
         <div className="outer-container">
             <Header />
-            {view === 'login' ? (
+            {view === 'login' || !authStatus ? (
                 <Login
                     onLogin={onLogin}
                     authStatus={authStatus}
@@ -145,7 +145,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         />
                     )}
                     {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
-                    {view === 'settings' && <Settings onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />}
+                    {view === 'settings' && (
+                        <Settings onLogout={onLogout} serverEndpoint={authStatus?.endpoint || config?.serverEndpoint} />
+                    )}
                     {view === 'chat' && (
                         <Chat
                             messageInProgress={messageInProgress}
