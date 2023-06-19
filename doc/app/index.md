@@ -34,7 +34,7 @@ The Cody app is a free, lightweight, native desktop application that connects yo
 
 ## Installation
 
-Check the [latest release](https://github.com/sourcegraph/sourcegraph/releases/tag/app-v2023.6.13%2B1311.1af08ae774) to find the right download link for your operating system. The app is currently supported on MacOS and Linux, and we're working on Windows support.
+Check the [latest release](https://github.com/sourcegraph/sourcegraph/releases/tag/app-v2023.6.16%2B1314.6c2d49d47c) to find the right download link for your operating system. The app is currently supported on MacOS and Linux, and we're working on Windows support.
 
 ## Setup
 
@@ -57,6 +57,19 @@ We're shipping new releases of the app quickly, and you should get prompts to up
 
 If you're on a version that's 2023.6.13 or older, we recommend you uninstall the app (see below) and download the most recent version in order to add your projects to your code graph during setup. Also note that these older versions of the app were called "Sourcegraph" and included Sourcegraph code search. Going forward, the app will be a Cody-only experience (and branded accordingly) so that we can focus on making Cody as useful and intuitive as possible.
 
+## Rate limiting
+
+There are several forms of rate limiting that help us control costs for free versions of Cody. We expect to relax these limits as continue development on [Cody Gateway](../cody/explanations/cody_gateway).
+
+### Cody Chat
+Interactions with Cody Chat (whether in the app UI or in the editor extension) are capped at 100 requests per day. 
+
+### Completions
+Cody completions (autocomplete powered by Cody) are capped at 100 requests per day. Learn more about [Cody Completions](../cody/completions.md).
+
+### Embeddings
+The setup experience allows users to select up to 10 repos for embeddings. Additional repos can be added, and embeddings can be scheduled, under Settings > Advanced settings > Embedding jobs, but the number of additional repos supported will vary depending on size.  
+
 ## Uninstallation
 
 We're working on a better way to clear all data including webkit storage, but for now you can run `rm -rf ~/.sourcegraph-psql ~/Library/Application\ Support/com.sourcegraph.cody ~/Library/Caches/com.sourcegraph.cody ~/Library/WebKit/com.sourcegraph.cody` to uninstall the app.
@@ -64,7 +77,7 @@ We're working on a better way to clear all data including webkit storage, but fo
 ## Troubleshooting
 
 Known issues: 
-- Users of the VS Code extension have to reconnect to the app every time they quit and reopen the editor. Using the editor extension to ask Cody questions about repos connected to the app is fragile and Cody may hang / not show embeddings correctly. 
+- The app is slow to load on initial install, due to Postgres issues we're working to tighten up. 
 - In the app's Cody Chat UI, Cody will read N files to provide an answer. Those files are listed as hyperlinks, but they should not be. 
 - In the settings dropdown in the app, there's an option for "Teams" that should not be there as the app is a single-player experience. 
 - The cloud icon in the app UI always says "indexing" and refers to Sourcegraph code search, not projects that are being added to the app's code graph. 
