@@ -42,6 +42,7 @@ go_test(
         "multihandler_test.go",
         "routes_test.go",
     ],
+    tags = ["requires-network"],
     deps = [
         ":handler",
         "//enterprise/internal/batches/types",

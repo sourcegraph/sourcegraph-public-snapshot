@@ -32,9 +32,9 @@ go_test(
     name = "executors_test",
     srcs = ["multiqueue_cache_cleaner_test.go"],
     embed = [":executors"],
+    tags = ["requires-network"],
     deps = [
         "//enterprise/internal/executor/types",
         "//internal/rcache",
     ],
-    tags = ["requires-network"]
 )
