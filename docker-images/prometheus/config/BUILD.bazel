@@ -8,6 +8,7 @@ pkg_files(
         "alertmanager.yml",
         "prometheus.yml",
     ],
+    # TODO explain
     attributes = pkg_attributes(
         mode = "0777",
     ),
@@ -19,6 +20,4 @@ pkg_tar(
     srcs = [
         ":base_config",
     ],
-    mode = "0777",
-    modes = {"prometheus.yml": "0777"},
 )
