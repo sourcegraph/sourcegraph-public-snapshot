@@ -4,39 +4,25 @@
 
 .row {
     position: relative;
-    border-bottom-width: 1px;
-    border-bottom-style: solid;
-
     display: flex;
     flex-direction: column;
-
     padding: var(--spacing);
 }
 
-.assistant-row:before {
+.row:before {
     position: absolute;
     top: 0;
     left: 0;
 
-    width: 0.1em;
+    width: .1rem;
     height: 100%;
 
     content: '';
+}
+
+
+.assistant-row:before {
     background-image: linear-gradient(to bottom, #b200f8, #ff5543, #00cbec);
-}
-
-.row:last-child {
-    border-bottom-width: 1px;
-    border-bottom-style: solid;
-}
-
-.row:last-child:not(:only-child) {
-    margin-bottom: -1px;
-}
-
-.row:only-child {
-    /* For the welcome message */
-    border-bottom: none;
 }
 
 .row:hover > .header-container,
@@ -47,7 +33,6 @@
 .actions {
     display: flex;
     flex-direction: column;
-    align-items: center;
     padding: 0 0 var(--spacing) 0;
 }
 

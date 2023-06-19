@@ -14,17 +14,16 @@
 /* Apply a slight tint to the assistant transcript item. */
 body[data-vscode-theme-kind='vscode-light'] .transcript-item:not(.human-transcript-item),
 body[data-vscode-theme-kind='vscode-high-contrast-light'] .transcript-item:not(.human-transcript-item) {
-    background-color: rgba(0, 0, 0, 0.07); /* slight dark tint */
+    background-color: rgba(0, 0, 0, 0.05); /* slight dark tint */
 }
 
 body[data-vscode-theme-kind='vscode-dark'] .transcript-item:not(.human-transcript-item),
 body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-transcript-item) {
-    background-color: rgba(255, 255, 255, 0.07); /* slight light tint */
+    background-color: rgba(255, 255, 255, 0.05); /* slight light tint */
 }
 
-.transcript-item-participant {
-    font-size: var(--vscode-editor-font-size);
-    color: var(--vscode-descriptionForeground);
+.human-transcript-item:before {
+    background-color: var(--vscode-sideBarSectionHeader-border);
 }
 
 .transcript-item pre,
