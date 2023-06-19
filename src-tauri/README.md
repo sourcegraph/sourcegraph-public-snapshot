@@ -67,7 +67,7 @@ The system tray icon applies to MacOS and is different from the application icon
 
 The tray icon is expected to be grayscale and will automatically be adjusted between light and dark modes. This behavior is enabled by the `iconAsTemplate` flag.
 
-Note that the light and dark versions of the tray icon depend on the color of the desktop wallaper, and not on the system UI light/dark theme.
+Note that the light and dark versions of the tray icon depend on the color of the desktop wallpaper, and not on the system UI light/dark theme.
 
 ## Where to get help or support
 
