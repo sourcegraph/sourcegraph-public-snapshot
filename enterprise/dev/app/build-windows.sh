@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 echo "--- :chrome: Building web"
 pnpm install
 NODE_ENV=production ENTERPRISE=1 SOURCEGRAPH_APP=1 pnpm run build-web
