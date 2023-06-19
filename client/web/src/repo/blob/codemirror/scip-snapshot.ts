@@ -14,7 +14,7 @@ class SCIPSnapshotDecorations extends WidgetType {
     }
 }
 
-export const scipSnapshot = (data?: { offset: number; data: string }[] | null): Extension =>
+export const scipSnapshot = (blob: string, data?: { offset: number; data: string }[] | null): Extension =>
     data
         ? [
               EditorView.decorations.of(
@@ -23,7 +23,14 @@ export const scipSnapshot = (data?: { offset: number; data: string }[] | null): 
                           Decoration.widget({
                               widget: new SCIPSnapshotDecorations(line.data),
                               block: true,
-                          }).range(line.offset, line.offset)
+                          }).range(
+                              // If the offset is beyond the document, we have to bring it back one
+                              // so codemirror will render them. This only looks correct when there
+                              // are no lines after it, which is the case for the final line, otherwise
+                              // offsetting by -1 gives weird extra newlines
+                              line.offset - (line.offset > blob.length ? 1 : 0),
+                              line.offset - (line.offset > blob.length ? 1 : 0)
+                          )
                       )
                   )
               ),

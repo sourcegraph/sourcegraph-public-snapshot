@@ -1405,6 +1405,9 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 		return nil, err
 	}
 
+	// client-side normalizes the file to LF, so normalize CRLF files to that so the offsets are correct
+	file = bytes.ReplaceAll(file, []byte("\r\n"), []byte("\n"))
+
 	repo, err := s.repoStore.Get(ctx, api.RepoID(dump.RepositoryID))
 	if err != nil {
 		return nil, err
