@@ -8,6 +8,8 @@
 - Autofocus Cody chat prompt input [#53836](https://github.com/sourcegraph/sourcegraph/pull/53836)
 - Basic integration with the local Cody App [#54061](https://github.com/sourcegraph/sourcegraph/pull/54061)
 - Onboarding of the user when using local Cody App [#54298](https://github.com/sourcegraph/sourcegraph/pull/54298)
+- Chat message when access token is invalid or not
+  configured [#53659](https://github.com/sourcegraph/sourcegraph/pull/53659)
 
 ### Changed
 
@@ -23,15 +25,19 @@
 - Fixed the y position at which autocomplete suggestions are rendered [#53677](https://github.com/sourcegraph/sourcegraph/pull/53677)
 - Fixed rendered completions being cleared after disabling them in settings [#53758](https://github.com/sourcegraph/sourcegraph/pull/53758)
 - Wrap long words in the chat message [#54244](https://github.com/sourcegraph/sourcegraph/pull/54244)
+- Reset conversation button re-enables "Send"
+  button [#53669](https://github.com/sourcegraph/sourcegraph/pull/53669)
 
 ### Security
 
-## [3.0.0-alpha.2]
+## [3.0.0-alpha.5]
 
 ### Added
 
-- A separate setting for the (optional) dotcom access token. [pull/53018](https://github.com/sourcegraph/sourcegraph/pull/53018)
-- Enabled "Explain selected code (detailed)" recipe [#53080](https://github.com/sourcegraph/sourcegraph/pull/53080)
+- A separate setting for the (optional) dotcom access
+  token. [pull/53018](https://github.com/sourcegraph/sourcegraph/pull/53018)
+- Enabled "Explain selected code (detailed)"
+  recipe [#53080](https://github.com/sourcegraph/sourcegraph/pull/53080)
 - Enabled multiple recipes [#53299](https://github.com/sourcegraph/sourcegraph/pull/53299)
   - Explain selected code (high level)
   - Generate a unit test
@@ -44,7 +50,6 @@
 - Enabled "Translate to different language" recipe [#53393](https://github.com/sourcegraph/sourcegraph/pull/53393)
 - Skip Cody completions if there is code in line suffix or in the middle of a word in prefix [#53476](https://github.com/sourcegraph/sourcegraph/pull/53476)
 - Enabled "Summarize recent code changes" recipe [#53534](https://github.com/sourcegraph/sourcegraph/pull/53534)
-- Chat message when access token is invalid or not configured [#53659](https://github.com/sourcegraph/sourcegraph/pull/53659)
 
 ### Changed
 
