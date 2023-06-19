@@ -15,6 +15,7 @@
 ## [Sourcegraph App](app/index.md)
 
 - [Notes about code signing the Sourcegraph App](./app/codesigning.md)
+- [Building App on Windows](./app/windows.md)
 
 ## Development
 
