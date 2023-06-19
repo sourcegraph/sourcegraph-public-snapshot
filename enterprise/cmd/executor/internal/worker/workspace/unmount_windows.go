@@ -3,5 +3,5 @@ package workspace
 import "errors"
 
 func unmount(dirPath string) error {
-	return errors.New("unmount not supported on Windows")
+	panic("unmount should never be called on Windows")
 }
