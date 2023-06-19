@@ -50,6 +50,7 @@
 - Fixed UI of the prompt input [#53548](https://github.com/sourcegraph/sourcegraph/pull/53548)
 - Fixed zero-width spaces popping up in inline autocomplete [#53599](https://github.com/sourcegraph/sourcegraph/pull/53599)
 - Reset conversation button re-enables "Send" button [#53669](https://github.com/sourcegraph/sourcegraph/pull/53669)
+- Fixed displaying message about invalid access token on any 401 error from backend [#53674](https://github.com/sourcegraph/sourcegraph/pull/53674)
 
 ### Security
 
