@@ -52,13 +52,13 @@ fileExistenceTests:
   shouldExist: true
   uid: 0
   gid: 0
-  permissions: '-r-xr-xr-x'
+  permissions: '-rwxrwxrwx'
 - name: '/sg_config_prometheus/alertmanager.yml'
   path: '/sg_config_prometheus/alertmanager.yml'
   shouldExist: true
   uid: 0
   gid: 0
-  permissions: '-r-xr-xr-x'
+  permissions: '-rwxrwxrwx'
 - name: '/sg_config_prometheus/prometheus_alert_rules.yml'
   path: '/sg_config_prometheus/prometheus_alert_rules.yml'
   shouldExist: true
