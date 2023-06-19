@@ -10,8 +10,8 @@ interface Props {
 }
 export const CodeInsightsLimitedAccessAppBanner: React.FC<Props> = props => (
     <LimitedAccessBanner storageKey="app.limitedAccessBannerDismissed.codeInsights" className={props.className}>
-        Code Insights is currently available to try for free, up to 2 insights, while Sourcegraph App is in beta.
-        Pricing and availability for Code Insights is subject to change in future releases.{' '}
+        Code Insights is currently available to try for free, up to 2 insights, while Cody App is in beta. Pricing and
+        availability for Code Insights is subject to change in future releases.{' '}
         <strong>
             For unlimited access to Insights,{' '}
             <Link

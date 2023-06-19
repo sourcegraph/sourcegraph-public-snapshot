@@ -159,7 +159,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<
             {!licensed && isSourcegraphApp && (
                 <LimitedAccessLabel
                     className={classNames(styles.limitedBanner)}
-                    message="Dashboards aren't available yet for the Sourcegraph app"
+                    message="Dashboards aren't available yet for the Cody app"
                 />
             )}
 

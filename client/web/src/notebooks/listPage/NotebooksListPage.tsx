@@ -263,7 +263,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
 
                 {isSourcegraphApp && (
                     <LimitedAccessBanner storageKey="app.limitedAccessBannerDismissed.notebooks" className="my-4">
-                        Notebooks is currently available to try for free while Sourcegraph App is in beta. Pricing and
+                        Notebooks is currently available to try for free while Cody App is in beta. Pricing and
                         availability for Notebooks is subject to change in future releases.
                     </LimitedAccessBanner>
                 )}

@@ -183,8 +183,8 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
             </PageHeader>
             {isSourcegraphApp && (
                 <LimitedAccessBanner storageKey="app.limitedAccessBannerDismissed.batchChanges" className="my-4">
-                    Batch Changes is currently available to try for free, up to 10 changesets, while Sourcegraph App is
-                    in beta. Pricing and availability for Batch Changes is subject to change in future releases.{' '}
+                    Batch Changes is currently available to try for free, up to 10 changesets, while Cody App is in
+                    beta. Pricing and availability for Batch Changes is subject to change in future releases.{' '}
                     <strong>
                         For unlimited access to Batch Changes,{' '}
                         <Link

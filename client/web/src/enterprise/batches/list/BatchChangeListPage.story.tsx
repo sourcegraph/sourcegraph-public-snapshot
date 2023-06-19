@@ -123,7 +123,7 @@ ListOfBatchChanges.argTypes = {
         defaultValue: false,
     },
     isApp: {
-        name: 'is Sourcegraph App',
+        name: 'is Cody App',
         control: { type: 'boolean' },
         defaultValue: false,
     },
