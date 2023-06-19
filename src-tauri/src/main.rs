@@ -6,7 +6,6 @@
 #[cfg(not(dev))]
 use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 
-mod cody;
 mod common;
 mod tray;
 use common::{extract_path_from_scheme_url, show_window};
