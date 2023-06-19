@@ -419,6 +419,11 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         const { fileTermCounts, termTotalFiles, totalFiles } = fileMatches
         const idfDict = idf(termTotalFiles, totalFiles)
 
+        const activeTextEditor = this.editor.getActiveTextEditor()
+        const activeFilename = activeTextEditor
+            ? path.normalize(vscode.workspace.asRelativePath(activeTextEditor.filePath))
+            : undefined
+
         const querySizeBytes = query
             .flatMap(t => t.originals.map(orig => (orig.length + 1) * t.count))
             .reduce((a, b) => a + b, 0)
@@ -430,7 +435,13 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         )
         const queryVec = tfidf(queryStems, queryTf, idfDict)
         const filenamesWithScores = Object.entries(fileTermCounts)
-            .map(([filename, fileTermCounts]) => {
+            .flatMap(([filename, fileTermCounts]) => {
+                if (activeFilename === filename) {
+                    // The currently active file will always be added as context, so we can skip
+                    // over it here
+                    return []
+                }
+
                 if (fileStats[filename] === undefined) {
                     throw new Error(`filename ${filename} missing from fileStats`)
                 }
@@ -444,15 +455,17 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                     score *= 0.1 // downweight very large files
                 }
 
-                return {
-                    filename,
-                    cosineScore,
-                    termCounts: fileTermCounts,
-                    tfVec,
-                    idfDict,
-                    score,
-                    scoreComponents,
-                }
+                return [
+                    {
+                        filename,
+                        cosineScore,
+                        termCounts: fileTermCounts,
+                        tfVec,
+                        idfDict,
+                        score,
+                        scoreComponents,
+                    },
+                ]
             })
             .sort(({ score: score1 }, { score: score2 }) => score2 - score1)
 
