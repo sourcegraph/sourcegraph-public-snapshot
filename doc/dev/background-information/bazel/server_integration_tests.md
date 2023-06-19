@@ -38,9 +38,9 @@ Therefore, two options are available to iterate locally:
 - You have access to a linux machine, in which case you're good to go, you can use the command above exaclty as it is. 
 - You don't have access to a linux machine, in which case you'll want to write your tests by running the server locally on your own, develop your tests like this, and finally integrate them with Bazel in the `//testing` package once you're done.
 
-### Using the `server_integration_test` rule
+## Using the `server_integration_test` rule
 
-#### Adding the rule in `testing/BUILD.bazel` 
+### Adding the rule in `testing/BUILD.bazel` 
 
 The `server_integration_test` rule is a actually a [_macro_](https://bazel.build/extending/macros) of [`sh_test`](https://bazel.build/reference/be/shell#sh_test). In simple terms, a macro in Bazel is a function that will output code calling other rules, usually doing manipulation for you to avoid having to repeat yourself, or to pass default values. 
 
@@ -97,7 +97,7 @@ server_integration_test(
 
 Now we have defined our test target, it's time to write the script that will call your tests, regardless of the language you wrote them with, while setting up and tearing down the server image.
 
-#### Writing the test runner script
+### Writing the test runner script
 
 We'll now write `testing/foo_test.sh`, which will take care of setting up and tearing down the server image once it has ran our tests against the server.
 You're free to pick whatever language you want to write a test, as long as it is built and runnable by Bazel. It can be a shell script, Go code or 
@@ -156,7 +156,7 @@ echo "--- foo tests"
 echo "--- done"
 ```
 
-### Going further 
+## Going further 
 
 Once you're less confused by the Bazel jargon that is sprinkled all over the place, it'll become clear that Bazel is simply providing 
 an hermetic way of running commands, meaning you can include whatever you want in your wrapping script, such as creating an 
