@@ -6,7 +6,7 @@ import { test } from './helpers'
 
 test('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
     await sidebar.getByRole('button', { name: 'Other Login Options...' }).click()
-    await page.getByRole('option', { name: 'Login with URL and Access Token, Login with URL and Access Token' }).click()
+    await page.getByRole('option', { name: 'Sign in with URL and Access Token' }).click()
     await page.getByRole('combobox', { name: 'input' }).fill(SERVER_URL)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
     await page.getByRole('combobox', { name: 'input' }).fill('abcdefghijklmnopqrstuvwxyz')
@@ -15,7 +15,7 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
     await expect(sidebar.getByText('Invalid credentials')).toBeVisible()
 
     await sidebar.getByRole('button', { name: 'Other Login Options...' }).click()
-    await page.getByRole('option', { name: 'Login with URL and Access Token, Login with URL and Access Token' }).click()
+    await page.getByRole('option', { name: 'Sign in with URL and Access Token' }).click()
     await page.getByRole('combobox', { name: 'input' }).fill(SERVER_URL)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')
     await page.getByRole('combobox', { name: 'input' }).fill(VALID_TOKEN)
@@ -31,8 +31,9 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
 
     await page.getByRole('button', { name: 'Chat Section' }).hover()
 
-    await page.click('[aria-label="Settings"]')
-    await sidebar.getByRole('button', { name: 'Logout' }).click()
+    await page.getByRole('button', { name: 'More Actions...', exact: true }).click()
+    await page.getByRole('button', { name: 'Sign out...' }).click()
+    await page.getByRole('option', { name: 'sign-out http://localhost:49300, current' }).locator('a').click()
 
     await expect(sidebar.getByRole('button', { name: 'Other Login Options...' })).toBeVisible()
     await expect(sidebar.getByText('Invalid credentials')).not.toBeVisible()

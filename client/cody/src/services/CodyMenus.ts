@@ -90,19 +90,16 @@ export const LoginMenuOptionItems = [
     {
         id: 'enterprise',
         label: 'Sign in to a Sourcegraph Enterprise Instance',
-        description: 'Sign in to a Sourcegraph Enterprise Instance',
         totalSteps: 1,
     },
     {
         id: 'dotcom',
         label: 'Sign in to Sourcegraph.com',
-        description: 'Sign in to Sourcegraph.com',
         totalSteps: 0,
     },
     {
         id: 'token',
         label: 'Sign in with URL and Access Token',
-        description: 'Sign in with URL and Access Token',
         totalSteps: 2,
     },
 ]
