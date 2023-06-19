@@ -59,7 +59,7 @@ If you're on a version that's 2023.6.13 or older, we recommend you uninstall the
 
 ## Rate limiting
 
-There are several forms of rate limiting that help us control costs for free versions of Cody. We expect to relax these limits as continue development on [Cody Gateway](../cody/explanations/cody_gateway).
+There are several forms of rate limiting that help us control costs for free versions of Cody. We expect to relax these limits as we continue development on [Cody Gateway](../cody/explanations/cody_gateway.md).
 
 ### Cody Chat
 Interactions with Cody Chat (whether in the app UI or in the editor extension) are capped at 100 requests per day. 
