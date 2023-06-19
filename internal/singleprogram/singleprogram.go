@@ -104,12 +104,12 @@ func Init(logger log.Logger) CleanupFunc {
 	}
 
 	// Force migrations prior to start any services
-	_, err = connections.EnsureNewFrontendDB(observation.NewContext(logger), os.Getenv("PGDATASOURCE"), "frontend")
+	_, err = connections.MigrateNewFrontendDB(observation.NewContext(logger), os.Getenv("PGDATASOURCE"), "frontend")
 	if err != nil {
 		logger.Fatal("Failed to migrate to codeintel database", log.Error(err))
 	}
 
-	_, err = connections.EnsureNewCodeIntelDB(observation.NewContext(logger), os.Getenv("CODEINTEL_PGDATASOURCE"), "codeintel")
+	_, err = connections.MigrateNewCodeIntelDB(observation.NewContext(logger), os.Getenv("CODEINTEL_PGDATASOURCE"), "codeintel")
 	if err != nil {
 		logger.Fatal("Failed to migrate to codeintel database", log.Error(err))
 	}
