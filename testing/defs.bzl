@@ -2,12 +2,12 @@ def server_integration_test(name, port, runner_src, **kwargs):
     if not port:
         fail("port must be specified")
 
-    args = kwargs.get("args", [])
-    data = kwargs.get("data", [])
-    env = kwargs.get("env", {})
-    env_inherit = kwargs.get("env_inherit", [])
-    tags = kwargs.get("tags", [])
-    deps = kwargs.get("deps", [])
+    args = kwargs.pop("args", [])
+    data = kwargs.pop("data", [])
+    env = kwargs.pop("env", {})
+    env_inherit = kwargs.pop("env_inherit", [])
+    tags = kwargs.pop("tags", [])
+    deps = kwargs.pop("deps", [])
 
     # We need the server image for the script to spawn it.
     data.append("//enterprise/cmd/server:image_tarball")
