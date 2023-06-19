@@ -8,7 +8,7 @@ use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 
 mod common;
 mod tray;
-use common::{extract_path_from_scheme_url, show_window};
+use common::{close_window, extract_path_from_scheme_url, show_window};
 use std::sync::RwLock;
 use tauri::Manager;
 use tauri_utils::config::RemoteDomainAccessScope;
@@ -143,7 +143,7 @@ fn main() {
                     .unwrap()
                     .eval(&format!("window.location.href = '{}'", path))
                     .unwrap();
-                show_window(&handle, "main");
+                show_window(&handle.clone(), "main");
             })
             .unwrap();
 
@@ -157,6 +157,7 @@ fn main() {
                     set_launch_path(url)
                 }
             }
+            show_window(&app.handle(), "splashscreen");
             Ok(())
         })
         // Define a handler so that invoke("get_launch_scheme_url") can be
@@ -214,21 +215,24 @@ fn start_embedded_services(handle: &tauri::AppHandle) {
                         *APP_SHELL_READY_PAYLOAD.write().unwrap() = Some(AppShellReadyPayload {
                             sign_in_url: url.to_string(),
                         });
-                        app.get_window("main")
-                            .unwrap()
-                            .emit(
-                                "app-shell-ready",
-                                APP_SHELL_READY_PAYLOAD.read().unwrap().clone(),
-                            )
-                            .unwrap();
+                        close_window(&app, "splashscreen");
+                        let main = app.get_window("main").unwrap();
+                        main.show().unwrap();
+                        main.emit(
+                            "app-shell-ready",
+                            APP_SHELL_READY_PAYLOAD.read().unwrap().clone(),
+                        )
+                        .unwrap();
                     }
                     log::error!("{}", line);
                 }
                 CommandEvent::Error(err) => {
+                    close_window(&app, "splashscreen");
                     show_error_screen(&app);
                     log::error!("Error running the Cody app backend: {:#?}", err)
                 }
                 CommandEvent::Terminated(payload) => {
+                    close_window(&app, "splashscreen");
                     show_error_screen(&app);
 
                     if let Some(code) = payload.code {

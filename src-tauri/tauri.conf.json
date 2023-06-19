@@ -17,7 +17,9 @@
         "confirm": true
       },
       "fs": {
-        "scope": ["$APPDATA/postgresql/data"],
+        "scope": [
+          "$APPDATA/postgresql/data"
+        ],
         "removeDir": true
       },
       "shell": {
@@ -26,7 +28,12 @@
           {
             "name": "../.bin/sourcegraph-backend",
             "sidecar": true,
-            "args": ["--cacheDir", "$APPCONFIG", "--configDir", "$APPLOCALDATA"]
+            "args": [
+              "--cacheDir",
+              "$APPCONFIG",
+              "--configDir",
+              "$APPLOCALDATA"
+            ]
           }
         ],
         "open": "^(vscode:|https?:)|com.sourcegraph.cody/.*.log$"
@@ -46,8 +53,16 @@
       "deb": {
         "depends": []
       },
-      "externalBin": ["../.bin/sourcegraph-backend"],
-      "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+      "externalBin": [
+        "../.bin/sourcegraph-backend"
+      ],
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ],
       "identifier": "com.sourcegraph.cody",
       "longDescription": "",
       "macOS": {
@@ -83,7 +98,17 @@
         "height": 768,
         "resizable": true,
         "title": "Cody",
-        "width": 1024
+        "width": 1024,
+        "visible": false
+      },
+      {
+        "fullscreen": false,
+        "height": 600,
+        "resizable": false,
+        "decorations": false,
+        "width": 800,
+        "url": "splashscreen.html",
+        "label": "splashscreen"
       }
     ]
   }
