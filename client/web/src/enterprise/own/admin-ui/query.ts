@@ -36,6 +36,7 @@ export const GET_INSTANCE_OWN_STATS = gql`
             totalCodeownedFiles
             totalOwnedFiles
             totalAssignedOwnershipFiles
+            updatedAt
         }
     }
 `

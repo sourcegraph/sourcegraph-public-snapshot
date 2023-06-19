@@ -273,6 +273,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 		want := PathAggregateCounts{
 			CodeownedFileCount:  1,
 			TotalOwnedFileCount: 1,
+			UpdatedAt:           timestamp,
 		}
 		assert.DeepEqual(t, want, got)
 	})
@@ -288,6 +289,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 			CodeownedFileCount:         1,
 			AssignedOwnershipFileCount: 1,
 			TotalOwnedFileCount:        2,
+			UpdatedAt:                  timestamp,
 		}
 		assert.DeepEqual(t, want, got)
 	})
@@ -302,6 +304,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 			CodeownedFileCount:         1,
 			AssignedOwnershipFileCount: 1,
 			TotalOwnedFileCount:        2,
+			UpdatedAt:                  timestamp,
 		}
 		assert.DeepEqual(t, want, got)
 	})
@@ -314,6 +317,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 			CodeownedFileCount:         11,
 			AssignedOwnershipFileCount: 1,
 			TotalOwnedFileCount:        12,
+			UpdatedAt:                  timestamp,
 		}
 		assert.DeepEqual(t, want, got)
 	})
