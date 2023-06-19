@@ -5,11 +5,12 @@ package search
 
 import (
 	"io/fs"
-	"log"
 	"os"
 	"syscall"
 
 	"golang.org/x/sys/unix"
+
+	"github.com/sourcegraph/log"
 )
 
 func mmap(path string, f *os.File, fi fs.FileInfo) ([]byte, error) {
@@ -19,7 +20,7 @@ func mmap(path string, f *os.File, fi fs.FileInfo) ([]byte, error) {
 	}
 	if err := unix.Madvise(data, syscall.MADV_SEQUENTIAL); err != nil {
 		// best effort at optimization, so only log failures here
-		log.Printf("failed to madvise for %q: %v", path, err)
+		log.Scoped("mmap", "").Info("failed to madvise", log.String("path", path), log.Error(err))
 	}
 
 	return data, nil
