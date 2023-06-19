@@ -82,13 +82,13 @@ ts_project(
         "//:node_modules/@types/react",
         "//:node_modules/@types/sinon",
         "//:node_modules/@types/uuid",
-        "//:node_modules/axe-core",  #keep
+        "//:node_modules/axe-core",
         "//:node_modules/chalk",
         "//:node_modules/comlink",
         "//:node_modules/date-fns",
         "//:node_modules/delay",
         "//:node_modules/expect",
-        "//:node_modules/graphql",  #keep
+        "//:node_modules/graphql",
         "//:node_modules/jest",  #keep
         "//:node_modules/jest-mock-extended",
         "//:node_modules/jsonc-parser",

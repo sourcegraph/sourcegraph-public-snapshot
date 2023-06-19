@@ -30,18 +30,17 @@ ts_project(
     ],
     module = "commonjs",
     tsconfig = ":tsconfig",
-    # TODO(bazel): type-only imports
     deps = [
         "//:node_modules/@codemirror/view",
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/pollyjs__core",  #keep
         "//:node_modules/@types/puppeteer",
         "//:node_modules/lodash",
-        "//:node_modules/puppeteer",  #keep
+        "//:node_modules/puppeteer",
         "//client/web:graphql_operations",
         "//client/web:node_modules/@sourcegraph/common",
         "//client/web:node_modules/@sourcegraph/shared",
-        "//client/web:web_lib",  #keep
+        "//client/web:web_lib",
         "//client/web/dev",
     ],
 )

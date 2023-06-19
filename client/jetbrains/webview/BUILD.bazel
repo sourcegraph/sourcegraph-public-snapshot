@@ -128,7 +128,7 @@ ts_project(
         "//:node_modules/mdi-react",
         "//:node_modules/react",
         "//:node_modules/react-dom",
-        "//:node_modules/react-router-dom",  #keep
+        "//:node_modules/react-router-dom",
         "//:node_modules/rxjs",
         "//client/jetbrains:node_modules/@sourcegraph/branded",
         "//client/jetbrains:node_modules/@sourcegraph/common",
