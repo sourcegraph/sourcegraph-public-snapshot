@@ -3,63 +3,37 @@
 }
 
 .row {
-    border-bottom-width: 1px;
-    border-bottom-style: solid;
-
+    position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--spacing);
+    padding: var(--spacing);
 }
 
-.row:last-child {
-    border-bottom-width: 1px;
-    border-bottom-style: solid;
+.row:before {
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    width: .1rem;
+    height: 100%;
+
+    content: '';
 }
 
-.row:last-child:not(:only-child) {
-    margin-bottom: -1px;
+
+.assistant-row:before {
+    background-image: linear-gradient(to bottom, #b200f8, #ff5543, #00cbec);
 }
 
-.row:only-child {
-    /* For the welcome message, make it visually consume the entire height instead of being a
-    discrete message. */
-    flex: 1;
-    border-bottom: none;
-}
-
-.participant {
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
-}
-
-.participant-name {
-    display: flex;
-    gap: 0.25rem;
-    align-items: center;
-
-    margin: 0;
-    padding: var(--spacing) var(--spacing) 0 var(--spacing);
-
-    font-size: 0.8rem;
-    font-weight: bold;
-    height: 2rem;
-}
-
-.participant-avatar {
-    height: 1rem;
-    width: 1rem;
+.row:hover > .header-container,
+.row:hover > .footer-container {
+    visibility: visible;
 }
 
 .actions {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 0 var(--spacing);
-}
-
-.content-padding {
-    padding: 0 var(--spacing) var(--spacing) var(--spacing);
+    padding: 0 0 var(--spacing) 0;
 }
 
 .content {
@@ -84,10 +58,40 @@
     margin-bottom: 0;
 }
 
+.header-container {
+    position: absolute;
+    right: var(--spacing);
+    top: calc(var(--spacing) / 4);
+
+    visibility: hidden;
+}
+
+.editing-container {
+    position: absolute;
+    right: var(--spacing);
+    top: var(--spacing);
+
+    visibility: visible;
+}
+
+.editing-label {
+    margin: 0;
+    padding-top: 0.1rem;
+    padding-bottom: 0.5rem;
+    opacity: 0.5;
+}
+
+.footer-container {
+    position: absolute;
+    bottom: calc(var(--spacing) / 4);
+    right: var(--spacing);
+
+    visibility: hidden;
+}
+
 .feedback-edit-buttons-container {
     display: flex;
     gap: 0.25rem;
-    align-items: center;
 
     margin: 0;
     padding: 0 var(--spacing) var(--spacing) var(--spacing);

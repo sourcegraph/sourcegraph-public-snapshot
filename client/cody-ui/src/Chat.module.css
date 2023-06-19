@@ -9,6 +9,7 @@
 }
 
 .input-row {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -48,4 +49,14 @@
     flex-wrap: wrap;
     gap: 0.5rem;
     margin-bottom: 0.25rem;
+}
+
+.abort-button-container {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: -2.5rem;
+    z-index: 100;
 }

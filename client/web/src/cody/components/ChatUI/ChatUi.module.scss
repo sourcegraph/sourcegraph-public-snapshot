@@ -1,26 +1,27 @@
 .container {
-    font-size: 0.9rem;
+    font-size: var(--font-size-base);
     flex: 1;
     height: auto !important;
     min-height: 0.1rem;
+    background-color: var(--body-bg);
 }
 
 .transcript-item {
-    background: linear-gradient(var(--body-bg), var(--body-bg)) padding-box,
-        linear-gradient(268deg, #00cbec, #a112ff) border-box;
-    border-color: transparent;
-    border-top-width: 1px;
-    border-top-style: solid;
-    border-bottom-style: none !important; // Override the Transcript...last-child row
-}
-
-.transcript-action > ol {
-    padding: 0;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--input-bg);
 }
 
 .human-transcript-item {
-    background: var(--input-bg);
-    border-color: var(--border-color-2);
+    background-color: var(--bg-color);
+}
+
+.human-transcript-item::before {
+    background-color: var(--border-color-2);
+}
+
+.transcript-action {
+    border: 1px solid var(--border-color);
+    background-color: var(--body-bg);
 }
 
 .transcript-item pre,
@@ -43,9 +44,26 @@
     color: var(--code-background);
 }
 
+.transcript-item p {
+    /* Default typography is too spaced out */
+    margin-bottom: 0.75rem;
+}
+
 .transcript-item ul,
 .transcript-item ol {
     padding-left: 2rem;
+
+    /* Often there's paragraphs in list items, and the margin becomes too huge, so we reduce it to something sensible */
+    p {
+        margin-bottom: 0.5rem;
+    }
+}
+
+.transcript-item .transcript-action {
+    ol,
+    li {
+        padding: 0;
+    }
 }
 
 .scroll-button-wrapper {

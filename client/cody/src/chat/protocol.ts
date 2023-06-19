@@ -22,6 +22,7 @@ export type WebviewMessage =
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
     | { command: 'insert'; text: string }
+    | { command: 'abort' }
 
 /**
  * A message sent from the extension host to the webview.

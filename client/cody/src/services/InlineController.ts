@@ -137,13 +137,15 @@ export class InlineController {
     /**
      * List response from Cody as comment
      */
-    public reply(replyText = 'There was an error.'): void {
-        if (!this.thread) {
+    public reply(text: string, error = false): void {
+        if (!this.thread || this.thread.state) {
             return
         }
+        const replyText = text
         const comment = new Comment(replyText, 'Cody', this.codyIcon, false, this.thread, undefined)
         this.thread.comments = [...this.thread.comments, comment]
-        this.thread.canReply = true
+        this.thread.canReply = !error
+        this.thread.state = error ? 1 : 0
         const firstCommentId = this.thread.comments[0].label
         if (firstCommentId) {
             this.threads.set(firstCommentId, this.thread)
@@ -178,10 +180,10 @@ export class InlineController {
     }
 
     public async error(): Promise<void> {
-        if (!this.currentTaskId) {
-            return this.reply()
+        this.reply('Request failed. Please close this and try again.', true)
+        if (this.currentTaskId) {
+            await this.stopFixMode(true)
         }
-        await this.stopFixMode(true)
     }
     /**
      * Create code lense and initiate decorators for fix mode
@@ -215,6 +217,7 @@ export class InlineController {
         await lens?.decorator.decorate(range)
         if (this.thread) {
             this.thread.range = range
+            this.thread.state = error ? 1 : 0
         }
         this.currentTaskId = ''
         logEvent('CodyVSCodeExtension:inline-assist:error')

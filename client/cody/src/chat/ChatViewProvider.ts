@@ -240,6 +240,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
                 break
+            case 'abort':
+                void this.multiplexer.notifyTurnComplete()
+                this.cancelCompletion()
+                this.onCompletionEnd()
+                break
             case 'executeRecipe':
                 await this.executeRecipe(message.recipe)
                 break
@@ -357,6 +362,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 void this.multiplexer.notifyTurnComplete()
             },
             onError: (err, statusCode) => {
+                // TODO notify the multiplexer of the error
+                debug('ChatViewProvider:onError', err)
+                if (err === 'aborted') {
+                    this.onCompletionEnd()
+                    return
+                }
                 // Display error message as assistant response
                 this.transcript.addErrorAsAssistantResponse(err)
                 // Log users out on unauth error
