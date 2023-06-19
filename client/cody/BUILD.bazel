@@ -55,6 +55,7 @@ ts_project(
         "src/completions/providers/unstable-codegen.ts",
         "src/completions/utils.ts",
         "src/configuration.ts",
+        "src/configuration-keys.ts",
         "src/editor/vscode-editor.ts",
         "src/event-logger.ts",
         "src/extension.ts",

@@ -1,5 +1,6 @@
 export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'
 
+// Should we share VS Code specific config via cody-shared?
 export interface Configuration {
     serverEndpoint: string
     codebase?: string
@@ -15,6 +16,8 @@ export interface Configuration {
     experimentalNonStop: boolean
     completionsAdvancedProvider: 'anthropic' | 'unstable-codegen'
     completionsAdvancedServerEndpoint: string | null
+    completionsAdvancedCache: boolean
+    completionsAdvancedEmbeddings: boolean
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {

@@ -101,6 +101,7 @@ const register = async (
     const controllers = { inline: commentController, fixups: fixup }
 
     const editor = new VSCodeEditor(controllers)
+    // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
@@ -427,7 +428,14 @@ function createCompletionsProvider(
                 contextWindowTokens: 2048,
             })
     }
-    const completionsProvider = new CodyCompletionItemProvider(providerConfig, history, statusBar, codebaseContext)
+    const completionsProvider = new CodyCompletionItemProvider({
+        providerConfig,
+        history,
+        statusBar,
+        codebaseContext,
+        isCompletionsCacheEnabled: config.completionsAdvancedCache,
+        isEmbeddingsContextEnabled: config.completionsAdvancedEmbeddings,
+    })
 
     disposables.push(
         vscode.commands.registerCommand('cody.manual-completions', async () => {

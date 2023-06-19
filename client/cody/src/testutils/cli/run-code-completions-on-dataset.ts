@@ -44,16 +44,13 @@ async function initCompletionsProvider(): Promise<CodyCompletionItemProvider> {
         completionsClient,
         contextWindowTokens: 2048,
     })
-    const completionsProvider = new CodyCompletionItemProvider(
+    const completionsProvider = new CodyCompletionItemProvider({
         providerConfig,
+        statusBar: noopStatusBar,
         history,
-        noopStatusBar,
-        null as any,
-        undefined,
-        undefined,
-        undefined,
-        true // disable timeouts
-    )
+        codebaseContext: null as any,
+        disableTimeouts: true,
+    })
 
     return completionsProvider
 }

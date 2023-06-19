@@ -7,7 +7,7 @@ import {
 
 import { mockVSCodeExports } from '../testutils/vscode'
 
-import { CodyCompletionItemProvider, inlineCompletionsCache } from '.'
+import { CodyCompletionItemProvider } from '.'
 import { createProviderConfig } from './providers/anthropic'
 
 jest.mock('vscode', () => ({
@@ -94,16 +94,13 @@ async function complete(
         completionsClient,
         contextWindowTokens: 2048,
     })
-    const completionProvider = new CodyCompletionItemProvider(
+    const completionProvider = new CodyCompletionItemProvider({
         providerConfig,
-        null as any,
-        noopStatusBar,
-        null as any,
-        undefined,
-        undefined,
-        undefined,
-        true // disable timeouts
-    )
+        statusBar: noopStatusBar,
+        history: null as any,
+        codebaseContext: null as any,
+        disableTimeouts: true,
+    })
 
     if (!code.includes(CURSOR_MARKER)) {
         throw new Error('The test code must include a | to denote the cursor position')
@@ -177,8 +174,6 @@ function truncateMultilineString(string: string): string {
 }
 
 describe('Cody completions', () => {
-    beforeEach(() => inlineCompletionsCache.clear())
-
     it('uses a simple prompt for small files', async () => {
         const { requests } = await complete(`foo ${CURSOR_MARKER}`)
 
