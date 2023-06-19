@@ -80,6 +80,13 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
 
     const anchor = `diff-${node.internalID}`
 
+    const gitBlobURL =
+        window.context.experimentalFeatures.perforceChangelistMapping &&
+        node.mostRelevantFile.__typename === 'GitBlob' &&
+        node.mostRelevantFile.changelistURL
+            ? node.mostRelevantFile.changelistURL
+            : node.mostRelevantFile.url
+
     return (
         <>
             {/* The empty <a> tag is to allow users to anchor links to the top of this file diff node */}
@@ -114,7 +121,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                         {stat}
                         {node.mostRelevantFile.__typename === 'GitBlob' ? (
                             <Tooltip content="View file at revision">
-                                <Link to={node.mostRelevantFile.url} className="mr-0 ml-2 fw-bold">
+                                <Link to={gitBlobURL} className="mr-0 ml-2 fw-bold">
                                     <strong>{path}</strong>
                                 </Link>
                             </Tooltip>

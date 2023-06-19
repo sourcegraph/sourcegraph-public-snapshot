@@ -91,9 +91,16 @@ export const resolveRepoRevision = memoizeObservable(
                                 cloned
                             }
                             commit(rev: $revision) {
-                                oid
-                                tree(path: "") {
-                                    url
+                                __typename
+                                ...GitCommitFieldsWithTree
+                            }
+                            changelist(cid: $revision) {
+                                __typename
+                                cid
+                                canonicalURL
+                                commit {
+                                    __typename
+                                    ...GitCommitFieldsWithTree
                                 }
                             }
                             defaultBranch {
@@ -103,6 +110,13 @@ export const resolveRepoRevision = memoizeObservable(
                         ... on Redirect {
                             url
                         }
+                    }
+                }
+
+                fragment GitCommitFieldsWithTree on GitCommit {
+                    oid
+                    tree(path: "") {
+                        url
                     }
                 }
                 ${repositoryFragment}
@@ -128,21 +142,24 @@ export const resolveRepoRevision = memoizeObservable(
                 if (!data.repositoryRedirect.mirrorInfo.cloned) {
                     throw new CloneInProgressError(repoName, 'queued for cloning')
                 }
-                if (!data.repositoryRedirect.commit) {
+
+                // The "revision" we queried for could be a commit or a changelist.
+                const commit = data.repositoryRedirect.commit || data.repositoryRedirect.changelist?.commit
+                if (!commit) {
                     throw new RevisionNotFoundError(revision)
                 }
 
                 const defaultBranch = data.repositoryRedirect.defaultBranch?.abbrevName || 'HEAD'
 
-                if (!data.repositoryRedirect.commit.tree) {
+                if (!commit.tree) {
                     throw new RevisionNotFoundError(defaultBranch)
                 }
 
                 return {
                     repo: data.repositoryRedirect,
-                    commitID: data.repositoryRedirect.commit.oid,
+                    commitID: commit.oid,
                     defaultBranch,
-                    rootTreeURL: data.repositoryRedirect.commit.tree.url,
+                    rootTreeURL: commit.tree.url,
                 }
             })
         ),

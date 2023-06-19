@@ -113,6 +113,7 @@ describe('RepositoryCommitPage', () => {
                                 mostRelevantFile: {
                                     __typename: 'GitBlob',
                                     url: '/github.com/sourcegraph/sourcegraph@1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416/-/blob/client/web/src/auth/CloudSignUpPage.tsx',
+                                    changelistURL: '',
                                 },
                                 hunks: [
                                     {
@@ -188,6 +189,7 @@ describe('RepositoryCommitPage', () => {
                                 mostRelevantFile: {
                                     __typename: 'GitBlob',
                                     url: '/github.com/sourcegraph/sourcegraph@1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416/-/blob/client/web/src/auth/__snapshots__/SignUpPage.test.tsx.snap',
+                                    changelistURL: '',
                                 },
                                 hunks: [
                                     {
@@ -290,11 +292,13 @@ describe('RepositoryCommitPage', () => {
                     cloned: true,
                 },
                 commit: {
+                    __typename: 'GitCommit',
                     oid: '1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416',
                     tree: {
                         url: '/github.com/sourcegraph/sourcegraph',
                     },
                 },
+                changelist: null,
                 isFork: false,
                 metadata: [],
             },

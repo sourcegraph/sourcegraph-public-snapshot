@@ -95,6 +95,7 @@ const mockDiff: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
                 mostRelevantFile: {
                     __typename: 'GitBlob',
                     url: 'http://test.test/fileurl',
+                    changelistURL: '',
                 },
                 hunks: [
                     {
