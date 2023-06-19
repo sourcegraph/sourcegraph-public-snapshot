@@ -175,7 +175,7 @@ fn main() {
             clear_all_data
         ])
         .run(context)
-        .expect("error while running tauri application");
+        .expect("error while running Cody app");
 }
 
 #[cfg(dev)]
@@ -227,20 +227,17 @@ fn start_embedded_services(handle: &tauri::AppHandle) {
                 }
                 CommandEvent::Error(err) => {
                     show_error_screen(&app);
-                    log::error!("Error running the Sourcegraph app backend: {:#?}", err)
+                    log::error!("Error running the Cody app backend: {:#?}", err)
                 }
                 CommandEvent::Terminated(payload) => {
                     show_error_screen(&app);
 
                     if let Some(code) = payload.code {
-                        log::error!("Sourcegraph app backend terminated with exit code {}", code);
+                        log::error!("Cody app backend terminated with exit code {}", code);
                     }
 
                     if let Some(signal) = payload.signal {
-                        log::error!(
-                            "Sourcegraph app backend terminated due to signal {}",
-                            signal
-                        );
+                        log::error!("Cody app backend terminated due to signal {}", signal);
                     }
                 }
                 _ => continue,
