@@ -7,7 +7,7 @@ import {
 
 import { mockVSCodeExports } from '../testutils/vscode'
 
-import { CodyCompletionItemProvider, inlineCompletionsCache } from '.'
+import { CodyCompletionItemProvider } from '.'
 import { createProviderConfig } from './providers/anthropic'
 
 jest.mock('vscode', () => ({
@@ -94,16 +94,13 @@ async function complete(
         completionsClient,
         contextWindowTokens: 2048,
     })
-    const completionProvider = new CodyCompletionItemProvider(
+    const completionProvider = new CodyCompletionItemProvider({
         providerConfig,
-        null as any,
-        noopStatusBar,
-        null as any,
-        undefined,
-        undefined,
-        undefined,
-        true // disable timeouts
-    )
+        statusBar: noopStatusBar,
+        history: null as any,
+        codebaseContext: null as any,
+        disableTimeouts: true,
+    })
 
     if (!code.includes(CURSOR_MARKER)) {
         throw new Error('The test code must include a | to denote the cursor position')
@@ -177,8 +174,6 @@ function truncateMultilineString(string: string): string {
 }
 
 describe('Cody completions', () => {
-    beforeEach(() => inlineCompletionsCache.clear())
-
     it('uses a simple prompt for small files', async () => {
         const { requests } = await complete(`foo ${CURSOR_MARKER}`)
 
@@ -484,6 +479,150 @@ describe('Cody completions', () => {
                         print(f\\"Multiple of 3: {i}\\")
                     else:
                         print(f\\"ODD {i}\\")"
+            `)
+        })
+
+        it('works with java', async () => {
+            const { completions, requests } = await complete(
+                `
+                for (int i = 0; i < 11; i++) {
+                    if (i % 2 == 0) {
+                        ${CURSOR_MARKER}`,
+                [
+                    createCompletionResponse(`
+                    System.out.println(i);
+                        } else if (i % 3 == 0) {
+                            System.out.println("Multiple of 3: " + i);
+                        } else {
+                            System.out.println("ODD " + i);
+                        }
+                    }
+
+                    for (int i = 0; i < 12; i++) {
+                        System.out.println("unrelated");
+                    }`),
+                ],
+                'java'
+            )
+
+            expect(requests).toHaveLength(3)
+            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+                "System.out.println(i);
+                    } else if (i % 3 == 0) {
+                        System.out.println(\\"Multiple of 3: \\" + i);
+                    } else {
+                        System.out.println(\\"ODD \\" + i);
+                    }"
+            `)
+        })
+
+        // TODO: Detect `}\nelse\n{` pattern for else skip logic
+        it('works with csharp', async () => {
+            const { completions, requests } = await complete(
+                `
+                for (int i = 0; i < 11; i++) {
+                    if (i % 2 == 0)
+                    {
+                        ${CURSOR_MARKER}`,
+                [
+                    createCompletionResponse(`
+                    Console.WriteLine(i);
+                        }
+                        else if (i % 3 == 0)
+                        {
+                            Console.WriteLine("Multiple of 3: " + i);
+                        }
+                        else
+                        {
+                            Console.WriteLine("ODD " + i);
+                        }
+
+                    }
+
+                    for (int i = 0; i < 12; i++)
+                    {
+                        Console.WriteLine("unrelated");
+                    }`),
+                ],
+                'csharp'
+            )
+
+            expect(requests).toHaveLength(3)
+            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+                "Console.WriteLine(i);
+                    }"
+            `)
+        })
+
+        it('works with c++', async () => {
+            const { completions, requests } = await complete(
+                `
+                for (int i = 0; i < 11; i++) {
+                    if (i % 2 == 0) {
+                        ${CURSOR_MARKER}`,
+                [
+                    createCompletionResponse(`
+                    std::cout << i;
+                        } else if (i % 3 == 0) {
+                            std::cout << "Multiple of 3: " << i;
+                        } else  {
+                            std::cout << "ODD " << i;
+                        }
+                    }
+
+                    for (int i = 0; i < 12; i++) {
+                        std::cout << "unrelated";
+                    }`),
+                ],
+                'cpp'
+            )
+
+            expect(requests).toHaveLength(3)
+            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+                "std::cout << i;
+                    } else if (i % 3 == 0) {
+                        std::cout << \\"Multiple of 3: \\" << i;
+                    } else  {
+                        std::cout << \\"ODD \\" << i;
+                    }"
+            `)
+        })
+
+        it('works with c', async () => {
+            const { completions, requests } = await complete(
+                `
+                for (int i = 0; i < 11; i++) {
+                    if (i % 2 == 0) {
+                        ${CURSOR_MARKER}`,
+                [
+                    createCompletionResponse(`
+                    printf("%d", i);
+                        } else if (i % 3 == 0) {
+                            printf("Multiple of 3: %d", i);
+                        } else {
+                            printf("ODD %d", i);
+                        }
+                    }
+
+                    for (int i = 0; i < 12; i++) {
+                        printf("unrelated");
+                    }`),
+                ],
+                'c'
+            )
+
+            expect(requests).toHaveLength(3)
+            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+                "printf(\\"%d\\", i);
+                    } else if (i % 3 == 0) {
+                        printf(\\"Multiple of 3: %d\\", i);
+                    } else {
+                        printf(\\"ODD %d\\", i);
+                    }"
             `)
         })
 

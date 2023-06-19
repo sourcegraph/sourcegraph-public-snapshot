@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { mdiEmail } from '@mdi/js'
+import { useNavigate } from 'react-router-dom'
 
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
@@ -27,7 +28,6 @@ interface Props {
     repoID: string
     filePath: string
     setRemoveOwnerError: any
-    refetch: any
 }
 
 type OwnershipReason =
@@ -42,7 +42,6 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
     makeOwnerButton,
     repoID,
     filePath,
-    refetch,
     setRemoveOwnerError,
 }) => {
     const findEmail = (): string | undefined => {
@@ -68,6 +67,9 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
 
     const sortReasons = () => (reason1: OwnershipReason, reason2: OwnershipReason) =>
         getOwnershipReasonPriority(reason2) - getOwnershipReasonPriority(reason1)
+
+    const navigate = useNavigate()
+    const refreshPage = (): Promise<any> => Promise.resolve(navigate(0))
 
     return (
         <tr>
@@ -108,7 +110,7 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
                         {makeOwnerButton ||
                             (hasAssigned && (
                                 <RemoveOwnerButton
-                                    onSuccess={refetch}
+                                    onSuccess={refreshPage}
                                     onError={setRemoveOwnerError}
                                     repoId={repoID}
                                     path={filePath}

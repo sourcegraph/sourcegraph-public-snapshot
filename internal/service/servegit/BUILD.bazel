@@ -24,6 +24,7 @@ go_library(
         "//lib/errors",
         "//lib/gitservice",
         "//schema",
+        "@com_github_grafana_regexp//:regexp",
         "@com_github_sourcegraph_log//:log",
         "@org_golang_x_exp//slices",
     ],

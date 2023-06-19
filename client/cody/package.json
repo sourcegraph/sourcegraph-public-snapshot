@@ -832,6 +832,18 @@
         "cody.completions.advanced.serverEndpoint": {
           "type": "string",
           "markdownDescription": "Overwrite the server endpoint used for generating code completions. This is only supported with the `unstable-codegen` provider right now."
+        },
+        "cody.completions.advanced.cache": {
+          "order": 99,
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Enables caching of code completions."
+        },
+        "cody.completions.advanced.embeddings": {
+          "order": 99,
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Enables the use of embeddings as code completions context."
         }
       }
     },
