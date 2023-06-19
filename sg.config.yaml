@@ -1410,6 +1410,7 @@ commandsets:
     env:
       DISABLE_CODE_INSIGHTS: false
       SOURCEGRAPH_APP: 1
+      EXTSVC_CONFIG_ALLOW_EDITS: true
 
   cody-gateway:
     checks:
