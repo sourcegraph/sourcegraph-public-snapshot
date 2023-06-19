@@ -8,6 +8,8 @@ public interface UpdatableChat {
 
   void respondToMessage(@NotNull ChatMessage message, @NotNull String responsePrefix);
 
+  void respondToErrorFromServer(@NotNull String errorMessage);
+
   void updateLastMessage(@NotNull ChatMessage message);
 
   void finishMessageProcessing();

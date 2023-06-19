@@ -16,11 +16,8 @@ import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
-import com.intellij.util.ui.JBUI;
-import com.intellij.util.ui.UIUtil;
-import com.sourcegraph.cody.chat.Chat;
-import com.sourcegraph.cody.chat.ChatBubble;
-import com.sourcegraph.cody.chat.ChatMessage;
+import com.intellij.util.ui.*;
+import com.sourcegraph.cody.chat.*;
 import com.sourcegraph.cody.editor.EditorContext;
 import com.sourcegraph.cody.editor.EditorContextGetter;
 import com.sourcegraph.cody.prompts.SupportedLanguages;
@@ -38,6 +35,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.ButtonUI;
 import javax.swing.plaf.basic.BasicTextAreaUI;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 class CodyToolWindowContent implements UpdatableChat {
@@ -202,9 +200,26 @@ class CodyToolWindowContent implements UpdatableChat {
   }
 
   private void addWelcomeMessage() {
-    var welcomeText =
+    boolean isEnterprise =
+        ConfigUtil.getInstanceType(project).equals(SettingsComponent.InstanceType.ENTERPRISE);
+    String accessToken =
+        isEnterprise
+            ? ConfigUtil.getEnterpriseAccessToken(project)
+            : ConfigUtil.getDotComAccessToken(project);
+    String welcomeText =
         "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.";
     addMessageToChat(ChatMessage.createAssistantMessage(welcomeText));
+    if (StringUtils.isEmpty(accessToken)) {
+      String noAccessTokenText =
+          "<p>It looks like you don't have Sourcegraph Access Token configured.</p>"
+              + "<p>See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> how to create one and configure it in the settings to use Cody.</p>";
+      AssistantMessageWithSettingsButton assistantMessageWithSettingsButton =
+          new AssistantMessageWithSettingsButton(project, noAccessTokenText);
+      var messageContentPanel = new JPanel(new BorderLayout());
+      messageContentPanel.add(assistantMessageWithSettingsButton);
+      ApplicationManager.getApplication()
+          .invokeLater(() -> addComponentToChat(messageContentPanel));
+    }
   }
 
   @NotNull
@@ -247,24 +262,28 @@ class CodyToolWindowContent implements UpdatableChat {
         .invokeLater(
             () -> {
               // Bubble panel
-              var bubblePanel = new JPanel();
-              bubblePanel.setLayout(
-                  new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
-              // Chat bubble
               ChatBubble bubble = new ChatBubble(message);
-              bubblePanel.add(bubble, VerticalFlowLayout.TOP);
-              messagesPanel.add(bubblePanel);
+              addComponentToChat(bubble);
+            });
+  }
+
+  private void addComponentToChat(JPanel message) {
+
+    var bubblePanel = new JPanel();
+    bubblePanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
+    // Chat message
+    bubblePanel.add(message, VerticalFlowLayout.TOP);
+    messagesPanel.add(bubblePanel);
+    messagesPanel.revalidate();
+    messagesPanel.repaint();
+
+    // Need this hacky solution to scroll all the way down after each message
+    ApplicationManager.getApplication()
+        .invokeLater(
+            () -> {
+              needScrollingDown = true;
               messagesPanel.revalidate();
               messagesPanel.repaint();
-
-              // Need this hacky solution to scroll all the way down after each message
-              ApplicationManager.getApplication()
-                  .invokeLater(
-                      () -> {
-                        needScrollingDown = true;
-                        messagesPanel.revalidate();
-                        messagesPanel.repaint();
-                      });
             });
   }
 
@@ -277,6 +296,31 @@ class CodyToolWindowContent implements UpdatableChat {
   public void respondToMessage(@NotNull ChatMessage message, @NotNull String responsePrefix) {
     activateChatTab();
     sendMessage(this.project, message, responsePrefix);
+  }
+
+  @Override
+  public void respondToErrorFromServer(@NotNull String errorMessage) {
+    if (errorMessage.equals("Connection refused")) {
+      this.addMessageToChat(
+          ChatMessage.createAssistantMessage(
+              "I'm sorry, I can't connect to the server. Please make sure that the server is running and try again."));
+    } else if (errorMessage.startsWith("Got error response 401: Invalid access token.")) {
+      String invalidAccessTokenText =
+          "<p>It looks like your Sourcegraph Access Token is invalid or not configured.</p>"
+              + "<p>See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> how to create one and configure it in the settings to use Cody.</p>";
+      AssistantMessageWithSettingsButton assistantMessageWithSettingsButton =
+          new AssistantMessageWithSettingsButton(project, invalidAccessTokenText);
+      var messageContentPanel = new JPanel(new BorderLayout());
+      messageContentPanel.add(assistantMessageWithSettingsButton);
+      ApplicationManager.getApplication()
+          .invokeLater(() -> this.addComponentToChat(messageContentPanel));
+    } else {
+      this.addMessageToChat(
+          ChatMessage.createAssistantMessage(
+              "I'm sorry, something wet wrong. Please try again. The error message I got was: \""
+                  + errorMessage
+                  + "\"."));
+    }
   }
 
   public synchronized void updateLastMessage(@NotNull ChatMessage message) {

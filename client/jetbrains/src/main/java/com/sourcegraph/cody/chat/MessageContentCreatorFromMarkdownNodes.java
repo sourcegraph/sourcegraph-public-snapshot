@@ -1,5 +1,7 @@
 package com.sourcegraph.cody.chat;
 
+import static com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN;
+
 import com.intellij.ide.highlighter.HighlighterFactory;
 import com.intellij.lang.Language;
 import com.intellij.openapi.editor.Document;
@@ -11,6 +13,7 @@ import com.intellij.openapi.editor.highlighter.EditorHighlighter;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
+import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
@@ -27,7 +30,6 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
-  private static final int TEXT_MARGIN = 14;
   private final HtmlRenderer htmlRenderer =
       HtmlRenderer.builder().extensions(List.of(TablesExtension.create())).build();
   private final JPanel messagePanel;
@@ -48,6 +50,7 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
     jEditorPane.setFocusable(true);
     jEditorPane.setMargin(
         JBInsets.create(new Insets(TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN)));
+    jEditorPane.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);
     textPane = jEditorPane;
     messagePanel.add(textPane, textPaneIndex++);
     return jEditorPane;
