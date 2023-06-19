@@ -108,19 +108,18 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
 
         const filesnamesWithScores = await this.fetchKeywordFiles(rootPath, query)
         const top10 = filesnamesWithScores.slice(0, numResults)
-        const uniqueFiles = new Set<string>()
-        const filteredTen = top10.filter(({ filename }) => {
-            if (uniqueFiles.has(filename)) {
-                return false
-            }
-            uniqueFiles.add(filename)
-            return true
-        })
+
         const messagePairs = await Promise.all(
-            filteredTen.map(async ({ filename }) => {
+            top10.map(async ({ filename }) => {
                 const uri = vscode.Uri.file(path.join(rootPath, filename))
-                const content = (await vscode.workspace.openTextDocument(uri)).getText()
-                return { fileName: filename, content }
+                try {
+                    const content = (await vscode.workspace.openTextDocument(uri)).getText()
+                    return [{ fileName: filename, content }]
+                } catch (error) {
+                    // Handle file reading errors in case of concurrent file deletions or binary files
+                    console.error(error)
+                    return []
+                }
             })
         )
         const searchDuration = performance.now() - startTime
@@ -212,21 +211,28 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
             .map(t => (t.prefix.length < 4 ? t.originals[0] : t.prefix))
             .join('|')
         const filesnamesWithScores = await this.fetchKeywordFiles(rootPath, query)
-        const messagePairs = await Promise.all(
-            filesnamesWithScores.slice(0, numResults).map(async ({ filename }) => {
-                const uri = vscode.Uri.file(path.join(rootPath, filename))
-                const textDocument = await vscode.workspace.openTextDocument(uri)
-                const snippet = textDocument.getText()
-                const keywordPattern = new RegExp(stems, 'g')
-                // show 5 lines of code only
-                // TODO: Rewrite this to use rg instead @bee
-                const matches = snippet.match(keywordPattern)
-                const keywordIndex = snippet.indexOf(matches ? matches[0] : query)
-                const startLine = Math.max(0, textDocument.positionAt(keywordIndex).line - 2)
-                const endLine = startLine + 5
-                const content = textDocument.getText(new vscode.Range(startLine, 0, endLine, 0))
+        const topN = filesnamesWithScores.slice(0, numResults)
 
-                return { fileName: filename, content }
+        const messagePairs = await Promise.all(
+            topN.map(async ({ filename }) => {
+                try {
+                    const uri = vscode.Uri.file(path.join(rootPath, filename))
+                    const textDocument = await vscode.workspace.openTextDocument(uri)
+                    const snippet = textDocument.getText()
+                    const keywordPattern = new RegExp(stems, 'g')
+                    // show 5 lines of code only
+                    // TODO: Rewrite this to use rg instead @bee
+                    const matches = snippet.match(keywordPattern)
+                    const keywordIndex = snippet.indexOf(matches ? matches[0] : query)
+                    const startLine = Math.max(0, textDocument.positionAt(keywordIndex).line - 2)
+                    const endLine = startLine + 5
+                    const content = textDocument.getText(new vscode.Range(startLine, 0, endLine, 0))
+
+                    return [{ fileName: filename, content }]
+                } catch (error) {
+                    console.error(error)
+                    return []
+                }
             })
         )
         return messagePairs.flat()
@@ -450,7 +456,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
             })
             .sort(({ score: score1 }, { score: score2 }) => score2 - score1)
 
-        return filenamesWithScores
+        return uniques(filenamesWithScores)
     }
 }
 
@@ -513,4 +519,15 @@ function idf(termTotalFiles: { [term: string]: number }, totalFiles: number): { 
 
 function escapeRegex(s: string): string {
     return s.replace(/[$()*+./?[\\\]^{|}-]/g, '\\$&')
+}
+
+function uniques(results: { filename: string; score: number }[]): { filename: string; score: number }[] {
+    const seen = new Set<string>()
+    return results.filter(({ filename }) => {
+        if (seen.has(filename)) {
+            return false
+        }
+        seen.add(filename)
+        return true
+    })
 }
