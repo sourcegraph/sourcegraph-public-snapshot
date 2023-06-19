@@ -1,5 +1,7 @@
 import { FC } from 'react'
 
+import { appWindow } from '@tauri-apps/api/window'
+
 import '../SourcegraphWebApp.scss'
 
 import { logger } from '@sourcegraph/common'
@@ -34,6 +36,8 @@ import { enterpriseUserAreaHeaderNavItems } from './user/navitems'
 import { enterpriseUserAreaRoutes } from './user/routes'
 import { enterpriseUserSettingsAreaRoutes } from './user/settings/routes'
 import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems'
+
+appWindow.setSize()
 
 const injectedValuesConfig = {
     /**
