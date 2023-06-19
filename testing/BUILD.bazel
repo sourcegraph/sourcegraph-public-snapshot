@@ -1,11 +1,9 @@
-# This test target runs the container on port=7080
-sh_test(
+load(":defs.bzl", "server_integration_test")
+
+server_integration_test(
     name = "e2e_test",
-    srcs = [":e2e_test.sh"],
     args = [
-        "$(location //enterprise/cmd/server:image_tarball)",  # image we're testing against
-        "server:candidate",
-        "$(location //client/web/src/end-to-end:e2e)",  # actual test
+        "$(location //client/web/src/end-to-end:e2e)",
         "$(rootpath //:mocha_config)",
         "'$(rootpath //client/web/src/end-to-end:testing_e2e_bundle)/**/*.test.js'",
     ],
@@ -13,7 +11,6 @@ sh_test(
         "//:mocha_config",
         "//client/web/src/end-to-end:e2e",
         "//client/web/src/end-to-end:testing_e2e_bundle",
-        "//enterprise/cmd/server:image_tarball",
     ],
     env = {
         "SG_FEATURE_FLAG_GRPC": "false",
@@ -39,24 +36,19 @@ sh_test(
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
     ],
-    tags = ["requires-network"],
-    deps = ["//testing/tools:integration_runner"],
+    port = "7080",
+    runner_src = ":e2e_test.sh",
 )
 
-# This test target runs the container on port=7081
-sh_test(
+server_integration_test(
     name = "backend_integration_test",
-    srcs = [":backend_integration_test.sh"],
     args = [
-        "$(location //enterprise/cmd/server:image_tarball)",  # image we're testing against
-        "server:candidate",
         "$(location //dev/gqltest:gqltest_test)",  # actual test
         "$(location //dev/authtest:authtest_test)",  # actual test
     ],
     data = [
         "//dev/authtest:authtest_test",
         "//dev/gqltest:gqltest_test",
-        "//enterprise/cmd/server:image_tarball",
     ],
     env = {
         "SG_FEATURE_FLAG_GRPC": "false",
@@ -78,17 +70,13 @@ sh_test(
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
     ],
-    tags = ["requires-network"],
-    deps = ["//testing/tools:integration_runner"],
+    port = "7081",
+    runner_src = ":backend_integration_test.sh",
 )
 
-# This test target runs the container on port=7082
-sh_test(
+server_integration_test(
     name = "codeintel_integration_test",
-    srcs = [":codeintel_integration_test.sh"],
     args = [
-        "$(location //enterprise/cmd/server:image_tarball)",  # image we're testing against
-        "server:candidate",
         "$(location //internal/cmd/init-sg)",
         "$(rlocationpath @src-cli-linux-amd64//:src-cli-linux-amd64)",
         "$(location //dev/codeintel-qa/cmd/download)",
@@ -103,7 +91,6 @@ sh_test(
         "//dev/codeintel-qa/cmd/download",
         "//dev/codeintel-qa/cmd/query",
         "//dev/codeintel-qa/cmd/upload",
-        "//enterprise/cmd/server:image_tarball",
         "//internal/cmd/init-sg",
         "@src-cli-linux-amd64//:src-cli-linux-amd64",
     ],
@@ -130,9 +117,9 @@ sh_test(
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
     ],
+    port = "7082",
+    runner_src = ":codeintel_integration_test.sh",
     tags = [
         "manual",
-        "requires-network",
     ],
-    deps = ["//testing/tools:integration_runner"],
 )
