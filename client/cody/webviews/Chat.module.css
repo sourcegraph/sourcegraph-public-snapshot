@@ -14,12 +14,12 @@
 /* Apply a slight tint to the assistant transcript item. */
 body[data-vscode-theme-kind='vscode-light'] .transcript-item:not(.human-transcript-item),
 body[data-vscode-theme-kind='vscode-high-contrast-light'] .transcript-item:not(.human-transcript-item) {
-    background-color: rgba(0, 0, 0, 0.05); /* slight dark tint */
+    background-color: rgba(0, 0, 0, 0.04); /* slight dark tint */
 }
 
 body[data-vscode-theme-kind='vscode-dark'] .transcript-item:not(.human-transcript-item),
 body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-transcript-item) {
-    background-color: rgba(255, 255, 255, 0.05); /* slight light tint */
+    background-color: rgba(255, 255, 255, 0.04); /* slight light tint */
 }
 
 .human-transcript-item:before {
@@ -33,6 +33,11 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
     background-color: var(--code-background);
     color: var(--code-foreground);
+}
+
+.transcript-item ul,
+.transcript-item ol {
+    padding-left: 1rem;
 }
 
 .transcript-action {

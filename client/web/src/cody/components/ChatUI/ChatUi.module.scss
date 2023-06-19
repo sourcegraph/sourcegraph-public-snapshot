@@ -44,9 +44,14 @@
     color: var(--code-background);
 }
 
+.transcript-item p {
+    /* Default typography is too spaced out */
+    margin-bottom: .75rem;
+}
+
 .transcript-item ul,
 .transcript-item ol {
-    padding-left: 1rem;
+    padding-left: 2rem;
 
     /* Often there's paragraphs in list items, and the margin becomes too huge, so we reduce it to something sensible */
     p {
