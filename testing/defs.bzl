@@ -33,4 +33,5 @@ def server_integration_test(name, port, runner_src, **kwargs):
         env_inherit = env_inherit,
         deps = deps,
         tags = tags,
+        **kwargs,
     )
