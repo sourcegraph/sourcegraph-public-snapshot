@@ -1280,6 +1280,7 @@ CREATE TABLE changesets (
     computed_state text NOT NULL,
     external_fork_name citext,
     previous_failure_message text,
+    commit_verification jsonb DEFAULT '{}'::jsonb NOT NULL,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),
@@ -4101,6 +4102,7 @@ CREATE VIEW reconciler_changesets AS
     c.external_state,
     c.external_review_state,
     c.external_check_state,
+    c.commit_verification,
     c.diff_stat_added,
     c.diff_stat_deleted,
     c.sync_state,
@@ -5927,6 +5929,8 @@ CREATE INDEX lsif_dependency_indexing_jobs_upload_id ON lsif_dependency_syncing_
 CREATE INDEX lsif_dependency_repos_blocked ON lsif_dependency_repos USING btree (blocked);
 
 CREATE INDEX lsif_dependency_repos_last_checked_at ON lsif_dependency_repos USING btree (last_checked_at NULLS FIRST);
+
+CREATE INDEX lsif_dependency_repos_name_gin ON lsif_dependency_repos USING gin (name gin_trgm_ops);
 
 CREATE INDEX lsif_dependency_repos_name_id ON lsif_dependency_repos USING btree (name, id);
 

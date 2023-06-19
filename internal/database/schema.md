@@ -520,6 +520,7 @@ Referenced by:
  computed_state           | text                                         |           | not null | 
  external_fork_name       | citext                                       |           |          | 
  previous_failure_message | text                                         |           |          | 
+ commit_verification      | jsonb                                        |           | not null | '{}'::jsonb
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -2109,6 +2110,7 @@ Indexes:
     "lsif_dependency_repos_unique_scheme_name" UNIQUE, btree (scheme, name)
     "lsif_dependency_repos_blocked" btree (blocked)
     "lsif_dependency_repos_last_checked_at" btree (last_checked_at NULLS FIRST)
+    "lsif_dependency_repos_name_gin" gin (name gin_trgm_ops)
     "lsif_dependency_repos_name_id" btree (name, id)
     "lsif_dependency_repos_scheme_id" btree (scheme, id)
 Referenced by:
@@ -4774,6 +4776,7 @@ Foreign-key constraints:
     c.external_state,
     c.external_review_state,
     c.external_check_state,
+    c.commit_verification,
     c.diff_stat_added,
     c.diff_stat_deleted,
     c.sync_state,

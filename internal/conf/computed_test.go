@@ -675,6 +675,19 @@ func TestGetCompletionsConfig(t *testing.T) {
 func TestGetEmbeddingsConfig(t *testing.T) {
 	licenseKey := "theasdfkey"
 	licenseAccessToken := licensing.GenerateLicenseKeyBasedAccessToken(licenseKey)
+	zeroConfigDefaultWithLicense := &conftypes.EmbeddingsConfig{
+		Provider:                   "sourcegraph",
+		AccessToken:                licenseAccessToken,
+		Model:                      "openai/text-embedding-ada-002",
+		Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+		Dimensions:                 1536,
+		Incremental:                true,
+		MinimumInterval:            24 * time.Hour,
+		MaxCodeEmbeddingsPerRepo:   3_072_000,
+		MaxTextEmbeddingsPerRepo:   512_000,
+		PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+	}
+
 	testCases := []struct {
 		name         string
 		siteConfig   schema.SiteConfiguration
@@ -700,7 +713,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				LicenseKey:  licenseKey,
 				Embeddings:  &schema.Embeddings{},
 			},
-			wantDisabled: true,
+			wantConfig: zeroConfigDefaultWithLicense,
 		},
 		{
 			name: "cody.enabled set false",
@@ -735,18 +748,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				CodyEnabled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 			},
-			wantConfig: &conftypes.EmbeddingsConfig{
-				Provider:                   "sourcegraph",
-				AccessToken:                licenseAccessToken,
-				Model:                      "openai/text-embedding-ada-002",
-				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
-				Dimensions:                 1536,
-				Incremental:                true,
-				MinimumInterval:            24 * time.Hour,
-				MaxCodeEmbeddingsPerRepo:   3_072_000,
-				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
-			},
+			wantConfig: zeroConfigDefaultWithLicense,
 		},
 		{
 			name: "Sourcegraph provider",
@@ -757,12 +759,23 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					Provider: "sourcegraph",
 				},
 			},
+			wantConfig: zeroConfigDefaultWithLicense,
+		},
+		{
+			name: "No provider and no token, assume Sourcegraph",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Model: "openai/text-embedding-bobert-9000",
+				},
+			},
 			wantConfig: &conftypes.EmbeddingsConfig{
 				Provider:                   "sourcegraph",
 				AccessToken:                licenseAccessToken,
-				Model:                      "openai/text-embedding-ada-002",
+				Model:                      "openai/text-embedding-bobert-9000",
 				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
-				Dimensions:                 1536,
+				Dimensions:                 0, // unknown model used for test case
 				Incremental:                true,
 				MinimumInterval:            24 * time.Hour,
 				MaxCodeEmbeddingsPerRepo:   3_072_000,
