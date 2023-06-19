@@ -32,6 +32,7 @@
 - Enabled "Translate to different language" recipe [#53393](https://github.com/sourcegraph/sourcegraph/pull/53393)
 - Skip Cody completions if there is code in line suffix or in the middle of a word in prefix [#53476](https://github.com/sourcegraph/sourcegraph/pull/53476)
 - Enabled "Summarize recent code changes" recipe [#53534](https://github.com/sourcegraph/sourcegraph/pull/53534)
+- Chat message when access token is invalid or not configured [#53659](https://github.com/sourcegraph/sourcegraph/pull/53659)
 
 ### Changed
 
