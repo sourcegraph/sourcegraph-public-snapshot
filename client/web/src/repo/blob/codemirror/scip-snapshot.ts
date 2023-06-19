@@ -11,12 +11,12 @@ class SCIPSnapshotDecorations extends WidgetType {
         const lineDiv = document.createElement('div')
         lineDiv.style.color = 'grey'
         lineDiv.innerText = this.line
-        div.appendChild(lineDiv)
+        div.append(lineDiv)
         for (const extra of this.additional || []) {
             const extraDiv = document.createElement('div')
             extraDiv.style.color = 'grey'
             extraDiv.innerText = extra
-            div.appendChild(extraDiv)
+            div.append(extraDiv)
         }
         return div
     }
