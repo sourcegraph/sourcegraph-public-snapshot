@@ -51,6 +51,7 @@ go_test(
         "service_implementations_test.go",
         "service_ranges_test.go",
         "service_references_test.go",
+        "service_snapshot_test.go",
         "service_stencil_test.go",
         "service_test.go",
     ],
