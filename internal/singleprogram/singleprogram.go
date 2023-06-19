@@ -16,7 +16,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -36,6 +38,8 @@ func Init(logger log.Logger) CleanupFunc {
 
 	// INDEXED_SEARCH_SERVERS is empty (but defined) so that indexed search is disabled.
 	setDefaultEnv(logger, "INDEXED_SEARCH_SERVERS", "")
+
+	setDefaultEnv(logger, "DISABLE_CODE_INSIGHTS", "true")
 
 	// GITSERVER_EXTERNAL_ADDR is used by gitserver to identify itself in the
 	// list in SRC_GIT_SERVERS.
@@ -97,6 +101,17 @@ func Init(logger log.Logger) CleanupFunc {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "unable to set up PostgreSQL:", err)
 		os.Exit(1)
+	}
+
+	// Force migrations prior to start any services
+	_, err = connections.EnsureNewFrontendDB(observation.NewContext(logger), os.Getenv("PGDATASOURCE"), "frontend")
+	if err != nil {
+		logger.Fatal("Failed to migrate to codeintel database", log.Error(err))
+	}
+
+	_, err = connections.EnsureNewCodeIntelDB(observation.NewContext(logger), os.Getenv("CODEINTEL_PGDATASOURCE"), "codeintel")
+	if err != nil {
+		logger.Fatal("Failed to migrate to codeintel database", log.Error(err))
 	}
 
 	writeFileIfNotExists := func(path string, data []byte) {

@@ -11,7 +11,9 @@ go_library(
     deps = [
         "//internal/conf/confdefaults",
         "//internal/conf/deploy",
+        "//internal/database/connections/live",
         "//internal/env",
+        "//internal/observation",
         "//internal/version",
         "//lib/errors",
         "@com_github_fatih_color//:color",
