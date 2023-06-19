@@ -273,3 +273,66 @@ func TestEmptyDirIsNotBareRepo(t *testing.T) {
 		t.Errorf("Path %s it falsey detected as a bare repository", dir)
 	}
 }
+
+func TestConvertGitCloneURLToCodebaseName(t *testing.T) {
+	testCases := []struct {
+		name     string
+		cloneURL string
+		expected string
+	}{
+		{
+			name:     "GitHub SSH URL",
+			cloneURL: "git@github.com:sourcegraph/sourcegraph.git",
+			expected: "github.com/sourcegraph/sourcegraph",
+		},
+		{
+			name:     "GitHub SSH URL without .git",
+			cloneURL: "git@github.com:sourcegraph/sourcegraph",
+			expected: "github.com/sourcegraph/sourcegraph",
+		},
+		{
+			name:     "GitHub HTTPS URL",
+			cloneURL: "https://github.com/sourcegraph/sourcegraph",
+			expected: "github.com/sourcegraph/sourcegraph",
+		},
+		{
+			name:     "Bitbucket SSH URL",
+			cloneURL: "git@bitbucket.sgdev.org:sourcegraph/sourcegraph.git",
+			expected: "bitbucket.sgdev.org/sourcegraph/sourcegraph",
+		},
+		{
+			name:     "GitLab SSH URL",
+			cloneURL: "git@gitlab.com:sourcegraph/sourcegraph.git",
+			expected: "gitlab.com/sourcegraph/sourcegraph",
+		},
+		{
+			name:     "GitLab HTTPS URL",
+			cloneURL: "https://gitlab.com/sourcegraph/sourcegraph.git",
+			expected: "gitlab.com/sourcegraph/sourcegraph",
+		},
+		{
+			name:     "GitHub SSH URL",
+			cloneURL: "git@github.com:sourcegraph/sourcegraph.git",
+			expected: "github.com/sourcegraph/sourcegraph",
+		},
+		{
+			name:     "SSH Alias URL",
+			cloneURL: "github:sourcegraph/sourcegraph",
+			expected: "github.com/sourcegraph/sourcegraph",
+		},
+		{
+			name:     "GitHub HTTP URL",
+			cloneURL: "http://github.com/sourcegraph/sourcegraph",
+			expected: "github.com/sourcegraph/sourcegraph",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			actual := convertGitCloneURLToCodebaseName(testCase.cloneURL)
+			if actual != testCase.expected {
+				t.Errorf("Expected %s but got %s", testCase.expected, actual)
+			}
+		})
+	}
+}
