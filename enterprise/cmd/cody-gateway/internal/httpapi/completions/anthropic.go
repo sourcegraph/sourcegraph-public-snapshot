@@ -3,6 +3,7 @@ package completions
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -24,6 +25,7 @@ func NewAnthropicHandler(
 	rateLimitNotifier notify.RateLimitNotifier,
 	accessToken string,
 	allowedModels []string,
+	maxTokensToSample int,
 ) http.Handler {
 	return makeUpstreamHandler(
 		logger,
@@ -88,6 +90,12 @@ func NewAnthropicHandler(
 					logger.Error("failed to decode Anthropic streaming response", log.Error(err))
 				}
 				return len(lastCompletion)
+			},
+			validateRequest: func(ar anthropicRequest) error {
+				if ar.MaxTokensToSample > int32(maxTokensToSample) {
+					return fmt.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokensToSample)
+				}
+				return nil
 			},
 		},
 	)
