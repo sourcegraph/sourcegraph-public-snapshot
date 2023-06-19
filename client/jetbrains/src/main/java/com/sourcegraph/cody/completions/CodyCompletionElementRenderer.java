@@ -6,6 +6,7 @@ import com.intellij.openapi.editor.EditorCustomElementRenderer;
 import com.intellij.openapi.editor.Inlay;
 import com.intellij.openapi.editor.colors.EditorFontType;
 import com.intellij.openapi.editor.impl.EditorImpl;
+import com.intellij.openapi.editor.impl.FontInfo;
 import com.intellij.openapi.editor.markup.TextAttributes;
 import java.awt.*;
 import org.jetbrains.annotations.NotNull;
@@ -28,6 +29,17 @@ public class CodyCompletionElementRenderer implements EditorCustomElementRendere
     return editor.getFontMetrics(Font.PLAIN).stringWidth(text);
   }
 
+  private int fontYOffset(Font font) {
+    FontMetrics metrics =
+        FontInfo.getFontMetrics(font, FontInfo.getFontRenderContext(editor.getContentComponent()));
+    double fontBaseline =
+        font.createGlyphVector(metrics.getFontRenderContext(), "Hello world!")
+            .getVisualBounds()
+            .getHeight();
+    double linePadding = (editor.getLineHeight() - fontBaseline) / 2;
+    return (int) Math.ceil(fontBaseline + linePadding);
+  }
+
   @Override
   public void paint(
       @NotNull Inlay inlay,
@@ -37,7 +49,9 @@ public class CodyCompletionElementRenderer implements EditorCustomElementRendere
     Font font = this.editor.getColorsScheme().getFont(EditorFontType.PLAIN).deriveFont(Font.ITALIC);
     g.setFont(font);
     g.setColor(this.themeAttributes.getForegroundColor());
-    g.drawString(this.text, targetRegion.x, targetRegion.y + g.getFontMetrics().getAscent());
+    int x = targetRegion.x;
+    int y = targetRegion.y + fontYOffset(font);
+    g.drawString(this.text, x, y);
   }
 
   @Override
