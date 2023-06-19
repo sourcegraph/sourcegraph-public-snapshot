@@ -133,7 +133,12 @@ WITH
 targets AS (
 	SELECT uvt.upload_id
 	FROM lsif_uploads_visible_at_tip uvt
-	WHERE uvt.is_default_branch
+	JOIN lsif_uploads u ON u.id = uvt.upload_id
+	JOIN repo r ON r.id = u.repository_id
+	WHERE
+		uvt.is_default_branch AND
+		r.deleted_at IS NULL AND
+		r.blocked IS NULL
 ),
 exported AS (
 	SELECT re.id
@@ -144,9 +149,13 @@ exported AS (
 		EXISTS (
 			SELECT 1
 			FROM lsif_uploads_visible_at_tip uvt
+			JOIN lsif_uploads u ON u.id = uvt.upload_id
+			JOIN repo r ON r.id = u.repository_id
 			WHERE
 				uvt.is_default_branch AND
-				uvt.upload_id = re.upload_id
+				uvt.upload_id = re.upload_id AND
+				r.deleted_at IS NULL AND
+				r.blocked IS NULL
 		)
 ),
 progress AS (
