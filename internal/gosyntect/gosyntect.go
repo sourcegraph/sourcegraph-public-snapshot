@@ -299,40 +299,30 @@ func (c *Client) Symbols(ctx context.Context, q *SymbolsQuery) (*SymbolsResponse
 		return nil, errors.Wrap(err, "encoding query")
 	}
 
-	// fmt.Println("jsonQuery", string(jsonQuery))
-
-	req, err := http.NewRequest("POST", c.url("/symbols"), bytes.NewReader(jsonQuery))
+	url := c.url("/symbols")
+	req, err := http.NewRequest("POST", url, bytes.NewReader(jsonQuery))
 	if err != nil {
 		return nil, errors.Wrap(err, "building request")
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	// Perform the request.
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("making request to %s", c.url("/")))
+		return nil, errors.Wrap(err, "performing symbols request")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Newf("Whoopsie %s", resp.StatusCode)
+		return nil, errors.Newf("unexpected status code %d", resp.StatusCode)
 	}
-
-	// buf, err := io.ReadAll(resp.Body)
-	// if err != nil {
-	// 	return nil, errors.Wrap(err, "reading response body")
-	// }
-	// fmt.Println("resp Body", string(buf))
 
 	var r symbolsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("decoding JSON response from %s", c.url("/")))
+		return nil, errors.Wrap(err, "decoding symbols response")
 	}
 
 	return &SymbolsResponse{
 		Scip:      r.Scip,
 		Plaintext: r.Plaintext,
 	}, nil
-
-	// return response, nil
 }
