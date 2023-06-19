@@ -36,7 +36,7 @@ export interface StepConfiguration {
     nextURL?: string
     component: ComponentType<StepComponentProps>
     onView?: () => void
-    onNext?: (client: ApolloClient<{}>) => void
+    onNext?: (client: ApolloClient<{}>) => Promise<void>
 }
 
 interface SetupStepsContextData {
