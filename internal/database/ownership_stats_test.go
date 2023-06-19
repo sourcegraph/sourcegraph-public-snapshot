@@ -230,7 +230,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 	})
 
 	// 2. Insert aggregate counts:
-	timestamp := time.Now()
+	timestamp := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
 	repo1Counts := fakeAggregateStatsIterator{
 		"": {
 			CodeownedFileCount:         1,
