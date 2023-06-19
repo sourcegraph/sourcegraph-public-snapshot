@@ -11,20 +11,19 @@
     border-color: var(--vscode-sideBarSectionHeader-border);
 }
 
-/* Apply a slight tint to the human transcript item. */
-body[data-vscode-theme-kind='vscode-light'] .human-transcript-item,
-body[data-vscode-theme-kind='vscode-high-contrast-light'] .human-transcript-item {
-    background-color: rgba(0, 0, 0, 0.07); /* slight dark tint */
+/* Apply a slight tint to the assistant transcript item. */
+body[data-vscode-theme-kind='vscode-light'] .transcript-item:not(.human-transcript-item),
+body[data-vscode-theme-kind='vscode-high-contrast-light'] .transcript-item:not(.human-transcript-item) {
+    background-color: rgba(0, 0, 0, 0.04); /* slight dark tint */
 }
 
-body[data-vscode-theme-kind='vscode-dark'] .human-transcript-item,
-body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
-    background-color: rgba(255, 255, 255, 0.07); /* slight light tint */
+body[data-vscode-theme-kind='vscode-dark'] .transcript-item:not(.human-transcript-item),
+body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-transcript-item) {
+    background-color: rgba(255, 255, 255, 0.04); /* slight light tint */
 }
 
-.transcript-item-participant {
-    font-size: var(--vscode-editor-font-size);
-    color: var(--vscode-descriptionForeground);
+.human-transcript-item:before {
+    background-color: var(--vscode-sideBarSectionHeader-border);
 }
 
 .transcript-item pre,
@@ -34,6 +33,11 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     /* Our syntax highlighter emits colors intended for dark backgrounds only. */
     background-color: var(--code-background);
     color: var(--code-foreground);
+}
+
+.transcript-item ul,
+.transcript-item ol {
+    padding-left: 1rem;
 }
 
 .transcript-action {
@@ -46,17 +50,19 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     font-size: var(--vscode-editor-font-size);
 }
 
-.code-blocks-copy-button, .code-blocks-insert-button {
+.code-blocks-copy-button,
+.code-blocks-insert-button {
     color: var(--vscode-button-secondaryForeground);
     background-color: var(--vscode-button-secondaryBackground);
     border: none;
     font-size: var(--type-ramp-minus1-font-size);
-    padding: .25rem .5rem;
+    padding: 0.25rem 0.5rem;
     /* Move the button up 50% to get out of the road of the text, but also to make sure your cursor is over the middle of the button if it appears when coming in from above */
     transform: translateY(-50%);
 }
 
-.code-blocks-copy-button:hover, .code-blocks-insert-button:hover {
+.code-blocks-copy-button:hover,
+.code-blocks-insert-button:hover {
     background-color: var(--vscode-button-secondaryHoverBackground);
 }
 
@@ -72,9 +78,10 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     outline: none;
 }
 
-:global(.token-hallucinated), :global(.token-not-hallucinated) {
+:global(.token-hallucinated),
+:global(.token-not-hallucinated) {
     word-break: break-all;
-    text-underline-offset: .125rem;
+    text-underline-offset: 0.125rem;
 }
 
 :global(.token-hallucinated) {
@@ -103,4 +110,34 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 .suggestion-button {
     border-radius: 1rem;
     font-size: 0.7rem;
+}
+
+.submit-button-disabled {
+    cursor: not-allowed;
+}
+
+.stop-generating-button {
+    padding: 0;
+    border-radius: 1rem;
+
+    animation: fadeInSlideUp 1s 1;
+}
+
+.stop-generating-button > i {
+    margin-right: 0.25rem;
+}
+
+.stop-generating-button:active {
+    transition: all 0.5s linear;
+}
+
+@keyframes fadeInSlideUp {
+    from {
+        opacity: 0;
+        margin-top: var(--spacing);
+    }
+    to {
+        opacity: 1;
+        margin: 0;
+    }
 }

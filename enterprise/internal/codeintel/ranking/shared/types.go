@@ -4,6 +4,7 @@ import "time"
 
 type Summary struct {
 	GraphKey                string
+	VisibleToZoekt          bool
 	PathMapperProgress      Progress
 	ReferenceMapperProgress Progress
 	ReducerProgress         *Progress
@@ -14,6 +15,12 @@ type Progress struct {
 	CompletedAt *time.Time
 	Processed   int
 	Total       int
+}
+
+type CoverageCounts struct {
+	NumTargetIndexes                   int
+	NumExportedIndexes                 int
+	NumRepositoriesWithoutCurrentRanks int
 }
 
 type RankingDefinitions struct {

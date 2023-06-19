@@ -49,6 +49,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     suggestions,
     setSuggestions,
 }) => {
+    const abortMessageInProgress = useCallback(() => {
+        vscodeAPI.postMessage({ command: 'abort' })
+    }, [vscodeAPI])
+
     const onSubmit = useCallback(
         (text: string, submitType: 'user' | 'suggestion') => {
             vscodeAPI.postMessage({ command: 'submit', text, submitType })
@@ -114,9 +118,31 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             copyButtonOnSubmit={onCopyBtnClick}
             suggestions={suggestions}
             setSuggestions={setSuggestions}
+            abortMessageInProgressComponent={AbortMessageInProgress}
+            onAbortMessageInProgress={abortMessageInProgress}
+            // TODO: We should fetch this from the server and pass a pretty component
+            // down here to render cody is disabled on the instance nicely.
+            isCodyEnabled={true}
+            codyNotEnabledNotice={undefined}
         />
     )
 }
+
+interface AbortMessageInProgressProps {
+    onAbortMessageInProgress: () => void
+}
+
+const AbortMessageInProgress: React.FunctionComponent<AbortMessageInProgressProps> = ({ onAbortMessageInProgress }) => (
+    <div className={classNames(styles.stopGeneratingButtonContainer)}>
+        <VSCodeButton
+            className={classNames(styles.stopGeneratingButton)}
+            onClick={onAbortMessageInProgress}
+            appearance="secondary"
+        >
+            <i className="codicon codicon-stop-circle" /> Stop generating
+        </VSCodeButton>
+    </div>
+)
 
 const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     className,
@@ -177,7 +203,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
 
 const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
     <VSCodeButton
-        className={classNames(styles.submitButton, className)}
+        className={classNames(disabled ? styles.submitButtonDisabled : styles.submitButton, className)}
         appearance="icon"
         type="button"
         disabled={disabled}

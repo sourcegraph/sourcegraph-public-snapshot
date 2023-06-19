@@ -35,6 +35,12 @@ pkg_tar(
 )
 
 pkg_tar(
+    name = "tar_batcheshelper",
+    srcs = ["//enterprise/cmd/batcheshelper"],
+    package_dir = "/usr/local/bin",
+)
+
+pkg_tar(
     name = "tar_src-cli",
     srcs = ["@src-cli-linux-amd64//:src-cli-linux-amd64"],
     package_dir = "/usr/local/bin",
@@ -54,6 +60,7 @@ oci_image(
     tars = [
         ":tar_executor",
         ":tar_src-cli",
+        ":tar_batcheshelper",
     ],
     user = "sourcegraph",
 )

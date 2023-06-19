@@ -88,7 +88,7 @@ func (s *s3Store) Get(ctx context.Context, key string) (_ io.ReadCloser, err err
 	ctx, _, endObservation := s.operations.Get.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("key", key),
 	}})
-	defer endObservation(1, observation.Args{})
+	done := func() { endObservation(1, observation.Args{}) }
 
 	reader := writeToPipe(func(w io.Writer) error {
 		zeroReads := 0
@@ -115,7 +115,7 @@ func (s *s3Store) Get(ctx context.Context, key string) (_ io.ReadCloser, err err
 		}
 	})
 
-	return io.NopCloser(reader), nil
+	return NewExtraCloser(io.NopCloser(reader), done), nil
 }
 
 // ioCopyHook is a pointer to io.Copy. This function is replaced in unit tests so that we can

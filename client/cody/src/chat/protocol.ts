@@ -24,6 +24,7 @@ export type WebviewMessage =
     | { command: 'edit'; text: string }
     | { command: 'insert'; text: string }
     | { command: 'auth'; type: 'login' | 'logout' | 'support' }
+    | { command: 'abort' }
 
 /**
  * A message sent from the extension host to the webview.

@@ -125,6 +125,7 @@ func TestChangesetResolver(t *testing.T) {
 		ExternalState:       btypes.ChangesetExternalStateOpen,
 		ExternalCheckState:  btypes.ChangesetCheckStatePending,
 		ExternalReviewState: btypes.ChangesetReviewStateChangesRequested,
+		CommitVerified:      true,
 		PublicationState:    btypes.ChangesetPublicationStatePublished,
 		ReconcilerState:     btypes.ReconcilerStateCompleted,
 		Metadata: &github.PullRequest{
@@ -415,6 +416,9 @@ func TestChangesetResolver(t *testing.T) {
 					Typename:  "RepositoryComparison",
 					FileDiffs: testDiffGraphQL,
 				},
+				CommitVerification: &apitest.GitHubCommitVerification{
+					Verified: true,
+				},
 			},
 		},
 		{
@@ -595,6 +599,12 @@ query($changeset: ID!) {
       currentSpec { id }
 
 	  ownedByBatchChange
+
+	  commitVerification {
+		... on GitHubCommitVerification {
+		  verified
+		}
+	  }
 
       diff {
         __typename

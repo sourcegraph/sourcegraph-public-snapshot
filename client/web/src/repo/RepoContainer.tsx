@@ -155,7 +155,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     )
 
     const {
-        isCodyEnabled,
         sidebarSize: codySidebarSize,
         isSidebarOpen: isCodySidebarOpen,
         setIsSidebarOpen: setIsCodySidebarOpen,
@@ -359,16 +358,15 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     return (
         <>
-            {isCodyEnabled.sidebar &&
-                focusCodyShortcut?.keybindings.map((keybinding, index) => (
-                    <Shortcut
-                        key={index}
-                        {...keybinding}
-                        onMatch={() => {
-                            setIsCodySidebarOpen(true)
-                        }}
-                    />
-                ))}
+            {focusCodyShortcut?.keybindings.map((keybinding, index) => (
+                <Shortcut
+                    key={index}
+                    {...keybinding}
+                    onMatch={() => {
+                        setIsCodySidebarOpen(true)
+                    }}
+                />
+            ))}
             <div className={classNames('w-100 d-flex flex-row')}>
                 <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
                     <RepoHeader
@@ -383,28 +381,26 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                         telemetryService={props.telemetryService}
                     />
 
-                    {isCodyEnabled.sidebar ? (
-                        <RepoHeaderContributionPortal
-                            position="right"
-                            priority={1}
-                            id="cody"
-                            {...repoHeaderContributionsLifecycleProps}
-                        >
-                            {() =>
-                                !isCodySidebarOpen ? (
-                                    <AskCodyButton
-                                        onClick={() => {
-                                            props.telemetryService.log(EventName.CODY_SIDEBAR_CHAT_OPENED, {
-                                                repo,
-                                                path: filePath,
-                                            })
-                                            setIsCodySidebarOpen(true)
-                                        }}
-                                    />
-                                ) : null
-                            }
-                        </RepoHeaderContributionPortal>
-                    ) : null}
+                    <RepoHeaderContributionPortal
+                        position="right"
+                        priority={1}
+                        id="cody"
+                        {...repoHeaderContributionsLifecycleProps}
+                    >
+                        {() =>
+                            !isCodySidebarOpen ? (
+                                <AskCodyButton
+                                    onClick={() => {
+                                        props.telemetryService.log(EventName.CODY_SIDEBAR_CHAT_OPENED, {
+                                            repo,
+                                            path: filePath,
+                                        })
+                                        setIsCodySidebarOpen(true)
+                                    }}
+                                />
+                            ) : null
+                        }
+                    </RepoHeaderContributionPortal>
 
                     <RepoHeaderContributionPortal
                         position="right"
@@ -499,7 +495,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     </Suspense>
                 </div>
 
-                {isCodyEnabled.sidebar && isCodySidebarOpen && (
+                {isCodySidebarOpen && (
                     <Panel
                         className="cody-sidebar-panel"
                         position="right"

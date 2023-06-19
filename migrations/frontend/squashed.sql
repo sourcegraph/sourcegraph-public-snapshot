@@ -1280,6 +1280,7 @@ CREATE TABLE changesets (
     computed_state text NOT NULL,
     external_fork_name citext,
     previous_failure_message text,
+    commit_verification jsonb DEFAULT '{}'::jsonb NOT NULL,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),
@@ -2579,6 +2580,29 @@ COMMENT ON CONSTRAINT required_bool_fields ON feature_flags IS 'Checks that bool
 
 COMMENT ON CONSTRAINT required_rollout_fields ON feature_flags IS 'Checks that rollout is set IFF flag_type = rollout';
 
+CREATE TABLE github_app_installs (
+    id integer NOT NULL,
+    app_id integer NOT NULL,
+    installation_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    url text,
+    account_login text,
+    account_avatar_url text,
+    account_url text,
+    account_type text,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE github_app_installs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE github_app_installs_id_seq OWNED BY github_app_installs.id;
+
 CREATE TABLE github_apps (
     id integer NOT NULL,
     app_id integer NOT NULL,
@@ -2593,7 +2617,8 @@ CREATE TABLE github_apps (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     app_url text DEFAULT ''::text NOT NULL,
-    webhook_id integer
+    webhook_id integer,
+    domain text DEFAULT 'repos'::text NOT NULL
 );
 
 CREATE SEQUENCE github_apps_id_seq
@@ -2698,6 +2723,14 @@ COMMENT ON COLUMN gitserver_repos_statistics.cloned IS 'Number of repositories i
 COMMENT ON COLUMN gitserver_repos_statistics.failed_fetch IS 'Number of repositories in gitserver_repos table on this shard where last_error is set';
 
 COMMENT ON COLUMN gitserver_repos_statistics.corrupted IS 'Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table';
+
+CREATE TABLE gitserver_repos_sync_output (
+    repo_id integer NOT NULL,
+    last_output text DEFAULT ''::text NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE gitserver_repos_sync_output IS 'Contains the most recent output from gitserver repository sync jobs.';
 
 CREATE TABLE global_state (
     site_id uuid NOT NULL,
@@ -4002,13 +4035,13 @@ CREATE TABLE product_subscriptions (
     archived_at timestamp with time zone,
     account_number text,
     cody_gateway_enabled boolean DEFAULT false NOT NULL,
-    cody_gateway_chat_rate_limit integer,
+    cody_gateway_chat_rate_limit bigint,
     cody_gateway_chat_rate_interval_seconds integer,
-    cody_gateway_embeddings_api_rate_limit integer,
+    cody_gateway_embeddings_api_rate_limit bigint,
     cody_gateway_embeddings_api_rate_interval_seconds integer,
     cody_gateway_embeddings_api_allowed_models text[],
     cody_gateway_chat_rate_limit_allowed_models text[],
-    cody_gateway_code_rate_limit integer,
+    cody_gateway_code_rate_limit bigint,
     cody_gateway_code_rate_interval_seconds integer,
     cody_gateway_code_rate_limit_allowed_models text[]
 );
@@ -4069,6 +4102,7 @@ CREATE VIEW reconciler_changesets AS
     c.external_state,
     c.external_review_state,
     c.external_check_state,
+    c.commit_verification,
     c.diff_stat_added,
     c.diff_stat_deleted,
     c.sync_state,
@@ -4845,7 +4879,8 @@ CREATE TABLE zoekt_repos (
     branches jsonb DEFAULT '[]'::jsonb NOT NULL,
     index_status text DEFAULT 'not_indexed'::text NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    last_indexed_at timestamp with time zone
 );
 
 ALTER TABLE ONLY access_requests ALTER COLUMN id SET DEFAULT nextval('access_requests_id_seq'::regclass);
@@ -4961,6 +4996,8 @@ ALTER TABLE ONLY executor_secrets ALTER COLUMN id SET DEFAULT nextval('executor_
 ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SET DEFAULT nextval('explicit_permissions_bitbucket_projects_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY external_services ALTER COLUMN id SET DEFAULT nextval('external_services_id_seq'::regclass);
+
+ALTER TABLE ONLY github_app_installs ALTER COLUMN id SET DEFAULT nextval('github_app_installs_id_seq'::regclass);
 
 ALTER TABLE ONLY github_apps ALTER COLUMN id SET DEFAULT nextval('github_apps_id_seq'::regclass);
 
@@ -5319,6 +5356,9 @@ ALTER TABLE ONLY feature_flag_overrides
 ALTER TABLE ONLY feature_flags
     ADD CONSTRAINT feature_flags_pkey PRIMARY KEY (flag_name);
 
+ALTER TABLE ONLY github_app_installs
+    ADD CONSTRAINT github_app_installs_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY github_apps
     ADD CONSTRAINT github_apps_pkey PRIMARY KEY (id);
 
@@ -5330,6 +5370,9 @@ ALTER TABLE ONLY gitserver_repos
 
 ALTER TABLE ONLY gitserver_repos_statistics
     ADD CONSTRAINT gitserver_repos_statistics_pkey PRIMARY KEY (shard_id);
+
+ALTER TABLE ONLY gitserver_repos_sync_output
+    ADD CONSTRAINT gitserver_repos_sync_output_pkey PRIMARY KEY (repo_id);
 
 ALTER TABLE ONLY global_state
     ADD CONSTRAINT global_state_pkey PRIMARY KEY (site_id);
@@ -5562,6 +5605,9 @@ ALTER TABLE ONLY temporary_settings
 ALTER TABLE ONLY temporary_settings
     ADD CONSTRAINT temporary_settings_user_id_key UNIQUE (user_id);
 
+ALTER TABLE ONLY github_app_installs
+    ADD CONSTRAINT unique_app_install UNIQUE (app_id, installation_id);
+
 ALTER TABLE ONLY user_credentials
     ADD CONSTRAINT user_credentials_domain_user_id_external_service_type_exter_key UNIQUE (domain, user_id, external_service_type, external_service_id);
 
@@ -5627,6 +5673,8 @@ CREATE INDEX access_requests_created_at ON access_requests USING btree (created_
 CREATE INDEX access_requests_status ON access_requests USING btree (status);
 
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
+
+CREATE INDEX app_id_idx ON github_app_installs USING btree (app_id);
 
 CREATE UNIQUE INDEX assigned_owners_file_path_owner ON assigned_owners USING btree (file_path_id, owner_user_id);
 
@@ -5830,6 +5878,8 @@ CREATE INDEX feature_flag_overrides_user_id ON feature_flag_overrides USING btre
 
 CREATE INDEX finished_at_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (finished_at);
 
+CREATE INDEX github_app_installs_account_login ON github_app_installs USING btree (account_login);
+
 CREATE UNIQUE INDEX github_apps_app_id_slug_base_url_unique ON github_apps USING btree (app_id, slug, base_url);
 
 CREATE INDEX gitserver_relocator_jobs_state ON gitserver_relocator_jobs USING btree (state);
@@ -5866,6 +5916,8 @@ CREATE INDEX insights_query_runner_jobs_series_id_state ON insights_query_runner
 
 CREATE INDEX insights_query_runner_jobs_state_btree ON insights_query_runner_jobs USING btree (state);
 
+CREATE INDEX installation_id_idx ON github_app_installs USING btree (installation_id);
+
 CREATE UNIQUE INDEX kind_cloud_default ON external_services USING btree (kind, cloud_default) WHERE ((cloud_default = true) AND (deleted_at IS NULL));
 
 CREATE INDEX lsif_configuration_policies_repository_id ON lsif_configuration_policies USING btree (repository_id);
@@ -5877,6 +5929,8 @@ CREATE INDEX lsif_dependency_indexing_jobs_upload_id ON lsif_dependency_syncing_
 CREATE INDEX lsif_dependency_repos_blocked ON lsif_dependency_repos USING btree (blocked);
 
 CREATE INDEX lsif_dependency_repos_last_checked_at ON lsif_dependency_repos USING btree (last_checked_at NULLS FIRST);
+
+CREATE INDEX lsif_dependency_repos_name_gin ON lsif_dependency_repos USING gin (name gin_trgm_ops);
 
 CREATE INDEX lsif_dependency_repos_name_id ON lsif_dependency_repos USING btree (name, id);
 
@@ -6478,11 +6532,17 @@ ALTER TABLE ONLY vulnerability_affected_symbols
 ALTER TABLE ONLY vulnerability_matches
     ADD CONSTRAINT fk_vulnerability_affected_packages FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY github_app_installs
+    ADD CONSTRAINT github_app_installs_app_id_fkey FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY github_apps
     ADD CONSTRAINT github_apps_webhook_id_fkey FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL;
 
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY gitserver_repos_sync_output
+    ADD CONSTRAINT gitserver_repos_sync_output_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY insights_query_runner_jobs_dependencies
     ADD CONSTRAINT insights_query_runner_jobs_dependencies_fk_job_id FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE;

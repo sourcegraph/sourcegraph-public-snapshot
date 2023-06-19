@@ -10,9 +10,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cody"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
 // maxRequestDuration is the maximum amount of time a request can take before
@@ -22,7 +22,7 @@ const maxRequestDuration = time.Minute
 func newCompletionsHandler(
 	rl RateLimiter,
 	traceFamily string,
-	getModel func(types.CodyCompletionRequestParameters, *schema.Completions) string,
+	getModel func(types.CodyCompletionRequestParameters, *conftypes.CompletionsConfig) string,
 	handle func(context.Context, types.CompletionRequestParameters, types.CompletionsClient, http.ResponseWriter),
 ) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +39,7 @@ func newCompletionsHandler(
 			return
 		}
 
-		completionsConfig := client.GetCompletionsConfig(conf.Get().SiteConfig())
+		completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 		if completionsConfig == nil {
 			http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
 		}

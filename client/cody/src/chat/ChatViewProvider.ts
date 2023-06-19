@@ -30,6 +30,7 @@ import { LocalKeywordContextFetcher } from '../local-context/local-keyword-conte
 import { debug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { FixupTask } from '../non-stop/FixupTask'
+import { IdleRecipeRunner } from '../non-stop/roles'
 import { AuthProvider } from '../services/AuthProvider'
 import { LocalAppDetector } from '../services/LocalAppDetector'
 import { LocalStorage } from '../services/LocalStorageProvider'
@@ -64,7 +65,7 @@ export type Config = Pick<
     | 'experimentalGuardrails'
 >
 
-export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
+export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable, IdleRecipeRunner {
     private isMessageInProgress = false
     private cancelCompletionCallback: (() => void) | null = null
     private webview?: Omit<vscode.Webview, 'postMessage'> & {
@@ -129,6 +130,50 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.disposables.push(this.localAppDetector)
     }
 
+    private idleCallbacks_: (() => void)[] = []
+
+    private get isIdle(): boolean {
+        // TODO: Use a cooldown timer for typing and interaction
+        return !this.isMessageInProgress
+    }
+
+    private scheduleIdleRecipes(): void {
+        setTimeout(() => {
+            if (!this.isIdle) {
+                // We rely on the recipe ending re-scheduling idle recipes
+                return
+            }
+            const notifyIdle = this.idleCallbacks_.shift()
+            if (!notifyIdle) {
+                return
+            }
+            try {
+                notifyIdle()
+            } catch (error) {
+                console.error(error)
+            }
+            if (this.idleCallbacks_.length) {
+                this.scheduleIdleRecipes()
+            }
+        }, 1000)
+    }
+
+    public onIdle(callback: () => void): void {
+        if (this.isIdle) {
+            // Run "now", but not synchronously on this callstack.
+            void Promise.resolve().then(callback)
+        } else {
+            this.idleCallbacks_.push(callback)
+        }
+    }
+
+    public runIdleRecipe(recipeId: RecipeID, humanChatInput?: string): Promise<void> {
+        if (!this.isIdle) {
+            throw new Error('not idle')
+        }
+        return this.executeRecipe(recipeId, humanChatInput, false)
+    }
+
     public onConfigurationChange(newConfig: Config): void {
         this.config = newConfig
         this.configurationChangeEvent.fire()
@@ -186,6 +231,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'edit':
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
+                break
+            case 'abort':
+                void this.multiplexer.notifyTurnComplete()
+                this.cancelCompletion()
+                this.onCompletionEnd()
                 break
             case 'executeRecipe':
                 await this.executeRecipe(message.recipe)
@@ -300,6 +350,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 void this.multiplexer.notifyTurnComplete()
             },
             onError: (err, statusCode) => {
+                // TODO notify the multiplexer of the error
+                debug('ChatViewProvider:onError', err)
+                if (err === 'aborted') {
+                    this.onCompletionEnd()
+                    return
+                }
                 // Display error message as assistant response
                 this.transcript.addErrorAsAssistantResponse(err)
                 // Log users out on unauth error
@@ -335,6 +391,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.sendChatHistory()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', false)
         this.logEmbeddingsSearchErrors()
+        this.scheduleIdleRecipes()
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
@@ -811,7 +868,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             console.error('used ForTesting method without test support object')
             return []
         }
-        return this.editor.controllers.task.getTasks()
+        return this.editor.controllers.fixups.getTasks()
     }
 
     public dispose(): void {

@@ -9,6 +9,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
@@ -20,6 +22,8 @@ import (
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -29,6 +33,7 @@ import (
 type changesetResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
+	logger          log.Logger
 
 	changeset *btypes.Changeset
 
@@ -49,20 +54,21 @@ type changesetResolver struct {
 	specErr  error
 }
 
-func NewChangesetResolverWithNextSync(store *store.Store, gitserverClient gitserver.Client, changeset *btypes.Changeset, repo *types.Repo, nextSyncAt time.Time) *changesetResolver {
-	r := NewChangesetResolver(store, gitserverClient, changeset, repo)
+func NewChangesetResolverWithNextSync(store *store.Store, gitserverClient gitserver.Client, logger log.Logger, changeset *btypes.Changeset, repo *types.Repo, nextSyncAt time.Time) *changesetResolver {
+	r := NewChangesetResolver(store, gitserverClient, logger, changeset, repo)
 	r.attemptedPreloadNextSyncAt = true
 	r.preloadedNextSyncAt = nextSyncAt
 	return r
 }
 
-func NewChangesetResolver(store *store.Store, gitserverClient gitserver.Client, changeset *btypes.Changeset, repo *types.Repo) *changesetResolver {
+func NewChangesetResolver(store *store.Store, gitserverClient gitserver.Client, logger log.Logger, changeset *btypes.Changeset, repo *types.Repo) *changesetResolver {
 	return &changesetResolver{
 		store:           store,
 		gitserverClient: gitserverClient,
-		repo:            repo,
-		repoResolver:    graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), gitserverClient, repo),
-		changeset:       changeset,
+
+		repo:         repo,
+		repoResolver: graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), gitserverClient, repo),
+		changeset:    changeset,
 	}
 }
 
@@ -188,7 +194,7 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 		}
 	}
 
-	return &batchChangesConnectionResolver{store: r.store, gitserverClient: r.gitserverClient, opts: opts}, nil
+	return &batchChangesConnectionResolver{store: r.store, gitserverClient: r.gitserverClient, opts: opts, logger: r.logger}, nil
 }
 
 // This points to the Batch Change that can close or open this changeset on its codehost. If this is nil,
@@ -346,6 +352,18 @@ func (r *changesetResolver) ForkName() *string {
 		return &name
 	}
 	return nil
+}
+
+func (r *changesetResolver) CommitVerification(ctx context.Context) (graphqlbackend.CommitVerificationResolver, error) {
+	switch r.changeset.ExternalServiceType {
+	case extsvc.TypeGitHub:
+		if r.changeset.CommitVerification != nil {
+			return &commitVerificationResolver{
+				commitVerification: r.changeset.CommitVerification,
+			}, nil
+		}
+	}
+	return nil, nil
 }
 
 func (r *changesetResolver) ReviewState(ctx context.Context) *string {
@@ -553,4 +571,40 @@ func (r *changesetLabelResolver) Description() *string {
 		return nil
 	}
 	return &r.label.Description
+}
+
+var _ graphqlbackend.CommitVerificationResolver = &commitVerificationResolver{}
+
+type commitVerificationResolver struct {
+	commitVerification *github.Verification
+}
+
+func (c *commitVerificationResolver) ToGitHubCommitVerification() (graphqlbackend.GitHubCommitVerificationResolver, bool) {
+	if c.commitVerification != nil {
+		return &gitHubCommitVerificationResolver{commitVerification: c.commitVerification}, true
+	}
+
+	return nil, false
+}
+
+var _ graphqlbackend.GitHubCommitVerificationResolver = &gitHubCommitVerificationResolver{}
+
+type gitHubCommitVerificationResolver struct {
+	commitVerification *github.Verification
+}
+
+func (r *gitHubCommitVerificationResolver) Verified() bool {
+	return r.commitVerification.Verified
+}
+
+func (r *gitHubCommitVerificationResolver) Reason() string {
+	return r.commitVerification.Reason
+}
+
+func (r *gitHubCommitVerificationResolver) Signature() string {
+	return r.commitVerification.Signature
+}
+
+func (r *gitHubCommitVerificationResolver) Payload() string {
+	return r.commitVerification.Payload
 }

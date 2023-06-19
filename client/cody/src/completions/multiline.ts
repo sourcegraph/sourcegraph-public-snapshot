@@ -16,7 +16,8 @@ export function detectMultilineMode(
         sameLineSuffix.trim() === '' &&
         // Only trigger multiline suggestions for the beginning of blocks
         prefix.trim().at(prefix.trim().length - config.blockStart.length) === config.blockStart &&
-        // Only trigger multiline suggestions when the new current line is indented
+        // Only trigger multiline suggestions when the new current line is
+        // indented
         indentation(prevNonEmptyLine) < indentation(sameLinePrefix)
     ) {
         return 'block'
@@ -38,15 +39,16 @@ export function truncateMultilineCompletion(
 
     const lines = completion.split('\n')
 
-    // We use a whitespace counting approach to finding the end of the completion. To find
-    // an end, we look for the first line that is below the start scope of the completion (
-    // calculated by the number of leading spaces or tabs)
+    // We use a whitespace counting approach to finding the end of the
+    // completion. To find an end, we look for the first line that is below the
+    // start scope of the completion ( calculated by the number of leading
+    // spaces or tabs)
     const prefixLastNewline = prefix.lastIndexOf('\n')
     const prefixIndentationWithFirstCompletionLine = prefix.slice(prefixLastNewline + 1) + completion[0]
     const startIndent = indentation(prefixIndentationWithFirstCompletionLine)
 
-    // Normalize responses that start with a newline followed by the exact indentation of
-    // the first line.
+    // Normalize responses that start with a newline followed by the exact
+    // indentation of the first line.
     if (lines.length > 1 && lines[0] === '' && indentation(lines[1]) === startIndent) {
         lines.shift()
         lines[0] = lines[0].trimStart()
@@ -64,8 +66,8 @@ export function truncateMultilineCompletion(
         }
     }
 
-    // Only include a closing line (e.g. `}`) if the block is empty yet. We detect this by
-    // looking at the indentation of the next non-empty line.
+    // Only include a closing line (e.g. `}`) if the block is empty yet. We
+    // detect this by looking at the indentation of the next non-empty line.
     const includeClosingLine = indentation(nextNonEmptyLine) < startIndent
 
     let cutOffIndex = lines.length
@@ -77,8 +79,8 @@ export function truncateMultilineCompletion(
         }
 
         if (indentation(line) < startIndent) {
-            // When we find the first block below the start indentation, only include it if
-            // it is an end block
+            // When we find the first block below the start indentation, only
+            // include it if it is an end block
             if (includeClosingLine && config.blockEnd && line.trim().startsWith(config.blockEnd)) {
                 cutOffIndex = i + 1
             } else {
@@ -118,11 +120,15 @@ interface LanguageConfig {
 }
 function getLanguageConfig(languageId: string): LanguageConfig | null {
     switch (languageId) {
-        case 'typescript':
-        case 'typescriptreact':
+        case 'c':
+        case 'cpp':
+        case 'csharp':
+        case 'go':
+        case 'java':
         case 'javascript':
         case 'javascriptreact':
-        case 'go':
+        case 'typescript':
+        case 'typescriptreact':
             return {
                 blockStart: '{',
                 blockElseTest: /^[\t ]*} else/,

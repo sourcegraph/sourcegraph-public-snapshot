@@ -84,6 +84,15 @@ type Repo struct {
 	KeyValuePairs map[string]*string `json:",omitempty"`
 }
 
+type GitHubAppDomain string
+
+func (s GitHubAppDomain) ToGraphQL() string { return strings.ToUpper(string(s)) }
+
+const (
+	ReposGitHubAppDomain   GitHubAppDomain = "repos"
+	BatchesGitHubAppDomain GitHubAppDomain = "batches"
+)
+
 // RepoCommit is a record of a repo and a corresponding commit.
 type RepoCommit struct {
 	ID                   int64
@@ -577,6 +586,8 @@ type GitserverRepo struct {
 	CloningProgress string
 	// The last error that occurred or empty if the last action was successful
 	LastError string
+	// the output of the most recent repo sync job
+	LastSyncOutput string
 	// The last time fetch was called.
 	LastFetched time.Time
 	// The last time a fetch updated the repository.
@@ -1821,9 +1832,6 @@ type NotebooksUsageStatistics struct {
 }
 
 type OwnershipUsageStatistics struct {
-	// Whether the `search-ownership` feature flag is on anywhere on the instance.
-	FeatureFlagOn *bool `json:"feature_flag_on,omitempty"`
-
 	// Statistics about ownership data in repositories
 	ReposCount *OwnershipUsageReposCounts `json:"repos_count,omitempty"`
 

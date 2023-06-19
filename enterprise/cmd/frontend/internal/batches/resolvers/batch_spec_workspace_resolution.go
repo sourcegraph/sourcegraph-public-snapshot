@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -15,6 +17,7 @@ import (
 
 type batchSpecWorkspaceResolutionResolver struct {
 	store      *store.Store
+	logger     log.Logger
 	resolution *btypes.BatchSpecResolutionJob
 }
 
@@ -49,7 +52,7 @@ func (r *batchSpecWorkspaceResolutionResolver) Workspaces(ctx context.Context, a
 	}
 	opts.BatchSpecID = r.resolution.BatchSpecID
 
-	return &batchSpecWorkspaceConnectionResolver{store: r.store, opts: opts}, nil
+	return &batchSpecWorkspaceConnectionResolver{store: r.store, logger: r.logger, opts: opts}, nil
 }
 
 func (r *batchSpecWorkspaceResolutionResolver) RecentlyCompleted(ctx context.Context, args *graphqlbackend.ListRecentlyCompletedWorkspacesArgs) graphqlbackend.BatchSpecWorkspaceConnectionResolver {

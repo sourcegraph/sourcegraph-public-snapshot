@@ -7,9 +7,9 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -178,15 +178,15 @@ func getConfiguredLimit(ctx context.Context, db database.DB, scope types.Complet
 	}
 
 	// Otherwise, fall back to the global limit.
-	cfg := conf.Get()
+	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 	switch scope {
 	case types.CompletionsFeatureChat:
-		if cfg.Completions != nil && cfg.Completions.PerUserDailyLimit > 0 {
-			return cfg.Completions.PerUserDailyLimit, nil
+		if cfg != nil && cfg.PerUserDailyLimit > 0 {
+			return cfg.PerUserDailyLimit, nil
 		}
 	case types.CompletionsFeatureCode:
-		if cfg.Completions != nil && cfg.Completions.PerUserCodeCompletionsDailyLimit > 0 {
-			return cfg.Completions.PerUserCodeCompletionsDailyLimit, nil
+		if cfg != nil && cfg.PerUserCodeCompletionsDailyLimit > 0 {
+			return cfg.PerUserCodeCompletionsDailyLimit, nil
 		}
 	default:
 		return 0, errors.Newf("unknown scope: %s", scope)
