@@ -40,6 +40,13 @@ export async function LoginStepInputBox(title: string, step: number, needToken: 
     if (!needToken || !endpoint) {
         return { endpoint, token: null }
     }
+    return TokenInputBox(endpoint)
+}
+
+export async function TokenInputBox(endpoint: string): Promise<LoginInput | null> {
+    // Get endpoint
+    const options = LoginStepOptions[1]
+    options.title = endpoint
     const token = await vscode.window.showInputBox(LoginStepOptions[1])
     return { endpoint, token }
 }

@@ -4,7 +4,6 @@ import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { View } from '../../webviews/NavBar'
-import { LocalProcess } from '../services/LocalAppDetector'
 
 /**
  * A message sent from the webview to the extension host.
@@ -23,7 +22,7 @@ export type WebviewMessage =
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
     | { command: 'insert'; text: string }
-    | { command: 'auth'; type: 'login' | 'logout' | 'support' }
+    | { command: 'auth'; type: 'signin' | 'signout' | 'support' }
     | { command: 'abort' }
 
 /**
@@ -108,13 +107,16 @@ export const unauthenticatedStatus = {
 }
 
 /** The local environment of the editor. */
-export interface LocalEnv extends LocalProcess {
+export interface LocalEnv {
+    // The operating system kind
+    os: string
+    // The URL scheme the editor is registered to in the operating system
+    uriScheme: string
     // The application name of the editor
     appName: string
-    // The URL scheme the editor is registered to in the operating system
-    appScheme: string
-    // The operating system kind
-    appOS: string
+    arch: string
+    homeDir?: string | undefined
+    isAppInstalled: boolean
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {

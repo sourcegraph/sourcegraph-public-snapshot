@@ -126,9 +126,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     serverEndpoint={config?.serverEndpoint}
                     isAppInstalled={isAppInstalled}
                     vscodeAPI={vscodeAPI}
-                    appOS={config?.appOS}
+                    appOS={config?.os}
                     appArch={config?.arch}
-                    callbackScheme={config?.appScheme}
+                    callbackScheme={config?.uriScheme}
                 />
             ) : (
                 <>

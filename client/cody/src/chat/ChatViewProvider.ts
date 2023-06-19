@@ -34,7 +34,7 @@ import { IdleRecipeRunner } from '../non-stop/roles'
 import { AuthProvider } from '../services/AuthProvider'
 import { LocalAppDetector } from '../services/LocalAppDetector'
 import { LocalStorage } from '../services/LocalStorageProvider'
-import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../services/SecretStorageProvider'
+import { SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
 
 import { fastFilesExist } from './fastFileFinder'
@@ -46,7 +46,6 @@ import {
     WebviewMessage,
     defaultAuthStatus,
     LocalEnv,
-    isLoggedIn,
 } from './protocol'
 import { getRecipe } from './recipes'
 import { convertGitCloneURLToCodebaseName } from './utils'
@@ -115,14 +114,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(async () => {
                 await this.updateCodebaseContext()
-            }),
-            vscode.workspace.onDidChangeConfiguration(async () => {
-                this.config = await getFullConfig(this.secretStorage, this.localStorage)
-                const newCodebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor, chat)
-                if (newCodebaseContext) {
-                    this.codebaseContext = newCodebaseContext
-                    await this.setAnonymousUserID()
-                }
             })
         )
 
@@ -241,7 +232,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await this.executeRecipe(message.recipe)
                 break
             case 'auth':
-                // cody.auth.login or cody.auth.signout
+                // cody.auth.signin or cody.auth.signout
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
                 break
             case 'settings': {
@@ -255,7 +246,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.sendEvent(message.event, message.value)
                 break
             case 'removeToken':
-                await this.logout()
+                await this.authProvider.signoutMenu()
                 break
             case 'removeHistory':
                 await this.clearHistory()
@@ -368,8 +359,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                         authStatus.showInvalidAccessTokenError = true
                     }
                     debug('ChatViewProvider:onError:unauth', err, { verbose: { authStatus } })
-                    void this.authProvider.setAuthStatus(authStatus)
                     void this.clearAndRestartSession()
+                    void this.authProvider.auth(
+                        this.config.serverEndpoint,
+                        this.config.accessToken,
+                        this.config.customHeaders
+                    )
                 }
                 this.onCompletionEnd()
                 void this.editor.controllers.inline.error()
@@ -619,25 +614,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
-     * Save, verify, and share authStatus state with webview
+     * Save, verify, and sync authStatus between extension host and webview
+     * activate extension when user has valid login
      */
-    public async sendLogin(authStatus: AuthStatus): Promise<void> {
-        // activate extension when user has valid login
-        await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
+    public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
+        if (authStatus.isLoggedIn) {
+            void this.publishConfig()
+        }
+        await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
+        this.setWebviewView(authStatus.isLoggedIn ? 'chat' : 'login')
         await this.webview?.postMessage({ type: 'login', authStatus })
         this.sendEvent('auth', 'login')
-    }
-
-    /**
-     * Logout deletes token from secret storage
-     * Also removes the avtivate status for the extension to disable access to all commands and set webview back to login view
-     */
-    public async logout(): Promise<void> {
-        await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-        await vscode.commands.executeCommand('setContext', 'cody.activated', false)
-        this.sendEvent('token', 'Delete')
-        this.sendEvent('auth', 'logout')
-        this.setWebviewView('login')
     }
 
     /**
@@ -729,26 +716,22 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     private publishConfig(): void {
         const send = async (): Promise<void> => {
-            // update codebase context on configuration change
-            void this.updateCodebaseContext()
+            this.config = await getFullConfig(this.secretStorage, this.localStorage)
+
             // check if the new configuration change is valid or not
-            const userState = await this.authProvider.auth(
-                this.config.serverEndpoint,
-                this.config.accessToken,
-                this.config.customHeaders
-            )
-            const authStatus = userState.authStatus
+            const authStatus = this.authProvider.getAuthStatus()
             const localProcess = this.localAppDetector.getProcessInfo()
             this.sendLocalAppState(localProcess.isAppInstalled)
             const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
-                appScheme: vscode.env.uriScheme,
-                appName: vscode.env.appName,
-                appOS: process.platform,
             }
-            void this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
+
+            // update codebase context on configuration change
+            await this.updateCodebaseContext()
+            await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
+            debug('Cody:publishConfig', 'webview', { verbose: authStatus })
         }
 
         this.disposables.push(this.configurationChangeEvent.event(() => send()))

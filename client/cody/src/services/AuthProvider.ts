@@ -10,12 +10,15 @@ import {
     LOCAL_APP_URL,
     defaultAuthStatus,
     isLocalApp,
-    isLoggedIn,
+    isLoggedIn as isAuthed,
     unauthenticatedStatus,
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
+import { updateConfiguration } from '../configuration'
+import { logEvent } from '../event-logger'
+import { debug } from '../log'
 
-import { AuthMenu, LoginStepInputBox } from './CodyMenus'
+import { AuthMenu, LoginStepInputBox, TokenInputBox } from './CodyMenus'
 import { LocalStorage } from './LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from './SecretStorageProvider'
 
@@ -33,12 +36,22 @@ export class AuthProvider {
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage
     ) {
-        this.authStatus.endpoint = config.serverEndpoint
         this.loadEndpointHistory()
+        const lastEndpoint = localStorage?.getEndpoint()
+        if (lastEndpoint) {
+            this.autoSignin(lastEndpoint).catch(() => null)
+        }
     }
 
-    public async login(): Promise<void> {
+    private async autoSignin(endpoint: string): Promise<void> {
+        const token = await this.secretStorage.get(endpoint)
+        await this.auth(endpoint, token || null)
+    }
+
+    public async signinMenu(): Promise<void> {
         const mode = this.authStatus.isLoggedIn ? 'switch' : 'signin'
+        debug('AuthProvider:signinMenu', mode)
+        logEvent('CodyVSCodeExtension:login:clicked')
         const item = await AuthMenu(mode, this.endpointHistory)
         if (!item) {
             return
@@ -59,7 +72,6 @@ export class AuthProvider {
             case 'token': {
                 const input = await LoginStepInputBox(item.uri, 1, true)
                 if (!input?.endpoint || !input?.token) {
-                    console.log('No endpoint or token provided')
                     return
                 }
                 await this.auth(input.endpoint, input.token)
@@ -67,39 +79,49 @@ export class AuthProvider {
             }
             default: {
                 // Auto log user if token for the selected instance was found in secret
-                console.log('Signing in...', item.uri)
                 const selectedEndpoint = item.uri
-                this.authStatus.endpoint = selectedEndpoint
                 const token = await this.secretStorage.get(selectedEndpoint)
                 const authState = await this.auth(selectedEndpoint, token || null)
-                if (authState.isLoggedIn) {
+                if (!authState || authState?.isLoggedIn) {
                     return
                 }
-                const input = await LoginStepInputBox(item.uri, 2, false)
-                await this.auth(selectedEndpoint, input?.token || null)
+                const input = await TokenInputBox(item.uri)
+                const isLoggedIn = (await this.auth(selectedEndpoint, input?.token || null))?.isLoggedIn
+                if (isLoggedIn) {
+                    void vscode.window.showInformationMessage(`Successfully signed in to ${selectedEndpoint}`)
+                }
             }
         }
     }
 
     // Log user out of the current instance
-    public async logout(): Promise<void> {
+    public async signoutMenu(): Promise<void> {
+        logEvent('CodyVSCodeExtension:logout:clicked')
         const endpointQuickPickItem = this.authStatus.endpoint ? [this.authStatus.endpoint] : []
         const endpoint = await AuthMenu('signout', endpointQuickPickItem)
-        if (!endpoint) {
+        if (!endpoint?.uri) {
             return
         }
-        await this.localStorage.deleteEndpoint()
-        await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-        await this.secretStorage.delete(endpoint.label)
-        this.authStatus = unauthenticatedStatus
-        await vscode.commands.executeCommand('setContext', 'cody.activated', false)
+        await this.signout(endpoint.uri)
+        debug('AuthProvider:signoutMenu', endpoint.uri)
     }
 
-    private async getAuthStatus(
+    private async signout(endpoint: string): Promise<void> {
+        await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+        await updateConfiguration('serverEndpoint', '')
+        await this.auth(endpoint, null)
+    }
+
+    public getAuthStatus(): AuthStatus {
+        return this.authStatus
+    }
+
+    private async makeAuthStatus(
         config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
     ): Promise<AuthStatus> {
         const endpoint = config.serverEndpoint
-        if (!config.accessToken || !endpoint) {
+        const token = config.accessToken
+        if (!token || !endpoint) {
             return { ...defaultAuthStatus, endpoint }
         }
         // Cache the config and the GraphQL client
@@ -126,23 +148,29 @@ export class AuthProvider {
             return
         }
         this.authStatus = authStatus
-        await vscode.commands.executeCommand('cody.auth.verify', authStatus)
+        await vscode.commands.executeCommand('cody.auth.sync', authStatus)
     }
 
     // It processes the authentication steps and stores the login info before sharing the auth status with chatview
     public async auth(
         endpoint: string,
         token: string | null,
-        customHeaders?: {}
-    ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean }> {
+        customHeaders = {}
+    ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean } | null> {
         const config = {
             serverEndpoint: endpoint,
             accessToken: token,
             customHeaders: customHeaders || this.config.customHeaders,
         }
-        const authStatus = await this.getAuthStatus(config)
+        const authStatus = await this.makeAuthStatus(config)
+        const isLoggedIn = isAuthed(authStatus)
+        authStatus.isLoggedIn = isLoggedIn
         await this.setAuthStatus(authStatus)
-        return { authStatus, isLoggedIn: isLoggedIn(authStatus) }
+        await this.storeAuthInfo(endpoint, token)
+        if (isLoggedIn) {
+            void vscode.window.showInformationMessage(`You are signed in to ${endpoint}.`)
+        }
+        return { authStatus, isLoggedIn }
     }
 
     // Register URI Handler (vscode://sourcegraph.cody-ai) for:
@@ -158,7 +186,7 @@ export class AuthProvider {
         }
         await this.storeAuthInfo(endpoint, token)
         const authState = await this.auth(endpoint, token, customHeaders)
-        if (authState.isLoggedIn) {
+        if (authState?.isLoggedIn) {
             const actionButtonLabel = 'Get Started'
             const successMessage = isApp ? 'Connected to Cody App' : 'Signed in to Sourcegraph.com'
             const action = await vscode.window.showInformationMessage(successMessage, actionButtonLabel)
@@ -166,8 +194,6 @@ export class AuthProvider {
                 await vscode.commands.executeCommand('cody.chat.focus')
             }
         }
-        this.authStatus.endpoint = endpoint
-        await this.setAuthStatus(authState.authStatus)
     }
 
     private redirectToEndpointLogin(isDotCom: boolean): void {
@@ -187,12 +213,16 @@ export class AuthProvider {
     }
 
     private async storeAuthInfo(endpoint: string | null | undefined, token: string | null | undefined): Promise<void> {
-        if (!endpoint || !token) {
+        debug('AuthProvider:storeAuthInfo:init', endpoint || '')
+        if (!endpoint) {
             return
         }
-        this.authStatus.endpoint = endpoint
         await this.localStorage.saveEndpoint(endpoint)
-        await this.secretStorage.storeToken(endpoint, token)
+        await updateConfiguration('serverEndpoint', endpoint)
+        if (token) {
+            await this.secretStorage.storeToken(endpoint, token)
+        }
         this.loadEndpointHistory()
+        debug('AuthProvider:storeAuthInfo:stored', endpoint || '')
     }
 }

@@ -302,7 +302,7 @@
         "icon": "$(sign-out)"
       },
       {
-        "command": "cody.auth.switch",
+        "command": "cody.auth.signin",
         "category": "Cody",
         "title": "Switch Account..."
       },
@@ -679,7 +679,7 @@
           "group": "9_cody@2"
         },
         {
-          "command": "cody.auth.switch",
+          "command": "cody.auth.signin",
           "when": "view == cody.chat && cody.activated",
           "group": "9_cody@0"
         },

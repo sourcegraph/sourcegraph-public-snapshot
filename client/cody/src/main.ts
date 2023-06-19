@@ -181,10 +181,9 @@ const register = async (
             }
         }),
         // Auth
-        vscode.commands.registerCommand('cody.auth.verify', (state: AuthStatus) => chatProvider.sendLogin(state)),
-        vscode.commands.registerCommand('cody.auth.login', () => authProvider.login()),
-        vscode.commands.registerCommand('cody.auth.signout', () => authProvider.logout()),
-        vscode.commands.registerCommand('cody.auth.switch', () => authProvider.login()),
+        vscode.commands.registerCommand('cody.auth.sync', (state: AuthStatus) => chatProvider.syncAuthStatus(state)),
+        vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
+        vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
         // Commands
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
@@ -330,11 +329,6 @@ const register = async (
     if (initialConfig.experimentalNonStop || process.env.CODY_TESTING === 'true') {
         fixup.register()
         await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
-    }
-
-    // Automatically log user in if endpoint and token are found
-    if (initialConfig.serverEndpoint && initialConfig.accessToken) {
-        await authProvider.auth(initialConfig.serverEndpoint, initialConfig.accessToken, initialConfig.customHeaders)
     }
 
     await showSetupNotification(initialConfig, localStorage)

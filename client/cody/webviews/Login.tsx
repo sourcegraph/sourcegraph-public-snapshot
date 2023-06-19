@@ -47,7 +47,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     }
 
     const onFooterButtonClick = useCallback(
-        (title: 'login' | 'support') => {
+        (title: 'signin' | 'support') => {
             vscodeAPI.postMessage({ command: 'auth', type: title })
         },
         [vscodeAPI]
@@ -93,7 +93,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                 )}
             </div>
             <footer className={styles.footer}>
-                <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('login')}>
+                <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('signin')}>
                     Other Login Options...
                 </VSCodeButton>
                 <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('support')}>

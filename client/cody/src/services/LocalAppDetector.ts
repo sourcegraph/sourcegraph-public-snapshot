@@ -1,11 +1,6 @@
 import * as vscode from 'vscode'
 
-export interface LocalProcess {
-    arch?: string
-    homeDir?: string | undefined
-    os?: string
-    isAppInstalled: boolean
-}
+import { LocalEnv } from '../chat/protocol'
 
 export interface LocalAppPaths {
     [os: string]: {
@@ -99,12 +94,14 @@ export class LocalAppDetector implements vscode.Disposable {
         }
     }
 
-    public getProcessInfo(): LocalProcess {
+    public getProcessInfo(): LocalEnv {
         return {
             arch: this.arch,
             os: this.platformName,
             homeDir: this.homeDir,
             isAppInstalled: this.isInstalled,
+            uriScheme: vscode.env.uriScheme,
+            appName: vscode.env.appName,
         }
     }
 
