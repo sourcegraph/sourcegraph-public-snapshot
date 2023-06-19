@@ -133,8 +133,7 @@ WITH
 targets AS (
 	SELECT uvt.upload_id
 	FROM lsif_uploads_visible_at_tip uvt
-	JOIN lsif_uploads u ON u.id = uvt.upload_id
-	JOIN repo r ON r.id = u.repository_id
+	JOIN repo r ON r.id = uvt.repository_id
 	WHERE
 		uvt.is_default_branch AND
 		r.deleted_at IS NULL AND
@@ -143,20 +142,10 @@ targets AS (
 exported AS (
 	SELECT re.id
 	FROM codeintel_ranking_exports re
+	JOIN targets t ON t.upload_id = re.upload_id
 	WHERE
 		re.graph_key = %s AND
-		re.deleted_at IS NULL AND
-		EXISTS (
-			SELECT 1
-			FROM lsif_uploads_visible_at_tip uvt
-			JOIN lsif_uploads u ON u.id = uvt.upload_id
-			JOIN repo r ON r.id = u.repository_id
-			WHERE
-				uvt.is_default_branch AND
-				uvt.upload_id = re.upload_id AND
-				r.deleted_at IS NULL AND
-				r.blocked IS NULL
-		)
+		re.deleted_at IS NULL
 ),
 progress AS (
 	SELECT pl.id
