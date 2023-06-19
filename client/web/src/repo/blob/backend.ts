@@ -103,6 +103,7 @@ export const fetchBlob = memoizeObservable(
                             snapshot(indexID: $visibleIndexID) {
                                 offset
                                 data
+                                additional
                             }
                         }
                     }
