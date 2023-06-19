@@ -125,6 +125,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         context: vscode.InlineCompletionContext,
         token?: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionItem[]> {
+        console.log({ position, context })
         const abortController = new AbortController()
         if (token) {
             this.abortOpenInlineCompletions()
@@ -145,7 +146,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
 
         const { prefix, suffix, prevLine: sameLinePrefix, prevNonEmptyLine } = docContext
+
         const sameLineSuffix = suffix.slice(0, suffix.indexOf('\n'))
+
+        const range = context.selectedCompletionInfo?.range ?? new vscode.Range(position, position)
 
         // Avoid showing completions when we're deleting code (Cody can only insert code at the
         // moment)
@@ -157,14 +161,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // again
             const cachedCompletions = this.inlineCompletionsCache?.get(prefix, false)
             if (cachedCompletions?.isExactPrefix) {
-                return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
+                return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions, range)
             }
             return []
         }
 
         const cachedCompletions = this.inlineCompletionsCache?.get(prefix)
         if (cachedCompletions) {
-            return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
+            return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions, range)
         }
 
         const similarCode = await getContext({
@@ -185,23 +189,23 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         // selected completion info is present (so something is selected from the completions
         // dropdown list based on the lang server) and the returned completion range does not
         // contain the same selection.
-        if (context.selectedCompletionInfo || /[A-Za-z]$/.test(sameLinePrefix)) {
-            return []
-        }
+        // if (context.selectedCompletionInfo || /[A-Za-z]$/.test(sameLinePrefix)) {
+        //     return []
+        // }
         // If we have a suffix in the same line as the cursor and the suffix contains any word
         // characters, do not attempt to make a completion. This means we only make completions if
         // we have a suffix in the same line for special characters like `)]}` etc.
         //
         // VS Code will attempt to merge the remainder of the current line by characters but for
         // words this will easily get very confusing.
-        if (/\w/.test(sameLineSuffix)) {
-            return []
-        }
+        // if (/\w/.test(sameLineSuffix)) {
+        //     return []
+        // }
         // In this case, VS Code won't be showing suggestions anyway and we are more likely to want
         // suggested method names from the language server instead.
-        if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || sameLinePrefix.endsWith('.')) {
-            return []
-        }
+        // if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke) {
+        // return []
+        // }
 
         const sharedProviderOptions = {
             prefix,
@@ -303,7 +307,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         if (rankedResults.length > 0) {
             CompletionLogger.suggest(logId)
             this.inlineCompletionsCache?.add(logId, rankedResults)
-            return toInlineCompletionItems(logId, rankedResults)
+            return toInlineCompletionItems(logId, rankedResults, range)
         }
 
         CompletionLogger.noResponse(logId)
@@ -317,10 +321,14 @@ export interface Completion {
     stopReason?: string
 }
 
-function toInlineCompletionItems(logId: string, completions: Completion[]): vscode.InlineCompletionItem[] {
+function toInlineCompletionItems(
+    logId: string,
+    completions: Completion[],
+    range: vscode.Range
+): vscode.InlineCompletionItem[] {
     return completions.map(
         completion =>
-            new vscode.InlineCompletionItem(completion.content, undefined, {
+            new vscode.InlineCompletionItem(completion.content, range, {
                 title: 'Completion accepted',
                 command: 'cody.completions.inline.accepted',
                 arguments: [{ codyLogId: logId }],
