@@ -84,8 +84,20 @@ describe('Hallucinations detector', () => {
                 output: [],
             },
             {
-                input: '/api/v2/items/:id',
+                input: '/items/:id',
                 output: [],
+            },
+            {
+                input: '/package.json',
+                output: [],
+            },
+            {
+                input: '/products/123',
+                output: [{ fullMatch: '/products/123', pathMatch: '/products/123' }],
+            },
+            {
+                input: '/src/components',
+                output: [{ fullMatch: '/src/components', pathMatch: '/src/components' }],
             },
             {
                 input: 'git/refs',

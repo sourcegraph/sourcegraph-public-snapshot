@@ -165,7 +165,7 @@ function isFilePathLike(fullMatch: string, pathMatch: string): boolean {
     }
 
     // check for API endpoints
-    const apiRegex = new RegExp('^/[^\\s]*[./:][^\\s]*$')
+    const apiRegex = new RegExp('\\/:[\\w-]+', 'g')
     if (apiRegex.test(fullMatch) || parts[0].startsWith('/api')) {
         return false
     }
