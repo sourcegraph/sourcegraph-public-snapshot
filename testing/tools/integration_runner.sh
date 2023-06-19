@@ -83,8 +83,8 @@ function _run_server_image() {
   image_name="$2"
   local url
   url="$3"
-  local port
-  port="$4"
+  local server_port
+  server_port="$4"
   local data
   data="$5"
   local container_name
@@ -111,7 +111,7 @@ function _run_server_image() {
   docker run $docker_args \
     -d \
     --name "$container_name" \
-    --publish "$port":7080 \
+    --publish "$server_port":7080 \
     -e BAZEL_SKIP_OOB_INFER_VERSION=true \
     -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS="$ALLOW_SINGLE_DOCKER_CODE_INSIGHTS" \
     -e SOURCEGRAPH_LICENSE_GENERATION_KEY="$SOURCEGRAPH_LICENSE_GENERATION_KEY" \
@@ -160,8 +160,8 @@ function run_server_image() {
   image_name="$2"
   local url
   url="$3"
-  local port
-  port="$4"
+  local server_port
+  server_port="$4"
 
   must_be_CI
   must_not_be_running "$url"
@@ -179,7 +179,7 @@ function run_server_image() {
   # we want those to be expanded right now, on purpose.
   # shellcheck disable=SC2064
   trap "cleanup $image_name $container_name" EXIT
-  _run_server_image "$image_tarball" "$image_name" "$url" "$port" "$data" "$container_name"
+  _run_server_image "$image_tarball" "$image_name" "$url" "$server_port" "$data" "$container_name"
 
   wait_until_container_ready "$container_name" "$url" 60
 }

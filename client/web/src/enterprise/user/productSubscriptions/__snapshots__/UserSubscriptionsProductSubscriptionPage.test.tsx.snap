@@ -64,7 +64,7 @@ exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
       <p
         class="mb-2"
       >
-        Access tokens can be used for Cody Gateway access
+        Access tokens can be used for Cody Gateway access. In most cases this is not needed, since access tokens are automatically generated from each instance's configured license key.
       </p>
     </div>
   </div>

@@ -16,8 +16,7 @@ cmd_query="$8"
 
 testdata_repos="$9"
 
-port="7082"
-url="http://localhost:$port"
+url="http://localhost:$PORT"
 
 SOURCEGRAPH_BASE_URL="$url"
 export SOURCEGRAPH_BASE_URL
@@ -25,7 +24,7 @@ export SOURCEGRAPH_BASE_URL
 ALLOW_SINGLE_DOCKER_CODE_INSIGHTS="true"
 export ALLOW_SINGLE_DOCKER_CODE_INSIGHTS
 
-run_server_image "$tarball" "$image_name" "$url" "$port"
+run_server_image "$tarball" "$image_name" "$url" "$PORT"
 
 echo '--- Initializing instance'
 "$init_sg" initSG -sg_envrc="./sg_envrc"
