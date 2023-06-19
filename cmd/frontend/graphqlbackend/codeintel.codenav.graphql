@@ -260,6 +260,9 @@ type SnapshotData {
     """
     data: String!
 
+    """
+    Any additional lines of snapshot output such as relationships, documentation etc.
+    """
     additional: [String!]
 }
 
