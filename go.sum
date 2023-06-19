@@ -2067,8 +2067,8 @@ github.com/sourcegraph/scip v0.2.4-0.20230613194658-b62733841bc3 h1:6PgJPdhDHRGs
 github.com/sourcegraph/scip v0.2.4-0.20230613194658-b62733841bc3/go.mod h1:ymcTuv+6D5OEZB/84TRPQvUpDK7v7zXnWBJl79hb7ns=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20230616075008-fb27b3776e31 h1:HddibZs+WeScg+iQjPKIlGRR8CmWctwzo7gJ/MeCL+Y=
-github.com/sourcegraph/zoekt v0.0.0-20230616075008-fb27b3776e31/go.mod h1:E6oxotmuKTfdjmlkhyqc4eR3YvDLAHDHyPYISBP5+0g=
+github.com/sourcegraph/zoekt v0.0.0-20230619155016-edf0c8b4e978 h1:CTKmuHsEmO0T+CH3d3wYimeENVprNKip51L/sUfZVCA=
+github.com/sourcegraph/zoekt v0.0.0-20230619155016-edf0c8b4e978/go.mod h1:E6oxotmuKTfdjmlkhyqc4eR3YvDLAHDHyPYISBP5+0g=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spaolacci/murmur3 v1.1.0/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v0.0.0-20170901052352-ee1bd8ee15a1/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
