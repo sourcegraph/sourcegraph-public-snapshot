@@ -80,16 +80,29 @@ export const fetchBlob = memoizeObservable(
                 ) {
                     repository(name: $repoName) {
                         commit(rev: $revision) {
-                            file(path: $filePath) {
-                                ...BlobFileFields
+                            __typename
+                            ...GitCommitFieldsWithFileAndBlob
+                        }
+                        changelist(cid: $revision) {
+                            __typename
+                            cid
+                            commit {
+                                ...GitCommitFieldsWithFileAndBlob
                             }
-                            blob(path: $filePath) @include(if: $snapshot) {
-                                lsif {
-                                    snapshot(indexID: $visibleIndexID) {
-                                        offset
-                                        data
-                                    }
-                                }
+                        }
+                    }
+                }
+
+                fragment GitCommitFieldsWithFileAndBlob on GitCommit {
+                    oid
+                    file(path: $filePath) {
+                        ...BlobFileFields
+                    }
+                    blob(path: $filePath) @include(if: $snapshot) {
+                        lsif {
+                            snapshot(indexID: $visibleIndexID) {
+                                offset
+                                data
                             }
                         }
                     }
@@ -134,17 +147,19 @@ export const fetchBlob = memoizeObservable(
         ).pipe(
             map(dataOrThrowErrors),
             map(data => {
-                if (!data.repository?.commit) {
+                const commit = data.repository?.commit || data.repository?.changelist?.commit
+
+                if (!commit) {
                     throw new Error('Commit not found')
                 }
 
-                if (!data.repository.commit.file) {
+                if (!commit.file) {
                     throw new Error('File not found')
                 }
 
                 return {
-                    ...data.repository.commit.file,
-                    snapshot: data.repository.commit.blob?.lsif?.snapshot,
+                    ...commit.file,
+                    snapshot: commit.blob?.lsif?.snapshot,
                 }
             })
         )
