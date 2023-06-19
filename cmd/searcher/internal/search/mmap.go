@@ -17,7 +17,7 @@ func mmap(path string, f *os.File, fi fs.FileInfo) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := unix.Madvise(zf.Data, syscall.MADV_SEQUENTIAL); err != nil {
+	if err := unix.Madvise(data, syscall.MADV_SEQUENTIAL); err != nil {
 		// best effort at optimization, so only log failures here
 		log.Printf("failed to madvise for %q: %v", path, err)
 	}
@@ -25,6 +25,6 @@ func mmap(path string, f *os.File, fi fs.FileInfo) ([]byte, error) {
 	return data, nil
 }
 
-func unmap(data []byte) {
-	return unix.Munmap(zf.Data)
+func unmap(data []byte) error {
+	return unix.Munmap(data)
 }
