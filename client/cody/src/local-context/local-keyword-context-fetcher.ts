@@ -108,8 +108,16 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
 
         const filesnamesWithScores = await this.fetchKeywordFiles(rootPath, query)
         const top10 = filesnamesWithScores.slice(0, numResults)
+        const uniqueFiles = new Set<string>()
+        const filteredTen = top10.filter(({ filename }) => {
+            if (uniqueFiles.has(filename)) {
+                return false
+            }
+            uniqueFiles.add(filename)
+            return true
+        })
         const messagePairs = await Promise.all(
-            top10.map(async ({ filename }) => {
+            filteredTen.map(async ({ filename }) => {
                 const uri = vscode.Uri.file(path.join(rootPath, filename))
                 const content = (await vscode.workspace.openTextDocument(uri)).getText()
                 return { fileName: filename, content }
@@ -118,6 +126,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         const searchDuration = performance.now() - startTime
         logEvent('CodyVSCodeExtension:keywordContext:searchDuration', searchDuration, searchDuration)
         debug('LocalKeywordContextFetcher:getContext', JSON.stringify({ searchDuration }))
+
         return messagePairs.reverse().flat()
     }
 
@@ -137,6 +146,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                         responseText = text
                     },
                     onComplete: () => {
+                        console.log(responseText)
                         resolve(responseText.split(/\s+/).filter(e => e.length > 0))
                     },
                     onError: (message: string, statusCode?: number) => {

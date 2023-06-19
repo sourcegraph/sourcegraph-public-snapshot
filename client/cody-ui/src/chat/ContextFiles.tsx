@@ -18,21 +18,12 @@ export const ContextFiles: React.FunctionComponent<{
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     className?: string
 }> = React.memo(function ContextFilesContent({ contextFiles, fileLinkComponent: FileLink, className }) {
-    const uniqueFiles = new Set<string>()
-    const filteredFiles = contextFiles.filter(file => {
-        if (uniqueFiles.has(file.fileName)) {
-            return false
-        }
-        uniqueFiles.add(file.fileName)
-        return true
-    })
-
     return (
         <TranscriptAction
-            title={{ verb: 'Read', object: `${filteredFiles.length} ${pluralize('file', filteredFiles.length)}` }}
+            title={{ verb: 'Read', object: `${contextFiles.length} ${pluralize('file', contextFiles.length)}` }}
             steps={[
                 { verb: 'Searched', object: 'entire codebase for relevant files', icon: mdiMagnify },
-                ...filteredFiles.map(file => ({
+                ...contextFiles.map(file => ({
                     verb: '',
                     object: <FileLink path={file.fileName} repoName={file.repoName} revision={file.revision} />,
                     icon: mdiFileDocumentOutline,
