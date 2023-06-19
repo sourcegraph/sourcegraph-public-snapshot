@@ -6,7 +6,7 @@ export interface ProviderConfig {
      * A factory to create instances of the provider. This pattern allows us to inject provider
      * specific parameters outside of the callers of the factory.
      */
-    create(options: ProviderOptions): Provider
+    create(options: ProviderOptions): AbstractProvider
 
     /**
      * The maximum number of unicode characters that should be included in the
@@ -39,7 +39,7 @@ export interface ProviderOptions {
     n: number
 }
 
-export abstract class Provider {
+export abstract class AbstractProvider {
     protected prefix: string
     protected suffix: string
     protected fileName: string

@@ -6,7 +6,7 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { Completion } from '..'
 import { messagesToText } from '../utils'
 
-import { Provider, ProviderConfig, ProviderOptions } from './provider'
+import { AbstractProvider, ProviderConfig, ProviderOptions } from './provider'
 
 const COMPLETIONS_PREAMBLE = `You are Cody, a code completion AI developed by Sourcegraph.
 You only respond in a single Markdown code blocks to all questions.
@@ -24,7 +24,7 @@ interface AnthropicOptions {
     completionsClient: SourcegraphNodeCompletionsClient
 }
 
-export class AnthropicProvider extends Provider {
+export class AnthropicProvider extends AbstractProvider {
     private promptChars: number
     private responseTokens: number
     private completionsClient: SourcegraphNodeCompletionsClient
