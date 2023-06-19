@@ -15,7 +15,7 @@
     background-color: var(--bg-color);
 }
 
-.human-transcript-item:before {
+.human-transcript-item::before {
     background-color: var(--border-color-2);
 }
 
