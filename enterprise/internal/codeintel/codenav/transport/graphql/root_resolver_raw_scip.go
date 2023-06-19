@@ -48,3 +48,7 @@ func (r *snapshotDataResolver) Offset() int32 {
 func (r *snapshotDataResolver) Data() string {
 	return r.data.Symbol
 }
+
+func (r *snapshotDataResolver) Additional() *[]string {
+	return &r.data.AdditionalData
+}
