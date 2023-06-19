@@ -13,14 +13,6 @@ filegroup(
 )
 
 pkg_tar(
-    name = "config_tar_min",
-    srcs = [
-        "//docker-images/prometheus/config:base_config",
-    ],
-    strip_prefix = ".",
-)
-
-pkg_tar(
     name = "config_tar",
     srcs = [
         ":startup_scripts",
