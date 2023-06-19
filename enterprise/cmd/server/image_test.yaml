@@ -89,6 +89,19 @@ fileExistenceTests:
   uid: 0
   gid: 0
   permissions: '-r-xr-xr-x'
+# /sg_config_prometheus configuration
+- name: '/sg_config_prometheus/prometheus.yml'
+  path: '/sg_config_prometheus/prometheus.yml'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-rwxrwxrwx'
+- name: '/sg_config_prometheus/alertmanager.yml'
+  path: '/sg_config_prometheus/alertmanager.yml'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-rwxrwxrwx'
 
 metadataTest:
   envVars:
