@@ -39,6 +39,7 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         "//:node_modules/@types/lodash",
+        "//:node_modules/@types/puppeteer",
         "//:node_modules/jsonc-parser",
         "//:node_modules/lodash",
         "//:node_modules/puppeteer",  #keep

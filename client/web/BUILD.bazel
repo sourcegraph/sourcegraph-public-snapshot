@@ -20,6 +20,13 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 # gazelle:js_ignore_imports **/*.worker.ts
 # gazelle:js_ignore_imports **/SourcegraphWebApp.scss
 
+# Ignores added with update to Apsect CLI 5.5.2
+# TODO(bazel): remove these once the underlying bug with tsconfig paths is fixed
+# gazelle:js_ignore_imports src/graphql-operations
+# gazelle:js_ignore_imports src/jscontext
+# gazelle:js_ignore_imports src/stores/navbarSearchQueryState
+# gazelle:js_ignore_imports ../../schema.json
+
 npm_link_all_packages(name = "node_modules")
 
 eslint_config_and_lint_root(
@@ -1957,6 +1964,8 @@ ts_project(
     deps = [
         ":graphql_operations",
         ":module_style_typings",
+        ":node_modules/@sourcegraph/branded",
+        ":node_modules/@sourcegraph/codeintellify",
         ":node_modules/@sourcegraph/common",
         ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/shared",

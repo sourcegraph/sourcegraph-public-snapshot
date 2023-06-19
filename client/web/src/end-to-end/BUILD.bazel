@@ -27,7 +27,9 @@ ts_project(
     tsconfig = ":tsconfig",
     use_preset_env = False,
     deps = [
+        "//:node_modules/@types/mocha",
         "//:node_modules/@types/mockdate",
+        "//:node_modules/mocha",
         "//:node_modules/mockdate",
         "//client/web:node_modules/@sourcegraph/shared",
     ],

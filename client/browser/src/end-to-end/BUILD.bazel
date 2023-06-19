@@ -21,6 +21,7 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         "//:node_modules/@types/node",
+        "//:node_modules/@types/puppeteer",
         "//:node_modules/expect",
         "//:node_modules/puppeteer",  #keep
         "//client/browser:node_modules/@sourcegraph/shared",
@@ -42,6 +43,7 @@ ts_project(
         ":end-to-end",
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/node",
+        "//:node_modules/@types/puppeteer",
         "//:node_modules/expect",
         "//:node_modules/lodash",
         "//:node_modules/puppeteer",  #keep

@@ -246,9 +246,11 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":branded_lib",
+        ":node_modules/@sourcegraph/extension-api-types",
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/testing",
         ":node_modules/@sourcegraph/wildcard",
+        "//:node_modules/@codemirror/autocomplete",
         "//:node_modules/@codemirror/state",
         "//:node_modules/@testing-library/react",
         "//:node_modules/@testing-library/user-event",

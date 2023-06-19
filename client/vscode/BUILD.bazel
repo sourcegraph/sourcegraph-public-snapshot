@@ -212,6 +212,7 @@ ts_project(
         "//:node_modules/@mdi/js",
         "//:node_modules/@reach/visually-hidden",
         "//:node_modules/@types/classnames",
+        "//:node_modules/@types/history",
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/node",
         "//:node_modules/@types/node-fetch",
@@ -227,6 +228,7 @@ ts_project(
         "//:node_modules/core-js",
         "//:node_modules/execa",
         "//:node_modules/graphql",
+        "//:node_modules/history",
         "//:node_modules/http-proxy-agent",
         "//:node_modules/https-proxy-agent",
         "//:node_modules/lodash",
@@ -238,6 +240,7 @@ ts_project(
         "//:node_modules/react-router-dom",
         "//:node_modules/rxjs",
         "//:node_modules/use-deep-compare-effect",
+        "//:node_modules/utility-types",
         "//:node_modules/uuid",
         "//:node_modules/zustand",
         "//client/common:common_lib",  #keep

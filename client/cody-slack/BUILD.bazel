@@ -46,6 +46,7 @@ ts_project(
         ":node_modules/openai",
         ":node_modules/slackify-markdown",
         "//:node_modules/@types/lodash",
+        "//:node_modules/@types/node",
         "//:node_modules/envalid",
         "//:node_modules/lodash",
         "//:node_modules/octokit",
