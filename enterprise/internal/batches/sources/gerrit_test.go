@@ -9,11 +9,13 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var (
@@ -378,8 +380,72 @@ func TestGerritSource_CloseChangeset(t *testing.T) {
 		})
 		client.GetChangeReviewsFunc.SetDefaultReturn(&[]gerrit.Reviewer{}, nil)
 
+		assert.Len(t, client.DeleteChangeFunc.History(), 0)
+
 		err := s.CloseChangeset(ctx, cs)
+
 		assert.Nil(t, err)
+		assert.Len(t, client.DeleteChangeFunc.History(), 0)
+		assertGerritChangesetMatchesPullRequest(t, cs, pr)
+	})
+
+	t.Run("with auto-delete branch enabled, failure", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				BatchChangesAutoDeleteBranch: true,
+			},
+		})
+		defer conf.Mock(nil)
+
+		cs, id, _ := mockGerritChangeset()
+		cs.ExternalID = id
+		s, client := mockGerritSource()
+
+		want := errors.New("error")
+		client.AbandonChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) (*gerrit.Change, error) {
+			assert.Equal(t, changeID, id)
+			return &gerrit.Change{}, want
+		})
+
+		assert.Len(t, client.DeleteChangeFunc.History(), 0)
+
+		err := s.CloseChangeset(ctx, cs)
+
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+		assert.Len(t, client.DeleteChangeFunc.History(), 0)
+	})
+
+	t.Run("with auto-delete branch enabled, success", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				BatchChangesAutoDeleteBranch: true,
+			},
+		})
+		defer conf.Mock(nil)
+
+		cs, id, _ := mockGerritChangeset()
+		cs.ExternalID = id
+		s, client := mockGerritSource()
+
+		pr := mockGerritChange(&testProject, id)
+		client.GetURLFunc.SetDefaultReturn(&url.URL{})
+		client.AbandonChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) (*gerrit.Change, error) {
+			assert.Equal(t, changeID, id)
+			return pr, nil
+		})
+		client.DeleteChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) error {
+			assert.Equal(t, changeID, id)
+			return nil
+		})
+		client.GetChangeReviewsFunc.SetDefaultReturn(&[]gerrit.Reviewer{}, nil)
+
+		assert.Len(t, client.DeleteChangeFunc.History(), 0)
+
+		err := s.CloseChangeset(ctx, cs)
+
+		assert.Nil(t, err)
+		assert.Len(t, client.DeleteChangeFunc.History(), 1)
 		assertGerritChangesetMatchesPullRequest(t, cs, pr)
 	})
 }
