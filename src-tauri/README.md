@@ -63,7 +63,7 @@ The `tauri icon` command will generate all of the variants and sizes automatical
 
 ### System tray icon
 
-The system tray icon applies to MacOS and is different from the application icon. It's placed in `icons/tray.png` and defined in `tauri.systemTray.iconPath`.
+The system tray icon is different from the application icon. It's placed in `icons/tray.png` and defined in `tauri.systemTray.iconPath`.
 
 The tray icon is expected to be grayscale and will automatically be adjusted between light and dark modes. This behavior is enabled by the `iconAsTemplate` flag.
 
