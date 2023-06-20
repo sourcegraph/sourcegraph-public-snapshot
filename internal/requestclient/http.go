@@ -11,6 +11,10 @@ const (
 	// De-facto standard for identifying original IP address of a client:
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For
 	headerKeyForwardedFor = "X-Forwarded-For"
+	// Standard for identifyying the application, operating system, vendor,
+	// and/or version of the requesting user agent.
+	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
+	headerKeyUserAgent = "User-Agent"
 )
 
 // HTTPTransport is a roundtripper that sets client IP information within request context as
@@ -76,6 +80,7 @@ func httpMiddleware(next http.Handler, hasCloudflareProxy bool) http.Handler {
 		ctxWithClient := WithClient(req.Context(), &Client{
 			IP:           strings.Split(req.RemoteAddr, ":")[0],
 			ForwardedFor: req.Header.Get(headerKeyForwardedFor),
+			UserAgent:    req.Header.Get(headerKeyUserAgent),
 		})
 		next.ServeHTTP(rw, req.WithContext(ctxWithClient))
 	})

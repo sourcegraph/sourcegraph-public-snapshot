@@ -37,6 +37,7 @@ func Log(ctx context.Context, logger log.Logger, record Record) {
 		log.Object("actor",
 			log.String("actorUID", actorId(act)),
 			log.String("ip", ip(client)),
+			log.String("userAgent", userAgent(client)),
 			log.String("X-Forwarded-For", forwardedFor(client)))))
 	fields = append(fields, record.Fields...)
 
@@ -60,6 +61,13 @@ func ip(client *requestclient.Client) string {
 		return "unknown"
 	}
 	return client.IP
+}
+
+func userAgent(client *requestclient.Client) string {
+	if client == nil {
+		return "unknown"
+	}
+	return client.UserAgent
 }
 
 func forwardedFor(client *requestclient.Client) string {

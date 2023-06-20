@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +22,7 @@ func TestLog(t *testing.T) {
 		actor             *actor.Actor
 		client            *requestclient.Client
 		additionalContext []log.Field
-		expectedEntry     map[string]interface{}
+		expectedEntry     autogold.Value
 	}{
 		{
 			name:  "fully populated audit data",
@@ -29,19 +30,19 @@ func TestLog(t *testing.T) {
 			client: &requestclient.Client{
 				IP:           "192.168.0.1",
 				ForwardedFor: "192.168.0.1",
+				UserAgent:    "Foobar",
 			},
 			additionalContext: []log.Field{log.String("additional", "stuff")},
-			expectedEntry: map[string]interface{}{
-				"audit": map[string]interface{}{
-					"entity": "test entity",
-					"actor": map[string]interface{}{
-						"actorUID":        "1",
-						"ip":              "192.168.0.1",
-						"X-Forwarded-For": "192.168.0.1",
-					},
+			expectedEntry: autogold.Expect(map[string]interface{}{"additional": "stuff", "audit": map[string]interface{}{
+				"actor": map[string]interface{}{
+					"X-Forwarded-For": "192.168.0.1",
+					"actorUID":        "1",
+					"ip":              "192.168.0.1",
+					"userAgent":       "Foobar",
 				},
-				"additional": "stuff",
-			},
+				"auditId": "4f37f3d8-febe-4827-b7a2-10e068ae0855",
+				"entity":  "test entity",
+			}}),
 		},
 		{
 			name:  "anonymous actor",
@@ -49,19 +50,19 @@ func TestLog(t *testing.T) {
 			client: &requestclient.Client{
 				IP:           "192.168.0.1",
 				ForwardedFor: "192.168.0.1",
+				UserAgent:    "Foobar",
 			},
 			additionalContext: []log.Field{log.String("additional", "stuff")},
-			expectedEntry: map[string]interface{}{
-				"audit": map[string]interface{}{
-					"entity": "test entity",
-					"actor": map[string]interface{}{
-						"actorUID":        "anonymous",
-						"ip":              "192.168.0.1",
-						"X-Forwarded-For": "192.168.0.1",
-					},
+			expectedEntry: autogold.Expect(map[string]interface{}{"additional": "stuff", "audit": map[string]interface{}{
+				"actor": map[string]interface{}{
+					"X-Forwarded-For": "192.168.0.1",
+					"actorUID":        "anonymous",
+					"ip":              "192.168.0.1",
+					"userAgent":       "Foobar",
 				},
-				"additional": "stuff",
-			},
+				"auditId": "5b32f343-98b5-4697-99cb-dd4d9665dc49",
+				"entity":  "test entity",
+			}}),
 		},
 		{
 			name:  "missing actor",
@@ -69,36 +70,35 @@ func TestLog(t *testing.T) {
 			client: &requestclient.Client{
 				IP:           "192.168.0.1",
 				ForwardedFor: "192.168.0.1",
+				UserAgent:    "Foobar",
 			},
 			additionalContext: []log.Field{log.String("additional", "stuff")},
-			expectedEntry: map[string]interface{}{
-				"audit": map[string]interface{}{
-					"entity": "test entity",
-					"actor": map[string]interface{}{
-						"actorUID":        "unknown",
-						"ip":              "192.168.0.1",
-						"X-Forwarded-For": "192.168.0.1",
-					},
+			expectedEntry: autogold.Expect(map[string]interface{}{"additional": "stuff", "audit": map[string]interface{}{
+				"actor": map[string]interface{}{
+					"X-Forwarded-For": "192.168.0.1",
+					"actorUID":        "unknown",
+					"ip":              "192.168.0.1",
+					"userAgent":       "Foobar",
 				},
-				"additional": "stuff",
-			},
+				"auditId": "30a6893f-ee76-4fbc-a7a5-5c07e32cf0e1",
+				"entity":  "test entity",
+			}}),
 		},
 		{
 			name:              "missing client info",
 			actor:             &actor.Actor{UID: 1},
 			client:            nil,
 			additionalContext: []log.Field{log.String("additional", "stuff")},
-			expectedEntry: map[string]interface{}{
-				"audit": map[string]interface{}{
-					"entity": "test entity",
-					"actor": map[string]interface{}{
-						"actorUID":        "1",
-						"ip":              "unknown",
-						"X-Forwarded-For": "unknown",
-					},
+			expectedEntry: autogold.Expect(map[string]interface{}{"additional": "stuff", "audit": map[string]interface{}{
+				"actor": map[string]interface{}{
+					"X-Forwarded-For": "unknown",
+					"actorUID":        "1",
+					"ip":              "unknown",
+					"userAgent":       "unknown",
 				},
-				"additional": "stuff",
-			},
+				"auditId": "8da90d82-b6a3-4074-855c-ca69f0735cfe",
+				"entity":  "test entity",
+			}}),
 		},
 		{
 			name:  "no additional context",
@@ -106,18 +106,17 @@ func TestLog(t *testing.T) {
 			client: &requestclient.Client{
 				IP:           "192.168.0.1",
 				ForwardedFor: "192.168.0.1",
+				UserAgent:    "Foobar",
 			},
 			additionalContext: nil,
-			expectedEntry: map[string]interface{}{
-				"audit": map[string]interface{}{
-					"entity": "test entity",
-					"actor": map[string]interface{}{
-						"actorUID":        "1",
-						"ip":              "192.168.0.1",
-						"X-Forwarded-For": "192.168.0.1",
-					},
+			expectedEntry: autogold.Expect(map[string]interface{}{"audit": map[string]interface{}{
+				"actor": map[string]interface{}{
+					"X-Forwarded-For": "192.168.0.1", "actorUID": "1", "ip": "192.168.0.1",
+					"userAgent": "Foobar",
 				},
-			},
+				"auditId": "a1d698e5-fc08-4e27-b716-b524501de80c",
+				"entity":  "test entity",
+			}}),
 		},
 	}
 
@@ -145,18 +144,7 @@ func TestLog(t *testing.T) {
 			assert.Contains(t, logs[0].Message, "test audit action (sampling immunity token")
 
 			// non-audit fields are preserved
-			assert.Equal(t, tc.expectedEntry["additional"], logs[0].Fields["additional"])
-
-			expectedAudit := tc.expectedEntry["audit"].(map[string]interface{})
-			actualAudit := logs[0].Fields["audit"].(map[string]interface{})
-			assert.Equal(t, expectedAudit["entity"], actualAudit["entity"])
-			assert.NotEmpty(t, actualAudit["auditId"])
-
-			expectedActor := expectedAudit["actor"].(map[string]interface{})
-			actualActor := actualAudit["actor"].(map[string]interface{})
-			assert.Equal(t, expectedActor["actorUID"], actualActor["actorUID"])
-			assert.Equal(t, expectedActor["ip"], actualActor["ip"])
-			assert.Equal(t, expectedActor["X-Forwarded-For"], actualActor["X-Forwarded-For"])
+			tc.expectedEntry.Equal(t, logs[0].Fields)
 		})
 	}
 }
