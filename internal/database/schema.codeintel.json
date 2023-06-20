@@ -486,65 +486,6 @@
       "Triggers": []
     },
     {
-      "Name": "codeintel_scip_documents_schema_versions",
-      "Comment": "Tracks the range of `schema_versions` values associated with each document referenced from the [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) table.",
-      "Columns": [
-        {
-          "Name": "max_schema_version",
-          "Index": 3,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "An upper-bound on the `schema_version` values of the document records referenced from the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index."
-        },
-        {
-          "Name": "min_schema_version",
-          "Index": 2,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "A lower-bound on the `schema_version` values of the document records referenced from the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index."
-        },
-        {
-          "Name": "upload_id",
-          "Index": 1,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "The identifier of the associated SCIP index."
-        }
-      ],
-      "Indexes": [
-        {
-          "Name": "codeintel_scip_documents_schema_versions_pkey",
-          "IsPrimaryKey": true,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_documents_schema_versions_pkey ON codeintel_scip_documents_schema_versions USING btree (upload_id)",
-          "ConstraintType": "p",
-          "ConstraintDefinition": "PRIMARY KEY (upload_id)"
-        }
-      ],
-      "Constraints": null,
-      "Triggers": []
-    },
-    {
       "Name": "codeintel_scip_metadata",
       "Comment": "Global metadatadata about a single processed upload.",
       "Columns": [
