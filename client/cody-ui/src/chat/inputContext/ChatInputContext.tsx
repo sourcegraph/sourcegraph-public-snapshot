@@ -20,14 +20,17 @@ const formatFilePath = (filePath: string, selection: ChatContextStatus['selectio
         return fileName
     }
 
+    const startLine = selection.start.line + 1
+    const endLine = selection.end.line + 1
+
     if (
-        selection.start.line === selection.end.line ||
-        (selection.start.line + 1 === selection.end.line && selection.end.character === 0) // A single line selected with the cursor at the start of the next line
+        startLine === endLine ||
+        (startLine + 1 === endLine && selection.end.character === 0) // A single line selected with the cursor at the start of the next line
     ) {
-        return `${fileName}:${selection.start.line}`
+        return `${fileName}:${startLine}`
     }
 
-    return `${fileName}:${selection.start.line}-${selection.end.line}`
+    return `${fileName}:${startLine}-${endLine}`
 }
 
 export const ChatInputContext: React.FunctionComponent<{
