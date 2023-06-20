@@ -370,7 +370,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                     New chat
                                 </Button>
                             </div>
-                            <ChatUI codyChatStore={codyChatStore} />
+                            <ChatUI codyChatStore={codyChatStore} isSourcegraphApp={true} />
                         </div>
 
                         {showMobileHistory && (

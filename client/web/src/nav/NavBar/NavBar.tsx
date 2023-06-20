@@ -52,12 +52,16 @@ export interface NavLinkProps extends NavItemProps, Pick<LinkProps, 'to'> {
 export const NavBar = forwardRef(function NavBar({ children, logo }, reference): JSX.Element {
     return (
         <nav aria-label="Main" className={navBarStyles.navbar} ref={reference}>
-            <H1 className={navBarStyles.logo}>
-                <RouterNavLink className="d-flex align-items-center" to={PageRoutes.Search}>
-                    {logo}
-                </RouterNavLink>
-            </H1>
-            <hr className={navBarStyles.divider} aria-hidden={true} />
+            {logo && (
+                <>
+                    <H1 className={navBarStyles.logo}>
+                        <RouterNavLink className="d-flex align-items-center" to={PageRoutes.Search}>
+                            {logo}
+                        </RouterNavLink>
+                    </H1>
+                    <hr className={navBarStyles.divider} aria-hidden={true} />
+                </>
+            )}
             {children}
         </nav>
     )

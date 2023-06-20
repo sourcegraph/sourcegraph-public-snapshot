@@ -58,10 +58,10 @@ const REQUESTERS: Record<string, TokenRequester> = {
         callbackType: 'new-tab',
     },
     APP: {
-        name: 'Sourcegraph App',
+        name: 'Cody App',
         redirectURL: 'sourcegraph://app/auth/callback?code=$TOKEN',
-        successMessage: 'Now opening the Sourcegraph App...',
-        infoMessage: 'You will be redirected to Sourcegraph App.',
+        successMessage: 'Now opening the Cody App...',
+        infoMessage: 'You will be redirected to Cody App.',
         callbackType: 'open',
         onlyDotCom: true,
         forwardDestination: true,
