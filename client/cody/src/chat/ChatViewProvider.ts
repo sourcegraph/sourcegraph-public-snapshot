@@ -712,6 +712,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     connection: this.codebaseContext.checkEmbeddingsConnection(),
                     codebase: this.codebaseContext.getCodebase(),
                     filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
+                    selection: editorContext ? editorContext.selection : undefined,
                     supportsKeyword: true,
                 },
             })

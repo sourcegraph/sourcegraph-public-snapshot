@@ -58,7 +58,13 @@ export class VSCodeEditor implements Editor {
         }
         const documentUri = activeEditor.document.uri
         const documentText = activeEditor.document.getText()
-        return { content: documentText, filePath: documentUri.fsPath }
+        const documentSelection = activeEditor.selection
+
+        return {
+            content: documentText,
+            filePath: documentUri.fsPath,
+            selection: !documentSelection.isEmpty ? documentSelection : undefined,
+        }
     }
 
     private getActiveTextEditorInstance(): vscode.TextEditor | null {
