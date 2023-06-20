@@ -26,7 +26,7 @@ var tracer = otel.Tracer("internal/notify")
 // given thresholds. At most one notification will be sent per actor per
 // threshold until the TTL is reached (that clears the counter). It is best to
 // align the TTL with the rate limit window.
-type RateLimitNotifier func(ctx context.Context, actorID string, actorSource codygateway.ActorSource, feature codygateway.Feature, usagePercentage float32, ttl time.Duration)
+type RateLimitNotifier func(ctx context.Context, actorID string, actorSource codygateway.ActorSource, feature codygateway.Feature, usageRatio float32, ttl time.Duration)
 
 // NewSlackRateLimitNotifier returns a RateLimitNotifier that sends Slack
 // notifications when usage rate hits given thresholds.
@@ -47,20 +47,20 @@ func NewSlackRateLimitNotifier(
 	}
 	sort.Ints(thresholds)
 
-	return func(ctx context.Context, actorID string, actorSource codygateway.ActorSource, feature codygateway.Feature, usagePercentage float32, ttl time.Duration) {
-		usage := int(usagePercentage * 100)
-		if usage < thresholds[0] {
+	return func(ctx context.Context, actorID string, actorSource codygateway.ActorSource, feature codygateway.Feature, usageRatio float32, ttl time.Duration) {
+		usagePercentage := int(usageRatio * 100)
+		if usagePercentage < thresholds[0] {
 			return
 		}
 
 		var span trace.Span
 		ctx, span = tracer.Start(ctx, "slackRateLimitNotification",
 			trace.WithAttributes(
-				attribute.Float64("usagePercentage", float64(usagePercentage)),
+				attribute.Float64("usageRatio", float64(usageRatio)),
 				attribute.Float64("alert.ttlSeconds", ttl.Seconds())))
 		logger := sgtrace.Logger(ctx, baseLogger)
 
-		if err := handleNotify(ctx, logger, rs, dotcomURL, thresholds, slackWebhookURL, slackSender, actorID, actorSource, feature, usage, usagePercentage, ttl); err != nil {
+		if err := handleNotify(ctx, logger, rs, dotcomURL, thresholds, slackWebhookURL, slackSender, actorID, actorSource, feature, usagePercentage, usageRatio, ttl); err != nil {
 			span.RecordError(err)
 			logger.Error("failed to notification", log.Error(err))
 		}
@@ -82,8 +82,8 @@ func handleNotify(
 	actorID string,
 	actorSource codygateway.ActorSource,
 	feature codygateway.Feature,
-	usage int,
-	usagePercentage float32,
+	usagePercentage int,
+	usageRatio float32,
 	ttl time.Duration,
 ) error {
 	span := trace.SpanFromContext(ctx)
@@ -100,7 +100,7 @@ func handleNotify(
 
 	bucket := 0
 	for _, threshold := range thresholds {
-		if usage < threshold {
+		if usagePercentage < threshold {
 			break
 		}
 		bucket = threshold
@@ -132,7 +132,7 @@ func handleNotify(
 				log.String("source", string(actorSource)),
 			),
 			log.String("feature", string(feature)),
-			log.Int("usagePercentage", int(usagePercentage*100)),
+			log.Int("usagePercentage", int(usageRatio*100)),
 		)
 		return nil
 	}
@@ -151,7 +151,7 @@ func handleNotify(
 		attribute.Bool("sendToSlack", true))
 
 	text := fmt.Sprintf("The actor %s from %q has exceeded *%d%%* of its rate limit quota for `%s`. The quota will reset in `%s` at `%s`.",
-		actorLink, actorSource, usage, feature, ttl.String(), time.Now().Add(ttl).Format(time.RFC3339))
+		actorLink, actorSource, usagePercentage, feature, ttl.String(), time.Now().Add(ttl).Format(time.RFC3339))
 
 	// NOTE: The context timeout must below the lock timeout we set above (30 seconds
 	// ) to make sure the lock doesn't expire when we release it, i.e. avoid

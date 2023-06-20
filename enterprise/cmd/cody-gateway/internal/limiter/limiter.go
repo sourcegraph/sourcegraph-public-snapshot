@@ -45,9 +45,8 @@ type StaticLimiter struct {
 
 	NowFunc func() time.Time
 
-	// RateLimitAlerter is always called with usagePercentage whenever rate
-	// limits are acquired.
-	RateLimitAlerter func(ctx context.Context, usagePercentage float32, ttl time.Duration)
+	// RateLimitAlerter is always called with usageRatio whenever rate limits are acquired.
+	RateLimitAlerter func(ctx context.Context, usageRatio float32, ttl time.Duration)
 }
 
 // RetryAfterWithTTL consults the current TTL using the given identifier and
