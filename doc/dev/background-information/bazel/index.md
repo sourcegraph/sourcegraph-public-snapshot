@@ -10,7 +10,7 @@ Sourcegraph uses [Bazel](https://bazel.build) as its build system. Reach out on 
   - [Cheat sheet](#bazel-cheat-sheet)
   - [FAQ](./faq.md)
 - **Context specific**
-  - [Bazel ang Go](./go.md)
+  - [Bazel and Go](./go.md)
   - [Bazel and client](./web.md)
   - [Bazel and container images](./containers.md)
 - **How-tos**
