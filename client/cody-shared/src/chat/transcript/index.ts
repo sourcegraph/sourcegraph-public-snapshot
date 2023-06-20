@@ -153,7 +153,7 @@ export class Transcript {
 
     public async getPromptForLastInteraction(
         preamble: Message[] = [],
-        max_prompt_length: number = MAX_AVAILABLE_PROMPT_LENGTH
+        maxPromptLength: number = MAX_AVAILABLE_PROMPT_LENGTH
     ): Promise<{ prompt: Message[]; contextFiles: ContextFile[] }> {
         if (this.interactions.length === 0) {
             return { prompt: [], contextFiles: [] }

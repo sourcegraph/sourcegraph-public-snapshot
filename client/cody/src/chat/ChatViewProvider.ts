@@ -76,7 +76,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private inputHistory: string[] = []
     private chatHistory: ChatHistory = {}
 
-    private max_prompt_limit = MAX_AVAILABLE_PROMPT_LENGTH
+    private maxPromptLimit = MAX_AVAILABLE_PROMPT_LENGTH
     private transcript: Transcript = new Transcript()
 
     // Allows recipes to hook up subscribers to process sub-streams of bot output
@@ -140,10 +140,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.disposables.push(this.localAppDetector)
 
         const codyConfig = vscode.workspace.getConfiguration('cody')
-        const token_limit = codyConfig.get<number>('provider.limit.prompt')
-        const solution_limit = codyConfig.get<number>('provider.limit.solution') || SOLUTION_TOKEN_LENGTH
-        if (token_limit) {
-            this.max_prompt_limit = token_limit - solution_limit
+        const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
+        const solutionLimit = codyConfig.get<number>('provider.limit.solution') || SOLUTION_TOKEN_LENGTH
+        if (tokenLimit) {
+            this.maxPromptLimit = tokenLimit - solutionLimit
         }
     }
 
