@@ -515,6 +515,10 @@ FOR INTERNAL USE ONLY.
 """
 type CodyGatewayDotcomUser {
     """
+    The id of the user
+    """
+    id: ID!
+    """
     The user name of the user
     """
     username: String!
