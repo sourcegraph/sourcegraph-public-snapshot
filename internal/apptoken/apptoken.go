@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/singleprogram"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -31,23 +32,23 @@ type AppTokenFilePayload struct {
 // Checks if the app token file exists in the config dir and contains a valid
 // token. If not, it will generate a new token and create a new app token file.
 func CreateAppTokenFileIfNotExists(ctx context.Context, db database.DB, uid int32) error {
-	configDir, err := os.UserConfigDir()
+	configDir, err := singleprogram.SetupAppConfigDir()
 	if err != nil {
-		return errors.Wrap(err, "Could not get user config dir")
+		return errors.Wrap(err, "Could not get config dir")
 	}
 	appPayloadFilePath := filepath.Join(configDir, appPayloadFileName)
-	existingAccessTokenPresent := IsExistingAppTokenPresent(ctx, db, appPayloadFilePath, uid)
+	existingAccessTokenPresent := isExistingAppTokenPresent(ctx, db, appPayloadFilePath, uid)
 	if existingAccessTokenPresent {
 		return nil
 	}
 
-	return CreateAppTokenFile(ctx, db, appPayloadFilePath, uid)
+	return createAppTokenFile(ctx, db, appPayloadFilePath, uid)
 }
 
 // Attempts to read the app token file and checks if the token is valid,
 // returning true if a valid token was found. Returns false if reading the file
 // or validating the token fails.
-func IsExistingAppTokenPresent(ctx context.Context, db database.DB, appTokenFilePath string, uid int32) bool {
+func isExistingAppTokenPresent(ctx context.Context, db database.DB, appTokenFilePath string, uid int32) bool {
 	fileContents, err := os.ReadFile(appTokenFilePath)
 	if err != nil {
 		return false
@@ -70,8 +71,8 @@ func IsExistingAppTokenPresent(ctx context.Context, db database.DB, appTokenFile
 
 // Generate a new app token and write it to the app token file. Will overwrite
 // if the file already exists.
-func CreateAppTokenFile(ctx context.Context, db database.DB, appTokenFilePath string, uid int32) error {
-	_, token, err := db.AccessTokens().Create(ctx, uid, []string{appTokenScope}, appTokenName, uid)
+func createAppTokenFile(ctx context.Context, db database.DB, appTokenFilePath string, uid int32) error {
+	_, token, err := db.AccessTokens().CreateInternal(ctx, uid, []string{appTokenScope}, appTokenName, uid)
 	if err != nil {
 		return err
 	}
