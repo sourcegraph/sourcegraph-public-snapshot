@@ -66,7 +66,7 @@ async function detectTokens(
     const filePathsExist = await filesExist([...Object.keys(filePathToFullMatch)])
     const highlightedTokens: HighlightedToken[] = []
     for (const [filePath, fullMatches] of Object.entries(filePathToFullMatch)) {
-        const exists = filePathsExist[filePath.endsWith('/') ? filePath.slice(0, -1) : filePath]
+        const exists = filePathsExist[filePath]
         for (const fullMatch of fullMatches) {
             highlightedTokens.push({
                 type: 'file',
@@ -163,6 +163,18 @@ function isFilePathLike(fullMatch: string, pathMatch: string): boolean {
         // Probably a URL.
         return false
     }
-    // TODO: we can do further validation here.
+
+    // check for API endpoints
+    const apiRegex = new RegExp('\\/:[\\w-]+', 'g')
+    if (apiRegex.test(fullMatch) || parts[0].startsWith('/api')) {
+        return false
+    }
+
+    if (parts[0].startsWith('git') || parts[0].includes('refs')) {
+        return false
+    }
+
+    // TODO: // Check if the path contains any invalid characters
+
     return true
 }
