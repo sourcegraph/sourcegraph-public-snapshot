@@ -10,6 +10,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
 
@@ -26,7 +27,6 @@ import (
 	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -124,10 +124,6 @@ func (r *ownResolver) GitBlobOwnership(
 	blob *graphqlbackend.GitTreeEntryResolver,
 	args graphqlbackend.ListOwnershipArgs,
 ) (graphqlbackend.OwnershipConnectionResolver, error) {
-	if err := areOwnEndpointsAvailable(ctx); err != nil {
-		return nil, err
-	}
-
 	var rrs []reasonAndReference
 
 	// Evaluate CODEOWNERS rules.
@@ -159,19 +155,21 @@ func (r *ownResolver) GitBlobOwnership(
 		rrs = append(rrs, viewerResolvers...)
 	}
 
-	// Retrieve assigned owners.
-	assignedOwners, err := r.computeAssignedOwners(ctx, blob, repoID)
-	if err != nil {
-		return nil, err
-	}
-	rrs = append(rrs, assignedOwners...)
+	if args.IncludeReason(graphqlbackend.AssignedOwner) {
+		// Retrieve assigned owners.
+		assignedOwners, err := r.computeAssignedOwners(ctx, blob, repoID)
+		if err != nil {
+			return nil, err
+		}
+		rrs = append(rrs, assignedOwners...)
 
-	// Retrieve assigned teams.
-	assignedTeams, err := r.computeAssignedTeams(ctx, blob, repoID)
-	if err != nil {
-		return nil, err
+		// Retrieve assigned teams.
+		assignedTeams, err := r.computeAssignedTeams(ctx, blob, repoID)
+		if err != nil {
+			return nil, err
+		}
+		rrs = append(rrs, assignedTeams...)
 	}
-	rrs = append(rrs, assignedTeams...)
 
 	return r.ownershipConnection(ctx, args, rrs, blob.Repository(), blob.Path())
 }
@@ -192,9 +190,6 @@ func (r *ownResolver) GitCommitOwnership(
 	commit *graphqlbackend.GitCommitResolver,
 	args graphqlbackend.ListOwnershipArgs,
 ) (graphqlbackend.OwnershipConnectionResolver, error) {
-	if err := areOwnEndpointsAvailable(ctx); err != nil {
-		return nil, err
-	}
 	repoID := commit.Repository().IDInt32()
 
 	// Retrieve recent contributors signals.
@@ -218,10 +213,6 @@ func (r *ownResolver) GitTreeOwnership(
 	tree *graphqlbackend.GitTreeEntryResolver,
 	args graphqlbackend.ListOwnershipArgs,
 ) (graphqlbackend.OwnershipConnectionResolver, error) {
-	if err := areOwnEndpointsAvailable(ctx); err != nil {
-		return nil, err
-	}
-
 	// Retrieve recent contributors signals.
 	repoID := tree.Repository().IDInt32()
 	rrs, err := computeRecentContributorSignals(ctx, r.db, tree.Path(), repoID)
@@ -253,7 +244,7 @@ func (r *ownResolver) GitTreeOwnership(
 	return r.ownershipConnection(ctx, args, rrs, tree.Repository(), tree.Path())
 }
 
-func (r *ownResolver) GitTreeOwnershipStats(ctx context.Context, tree *graphqlbackend.GitTreeEntryResolver) (graphqlbackend.OwnershipStatsResolver, error) {
+func (r *ownResolver) GitTreeOwnershipStats(_ context.Context, tree *graphqlbackend.GitTreeEntryResolver) (graphqlbackend.OwnershipStatsResolver, error) {
 	return &ownStatsResolver{
 		db: r.db,
 		opts: database.TreeLocationOpts{
@@ -263,7 +254,7 @@ func (r *ownResolver) GitTreeOwnershipStats(ctx context.Context, tree *graphqlba
 	}, nil
 }
 
-func (r *ownResolver) InstanceOwnershipStats(ctx context.Context) (graphqlbackend.OwnershipStatsResolver, error) {
+func (r *ownResolver) InstanceOwnershipStats(_ context.Context) (graphqlbackend.OwnershipStatsResolver, error) {
 	return &ownStatsResolver{db: r.db}, nil
 }
 
@@ -477,6 +468,14 @@ func (r *ownStatsResolver) TotalAssignedOwnershipFiles(ctx context.Context) (int
 	return int32(counts.AssignedOwnershipFileCount), nil
 }
 
+func (r *ownStatsResolver) UpdatedAt(ctx context.Context) (*gqlutil.DateTime, error) {
+	counts, err := r.computeOwnCounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return gqlutil.FromTime(counts.UpdatedAt), nil
+}
+
 type ownershipConnectionResolver struct {
 	db          edb.EnterpriseDB
 	total       int
@@ -525,9 +524,6 @@ type ownershipResolver struct {
 }
 
 func (r *ownershipResolver) Owner(ctx context.Context) (graphqlbackend.OwnerResolver, error) {
-	if err := areOwnEndpointsAvailable(ctx); err != nil {
-		return nil, err
-	}
 	return &ownerResolver{
 		db:            r.db,
 		resolvedOwner: r.resolvedOwner,
@@ -613,13 +609,6 @@ func (r *ownerResolver) ToTeam() (*graphqlbackend.TeamResolver, bool) {
 		Name:        resolvedTeam.Identifier(),
 		DisplayName: resolvedTeam.Identifier(),
 	}), true
-}
-
-func areOwnEndpointsAvailable(ctx context.Context) error {
-	if !featureflag.FromContext(ctx).GetBoolOr("search-ownership", false) {
-		return errors.New("own is not available yet")
-	}
-	return nil
 }
 
 func (r *ownResolver) OwnSignalConfigurations(ctx context.Context) ([]graphqlbackend.SignalConfigurationResolver, error) {

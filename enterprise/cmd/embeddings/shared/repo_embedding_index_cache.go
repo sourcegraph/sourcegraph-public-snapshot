@@ -8,6 +8,7 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/singleflight"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type downloadRepoEmbeddingIndexFn func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error)
@@ -169,6 +171,9 @@ func (c *CachedEmbeddingIndexGetter) get(ctx context.Context, repoName api.RepoN
 	repoEmbeddingIndexName := embeddings.GetRepoEmbeddingIndexName(repoName)
 
 	cacheEntry, ok := c.cache.Get(repoEmbeddingIndexName)
+	if tr := trace.TraceFromContext(ctx); tr != nil {
+		tr.AddEvent("checked embedding index cache", attribute.Bool("hit", ok))
+	}
 	if !ok {
 		// We do not have the index in the cache. Download and cache it.
 		return c.getAndCacheIndex(ctx, repoEmbeddingIndexName, lastFinishedRepoEmbeddingJob.FinishedAt)

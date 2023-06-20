@@ -12,6 +12,8 @@
 
 ### Fixed
 
+- Fixed the y position at which autocomplete suggestions are rendered [#53677](https://github.com/sourcegraph/sourcegraph/pull/53677)
+
 ### Security
 
 ## [3.0.0-alpha.2]
@@ -32,8 +34,11 @@
 - Enabled "Translate to different language" recipe [#53393](https://github.com/sourcegraph/sourcegraph/pull/53393)
 - Skip Cody completions if there is code in line suffix or in the middle of a word in prefix [#53476](https://github.com/sourcegraph/sourcegraph/pull/53476)
 - Enabled "Summarize recent code changes" recipe [#53534](https://github.com/sourcegraph/sourcegraph/pull/53534)
+- Chat message when access token is invalid or not configured [#53659](https://github.com/sourcegraph/sourcegraph/pull/53659)
 
 ### Changed
+
+- Parallelized completion API calls and reduced debounce down to 20ms [#53592](https://github.com/sourcegraph/sourcegraph/pull/53592)
 
 ### Deprecated
 
@@ -44,6 +49,10 @@
 - Fixed font on the chat ui [#53540](https://github.com/sourcegraph/sourcegraph/pull/53540)
 - Fixed line breaks in the chat ui [#53543](https://github.com/sourcegraph/sourcegraph/pull/53543)
 - Reset prompt input on message send [#53543](https://github.com/sourcegraph/sourcegraph/pull/53543)
+- Fixed UI of the prompt input [#53548](https://github.com/sourcegraph/sourcegraph/pull/53548)
+- Fixed zero-width spaces popping up in inline autocomplete [#53599](https://github.com/sourcegraph/sourcegraph/pull/53599)
+- Reset conversation button re-enables "Send" button [#53669](https://github.com/sourcegraph/sourcegraph/pull/53669)
+- Fixed displaying message about invalid access token on any 401 error from backend [#53674](https://github.com/sourcegraph/sourcegraph/pull/53674)
 
 ### Security
 

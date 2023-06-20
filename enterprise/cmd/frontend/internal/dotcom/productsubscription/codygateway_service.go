@@ -65,7 +65,7 @@ func NewCodyGatewayServiceWithOptions(opts CodyGatewayServiceOptions) *codyGatew
 type SubscriptionUsage struct {
 	Date  time.Time
 	Model string
-	Count int
+	Count int64
 }
 
 type codyGatewayService struct {
@@ -176,7 +176,7 @@ ORDER BY
 		var row struct {
 			Date  bigquery.NullDate
 			Model string
-			Count int
+			Count int64
 		}
 		err := it.Next(&row)
 		if err == iterator.Done {
@@ -299,7 +299,7 @@ ORDER BY
 		var row struct {
 			Date  bigquery.NullDate
 			Model string
-			Count int
+			Count int64
 		}
 		err := it.Next(&row)
 		if err == iterator.Done {

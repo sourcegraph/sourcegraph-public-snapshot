@@ -5,12 +5,13 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"syscall"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	"github.com/ricochet2200/go-disk-usage/du"
 )
 
 type testRegisterer struct{}
@@ -191,10 +192,9 @@ func (c *diskCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (c *diskCollector) Collect(ch chan<- prometheus.Metric) {
-	var stat syscall.Statfs_t
-	_ = syscall.Statfs(c.path, &stat)
-	ch <- prometheus.MustNewConstMetric(c.availableDesc, prometheus.GaugeValue, float64(stat.Bavail*uint64(stat.Bsize)))
-	ch <- prometheus.MustNewConstMetric(c.totalDesc, prometheus.GaugeValue, float64(stat.Blocks*uint64(stat.Bsize)))
+	usage := du.NewDiskUsage(c.path)
+	ch <- prometheus.MustNewConstMetric(c.availableDesc, prometheus.GaugeValue, float64(usage.Available()))
+	ch <- prometheus.MustNewConstMetric(c.totalDesc, prometheus.GaugeValue, float64(usage.Size()))
 }
 
 func mustRegisterOnce(c prometheus.Collector) {

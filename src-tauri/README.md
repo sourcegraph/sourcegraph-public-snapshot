@@ -1,6 +1,6 @@
-# Sourcegraph app Tauri shell
+# Cody app Tauri shell
 
-This contains all the Tauri code for the Sourcegraph App. Currently it consists of starting the `sourcegraph-backend` sidecar and then the Tauri frontend waits until it gets a message from the sidecar that the backend is up. Once the message has been received the Tauri frontend redirects the "web container" to http://localhost:3080.
+This contains all the Tauri code for the Cody App. Currently it consists of starting the `sourcegraph-backend` sidecar and then the Tauri frontend waits until it gets a message from the sidecar that the backend is up. Once the message has been received the Tauri frontend redirects the "web container" to http://localhost:3080.
 
 ## Required software
 
@@ -40,9 +40,16 @@ The Sourcegraph backend, or "single binary" as it was previously known, contains
 
 Tauri has two modes that you can run.
 
-- `Dev mode` which will run all of tauri but it does not embed the `sourcegraph-backend` instead it utilizes externally running sidecars and will directly open the app according to the `devPath` set in `tauri.conf.json`. To run the app in 'dev' mode you need to run the following command:
-  - `sg start app`
-- `pnpm tauri build` this will build the complete Tauri bundle, which, if you're on mac, will be called `Sourcegrap App.dmg`. The other noticable difference is that is will run the `client/app-shell` code.
+- `Dev mode` which will run all of tauri but it does not embed the `sourcegraph-backend` instead it utilizes externally running sidecars and will directly open the app according to the `devPath` set in `tauri.conf.json`. The Cody App requires users to have a valid Sourcegraph.com account, before running the App ensure that an API Token for an account is provided in the site configuration at `app.dotcomAuthToken`. Dev mode utilizes `EXTSVC_CONFIG_ALLOW_EDITS=true` to allow local repositories to be added while App is being run. If you wish to run in dev mode with repos already added, they can be added to external services config like:
+
+```
+ {"url": "http://127.0.0.1:3434", "root": "PATH_TO_REPO(S)", "repos": ["src-serve-local"] }
+```
+
+To start the app in 'dev' mode you need to run the following command:
+
+- `sg start app`
+- `pnpm tauri build` this will build the complete Tauri bundle, which, if you're on mac, will be called `Cody.dmg`. The other noticeable difference is that is will run the `client/app-shell` code.
 
 ## Where to get help or support
 

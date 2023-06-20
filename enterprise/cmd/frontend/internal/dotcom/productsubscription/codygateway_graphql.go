@@ -163,7 +163,9 @@ func (r *codyGatewayRateLimitResolver) Source() graphqlbackend.CodyGatewayRateLi
 
 func (r *codyGatewayRateLimitResolver) AllowedModels() []string { return r.v.AllowedModels }
 
-func (r *codyGatewayRateLimitResolver) Limit() int32 { return r.v.Limit }
+func (r *codyGatewayRateLimitResolver) Limit() graphqlbackend.BigInt {
+	return graphqlbackend.BigInt(r.v.Limit)
+}
 
 func (r *codyGatewayRateLimitResolver) IntervalSeconds() int32 { return r.v.IntervalSeconds }
 
@@ -199,7 +201,7 @@ func (r codyGatewayRateLimitResolver) Usage(ctx context.Context) ([]graphqlbacke
 type codyGatewayUsageDatapoint struct {
 	date  time.Time
 	model string
-	count int
+	count int64
 }
 
 func (r *codyGatewayUsageDatapoint) Date() gqlutil.DateTime {
@@ -210,6 +212,6 @@ func (r *codyGatewayUsageDatapoint) Model() string {
 	return r.model
 }
 
-func (r *codyGatewayUsageDatapoint) Count() int32 {
-	return int32(r.count)
+func (r *codyGatewayUsageDatapoint) Count() graphqlbackend.BigInt {
+	return graphqlbackend.BigInt(r.count)
 }

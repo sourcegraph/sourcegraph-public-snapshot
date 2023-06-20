@@ -9,7 +9,6 @@ import org.commonmark.parser.Parser;
 import org.jetbrains.annotations.NotNull;
 
 public class ChatBubble extends JPanel {
-  private static final int GRADIENT_WIDTH = 2;
 
   public ChatBubble(@NotNull ChatMessage message) {
     super();
@@ -21,11 +20,13 @@ public class ChatBubble extends JPanel {
 
   @NotNull
   private JPanel buildMessagePanel(@NotNull ChatMessage message) {
-    MessagePanel messagePanel = new MessagePanel(message, GRADIENT_WIDTH);
+    MessagePanel messagePanel =
+        new MessagePanel(message.getSpeaker(), ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
     Parser parser = Parser.builder().extensions(List.of(TablesExtension.create())).build();
     Node document = parser.parse(message.getDisplayText());
     MessageContentCreatorFromMarkdownNodes messageContentCreator =
-        new MessageContentCreatorFromMarkdownNodes(messagePanel, GRADIENT_WIDTH);
+        new MessageContentCreatorFromMarkdownNodes(
+            messagePanel, ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
     document.accept(messageContentCreator);
     return messagePanel;
   }

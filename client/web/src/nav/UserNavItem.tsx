@@ -27,7 +27,6 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 
 import { AppUserConnectDotComAccount } from './AppUserConnectDotComAccount'
@@ -67,7 +66,6 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
 
     const { themeSetting, setThemeSetting } = useTheme()
     const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
-    const [enableTeams] = useFeatureFlag('search-ownership')
 
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
@@ -151,7 +149,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                 </MenuLink>
                             )}
                             {isSourcegraphApp && <AppUserConnectDotComAccount />}
-                            {enableTeams && !isSourcegraphDotCom && (
+                            {!isSourcegraphDotCom && (
                                 <MenuLink as={Link} to="/teams">
                                     Teams
                                 </MenuLink>

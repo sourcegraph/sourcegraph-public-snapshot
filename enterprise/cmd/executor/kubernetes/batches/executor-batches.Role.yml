@@ -20,3 +20,19 @@ rules:
       - get
       - list
       - watch
+  # Secrets are required if KUBERNETES_SINGLE_JOB_POD is "true"
+#  - apiGroups:
+#      - ""
+#    resources:
+#      - secrets
+#    verbs:
+#      - create
+#      - delete
+  # PVCs are required if KUBERNETES_JOB_VOLUME_TYPE is "pvc"
+#  - apiGroups:
+#      - ""
+#    resources:
+#      - persistentvolumeclaims
+#    verbs:
+#      - create
+#      - delete

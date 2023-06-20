@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -14,7 +15,7 @@ type shellRunner struct {
 	cmd            command.Command
 	dir            string
 	internalLogger log.Logger
-	commandLogger  command.Logger
+	commandLogger  cmdlogger.Logger
 	options        command.DockerOptions
 	// tmpDir is used to store temporary files used for docker execution.
 	tmpDir string
@@ -25,7 +26,7 @@ var _ Runner = &shellRunner{}
 // NewShellRunner creates a new runner that runs shell commands.
 func NewShellRunner(
 	cmd command.Command,
-	logger command.Logger,
+	logger cmdlogger.Logger,
 	dir string,
 	options command.DockerOptions,
 ) Runner {
@@ -61,6 +62,6 @@ func (r *shellRunner) Teardown(ctx context.Context) error {
 }
 
 func (r *shellRunner) Run(ctx context.Context, spec Spec) error {
-	shellSpec := command.NewShellSpec(r.dir, spec.Image, spec.ScriptPath, spec.CommandSpec, r.options)
+	shellSpec := command.NewShellSpec(r.dir, spec.Image, spec.ScriptPath, spec.CommandSpecs[0], r.options)
 	return r.cmd.Run(ctx, r.commandLogger, shellSpec)
 }

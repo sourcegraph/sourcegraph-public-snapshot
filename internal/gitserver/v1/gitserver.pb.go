@@ -545,8 +545,9 @@ type CreateCommitFromPatchBinaryRequest struct {
 	// commit_info is the information to be used for the commit
 	CommitInfo *PatchCommitInfo `protobuf:"bytes,6,opt,name=commit_info,json=commitInfo,proto3" json:"commit_info,omitempty"`
 	// push_config is the configuration to be used for pushing the commit
-	Push         *PushConfig `protobuf:"bytes,7,opt,name=push,proto3" json:"push,omitempty"`
-	GitApplyArgs []string    `protobuf:"bytes,8,rep,name=git_apply_args,json=gitApplyArgs,proto3" json:"git_apply_args,omitempty"`
+	Push *PushConfig `protobuf:"bytes,7,opt,name=push,proto3" json:"push,omitempty"`
+	// git_apply_args are the arguments to be passed to git apply
+	GitApplyArgs []string `protobuf:"bytes,8,rep,name=git_apply_args,json=gitApplyArgs,proto3" json:"git_apply_args,omitempty"`
 	// push_ref is the optional override for the ref that is pushed to
 	PushRef *string `protobuf:"bytes,9,opt,name=push_ref,json=pushRef,proto3,oneof" json:"push_ref,omitempty"`
 }

@@ -20,7 +20,6 @@ const SEARCH_PAGE_QUERY = gql`
             totalCount
         }
         codehostWidgetFlag: evaluateFeatureFlag(flagName: "plg-enable-add-codehost-widget")
-        searchOwnershipFlag: evaluateFeatureFlag(flagName: "search-ownership")
     }
 `
 

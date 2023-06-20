@@ -18,17 +18,18 @@ This release is scheduled for **$RELEASE_DATE**.
 
 ## Setup
 
+<!-- Keep in sync with patch_release_issue_template's "Setup" section -->
+
+- [ ] Ensure you have the latest version of the release tooling and configuration by checking out and updating `sourcegraph@main`.
 - [ ] Ensure release configuration in [`dev/release/release-config.jsonc`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/release/release-config.jsonc) on `main` has version $MAJOR.$MINOR.$PATCH selected by using the command:
 
 ```shell
 pnpm run release release:activate-release
 ```
 
-- [ ] Ensure you have the latest version of the release tooling and configuration by checking out and updating `sourcegraph@main`.
-
 ## Security review ($SECURITY_REVIEW_DATE)
 
-- [ ] Create a [new issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose) using the **Security release approval** template and post a message in the [#security](https://sourcegraph.slack.com/archives/C1JH2BEHZ) channel tagging `@security-support`.
+- [ ] Create a [Security release approval](https://github.com/sourcegraph/sourcegraph/issues/new/choose#:~:text=Security%20release%20approval) issue and post a message in the [#ask-security](https://sourcegraph.slack.com/archives/C1JH2BEHZ) channel tagging `@security-support`.
 
 ## Cut release ($CODE_FREEZE_DATE)
 
@@ -125,7 +126,7 @@ Monitor the release branch, and backports. Ensure the branch remains healthy.
 On the day of the release, confirm there are no more release-blocking issues (as reported by the `release:status` command), then proceed with creating the final release:
 
 - [ ] Make sure [CHANGELOG entries](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) have been moved from **Unreleased** to **$MAJOR.$MINOR.$PATCH**, but exluding the ones that merged to `main` after the branch cut (whose changes are not in the `$MAJOR.$MINOR` branch).
-- [ ] Ensure security has approved the `Security release approval issue` you created.
+- [ ] Ensure security has approved the [Security release approval](https://github.com/sourcegraph/sourcegraph/issues?q=label%3Arelease-blocker+Security+approval+is%3Aopen) issue you created.
 - [ ] Make sure [deploy-sourcegraph-helm CHANGELOG entries](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/CHANGELOG.md) have been moved from **Unreleased** to **$MAJOR.$MINOR.$PATCH**, but exluding the ones that merged to `main` after the branch cut (whose changes are not in the `$MAJOR.$MINOR` branch).
 - [ ] Promote a release candidate to the final release build. You will need to provide the tag of the release candidate which you would like to promote as an argument. To get a list of available release candidates, you can use:
 
@@ -136,7 +137,7 @@ On the day of the release, confirm there are no more release-blocking issues (as
   To promote the candidate, use the command:
 
   ```sh
-  pnpm run release release:promote-candidate tag
+  pnpm run release release:promote-candidate <tag>
   ```
 
 - [ ] Ensure that the following pipelines all pass for the `v$MAJOR.$MINOR.$PATCH` tag:

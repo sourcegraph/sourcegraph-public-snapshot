@@ -46,9 +46,9 @@ import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
 import { CodeIntelligenceProps } from '../../codeintel'
+import { isCodyEnabled } from '../../cody/isCodyEnabled'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { RepositoryFields } from '../../graphql-operations'
 import { SourcegraphContext } from '../../jscontext'
 import { OwnConfigProps } from '../../own/OwnConfigProps'
@@ -171,8 +171,7 @@ export const TreePage: FC<Props> = ({
         !!settingsCascade.final?.experimentalFeatures?.codeInsights &&
         settingsCascade.final['insights.displayLocation.directory'] === true
 
-    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
-    const showOwnership = ownEnabled && ownFeatureFlagEnabled && !isSourcegraphDotCom
+    const showOwnership = ownEnabled && !isSourcegraphDotCom
 
     // Add DirectoryViewer
     const uri = toURIWithPath({ repoName, commitID, filePath })
@@ -361,13 +360,14 @@ export const TreePage: FC<Props> = ({
 
     return (
         <div className={classNames(styles.treePage, className)}>
-            {isSourcegraphDotCom && (
+            {(isSourcegraphDotCom || isCodyEnabled()) && (
                 <TryCodyWidget
                     className="mb-2"
                     telemetryService={props.telemetryService}
                     type="repo"
                     authenticatedUser={authenticatedUser}
                     context={context}
+                    isSourcegraphDotCom={isSourcegraphDotCom}
                 />
             )}
             <Container className={styles.container}>

@@ -36,12 +36,3 @@ type ChangelistNotFoundError struct {
 func (e *ChangelistNotFoundError) Error() string {
 	return fmt.Sprintf("revision not found: %s@%s", e.Repo, e.ID)
 }
-
-type BadChangelistError struct {
-	CID  string
-	Repo api.RepoName
-}
-
-func (e *BadChangelistError) Error() string {
-	return fmt.Sprintf("invalid changelist ID %q for repo %q", e.Repo, e.CID)
-}
