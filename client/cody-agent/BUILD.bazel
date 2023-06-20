@@ -24,9 +24,9 @@ ts_project(
         "src/agent.ts",
         "src/editor.ts",
         "src/index.ts",
+        "src/jsonrpc.ts",
         "src/offsets.ts",
         "src/protocol.ts",
-        "src/rpc.ts",
     ],
     tsconfig = ":tsconfig",
     deps = [
