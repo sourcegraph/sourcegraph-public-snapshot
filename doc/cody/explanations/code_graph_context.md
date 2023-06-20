@@ -12,6 +12,8 @@ Embeddings are a semantic representation of text that allow us to create a searc
 
 Embeddings for relevant code files must be enabled for each repository that you'd like Cody to have context on.
 
+> NOTE: Generating embeddings sends code snippets to a third-party language party provider. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). 
+
 ### Configuring embeddings
 
 > NOTE: Enterprise Cloud customers should reach out to their Sourcegraph representative to enable embeddings.
@@ -88,6 +90,10 @@ If you would like to allow your Sourcegraph instance to control the creation and
 ### Environment variables for the `embeddings` service
 
 - `EMBEDDINGS_CACHE_SIZE`: The maximum size of the in-memory cache (in bytes) that holds the embeddings for commonly-searched repos. If embeddings for a repo are larger than this size, the repo will not be held in the cache and must be re-fetched for each embeddings search. Defaults to `6442450944` (6 GiB).
+
+### Configuring embedding policies
+
+Embeddings are configured through the Admin UI using [policies](https://docs.sourcegraph.com/cody/explanations/policies).
 
 ### Incremental embeddings
 
