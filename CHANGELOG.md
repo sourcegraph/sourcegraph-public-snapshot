@@ -21,7 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- `golang.org/x/net/trace` instrumentation, previously available under `/debug/requests` and `/debug/events`, is now disabled by default. It can be re-enabled on a per-service basis with `SRC_ENABLE_NET_TRACE=true`. [#53795](https://github.com/sourcegraph/sourcegraph/pull/53795)
 
 ### Fixed
 

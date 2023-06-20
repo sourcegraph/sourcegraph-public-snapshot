@@ -13,7 +13,7 @@ import (
 
 // EnableNetTrace toggles golang.org/x/net/trace support (exported via
 // '/debug/requests' and '/debug/events') in internal/trace through SRC_ENABLE_NET_TRACE.
-var EnableNetTrace = env.MustGetBool("SRC_ENABLE_NET_TRACE", true, "Enable golang.org/x/net/trace")
+var EnableNetTrace = env.MustGetBool("SRC_ENABLE_NET_TRACE", false, "Enable golang.org/x/net/trace instrumentation")
 
 // A Tracer for trace creation, parameterised over an opentelemetry.TracerProvider. Set
 // TracerProvider if you don't want to use the global tracer provider, otherwise the

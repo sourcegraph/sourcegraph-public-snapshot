@@ -105,6 +105,9 @@ You can test the exporter by [tracing a search query](#trace-a-search-query).
 
 ### net/trace
 
+> WARNING: `net/trace` instrumentation will be disabled by default in Sourcegraph 5.2.
+> To enable it, set `SRC_ENABLE_NET_TRACE=true` on Sourcegraph services of interest.
+
 Sourcegraph uses the [`net/trace`](https://pkg.go.dev/golang.org/x/net/trace) package in its backend
 services, in addition to the other tracing mechanisms listed above.
 This provides simple tracing information within a single process.
