@@ -15,6 +15,7 @@
 ## [Sourcegraph App](app/index.md)
 
 - [Notes about code signing the Sourcegraph App](./app/codesigning.md)
+- [Building App on Windows](./app/windows.md)
 
 ## Development
 
@@ -25,6 +26,7 @@
   - [Bazel and client code](./bazel/web.md)
   - [Bazel and container images](./bazel/containers.md)
   - [Bazel FAQ](./bazel/faq.md)
+  - [Writing a server integration test](./bazel/server_integration_tests.md)
 - [Developing the web clients](web/index.md)
   - [Developing the web app](web/web_app.md)
   - [Developing the code host integrations](web/code_host_integrations.md)

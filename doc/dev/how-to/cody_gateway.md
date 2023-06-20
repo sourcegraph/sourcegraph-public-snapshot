@@ -16,7 +16,6 @@ Then, set up some feature flags:
 - `product-subscriptions-service-account`: set to `true` globally for convenience.
   In production, this flag is used to denote service accounts, but in development it doesn't matter.
   - You can also create an additional user and set this flag to `true` only for that user for more robust testing.
-- `cody-gateway-management-ui` (TODO: this will no logner be required once Cody Gateway is GA)
 
 Configure Cody features to talk to your local Cody Gateway:
 

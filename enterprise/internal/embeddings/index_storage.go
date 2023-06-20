@@ -54,8 +54,17 @@ func UploadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store
 
 	eg, ctx := errgroup.WithContext(ctx)
 
-	eg.Go(func() error {
-		defer pw.Close()
+	eg.Go(func() (err error) {
+		// Close the pipe with an error so the index does not get saved
+		// successfully to the blob store on failure to encode.
+		defer func() {
+			if v := recover(); v != nil {
+				pw.CloseWithError(errors.New("panic during encode"))
+				panic(v)
+			} else {
+				pw.CloseWithError(err)
+			}
+		}()
 
 		enc := newEncoder(gob.NewEncoder(pw), CurrentFormatVersion, embeddingsChunkSize)
 		return enc.encode(index)

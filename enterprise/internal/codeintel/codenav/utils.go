@@ -137,11 +137,17 @@ type linemap struct {
 }
 
 func newLinemap(source string) linemap {
+	// first line starts at offset 0
 	l := linemap{positions: []int{0}}
 	for i, char := range source {
 		if char == '\n' {
 			l.positions = append(l.positions, i+1)
 		}
 	}
+	// as we want the offset of the line _following_ a symbol's line,
+	// we need to add one extra here for when symbols exist on the final line
+	lastNewline := l.positions[len(l.positions)-1]
+	lenToEnd := len(source[lastNewline:])
+	l.positions = append(l.positions, lastNewline+lenToEnd+1)
 	return l
 }
