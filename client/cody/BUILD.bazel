@@ -53,6 +53,7 @@ ts_project(
         "src/completions/providers/anthropic.ts",
         "src/completions/providers/provider.ts",
         "src/completions/providers/unstable-codegen.ts",
+        "src/completions/providers/unstable-huggingface.ts",
         "src/completions/utils.ts",
         "src/configuration.ts",
         "src/configuration-keys.ts",

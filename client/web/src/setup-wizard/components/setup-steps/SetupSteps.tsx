@@ -36,7 +36,7 @@ export interface StepConfiguration {
     nextURL?: string
     component: ComponentType<StepComponentProps>
     onView?: () => void
-    onNext?: (client: ApolloClient<{}>) => void
+    onNext?: (client: ApolloClient<{}>) => Promise<void> | void
 }
 
 interface SetupStepsContextData {
@@ -114,11 +114,13 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
         onStepChange(currentStep)
     }, [currentStep, onStepChange])
 
-    const handleGoToNextStep = useCallback(() => {
+    const handleGoToNextStep = useCallback(async () => {
         const activeStep = steps[activeStepIndex]
         const nextStepIndex = activeStepIndex + 1
 
-        activeStep.onNext?.(client)
+        if (activeStep.onNext) {
+            await activeStep.onNext(client)
+        }
 
         if (activeStep.nextURL) {
             navigate(activeStep.nextURL)

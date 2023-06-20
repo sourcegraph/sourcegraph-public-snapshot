@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
 import { H1, H2, H3, H4, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
 import { ExternalsAuth } from '../../../auth/components/ExternalsAuth'
 import { MarketingBlock } from '../../../components/MarketingBlock'
 import { Page } from '../../../components/Page'
@@ -99,11 +100,13 @@ const codyPlatformCardItems = (
 export interface CodyMarketingPageProps {
     isSourcegraphDotCom: boolean
     context: Pick<SourcegraphContext, 'authProviders'>
+    authenticatedUser: AuthenticatedUser | null
 }
 
 export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> = ({
     context,
     isSourcegraphDotCom,
+    authenticatedUser,
 }) => {
     const { theme } = useTheme()
     const isDarkTheme = theme === Theme.Dark
@@ -203,6 +206,12 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                         </ul>
                         <Text className="mb-0">
                             <Link to="https://about.sourcegraph.com/cody">Learn more about Cody &rarr;</Link>
+                            {authenticatedUser?.siteAdmin && (
+                                <>
+                                    {' '}
+                                    or <Link to="/help/cody/explanations/enabling_cody_enterprise">enable it now</Link>.
+                                </>
+                            )}
                         </Text>
                     </MarketingBlock>
                 )}

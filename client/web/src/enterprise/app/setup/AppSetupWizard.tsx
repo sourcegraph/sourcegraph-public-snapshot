@@ -1,5 +1,7 @@
 import { FC, useCallback, useLayoutEffect } from 'react'
 
+import { appWindow, LogicalSize } from '@tauri-apps/api/window'
+
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Theme, ThemeContext, ThemeSetting, useTheme } from '@sourcegraph/shared/src/theme'
@@ -49,6 +51,10 @@ const APP_SETUP_STEPS: StepConfiguration[] = [
         onView: () => {
             localStorage.setItem('app.setup.finished', 'true')
         },
+        onNext: async () => {
+            await appWindow.setResizable(true)
+            await appWindow.setSize(new LogicalSize(1024, 768))
+        },
     },
 ]
 
@@ -87,13 +93,25 @@ export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService }) => {
         }
     }, [theme])
 
+    // Local screen size when we are in app setup flow,
+    // see last step onNext for window size restore and resize
+    // unblock
+    useLayoutEffect(() => {
+        async function lockSize(): Promise<void> {
+            await appWindow.setSize(new LogicalSize(940, 640))
+            await appWindow.setResizable(false)
+        }
+
+        lockSize().catch(() => {})
+    }, [])
+
     if (status !== 'loaded') {
         return null
     }
 
     return (
         <ThemeContext.Provider value={{ themeSetting: ThemeSetting.Light }}>
-            <PageTitle title="Sourcegraph App setup" />
+            <PageTitle title="Cody App setup" />
 
             <SetupStepsRoot
                 baseURL="/app-setup/"

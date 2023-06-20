@@ -197,12 +197,14 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
             <NavBar
                 ref={navbarReference}
                 logo={
-                    <BrandLogo
-                        branding={branding}
-                        isLightTheme={isLightTheme}
-                        variant="symbol"
-                        className={styles.logo}
-                    />
+                    !isSourcegraphApp && (
+                        <BrandLogo
+                            branding={branding}
+                            isLightTheme={isLightTheme}
+                            variant="symbol"
+                            className={styles.logo}
+                        />
+                    )
                 }
             >
                 <NavGroup>
@@ -336,7 +338,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         </>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
-                    {props.authenticatedUser?.siteAdmin && (
+                    {props.authenticatedUser?.siteAdmin && !isSourcegraphApp && (
                         <NavAction>
                             <StatusMessagesNavItem isSourcegraphApp={isSourcegraphApp} />
                         </NavAction>
