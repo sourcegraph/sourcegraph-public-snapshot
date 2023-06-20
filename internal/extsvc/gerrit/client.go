@@ -40,6 +40,7 @@ type Client interface {
 	ListProjects(ctx context.Context, opts ListProjectsArgs) (projects ListProjectsResponse, nextPage bool, err error)
 	GetChange(ctx context.Context, changeID string) (*Change, error)
 	AbandonChange(ctx context.Context, changeID string) (*Change, error)
+	DeleteChange(ctx context.Context, changeID string) error
 	SubmitChange(ctx context.Context, changeID string) (*Change, error)
 	RestoreChange(ctx context.Context, changeID string) (*Change, error)
 	WriteReviewComment(ctx context.Context, changeID string, comment ChangeReviewComment) error
