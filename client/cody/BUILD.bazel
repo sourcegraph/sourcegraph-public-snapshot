@@ -49,7 +49,6 @@ ts_project(
         "src/completions/logger.ts",
         "src/completions/manual.ts",
         "src/completions/multiline.ts",
-        "src/completions/post-process.ts",
         "src/completions/providers/anthropic.ts",
         "src/completions/providers/provider.ts",
         "src/completions/providers/unstable-codegen.ts",
