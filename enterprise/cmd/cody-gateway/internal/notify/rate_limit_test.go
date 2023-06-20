@@ -76,7 +76,12 @@ func TestSlackRateLimitNotifier(t *testing.T) {
 				},
 			)
 
-			alerter("alice", codygateway.ActorSourceProductSubscription, codygateway.FeatureChatCompletions, test.usagePercentage, time.Minute)
+			alerter(context.Background(),
+				"alice",
+				codygateway.ActorSourceProductSubscription,
+				codygateway.FeatureChatCompletions,
+				test.usagePercentage,
+				time.Minute)
 			assert.Equal(t, test.wantAlerted, alerted, "alert fired incorrectly")
 		})
 	}
