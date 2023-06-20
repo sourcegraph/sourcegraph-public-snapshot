@@ -47,7 +47,4 @@ public class CodyAgentClient {
           .invokeLater(() -> onChatUpdateMessageInProgress.accept(params));
     }
   }
-
-  @JsonNotification("chat/updateTranscript")
-  public void chatUpdateTranscript(TranscriptJSON ignored) {}
 }

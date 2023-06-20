@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import assert from 'assert'
 import { Readable, Writable } from 'stream'
 
@@ -107,6 +108,7 @@ export class MessageDecoder extends Writable {
             } else {
                 if (this.contentLengthRemaining === 0) {
                     try {
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                         const data = JSON.parse(this.contentBuffer.toString())
                         this.contentBuffer = Buffer.alloc(0)
                         this.contentLengthRemaining = null

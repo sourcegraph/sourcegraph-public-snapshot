@@ -34,8 +34,8 @@ public interface CodyAgentServer {
   @JsonNotification("exit")
   void exit();
 
-  @JsonNotification("configuration/didChange")
-  void configurationDidChange(Configuration document);
+  @JsonNotification("connectionConfiguration/didChange")
+  void configurationDidChange(ConnectionConfiguration document);
 
   @JsonNotification("textDocument/didFocus")
   void textDocumentDidFocus(TextDocument document);

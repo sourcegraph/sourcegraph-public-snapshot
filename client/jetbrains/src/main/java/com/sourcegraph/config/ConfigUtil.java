@@ -5,9 +5,12 @@ import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
-import com.sourcegraph.agent.Configuration;
+import com.intellij.openapi.project.ProjectManager;
+import com.sourcegraph.agent.ConnectionConfiguration;
 import com.sourcegraph.find.Search;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -19,8 +22,8 @@ public class ConfigUtil {
   public static final String DOTCOM_URL = "https://sourcegraph.com/";
 
   @NotNull
-  public static Configuration getAgentConfiguration(@NotNull Project project) {
-    return new Configuration()
+  public static ConnectionConfiguration getAgentConfiguration(@NotNull Project project) {
+    return new ConnectionConfiguration()
         .setServerEndpoint(getSourcegraphUrl(project))
         .setAccessToken(getProjectAccessToken(project))
         .setCustomHeaders(getCustomRequestHeadersAsMap(project));
@@ -257,6 +260,37 @@ public class ConfigUtil {
   @NotNull
   private static SourcegraphProjectService getProjectLevelConfig(@NotNull Project project) {
     return Objects.requireNonNull(SourcegraphService.getInstance(project));
+  }
+
+  @NotNull
+  public static String getWorkspaceRoot() {
+    int minNameCount = Integer.MAX_VALUE;
+    Path shortestPath = null;
+    for (Project openProject : ProjectManager.getInstance().getOpenProjects()) {
+      String basePath = openProject.getBasePath();
+      if (basePath == null) {
+        continue;
+      }
+      Path path = Paths.get(basePath);
+      if (path.getNameCount() < minNameCount) {
+        minNameCount = path.getNameCount();
+        shortestPath = path;
+      }
+    }
+    if (shortestPath != null) {
+      return shortestPath.toString();
+    }
+    // Technically wrong because the same IntelliJ process is used for different windows in
+    // different projects
+    return System.getProperty("user.dir");
+  }
+
+  @NotNull
+  public static String getWorkspaceRoot(@NotNull Project project) {
+    if (project.getBasePath() != null) {
+      return project.getBasePath();
+    }
+    return getWorkspaceRoot();
   }
 
   public static String getProjectAccessToken(Project project) {

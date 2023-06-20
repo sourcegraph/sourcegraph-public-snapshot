@@ -20,7 +20,7 @@ export class AgentEditor implements Editor {
     }
 
     public getWorkspaceRootPath(): string | null {
-        return this.agent.workspaceRootFilePath
+        return this.agent.workspaceRootPath
     }
 
     private activeDocument(): TextDocument | undefined {

@@ -1,3 +1,4 @@
 # Cody agent
 
-The `@sourcegraph/cody-agent` package contains a JSON-RPC interface between `@sourcegraph/cody-shared` and non-Node based agents like `Cody for JetBrains` or `cody.nvim`.
+The `@sourcegraph/cody-agent` package implements a JSON-RPC server to interact with Cody via stdout/stdin.
+This package is intended to be used by non-ECMAScript clients such as the JetBrains and NeoVim plugins.

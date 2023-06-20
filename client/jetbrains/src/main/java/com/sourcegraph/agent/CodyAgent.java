@@ -172,7 +172,17 @@ public class CodyAgent {
     executorService.submit(
         () -> {
           try {
-            ServerInfo info = server.initialize(new ClientInfo("JetBrains")).get();
+            ServerInfo info =
+                server
+                    .initialize(
+                        new ClientInfo()
+                            .setName("JetBrains")
+                            .setVersion(ConfigUtil.getPluginVersion())
+                            .setWorkspaceRootPath(ConfigUtil.getWorkspaceRoot())
+                            .setConnectionConfiguration(
+                                ConfigUtil.getAgentConfiguration(
+                                    ProjectManager.getInstance().getDefaultProject())))
+                    .get();
             logger.info("connected to Cody agent " + info.name);
             server.initialized();
             server.configurationDidChange(

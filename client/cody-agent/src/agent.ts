@@ -1,15 +1,14 @@
-/* eslint-disable no-void */
-import { Client, ClientInitConfig, createClient } from '@sourcegraph/cody-shared/src/chat/client'
+import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { AgentEditor } from './editor'
-import { Configuration, TextDocument } from './protocol'
+import { ConnectionConfiguration, TextDocument } from './protocol'
 import { MessageHandler } from './rpc'
 
 export class Agent extends MessageHandler {
     private client?: Promise<Client>
-    public workspaceRootFilePath: string | null = null
+    public workspaceRootPath: string | null = null
     public activeDocumentFilePath: string | null = null
     public documents: Map<string, TextDocument> = new Map()
 
@@ -18,12 +17,15 @@ export class Agent extends MessageHandler {
 
         this.setClient({
             customHeaders: {},
-            accessToken: process.env.SRC_ACCESS_TOKEN!,
-            serverEndpoint: process.env.SRC_ENDPOINT || 'https://sourcegraph.sourcegraph.com',
+            accessToken: process.env.SRC_ACCESS_TOKEN || '',
+            serverEndpoint: process.env.SRC_ENDPOINT || 'https://sourcegraph.com',
         })
 
         this.registerRequest('initialize', client => {
-            process.stderr.write(`Beginning handshake with client ${client.name}\n`)
+            process.stderr.write(
+                `Cody-Agent: handshake with client '${client.name}' with version '${client.version}' and workspace root path '${client.workspaceRootPath}'\n`
+            )
+            this.workspaceRootPath = client.workspaceRootPath
             return Promise.resolve({
                 name: 'cody-agent',
             })
@@ -36,10 +38,6 @@ export class Agent extends MessageHandler {
             process.exit(0)
         })
 
-        this.registerNotification('workspaceRootPath/didChange', path => {
-            this.workspaceRootFilePath = path
-        })
-
         this.registerNotification('textDocument/didFocus', document => {
             this.activeDocumentFilePath = document.filePath
         })
@@ -48,6 +46,9 @@ export class Agent extends MessageHandler {
             this.activeDocumentFilePath = document.filePath
         })
         this.registerNotification('textDocument/didChange', document => {
+            if (document.content === undefined) {
+                document.content = this.documents.get(document.filePath)?.content
+            }
             this.documents.set(document.filePath, document)
             this.activeDocumentFilePath = document.filePath
         })
@@ -55,12 +56,11 @@ export class Agent extends MessageHandler {
             this.documents.delete(document.filePath)
         })
 
-        this.registerNotification('configuration/didChange', config => {
+        this.registerNotification('connectionConfiguration/didChange', config => {
             this.setClient(config)
-            console.log(JSON.stringify(config))
         })
 
-        this.registerRequest('recipes/list', data =>
+        this.registerRequest('recipes/list', () =>
             Promise.resolve(
                 Object.values(registeredRecipes).map(({ id }) => ({
                     id,
@@ -80,18 +80,15 @@ export class Agent extends MessageHandler {
         })
     }
 
-    private setClient(config: Configuration): void {
+    private setClient(config: ConnectionConfiguration): void {
         this.client = createClient({
             editor: new AgentEditor(this),
             config: { ...config, useContext: 'none' },
             setMessageInProgress: messageInProgress => {
                 this.notify('chat/updateMessageInProgress', messageInProgress)
             },
-            setTranscript: transcript => {
-                transcript.toJSON().then(
-                    value => this.notify('chat/updateTranscript', value),
-                    () => {}
-                )
+            setTranscript: () => {
+                // Not supported yet by agent.
             },
             createCompletionsClient: config => new SourcegraphNodeCompletionsClient(config),
         })

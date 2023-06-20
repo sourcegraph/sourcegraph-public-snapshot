@@ -100,7 +100,7 @@ tasks {
 
     val agentSourceDirectory = Paths.get("..", "cody-agent").normalize()
     val agentTargetDirectory =
-        buildDir.resolve("idea-sandbox").resolve("plugins").resolve("Sourcegraph").resolve("agent").toPath()
+        buildDir.resolve("sourcegraph").resolve("agent").toPath()
 
     fun cleanAgentTargetDirectory() {
         if (Files.isDirectory(agentTargetDirectory)) {
@@ -109,7 +109,6 @@ tasks {
     }
 
     fun copyAgentBinariesToPluginPath(targetPath: String) {
-
         val shouldBuildBinaries =
             findProperty("forceAgentBuild") == "true" ||
                 !Files.isDirectory(agentTargetDirectory) ||
@@ -138,6 +137,7 @@ tasks {
         dependsOn("copyAgentBinariesToPluginPath")
         jvmArgs("-Djdk.module.illegalAccess.silent=true")
         systemProperty("cody-agent.trace-path", "$buildDir/sourcegraph/cody-agent-trace.json")
+        systemProperty("cody-agent.directory", agentTargetDirectory.parent.toString())
     }
 
     // Configure UI tests plugin
