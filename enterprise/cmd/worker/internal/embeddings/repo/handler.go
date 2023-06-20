@@ -11,9 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	bgrepo "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -84,13 +86,10 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		gitserver: h.gitserverClient,
 	}
 
-	excludedGlobPatterns := embed.GetDefaultExcludedFilePathPatterns()
-	excludedGlobPatterns = append(excludedGlobPatterns, embed.CompileGlobPatterns(embeddingsConfig.ExcludedFilePathPatterns)...)
-
 	opts := embed.EmbedRepoOpts{
 		RepoName:          repo.Name,
 		Revision:          record.Revision,
-		ExcludePatterns:   excludedGlobPatterns,
+		ExcludePatterns:   getExcludedFilePathPatterns(embeddingsConfig),
 		SplitOptions:      splitOptions,
 		MaxCodeEmbeddings: embeddingsConfig.MaxCodeEmbeddingsPerRepo,
 		MaxTextEmbeddings: embeddingsConfig.MaxTextEmbeddingsPerRepo,
@@ -137,6 +136,16 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 	} else {
 		return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, indexName, repoEmbeddingIndex)
 	}
+}
+
+func getExcludedFilePathPatterns(embeddingsConfig *conftypes.EmbeddingsConfig) []*paths.GlobPattern {
+	var excludedGlobPatterns []*paths.GlobPattern
+	if embeddingsConfig != nil && len(embeddingsConfig.ExcludedFilePathPatterns) != 0 {
+		excludedGlobPatterns = embed.CompileGlobPatterns(embeddingsConfig.ExcludedFilePathPatterns)
+	} else {
+		excludedGlobPatterns = embed.GetDefaultExcludedFilePathPatterns()
+	}
+	return excludedGlobPatterns
 }
 
 // getPreviousEmbeddingIndex checks the last successfully indexed revision and returns its embeddings index. If there
