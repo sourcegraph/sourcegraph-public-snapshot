@@ -517,30 +517,42 @@ func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, opts
 const listOldestRepoEmbeddedJobs = `with oldest_jobs as (
   select
     repo_id,
+    repo.name as repo_name,
     min(queued_at) as queued_at
   from
     repo_embedding_jobs
+    join repo on repo_embedding_jobs.repo_id = repo.id
   group by
-    id,
-    repo_id
+    repo_embedding_jobs.repo_id,
+    repo_name
 ),
-job_ids as (
+jobs as (
   select
     repo_embedding_jobs.id,
-    repo_embedding_jobs.repo_id,
-    repo_embedding_jobs.queued_at
+    repo_embedding_jobs.state,
+    oldest_jobs.*
   from
     repo_embedding_jobs
     join oldest_jobs on repo_embedding_jobs.repo_id = oldest_jobs.repo_id
     and repo_embedding_jobs.queued_at = oldest_jobs.queued_at
 )
 select
-	*
+  jobs.id,
+  jobs.repo_id,
+  jobs.repo_name,
+  jobs.queued_at,
+  jobs.state,
+  repo_embedding_job_stats.*
 from
-  repo_embedding_jobs
-  join job_ids on repo_embedding_jobs.id = job_ids.id
+  repo_embedding_job_stats
+  join jobs on repo_embedding_job_stats.job_id = jobs.id
+--- add the where clause here
+--- where
+--- jobs.repo_name in (
+--- 'github.com/smol-ai/logger'
+--- )
 order by
-  repo_embedding_jobs.queued_at
+  jobs.queued_at
 `
 
 func (s *repoEmbeddingJobsStore) ListOldestRepoEmbeddingJobs(ctx context.Context, repoNames []string) ([]*RepoEmbedJobStatus, error) {
