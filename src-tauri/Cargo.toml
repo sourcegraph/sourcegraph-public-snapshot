@@ -33,7 +33,7 @@ tauri-utils = { git = "https://github.com/tauri-apps/tauri", branch = "dev" }
 [dependencies.tauri]
 git = "https://github.com/tauri-apps/tauri"
 branch = "dev"
-features = ["fs-remove-dir", "dialog-confirm", "updater", "dialog-open", "devtools", "process-command-api", "shell-open", "shell-sidecar", "system-tray", "window-start-dragging"]
+features = [ "window-set-size", "window-set-resizable","fs-remove-dir", "dialog-confirm", "updater", "dialog-open", "devtools", "process-command-api", "shell-open", "shell-sidecar", "system-tray", "window-start-dragging"]
 
 [patch.crates-io]
 tauri = { git = "https://github.com/tauri-apps/tauri", branch = "dev" }

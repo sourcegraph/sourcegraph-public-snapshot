@@ -32,7 +32,9 @@
         "open": "^(vscode:|https?:)|com.sourcegraph.cody/.*.log$"
       },
       "window": {
-        "startDragging": true
+        "startDragging": true,
+        "setSize": true,
+        "setResizable": true
       }
     },
     "systemTray": {
@@ -79,11 +81,11 @@
     },
     "windows": [
       {
-        "fullscreen": false,
-        "height": 768,
-        "resizable": true,
         "title": "Cody",
-        "width": 1024
+        "fullscreen": false,
+        "resizable": true,
+        "width": 1024,
+        "height": 768
       }
     ]
   }
