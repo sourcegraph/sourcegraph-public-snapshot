@@ -35,24 +35,19 @@ WITH candidates AS (
 		u.root,
 		md5(u.repository_id || ':' || u.root || ':' || u.indexer) AS upload_key
 	FROM lsif_uploads u
+	JOIN lsif_uploads_visible_at_tip uvt ON uvt.upload_id = u.id
 	JOIN repo r ON r.id = u.repository_id
 	WHERE
-		EXISTS (
-			SELECT 1
-			FROM lsif_uploads_visible_at_tip uvt
-			WHERE
-				uvt.is_default_branch AND
-				uvt.upload_id = u.id
-		) AND
+		uvt.is_default_branch AND
+		r.deleted_at IS NULL AND
+		r.blocked IS NULL AND
 		NOT EXISTS (
 			SELECT 1
 			FROM codeintel_ranking_exports re
 			WHERE
 				re.graph_key = %s AND
 				re.upload_id = u.id
-		) AND
-		r.deleted_at IS NULL AND
-		r.blocked IS NULL
+		)
 	ORDER BY u.id DESC
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
