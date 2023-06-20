@@ -67,7 +67,6 @@ export const LangStatsInsightCreationPage: Story = () => {
                 onCancel={noop}
                 onSuccessfulCreation={noop}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                isSourcegraphApp={false}
             />
         </MockedTestProvider>
     )
