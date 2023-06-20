@@ -176,13 +176,22 @@ export class Transcript {
         let truncatedMessages = truncatePrompt(messages, MAX_AVAILABLE_PROMPT_LENGTH - preambleTokensUsage)
 
         // Return what context fits in the window
-        const contextFiles: ContextFile[] = []
+        const contextResults: ContextFile[] = []
         for (const msg of truncatedMessages) {
             const contextFile = (msg as ContextMessage).file
             if (contextFile) {
-                contextFiles.push(contextFile)
+                contextResults.push(contextFile)
             }
         }
+
+        const seen = new Set<string>()
+        const contextFiles = contextResults.filter(({ fileName }) => {
+            if (seen.has(fileName)) {
+                return false
+            }
+            seen.add(fileName)
+            return true
+        })
 
         // Filter out extraneous fields from ContextMessage instances
         truncatedMessages = truncatedMessages.map(({ speaker, text }) => ({ speaker, text }))
