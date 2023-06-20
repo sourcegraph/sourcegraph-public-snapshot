@@ -8,16 +8,19 @@ export function detectMultilineMode(
     languageId: string
 ): null | 'block' {
     const config = getLanguageConfig(languageId)
-
+    if (!config) {
+        return null
+    }
+    if (sameLinePrefix.trim() === '' && sameLineSuffix.trim() === '') {
+        return 'block'
+    }
+    if (sameLinePrefix.match(/[\{\[\(]$/)) {
+        return 'block'
+    }
     if (
-        config &&
-        // Only trigger multiline suggestions for empty lines
-        sameLinePrefix.trim() === '' &&
-        sameLineSuffix.trim() === '' &&
         // Only trigger multiline suggestions for the beginning of blocks
         prefix.trim().at(prefix.trim().length - config.blockStart.length) === config.blockStart &&
-        // Only trigger multiline suggestions when the new current line is
-        // indented
+        // Only trigger multiline suggestions when the new current line is indented
         indentation(prevNonEmptyLine) < indentation(sameLinePrefix)
     ) {
         return 'block'

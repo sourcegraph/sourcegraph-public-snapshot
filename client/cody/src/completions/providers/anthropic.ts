@@ -2,16 +2,12 @@ import * as anthropic from '@anthropic-ai/sdk'
 
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
+import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { Completion } from '..'
-import { messagesToText } from '../utils'
+import { batchCompletions, messagesToText } from '../utils'
 
 import { AbstractProvider, ProviderConfig, ProviderOptions } from './provider'
-
-const COMPLETIONS_PREAMBLE = `You are Cody, a code completion AI developed by Sourcegraph.
-You only respond in a single Markdown code blocks to all questions.
-All answers must be valid {lang} programs.
-DO NOT respond with anything other than code.`
 
 const CHARS_PER_TOKEN = 4
 
@@ -38,113 +34,57 @@ export class AnthropicProvider extends AbstractProvider {
         this.completionsClient = anthropicOptions.completionsClient
     }
 
-    private emptyPromptLength(injectPrefix?: string): number {
-        const promptNoSnippets = messagesToText(this.createPromptPrefix(injectPrefix))
+    public emptyPromptLength(): number {
+        const { messages } = this.createPromptPrefix()
+        const promptNoSnippets = messagesToText(messages)
         return promptNoSnippets.length - 10 // extra 10 chars of buffer cuz who knows
     }
 
-    private createPromptPrefix(injectPrefix: string = ''): Message[] {
+    private createPromptPrefix(): { messages: Message[]; prefix: PrefixComponents } {
         // TODO(beyang): escape 'Human:' and 'Assistant:'
         const prefixLines = this.prefix.split('\n')
         if (prefixLines.length === 0) {
             throw new Error('no prefix lines')
         }
 
-        let prefixMessages: Message[]
-        if (prefixLines.length > 2) {
-            const endLine = Math.max(Math.floor(prefixLines.length / 2), prefixLines.length - 5)
-            prefixMessages = [
-                {
-                    speaker: 'human',
-                    text: COMPLETIONS_PREAMBLE.replace('{lang}', this.languageId),
-                },
-                {
-                    speaker: 'assistant',
-                    text: '```\n// Ok```',
-                },
-                {
-                    speaker: 'human',
-                    text:
-                        'Complete the following file:\n' +
-                        '```' +
-                        `\n${prefixLines.slice(0, endLine).join('\n')}\n` +
-                        '```',
-                },
-                {
-                    speaker: 'assistant',
-                    text: `\`\`\`\n${prefixLines.slice(endLine).join('\n')}${injectPrefix}`,
-                },
-            ]
-        } else {
-            prefixMessages = [
-                {
-                    speaker: 'human',
-                    text: 'Write some code',
-                },
-                {
-                    speaker: 'assistant',
-                    text: `Here is some code:\n\`\`\`\n${this.prefix}${injectPrefix}`,
-                },
-            ]
-        }
-
-        return prefixMessages
+        const { head, tail, overlap } = getHeadAndTail(this.prefix)
+        const prefixMessages: Message[] = [
+            {
+                speaker: 'human',
+                text: 'You are Cody, a code completion AI developed by Sourcegraph. You write code in between tags like this:<CODE5711>/* Code goes here */</CODE5711>',
+            },
+            {
+                speaker: 'assistant',
+                text: 'I am Cody, a code completion AI developed by Sourcegraph.',
+            },
+            {
+                speaker: 'human',
+                text: `Complete this code: <CODE5711>${head.trimmed}</CODE5711>.`,
+            },
+            {
+                speaker: 'assistant',
+                text: `Okay, here is some code: <CODE5711>${tail.trimmed}`,
+            },
+        ]
+        return { messages: prefixMessages, prefix: { head, tail, overlap } }
     }
-
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
-    protected createPrompt(injectPrefix?: string): Message[] {
-        const prefixMessages = this.createPromptPrefix(injectPrefix)
+    protected createPrompt(): { messages: Message[]; prefix: PrefixComponents } {
+        const { messages: prefixMessages, prefix } = this.createPromptPrefix()
         const referenceSnippetMessages: Message[] = []
 
-        let remainingChars = this.promptChars - this.emptyPromptLength(injectPrefix)
-
-        if (this.suffix.length > 0) {
-            let suffix = ''
-            // We throw away the first 5 lines of the suffix to avoid the LLM to
-            // just continue the completion by appending the suffix.
-            const suffixLines = this.suffix.split('\n')
-            if (suffixLines.length > 5) {
-                suffix = suffixLines.slice(5).join('\n')
-            }
-
-            if (suffix.length > 0) {
-                const suffixContext: Message[] = [
-                    {
-                        speaker: 'human',
-                        text:
-                            'Add the following code snippet to your knowledge base:\n' +
-                            '```' +
-                            `\n${suffix}\n` +
-                            '```',
-                    },
-                    {
-                        speaker: 'assistant',
-                        text: '```\n// Ok```',
-                    },
-                ]
-
-                const numSnippetChars = messagesToText(suffixContext).length + 1
-                if (numSnippetChars <= remainingChars) {
-                    referenceSnippetMessages.push(...suffixContext)
-                    remainingChars -= numSnippetChars
-                }
-            }
-        }
+        let remainingChars = this.promptChars - this.emptyPromptLength()
 
         for (const snippet of this.snippets) {
             const snippetMessages: Message[] = [
                 {
                     speaker: 'human',
-                    text:
-                        `Add the following code snippet (from file ${snippet.fileName}) to your knowledge base:\n` +
-                        '```' +
-                        `\n${snippet.content}\n` +
-                        '```',
+                    text: `Here is a reference snippet of code: <CODE5711>${snippet.content}</CODE5711>`,
                 },
                 {
                     speaker: 'assistant',
-                    text: 'Okay, I have added it to my knowledge base.',
+                    text: 'I have added the snippet to my knowledge base.',
                 },
             ]
             const numSnippetChars = messagesToText(snippetMessages).length + 1
@@ -155,38 +95,93 @@ export class AnthropicProvider extends AbstractProvider {
             remainingChars -= numSnippetChars
         }
 
-        return [...referenceSnippetMessages, ...prefixMessages]
+        return { messages: [...referenceSnippetMessages, ...prefixMessages], prefix }
     }
 
-    public async generateCompletions(abortSignal: AbortSignal): Promise<Completion[]> {
-        // TODO: Bring back the logic with injectPrefix \n when the current line is non empty
+    private postProcess(rawResponse: string, prefix: PrefixComponents): string {
+        let completion = extractFromCodeBlock(rawResponse)
 
+        if (prefix.tail.rearSpace.length > 0) {
+            const rearSpaceLines = prefix.tail.rearSpace.split('\n')
+            const currentLine = rearSpaceLines[rearSpaceLines.length - 1]
+            if (currentLine.match(/^\s*$/)) {
+                // New line + indent: trim all leading new lines and match indent
+                completion = completion.replace(/^\n*/, '')
+                const completionIndent = completion.match(/^\s*/)![0]
+                if (currentLine.length <= completionIndent.length) {
+                    completion = completionIndent.slice(currentLine.length) + completion.slice(completionIndent.length)
+                }
+            }
+        }
+
+        completion = trimIndent(completion, this.suffix)
+        completion = trimUntilSuffix(completion, this.suffix)
+
+        // Remove incomplete lines in single-line completions
+        if (this.multilineMode !== 'block') {
+            const allowedNewlines = 2
+            const lines = completion.split('\n')
+            if (lines.length >= allowedNewlines) {
+                completion = lines.slice(0, allowedNewlines).join('\n')
+            }
+        }
+
+        completion = completion.trimEnd()
+        return completion
+    }
+
+    public async generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]> {
         // Create prompt
-        const prompt = this.createPrompt()
+        const { messages: prompt, prefix } = this.createPrompt()
         if (prompt.length > this.promptChars) {
-            throw new Error('prompt length exceeded maximum allowed chars')
+            throw new Error('prompt length exceeded maximum alloted chars')
         }
 
-        const params = {
-            messages: prompt,
-            stopSequences:
-                this.multilineMode !== null ? [anthropic.HUMAN_PROMPT, '\n\n\n'] : [anthropic.HUMAN_PROMPT, '\n'],
-            maxTokensToSample: this.responseTokens,
-            temperature: 1,
-            topK: -1,
-            topP: -1,
+        let args: CompletionParameters
+        switch (this.multilineMode) {
+            case 'block': {
+                args = {
+                    temperature: 0.5,
+                    messages: prompt,
+                    maxTokensToSample: this.responseTokens,
+                    stopSequences: [anthropic.HUMAN_PROMPT],
+                }
+                break
+            }
+            default: {
+                args = {
+                    temperature: 0.5,
+                    messages: prompt,
+                    maxTokensToSample: Math.min(100, this.responseTokens),
+                    stopSequences: [anthropic.HUMAN_PROMPT, '\n\n'],
+                }
+                break
+            }
         }
 
-        // Issue requests
-        const responses = await Promise.all(
-            Array.from({ length: this.n }).map(() => this.completionsClient.complete(params, abortSignal))
+        // Issue request
+        const responses = await batchCompletions(this.completionsClient, args, n || this.n, abortSignal)
+
+        // Post-process
+        const ret = await Promise.all(
+            responses.map(async resp => {
+                const content = await this.postProcess(resp.completion, prefix)
+
+                if (content === null) {
+                    return []
+                }
+
+                return [
+                    {
+                        prefix: this.prefix,
+                        messages: prompt,
+                        content,
+                        stopReason: resp.stopReason,
+                    },
+                ]
+            })
         )
-
-        return responses.map(resp => ({
-            prefix: this.prefix,
-            content: resp.completion,
-            stopReason: resp.stopReason,
-        }))
+        return ret.flat()
     }
 }
 
@@ -198,4 +193,114 @@ export function createProviderConfig(anthropicOptions: AnthropicOptions): Provid
         maximumContextCharacters: tokensToChars(anthropicOptions.contextWindowTokens),
         identifier: 'anthropic',
     }
+}
+
+interface TrimmedString {
+    trimmed: string
+    leadSpace: string
+    rearSpace: string
+}
+
+interface PrefixComponents {
+    head: TrimmedString
+    tail: TrimmedString
+    overlap?: string
+}
+
+function extractFromCodeBlock(completion: string): string {
+    if (completion.includes('<CODE5711>')) {
+        console.error('invalid code completion response, should not contain opening tag <CODE5711>')
+        return ''
+    }
+    let end = completion.indexOf('</CODE5711>')
+    if (end === -1) {
+        end = completion.length
+    }
+    return completion.substring(0, end).trimEnd()
+}
+
+// Split string into head and tail. The tail is at most the last 2 non-empty lines of the snippet
+function getHeadAndTail(s: string): PrefixComponents {
+    const lines = s.split('\n')
+    const tailThreshold = 2
+
+    let nonEmptyCount = 0
+    let tailStart = -1
+    for (let i = lines.length - 1; i >= 0; i--) {
+        if (lines[i].trim().length > 0) {
+            nonEmptyCount++
+        }
+        if (nonEmptyCount >= tailThreshold) {
+            tailStart = i
+            break
+        }
+    }
+
+    if (tailStart === -1) {
+        return { head: trimSpace(s), tail: trimSpace(s), overlap: s }
+    }
+
+    return { head: trimSpace(lines.slice(0, tailStart).join('\n')), tail: trimSpace(lines.slice(tailStart).join('\n')) }
+}
+
+function trimSpace(s: string): TrimmedString {
+    const trimmed = s.trim()
+    const headEnd = s.indexOf(trimmed)
+    return { trimmed, leadSpace: s.slice(0, headEnd), rearSpace: s.slice(headEnd + trimmed.length) }
+}
+
+function trimIndent(insertion: string, suffix: string): string {
+    let suffixIndent = 0
+    for (const line of suffix.split('\n')) {
+        if (line.trim().length > 0) {
+            const indentMatch = line.match(/^\s*/)
+            if (indentMatch && indentMatch.length >= 1) {
+                suffixIndent = indentMatch[0].length
+            }
+            break
+        }
+    }
+
+    const insertionLines = insertion.split('\n')
+    let insertionEnd = insertionLines.length
+    // Skip over first line, because we expect that to always be included and to have no leading whitespace
+    for (let i = 1; i < insertionLines.length; i++) {
+        const line = insertionLines[i]
+        if (line.trim().length === 0) {
+            continue
+        }
+        const indentMatch = line.match(/^\s*/)
+        if (indentMatch && indentMatch.length >= 1) {
+            if (indentMatch[0].length < suffixIndent) {
+                insertionEnd = i
+                break
+            }
+        }
+    }
+    return insertionLines.slice(0, insertionEnd).join('\n')
+}
+
+function trimUntilSuffix(insertion: string, suffix: string): string {
+    insertion = insertion.trimEnd()
+    let firstNonEmptySuffixLine = ''
+    for (const line of suffix.split('\n')) {
+        if (line.trim().length > 0) {
+            firstNonEmptySuffixLine = line
+            break
+        }
+    }
+    if (firstNonEmptySuffixLine.length === 0) {
+        return insertion
+    }
+
+    const insertionLines = insertion.split('\n')
+    let insertionEnd = insertionLines.length
+    for (let i = 0; i < insertionLines.length; i++) {
+        const line = insertionLines[i]
+        if (line === firstNonEmptySuffixLine) {
+            insertionEnd = i
+            break
+        }
+    }
+    return insertionLines.slice(0, insertionEnd).join('\n')
 }
