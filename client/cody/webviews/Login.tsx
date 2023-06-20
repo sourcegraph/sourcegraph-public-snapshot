@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { AuthStatus, DOTCOM_CALLBACK_URL, DOTCOM_URL } from '../src/chat/protocol'
+import { AuthStatus, DOTCOM_CALLBACK_URL, DOTCOM_URL, LOCAL_APP_URL } from '../src/chat/protocol'
 
 import { ConnectApp } from './ConnectApp'
 import { VSCodeWrapper } from './utils/VSCodeApi'
@@ -30,6 +30,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     appArch,
 }) => {
     const [endpoint, setEndpoint] = useState(serverEndpoint || DOTCOM_URL.href)
+    const [isAppRunning, setIsAppRunning] = useState(false)
 
     const isOSSupported = appOS === 'darwin' && appArch === 'arm64'
 
@@ -49,20 +50,37 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 
     const messages = {
         getStarted:
-            'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code. Download the desktop app to configure your local code graph.',
+            'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code. Download and run the Cody desktop app to configure your local code graph.',
         connectApp: 'Cody App detected. All that’s left is to do is connect VS Code with Cody App.',
-        // unsupportedNote: 'Sorry, ${platform} is not yet supported',
+        appNotRunning:
+            'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
         comingSoon:
             'We’re working on bringing Cody App to your platform. In the meantime, you can try Cody with open source repositories by logging into sourcegraph.com.',
     }
+
+    // make a quick api call to check if the endpoint is valid
+    const checkAppConnection = useCallback(async () => {
+        try {
+            const response = await fetch(`${LOCAL_APP_URL.href}/__version`)
+            if (response.status === 200) {
+                setIsAppRunning(true)
+            }
+        } catch (error) {
+            console.error(error)
+        }
+    }, [])
+
+    void checkAppConnection()
 
     return (
         <div className={styles.container}>
             {authStatus && <ErrorContainer authStatus={authStatus} endpoint={endpoint} />}
             <div className={styles.sectionsContainer}>
                 <section className={classNames(styles.section, isOSSupported ? styles.codyGradient : null)}>
-                    <h2 className={styles.sectionHeader}>{isAppInstalled ? 'Connect to Cody App' : 'Get Started'}</h2>
-                    <p className={styles.openMessage}>{isAppInstalled ? messages.connectApp : messages.getStarted}</p>
+                    <h2 className={styles.sectionHeader}>{isAppInstalled ? 'Cody App Not Running' : 'Get Started'}</h2>
+                    <p className={styles.openMessage}>
+                        {!isAppRunning && isAppInstalled ? messages.appNotRunning : messages.getStarted}
+                    </p>
                     <ConnectApp
                         isAppInstalled={isAppInstalled}
                         vscodeAPI={vscodeAPI}

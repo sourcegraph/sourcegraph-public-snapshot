@@ -19,7 +19,9 @@ export const ConnectApp: React.FunctionComponent<ConnectAppProps> = ({
     appOS,
     appArch,
 }) => {
-    const buttonText = !isAppInstalled && isOSSupported ? 'Download Cody App' : 'Connect Cody App'
+    const buttonText = !isAppInstalled && isOSSupported ? 'Download Cody App' : 'Open Cody App'
+    const buttonIcon =
+        !isAppInstalled && isOSSupported ? 'codicon codicon-cloud-download' : 'codicon codicon-vm-running'
     // Open landing page if download link for user's arch cannot be found
     const DOWNLOAD_URL = APP_DOWNLOAD_URLS[appOS] ? APP_DOWNLOAD_URLS[appOS][appArch] : APP_LANDING_URL.href
     // Use postMessage to open because it won't open otherwise due to the sourcegraph:// scheme.
@@ -36,7 +38,7 @@ export const ConnectApp: React.FunctionComponent<ConnectAppProps> = ({
                 disabled={!isOSSupported}
                 onClick={() => openLink(isAppInstalled ? APP_CALLBACK_URL.href : DOWNLOAD_URL)}
             >
-                <i className="codicon codicon-cloud-download" slot="start" />
+                <i className={buttonIcon} slot="start" />
                 {buttonText}
             </VSCodeButton>
         </div>
