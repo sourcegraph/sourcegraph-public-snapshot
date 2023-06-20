@@ -156,6 +156,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                         filePath={filePath}
                                         reasons={ownership.reasons}
                                         setRemoveOwnerError={setRemoveOwnerError}
+                                        isDirectory={isDirectory}
                                     />
                                 </React.Fragment>
                             ))}
@@ -202,6 +203,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                             repoID={repoID}
                                             filePath={filePath}
                                             setRemoveOwnerError={setRemoveOwnerError}
+                                            isDirectory={isDirectory}
                                         />
                                     </React.Fragment>
                                 )

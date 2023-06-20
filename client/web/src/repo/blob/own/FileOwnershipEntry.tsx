@@ -28,6 +28,7 @@ interface Props {
     repoID: string
     filePath: string
     setRemoveOwnerError: any
+    isDirectory: boolean
 }
 
 type OwnershipReason =
@@ -43,6 +44,7 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
     repoID,
     filePath,
     setRemoveOwnerError,
+    isDirectory
 }) => {
     const findEmail = (): string | undefined => {
         if (owner.__typename !== 'Person') {
@@ -69,7 +71,11 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
         getOwnershipReasonPriority(reason2) - getOwnershipReasonPriority(reason1)
 
     const navigate = useNavigate()
-    const refreshPage = (): Promise<any> => Promise.resolve(navigate(0))
+    const refreshPage = (): Promise<any> => {
+        if (!isDirectory) {
+            return Promise.resolve(navigate(0))
+        }
+    }
 
     return (
         <tr>
