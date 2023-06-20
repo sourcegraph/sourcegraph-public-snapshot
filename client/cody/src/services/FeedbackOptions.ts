@@ -32,3 +32,14 @@ export const showFeedbackSupportQuickPick = async (): Promise<void> => {
     const selectedItem = await vscode.window.showQuickPick(FeedbackOptionItems, FeedbackQuickPickOptions)
     await selectedItem?.onSelect()
 }
+
+export const AuthOptionItems = [
+    {
+        label: '$(gear) Settings',
+        detail: 'Configure your Cody settings.',
+        async onSelect(): Promise<void> {
+            await vscode.commands.executeCommand('cody.settings.user')
+            await vscode.commands.executeCommand('cody.settings.extension')
+        },
+    },
+]

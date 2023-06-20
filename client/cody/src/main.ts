@@ -197,7 +197,10 @@ const register = async (
             })
         }),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
-        vscode.commands.registerCommand('cody.settings', () => chatProvider.setWebviewView('settings')),
+        vscode.commands.registerCommand('cody.settings.user', () => chatProvider.setWebviewView('settings')),
+        vscode.commands.registerCommand('cody.settings.extension', () =>
+            vscode.commands.executeCommand('workbench.action.openSettings', { query: '@ext:sourcegraph.cody-ai' })
+        ),
         vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
         vscode.commands.registerCommand('cody.history.clear', async () => {
             await chatProvider.clearHistory()

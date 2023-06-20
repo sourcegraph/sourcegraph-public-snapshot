@@ -115,6 +115,10 @@ export interface LocalEnv {
     arch: string
     homeDir?: string | undefined
     isAppInstalled: boolean
+    isAppRunning: boolean
+    extensionVersion: string
+    // TODO: remove this once the experimental period for connect app is over
+    isAppConnectEnabled: boolean
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {

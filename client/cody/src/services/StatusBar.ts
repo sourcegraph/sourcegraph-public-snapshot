@@ -4,7 +4,7 @@ import type { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { getConfiguration } from '../configuration'
 
-import { FeedbackOptionItems } from './FeedbackOptions'
+import { AuthOptionItems, FeedbackOptionItems } from './FeedbackOptions'
 
 export interface CodyStatusBar {
     dispose(): void
@@ -81,6 +81,8 @@ export function createStatusBar(): CodyStatusBar {
                 ),
                 { label: 'cody feedback', kind: vscode.QuickPickItemKind.Separator },
                 ...FeedbackOptionItems,
+                { label: 'cody settings', kind: vscode.QuickPickItemKind.Separator },
+                ...AuthOptionItems,
             ],
             {
                 placeHolder: 'Select an option',

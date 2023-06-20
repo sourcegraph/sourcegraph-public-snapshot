@@ -20,6 +20,7 @@ interface ConfigGetter {
  */
 export function getConfiguration(config: ConfigGetter): Configuration {
     const isTesting = process.env.CODY_TESTING === 'true'
+    void vscode.commands.executeCommand('setContext', 'cody.test.inProgress', isTesting)
 
     let debugRegex: RegExp | null = null
     try {

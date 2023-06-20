@@ -53,6 +53,7 @@
 
 .button {
     justify-content: center;
+    padding: 0.25rem;
 }
 
 .error {

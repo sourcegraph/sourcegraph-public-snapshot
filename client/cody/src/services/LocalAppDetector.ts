@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
-import { LocalEnv } from '../chat/protocol'
+import { version } from '../../package.json'
+import { LOCAL_APP_URL, LocalEnv } from '../chat/protocol'
 
 export interface LocalAppPaths {
     [os: string]: {
@@ -10,7 +11,6 @@ export interface LocalAppPaths {
 }
 
 const LOCAL_APP_LOCATIONS: LocalAppPaths = {
-    // Only Apple silicon is supported
     darwin: [
         {
             dir: '/Applications/',
@@ -49,8 +49,12 @@ export class LocalAppDetector implements vscode.Disposable {
     // Check if the platform is supported and the user has a home directory
     private isSupported: boolean
     private isInstalled = false
+    private isRunning = false
     private localAppMarkers
     private appFsPaths: string[] = []
+
+    // TODO: remove this once the experimental period for connect app is over
+    private isAppConnectEnabled = false
 
     private onChange: OnChangeCallback
     private _watchers: vscode.Disposable[] = []
@@ -63,6 +67,9 @@ export class LocalAppDetector implements vscode.Disposable {
         this.localAppMarkers = LOCAL_APP_LOCATIONS[this.platformName]
         // Only Mac is supported for now
         this.isSupported = this.platformName === 'darwin' && this.homeDir !== undefined
+        const codyConfiguration = vscode.workspace.getConfiguration('cody')
+        // TODO: remove this once the experimental period for connect app is over
+        this.isAppConnectEnabled = codyConfiguration.get<boolean>('experimental.app.connect') ?? false
         this.init()
     }
 
@@ -72,15 +79,15 @@ export class LocalAppDetector implements vscode.Disposable {
             return
         }
         // Create filePaths and file watchers
-        const makers = this.localAppMarkers
-        for (const maker of makers) {
-            const dirPath = this.expandHomeDir(maker.dir)
+        const markers = this.localAppMarkers
+        for (const marker of markers) {
+            const dirPath = this.expandHomeDir(marker.dir)
             const dirUri = vscode.Uri.file(dirPath)
-            const watchPattern = new vscode.RelativePattern(dirUri, maker.file)
+            const watchPattern = new vscode.RelativePattern(dirUri, marker.file)
             const watcher = vscode.workspace.createFileSystemWatcher(watchPattern)
             watcher.onDidChange(() => this.detect())
             this._watchers.push(watcher)
-            this.appFsPaths.push(dirPath + maker.file)
+            this.appFsPaths.push(dirPath + marker.file)
         }
         void this.detect()
     }
@@ -89,19 +96,41 @@ export class LocalAppDetector implements vscode.Disposable {
         if (!this.isSupported || !this.appFsPaths.length) {
             return
         }
-        if (await Promise.any(this.appFsPaths.map(file => pathExists(file)))) {
-            this.fire()
+        if (!this.isInstalled) {
+            if (await Promise.any(this.appFsPaths.map(file => pathExists(file)))) {
+                this.isInstalled = true
+                await this.fetch()
+                this.fire()
+            }
+            return
+        }
+    }
+
+    // Check if App is running
+    public async fetch(): Promise<void> {
+        if (!this.isInstalled || this.isRunning) {
+            return
+        }
+        const response = await fetch(`${LOCAL_APP_URL.href}__version`)
+        if (response.status === 200) {
+            this.isRunning = true
+            console.log('App is running.')
+            return
         }
     }
 
     public getProcessInfo(): LocalEnv {
+        void this.fetch()
         return {
-            arch: this.arch,
             os: this.platformName,
+            arch: this.arch,
             homeDir: this.homeDir,
-            isAppInstalled: this.isInstalled,
             uriScheme: vscode.env.uriScheme,
             appName: vscode.env.appName,
+            extensionVersion: version,
+            isAppInstalled: this.isInstalled,
+            isAppRunning: this.isRunning,
+            isAppConnectEnabled: this.isAppConnectEnabled,
         }
     }
 
@@ -115,8 +144,7 @@ export class LocalAppDetector implements vscode.Disposable {
     // We can dispose the file watcher when app is found or when user has logged in
     private fire(): void {
         console.info('app found')
-        this.isInstalled = true
-        this.onChange(this.isInstalled)
+        this.onChange(true)
         this.dispose()
     }
 
