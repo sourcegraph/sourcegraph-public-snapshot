@@ -29,7 +29,7 @@ export class AuthProvider {
     private appScheme = vscode.env.uriScheme
     private client: SourcegraphGraphQLAPIClient | null = null
 
-    private authStatus: AuthStatus = unauthenticatedStatus
+    private authStatus: AuthStatus = defaultAuthStatus
 
     constructor(
         private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
@@ -45,7 +45,9 @@ export class AuthProvider {
 
     private async autoSignin(endpoint: string): Promise<void> {
         const token = await this.secretStorage.get(endpoint)
-        await this.auth(endpoint, token || null)
+        if (endpoint && token) {
+            await this.auth(endpoint, token || null)
+        }
     }
 
     public async signinMenu(): Promise<void> {
@@ -108,6 +110,7 @@ export class AuthProvider {
 
     private async signout(endpoint: string): Promise<void> {
         await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+        await this.localStorage.deleteEndpoint()
         await updateConfiguration('serverEndpoint', '')
         await this.auth(endpoint, null)
     }
@@ -134,12 +137,14 @@ export class AuthProvider {
         const isDotComOrApp = this.client.isDotCom() || isLocalApp(endpoint)
         if (!isDotComOrApp) {
             const currentUserID = await this.client.getCurrentUserId()
-            return newAuthStatus(endpoint, isDotComOrApp, !isError(currentUserID), false, enabled, version)
+            const hasVerifiedEmail = false
+            return newAuthStatus(endpoint, isDotComOrApp, !isError(currentUserID), hasVerifiedEmail, enabled, version)
         }
         const userInfo = await this.client.getCurrentUserIdAndVerifiedEmail()
+        const isCodyEnabled = true
         return isError(userInfo)
             ? { ...unauthenticatedStatus, endpoint }
-            : newAuthStatus(endpoint, isDotComOrApp, !!userInfo.id, userInfo.hasVerifiedEmail, true, version)
+            : newAuthStatus(endpoint, isDotComOrApp, !!userInfo.id, userInfo.hasVerifiedEmail, isCodyEnabled, version)
     }
 
     // Verify and share auth status with chatview

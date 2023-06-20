@@ -39,8 +39,12 @@ export const AuthMenu = async (type: AuthMenuType, historyItems: string[]): Prom
                   }))
                   .reverse()
             : []
-    const seperator = [{ label: 'previously used', kind: -1 }]
-    const optionItems = type === 'signout' ? history : [...LoginMenuOptionItems, ...seperator, ...history]
+    const seperator = [{ label: type === 'signin' ? 'previously used' : 'current', kind: -1 }]
+    const items = LoginMenuOptionItems
+    if (type === 'signin') {
+        items.shift()
+    }
+    const optionItems = type === 'signout' ? history : [...items, ...seperator, ...history]
     const option = (await vscode.window.showQuickPick(optionItems, AuthMenuOptions[type])) as LoginMenuItem
     return option
 }
@@ -87,6 +91,11 @@ export const AuthMenuOptions = {
 }
 
 export const LoginMenuOptionItems = [
+    {
+        id: 'app',
+        label: 'Connect to Cody App',
+        totalSteps: 0,
+    },
     {
         id: 'enterprise',
         label: 'Sign in to a Sourcegraph Enterprise Instance',

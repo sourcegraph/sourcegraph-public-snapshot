@@ -621,7 +621,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
         this.setWebviewView(authStatus.isLoggedIn ? 'chat' : 'login')
         await this.webview?.postMessage({ type: 'login', authStatus })
-        this.sendEvent('auth', 'login')
+        this.sendEvent('auth', authStatus.isLoggedIn ? 'successfully' : 'failed')
     }
 
     /**
@@ -714,7 +714,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private publishConfig(): void {
         const send = async (): Promise<void> => {
             this.config = await getFullConfig(this.secretStorage, this.localStorage)
-
             // check if the new configuration change is valid or not
             const authStatus = this.authProvider.getAuthStatus()
             const localProcess = this.localAppDetector.getProcessInfo()
@@ -755,7 +754,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`, endpointUri, endpointUri)
                 break
             case 'auth':
-                logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
+                logEvent(`CodyVSCodeExtension:Auth:${value}`, endpointUri, endpointUri)
                 break
             // aditya combine this with above statemenet for auth or click
             case 'click':
