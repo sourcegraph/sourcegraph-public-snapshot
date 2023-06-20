@@ -67,7 +67,7 @@ export class PrDescription implements Recipe {
         }
 
         const promptMessage = `Summarise these changes:\n${gitCommitOutput}\n\n made while working in the current git branch.\nUse this pull request template to ${prTemplateContent} generate a pull request description based on the committed changes.\nIf the PR template mentions a requirement to check the contribution guidelines, then just summarise the changes in bulletin format.\n If it mentions a test plan for the changes use N/A\n.`
-        const assistantResponsePrefix = `Here is the PR description for the work done in your current branch: \n${truncatedCommitMessage}`
+        const assistantResponsePrefix = `Here is the PR description for the work done in your current branch:\n${truncatedCommitMessage}`
         return new Interaction(
             { speaker: 'human', text: promptMessage, displayText: rawDisplayText },
             {
