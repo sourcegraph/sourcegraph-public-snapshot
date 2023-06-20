@@ -81,9 +81,9 @@
 }
 
 .footer-container {
-    display: flex;
-    justify-content: flex-end;
-    padding-top: var(--spacing);
+    position: absolute;
+    bottom: calc(var(--spacing) / 4);
+    right: var(--spacing);
 
     visibility: hidden;
 }
