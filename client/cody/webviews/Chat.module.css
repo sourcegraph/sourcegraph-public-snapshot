@@ -37,12 +37,14 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
 
 .transcript-item ul,
 .transcript-item ol {
-    padding-left: 1rem;
+    padding-left: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .transcript-action {
-    background: var(--button-secondary-background);
-    color: var(--button-secondary-foreground);
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
     font-size: var(--vscode-editor-font-size);
 }
 
@@ -109,7 +111,6 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
 
 .suggestion-button {
     border-radius: 1rem;
-    font-size: 0.7rem;
 }
 
 .submit-button-disabled {
