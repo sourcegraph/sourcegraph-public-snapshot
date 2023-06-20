@@ -1,4 +1,3 @@
-use crate::cody::init_cody_window;
 use crate::common::{prompt_to_clear_all_data, show_logs, show_window};
 use tauri::api::shell;
 use tauri::{
@@ -21,7 +20,7 @@ fn create_system_tray_menu() -> SystemTrayMenu {
     );
 
     SystemTrayMenu::new()
-        .add_item(CustomMenuItem::new("open".to_string(), "Open Sourcegraph"))
+        .add_item(CustomMenuItem::new("open".to_string(), "Open Cody"))
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(
             CustomMenuItem::new("settings".to_string(), "Settings").accelerator("CmdOrCtrl+,"),
@@ -41,17 +40,11 @@ pub fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
     if let SystemTrayEvent::MenuItemClick { id, .. } = event {
         match id.as_str() {
             "open" => show_window(app, "main"),
-            "cody" => {
-                let win = app.get_window("cody");
-                if win.is_none() {
-                    init_cody_window(app);
-                } else {
-                    show_window(app, "cody")
-                }
-            }
             "settings" => {
                 let window = app.get_window("main").unwrap();
-                window.eval("window.location.href = '/user/app-settings'").unwrap();
+                window
+                    .eval("window.location.href = '/user/app-settings'")
+                    .unwrap();
                 show_window(app, "main");
             }
             "view_logs" => show_logs(app),

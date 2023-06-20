@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/openai"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
 const openAIURL = "https://api.openai.com/v1/chat/completions"
@@ -30,7 +31,7 @@ func NewOpenAIHandler(
 		eventLogger,
 		rs,
 		rateLimitNotifier,
-		openai.ProviderName,
+		string(conftypes.CompletionsProviderNameOpenAI),
 		openAIURL,
 		allowedModels,
 		upstreamHandlerMethods[openaiRequest]{
@@ -99,6 +100,9 @@ func NewOpenAIHandler(
 					logger.Error("failed to decode OpenAI streaming response", log.Error(err))
 				}
 				return len(finalCompletion)
+			},
+			validateRequest: func(_ openaiRequest) error {
+				return nil
 			},
 		},
 	)

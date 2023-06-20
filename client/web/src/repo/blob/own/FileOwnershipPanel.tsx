@@ -1,13 +1,13 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
+import { useNavigate } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { FetchOwnershipResult, FetchOwnershipVariables } from '../../../graphql-operations'
 import { OwnershipAssignPermission } from '../../../rbac/constants'
 
@@ -28,7 +28,7 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
         telemetryService.log('OwnershipPanelOpened')
     }, [telemetryService])
 
-    const { data, loading, error, refetch } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
+    const { data, loading, error } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
         variables: {
             repo: repoID,
             revision: revision ?? '',
@@ -36,7 +36,8 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
         },
     })
     const [makeOwnerError, setMakeOwnerError] = React.useState<Error | undefined>(undefined)
-    const [ownPromotionEnabled] = useFeatureFlag('own-promote')
+    const navigate = useNavigate()
+    const refreshPage = (): Promise<any> => Promise.resolve(navigate(0))
 
     if (loading) {
         return (
@@ -48,18 +49,17 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
     const canAssignOwners = (data?.currentUser?.permissions?.nodes || []).some(
         permission => permission.displayName === OwnershipAssignPermission
     )
-    const makeOwnerButton =
-        canAssignOwners && ownPromotionEnabled
-            ? (userId: string | undefined) => (
-                  <MakeOwnerButton
-                      onSuccess={refetch}
-                      onError={setMakeOwnerError}
-                      repoId={repoID}
-                      path={filePath}
-                      userId={userId}
-                  />
-              )
-            : undefined
+    const makeOwnerButton = canAssignOwners
+        ? (userId: string | undefined) => (
+              <MakeOwnerButton
+                  onSuccess={refreshPage}
+                  onError={setMakeOwnerError}
+                  repoId={repoID}
+                  path={filePath}
+                  userId={userId}
+              />
+          )
+        : undefined
 
     if (error) {
         logger.log(error)
@@ -79,9 +79,8 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
                 makeOwnerError={makeOwnerError}
                 repoID={repoID}
                 filePath={filePath}
-                refetch={refetch}
             />
         )
     }
-    return <OwnerList refetch={refetch} filePath={filePath} repoID={repoID} />
+    return <OwnerList filePath={filePath} repoID={repoID} />
 }

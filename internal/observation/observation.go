@@ -33,6 +33,7 @@ const (
 	EmitForTraces
 	EmitForHoney
 	EmitForSentry
+	EmitForAllExceptLogs = EmitForMetrics | EmitForSentry | EmitForTraces | EmitForHoney
 
 	EmitForDefault = EmitForMetrics | EmitForLogs | EmitForTraces | EmitForHoney
 )

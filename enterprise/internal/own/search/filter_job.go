@@ -2,48 +2,36 @@ package search
 
 import (
 	"context"
-	"fmt"
 
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type featureFlagError struct {
-	predicate string
-}
-
-func (e *featureFlagError) Error() string {
-	return fmt.Sprintf("`%s` searches are not enabled on this instance. <a href=\"/help/own\">Learn more about Own.</a>", e.predicate)
-}
-
-func NewFileHasOwnersJob(child job.Job, features *search.Features, includeOwners, excludeOwners []string) job.Job {
+func NewFileHasOwnersJob(child job.Job, includeOwners, excludeOwners []string) job.Job {
 	return &fileHasOwnersJob{
 		child:         child,
-		features:      features,
 		includeOwners: includeOwners,
 		excludeOwners: excludeOwners,
 	}
 }
 
 type fileHasOwnersJob struct {
-	child    job.Job
-	features *search.Features
+	child job.Job
 
 	includeOwners []string
 	excludeOwners []string
 }
 
 func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	if s.features == nil || !s.features.CodeOwnershipSearch {
-		return nil, &featureFlagError{predicate: "file:has.owner()"}
-	}
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer finish(alert, err)
 
@@ -74,7 +62,6 @@ func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, 
 	})
 
 	alert, err = s.child.Run(ctx, clients, filteredStream)
-	// Add is nil-safe, we can just add an alert even if its pointer is nil.
 	maxAlerter.Add(alert)
 	return maxAlerter.Alert, err
 }
@@ -121,22 +108,43 @@ func applyCodeOwnershipFiltering(
 
 matchesLoop:
 	for _, m := range matches {
-		// Code ownership is currently only implemented for files.
-		mm, ok := m.(*result.FileMatch)
-		if !ok {
-			continue
+		var (
+			filePaths []string
+			commitID  api.CommitID
+			repo      types.MinimalRepo
+		)
+		switch mm := m.(type) {
+		case *result.FileMatch:
+			filePaths = []string{mm.File.Path}
+			commitID = mm.CommitID
+			repo = mm.Repo
+		case *result.CommitMatch:
+			filePaths = mm.ModifiedFiles
+			commitID = mm.Commit.ID
+			repo = mm.Repo
 		}
-
-		file, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.Repo.ID, mm.CommitID)
+		if len(filePaths) == 0 {
+			continue matchesLoop
+		}
+		file, err := rules.GetFromCacheOrFetch(ctx, repo.Name, repo.ID, commitID)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue matchesLoop
 		}
-		fileOwners := file.Match(mm.File.Path)
-		if len(includeTerms) > 0 && !containsOwner(fileOwners, includeTerms, includeBags) {
-			continue matchesLoop
+		// For multiple files considered for ownership in single result (CommitMatch case) we:
+		// * exclude a result if none of the files is owned by all included owners,
+		// * exclude a result if any of the files is owned by all excluded owners.
+		var fileMatchesIncludeTerms bool
+		for _, path := range filePaths {
+			fileOwners := file.Match(path)
+			if len(includeTerms) > 0 && ownersFilters(fileOwners, includeTerms, includeBags, false) {
+				fileMatchesIncludeTerms = true
+			}
+			if len(excludeTerms) > 0 && !ownersFilters(fileOwners, excludeTerms, excludeBags, true) {
+				continue matchesLoop
+			}
 		}
-		if len(excludeTerms) > 0 && containsOwner(fileOwners, excludeTerms, excludeBags) {
+		if len(includeTerms) > 0 && !fileMatchesIncludeTerms {
 			continue matchesLoop
 		}
 
@@ -146,20 +154,19 @@ matchesLoop:
 	return filtered, errs
 }
 
-// containsOwner searches within emails and handles in a case-insensitive
-// manner.
-//
-//   - Empty string passed as search term means any, so the predicate
-//     returns true if there is at least one owner, and false otherwise.
-//   - Multiple bags have AND semantics, so ownership data needs to be within
-//     all of the search term bags.
-func containsOwner(ownership fileOwnershipData, searchTerms []string, allBags []own.Bag) bool {
+// ownersFilters searches within emails to determine if ownership passes filtering by searchTerms and allBags.
+//   - Multiple bags have AND semantics, so ownership data needs to pass filtering criteria of each Bag.
+//   - If exclude is true then we expect ownership to not be within a bag (i.e. IsWithin() is false)
+//   - Empty string passed as search term means any, so the ownership is a match if there is at least one owner,
+//     and false otherwise.
+//   - Filtering is handled in a case-insensitive manner.
+func ownersFilters(ownership fileOwnershipData, searchTerms []string, allBags []own.Bag, exclude bool) bool {
 	// Empty search terms means any owner matches.
 	if len(searchTerms) == 1 && searchTerms[0] == "" {
-		return ownership.NonEmpty()
+		return ownership.NonEmpty() == !exclude
 	}
 	for _, bag := range allBags {
-		if !ownership.IsWithin(bag) {
+		if ownership.IsWithin(bag) == exclude {
 			return false
 		}
 	}

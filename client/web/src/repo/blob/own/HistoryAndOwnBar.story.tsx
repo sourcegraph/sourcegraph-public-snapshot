@@ -153,5 +153,5 @@ const config: Meta = {
 export default config
 
 export const Default: Story = () => (
-    <WebStory mocks={[mockLoaded]}>{() => <HistoryAndOwnBar {...variables} />}</WebStory>
+    <WebStory mocks={[mockLoaded]}>{() => <HistoryAndOwnBar enableOwnershipPanel={true} {...variables} />}</WebStory>
 )

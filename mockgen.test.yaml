@@ -52,11 +52,13 @@
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command
       interfaces:
         - Command
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger
+      interfaces:
         - Logger
         - LogEntry
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files
       interfaces:
-        - FilesStore
+        - Store
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util
       interfaces:
         - CmdRunner
@@ -65,13 +67,32 @@
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command
       interfaces:
         - Command
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger
+      interfaces:
         - Logger
         - LogEntry
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files
+      interfaces:
+        - Store
+- filename: enterprise/cmd/executor/internal/worker/files/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files
+      interfaces:
+        - Store
 - filename: enterprise/cmd/executor/internal/worker/command/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command
       interfaces:
         - Command
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger
+      interfaces:
+        - Logger
+        - LogEntry
+        - ExecutionLogEntryStore
+- filename: enterprise/cmd/executor/internal/worker/cmdlogger/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger
+      interfaces:
         - Logger
         - LogEntry
         - ExecutionLogEntryStore
@@ -80,15 +101,17 @@
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command
       interfaces:
         - Command
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger
+      interfaces:
         - Logger
         - LogEntry
         - ExecutionLogEntryStore
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util
       interfaces:
         - CmdRunner
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files
       interfaces:
-        - FilesStore
+        - Store
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime
       interfaces:
         - Runtime
@@ -103,11 +126,13 @@
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command
       interfaces:
         - Command
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger
+      interfaces:
         - Logger
         - LogEntry
-    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace
+    - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files
       interfaces:
-        - FilesStore
+        - Store
     - path: github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace
       interfaces:
         - Workspace

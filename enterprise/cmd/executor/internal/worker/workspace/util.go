@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
 )
 
 const loopDevPath = "/var/lib/firecracker/loop-devices"
@@ -37,7 +37,7 @@ func MakeTemporaryMountDirectory(prefix string) (string, error) {
 }
 
 // runs the given command with args and logs the invocation and output to the provided log entry handle.
-func commandLogger(ctx context.Context, cmdRunner util.CmdRunner, handle command.LogEntry, command string, args ...string) (string, error) {
+func commandLogger(ctx context.Context, cmdRunner util.CmdRunner, handle cmdlogger.LogEntry, command string, args ...string) (string, error) {
 	fmt.Fprintf(handle, "$ %s %s\n", command, strings.Join(args, " "))
 	out, err := cmdRunner.CombinedOutput(ctx, command, args...)
 	if len(out) == 0 {

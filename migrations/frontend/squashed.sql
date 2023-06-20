@@ -1280,6 +1280,7 @@ CREATE TABLE changesets (
     computed_state text NOT NULL,
     external_fork_name citext,
     previous_failure_message text,
+    commit_verification jsonb DEFAULT '{}'::jsonb NOT NULL,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),
@@ -2723,6 +2724,14 @@ COMMENT ON COLUMN gitserver_repos_statistics.failed_fetch IS 'Number of reposito
 
 COMMENT ON COLUMN gitserver_repos_statistics.corrupted IS 'Number of repositories that are NOT soft-deleted and not blocked and have corrupted_at set in gitserver_repos table';
 
+CREATE TABLE gitserver_repos_sync_output (
+    repo_id integer NOT NULL,
+    last_output text DEFAULT ''::text NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE gitserver_repos_sync_output IS 'Contains the most recent output from gitserver repository sync jobs.';
+
 CREATE TABLE global_state (
     site_id uuid NOT NULL,
     initialized boolean DEFAULT false NOT NULL
@@ -4026,13 +4035,13 @@ CREATE TABLE product_subscriptions (
     archived_at timestamp with time zone,
     account_number text,
     cody_gateway_enabled boolean DEFAULT false NOT NULL,
-    cody_gateway_chat_rate_limit integer,
+    cody_gateway_chat_rate_limit bigint,
     cody_gateway_chat_rate_interval_seconds integer,
-    cody_gateway_embeddings_api_rate_limit integer,
+    cody_gateway_embeddings_api_rate_limit bigint,
     cody_gateway_embeddings_api_rate_interval_seconds integer,
     cody_gateway_embeddings_api_allowed_models text[],
     cody_gateway_chat_rate_limit_allowed_models text[],
-    cody_gateway_code_rate_limit integer,
+    cody_gateway_code_rate_limit bigint,
     cody_gateway_code_rate_interval_seconds integer,
     cody_gateway_code_rate_limit_allowed_models text[]
 );
@@ -4093,6 +4102,7 @@ CREATE VIEW reconciler_changesets AS
     c.external_state,
     c.external_review_state,
     c.external_check_state,
+    c.commit_verification,
     c.diff_stat_added,
     c.diff_stat_deleted,
     c.sync_state,
@@ -4869,7 +4879,8 @@ CREATE TABLE zoekt_repos (
     branches jsonb DEFAULT '[]'::jsonb NOT NULL,
     index_status text DEFAULT 'not_indexed'::text NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    last_indexed_at timestamp with time zone
 );
 
 ALTER TABLE ONLY access_requests ALTER COLUMN id SET DEFAULT nextval('access_requests_id_seq'::regclass);
@@ -5359,6 +5370,9 @@ ALTER TABLE ONLY gitserver_repos
 
 ALTER TABLE ONLY gitserver_repos_statistics
     ADD CONSTRAINT gitserver_repos_statistics_pkey PRIMARY KEY (shard_id);
+
+ALTER TABLE ONLY gitserver_repos_sync_output
+    ADD CONSTRAINT gitserver_repos_sync_output_pkey PRIMARY KEY (repo_id);
 
 ALTER TABLE ONLY global_state
     ADD CONSTRAINT global_state_pkey PRIMARY KEY (site_id);
@@ -5915,6 +5929,8 @@ CREATE INDEX lsif_dependency_indexing_jobs_upload_id ON lsif_dependency_syncing_
 CREATE INDEX lsif_dependency_repos_blocked ON lsif_dependency_repos USING btree (blocked);
 
 CREATE INDEX lsif_dependency_repos_last_checked_at ON lsif_dependency_repos USING btree (last_checked_at NULLS FIRST);
+
+CREATE INDEX lsif_dependency_repos_name_gin ON lsif_dependency_repos USING gin (name gin_trgm_ops);
 
 CREATE INDEX lsif_dependency_repos_name_id ON lsif_dependency_repos USING btree (name, id);
 
@@ -6524,6 +6540,9 @@ ALTER TABLE ONLY github_apps
 
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY gitserver_repos_sync_output
+    ADD CONSTRAINT gitserver_repos_sync_output_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY insights_query_runner_jobs_dependencies
     ADD CONSTRAINT insights_query_runner_jobs_dependencies_fk_job_id FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE;

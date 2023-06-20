@@ -273,9 +273,14 @@ type Changeset struct {
 	ExternalState         ChangesetExternalState
 	ExternalReviewState   ChangesetReviewState
 	ExternalCheckState    ChangesetCheckState
-	DiffStatAdded         *int32
-	DiffStatDeleted       *int32
-	SyncState             ChangesetSyncState
+
+	// If the commit created for a changeset is signed, commit verification is the
+	// signature verification result from the code host.
+	CommitVerification *github.Verification
+
+	DiffStatAdded   *int32
+	DiffStatDeleted *int32
+	SyncState       ChangesetSyncState
 
 	// The batch change that "owns" this changeset: it can create/close
 	// it on code host. If this is 0, it is imported/tracked by a batch change.

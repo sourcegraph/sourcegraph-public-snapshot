@@ -6,12 +6,12 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // NewChatCompletionsStreamHandler is an http handler which streams back completions results.
@@ -19,7 +19,7 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 	logger = logger.Scoped("chat", "chat completions handler")
 	rl := NewRateLimiter(db, redispool.Store, types.CompletionsFeatureChat)
 
-	return newCompletionsHandler(rl, "chat", func(requestParams types.CodyCompletionRequestParameters, c *schema.Completions) string {
+	return newCompletionsHandler(rl, "chat", func(requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) string {
 		// No user defined models for now.
 		if requestParams.Fast {
 			return c.FastChatModel
@@ -38,17 +38,29 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 		}()
 
 		err = cc.Stream(ctx, types.CompletionsFeatureChat, requestParams,
-			func(event types.CompletionResponse) error { return eventWriter.Event("completion", event) })
+			func(event types.CompletionResponse) error {
+				return eventWriter.Event("completion", event)
+			})
 		if err != nil {
-			trace.Logger(ctx, logger).Error("error while streaming completions", log.Error(err))
+			l := trace.Logger(ctx, logger)
 
-			// Propagate the upstream headers to the client if available.
+			logFields := []log.Field{log.Error(err)}
 			if errNotOK, ok := types.IsErrStatusNotOK(err); ok {
-				errNotOK.WriteHeader(w)
-			} else {
-				w.WriteHeader(http.StatusInternalServerError)
+				if tc := errNotOK.SourceTraceContext; tc != nil {
+					logFields = append(logFields,
+						log.String("sourceTraceContext.traceID", tc.TraceID),
+						log.String("sourceTraceContext.spanID", tc.SpanID))
+				}
 			}
-			_ = eventWriter.Event("error", map[string]string{"error": err.Error()})
+			l.Error("error while streaming completions", logFields...)
+
+			// Note that we do NOT attempt to forward the status code to the
+			// client here, since we are using streamhttp.Writer - see
+			// streamhttp.NewWriter for more details. Instead, we send an error
+			// event, which clients should check as appropriate.
+			if err := eventWriter.Event("error", map[string]string{"error": err.Error()}); err != nil {
+				l.Error("error reporting streaming completion error", log.Error(err))
+			}
 			return
 		}
 	})

@@ -11,9 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	bgrepo "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -38,9 +40,6 @@ const (
 	embedEntireFileTokensThreshold          = 384
 	embeddingChunkTokensThreshold           = 256
 	embeddingChunkEarlySplitTokensThreshold = embeddingChunkTokensThreshold - 32
-
-	defaultMaxCodeEmbeddingsPerRepo = 3_072_000
-	defaultMaxTextEmbeddingsPerRepo = 512_000
 )
 
 var splitOptions = codeintelContext.SplitOptions{
@@ -50,7 +49,8 @@ var splitOptions = codeintelContext.SplitOptions{
 }
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.RepoEmbeddingJob) error {
-	if !conf.EmbeddingsEnabled() {
+	embeddingsConfig := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	if embeddingsConfig == nil {
 		return errors.New("embeddings are not configured or disabled")
 	}
 
@@ -61,7 +61,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		return err
 	}
 
-	embeddingsClient, err := embed.NewEmbeddingsClient(&conf.Get().SiteConfiguration)
+	embeddingsClient, err := embed.NewEmbeddingsClient(embeddingsConfig)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 	// otherwise we fall back to a full index.
 	var lastSuccessfulJobRevision api.CommitID
 	var previousIndex *embeddings.RepoEmbeddingIndex
-	if conf.Get().Embeddings.Incremental == nil || *conf.Get().Embeddings.Incremental {
+	if embeddingsConfig.Incremental {
 		lastSuccessfulJobRevision, previousIndex = h.getPreviousEmbeddingIndex(ctx, logger, repo)
 
 		if previousIndex != nil && !previousIndex.IsModelCompatible(embeddingsClient.GetModelIdentifier()) {
@@ -86,17 +86,13 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		gitserver: h.gitserverClient,
 	}
 
-	config := conf.Get().Embeddings
-	excludedGlobPatterns := embed.GetDefaultExcludedFilePathPatterns()
-	excludedGlobPatterns = append(excludedGlobPatterns, embed.CompileGlobPatterns(config.ExcludedFilePathPatterns)...)
-
 	opts := embed.EmbedRepoOpts{
 		RepoName:          repo.Name,
 		Revision:          record.Revision,
-		ExcludePatterns:   excludedGlobPatterns,
+		ExcludePatterns:   getExcludedFilePathPatterns(embeddingsConfig),
 		SplitOptions:      splitOptions,
-		MaxCodeEmbeddings: defaultTo(config.MaxCodeEmbeddingsPerRepo, defaultMaxCodeEmbeddingsPerRepo),
-		MaxTextEmbeddings: defaultTo(config.MaxTextEmbeddingsPerRepo, defaultMaxTextEmbeddingsPerRepo),
+		MaxCodeEmbeddings: embeddingsConfig.MaxCodeEmbeddingsPerRepo,
+		MaxTextEmbeddings: embeddingsConfig.MaxTextEmbeddingsPerRepo,
 		IndexedRevision:   lastSuccessfulJobRevision,
 	}
 
@@ -142,6 +138,16 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 	}
 }
 
+func getExcludedFilePathPatterns(embeddingsConfig *conftypes.EmbeddingsConfig) []*paths.GlobPattern {
+	var excludedGlobPatterns []*paths.GlobPattern
+	if embeddingsConfig != nil && len(embeddingsConfig.ExcludedFilePathPatterns) != 0 {
+		excludedGlobPatterns = embed.CompileGlobPatterns(embeddingsConfig.ExcludedFilePathPatterns)
+	} else {
+		excludedGlobPatterns = embed.GetDefaultExcludedFilePathPatterns()
+	}
+	return excludedGlobPatterns
+}
+
 // getPreviousEmbeddingIndex checks the last successfully indexed revision and returns its embeddings index. If there
 // is no previous revision, or if there's a problem downloading the index, then it returns a nil index. This means we
 // need to do a full (non-incremental) reindex.
@@ -164,13 +170,6 @@ func (h *handler) getPreviousEmbeddingIndex(ctx context.Context, logger log.Logg
 		log.String("old revision", string(lastSuccessfulJob.Revision)),
 	)
 	return lastSuccessfulJob.Revision, index
-}
-
-func defaultTo(input, def int) int {
-	if input == 0 {
-		return def
-	}
-	return input
 }
 
 type revisionFetcher struct {

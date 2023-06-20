@@ -340,11 +340,20 @@ type BatchLogResult struct {
 }
 
 func (bl *BatchLogResult) ToProto() *proto.BatchLogResult {
-	return &proto.BatchLogResult{
+	result := &proto.BatchLogResult{
 		RepoCommit:    bl.RepoCommit.ToProto(),
 		CommandOutput: bl.CommandOutput,
-		CommandError:  &bl.CommandError,
 	}
+
+	var cmdErr string
+
+	if bl.CommandError != "" {
+		cmdErr = bl.CommandError
+		result.CommandError = &cmdErr
+	}
+
+	return result
+
 }
 
 func (bl *BatchLogResult) FromProto(p *proto.BatchLogResult) {
@@ -569,6 +578,14 @@ type RepoCloneProgress struct {
 	Cloned          bool   // whether the repository has been cloned successfully
 }
 
+func (r *RepoCloneProgress) ToProto() *proto.RepoCloneProgress {
+	return &proto.RepoCloneProgress{
+		CloneInProgress: r.CloneInProgress,
+		CloneProgress:   r.CloneProgress,
+		Cloned:          r.Cloned,
+	}
+}
+
 func (r *RepoCloneProgress) FromProto(p *proto.RepoCloneProgress) {
 	*r = RepoCloneProgress{
 		CloneInProgress: p.GetCloneInProgress(),
@@ -637,20 +654,32 @@ type CreateCommitFromPatchRequest struct {
 }
 
 func (c *CreateCommitFromPatchRequest) ToProto() *proto.CreateCommitFromPatchBinaryRequest {
-	return &proto.CreateCommitFromPatchBinaryRequest{
+	cc := &proto.CreateCommitFromPatchBinaryRequest{
 		Repo:         string(c.Repo),
 		BaseCommit:   string(c.BaseCommit),
 		Patch:        c.Patch,
 		TargetRef:    c.TargetRef,
 		UniqueRef:    c.UniqueRef,
 		CommitInfo:   c.CommitInfo.ToProto(),
-		Push:         c.Push.ToProto(),
 		GitApplyArgs: c.GitApplyArgs,
 		PushRef:      c.PushRef,
 	}
+
+	if c.Push != nil {
+		cc.Push = c.Push.ToProto()
+	}
+
+	return cc
 }
 
 func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchBinaryRequest) {
+	gp := p.GetPush()
+	var pushConfig *PushConfig
+	if gp != nil {
+		pushConfig = &PushConfig{}
+		pushConfig.FromProto(gp)
+	}
+
 	*c = CreateCommitFromPatchRequest{
 		Repo:         api.RepoName(p.GetRepo()),
 		BaseCommit:   api.CommitID(p.GetBaseCommit()),
@@ -658,9 +687,12 @@ func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchB
 		TargetRef:    p.GetTargetRef(),
 		UniqueRef:    p.GetUniqueRef(),
 		CommitInfo:   PatchCommitInfoFromProto(p.GetCommitInfo()),
-		Push:         PushConfigFromProto(p.GetPush()),
+		Push:         pushConfig,
 		GitApplyArgs: p.GetGitApplyArgs(),
-		PushRef:      p.PushRef,
+	}
+
+	if p != nil {
+		c.PushRef = p.PushRef
 	}
 }
 
@@ -715,6 +747,10 @@ type PushConfig struct {
 }
 
 func (p *PushConfig) ToProto() *proto.PushConfig {
+	if p == nil {
+		return nil
+	}
+
 	return &proto.PushConfig{
 		RemoteUrl:  p.RemoteURL,
 		PrivateKey: p.PrivateKey,
@@ -722,11 +758,8 @@ func (p *PushConfig) ToProto() *proto.PushConfig {
 	}
 }
 
-func PushConfigFromProto(p *proto.PushConfig) *PushConfig {
-	if p == nil {
-		return nil
-	}
-	return &PushConfig{
+func (pc *PushConfig) FromProto(p *proto.PushConfig) {
+	*pc = PushConfig{
 		RemoteURL:  p.GetRemoteUrl(),
 		PrivateKey: p.GetPrivateKey(),
 		Passphrase: p.GetPassphrase(),

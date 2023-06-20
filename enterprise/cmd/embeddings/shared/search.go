@@ -6,10 +6,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"go.opentelemetry.io/otel/attribute"
 )
 
-const SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT = 1000
+const similaritySearchMinRowsToSplit = 1000
+const queryEmbeddingRetries = 3
 
 type getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
 type getQueryEmbeddingFn func(ctx context.Context, model string) ([]float32, string, error)
@@ -20,53 +23,59 @@ func searchRepoEmbeddingIndexes(
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
 	weaviate *weaviateClient,
-) (*embeddings.EmbeddingCombinedSearchResults, error) {
+) (_ *embeddings.EmbeddingCombinedSearchResults, err error) {
+	tr, ctx := trace.New(ctx, "searchRepoEmbeddingIndexes", "", params.Attrs()...)
+	defer tr.FinishWithErr(&err)
+
 	floatQuery, queryModel, err := getQueryEmbedding(ctx, params.Query)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting query embedding")
+		return nil, err
 	}
 	embeddedQuery := embeddings.Quantize(floatQuery)
 
 	workerOpts := embeddings.WorkerOptions{
 		NumWorkers:     runtime.GOMAXPROCS(0),
-		MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT,
+		MinRowsToSplit: similaritySearchMinRowsToSplit,
 	}
 
 	searchOpts := embeddings.SearchOptions{
 		UseDocumentRanks: params.UseDocumentRanks,
 	}
 
-	var result embeddings.EmbeddingCombinedSearchResults
+	searchRepo := func(repoID api.RepoID, repoName api.RepoName) (codeResults, textResults []embeddings.EmbeddingSearchResult, err error) {
+		tr, ctx := trace.New(ctx, "searchRepo", "",
+			attribute.String("repoName", string(repoName)),
+		)
+		defer tr.FinishWithErr(&err)
 
-	for i, repoName := range params.RepoNames {
 		if weaviate.Use(ctx) {
-			codeResults, textResults, err := weaviate.Search(ctx, repoName, params.RepoIDs[i], params.Query, params.CodeResultsCount, params.TextResultsCount)
-			if err != nil {
-				return nil, err
-			}
-
-			result.CodeResults.MergeTruncate(codeResults, params.CodeResultsCount)
-			result.TextResults.MergeTruncate(textResults, params.TextResultsCount)
-			continue
+			return weaviate.Search(ctx, repoName, repoID, floatQuery, params.CodeResultsCount, params.TextResultsCount)
 		}
 
 		embeddingIndex, err := getRepoEmbeddingIndex(ctx, repoName)
 		if err != nil {
-			return nil, errors.Wrapf(err, "getting repo embedding index for repo %q", repoName)
+			return nil, nil, errors.Wrapf(err, "getting repo embedding index for repo %q", repoName)
 		}
 
 		if !embeddingIndex.IsModelCompatible(queryModel) {
-			return nil, errors.Newf("embeddings model in config (%s) does not match the embeddings model for the"+
+			return nil, nil, errors.Newf("embeddings model in config (%s) does not match the embeddings model for the"+
 				" index (%s). Embedding index for repo %q must be reindexed with the new model",
 				queryModel, embeddingIndex.EmbeddingsModel, repoName)
 		}
 
-		codeResults := embeddingIndex.CodeIndex.SimilaritySearch(embeddedQuery, params.CodeResultsCount, workerOpts, searchOpts, embeddingIndex.RepoName, embeddingIndex.Revision)
-		textResults := embeddingIndex.TextIndex.SimilaritySearch(embeddedQuery, params.TextResultsCount, workerOpts, searchOpts, embeddingIndex.RepoName, embeddingIndex.Revision)
+		codeResults = embeddingIndex.CodeIndex.SimilaritySearch(embeddedQuery, params.CodeResultsCount, workerOpts, searchOpts, embeddingIndex.RepoName, embeddingIndex.Revision)
+		textResults = embeddingIndex.TextIndex.SimilaritySearch(embeddedQuery, params.TextResultsCount, workerOpts, searchOpts, embeddingIndex.RepoName, embeddingIndex.Revision)
+		return codeResults, textResults, nil
+	}
 
+	var result embeddings.EmbeddingCombinedSearchResults
+	for i, repoName := range params.RepoNames {
+		codeResults, textResults, err := searchRepo(params.RepoIDs[i], repoName)
+		if err != nil {
+			return nil, err
+		}
 		result.CodeResults.MergeTruncate(codeResults, params.CodeResultsCount)
 		result.TextResults.MergeTruncate(textResults, params.TextResultsCount)
-
 	}
 
 	return &result, nil

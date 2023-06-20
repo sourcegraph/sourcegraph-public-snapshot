@@ -12,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/anthropic"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const anthropicAPIURL = "https://api.anthropic.com/v1/complete"
@@ -23,13 +25,14 @@ func NewAnthropicHandler(
 	rateLimitNotifier notify.RateLimitNotifier,
 	accessToken string,
 	allowedModels []string,
+	maxTokensToSample int,
 ) http.Handler {
 	return makeUpstreamHandler(
 		logger,
 		eventLogger,
 		rs,
 		rateLimitNotifier,
-		anthropic.ProviderName,
+		string(conftypes.CompletionsProviderNameAnthropic),
 		anthropicAPIURL,
 		allowedModels,
 		upstreamHandlerMethods[anthropicRequest]{
@@ -87,6 +90,12 @@ func NewAnthropicHandler(
 					logger.Error("failed to decode Anthropic streaming response", log.Error(err))
 				}
 				return len(lastCompletion)
+			},
+			validateRequest: func(ar anthropicRequest) error {
+				if ar.MaxTokensToSample > int32(maxTokensToSample) {
+					return errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokensToSample)
+				}
+				return nil
 			},
 		},
 	)

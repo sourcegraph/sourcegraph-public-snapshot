@@ -9,8 +9,8 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -65,7 +65,7 @@ func NewCodyGatewayServiceWithOptions(opts CodyGatewayServiceOptions) *codyGatew
 type SubscriptionUsage struct {
 	Date  time.Time
 	Model string
-	Count int
+	Count int64
 }
 
 type codyGatewayService struct {
@@ -176,7 +176,7 @@ ORDER BY
 		var row struct {
 			Date  bigquery.NullDate
 			Model string
-			Count int
+			Count int64
 		}
 		err := it.Next(&row)
 		if err == iterator.Done {
@@ -299,7 +299,7 @@ ORDER BY
 		var row struct {
 			Date  bigquery.NullDate
 			Model string
-			Count int
+			Count int64
 		}
 		err := it.Next(&row)
 		if err == iterator.Done {

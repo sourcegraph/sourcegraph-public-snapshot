@@ -3,7 +3,6 @@ package actor
 import (
 	"context"
 	"fmt"
-	"sync/atomic"
 	"time"
 
 	"github.com/go-redsync/redsync/v4"
@@ -61,13 +60,11 @@ type SourceSyncer interface {
 	Sync(ctx context.Context) (int, error)
 }
 
-type Sources struct {
-	sources []Source
+type Sources struct{ sources []Source }
 
-	syncRunning atomic.Bool
+func NewSources(sources ...Source) *Sources {
+	return &Sources{sources: sources}
 }
-
-func NewSources(sources ...Source) *Sources { return &Sources{sources: sources} }
 
 func (s *Sources) Get(ctx context.Context, token string) (_ *Actor, err error) {
 	var span trace.Span
@@ -102,10 +99,6 @@ func (s *Sources) Get(ctx context.Context, token string) (_ *Actor, err error) {
 // By default, this is only used by (Sources).Worker(), which ensures only
 // a primary worker instance is running these in the background.
 func (s *Sources) SyncAll(ctx context.Context, logger log.Logger) error {
-	if !s.syncRunning.CompareAndSwap(s.syncRunning.Load(), true) {
-		return errors.New("sources.SyncAll already running")
-	}
-
 	p := pool.New().WithErrors().WithContext(ctx)
 	for _, src := range s.sources {
 		if src, ok := src.(SourceSyncer); ok {

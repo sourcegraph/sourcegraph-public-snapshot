@@ -849,7 +849,7 @@ func TestGithubSource_DuplicateCommit(t *testing.T) {
 			src, save := setup(t, ctx, tc.name)
 			defer save(t)
 
-			err := src.DuplicateCommit(ctx, opts, repo, tc.rev)
+			_, err := src.DuplicateCommit(ctx, opts, repo, tc.rev)
 			if err != nil && tc.err == nil {
 				t.Fatalf("unexpected error: %s", err)
 			}

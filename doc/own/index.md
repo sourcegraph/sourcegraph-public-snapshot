@@ -1,24 +1,24 @@
 # Sourcegraph Own
 
-<aside class="experimental">
+<aside class="beta">
 <p>
-<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change in the future.
+<span class="badge badge-beta">Beta</span> This feature is currently in beta.
 </p>
 
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
-Sourcegraph Own is a new, experimental product aimed at helping find the right person and team to contact, for any question, at any time. We are starting out with code ownership, and are exploring ways to help you find someone to answer _every_ question.
+Sourcegraph Own is a new product aimed at helping find the right person and team to contact, for any question, at any time. We are starting out with code ownership, ownership inference and assignments and are exploring ways to help you find someone to answer _every_ question.
 
 ## Enabling Sourcegraph Own
 
-As an experimental feature, Sourcegraph Own is disabled by default. If you like to try it, a site-admin can enable the feature flag `search-ownership`:
+Sourcegraph Own is enabled by default. If you like to disable it from being shown in the UI, you can create the feature flag `enable-ownership-panels` and set it to `false`:
 
 - Go to **Site-admin > Feature flags**
-- If the feature flag `search-ownership` doesn't yet exist, click **Create feature flag**
-- Under **Name**, put `search-ownership`
+- If the feature flag `enable-ownership-panels` doesn't yet exist, click **Create feature flag**
+- Under **Name**, put `enable-ownership-panels`
 - For **Type** select **Boolean**
-- And set **Value** to **True**
+- And set **Value** to **False**
 - Click **Create flag**
 
 ## Concepts

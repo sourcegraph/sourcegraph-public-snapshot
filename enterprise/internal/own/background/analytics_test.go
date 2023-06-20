@@ -4,7 +4,9 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -44,6 +46,7 @@ func (f fakeGitServer) ReadFile(ctx context.Context, checker authz.SubRepoPermis
 }
 
 func TestAnalyticsIndexerSuccess(t *testing.T) {
+	rcache.SetupForTest(t)
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -65,9 +68,12 @@ func TestAnalyticsIndexerSuccess(t *testing.T) {
 			"CODEOWNERS": "/owned/* @owner",
 		},
 	}
+	checker := authz.NewMockSubRepoPermissionChecker()
+	checker.EnabledFunc.SetDefaultReturn(true)
+	checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
 	require.NoError(t, db.AssignedOwners().Insert(ctx, user.ID, repoID, "owned/file1.go", user.ID))
 	require.NoError(t, db.AssignedOwners().Insert(ctx, user.ID, repoID, "assigned.go", user.ID))
-	require.NoError(t, newAnalyticsIndexer(client, db).indexRepo(ctx, repoID))
+	require.NoError(t, newAnalyticsIndexer(client, db, rcache.New("test_own_signal"), logger).indexRepo(ctx, repoID, checker))
 
 	totalFileCount, err := db.RepoPaths().AggregateFileCount(ctx, database.TreeLocationOpts{})
 	require.NoError(t, err)
@@ -75,15 +81,50 @@ func TestAnalyticsIndexerSuccess(t *testing.T) {
 
 	gotCounts, err := db.OwnershipStats().QueryAggregateCounts(ctx, database.TreeLocationOpts{})
 	require.NoError(t, err)
+	// We don't really need to compare time here.
+	defaultTime := time.Time{}
+	gotCounts.UpdatedAt = defaultTime
 	wantCounts := database.PathAggregateCounts{
 		CodeownedFileCount:         3,
 		AssignedOwnershipFileCount: 2,
 		TotalOwnedFileCount:        4,
+		UpdatedAt:                  defaultTime,
 	}
 	assert.Equal(t, wantCounts, gotCounts)
 }
 
+func TestAnalyticsIndexerSkipsReposWithSubRepoPerms(t *testing.T) {
+	rcache.SetupForTest(t)
+	obsCtx := observation.TestContextTB(t)
+	logger := obsCtx.Logger
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	var repoID api.RepoID = 1
+	err := db.Repos().Create(ctx, &types.Repo{Name: "repo", ID: repoID})
+	require.NoError(t, err)
+	client := fakeGitServer{
+		files: []string{"notOwned.go", "alsoNotOwned.go", "owned/file1.go", "owned/file2.go", "owned/file3.go"},
+		fileContents: map[string]string{
+			"CODEOWNERS": "/owned/* @owner",
+		},
+	}
+	checker := authz.NewMockSubRepoPermissionChecker()
+	checker.EnabledFunc.SetDefaultReturn(true)
+	checker.EnabledForRepoIDFunc.SetDefaultReturn(true, nil)
+	err = newAnalyticsIndexer(client, db, rcache.New("test_own_signal"), logger).indexRepo(ctx, repoID, checker)
+	require.NoError(t, err)
+
+	totalFileCount, err := db.RepoPaths().AggregateFileCount(ctx, database.TreeLocationOpts{})
+	require.NoError(t, err)
+	assert.Equal(t, int32(0), totalFileCount)
+
+	codeownedCount, err := db.OwnershipStats().QueryAggregateCounts(ctx, database.TreeLocationOpts{})
+	require.NoError(t, err)
+	assert.Equal(t, database.PathAggregateCounts{CodeownedFileCount: 0}, codeownedCount)
+}
+
 func TestAnalyticsIndexerNoCodeowners(t *testing.T) {
+	rcache.SetupForTest(t)
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -94,7 +135,10 @@ func TestAnalyticsIndexerNoCodeowners(t *testing.T) {
 	client := fakeGitServer{
 		files: []string{"notOwned.go", "alsoNotOwned.go", "owned/file1.go", "owned/file2.go", "owned/file3.go"},
 	}
-	err = newAnalyticsIndexer(client, db).indexRepo(ctx, repoID)
+	checker := authz.NewMockSubRepoPermissionChecker()
+	checker.EnabledFunc.SetDefaultReturn(true)
+	checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
+	err = newAnalyticsIndexer(client, db, rcache.New("test_own_signal"), logger).indexRepo(ctx, repoID, checker)
 	require.NoError(t, err)
 
 	totalFileCount, err := db.RepoPaths().AggregateFileCount(ctx, database.TreeLocationOpts{})
@@ -102,6 +146,8 @@ func TestAnalyticsIndexerNoCodeowners(t *testing.T) {
 	assert.Equal(t, int32(5), totalFileCount)
 
 	codeownedCount, err := db.OwnershipStats().QueryAggregateCounts(ctx, database.TreeLocationOpts{})
+	defaultTime := time.Time{}
+	codeownedCount.UpdatedAt = defaultTime
 	require.NoError(t, err)
-	assert.Equal(t, database.PathAggregateCounts{CodeownedFileCount: 0}, codeownedCount)
+	assert.Equal(t, database.PathAggregateCounts{CodeownedFileCount: 0, UpdatedAt: defaultTime}, codeownedCount)
 }

@@ -1,5 +1,7 @@
 # How to set up Cody Gateway locally
 
+> WARNING: This is a development guide - to use Cody Gateway for Sourcegraph, refer to [Sourcegraph Cody Gateway](../../cody/explanations/cody_gateway.md).
+
 This guide documents how to set up [Cody Gateway](https://handbook.sourcegraph.com/departments/engineering/teams/cody/cody-gateway/) locally for development.
 
 To get started, Cody Gateway is included in the standard `dotcom` run set.
@@ -14,7 +16,6 @@ Then, set up some feature flags:
 - `product-subscriptions-service-account`: set to `true` globally for convenience.
   In production, this flag is used to denote service accounts, but in development it doesn't matter.
   - You can also create an additional user and set this flag to `true` only for that user for more robust testing.
-- `cody-gateway-management-ui` (TODO: this will no logner be required once Cody Gateway is GA)
 
 Configure Cody features to talk to your local Cody Gateway:
 

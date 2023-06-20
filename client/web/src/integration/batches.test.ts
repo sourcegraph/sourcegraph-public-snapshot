@@ -95,6 +95,7 @@ const mockDiff: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
                 mostRelevantFile: {
                     __typename: 'GitBlob',
                     url: 'http://test.test/fileurl',
+                    changelistURL: '',
                 },
                 hunks: [
                     {
@@ -233,6 +234,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                         },
                     ],
                     nextSyncAt: null,
+                    commitVerification: null,
                     repository: {
                         id: 'repo123',
                         name: 'github.com/sourcegraph/repo',

@@ -49,7 +49,6 @@ func TestIsCodyEnabled(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				CodyEnabled: &truePtr,
-				Completions: &schema.Completions{},
 			},
 		})
 		t.Cleanup(func() {
@@ -82,7 +81,6 @@ func TestIsCodyEnabled(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
 				CodyEnabled: &falsePtr,
-				Completions: &schema.Completions{},
 			},
 		})
 		t.Cleanup(func() {
@@ -114,7 +112,6 @@ func TestIsCodyEnabled(t *testing.T) {
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					CodyEnabled:                  &truePtr,
-					Completions:                  &schema.Completions{},
 					CodyRestrictUsersFeatureFlag: &truePtr,
 				},
 			})
@@ -137,7 +134,6 @@ func TestIsCodyEnabled(t *testing.T) {
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					CodyEnabled:                  &truePtr,
-					Completions:                  &schema.Completions{},
 					CodyRestrictUsersFeatureFlag: &truePtr,
 				},
 			})
@@ -164,7 +160,6 @@ func TestIsCodyEnabled(t *testing.T) {
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					CodyEnabled: &truePtr,
-					Completions: &schema.Completions{},
 				},
 			})
 			t.Cleanup(func() {

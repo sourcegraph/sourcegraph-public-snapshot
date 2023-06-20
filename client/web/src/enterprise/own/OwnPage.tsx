@@ -18,8 +18,6 @@ import { PageTitle } from '../../components/PageTitle'
 
 /**
  * A page explaining how to use Sourcegraph Own.
- * Note that this page is visible regardless of whether the `search-ownership`
- * feature flag has been enabled.
  */
 export const OwnPage: React.FunctionComponent<{}> = () => {
     const allowAutoplay = !useReducedMotion()

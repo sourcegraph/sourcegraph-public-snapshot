@@ -6,7 +6,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
 
 SUPPORTED_PLATFORMS=("aarch64-apple-darwin" "x86_64-apple-darwin" "x86_64-unknown-linux-gnu")
 
-# deterines the Sourcegraph App filename based on the platform string given
+# deterines the Cody App filename based on the platform string given
 # args:
 # - 1: platform string
 filename_from() {
@@ -23,15 +23,16 @@ filename_from() {
 
   case "${os}" in
     "darwin")
-      filename="Sourcegraph.${version}.${arch}.app.tar.gz"
+      filename="Cody.${version}.${arch}.app.tar.gz"
       ;;
     "linux")
       # note the UNDERSCORES
-      filename="sourcegraph_${version}_${arch}.AppImage.tar.gz"
+      filename="cody_${version}_${arch}.AppImage.tar.gz"
       ;;
     *)
       echo "cannot determine filename for unsupported os: ${os}"
       exit 1
+      ;;
   esac
 
   echo "${filename}"
@@ -47,7 +48,6 @@ short_platform() {
 
   echo "${arch}-${os}"
 }
-
 
 # local_file given a dir and filename, local_file finds the file locally with that name
 # args:
@@ -124,14 +124,15 @@ generate_manifest() {
   pub_date="$(echo "${RELEASE_JSON}" | jq -r ".createdAt")"
 
   # This is the base manifest, which we will append platform json too
-  manifest=$(cat <<EOF
+  manifest=$(
+    cat <<EOF
 {
   "version": "${version}",
   "pub_date": "${pub_date}",
   "platforms": {}
 }
 EOF
-)
+  )
 
   # we loop through our supported platforms. If we do have platform json for the particular platform, we append to our base manifest
   local json
@@ -159,11 +160,11 @@ fi
 
 echo "--- generating app update manifest for version: ${version}"
 echo "supported platforms in manifest are: ${SUPPORTED_PLATFORMS[*]}"
-manifest=$(generate_manifest "${version}" )
+manifest=$(generate_manifest "${version}")
 
 if [[ ${CI:-""} == "true" ]]; then
   mkdir -p manifest
-  echo "${manifest}" | jq >> manifest/app.update.manifest
+  echo "${manifest}" | jq >>manifest/app.update.manifest
   buildkite-agent artifact upload manifest/app.update.manifest
 else
   echo "--- app update manifest ---"
