@@ -25,6 +25,10 @@ go_test(
     timeout = "short",
     srcs = ["rfc_test.go"],
     embed = [":rfc"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//dev/sg/internal/std",
         "@org_golang_x_oauth2//:oauth2",
