@@ -28,7 +28,12 @@ func Log(ctx context.Context, logger log.Logger, record Record) {
 	}
 
 	client := requestclient.FromContext(ctx)
+
 	auditId := uuid.New().String()
+	if record.auditIDGenerator != nil {
+		auditId = record.auditIDGenerator()
+	}
+
 	var fields []log.Field
 
 	fields = append(fields, log.Object("audit",
@@ -37,6 +42,7 @@ func Log(ctx context.Context, logger log.Logger, record Record) {
 		log.Object("actor",
 			log.String("actorUID", actorId(act)),
 			log.String("ip", ip(client)),
+			log.String("userAgent", userAgent(client)),
 			log.String("X-Forwarded-For", forwardedFor(client)))))
 	fields = append(fields, record.Fields...)
 
@@ -62,6 +68,13 @@ func ip(client *requestclient.Client) string {
 	return client.IP
 }
 
+func userAgent(client *requestclient.Client) string {
+	if client == nil {
+		return "unknown"
+	}
+	return client.UserAgent
+}
+
 func forwardedFor(client *requestclient.Client) string {
 	if client == nil {
 		return "unknown"
@@ -76,6 +89,10 @@ type Record struct {
 	Action string
 	// Fields hold any additional context relevant to the Action
 	Fields []log.Field
+
+	// auditIDGenerator can be provided in tests to generate a stable audit
+	// log ID.
+	auditIDGenerator func() string
 }
 
 type AuditLogSetting = int

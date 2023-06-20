@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/completions"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/embeddings"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/requestlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
@@ -35,13 +36,16 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 		v1router.Path("/completions/anthropic").Methods(http.MethodPost).Handler(
 			instrumentation.HTTPMiddleware("v1.completions.anthropic",
 				authr.Middleware(
-					completions.NewAnthropicHandler(
+					requestlogger.Middleware(
 						logger,
-						eventLogger,
-						rs,
-						config.RateLimitNotifier,
-						config.AnthropicAccessToken,
-						config.AnthropicAllowedModels,
+						completions.NewAnthropicHandler(
+							logger,
+							eventLogger,
+							rs,
+							config.RateLimitNotifier,
+							config.AnthropicAccessToken,
+							config.AnthropicAllowedModels,
+						),
 					),
 				),
 			),
@@ -51,14 +55,17 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 		v1router.Path("/completions/openai").Methods(http.MethodPost).Handler(
 			instrumentation.HTTPMiddleware("v1.completions.openai",
 				authr.Middleware(
-					completions.NewOpenAIHandler(
+					requestlogger.Middleware(
 						logger,
-						eventLogger,
-						rs,
-						config.RateLimitNotifier,
-						config.OpenAIAccessToken,
-						config.OpenAIOrgID,
-						config.OpenAIAllowedModels,
+						completions.NewOpenAIHandler(
+							logger,
+							eventLogger,
+							rs,
+							config.RateLimitNotifier,
+							config.OpenAIAccessToken,
+							config.OpenAIOrgID,
+							config.OpenAIAllowedModels,
+						),
 					),
 				),
 			),
@@ -67,7 +74,10 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 		v1router.Path("/embeddings/models").Methods(http.MethodGet).Handler(
 			instrumentation.HTTPMiddleware("v1.embeddings.models",
 				authr.Middleware(
-					embeddings.NewListHandler(),
+					requestlogger.Middleware(
+						logger,
+						embeddings.NewListHandler(),
+					),
 				),
 			),
 		)
@@ -75,15 +85,18 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 		v1router.Path("/embeddings").Methods(http.MethodPost).Handler(
 			instrumentation.HTTPMiddleware("v1.embeddings",
 				authr.Middleware(
-					embeddings.NewHandler(
+					requestlogger.Middleware(
 						logger,
-						eventLogger,
-						rs,
-						config.RateLimitNotifier,
-						embeddings.ModelFactoryMap{
-							embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(config.OpenAIAccessToken),
-						},
-						config.EmbeddingsAllowedModels,
+						embeddings.NewHandler(
+							logger,
+							eventLogger,
+							rs,
+							config.RateLimitNotifier,
+							embeddings.ModelFactoryMap{
+								embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(config.OpenAIAccessToken),
+							},
+							config.EmbeddingsAllowedModels,
+						),
 					),
 				),
 			),
