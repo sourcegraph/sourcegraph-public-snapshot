@@ -28,7 +28,12 @@ func Log(ctx context.Context, logger log.Logger, record Record) {
 	}
 
 	client := requestclient.FromContext(ctx)
+
 	auditId := uuid.New().String()
+	if record.auditIDGenerator != nil {
+		auditId = record.auditIDGenerator()
+	}
+
 	var fields []log.Field
 
 	fields = append(fields, log.Object("audit",
@@ -84,6 +89,10 @@ type Record struct {
 	Action string
 	// Fields hold any additional context relevant to the Action
 	Fields []log.Field
+
+	// auditIDGenerator can be provided in tests to generate a stable audit
+	// log ID.
+	auditIDGenerator func() string
 }
 
 type AuditLogSetting = int

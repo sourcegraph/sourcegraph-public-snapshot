@@ -40,7 +40,7 @@ func TestLog(t *testing.T) {
 					"ip":              "192.168.0.1",
 					"userAgent":       "Foobar",
 				},
-				"auditId": "4f37f3d8-febe-4827-b7a2-10e068ae0855",
+				"auditId": "test-audit-id-1234",
 				"entity":  "test entity",
 			}}),
 		},
@@ -60,7 +60,7 @@ func TestLog(t *testing.T) {
 					"ip":              "192.168.0.1",
 					"userAgent":       "Foobar",
 				},
-				"auditId": "5b32f343-98b5-4697-99cb-dd4d9665dc49",
+				"auditId": "test-audit-id-1234",
 				"entity":  "test entity",
 			}}),
 		},
@@ -80,7 +80,7 @@ func TestLog(t *testing.T) {
 					"ip":              "192.168.0.1",
 					"userAgent":       "Foobar",
 				},
-				"auditId": "30a6893f-ee76-4fbc-a7a5-5c07e32cf0e1",
+				"auditId": "test-audit-id-1234",
 				"entity":  "test entity",
 			}}),
 		},
@@ -96,7 +96,7 @@ func TestLog(t *testing.T) {
 					"ip":              "unknown",
 					"userAgent":       "unknown",
 				},
-				"auditId": "8da90d82-b6a3-4074-855c-ca69f0735cfe",
+				"auditId": "test-audit-id-1234",
 				"entity":  "test entity",
 			}}),
 		},
@@ -114,7 +114,7 @@ func TestLog(t *testing.T) {
 					"X-Forwarded-For": "192.168.0.1", "actorUID": "1", "ip": "192.168.0.1",
 					"userAgent": "Foobar",
 				},
-				"auditId": "a1d698e5-fc08-4e27-b716-b524501de80c",
+				"auditId": "test-audit-id-1234",
 				"entity":  "test entity",
 			}}),
 		},
@@ -130,6 +130,8 @@ func TestLog(t *testing.T) {
 				Entity: "test entity",
 				Action: "test audit action",
 				Fields: tc.additionalContext,
+
+				auditIDGenerator: func() string { return "test-audit-id-1234" },
 			}
 
 			logger, exportLogs := logtest.Captured(t)
