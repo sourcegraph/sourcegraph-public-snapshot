@@ -24,13 +24,16 @@ export class UnstableHuggingFaceProvider extends Provider {
 
     public async generateCompletions(abortSignal: AbortSignal): Promise<Completion[]> {
         // TODO: Add context and language
+        // Prompt format is taken form https://huggingface.co/bigcode/starcoder#fill-in-the-middle
         const prompt = `<fim_prefix>${this.prefix}<fim_suffix>${this.suffix}<fim_middle>`
 
         const request = {
             inputs: prompt,
             parameters: {
                 num_return_sequences: 1,
-                max_new_tokens: this.multilineMode === null ? 40 : 128,
+                // To speed up sample generation in single-line case, we request a lower token limit
+                // since we can't terminate on the first `\n`.
+                max_new_tokens: this.multilineMode === null ? 64 : 256,
             },
         }
 
@@ -57,9 +60,7 @@ export class UnstableHuggingFaceProvider extends Provider {
                 throw new Error(data.error)
             }
 
-            const completions: string[] = data.map((c: { generated_text: string }) =>
-                c.generated_text.replace(STOP_WORD, '')
-            )
+            const completions: string[] = data.map(c => c.generated_text.replace(STOP_WORD, ''))
             log?.onComplete(completions)
 
             return completions.map(content => ({

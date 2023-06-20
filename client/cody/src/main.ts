@@ -407,7 +407,39 @@ function createCompletionsProvider(
         history,
         codebaseContext
     )
+    const providerConfig = createCompletionProviderConfig(config, webviewErrorMessenger, completionsClient)
+    const completionsProvider = new CodyCompletionItemProvider({
+        providerConfig,
+        history,
+        statusBar,
+        codebaseContext,
+        isCompletionsCacheEnabled: config.completionsAdvancedCache,
+        isEmbeddingsContextEnabled: config.completionsAdvancedEmbeddings,
+    })
 
+    disposables.push(
+        vscode.commands.registerCommand('cody.manual-completions', async () => {
+            await manualCompletionService.fetchAndShowManualCompletions()
+        }),
+        vscode.commands.registerCommand('cody.completions.inline.accepted', ({ codyLogId }) => {
+            CompletionsLogger.accept(codyLogId)
+        }),
+        vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider)
+    )
+    return {
+        dispose: () => {
+            for (const disposable of disposables) {
+                disposable.dispose()
+            }
+        },
+    }
+}
+
+function createCompletionProviderConfig(
+    config: Configuration,
+    webviewErrorMessenger: (error: string) => Promise<void>,
+    completionsClient: SourcegraphNodeCompletionsClient
+): ProviderConfig {
     let providerConfig: null | ProviderConfig = null
     switch (config.completionsAdvancedProvider) {
         case 'unstable-codegen': {
@@ -438,35 +470,12 @@ function createCompletionsProvider(
             break
         }
     }
-    if (!providerConfig) {
-        providerConfig = createAnthropicProviderConfig({
-            completionsClient,
-            contextWindowTokens: 2048,
-        })
+    if (providerConfig) {
+        return providerConfig
     }
-    const completionsProvider = new CodyCompletionItemProvider({
-        providerConfig,
-        history,
-        statusBar,
-        codebaseContext,
-        isCompletionsCacheEnabled: config.completionsAdvancedCache,
-        isEmbeddingsContextEnabled: config.completionsAdvancedEmbeddings,
-    })
 
-    disposables.push(
-        vscode.commands.registerCommand('cody.manual-completions', async () => {
-            await manualCompletionService.fetchAndShowManualCompletions()
-        }),
-        vscode.commands.registerCommand('cody.completions.inline.accepted', ({ codyLogId }) => {
-            CompletionsLogger.accept(codyLogId)
-        }),
-        vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider)
-    )
-    return {
-        dispose: () => {
-            for (const disposable of disposables) {
-                disposable.dispose()
-            }
-        },
-    }
+    return createAnthropicProviderConfig({
+        completionsClient,
+        contextWindowTokens: 2048,
+    })
 }
