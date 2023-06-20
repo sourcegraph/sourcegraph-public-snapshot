@@ -479,7 +479,7 @@ func getVCSSyncer(
 		}
 		return server.NewRubyPackagesSyncer(&c, depsSvc, cli), nil
 	}
-	return &server.GitRepoSyncer{}, nil
+	return server.NewGitRepoSyncer(), nil
 }
 
 func syncExternalServiceRateLimiters(ctx context.Context, store database.ExternalServiceStore) error {

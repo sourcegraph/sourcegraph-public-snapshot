@@ -1005,7 +1005,7 @@ func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protoc
 		remoteURL, _ = vcs.ParseURL("https://" + string(repo) + ".git")
 
 		// At this point we are assuming it's a git repo
-		syncer = &GitRepoSyncer{}
+		syncer = NewGitRepoSyncer()
 	} else {
 		syncer, err = s.GetVCSSyncer(ctx, repo)
 		if err != nil {
