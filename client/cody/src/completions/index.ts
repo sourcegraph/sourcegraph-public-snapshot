@@ -144,6 +144,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
+        const languageId = document.languageId
         const { prefix, suffix, prevLine: sameLinePrefix, prevNonEmptyLine } = docContext
         const sameLineSuffix = suffix.slice(0, suffix.indexOf('\n'))
 
@@ -167,7 +168,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
         }
 
-        const similarCode = await getContext({
+        const { context: similarCode, logSummary: contextSummary } = await getContext({
             currentEditor,
             prefix,
             suffix,
@@ -207,7 +208,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             prefix,
             suffix,
             fileName: path.normalize(vscode.workspace.asRelativePath(document.fileName ?? '')),
-            languageId: document.languageId,
+            languageId,
             snippets: similarCode,
             responsePercentage: this.responsePercentage,
             prefixPercentage: this.prefixPercentage,
@@ -215,13 +216,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
 
         if (
-            (multilineMode = detectMultilineMode(
-                prefix,
-                prevNonEmptyLine,
-                sameLinePrefix,
-                sameLineSuffix,
-                document.languageId
-            ))
+            (multilineMode = detectMultilineMode(prefix, prevNonEmptyLine, sameLinePrefix, sameLineSuffix, languageId))
         ) {
             timeout = 200
             completers.push(
@@ -263,6 +258,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             type: 'inline',
             multilineMode,
             providerIdentifier: this.providerConfig.identifier,
+            languageId,
+            contextSummary,
         })
         const stopLoading = this.statusBar.startLoading('Completions are being generated')
 
@@ -287,7 +284,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 prefix,
                 suffix,
                 multiline: multilineMode !== null,
-                languageId: document.languageId,
+                languageId,
                 completion,
             })
         )
