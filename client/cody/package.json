@@ -827,11 +827,15 @@
         "cody.completions.advanced.provider": {
           "type": "string",
           "default": "anthropic",
-          "markdownDescription": "Overwrite the provider used for generating code completions. Only supported values at the moment are `anthropic` (default) or `unstable-codegen`."
+          "markdownDescription": "Overwrite the provider used for generating code completions. Only supported values at the moment are `anthropic` (default), `unstable-codegen`, or `unstable-huggingface`."
         },
         "cody.completions.advanced.serverEndpoint": {
           "type": "string",
-          "markdownDescription": "Overwrite the server endpoint used for generating code completions. This is only supported with the `unstable-codegen` provider right now."
+          "markdownDescription": "Overwrite the server endpoint used for generating code completions. This is only supported with the `unstable-codegen` or `unstable-huggingface` provider."
+        },
+        "cody.completions.advanced.accessToken": {
+          "type": "string",
+          "markdownDescription": "Overwrite the access token used for generating code completions. This is only supported with the `unstable-huggingface` provider."
         },
         "cody.completions.advanced.cache": {
           "order": 99,
