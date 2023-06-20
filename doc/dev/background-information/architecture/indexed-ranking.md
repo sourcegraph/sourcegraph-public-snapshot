@@ -34,17 +34,20 @@ Zoekt creates a [score for a match](https://sourcegraph.com/search?q=context:glo
 - It matches a full word. For example, if you search `rank`, then `result rank` will score more highly than `ranked list`.
 - It partially matches a word. For example, if you search `rank`, then `result rank` will score more highly than `ranked list`.
 
-We also incorporate smaller signals based on the repository and file importance (described in the next section), as well as the number of query components that match (in the case of OR queries).
+If code intel ranks are being calculated from [SCIP data](/code_navigation/explanations/precise_code_navigation.md), then we add these ranks as an important signal.
+A file's rank is based on the number inbound references from any other file in the available code graph, representing how widely-used and important the file is
+to the codebase (similar to PageRank in web search). See [this guide](./precise-ranking.md) on how to enable the background job to produce these ranks.
 
-## Ordering files by importance
+We also incorporate smaller signals based on the repository and file order (described in the next section), as well as the number of query components that match (in the case of OR queries).
+
+## Ordering files within the index
 
 When creating indexes, we lay out the files such that we search more important files and repositories first. This means when streaming we're more likely to encounter important candidates first, leading to a better set of ranked results.
 
 Zoekt indexes are partitioned by repository. The search proceeds through each repository in order of their priority.
 The [repository priority](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+stars+reporank&patternType=regexp) is the number of stars a repository has received. Admins can manually adjust the priority of a repository through a [site configuration option](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+repoRankFromConfig&patternType=regexp).
 
-Within each repository, files are ordered in terms of importance. If precise ranking scores are being calculated from [SCIP data](/code_navigation/explanations/precise_code_navigation.md), then files are ranked by the number of inbound references from any other file in the available code graph. See [this guide](./precise-ranking.md) on how to set such a background job. In the absence of SCIP-powered ranking scores, the following rules are applied:
-
+Within each repository, files are ordered in terms of importance:
 - Down rank generated code. This code is usually the least interesting in results.
 - Down rank vendored code. Developers are normally looking for code written by their organization.
 - Down rank test code. Developers normally prefer results in non-test code over test code.
