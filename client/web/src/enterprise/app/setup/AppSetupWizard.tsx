@@ -97,7 +97,7 @@ export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService }) => {
     // see last step onNext for window size restore and resize
     // unblock
     useLayoutEffect(() => {
-        async function lockSize() {
+        async function lockSize(): Promise<void> {
             await appWindow.setSize(new LogicalSize(940, 640))
             await appWindow.setResizable(false)
         }

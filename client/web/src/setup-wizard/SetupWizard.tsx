@@ -33,7 +33,7 @@ const CORE_STEPS: StepConfiguration[] = [
         // If user clicked next button in setup remote repositories
         // this mean that setup was completed, and they're ready to go
         // to app UI. See https://github.com/sourcegraph/sourcegraph/issues/50122
-        onNext: async (client: ApolloClient<{}>) => {
+        onNext: (client: ApolloClient<{}>) => {
             // Mutate initial needsRepositoryConfiguration value
             // in order to avoid loop in Layout page redirection logic
             // TODO Remove this as soon as we have a proper Sourcegraph context store
