@@ -3,6 +3,18 @@ export interface ActiveTextEditor {
     filePath: string
     repoName?: string
     revision?: string
+    selection?: ActiveTextEditorSelectionRange
+}
+
+export interface ActiveTextEditorSelectionRange {
+    start: {
+        line: number
+        character: number
+    }
+    end: {
+        line: number
+        character: number
+    }
 }
 
 export interface ActiveTextEditorSelection {
