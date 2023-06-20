@@ -252,6 +252,9 @@ func (b bag) FindResolved(ref Reference) (codeowners.ResolvedOwner, bool) {
 			}
 			if id := refCtx.resolvedTeamID; id != 0 {
 				teamRefs := b.resolvedTeams[id]
+				if teamRefs == nil || teamRefs.team == nil {
+					continue
+				}
 				return &codeowners.Team{
 					Team:   teamRefs.team,
 					Handle: teamRefs.team.Name,
