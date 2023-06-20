@@ -102,7 +102,9 @@ type RepoEmbeddingJobsStore interface {
 	CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID) (int, error)
 	GetLastCompletedRepoEmbeddingJob(ctx context.Context, repoID api.RepoID) (*RepoEmbeddingJob, error)
 	GetLastRepoEmbeddingJobForRevision(ctx context.Context, repoID api.RepoID, revision api.CommitID) (*RepoEmbeddingJob, error)
+
 	ListRepoEmbeddingJobs(ctx context.Context, args ListOpts) ([]*RepoEmbeddingJob, error)
+	ListOldestRepoEmbeddingJobs(ctx context.Context, args ListOpts) ([]*EmbedRepoStats, error)
 	CountRepoEmbeddingJobs(ctx context.Context, args ListOpts) (int, error)
 	GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error)
 	CancelRepoEmbeddingJob(ctx context.Context, job int) error
@@ -510,6 +512,79 @@ func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, opts
 		jobs = append(jobs, job)
 	}
 	return jobs, nil
+}
+
+const listOldestRepoEmbeddedJobs = `with oldest_jobs as (
+  select
+    repo_id,
+    min(queued_at) as queued_at
+  from
+    repo_embedding_jobs
+  group by
+    id,
+    repo_id
+),
+job_ids as (
+  select
+    repo_embedding_jobs.id,
+    repo_embedding_jobs.repo_id,
+    repo_embedding_jobs.queued_at
+  from
+    repo_embedding_jobs
+    join oldest_jobs on repo_embedding_jobs.repo_id = oldest_jobs.repo_id
+    and repo_embedding_jobs.queued_at = oldest_jobs.queued_at
+)
+select
+	*
+from
+  repo_embedding_jobs
+  join job_ids on repo_embedding_jobs.id = job_ids.id
+order by
+  repo_embedding_jobs.queued_at
+`
+
+func (s *repoEmbeddingJobsStore) ListOldestRepoEmbeddingJobs(ctx context.Context, repoNames []string) ([]*RepoEmbedJobStatus, error) {
+	// TODO(burmudar): (a) use pagination (b) JOIN with repo table to get repoNames mapped to ids
+	q := sqlf.Sprintf(listOldestRepoEmbeddedJobs)
+
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []*RepoEmbedJobStatus
+	for rows.Next() {
+		item, err := scanRepoEmbedJobStatus(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, item)
+	}
+
+	return results, err
+}
+
+func scanRepoEmbedJobStatus(s *sql.Rows) (*RepoEmbedJobStatus, error) {
+
+	var jobStatus RepoEmbedJobStatus
+	err := s.Scan(
+		&jobStatus.JobID,
+		&jobStatus.RepoID,
+		&jobStatus.QueuedAt,
+		&jobStatus.Stats.IsIncremental,
+		&jobStatus.Stats.CodeIndexStats.FilesScheduled,
+		&jobStatus.Stats.CodeIndexStats.FilesEmbedded,
+		&jobStatus.Stats.CodeIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&jobStatus.Stats.CodeIndexStats.FilesSkipped),
+		&jobStatus.Stats.CodeIndexStats.BytesEmbedded,
+		&jobStatus.Stats.TextIndexStats.FilesScheduled,
+		&jobStatus.Stats.TextIndexStats.FilesEmbedded,
+		&jobStatus.Stats.TextIndexStats.ChunksEmbedded,
+		dbutil.JSONMessage(&jobStatus.Stats.TextIndexStats.FilesSkipped),
+		&jobStatus.Stats.TextIndexStats.BytesEmbedded,
+	)
+	return &jobStatus, err
 }
 
 func (s *repoEmbeddingJobsStore) CancelRepoEmbeddingJob(ctx context.Context, jobID int) error {
