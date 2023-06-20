@@ -12,6 +12,8 @@
 
 ### Fixed
 
+- Fixed the y position at which autocomplete suggestions are rendered [#53677](https://github.com/sourcegraph/sourcegraph/pull/53677)
+
 ### Security
 
 ## [3.0.0-alpha.2]
