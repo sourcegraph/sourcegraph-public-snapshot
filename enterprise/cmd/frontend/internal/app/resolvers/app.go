@@ -113,14 +113,14 @@ func (r *appResolver) SetupNewAppRepositoriesForEmbedding(ctx context.Context, a
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *appResolver) EmbeddingJobStatus(ctx context.Context, args graphqlbackend.EmbeddingJobStatusArgs) ([]graphqlbackend.EmbeddingJobStatusResolver, error) {
+func (r *appResolver) ListRepoEmbeddingJobStatus(ctx context.Context, args graphqlbackend.EmbeddingJobStatusArgs) ([]*graphqlbackend.EmbeddingJobStatusResolver, error) {
 	// 🚨 SECURITY: Only site admins may schedule embedding jobs.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
 	repoEmbeddingsStore := repo.NewRepoEmbeddingJobsStore(r.db)
-	repoEmbeddingsStore.ListOldestRepoEmbeddingJobStats(r.db)
+	repoEmbeddingsStore.ListRepoEmbeddingJobStatus(ctx, []string{})
 	return nil, nil
 }
 

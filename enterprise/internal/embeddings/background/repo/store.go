@@ -104,7 +104,7 @@ type RepoEmbeddingJobsStore interface {
 	GetLastRepoEmbeddingJobForRevision(ctx context.Context, repoID api.RepoID, revision api.CommitID) (*RepoEmbeddingJob, error)
 
 	ListRepoEmbeddingJobs(ctx context.Context, args ListOpts) ([]*RepoEmbeddingJob, error)
-	ListOldestRepoEmbeddingJobs(ctx context.Context, args ListOpts) ([]*EmbedRepoStats, error)
+	ListRepoEmbeddingJobStatus(ctx context.Context, repoNames []string) ([]*RepoEmbedJobStatus, error)
 	CountRepoEmbeddingJobs(ctx context.Context, args ListOpts) (int, error)
 	GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error)
 	CancelRepoEmbeddingJob(ctx context.Context, job int) error
@@ -555,8 +555,8 @@ order by
   jobs.queued_at
 `
 
-func (s *repoEmbeddingJobsStore) ListOldestRepoEmbeddingJobs(ctx context.Context, repoNames []string) ([]*RepoEmbedJobStatus, error) {
-	// TODO(burmudar): (a) use pagination (b) JOIN with repo table to get repoNames mapped to ids
+func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobStatus(ctx context.Context, repoNames []string) ([]*RepoEmbedJobStatus, error) {
+	// TODO(burmudar): (a) use pagination (b) add where clause
 	q := sqlf.Sprintf(listOldestRepoEmbeddedJobs)
 
 	rows, err := s.Query(ctx, q)
