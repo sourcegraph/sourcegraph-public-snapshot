@@ -4,16 +4,30 @@ import { Readable, Writable } from 'stream'
 
 import { Notifications, Requests } from './protocol'
 
-export type RequestMethod = keyof Requests
-export type NotificationMethod = keyof Notifications
+// This file is a standalone implementation of JSON-RPC for Node.js
+// ReadStream/WriteStream, which conventionally map to stdin/stdout.
+// The code assumes familiarity with the JSON-RPC specification as documented
+// here https://www.jsonrpc.org/specification
+// To learn more about how JSON-RPC protocols work, the LSP specification is
+// also a good read
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/
 
-export type Method = RequestMethod | keyof Notifications
-export type ParamsOf<K extends Method> = (Requests & Notifications)[K][0]
-export type ResultOf<K extends RequestMethod> = Requests[K][1]
+// String literal types for the names of the Cody Agent protocol methods.
+type RequestMethodName = keyof Requests
+type NotificationMethodName = keyof Notifications
+type MethodName = RequestMethodName | NotificationMethodName
 
-export type Id = string | number
+// Parameter type of a request or notification. Note: JSON-RPC methods can only
+// accept one parameter. Multiple parameters must be encoded as an array or an
+// object.
+type ParamsOf<K extends MethodName> = (Requests & Notifications)[K][0]
+// Request result types. Note: notifications don't return values.
+type ResultOf<K extends RequestMethodName> = Requests[K][1]
 
-export enum ErrorCode {
+type Id = string | number
+
+// Error codes as defined by the JSON-RPC spec.
+enum ErrorCode {
     ParseError = -32700,
     InvalidRequest = -32600,
     MethodNotFound = -32601,
@@ -21,37 +35,38 @@ export enum ErrorCode {
     InternalError = -32603,
 }
 
-export interface ErrorInfo<T> {
+// Result of an erroneous request, which populates the `error` property instead
+// of `result` for successful results.
+interface ErrorInfo<T> {
     code: ErrorCode
     message: string
     data: T
 }
 
-export interface RequestMessage<M extends RequestMethod> {
+// The three different kinds of toplevel JSON objects that get written to the
+// wire: requests, request responses, and notifications.
+interface RequestMessage<M extends RequestMethodName> {
     jsonrpc: '2.0'
     id: Id
     method: M
     params?: ParamsOf<M>
 }
-
-export interface ResponseMessage<M extends RequestMethod> {
+interface ResponseMessage<M extends RequestMethodName> {
     jsonrpc: '2.0'
     id: Id
     result?: ResultOf<M>
     error?: ErrorInfo<any>
 }
-
-export interface NotificationMessage<M extends NotificationMethod> {
+interface NotificationMessage<M extends NotificationMethodName> {
     jsonrpc: '2.0'
     method: M
     params?: ParamsOf<M>
 }
+type Message = RequestMessage<any> & ResponseMessage<any> & NotificationMessage<any>
 
-export type Message = RequestMessage<any> & ResponseMessage<any> & NotificationMessage<any>
+type MessageHandlerCallback = (err: Error | null, msg: Message | null) => void
 
-export type MessageHandlerCallback = (err: Error | null, msg: Message | null) => void
-
-export class MessageDecoder extends Writable {
+class MessageDecoder extends Writable {
     private buffer: Buffer = Buffer.alloc(0)
     private contentLengthRemaining: number | null = null
     private contentBuffer: Buffer = Buffer.alloc(0)
@@ -87,7 +102,10 @@ export class MessageDecoder extends Writable {
                         // This state is irrecoverable because the stream is polluted
                         // Also what is the client doing 😭
                         this.contentLengthRemaining = newContentLength
-                        assert(this.contentLengthRemaining !== null)
+                        assert(
+                            isFinite(this.contentLengthRemaining),
+                            `parsed Content-Length ${this.contentLengthRemaining} is not a finite number`
+                        )
                         continue read
                     }
 
@@ -132,7 +150,7 @@ export class MessageDecoder extends Writable {
     }
 }
 
-export class MessageEncoder extends Readable {
+class MessageEncoder extends Readable {
     private buffer: Buffer = Buffer.alloc(0)
 
     public send(data: any): void {
@@ -151,13 +169,17 @@ export class MessageEncoder extends Readable {
     }
 }
 
-type RequestCallback<M extends RequestMethod> = (params: ParamsOf<M>) => Promise<ResultOf<M>>
-type NotificationCallback<M extends NotificationMethod> = (params: ParamsOf<M>) => void
+type RequestCallback<M extends RequestMethodName> = (params: ParamsOf<M>) => Promise<ResultOf<M>>
+type NotificationCallback<M extends NotificationMethodName> = (params: ParamsOf<M>) => void
 
+/**
+ * Only exported API in this file. MessageHandler exposes a public `messageDecoder` property
+ * that can be piped with ReadStream/WriteStream.
+ */
 export class MessageHandler {
     private id = 0
-    private requestHandlers: Map<RequestMethod, RequestCallback<any>> = new Map()
-    private notificationHandlers: Map<NotificationMethod, NotificationCallback<any>> = new Map()
+    private requestHandlers: Map<RequestMethodName, RequestCallback<any>> = new Map()
+    private notificationHandlers: Map<NotificationMethodName, NotificationCallback<any>> = new Map()
     private responseHandlers: Map<Id, (params: any) => void> = new Map()
 
     // TODO: RPC error handling
@@ -226,15 +248,15 @@ export class MessageHandler {
 
     public messageEncoder: MessageEncoder = new MessageEncoder()
 
-    public registerRequest<M extends RequestMethod>(method: M, callback: RequestCallback<M>): void {
+    public registerRequest<M extends RequestMethodName>(method: M, callback: RequestCallback<M>): void {
         this.requestHandlers.set(method, callback)
     }
 
-    public registerNotification<M extends NotificationMethod>(method: M, callback: NotificationCallback<M>): void {
+    public registerNotification<M extends NotificationMethodName>(method: M, callback: NotificationCallback<M>): void {
         this.notificationHandlers.set(method, callback)
     }
 
-    public request<M extends RequestMethod>(method: M, params: ParamsOf<M>): Promise<ResultOf<M>> {
+    public request<M extends RequestMethodName>(method: M, params: ParamsOf<M>): Promise<ResultOf<M>> {
         const id = this.id++
 
         const data: RequestMessage<M> = {
@@ -250,7 +272,7 @@ export class MessageHandler {
         })
     }
 
-    public notify<M extends NotificationMethod>(method: M, params: ParamsOf<M>): void {
+    public notify<M extends NotificationMethodName>(method: M, params: ParamsOf<M>): void {
         const data: NotificationMessage<M> = {
             jsonrpc: '2.0',
             method,

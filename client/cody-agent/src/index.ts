@@ -1,6 +1,6 @@
 import { Agent } from './agent'
 
-process.stderr.write('Starting agent...\n')
+process.stderr.write('Starting Cody Agent...\n')
 
 const agent = new Agent()
 

@@ -3,8 +3,8 @@ import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/age
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { AgentEditor } from './editor'
+import { MessageHandler } from './jsonrpc'
 import { ConnectionConfiguration, TextDocument } from './protocol'
-import { MessageHandler } from './rpc'
 
 export class Agent extends MessageHandler {
     private client?: Promise<Client>
@@ -23,16 +23,19 @@ export class Agent extends MessageHandler {
 
         this.registerRequest('initialize', client => {
             process.stderr.write(
-                `Cody-Agent: handshake with client '${client.name}' with version '${client.version}' and workspace root path '${client.workspaceRootPath}'\n`
+                `Cody Agent: handshake with client '${client.name}' (version '${client.version}') at workspace root path '${client.workspaceRootPath}'\n`
             )
             this.workspaceRootPath = client.workspaceRootPath
+            if (client.connectionConfiguration) {
+                this.setClient(client.connectionConfiguration)
+            }
             return Promise.resolve({
                 name: 'cody-agent',
             })
         })
         this.registerNotification('initialized', () => {})
 
-        this.registerRequest('shutdown', async () => {})
+        this.registerRequest('shutdown', () => Promise.resolve(null))
 
         this.registerNotification('exit', () => {
             process.exit(0)
@@ -72,11 +75,12 @@ export class Agent extends MessageHandler {
         this.registerRequest('recipes/execute', async data => {
             const client = await this.client
             if (!client) {
-                return undefined
+                return null
             }
             await client.executeRecipe(data.id, {
                 humanChatInput: data.humanChatInput,
             })
+            return null
         })
     }
 

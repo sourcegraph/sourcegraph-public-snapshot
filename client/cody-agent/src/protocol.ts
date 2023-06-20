@@ -17,13 +17,13 @@ export type Requests = {
     // before any other request/notification is sent.
     initialize: [ClientInfo, ServerInfo]
     // The 'shutdown' request must be sent before terminating the agent process.
-    shutdown: [void, void]
+    shutdown: [null, null]
 
     // Client requests the agent server to lists all recipes that are supported
     // by the agent.
-    'recipes/list': [void, RecipeInfo[]]
+    'recipes/list': [null, RecipeInfo[]]
     // Client requests the agent server to execute an individual recipe.
-    'recipes/execute': [ExecuteRecipeParams, void]
+    'recipes/execute': [ExecuteRecipeParams, null]
 
     // ================
     // Server -> Client
@@ -39,9 +39,9 @@ export type Notifications = {
     // ================
 
     // The 'initalized' notification must be sent after receiving the 'initialize' response.
-    initialized: [void]
+    initialized: [null]
     // The 'exit' notification must be sent after the client receives the 'shutdown' response.
-    exit: [void]
+    exit: [null]
 
     // The server should use the provided connection configuration for all
     // subsequent requests/notications. The previous connection configuration

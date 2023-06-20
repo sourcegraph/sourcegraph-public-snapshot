@@ -8,7 +8,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.sourcegraph.agent.ConnectionConfiguration;
 import com.sourcegraph.find.Search;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;

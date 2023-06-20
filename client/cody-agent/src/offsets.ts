@@ -1,6 +1,9 @@
 import { Position, TextDocument } from './protocol'
 
-export class Offsets {
+/**
+ * Utility class to convert line/character positions into offsets.
+ */
+export class DocumentOffsets {
     private lines: number[] = []
     constructor(public readonly document: TextDocument) {
         if (document.content) {
@@ -13,7 +16,7 @@ export class Offsets {
                 index++
             }
             if (document.content.length !== this.lines[this.lines.length - 1]) {
-                this.lines.push(document.content.length) // sentinel value used for binary search
+                this.lines.push(document.content.length) // sentinel value
             }
         }
     }

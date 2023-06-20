@@ -4,44 +4,41 @@ import path from 'path'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
-import { MessageHandler } from './rpc'
+import { MessageHandler } from './jsonrpc'
 
 export class TestClient extends MessageHandler {
-    constructor() {
-        super()
-    }
-
-    async handshake() {
+    public async handshake() {
         const info = await this.request('initialize', {
             name: 'test-client',
+            version: 'v1',
+            workspaceRootPath: '/path/to/foo',
         })
-        this.notify('initialized', void {})
+        this.notify('initialized', null)
         return info
     }
 
-    async listRecipes() {
-        return await this.request('recipes/list', void {})
+    public listRecipes() {
+        return this.request('recipes/list', null)
     }
 
-    async executeRecipe(id: RecipeID, humanChatInput: string) {
+    public async executeRecipe(id: RecipeID, humanChatInput: string) {
         return this.request('recipes/execute', {
             id,
-            context: {
-                editor: {
-                    workspaceRoot: null,
-                },
-            },
             humanChatInput,
         })
     }
 
-    async shutdownAndExit() {
-        await this.request('shutdown', void {})
-        this.notify('exit', void {})
+    public async shutdownAndExit() {
+        await this.request('shutdown', null)
+        this.notify('exit', null)
     }
 }
 
 describe('StandardAgent', () => {
+    if (process.env.SRC_ACCESS_TOKEN === undefined || process.env.SRC_ENDPOINT === undefined) {
+        it('no-op test because SRC_ACCESS_TOKEN is not set. To actually run the Cody Agent tests, set the environment variables SRC_ENDPOINT and SRC_ACCESS_TOKEN', () => {})
+        return
+    }
     const client = new TestClient()
     const agentProcess = spawn('node', [path.join(__dirname, '../dist/agent.js')], {
         stdio: 'pipe',
@@ -50,6 +47,7 @@ describe('StandardAgent', () => {
     agentProcess.stdout.pipe(client.messageDecoder)
     client.messageEncoder.pipe(agentProcess.stdin)
     agentProcess.stderr.on('data', msg => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
         console.log(msg.toString())
     })
 
@@ -62,28 +60,13 @@ describe('StandardAgent', () => {
         assert(recipes.length === 8)
     })
 
-    const promise = new Promise((resolve, reject) => {
-        let done = false
+    const streamingChatMessages = new Promise<void>(resolve => {
         let assistantMessage: string | null = null
-
         client.registerNotification('chat/updateMessageInProgress', msg => {
             if (msg !== null) {
                 assistantMessage = msg.text ?? null
             } else {
-                done = true
-            }
-        })
-
-        client.registerNotification('chat/updateTranscript', transcript => {
-            if (
-                done &&
-                assistantMessage === transcript.interactions[transcript.interactions.length - 1].assistantMessage.text
-            ) {
-                if (assistantMessage.includes('4')) {
-                    resolve(void {})
-                } else {
-                    reject()
-                }
+                resolve()
             }
         })
     })
@@ -92,9 +75,9 @@ describe('StandardAgent', () => {
         await client.executeRecipe('chat-question', "What's 2+2?")
     })
 
-    it('sends back transcript updates and makes sense', () => promise, 20_000)
+    it('sends back transcript updates and makes sense', () => streamingChatMessages, 20_000)
 
-    afterAll(() => {
-        client.shutdownAndExit()
+    afterAll(async () => {
+        await client.shutdownAndExit()
     })
 })

@@ -3,15 +3,11 @@ package com.sourcegraph.cody.chat;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.agent.*;
 import com.sourcegraph.agent.protocol.ExecuteRecipeParams;
-import com.sourcegraph.agent.protocol.StaticEditor;
-import com.sourcegraph.agent.protocol.StaticRecipeContext;
 import com.sourcegraph.cody.UpdatableChat;
 import com.sourcegraph.cody.api.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-
-import com.sourcegraph.config.ConfigUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

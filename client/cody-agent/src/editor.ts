@@ -7,7 +7,7 @@ import {
 } from '@sourcegraph/cody-shared/src/editor'
 
 import { Agent } from './agent'
-import { Offsets } from './offsets'
+import { DocumentOffsets } from './offsets'
 import { TextDocument } from './protocol'
 
 export class AgentEditor implements Editor {
@@ -46,7 +46,7 @@ export class AgentEditor implements Editor {
         if (document === undefined || document.content === undefined || document.selection === undefined) {
             return null
         }
-        const offsets = new Offsets(document)
+        const offsets = new DocumentOffsets(document)
         const from = offsets.offset(document.selection.start)
         const to = offsets.offset(document.selection.end)
         return {

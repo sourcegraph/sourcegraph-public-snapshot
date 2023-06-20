@@ -3,17 +3,15 @@ package com.sourcegraph.agent;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.PluginPathManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.SystemInfoRt;
 import com.intellij.util.system.CpuArch;
 import com.sourcegraph.agent.protocol.*;
-
+import com.sourcegraph.config.ConfigUtil;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.nio.file.*;
 import java.util.Objects;
@@ -21,8 +19,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import com.sourcegraph.config.ConfigUtil;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
 public class CodyAgent {
   // TODO: actually stop the agent based on application lifecycle events
   public static Logger logger = Logger.getInstance(CodyAgent.class);
-  private static @NotNull PluginId pluginId = PluginId.getId("com.sourcegraph.jetbrains");
+  private static final @NotNull PluginId PLUGIN_ID = PluginId.getId("com.sourcegraph.jetbrains");
 
   private CodyAgentClient client;
   public static final ExecutorService executorService = Executors.newCachedThreadPool();
@@ -98,7 +94,7 @@ public class CodyAgent {
     if (!fromProperty.isEmpty()) {
       return Paths.get(fromProperty);
     }
-    IdeaPluginDescriptor plugin = PluginManagerCore.getPlugin(pluginId);
+    IdeaPluginDescriptor plugin = PluginManagerCore.getPlugin(PLUGIN_ID);
     if (plugin == null) {
       return null;
     }
