@@ -23,6 +23,7 @@ USER sourcegraph
 WORKDIR /home/sourcegraph
 
 COPY --from=zoekt_upstream \
+    /usr/local/bin/scip-ctags \
     /usr/local/bin/zoekt-sourcegraph-indexserver \
     /usr/local/bin/zoekt-archive-index \
     /usr/local/bin/zoekt-git-index \
