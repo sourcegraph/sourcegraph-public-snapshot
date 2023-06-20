@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -84,9 +83,13 @@ func (s *service) ForSubject(ctx context.Context, subject api.SettingsSubject) (
 		return nil, err
 	}
 
-	allSettings, err := iter.MapErr(subjects, func(subject *api.SettingsSubject) (*schema.Settings, error) {
-		return latest(ctx, s.db, *subject)
-	})
+	allSettings := make([]*schema.Settings, len(subjects))
+	for i, subject := range subjects {
+		allSettings[i], err = latest(ctx, s.db, subject)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	return mergeSettings(allSettings...), nil
 }
