@@ -149,7 +149,13 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     }
 
     if (!authenticatedUser || !isCodyEnabled()) {
-        return <CodyMarketingPage isSourcegraphDotCom={isSourcegraphDotCom} context={context} />
+        return (
+            <CodyMarketingPage
+                isSourcegraphDotCom={isSourcegraphDotCom}
+                authenticatedUser={authenticatedUser}
+                context={context}
+            />
+        )
     }
 
     return (
