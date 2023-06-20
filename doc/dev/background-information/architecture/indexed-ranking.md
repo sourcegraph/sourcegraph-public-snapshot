@@ -36,12 +36,6 @@ Zoekt creates a [score for a match](https://sourcegraph.com/search?q=context:glo
 
 We also incorporate smaller signals based on the repository and file importance (described in the next section), as well as the number of query components that match (in the case of OR queries).
 
-## HELLO
-
-![finished](https://storage.googleapis.com/sourcegraph-assets/docs/images/ranking/5.1/finished.png)
-![calculating](https://storage.googleapis.com/sourcegraph-assets/docs/images/ranking/5.1/calculating.png)
-![unindexed](https://storage.googleapis.com/sourcegraph-assets/docs/images/ranking/5.1/unindexed.png)
-
 ## Ordering files by importance
 
 When creating indexes, we lay out the files such that we search more important files and repositories first. This means when streaming we're more likely to encounter important candidates first, leading to a better set of ranked results.
@@ -49,12 +43,13 @@ When creating indexes, we lay out the files such that we search more important f
 Zoekt indexes are partitioned by repository. The search proceeds through each repository in order of their priority.
 The [repository priority](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+stars+reporank&patternType=regexp) is the number of stars a repository has received. Admins can manually adjust the priority of a repository through a [site configuration option](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+repoRankFromConfig&patternType=regexp).
 
-Within each repository, files are ordered in terms of importance:
+Within each repository, files are ordered in terms of importance. If precise ranking scores are being calculated from [SCIP data](/code_navigation/explanations/precise_code_navigation.md), then files are ranked by the number of inbound references from any other file in the available code graph. See [this guide](./precise-ranking.md) on how to set such a background job. In the absence of SCIP-powered ranking scores, the following rules are applied:
+
 - Down rank generated code. This code is usually the least interesting in results.
-- Down rank vendored code. Developers are normally looking for code written by their organisation.
+- Down rank vendored code. Developers are normally looking for code written by their organization.
 - Down rank test code. Developers normally prefer results in non-test code over test code.
 - Up rank files with lots of symbols. These files are usually edited a lot.
-- Up rank small files. If you have similiar symbol levels, prefer the shorter file.
+- Up rank small files. If you have similar symbol levels, prefer the shorter file.
 - Up rank short names. The closer to the project root the likely more important you are.
 - Up rank branch count. if the same document appears on multiple branches its likely more important.
 
@@ -62,4 +57,3 @@ Within each repository, files are ordered in terms of importance:
 
 - [RFC 359](https://docs.google.com/document/d/1EiD_dKkogqBNAbKN3BbanII4lQwROI7a0aGaZ7i-0AU/edit#heading=h.trqab8y0kufp): Search Result Ranking
 - [Zoekt design reference](https://github.com/sourcegraph/zoekt/blob/master/doc/design.md#ranking)
-
