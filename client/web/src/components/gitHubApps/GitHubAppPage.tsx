@@ -179,6 +179,17 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcr
                                 Learn more about public vs. private GitHub Apps.
                             </Link>
                         </Text>
+                        <Text>
+                            Only{' '}
+                            <Link
+                                to="https://docs.github.com/en/organizations/managing-peoples-access-to-your-organization-with-roles/roles-in-an-organization#organization-owners"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                organization owners
+                            </Link>{' '}
+                            can view and manage installations for an organization.
+                        </Text>
                         <div className="list-group mb-3" aria-label="GitHub App Installations">
                             {app.installations?.length === 0 ? (
                                 <Text>
