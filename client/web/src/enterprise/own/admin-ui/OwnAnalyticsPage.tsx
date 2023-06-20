@@ -100,6 +100,7 @@ const OwnAnalyticsPanel: FC = () => {
                                             width={width}
                                             height={300}
                                             data={ownSignalsData}
+                                            maxValueLowerBound={100}
                                             getDatumName={datum => datum.name}
                                             getDatumValue={datum => datum.count}
                                             getDatumColor={datum => datum.fill}

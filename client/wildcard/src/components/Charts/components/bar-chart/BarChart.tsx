@@ -29,6 +29,7 @@ export interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGPr
     getTruncatedXTick?: (formattedTick: string) => string
     getCategory?: (datum: Datum) => string | undefined
     getDatumFadeColor?: (datum: Datum) => string
+    maxValueLowerBound?: number
 
     onDatumHover?: (datum: Datum) => void
     getDatumHoverValueLabel?: (datum: Datum) => string
@@ -54,6 +55,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         getDatumValue,
         getDatumColor,
         getDatumFadeColor,
+        maxValueLowerBound,
         getDatumHoverValueLabel,
         getDatumLink = DEFAULT_LINK_GETTER,
         getCategory = getDatumName,
@@ -76,13 +78,12 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         [categories]
     )
 
-    const yScale = useMemo(
-        () =>
-            scaleLinear<number>({
-                domain: [0, Math.max(...categories.map(category => category.maxValue))],
-            }),
-        [categories]
-    )
+    const yScale = useMemo(() => {
+        const highestValue = Math.max(...categories.map(category => category.maxValue))
+        return scaleLinear<number>({
+            domain: [0, Math.max(highestValue, maxValueLowerBound ?? -Infinity)],
+        })
+    }, [categories])
 
     const handleBarClick = (event: MouseEvent, datum: Datum, index: number): void => {
         const link = getDatumLink(datum)
