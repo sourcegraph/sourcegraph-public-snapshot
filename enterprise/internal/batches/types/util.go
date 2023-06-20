@@ -30,9 +30,10 @@ func GetSupportedExternalServices() map[string]CodehostCapabilities {
 		extsvc.TypeAzureDevOps:     {CodehostCapabilityDraftChangesets: true},
 		extsvc.TypeGerrit:          {CodehostCapabilityDraftChangesets: true},
 	}
-	if conf.Get().ExperimentalFeatures.BatchChangesEnablePerforce {
+	if conf.Get().ExperimentalFeatures != nil && conf.Get().ExperimentalFeatures.BatchChangesEnablePerforce {
 		supportedExternalServices[extsvc.TypePerforce] = CodehostCapabilities{}
 	}
+
 	return supportedExternalServices
 }
 
