@@ -1,4 +1,4 @@
-# Deploying Sourcegraph executors on Kubernetes
+# Deploying Sourcegraph executors natively on Kubernetes
 
 <aside class="beta">
 <p>
