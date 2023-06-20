@@ -2394,7 +2394,26 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "default": [
+            ".*ignore",
+            ".gitattributes",
+            ".mailmap",
+            "*.csv",
+            "*.sql",
+            "*.svg",
+            "*.json",
+            "*.jsonc",
+            "*.jsonl",
+            "*.xml",
+            "*.yml",
+            "*.yaml",
+            "__fixtures__/",
+            "node_modules/",
+            "testdata/",
+            "mocks/",
+            "vendor/"
+          ]
         },
         "maxCodeEmbeddingsPerRepo": {
           "description": "The maximum number of embeddings for code files to generate per repo",
