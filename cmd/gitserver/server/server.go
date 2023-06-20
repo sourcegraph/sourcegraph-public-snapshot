@@ -2714,6 +2714,14 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	redactor := newURLRedactor(remoteURL)
 
+	// Note: We want to make sure that the latest config is always applied so we cannot set this
+	// where the syncer is initialised.
+	if gitSyncer, ok := syncer.(*gitRepoSyncer); ok {
+		if recordingConf := conf.Get().SiteConfig().GitRecorder; recordingConf != nil {
+			gitSyncer.RecordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos), recordingConf.Size)
+		}
+	}
+
 	output, err := syncer.Fetch(ctx, remoteURL, dir, revspec)
 
 	// best-effort update the output of the fetch
