@@ -36,6 +36,12 @@ Zoekt creates a [score for a match](https://sourcegraph.com/search?q=context:glo
 
 We also incorporate smaller signals based on the repository and file importance (described in the next section), as well as the number of query components that match (in the case of OR queries).
 
+## HELLO
+
+![finished](https://storage.googleapis.com/sourcegraph-assets/docs/images/ranking/5.1/finished.png)
+![calculating](https://storage.googleapis.com/sourcegraph-assets/docs/images/ranking/5.1/calculating.png)
+![unindexed](https://storage.googleapis.com/sourcegraph-assets/docs/images/ranking/5.1/unindexed.png)
+
 ## Ordering files by importance
 
 When creating indexes, we lay out the files such that we search more important files and repositories first. This means when streaming we're more likely to encounter important candidates first, leading to a better set of ranked results.
