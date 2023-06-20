@@ -64,6 +64,13 @@ if [ "$BUILDKITE_BRANCH" == "main" ]; then
   push_prod=true
 fi
 
+# All release branch builds must be published to prod tags to support
+# format introduced by https://github.com/sourcegraph/sourcegraph/pull/48050
+# by release branch deployments.
+if [[ "$BUILDKITE_BRANCH" =~ ^[0-9]+\.[0-9]+$ ]]; then
+  push_prod=true
+fi
+
 if [[ "$BUILDKITE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   dev_tags+=("${BUILDKITE_TAG:1}")
   prod_tags+=("${BUILDKITE_TAG:1}")
