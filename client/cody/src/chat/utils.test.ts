@@ -91,6 +91,8 @@ describe('validateAuthStatus', () => {
             showInvalidAccessTokenError: false,
             requiresVerifiedEmail: true,
             siteHasCodyEnabled: true,
+            isLoggedIn: true,
+            endpoint,
         }
         expect(newAuthStatus(endpoint, isDotComOrApp, validUser, verifiedEmail, codyEnabled, siteVersion)).toEqual(
             expected
@@ -104,6 +106,7 @@ describe('validateAuthStatus', () => {
             hasVerifiedEmail: false,
             requiresVerifiedEmail: true,
             siteHasCodyEnabled: true,
+            endpoint,
         }
         expect(newAuthStatus(endpoint, isDotComOrApp, validUser, !verifiedEmail, codyEnabled, siteVersion)).toEqual(
             expected
@@ -116,6 +119,8 @@ describe('validateAuthStatus', () => {
             ...defaultAuthStatus,
             authenticated: true,
             siteHasCodyEnabled: true,
+            isLoggedIn: true,
+            endpoint,
         }
         expect(newAuthStatus(endpoint, !isDotComOrApp, validUser, verifiedEmail, codyEnabled, siteVersion)).toEqual(
             expected
@@ -134,6 +139,7 @@ describe('validateAuthStatus', () => {
             ...defaultAuthStatus,
             authenticated: true,
             siteHasCodyEnabled: false,
+            endpoint,
         }
         expect(newAuthStatus(endpoint, !isDotComOrApp, validUser, !verifiedEmail, !codyEnabled, siteVersion)).toEqual(
             expected

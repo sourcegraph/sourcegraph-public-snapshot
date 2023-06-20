@@ -33,9 +33,9 @@ export async function beforeIntegrationTest(): Promise<void> {
  * Teardown (`afterEach`) function for integration tests that use {@link beforeIntegrationTest}.
  */
 export async function afterIntegrationTest(): Promise<void> {
-    await ensureExecuteCommand('cody.auth.logout')
     await ensureExecuteCommand('cody.interactive.clear')
     await ensureExecuteCommand('cody.history.clear')
+    await ensureExecuteCommand('cody.test.token', null)
 }
 
 // executeCommand specifies ...any[] https://code.visualstudio.com/api/references/vscode-api#commands

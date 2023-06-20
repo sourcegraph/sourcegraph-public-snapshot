@@ -72,7 +72,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
 
 function sanitizeCodebase(codebase: string | undefined): string {
     if (!codebase) {
-        return DOTCOM_URL.href
+        return ''
     }
     const protocolRegexp = /^(https?):\/\//
     const trailingSlashRegexp = /\/$/
@@ -80,6 +80,9 @@ function sanitizeCodebase(codebase: string | undefined): string {
 }
 
 function sanitizeServerEndpoint(serverEndpoint: string): string {
+    if (!serverEndpoint) {
+        return DOTCOM_URL.href
+    }
     const trailingSlashRegexp = /\/$/
     return serverEndpoint.trim().replace(trailingSlashRegexp, '')
 }

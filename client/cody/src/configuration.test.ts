@@ -1,5 +1,6 @@
 import type * as vscode from 'vscode'
 
+import { DOTCOM_URL } from './chat/protocol'
 import { getConfiguration } from './configuration'
 
 describe('getConfiguration', () => {
@@ -8,7 +9,7 @@ describe('getConfiguration', () => {
             get: <T>(_key: string, defaultValue?: T): typeof defaultValue | undefined => defaultValue,
         }
         expect(getConfiguration(config)).toEqual({
-            serverEndpoint: '',
+            serverEndpoint: DOTCOM_URL.href,
             codebase: '',
             useContext: 'embeddings',
             experimentalSuggest: false,
