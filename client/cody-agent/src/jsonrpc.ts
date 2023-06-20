@@ -91,12 +91,14 @@ class MessageDecoder extends Writable {
                 // once we get the whole thing
                 let newContentLength = 0
 
-                while ((endIndex = headerString.indexOf('\r\n', startIndex)) !== -1) {
+                const LINE_TERMINATOR = '\r\n'
+
+                while ((endIndex = headerString.indexOf(LINE_TERMINATOR, startIndex)) !== -1) {
                     const entry = headerString.slice(startIndex, endIndex)
                     const [headerName, headerValue] = entry.split(':').map(_ => _.trim())
 
                     if (headerValue === undefined) {
-                        this.buffer = this.buffer.slice(endIndex + 2)
+                        this.buffer = this.buffer.slice(endIndex + LINE_TERMINATOR.length)
 
                         // Asserts we actually have a valid header with a Content-Length
                         // This state is irrecoverable because the stream is polluted
@@ -119,7 +121,7 @@ class MessageDecoder extends Writable {
                             break
                     }
 
-                    startIndex = endIndex + 2
+                    startIndex = endIndex + LINE_TERMINATOR.length
                 }
 
                 break
