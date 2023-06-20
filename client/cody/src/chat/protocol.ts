@@ -62,8 +62,8 @@ export const APP_LANDING_URL = new URL('https://about.sourcegraph.com/app')
 export const APP_CALLBACK_URL = new URL('sourcegraph://user/settings/tokens/new/callback?requestFrom=CODY')
 export const APP_DOWNLOAD_URLS: { [os: string]: { [arch: string]: string } } = {
     darwin: {
-        arm64: 'https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.13%2B1311.1af08ae774/Sourcegraph_2023.6.13+1311.1af08ae774_aarch64.dmg',
-        x64: 'https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.13%2B1311.1af08ae774/Sourcegraph_2023.6.13+1311.1af08ae774_x64.dmg',
+        arm64: 'https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.16%2B1314.6c2d49d47c/Cody_2023.6.16+1314.6c2d49d47c_aarch64.dmg',
+        x64: 'https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.16%2B1314.6c2d49d47c/Cody_2023.6.16+1314.6c2d49d47c_x64.dmg',
     },
 }
 
