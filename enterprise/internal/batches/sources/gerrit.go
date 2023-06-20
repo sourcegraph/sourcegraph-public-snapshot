@@ -10,6 +10,7 @@ import (
 
 	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
@@ -166,6 +167,12 @@ func (s GerritSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
 	updated, err := s.client.AbandonChange(ctx, cs.ExternalID)
 	if err != nil {
 		return errors.Wrap(err, "abandoning change")
+	}
+
+	if conf.Get().BatchChangesAutoDeleteBranch {
+		if err := s.client.DeleteChange(ctx, cs.ExternalID); err != nil {
+			return errors.Wrap(err, "deleting change")
+		}
 	}
 
 	return errors.Wrap(s.setChangesetMetadata(ctx, updated, cs), "setting Gerrit changeset metadata")
