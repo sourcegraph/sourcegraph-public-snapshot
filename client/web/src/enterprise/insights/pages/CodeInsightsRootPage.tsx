@@ -44,7 +44,6 @@ export enum CodeInsightsRootPageTab {
 interface CodeInsightsRootPageProps extends TelemetryProps {
     dashboardId?: string
     activeTab: CodeInsightsRootPageTab
-    isSourcegraphApp: boolean
 }
 
 export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = memo(props => {
@@ -76,7 +75,7 @@ export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = memo(props =>
     }
 
     return (
-        <CodeInsightsPage isSourcegraphApp={props.isSourcegraphApp}>
+        <CodeInsightsPage>
             <PageHeader
                 path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
                 actions={
@@ -99,21 +98,14 @@ export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = memo(props =>
                 </TabList>
                 <TabPanels className={styles.tabPanels}>
                     <TabPanel tabIndex={-1}>
-                        <DashboardsView
-                            dashboardId={dashboardId}
-                            telemetryService={telemetryService}
-                            isSourcegraphApp={props.isSourcegraphApp}
-                        />
+                        <DashboardsView dashboardId={dashboardId} telemetryService={telemetryService} />
                     </TabPanel>
                     <TabPanel tabIndex={-1}>
                         <AllInsightsView telemetryService={telemetryService} />
                     </TabPanel>
                     <TabPanel tabIndex={-1}>
                         <Suspense fallback={<LoadingSpinner aria-label="Loading Code Insights Getting started page" />}>
-                            <LazyCodeInsightsGettingStartedPage
-                                isSourcegraphApp={props.isSourcegraphApp}
-                                telemetryService={telemetryService}
-                            />
+                            <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
                         </Suspense>
                     </TabPanel>
                 </TabPanels>

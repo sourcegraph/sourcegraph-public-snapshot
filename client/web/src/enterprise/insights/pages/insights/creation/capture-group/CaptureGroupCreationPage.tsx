@@ -20,7 +20,6 @@ interface CaptureGroupCreationPageProps extends TelemetryProps {
     onInsightCreateRequest: (event: { insight: MinimalCaptureGroupInsightData }) => Promise<unknown>
     onSuccessfulCreation: () => void
     onCancel: () => void
-    isSourcegraphApp: boolean
 }
 
 export const CaptureGroupCreationPage: FC<CaptureGroupCreationPageProps> = props => {
@@ -64,7 +63,7 @@ export const CaptureGroupCreationPage: FC<CaptureGroupCreationPageProps> = props
     }
 
     return (
-        <CodeInsightsPage isSourcegraphApp={props.isSourcegraphApp}>
+        <CodeInsightsPage>
             <PageTitle title="Create detect and track patterns insight - Code Insights" />
 
             <PageHeader

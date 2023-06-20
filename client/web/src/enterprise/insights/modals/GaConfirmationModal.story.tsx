@@ -53,7 +53,7 @@ export const GaConfirmationModalExample: React.FunctionComponent<React.PropsWith
             <TemporarySettingsContext.Provider value={settingsStorage}>
                 <div>
                     <H2>Some content</H2>
-                    <GaConfirmationModal isSourcegraphApp={false} />
+                    <GaConfirmationModal />
                 </div>
             </TemporarySettingsContext.Provider>
         </CodeInsightsBackendContext.Provider>
