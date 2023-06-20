@@ -2,7 +2,6 @@ import React from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 
-import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { H2, H3, Icon, Text, Link } from '@sourcegraph/wildcard'
 
 interface Props {
