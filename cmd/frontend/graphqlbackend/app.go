@@ -23,7 +23,7 @@ type AppResolver interface {
 	LocalExternalServices(ctx context.Context) ([]LocalExternalServiceResolver, error)
 
 	SetupNewAppRepositoriesForEmbedding(ctx context.Context, args SetupNewAppRepositoriesForEmbeddingArgs) (*EmptyResponse, error)
-	EmbeddingJobStatus(ctx context.Context, args EmbeddingJobStatusArgs) (*[]EmbeddingJobStatusResolver, error)
+	ListRepoEmbeddingJobStatus(ctx context.Context, args EmbeddingJobStatusArgs) ([]*EmbeddingJobStatusResolver, error)
 }
 
 type EmbeddingJobStatusResolver interface {
