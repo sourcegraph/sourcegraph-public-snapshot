@@ -12,3 +12,6 @@ export const isCodyEnabled = (): boolean => {
 
     return true
 }
+
+export const isSignInRequiredForCody = (): boolean =>
+    window.context.sourcegraphDotComMode && !window.context.isAuthenticatedUser
