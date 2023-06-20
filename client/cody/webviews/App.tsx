@@ -95,17 +95,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         // The dependencies array is empty to execute the callback only on component mount.
     }, [debugLog, errorMessages, vscodeAPI])
 
-    const onLogin = useCallback(
-        (token: string, endpoint: string) => {
-            if (!endpoint) {
-                return
-            }
-            setAuthStatus(undefined)
-            vscodeAPI.postMessage({ command: 'settings', serverEndpoint: endpoint, accessToken: token })
-        },
-        [vscodeAPI]
-    )
-
     const onLogout = useCallback(() => {
         vscodeAPI.postMessage({ command: 'auth', type: 'signout' })
     }, [vscodeAPI])
@@ -119,7 +108,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             <Header />
             {view === 'login' || !authStatus ? (
                 <Login
-                    onLogin={onLogin}
                     authStatus={authStatus}
                     serverEndpoint={config?.serverEndpoint}
                     isAppInstalled={isAppInstalled}

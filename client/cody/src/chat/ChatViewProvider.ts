@@ -738,8 +738,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Log Events - naming convention: source:feature:action
      */
     public sendEvent(event: string, value: string): void {
-        const isPrivateInstance = new URL(this.config.serverEndpoint).href !== DOTCOM_URL.href
-        const endpointUri = { serverEndpoint: this.config.serverEndpoint }
+        const endpoint = this.config.serverEndpoint || DOTCOM_URL.href
+        const isPrivateInstance = new URL(endpoint).href !== DOTCOM_URL.href
+        const endpointUri = { serverEndpoint: endpoint }
         const chatTranscript = { chatTranscript: this.transcript.toChat() }
         switch (event) {
             case 'feedback':

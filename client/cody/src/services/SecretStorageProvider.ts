@@ -18,6 +18,7 @@ export interface SecretStorage {
     get(key: string): Promise<string | undefined>
     store(key: string, value: string): Promise<void>
     storeToken(endpoint: string, value: string): Promise<void>
+    deleteToken(endpoint: string): Promise<void>
     delete(key: string): Promise<void>
     onDidChange(callback: (key: string) => Promise<void>): vscode.Disposable
 }
@@ -40,8 +41,13 @@ export class VSCodeSecretStorage implements SecretStorage {
         if (!value || !endpoint) {
             return
         }
-        await this.store(CODY_ACCESS_TOKEN_SECRET, value)
         await this.store(endpoint, value)
+        await this.store(CODY_ACCESS_TOKEN_SECRET, value)
+    }
+
+    public async deleteToken(endpoint: string): Promise<void> {
+        await this.secretStorage.delete(endpoint)
+        await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
     }
 
     public async delete(key: string): Promise<void> {
@@ -82,9 +88,13 @@ export class InMemorySecretStorage implements SecretStorage {
     }
 
     public async storeToken(endpoint: string, value: string): Promise<void> {
-        const key = CODY_ACCESS_TOKEN_SECRET
-        await this.store(key, value)
         await this.store(endpoint, value)
+        await this.store(CODY_ACCESS_TOKEN_SECRET, value)
+    }
+
+    public async deleteToken(endpoint: string): Promise<void> {
+        await this.delete(endpoint)
+        await this.delete(CODY_ACCESS_TOKEN_SECRET)
     }
 
     public async delete(key: string): Promise<void> {

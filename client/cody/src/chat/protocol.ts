@@ -84,7 +84,7 @@ export interface AuthStatus {
 }
 
 export const defaultAuthStatus = {
-    endpoint: null,
+    endpoint: DOTCOM_URL.href,
     isLoggedIn: false,
     showInvalidAccessTokenError: false,
     authenticated: false,
@@ -95,7 +95,6 @@ export const defaultAuthStatus = {
 }
 
 export const unauthenticatedStatus = {
-    endpoint: null,
     isLoggedIn: false,
     showInvalidAccessTokenError: true,
     authenticated: false,

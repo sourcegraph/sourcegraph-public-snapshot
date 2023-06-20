@@ -12,7 +12,6 @@ import styles from './Login.module.css'
 
 interface LoginProps {
     authStatus?: AuthStatus
-    onLogin: (token: string, endpoint: string) => void
     serverEndpoint?: string
     isAppInstalled: boolean
     vscodeAPI: VSCodeWrapper
@@ -23,7 +22,6 @@ interface LoginProps {
 
 export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
     authStatus,
-    onLogin,
     serverEndpoint,
     isAppInstalled,
     vscodeAPI,
@@ -34,17 +32,13 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     const [endpoint, setEndpoint] = useState(serverEndpoint || DOTCOM_URL.href)
 
     const isOSSupported = appOS === 'darwin' && appArch === 'arm64'
-    const loginWithDotCom = (): void => {
+
+    const loginWithDotCom = useCallback(() => {
         const authUri = new URL(DOTCOM_CALLBACK_URL.href)
         authUri.searchParams.append('requestFrom', callbackScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY')
         setEndpoint(DOTCOM_URL.href)
-        onLogin('', DOTCOM_URL.href)
-        openLink(authUri.href)
-    }
-
-    const openLink = (url: string): void => {
-        vscodeAPI.postMessage({ command: 'links', value: url })
-    }
+        vscodeAPI.postMessage({ command: 'links', value: authUri.href })
+    }, [callbackScheme, vscodeAPI])
 
     const onFooterButtonClick = useCallback(
         (title: 'signin' | 'support') => {

@@ -17,34 +17,32 @@ export interface LoginInput {
 
 export type AuthMenuType = 'signin' | 'signout' | 'switch'
 
-function getItemLabel(uri: string, icon: string): string {
+function getItemLabel(uri: string, icon: string, current: boolean): string {
+    const iconType = current ? '$(check)' : icon
     if (isLocalApp(uri)) {
-        return `${icon} Cody App`
+        return `${iconType} Cody App`
     }
-    return `${icon} ${uri}`
+    return `${iconType} ${uri}`
 }
 
 export const AuthMenu = async (type: AuthMenuType, historyItems: string[]): Promise<LoginMenuItem | null> => {
     // Create option items
     const menu = AuthMenuOptions[type]
     const icon = menu.icon
+    const historySize = historyItems?.length
     const history =
-        historyItems?.length > 0
+        historySize > 0
             ? historyItems
                   ?.map((uri, i) => ({
                       id: uri,
-                      label: getItemLabel(uri, icon),
-                      description: i === 0 ? 'current' : '',
+                      label: getItemLabel(uri, icon, type === 'switch' && i === historySize - 1),
+                      description: type === 'signout' && i === 0 ? 'current' : '',
                       uri,
                   }))
                   .reverse()
             : []
     const seperator = [{ label: type === 'signin' ? 'previously used' : 'current', kind: -1 }]
-    const items = LoginMenuOptionItems
-    if (type === 'signin') {
-        items.shift()
-    }
-    const optionItems = type === 'signout' ? history : [...items, ...seperator, ...history]
+    const optionItems = type === 'signout' ? history : [...LoginMenuOptionItems, ...seperator, ...history]
     const option = (await vscode.window.showQuickPick(optionItems, AuthMenuOptions[type])) as LoginMenuItem
     return option
 }
@@ -78,7 +76,7 @@ export const AuthMenuOptions = {
     },
     signout: {
         title: 'Sign Out',
-        placeHolder: 'Select an account to sign out',
+        placeHolder: 'Select instance to sign out',
         ignoreFocusOut: true,
         icon: '$(sign-out)',
     },
@@ -91,11 +89,6 @@ export const AuthMenuOptions = {
 }
 
 export const LoginMenuOptionItems = [
-    {
-        id: 'app',
-        label: 'Connect to Cody App',
-        totalSteps: 0,
-    },
     {
         id: 'enterprise',
         label: 'Sign in to a Sourcegraph Enterprise Instance',
