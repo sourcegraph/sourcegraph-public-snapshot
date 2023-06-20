@@ -32,7 +32,6 @@ go_library(
         "//internal/redispool",
         "//internal/requestclient",
         "//internal/service",
-        "//internal/trace",
         "//internal/trace/policy",
         "//internal/tracer/oteldefaults",
         "//internal/tracer/oteldefaults/exporters",
