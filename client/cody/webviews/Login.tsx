@@ -111,9 +111,9 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                     Continue with Sourcegraph.com
                 </VSCodeButton>
             </section>
-            {/* Sourcegraph App */}
+            {/* Cody App */}
             <section className={classNames(styles.section, styles.codyGradient)}>
-                <h2 className={styles.sectionHeader}>Sourcegraph App</h2>
+                <h2 className={styles.sectionHeader}>Cody App</h2>
                 <p className={styles.openMessage}>{APP_MESSAGES.getStarted}</p>
                 {!isAppInstalled && <small className={styles.openMessage}>{APP_MESSAGES.download}</small>}
                 <ConnectApp

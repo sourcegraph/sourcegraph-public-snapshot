@@ -702,7 +702,7 @@
         },
         {
           "command": "cody.settings.user",
-          "when": "view == cody.chat",
+          "when": "view == cody.chat && cody.activated",
           "group": "8_cody@0"
         },
         {

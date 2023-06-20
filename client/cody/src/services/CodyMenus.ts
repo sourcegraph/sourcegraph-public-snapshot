@@ -102,7 +102,7 @@ export const LoginMenuOptionItems = [
     {
         id: 'enterprise',
         label: 'Sign in to a Sourcegraph Enterprise Instance',
-        detail: 'Instance must be at version 5.1 or higher',
+        description: 'Instance must be at v5.1 or higher',
         totalSteps: 1,
     },
 ]
