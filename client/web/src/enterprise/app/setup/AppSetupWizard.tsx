@@ -93,7 +93,7 @@ export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService }) => {
 
     return (
         <ThemeContext.Provider value={{ themeSetting: ThemeSetting.Light }}>
-            <PageTitle title="Sourcegraph App setup" />
+            <PageTitle title="Cody App setup" />
 
             <SetupStepsRoot
                 baseURL="/app-setup/"

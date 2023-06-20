@@ -31,12 +31,10 @@ interface ComputeInsightCreationPageProps extends TelemetryProps {
     onInsightCreateRequest: (event: InsightCreateEvent) => Promise<unknown>
     onSuccessfulCreation: () => void
     onCancel: () => void
-    isSourcegraphApp: boolean
 }
 
 export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreationPageProps> = props => {
-    const { backUrl, telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel, isSourcegraphApp } =
-        props
+    const { backUrl, telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
 
     const { licensed, insight } = useUiFeatures()
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
@@ -83,7 +81,7 @@ export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreatio
     }, [setInitialFormValues, telemetryService, onCancel])
 
     return (
-        <CodeInsightsPage isSourcegraphApp={isSourcegraphApp}>
+        <CodeInsightsPage>
             <PageTitle title="Create group results insight - Code Insights" />
 
             <PageHeader

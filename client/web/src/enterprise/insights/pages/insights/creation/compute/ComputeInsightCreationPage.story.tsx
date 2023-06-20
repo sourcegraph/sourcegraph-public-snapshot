@@ -38,7 +38,6 @@ export const ComputeInsightCreationPage: Story = () => {
             onInsightCreateRequest={fakeAPIRequest}
             onSuccessfulCreation={noop}
             onCancel={noop}
-            isSourcegraphApp={false}
         />
     )
 }

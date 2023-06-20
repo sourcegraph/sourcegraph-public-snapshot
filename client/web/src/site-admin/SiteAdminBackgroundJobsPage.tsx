@@ -110,7 +110,7 @@ export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
             <Text>Terminology:</Text>
             <ul>
                 <li>
-                    <strong>Job</strong>: a bag of routines, started when the Sourcegraph app is launched
+                    <strong>Job</strong>: a bag of routines, started when the Cody app is launched
                 </li>
                 <li>
                     <strong>Routine</strong>: a background process that repeatedly executes its task indefinitely, using

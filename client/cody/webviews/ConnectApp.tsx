@@ -21,7 +21,7 @@ export const ConnectApp: React.FunctionComponent<ConnectAppProps> = props => {
                 type="button"
                 onClick={() => openLink('sourcegraph://user/settings/tokens/new/callback?requestFrom=CODY')}
             >
-                Connect Sourcegraph App
+                Connect Cody App
             </VSCodeButton>
         </p>
     )

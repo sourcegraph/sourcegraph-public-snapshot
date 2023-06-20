@@ -37,7 +37,7 @@ export const ProductResearchPage: React.FunctionComponent<React.PropsWithChildre
             <PageHeader headingElement="h2" path={[{ text: 'Product research and feedback' }]} className="mb-3" />
             {isSourcegraphApp && (
                 <Container className="mb-2">
-                    <Text>Do you have feedback or need help with Sourcegraph App?</Text>
+                    <Text>Do you have feedback or need help with Cody App?</Text>
                     {[
                         {
                             content: 'File an issue',
