@@ -35,8 +35,8 @@ var QueuePerRepoIndexJobs = []IndexJobType{
 		RefreshInterval: time.Minute * 5,
 	}, {
 		Name:            types.Analytics,
-		IndexInterval:   time.Hour * 24,
-		RefreshInterval: time.Hour * 24,
+		IndexInterval:   time.Minute * 2,
+		RefreshInterval: time.Minute * 2,
 	},
 }
 
