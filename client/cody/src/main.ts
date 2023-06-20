@@ -16,6 +16,7 @@ import { ManualCompletionService } from './completions/manual'
 import { createProviderConfig as createAnthropicProviderConfig } from './completions/providers/anthropic'
 import { ProviderConfig } from './completions/providers/provider'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './completions/providers/unstable-codegen'
+import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './completions/providers/unstable-huggingface'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger, eventLogger } from './event-logger'
@@ -406,28 +407,7 @@ function createCompletionsProvider(
         history,
         codebaseContext
     )
-
-    let providerConfig: ProviderConfig
-    switch (config.completionsAdvancedProvider) {
-        case 'unstable-codegen': {
-            if (config.completionsAdvancedServerEndpoint !== null) {
-                providerConfig = createUnstableCodeGenProviderConfig({
-                    serverEndpoint: config.completionsAdvancedServerEndpoint,
-                })
-                break
-            }
-
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            webviewErrorMessenger(
-                'Provider `unstable-codegen` can not be used without configuring `cody.completions.advanced.serverEndpoint`. Falling back to `anthropic`.'
-            )
-        }
-        default:
-            providerConfig = createAnthropicProviderConfig({
-                completionsClient,
-                contextWindowTokens: 2048,
-            })
-    }
+    const providerConfig = createCompletionProviderConfig(config, webviewErrorMessenger, completionsClient)
     const completionsProvider = new CodyCompletionItemProvider({
         providerConfig,
         history,
@@ -453,4 +433,49 @@ function createCompletionsProvider(
             }
         },
     }
+}
+
+function createCompletionProviderConfig(
+    config: Configuration,
+    webviewErrorMessenger: (error: string) => Promise<void>,
+    completionsClient: SourcegraphNodeCompletionsClient
+): ProviderConfig {
+    let providerConfig: null | ProviderConfig = null
+    switch (config.completionsAdvancedProvider) {
+        case 'unstable-codegen': {
+            if (config.completionsAdvancedServerEndpoint !== null) {
+                providerConfig = createUnstableCodeGenProviderConfig({
+                    serverEndpoint: config.completionsAdvancedServerEndpoint,
+                })
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            webviewErrorMessenger(
+                'Provider `unstable-codegen` can not be used without configuring `cody.completions.advanced.serverEndpoint`. Falling back to `anthropic`.'
+            )
+            break
+        }
+        case 'unstable-huggingface': {
+            if (config.completionsAdvancedServerEndpoint !== null) {
+                providerConfig = createUnstableHuggingFaceProviderConfig({
+                    serverEndpoint: config.completionsAdvancedServerEndpoint,
+                    accessToken: config.completionsAdvancedAccessToken,
+                })
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            webviewErrorMessenger(
+                'Provider `unstable-huggingface` can not be used without configuring `cody.completions.advanced.serverEndpoint`. Falling back to `anthropic`.'
+            )
+            break
+        }
+    }
+    if (providerConfig) {
+        return providerConfig
+    }
+
+    return createAnthropicProviderConfig({
+        completionsClient,
+        contextWindowTokens: 2048,
+    })
 }
