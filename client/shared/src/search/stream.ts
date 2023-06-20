@@ -229,17 +229,17 @@ export interface Skipped {
      * - display :: we hit the display limit, so we stopped sending results from the backend.
      */
     reason:
-        | 'document-match-limit'
-        | 'shard-match-limit'
-        | 'repository-limit'
-        | 'shard-timedout'
-        | 'repository-cloning'
-        | 'repository-missing'
-        | 'backend-missing'
-        | 'excluded-fork'
-        | 'excluded-archive'
-        | 'display'
-        | 'error'
+    | 'document-match-limit'
+    | 'shard-match-limit'
+    | 'repository-limit'
+    | 'shard-timedout'
+    | 'repository-cloning'
+    | 'repository-missing'
+    | 'backend-missing'
+    | 'excluded-fork'
+    | 'excluded-archive'
+    | 'display'
+    | 'error'
     /**
      * A short message. eg 1,200 timed out.
      */
@@ -573,7 +573,8 @@ export function getRevision(branches?: string[], version?: string): string {
 
 export function getFileMatchUrl(fileMatch: ContentMatch | SymbolMatch | PathMatch): string {
     const revision = getRevision(fileMatch.branches, fileMatch.commit)
-    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.path}`
+    const encodedFilePath = fileMatch.path.split('/').map(encodeURIComponent).join('/')
+    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${encodedFilePath}`
 }
 
 export function getRepoMatchLabel(repoMatch: RepositoryMatch): string {
