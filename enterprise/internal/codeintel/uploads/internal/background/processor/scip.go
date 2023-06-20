@@ -72,12 +72,14 @@ func correlateSCIP(
 
 			for _, symbol := range document.Symbols {
 				if pkg, ok := packageFromSymbol(symbol.Symbol); ok {
-					packageSet[pkg] = false
+					// no-op if key exists; add false if key is absent
+					packageSet[pkg] = packageSet[pkg] || false
 				}
 
 				for _, relationship := range symbol.Relationships {
 					if pkg, ok := packageFromSymbol(relationship.Symbol); ok {
-						packageSet[pkg] = false
+						// no-op if key exists; add false if key is absent
+						packageSet[pkg] = packageSet[pkg] || false
 					}
 				}
 			}
@@ -88,8 +90,12 @@ func correlateSCIP(
 				}
 
 				if pkg, ok := packageFromSymbol(occurrence.Symbol); ok {
-					isDefinition := scip.SymbolRole_Definition.Matches(occurrence)
-					packageSet[pkg] = packageSet[pkg] || isDefinition
+					if isDefinition := scip.SymbolRole_Definition.Matches(occurrence); isDefinition {
+						packageSet[pkg] = true
+					} else {
+						// no-op if key exists; add false if key is absent
+						packageSet[pkg] = packageSet[pkg] || false
+					}
 				}
 			}
 		}
