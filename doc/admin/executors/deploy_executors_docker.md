@@ -1,14 +1,18 @@
 # Deploying Sourcegraph executors using Docker Compose
 
-<aside class="experimental">
+<aside class="beta">
 <p>
-<span class="badge badge-experimental">Experimental</span> This deployment is experimental and may change in the future.
+<span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future.
 </p>
 
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
 A [docker-compose file](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/executors/executor.docker-compose.yaml) is provided to deploy executors standlone, or alongside your existing Sourcegraph deployment.
+
+## Requirements
+
+Privileged containers are required to run executors in docker-compose. This is because executors require access to the docker daemon running on the host.
 
 ## Deployment
 
