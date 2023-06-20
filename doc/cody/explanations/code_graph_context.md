@@ -12,15 +12,22 @@ Embeddings are a semantic representation of text that allow us to create a searc
 
 Embeddings for relevant code files must be enabled for each repository that you'd like Cody to have context on.
 
-> NOTE: Generating embeddings sends code snippets to a third-party language party provider. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). 
-
 ### Configuring embeddings
 
 > NOTE: Enterprise Cloud customers should reach out to their Sourcegraph representative to enable embeddings.
 > See [Enabling Cody Enterprise: Cody on Sourcegraph Cloud](./enabling_cody_enterprise.md#cody-on-sourcegraph-cloud)
 
-Embeddings are automatically enabled and configured once [Cody is enabled](../quickstart.md).
-After enabling Cody, navigate to **Site admin > Cody** (`/site-admin/cody`) and schedule repositories for embedding.
+Embeddings are automatically enabled and configured once [Cody is enabled](../quickstart.md). However, embeddings will not be generated for any repo unless an admin takes action. There are two ways to do this.
+
+The recommended way of configuring embeddings is to use a policy. These are configured through the Admin UI using [policies](https://docs.sourcegraph.com/cody/explanations/policies). Policy based embeddings will be automatically updated based on the [update interval](#adjust-the-minimum-time-interval-between-automatically-scheduled-embeddings). Updates are [incremental](#incremental-embeddings). 
+
+To create a manual embedding, an admin can manually schedule specific repositories for embedding by navigating to **Site admin > Cody** (`/site-admin/cody`) and entering the names of the repositories that should be embeded. Manual embeddings are useful for one-off embeddings or to run an embeddings job immediately. These will not be automatically updated. However, if [incremental updates](#incremental-embeddings) are enabled, subsequent manual runs will be incremental.
+
+Whether created manually or by a policy, embeddings for an instance will be stored and served together.
+
+> NOTE: Generating embeddings sends code snippets to a third-party language party provider. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). 
+
+<span class="virtual-br"></span>
 
 > NOTE: By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice).
 
@@ -90,10 +97,6 @@ If you would like to allow your Sourcegraph instance to control the creation and
 ### Environment variables for the `embeddings` service
 
 - `EMBEDDINGS_CACHE_SIZE`: The maximum size of the in-memory cache (in bytes) that holds the embeddings for commonly-searched repos. If embeddings for a repo are larger than this size, the repo will not be held in the cache and must be re-fetched for each embeddings search. Defaults to `6442450944` (6 GiB).
-
-### Configuring embedding policies
-
-Embeddings are configured through the Admin UI using [policies](https://docs.sourcegraph.com/cody/explanations/policies).
 
 ### Incremental embeddings
 
