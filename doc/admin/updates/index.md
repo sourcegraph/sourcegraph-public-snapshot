@@ -1,5 +1,9 @@
 # Updating sourcegraph
 
+![queued](https://storage.googleapis.com/sourcegraph-assets/docs/images/upgrades/5.1/queued.png)
+![failed](https://storage.googleapis.com/sourcegraph-assets/docs/images/upgrades/5.1/failed.png)
+![oobmigrations](https://storage.googleapis.com/sourcegraph-assets/docs/images/upgrades/5.1/oobmigrations.png)
+
 This page is intended as an entry point into Sourcegraph versioning, upgrades, and the `migrator` service which manages our database schemas. Here we'll cover general concepts and direct you toward relevant operations pages.
 
 **If you are already familiar with Sourcegraph upgrades [skip to instance specific procedures](#instance-specific-procedures).**
