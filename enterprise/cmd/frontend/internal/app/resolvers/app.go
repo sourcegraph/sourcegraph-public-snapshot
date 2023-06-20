@@ -113,6 +113,10 @@ func (r *appResolver) SetupNewAppRepositoriesForEmbedding(ctx context.Context, a
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *appResolver) EmbeddingJobStatus(ctx context.Context, args graphqlbackend.EmbeddingJobStatusArgs) ([]graphqlbackend.EmbeddingJobStatusResolver, error) {
+	return nil, nil
+}
+
 type localDirectoryResolver struct {
 	paths []string
 }
