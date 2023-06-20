@@ -1,6 +1,7 @@
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
 load("//cmd/server:macro.bzl", "container_dependencies", "dependencies_tars")
 load("//dev:oci_defs.bzl", "image_repository")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 
 DEPS = [
@@ -12,6 +13,12 @@ DEPS = [
 ]
 
 container_dependencies(DEPS)
+
+pkg_tar(
+    name = "tar_scip-ctags",
+    srcs = ["//docker-images/syntax-highlighter:scip-ctags"],
+    package_dir = "/usr/local/bin",
+)
 
 oci_image(
     name = "image",
@@ -25,7 +32,9 @@ oci_image(
         "DATA_DIR": "/data/index",
         "SRC_FRONTEND_INTERNAL": "http://sourcegraph-frontend-internal",
     },
-    tars = dependencies_tars(DEPS),
+    tars = [
+        ":tar_scip-ctags",
+    ] + dependencies_tars(DEPS),
     user = "sourcegraph",
     workdir = "/home/sourcegraph",
 )
