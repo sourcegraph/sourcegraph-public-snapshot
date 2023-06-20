@@ -38,7 +38,7 @@ func WithClient(ctx context.Context, client *Client) context.Context {
 
 func (c *Client) LogFields() []log.Field {
 	if c == nil {
-		return []log.Field{log.String("requestclient", "<nil>")}
+		return []log.Field{log.String("requestClient", "<nil>")}
 	}
 	return []log.Field{
 		log.String("requestClient.ip", c.IP),
