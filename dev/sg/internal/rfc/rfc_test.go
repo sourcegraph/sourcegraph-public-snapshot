@@ -29,12 +29,12 @@ func TestAllocateRandomPort(t *testing.T) {
 		t.Errorf("Expected non-zero port, got %d", port)
 	}
 
-	// Check that we can listen on the port
-	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	// Test the port is open and we can listen on it
+	conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal(err) // Port is closed or an error occurred
 	}
-	listener.Close()
+	defer conn.Close()
 }
 
 func TestAuthResponseHandler(t *testing.T) {
