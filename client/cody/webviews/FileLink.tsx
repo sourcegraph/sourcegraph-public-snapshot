@@ -13,6 +13,7 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = ({ path }) => (
         onClick={() => {
             getVSCodeAPI().postMessage({ command: 'openFile', filePath: path })
         }}
+        title={path}
     >
         {path}
     </button>
