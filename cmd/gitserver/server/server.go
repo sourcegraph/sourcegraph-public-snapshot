@@ -1867,7 +1867,7 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Make sure the subcommand is explicitly allowed
-	allowlist := []string{"protects", "groups", "users", "group"}
+	allowlist := []string{"protects", "groups", "users", "group", "changes"}
 	allowed := false
 	for _, arg := range allowlist {
 		if req.Args[0] == arg {
