@@ -14,11 +14,22 @@ type SetupNewAppRepositoriesForEmbeddingArgs struct {
 	RepoNames []string
 }
 
+type EmbeddingJobStatusArgs struct {
+	RepoNames []string
+}
+
 type AppResolver interface {
 	LocalDirectories(ctx context.Context, args *LocalDirectoryArgs) (LocalDirectoryResolver, error)
 	LocalExternalServices(ctx context.Context) ([]LocalExternalServiceResolver, error)
 
 	SetupNewAppRepositoriesForEmbedding(ctx context.Context, args SetupNewAppRepositoriesForEmbeddingArgs) (*EmptyResponse, error)
+	EmbeddingJobStatus(ctx context.Context, args EmbeddingJobStatusArgs) (*EmptyResponse, error)
+}
+
+type EmbeddingJobStatusResolver interface {
+	RepoNames() []string
+	Status() string
+	PercentComplete() float32
 }
 
 type LocalDirectoryResolver interface {

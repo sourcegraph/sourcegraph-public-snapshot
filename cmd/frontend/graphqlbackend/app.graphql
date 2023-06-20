@@ -10,6 +10,29 @@ extend type Query {
     by Sourcegraph App.
     """
     localExternalServices: [LocalExternalService!]!
+
+    """
+    Allows Admin users to list the status and progress of each Embedding Job for configured. This is instended to be used by Cody App
+    """
+    embeddingJobStatus(repoNames: [String!]!): [EmbeddingJobStatus!]!
+}
+
+"""
+EmbeddingJobStatus represents the status of an embedding job for a particular repo. This is an API specific to Cody App.
+"""
+type EmbeddingJobStatus {
+    """
+    The name of the repo this embedding job status is for
+    """
+    RepoName: String!
+    """
+    The embedding status of the job which can be: COMPLETED, QUEUED, IN PROGRESS and NO STATUS
+    """
+    Status: String!
+    """
+    The completion percentage of the job with 0 meaning the job has not started and 100 means the job is complete.
+    """
+    PercentComplete: Float!
 }
 
 """
