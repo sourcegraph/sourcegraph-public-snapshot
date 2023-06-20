@@ -17,7 +17,26 @@ Provide a descriptive name for the policy and click on **Add repository pattern*
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/embeddings/new-policy-create.png" class="screenshot" alt="Create new global policy">
 
-The pattern matches exactly, unless you use an asterisk _*_ to match any sequence of characters.
+The pattern matches exactly, unless you use an asterisk _*_, which matches any sequence of zero or more characters.
+
+### Example 1
+
+- Original: "github.com/sourcegraph/sourcegraph"
+- Pattern: `github.com/sourcegraph/*`
+- Result: The pattern matches the original and all other repositories under the "github.com/sourcegraph/" organization.
+
+### Example 2
+
+- Original: "github.com/sourcegraph/sourcegraph"
+- Pattern: `github.com/sourcegraph/sourcegraph`
+- Result: The pattern matches only the original.
+
+### Example 3
+
+- Original: "github.com/sourcegraph/sourcegraph"
+- Pattern: `*sourcegraph*`
+- Result: The pattern matches the original and any repository, from any code host, with the word "sourcegraph" in it.
+
 The policy will be applied to all repositories that match the pattern.
 If you choose not to define a pattern, the policy will be applied to up to [embeddings.policyRepositoryMatchLimit](./code_graph_context.md#configuring-the-global-policy-match-limit) repositories.
 Finally, click on **Create policy**.
