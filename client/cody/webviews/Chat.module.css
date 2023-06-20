@@ -35,11 +35,9 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
     color: var(--code-foreground);
 }
 
-.transcript-item ul,
-.transcript-item ol {
-    padding-left: 0.5rem;
-    white-space: nowrap;
-    overflow: hidden;
+.transcript-item ul:not(.transcript-action *),
+.transcript-item ol:not(.transcript-action *) {
+    padding-left: 2rem;
 }
 
 .transcript-action {
