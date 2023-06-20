@@ -112,11 +112,11 @@ func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, l
 	const (
 		version    = "V3"
 		searchMode = search.Precise
-		protocol   = search.Batch
+		protocol   = search.Streaming
 	)
 
 	patternType := "literal"
-	searchQuery := fmt.Sprintf("type:file select:repo index:only count:%d content:%q", limit, snippet)
+	searchQuery := fmt.Sprintf("type:file select:repo index:only case:yes count:%d content:%q", limit, snippet)
 
 	inputs, err := c.SearchClient.Plan(
 		ctx,

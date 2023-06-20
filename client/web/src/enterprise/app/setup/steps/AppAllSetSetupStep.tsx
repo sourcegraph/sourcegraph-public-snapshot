@@ -13,12 +13,13 @@ export const AppAllSetSetupStep: FC<StepComponentProps> = ({ className }) => {
 
     return (
         <div className={classNames(styles.root, className)}>
-            <div className={styles.content}>
-                <div className={styles.description}>
-                    <H1 className={styles.descriptionHeading}>You’re all set</H1>
+            <div className={styles.description}>
+                <H1 className={styles.descriptionHeading}>You’re all set</H1>
+
+                <div className={styles.descriptionContent}>
                     <Text className={styles.descriptionText}>
-                        Ask Cody questions right within your editor. The Cody extension also has a fixup code feature,
-                        recipes, and experimental completions.
+                        Open the app to get started. You can also access Cody from the system tray to chat with Cody
+                        alongside your editor.
                     </Text>
                     <Button size="lg" variant="primary" className={styles.descriptionButton} onClick={onNextStep}>
                         Open the app →
