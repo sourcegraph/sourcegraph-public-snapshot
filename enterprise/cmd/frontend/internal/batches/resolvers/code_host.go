@@ -66,7 +66,7 @@ func (c *batchChangesCodeHostResolver) RequiresSSH() bool {
 
 func (c *batchChangesCodeHostResolver) RequiresUsername() bool {
 	switch c.codeHost.ExternalServiceType {
-	case extsvc.TypeBitbucketCloud, extsvc.TypeAzureDevOps, extsvc.TypeGerrit:
+	case extsvc.TypeBitbucketCloud, extsvc.TypeAzureDevOps, extsvc.TypePerforce:
 		return true
 	}
 

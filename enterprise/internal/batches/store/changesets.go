@@ -16,6 +16,7 @@ import (
 	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -1525,6 +1526,10 @@ func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		m := new(gerritbatches.AnnotatedChange)
 		m.Change = &gerrit.Change{}
 		t.Metadata = m
+	case extsvc.TypePerforce:
+		t.Metadata = new(protocol.PerforceChangelist)
+	case extsvc.TypeGerrit:
+		t.Metadata = new(gerrit.Change)
 	default:
 		return errors.New("unknown external service type")
 	}

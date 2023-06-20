@@ -116,7 +116,7 @@ func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
 
 	// Only show supported hosts.
 	supportedTypes := []*sqlf.Query{}
-	for extSvcType := range btypes.SupportedExternalServices {
+	for extSvcType := range btypes.GetSupportedExternalServices() {
 		supportedTypes = append(supportedTypes, sqlf.Sprintf("%s", extSvcType))
 	}
 	repoPreds = append(repoPreds, sqlf.Sprintf("repo.external_service_type IN (%s)", sqlf.Join(supportedTypes, ", ")))

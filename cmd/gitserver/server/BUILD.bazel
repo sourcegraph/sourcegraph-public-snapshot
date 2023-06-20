@@ -72,6 +72,7 @@ go_library(
         "//internal/limiter",
         "//internal/metrics",
         "//internal/observation",
+        "//internal/perforce",
         "//internal/ratelimit",
         "//internal/search/streaming/http",
         "//internal/security",
