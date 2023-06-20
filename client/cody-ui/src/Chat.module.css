@@ -47,8 +47,11 @@
 .suggestions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    flex-direction: row;
+    gap: 0.1rem;
     margin-bottom: 0.25rem;
+    /* This matches the button paddings, so the button text lines up with the input */
+    margin-left: -6px;
 }
 
 .abort-button-container {
