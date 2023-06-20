@@ -1,6 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 
-import { mdiClose, mdiSend, mdiArrowDown, mdiPencil, mdiThumbUp, mdiThumbDown, mdiCheck } from '@mdi/js'
+import {
+    mdiClose,
+    mdiSend,
+    mdiArrowDown,
+    mdiPencil,
+    mdiThumbUp,
+    mdiThumbDown,
+    mdiCheck,
+    mdiStopCircleOutline,
+} from '@mdi/js'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
@@ -119,9 +128,9 @@ interface IAbortMessageInProgressProps {
 const AbortMessageInProgress: React.FunctionComponent<IAbortMessageInProgressProps> = React.memo(
     function AbortMessageInProgressButton({ onAbortMessageInProgress }) {
         return (
-            <div className="d-flex justify-content-center w-100 mt-4 mb-2">
-                <Button onClick={onAbortMessageInProgress} variant="secondary" outline={true} size="sm">
-                    Stop generating
+            <div className="d-flex justify-content-center w-100 mb-1">
+                <Button onClick={onAbortMessageInProgress} variant="secondary" outline={false} size="sm">
+                    <Icon aria-label="Abort" svgPath={mdiStopCircleOutline} /> Stop generating
                 </Button>
             </div>
         )

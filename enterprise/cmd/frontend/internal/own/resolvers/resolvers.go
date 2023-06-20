@@ -10,6 +10,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
 
@@ -243,7 +244,7 @@ func (r *ownResolver) GitTreeOwnership(
 	return r.ownershipConnection(ctx, args, rrs, tree.Repository(), tree.Path())
 }
 
-func (r *ownResolver) GitTreeOwnershipStats(ctx context.Context, tree *graphqlbackend.GitTreeEntryResolver) (graphqlbackend.OwnershipStatsResolver, error) {
+func (r *ownResolver) GitTreeOwnershipStats(_ context.Context, tree *graphqlbackend.GitTreeEntryResolver) (graphqlbackend.OwnershipStatsResolver, error) {
 	return &ownStatsResolver{
 		db: r.db,
 		opts: database.TreeLocationOpts{
@@ -253,7 +254,7 @@ func (r *ownResolver) GitTreeOwnershipStats(ctx context.Context, tree *graphqlba
 	}, nil
 }
 
-func (r *ownResolver) InstanceOwnershipStats(ctx context.Context) (graphqlbackend.OwnershipStatsResolver, error) {
+func (r *ownResolver) InstanceOwnershipStats(_ context.Context) (graphqlbackend.OwnershipStatsResolver, error) {
 	return &ownStatsResolver{db: r.db}, nil
 }
 
@@ -465,6 +466,14 @@ func (r *ownStatsResolver) TotalAssignedOwnershipFiles(ctx context.Context) (int
 		return 0, err
 	}
 	return int32(counts.AssignedOwnershipFileCount), nil
+}
+
+func (r *ownStatsResolver) UpdatedAt(ctx context.Context) (*gqlutil.DateTime, error) {
+	counts, err := r.computeOwnCounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return gqlutil.FromTime(counts.UpdatedAt), nil
 }
 
 type ownershipConnectionResolver struct {

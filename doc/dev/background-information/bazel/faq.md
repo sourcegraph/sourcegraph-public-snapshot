@@ -143,6 +143,15 @@ Solution: `gcloud auth configure-docker us.gcr.io` to get access to the registry
 
 Solution: Pass the `--keep_going` additional flag to your `bazel query` command, so the evaluation doesn't stop at the first error. 
 
+## Networking
+
+### Tests fail with `connection refused`
+Any tests that make network calls on `localhost` need to be reachable from your Bazel build and test environment. If tests fail with errors like `error="dial tcp 127.0.0.1:6379: connect: connection refused"`, you most likely have to allow outbound networking for the sandbox environment.   
+    
+This can be achieved by adding the attribute `tags = ["requires-network"]` to the `go_test` rule in the `BUILD.bazel` file of the test directory.
+    
+> NOTE: make sure to run `bazel configure` after adding the tag as it will probably move it to another line. Save yourself a failing build! 
+    
 ## Go
 
 ### It complains about some missing symbols, but I'm sure they are there since I can see my files
