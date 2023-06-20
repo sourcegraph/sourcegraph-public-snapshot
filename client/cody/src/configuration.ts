@@ -38,7 +38,11 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         CONFIG_KEY.completionsAdvancedProvider,
         'anthropic'
     )
-    if (completionsAdvancedProvider !== 'anthropic' && completionsAdvancedProvider !== 'unstable-codegen') {
+    if (
+        completionsAdvancedProvider !== 'anthropic' &&
+        completionsAdvancedProvider !== 'unstable-codegen' &&
+        completionsAdvancedProvider !== 'unstable-huggingface'
+    ) {
         completionsAdvancedProvider = 'anthropic'
         void vscode.window.showInformationMessage(
             `Unrecognized ${CONFIG_KEY.completionsAdvancedProvider}, defaulting to 'anthropic'`
@@ -63,6 +67,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
             CONFIG_KEY.completionsAdvancedServerEndpoint,
             null
         ),
+        completionsAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.completionsAdvancedAccessToken, null),
         completionsAdvancedCache: config.get(CONFIG_KEY.completionsAdvancedCache, true),
         completionsAdvancedEmbeddings: config.get(CONFIG_KEY.completionsAdvancedEmbeddings, true),
     }
