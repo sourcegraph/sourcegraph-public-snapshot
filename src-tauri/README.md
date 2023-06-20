@@ -51,6 +51,31 @@ To start the app in 'dev' mode you need to run the following command:
 - `sg start app`
 - `pnpm tauri build` this will build the complete Tauri bundle, which, if you're on mac, will be called `Cody.dmg`. The other noticeable difference is that is will run the `client/app-shell` code.
 
+## Updating the icons
+
+### Application icons
+
+The application icon is defined in the `tauri.bundle.icon` field in `tauri.conf.json` and the files are located in `src-tauri/icons`. The application icon is one icon image, but is made available in multiple sizes and formats.
+
+Do not create the sizes and formats manually for the application icon. Instead, use the `tauri icon` command.
+
+```
+cd src-tauri
+tauri icon icon.png
+```
+
+The input file, `icon.png`, is expected to be a full-size PNG with transparency. It's recommended to be 1024x1024 in size.
+
+The `tauri icon` command will generate all of the variants and sizes automatically, and place them in `src-tauri/icons`.
+
+### System tray icon
+
+The system tray icon is different from the application icon. It's placed in `icons/tray.png` and defined in `tauri.systemTray.iconPath`.
+
+The tray icon is expected to be grayscale and will automatically be adjusted between light and dark modes. This behavior is enabled by the `iconAsTemplate` flag.
+
+Note that the light and dark versions of the tray icon depend on the color of the desktop wallpaper, and not on the system UI light/dark theme.
+
 ## Where to get help or support
 
 You can join us in Slack! We have a few channels that you might be interested in:
