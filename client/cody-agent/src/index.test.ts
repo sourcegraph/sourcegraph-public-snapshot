@@ -61,11 +61,8 @@ describe('StandardAgent', () => {
     })
 
     const streamingChatMessages = new Promise<void>(resolve => {
-        let assistantMessage: string | null = null
         client.registerNotification('chat/updateMessageInProgress', msg => {
-            if (msg !== null) {
-                assistantMessage = msg.text ?? null
-            } else {
+            if (msg === null) {
                 resolve()
             }
         })
