@@ -51,7 +51,7 @@ export function suggest(id: string): void {
     }
 }
 
-export function accept(id: string): void {
+export function accept(id: string, lines: number): void {
     const completionEvent = displayedCompletions.get(id)
     if (!completionEvent) {
         return
@@ -59,7 +59,7 @@ export function accept(id: string): void {
     completionEvent.forceRead = true
 
     logSuggestionEvent()
-    logCompletionEvent('accepted', completionEvent.params)
+    logCompletionEvent('accepted', { ...completionEvent.params, lines })
 }
 
 export function noResponse(id: string): void {
