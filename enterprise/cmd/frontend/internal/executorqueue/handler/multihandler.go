@@ -16,6 +16,7 @@ import (
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -24,6 +25,7 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // MultiHandler handles the HTTP requests of an executor for more than one queue. See ExecutorHandler for single-queue implementation.
@@ -34,6 +36,7 @@ type MultiHandler struct {
 	CodeIntelQueueHandler QueueHandler[uploadsshared.Index]
 	BatchesQueueHandler   QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]
 	DequeueCache          *rcache.Cache
+	dequeueCacheConfig    *schema.DequeueCacheConfig
 	logger                log.Logger
 }
 
@@ -45,7 +48,9 @@ func NewMultiHandler(
 	codeIntelQueueHandler QueueHandler[uploadsshared.Index],
 	batchesQueueHandler QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob],
 ) MultiHandler {
+	siteConfig := conf.Get().SiteConfiguration
 	dequeueCache := rcache.New(executortypes.DequeueCachePrefix)
+	dequeueCacheConfig := siteConfig.ExecutorsMultiqueue.DequeueCacheConfig
 	multiHandler := MultiHandler{
 		executorStore:         executorStore,
 		jobTokenStore:         jobTokenStore,
@@ -53,6 +58,7 @@ func NewMultiHandler(
 		CodeIntelQueueHandler: codeIntelQueueHandler,
 		BatchesQueueHandler:   batchesQueueHandler,
 		DequeueCache:          dequeueCache,
+		dequeueCacheConfig:    dequeueCacheConfig,
 		logger:                log.Scoped("executor-multi-queue-handler", "The route handler for all executor queues"),
 	}
 	return multiHandler
@@ -220,14 +226,21 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 
 // SelectQueueForDequeueing selects a queue from the provided list with weighted randomness.
 func (m *MultiHandler) SelectQueueForDequeueing(candidateQueues []string) (string, error) {
-	return DoSelectQueueForDequeueing(candidateQueues)
+	return DoSelectQueueForDequeueing(candidateQueues, m.dequeueCacheConfig)
 }
 
-var DoSelectQueueForDequeueing = func(candidateQueues []string) (string, error) {
+var DoSelectQueueForDequeueing = func(candidateQueues []string, config *schema.DequeueCacheConfig) (string, error) {
 	// pick a queue based on the defined weights
 	var choices []weightedrand.Choice[string, int]
 	for _, queue := range candidateQueues {
-		choices = append(choices, weightedrand.NewChoice(queue, executortypes.DequeuePropertiesPerQueue[queue].Weight))
+		var weight int
+		switch queue {
+		case "batches":
+			weight = config.Batches.Weight
+		case "codeintel":
+			weight = config.Codeintel.Weight
+		}
+		choices = append(choices, weightedrand.NewChoice(queue, weight))
 	}
 	chooser, err := weightedrand.NewChooser(choices...)
 	if err != nil {
@@ -245,7 +258,14 @@ func (m *MultiHandler) DiscardQueuesAtLimit(queues []string) ([]string, error) {
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to check dequeue count for queue '%s'", queue)
 		}
-		if len(dequeues) < executortypes.DequeuePropertiesPerQueue[queue].Limit {
+		var limit int
+		switch queue {
+		case m.BatchesQueueHandler.Name:
+			limit = m.dequeueCacheConfig.Batches.Limit
+		case m.CodeIntelQueueHandler.Name:
+			limit = m.dequeueCacheConfig.Codeintel.Limit
+		}
+		if len(dequeues) < limit {
 			candidateQueues = append(candidateQueues, queue)
 		}
 	}
