@@ -81,9 +81,5 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
             />
         )
     }
-<<<<<<< HEAD
     return <OwnerList refetch={refetch} filePath={filePath} repoID={repoID} />
-=======
-    return <OwnerList filePath={filePath} repoID={repoID} refetch={refetch} />
->>>>>>> 6aae5a1c9f (own: only refresh ownership if not in fullscreen mode (#53818))
 }

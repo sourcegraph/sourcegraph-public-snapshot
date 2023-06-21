@@ -177,7 +177,6 @@ export const OwnerList: FC<OwnerListProps> = ({
                                         reasons={ownership.reasons}
                                         setRemoveOwnerError={setRemoveOwnerError}
                                         isDirectory={isDirectory}
-                                        refetch={refetch}
                                     />
                                 </Fragment>
                             ))}
