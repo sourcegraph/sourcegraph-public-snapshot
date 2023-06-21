@@ -72,6 +72,11 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<
                             )}
                         </li>
                         <li>
+                            {/* TODO: Add link to configuring credentials docs page once it's added. */}
+                            Batch Changes now supports Gerrit. To start publishing Gerrit Changes, add your user
+                            credentials.
+                        </li>
+                        <li>
                             Batch Changes now supports per-batch-change control for pushing to a fork of the upstream
                             repository with the{' '}
                             <Link
@@ -81,6 +86,17 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<
                                 batch spec property
                             </Link>{' '}
                             <Code>changesetTemplate.fork</Code>.
+                        </li>
+                        <li>
+                            Branches created by Batch Changes can now be automatically deleted on the code host upon
+                            merging or closing a changeset by enabling the <Code>batchChanges.autoDeleteBranch</Code>{' '}
+                            <Link
+                                to="/help/admin/config/batch_changes#automatically-delete-branches-on-merge-closesite"
+                                target="_blank"
+                            >
+                                setting
+                            </Link>
+                            .
                         </li>
                     </ul>
                 </CardBody>
