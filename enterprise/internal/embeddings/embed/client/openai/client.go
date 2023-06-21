@@ -94,8 +94,41 @@ func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []stri
 		}
 	}
 
-	request := openaiEmbeddingAPIRequest{Model: c.model, Input: augmentedTexts}
+	response, err := c.do(ctx, openaiEmbeddingAPIRequest{Model: c.model, Input: augmentedTexts})
+	if err != nil {
+		return nil, err
+	}
 
+	if len(response.Data) == 0 {
+		return nil, nil
+	}
+
+	// Ensure embedding responses are sorted in the original order.
+	sort.Slice(response.Data, func(i, j int) bool {
+		return response.Data[i].Index < response.Data[j].Index
+	})
+
+	dimensionality := len(response.Data[0].Embedding)
+	embeddings := make([]float32, 0, len(response.Data)*dimensionality)
+	for _, embedding := range response.Data {
+		if len(embedding.Embedding) == 0 {
+			response, err := c.do(ctx, openaiEmbeddingAPIRequest{Model: c.model, Input: []string{augmentedTexts[embedding.Index]}})
+			if err != nil {
+				return nil, err
+			}
+			if len(response.Data) != 1 || len(response.Data[0].Embedding) == 0 {
+				return nil, errors.New("null response for embedding")
+			}
+			embeddings = append(embeddings, response.Data[0].Embedding...)
+			continue
+		}
+		embeddings = append(embeddings, embedding.Embedding...)
+	}
+
+	return embeddings, nil
+}
+
+func (c *openaiEmbeddingsClient) do(ctx context.Context, request openaiEmbeddingAPIRequest) (*openaiEmbeddingAPIResponse, error) {
 	bodyBytes, err := json.Marshal(request)
 	if err != nil {
 		return nil, err
@@ -123,23 +156,7 @@ func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []stri
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
-
-	if len(response.Data) == 0 {
-		return nil, nil
-	}
-
-	// Ensure embedding responses are sorted in the original order.
-	sort.Slice(response.Data, func(i, j int) bool {
-		return response.Data[i].Index < response.Data[j].Index
-	})
-
-	dimensionality := len(response.Data[0].Embedding)
-	embeddings := make([]float32, 0, len(response.Data)*dimensionality)
-	for _, embedding := range response.Data {
-		embeddings = append(embeddings, embedding.Embedding...)
-	}
-
-	return embeddings, nil
+	return &response, nil
 }
 
 type openaiEmbeddingAPIRequest struct {
