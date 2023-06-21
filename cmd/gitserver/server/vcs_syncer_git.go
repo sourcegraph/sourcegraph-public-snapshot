@@ -18,8 +18,8 @@ type gitRepoSyncer struct {
 	RecordingCommandFactory *wrexec.RecordingCommandFactory
 }
 
-func NewGitRepoSyncer() *gitRepoSyncer {
-	return &gitRepoSyncer{RecordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0)}
+func NewGitRepoSyncer(r *wrexec.RecordingCommandFactory) *gitRepoSyncer {
+	return &gitRepoSyncer{RecordingCommandFactory: r}
 }
 
 func (s *gitRepoSyncer) Type() string {

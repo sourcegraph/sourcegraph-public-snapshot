@@ -289,10 +289,10 @@ type Server struct {
 	// dereferencs.
 	operations *operations
 
-	// recordingCommandFactory is a factory that creates recordable commands by wrapping os/exec.Commands.
+	// RecordingCommandFactory is a factory that creates recordable commands by wrapping os/exec.Commands.
 	// The factory creates recordable commands with a set predicate, which is used to determine whether a
 	// particular command should be recorded or not.
-	recordingCommandFactory *wrexec.RecordingCommandFactory
+	RecordingCommandFactory *wrexec.RecordingCommandFactory
 
 	// Perforce is a plugin-like service attached to Server for all things Perforce.
 	Perforce *perforce.Service
@@ -430,7 +430,7 @@ func (s *Server) Handler() http.Handler {
 	s.locker = &RepositoryLocker{}
 	s.repoUpdateLocks = make(map[api.RepoName]*locks)
 
-	s.recordingCommandFactory = wrexec.NewRecordingCommandFactory(nil, 0)
+	s.RecordingCommandFactory = wrexec.NewRecordingCommandFactory(nil, 0)
 	conf.Watch(func() {
 		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
 		// to determine whether a command should be recorded or not.
@@ -439,7 +439,7 @@ func (s *Server) Handler() http.Handler {
 			s.recordingCommandFactory.Disable()
 			return
 		}
-		s.recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos), recordingConf.Size)
+		s.RecordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos), recordingConf.Size)
 	})
 
 	// GitMaxConcurrentClones controls the maximum number of clones that
@@ -1005,7 +1005,7 @@ func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protoc
 		remoteURL, _ = vcs.ParseURL("https://" + string(repo) + ".git")
 
 		// At this point we are assuming it's a git repo
-		syncer = NewGitRepoSyncer()
+		syncer = NewGitRepoSyncer(s.RecordingCommandFactory)
 	} else {
 		syncer, err = s.GetVCSSyncer(ctx, repo)
 		if err != nil {
@@ -1467,7 +1467,7 @@ func (s *Server) performGitLogCommand(ctx context.Context, repoCommit api.RepoCo
 		return "", true, errors.New("commit ID starting with - is not allowed")
 	}
 
-	cmd := s.recordingCommandFactory.Command(ctx, s.Logger, "git", "log", "-n", "1", "--name-only", format, commitId)
+	cmd := s.RecordingCommandFactory.Command(ctx, s.Logger, "git", "log", "-n", "1", "--name-only", format, commitId)
 	dir.Set(cmd.Unwrap())
 	cmd.Unwrap().Stdout = &buf
 
@@ -1791,7 +1791,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	stderrW := &writeCounter{w: &limitWriter{W: &stderrBuf, N: 1024}}
 
 	cmdStart = time.Now()
-	cmd := s.recordingCommandFactory.Command(ctx, s.Logger, "git", req.Args...)
+	cmd := s.RecordingCommandFactory.Command(ctx, s.Logger, "git", req.Args...)
 	dir.Set(cmd.Unwrap())
 	cmd.Unwrap().Stdout = stdoutW
 	cmd.Unwrap().Stderr = stderrW
@@ -2020,7 +2020,7 @@ func (s *Server) p4Exec(ctx context.Context, logger log.Logger, req *protocol.P4
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
 
-	exitStatus, execErr = runCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd))
+	exitStatus, execErr = runCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd))
 
 	status = strconv.Itoa(exitStatus)
 	stdoutN = stdoutW.n
@@ -2318,7 +2318,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
-	output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw)
+	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw)
 
 	// best-effort update the output of the clone
 	go s.setLastOutput(context.Background(), repo, redactor.redact(string(output)))
@@ -2333,7 +2333,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	removeBadRefs(ctx, tmp)
 
-	if err := setHEAD(ctx, logger, s.recordingCommandFactory, tmp, syncer, remoteURL); err != nil {
+	if err := setHEAD(ctx, logger, s.RecordingCommandFactory, tmp, syncer, remoteURL); err != nil {
 		logger.Warn("Failed to ensure HEAD exists", log.Error(err))
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
@@ -2737,7 +2737,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	removeBadRefs(ctx, dir)
 
-	if err := setHEAD(ctx, logger, s.recordingCommandFactory, dir, syncer, remoteURL); err != nil {
+	if err := setHEAD(ctx, logger, s.RecordingCommandFactory, dir, syncer, remoteURL); err != nil {
 		return errors.Wrapf(err, "failed to ensure HEAD exists for repo %q", repo)
 	}
 

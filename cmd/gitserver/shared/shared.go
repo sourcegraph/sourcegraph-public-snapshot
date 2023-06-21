@@ -52,6 +52,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -134,6 +135,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return errors.Wrap(err, "creating sub-repo client")
 	}
 
+	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
 	gitserver := server.Server{
 		Logger:             logger,
 		ObservationCtx:     observationCtx,
@@ -143,13 +145,22 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, config.ReposDir, config.CoursierCacheDir)
+			return getVCSSyncer(ctx, &newVCSSyncerOpts{
+				externalServiceStore:    externalServiceStore,
+				repoStore:               repoStore,
+				depsSvc:                 dependenciesSvc,
+				repo:                    repo,
+				reposDir:                config.ReposDir,
+				coursierCacheDir:        config.CoursierCacheDir,
+				recordingCommandFactory: recordingCommandFactory,
+			})
 		},
 		Hostname:                externalAddress(),
 		DB:                      db,
 		CloneQueue:              server.NewCloneQueue(observationCtx, list.New()),
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
+		RecordingCommandFactory: recordingCommandFactory,
 	}
 
 	configurationWatcher := conf.DefaultClient()
@@ -362,26 +373,28 @@ func getRemoteURLFunc(
 	return "", errors.Errorf("no sources for %q", repo)
 }
 
-func getVCSSyncer(
-	ctx context.Context,
-	externalServiceStore database.ExternalServiceStore,
-	repoStore database.RepoStore,
-	depsSvc *dependencies.Service,
-	repo api.RepoName,
-	reposDir string,
-	coursierCacheDir string,
-) (server.VCSSyncer, error) {
+type newVCSSyncerOpts struct {
+	externalServiceStore    database.ExternalServiceStore
+	repoStore               database.RepoStore
+	depsSvc                 *dependencies.Service
+	repo                    api.RepoName
+	reposDir                string
+	coursierCacheDir        string
+	recordingCommandFactory *wrexec.RecordingCommandFactory
+}
+
+func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (server.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
 	// it's safe.
-	r, err := repoStore.GetByName(actor.WithInternalActor(ctx), repo)
+	r, err := opts.repoStore.GetByName(actor.WithInternalActor(ctx), opts.repo)
 	if err != nil {
 		return nil, errors.Wrap(err, "get repository")
 	}
 
 	extractOptions := func(connection any) (string, error) {
 		for _, info := range r.Sources {
-			extSvc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
+			extSvc, err := opts.externalServiceStore.GetByID(ctx, info.ExternalServiceID())
 			if err != nil {
 				return "", errors.Wrap(err, "get external service")
 			}
@@ -408,7 +421,7 @@ func getVCSSyncer(
 			return nil, err
 		}
 
-		p4Home := filepath.Join(reposDir, server.P4HomeName)
+		p4Home := filepath.Join(opts.reposDir, server.P4HomeName)
 		// Ensure the directory exists
 		if err := os.MkdirAll(p4Home, os.ModePerm); err != nil {
 			return nil, errors.Wrapf(err, "ensuring p4Home exists: %q", p4Home)
@@ -425,7 +438,7 @@ func getVCSSyncer(
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		return server.NewJVMPackagesSyncer(&c, depsSvc, coursierCacheDir), nil
+		return server.NewJVMPackagesSyncer(&c, opts.depsSvc, opts.coursierCacheDir), nil
 	case extsvc.TypeNpmPackages:
 		var c schema.NpmPackagesConnection
 		urn, err := extractOptions(&c)
@@ -436,7 +449,7 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		return server.NewNpmPackagesSyncer(c, depsSvc, cli), nil
+		return server.NewNpmPackagesSyncer(c, opts.depsSvc, cli), nil
 	case extsvc.TypeGoModules:
 		var c schema.GoModulesConnection
 		urn, err := extractOptions(&c)
@@ -444,7 +457,7 @@ func getVCSSyncer(
 			return nil, err
 		}
 		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
-		return server.NewGoModulesSyncer(&c, depsSvc, cli), nil
+		return server.NewGoModulesSyncer(&c, opts.depsSvc, cli), nil
 	case extsvc.TypePythonPackages:
 		var c schema.PythonPackagesConnection
 		urn, err := extractOptions(&c)
@@ -455,7 +468,7 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		return server.NewPythonPackagesSyncer(&c, depsSvc, cli, reposDir), nil
+		return server.NewPythonPackagesSyncer(&c, opts.depsSvc, cli, opts.reposDir), nil
 	case extsvc.TypeRustPackages:
 		var c schema.RustPackagesConnection
 		urn, err := extractOptions(&c)
@@ -466,7 +479,7 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		return server.NewRustPackagesSyncer(&c, depsSvc, cli), nil
+		return server.NewRustPackagesSyncer(&c, opts.depsSvc, cli), nil
 	case extsvc.TypeRubyPackages:
 		var c schema.RubyPackagesConnection
 		urn, err := extractOptions(&c)
@@ -477,9 +490,9 @@ func getVCSSyncer(
 		if err != nil {
 			return nil, err
 		}
-		return server.NewRubyPackagesSyncer(&c, depsSvc, cli), nil
+		return server.NewRubyPackagesSyncer(&c, opts.depsSvc, cli), nil
 	}
-	return server.NewGitRepoSyncer(), nil
+	return server.NewGitRepoSyncer(opts.recordingCommandFactory), nil
 }
 
 func syncExternalServiceRateLimiters(ctx context.Context, store database.ExternalServiceStore) error {
