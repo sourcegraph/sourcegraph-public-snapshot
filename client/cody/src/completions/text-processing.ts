@@ -123,6 +123,13 @@ function trimSpace(s: string): TrimmedString {
     return { trimmed, leadSpace: s.slice(0, headEnd), rearSpace: s.slice(headEnd + trimmed.length) }
 }
 
+/*
+ * Trims the insertion string until the first line that matches the suffix string.
+ *
+ * This is to "fit" the completion from Claude back into the code we're modifying.
+ * Oftentimes, the last couple of lines of the completion may match against the suffix
+ * (the code following the cursor).
+ */
 export function trimUntilSuffix(insertion: string, suffix: string): string {
     insertion = insertion.trimEnd()
     let firstNonEmptySuffixLine = ''
