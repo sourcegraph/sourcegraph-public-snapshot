@@ -34,6 +34,8 @@ For more details about configuring Cody, refer to the following guides:
 - [Enabling Cody for Sourcegraph Enterprise](./enabling_cody_enterprise.md)
 - [Code Graph Context: Embeddings](./code_graph_context.md#embeddings)
 
+Cody Gateway is hosted at `cody-gateway.sourcegraph.com`. To use Cody Gateway, your Sourcegraph instance must be able to connect to the service at this domain.
+
 ## Configuring custom models
 
 To configure custom models for various Cody configurations (e.g. `"completions"` and `"embeddings"`), specify the desired model with the upstream provider as a prefix to the name of the model. For example, to use the `claude-v1` model from Anthropic, you would configure:
