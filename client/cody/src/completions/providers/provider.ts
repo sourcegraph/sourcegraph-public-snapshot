@@ -1,10 +1,6 @@
 import { Completion } from '..'
 import { ReferenceSnippet } from '../context'
 
-export interface Provider {
-    generateCompletions(abortSignal: AbortSignal): Promise<Completion[]>
-}
-
 export interface ProviderConfig {
     /**
      * A factory to create instances of the provider. This pattern allows us to inject provider
