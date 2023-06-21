@@ -11,11 +11,14 @@ import (
 
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -33,20 +36,45 @@ type FileChunkContext struct {
 	EndLine   int
 }
 
-func NewCodyContextClient(logger log.Logger, db edb.EnterpriseDB, embeddingsClient embeddings.Client, searchClient client.SearchClient) *CodyContextClient {
+func NewCodyContextClient(obsCtx *observation.Context, db edb.EnterpriseDB, embeddingsClient embeddings.Client, searchClient client.SearchClient) *CodyContextClient {
+	redMetrics := metrics.NewREDMetrics(
+		obsCtx.Registerer,
+		"codycontext_client",
+		metrics.WithLabels("op"),
+	)
+
+	op := func(name string) *observation.Operation {
+		return obsCtx.Operation(observation.Op{
+			Name:              fmt.Sprintf("codycontext.client.%s", name),
+			MetricLabelValues: []string{name},
+			Metrics:           redMetrics,
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+				return observation.EmitForAllExceptLogs
+			},
+		})
+	}
+
 	return &CodyContextClient{
-		logger:           logger,
 		db:               db,
 		embeddingsClient: embeddingsClient,
 		searchClient:     searchClient,
+
+		obsCtx:                 obsCtx,
+		getCodyContextOp:       op("getCodyContext"),
+		getEmbeddingsContextOp: op("getEmbeddingsContext"),
+		getKeywordContextOp:    op("getKeywordContext"),
 	}
 }
 
 type CodyContextClient struct {
-	logger           log.Logger
 	db               edb.EnterpriseDB
 	embeddingsClient embeddings.Client
 	searchClient     client.SearchClient
+
+	obsCtx                 *observation.Context
+	getCodyContextOp       *observation.Operation
+	getEmbeddingsContextOp *observation.Operation
+	getKeywordContextOp    *observation.Operation
 }
 
 type GetContextArgs struct {
@@ -56,7 +84,19 @@ type GetContextArgs struct {
 	TextResultsCount int32
 }
 
-func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextArgs) ([]FileChunkContext, error) {
+func (a *GetContextArgs) Attrs() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.Int("numRepos", len(a.Repos)),
+		attribute.String("query", a.Query),
+		attribute.Int("codeResultsCount", int(a.CodeResultsCount)),
+		attribute.Int("textResultsCount", int(a.TextResultsCount)),
+	}
+}
+
+func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
+	ctx, _, endObservation := c.getCodyContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
+	defer endObservation(1, observation.Args{})
+
 	embeddingRepos, keywordRepos, err := c.partitionRepos(ctx, args.Repos)
 	if err != nil {
 		return nil, err
@@ -122,6 +162,9 @@ func (c *CodyContextClient) partitionRepos(ctx context.Context, input []types.Re
 }
 
 func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
+	ctx, _, endObservation := c.getEmbeddingsContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
+	defer endObservation(1, observation.Args{})
+
 	if len(args.Repos) == 0 || (args.CodeResultsCount == 0 && args.TextResultsCount == 0) {
 		// Don't bother doing an API request if we can't actually have any results.
 		return nil, nil
@@ -174,6 +217,9 @@ var textFileFilter = func() string {
 
 // getKeywordContext uses keyword search to find relevant bits of context for Cody
 func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
+	ctx, _, endObservation := c.getKeywordContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
+	defer endObservation(1, observation.Args{})
+
 	if len(args.Repos) == 0 {
 		// TODO(camdencheek): for some reason the search query `repo:^$`
 		// returns all repos, not zero repos, causing searches over zero repos
@@ -238,7 +284,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 			return nil, err
 		}
 		if alert != nil {
-			c.logger.Warn("received alert from keyword search execution",
+			c.obsCtx.Logger.Warn("received alert from keyword search execution",
 				log.String("title", alert.Title),
 				log.String("description", alert.Description),
 			)

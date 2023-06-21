@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -127,7 +128,7 @@ func TestContextResolver(t *testing.T) {
 	})
 
 	contextClient := codycontext.NewCodyContextClient(
-		logger,
+		observation.NewContext(logger),
 		db,
 		mockEmbeddingsClient,
 		mockSearchClient,
