@@ -41,7 +41,7 @@ Settings, and add the `"openInEditor": {}` key to your user setting JSON.
 
 - **editorIds:** an array of short names of an editor (“vscode”, “idea”, “sublime”, “pycharm”, etc.) or “custom”. This is what you set in the dropdown when you first set up the feature.
   - Note that the initial setup UI only allows you to select one editor, but if you use multiple editors, you can manually add more. Each of them will have an icon on your toolbar.
-- **custom.urlPattern:** If you set editorId to “custom” then this must be set, too. Use the placeholders “%file”, “%line”, and “%col” to mark where the file path, line number, and column number must be insterted. Example URL pattern for IntelliJ IDEA: `idea://open?file=%file&line=%line&column=%col`
+- **custom.urlPattern:** If you set editorId to “custom” then this must be set, too. Use the placeholders “%file”, “%line”, and “%col” to mark where the file path, line number, and column number must be inserted. Example URL pattern for IntelliJ IDEA: `idea://open?file=%file&line=%line&column=%col`
 - **projectPaths.default**: This is what you set in the form when you first set up the feature: The absolute path on your computer where your git repositories live. All git repos to open have to be cloned under this path with their original names. `/Users/yourusername/src` is a valid absolute path, `~/src` is not. Works both with and without a trailing slash.
 - **projectPaths.linux**: Overwrites the default path on Linux. Handy if you use different environments. Works both with and without a trailing slash.
 - **projectPaths.mac**: Overwrites the default path on macOS. Works both with and without a trailing slash.

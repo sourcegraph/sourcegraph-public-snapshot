@@ -35,7 +35,7 @@ upload_dist() {
   local target_dir
   path="$(bundle_path)"
   echo "searching for artefacts in '${path}' and moving them to dist/"
-  src=$(find "${path}" -type f \( -name "Cody*.dmg" -o -name "Cody*.tar.gz" -o -name "Cody*.deb" -o -name "cody*.AppImage" -o -name "cody*.tar.gz" -o -name "*.sig" \))
+  src=$(find "${path}" -type f \( -name "Cody*.dmg" -o -name "Cody*.tar.gz" -o -name "cody*.deb" -o -name "cody*.AppImage" -o -name "cody*.tar.gz" -o -name "*.sig" \))
   target_dir="./${DIST_DIR}"
 
   mkdir -p "${target_dir}"

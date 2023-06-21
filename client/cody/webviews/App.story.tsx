@@ -48,7 +48,14 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 debugEnable: true,
                 serverEndpoint: 'https://example.com',
                 appName: 'VS Code',
-                appScheme: 'vscode',
+                uriScheme: 'vscode',
+                os: 'linux',
+                arch: 'x64',
+                homeDir: '/home/user',
+                isAppInstalled: false,
+                isAppConnectEnabled: false,
+                isAppRunning: false,
+                extensionVersion: '0.0.0',
             },
             authStatus: {
                 ...defaultAuthStatus,
@@ -57,6 +64,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 requiresVerifiedEmail: false,
                 siteHasCodyEnabled: true,
                 siteVersion: '5.1.0',
+                endpoint: 'https://example.com',
             },
         })
         return () => {}
