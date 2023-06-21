@@ -25,6 +25,7 @@ go_library(
         "//cmd/frontend/hubspot",
         "//cmd/frontend/hubspot/hubspotutil",
         "//internal/actor",
+        "//internal/apptoken",
         "//internal/auth",
         "//internal/auth/providers",
         "//internal/authz",
