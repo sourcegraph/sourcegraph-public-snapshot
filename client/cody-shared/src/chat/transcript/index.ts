@@ -152,7 +152,8 @@ export class Transcript {
     }
 
     public async getPromptForLastInteraction(
-        preamble: Message[] = []
+        preamble: Message[] = [],
+        maxPromptLength: number = MAX_AVAILABLE_PROMPT_LENGTH
     ): Promise<{ prompt: Message[]; contextFiles: ContextFile[] }> {
         if (this.interactions.length === 0) {
             return { prompt: [], contextFiles: [] }
@@ -173,7 +174,7 @@ export class Transcript {
         }
 
         const preambleTokensUsage = preamble.reduce((acc, message) => acc + estimateTokensUsage(message), 0)
-        let truncatedMessages = truncatePrompt(messages, MAX_AVAILABLE_PROMPT_LENGTH - preambleTokensUsage)
+        let truncatedMessages = truncatePrompt(messages, maxPromptLength - preambleTokensUsage)
 
         // Return what context fits in the window
         const contextFiles: ContextFile[] = []
