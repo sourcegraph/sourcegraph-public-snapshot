@@ -7,11 +7,7 @@ import { noop } from 'lodash'
 import { Text, Icon, Button, Container, PageHeader, LoadingSpinner, ErrorAlert, Collapse, CollapsePanel } from '@sourcegraph/wildcard'
 
 import { LocalRepository } from '../../../../graphql-operations'
-import {
-    callFilePicker,
-    useLocalExternalServices,
-    LocalCodeHost,
-} from '../../../../setup-wizard/components'
+import { callFilePicker, useLocalExternalServices, LocalCodeHost } from '../../../../setup-wizard/components'
 import { NoReposAddedState } from '../../components'
 
 import styles from './LocalRepositoriesTab.module.scss'
@@ -80,7 +76,7 @@ interface PathsPickerActionsProps {
  */
 export const PathsPickerActions: FC<PathsPickerActionsProps> = ({ className, onPathsChange }) => {
     const handleClickCallPathPicker = async (): Promise<void> => {
-        const paths = await callFilePicker()
+        const paths = ['/home/fkling/arch-home/projects/esvm', '/home/fkling/arch-home/projects/fib'] //await callFilePicker()
 
         if (paths !== null) {
             onPathsChange(paths)
@@ -108,7 +104,7 @@ interface LocalRepositoriesListProps {
  */
 const LocalRepositoriesList: FC<LocalRepositoriesListProps> = ({ services, onPathDelete }) => {
     const sortedServices = useMemo(
-        () => services.slice().sort((serviceA, serviceB) => +serviceA.isFolder - +serviceB.isFolder),
+        () => services.slice().sort((serviceA, serviceB) => +serviceB.isFolder - +serviceA.isFolder),
         [services]
     )
 

@@ -169,7 +169,7 @@ func (r *appResolver) AddLocalRepositories(ctx context.Context, args graphqlback
 
 		services = append(services, &types.ExternalService{
 			Kind:        extsvc.VariantLocalGit.AsKind(),
-			DisplayName: fmt.Sprint("Local repositories ({})", path),
+			DisplayName: fmt.Sprintf("Local repositories (%s)", path),
 			Config:      extsvc.NewUnencryptedConfig(string(serviceConfig)),
 		})
 	}
