@@ -254,5 +254,6 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
     editorSettings.setIndentGuidesShown(false);
     editorSettings.setLineNumbersShown(false);
     editorSettings.setUseSoftWraps(false);
+    editorSettings.setCaretRowShown(false);
   }
 }
