@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { CardBody, Card, H3, H4, Link } from '@sourcegraph/wildcard'
+import { CardBody, Card, H3, H4, Link, Code } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
@@ -70,6 +70,17 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<
                                     .
                                 </>
                             )}
+                        </li>
+                        <li>
+                            Batch Changes now supports per-batch-change control for pushing to a fork of the upstream
+                            repository with the{' '}
+                            <Link
+                                to="/help/batch_changes/references/batch_spec_yaml_reference#changesettemplate-fork"
+                                target="_blank"
+                            >
+                                batch spec property
+                            </Link>{' '}
+                            <Code>changesetTemplate.fork</Code>.
                         </li>
                     </ul>
                 </CardBody>
