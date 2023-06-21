@@ -283,6 +283,7 @@ func claimAutoUpgradeLock(ctx context.Context, obsvCtx *observation.Context, db 
 		}
 
 		if claimed {
+			obsvCtx.Logger.Info("claimed autoupgrade lock")
 			return true, nil
 		}
 

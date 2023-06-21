@@ -196,7 +196,7 @@ func (s *store) EnsureUpgradeTable(ctx context.Context) (err error) {
 		sqlf.Sprintf(`ALTER TABLE upgrade_logs ADD COLUMN IF NOT EXISTS to_version text NOT NULL`),
 		sqlf.Sprintf(`ALTER TABLE upgrade_logs ADD COLUMN IF NOT EXISTS upgrader_hostname text NOT NULL`),
 		sqlf.Sprintf(`ALTER TABLE upgrade_logs ADD COLUMN IF NOT EXISTS plan json NOT NULL DEFAULT '{}'::json`),
-		sqlf.Sprintf(`ALTER TABLE upgrade_logs ADD COLUMN IF NOT EXISTS last_heartbeat_at timestamptz`),
+		sqlf.Sprintf(`ALTER TABLE upgrade_logs ADD COLUMN IF NOT EXISTS last_heartbeat_at timestamptz NOT NULL DEFAULT now()`),
 	}
 
 	if err := s.db.WithTransact(ctx, func(tx *basestore.Store) error {
@@ -257,8 +257,7 @@ WITH claim_attempt AS (
 			(
 				finished_at IS NULL
 				AND (
-					last_heartbeat_at IS NULL
-					OR last_heartbeat_at >= %s::timestamptz - %s::interval
+					last_heartbeat_at >= %s::timestamptz - %s::interval
 				)
 			)
 			-- or that succeeded to the expected version
