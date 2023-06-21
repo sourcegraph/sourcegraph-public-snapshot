@@ -18,6 +18,7 @@ import (
 
 func NewClient(httpClient *http.Client, config *conftypes.EmbeddingsConfig) *openaiEmbeddingsClient {
 	return &openaiEmbeddingsClient{
+		httpClient:  httpClient,
 		dimensions:  config.Dimensions,
 		accessToken: config.AccessToken,
 		model:       config.Model,
@@ -165,8 +166,10 @@ type openaiEmbeddingAPIRequest struct {
 }
 
 type openaiEmbeddingAPIResponse struct {
-	Data []struct {
-		Index     int       `json:"index"`
-		Embedding []float32 `json:"embedding"`
-	} `json:"data"`
+	Data []openaiEmbeddingAPIResponseData `json:"data"`
+}
+
+type openaiEmbeddingAPIResponseData struct {
+	Index     int       `json:"index"`
+	Embedding []float32 `json:"embedding"`
 }

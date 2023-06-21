@@ -28,6 +28,14 @@ type openaiClient struct {
 const apiURL = "https://api.openai.com/v1/embeddings"
 
 func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway.EmbeddingsRequest) (*codygateway.EmbeddingsResponse, int, error) {
+	for _, s := range input.Input {
+		if s == "" {
+			// The OpenAI API will return an error if any of the strings in texts is an empty string,
+			// so fail fast to avoid making tons of retryable requests.
+			return nil, 0, response.NewHTTPStatusCodeError(http.StatusBadRequest, errors.New("cannot generate embeddings for an empty string"))
+		}
+	}
+
 	model, ok := openAIModelMappings[input.Model]
 	if !ok {
 		return nil, 0, response.NewHTTPStatusCodeError(http.StatusBadRequest, errors.Newf("no OpenAI model found for %q", input.Model))
@@ -74,14 +82,6 @@ func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway
 }
 
 func (c *openaiClient) requestEmbeddings(ctx context.Context, model openAIModel, input []string) (*openaiEmbeddingsResponse, error) {
-	for _, s := range input {
-		if s == "" {
-			// The OpenAI API will return an error if any of the strings in texts is an empty string,
-			// so fail fast to avoid making tons of retryable requests.
-			return nil, response.NewHTTPStatusCodeError(http.StatusBadRequest, errors.New("cannot generate embeddings for an empty string"))
-		}
-	}
-
 	request := openaiEmbeddingsRequest{
 		Model: model.upstreamName,
 		Input: input,
