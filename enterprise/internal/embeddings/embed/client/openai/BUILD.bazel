@@ -8,7 +8,6 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//internal/conf/conftypes",
-        "//internal/httpcli",
         "//lib/errors",
     ],
 )
