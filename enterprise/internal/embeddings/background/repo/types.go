@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 )
@@ -38,14 +39,6 @@ func (j *RepoEmbeddingJob) RecordUID() string {
 
 func (j *RepoEmbeddingJob) IsRepoEmbeddingJobScheduledOrCompleted() bool {
 	return j != nil && (j.State == "completed" || j.State == "processing" || j.State == "queued")
-}
-
-type RepoEmbedJobStatus struct {
-	JobID    int
-	RepoID   api.RepoID
-	QueuedAt *time.Time
-	State    string
-	Stats    EmbedRepoStats
 }
 
 type EmbedRepoStats struct {

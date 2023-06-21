@@ -12,27 +12,19 @@ extend type Query {
     localExternalServices: [LocalExternalService!]!
 
     """
-    Allows Admin users to list the status and progress of each Embedding Job for configured. This is instended to be used by Cody App
+    Allows Admin users to list the progress of embeddings for 1 or more repos. This is intended to be used only by the Cody App
     """
-    embeddingJobStatus(repoNames: [String!]!): [EmbeddingJobStatus!]!
+    embeddingsSetupProgress(repoNames: [String!]): EmbeddingsSetupProgress!
 }
 
 """
-EmbeddingJobStatus represents the status of an embedding job for a particular repo. This is an API specific to Cody App.
+EmbeddingsSetupProgress represents the overall status of embeddings creation. This is an API specific to Cody App.
 """
-type EmbeddingJobStatus {
+type EmbeddingsSetupProgress {
     """
-    The name of the repo this embedding job status is for
+    The overall percentage of setting up embeddings with 0 meaning no progress not started and 100 means the job is complete.
     """
-    RepoName: String!
-    """
-    The embedding status of the job which can be: COMPLETED, QUEUED, IN PROGRESS and NO STATUS
-    """
-    Status: String!
-    """
-    The completion percentage of the job with 0 meaning the job has not started and 100 means the job is complete.
-    """
-    PercentComplete: Float!
+    percentComplete: Int!
 }
 
 """
