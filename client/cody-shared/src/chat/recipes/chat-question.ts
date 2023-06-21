@@ -47,11 +47,6 @@ export class ChatQuestion implements Recipe {
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
 
-        // Add selected text as context when available
-        if (selection?.selectedText) {
-            contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
-        }
-
         const isCodebaseContextRequired = firstInteraction || (await intentDetector.isCodebaseContextRequired(text))
 
         this.debug('ChatQuestion:getContextMessages', 'isCodebaseContextRequired', isCodebaseContextRequired)
@@ -67,6 +62,11 @@ export class ChatQuestion implements Recipe {
         this.debug('ChatQuestion:getContextMessages', 'isEditorContextRequired', isEditorContextRequired)
         if (isCodebaseContextRequired || isEditorContextRequired) {
             contextMessages.push(...ChatQuestion.getEditorContext(editor))
+        }
+
+        // Add selected text as context when available
+        if (selection?.selectedText) {
+            contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
         }
 
         return contextMessages

@@ -26,11 +26,10 @@ import styles from './DashboardsContent.module.scss'
 export interface DashboardsContentProps extends TelemetryProps {
     currentDashboard: CustomInsightDashboard | undefined
     dashboards: CustomInsightDashboard[]
-    isSourcegraphApp: boolean
 }
 
 export const DashboardsContent: FC<DashboardsContentProps> = props => {
-    const { currentDashboard, dashboards, telemetryService, isSourcegraphApp } = props
+    const { currentDashboard, dashboards, telemetryService } = props
 
     const navigate = useNavigate()
     const [, setLasVisitedDashboard] = useTemporarySetting('insights.lastVisitedDashboardId', null)
@@ -103,7 +102,7 @@ export const DashboardsContent: FC<DashboardsContentProps> = props => {
                 </Tooltip>
             </DashboardHeader>
 
-            {!licensed && !isSourcegraphApp && (
+            {!licensed && (
                 <LimitedAccessLabel
                     className={classNames(styles.limitedAccessLabel)}
                     message="Unlock Code Insights for full access to custom dashboards"

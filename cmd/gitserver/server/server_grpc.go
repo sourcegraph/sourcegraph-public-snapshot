@@ -215,7 +215,7 @@ func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService
 	}
 
 	// Make sure the subcommand is explicitly allowed
-	allowlist := []string{"protects", "groups", "users", "group"}
+	allowlist := []string{"protects", "groups", "users", "group", "changes"}
 	allowed := false
 	for _, arg := range allowlist {
 		if req.Args[0] == arg {
