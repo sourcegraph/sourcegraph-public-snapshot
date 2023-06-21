@@ -5,7 +5,7 @@ load("//dev:oci_defs.bzl", "image_repository")
 
 filegroup(
     name = "config_files",
-    srcs = glob(["config/*"]) + ["entry-bazel.sh"],
+    srcs = glob(["config/*"]) + ["entry.sh"],
 )
 
 pkg_tar(
@@ -16,7 +16,6 @@ pkg_tar(
     ],
     remap_paths = {
         "docker-images/grafana/config": "/sg_config_grafana",
-        "/entry-bazel.sh": "/entry.sh",
     },
 )
 
