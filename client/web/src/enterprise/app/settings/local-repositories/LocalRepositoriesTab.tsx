@@ -76,7 +76,7 @@ interface PathsPickerActionsProps {
  */
 export const PathsPickerActions: FC<PathsPickerActionsProps> = ({ className, onPathsChange }) => {
     const handleClickCallPathPicker = async (): Promise<void> => {
-        const paths = ['/home/fkling/arch-home/projects/esvm', '/home/fkling/arch-home/projects/fib'] //await callFilePicker()
+        const paths = await callFilePicker()
 
         if (paths !== null) {
             onPathsChange(paths)
@@ -104,7 +104,11 @@ interface LocalRepositoriesListProps {
  */
 const LocalRepositoriesList: FC<LocalRepositoriesListProps> = ({ services, onPathDelete }) => {
     const sortedServices = useMemo(
-        () => services.slice().sort((serviceA, serviceB) => +serviceB.isFolder - +serviceA.isFolder),
+        () =>
+            services.slice().sort((serviceA, serviceB) => {
+                const result = +serviceB.isFolder - +serviceA.isFolder
+                return result === 0 ? serviceA.path.localeCompare(serviceB.path) : result
+            }),
         [services]
     )
 
@@ -112,10 +116,10 @@ const LocalRepositoriesList: FC<LocalRepositoriesListProps> = ({ services, onPat
         <ul className={styles.list}>
             {sortedServices.map(service =>
                 service.isFolder ? (
-                    <DirectoryItem key={service.path} service={service} onDelete={onPathDelete} />
+                    <DirectoryItem key={service.id} service={service} onDelete={onPathDelete} />
                 ) : (
                     <RepositoryItem
-                        key={service.path}
+                        key={service.id}
                         service={service}
                         repository={service.repositories[0]}
                         onDelete={onPathDelete}

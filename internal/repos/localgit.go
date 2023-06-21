@@ -2,10 +2,12 @@ package repos
 
 import (
 	"context"
+	"net/url"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"github.com/grafana/regexp"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -120,7 +122,10 @@ type repoConfig struct {
 }
 
 func (c repoConfig) fullName() api.RepoName {
-	name := ""
+	name := gitRemote(c.Path)
+	if name != "" {
+		return api.RepoName(name)
+	}
 	if c.Group != "" {
 		name = c.Group + "/"
 	}
@@ -152,4 +157,68 @@ func getRepoPaths(config *schema.LocalGitExternalService, logger log.Logger) []r
 	}
 
 	return paths
+}
+
+// Returns a string of the git remote if it exists
+func gitRemote(path string) string {
+	// Executing git rev-parse --git-dir in the root of a worktree returns .git
+	c := exec.Command("git", "remote", "get-url", "origin")
+	c.Dir = path
+	out, err := c.CombinedOutput()
+
+	if err != nil {
+		return ""
+	}
+
+	return convertGitCloneURLToCodebaseName(string(out))
+}
+
+// Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
+// This should captures:
+// - "github:sourcegraph/sourcegraph" a common SSH host alias
+// - "https://github.com/sourcegraph/deploy-sourcegraph-k8s.git"
+// - "git@github.com:sourcegraph/sourcegraph.git"
+func convertGitCloneURLToCodebaseName(cloneURL string) string {
+	cloneURL = strings.TrimSpace(cloneURL)
+	if cloneURL == "" {
+		return ""
+	}
+	uri, err := url.Parse(strings.Replace(cloneURL, "git@", "", 1))
+	if err != nil {
+		return ""
+	}
+	// Handle common Git SSH URL format
+	match := regexp.MustCompile(`git@([^:]+):([\w-]+)\/([\w-]+)(\.git)?`).FindStringSubmatch(cloneURL)
+	if strings.HasPrefix(cloneURL, "git@") && len(match) > 0 {
+		host := match[1]
+		owner := match[2]
+		repo := match[3]
+		return host + "/" + owner + "/" + repo
+	}
+
+	buildName := func(prefix string, uri *url.URL) string {
+		name := uri.Path
+		if name == "" {
+			name = uri.Opaque
+		}
+		return prefix + strings.TrimSuffix(name, ".git")
+	}
+
+	// Handle GitHub URLs
+	if strings.HasPrefix(uri.Scheme, "github") || strings.HasPrefix(uri.String(), "github") {
+		return buildName("github.com/", uri)
+	}
+	// Handle GitLab URLs
+	if strings.HasPrefix(uri.Scheme, "gitlab") || strings.HasPrefix(uri.String(), "gitlab") {
+		return buildName("gitlab.com/", uri)
+	}
+	// Handle HTTPS URLs
+	if strings.HasPrefix(uri.Scheme, "http") && uri.Host != "" && uri.Path != "" {
+		return buildName(uri.Host, uri)
+	}
+	// Generic URL
+	if uri.Host != "" && uri.Path != "" {
+		return buildName(uri.Host, uri)
+	}
+	return ""
 }
