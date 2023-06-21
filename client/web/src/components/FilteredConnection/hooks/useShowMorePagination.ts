@@ -216,7 +216,7 @@ export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
             ...variables,
             first,
         })
-    }, [refetch, variables])
+    }, [first, refetch, variables])
 
     // We use `refetchAll` to poll for all the nodes currently loaded in the
     // connection, vs. just providing a `pollInterval` to the underlying `useQuery`, which

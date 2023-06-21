@@ -122,7 +122,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
             await scheduleRepoEmbeddingJobs({ variables: { repoNames } })
             refetchFirst()
         },
-        [refetchFirst(), scheduleRepoEmbeddingJobs]
+        [refetchFirst, scheduleRepoEmbeddingJobs]
     )
 
     const form = useForm<RepoEmbeddingJobsFormValues>({
