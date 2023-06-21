@@ -1,5 +1,6 @@
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
 import com.sourcegraph.cody.completions.CodyCompletionsManager;
 import com.sourcegraph.cody.completions.CompletionDocumentContext;
 import com.sourcegraph.cody.vscode.InlineCompletionItem;
@@ -85,5 +86,21 @@ public class InlineCompletionsPostProcessingTest {
     assertEquals(
         outputCompletion.range,
         inputCompletion.range.withEnd(inputCompletion.range.end.withCharacter(7)));
+  }
+
+  @Test
+  public void convertCompletionIndentationTabsToSpaces() {
+    String suggestionText = "\t    \tHello world! \tHello once again!";
+    Range inputRange = new Range(new Position(0, 0), new Position(0, 37));
+    InlineCompletionItem inputCompletion =
+        new InlineCompletionItem(suggestionText, sameLineSuffix, inputRange, null);
+    CommonCodeStyleSettings.IndentOptions indentOptions = // default indent options use tabSize = 4
+        CommonCodeStyleSettings.IndentOptions.DEFAULT_INDENT_OPTIONS;
+    InlineCompletionItem outputCompletion =
+        CodyCompletionsManager.normalizeIndentation(inputCompletion, indentOptions);
+    String expectedSuggestionText = "            Hello world! \tHello once again!";
+    Range expectedRange = inputRange.withEnd(inputRange.end.withCharacter(43));
+    assertEquals(outputCompletion.insertText, expectedSuggestionText);
+    assertEquals(outputCompletion.range, expectedRange);
   }
 }
