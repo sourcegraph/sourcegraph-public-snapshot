@@ -134,20 +134,18 @@ interface LocalRepositoriesListProps {
  * backend API doesn't expose this information, but as soon as we have this in
  * API we can simplify this component.
  */
-const LocalRepositoriesList: FC<LocalRepositoriesListProps> = ({ paths, repositories, onPathDelete }) => {
-    return (
-        <ul className={styles.list}>
-            {repositories.map(repository => (
-                <RepositoryItem
-                    key={repository.path}
-                    repository={repository}
-                    withDelete={true}
-                    onDelete={() => onPathDelete(repository.path)}
-                />
-            ))}
-        </ul>
-    )
-}
+const LocalRepositoriesList: FC<LocalRepositoriesListProps> = ({ repositories, onPathDelete }) => (
+    <ul className={styles.list}>
+        {repositories.map(repository => (
+            <RepositoryItem
+                key={repository.path}
+                repository={repository}
+                withDelete={true}
+                onDelete={() => onPathDelete(repository.path)}
+            />
+        ))}
+    </ul>
+)
 
 interface RepositoryItemProps {
     repository: LocalRepository
