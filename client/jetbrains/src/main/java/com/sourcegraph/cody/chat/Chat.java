@@ -31,7 +31,7 @@ public class Chat {
       @NotNull UpdatableChat chat)
       throws ExecutionException, InterruptedException {
     if (CodyAgent.isConnected(project)) {
-      sendMessageViaMessage(project, humanMessage, prefix, chat);
+      sendMessageViaAgent(project, humanMessage, chat);
     } else {
       sendMessageWithoutAgent(humanMessage, prefix, chat);
     }
@@ -42,7 +42,7 @@ public class Chat {
     // TODO: Usethe context getting logic from VS Code
     List<Message> preamble = Preamble.getPreamble(codebase);
     var codeContext = "";
-    if (humanMessage.getContextFiles().isEmpty()) {
+    if (humanMessage.getContextFiles().size() == 0) {
       codeContext = "I have no file open in the editor right now.";
     } else {
       codeContext = "Here is my current file\n" + humanMessage.getContextFiles().get(0);
@@ -66,11 +66,8 @@ public class Chat {
         new CancellationToken());
   }
 
-  private void sendMessageViaMessage(
-      @NotNull Project project,
-      @NotNull ChatMessage humanMessage,
-      @Nullable String prefix,
-      @NotNull UpdatableChat chat)
+  private void sendMessageViaAgent(
+      @NotNull Project project, @NotNull ChatMessage humanMessage, @NotNull UpdatableChat chat)
       throws ExecutionException, InterruptedException {
     final AtomicBoolean isFirstMessage = new AtomicBoolean(false);
     CodyAgent.getClient(project).onChatUpdateMessageInProgress =

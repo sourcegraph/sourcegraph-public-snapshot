@@ -45,7 +45,6 @@
             factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
         <notificationGroup id="Cody Sourcegraph access" displayType="BALLOON"/>
         <projectService serviceImplementation="com.sourcegraph.cody.agent.CodyAgent"/>
-<!--        <projectServiceContainerInitializedListener implementation="com.sourcegraph.agent.CodyAgent"/>-->
 
 
         <!-- Code completions -->

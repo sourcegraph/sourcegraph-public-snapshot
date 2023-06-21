@@ -4,6 +4,11 @@ import com.sourcegraph.cody.agent.protocol.TextDocument;
 import java.util.HashMap;
 import java.util.Map;
 
+// Work-in-progress implementation of a helper class to optimize the notification traffic for
+// textDocument/* methods. For example, we don't need to include the content of the document
+// when we move the cursor around, or we don't need to send repeated didFocus events for the
+// same file path. Currently, we send duplicate didFocus events when the user focuses on
+// another application than IntelliJ, and then focuses back on the original document.
 public class CodyAgentDocuments {
   private final CodyAgentServer underlying;
   private String focusedPath = null;
