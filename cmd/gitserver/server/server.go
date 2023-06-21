@@ -436,6 +436,7 @@ func (s *Server) Handler() http.Handler {
 		// to determine whether a command should be recorded or not.
 		recordingConf := conf.Get().SiteConfig().GitRecorder
 		if recordingConf == nil {
+			s.recordingCommandFactory.Disable()
 			return
 		}
 		s.recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos), recordingConf.Size)
