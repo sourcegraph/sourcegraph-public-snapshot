@@ -10,7 +10,7 @@ interface CachedCompletion {
 
 export class CompletionsCache {
     private cache = new LRUCache<string, CachedCompletion>({
-        max: 100, // Maximum input prefixes in the cache.
+        max: 500, // Maximum input prefixes in the cache.
     })
 
     public clear(): void {

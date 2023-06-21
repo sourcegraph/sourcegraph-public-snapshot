@@ -32,7 +32,7 @@ interface CompletionEvent {
 const READ_TIMEOUT = 750
 
 const displayedCompletions = new LRUCache<string, CompletionEvent>({
-    max: 500, // Maximum number of completions that we are keeping track of
+    max: 100, // Maximum number of completions that we are keeping track of
 })
 
 export function logCompletionEvent(name: string, params?: unknown): void {
