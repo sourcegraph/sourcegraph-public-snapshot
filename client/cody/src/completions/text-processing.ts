@@ -3,6 +3,18 @@ import * as vscode from 'vscode'
 export const OPENING_CODE_TAG = '<CODE5711>'
 export const CLOSING_CODE_TAG = '</CODE5711>'
 
+/**
+ * This extracts the generated code from the response from Anthropic. The generated code is
+ * bookended by <CODE5711></CODE5711> tags (the '5711' ensures the tags are not interpreted as HTML
+ * tags and this seems to yield better results).
+ *
+ * Any trailing whitespace is trimmed, but leading whitespace is preserved.
+ * Trailing whitespace seems irrelevant to the user experience.
+ * Leading whitespace is important, as leading newlines and indentation are relevant.
+ *
+ * @param completion The raw completion result received from Anthropic
+ * @returns the extracted code block
+ */
 export function extractFromCodeBlock(completion: string): string {
     if (completion.includes(OPENING_CODE_TAG)) {
         // TODO(valery): use logger here instead.
@@ -46,12 +58,35 @@ export function fixBadCompletionStart(completion: string): string {
     return completion
 }
 
+/**
+ * A TrimmedString represents a string that has had its lead and rear whitespace trimmed.
+ * This to manage and track whitespace during pre- and post-processing of inputs to
+ * the Claude API, which is highly sensitive to whitespace and performs better when there
+ * is no trailing whitespace in its input.
+ */
 export interface TrimmedString {
     trimmed: string
     leadSpace: string
     rearSpace: string
 }
 
+/**
+ * PrefixComponents represent the different components of the "prefix", the section of the
+ * current file preceding the cursor. The prompting strategy for Claude follows this pattern:
+ *
+ * Human: Complete this code: <CODE5711>const foo = 'bar'
+ * const bar = 'blah'</CODE5711>
+ *
+ * Assistant: Here is the completion: <CODE5711>const baz = 'buzz'
+ * return</CODE5711>
+ *
+ * Note that we "put words into Claude's mouth" to ensure the completion starts from the
+ * appropriate point in code.
+ *
+ * tail needs to be long enough to be coherent, but no longer than necessary, because Claude
+ * prefers shorter Assistant responses, so if the tail is too long, the returned completion
+ * will be very short or empty. In practice, a good length for tail is 1-2 lines.
+ */
 export interface PrefixComponents {
     head: TrimmedString
     tail: TrimmedString
