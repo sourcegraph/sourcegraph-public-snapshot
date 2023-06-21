@@ -105,7 +105,6 @@ describe('CodeInsightsRootPage', () => {
             <CodeInsightsRootPage
                 activeTab={CodeInsightsRootPageTab.Dashboards}
                 telemetryService={mockTelemetryService}
-                isSourcegraphApp={false}
             />,
             {
                 route: '/insights/dashboards/foo',
@@ -121,7 +120,6 @@ describe('CodeInsightsRootPage', () => {
             <CodeInsightsRootPage
                 activeTab={CodeInsightsRootPageTab.Dashboards}
                 telemetryService={mockTelemetryService}
-                isSourcegraphApp={false}
             />,
             {
                 route: '/insights/dashboards/foo',

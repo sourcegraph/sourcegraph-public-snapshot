@@ -12,6 +12,7 @@ import (
 	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
 	adobatches "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -120,8 +121,8 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 		return computeBitbucketCloudBuildState(c.UpdatedAt, m, events)
 	case *azuredevops.AnnotatedPullRequest:
 		return computeAzureDevOpsBuildState(m)
-	case gerritbatches.AnnotatedChange:
-		// Gerrit doesn't have builds built-in, I think its better to be explicit by still
+	case *gerritbatches.AnnotatedChange, *protocol.PerforceChangelistState:
+		// Gerrit and Perforce don't have builds built-in, its better to be explicit by still
 		// including this case for clarity.
 		return btypes.ChangesetCheckStateUnknown
 	}
@@ -585,6 +586,17 @@ func computeSingleChangesetExternalState(c *btypes.Changeset) (s btypes.Changese
 		default:
 			return "", errors.Errorf("unknown Gerrit Change state: %s", m.Change.Status)
 		}
+	case *protocol.PerforceChangelist:
+		switch m.State {
+		case protocol.PerforceChangelistStateClosed:
+			s = btypes.ChangesetExternalStateClosed
+		case protocol.PerforceChangelistStateSubmitted:
+			s = btypes.ChangesetExternalStateMerged
+		case protocol.PerforceChangelistStatePending, protocol.PerforceChangelistStateShelved:
+			s = btypes.ChangesetExternalStateOpen
+		default:
+			return "", errors.Errorf("unknown Gerrit Change state: %s", m.State)
+		}
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -695,7 +707,8 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 				states[btypes.ChangesetReviewStatePending] = true
 			}
 		}
-
+	case *protocol.PerforceChangelist:
+		states[btypes.ChangesetReviewStatePending] = true
 	default:
 		return "", errors.New("unknown changeset type")
 	}

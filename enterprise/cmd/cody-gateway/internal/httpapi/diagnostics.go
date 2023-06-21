@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/auth"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/requestlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -95,7 +96,8 @@ func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret stri
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/-/") {
-			instrumentation.HTTPMiddleware("diagnostics", handler).ServeHTTP(w, r)
+			instrumentation.HTTPMiddleware("diagnostics", requestlogger.Middleware(baseLogger, handler)).
+				ServeHTTP(w, r)
 			return
 		}
 

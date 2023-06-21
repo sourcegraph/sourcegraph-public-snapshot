@@ -13,6 +13,26 @@ import styles from './ChatInputContext.module.css'
 const warning =
     'This repository has not yet been configured for Cody indexing on Sourcegraph, and response quality will be poor. To enable Cody’s code graph indexing, click here to see the Cody documentation, or email support@sourcegraph.com for assistance.'
 
+const formatFilePath = (filePath: string, selection: ChatContextStatus['selection']): string => {
+    const fileName = basename(filePath)
+
+    if (!selection) {
+        return fileName
+    }
+
+    const startLine = selection.start.line + 1
+    const endLine = selection.end.line + 1
+
+    if (
+        startLine === endLine ||
+        (startLine + 1 === endLine && selection.end.character === 0) // A single line selected with the cursor at the start of the next line
+    ) {
+        return `${fileName}:${startLine}`
+    }
+
+    return `${fileName}:${startLine}-${endLine}`
+}
+
 export const ChatInputContext: React.FunctionComponent<{
     contextStatus: ChatContextStatus
     className?: string
@@ -30,12 +50,12 @@ export const ChatInputContext: React.FunctionComponent<{
                 contextStatus.filePath
                     ? {
                           icon: mdiFileDocumentOutline,
-                          text: basename(contextStatus.filePath),
+                          text: formatFilePath(contextStatus.filePath, contextStatus.selection),
                           tooltip: contextStatus.filePath,
                       }
                     : null,
             ].filter(isDefined),
-        [contextStatus.codebase, contextStatus.connection, contextStatus.filePath]
+        [contextStatus.codebase, contextStatus.connection, contextStatus.filePath, contextStatus.selection]
     )
 
     return (
