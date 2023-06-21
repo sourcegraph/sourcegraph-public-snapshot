@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/derision-test/glock"
 	"github.com/jackc/pgerrcode"
 	"github.com/urfave/cli/v2"
 
@@ -117,7 +118,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			return err
 		}
 
-		upgradestore := upgradestore.New(db)
+		upgradestore := upgradestore.New(db, glock.NewRealClock())
 
 		_, dbShouldAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
 		if err != nil && !errors.HasPostgresCode(err, pgerrcode.UndefinedTable) && !errors.Is(err, sql.ErrNoRows) {

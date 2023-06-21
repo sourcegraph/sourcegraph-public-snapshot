@@ -3,8 +3,10 @@ package upgradestore
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/Masterminds/semver"
+	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
@@ -19,7 +21,8 @@ func TestGetServiceVersion(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db)
+	clock := glock.NewMockClock()
+	store := New(db, clock)
 
 	t.Run("fresh db", func(t *testing.T) {
 		_, ok, err := store.GetServiceVersion(ctx)
@@ -73,7 +76,8 @@ func TestSetServiceVersion(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db)
+	clock := glock.NewMockClock()
+	store := New(db, clock)
 
 	if err := store.UpdateServiceVersion(ctx, "1.2.3"); err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -96,7 +100,8 @@ func TestGetFirstServiceVersion(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db)
+	clock := glock.NewMockClock()
+	store := New(db, clock)
 
 	t.Run("fresh db", func(t *testing.T) {
 		_, ok, err := store.GetFirstServiceVersion(ctx)
@@ -150,7 +155,8 @@ func TestUpdateServiceVersion(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db)
+	clock := glock.NewMockClock()
+	store := New(db, clock)
 
 	t.Run("update sequence", func(t *testing.T) {
 		for _, tc := range []struct {
@@ -207,7 +213,8 @@ func TestValidateUpgrade(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db)
+	clock := glock.NewMockClock()
+	store := New(db, clock)
 
 	t.Run("missing table", func(t *testing.T) {
 		if err := store.db.Exec(ctx, sqlf.Sprintf("DROP TABLE versions;")); err != nil {
@@ -226,7 +233,8 @@ func TestClaimAutoUpgrade(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
 		logger := logtest.Scoped(t)
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
-		store := New(db)
+		clock := glock.NewMockClock()
+		store := New(db, clock)
 
 		if err := store.EnsureUpgradeTable(ctx); err != nil {
 			t.Fatalf("unexpected error: %s", err)
@@ -245,7 +253,8 @@ func TestClaimAutoUpgrade(t *testing.T) {
 	t.Run("basic sequential (first in-progress)", func(t *testing.T) {
 		logger := logtest.Scoped(t)
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
-		store := New(db)
+		clock := glock.NewMockClock()
+		store := New(db, clock)
 
 		if err := store.EnsureUpgradeTable(ctx); err != nil {
 			t.Fatalf("unexpected error: %s", err)
@@ -273,7 +282,8 @@ func TestClaimAutoUpgrade(t *testing.T) {
 	t.Run("basic sequential (first failed)", func(t *testing.T) {
 		logger := logtest.Scoped(t)
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
-		store := New(db)
+		clock := glock.NewMockClock()
+		store := New(db, clock)
 
 		if err := store.EnsureUpgradeTable(ctx); err != nil {
 			t.Fatalf("unexpected error: %s", err)
@@ -305,7 +315,8 @@ func TestClaimAutoUpgrade(t *testing.T) {
 	t.Run("basic sequential (first succeeded)", func(t *testing.T) {
 		logger := logtest.Scoped(t)
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
-		store := New(db)
+		clock := glock.NewMockClock()
+		store := New(db, clock)
 
 		if err := store.EnsureUpgradeTable(ctx); err != nil {
 			t.Fatalf("unexpected error: %s", err)
@@ -337,7 +348,8 @@ func TestClaimAutoUpgrade(t *testing.T) {
 	t.Run("basic sequential (first succeeded, older version)", func(t *testing.T) {
 		logger := logtest.Scoped(t)
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
-		store := New(db)
+		clock := glock.NewMockClock()
+		store := New(db, clock)
 
 		if err := store.EnsureUpgradeTable(ctx); err != nil {
 			t.Fatalf("unexpected error: %s", err)
@@ -363,6 +375,58 @@ func TestClaimAutoUpgrade(t *testing.T) {
 
 		if !claimed {
 			t.Fatal("expected successful autoupgrade claim")
+		}
+	})
+
+	t.Run("stale heartbeat", func(t *testing.T) {
+		logger := logtest.Scoped(t)
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		clock := glock.NewMockClock()
+		store := New(db, clock)
+
+		if err := store.EnsureUpgradeTable(ctx); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		claimed, err := store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.1.0")
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		if !claimed {
+			t.Fatal("expected successful autoupgrade claim")
+		}
+
+		if err := store.Heartbeat(ctx); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		// first test that we cant claim if 15s havent elapsed
+		{
+			clock.Advance(time.Second * 10)
+
+			claimed, err = store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+
+			if claimed {
+				t.Fatal("expected unsuccessful autoupgrade claim")
+			}
+		}
+
+		// then test that we can claim if 15s have elapsed
+		{
+			clock.Advance(time.Second * 6)
+
+			claimed, err = store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+
+			if !claimed {
+				t.Fatal("expected successful autoupgrade claim")
+			}
 		}
 	})
 }

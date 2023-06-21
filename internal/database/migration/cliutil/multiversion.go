@@ -3,6 +3,8 @@ package cliutil
 import (
 	"context"
 
+	"github.com/derision-test/glock"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -17,7 +19,7 @@ func GetRawServiceVersion(ctx context.Context, r *runner.Runner) (_ string, ok b
 		return "", false, err
 	}
 
-	return upgradestore.New(db).GetServiceVersion(ctx)
+	return upgradestore.New(db, glock.NewRealClock()).GetServiceVersion(ctx)
 }
 
 // GetServiceVersion returns the frontend service version information for the given runner as a parsed version.

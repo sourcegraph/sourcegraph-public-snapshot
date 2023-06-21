@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -508,7 +509,7 @@ func (r *siteResolver) AutoUpgradeEnabled(ctx context.Context) (bool, error) {
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return false, err
 	}
-	_, enabled, err := upgradestore.NewWith(r.db.Handle()).GetAutoUpgrade(ctx)
+	_, enabled, err := upgradestore.NewWith(r.db.Handle(), glock.NewRealClock()).GetAutoUpgrade(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -523,7 +524,7 @@ func (r *schemaResolver) SetAutoUpgrade(ctx context.Context, args *struct {
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
 	}
-	err := upgradestore.NewWith(r.db.Handle()).SetAutoUpgrade(ctx, args.Enable)
+	err := upgradestore.NewWith(r.db.Handle(), glock.NewRealClock()).SetAutoUpgrade(ctx, args.Enable)
 	return &EmptyResponse{}, err
 }
 
