@@ -2,7 +2,6 @@ package executors
 
 import (
 	"context"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -45,7 +44,7 @@ func (j *janitorJob) Routines(_ context.Context, observationCtx *observation.Con
 			goroutine.WithDescription("clean up executor heartbeat records for presumed dead executors"),
 			goroutine.WithInterval(janitorConfigInst.CleanupTaskInterval),
 		),
-		NewMultiqueueCacheCleaner(executortypes.ValidQueueNames, dequeueCache, executortypes.DequeueTtl, 5*time.Second),
+		NewMultiqueueCacheCleaner(executortypes.ValidQueueNames, dequeueCache, janitorConfigInst.CacheDequeueTtl, janitorConfigInst.CacheCleanupInterval),
 	}
 
 	return routines, nil
