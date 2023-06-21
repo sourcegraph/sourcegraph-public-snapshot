@@ -101,7 +101,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
     makeOwnerError,
     repoID,
     filePath,
-    refetch
+    refetch,
 }) => {
     const [removeOwnerError, setRemoveOwnerError] = React.useState<Error | undefined>(undefined)
 

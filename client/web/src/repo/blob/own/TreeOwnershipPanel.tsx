@@ -89,5 +89,5 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
             />
         )
     }
-    return <OwnerList repoID={repoID} filePath={filePath} refetch={refetch}/>
+    return <OwnerList repoID={repoID} filePath={filePath} refetch={refetch} />
 }
