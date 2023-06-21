@@ -225,16 +225,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     multilineMode,
                 })
             )
-        } else if (sameLinePrefix.trim() === '') {
-            // The current line is empty
-            timeout = 20
-            completers.push(
-                this.providerConfig.create({
-                    ...sharedProviderOptions,
-                    n: 3,
-                    multilineMode: null,
-                })
-            )
         } else {
             // The current line has a suffix
             timeout = 20
