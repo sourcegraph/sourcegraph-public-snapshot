@@ -37,6 +37,7 @@ go_test(
     ],
     deps = [
         "//internal/database",
+        "//internal/database/basestore",
         "//internal/database/dbtest",
         "//lib/errors",
         "@com_github_derision_test_glock//:glock",

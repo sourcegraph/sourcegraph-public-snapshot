@@ -86,7 +86,6 @@ go_library(
         "//lib/errors",
         "//lib/output",
         "//schema",
-        "@com_github_derision_test_glock//:glock",
         "@com_github_fsnotify_fsnotify//:fsnotify",
         "@com_github_gorilla_context//:context",
         "@com_github_gorilla_mux//:mux",

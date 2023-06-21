@@ -9,7 +9,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/derision-test/glock"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/tmpfriend"
 	sglog "github.com/sourcegraph/log"
@@ -79,7 +78,7 @@ func InitDB(logger sglog.Logger) (*sql.DB, error) {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
-	if err := upgradestore.New(database.NewDB(logger, sqlDB), glock.NewRealClock()).UpdateServiceVersion(context.Background(), version.Version()); err != nil {
+	if err := upgradestore.New(database.NewDB(logger, sqlDB)).UpdateServiceVersion(context.Background(), version.Version()); err != nil {
 		return nil, err
 	}
 

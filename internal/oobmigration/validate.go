@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/derision-test/glock"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -30,7 +29,7 @@ func ValidateOutOfBandMigrationRunner(ctx context.Context, db database.DB, runne
 		return nil
 	}
 
-	firstSemverString, ok, err := upgradestore.New(db, glock.NewRealClock()).GetFirstServiceVersion(ctx)
+	firstSemverString, ok, err := upgradestore.New(db).GetFirstServiceVersion(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve first instance version")
 	}

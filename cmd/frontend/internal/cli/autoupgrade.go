@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/derision-test/glock"
 	"github.com/jackc/pgerrcode"
 	"github.com/keegancsmith/sqlf"
 
@@ -48,7 +47,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 	defer sqlDB.Close()
 
 	db := database.NewDB(obsvCtx.Logger, sqlDB)
-	upgradestore := upgradestore.New(db, glock.NewRealClock())
+	upgradestore := upgradestore.New(db)
 
 	currentVersionStr, dbShouldAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
 	// fresh instance
@@ -240,7 +239,7 @@ func finalMileMigrations(obsvCtx *observation.Context) error {
 // and
 // there are no named connections in pg_stat_activity besides frontend-autoupgrader.
 func claimAutoUpgradeLock(ctx context.Context, obsvCtx *observation.Context, db database.DB, toVersion oobmigration.Version) (stillNeedsUpgrade bool, err error) {
-	upgradestore := upgradestore.New(db, glock.NewRealClock())
+	upgradestore := upgradestore.New(db)
 
 	// try to claim
 	for {
@@ -296,7 +295,7 @@ func claimAutoUpgradeLock(ctx context.Context, obsvCtx *observation.Context, db 
 const heartbeatInterval = time.Second * 10
 
 func heartbeatLoop(logger log.Logger, db database.DB) (func(), error) {
-	upgradestore := upgradestore.New(db, glock.NewRealClock())
+	upgradestore := upgradestore.New(db)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()

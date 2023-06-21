@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/derision-test/glock"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/multiversion"
@@ -107,7 +106,7 @@ func Upgrade(
 		if err != nil {
 			return errors.Wrap(err, "new db handle")
 		}
-		currentVersion, autoUpgrade, err := upgradestore.New(db, glock.NewRealClock()).GetAutoUpgrade(ctx)
+		currentVersion, autoUpgrade, err := upgradestore.New(db).GetAutoUpgrade(ctx)
 		if err != nil {
 			return errors.Wrap(err, "checking auto upgrade")
 		}

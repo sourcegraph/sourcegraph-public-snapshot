@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -21,8 +22,8 @@ func TestGetServiceVersion(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	clock := glock.NewMockClock()
-	store := New(db, clock)
+
+	store := New(db)
 
 	t.Run("fresh db", func(t *testing.T) {
 		_, ok, err := store.GetServiceVersion(ctx)
@@ -76,8 +77,8 @@ func TestSetServiceVersion(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	clock := glock.NewMockClock()
-	store := New(db, clock)
+
+	store := New(db)
 
 	if err := store.UpdateServiceVersion(ctx, "1.2.3"); err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -100,8 +101,8 @@ func TestGetFirstServiceVersion(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	clock := glock.NewMockClock()
-	store := New(db, clock)
+
+	store := New(db)
 
 	t.Run("fresh db", func(t *testing.T) {
 		_, ok, err := store.GetFirstServiceVersion(ctx)
@@ -155,8 +156,8 @@ func TestUpdateServiceVersion(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	clock := glock.NewMockClock()
-	store := New(db, clock)
+
+	store := New(db)
 
 	t.Run("update sequence", func(t *testing.T) {
 		for _, tc := range []struct {
@@ -213,8 +214,8 @@ func TestValidateUpgrade(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	clock := glock.NewMockClock()
-	store := New(db, clock)
+
+	store := New(db)
 
 	t.Run("missing table", func(t *testing.T) {
 		if err := store.db.Exec(ctx, sqlf.Sprintf("DROP TABLE versions;")); err != nil {
@@ -233,8 +234,8 @@ func TestClaimAutoUpgrade(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
 		logger := logtest.Scoped(t)
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
-		clock := glock.NewMockClock()
-		store := New(db, clock)
+
+		store := New(db)
 
 		if err := store.EnsureUpgradeTable(ctx); err != nil {
 			t.Fatalf("unexpected error: %s", err)
@@ -253,8 +254,8 @@ func TestClaimAutoUpgrade(t *testing.T) {
 	t.Run("basic sequential (first in-progress)", func(t *testing.T) {
 		logger := logtest.Scoped(t)
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
-		clock := glock.NewMockClock()
-		store := New(db, clock)
+
+		store := New(db)
 
 		if err := store.EnsureUpgradeTable(ctx); err != nil {
 			t.Fatalf("unexpected error: %s", err)
@@ -282,8 +283,8 @@ func TestClaimAutoUpgrade(t *testing.T) {
 	t.Run("basic sequential (first failed)", func(t *testing.T) {
 		logger := logtest.Scoped(t)
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
-		clock := glock.NewMockClock()
-		store := New(db, clock)
+
+		store := New(db)
 
 		if err := store.EnsureUpgradeTable(ctx); err != nil {
 			t.Fatalf("unexpected error: %s", err)
@@ -315,8 +316,8 @@ func TestClaimAutoUpgrade(t *testing.T) {
 	t.Run("basic sequential (first succeeded)", func(t *testing.T) {
 		logger := logtest.Scoped(t)
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
-		clock := glock.NewMockClock()
-		store := New(db, clock)
+
+		store := New(db)
 
 		if err := store.EnsureUpgradeTable(ctx); err != nil {
 			t.Fatalf("unexpected error: %s", err)
@@ -348,8 +349,8 @@ func TestClaimAutoUpgrade(t *testing.T) {
 	t.Run("basic sequential (first succeeded, older version)", func(t *testing.T) {
 		logger := logtest.Scoped(t)
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
-		clock := glock.NewMockClock()
-		store := New(db, clock)
+
+		store := New(db)
 
 		if err := store.EnsureUpgradeTable(ctx); err != nil {
 			t.Fatalf("unexpected error: %s", err)
@@ -382,7 +383,7 @@ func TestClaimAutoUpgrade(t *testing.T) {
 		logger := logtest.Scoped(t)
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		clock := glock.NewMockClock()
-		store := New(db, clock)
+		store := newStore(basestore.NewWithHandle(db.Handle()), clock)
 
 		if err := store.EnsureUpgradeTable(ctx); err != nil {
 			t.Fatalf("unexpected error: %s", err)

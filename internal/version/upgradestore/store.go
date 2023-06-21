@@ -25,14 +25,18 @@ type store struct {
 }
 
 // New returns a new version store with the given database handle.
-func New(db database.DB, clock glock.Clock) *store {
-	return NewWith(db.Handle(), clock)
+func New(db database.DB) *store {
+	return NewWith(db.Handle())
 }
 
 // NewWith returns a new version store with the given transactable handle.
-func NewWith(db basestore.TransactableHandle, clock glock.Clock) *store {
+func NewWith(db basestore.TransactableHandle) *store {
+	return newStore(basestore.NewWithHandle(db), glock.NewRealClock())
+}
+
+func newStore(db *basestore.Store, clock glock.Clock) *store {
 	return &store{
-		db:    basestore.NewWithHandle(db),
+		db:    db,
 		clock: clock,
 	}
 }

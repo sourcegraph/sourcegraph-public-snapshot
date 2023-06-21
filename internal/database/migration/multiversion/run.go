@@ -6,8 +6,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/derision-test/glock"
-
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 
@@ -157,7 +155,7 @@ func RunMigration(
 		// still want to catch the cases where site-admins "jump forward" several versions while
 		// using the standard upgrade path (not a multi-version upgrade that handles these cases).
 
-		if err := upgradestore.New(db, glock.NewRealClock()).SetServiceVersion(ctx, fmt.Sprintf("%d.%d.0", plan.to.Major, plan.to.Minor)); err != nil {
+		if err := upgradestore.New(db).SetServiceVersion(ctx, fmt.Sprintf("%d.%d.0", plan.to.Major, plan.to.Minor)); err != nil {
 			return err
 		}
 	}
