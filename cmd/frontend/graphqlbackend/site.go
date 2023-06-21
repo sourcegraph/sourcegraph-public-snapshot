@@ -565,3 +565,43 @@ func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
 }
 
 func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool { return cody.IsCodyEnabled(ctx) }
+
+func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigurationResolver {
+	c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+	if c == nil {
+		return nil
+	}
+
+	return &codyLLMConfigurationResolver{config: c}
+}
+
+type codyLLMConfigurationResolver struct {
+	config *conftypes.CompletionsConfig
+}
+
+func (c *codyLLMConfigurationResolver) ChatModel() string { return c.config.ChatModel }
+func (c *codyLLMConfigurationResolver) ChatModelMaxPromptTokens() *int32 {
+	if c.config.ChatModelMaxPromptTokens != 0 {
+		max := int32(c.config.ChatModelMaxPromptTokens)
+		return &max
+	}
+	return nil
+}
+
+func (c *codyLLMConfigurationResolver) FastChatModel() string { return c.config.FastChatModel }
+func (c *codyLLMConfigurationResolver) FastChatModelMaxPromptTokens() *int32 {
+	if c.config.FastChatModelMaxPromptTokens != 0 {
+		max := int32(c.config.FastChatModelMaxPromptTokens)
+		return &max
+	}
+	return nil
+}
+
+func (c *codyLLMConfigurationResolver) CompletionModel() string { return c.config.FastChatModel }
+func (c *codyLLMConfigurationResolver) CompletionModelMaxPromptTokens() *int32 {
+	if c.config.CompletionModelMaxPromptTokens != 0 {
+		max := int32(c.config.CompletionModelMaxPromptTokens)
+		return &max
+	}
+	return nil
+}

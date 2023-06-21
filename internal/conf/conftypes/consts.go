@@ -3,9 +3,15 @@ package conftypes
 import "time"
 
 type CompletionsConfig struct {
-	ChatModel                        string
-	FastChatModel                    string
-	CompletionModel                  string
+	ChatModel                string
+	ChatModelMaxPromptTokens int
+
+	FastChatModel                string
+	FastChatModelMaxPromptTokens int
+
+	CompletionModel                string
+	CompletionModelMaxPromptTokens int
+
 	AccessToken                      string
 	Provider                         CompletionsProviderName
 	Endpoint                         string
