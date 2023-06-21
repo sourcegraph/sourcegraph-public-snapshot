@@ -239,7 +239,7 @@ type PullRequest struct {
 	HeadRefName    string
 	BaseRefName    string
 	Number         int64
-	MergeableState string
+	ReviewDecision string
 	Author         Actor
 	BaseRepository PullRequestRepo
 	HeadRepository PullRequestRepo
@@ -881,7 +881,6 @@ func (c *V4Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 	if err != nil {
 		return err
 	}
-
 	version := c.determineGitHubVersion(ctx)
 
 	prFragment, err := pullRequestFragments(version)
@@ -1463,6 +1462,7 @@ fragment pr on PullRequest {
   baseRefOid
   headRefName
   baseRefName
+  reviewDecision
   %s
   author {
     ...actor

@@ -394,7 +394,6 @@ func (c *Changeset) SetMetadata(meta any) error {
 		c.ExternalServiceType = extsvc.TypeGitHub
 		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.HeadRefName)
 		c.ExternalUpdatedAt = pr.UpdatedAt
-		// c.Mergeable = pr.MergeableState
 
 		if pr.BaseRepository.ID != pr.HeadRepository.ID {
 			c.ExternalForkNamespace = pr.HeadRepository.Owner.Login
