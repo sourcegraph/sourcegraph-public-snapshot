@@ -2,6 +2,7 @@ package embeddings
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
@@ -10,7 +11,7 @@ import (
 
 func TestOpenAI(t *testing.T) {
 	t.Run("errors on empty embedding string", func(t *testing.T) {
-		client := NewOpenAIClient("")
+		client := NewOpenAIClient(http.DefaultClient, "")
 		_, _, err := client.GenerateEmbeddings(context.Background(), codygateway.EmbeddingsRequest{
 			Input: []string{"a", ""}, // empty string is invalid
 		})

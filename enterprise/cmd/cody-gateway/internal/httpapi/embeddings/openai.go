@@ -10,17 +10,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewOpenAIClient(accessToken string) EmbeddingsClient {
+func NewOpenAIClient(httpClient *http.Client, accessToken string) EmbeddingsClient {
 	return &openaiClient{
+		httpClient:  httpClient,
 		accessToken: accessToken,
 	}
 }
 
 type openaiClient struct {
+	httpClient  *http.Client
 	accessToken string
 }
 
@@ -99,7 +100,7 @@ func (c *openaiClient) requestEmbeddings(ctx context.Context, model openAIModel,
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 
-	resp, err := httpcli.ExternalDoer.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

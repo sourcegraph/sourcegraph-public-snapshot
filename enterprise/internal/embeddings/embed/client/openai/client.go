@@ -13,11 +13,10 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewClient(config *conftypes.EmbeddingsConfig) *openaiEmbeddingsClient {
+func NewClient(httpClient *http.Client, config *conftypes.EmbeddingsConfig) *openaiEmbeddingsClient {
 	return &openaiEmbeddingsClient{
 		dimensions:  config.Dimensions,
 		accessToken: config.AccessToken,
@@ -27,6 +26,7 @@ func NewClient(config *conftypes.EmbeddingsConfig) *openaiEmbeddingsClient {
 }
 
 type openaiEmbeddingsClient struct {
+	httpClient  *http.Client
 	model       string
 	dimensions  int
 	endpoint    string
@@ -141,7 +141,7 @@ func (c *openaiEmbeddingsClient) do(ctx context.Context, request openaiEmbedding
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 
-	resp, err := httpcli.ExternalDoer.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
