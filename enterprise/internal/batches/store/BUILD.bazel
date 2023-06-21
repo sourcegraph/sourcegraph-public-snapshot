@@ -53,6 +53,7 @@ go_library(
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",
         "//internal/featureflag",
+        "//internal/gitserver/protocol",
         "//internal/metrics",
         "//internal/observation",
         "//internal/timeutil",

@@ -1,0 +1,74 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://gerrit.sgdev.org/a/changes/I2e55bf947cc1fe96b2663f4d3fedaa992628f8d4
+    method: DELETE
+  response:
+    body: ""
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 7da626f5cc8ac3a7-SEA
+      Content-Disposition:
+      - attachment
+      Date:
+      - Tue, 20 Jun 2023 18:42:32 GMT
+      Expires:
+      - Mon, 01 Jan 1990 00:00:00 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+    status: 204 No Content
+    code: 204
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://gerrit.sgdev.org/a/changes/I2e55bf947cc1fe96b2663f4d3fedaa992628f8d4
+    method: DELETE
+  response:
+    body: |
+      Not found: I2e55bf947cc1fe96b2663f4d3fedaa992628f8d4
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 7da626f84ec5c3a7-SEA
+      Content-Disposition:
+      - attachment
+      Content-Type:
+      - text/plain;charset=utf-8
+      Date:
+      - Tue, 20 Jun 2023 18:42:32 GMT
+      Expires:
+      - Mon, 01 Jan 1990 00:00:00 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+    status: 404 Not Found
+    code: 404
+    duration: ""

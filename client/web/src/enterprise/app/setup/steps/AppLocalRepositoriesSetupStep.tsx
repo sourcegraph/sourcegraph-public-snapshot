@@ -1,70 +1,93 @@
 import { FC, useContext, useState } from 'react'
 
+import { MutationTuple } from '@apollo/client'
+import { mdiGit } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom'
 
-import { useQuery, gql } from '@sourcegraph/http-client'
-import { Button, H1, Text, Tooltip } from '@sourcegraph/wildcard'
+import { gql, useMutation } from '@sourcegraph/http-client'
+import { Button, H1, Icon, Text, Tooltip, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { AppUserConnectDotComAccountResult, LocalRepository } from '../../../../graphql-operations'
-import { EnterprisePageRoutes } from '../../../../routes.constants'
-import { SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
-import { LocalRepositoriesWidget, PathsPickerActions } from '../../settings/local-repositories/LocalRepositoriesTab'
+import {
+    LocalRepository,
+    ScheduleLocalRepoEmbeddingJobsResult,
+    ScheduleLocalRepoEmbeddingJobsVariables,
+} from '../../../../graphql-operations'
+import { callFilePicker, SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
+import { LocalRepositoriesWidget } from '../../settings/local-repositories/LocalRepositoriesTab'
 
 import styles from './AppLocalRepositoriesSetupStep.module.scss'
 
-const SITE_GQL = gql`
-    query SetupUserConnectDotComAccount {
-        site {
-            id
-            appHasConnectedDotComAccount
+const MAX_NUMBER_OF_REPOSITORIES = 10
+
+const SCHEDULE_REPO_EMBEDDING_JOBS = gql`
+    mutation ScheduleLocalRepoEmbeddingJobs($repoNames: [String!]!) {
+        setupNewAppRepositoriesForEmbedding(repoNames: $repoNames) {
+            alwaysNil
         }
     }
 `
 
-export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ className }) => {
-    const navigate = useNavigate()
-    const { onNextStep } = useContext(SetupStepsContext)
+export function useScheduleRepoEmbeddingJobs(): MutationTuple<
+    ScheduleLocalRepoEmbeddingJobsResult,
+    ScheduleLocalRepoEmbeddingJobsVariables
+> {
+    return useMutation<ScheduleLocalRepoEmbeddingJobsResult, ScheduleLocalRepoEmbeddingJobsVariables>(
+        SCHEDULE_REPO_EMBEDDING_JOBS
+    )
+}
 
+export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ className }) => {
+    const { onNextStep } = useContext(SetupStepsContext)
+    const [scheduleEmbeddings, { loading }] = useScheduleRepoEmbeddingJobs()
     const [repositories, setRepositories] = useState<LocalRepository[]>([])
 
-    const { data, loading } = useQuery<AppUserConnectDotComAccountResult, AppUserConnectDotComAccountResult>(SITE_GQL, {
-        nextFetchPolicy: 'cache-first',
-    })
-
-    const handleNext = (): void => {
-        if (data?.site?.appHasConnectedDotComAccount) {
-            onNextStep()
-            return
-        }
-
-        // Skip embeddings step if app isn't connected to the .com account
-        navigate(`${EnterprisePageRoutes.AppSetup}/install-extensions`)
+    const handleNext = async (): Promise<void> => {
+        await scheduleEmbeddings({
+            variables: { repoNames: repositories.map(repo => repo.name) },
+        })
+        onNextStep()
     }
 
     return (
         <div className={classNames(className, styles.root)}>
             <div className={styles.description}>
-                <H1 className={styles.descriptionHeading}>Add your projects</H1>
+                <H1 className={styles.descriptionHeading}>Build your code graph</H1>
 
                 <Text className={styles.descriptionText}>
-                    Choose the local repositories you’d like to add to the app.
+                    Select up to {MAX_NUMBER_OF_REPOSITORIES} repositories to add to your code graph.
                 </Text>
 
                 <Text className={styles.descriptionText}>
-                    Consider adding your most recent projects, or the repositories you edit the most. You can always add
-                    more later.
+                    This code will be sent to OpenAI to create{' '}
+                    <Link
+                        to="https://docs.sourcegraph.com/cody/explanations/code_graph_context#embeddings"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        embeddings
+                    </Link>
+                    , which help Cody generate more accurate answers about your code.
                 </Text>
 
-                <Tooltip content={repositories.length === 0 ? 'Select at least one repo to continue' : undefined}>
+                <Tooltip
+                    content={
+                        repositories.length > MAX_NUMBER_OF_REPOSITORIES
+                            ? `Select less repositores, Right now Cody only supports a maximum of ${MAX_NUMBER_OF_REPOSITORIES} repos`
+                            : repositories.length === 0
+                            ? 'Select at least one repo to continue'
+                            : undefined
+                    }
+                >
                     <Button
                         size="lg"
                         variant="primary"
-                        disabled={loading || repositories.length === 0}
+                        disabled={
+                            loading || repositories.length === 0 || repositories.length > MAX_NUMBER_OF_REPOSITORIES
+                        }
                         className={styles.descriptionNext}
                         onClick={handleNext}
                     >
-                        Next →
+                        {loading && <LoadingSpinner />} Next →
                     </Button>
                 </Tooltip>
             </div>
@@ -75,6 +98,7 @@ export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ classNam
                 >
                     {api => (
                         <PathsPickerActions
+                            disabled={repositories.length > MAX_NUMBER_OF_REPOSITORIES}
                             className={styles.localRepositoriesButtonsGroup}
                             onPathsChange={api.addNewPaths}
                         />
@@ -82,5 +106,38 @@ export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ classNam
                 </LocalRepositoriesWidget>
             </div>
         </div>
+    )
+}
+
+interface PathsPickerActionsProps {
+    disabled: boolean
+    className?: string
+    onPathsChange: (paths: string[]) => void
+}
+
+/**
+ * Local repositories path picker buttons, both do the same job,
+ * but we have two buttons to improve user understanding what options
+ * they have in the file picker.
+ */
+const PathsPickerActions: FC<PathsPickerActionsProps> = props => {
+    const { disabled, className, onPathsChange } = props
+
+    const handleClickCallPathPicker = async (): Promise<void> => {
+        const paths = await callFilePicker({ multiple: false })
+
+        if (paths !== null) {
+            onPathsChange(paths)
+        }
+    }
+
+    return (
+        <Tooltip
+            content={disabled ? `Right now Cody only supports a maximum of ${MAX_NUMBER_OF_REPOSITORIES} repos` : ''}
+        >
+            <Button variant="primary" disabled={disabled} className={className} onClick={handleClickCallPathPicker}>
+                <Icon svgPath={mdiGit} aria-hidden={true} /> Add a repository
+            </Button>
+        </Tooltip>
     )
 }

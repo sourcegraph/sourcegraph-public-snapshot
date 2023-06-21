@@ -522,6 +522,12 @@
           "!go": {
             "pointer": true
           }
+        },
+        "batchChanges.enablePerforce": {
+          "description": "When enabled, batch changes will be executable on Perforce depots.",
+          "type": "boolean",
+          "group": "BatchChanges",
+          "default": false
         }
       },
       "examples": [
@@ -2400,14 +2406,8 @@
             ".gitattributes",
             ".mailmap",
             "*.csv",
-            "*.sql",
             "*.svg",
-            "*.json",
-            "*.jsonc",
-            "*.jsonl",
             "*.xml",
-            "*.yml",
-            "*.yaml",
             "__fixtures__/",
             "node_modules/",
             "testdata/",
