@@ -35,7 +35,7 @@ const DOMPURIFY_CONFIG = {
         's',
         'u',
     ],
-    ALLOWED_URI_REGEXP: /^vscode:?\/\/[^\s#$./?].\S*$/i,
+    ALLOWED_URI_REGEXP: /^(https?|vscode):\/\/[^\s#$./?].\S*$/i,
 }
 
 /**

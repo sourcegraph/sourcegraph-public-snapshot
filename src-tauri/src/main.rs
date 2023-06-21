@@ -105,7 +105,22 @@ fn main() {
             tauri::WindowEvent::CloseRequested { api, .. } => {
                 // Ensure the app stays open after the last window is closed.
                 if event.window().label() == "main" {
-                    event.window().hide().unwrap();
+                    // We use `tauri::AppHandle::hide` instead of `event.window().hide` because
+                    // hiding the app allows clicking the dock icon to show the app again.
+                    // This is a temporary solution that only works if the app has a single window.
+                    // If we need to add more windows in the future, we need to wait until
+                    // https://github.com/tauri-apps/tauri/issues/3084 is fixed.
+                    #[allow(unused_unsafe)]
+                    #[cfg(not(target_os = "macos"))]
+                    {
+                        event.window().hide().unwrap();
+                    }
+
+                    #[allow(unused_unsafe)]
+                    #[cfg(target_os = "macos")]
+                    unsafe {
+                        tauri::AppHandle::hide(&event.window().app_handle()).unwrap();
+                    }
                     api.prevent_close();
                 }
             }

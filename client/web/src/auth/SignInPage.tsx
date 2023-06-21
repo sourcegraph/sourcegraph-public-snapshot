@@ -166,7 +166,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                                 to="https://about.sourcegraph.com/app"
                                 onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'SignInPage' })}
                             >
-                                download Sourcegraph app
+                                download Cody app
                             </Link>{' '}
                             or{' '}
                             <Link
