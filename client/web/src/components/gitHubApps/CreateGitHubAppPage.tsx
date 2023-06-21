@@ -283,7 +283,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                             Your GitHub App must be public if you want to install it on multiple organizations or user
                             accounts.{' '}
                             <Link
-                                to="/help/admin/external_service/github#mutliple-installations"
+                                to="/help/admin/external_service/github#multiple-installations"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >

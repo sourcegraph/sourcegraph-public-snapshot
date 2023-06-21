@@ -172,7 +172,7 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcr
                             </AnchorLink>
                             . A private GitHub App can only be installed on the account that originally created it.{' '}
                             <Link
-                                to="/help/admin/external_service/github#mutliple-installations"
+                                to="/help/admin/external_service/github#multiple-installations"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
