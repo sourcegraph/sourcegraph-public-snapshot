@@ -17,16 +17,16 @@ func TestSlackRateLimitNotifier(t *testing.T) {
 	logger := logtest.NoOp(t)
 
 	tests := []struct {
-		name            string
-		mockRedis       func(t *testing.T) redispool.KeyValue
-		usagePercentage float32
-		wantAlerted     bool
+		name        string
+		mockRedis   func(t *testing.T) redispool.KeyValue
+		usageRatio  float32
+		wantAlerted bool
 	}{
 		{
-			name:            "no alerts below lowest bucket",
-			mockRedis:       func(*testing.T) redispool.KeyValue { return redispool.NewMockKeyValue() },
-			usagePercentage: 0.1,
-			wantAlerted:     false,
+			name:        "no alerts below lowest bucket",
+			mockRedis:   func(*testing.T) redispool.KeyValue { return redispool.NewMockKeyValue() },
+			usageRatio:  0.1,
+			wantAlerted: false,
 		},
 		{
 			name: "alert when hits 50% bucket",
@@ -35,8 +35,8 @@ func TestSlackRateLimitNotifier(t *testing.T) {
 				rs.SetNxFunc.SetDefaultReturn(true, nil)
 				return rs
 			},
-			usagePercentage: 0.5,
-			wantAlerted:     true,
+			usageRatio:  0.5,
+			wantAlerted: true,
 		},
 		{
 			name: "no alert when hits alerted bucket",
@@ -46,8 +46,8 @@ func TestSlackRateLimitNotifier(t *testing.T) {
 				rs.GetFunc.SetDefaultReturn(redispool.NewValue(int64(50), nil))
 				return rs
 			},
-			usagePercentage: 0.6,
-			wantAlerted:     false,
+			usageRatio:  0.6,
+			wantAlerted: false,
 		},
 		{
 			name: "alert when hits another bucket",
@@ -57,8 +57,8 @@ func TestSlackRateLimitNotifier(t *testing.T) {
 				rs.GetFunc.SetDefaultReturn(redispool.NewValue(int64(50), nil))
 				return rs
 			},
-			usagePercentage: 0.8,
-			wantAlerted:     true,
+			usageRatio:  0.8,
+			wantAlerted: true,
 		},
 	}
 	for _, test := range tests {
@@ -76,7 +76,12 @@ func TestSlackRateLimitNotifier(t *testing.T) {
 				},
 			)
 
-			alerter("alice", codygateway.ActorSourceProductSubscription, codygateway.FeatureChatCompletions, test.usagePercentage, time.Minute)
+			alerter(context.Background(),
+				"alice",
+				codygateway.ActorSourceProductSubscription,
+				codygateway.FeatureChatCompletions,
+				test.usageRatio,
+				time.Minute)
 			assert.Equal(t, test.wantAlerted, alerted, "alert fired incorrectly")
 		})
 	}
