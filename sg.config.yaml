@@ -748,12 +748,19 @@ commands:
       fi
 
       cp ${PROM_TARGETS} "${CONFIG_DIR}"/prometheus_targets.yml
-      CACHE=true ./docker-images/prometheus/build.sh
+
+      if [[ $(uname) == "Linux" ]]; then
+        bazel build //docker-images/prometheus:image_tarball
+        docker load --input $(bazel cquery //docker-images/prometheus:image_tarball --output=files)
+      else
+        bazel build //docker-images/prometheus:image_tarball --config darwin-docker
+        docker load --input $(bazel cquery //docker-images/prometheus:image_tarball --config darwin-docker --output=files)
+      fi
     env:
       PROMETHEUS_DISK: $HOME/.sourcegraph-dev/data/prometheus
       # See comment above for `grafana`
       PROMETHEUS_LOG_FILE: $HOME/.sourcegraph-dev/logs/prometheus/prometheus.log
-      IMAGE: sourcegraph/prometheus:dev
+      IMAGE: prometheus:candidate
       CONTAINER: prometheus
       PORT: 9090
       CONFIG_DIR: docker-images/prometheus/config
