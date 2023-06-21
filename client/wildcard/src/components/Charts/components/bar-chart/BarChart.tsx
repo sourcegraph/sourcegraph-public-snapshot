@@ -78,9 +78,19 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         [categories]
     )
 
-    const yScale = useMemo(() => scaleLinear<number>({
-        domain: [0, categories.reduce((max, category) => Math.max(max, category.maxValue), maxValueLowerBound ?? -Infinity)],
-    }), [categories, maxValueLowerBound])
+    const yScale = useMemo(
+        () =>
+            scaleLinear<number>({
+                domain: [
+                    0,
+                    categories.reduce(
+                        (max, category) => Math.max(max, category.maxValue),
+                        maxValueLowerBound ?? -Infinity
+                    ),
+                ],
+            }),
+        [categories, maxValueLowerBound]
+    )
 
     const handleBarClick = (event: MouseEvent, datum: Datum, index: number): void => {
         const link = getDatumLink(datum)
