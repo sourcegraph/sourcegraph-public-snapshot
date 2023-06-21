@@ -67,7 +67,7 @@ Or if you prefer using a Vim editor:
 kubectl exec -it $FRONTEND_POD -- sh -c 'vi ~/site-config.json'
 ```
 
-Then simply save your changes (type <kbd>ctrl+x</kbd> and <kbd>y</kbd> to exit `nano` and save your changes). Your changes will be applied immediately in the same was as if you had made them through the web UI.
+Then simply save your changes (type <kbd>ctrl+x</kbd> and <kbd>y</kbd> to exit `nano` and save your changes). Your changes will be applied immediately in the same way as if you had made them through the web UI.
 
 ## If you are still encountering issues
 
