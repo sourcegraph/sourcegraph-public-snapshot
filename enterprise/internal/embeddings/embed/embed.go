@@ -96,7 +96,7 @@ func EmbedRepo(
 		reportProgress(&stats)
 	}
 
-	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks, reportCodeProgress)
+	codeIndex, codeIndexStats, err := embedFiles(ctx, logger, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks, reportCodeProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -107,7 +107,7 @@ func EmbedRepo(
 		reportProgress(&stats)
 	}
 
-	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks, reportTextProgress)
+	textIndex, textIndexStats, err := embedFiles(ctx, logger, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks, reportTextProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -142,6 +142,7 @@ type EmbedRepoOpts struct {
 // the embeddings and metadata about the chunks the embeddings correspond to.
 func embedFiles(
 	ctx context.Context,
+	logger log.Logger,
 	files []FileEntry,
 	client client.EmbeddingsClient,
 	contextService ContextService,
@@ -230,7 +231,14 @@ func embedFiles(
 
 		contentBytes, err := reader.Read(ctx, file.Name)
 		if err != nil {
-			return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, errors.Wrap(err, "error while reading a file")
+			logger.Error(
+				"skipping file",
+				log.String("reason", SkipReasonReadError),
+				log.String("file", file.Name),
+				log.Error(err),
+			)
+			stats.Skip(SkipReasonReadError, int(file.Size))
+			continue
 		}
 
 		if embeddable, skipReason := isEmbeddableFileContent(contentBytes); !embeddable {
@@ -241,7 +249,20 @@ func embedFiles(
 		// At this point, we have determined that we want to embed this file.
 		chunks, err := contextService.SplitIntoEmbeddableChunks(ctx, string(contentBytes), file.Name, splitOptions)
 		if err != nil {
-			return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, errors.Wrap(err, "error while splitting file")
+			logger.Error(
+				"skipping file",
+				log.String("reason", SkipReasonChunkError),
+				log.String("file", file.Name),
+				log.Object(
+					"splitOptions",
+					log.Int("ChunkTokensThreshold", splitOptions.ChunkTokensThreshold),
+					log.Int("NoSplitTokensThreshold", splitOptions.NoSplitTokensThreshold),
+					log.Int("ChunkEarlySplitTokensThreshold", splitOptions.ChunkEarlySplitTokensThreshold),
+				),
+				log.Error(err),
+			)
+			stats.Skip(SkipReasonChunkError, int(file.Size))
+			continue
 		}
 		for _, chunk := range chunks {
 			if err := addToBatch(chunk); err != nil {

@@ -91,6 +91,12 @@ const (
 
 	// File was excluded because we hit the max embedding limit for the repo
 	SkipReasonMaxEmbeddings SkipReason = "maxEmbeddings"
+
+	// File was excluded because gitserver failed to read it
+	SkipReasonReadError SkipReason = "readError"
+
+	// File was excluded because of an error during chunking
+	SkipReasonChunkError SkipReason = "chunkError"
 )
 
 func isEmbeddableFileContent(content []byte) (embeddable bool, reason SkipReason) {
