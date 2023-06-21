@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@sourcegraph/http-client'
 import { Button, ErrorAlert, Form, H3, Label, Modal } from '@sourcegraph/wildcard'
 
-import { LoaderButton } from '../../components/LoaderButton'
 import {
     AssignOwnerResult,
     AssignOwnerVariables,
@@ -15,6 +14,7 @@ import {
     AssignTeamVariables,
     Scalars,
 } from '../../graphql-operations'
+import { LoaderButton } from '../LoaderButton'
 
 import { ASSIGN_OWNER, ASSIGN_TEAM } from './graphqlQueries'
 import { UserTeamSelect } from './UserTeamSelect'
