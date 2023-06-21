@@ -384,7 +384,6 @@ ts_project(
         "src/enterprise/app/setup/steps/AppInstallExtensionsSetupStep.tsx",
         "src/enterprise/app/setup/steps/AppLocalRepositoriesSetupStep.tsx",
         "src/enterprise/app/setup/steps/AppWelcomeSetupStep.tsx",
-        "src/enterprise/app/setup/steps/embeddings-step/AppEmbeddingsSetupStep.tsx",
         "src/enterprise/batches/BatchChangeTabs.tsx",
         "src/enterprise/batches/BatchSpec.tsx",
         "src/enterprise/batches/BatchSpecNode.tsx",

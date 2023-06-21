@@ -4,7 +4,7 @@ import { MutationTuple } from '@apollo/client'
 import { mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
-import { gql, useMutation } from '@sourcegraph/http-client/out/src'
+import { gql, useMutation } from '@sourcegraph/http-client'
 import { Button, H1, Icon, Text, Tooltip, Link } from '@sourcegraph/wildcard'
 
 import {
@@ -69,7 +69,7 @@ export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ classNam
                     , which help Cody generate more accurate answers about your code.
                 </Text>
 
-                <Tooltip content={repositories.length === 0 ? 'Select at least one repo to continue' : undefined}>
+                <Tooltip content={repositories.length > MAX_NUMBER_OF_REPOSITORIES ? `Select less repositores, Right now Cody only supports a maximum of ${MAX_NUMBER_OF_REPOSITORIES} repos` : repositories.length === 0 ? 'Select at least one repo to continue' : undefined}>
                     <Button
                         size="lg"
                         variant="primary"
