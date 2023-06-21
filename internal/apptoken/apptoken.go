@@ -41,7 +41,7 @@ type AppTokenFilePayload struct {
 // Checks if the app token file exists in the config dir and contains a valid
 // token. If not, it will generate a new token and create a new app token file.
 func CreateAppTokenFileIfNotExists(ctx context.Context, db database.DB, uid int32) error {
-	if deploy.IsApp() {
+	if !deploy.IsApp() {
 		return errors.New("can only be called in App")
 	}
 	configDir, err := singleprogram.SetupAppConfigDir()
