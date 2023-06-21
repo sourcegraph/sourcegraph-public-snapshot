@@ -5,6 +5,7 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { Completion } from '..'
+import { OPENING_CODE_TAG, CLOSING_CODE_TAG, extractFromCodeBlock } from '../text-processing'
 import { batchCompletions, messagesToText } from '../utils'
 
 import { AbstractProvider, ProviderConfig, ProviderOptions } from './provider'
@@ -51,7 +52,7 @@ export class AnthropicProvider extends AbstractProvider {
         const prefixMessages: Message[] = [
             {
                 speaker: 'human',
-                text: 'You are Cody, a code completion AI developed by Sourcegraph. You write code in between tags like this:<CODE5711>/* Code goes here */</CODE5711>',
+                text: `You are Cody, a code completion AI developed by Sourcegraph. You write code in between tags like this:${OPENING_CODE_TAG}/* Code goes here */${CLOSING_CODE_TAG}`,
             },
             {
                 speaker: 'assistant',
@@ -59,11 +60,11 @@ export class AnthropicProvider extends AbstractProvider {
             },
             {
                 speaker: 'human',
-                text: `Complete this code: <CODE5711>${head.trimmed}</CODE5711>.`,
+                text: `Complete this code: ${OPENING_CODE_TAG}${head.trimmed}${CLOSING_CODE_TAG}.`,
             },
             {
                 speaker: 'assistant',
-                text: `Okay, here is some code: <CODE5711>${tail.trimmed}`,
+                text: `Okay, here is some code: ${OPENING_CODE_TAG}${tail.trimmed}`,
             },
         ]
         return { messages: prefixMessages, prefix: { head, tail, overlap } }
@@ -80,7 +81,7 @@ export class AnthropicProvider extends AbstractProvider {
             const snippetMessages: Message[] = [
                 {
                     speaker: 'human',
-                    text: `Here is a reference snippet of code: <CODE5711>${snippet.content}</CODE5711>`,
+                    text: `Here is a reference snippet of code: ${OPENING_CODE_TAG}${snippet.content}${CLOSING_CODE_TAG}`,
                 },
                 {
                     speaker: 'assistant',
@@ -205,18 +206,6 @@ interface PrefixComponents {
     head: TrimmedString
     tail: TrimmedString
     overlap?: string
-}
-
-function extractFromCodeBlock(completion: string): string {
-    if (completion.includes('<CODE5711>')) {
-        console.error('invalid code completion response, should not contain opening tag <CODE5711>')
-        return ''
-    }
-    let end = completion.indexOf('</CODE5711>')
-    if (end === -1) {
-        end = completion.length
-    }
-    return completion.substring(0, end).trimEnd()
 }
 
 // Split string into head and tail. The tail is at most the last 2 non-empty lines of the snippet
