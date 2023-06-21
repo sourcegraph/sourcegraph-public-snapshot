@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test'
 
-import { SERVER_URL, VALID_TOKEN } from '../mock-server'
+import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 
 import { test } from './helpers'
 
