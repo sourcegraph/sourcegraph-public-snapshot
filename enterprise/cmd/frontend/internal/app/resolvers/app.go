@@ -73,7 +73,7 @@ func (r *appResolver) SetupNewAppRepositoriesForEmbedding(ctx context.Context, a
 	}
 
 	repoEmbeddingsStore := repo.NewRepoEmbeddingJobsStore(r.db)
-	jobContext, cancel := context.WithDeadline(ctx, time.Now().Add(20*time.Second))
+	jobContext, cancel := context.WithDeadline(ctx, time.Now().Add(60*time.Second))
 	defer cancel()
 	p := pool.New().WithMaxGoroutines(10).WithContext(jobContext)
 	for _, repo := range args.RepoNames {
