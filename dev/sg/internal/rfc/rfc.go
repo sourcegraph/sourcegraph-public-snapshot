@@ -3,7 +3,6 @@ package rfc
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
+	"github.com/sourcegraph/log"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
@@ -61,7 +61,7 @@ func getClient(ctx context.Context, config *oauth2.Config, out *std.Output) (*ht
 	if err := sec.Get("rfc", tok); err != nil {
 		// ...if it doesn't exist, open browser and ask user to give us
 		// permissions
-		tok, err = getTokenFromWeb(handleAuthResponse, ctx, NewTokenHandler(config), out)
+		tok, err = getTokenFromWeb(ctx, handleAuthResponse, NewTokenHandler(config), out)
 		if err != nil {
 			return nil, err
 		}
@@ -113,10 +113,10 @@ func authResponseHandler(sendCode chan string, sendError chan error, gracefulShu
 // server: The HTTP server.
 // gracefulShutdown: Whether the server shutdown gracefully after handling a request.
 // handler: The request handler for the server, containing the authEndpoint.
-func startAuthHandlerServer(socket net.Listener, authEndpoint string,
-	codeReceiver chan string, errorReceiver chan error) {
+func startAuthHandlerServer(socket net.Listener, authEndpoint string, codeReceiver chan string, errorReceiver chan error) {
+	logger := log.Scoped("rfc_auth_handler", "sg rfc oauth handler")
 	var server http.Server
-	var gracefulShutdown bool = false
+	gracefulShutdown := false
 
 	// Creates a handler to handle response
 	handler := http.NewServeMux()
@@ -130,7 +130,7 @@ func startAuthHandlerServer(socket net.Listener, authEndpoint string,
 		defer socket.Close()
 		if err := server.Serve(socket); err != nil {
 			if !gracefulShutdown {
-				log.Print("failure to handle", err)
+				logger.Error("failure to handle", log.Error(err))
 			}
 		}
 	}()
@@ -201,8 +201,7 @@ func NewTokenHandler(config *oauth2.Config) *tokenHandlerImpl {
 }
 
 // Request a token from the web, then returns the retrieved token.
-func getTokenFromWeb(responseFactory authResponseHandlerFactory, ctx context.Context,
-	config tokenHandler, out *std.Output) (*oauth2.Token, error) {
+func getTokenFromWeb(ctx context.Context, f authResponseHandlerFactory, config tokenHandler, out *std.Output) (*oauth2.Token, error) {
 	out.WriteNoticef("Setting up Google token via oAuth - follow the prompts to get set up!")
 
 	var err error
@@ -211,7 +210,7 @@ func getTokenFromWeb(responseFactory authResponseHandlerFactory, ctx context.Con
 	var waitForCode chan string
 	var waitForError chan error
 
-	if redirectUrl, waitForCode, waitForError, err = responseFactory(); err == nil {
+	if redirectUrl, waitForCode, waitForError, err = f(); err == nil {
 		config.SetRedirectURL(redirectUrl)
 	} else {
 		// TODO
