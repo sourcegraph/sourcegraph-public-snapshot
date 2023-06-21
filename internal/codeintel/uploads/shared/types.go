@@ -45,6 +45,16 @@ func (u Upload) RecordUID() string {
 	return strconv.Itoa(u.ID)
 }
 
+type UploadSizeStats struct {
+	ID               int
+	UploadSize       *int64
+	UncompressedSize *int64
+}
+
+func (u Upload) SizeStats() UploadSizeStats {
+	return UploadSizeStats{u.ID, u.UploadSize, u.UncompressedSize}
+}
+
 // TODO - unify with Upload
 // Dump is a subset of the lsif_uploads table (queried via the lsif_dumps_with_repository_name view)
 // and stores only processed records.

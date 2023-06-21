@@ -1,10 +1,13 @@
 package processor
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
+	"os"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -240,7 +243,7 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		return directoryChildren, nil
 	}
 
-	return false, withUploadData(ctx, logger, uploadStore, upload.ID, trace, func(r io.Reader) (err error) {
+	return false, withUploadData(ctx, logger, uploadStore, upload.SizeStats(), trace, func(rr readResetter) (err error) {
 		const (
 			lsifContentType = "application/x-ndjson+lsif"
 			scipContentType = "application/x-protobuf+scip"
@@ -273,12 +276,7 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			return errors.Wrap(err, "store.CommitDate")
 		}
 
-		rSize := int64(0)
-		if upload.UncompressedSize != nil {
-			rSize = *upload.UncompressedSize
-		}
-
-		correlatedSCIPData, err := correlateSCIP(ctx, r, rSize, upload.Root, getChildren)
+		correlatedSCIPData, err := correlateSCIP(ctx, rr, upload.Root, getChildren)
 		if err != nil {
 			return errors.Wrap(err, "conversion.Correlate")
 		}
@@ -387,11 +385,56 @@ func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, git
 	return true, nil
 }
 
+// NOTE(scip-index-size-stats) In practice, the following seem to be true:
+//   - The memory usage of a full deserialized scip.Index is about
+//     2.5x-4.5x times the size of the uncompressed index byte slice.
+//   - The size of an uncompressed index is about 5x-10x the size of
+//     the gzip-compressed index
+//
+// The code intel worker sometimes has as little as 2GB of RAM, so 1/4-th of
+// that is 512MiB.
+const uncompressedSizeLimitBytes = 512 * 1024 * 1024
+
+type readResetter interface {
+	io.Reader
+	seekToStart() error
+}
+
+type gzipReadResetter struct {
+	file   *os.File
+	reader *gzip.Reader
+}
+
+func (grr *gzipReadResetter) Read(buf []byte) (int, error) {
+	return grr.reader.Read(buf)
+}
+
+func (grr *gzipReadResetter) seekToStart() (err error) {
+	if _, err = grr.file.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
+	grr.reader, err = gzip.NewReader(grr.file)
+	return err
+}
+
+type bufReadResetter struct {
+	reader *bytes.Reader
+}
+
+func (brr *bufReadResetter) Read(p []byte) (int, error) {
+	return brr.reader.Read(p)
+}
+
+func (brr *bufReadResetter) seekToStart() error {
+	_, err := brr.reader.Seek(0, io.SeekStart)
+	return err
+}
+
 // withUploadData will invoke the given function with a reader of the upload's raw data. The
 // consumer should expect raw newline-delimited JSON content. If the function returns without
 // an error, the upload file will be deleted.
-func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadstore.Store, id int, trace observation.TraceLogger, fn func(r io.Reader) error) error {
-	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", id)
+func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadstore.Store, uploadStats uploadsshared.UploadSizeStats, trace observation.TraceLogger, fn func(r readResetter) error) error {
+	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", uploadStats.ID)
 
 	trace.AddEvent("TODO Domain Owner", attribute.String("uploadFilename", uploadFilename))
 
@@ -402,13 +445,66 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 	}
 	defer rc.Close()
 
-	rc, err = gzip.NewReader(rc)
-	if err != nil {
-		return errors.Wrap(err, "gzip.NewReader")
+	trySaveToDisk := func(r io.Reader) (readResetter, *os.File, error) {
+		var cursor readResetter = nil
+		tmpFilePattern := fmt.Sprintf("upload-%s-*.gz", strings.ReplaceAll(uploadFilename, "*", "_"))
+		tmpFile, err := os.CreateTemp("", tmpFilePattern)
+		if err != nil {
+			logger.Warn("Failed to create temporary file to save upload for streaming",
+				log.NamedError("err", err),
+				log.String("filename", uploadFilename))
+		} else {
+			cursor = &gzipReadResetter{file: tmpFile}
+			if err = cursor.seekToStart(); err != nil {
+				return nil, nil, errors.Wrapf(err, "failed to seek for file: %s", tmpFile.Name())
+			}
+		}
+		return cursor, tmpFile, nil
 	}
-	defer rc.Close()
 
-	if err := fn(rc); err != nil {
+	var readerForDiskWrite io.Reader = nil
+	var buf []byte
+	compressedSizeHint := int64(0)
+	if uploadStats.UploadSize != nil {
+		compressedSizeHint = *uploadStats.UploadSize
+	}
+	if uploadStats.UncompressedSize != nil && *uploadStats.UncompressedSize > uncompressedSizeLimitBytes {
+		readerForDiskWrite = rc
+	} else {
+		buf, err = readAllWithSizeHint(rc, compressedSizeHint)
+		if err != nil {
+			return errors.Wrap(err, "failed to read upload file")
+		}
+		compressedSize := len(buf)
+		uncompressedSizeEstimate := compressedSize * 5
+		if uncompressedSizeEstimate > uncompressedSizeLimitBytes {
+			readerForDiskWrite = bytes.NewReader(buf)
+		}
+	}
+	var cursor readResetter = nil
+	if readerForDiskWrite != nil {
+		var tmpFile *os.File
+		cursor, tmpFile, err = trySaveToDisk(readerForDiskWrite)
+		if tmpFile != nil {
+			defer os.RemoveAll(tmpFile.Name())
+		}
+		if err != nil {
+			return err
+		}
+	}
+	if cursor == nil {
+		if buf == nil {
+			// trySaveToDisk may return err == nil and cursor == nil,
+			// e.g. if it fails to create a temporary file.
+			// In that case, we haven't read the data yet.
+			if buf, err = readAllWithSizeHint(rc, compressedSizeHint); err != nil {
+				return errors.Wrap(err, "failed to read upload file")
+			}
+		}
+		cursor = &bufReadResetter{reader: bytes.NewReader(buf)}
+	}
+
+	if err := fn(cursor); err != nil {
 		return err
 	}
 

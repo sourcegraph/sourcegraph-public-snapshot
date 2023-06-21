@@ -29,7 +29,7 @@ func NewResetterMetrics(observationCtx *observation.Context) *resetterMetrics {
 	)
 	numUploadResetFailures := counter(
 		"src_codeintel_background_upload_record_reset_failures_total",
-		"The number of upload reset failures.",
+		"The number of upload seekToStart failures.",
 	)
 	numUploadResetErrors := counter(
 		"src_codeintel_background_upload_record_reset_errors_total",
