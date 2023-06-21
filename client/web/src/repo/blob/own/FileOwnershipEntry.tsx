@@ -27,6 +27,10 @@ interface Props {
     repoID: string
     filePath: string
     setRemoveOwnerError: any
+<<<<<<< HEAD
+=======
+    isDirectory: boolean
+>>>>>>> 6aae5a1c9f (own: only refresh ownership if not in fullscreen mode (#53818))
     refetch: any
 }
 
@@ -44,6 +48,8 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
     filePath,
     refetch,
     setRemoveOwnerError,
+    isDirectory,
+    refetch,
 }) => {
     const findEmail = (): string | undefined => {
         if (owner.__typename !== 'Person') {
@@ -69,6 +75,17 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
     const sortReasons = () => (reason1: OwnershipReason, reason2: OwnershipReason) =>
         getOwnershipReasonPriority(reason2) - getOwnershipReasonPriority(reason1)
 
+<<<<<<< HEAD
+=======
+    const navigate = useNavigate()
+    const refresh = (): Promise<any> => {
+        if (!isDirectory) {
+            return Promise.resolve(navigate(0))
+        }
+        return Promise.resolve(refetch())
+    }
+
+>>>>>>> 6aae5a1c9f (own: only refresh ownership if not in fullscreen mode (#53818))
     return (
         <tr>
             <td className={`${containerStyles.fitting} ${containerStyles.moreSpace}`}>
@@ -108,7 +125,11 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
                         {makeOwnerButton ||
                             (hasAssigned && (
                                 <RemoveOwnerButton
+<<<<<<< HEAD
                                     onSuccess={refetch}
+=======
+                                    onSuccess={refresh}
+>>>>>>> 6aae5a1c9f (own: only refresh ownership if not in fullscreen mode (#53818))
                                     onError={setRemoveOwnerError}
                                     repoId={repoID}
                                     path={filePath}
