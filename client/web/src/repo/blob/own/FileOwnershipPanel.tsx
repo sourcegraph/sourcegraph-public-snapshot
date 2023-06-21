@@ -28,7 +28,7 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
         telemetryService.log('OwnershipPanelOpened')
     }, [telemetryService])
 
-    const { data, loading, error } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
+    const { data, loading, error, refetch } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
         variables: {
             repo: repoID,
             revision: revision ?? '',
@@ -79,8 +79,9 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
                 makeOwnerError={makeOwnerError}
                 repoID={repoID}
                 filePath={filePath}
+                refetch={refetch}
             />
         )
     }
-    return <OwnerList filePath={filePath} repoID={repoID} />
+    return <OwnerList filePath={filePath} repoID={repoID} refetch={refetch}/>
 }

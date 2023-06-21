@@ -91,6 +91,7 @@ interface OwnerListProps {
     makeOwnerError?: Error
     repoID: string
     filePath: string
+    refetch: any
 }
 
 export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
@@ -100,6 +101,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
     makeOwnerError,
     repoID,
     filePath,
+    refetch
 }) => {
     const [removeOwnerError, setRemoveOwnerError] = React.useState<Error | undefined>(undefined)
 
@@ -157,6 +159,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                         reasons={ownership.reasons}
                                         setRemoveOwnerError={setRemoveOwnerError}
                                         isDirectory={isDirectory}
+                                        refetch={refetch}
                                     />
                                 </React.Fragment>
                             ))}
@@ -204,6 +207,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                             filePath={filePath}
                                             setRemoveOwnerError={setRemoveOwnerError}
                                             isDirectory={isDirectory}
+                                            refetch={refetch}
                                         />
                                     </React.Fragment>
                                 )
