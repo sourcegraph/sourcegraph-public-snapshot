@@ -261,7 +261,7 @@ func TestExecRequest(t *testing.T) {
 }
 
 func TestServer_handleP4Exec(t *testing.T) {
-	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
+	defaultMockRunCommand := func(ctx context.Context, cmd *exec.Cmd) (int, error) {
 		switch cmd.Args[1] {
 		case "users":
 			_, _ = cmd.Stdout.Write([]byte("admin <admin@joe-perforce-server> (admin) accessed 2021/01/31"))
@@ -270,33 +270,45 @@ func TestServer_handleP4Exec(t *testing.T) {
 		}
 		return 0, nil
 	}
-	t.Cleanup(func() { runCommandMock = nil })
 
-	logger := logtest.Scoped(t)
+	t.Cleanup(func() {
+		updateRunCommandMock(nil)
+	})
 
-	s := &Server{
-		Logger:            logger,
-		ObservationCtx:    observation.TestContextTB(t),
-		skipCloneForTests: true,
-		DB:                database.NewMockDB(),
-	}
+	startServer := func(t *testing.T) (handler http.Handler, client proto.GitserverServiceClient, cleanup func()) {
+		t.Helper()
 
-	server := defaults.NewServer(logger)
-	proto.RegisterGitserverServiceServer(server, &GRPCServer{Server: s})
-	handler := grpc.MultiplexHandlers(server, s.Handler())
+		logger := logtest.Scoped(t)
 
-	srv := httptest.NewServer(handler)
-	defer srv.Close()
+		s := &Server{
+			Logger:            logger,
+			ObservationCtx:    observation.TestContextTB(t),
+			skipCloneForTests: true,
+			DB:                database.NewMockDB(),
+		}
 
-	t.Run("gRPC", func(t *testing.T) {
+		server := defaults.NewServer(logger)
+		proto.RegisterGitserverServiceServer(server, &GRPCServer{Server: s})
+		handler = grpc.MultiplexHandlers(server, s.Handler())
+
+		srv := httptest.NewServer(handler)
+
 		u, _ := url.Parse(srv.URL)
 		conn, err := defaults.Dial(u.Host, logger.Scoped("gRPC client", ""))
 		if err != nil {
 			t.Fatalf("failed to dial: %v", err)
 		}
 
-		client := proto.NewGitserverServiceClient(conn)
+		client = proto.NewGitserverServiceClient(conn)
 
+		return handler, client, func() {
+			srv.Close()
+			conn.Close()
+			server.Stop()
+		}
+	}
+
+	t.Run("gRPC", func(t *testing.T) {
 		readAll := func(execClient proto.GitserverService_P4ExecClient) ([]byte, error) {
 			var buf bytes.Buffer
 			for {
@@ -312,12 +324,15 @@ func TestServer_handleP4Exec(t *testing.T) {
 				if err != nil {
 					t.Fatalf("failed to write data: %v", err)
 				}
-
-				return buf.Bytes(), nil
 			}
 		}
 
 		t.Run("success", func(t *testing.T) {
+			updateRunCommandMock(defaultMockRunCommand)
+
+			_, client, closeFunc := startServer(t)
+			t.Cleanup(closeFunc)
+
 			stream, err := client.P4Exec(context.Background(), &proto.P4ExecRequest{
 				Args: []string{"users"},
 			})
@@ -338,6 +353,11 @@ func TestServer_handleP4Exec(t *testing.T) {
 		})
 
 		t.Run("empty request", func(t *testing.T) {
+			updateRunCommandMock(defaultMockRunCommand)
+
+			_, client, closeFunc := startServer(t)
+			t.Cleanup(closeFunc)
+
 			stream, err := client.P4Exec(context.Background(), &proto.P4ExecRequest{})
 			if err != nil {
 				t.Fatalf("failed to call P4Exec: %v", err)
@@ -350,6 +370,12 @@ func TestServer_handleP4Exec(t *testing.T) {
 		})
 
 		t.Run("disallowed command", func(t *testing.T) {
+
+			updateRunCommandMock(defaultMockRunCommand)
+
+			_, client, closeFunc := startServer(t)
+			t.Cleanup(closeFunc)
+
 			stream, err := client.P4Exec(context.Background(), &proto.P4ExecRequest{
 				Args: []string{"bad_command"},
 			})
@@ -364,17 +390,17 @@ func TestServer_handleP4Exec(t *testing.T) {
 		})
 
 		t.Run("context cancelled", func(t *testing.T) {
-			old := runCommandMock
-			t.Cleanup(func() { runCommandMock = old })
-
 			ctx, cancel := context.WithCancel(context.Background())
 
-			runCommandMock = func(ctx context.Context, _ *exec.Cmd) (int, error) {
+			updateRunCommandMock(func(ctx context.Context, _ *exec.Cmd) (int, error) {
 				// fake a context cancellation that occurs while the process is running
 
 				cancel()
 				return 0, ctx.Err()
-			}
+			})
+
+			_, client, closeFunc := startServer(t)
+			t.Cleanup(closeFunc)
 
 			stream, err := client.P4Exec(ctx, &proto.P4ExecRequest{
 				Args: []string{"users"},
@@ -425,12 +451,15 @@ func TestServer_handleP4Exec(t *testing.T) {
 			},
 		}
 
-		h := handler
-
 		for _, test := range tests {
 			t.Run(test.Name, func(t *testing.T) {
+				updateRunCommandMock(defaultMockRunCommand)
+
+				handler, _, closeFunc := startServer(t)
+				t.Cleanup(closeFunc)
+
 				w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
-				h.ServeHTTP(&w, test.Request)
+				handler.ServeHTTP(&w, test.Request)
 
 				res := w.Result()
 				if res.StatusCode != test.ExpectedCode {
