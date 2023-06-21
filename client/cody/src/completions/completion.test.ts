@@ -174,27 +174,6 @@ function truncateMultilineString(string: string): string {
 }
 
 describe('Cody completions', () => {
-    it('uses a simple prompt for small files', async () => {
-        const { requests } = await complete(`foo ${CURSOR_MARKER}`)
-
-        expect(requests).toHaveLength(3)
-        expect(requests[0]!.messages).toMatchInlineSnapshot(`
-            Array [
-              Object {
-                "speaker": "human",
-                "text": "Write some code",
-              },
-              Object {
-                "speaker": "assistant",
-                "text": "Here is some code:
-            \`\`\`
-            foo ",
-              },
-            ]
-        `)
-        expect(requests[0]!.stopSequences).toContain('\n')
-    })
-
     it('uses a more complex prompt for larger files', async () => {
         const { requests } = await complete(`
             class Range {
@@ -221,15 +200,11 @@ describe('Cody completions', () => {
         expect(messages[messages.length - 1]).toMatchInlineSnapshot(`
             Object {
               "speaker": "assistant",
-              "text": "\`\`\`
-                public start: Position
-                public end: Position
-
-                constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
-                    this.startLine = ",
+              "text": "Okay, here is some code: <CODE5711>constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
+                    this.startLine =",
             }
         `)
-        expect(requests[0]!.stopSequences).toContain('\n')
+        expect(requests[0]!.stopSequences).toEqual(['\n\nHuman:', '\n', '\n\n'])
     })
 
     it('does not make a request when in the middle of a word', async () => {
@@ -314,7 +289,7 @@ describe('Cody completions', () => {
     })
 
     it('filters out known-bad completion starts', async () => {
-        const { completions } = await complete(`one:\n${CURSOR_MARKER}`, [
+        const { completions } = await complete(`one:\n  ${CURSOR_MARKER}`, [
             createCompletionResponse('➕     1'),
             createCompletionResponse('\u200B   2'),
             createCompletionResponse('.      3'),

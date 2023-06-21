@@ -14,7 +14,7 @@ describe('extractFromCodeBlock', () => {
     it('returns the whole string if the closing tag is not found', () => {
         expect(extractFromCodeBlock('hello world')).toBe('hello world')
         expect(extractFromCodeBlock('<randomTag>hello world</randomTag>')).toBe('<randomTag>hello world</randomTag>')
-        expect(extractFromCodeBlock(`const isEnabled = true // something else`)).toBe(
+        expect(extractFromCodeBlock('const isEnabled = true // something else')).toBe(
             'const isEnabled = true // something else'
         )
     })

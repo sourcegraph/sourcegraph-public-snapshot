@@ -5,7 +5,16 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { Completion } from '..'
-import { OPENING_CODE_TAG, CLOSING_CODE_TAG, extractFromCodeBlock } from '../text-processing'
+import { checkOddIndentation, truncateMultilineCompletion } from '../multiline'
+import {
+    OPENING_CODE_TAG,
+    CLOSING_CODE_TAG,
+    extractFromCodeBlock,
+    fixBadCompletionStart,
+    PrefixComponents,
+    getHeadAndTail,
+    trimUntilSuffix,
+} from '../text-processing'
 import { batchCompletions, messagesToText } from '../utils'
 
 import { AbstractProvider, ProviderConfig, ProviderOptions } from './provider'
@@ -69,6 +78,7 @@ export class AnthropicProvider extends AbstractProvider {
         ]
         return { messages: prefixMessages, prefix: { head, tail, overlap } }
     }
+
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
     protected createPrompt(): { messages: Message[]; prefix: PrefixComponents } {
@@ -102,24 +112,30 @@ export class AnthropicProvider extends AbstractProvider {
     private postProcess(rawResponse: string, prefix: PrefixComponents): string {
         let completion = extractFromCodeBlock(rawResponse)
 
-        if (prefix.tail.rearSpace.length > 0) {
-            const rearSpaceLines = prefix.tail.rearSpace.split('\n')
-            const currentLine = rearSpaceLines[rearSpaceLines.length - 1]
-            if (currentLine.match(/^\s*$/)) {
-                // New line + indent: trim all leading new lines and match indent
-                completion = completion.replace(/^\n*/, '')
-                const completionIndent = completion.match(/^\s*/)![0]
-                if (currentLine.length <= completionIndent.length) {
-                    completion = completionIndent.slice(currentLine.length) + completion.slice(completionIndent.length)
-                }
-            }
+        // Sometimes Claude emits a single space in the completion. We call this an "odd indentation"
+        // completion and try to fix the response.
+        const hasOddIndentation = checkOddIndentation(completion, prefix)
+
+        // Remove bad symbols from the start of the completion string.
+        completion = fixBadCompletionStart(completion)
+
+        // Trim start of the completion to remove all trailing whitespace.
+        completion = completion.trimStart()
+
+        // Handle multiline completion indentation and remove overlap with suffx.
+        if (this.multilineMode === 'block') {
+            completion = truncateMultilineCompletion(
+                completion,
+                this.prefix,
+                this.suffix,
+                hasOddIndentation,
+                this.languageId
+            )
+            completion = trimUntilSuffix(completion, this.suffix)
         }
 
-        completion = trimIndent(completion, this.suffix)
-        completion = trimUntilSuffix(completion, this.suffix)
-
         // Remove incomplete lines in single-line completions
-        if (this.multilineMode !== 'block') {
+        if (this.multilineMode === null) {
             const allowedNewlines = 2
             const lines = completion.split('\n')
             if (lines.length >= allowedNewlines) {
@@ -127,8 +143,7 @@ export class AnthropicProvider extends AbstractProvider {
             }
         }
 
-        completion = completion.trimEnd()
-        return completion
+        return completion.trimEnd()
     }
 
     public async generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]> {
@@ -154,7 +169,8 @@ export class AnthropicProvider extends AbstractProvider {
                     temperature: 0.5,
                     messages: prompt,
                     maxTokensToSample: Math.min(100, this.responseTokens),
-                    stopSequences: [anthropic.HUMAN_PROMPT, '\n\n'],
+                    // '\n' contributed the most to a sub 1 second response latency
+                    stopSequences: [anthropic.HUMAN_PROMPT, '\n', '\n\n'],
                 }
                 break
             }
@@ -164,24 +180,23 @@ export class AnthropicProvider extends AbstractProvider {
         const responses = await batchCompletions(this.completionsClient, args, n || this.n, abortSignal)
 
         // Post-process
-        const ret = await Promise.all(
-            responses.map(async resp => {
-                const content = await this.postProcess(resp.completion, prefix)
+        const ret = responses.map(resp => {
+            const content = this.postProcess(resp.completion, prefix)
 
-                if (content === null) {
-                    return []
-                }
+            if (content === null) {
+                return []
+            }
 
-                return [
-                    {
-                        prefix: this.prefix,
-                        messages: prompt,
-                        content,
-                        stopReason: resp.stopReason,
-                    },
-                ]
-            })
-        )
+            return [
+                {
+                    prefix: this.prefix,
+                    messages: prompt,
+                    content,
+                    stopReason: resp.stopReason,
+                },
+            ]
+        })
+
         return ret.flat()
     }
 }
@@ -194,102 +209,4 @@ export function createProviderConfig(anthropicOptions: AnthropicOptions): Provid
         maximumContextCharacters: tokensToChars(anthropicOptions.contextWindowTokens),
         identifier: 'anthropic',
     }
-}
-
-interface TrimmedString {
-    trimmed: string
-    leadSpace: string
-    rearSpace: string
-}
-
-interface PrefixComponents {
-    head: TrimmedString
-    tail: TrimmedString
-    overlap?: string
-}
-
-// Split string into head and tail. The tail is at most the last 2 non-empty lines of the snippet
-function getHeadAndTail(s: string): PrefixComponents {
-    const lines = s.split('\n')
-    const tailThreshold = 2
-
-    let nonEmptyCount = 0
-    let tailStart = -1
-    for (let i = lines.length - 1; i >= 0; i--) {
-        if (lines[i].trim().length > 0) {
-            nonEmptyCount++
-        }
-        if (nonEmptyCount >= tailThreshold) {
-            tailStart = i
-            break
-        }
-    }
-
-    if (tailStart === -1) {
-        return { head: trimSpace(s), tail: trimSpace(s), overlap: s }
-    }
-
-    return { head: trimSpace(lines.slice(0, tailStart).join('\n')), tail: trimSpace(lines.slice(tailStart).join('\n')) }
-}
-
-function trimSpace(s: string): TrimmedString {
-    const trimmed = s.trim()
-    const headEnd = s.indexOf(trimmed)
-    return { trimmed, leadSpace: s.slice(0, headEnd), rearSpace: s.slice(headEnd + trimmed.length) }
-}
-
-function trimIndent(insertion: string, suffix: string): string {
-    let suffixIndent = 0
-    for (const line of suffix.split('\n')) {
-        if (line.trim().length > 0) {
-            const indentMatch = line.match(/^\s*/)
-            if (indentMatch && indentMatch.length >= 1) {
-                suffixIndent = indentMatch[0].length
-            }
-            break
-        }
-    }
-
-    const insertionLines = insertion.split('\n')
-    let insertionEnd = insertionLines.length
-    // Skip over first line, because we expect that to always be included and to have no leading whitespace
-    for (let i = 1; i < insertionLines.length; i++) {
-        const line = insertionLines[i]
-        if (line.trim().length === 0) {
-            continue
-        }
-        const indentMatch = line.match(/^\s*/)
-        if (indentMatch && indentMatch.length >= 1) {
-            if (indentMatch[0].length < suffixIndent) {
-                insertionEnd = i
-                break
-            }
-        }
-    }
-    return insertionLines.slice(0, insertionEnd).join('\n')
-}
-
-function trimUntilSuffix(insertion: string, suffix: string): string {
-    insertion = insertion.trimEnd()
-    let firstNonEmptySuffixLine = ''
-    for (const line of suffix.split('\n')) {
-        if (line.trim().length > 0) {
-            firstNonEmptySuffixLine = line
-            break
-        }
-    }
-    if (firstNonEmptySuffixLine.length === 0) {
-        return insertion
-    }
-
-    const insertionLines = insertion.split('\n')
-    let insertionEnd = insertionLines.length
-    for (let i = 0; i < insertionLines.length; i++) {
-        const line = insertionLines[i]
-        if (line === firstNonEmptySuffixLine) {
-            insertionEnd = i
-            break
-        }
-    }
-    return insertionLines.slice(0, insertionEnd).join('\n')
 }

@@ -1,4 +1,4 @@
-import * as vscode from 'vscode'
+import { PrefixComponents, indentation } from './text-processing'
 
 export function detectMultilineMode(
     prefix: string,
@@ -11,13 +11,14 @@ export function detectMultilineMode(
     if (!config) {
         return null
     }
-    if (sameLinePrefix.trim() === '' && sameLineSuffix.trim() === '') {
+
+    if (sameLinePrefix.match(/[([{]$/)) {
         return 'block'
     }
-    if (sameLinePrefix.match(/[\{\[\(]$/)) {
-        return 'block'
-    }
+
     if (
+        sameLinePrefix.trim() === '' &&
+        sameLineSuffix.trim() === '' &&
         // Only trigger multiline suggestions for the beginning of blocks
         prefix.trim().at(prefix.trim().length - config.blockStart.length) === config.blockStart &&
         // Only trigger multiline suggestions when the new current line is indented
@@ -25,14 +26,21 @@ export function detectMultilineMode(
     ) {
         return 'block'
     }
+
     return null
+}
+
+// Detect if completion starts with a space followed by any non-space character.
+export const ODD_INDENTATION_REGEX = /^ [^ ]/
+export function checkOddIndentation(completion: string, prefix: PrefixComponents): boolean {
+    return completion.length > 0 && ODD_INDENTATION_REGEX.test(completion) && prefix.tail.rearSpace.length > 0
 }
 
 export function truncateMultilineCompletion(
     completion: string,
-    hasOddIndentation: boolean,
     prefix: string,
-    nextNonEmptyLine: string,
+    suffix: string,
+    hasOddIndentation: boolean,
     languageId: string
 ): string {
     const config = getLanguageConfig(languageId)
@@ -47,7 +55,7 @@ export function truncateMultilineCompletion(
     // start scope of the completion ( calculated by the number of leading
     // spaces or tabs)
     const prefixLastNewline = prefix.lastIndexOf('\n')
-    const prefixIndentationWithFirstCompletionLine = prefix.slice(prefixLastNewline + 1) + completion[0]
+    const prefixIndentationWithFirstCompletionLine = prefix.slice(prefixLastNewline + 1)
     const startIndent = indentation(prefixIndentationWithFirstCompletionLine)
 
     // Normalize responses that start with a newline followed by the exact
@@ -68,6 +76,13 @@ export function truncateMultilineCompletion(
             }
         }
     }
+
+    const firstNewLineIndex = suffix.indexOf('\n') + 1
+    const nextNonEmptyLine =
+        suffix
+            .slice(firstNewLineIndex)
+            .split('\n')
+            .find(line => line.trim().length > 0) ?? ''
 
     // Only include a closing line (e.g. `}`) if the block is empty yet. We
     // detect this by looking at the indentation of the next non-empty line.
@@ -94,26 +109,6 @@ export function truncateMultilineCompletion(
     }
 
     return lines.slice(0, cutOffIndex).join('\n')
-}
-
-/**
- * Counts space or tabs in the beginning of a line.
- *
- * Since Cody can sometimes respond in a mix of tab and spaces, this function
- * normalizes the whitespace first using the currently enabled tabSize option.
- */
-function indentation(line: string): number {
-    const tabSize = vscode.window.activeTextEditor
-        ? // tabSize is always resolved to a number when accessing the property
-          (vscode.window.activeTextEditor.options.tabSize as number)
-        : 2
-
-    const regex = line.match(/^[\t ]*/)
-    if (regex) {
-        const whitespace = regex[0]
-        return [...whitespace].reduce((p, c) => p + (c === '\t' ? tabSize : 1), 0)
-    }
-    return 0
 }
 
 interface LanguageConfig {
