@@ -31,4 +31,4 @@ jobs:
       - run: ./docker/batch-change-volume-workspace/push.py -d ./docker/batch-change-volume-workspace/Dockerfile -i sourcegraph/src-batch-change-volume-workspace -p linux/amd64,linux/arm64,linux/386 --readme ./docker/batch-change-volume-workspace/README.md
         env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          DOCKER_USERNAME: sourcegraphci
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}

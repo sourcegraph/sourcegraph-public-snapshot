@@ -181,9 +181,10 @@ jobs:
       - run: go get -d -t ./...
       - run: go test -i ./...
       - run: go test -race -v ./...
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u=sourcegraphci --password-stdin
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u=$DOCKER_USERNAME --password-stdin
         env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
