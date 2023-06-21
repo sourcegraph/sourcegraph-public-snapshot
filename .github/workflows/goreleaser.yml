@@ -194,7 +194,7 @@ jobs:
           # we want to update the main (unversioned) Homebrew formula. For releasing a
           # patch on an older version, we want to publish a new versioned formula and
           # leave the main formula untouched.
-          args: release --rm-dist --config=${{ env.config_file }}
+          args: release --clean --config=${{ env.config_file }}
         env:
           # Use separate access token, because we need a scope:repo token to publish the brew formula.
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
