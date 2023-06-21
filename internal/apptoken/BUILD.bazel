@@ -6,6 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/apptoken",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/conf/deploy",
         "//internal/database",
         "//internal/singleprogram",
         "//internal/version",
