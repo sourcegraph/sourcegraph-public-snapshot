@@ -4,6 +4,8 @@
 
 ### Added
 
+- Background color and font of inline code blocks differs from regular text in message [#53761](https://github.com/sourcegraph/sourcegraph/pull/53761)
+
 ### Changed
 
 - Convert `\t` to spaces in leading whitespace for autocomplete suggestions (according to settings) [#53743](https://github.com/sourcegraph/sourcegraph/pull/53743)
