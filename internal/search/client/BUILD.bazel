@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "client.go",
         "mocks_temp.go",
+        "telemetry.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/client",
     visibility = ["//:__subpackages__"],
