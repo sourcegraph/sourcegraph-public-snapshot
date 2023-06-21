@@ -66,9 +66,8 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                 const appID = params.get('appID')
                 const installationID = params.get('installationID')
                 const baseURL = params.get('url')
-                const org = params.get('org')
                 if (externalService === codeHostExternalServices.ghapp) {
-                    externalService = gitHubAppConfig(baseURL, appID, installationID, org)
+                    externalService = gitHubAppConfig(baseURL, appID, installationID)
                 }
             }
             return externalService

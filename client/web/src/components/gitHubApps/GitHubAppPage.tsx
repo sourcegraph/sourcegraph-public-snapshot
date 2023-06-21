@@ -232,7 +232,7 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcr
                                                             app.appID
                                                         }&installationID=${installation.id}&url=${encodeURI(
                                                             app.baseURL
-                                                        )}&org=${installation.account.login}`}
+                                                        )}`}
                                                         size="sm"
                                                     >
                                                         <Icon svgPath={mdiPlus} aria-hidden={true} /> Add connection
