@@ -46,14 +46,18 @@ export function createDefaultLocalServiceConfig(path: string): string {
 
 type Path = string
 
+interface OpenDialogSettings {
+    multiple?: boolean
+}
+
 /**
  * Calls native file picker window, returns list of picked files paths.
  * In case if picker was closed/canceled returns null
  */
-export async function callFilePicker(): Promise<Path[] | null> {
+export async function callFilePicker(settings?: OpenDialogSettings): Promise<Path[] | null> {
     const selected = await open({
         directory: true,
-        multiple: true,
+        multiple: settings?.multiple ?? true,
     })
 
     if (Array.isArray(selected)) {
