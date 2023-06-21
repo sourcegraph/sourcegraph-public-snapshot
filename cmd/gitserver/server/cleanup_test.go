@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -434,7 +435,7 @@ func TestCleanupExpired(t *testing.T) {
 		ReposDir:         root,
 		GetRemoteURLFunc: getRemoteURL,
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return NewGitRepoSyncer(), nil
+			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCOmmandFactory()), nil
 		},
 		DB: database.NewMockDB(),
 	}
@@ -523,7 +524,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 				return remote, nil
 			},
 			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-				return NewGitRepoSyncer(), nil
+				return NewGitRepoSyncer(wrexec.NewNoOpRecordingCOmmandFactory()), nil
 			},
 			DB:                mockDB,
 			skipCloneForTests: true,

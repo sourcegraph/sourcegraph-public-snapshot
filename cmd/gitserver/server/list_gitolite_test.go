@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -124,7 +125,7 @@ func TestCheckSSRFHeader(t *testing.T) {
 			return "https://" + string(name) + ".git", nil
 		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return NewGitRepoSyncer(), nil
+			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCOmmandFactory()), nil
 		},
 		DB: db,
 	}
