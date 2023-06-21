@@ -495,7 +495,7 @@
       "commandPalette": [
         {
           "command": "cody.recipe.explain-code",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.context-search",
@@ -503,27 +503,27 @@
         },
         {
           "command": "cody.recipe.optimize-code",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.explain-code-high-level",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.file-touch",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.generate-unit-test",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.generate-docstring",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.translate-to-language",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.git-history",
@@ -531,7 +531,7 @@
         },
         {
           "command": "cody.recipe.fixup",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.test.token",
@@ -568,6 +568,10 @@
         },
         {
           "command": "cody.fixup.diff",
+          "when": "false"
+        },
+        {
+          "command": "cody.fixup.open",
           "when": "false"
         },
         {

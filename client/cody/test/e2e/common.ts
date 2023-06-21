@@ -4,7 +4,7 @@ import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 
 // Sign into Cody with valid auth from the sidebar
 export const sidebarSignin = async (page: Page, sidebar: Frame): Promise<void> => {
-    await sidebar.getByRole('button', { name: 'Other Signin Options' }).click()
+    await sidebar.getByRole('button', { name: 'Other Sign In Options...' }).click()
     await page.getByRole('option', { name: 'Sign in with URL and Access Token' }).click()
     await page.getByRole('combobox', { name: 'input' }).fill(SERVER_URL)
     await page.getByRole('combobox', { name: 'input' }).press('Enter')

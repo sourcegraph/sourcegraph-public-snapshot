@@ -17,25 +17,23 @@ export interface LoginInput {
 
 export type AuthMenuType = 'signin' | 'signout' | 'switch'
 
-function getItemLabel(uri: string, icon: string, current: boolean): string {
-    const iconType = current ? '$(check)' : icon
+function getItemLabel(uri: string, current: boolean): string {
+    const icon = current ? '$(check) ' : ''
     if (isLocalApp(uri)) {
-        return `${iconType} Cody App`
+        return `${icon}Cody App`
     }
-    return `${iconType} ${uri}`
+    return `${icon}${uri}`
 }
 
 export const AuthMenu = async (type: AuthMenuType, historyItems: string[]): Promise<LoginMenuItem | null> => {
     // Create option items
-    const menu = AuthMenuOptions[type]
-    const icon = menu.icon
     const historySize = historyItems?.length
     const history =
         historySize > 0
             ? historyItems
                   ?.map((uri, i) => ({
                       id: uri,
-                      label: getItemLabel(uri, icon, type === 'switch' && i === historySize - 1),
+                      label: getItemLabel(uri, type === 'switch' && i === historySize - 1),
                       description: type === 'signout' && i === 0 ? 'current' : '',
                       uri,
                   }))
@@ -101,6 +99,7 @@ export const LoginMenuOptionItems = [
         label: 'Sign in to a Sourcegraph Enterprise Instance',
         description: 'Instance must be v5.1 or higher',
         totalSteps: 1,
+        picked: true,
     },
 ]
 

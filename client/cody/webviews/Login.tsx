@@ -22,6 +22,23 @@ interface LoginProps {
     isAppConnectEnabled?: boolean
 }
 
+const APP_MESSAGES = {
+    getStarted: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
+    download: 'Download and run the Cody desktop app to configure your local code graph.',
+    connectApp: 'Cody App detected. All that’s left is to do is connect VS Code with Cody App.',
+    appNotRunning: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
+    comingSoon:
+        'We’re working on bringing Cody App to your platform. In the meantime, you can try Cody with open source repositories by signing in to Sourcegraph.com.',
+}
+
+const ERROR_MESSAGES = {
+    DISABLED: 'Cody is not enabled on your instance. To enable Cody, please contact your site admin.',
+    VERSION:
+        'Cody is not supported by your Sourcegraph instance version (version: $SITEVERSION). To use Cody, please contact your site admin to upgrade to version 5.1.0 or above.',
+    INVALID: 'Invalid credentials. Please check the Sourcegraph instance URL and access token.',
+    EMAIL_NOT_VERIFIED: 'Email not verified. Please add a verified email to your Sourcegraph.com account.',
+}
+
 export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
     authStatus,
     serverEndpoint,
@@ -38,10 +55,10 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     const isOSSupported = appOS === 'darwin' && appArch === 'arm64'
 
     const loginWithDotCom = useCallback(() => {
-        const authUri = new URL(DOTCOM_CALLBACK_URL.href)
-        authUri.searchParams.append('requestFrom', callbackScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY')
+        const callbackUri = new URL(DOTCOM_CALLBACK_URL.href)
+        callbackUri.searchParams.append('requestFrom', callbackScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY')
         setEndpoint(DOTCOM_URL.href)
-        vscodeAPI.postMessage({ command: 'links', value: authUri.href })
+        vscodeAPI.postMessage({ command: 'links', value: callbackUri.href })
     }, [callbackScheme, vscodeAPI])
 
     const onFooterButtonClick = useCallback(
@@ -51,11 +68,12 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
         [vscodeAPI]
     )
 
-    const sectionTitle = isAppRunning ? 'Connect with Cody App' : 'Cody App Not Running'
+    const title = isAppInstalled ? (isAppRunning ? 'Connect with Cody App' : 'Cody App Not Running') : 'Get Started'
+
     const SigninWithApp: React.FunctionComponent = () => (
         <div className={styles.sectionsContainer}>
             <section className={classNames(styles.section, isOSSupported ? styles.codyGradient : null)}>
-                <h2 className={styles.sectionHeader}>{isAppInstalled ? sectionTitle : 'Get Started'}</h2>
+                <h2 className={styles.sectionHeader}>{isAppInstalled ? title : 'Get Started'}</h2>
                 <p className={styles.openMessage}>
                     {!isAppInstalled
                         ? APP_MESSAGES.getStarted
@@ -68,8 +86,9 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                     isAppInstalled={isAppInstalled}
                     vscodeAPI={vscodeAPI}
                     isOSSupported={isOSSupported}
-                    appOS={appOS || ''}
-                    appArch={appArch || ''}
+                    appOS={appOS}
+                    appArch={appArch}
+                    callbackScheme={callbackScheme}
                 />
                 {!isOSSupported && (
                     <small>
@@ -115,7 +134,6 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             <section className={classNames(styles.section, styles.codyGradient)}>
                 <h2 className={styles.sectionHeader}>Cody App</h2>
                 <p className={styles.openMessage}>{APP_MESSAGES.getStarted}</p>
-                {!isAppInstalled && <small className={styles.openMessage}>{APP_MESSAGES.download}</small>}
                 <ConnectApp
                     isAppInstalled={isAppInstalled}
                     vscodeAPI={vscodeAPI}
@@ -141,23 +159,6 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             </footer>
         </div>
     )
-}
-
-const APP_MESSAGES = {
-    getStarted: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
-    download: 'Download and run the Cody desktop app to configure your local code graph.',
-    connectApp: 'Cody App detected. All that’s left is to do is connect VS Code with Cody App.',
-    appNotRunning: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
-    comingSoon:
-        'We’re working on bringing Cody App to your platform. In the meantime, you can try Cody with open source repositories by signing in to Sourcegraph.com.',
-}
-
-const ERROR_MESSAGES = {
-    DISABLED: 'Cody is not enabled on your instance. To enable Cody, please contact your site admin.',
-    VERSION:
-        'Cody is not supported by your Sourcegraph instance version (version: $SITEVERSION). To use Cody, please contact your site admin to upgrade to version 5.1.0 or above.',
-    INVALID: 'Invalid credentials. Please check the Sourcegraph instance URL and access token.',
-    EMAIL_NOT_VERIFIED: 'Email not verified. Please add a verified email to your Sourcegraph.com account.',
 }
 
 const ErrorContainer: React.FunctionComponent<{ authStatus: AuthStatus; endpoint: string }> = ({ authStatus }) => {

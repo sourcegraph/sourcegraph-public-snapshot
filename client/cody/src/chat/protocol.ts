@@ -59,7 +59,7 @@ export const CODY_FEEDBACK_URL = new URL(
 // APP
 export const LOCAL_APP_URL = new URL('http://localhost:3080')
 export const APP_LANDING_URL = new URL('https://about.sourcegraph.com/app')
-export const APP_CALLBACK_URL = new URL('sourcegraph://user/settings/tokens/new/callback?requestFrom=CODY')
+export const APP_CALLBACK_URL = new URL('sourcegraph://user/settings/tokens/new/callback')
 // TODO: Update URLs to always point to the latest app release: https://github.com/sourcegraph/sourcegraph/issues/53511
 export const APP_DOWNLOAD_URLS: { [os: string]: { [arch: string]: string } } = {
     darwin: {
