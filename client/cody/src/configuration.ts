@@ -34,18 +34,19 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         debugRegex = new RegExp('.*')
     }
 
-    let completionsAdvancedProvider = config.get<'anthropic' | 'unstable-codegen'>(
-        CONFIG_KEY.completionsAdvancedProvider,
+    let autocompleteAdvancedProvider = config.get<'anthropic' | 'unstable-codegen' | 'unstable-huggingface'>(
+        CONFIG_KEY.autocompleteAdvancedProvider,
         'anthropic'
     )
+    console.log({ autocompleteAdvancedProvider })
     if (
-        completionsAdvancedProvider !== 'anthropic' &&
-        completionsAdvancedProvider !== 'unstable-codegen' &&
-        completionsAdvancedProvider !== 'unstable-huggingface'
+        autocompleteAdvancedProvider !== 'anthropic' &&
+        autocompleteAdvancedProvider !== 'unstable-codegen' &&
+        autocompleteAdvancedProvider !== 'unstable-huggingface'
     ) {
-        completionsAdvancedProvider = 'anthropic'
+        autocompleteAdvancedProvider = 'anthropic'
         void vscode.window.showInformationMessage(
-            `Unrecognized ${CONFIG_KEY.completionsAdvancedProvider}, defaulting to 'anthropic'`
+            `Unrecognized ${CONFIG_KEY.autocompleteAdvancedProvider}, defaulting to 'anthropic'`
         )
     }
 
@@ -57,19 +58,19 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         debugEnable: config.get<boolean>(CONFIG_KEY.debugEnable, false),
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
-        autocomplete: config.get(CONFIG_KEY.autocomplete, isTesting),
+        autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, isTesting),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         experimentalInline: config.get(CONFIG_KEY.experimentalInline, isTesting),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
         experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
-        completionsAdvancedProvider,
-        completionsAdvancedServerEndpoint: config.get<string | null>(
-            CONFIG_KEY.completionsAdvancedServerEndpoint,
+        autocompleteAdvancedProvider,
+        autocompleteAdvancedServerEndpoint: config.get<string | null>(
+            CONFIG_KEY.autocompleteAdvancedServerEndpoint,
             null
         ),
-        completionsAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.completionsAdvancedAccessToken, null),
-        completionsAdvancedCache: config.get(CONFIG_KEY.completionsAdvancedCache, true),
-        completionsAdvancedEmbeddings: config.get(CONFIG_KEY.completionsAdvancedEmbeddings, true),
+        autocompleteAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedAccessToken, null),
+        autocompleteAdvancedCache: config.get(CONFIG_KEY.autocompleteAdvancedCache, true),
+        autocompleteAdvancedEmbeddings: config.get(CONFIG_KEY.autocompleteAdvancedEmbeddings, true),
     }
 }
 
@@ -102,8 +103,21 @@ export const getFullConfig = async (secretStorage: SecretStorage): Promise<Confi
 
 // We run this callback on extension startup
 export async function migrateConfiguration(): Promise<void> {
-    await migrateDeprecatedConfigOption(CONFIG_KEY.experimentalSuggestions, CONFIG_KEY.autocomplete)
-    // await migrateDeprecatedConfigOption(CONFIG_KEY.completionsAdvancedProvider, CONFIG_KEY.debugFilter)
+    await migrateDeprecatedConfigOption(CONFIG_KEY.experimentalSuggestions, CONFIG_KEY.autocompleteEnabled)
+    await migrateDeprecatedConfigOption(CONFIG_KEY.completionsAdvancedProvider, CONFIG_KEY.autocompleteAdvancedProvider)
+    await migrateDeprecatedConfigOption(
+        CONFIG_KEY.completionsAdvancedServerEndpoint,
+        CONFIG_KEY.autocompleteAdvancedServerEndpoint
+    )
+    await migrateDeprecatedConfigOption(
+        CONFIG_KEY.completionsAdvancedAccessToken,
+        CONFIG_KEY.autocompleteAdvancedAccessToken
+    )
+    await migrateDeprecatedConfigOption(CONFIG_KEY.completionsAdvancedCache, CONFIG_KEY.autocompleteAdvancedCache)
+    await migrateDeprecatedConfigOption(
+        CONFIG_KEY.completionsAdvancedEmbeddings,
+        CONFIG_KEY.autocompleteAdvancedEmbeddings
+    )
 }
 
 async function migrateDeprecatedConfigOption(
@@ -114,7 +128,7 @@ async function migrateDeprecatedConfigOption(
     const value = config.get(oldKey)
     const inspect = config.inspect(oldKey)
 
-    if (value === undefined || inspect === undefined) {
+    if (inspect === undefined || value === inspect.defaultValue) {
         return
     }
 
@@ -125,15 +139,6 @@ async function migrateDeprecatedConfigOption(
             ? vscode.ConfigurationTarget.Workspace
             : vscode.ConfigurationTarget.Global
 
-    console.log('found the setting in scope', scope, value)
-
     await config.update(newKey, value, scope)
     await config.update(oldKey, undefined, scope)
-
-    // // Set the new setting value for the current scope
-    // workspace.getConfiguration().update(newSettingName, oldSettingValue, getScope())
-
-    // // Remove the old setting for all possible scopes
-    // workspace.getConfiguration().update(oldSettingName, undefined)
-    // workspace.getConfiguration(undefined).update(oldSettingName, undefined)
 }

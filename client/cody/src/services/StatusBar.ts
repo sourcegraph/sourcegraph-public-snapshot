@@ -60,7 +60,7 @@ export function createStatusBar(): CodyStatusBar {
                     'Code Autocomplete',
                     'Beta',
                     'Enables inline code suggestions in your editor',
-                    'cody.autocomplete',
+                    'cody.autocomplete.enabled',
                     c => c.autocomplete
                 ),
                 createFeatureToggle(

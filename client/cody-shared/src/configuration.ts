@@ -14,11 +14,11 @@ export interface Configuration {
     experimentalInline: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
-    completionsAdvancedProvider: 'anthropic' | 'unstable-codegen' | 'unstable-huggingface'
-    completionsAdvancedServerEndpoint: string | null
-    completionsAdvancedAccessToken: string | null
-    completionsAdvancedCache: boolean
-    completionsAdvancedEmbeddings: boolean
+    autocompleteAdvancedProvider: 'anthropic' | 'unstable-codegen' | 'unstable-huggingface'
+    autocompleteAdvancedServerEndpoint: string | null
+    autocompleteAdvancedAccessToken: string | null
+    autocompleteAdvancedCache: boolean
+    autocompleteAdvancedEmbeddings: boolean
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {

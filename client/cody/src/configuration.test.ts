@@ -43,7 +43,7 @@ describe('getConfiguration', () => {
                             'Cache-Control': 'no-cache',
                             'Proxy-Authenticate': 'Basic',
                         }
-                    case 'cody.autocomplete':
+                    case 'cody.autocomplete.enabled':
                         return true
                     case 'cody.experimental.chatPredictions':
                         return true
@@ -59,15 +59,15 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.debug.filter':
                         return /.*/
-                    case 'cody.completions.advanced.provider':
+                    case 'cody.autocomplete.advanced.provider':
                         return 'unstable-codegen'
-                    case 'cody.completions.advanced.serverEndpoint':
+                    case 'cody.autocomplete.advanced.serverEndpoint':
                         return 'https://example.com/llm'
-                    case 'cody.completions.advanced.accessToken':
+                    case 'cody.autocomplete.advanced.accessToken':
                         return 'foobar'
-                    case 'cody.completions.advanced.cache':
+                    case 'cody.autocomplete.advanced.cache':
                         return false
-                    case 'cody.completions.advanced.embeddings':
+                    case 'cody.autocomplete.advanced.embeddings':
                         return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
