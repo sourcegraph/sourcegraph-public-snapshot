@@ -56,11 +56,11 @@ func NewSlackRateLimitNotifier(
 		var span trace.Span
 		ctx, span = tracer.Start(ctx, "slackRateLimitNotification",
 			trace.WithAttributes(
-				attribute.Float64("usageRatio", float64(usageRatio)),
+				attribute.Float64("usagePercentage", float64(usageRatio)),
 				attribute.Float64("alert.ttlSeconds", ttl.Seconds())))
 		logger := sgtrace.Logger(ctx, baseLogger)
 
-		if err := handleNotify(ctx, logger, rs, dotcomURL, thresholds, slackWebhookURL, slackSender, actorID, actorSource, feature, usagePercentage, usageRatio, ttl); err != nil {
+		if err := handleNotify(ctx, logger, rs, dotcomURL, thresholds, slackWebhookURL, slackSender, actorID, actorSource, feature, usagePercentage, ttl); err != nil {
 			span.RecordError(err)
 			logger.Error("failed to notification", log.Error(err))
 		}
@@ -83,7 +83,6 @@ func handleNotify(
 	actorSource codygateway.ActorSource,
 	feature codygateway.Feature,
 	usagePercentage int,
-	usageRatio float32,
 	ttl time.Duration,
 ) error {
 	span := trace.SpanFromContext(ctx)
@@ -132,7 +131,7 @@ func handleNotify(
 				log.String("source", string(actorSource)),
 			),
 			log.String("feature", string(feature)),
-			log.Int("usagePercentage", int(usageRatio*100)),
+			log.Int("usagePercentage", usagePercentage),
 		)
 		return nil
 	}
