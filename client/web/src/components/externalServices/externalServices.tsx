@@ -618,7 +618,7 @@ const GITHUB_APP: AddExternalServiceOptions = {
 export const gitHubAppConfig = (
     baseURL: string | null,
     appID: string | null,
-    installationID: string | null,
+    installationID: string | null
 ): AddExternalServiceOptions => ({
     ...GITHUB_APP,
     defaultConfig: `{
