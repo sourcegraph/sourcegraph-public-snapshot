@@ -61,6 +61,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Latest repository clone/sync output is surfaced in the "Mirroring and cloning" page (`{REPO}/-/settings/mirror`). Added primarily to enable easier debugging of issues with Perforce depots, it can also be useful for other code hosts. [#51598](https://github.com/sourcegraph/sourcegraph/pull/51598)
 - New `file:has.contributor(...)` predicate for filtering files based on contributors. [#53206](https://github.com/sourcegraph/sourcegraph/pull/53206)
 - Added multi-repo scope selector for Cody on the web supporting unified context generation API which uses combination of embeddings search and keyword search as fallback for context generation. [53046](https://github.com/sourcegraph/sourcegraph/pull/53046)
+- Batch Changes can now sign commits for changesets published on GitHub code hosts via GitHub Apps. [#52333](https://github.com/sourcegraph/sourcegraph/pull/52333)
 
 ### Changed
 
