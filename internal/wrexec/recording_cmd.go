@@ -154,7 +154,7 @@ func (rf *RecordingCommandFactory) Wrap(ctx context.Context, logger log.Logger, 
 	return RecordingWrap(ctx, logger, rf.shouldRecord, store, cmd)
 }
 
-// NewNoOpRecordingCOmmandFactory is a recording command factory that is intiailised with a nil shouldRecord and maxSize 0. This is a helper for use in tests.
-func NewNoOpRecordingCOmmandFactory() *RecordingCommandFactory {
+// NewNoOpRecordingCommandFactory is a recording command factory that is intialised with a nil shouldRecord and maxSize 0. This is a helper for use in tests.
+func NewNoOpRecordingCommandFactory() *RecordingCommandFactory {
 	return &RecordingCommandFactory{shouldRecord: nil, maxSize: 0}
 }
