@@ -522,6 +522,12 @@
           "!go": {
             "pointer": true
           }
+        },
+        "batchChanges.enablePerforce": {
+          "description": "When enabled, batch changes will be executable on Perforce depots.",
+          "type": "boolean",
+          "group": "BatchChanges",
+          "default": false
         }
       },
       "examples": [
@@ -2394,7 +2400,26 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "default": [
+            ".*ignore",
+            ".gitattributes",
+            ".mailmap",
+            "*.csv",
+            "*.sql",
+            "*.svg",
+            "*.json",
+            "*.jsonc",
+            "*.jsonl",
+            "*.xml",
+            "*.yml",
+            "*.yaml",
+            "__fixtures__/",
+            "node_modules/",
+            "testdata/",
+            "mocks/",
+            "vendor/"
+          ]
         },
         "maxCodeEmbeddingsPerRepo": {
           "description": "The maximum number of embeddings for code files to generate per repo",

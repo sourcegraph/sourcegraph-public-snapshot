@@ -19,9 +19,7 @@ import {
 
 import styles from './InsightsDashboardCreationPage.module.scss'
 
-interface InsightsDashboardCreationPageProps extends TelemetryProps {
-    isSourcegraphApp: boolean
-}
+interface InsightsDashboardCreationPageProps extends TelemetryProps {}
 
 export const InsightsDashboardCreationPage: React.FunctionComponent<
     React.PropsWithChildren<InsightsDashboardCreationPageProps>
@@ -58,7 +56,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<
     }
 
     return (
-        <CodeInsightsPage className={classNames('col-8', styles.page)} isSourcegraphApp={props.isSourcegraphApp}>
+        <CodeInsightsPage className={classNames('col-8', styles.page)}>
             <PageTitle title="Add dashboard - Code Insights" />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Add new dashboard' }]} />
@@ -71,11 +69,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<
             </span>
 
             <Container className="mt-4">
-                <InsightsDashboardCreationContent
-                    owners={owners}
-                    onSubmit={handleSubmit}
-                    isSourcegraphApp={props.isSourcegraphApp}
-                >
+                <InsightsDashboardCreationContent owners={owners} onSubmit={handleSubmit}>
                     {formAPI => (
                         <>
                             <Button

@@ -99,6 +99,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Slow request logs now have the correct trace and span IDs attached if a trace is present on the request. [#51826](https://github.com/sourcegraph/sourcegraph/pull/51826)
 - The braindot menu on the blob view no longer fetches data eagerly to prevent performance issues for larger monorepo users. [#53039](https://github.com/sourcegraph/sourcegraph/pull/53039)
 - Fixed an issue where commenting out redacted site-config secrets would re-add the secrets. [#53152](https://github.com/sourcegraph/sourcegraph/pull/53152)
+- Fixed an issue where SCIP packages would sometimes not be written to the database, breaking cross-repository jump to definition. [#53763](https://github.com/sourcegraph/sourcegraph/pull/53763)
 
 ### Removed
 

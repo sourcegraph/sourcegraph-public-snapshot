@@ -40,6 +40,7 @@ type Client interface {
 	ListProjects(ctx context.Context, opts ListProjectsArgs) (projects ListProjectsResponse, nextPage bool, err error)
 	GetChange(ctx context.Context, changeID string) (*Change, error)
 	AbandonChange(ctx context.Context, changeID string) (*Change, error)
+	DeleteChange(ctx context.Context, changeID string) error
 	SubmitChange(ctx context.Context, changeID string) (*Change, error)
 	RestoreChange(ctx context.Context, changeID string) (*Change, error)
 	WriteReviewComment(ctx context.Context, changeID string, comment ChangeReviewComment) error
@@ -148,10 +149,23 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (*http.R
 
 	defer resp.Body.Close()
 
-	bs, err := io.ReadAll(resp.Body)
+	var bs []byte
+	if resp.StatusCode != http.StatusNoContent {
+		bs, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
 
-	if err != nil {
-		return nil, err
+		// The first 4 characters of the Gerrit API responses need to be stripped, see: https://gerrit-review.googlesource.com/Documentation/rest-api.html#output .
+		if len(bs) < 4 {
+			return nil, &httpError{
+				URL:        req.URL,
+				StatusCode: resp.StatusCode,
+				Body:       bs,
+			}
+		}
+
+		bs = bs[4:]
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
@@ -161,19 +175,10 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (*http.R
 			Body:       bs,
 		}
 	}
-
-	// The first 4 characters of the Gerrit API responses need to be stripped, see: https://gerrit-review.googlesource.com/Documentation/rest-api.html#output .
-	if len(bs) < 4 {
-		return nil, &httpError{
-			URL:        req.URL,
-			StatusCode: resp.StatusCode,
-			Body:       bs,
-		}
-	}
 	if result == nil {
 		return resp, nil
 	}
-	return resp, json.Unmarshal(bs[4:], result)
+	return resp, json.Unmarshal(bs, result)
 }
 
 func (c *client) GetURL() *url.URL {

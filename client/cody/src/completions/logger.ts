@@ -1,9 +1,16 @@
 import { logEvent } from '../event-logger'
 
 interface CompletionEvent {
-    type: 'inline' | 'manual'
-    multilineMode: null | 'block'
-    providerIdentifier: string
+    params: {
+        type: 'inline' | 'manual'
+        multilineMode: null | 'block'
+        providerIdentifier: string
+        contextSummary: {
+            embeddings?: number
+            local?: number
+        }
+        languageId: string
+    }
     startedAt: number
     suggestedAt: number | null
     // When set, the completion will always be marked as `read`. This helps us
@@ -20,32 +27,16 @@ export function logCompletionEvent(name: string, params?: unknown): void {
     logEvent(`CodyVSCodeExtension:completion:${name}`, params, params)
 }
 
-export function start(
-    {
-        type,
-        multilineMode,
-        providerIdentifier,
-    }: {
-        type: CompletionEvent['type']
-        multilineMode: CompletionEvent['multilineMode']
-        providerIdentifier: CompletionEvent['providerIdentifier']
-    } = {
-        type: 'inline',
-        multilineMode: null,
-        providerIdentifier: '',
-    }
-): string {
+export function start(params: CompletionEvent['params']): string {
     const id = createId()
     displayedCompletions.set(id, {
-        type,
-        multilineMode,
-        providerIdentifier,
+        params,
         startedAt: Date.now(),
         suggestedAt: null,
         forceRead: false,
     })
 
-    logCompletionEvent('started', { type, multilineMode, providerIdentifier })
+    logCompletionEvent('started', params)
 
     return id
 }
@@ -68,20 +59,12 @@ export function accept(id: string): void {
     completionEvent.forceRead = true
 
     logSuggestionEvent()
-    logCompletionEvent('accepted', {
-        type: completionEvent.type,
-        multilineMode: completionEvent.multilineMode,
-        providerIdentifier: completionEvent.providerIdentifier,
-    })
+    logCompletionEvent('accepted', completionEvent.params)
 }
 
 export function noResponse(id: string): void {
     const completionEvent = displayedCompletions.get(id)
-    logCompletionEvent('noResponse', {
-        type: completionEvent?.type,
-        multilineMode: completionEvent?.multilineMode,
-        providerIdentifier: completionEvent?.providerIdentifier,
-    })
+    logCompletionEvent('noResponse', completionEvent?.params ?? {})
 }
 
 /**
@@ -99,7 +82,7 @@ function createId(): string {
 function logSuggestionEvent(): void {
     const now = Date.now()
     for (const completionEvent of displayedCompletions.values()) {
-        const { suggestedAt, startedAt, type, multilineMode, providerIdentifier, forceRead } = completionEvent
+        const { suggestedAt, startedAt, params, forceRead } = completionEvent
 
         if (!suggestedAt) {
             continue
@@ -110,9 +93,7 @@ function logSuggestionEvent(): void {
         const read = displayDuration >= READ_TIMEOUT
 
         logCompletionEvent('suggested', {
-            type,
-            multilineMode,
-            providerIdentifier,
+            ...params,
             latency,
             displayDuration,
             read: forceRead || read,
