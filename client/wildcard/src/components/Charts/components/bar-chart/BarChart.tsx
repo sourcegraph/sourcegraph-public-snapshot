@@ -29,6 +29,11 @@ export interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGPr
     getTruncatedXTick?: (formattedTick: string) => string
     getCategory?: (datum: Datum) => string | undefined
     getDatumFadeColor?: (datum: Datum) => string
+    // Provides a lower bound for stretching the Y-axis scale of the chart.
+    // By default, when this value is not defined, the chart stretches to the max
+    // value of the preseted data. When this value is provided, and higher than
+    // any data point, the chart will stretch its scale to this specified value,
+    // instead of the highest data point.
     maxValueLowerBound?: number
 
     onDatumHover?: (datum: Datum) => void
