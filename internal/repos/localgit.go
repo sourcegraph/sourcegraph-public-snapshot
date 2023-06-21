@@ -53,33 +53,44 @@ func (s *LocalGitSource) ExternalServices() types.ExternalServices {
 }
 
 func (s *LocalGitSource) ListRepos(ctx context.Context, results chan SourceResult) {
-	urn := s.svc.URN()
-	repoPaths := getRepoPaths(s.config, s.logger)
-	for _, r := range repoPaths {
-		uri := "file://" + r.Path
-		s.logger.Info("found repo ", log.String("uri", uri))
+	for _, r := range s.Repos(ctx) {
+		s.logger.Info("found repo ", log.String("uri", r.URI))
 		results <- SourceResult{
 			Source: s,
-			Repo: &types.Repo{
-				Name: r.fullName(),
-				URI:  uri,
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          uri,
-					ServiceType: extsvc.VariantLocalGit.AsType(),
-					ServiceID:   uri,
-				},
-				Sources: map[string]*types.SourceInfo{
-					urn: {
-						ID:       urn,
-						CloneURL: uri,
-					},
-				},
-				Metadata: &extsvc.LocalGitMetadata {
-					AbsRepoPath: r.Path,
-				},
-			},
+			Repo:   r,
 		}
 	}
+}
+
+// Repos is called internall by ListRepos and provides a simpler API for getting
+// a list of corresponding repositories from disk (e.g. for GraphQL responses).
+func (s *LocalGitSource) Repos(ctx context.Context) []*types.Repo {
+	var repos []*types.Repo
+
+	urn := s.svc.URN()
+	for _, r := range getRepoPaths(s.config, s.logger) {
+		uri := "file://" + r.Path
+		repos = append(repos, &types.Repo{
+			Name: r.fullName(),
+			URI:  uri,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          uri,
+				ServiceType: extsvc.VariantLocalGit.AsType(),
+				ServiceID:   uri,
+			},
+			Sources: map[string]*types.SourceInfo{
+				urn: {
+					ID:       urn,
+					CloneURL: uri,
+				},
+			},
+			Metadata: &extsvc.LocalGitMetadata{
+				AbsRepoPath: r.Path,
+			},
+		})
+	}
+
+	return repos
 }
 
 // Checks if git thinks the given path is a valid .git folder for a repository
@@ -96,7 +107,8 @@ func isBareRepo(path string) bool {
 
 // Check if git thinks the given path is a proper git checkout
 func isGitRepo(path string) bool {
-	// Executing git rev-parse --git-dir in the root of a worktree returns .git
+	// Executing git rev-parse in the root of a worktree returns an error if the
+	// path is not a git repo.
 	c := exec.Command("git", "-C", path, "rev-parse")
 	err := c.Run()
 	return err == nil
