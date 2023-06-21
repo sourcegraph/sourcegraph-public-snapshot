@@ -8,7 +8,7 @@
 
 <span class="badge badge-note">Sourcegraph 5.1+</span>
 
-If you are uploading SCIP data to support [precise code navigation](/code_navigation/explanations/precise_code_navigation.md), then Sourcegraph can perform a global analysis over all SCIP indexed code to build a file reference graph. The relative number of references to two files can then be used to [rank search results](./indexed-ranking.md) so that more highly referenced files come earlier in the result set.
+If you are uploading SCIP data to support [precise code navigation](./../../../code_navigation/explanations/precise_code_navigation.md), then Sourcegraph can perform a global analysis over all SCIP indexed code to build a file reference graph. The relative number of references to two files can then be used to [rank search results](./indexed-ranking.md) so that more highly referenced files come earlier in the result set.
 
 ## Enable the background jobs
 
