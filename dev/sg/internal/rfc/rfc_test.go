@@ -181,7 +181,7 @@ func TestGetTokenFromWeb(t *testing.T) {
 		sendError <- nil
 	}()
 
-	token, err := getTokenFromWeb(responseFactory, ctx, config, out)
+	token, err := getTokenFromWeb(ctx, responseFactory, config, out)
 	if err != nil {
 		t.Fatal(err)
 	}
