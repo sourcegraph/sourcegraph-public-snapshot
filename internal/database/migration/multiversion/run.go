@@ -86,7 +86,7 @@ func RunMigration(
 			output.EmojiFingerPointRight,
 			output.StyleReset,
 			"Migrating to v%s (step %d of %d)",
-			step.instanceVersion,
+			step.instanceVersion.String(),
 			i+1,
 			len(plan.steps),
 		))
