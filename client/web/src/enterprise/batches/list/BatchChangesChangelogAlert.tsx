@@ -63,7 +63,8 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<
                                 </>
                             ) : (
                                 <>
-                                    GitHub App integrations can be configured by site admins and viewed from{' '}
+                                    GitHub App commit signing integrations can be configured by site admins and viewed
+                                    from{' '}
                                     <Link to="/user/settings/batch-changes" target="_blank">
                                         your user settings
                                     </Link>
