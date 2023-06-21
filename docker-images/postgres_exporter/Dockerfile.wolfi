@@ -1,0 +1,21 @@
+
+# hadolint ignore=DL3007
+FROM us.gcr.io/sourcegraph-dev/wolfi-postgres-exporter-base:latest
+
+ARG COMMIT_SHA="unknown"
+ARG DATE="unknown"
+ARG VERSION="unknown"
+
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
+
+USER postgres_exporter
+
+COPY ./*.yaml /config/
+ENV  PG_EXPORTER_EXTEND_QUERY_PATH=/config/queries.yaml
+
+EXPOSE 9187
+
+# TODO: Error 'Error opening config file "postgres_exporter.yml"' occurs at startup in v0.12.0 - confirm this is working as expected
+ENTRYPOINT [ "/usr/bin/postgres_exporter"]

@@ -534,17 +534,9 @@ commands:
       while true; do
         sleep 1
       done
-    install: |
-      if [[ $(uname) == "Linux" ]]; then
-        bazel build //enterprise/cmd/executor-kubernetes:image_tarball
-        docker load --input $(bazel cquery //enterprise/cmd/executor-kubernetes:image_tarball --output=files)
-      else
-        bazel build //enterprise/cmd/executor-kubernetes:image_tarball --config darwin-docker
-        docker load --input $(bazel cquery //enterprise/cmd/executor-kubernetes:image_tarball --config darwin-docker --output=files)
-      fi
-
+    install: ./enterprise/cmd/executor-kubernetes/build.sh
     env:
-      IMAGE: executor-kubernetes:candidate
+      IMAGE: sourcegraph/executor-kubernetes:insiders
       # TODO: This is required but should only be set on M1 Macs.
       PLATFORM: linux/arm64
     watch:
@@ -606,16 +598,9 @@ commands:
   batcheshelper-builder:
     # Nothing to run for this, we just want to re-run the install script every time.
     cmd: exit 0
-    install: |
-      if [[ $(uname) == "Linux" ]]; then
-        bazel build //enterprise/cmd/batcheshelper:image_tarball
-        docker load --input $(bazel cquery //enterprise/cmd/batcheshelper:image_tarball --output=files)
-      else
-        bazel build //enterprise/cmd/batcheshelper:image_tarball --config darwin-docker
-        docker load --input $(bazel cquery //enterprise/cmd/batcheshelper:image_tarball --config darwin-docker --output=files)
-      fi
+    install: ./enterprise/cmd/batcheshelper/build.sh
     env:
-      IMAGE: batcheshelper:candidate
+      IMAGE: sourcegraph/batcheshelper:insiders
       # TODO: This is required but should only be set on M1 Macs.
       PLATFORM: linux/arm64
     watch:
@@ -699,15 +684,13 @@ commands:
         -p 0.0.0.0:3370:3370 ${ADD_HOST_FLAG} \
         -v "${GRAFANA_DISK}":/var/lib/grafana \
         -v "$(pwd)"/dev/grafana/all:/sg_config_grafana/provisioning/datasources \
-        grafana:candidate >"${GRAFANA_LOG_FILE}" 2>&1
+        sourcegraph/grafana:dev >"${GRAFANA_LOG_FILE}" 2>&1
     install: |
-      echo foobar
       mkdir -p "${GRAFANA_DISK}"
       mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
       export CACHE=true
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
-      bazel build //docker-images/grafana:image_tarball
-      docker load --input $(bazel cquery //docker-images/grafana:image_tarball --output=files)
+      ./docker-images/grafana/build.sh
     env:
       GRAFANA_DISK: $HOME/.sourcegraph-dev/data/grafana
       # Log file location: since we log outside of the Docker container, we should
@@ -718,7 +701,7 @@ commands:
       # We want to capture that output, but because it's fairly noisy, don't want to
       # display it in the normal case.
       GRAFANA_LOG_FILE: $HOME/.sourcegraph-dev/logs/grafana/grafana.log
-      IMAGE: grafana:candidate
+      IMAGE: sourcegraph/grafana:dev
       CONTAINER: grafana
       PORT: 3370
       # docker containers must access things via docker host on non-linux platforms
@@ -763,19 +746,12 @@ commands:
       fi
 
       cp ${PROM_TARGETS} "${CONFIG_DIR}"/prometheus_targets.yml
-
-      if [[ $(uname) == "Linux" ]]; then
-        bazel build //docker-images/prometheus:image_tarball
-        docker load --input $(bazel cquery //docker-images/prometheus:image_tarball --output=files)
-      else
-        bazel build //docker-images/prometheus:image_tarball --config darwin-docker
-        docker load --input $(bazel cquery //docker-images/prometheus:image_tarball --config darwin-docker --output=files)
-      fi
+      CACHE=true ./docker-images/prometheus/build.sh
     env:
       PROMETHEUS_DISK: $HOME/.sourcegraph-dev/data/prometheus
       # See comment above for `grafana`
       PROMETHEUS_LOG_FILE: $HOME/.sourcegraph-dev/logs/prometheus/prometheus.log
-      IMAGE: prometheus:candidate
+      IMAGE: sourcegraph/prometheus:dev
       CONTAINER: prometheus
       PORT: 9090
       CONFIG_DIR: docker-images/prometheus/config
@@ -814,14 +790,7 @@ commands:
       LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
 
   otel-collector:
-    install: |
-      if [[ $(uname) == "Linux" ]]; then
-        bazel build //docker-images/opentelemetry-collector:image_tarball
-        docker load --input $(bazel cquery //docker-images/opentelemetry-collector:image_tarball --output=files)
-      else
-        bazel build //docker-images/opentelemetry-collector:image_tarball --config darwin-docker
-        docker load --input $(bazel cquery //docker-images/opentelemetry-collector:image_tarball --config darwin-docker --output=files)
-      fi
+    install: docker-images/opentelemetry-collector/build.sh
     description: OpenTelemetry collector
     cmd: |
       JAEGER_HOST='host.docker.internal'
@@ -842,7 +811,7 @@ commands:
         -e HONEYCOMB_DATASET=$HONEYCOMB_DATASET \
         $IMAGE --config "/etc/otel-collector/$CONFIGURATION_FILE"
     env:
-      IMAGE: opentelemetry-collector:candidate
+      IMAGE: sourcegraph/opentelemetry-collector:dev
       # Overwrite the following in sg.config.overwrite.yaml, based on which collector
       # config you are using - see docker-images/opentelemetry-collector for more details.
       CONFIGURATION_FILE: "configs/jaeger.yaml"
