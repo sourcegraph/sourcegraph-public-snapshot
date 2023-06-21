@@ -40,7 +40,7 @@ Zoekt creates a [match score for a query](https://sourcegraph.com/search?q=conte
 
 In terms of static file signals, Zoekt uses the repository priority and file order (described in the next section).
 
-In addition, if code intel ranks are being calculated from [SCIP data](/code_navigation/explanations/precise_code_navigation.md), then Zoekt incorporates these
+In addition, if code intel ranks are being calculated from [SCIP data](./../../../code_navigation/explanations/precise_code_navigation.md), then Zoekt incorporates these
 as an important file signal. A file's rank is based on the number inbound references from any other file in the available code graph, representing how widely-used
 and important the file is to the codebase. This is inspired by PageRank in web search, which considers a website to be more authoritative if it has a large number
 of inbound links from other authoritative sites. See [this guide](./precise-ranking.md) on how to enable the background job to produce these ranks.
