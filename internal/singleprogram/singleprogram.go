@@ -81,7 +81,7 @@ func Init(logger log.Logger) CleanupFunc {
 	setDefaultEnv(logger, "SYMBOLS_CACHE_DIR", filepath.Join(cacheDir, "symbols"))
 	setDefaultEnv(logger, "SEARCHER_CACHE_DIR", filepath.Join(cacheDir, "searcher"))
 
-	configDir, err := setupAppDir(os.Getenv("SRC_APP_CONFIG"), os.UserConfigDir)
+	configDir, err := SetupAppConfigDir()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "failed to setup user config directory. Please see log for more details")
 		logger.Fatal("failed to setup config directory", log.Error(err))
@@ -243,6 +243,10 @@ exec docker run --rm -i \
     --entrypoint /usr/local/bin/universal-ctags \
     slimsag/ctags:latest@sha256:dd21503a3ae51524ab96edd5c0d0b8326d4baaf99b4238dfe8ec0232050af3c7 "$@"
 `
+
+func SetupAppConfigDir() (string, error) {
+	return setupAppDir(os.Getenv("SRC_APP_CONFIG"), os.UserConfigDir)
+}
 
 func setupAppDir(root string, defaultDirFn func() (string, error)) (string, error) {
 	var base = root
