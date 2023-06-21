@@ -4,7 +4,7 @@ import { useApolloClient } from '@apollo/client'
 import { isEqual } from 'lodash'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
 
 import {
     AddRemoteCodeHostResult,
@@ -38,6 +38,11 @@ export function useNewLocalRepositoriesPaths(): useNewLocalRepositoriesPathsAPI 
         fetchPolicy: 'cache-and-network',
     })
 
+    const [getLocalRepositories] = useLazyQuery<DiscoverLocalRepositoriesResult, DiscoverLocalRepositoriesVariables>(
+        DISCOVER_LOCAL_REPOSITORIES,
+        { fetchPolicy: 'network-only' }
+    )
+
     const apolloClient = useApolloClient()
     const [addLocalCodeHost] = useMutation<AddRemoteCodeHostResult, AddRemoteCodeHostVariables>(ADD_CODE_HOST)
     const [deleteLocalCodeHost] = useMutation<DeleteRemoteCodeHostResult, DeleteRemoteCodeHostVariables>(
@@ -45,6 +50,14 @@ export function useNewLocalRepositoriesPaths(): useNewLocalRepositoriesPathsAPI 
     )
 
     const addNewPaths = async (paths: Path[]): Promise<void> => {
+        const { data } = await getLocalRepositories({ variables: { paths } })
+        const repositoriesCount = data?.localDirectories.repositories.length ?? Infinity
+
+        if (repositoriesCount > 1) {
+            // Throw an error about multiple repositories
+            return
+        }
+
         for (const path of paths) {
             // Create a new local external service for this path
             await addLocalCodeHost({

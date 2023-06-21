@@ -48,6 +48,14 @@ func (c *openaiEmbeddingsClient) GetModelIdentifier() string {
 // In case of failure, it retries the embedding procedure up to maxRetries. This due to the OpenAI API which
 // often hangs up when downloading large embedding responses.
 func (c *openaiEmbeddingsClient) GetEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error) {
+	for _, text := range texts {
+		if text == "" {
+			// The OpenAI API will return an error if any of the strings in texts is an empty string,
+			// so fail fast to avoid making tons of retryable requests.
+			return nil, errors.New("cannot generate embeddings for an empty string")
+		}
+	}
+
 	embeddings, err := c.getEmbeddings(ctx, texts)
 	if err == nil {
 		return embeddings, nil

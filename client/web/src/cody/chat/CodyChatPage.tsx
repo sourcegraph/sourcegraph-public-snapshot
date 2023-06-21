@@ -241,7 +241,12 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                     <Icon aria-hidden={true} svgPath={mdiDelete} /> Clear all chats
                                 </MenuItem>
                                 <MenuDivider />
-                                <MenuLink as={Link} to="/help/cody" target="_blank" rel="noopener">
+                                <MenuLink
+                                    as={Link}
+                                    to={isSourcegraphApp ? 'https://docs.sourcegraph.com/app' : '/help/cody'}
+                                    target="_blank"
+                                    rel="noopener"
+                                >
                                     <Icon aria-hidden={true} svgPath={mdiOpenInNew} /> Cody Docs & FAQ
                                 </MenuLink>
                                 {authenticatedUser?.siteAdmin && (
@@ -370,7 +375,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                     New chat
                                 </Button>
                             </div>
-                            <ChatUI codyChatStore={codyChatStore} />
+                            <ChatUI codyChatStore={codyChatStore} isSourcegraphApp={true} />
                         </div>
 
                         {showMobileHistory && (

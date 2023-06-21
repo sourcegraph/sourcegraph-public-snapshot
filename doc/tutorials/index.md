@@ -59,7 +59,7 @@
 | -------- | --------| -------- |
 | [GraphQL API](../api/graphql/index.md) | Reference | The Sourcegraph GraphQL API is a rich API that exposes data related to the code available on a Sourcegraph instance. |
 | [GraphQL Examples](../api/graphql/examples.md) | Reference | This page demonstrates a few example GraphQL queries for the Sourcegraph GraphQL API.
-| [Streaming API](../api/stream_api/index.md) | Reference | With the Stream API you can consume search results and related metadata as a stream of events. The Sourcegraph UI calls the Stream API for all interactive searches.Compared to our GraphQL API, it offers shorter times to first results and supports running exhaustive searches returning a large volume of results without putting pressure on the backend. |
+| [Streaming API](../api/stream_api/index.md) | Reference | With the Stream API you can consume search results and related metadata as a stream of events. The Sourcegraph UI calls the Stream API for all interactive searches. Compared to our GraphQL API, it offers shorter times to first results and supports running exhaustive searches returning a large volume of results without putting pressure on the backend. |
 
 ## Customizing Your Sourcegraph User Environment
 | Topic | Content Type | Description |

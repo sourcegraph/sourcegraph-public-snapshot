@@ -1,13 +1,5 @@
 # Executors
 
-<aside class="beta">
-<p>
-<span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future.
-</p>
-
-<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
-</aside>
-
 Executors are Sourcegraph's solution for running untrusted code in a secure and controllable way.
 
 ## Installation
@@ -16,8 +8,8 @@ To deploy executors to target your Sourcegraph instance, [follow our deployment 
 
 The supported deployment options are,
 
-- <span class="badge badge-beta">Beta</span> [Binary](./deploy_executors_binary.md).
-- <span class="badge badge-beta">Beta</span> [Terraform on AWS or GCP](./deploy_executors.md).
+- [Binary](./deploy_executors_binary.md).
+- [Terraform on AWS or GCP](./deploy_executors.md).
 - <span class="badge badge-beta">Beta</span> [Native Kubernetes](./deploy_executors_kubernetes.md).
 - <span class="badge badge-beta">Beta</span> [Docker-in-Docker on Kubernetes](./deploy_executors_dind.md).
 - <span class="badge badge-beta">Beta</span> [Docker-Compose](./deploy_executors_docker.md).
