@@ -606,9 +606,16 @@ commands:
   batcheshelper-builder:
     # Nothing to run for this, we just want to re-run the install script every time.
     cmd: exit 0
-    install: ./enterprise/cmd/batcheshelper/build.sh
+    install: |
+      if [[ $(uname) == "Linux" ]]; then
+        bazel build //enterprise/cmd/batcheshelper:image_tarball
+        docker load --input $(bazel cquery //enterprise/cmd/batcheshelper:image_tarball --output=files)
+      else
+        bazel build //enterprise/cmd/batcheshelper:image_tarball --config darwin-docker
+        docker load --input $(bazel cquery //enterprise/cmd/batcheshelper:image_tarball --config darwin-docker --output=files)
+      fi
     env:
-      IMAGE: sourcegraph/batcheshelper:insiders
+      IMAGE: batcheshelper:candidate
       # TODO: This is required but should only be set on M1 Macs.
       PLATFORM: linux/arm64
     watch:
