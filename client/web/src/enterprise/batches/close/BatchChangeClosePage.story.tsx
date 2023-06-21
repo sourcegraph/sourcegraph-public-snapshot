@@ -208,6 +208,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                     },
                     forkTarget: null,
                 },
+                commitVerification: null,
             },
             {
                 __typename: 'ExternalChangeset',
@@ -246,6 +247,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                     },
                     forkTarget: null,
                 },
+                commitVerification: null,
             },
         ],
     })

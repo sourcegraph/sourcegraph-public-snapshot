@@ -24,9 +24,14 @@ export const updateJSContextBatchChangesLicense = (type: 'none' | 'limited' | 'f
     const license =
         type === 'full' ? BATCH_CHANGES_FULL_LICENSE : type === 'limited' ? BATCH_CHANGES_LIMITED_LICENSE : undefined
 
-    window.context.licenseInfo = window.context.licenseInfo
+    // This seems necessary to prevent Typescript from associating `window.context` with
+    // Mocha.SuiteFunction and subsequently throwing an error that the property `licenseInfo`
+    // doesn't exist.
+    const context: any = window.context
+
+    context.licenseInfo = context.licenseInfo
         ? {
-              ...window.context.licenseInfo,
+              ...context.licenseInfo,
               batchChanges: license,
           }
         : {
