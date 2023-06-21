@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -151,7 +152,11 @@ LOOP:
 
 	matchesFlush()
 
-	alert, err := getResults()
+	done := getResults()
+	alert, err := done(client.TelemetryArgs{
+		// TODO(keegancsmith) looks like we could report a Latency here.
+		UserResultSize: progress.MatchCount,
+	})
 	if err != nil {
 		_ = eventWriter.Event("error", streamhttp.EventError{Message: err.Error()})
 		return

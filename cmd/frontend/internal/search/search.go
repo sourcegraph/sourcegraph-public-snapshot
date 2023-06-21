@@ -105,6 +105,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		args.Query,
 		search.Mode(args.SearchMode),
 		search.Streaming,
+		"stream",
 	)
 	if err != nil {
 		var queryErr *client.QueryError
@@ -133,12 +134,11 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
 	}
 
-	var latency *time.Duration
+	var latency time.Duration
 	logLatency := func() {
-		elapsed := time.Since(start)
+		latency = time.Since(start)
 		metricLatency.WithLabelValues(string(GuessSource(r))).
-			Observe(elapsed.Seconds())
-		latency = &elapsed
+			Observe(latency.Seconds())
 	}
 
 	// HACK: We awkwardly call an inline function here so that we can defer the
@@ -150,7 +150,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 	// process because they are running in a goroutine that does not have a
 	// panic handler. We cannot add a panic handler because the goroutines are
 	// spawned by the go runtime.
-	alert, err := func() (*search.Alert, error) {
+	done := func() client.ExecutionResult {
 		eventHandler := newEventHandler(
 			ctx,
 			h.logger,
@@ -170,6 +170,10 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 
 		return h.searchClient.Execute(ctx, batchedStream, inputs)
 	}()
+	alert, err := done(client.TelemetryArgs{
+		Latency:        latency,
+		UserResultSize: progress.MatchCount,
+	})
 	if alert != nil {
 		eventWriter.Alert(alert)
 	}
@@ -177,7 +181,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 	return err
 }
 
-func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err error, duration time.Duration, latency *time.Duration, originalQuery string, progress *streamclient.ProgressAggregator) {
+func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err error, duration time.Duration, latency time.Duration, originalQuery string, progress *streamclient.ProgressAggregator) {
 	if honey.Enabled() {
 		status := client.DetermineStatusForLogs(alert, progress.Stats, err)
 		var alertType string
@@ -186,7 +190,7 @@ func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err 
 		}
 
 		var latencyMs *int64
-		if latency != nil {
+		if latency != 0 {
 			ms := latency.Milliseconds()
 			latencyMs = &ms
 		}

@@ -33,6 +33,7 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, enterpriseJo
 		query,
 		search.Precise,
 		search.Streaming,
+		"codemonitors_search",
 	)
 	if err != nil {
 		return nil, errcode.MakeNonRetryable(err)
@@ -55,7 +56,7 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, enterpriseJo
 
 	// Execute the search
 	agg := streaming.NewAggregatingStream()
-	_, err = planJob.Run(ctx, clients, agg)
+	_, err = planJob.Run(ctx, clients, agg) // TODO(keegancsmith) does not record telemetry
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +85,7 @@ func Snapshot(ctx context.Context, logger log.Logger, db database.DB, enterprise
 		query,
 		search.Precise,
 		search.Streaming,
+		"codemonitors_snapshot",
 	)
 	if err != nil {
 		return err
@@ -109,7 +111,7 @@ func Snapshot(ctx context.Context, logger log.Logger, db database.DB, enterprise
 	// and transactions cannot be used concurrently.
 	planJob = limitConcurrency(planJob)
 
-	_, err = planJob.Run(ctx, clients, streaming.NewNullStream())
+	_, err = planJob.Run(ctx, clients, streaming.NewNullStream()) // TODO(keegancsmith) does not record telemetry
 	return err
 }
 

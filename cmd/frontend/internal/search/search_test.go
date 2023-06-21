@@ -34,6 +34,7 @@ func TestServeStream_empty(t *testing.T) {
 
 	mock := client.NewMockSearchClient()
 	mock.PlanFunc.SetDefaultReturn(&search.Inputs{}, nil)
+	mock.ExecuteFunc.SetDefaultReturn(client.MockExecutionResult(nil, nil))
 
 	ts := httptest.NewServer(&streamHandler{
 		logger:              logtest.Scoped(t),
@@ -66,7 +67,7 @@ func TestServeStream_chunkMatches(t *testing.T) {
 
 	mock := client.NewMockSearchClient()
 	mock.PlanFunc.SetDefaultReturn(&search.Inputs{Query: query.Q{query.Parameter{Field: "count", Value: "1000"}}}, nil)
-	mock.ExecuteFunc.SetDefaultHook(func(_ context.Context, s streaming.Sender, _ *search.Inputs) (*search.Alert, error) {
+	mock.ExecuteFunc.SetDefaultHook(func(_ context.Context, s streaming.Sender, _ *search.Inputs) client.ExecutionResult {
 		s.Send(streaming.SearchEvent{
 			Results: result.Matches{&result.FileMatch{
 				File: result.File{Path: "testpath"},
@@ -79,7 +80,7 @@ func TestServeStream_chunkMatches(t *testing.T) {
 				}},
 			}},
 		})
-		return nil, nil
+		return client.MockExecutionResult(nil, nil)
 	})
 
 	mockRepos := database.NewMockRepoStore()
@@ -186,17 +187,17 @@ func TestDisplayLimit(t *testing.T) {
 
 			mockInput := make(chan streaming.SearchEvent)
 			mock := client.NewMockSearchClient()
-			mock.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, queryString string, _ search.Mode, _ search.Protocol) (*search.Inputs, error) {
+			mock.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, queryString string, _ search.Mode, _ search.Protocol, _ string) (*search.Inputs, error) {
 				q, err := query.Parse(queryString, query.SearchTypeLiteral)
 				require.NoError(t, err)
 				return &search.Inputs{
 					Query: q,
 				}, nil
 			})
-			mock.ExecuteFunc.SetDefaultHook(func(_ context.Context, stream streaming.Sender, _ *search.Inputs) (*search.Alert, error) {
+			mock.ExecuteFunc.SetDefaultHook(func(_ context.Context, stream streaming.Sender, _ *search.Inputs) client.ExecutionResult {
 				event := <-mockInput
 				stream.Send(event)
-				return nil, nil
+				return client.MockExecutionResult(nil, nil)
 			})
 
 			repos := database.NewStrictMockRepoStore()

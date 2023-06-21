@@ -34,7 +34,7 @@ func toComputeResult(ctx context.Context, cmd compute.Command, match result.Matc
 	return out, nil
 }
 
-func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, searchQuery string, computeCommand compute.Command) (<-chan Event, func() (*search.Alert, error)) {
+func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, searchQuery string, computeCommand compute.Command) (<-chan Event, func() client.ExecutionResult) {
 	eventsC := make(chan Event, 8)
 	errorC := make(chan error, 1)
 	s := stream.New().WithMaxGoroutines(8)
@@ -74,35 +74,40 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, en
 		searchQuery,
 		search.Precise,
 		search.Streaming,
+		"compute",
 	)
 	if err != nil {
 		close(eventsC)
 		close(errorC)
 
-		return eventsC, func() (*search.Alert, error) { return nil, err }
+		return eventsC, func() client.ExecutionResult {
+			return executionResultError(err)
+		}
 	}
 
-	type finalResult struct {
-		alert *search.Alert
-		err   error
-	}
-	final := make(chan finalResult, 1)
+	final := make(chan client.ExecutionResult, 1)
 	go func() {
 		defer close(final)
 		defer close(eventsC)
 		defer close(errorC)
 		defer s.Wait()
 
-		alert, err := searchClient.Execute(ctx, stream, inputs)
-		final <- finalResult{alert: alert, err: err}
+		final <- searchClient.Execute(ctx, stream, inputs)
 	}()
 
-	return eventsC, func() (*search.Alert, error) {
+	return eventsC, func() client.ExecutionResult {
+		// TODO(keegancsmith) we drop telemetry in the case of an error.
+		// Additionally it looks like we should cancel the search here.
 		computeErr := <-errorC
 		if computeErr != nil {
-			return nil, computeErr
+			return executionResultError(computeErr)
 		}
-		f := <-final
-		return f.alert, f.err
+		return <-final
+	}
+}
+
+func executionResultError(err error) client.ExecutionResult {
+	return func(client.TelemetryArgs) (*search.Alert, error) {
+		return nil, err
 	}
 }

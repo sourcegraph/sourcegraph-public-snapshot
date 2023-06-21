@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/grafana/regexp"
 	"github.com/prometheus/client_golang/prometheus"
@@ -31,7 +32,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+type TelemetryArgs struct {
+	// Latency is an optional field to log the time the first result was sent
+	// to the user. Note: we will always log total duration. This field only
+	// makes sense for endpoints that stream to the user.
+	Latency time.Duration
+
+	// UserResultSize is the number of results sent to the user. We can't
+	// infer this from Execute since the streamer may mutate/truncate results
+	// before sending to the user.
+	UserResultSize int
+}
+
+// ExecutionResult exists so we can capture telemetry which is recorded
+// outside of the client. Using this type makes it impossible to access the
+// final alert and error without recording telemetry.
+type ExecutionResult func(TelemetryArgs) (*search.Alert, error)
+
 type SearchClient interface {
+	// Plan validates the query inputs. You are expected to call Execute with
+	// the output of Plan.
+	//
+	//   - version :: the search query language to use. Normally "V3"
+	//   - patternType :: sets the default patternType: which can be overridden by searchQuery.
+	//   - searchMode :: used to optionally enable smart search.
+	//   - protocol :: normally streaming. Used to adjust defaults for graphql vs streaming.
+	//   - subsystem :: who is using search (graphql, stream, own, insights, etc). This is used in telemetry.
 	Plan(
 		ctx context.Context,
 		version string,
@@ -39,13 +65,19 @@ type SearchClient interface {
 		searchQuery string,
 		searchMode search.Mode,
 		protocol search.Protocol,
+		subsystem string,
 	) (*search.Inputs, error)
 
+	// Execute runs the plans sending results to stream.
+	//
+	// Note: we don't directly return the alert and error. Instead the
+	// intermediate ExecutionResult is returned which allows the caller to
+	// pass in telemetry which we can't collect inside of SearchClient.
 	Execute(
 		ctx context.Context,
 		stream streaming.Sender,
 		inputs *search.Inputs,
-	) (_ *search.Alert, err error)
+	) ExecutionResult
 
 	JobClients() job.RuntimeClients
 }
@@ -77,6 +109,13 @@ func MockedZoekt(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer
 	}
 }
 
+// MockExecutionResult is a convenience for tests
+func MockExecutionResult(alert *search.Alert, err error) ExecutionResult {
+	return func(TelemetryArgs) (*search.Alert, error) {
+		return alert, err
+	}
+}
+
 type searchClient struct {
 	logger                      log.Logger
 	db                          database.DB
@@ -95,9 +134,12 @@ func (s *searchClient) Plan(
 	searchQuery string,
 	searchMode search.Mode,
 	protocol search.Protocol,
+	subsystem string,
 ) (_ *search.Inputs, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchInputs", searchQuery)
 	defer tr.FinishWithErr(&err)
+
+	start := time.Now()
 
 	searchType, err := detectSearchType(version, patternType)
 	if err != nil {
@@ -146,6 +188,9 @@ func (s *searchClient) Plan(
 		PatternType:            searchType,
 		Protocol:               protocol,
 		SanitizeSearchPatterns: sanitizeSearchPatterns(ctx, s.db, s.logger), // Experimental: check site config to see if search sanitization is enabled
+
+		Start:     start,
+		Subsystem: subsystem,
 	}
 
 	tr.LazyPrintf("Parsed query: %s", inputs.Query)
@@ -154,6 +199,18 @@ func (s *searchClient) Plan(
 }
 
 func (s *searchClient) Execute(
+	ctx context.Context,
+	stream streaming.Sender,
+	inputs *search.Inputs,
+) ExecutionResult {
+	alert, err := s.execute(ctx, stream, inputs)
+	return func(TelemetryArgs) (*search.Alert, error) {
+		// TODO(keegancsmith) telemetry
+		return alert, err
+	}
+}
+
+func (s *searchClient) execute(
 	ctx context.Context,
 	stream streaming.Sender,
 	inputs *search.Inputs,

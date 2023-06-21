@@ -209,6 +209,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 			query,
 			search.Precise,
 			search.Streaming,
+			"codycontext",
 		)
 		if err != nil {
 			return nil, err
@@ -233,7 +234,10 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 			}
 		})
 
-		alert, err := c.searchClient.Execute(ctx, stream, plan)
+		done := c.searchClient.Execute(ctx, stream, plan)
+		alert, err := done(client.TelemetryArgs{
+			UserResultSize: len(collected),
+		})
 		if err != nil {
 			return nil, err
 		}

@@ -36,7 +36,7 @@ type MockSearchClient struct {
 func NewMockSearchClient() *MockSearchClient {
 	return &MockSearchClient{
 		ExecuteFunc: &SearchClientExecuteFunc{
-			defaultHook: func(context.Context, streaming.Sender, *search.Inputs) (r0 *search.Alert, r1 error) {
+			defaultHook: func(context.Context, streaming.Sender, *search.Inputs) (r0 ExecutionResult) {
 				return
 			},
 		},
@@ -46,7 +46,7 @@ func NewMockSearchClient() *MockSearchClient {
 			},
 		},
 		PlanFunc: &SearchClientPlanFunc{
-			defaultHook: func(context.Context, string, *string, string, search.Mode, search.Protocol) (r0 *search.Inputs, r1 error) {
+			defaultHook: func(context.Context, string, *string, string, search.Mode, search.Protocol, string) (r0 *search.Inputs, r1 error) {
 				return
 			},
 		},
@@ -58,7 +58,7 @@ func NewMockSearchClient() *MockSearchClient {
 func NewStrictMockSearchClient() *MockSearchClient {
 	return &MockSearchClient{
 		ExecuteFunc: &SearchClientExecuteFunc{
-			defaultHook: func(context.Context, streaming.Sender, *search.Inputs) (*search.Alert, error) {
+			defaultHook: func(context.Context, streaming.Sender, *search.Inputs) ExecutionResult {
 				panic("unexpected invocation of MockSearchClient.Execute")
 			},
 		},
@@ -68,7 +68,7 @@ func NewStrictMockSearchClient() *MockSearchClient {
 			},
 		},
 		PlanFunc: &SearchClientPlanFunc{
-			defaultHook: func(context.Context, string, *string, string, search.Mode, search.Protocol) (*search.Inputs, error) {
+			defaultHook: func(context.Context, string, *string, string, search.Mode, search.Protocol, string) (*search.Inputs, error) {
 				panic("unexpected invocation of MockSearchClient.Plan")
 			},
 		},
@@ -95,24 +95,24 @@ func NewMockSearchClientFrom(i SearchClient) *MockSearchClient {
 // SearchClientExecuteFunc describes the behavior when the Execute method of
 // the parent MockSearchClient instance is invoked.
 type SearchClientExecuteFunc struct {
-	defaultHook func(context.Context, streaming.Sender, *search.Inputs) (*search.Alert, error)
-	hooks       []func(context.Context, streaming.Sender, *search.Inputs) (*search.Alert, error)
+	defaultHook func(context.Context, streaming.Sender, *search.Inputs) ExecutionResult
+	hooks       []func(context.Context, streaming.Sender, *search.Inputs) ExecutionResult
 	history     []SearchClientExecuteFuncCall
 	mutex       sync.Mutex
 }
 
 // Execute delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockSearchClient) Execute(v0 context.Context, v1 streaming.Sender, v2 *search.Inputs) (*search.Alert, error) {
-	r0, r1 := m.ExecuteFunc.nextHook()(v0, v1, v2)
-	m.ExecuteFunc.appendCall(SearchClientExecuteFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
+func (m *MockSearchClient) Execute(v0 context.Context, v1 streaming.Sender, v2 *search.Inputs) ExecutionResult {
+	r0 := m.ExecuteFunc.nextHook()(v0, v1, v2)
+	m.ExecuteFunc.appendCall(SearchClientExecuteFuncCall{v0, v1, v2, r0})
+	return r0
 }
 
 // SetDefaultHook sets function that is called when the Execute method of
 // the parent MockSearchClient instance is invoked and the hook queue is
 // empty.
-func (f *SearchClientExecuteFunc) SetDefaultHook(hook func(context.Context, streaming.Sender, *search.Inputs) (*search.Alert, error)) {
+func (f *SearchClientExecuteFunc) SetDefaultHook(hook func(context.Context, streaming.Sender, *search.Inputs) ExecutionResult) {
 	f.defaultHook = hook
 }
 
@@ -120,7 +120,7 @@ func (f *SearchClientExecuteFunc) SetDefaultHook(hook func(context.Context, stre
 // Execute method of the parent MockSearchClient instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *SearchClientExecuteFunc) PushHook(hook func(context.Context, streaming.Sender, *search.Inputs) (*search.Alert, error)) {
+func (f *SearchClientExecuteFunc) PushHook(hook func(context.Context, streaming.Sender, *search.Inputs) ExecutionResult) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -128,20 +128,20 @@ func (f *SearchClientExecuteFunc) PushHook(hook func(context.Context, streaming.
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *SearchClientExecuteFunc) SetDefaultReturn(r0 *search.Alert, r1 error) {
-	f.SetDefaultHook(func(context.Context, streaming.Sender, *search.Inputs) (*search.Alert, error) {
-		return r0, r1
+func (f *SearchClientExecuteFunc) SetDefaultReturn(r0 ExecutionResult) {
+	f.SetDefaultHook(func(context.Context, streaming.Sender, *search.Inputs) ExecutionResult {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *SearchClientExecuteFunc) PushReturn(r0 *search.Alert, r1 error) {
-	f.PushHook(func(context.Context, streaming.Sender, *search.Inputs) (*search.Alert, error) {
-		return r0, r1
+func (f *SearchClientExecuteFunc) PushReturn(r0 ExecutionResult) {
+	f.PushHook(func(context.Context, streaming.Sender, *search.Inputs) ExecutionResult {
+		return r0
 	})
 }
 
-func (f *SearchClientExecuteFunc) nextHook() func(context.Context, streaming.Sender, *search.Inputs) (*search.Alert, error) {
+func (f *SearchClientExecuteFunc) nextHook() func(context.Context, streaming.Sender, *search.Inputs) ExecutionResult {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -185,10 +185,7 @@ type SearchClientExecuteFuncCall struct {
 	Arg2 *search.Inputs
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *search.Alert
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
+	Result0 ExecutionResult
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -200,7 +197,7 @@ func (c SearchClientExecuteFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SearchClientExecuteFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0}
 }
 
 // SearchClientJobClientsFunc describes the behavior when the JobClients
@@ -305,23 +302,23 @@ func (c SearchClientJobClientsFuncCall) Results() []interface{} {
 // SearchClientPlanFunc describes the behavior when the Plan method of the
 // parent MockSearchClient instance is invoked.
 type SearchClientPlanFunc struct {
-	defaultHook func(context.Context, string, *string, string, search.Mode, search.Protocol) (*search.Inputs, error)
-	hooks       []func(context.Context, string, *string, string, search.Mode, search.Protocol) (*search.Inputs, error)
+	defaultHook func(context.Context, string, *string, string, search.Mode, search.Protocol, string) (*search.Inputs, error)
+	hooks       []func(context.Context, string, *string, string, search.Mode, search.Protocol, string) (*search.Inputs, error)
 	history     []SearchClientPlanFuncCall
 	mutex       sync.Mutex
 }
 
 // Plan delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockSearchClient) Plan(v0 context.Context, v1 string, v2 *string, v3 string, v4 search.Mode, v5 search.Protocol) (*search.Inputs, error) {
-	r0, r1 := m.PlanFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.PlanFunc.appendCall(SearchClientPlanFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
+func (m *MockSearchClient) Plan(v0 context.Context, v1 string, v2 *string, v3 string, v4 search.Mode, v5 search.Protocol, v6 string) (*search.Inputs, error) {
+	r0, r1 := m.PlanFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6)
+	m.PlanFunc.appendCall(SearchClientPlanFuncCall{v0, v1, v2, v3, v4, v5, v6, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Plan method of the
 // parent MockSearchClient instance is invoked and the hook queue is empty.
-func (f *SearchClientPlanFunc) SetDefaultHook(hook func(context.Context, string, *string, string, search.Mode, search.Protocol) (*search.Inputs, error)) {
+func (f *SearchClientPlanFunc) SetDefaultHook(hook func(context.Context, string, *string, string, search.Mode, search.Protocol, string) (*search.Inputs, error)) {
 	f.defaultHook = hook
 }
 
@@ -329,7 +326,7 @@ func (f *SearchClientPlanFunc) SetDefaultHook(hook func(context.Context, string,
 // Plan method of the parent MockSearchClient instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *SearchClientPlanFunc) PushHook(hook func(context.Context, string, *string, string, search.Mode, search.Protocol) (*search.Inputs, error)) {
+func (f *SearchClientPlanFunc) PushHook(hook func(context.Context, string, *string, string, search.Mode, search.Protocol, string) (*search.Inputs, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -338,19 +335,19 @@ func (f *SearchClientPlanFunc) PushHook(hook func(context.Context, string, *stri
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *SearchClientPlanFunc) SetDefaultReturn(r0 *search.Inputs, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, *string, string, search.Mode, search.Protocol) (*search.Inputs, error) {
+	f.SetDefaultHook(func(context.Context, string, *string, string, search.Mode, search.Protocol, string) (*search.Inputs, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *SearchClientPlanFunc) PushReturn(r0 *search.Inputs, r1 error) {
-	f.PushHook(func(context.Context, string, *string, string, search.Mode, search.Protocol) (*search.Inputs, error) {
+	f.PushHook(func(context.Context, string, *string, string, search.Mode, search.Protocol, string) (*search.Inputs, error) {
 		return r0, r1
 	})
 }
 
-func (f *SearchClientPlanFunc) nextHook() func(context.Context, string, *string, string, search.Mode, search.Protocol) (*search.Inputs, error) {
+func (f *SearchClientPlanFunc) nextHook() func(context.Context, string, *string, string, search.Mode, search.Protocol, string) (*search.Inputs, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -401,6 +398,9 @@ type SearchClientPlanFuncCall struct {
 	// Arg5 is the value of the 6th argument passed to this method
 	// invocation.
 	Arg5 search.Protocol
+	// Arg6 is the value of the 7th argument passed to this method
+	// invocation.
+	Arg6 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *search.Inputs
@@ -412,7 +412,7 @@ type SearchClientPlanFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c SearchClientPlanFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6}
 }
 
 // Results returns an interface slice containing the results of this

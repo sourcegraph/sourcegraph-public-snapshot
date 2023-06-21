@@ -91,10 +91,10 @@ func TestContextResolver(t *testing.T) {
 	}
 
 	mockSearchClient := client.NewMockSearchClient()
-	mockSearchClient.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, query string, _ search.Mode, _ search.Protocol) (*search.Inputs, error) {
+	mockSearchClient.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, query string, _ search.Mode, _ search.Protocol, _ string) (*search.Inputs, error) {
 		return &search.Inputs{OriginalQuery: query}, nil
 	})
-	mockSearchClient.ExecuteFunc.SetDefaultHook(func(_ context.Context, stream streaming.Sender, inputs *search.Inputs) (*search.Alert, error) {
+	mockSearchClient.ExecuteFunc.SetDefaultHook(func(_ context.Context, stream streaming.Sender, inputs *search.Inputs) client.ExecutionResult {
 		if strings.Contains(inputs.OriginalQuery, "-file") {
 			stream.Send(streaming.SearchEvent{
 				Results: result.Matches{&result.FileMatch{
@@ -123,7 +123,7 @@ func TestContextResolver(t *testing.T) {
 			})
 
 		}
-		return nil, nil
+		return client.MockExecutionResult(nil, nil)
 	})
 
 	contextClient := codycontext.NewCodyContextClient(

@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -26,6 +27,10 @@ type SearchImplementer interface {
 
 // NewBatchSearchImplementer returns a SearchImplementer that provides search results and suggestions.
 func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, args *SearchArgs) (_ SearchImplementer, err error) {
+	// To distingiush between different graphql queries we rely on the request
+	// name as subsystem.
+	subsystem := trace.GraphQLRequestName(ctx)
+
 	cli := client.New(logger, db, enterpriseJobs)
 	inputs, err := cli.Plan(
 		ctx,
@@ -34,6 +39,7 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 		args.Query,
 		search.Precise,
 		search.Batch,
+		subsystem,
 	)
 	if err != nil {
 		var queryErr *client.QueryError

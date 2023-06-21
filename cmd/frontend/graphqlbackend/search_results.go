@@ -395,7 +395,10 @@ func logBatch(ctx context.Context, searchInputs *search.Inputs, srr *SearchResul
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	agg := streaming.NewAggregatingStream()
-	alert, err := r.client.Execute(ctx, agg, r.SearchInputs)
+	done := r.client.Execute(ctx, agg, r.SearchInputs)
+	alert, err := done(searchclient.TelemetryArgs{
+		UserResultSize: len(agg.Results),
+	})
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
 	logBatch(ctx, r.SearchInputs, srr, err)

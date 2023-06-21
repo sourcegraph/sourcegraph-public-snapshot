@@ -125,16 +125,12 @@ func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, l
 		searchQuery,
 		searchMode,
 		protocol,
+		"guardrails_attribution",
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create search plan")
 	}
 
-	// TODO(keegancsmith) Reading the SearchClient code it seems to miss out
-	// on some of the observability that we instead add in at a later stage.
-	// For example the search dataset in honeycomb will be missing. Will have
-	// to follow-up with observability and maybe solve it for all users.
-	//
 	// Note: In our current API we could just store repo names in seen. But it
 	// is safer to rely on searches ranking for result stability than doing
 	// something like sorting by name from the map.
@@ -144,7 +140,7 @@ func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, l
 		repoNames []string
 		limitHit  bool
 	)
-	_, err = c.SearchClient.Execute(ctx, streaming.StreamFunc(func(ev streaming.SearchEvent) {
+	done := c.SearchClient.Execute(ctx, streaming.StreamFunc(func(ev streaming.SearchEvent) {
 		mu.Lock()
 		defer mu.Unlock()
 
@@ -159,6 +155,9 @@ func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, l
 			repoNames = append(repoNames, string(repo.Name))
 		}
 	}), inputs)
+	_, err = done(client.TelemetryArgs{
+		UserResultSize: len(repoNames),
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute search")
 	}

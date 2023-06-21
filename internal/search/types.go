@@ -38,6 +38,12 @@ type Inputs struct {
 	Features               *Features
 	Protocol               Protocol
 	SanitizeSearchPatterns []*regexp.Regexp
+
+	// Start is when searchclient.Plan was called. Used by telemetry.
+	Start time.Time
+
+	// Subsystem is the value passed in via searchclient.Plan. Used by telemetry.
+	Subsystem string
 }
 
 // MaxResults computes the limit for the query.
