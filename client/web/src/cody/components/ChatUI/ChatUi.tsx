@@ -11,6 +11,7 @@ import {
     mdiStopCircleOutline,
 } from '@mdi/js'
 import classNames from 'classnames'
+import { useLocation } from 'react-router-dom'
 import useResizeObserver from 'use-resize-observer'
 
 import {
@@ -26,7 +27,7 @@ import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourceg
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
-import { isCodyEnabled, isEmailVerificationNeededForCody } from '../../isCodyEnabled'
+import { isCodyEnabled, isEmailVerificationNeededForCody, isSignInRequiredForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
 import { CodyChatStore } from '../../useCodyChat'
 import { ScopeSelector } from '../ScopeSelector'
@@ -301,11 +302,19 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = React
         }
 
         return (
-            <Tooltip content={isEmailVerificationNeededForCody() ? 'Verify your email to use Cody.' : ''}>
+            <Tooltip
+                content={
+                    isSignInRequiredForCody()
+                        ? 'Sign in to get access to Cody.'
+                        : isEmailVerificationNeededForCody()
+                        ? 'Verify your email to use Cody.'
+                        : ''
+                }
+            >
                 <TextArea
                     ref={textAreaRef}
                     className={className}
-                    value={value}
+                    value={isSignInRequiredForCody() ? 'Sign in to get access to use Cody' : value}
                     onChange={handleChange}
                     rows={1}
                     autoFocus={false}
@@ -342,6 +351,8 @@ const NeedsEmailVerificationNotice: React.FunctionComponent = React.memo(
 )
 
 const CodyNotEnabledNotice: React.FunctionComponent = React.memo(function CodyNotEnabledNoticeContent() {
+    const location = useLocation()
+
     return (
         <div className={classNames('p-3', styles.notEnabledBlock)}>
             <H2 className={classNames('d-flex gap-1 align-items-center mb-3', styles.codyMessageHeader)}>
@@ -350,8 +361,18 @@ const CodyNotEnabledNotice: React.FunctionComponent = React.memo(function CodyNo
             <div className="d-flex align-items-start">
                 <CodyNotEnabledIcon className="flex-shrink-0" />
                 <Text className="ml-2">
-                    Cody isn't available on this instance, but you can learn more about Cody{' '}
-                    <Link to="https://about.sourcegraph.com/cody?utm_source=server">here</Link>.
+                    {isSignInRequiredForCody() ? (
+                        <>
+                            <Link to={`/sign-in?returnTo=${location.pathname}`}>Sign in</Link> to get access to Cody.
+                            You can learn more about Cody{' '}
+                            <Link to="https://about.sourcegraph.com/cody?utm_source=server">here</Link>.
+                        </>
+                    ) : (
+                        <>
+                            Cody isn't available on this instance, but you can learn more about Cody{' '}
+                            <Link to="https://about.sourcegraph.com/cody?utm_source=server">here</Link>.
+                        </>
+                    )}
                 </Text>
             </div>
         </div>
