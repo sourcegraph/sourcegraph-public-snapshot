@@ -139,11 +139,13 @@ func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, l
 		seen      = map[api.RepoID]struct{}{}
 		repoNames []string
 		limitHit  bool
+		stats     streaming.Stats
 	)
 	done := c.SearchClient.Execute(ctx, streaming.StreamFunc(func(ev streaming.SearchEvent) {
 		mu.Lock()
 		defer mu.Unlock()
 
+		stats.Update(&ev.Stats)
 		limitHit = limitHit || ev.Stats.IsLimitHit
 
 		for _, m := range ev.Results {
@@ -156,6 +158,7 @@ func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, l
 		}
 	}), inputs)
 	_, err = done(client.TelemetryArgs{
+		Stats:          stats,
 		UserResultSize: len(repoNames),
 	})
 	if err != nil {

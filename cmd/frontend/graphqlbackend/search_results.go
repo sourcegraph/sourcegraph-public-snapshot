@@ -397,6 +397,7 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	agg := streaming.NewAggregatingStream()
 	done := r.client.Execute(ctx, agg, r.SearchInputs)
 	alert, err := done(searchclient.TelemetryArgs{
+		Stats:          agg.Stats,
 		UserResultSize: len(agg.Results),
 	})
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)

@@ -33,15 +33,18 @@ import (
 )
 
 type TelemetryArgs struct {
-	// Latency is an optional field to log the time the first result was sent
-	// to the user. Note: we will always log total duration. This field only
-	// makes sense for endpoints that stream to the user.
-	Latency time.Duration
-
 	// UserResultSize is the number of results sent to the user. We can't
 	// infer this from Execute since the streamer may mutate/truncate results
 	// before sending to the user.
 	UserResultSize int
+
+	// Stats is used to calculate the status of the search for telemetry.
+	Stats streaming.Stats
+
+	// Latency is an optional field to log the time the first result was sent
+	// to the user. Note: we will always log total duration. This field only
+	// makes sense for endpoints that stream to the user.
+	Latency time.Duration
 }
 
 // ExecutionResult exists so we can capture telemetry which is recorded

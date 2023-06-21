@@ -217,11 +217,14 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 
 		var (
 			mu        sync.Mutex
+			stats     streaming.Stats
 			collected []FileChunkContext
 		)
 		stream := streaming.StreamFunc(func(e streaming.SearchEvent) {
 			mu.Lock()
 			defer mu.Unlock()
+
+			stats.Update(&e.Stats)
 
 			for _, res := range e.Results {
 				if fm, ok := res.(*result.FileMatch); ok {
@@ -236,6 +239,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 
 		done := c.searchClient.Execute(ctx, stream, plan)
 		alert, err := done(client.TelemetryArgs{
+			Stats:          stats,
 			UserResultSize: len(collected),
 		})
 		if err != nil {

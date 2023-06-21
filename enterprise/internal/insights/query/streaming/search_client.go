@@ -2,7 +2,7 @@ package streaming
 
 import (
 	"context"
-	"sync/atomic"
+	"sync"
 
 	"github.com/sourcegraph/log"
 
@@ -44,15 +44,26 @@ func (r *insightsSearchClient) Search(ctx context.Context, query string, pattern
 		return nil, err
 	}
 
-	// Note: it may better to return the client.ExecutionResult, but for now it isn't as clear how to record a nice UserResultCount. Instead we just capture this ourselves.
-	var resultCount atomic.Int64
+	// Note: it may better to return the client.ExecutionResult, but for now
+	// it isn't as clear how to record a nice UserResultCount. Instead we just
+	// capture this ourselves.
+	var (
+		mu          sync.Mutex
+		resultCount int
+		stats       streaming.Stats
+	)
 	countSender := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		resultCount.Add(int64(len(event.Results)))
+		mu.Lock()
+		resultCount += len(event.Results)
+		stats.Update(&event.Stats)
+		mu.Unlock()
+
 		sender.Send(event)
 	})
 
 	done := r.searchClient.Execute(ctx, countSender, inputs)
 	return done(client.TelemetryArgs{
-		UserResultSize: int(resultCount.Load()),
+		Stats:          stats,
+		UserResultSize: resultCount,
 	})
 }

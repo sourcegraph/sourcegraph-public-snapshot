@@ -171,8 +171,9 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		return h.searchClient.Execute(ctx, batchedStream, inputs)
 	}()
 	alert, err := done(client.TelemetryArgs{
-		Latency:        latency,
+		Stats:          progress.Stats,
 		UserResultSize: progress.MatchCount,
+		Latency:        latency,
 	})
 	if alert != nil {
 		eventWriter.Alert(alert)

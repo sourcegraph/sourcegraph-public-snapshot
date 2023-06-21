@@ -155,6 +155,7 @@ LOOP:
 	done := getResults()
 	alert, err := done(client.TelemetryArgs{
 		// TODO(keegancsmith) looks like we could report a Latency here.
+		Stats:          progress.Stats,
 		UserResultSize: progress.MatchCount,
 	})
 	if err != nil {
