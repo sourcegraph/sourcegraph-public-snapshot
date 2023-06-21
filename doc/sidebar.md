@@ -78,7 +78,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Background information](dev/background-information/index.md)
   - [Contributing](dev/contributing.md)
 - [Dotcom](dotcom/index.md)
-- [App (experimental)](app/index.md)
+- [Cody App (experimental)](app/index.md)
 - [Own (experimental)](own/index.md)
 - <br/>
 - [★ Search query syntax](code_search/reference/queries.md)

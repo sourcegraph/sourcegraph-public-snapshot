@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
@@ -46,6 +48,30 @@ func TestClient_AbandonChange(t *testing.T) {
 		t.Fatal(err)
 	}
 	testutil.AssertGolden(t, "testdata/golden/AbandonChange.json", *update, resp)
+}
+
+func TestClient_DeleteChange(t *testing.T) {
+	cli, save := NewTestClient(t, "DeleteChange", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	// A change can only be deleted once. To re-record this test, publish a new change and
+	// update the change ID.
+	// You will need the "delete own changes" permission in order to delete your change:
+	// https://gerrit-review.googlesource.com/Documentation/access-control.html#category_delete_own_changes
+	changeID := "I2e55bf947cc1fe96b2663f4d3fedaa992628f8d4"
+	err := cli.DeleteChange(ctx, changeID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Delete again to ensure that the change is not found.
+	err = cli.DeleteChange(ctx, changeID)
+	if err == nil {
+		t.Fatal("expected error, but got nil")
+	}
+	assert.ErrorContains(t, err, "code=404")
 }
 
 func TestClient_SubmitChange(t *testing.T) {

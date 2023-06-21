@@ -58,6 +58,30 @@ func (c *client) AbandonChange(ctx context.Context, changeID string) (*Change, e
 	return &change, nil
 }
 
+// DeleteChange permanently deletes a Gerrit change.
+func (c *client) DeleteChange(ctx context.Context, changeID string) error {
+	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID))
+	if err != nil {
+		return err
+	}
+	reqURL := url.URL{Path: pathStr}
+	req, err := http.NewRequest("DELETE", reqURL.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
 // SubmitChange submits a Gerrit change.
 func (c *client) SubmitChange(ctx context.Context, changeID string) (*Change, error) {
 	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "submit")

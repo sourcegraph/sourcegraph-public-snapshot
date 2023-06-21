@@ -436,6 +436,7 @@ func (s *Server) Handler() http.Handler {
 		// to determine whether a command should be recorded or not.
 		recordingConf := conf.Get().SiteConfig().GitRecorder
 		if recordingConf == nil {
+			s.recordingCommandFactory.Disable()
 			return
 		}
 		s.recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos), recordingConf.Size)
@@ -1867,7 +1868,7 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Make sure the subcommand is explicitly allowed
-	allowlist := []string{"protects", "groups", "users", "group"}
+	allowlist := []string{"protects", "groups", "users", "group", "changes"}
 	allowed := false
 	for _, arg := range allowlist {
 		if req.Args[0] == arg {

@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -778,6 +779,12 @@ type CreateCommitFromPatchResponse struct {
 
 	// Error is populated only on error
 	Error *CreateCommitFromPatchError
+
+	// ChangelistId is the numeric ID of the changelist that is shelved for the patch.
+	// only supplied for Perforce code hosts.
+	// it's a string because it's optional, but usng a scalar pointer is not allowed in protobuf
+	// so blank string means not provided
+	ChangelistId string
 }
 
 func (r *CreateCommitFromPatchResponse) ToProto() *proto.CreateCommitFromPatchBinaryResponse {
@@ -788,8 +795,9 @@ func (r *CreateCommitFromPatchResponse) ToProto() *proto.CreateCommitFromPatchBi
 		err = nil
 	}
 	return &proto.CreateCommitFromPatchBinaryResponse{
-		Rev:   r.Rev,
-		Error: err,
+		Rev:          r.Rev,
+		Error:        err,
+		ChangelistId: r.ChangelistId,
 	}
 }
 
@@ -801,6 +809,7 @@ func (r *CreateCommitFromPatchResponse) FromProto(p *proto.CreateCommitFromPatch
 		r.Error.FromProto(p.GetError())
 	}
 	r.Rev = p.GetRev()
+	r.ChangelistId = p.ChangelistId
 }
 
 // SetError adds the supplied error related details to e.
@@ -890,4 +899,38 @@ func (r *GetObjectResponse) FromProto(p *proto.GetObjectResponse) {
 		Object: gitObj,
 	}
 
+}
+
+type PerforceChangelist struct {
+	ID           string
+	CreationDate time.Time
+	State        PerforceChangelistState
+	Author       string
+	Title        string
+	Message      string
+}
+
+type PerforceChangelistState string
+
+const (
+	PerforceChangelistStateSubmitted PerforceChangelistState = "submitted"
+	PerforceChangelistStatePending   PerforceChangelistState = "pending"
+	PerforceChangelistStateShelved   PerforceChangelistState = "shelved"
+	// Perforce doesn't actually return a state for closed changelists, so this is one we use to indicate the changelist is closed.
+	PerforceChangelistStateClosed PerforceChangelistState = "closed"
+)
+
+func ParsePerforceChangelistState(state string) (PerforceChangelistState, error) {
+	switch strings.ToLower(strings.TrimSpace(state)) {
+	case "submitted":
+		return PerforceChangelistStateSubmitted, nil
+	case "pending":
+		return PerforceChangelistStatePending, nil
+	case "shelved":
+		return PerforceChangelistStateShelved, nil
+	case "closed":
+		return PerforceChangelistStateClosed, nil
+	default:
+		return "", errors.Newf("invalid Perforce changelist state: %s", state)
+	}
 }

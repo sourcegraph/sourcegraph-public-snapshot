@@ -24,13 +24,12 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
@@ -781,7 +780,7 @@ func createSimpleGitRepo(t *testing.T, root string) string {
 
 type mockP4ExecClient struct {
 	isEndOfStream bool
-	Err           string
+	Err           error
 	grpc.ClientStream
 }
 
@@ -790,8 +789,10 @@ func (m *mockP4ExecClient) Recv() (*proto.P4ExecResponse, error) {
 		return nil, io.EOF
 	}
 
-	if m.Err != "" {
-		return nil, status.Error(codes.Unknown, m.Err)
+	if m.Err != nil {
+		s, _ := status.FromError(m.Err)
+		return nil, s.Err()
+
 	}
 
 	response := &proto.P4ExecResponse{
@@ -812,7 +813,7 @@ func TestClient_P4ExecGRPC(t *testing.T) {
 		user     string
 		password string
 		args     []string
-		err      string
+		err      error
 		wantBody string
 		wantErr  string
 	}
@@ -828,8 +829,18 @@ func TestClient_P4ExecGRPC(t *testing.T) {
 		},
 		{
 			name:    "error response",
-			err:     "example error",
+			err:     errors.New("example error"),
 			wantErr: "rpc error: code = Unknown desc = example error",
+		},
+		{
+			name:    "context cancellation",
+			err:     status.New(codes.Canceled, context.Canceled.Error()).Err(),
+			wantErr: context.Canceled.Error(),
+		},
+		{
+			name:    "context expiration",
+			err:     status.New(codes.DeadlineExceeded, context.DeadlineExceeded.Error()).Err(),
+			wantErr: context.DeadlineExceeded.Error(),
 		},
 	}
 
