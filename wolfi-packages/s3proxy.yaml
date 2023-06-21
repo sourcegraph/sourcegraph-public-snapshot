@@ -1,7 +1,7 @@
 package:
   name: s3proxy
   version: 2.0.0
-  epoch: 1
+  epoch: 2
   description: "Access other storage backends via the S3 API"
   target-architecture:
     - x86_64
@@ -12,7 +12,7 @@ package:
       license: 'Apache License 2.0'
   dependencies:
     runtime:
-      - openjdk-11
+      - openjdk-11=11.0.20.4-r0 # TODO(will): Temporarily pinned to avoid bad signature
       - openjdk-11-default-jvm # Set Java 11 as default JVM
 
 environment:
@@ -26,14 +26,14 @@ environment:
       - busybox
       - ca-certificates-bundle
       - maven
-      - openjdk-11
+      - openjdk-11=11.0.20.4-r0 # TODO(will): Temporarily pinned to avoid bad signature
       - openjdk-11-default-jvm
 
 pipeline:
   - uses: fetch
     with:
-      uri: https://github.com/sourcegraph/s3proxy/archive/refs/tags/s3proxy-${{package.version}}.tar.gz
-      expected-sha256: e2d3f8f217d67ab8cc074490f27b4d649f4ec73f5bf540aa9da1ad4dda818d0b
+      uri: https://github.com/sourcegraph/s3proxy/archive/refs/tags/s3proxy-${{package.version}}-${{package.epoch}}.tar.gz
+      expected-sha256: efeda0b7e2d87dbfb053510d706b109f8dcbf83fb7833e9d43b2231a2beaf247
       extract: true
   - runs: |
       JAVA_HOME=/usr/lib/jvm/java-11-openjdk/ mvn package -DskipTests
