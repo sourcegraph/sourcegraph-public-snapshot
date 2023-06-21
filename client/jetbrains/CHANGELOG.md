@@ -6,6 +6,8 @@
 
 ### Changed
 
+- Convert `\t` to spaces in leading whitespace for autocomplete suggestions (according to settings) [#53743](https://github.com/sourcegraph/sourcegraph/pull/53743)
+
 ### Deprecated
 
 ### Removed
