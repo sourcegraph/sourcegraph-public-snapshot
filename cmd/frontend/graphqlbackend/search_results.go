@@ -26,6 +26,7 @@ import (
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	searchclient "github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -357,7 +358,7 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 
 func logBatch(ctx context.Context, searchInputs *search.Inputs, srr *SearchResultsResolver, err error) {
 	var status, alertType string
-	status = DetermineStatusForLogs(srr.SearchAlert, srr.Stats, err)
+	status = searchclient.DetermineStatusForLogs(srr.SearchAlert, srr.Stats, err)
 	if srr.SearchAlert != nil {
 		alertType = srr.SearchAlert.PrometheusType
 	}
@@ -407,25 +408,6 @@ func (r *searchResolver) resultsToResolver(matches result.Matches, alert *search
 		SearchAlert: alert,
 		Stats:       stats,
 		db:          r.db,
-	}
-}
-
-// DetermineStatusForLogs determines the final status of a search for logging
-// purposes.
-func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err error) string {
-	switch {
-	case err == context.DeadlineExceeded:
-		return "timeout"
-	case err != nil:
-		return "error"
-	case stats.Status.All(search.RepoStatusTimedout) && stats.Status.Len() == len(stats.Repos):
-		return "timeout"
-	case stats.Status.Any(search.RepoStatusTimedout):
-		return "partial_timeout"
-	case alert != nil:
-		return "alert"
-	default:
-		return "success"
 	}
 }
 
