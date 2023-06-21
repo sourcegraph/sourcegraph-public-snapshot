@@ -130,7 +130,7 @@ func startAuthHandlerServer(socket net.Listener, authEndpoint string,
 		defer socket.Close()
 		if err := server.Serve(socket); err != nil {
 			if !gracefulShutdown {
-				log.Fatal("failure to handle", err)
+				log.Print("failure to handle", err)
 			}
 		}
 	}()
@@ -214,7 +214,8 @@ func getTokenFromWeb(responseFactory authResponseHandlerFactory, ctx context.Con
 	if redirectUrl, waitForCode, waitForError, err = responseFactory(); err == nil {
 		config.SetRedirectURL(redirectUrl)
 	} else {
-		log.Fatal("Cannot create a response handler for Google authorization: ", err)
+		// TODO
+		return nil, err
 	}
 
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
