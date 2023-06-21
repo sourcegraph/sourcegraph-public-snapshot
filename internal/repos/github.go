@@ -590,7 +590,7 @@ func (s *GitHubSource) listUser(ctx context.Context, user string, results chan *
 	return
 }
 
-// listUser returns all the repositories belonging to the authenticated GitHub App installation
+// listAppInstallation returns all the repositories belonging to the authenticated GitHub App installation
 // by hitting the /installation/repositories endpoint.
 //
 // It returns an error if the request fails on the first page.
