@@ -51,27 +51,34 @@ func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway
 	})
 
 	embeddings := make([]codygateway.Embedding, len(response.Data))
+OUTER:
 	for i, d := range response.Data {
-		if len(d.Embedding) == 0 {
+		if len(d.Embedding) > 0 {
+			embeddings[i] = codygateway.Embedding{
+				Index: d.Index,
+				Data:  d.Embedding,
+			}
+			continue
+		}
+
+	INNER:
+		for j := 0; j < 3; j++ {
 			// Nondeterministically, the OpenAI API will occasionally send back a `null` for
-			// an embedding in the response. Try it again and hope for the best.
+			// an embedding in the response. Try it again a few times and hope for the best.
 			response, err := c.requestEmbeddings(ctx, model, []string{input.Input[d.Index]})
 			if err != nil {
 				return nil, 0, err
 			}
 			if len(response.Data) != 1 || len(response.Data[0].Embedding) != model.dimensions {
-				return nil, 0, errors.New("null response returned for embedding")
+				continue INNER // retry
 			}
 			embeddings[i] = codygateway.Embedding{
 				Index: i,
 				Data:  response.Data[0].Embedding,
 			}
-			continue
+			continue OUTER // success
 		}
-		embeddings[i] = codygateway.Embedding{
-			Index: d.Index,
-			Data:  d.Embedding,
-		}
+		return nil, 0, errors.New("null response returned for embedding")
 	}
 
 	return &codygateway.EmbeddingsResponse{

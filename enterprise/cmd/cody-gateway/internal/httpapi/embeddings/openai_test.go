@@ -87,7 +87,6 @@ func TestOpenAI(t *testing.T) {
 
 	t.Run("retry on empty embedding fails", func(t *testing.T) {
 		gotRequest1 := false
-		gotRequest2 := false
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			// On the first request, respond with a null embedding
 			if !gotRequest1 {
@@ -105,20 +104,15 @@ func TestOpenAI(t *testing.T) {
 				return
 			}
 
-			// The client should try that embedding once more. Return null again. The client should fail.
-			if !gotRequest2 {
-				resp := openaiEmbeddingsResponse{
-					Data: []openaiEmbeddingsData{{
-						Index:     0,
-						Embedding: nil,
-					}},
-				}
-				json.NewEncoder(w).Encode(resp)
-				gotRequest2 = true
-				return
+			// After the first request, always respond with an invalid response
+			resp := openaiEmbeddingsResponse{
+				Data: []openaiEmbeddingsData{{
+					Index:     0,
+					Embedding: nil,
+				}},
 			}
-
-			panic("only expected 2 responses")
+			json.NewEncoder(w).Encode(resp)
+			return
 		}))
 		defer s.Close()
 
