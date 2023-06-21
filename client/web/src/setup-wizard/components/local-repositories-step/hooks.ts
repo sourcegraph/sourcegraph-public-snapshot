@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { isEqual } from 'lodash'
@@ -272,17 +272,21 @@ export function useLocalExternalServices(): LocalCodeHostResult {
         [deleteLocalCodeHost]
     )
 
-    return {
-        loading,
-        error,
-        loaded: !!data || !!previousData,
-        services: (
+    const services = useMemo(() => {
+        return (
             data?.localExternalServices ??
             previousData?.localExternalServices ??
             // FIXME: Determine folder/single repo on the server
             EMPTY_CODEHOST_LIST
-        ).map(service => ({ ...service, isFolder: service.repositories.length !== 1 })),
+        ).map(service => ({ ...service, isFolder: service.repositories.length !== 1 }))
+    }, [data, previousData])
+
+    return {
+        loading,
+        error,
+        services,
         deleteService,
         addRepositories,
+        loaded: !!data || !!previousData,
     }
 }
