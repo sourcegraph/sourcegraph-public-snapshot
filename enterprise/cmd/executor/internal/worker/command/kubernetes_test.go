@@ -90,7 +90,7 @@ func TestKubernetesCommand_CreateSecrets(t *testing.T) {
 
 	assert.Equal(t, "my-secret", createSecrets.Name)
 	assert.Len(t, createSecrets.Keys, 2)
-	assert.Equal(t, []string{"foo", "baz"}, createSecrets.Keys)
+	assert.ElementsMatch(t, []string{"foo", "baz"}, createSecrets.Keys)
 }
 
 func TestKubernetesCommand_DeleteSecret(t *testing.T) {
