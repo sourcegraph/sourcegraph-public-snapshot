@@ -71,9 +71,10 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
     }
 
     if (data?.node?.__typename === 'Repository') {
+        const commit = data.node.commit || data.node.changelist?.commit
         return (
             <OwnerList
-                data={data?.node?.commit?.blob?.ownership}
+                data={commit?.blob?.ownership}
                 isDirectory={false}
                 makeOwnerButton={makeOwnerButton}
                 makeOwnerError={makeOwnerError}
