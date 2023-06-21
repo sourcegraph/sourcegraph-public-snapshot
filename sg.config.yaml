@@ -814,7 +814,14 @@ commands:
       LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
 
   otel-collector:
-    install: docker-images/opentelemetry-collector/build.sh
+    install: |
+      if [[ $(uname) == "Linux" ]]; then
+        bazel build //docker-images/opentelemetry-collector:image_tarball
+        docker load --input $(bazel cquery //docker-images/opentelemetry-collector:image_tarball --output=files)
+      else
+        bazel build //docker-images/opentelemetry-collector:image_tarball --config darwin-docker
+        docker load --input $(bazel cquery //docker-images/opentelemetry-collector:image_tarball --config darwin-docker --output=files)
+      fi
     description: OpenTelemetry collector
     cmd: |
       JAEGER_HOST='host.docker.internal'
@@ -835,7 +842,7 @@ commands:
         -e HONEYCOMB_DATASET=$HONEYCOMB_DATASET \
         $IMAGE --config "/etc/otel-collector/$CONFIGURATION_FILE"
     env:
-      IMAGE: sourcegraph/opentelemetry-collector:dev
+      IMAGE: opentelemetry-collector:candidate
       # Overwrite the following in sg.config.overwrite.yaml, based on which collector
       # config you are using - see docker-images/opentelemetry-collector for more details.
       CONFIGURATION_FILE: "configs/jaeger.yaml"
