@@ -53,7 +53,7 @@ const EmailCheckVerificationForm: FC = () => {
         <div className={styles.emailForm}>
             <Icon svgPath={mdiEmail} inline={false} aria-hidden={true} className={styles.emailFormIcon} />
             <Text className={styles.emailFormText}>
-                You need to <b>verify you email</b> in order to use Cody
+                You need to <b>verify your email</b> in order to use Cody
             </Text>
             <Button
                 variant="primary"
