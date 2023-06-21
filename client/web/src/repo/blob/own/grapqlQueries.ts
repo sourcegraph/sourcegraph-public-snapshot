@@ -67,25 +67,34 @@ export const FETCH_OWNERS = gql`
         ruleLineMatch
     }
 
+    fragment BlobOwnershipFields on GitCommit {
+        blob(path: $currentPath) {
+            ownership {
+                totalOwners
+                nodes {
+                    owner {
+                        ...OwnerFields
+                    }
+                    reasons {
+                        ...CodeownersFileEntryFields
+                        ...RecentContributorOwnershipSignalFields
+                        ...RecentViewOwnershipSignalFields
+                        ...AssignedOwnerFields
+                    }
+                }
+            }
+        }
+    }
+
     query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
         node(id: $repo) {
             ... on Repository {
                 commit(rev: $revision) {
-                    blob(path: $currentPath) {
-                        ownership {
-                            totalOwners
-                            nodes {
-                                owner {
-                                    ...OwnerFields
-                                }
-                                reasons {
-                                    ...CodeownersFileEntryFields
-                                    ...RecentContributorOwnershipSignalFields
-                                    ...RecentViewOwnershipSignalFields
-                                    ...AssignedOwnerFields
-                                }
-                            }
-                        }
+                    ...BlobOwnershipFields
+                }
+                changelist(cid: $revision) {
+                    commit {
+                        ...BlobOwnershipFields
                     }
                 }
             }
