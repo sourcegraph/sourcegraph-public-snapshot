@@ -1,4 +1,4 @@
-package com.sourcegraph.agent.protocol;
+package com.sourcegraph.cody.agent.protocol;
 
 public class Position {
   public int line;

@@ -44,7 +44,8 @@
             secondary="false"
             factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
         <notificationGroup id="Cody Sourcegraph access" displayType="BALLOON"/>
-        <applicationService serviceImplementation="com.sourcegraph.agent.CodyAgent"/>
+        <projectService serviceImplementation="com.sourcegraph.cody.agent.CodyAgent"/>
+<!--        <projectServiceContainerInitializedListener implementation="com.sourcegraph.agent.CodyAgent"/>-->
 
 
         <!-- Code completions -->
@@ -56,6 +57,14 @@
         <projectService serviceImplementation="com.sourcegraph.cody.ui.SelectOptionManager"/>
 
     </extensions>
+
+    <applicationListeners>
+        <listener class="com.sourcegraph.cody.CodyAgentProjectListener" topic="com.intellij.openapi.project.ProjectManagerListener"/>
+        <listener class="com.sourcegraph.cody.CodyFileEditorListener" topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+        <!-- CodyAgentFocusListener is commented out since it doesn't seem possible to register a listener via plugin.xml.
+             We programmatically register a listener from CodyAgent instead. -->
+        <!-- <listener class="com.sourcegraph.cody.CodyAgentFocusListener" topic="com.intellij.openapi.editor.ex.FocusChangeListener"/> -->
+    </applicationListeners>
 
     <actions>
         <action

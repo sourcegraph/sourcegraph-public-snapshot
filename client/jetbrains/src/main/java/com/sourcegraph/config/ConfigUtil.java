@@ -5,11 +5,8 @@ import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
-import com.sourcegraph.agent.ConnectionConfiguration;
+import com.sourcegraph.cody.agent.ConnectionConfiguration;
 import com.sourcegraph.find.Search;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -261,35 +258,15 @@ public class ConfigUtil {
     return Objects.requireNonNull(SourcegraphService.getInstance(project));
   }
 
-  @NotNull
-  public static String getWorkspaceRoot() {
-    int minNameCount = Integer.MAX_VALUE;
-    Path shortestPath = null;
-    for (Project openProject : ProjectManager.getInstance().getOpenProjects()) {
-      String basePath = openProject.getBasePath();
-      if (basePath == null) {
-        continue;
-      }
-      Path path = Paths.get(basePath);
-      if (path.getNameCount() < minNameCount) {
-        minNameCount = path.getNameCount();
-        shortestPath = path;
-      }
-    }
-    if (shortestPath != null) {
-      return shortestPath.toString();
-    }
-    // Technically wrong because the same IntelliJ process is used for different windows in
-    // different projects
-    return System.getProperty("user.dir");
-  }
-
-  @NotNull
+  @Nullable
   public static String getWorkspaceRoot(@NotNull Project project) {
     if (project.getBasePath() != null) {
       return project.getBasePath();
     }
-    return getWorkspaceRoot();
+    // The base path should only be null for the default project. The agent server assumes that the
+    // workspace root is not null, so we have to provide some default value. Feel free to change to
+    // something else than the home directory if this is causing problems.
+    return System.getProperty("user.home");
   }
 
   public static String getProjectAccessToken(Project project) {

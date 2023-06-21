@@ -43,6 +43,9 @@ New issues and feature requests can be filed through our [issue tracker](https:/
   agent binary to function propertly. This agent binary is automatically built from source if it does not exist. To
   speed up edit/test/debug feedback loops, the agent binary does not get rebuilt unless you provdide the
   `-PforceAgentBuild=true` flag when running Gradle. For example, `./gradlew :runIde -PforceAgentBuild=true`.
+- Use the `-PenableAgent=true` property to enable the Cody agent. For example, `./gradlew :runIde -PenableAgent=true`.
+  When the agent is disabled, the plugin falls back to the non-agent based implementation. Once we have more
+  confidence with the agent, we will turn this on by default.
 
 ## Publishing a new version
 

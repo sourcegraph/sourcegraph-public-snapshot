@@ -3,4 +3,4 @@
  *
  * <p>In the future, these classes should ideally be replaced with automatically generated classes.
  */
-package com.sourcegraph.agent.protocol;
+package com.sourcegraph.cody.agent.protocol;

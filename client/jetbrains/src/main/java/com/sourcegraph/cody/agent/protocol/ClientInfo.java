@@ -1,6 +1,6 @@
-package com.sourcegraph.agent.protocol;
+package com.sourcegraph.cody.agent.protocol;
 
-import com.sourcegraph.agent.ConnectionConfiguration;
+import com.sourcegraph.cody.agent.ConnectionConfiguration;
 import org.jetbrains.annotations.Nullable;
 
 public class ClientInfo {

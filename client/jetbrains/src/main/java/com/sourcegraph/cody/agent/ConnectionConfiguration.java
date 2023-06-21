@@ -1,4 +1,4 @@
-package com.sourcegraph.agent;
+package com.sourcegraph.cody.agent;
 
 import java.util.Map;
 

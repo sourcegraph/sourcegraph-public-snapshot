@@ -1,8 +1,8 @@
-package com.sourcegraph.agent;
+package com.sourcegraph.cody.agent;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
-import com.sourcegraph.agent.protocol.*;
+import com.sourcegraph.cody.agent.protocol.ChatMessage;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -14,6 +14,8 @@ import org.jetbrains.annotations.Nullable;
 public class CodyAgentClient {
 
   @Nullable public CodyAgentServer server;
+  @Nullable public CodyAgentDocuments documents;
+  // Callback that is invoked when the agent sends a "chat/updateMessageInProgress" notification.
   @Nullable public Consumer<ChatMessage> onChatUpdateMessageInProgress;
   @Nullable public Editor editor;
 

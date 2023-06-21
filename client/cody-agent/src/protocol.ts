@@ -23,6 +23,13 @@ export type Requests = {
     // by the agent.
     'recipes/list': [null, RecipeInfo[]]
     // Client requests the agent server to execute an individual recipe.
+    // The response is null because the AI/Assistant messages are streamed through
+    // the chat/updateMessageInProgress notification. The flow to trigger a recipe
+    // is like this:
+    // client --- recipes/execute --> server
+    // client <-- chat/updateMessageInProgress --- server
+    //             ....
+    // client <-- chat/updateMessageInProgress --- server
     'recipes/execute': [ExecuteRecipeParams, null]
 
     // ================

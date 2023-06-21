@@ -131,13 +131,23 @@ tasks {
         }
     }
 
-
+    buildPlugin {
+        dependsOn("copyAgentBinariesToPluginPath")
+        // Copy agent binaries into the zip file that `buildPlugin` produces.
+        from(fileTree(agentTargetDirectory.parent.toString()) {
+            include("agent/*")
+        }) {
+            into("agent")
+        }
+    }
 
     runIde {
         dependsOn("copyAgentBinariesToPluginPath")
         jvmArgs("-Djdk.module.illegalAccess.silent=true")
         systemProperty("cody-agent.trace-path", "$buildDir/sourcegraph/cody-agent-trace.json")
         systemProperty("cody-agent.directory", agentTargetDirectory.parent.toString())
+        val isAgentEnabled = findProperty("disableAgent") == "true"
+        systemProperty("cody-agent.enabled", (!isAgentEnabled).toString())
     }
 
     // Configure UI tests plugin
@@ -155,16 +165,6 @@ tasks {
         password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
     }
 
-
-    buildPlugin {
-        dependsOn("copyAgentBinariesToPluginPath")
-        // Copy agent binaries into the zip file that `buildPlugin` produces.
-        from(fileTree(agentTargetDirectory.parent.toString()) {
-            include("agent/*")
-        }) {
-            into("agent")
-        }
-    }
 
     publishPlugin {
         dependsOn("patchChangelog")

@@ -1,4 +1,4 @@
-package com.sourcegraph.agent.protocol;
+package com.sourcegraph.cody.agent.protocol;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -21,5 +21,19 @@ public class TextDocument {
   public TextDocument setSelection(Range selection) {
     this.selection = selection;
     return this;
+  }
+
+  @Override
+  public String toString() {
+    return "TextDocument{"
+        + "filePath='"
+        + filePath
+        + '\''
+        + ", content='"
+        + content
+        + '\''
+        + ", selection="
+        + selection
+        + '}';
   }
 }
