@@ -135,6 +135,12 @@ func (rf *RecordingCommandFactory) Update(shouldRecord ShouldRecordFunc, max int
 	rf.maxSize = max
 }
 
+// Disable will modify the RecordingCommandFactory so that from that point, it
+// will not record. This is a convenience around Update.
+func (rf *RecordingCommandFactory) Disable() {
+	rf.Update(nil, 0)
+}
+
 // Command returns a new RecordingCommand with the ShouldRecordFunc already set.
 func (rf *RecordingCommandFactory) Command(ctx context.Context, logger log.Logger, name string, args ...string) *RecordingCmd {
 	store := rcache.NewFIFOList(KeyPrefix, rf.maxSize)
