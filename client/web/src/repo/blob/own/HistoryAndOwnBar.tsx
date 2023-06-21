@@ -60,7 +60,9 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
         )
     }
 
-    if (error || !(data?.node?.__typename === 'Repository' && data.node.commit)) {
+    const commit = data?.node?.commit || data?.node?.changelist?.commit
+
+    if (error || !(data?.node?.__typename === 'Repository' && commit)) {
         return (
             <div className={styles.wrapper}>
                 <Alert variant="danger" className="mb-0 py-1" aria-live="polite">
@@ -70,9 +72,9 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
         )
     }
 
-    const history = data?.node?.commit?.ancestors?.nodes?.[0]
-    const ownership = data.node.commit?.blob?.ownership
-    const contributorsCount = data.node.commit?.blob?.contributors?.totalCount ?? 0
+    const history = commit?.ancestors?.nodes?.[0]
+    const ownership = commit?.blob?.ownership
+    const contributorsCount = commit?.blob?.contributors?.totalCount ?? 0
 
     return (
         <div className={styles.wrapper}>
