@@ -187,7 +187,7 @@ func checkSourcegraphDatabase(ctx context.Context, out *std.Output, args CheckAr
 	dsn := postgresdsn.New("", "", getEnv)
 	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
-		return errors.Wrapf(err, "failed to connect to Soucegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
+		return errors.Wrapf(err, "failed to connect to Sourcegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
 	}
 	defer conn.Close(ctx)
 	for {
