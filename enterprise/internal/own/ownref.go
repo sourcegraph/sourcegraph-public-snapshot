@@ -9,6 +9,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -232,7 +233,7 @@ func (b bag) FindResolved(ref Reference) (codeowners.ResolvedOwner, bool) {
 		if refCtx, ok := b.references[k]; ok {
 			if id := refCtx.resolvedUserID; id != 0 {
 				userRefs := b.resolvedUsers[id]
-				if userRefs == nil {
+				if userRefs == nil || userRefs.user == nil {
 					continue
 				}
 				// TODO: Email resolution here is best effort,
@@ -251,6 +252,9 @@ func (b bag) FindResolved(ref Reference) (codeowners.ResolvedOwner, bool) {
 			}
 			if id := refCtx.resolvedTeamID; id != 0 {
 				teamRefs := b.resolvedTeams[id]
+				if teamRefs == nil || teamRefs.team == nil {
+					continue
+				}
 				return &codeowners.Team{
 					Team:   teamRefs.team,
 					Handle: teamRefs.team.Name,
