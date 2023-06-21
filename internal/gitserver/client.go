@@ -695,6 +695,10 @@ func convertGRPCErrorToGitDomainError(err error) error {
 		return context.Canceled
 	}
 
+	if st.Code() == codes.DeadlineExceeded {
+		return context.DeadlineExceeded
+	}
+
 	for _, detail := range st.Details() {
 		switch payload := detail.(type) {
 
