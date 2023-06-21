@@ -33,10 +33,11 @@ Ensure you have the following tools installed:
 
 1. Clone the [deploy-sourcegraph-helm](https://github.com/sourcegraph/deploy-sourcegraph-helm) repository to your local machine.
 2. Run `cd deploy-sourcegraph-helm/charts/sourcegraph-executor`.
-3. Edit the `values.yaml` with any other customizations you may require.
+3. Create an overrides file, `override.yaml`, with any other customizations you may require.
+   1. See [details on configurations](https://docs.sourcegraph.com/admin/deploy/kubernetes/helm#configuration).
 4. Run the following command:
     ```bash
-    helm upgrade --install -f values.yaml --version <your Sourcegraph Version> sg-executor sourcegraph/sourcegraph-executor
+    helm upgrade --install -f overrides.yaml --version <your Sourcegraph Version> sg-executor sourcegraph/sourcegraph-executor
     ```
 5. Confirm executors are working by checking the _Executors_ page under **Site admin > Executors > Instances** .
 
