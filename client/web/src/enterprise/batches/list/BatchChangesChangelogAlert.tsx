@@ -78,23 +78,23 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<
                         </li>
                         <li>
                             Batch Changes now supports per-batch-change control for pushing to a fork of the upstream
-                            repository with the{' '}
+                            repository with the batch spec property{' '}
                             <Link
                                 to="/help/batch_changes/references/batch_spec_yaml_reference#changesettemplate-fork"
                                 target="_blank"
                             >
-                                batch spec property
-                            </Link>{' '}
-                            <Code>changesetTemplate.fork</Code>.
+                                <Code>changesetTemplate.fork</Code>
+                            </Link>
+                            .
                         </li>
                         <li>
                             Branches created by Batch Changes can now be automatically deleted on the code host upon
-                            merging or closing a changeset by enabling the <Code>batchChanges.autoDeleteBranch</Code>{' '}
+                            merging or closing a changeset by enabling the site config setting{' '}
                             <Link
-                                to="/help/admin/config/batch_changes#automatically-delete-branches-on-merge-closesite"
+                                to="/help/admin/config/batch_changes#automatically-delete-branches-on-merge-close"
                                 target="_blank"
                             >
-                                setting
+                                <Code>batchChanges.autoDeleteBranch</Code>
                             </Link>
                             .
                         </li>
