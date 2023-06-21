@@ -4,9 +4,12 @@ import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
 
 // Sign into Cody with valid auth from the sidebar
 export const sidebarSignin = async (page: Page, sidebar: Frame): Promise<void> => {
-    await sidebar.getByRole('textbox', { name: 'Sourcegraph Instance URL' }).fill(SERVER_URL)
-    await sidebar.getByRole('textbox', { name: 'Access Token (docs)' }).fill(VALID_TOKEN)
-    await sidebar.getByRole('button', { name: 'Sign In' }).click()
+    await sidebar.getByRole('button', { name: 'Continue with Access Token' }).click()
+    await page.getByRole('option', { name: 'Sign in with URL and Access Token' }).click()
+    await page.getByRole('combobox', { name: 'input' }).fill(SERVER_URL)
+    await page.getByRole('combobox', { name: 'input' }).press('Enter')
+    await page.getByRole('combobox', { name: 'input' }).fill(VALID_TOKEN)
+    await page.getByRole('combobox', { name: 'input' }).press('Enter')
 
     // Collapse the task tree view
     await page.getByRole('button', { name: 'Fixups Section' }).click()
