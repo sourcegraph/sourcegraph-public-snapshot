@@ -34,3 +34,15 @@ By default, a fully configured Sourcegraph instance picks a default LLM to gener
 <br />
 
 > NOTE: Cody autocomplete currently only work with Anthropic's Claude Instant model. Support for other models will be coming later.
+
+## Accessing autocomplete logs
+
+VS Code logs can be accessed in the _Outputs_ view. To do this:
+
+1. Make sure to have [autocomplete enabled](#enabling-autocomplete)
+1. Enable Cody logs in verbose mode.
+  - Go to the Cody Extension Settings and enable: `Cody › Debug: Enable` and `Cody › Debug: Verbose`
+1. Restart or reload VS Code
+1. You can now see the logs in the outputs view
+  - Open the view via the menu bar: `View > Output`
+  - Select Cody AI by Sourcegraph in the dropdown list
