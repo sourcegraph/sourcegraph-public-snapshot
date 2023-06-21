@@ -9,6 +9,7 @@
 ### Changed
 
 - Convert `\t` to spaces in leading whitespace for autocomplete suggestions (according to settings) [#53743](https://github.com/sourcegraph/sourcegraph/pull/53743)
+- Disabled line highlighting in code blocks in chat [#53829](https://github.com/sourcegraph/sourcegraph/pull/53829)
 
 ### Deprecated
 
