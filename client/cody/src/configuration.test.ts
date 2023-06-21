@@ -20,11 +20,11 @@ describe('getConfiguration', () => {
             debugEnable: false,
             debugVerbose: false,
             debugFilter: null,
-            completionsAdvancedProvider: 'anthropic',
-            completionsAdvancedServerEndpoint: null,
-            completionsAdvancedAccessToken: null,
-            completionsAdvancedCache: true,
-            completionsAdvancedEmbeddings: true,
+            autocompleteAdvancedProvider: 'anthropic',
+            autocompleteAdvancedServerEndpoint: null,
+            autocompleteAdvancedAccessToken: null,
+            autocompleteAdvancedCache: true,
+            autocompleteAdvancedEmbeddings: true,
         })
     })
 
@@ -90,11 +90,11 @@ describe('getConfiguration', () => {
             debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,
-            completionsAdvancedProvider: 'unstable-codegen',
-            completionsAdvancedServerEndpoint: 'https://example.com/llm',
-            completionsAdvancedAccessToken: 'foobar',
-            completionsAdvancedCache: false,
-            completionsAdvancedEmbeddings: false,
+            autocompleteAdvancedProvider: 'unstable-codegen',
+            autocompleteAdvancedServerEndpoint: 'https://example.com/llm',
+            autocompleteAdvancedAccessToken: 'foobar',
+            autocompleteAdvancedCache: false,
+            autocompleteAdvancedEmbeddings: false,
         })
     })
 })

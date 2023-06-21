@@ -38,7 +38,6 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         CONFIG_KEY.autocompleteAdvancedProvider,
         'anthropic'
     )
-    console.log({ autocompleteAdvancedProvider })
     if (
         autocompleteAdvancedProvider !== 'anthropic' &&
         autocompleteAdvancedProvider !== 'unstable-codegen' &&
