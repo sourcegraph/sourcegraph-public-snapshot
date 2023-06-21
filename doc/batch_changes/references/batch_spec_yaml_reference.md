@@ -735,7 +735,7 @@ changesetTemplate:
 
 Whether or not each changeset should be created on a fork of the upstream repository in the namespace of the user publishing them (or the namespace of the service account if [global credentials](../how-tos/configuring_credentials.md#global-service-account-tokens) are used).
 
-If the [site config setting](../../admin/config/batch_changes.md#forks) `batchChanges.enforceForks` is enabled, this value will override the setting. For example, explicitly setting `fork: false` when the site config setting is enabled will result in changesets being published directly to the target repos. If omitted, the site config setting will be used.
+If the site config setting [`batchChanges.enforceForks`](../../admin/config/batch_changes.md#forks) is enabled, this value will override the setting. For example, explicitly setting `fork: false` when the site config setting is enabled will result in changesets being published directly to the target repos. If omitted, the site config setting will be used.
 
 The name of the fork Sourcegraph creates will be prefixed with the name of the original repo's namespace in order to prevent potential repo name collisions. For example, a batch spec targeting `github.com/my-org/project` would create or use any existing fork by the name `github.com/user/my-org-project`.
 
