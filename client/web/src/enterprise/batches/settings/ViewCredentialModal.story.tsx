@@ -33,6 +33,8 @@ export const View: Story = () => (
                     externalServiceURL: 'https://github.com/',
                     requiresSSH: true,
                     requiresUsername: false,
+                    supportsCommitSigning: false,
+                    commitSigningConfiguration: null,
                 }}
                 credential={credential}
                 onClose={noop}
