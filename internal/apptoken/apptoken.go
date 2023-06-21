@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/singleprogram"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -40,6 +41,9 @@ type AppTokenFilePayload struct {
 // Checks if the app token file exists in the config dir and contains a valid
 // token. If not, it will generate a new token and create a new app token file.
 func CreateAppTokenFileIfNotExists(ctx context.Context, db database.DB, uid int32) error {
+	if deploy.IsApp() {
+		return errors.New("can only be called in App")
+	}
 	configDir, err := singleprogram.SetupAppConfigDir()
 	if err != nil {
 		return errors.Wrap(err, "Could not get config dir")
