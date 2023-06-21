@@ -233,8 +233,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await this.onHumanMessageSubmitted(message.text, 'user')
                 break
             case 'abort':
-                void this.multiplexer.notifyTurnComplete()
                 this.cancelCompletion()
+                await this.multiplexer.notifyTurnComplete()
                 this.onCompletionEnd()
                 break
             case 'executeRecipe':
@@ -350,7 +350,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // TODO notify the multiplexer of the error
                 debug('ChatViewProvider:onError', err)
                 if (err === 'aborted') {
-                    this.onCompletionEnd()
                     return
                 }
                 // Display error message as assistant response
