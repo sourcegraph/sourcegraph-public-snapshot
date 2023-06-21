@@ -6,7 +6,6 @@ import (
 	"encoding/pem"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"time"
@@ -50,7 +49,7 @@ func main() {
 }
 
 func genJwtToken(appID string, keyPath string) (string, error) {
-	rawPem, err := ioutil.ReadFile(keyPath)
+	rawPem, err := os.ReadFile(keyPath)
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to read key file.")
 	}

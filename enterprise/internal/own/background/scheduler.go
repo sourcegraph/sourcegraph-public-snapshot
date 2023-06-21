@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	logger "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -27,11 +28,17 @@ type IndexJobType struct {
 }
 
 // QueuePerRepoIndexJobs is a slice of jobs that will automatically initialize and will queue up one index job per repo every IndexInterval.
-var QueuePerRepoIndexJobs = []IndexJobType{{
-	Name:            types.SignalRecentContributors,
-	IndexInterval:   time.Hour * 24,
-	RefreshInterval: time.Minute * 5,
-}}
+var QueuePerRepoIndexJobs = []IndexJobType{
+	{
+		Name:            types.SignalRecentContributors,
+		IndexInterval:   time.Hour * 24,
+		RefreshInterval: time.Minute * 5,
+	}, {
+		Name:            types.Analytics,
+		IndexInterval:   time.Hour * 24,
+		RefreshInterval: time.Hour * 24,
+	},
+}
 
 var repoCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Namespace: "src",
@@ -56,8 +63,14 @@ func GetOwnIndexSchedulerRoutines(db database.DB, observationCtx *observation.Co
 	}
 
 	makeRoutine := func(jobType IndexJobType, op *observation.Operation, handler goroutine.Handler) goroutine.BackgroundRoutine {
-		ffw := newFeatureFlagWrapper(db, jobType, op, handler)
-		return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), jobType.Name, "", jobType.RefreshInterval, ffw, op)
+		return goroutine.NewPeriodicGoroutine(
+			context.Background(),
+			newFeatureFlagWrapper(db, jobType, op, handler),
+			goroutine.WithName(jobType.Name),
+			goroutine.WithDescription(""),
+			goroutine.WithInterval(jobType.RefreshInterval),
+			goroutine.WithOperation(op),
+		)
 	}
 
 	for _, jobType := range QueuePerRepoIndexJobs {

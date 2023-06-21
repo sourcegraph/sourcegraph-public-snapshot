@@ -12,7 +12,6 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -81,14 +80,14 @@ func (s *gcsStore) Get(ctx context.Context, key string) (_ io.ReadCloser, err er
 	ctx, _, endObservation := s.operations.Get.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("key", key),
 	}})
-	defer endObservation(1, observation.Args{})
+	done := func() { endObservation(1, observation.Args{}) }
 
 	rc, err := s.client.Bucket(s.bucket).Object(key).NewRangeReader(ctx, 0, -1)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get object")
 	}
 
-	return rc, nil
+	return NewExtraCloser(rc, done), nil
 }
 
 func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (_ int64, err error) {
@@ -194,7 +193,7 @@ func (s *gcsStore) create(ctx context.Context, bucket gcsBucketHandle) error {
 }
 
 func (s *gcsStore) deleteSources(ctx context.Context, bucket gcsBucketHandle, sources []string) error {
-	return goroutine.RunWorkersOverStrings(sources, func(index int, source string) error {
+	return ForEachString(sources, func(index int, source string) error {
 		if err := bucket.Object(source).Delete(ctx); err != nil {
 			return errors.Wrap(err, "failed to delete source object")
 		}

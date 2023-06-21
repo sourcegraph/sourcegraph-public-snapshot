@@ -17,6 +17,16 @@ const EXTENSION_TO_LANGUAGE: { [key: string]: string } = {
     tsx: 'TSX',
 }
 
+export const commandRegex = {
+    chat: new RegExp(/^(?!.*\/n(ew)?\s|.*\/f(ix)?\s)/i), // For now, if the input does not start with /n or /f, it is a chat
+    fix: new RegExp(/^\/f(ix)?\s/i),
+    touch: new RegExp(/^\/t(ouch)?\s/i),
+    touchNeedFileName: new RegExp(/^\/t(ouch)?\s(?!.*test)/i), // Has /touch or /t but no test or tests in the string
+    noTest: new RegExp(/^(?!.*test)/i),
+    search: new RegExp(/^\/s(earch)?\s/i),
+    test: new RegExp(/^\/n(ew)?\s|test(s)?\s/, 'i'),
+}
+
 export function getNormalizedLanguageName(extension: string): string {
     return extension ? EXTENSION_TO_LANGUAGE[extension] ?? extension.charAt(0).toUpperCase() + extension.slice(1) : ''
 }
@@ -50,10 +60,13 @@ export function getFileExtension(fileName: string): string {
 
 // This cleans up the code returned by Cody based on current behavior
 // ex. Remove  `tags:` that Cody sometimes include in the returned content
+// It also removes all spaces before a new line to keep the indentations
 export function contentSanitizer(text: string): string {
+    let output = text + '\n'
     const tagsIndex = text.indexOf('tags:')
     if (tagsIndex !== -1) {
-        return text.trim().slice(tagsIndex + 6) + '\n'
+        // NOTE: 6 is the length of `tags:` + 1 space
+        output = output.slice(tagsIndex + 6)
     }
-    return text.trim() + '\n'
+    return output.replace(/^\s*\n/, '')
 }

@@ -12,6 +12,7 @@ export const executorFieldsFragment = gql`
         id
         hostname
         queueName
+        queueNames
         active
         os
         compatibility

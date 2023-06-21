@@ -41,13 +41,10 @@ export interface LangStatsInsightCreationPageProps extends TelemetryProps {
      * Whenever the user click on cancel button
      */
     onCancel: () => void
-
-    isSourcegraphApp: boolean
 }
 
 export const LangStatsInsightCreationPage: FC<LangStatsInsightCreationPageProps> = props => {
-    const { backUrl, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation, isSourcegraphApp } =
-        props
+    const { backUrl, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
 
     const { licensed, insight } = useUiFeatures()
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
@@ -94,7 +91,7 @@ export const LangStatsInsightCreationPage: FC<LangStatsInsightCreationPageProps>
     }, [setInitialFormValues, telemetryService, onCancel])
 
     return (
-        <CodeInsightsPage isSourcegraphApp={isSourcegraphApp}>
+        <CodeInsightsPage>
             <PageTitle title="Create language usage insight - Code Insights" />
 
             <PageHeader

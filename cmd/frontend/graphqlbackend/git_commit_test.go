@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"io/ioutil"
+	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
@@ -26,7 +28,7 @@ func TestGitCommitResolver(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewMockDB()
 
-	client := gitserver.NewClient()
+	client := gitserver.NewMockClient()
 
 	commit := &gitdomain.Commit{
 		ID:      "c1",
@@ -53,8 +55,8 @@ func TestGitCommitResolver(t *testing.T) {
 			require.Equal(t, "/xyz/-/commit/master%5E1", commitResolver.URL())
 
 			opts := GitTreeEntryResolverOpts{
-				commit: commitResolver,
-				stat:   CreateFileInfo("a/b", false),
+				Commit: commitResolver,
+				Stat:   CreateFileInfo("a/b", false),
 			}
 			treeResolver := NewGitTreeEntryResolver(db, client, opts)
 			url, err := treeResolver.URL(ctx)
@@ -154,6 +156,24 @@ func TestGitCommitResolver(t *testing.T) {
 				pf, err := r.PerforceChangelist(ctx)
 				require.NoError(t, err)
 				require.Nil(t, pf)
+
+				f, err := ioutil.TempFile("/tmp", "foo")
+				require.NoError(t, err)
+
+				fs, err := f.Stat()
+				require.NoError(t, err)
+				client.StatFunc.SetDefaultReturn(fs, nil)
+
+				path, err := filepath.Abs(filepath.Dir(f.Name()))
+				require.NoError(t, err)
+
+				gitTree, err := r.Blob(ctx, &struct{ Path string }{Path: path})
+				require.NoError(t, err)
+				require.NotNil(t, gitTree)
+
+				cl, err := gitTree.ChangelistURL(ctx)
+				require.NoError(t, err)
+				require.Nil(t, cl)
 			})
 		}
 	})
@@ -171,7 +191,7 @@ func TestGitCommitResolver(t *testing.T) {
 		repos.GetFunc.SetDefaultReturn(repo, nil)
 		db.ReposFunc.SetDefaultReturn(repos)
 
-		commitResolver := NewGitCommitResolver(db, client, repoResolver, "c1", commit)
+		commitResolver := NewGitCommitResolver(db, client, repoResolver, "8aa15f6a85c07a882821053f361b538f404f238e", commit)
 
 		ctx := actor.WithInternalActor(context.Background())
 
@@ -188,6 +208,29 @@ func TestGitCommitResolver(t *testing.T) {
 		subject, err := commitResolver.Subject(ctx)
 		require.NoError(t, err)
 		require.Equal(t, "subject: Changes things", subject)
+
+		f, err := ioutil.TempFile("/tmp", "foo")
+		require.NoError(t, err)
+
+		fs, err := f.Stat()
+		require.NoError(t, err)
+		client.StatFunc.SetDefaultReturn(fs, nil)
+
+		path, err := filepath.Abs(filepath.Dir(f.Name()))
+		require.NoError(t, err)
+
+		gitTree, err := commitResolver.Blob(ctx, &struct{ Path string }{Path: path})
+		require.NoError(t, err)
+
+		gotURL, err := gitTree.ChangelistURL(ctx)
+		require.NoError(t, err)
+
+		_, fileName := filepath.Split(f.Name())
+		require.Equal(
+			t,
+			filepath.Join("/perforce/test-depot@123/-/blob", fileName),
+			*gotURL,
+		)
 	}
 
 	t.Run("perforce depot, git-p4 commit", func(t *testing.T) {
@@ -389,6 +432,7 @@ func TestGitCommitAncestors(t *testing.T) {
 						  abbreviatedOID
 						  perforceChangelist {
 							cid
+                            canonicalURL
 						  }
 						}
 						pageInfo {
@@ -654,6 +698,7 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 									oid
 									perforceChangelist {
 										cid
+                                        canonicalURL
 									}
 								}
 							}
@@ -680,16 +725,14 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 	})
 
 	t.Run("perforce depot", func(t *testing.T) {
-		repos.GetFunc.SetDefaultReturn(
-			&types.Repo{
-				ID:   2,
-				Name: "github.com/gorilla/mux",
-				ExternalRepo: api.ExternalRepoSpec{
-					ServiceType: extsvc.TypePerforce,
-				},
-			},
-			nil,
-		)
+		repo := &types.Repo{
+			ID:           2,
+			Name:         "github.com/gorilla/mux",
+			ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce},
+		}
+
+		repos.GetFunc.SetDefaultReturn(repo, nil)
+		repos.GetByNameFunc.SetDefaultReturn(repo, nil)
 
 		// git-p4 commit.
 		c1 := gitdomain.Commit{
@@ -719,6 +762,7 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 									oid
 									perforceChangelist {
 										cid
+                                        canonicalURL
 									}
 								}
 							}
@@ -732,17 +776,19 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 							"ancestors": {
 								"nodes": [
 									{
-										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiYWFiYmMxMjM0NSJ9",
+										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3kiLCJjIjoiYWFiYmMxMjM0NSJ9",
 										"oid": "aabbc12345",
 										"perforceChangelist": {
-											"cid": "87654"
+											"cid": "87654",
+											"canonicalURL": "/github.com/gorilla/mux/-/changelist/87654"
 										}
 									},
 									{
-										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiY2NkZGUxMjM0NSJ9",
+										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3kiLCJjIjoiY2NkZGUxMjM0NSJ9",
 										"oid": "ccdde12345",
 										"perforceChangelist": {
-											"cid": "87655"
+											"cid": "87655",
+											"canonicalURL": "/github.com/gorilla/mux/-/changelist/87655"
 										}
 									}
 								]

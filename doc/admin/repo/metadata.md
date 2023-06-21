@@ -1,9 +1,5 @@
 # Custom repository metadata
 
-<aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> Tagging repositories with key/value pairs is an experimental feature in Sourcegraph 4.0. It's a <b>preview</b> of functionality we're currently exploring to make searching large numbers of repositories easier. To enable this feature, enable the `repository-metadata` feature flag for your org. If you have any feedback, please let us know!
-</aside>
-
 Repositories tracked by Sourcegraph can be associated with user-provided key-value pairs. Once this metadata is added, it can be used to filter searches to the subset of matching repositories.
 
 Metadata can be added either as key-value pairs or as tags. Key-value pairs can be searched with the filter `repo:has.meta(mykey:myvalue)`. `repo:has.meta(mykey)` can be used to search over repositories with a given key irrespective of its value. Tags are just key-value pairs with a `null` value and can be searched with the filter `repo:has.meta(mytag:)`.
@@ -21,13 +17,18 @@ Another way this could be used is to associate repos with a maintenance status. 
 
 ## Adding metadata
 
-Currently, there are two ways to add metadata to a repository: Sourcegraph's GraphQL API, and the [`src-cli` command line tool](https://github.com/sourcegraph/src-cli). 
+There are three ways to add metadata to a repository: via web UI, Sourcegraph's GraphQL API, and the [`src-cli` command line tool](https://github.com/sourcegraph/src-cli). 
+
+**NOTE:** That user needs to have `Repository metadata / Write` [RBAC permission](../access_control/index.md) to be able to edit repo metadata.
 
 ### Limitations
 
 - There are no scale limits in terms of number of pairs per repo, or number of pairs globally.
 - The size of a field is unbounded, but practically it's better to keep it small for performance reasons.
 - There are no limits on special characters in the key-value pairs, but in practice we recommend not using special characters because the search query language doesn’t have full support for escaping arbitrary sequences, in particular `:`, `(` and`)`.
+
+### Web UI
+Go to repository root page, hover over "Metadata" section and click on a gear icon, it will open a repository metadata editing page.
 
 ### GraphQL
 
@@ -58,12 +59,12 @@ mutation DeleteSecurityOwner($repoID: ID!) {
 Metadata can be added using `src repos add-metadata`, updated using `src repos update-metadata`, and deleted using `src repos delete-metadata`. You will need the GraphQL ID for the repository being targeted.
 
 ```text
-$ src repos add-metadata -repo=repoID -key=owning-team -value=security
+$ src repos add-metadata -repo-name=repoName -key=owning-team -value=security
 Key-value pair 'owning-team:security' created.
 
-$ src repos update-metadata -repo=repoID -key=owning-team -value=security++
+$ src repos update-metadata -repo-name=repoName -key=owning-team -value=security++
 Value of key 'owning-team' updated to 'security++'
 
-$ src repos delete-metadata -repo=repoID -key=owning-team
+$ src repos delete-metadata -repo-name=repoName -key=owning-team
 Key-value pair with key 'owning-team' deleted.
 ```

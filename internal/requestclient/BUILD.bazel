@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "requestclient",
@@ -11,6 +12,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/grpc/propagator",
+        "@com_github_sourcegraph_log//:log",
         "@org_golang_google_grpc//metadata",
         "@org_golang_google_grpc//peer",
     ],

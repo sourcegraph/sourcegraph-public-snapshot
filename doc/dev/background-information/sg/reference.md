@@ -32,24 +32,22 @@ Available comamndsets in `sg.config.yaml`:
 * api-only
 * app
 * batches 🦡
+* batches-kubernetes
 * codeintel
 * codeintel-bazel
+* codeintel-kubernetes
+* cody-gateway
 * dotcom
-* embeddings
 * enterprise
 * enterprise-bazel
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
 * enterprise-codeintel-bazel
+* enterprise-codeintel-multi-queue-executor
 * enterprise-e2e
 * iam
-* llm-proxy
 * monitoring
 * monitoring-alerts
-* oss
-* oss-bazel
-* oss-web-standalone
-* oss-web-standalone-prod
 * otel
 * web-standalone
 * web-standalone-prod
@@ -94,17 +92,22 @@ Available commands in `sg.config.yaml`:
 
 * batches-executor
 * batches-executor-firecracker
+* batches-executor-kubernetes
 * batcheshelper-builder
 * bext
 * blobstore
 * caddy
 * codeintel-executor
 * codeintel-executor-firecracker
+* codeintel-executor-kubernetes
 * codeintel-worker
-* cody-slack: Start Cody-Slack locally server locally
+* cody-gateway
+* cody-slack-dev: Start Cody-Slack dev locally
+* cody-slack-docker: Start Cody-Slack locally prod in Docker
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
 * embeddings
+* executor-kubernetes-template
 * executor-template
 * frontend: Enterprise frontend
 * github-proxy
@@ -114,17 +117,9 @@ Available commands in `sg.config.yaml`:
 * gitserver-template
 * grafana
 * jaeger
-* llm-proxy
 * loki
 * monitoring-generator
-* oss-frontend
-* oss-gitserver-0
-* oss-gitserver-1
-* oss-gitserver-template
-* oss-repo-updater
-* oss-symbols
-* oss-web: Open source version of the web app
-* oss-worker
+* multiqueue-executor
 * otel-collector: OpenTelemetry collector
 * postgres_exporter
 * prometheus
@@ -132,7 +127,6 @@ Available commands in `sg.config.yaml`:
 * repo-updater
 * searcher
 * server: Run an all-in-one sourcegraph/server image
-* sourcegraph-oss: Single program (Go static binary) distribution, OSS variant
 * sourcegraph: Single program (Go static binary) distribution
 * storybook
 * symbols
@@ -257,7 +251,6 @@ Supported run types when providing an argument for 'sg ci build [runtype]':
 * main-dry-run - Main dry run
 * docker-images-patch - Patch image
 * docker-images-patch-notest - Patch image without testing
-* docker-images-candidates-notest - Build all candidates without testing
 * executor-patch-notest - Build executor without testing
 * backend-integration - Backend integration tests
 
@@ -356,6 +349,9 @@ Available testsuites in `sg.config.yaml`:
 * bext-e2e
 * bext-integration
 * client
+* cody-e2e
+* cody-integration
+* cody-unit
 * docsite
 * web-e2e
 * web-integration
@@ -1241,6 +1237,43 @@ List registered instances for src-cli.
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+## sg app
+
+Manage releases and update manifests used to let Sourcegraph App clients know that a new update is available.
+
+
+Various commands to handle management of releases, and processes around Sourcegraph App.
+
+
+
+```sh
+# Update the updater manifest
+$ sg app update-manifest
+
+# Update the updater manifest based on a particular github release
+$ sg app update-manifest --release-tag app-v2023.07.07
+
+# Do everything except upload the updated manifest
+$ sg app update-manifest --no-upload
+
+# Update the manifest but don't update the signatures from the release - useful if the release comes from the same build
+$ sg app update-manifest --update-signatures
+```
+
+### sg app update-manifest
+
+update the manifest used by the updater endpoint on dotCom.
+
+
+Flags:
+
+* `--bucket="<value>"`: Bucket where the updated manifest should be uploaded to once updated. (default: sourcegraph-app)
+* `--build="<value>"`: Build number to retrieve the update-manifest from. If no build number is given, the latest build will be used (default: -1)
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--no-upload`: do everything except upload the final manifest
+* `--release-tag="<value>"`: GitHub release tag which should be used to update the manifest with. If no tag is given the latest GitHub release is used (default: latest)
+* `--update-signatures`: update the signatures in the update manifest by retrieving the signature content from the GitHub release
 
 ## sg teammate
 

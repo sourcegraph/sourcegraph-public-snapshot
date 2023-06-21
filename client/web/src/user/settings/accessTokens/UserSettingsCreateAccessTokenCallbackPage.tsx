@@ -9,6 +9,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Link, Text, ErrorAlert, Card, H1, H2, useEventObservable } from '@sourcegraph/wildcard'
 
+import { tauriShellOpen } from '../../../app/tauriIcpUtils'
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { CopyableText } from '../../../components/CopyableText'
@@ -19,15 +20,6 @@ import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 import { createAccessToken } from './create'
 
 import styles from './UserSettingsCreateAccessTokenCallbackPage.module.scss'
-
-/**
- * Utility function to open the callback URL in Sourcegraph App. Used where
- * window.open or target="_blank" cannot be used.
- */
-function tauriShellOpen(uri: string): void {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
-    ;(window as any).__TAURI__?.shell?.open(uri)
-}
 
 interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>, TelemetryProps {
     /**
@@ -66,17 +58,25 @@ const REQUESTERS: Record<string, TokenRequester> = {
         callbackType: 'new-tab',
     },
     APP: {
-        name: 'Sourcegraph App',
+        name: 'Cody App',
         redirectURL: 'sourcegraph://app/auth/callback?code=$TOKEN',
-        successMessage: 'Now opening the Sourcegraph App...',
-        infoMessage: 'You will be redirected to Sourcegraph App.',
+        successMessage: 'Now opening the Cody App...',
+        infoMessage: 'You will be redirected to Cody App.',
         callbackType: 'open',
         onlyDotCom: true,
         forwardDestination: true,
     },
     CODY: {
-        name: 'Sourcegraph Cody - VS Code Extension',
+        name: 'Cody AI by Sourcegraph - VS Code Extension',
         redirectURL: 'vscode://sourcegraph.cody-ai?code=$TOKEN',
+        successMessage: 'Now opening VS Code...',
+        infoMessage:
+            'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
+        callbackType: 'new-tab',
+    },
+    CODY_INSIDERS: {
+        name: 'Cody AI by Sourcegraph - VS Code Insiders Extension',
+        redirectURL: 'vscode-insiders://sourcegraph.cody-ai?code=$TOKEN',
         successMessage: 'Now opening VS Code...',
         infoMessage:
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
@@ -85,7 +85,7 @@ const REQUESTERS: Record<string, TokenRequester> = {
 }
 
 export function isAccessTokenCallbackPage(): boolean {
-    return location.pathname.startsWith('/users/') && location.pathname.endsWith('/settings/tokens/new/callback')
+    return location.pathname.endsWith('/settings/tokens/new/callback')
 }
 
 /**

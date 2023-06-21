@@ -47,7 +47,7 @@ export function debug(filterLabel: string, text: string, ...args: unknown[]): vo
     if (lastArg && typeof lastArg === 'object' && 'verbose' in lastArg) {
         if (config.debugVerbose) {
             outputChannel.appendLine(
-                `${filterLabel}: ${text} ${args.slice(0, -1).join(' ')} ${JSON.stringify(lastArg.verbose)}`
+                `${filterLabel}: ${text} ${args.slice(0, -1).join(' ')} ${JSON.stringify(lastArg.verbose, null, 2)}`
             )
         } else {
             outputChannel.appendLine(`${filterLabel}: ${text} ${args.slice(0, -1).join(' ')}`)
@@ -59,13 +59,13 @@ export function debug(filterLabel: string, text: string, ...args: unknown[]): vo
 }
 
 export const logger: CompletionLogger = {
-    startCompletion(params: CompletionParameters) {
+    startCompletion(params: CompletionParameters | {}) {
         if (!config.debugEnable) {
             return undefined
         }
 
         const start = Date.now()
-        const type = 'prompt' in params ? 'code-completion' : 'completion'
+        const type = 'prompt' in params ? 'code-completion' : 'messages' in params ? 'completion' : 'code-completion'
         let hasFinished = false
         let lastCompletion = ''
 
@@ -86,7 +86,7 @@ export const logger: CompletionLogger = {
             )
         }
 
-        function onComplete(result: string | CompletionResponse): void {
+        function onComplete(result: string | CompletionResponse | string[] | CompletionResponse[]): void {
             if (hasFinished) {
                 return
             }

@@ -18,7 +18,7 @@ spec:
       serviceAccountName: sg-executor-service-account
       containers:
         - name: sg-executor-batches
-          image: executor-kubernetes:latest
+          image: sourcegraph/executor-kubernetes:insiders
           imagePullPolicy: IfNotPresent
           env:
             - name: EXECUTOR_FRONTEND_URL
@@ -48,7 +48,10 @@ spec:
               # Since the host is 'host.docker.internal', this needs to be true.
             - name: EXECUTOR_DOCKER_ADD_HOST_GATEWAY
               value: "true"
-            # Ensure that the job pods are scheduled on the same node as the executor pod.
+              # Ensure that the job pods are scheduled on the same node as the executor pod.
+#            - name: EXECUTOR_KUBERNETES_POD_AFFINITY
+#              value: '[{"labelSelector": {"matchExpressions": [{"key": "app", "operator": "In", "values": ["sg-executor-batches"]}]}, "topologyKey": "kubernetes.io/hostname"}]'
+            # Another option to ensure that the job pods are scheduled on the same node as the executor pod.
             - name: EXECUTOR_KUBERNETES_NODE_NAME
               valueFrom:
                 fieldRef:
@@ -58,6 +61,12 @@ spec:
 #              value: "true"
 #            - name: EXECUTOR_KEEP_WORKSPACES
 #              value: "true"
+            # Check executor-batches.Role.yml to ensure the correct rules are enabled.
+#            - name: KUBERNETES_SINGLE_JOB_POD
+#              value: "true"
+            # Check executor-batches.Role.yml to ensure the correct rules are enabled.
+#            - name: KUBERNETES_JOB_VOLUME_TYPE
+#              value: "pvc"
           volumeMounts:
             - mountPath: /data
               name: sg-executor-batches-volume

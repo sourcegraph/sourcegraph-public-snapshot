@@ -42,6 +42,7 @@ const READY_EXTERNAL_CHANGESET: ChangesetFields = {
     id: 'somev1',
     error: null,
     syncerError: null,
+    commitVerification: null,
     currentSpec: {
         id: 'spec-rand-id-1',
         type: ChangesetSpecType.BRANCH,
@@ -81,6 +82,7 @@ const FAILED_EXTERNAL_CHANGESET: ChangesetFields = {
     id: 'somev2',
     error: 'Cannot create PR, insufficient token scope.',
     syncerError: null,
+    commitVerification: null,
     currentSpec: {
         id: 'spec-rand-id-2',
         type: ChangesetSpecType.BRANCH,

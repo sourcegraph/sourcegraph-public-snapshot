@@ -2,8 +2,15 @@ package internalerrs
 
 import (
 	"errors"
+	"sort"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	newspb "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news/v1"
 
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/grpc"
@@ -12,7 +19,8 @@ import (
 )
 
 func TestCallBackClientStream(t *testing.T) {
-	t.Run("SendMsg calls postMessageSend with error", func(t *testing.T) {
+	t.Run("SendMsg calls postMessageSend with message and error", func(t *testing.T) {
+		sentinelMessage := struct{}{}
 		sentinelErr := errors.New("send error")
 
 		var called bool
@@ -20,16 +28,19 @@ func TestCallBackClientStream(t *testing.T) {
 			ClientStream: &mockClientStream{
 				sendErr: sentinelErr,
 			},
-			postMessageSend: func(err error) {
+			postMessageSend: func(message any, err error) {
 				called = true
 
+				if diff := cmp.Diff(message, sentinelMessage); diff != "" {
+					t.Errorf("postMessageSend called with unexpected message (-want +got):\n%s", diff)
+				}
 				if !errors.Is(err, sentinelErr) {
 					t.Errorf("got %v, want %v", err, sentinelErr)
 				}
 			},
 		}
 
-		sendErr := stream.SendMsg(nil)
+		sendErr := stream.SendMsg(sentinelMessage)
 		if !called {
 			t.Error("postMessageSend not called")
 		}
@@ -39,7 +50,8 @@ func TestCallBackClientStream(t *testing.T) {
 		}
 	})
 
-	t.Run("RecvMsg calls postMessageReceive with error", func(t *testing.T) {
+	t.Run("RecvMsg calls postMessageReceive with message and error", func(t *testing.T) {
+		sentinelMessage := struct{}{}
 		sentinelErr := errors.New("receive error")
 
 		var called bool
@@ -47,16 +59,19 @@ func TestCallBackClientStream(t *testing.T) {
 			ClientStream: &mockClientStream{
 				recvErr: sentinelErr,
 			},
-			postMessageReceive: func(err error) {
+			postMessageReceive: func(message any, err error) {
 				called = true
 
+				if diff := cmp.Diff(message, sentinelMessage); diff != "" {
+					t.Errorf("postMessageReceive called with unexpected message (-want +got):\n%s", diff)
+				}
 				if !errors.Is(err, sentinelErr) {
 					t.Errorf("got %v, want %v", err, sentinelErr)
 				}
 			},
 		}
 
-		receiveErr := stream.RecvMsg(nil)
+		receiveErr := stream.RecvMsg(sentinelMessage)
 		if !called {
 			t.Error("postMessageReceive not called")
 		}
@@ -67,6 +82,38 @@ func TestCallBackClientStream(t *testing.T) {
 	})
 }
 
+func TestRequestSavingClientStream_InitialRequest(t *testing.T) {
+	// Setup: create a mock ClientStream that returns a sentinel error on SendMsg
+	sentinelErr := errors.New("send error")
+	mockClientStream := &mockClientStream{
+		sendErr: sentinelErr,
+	}
+
+	// Setup: create a requestSavingClientStream with the mock ClientStream
+	stream := &requestSavingClientStream{
+		ClientStream: mockClientStream,
+	}
+
+	// Setup: create a sample proto.Message for the request
+	request := &newspb.BinaryAttachment{
+		Name: "sample_request",
+		Data: []byte("sample data"),
+	}
+
+	// Test: call SendMsg with the request
+	err := stream.SendMsg(request)
+
+	// Check: assert SendMsg propagates the error
+	if !errors.Is(err, sentinelErr) {
+		t.Errorf("got %v, want %v", err, sentinelErr)
+	}
+
+	// Check: assert InitialRequest returns the request
+	if diff := cmp.Diff(request, *stream.InitialRequest(), cmpopts.IgnoreUnexported(newspb.BinaryAttachment{})); diff != "" {
+		t.Fatalf("InitialRequest() (-want +got):\n%s", diff)
+	}
+}
+
 // mockClientStream is a grpc.ClientStream that returns a given error on SendMsg and RecvMsg.
 type mockClientStream struct {
 	grpc.ClientStream
@@ -74,11 +121,122 @@ type mockClientStream struct {
 	recvErr error
 }
 
-func (s *mockClientStream) SendMsg(m interface{}) error {
+func (s *mockClientStream) SendMsg(any) error {
 	return s.sendErr
 }
 
-func (s *mockClientStream) RecvMsg(m interface{}) error {
+func (s *mockClientStream) RecvMsg(any) error {
+	return s.recvErr
+}
+
+func TestCallBackServerStream(t *testing.T) {
+	t.Run("SendMsg calls postMessageSend with message and error", func(t *testing.T) {
+		sentinelMessage := struct{}{}
+		sentinelErr := errors.New("send error")
+
+		var called bool
+		stream := callBackServerStream{
+			ServerStream: &mockServerStream{
+				sendErr: sentinelErr,
+			},
+			postMessageSend: func(message any, err error) {
+				called = true
+
+				if diff := cmp.Diff(message, sentinelMessage); diff != "" {
+					t.Errorf("postMessageSend called with unexpected message (-want +got):\n%s", diff)
+				}
+				if !errors.Is(err, sentinelErr) {
+					t.Errorf("got %v, want %v", err, sentinelErr)
+				}
+			},
+		}
+
+		sendErr := stream.SendMsg(sentinelMessage)
+		if !called {
+			t.Error("postMessageSend not called")
+		}
+
+		if !errors.Is(sendErr, sentinelErr) {
+			t.Errorf("got %v, want %v", sendErr, sentinelErr)
+		}
+	})
+
+	t.Run("RecvMsg calls postMessageReceive with message and error", func(t *testing.T) {
+		sentinelMessage := struct{}{}
+		sentinelErr := errors.New("receive error")
+
+		var called bool
+		stream := callBackServerStream{
+			ServerStream: &mockServerStream{
+				recvErr: sentinelErr,
+			},
+			postMessageReceive: func(message any, err error) {
+				called = true
+
+				if diff := cmp.Diff(message, sentinelMessage); diff != "" {
+					t.Errorf("postMessageReceive called with unexpected message (-want +got):\n%s", diff)
+				}
+				if !errors.Is(err, sentinelErr) {
+					t.Errorf("got %v, want %v", err, sentinelErr)
+				}
+			},
+		}
+
+		receiveErr := stream.RecvMsg(sentinelMessage)
+		if !called {
+			t.Error("postMessageReceive not called")
+		}
+
+		if !errors.Is(receiveErr, sentinelErr) {
+			t.Errorf("got %v, want %v", receiveErr, sentinelErr)
+		}
+	})
+}
+
+func TestRequestSavingServerStream_InitialRequest(t *testing.T) {
+	// Setup: create a mock ServerStream that returns a sentinel error on SendMsg
+	sentinelErr := errors.New("receive error")
+	mockServerStream := &mockServerStream{
+		recvErr: sentinelErr,
+	}
+
+	// Setup: create a requestSavingServerStream with the mock ServerStream
+	stream := &requestSavingServerStream{
+		ServerStream: mockServerStream,
+	}
+
+	// Setup: create a sample proto.Message for the request
+	request := &newspb.BinaryAttachment{
+		Name: "sample_request",
+		Data: []byte("sample data"),
+	}
+
+	// Test: call RecvMsg with the request
+	err := stream.RecvMsg(request)
+
+	// Check: assert RecvMsg propagates the error
+	if !errors.Is(err, sentinelErr) {
+		t.Errorf("got %v, want %v", err, sentinelErr)
+	}
+
+	// Check: assert InitialRequest returns the request
+	if diff := cmp.Diff(request, *stream.InitialRequest(), cmpopts.IgnoreUnexported(newspb.BinaryAttachment{})); diff != "" {
+		t.Fatalf("InitialRequest() (-want +got):\n%s", diff)
+	}
+}
+
+// mockServerStream is a grpc.ServerStream that returns a given error on SendMsg and RecvMsg.
+type mockServerStream struct {
+	grpc.ServerStream
+	sendErr error
+	recvErr error
+}
+
+func (s *mockServerStream) SendMsg(any) error {
+	return s.sendErr
+}
+
+func (s *mockServerStream) RecvMsg(any) error {
 	return s.recvErr
 }
 
@@ -217,6 +375,73 @@ func TestSplitMethodName(t *testing.T) {
 
 			if diff := cmp.Diff(method, tc.wantMethod); diff != "" {
 				t.Errorf("splitMethodName(%q) method (-want +got):\n%s", tc.fullMethod, diff)
+			}
+		})
+	}
+}
+
+func TestFindNonUTF8StringFields(t *testing.T) {
+	// Create instances of the BinaryAttachment and KeyValueAttachment messages
+	invalidBinaryAttachment := &newspb.BinaryAttachment{
+		Name: "inval\x80id_binary",
+		Data: []byte("sample data"),
+	}
+
+	invalidKeyValueAttachment := &newspb.KeyValueAttachment{
+		Name: "inval\x80id_key_value",
+		Data: map[string]string{
+			"key1": "value1",
+			"key2": "inval\x80id_value",
+		},
+	}
+
+	// Create a sample Article message with invalid UTF-8 strings
+	article := &newspb.Article{
+		Author:  "inval\x80id_author",
+		Date:    &timestamppb.Timestamp{Seconds: 1234567890},
+		Title:   "valid_title",
+		Content: "valid_content",
+		Status:  newspb.Article_STATUS_PUBLISHED,
+		Attachments: []*newspb.Attachment{
+			{Contents: &newspb.Attachment_BinaryAttachment{BinaryAttachment: invalidBinaryAttachment}},
+			{Contents: &newspb.Attachment_KeyValueAttachment{KeyValueAttachment: invalidKeyValueAttachment}},
+		},
+	}
+
+	tests := []struct {
+		name          string
+		message       proto.Message
+		expectedPaths []string
+	}{
+		{
+			name:    "Article with invalid UTF-8 strings",
+			message: article,
+			expectedPaths: []string{
+				"author",
+				"attachments[0].binary_attachment.name",
+				"attachments[1].key_value_attachment.name",
+				`attachments[1].key_value_attachment.data["key2"]`,
+			},
+		},
+		{
+			name:          "nil message",
+			message:       nil,
+			expectedPaths: []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			invalidFields, err := findNonUTF8StringFields(tt.message)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			sort.Strings(invalidFields)
+			sort.Strings(tt.expectedPaths)
+
+			if diff := cmp.Diff(tt.expectedPaths, invalidFields, cmpopts.EquateEmpty()); diff != "" {
+				t.Fatalf("unexpected invalid fields (-want +got):\n%s", diff)
 			}
 		})
 	}

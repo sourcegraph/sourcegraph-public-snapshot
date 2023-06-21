@@ -8,7 +8,6 @@ import { useQuery } from '@sourcegraph/http-client'
 import { LoadingSpinner, H4, Text, Link, ErrorAlert, PageHeader, Container } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
-import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import {
     UserAreaUserFields,
     UserProductSubscriptionResult,
@@ -46,9 +45,6 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
             errorPolicy: 'all',
         }
     )
-
-    // Feature flag only used as this is under development - will be enabled by default
-    const [llmProxyManagementUI] = useFeatureFlag('llm-proxy-management-ui')
 
     if (loading) {
         return <LoadingSpinner />
@@ -108,16 +104,15 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
                 </Container>
             )}
 
-            {llmProxyManagementUI && (
-                <CodyServicesSection
-                    viewerCanAdminister={false}
-                    currentSourcegraphAccessToken={productSubscription.currentSourcegraphAccessToken}
-                    accessTokenError={errorForPath(error, accessTokenPath)}
-                    llmProxyAccess={productSubscription.llmProxyAccess}
-                    productSubscriptionID={productSubscription.id}
-                    refetchSubscription={refetch}
-                />
-            )}
+            <CodyServicesSection
+                viewerCanAdminister={false}
+                currentSourcegraphAccessToken={productSubscription.currentSourcegraphAccessToken}
+                accessTokenError={errorForPath(error, accessTokenPath)}
+                codyGatewayAccess={productSubscription.codyGatewayAccess}
+                productSubscriptionID={productSubscription.id}
+                productSubscriptionUUID={subscriptionUUID}
+                refetchSubscription={refetch}
+            />
         </div>
     )
 }

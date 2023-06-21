@@ -1,0 +1,15 @@
+load("@rules_pkg//:mappings.bzl", "pkg_attributes", "pkg_files")
+
+pkg_files(
+    name = "base_config",
+    srcs = [
+        "alertmanager.yml",
+        "prometheus.yml",
+    ],
+    # These files need to be writable by the sourcegraph user to allow sync from siteConfig to Prometheus/Alertmanager
+    attributes = pkg_attributes(
+        mode = "0777",
+    ),
+    prefix = "/sg_config_prometheus",
+    visibility = ["//visibility:public"],
+)

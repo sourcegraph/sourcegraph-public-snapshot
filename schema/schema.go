@@ -78,7 +78,7 @@ type AuditLog struct {
 	GraphQL bool `json:"graphQL"`
 	// InternalTraffic description: Capture security events performed by the internal traffic (adds significant noise).
 	InternalTraffic bool `json:"internalTraffic"`
-	// SeverityLevel description: Severity logging level for the audit log.
+	// SeverityLevel description: DEPRECATED: No effect, audit logs are always set to SRC_LOG_LEVEL
 	SeverityLevel string `json:"severityLevel,omitempty"`
 }
 
@@ -519,6 +519,8 @@ type ChangesetTemplate struct {
 	Branch string `json:"branch"`
 	// Commit description: The Git commit to create with the changes.
 	Commit ExpandedGitCommitDescription `json:"commit"`
+	// Fork description: Whether to publish the changeset to a fork of the target repository. If omitted, the changeset will be published to a branch directly on the target repository, unless the global `batches.enforceFork` setting is enabled. If set, this property will override any global setting.
+	Fork bool `json:"fork,omitempty"`
 	// Published description: Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host. If omitted, the publication state is controlled from the Batch Changes UI.
 	Published any `json:"published,omitempty"`
 	// Title description: The title of the changeset.
@@ -540,26 +542,38 @@ type CloudKMSEncryptionKey struct {
 	Type            string `json:"type"`
 }
 
+// CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
+type CodyGateway struct {
+	// BigQueryDataset description: The dataset to pull BigQuery Cody Gateway related events from.
+	BigQueryDataset string `json:"bigQueryDataset,omitempty"`
+	// BigQueryGoogleProjectID description: The project ID to pull BigQuery Cody Gatewayrelated events from.
+	BigQueryGoogleProjectID string `json:"bigQueryGoogleProjectID,omitempty"`
+	// BigQueryTable description: The table in the dataset to pull BigQuery Cody Gateway related events from.
+	BigQueryTable string `json:"bigQueryTable,omitempty"`
+}
+
 // Completions description: Configuration for the completions service.
 type Completions struct {
-	// AccessToken description: The access token used to authenticate with the external completions provider.
-	AccessToken string `json:"accessToken"`
-	// ChatModel description: The model used for chat completions.
+	// AccessToken description: The access token used to authenticate with the external completions provider. If using the default provider 'sourcegraph', and if 'licenseKey' is set, a default access token is generated.
+	AccessToken string `json:"accessToken,omitempty"`
+	// ChatModel description: The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.
 	ChatModel string `json:"chatModel,omitempty"`
-	// CompletionModel description: The model used for code completion.
+	// CompletionModel description: The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.
 	CompletionModel string `json:"completionModel,omitempty"`
-	// Enabled description: Toggles whether completions are enabled.
-	Enabled bool `json:"enabled"`
-	// Endpoint description: The endpoint under which to reach the provider. Currently only used for provider types "llmproxy" and "anthropic". The default values are "https://completions.sourcegraph.com" and "https://api.anthropic.com/v1/complete" for LLM proxy and Anthropic, respectively.
+	// Enabled description: DEPRECATED. Use cody.enabled instead to turn Cody on/off.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Endpoint description: The endpoint under which to reach the provider. Currently only used for provider types "sourcegraph", "openai" and "anthropic". The default values are "https://cody-gateway.sourcegraph.com", "https://api.openai.com/v1/chat/completions", and "https://api.anthropic.com/v1/complete" for Sourcegraph, OpenAI, and Anthropic, respectively.
 	Endpoint string `json:"endpoint,omitempty"`
+	// FastChatModel description: The model used for fast chat completions.
+	FastChatModel string `json:"fastChatModel,omitempty"`
 	// Model description: DEPRECATED. Use chatModel instead.
-	Model string `json:"model"`
+	Model string `json:"model,omitempty"`
 	// PerUserCodeCompletionsDailyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
 	PerUserCodeCompletionsDailyLimit int `json:"perUserCodeCompletionsDailyLimit,omitempty"`
 	// PerUserDailyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
 	PerUserDailyLimit int `json:"perUserDailyLimit,omitempty"`
-	// Provider description: The external completions provider.
-	Provider string `json:"provider"`
+	// Provider description: The external completions provider. Defaults to 'sourcegraph'.
+	Provider string `json:"provider,omitempty"`
 }
 
 // CustomGitFetchMapping description: Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command.
@@ -580,8 +594,10 @@ type DebugLog struct {
 type Dotcom struct {
 	// AppNotifications description: Notifications to display in the Sourcegraph app.
 	AppNotifications []*AppNotifications `json:"app.notifications,omitempty"`
-	// LlmProxy description: Configuration related to the LLM Proxy service management. This should only be used on sourcegraph.com.
-	LlmProxy *LlmProxy `json:"llmProxy,omitempty"`
+	// CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
+	CodyGateway *CodyGateway `json:"codyGateway,omitempty"`
+	// SlackLicenseAnomallyWebhook description: Slack webhook for when there is an anomaly detected with license key usage.
+	SlackLicenseAnomallyWebhook string `json:"slackLicenseAnomallyWebhook,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
 	// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
@@ -606,22 +622,32 @@ type EmailTemplates struct {
 
 // Embeddings description: Configuration for embeddings service.
 type Embeddings struct {
-	// AccessToken description: The access token used to authenticate with the external embedding API service.
-	AccessToken string `json:"accessToken"`
-	// Dimensions description: The dimensionality of the embedding vectors.
-	Dimensions int `json:"dimensions"`
+	// AccessToken description: The access token used to authenticate with the external embedding API service. For provider sourcegraph, this is optional.
+	AccessToken string `json:"accessToken,omitempty"`
+	// Dimensions description: The dimensionality of the embedding vectors. Required field if not using the sourcegraph provider.
+	Dimensions int `json:"dimensions,omitempty"`
 	// Enabled description: Toggles whether embedding service is enabled.
-	Enabled bool `json:"enabled"`
+	Enabled *bool `json:"enabled,omitempty"`
+	// Endpoint description: The endpoint under which to reach the provider. Sensible default will be used for each provider.
+	Endpoint string `json:"endpoint,omitempty"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
+	// Incremental description: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.
+	Incremental *bool `json:"incremental,omitempty"`
 	// MaxCodeEmbeddingsPerRepo description: The maximum number of embeddings for code files to generate per repo
 	MaxCodeEmbeddingsPerRepo int `json:"maxCodeEmbeddingsPerRepo,omitempty"`
 	// MaxTextEmbeddingsPerRepo description: The maximum number of embeddings for text files to generate per repo
 	MaxTextEmbeddingsPerRepo int `json:"maxTextEmbeddingsPerRepo,omitempty"`
-	// Model description: The model used for embedding.
-	Model string `json:"model"`
-	// Url description: The url to the external embedding API service.
-	Url string `json:"url"`
+	// MinimumInterval description: The time to wait between runs. Valid time units are "s", "m", "h". Example values: "30s", "5m", "1h".
+	MinimumInterval string `json:"minimumInterval,omitempty"`
+	// Model description: The model used for embedding. A default model will be used for each provider, if not set.
+	Model string `json:"model,omitempty"`
+	// PolicyRepositoryMatchLimit description: The maximum number of repositories that can be matched by a global embeddings policy
+	PolicyRepositoryMatchLimit *int `json:"policyRepositoryMatchLimit,omitempty"`
+	// Provider description: The provider to use for generating embeddings. Defaults to sourcegraph.
+	Provider string `json:"provider,omitempty"`
+	// Url description: The url to the external embedding API service. Deprecated, use endpoint instead.
+	Url string `json:"url,omitempty"`
 }
 
 // EncryptionKey description: Config for a key
@@ -763,8 +789,8 @@ type ExpandedGitCommitDescription struct {
 
 // ExperimentalFeatures description: Experimental features and settings.
 type ExperimentalFeatures struct {
-	// CodyRestrictUsersFeatureFlag description: Restrict Cody to only be enabled for users that have a feature flag labeled "cody-experimental" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag.
-	CodyRestrictUsersFeatureFlag bool `json:"codyRestrictUsersFeatureFlag,omitempty"`
+	// BatchChangesEnablePerforce description: When enabled, batch changes will be executable on Perforce depots.
+	BatchChangesEnablePerforce bool `json:"batchChanges.enablePerforce,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
@@ -799,6 +825,8 @@ type ExperimentalFeatures struct {
 	PasswordPolicy *PasswordPolicy `json:"passwordPolicy,omitempty"`
 	// Perforce description: Allow adding Perforce code host connections
 	Perforce string `json:"perforce,omitempty"`
+	// PerforceChangelistMapping description: Allow mapping of Perforce changelists to their commit SHAs in the DB
+	PerforceChangelistMapping string `json:"perforceChangelistMapping,omitempty"`
 	// PythonPackages description: Allow adding Python package code host connections
 	PythonPackages string `json:"pythonPackages,omitempty"`
 	// Ranking description: Experimental search result ranking options.
@@ -855,7 +883,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
-	delete(m, "codyRestrictUsersFeatureFlag")
+	delete(m, "batchChanges.enablePerforce")
 	delete(m, "customGitFetch")
 	delete(m, "debug.log")
 	delete(m, "enableGRPC")
@@ -873,6 +901,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "pagure")
 	delete(m, "passwordPolicy")
 	delete(m, "perforce")
+	delete(m, "perforceChangelistMapping")
 	delete(m, "pythonPackages")
 	delete(m, "ranking")
 	delete(m, "rateLimitAnonymous")
@@ -1348,20 +1377,21 @@ type JVMPackagesConnection struct {
 	Maven Maven `json:"maven"`
 }
 
-// LlmProxy description: Configuration related to the LLM Proxy service management. This should only be used on sourcegraph.com.
-type LlmProxy struct {
-	// BigQueryDataset description: The dataset to pull BigQuery LLM Proxy related events from.
-	BigQueryDataset string `json:"bigQueryDataset,omitempty"`
-	// BigQueryGoogleProjectID description: The project ID to pull BigQuery LLM Proxy related events from.
-	BigQueryGoogleProjectID string `json:"bigQueryGoogleProjectID,omitempty"`
-	// BigQueryTable description: The table in the dataset to pull BigQuery LLM Proxy related events from.
-	BigQueryTable string `json:"bigQueryTable,omitempty"`
+// LocalGitExternalService description: Configuration for integration local Git repositories.
+type LocalGitExternalService struct {
+	Repos []*LocalGitRepoPattern `json:"repos,omitempty"`
+}
+type LocalGitRepoPattern struct {
+	Group   string `json:"group,omitempty"`
+	Pattern string `json:"pattern,omitempty"`
 }
 
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
 	// AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
 	AuditLog *AuditLog `json:"auditLog,omitempty"`
+	// SecurityEventLog description: EXPERIMENTAL: Configuration for security event logging
+	SecurityEventLog *SecurityEventLog `json:"securityEventLog,omitempty"`
 	// Sentry description: Configuration for Sentry
 	Sentry *Sentry `json:"sentry,omitempty"`
 }
@@ -1798,9 +1828,9 @@ type QuickLink struct {
 
 // Ranking description: Experimental search result ranking options.
 type Ranking struct {
-	// DocumentRanksWeight description: Controls the impact of document ranks on the final ranking when the 'search-ranking' feature is enabled. This is intended for internal testing purposes only, it's not recommended for users to change this.
+	// DocumentRanksWeight description: Controls the impact of document ranks on the final ranking. This is intended for internal testing purposes only, it's not recommended for users to change this.
 	DocumentRanksWeight *float64 `json:"documentRanksWeight,omitempty"`
-	// FlushWallTimeMS description: Controls the amount of time that Zoekt shards collect and rank results when the 'search-ranking' feature is enabled. Larger values give a more stable ranking, but searches can take longer to return an initial result.
+	// FlushWallTimeMS description: Controls the amount of time that Zoekt shards collect and rank results. Larger values give a more stable ranking, but searches can take longer to return an initial result.
 	FlushWallTimeMS int `json:"flushWallTimeMS,omitempty"`
 	// MaxQueueMatchCount description: The maximum number of matches that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs for queries with extremely high count of matches per repository.
 	MaxQueueMatchCount *int `json:"maxQueueMatchCount,omitempty"`
@@ -1978,6 +2008,12 @@ type SearchScope struct {
 	Name string `json:"name"`
 	// Value description: The query string of this search scope
 	Value string `json:"value"`
+}
+
+// SecurityEventLog description: EXPERIMENTAL: Configuration for security event logging
+type SecurityEventLog struct {
+	// Location description: Where to output the security event log [none, auditlog, database, all] where auditlog is the default logging to stdout with the specified audit log format
+	Location string `json:"location,omitempty"`
 }
 
 // Sentry description: Configuration for Sentry
@@ -2340,6 +2376,8 @@ type SiteConfiguration struct {
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
 	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
 	AuthzRefreshInterval int `json:"authz.refreshInterval,omitempty"`
+	// BatchChangesAutoDeleteBranch description: Automatically delete branches created for Batch Changes changesets when the changeset is merged or closed, for supported code hosts. Overrides any setting on the repository on the code host itself.
+	BatchChangesAutoDeleteBranch bool `json:"batchChanges.autoDeleteBranch,omitempty"`
 	// BatchChangesChangesetsRetention description: How long changesets will be retained after they have been detached from a batch change.
 	BatchChangesChangesetsRetention string `json:"batchChanges.changesetsRetention,omitempty"`
 	// BatchChangesDisableWebhooksWarning description: Hides Batch Changes warnings about webhooks not being configured.
@@ -2366,6 +2404,8 @@ type SiteConfiguration struct {
 	CodeIntelAutoIndexingIndexerMap map[string]string `json:"codeIntelAutoIndexing.indexerMap,omitempty"`
 	// CodeIntelAutoIndexingPolicyRepositoryMatchLimit description: The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.
 	CodeIntelAutoIndexingPolicyRepositoryMatchLimit *int `json:"codeIntelAutoIndexing.policyRepositoryMatchLimit,omitempty"`
+	// CodeIntelRankingDocumentReferenceCountsCronExpression description: A cron expression indicating when to run the document reference counts graph reduction job.
+	CodeIntelRankingDocumentReferenceCountsCronExpression *string `json:"codeIntelRanking.documentReferenceCountsCronExpression,omitempty"`
 	// CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix description: An arbitrary identifier used to group calculated rankings from SCIP data (excluding the SCIP export).
 	CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix string `json:"codeIntelRanking.documentReferenceCountsDerivativeGraphKeyPrefix,omitempty"`
 	// CodeIntelRankingDocumentReferenceCountsEnabled description: Enables/disables the document reference counts feature. Currently experimental.
@@ -2374,6 +2414,10 @@ type SiteConfiguration struct {
 	CodeIntelRankingDocumentReferenceCountsGraphKey string `json:"codeIntelRanking.documentReferenceCountsGraphKey,omitempty"`
 	// CodeIntelRankingStaleResultsAge description: The interval at which to run the reduce job that computes document reference counts. Default is 24hrs.
 	CodeIntelRankingStaleResultsAge int `json:"codeIntelRanking.staleResultsAge,omitempty"`
+	// CodyEnabled description: Enable or disable Cody instance-wide. When Cody is disabled, all Cody endpoints and GraphQL queries will return errors, Cody will not show up in the site-admin sidebar, and Cody in the global navbar will only show a call-to-action for site-admins to enable Cody.
+	CodyEnabled *bool `json:"cody.enabled,omitempty"`
+	// CodyRestrictUsersFeatureFlag description: Restrict Cody to only be enabled for users that have a feature flag labeled "cody" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.
+	CodyRestrictUsersFeatureFlag *bool `json:"cody.restrictUsersFeatureFlag,omitempty"`
 	// Completions description: Configuration for the completions service.
 	Completions *Completions `json:"completions,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
@@ -2606,6 +2650,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "auth.userOrgMap")
 	delete(m, "authz.enforceForSiteAdmins")
 	delete(m, "authz.refreshInterval")
+	delete(m, "batchChanges.autoDeleteBranch")
 	delete(m, "batchChanges.changesetsRetention")
 	delete(m, "batchChanges.disableWebhooksWarning")
 	delete(m, "batchChanges.enabled")
@@ -2618,10 +2663,13 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelAutoIndexing.enabled")
 	delete(m, "codeIntelAutoIndexing.indexerMap")
 	delete(m, "codeIntelAutoIndexing.policyRepositoryMatchLimit")
+	delete(m, "codeIntelRanking.documentReferenceCountsCronExpression")
 	delete(m, "codeIntelRanking.documentReferenceCountsDerivativeGraphKeyPrefix")
 	delete(m, "codeIntelRanking.documentReferenceCountsEnabled")
 	delete(m, "codeIntelRanking.documentReferenceCountsGraphKey")
 	delete(m, "codeIntelRanking.staleResultsAge")
+	delete(m, "cody.enabled")
+	delete(m, "cody.restrictUsersFeatureFlag")
 	delete(m, "completions")
 	delete(m, "corsOrigin")
 	delete(m, "debug.search.symbolsParallelism")
@@ -2757,10 +2805,18 @@ type SubRepoPermissions struct {
 	UserCacheTTLSeconds int `json:"userCacheTTLSeconds,omitempty"`
 }
 
+// SymbolConfiguration description: Configure symbol generation
+type SymbolConfiguration struct {
+	// Engine description: Manually specify overrides for symbol generation engine per language
+	Engine map[string]string `json:"engine"`
+}
+
 // SyntaxHighlighting description: Syntax highlighting configuration
 type SyntaxHighlighting struct {
 	Engine    SyntaxHighlightingEngine   `json:"engine"`
 	Languages SyntaxHighlightingLanguage `json:"languages"`
+	// Symbols description: Configure symbol generation
+	Symbols SymbolConfiguration `json:"symbols"`
 }
 type SyntaxHighlightingEngine struct {
 	// Default description: The default syntax highlighting engine to use

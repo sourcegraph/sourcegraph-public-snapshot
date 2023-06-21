@@ -28,8 +28,6 @@ func NewSummaryBuilder(
 	return goroutine.NewPeriodicGoroutine(
 		// We should use an internal actor when doing cross service calls.
 		actor.WithInternalActor(context.Background()),
-		"codeintel.autoindexing-summary-builder", "build an auto-indexing summary over repositories with high search activity",
-		config.Interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			repositoryWithCounts, err := store.TopRepositoriesToConfigure(ctx, config.NumRepositoriesToConfigure)
 			if err != nil {
@@ -50,7 +48,7 @@ func NewSummaryBuilder(
 
 				if autoIndexingEnabled() {
 					commit := "HEAD"
-					indexJobs, err := jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryWithCount.RepositoryID, commit, "", false)
+					result, err := jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryWithCount.RepositoryID, commit, "", false)
 					if err != nil {
 						if errors.As(err, &inference.LimitError{}) {
 							continue
@@ -78,7 +76,7 @@ func NewSummaryBuilder(
 						blocklist[key] = struct{}{}
 					}
 
-					inferredAvailableIndexers = uploadsshared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
+					inferredAvailableIndexers = uploadsshared.PopulateInferredAvailableIndexers(result.IndexJobs, blocklist, inferredAvailableIndexers)
 					// inferredAvailableIndexers = uploadsshared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 				}
 
@@ -93,5 +91,8 @@ func NewSummaryBuilder(
 
 			return nil
 		}),
+		goroutine.WithName("codeintel.autoindexing-summary-builder"),
+		goroutine.WithDescription("build an auto-indexing summary over repositories with high search activity"),
+		goroutine.WithInterval(config.Interval),
 	)
 }

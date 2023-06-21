@@ -37,6 +37,7 @@ export const settingsAreaRepositoryFragment = gql`
                 reason
             }
             lastError
+            lastSyncOutput
             updateSchedule {
                 due
                 index
@@ -67,22 +68,6 @@ export const FETCH_SETTINGS_AREA_REPOSITORY_GQL = gql`
         }
     }
     ${settingsAreaRepositoryFragment}
-`
-
-export const ADD_REPO_METADATA_GQL = gql`
-    mutation AddRepoMetadata($repo: ID!, $key: String!, $value: String) {
-        addRepoMetadata(repo: $repo, key: $key, value: $value) {
-            alwaysNil
-        }
-    }
-`
-
-export const DELETE_REPO_METADATA_GQL = gql`
-    mutation DeleteRepoMetadata($repo: ID!, $key: String!) {
-        deleteRepoMetadata(repo: $repo, key: $key) {
-            alwaysNil
-        }
-    }
 `
 
 /**

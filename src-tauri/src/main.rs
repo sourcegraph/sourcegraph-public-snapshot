@@ -6,7 +6,6 @@
 #[cfg(not(dev))]
 use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 
-mod cody;
 mod common;
 mod tray;
 use common::{extract_path_from_scheme_url, show_window};
@@ -31,6 +30,34 @@ fn get_launch_path(window: tauri::Window) -> String {
 #[tauri::command]
 fn app_shell_loaded() -> Option<AppShellReadyPayload> {
     return APP_SHELL_READY_PAYLOAD.read().unwrap().clone();
+}
+
+#[tauri::command]
+fn show_main_window(app_handle: tauri::AppHandle) {
+    show_window(&app_handle, "main");
+}
+
+#[tauri::command]
+fn reload_cody_window(app_handle: tauri::AppHandle) {
+    let win = app_handle.get_window("cody");
+    if win.is_some() {
+        win.unwrap().eval("window.location.reload();").unwrap();
+    }
+}
+
+#[tauri::command]
+fn show_logs(app_handle: tauri::AppHandle) {
+    common::show_logs(&app_handle);
+}
+
+#[tauri::command]
+fn restart_app(app_handle: tauri::AppHandle) {
+    app_handle.restart();
+}
+
+#[tauri::command]
+fn clear_all_data(app_handle: tauri::AppHandle) {
+    common::prompt_to_clear_all_data(&app_handle);
 }
 
 fn set_launch_path(url: String) {
@@ -78,7 +105,22 @@ fn main() {
             tauri::WindowEvent::CloseRequested { api, .. } => {
                 // Ensure the app stays open after the last window is closed.
                 if event.window().label() == "main" {
-                    event.window().hide().unwrap();
+                    // We use `tauri::AppHandle::hide` instead of `event.window().hide` because
+                    // hiding the app allows clicking the dock icon to show the app again.
+                    // This is a temporary solution that only works if the app has a single window.
+                    // If we need to add more windows in the future, we need to wait until
+                    // https://github.com/tauri-apps/tauri/issues/3084 is fixed.
+                    #[allow(unused_unsafe)]
+                    #[cfg(not(target_os = "macos"))]
+                    {
+                        event.window().hide().unwrap();
+                    }
+
+                    #[allow(unused_unsafe)]
+                    #[cfg(target_os = "macos")]
+                    unsafe {
+                        tauri::AppHandle::hide(&event.window().app_handle()).unwrap();
+                    }
                     api.prevent_close();
                 }
             }
@@ -137,9 +179,17 @@ fn main() {
         // its name which may suggest that it invokes something, actually only
         // *defines* an invoke() handler and does not invoke anything during
         // setup here.)
-        .invoke_handler(tauri::generate_handler![get_launch_path, app_shell_loaded])
+        .invoke_handler(tauri::generate_handler![
+            get_launch_path,
+            app_shell_loaded,
+            show_main_window,
+            reload_cody_window,
+            show_logs,
+            restart_app,
+            clear_all_data
+        ])
         .run(context)
-        .expect("error while running tauri application");
+        .expect("error while running Cody app");
 }
 
 #[cfg(dev)]
@@ -189,10 +239,35 @@ fn start_embedded_services(handle: &tauri::AppHandle) {
                     }
                     log::error!("{}", line);
                 }
+                CommandEvent::Error(err) => {
+                    show_error_screen(&app);
+                    log::error!("Error running the Cody app backend: {:#?}", err)
+                }
+                CommandEvent::Terminated(payload) => {
+                    show_error_screen(&app);
+
+                    if let Some(code) = payload.code {
+                        log::error!("Cody app backend terminated with exit code {}", code);
+                    }
+
+                    if let Some(signal) = payload.signal {
+                        log::error!("Cody app backend terminated due to signal {}", signal);
+                    }
+                }
                 _ => continue,
             };
         }
     });
+}
+
+/// Show the error page in the main window
+fn show_error_screen(app_handle: &tauri::AppHandle) {
+    app_handle
+        .get_window("main")
+        .unwrap()
+        .eval("window.location.href = 'tauri://localhost/error.html';")
+        .unwrap();
+    show_window(app_handle, "main");
 }
 
 fn get_sourcegraph_args(app_handle: &tauri::AppHandle) -> Vec<String> {

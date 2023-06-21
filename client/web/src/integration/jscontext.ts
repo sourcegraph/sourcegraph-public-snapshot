@@ -26,6 +26,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     codeInsightsEnabled: true,
     executorsEnabled: true,
     codyEnabled: true,
+    codyEnabledForCurrentUser: true,
     codyRequiresVerifiedEmail: false,
     extsvcConfigAllowEdits: false,
     extsvcConfigFileExists: false,
@@ -39,6 +40,13 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     emailEnabled: false,
     experimentalFeatures: {},
     isAuthenticatedUser: true,
+    licenseInfo: {
+        currentPlan: 'team-0',
+        batchChanges: {
+            maxNumChangesets: -1,
+            unrestricted: true,
+        },
+    },
     needServerRestart: false,
     needsSiteInit: false,
     needsRepositoryConfiguration: false,

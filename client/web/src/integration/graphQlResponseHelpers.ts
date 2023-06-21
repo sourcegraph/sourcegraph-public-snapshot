@@ -38,6 +38,8 @@ export const createFileTreeEntriesResult = (url: string, toplevelFiles: string[]
 export const createBlobContentResult = (content: string, lsif?: JsonDocument): BlobResult => ({
     repository: {
         commit: {
+            __typename: 'GitCommit',
+            oid: '1',
             file: {
                 __typename: 'VirtualFile',
                 content,
@@ -49,6 +51,7 @@ export const createBlobContentResult = (content: string, lsif?: JsonDocument): B
                 },
             },
         },
+        changelist: null,
     },
 })
 
@@ -94,9 +97,11 @@ export const createResolveRepoRevisionResult = (treeUrl: string, oid = '1'.repea
         defaultBranch: { displayName: 'master', abbrevName: 'master' },
         mirrorInfo: { cloneInProgress: false, cloneProgress: '', cloned: true },
         commit: {
+            __typename: 'GitCommit',
             oid,
             tree: { url: '/' + treeUrl },
         },
+        changelist: null,
         isFork: false,
         metadata: [],
     },
@@ -127,6 +132,7 @@ export const createResolveCloningRepoRevisionResult = (
             cloned: false,
         },
         commit: null,
+        changelist: null,
         isFork: false,
         metadata: [],
     },

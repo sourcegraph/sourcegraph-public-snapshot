@@ -24,6 +24,8 @@ interface ChatProps extends ChatClassNames {
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
     onSubmit: (text: string, submitType: 'user' | 'suggestion') => void
+    contextStatusComponent?: React.FunctionComponent<any>
+    contextStatusComponentProps?: any
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
@@ -39,6 +41,10 @@ interface ChatProps extends ChatClassNames {
     setSuggestions?: (suggestions: undefined | []) => void
     needsEmailVerification?: boolean
     needsEmailVerificationNotice?: React.FunctionComponent
+    codyNotEnabledNotice?: React.FunctionComponent
+    abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
+    onAbortMessageInProgress?: () => void
+    isCodyEnabled: boolean
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -82,8 +88,9 @@ export interface FeedbackButtonsProps {
     feedbackButtonsOnSubmit: (text: string) => void
 }
 
+// TODO: Rename to CodeBlockActionsProps
 export interface CopyButtonProps {
-    copyButtonOnSubmit: (text: string) => void
+    copyButtonOnSubmit: (text: string, insert?: boolean) => void
 }
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
@@ -106,6 +113,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     afterTips,
     className,
     codeBlocksCopyButtonClassName,
+    codeBlocksInsertButtonClassName,
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
@@ -121,7 +129,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     suggestions,
     setSuggestions,
     needsEmailVerification = false,
+    codyNotEnabledNotice: CodyNotEnabledNotice,
     needsEmailVerificationNotice: NeedsEmailVerificationNotice,
+    contextStatusComponent: ContextStatusComponent,
+    contextStatusComponentProps = {},
+    abortMessageInProgressComponent: AbortMessageInProgressButton,
+    onAbortMessageInProgress = () => {},
+    isCodyEnabled,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -154,6 +168,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setInputHistory([...inputHistory, input])
         },
         [inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions]
+    )
+    const onChatInput = useCallback(
+        ({ target }: React.SyntheticEvent) => {
+            const { value } = target as HTMLInputElement
+            inputHandler(value)
+        },
+        [inputHandler]
     )
 
     const onChatSubmit = useCallback((): void => {
@@ -215,7 +236,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
     return (
         <div className={classNames(className, styles.innerContainer)}>
-            {needsEmailVerification && NeedsEmailVerificationNotice ? (
+            {!isCodyEnabled && CodyNotEnabledNotice ? (
+                <div className="flex-1">
+                    <CodyNotEnabledNotice />
+                </div>
+            ) : needsEmailVerification && NeedsEmailVerificationNotice ? (
                 <div className="flex-1">
                     <NeedsEmailVerificationNotice />
                 </div>
@@ -227,6 +252,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     setMessageBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                    codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                     transcriptItemClassName={transcriptItemClassName}
                     humanTranscriptItemClassName={humanTranscriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
@@ -257,28 +283,34 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         )}
                     </div>
                 ) : null}
+                {messageInProgress && AbortMessageInProgressButton && (
+                    <div className={classNames(styles.abortButtonContainer)}>
+                        <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
+                    </div>
+                )}
                 <div className={styles.textAreaContainer}>
                     <TextArea
                         className={classNames(styles.chatInput, chatInputClassName)}
                         rows={inputRows}
-                        value={formInput}
+                        value={isCodyEnabled ? formInput : 'Cody is disabled on this instance'}
                         autoFocus={true}
                         required={true}
-                        disabled={needsEmailVerification}
-                        onInput={({ target }) => {
-                            const { value } = target as HTMLInputElement
-                            inputHandler(value)
-                        }}
+                        disabled={needsEmailVerification || !isCodyEnabled}
+                        onInput={onChatInput}
                         onKeyDown={onChatKeyDown}
                     />
                     <SubmitButton
                         className={styles.submitButton}
                         onClick={onChatSubmit}
-                        disabled={!!messageInProgress || needsEmailVerification}
+                        disabled={!!messageInProgress || needsEmailVerification || !isCodyEnabled}
                     />
                 </div>
-                {contextStatus && (
-                    <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
+                {ContextStatusComponent ? (
+                    <ContextStatusComponent {...contextStatusComponentProps} />
+                ) : (
+                    contextStatus && (
+                        <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
+                    )
                 )}
             </form>
         </div>

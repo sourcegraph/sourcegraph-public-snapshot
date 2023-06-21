@@ -9,7 +9,10 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
 	adobatches "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -118,6 +121,10 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 		return computeBitbucketCloudBuildState(c.UpdatedAt, m, events)
 	case *azuredevops.AnnotatedPullRequest:
 		return computeAzureDevOpsBuildState(m)
+	case *gerritbatches.AnnotatedChange, *protocol.PerforceChangelistState:
+		// Gerrit and Perforce don't have builds built-in, its better to be explicit by still
+		// including this case for clarity.
+		return btypes.ChangesetCheckStateUnknown
 	}
 
 	return btypes.ChangesetCheckStateUnknown
@@ -564,6 +571,32 @@ func computeSingleChangesetExternalState(c *btypes.Changeset) (s btypes.Changese
 		default:
 			return "", errors.Errorf("unknown Azure DevOps pull request state: %s", m.Status)
 		}
+	case *gerritbatches.AnnotatedChange:
+		switch m.Change.Status {
+		case gerrit.ChangeStatusAbandoned:
+			s = btypes.ChangesetExternalStateClosed
+		case gerrit.ChangeStatusMerged:
+			s = btypes.ChangesetExternalStateMerged
+		case gerrit.ChangeStatusNew:
+			if m.Change.WorkInProgress {
+				s = btypes.ChangesetExternalStateDraft
+			} else {
+				s = btypes.ChangesetExternalStateOpen
+			}
+		default:
+			return "", errors.Errorf("unknown Gerrit Change state: %s", m.Change.Status)
+		}
+	case *protocol.PerforceChangelist:
+		switch m.State {
+		case protocol.PerforceChangelistStateClosed:
+			s = btypes.ChangesetExternalStateClosed
+		case protocol.PerforceChangelistStateSubmitted:
+			s = btypes.ChangesetExternalStateMerged
+		case protocol.PerforceChangelistStatePending, protocol.PerforceChangelistStateShelved:
+			s = btypes.ChangesetExternalStateOpen
+		default:
+			return "", errors.Errorf("unknown Gerrit Change state: %s", m.State)
+		}
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -650,6 +683,32 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 				states[btypes.ChangesetReviewStatePending] = true
 			}
 		}
+	case *gerritbatches.AnnotatedChange:
+		if m.Reviewers == nil {
+			states[btypes.ChangesetReviewStatePending] = true
+			break
+		}
+		for _, reviewer := range m.Reviewers {
+			// Score represents the status of a review on Gerrit. Here are possible values for Vote:
+			//
+			//  +2 : approved, can be merged
+			//  +1 : approved, but needs additional reviews
+			//   0 : no score
+			//  -1 : needs changes
+			//  -2 : rejected
+			switch reviewer.Approvals.CodeReview {
+			case "+2", "+1":
+				states[btypes.ChangesetReviewStateApproved] = true
+			case " 0": // This isn't a typo, there is actually a space in the string.
+				states[btypes.ChangesetReviewStatePending] = true
+			case "-1", "-2":
+				states[btypes.ChangesetReviewStateChangesRequested] = true
+			default:
+				states[btypes.ChangesetReviewStatePending] = true
+			}
+		}
+	case *protocol.PerforceChangelist:
+		states[btypes.ChangesetReviewStatePending] = true
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -680,6 +739,10 @@ func selectReviewState(states map[btypes.ChangesetReviewState]bool) btypes.Chang
 // computeDiffStat computes the up to date diffstat for the changeset, based on
 // the values in c.SyncState.
 func computeDiffStat(ctx context.Context, client gitserver.Client, c *btypes.Changeset, repo api.RepoName) (*diff.Stat, error) {
+	//Code hosts that don't push to branches (like Gerrit), can just skip this.
+	if c.SyncState.BaseRefOid == c.SyncState.HeadRefOid {
+		return c.DiffStat(), nil
+	}
 	iter, err := client.Diff(ctx, authz.DefaultSubRepoPermsChecker, gitserver.DiffOptions{
 		Repo: repo,
 		Base: c.SyncState.BaseRefOid,

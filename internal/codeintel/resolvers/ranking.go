@@ -7,11 +7,27 @@ import (
 )
 
 type RankingServiceResolver interface {
-	RankingSummary(ctx context.Context) ([]RankingSummaryResolver, error)
+	RankingSummary(ctx context.Context) (GlobalRankingSummaryResolver, error)
+	BumpDerivativeGraphKey(ctx context.Context) (*EmptyResponse, error)
+	DeleteRankingProgress(ctx context.Context, args *DeleteRankingProgressArgs) (*EmptyResponse, error)
+}
+
+type DeleteRankingProgressArgs struct {
+	GraphKey string
+}
+
+type GlobalRankingSummaryResolver interface {
+	DerivativeGraphKey() *string
+	RankingSummary() []RankingSummaryResolver
+	NextJobStartsAt() *gqlutil.DateTime
+	NumExportedIndexes() int32
+	NumTargetIndexes() int32
+	NumRepositoriesWithoutCurrentRanks() int32
 }
 
 type RankingSummaryResolver interface {
 	GraphKey() string
+	VisibleToZoekt() bool
 	PathMapperProgress() RankingSummaryProgressResolver
 	ReferenceMapperProgress() RankingSummaryProgressResolver
 	ReducerProgress() RankingSummaryProgressResolver

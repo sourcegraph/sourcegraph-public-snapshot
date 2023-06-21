@@ -2,6 +2,15 @@ package internalerrs
 
 import (
 	"strings"
+	"sync"
+	"sync/atomic"
+	"unicode/utf8"
+
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protopath"
+	"google.golang.org/protobuf/reflect/protorange"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -12,25 +21,115 @@ import (
 type callBackClientStream struct {
 	grpc.ClientStream
 
-	postMessageSend    func(error)
-	postMessageReceive func(error)
+	postMessageSend    func(message any, err error)
+	postMessageReceive func(message any, err error)
 }
 
-func (c *callBackClientStream) SendMsg(m interface{}) error {
+func (c *callBackClientStream) SendMsg(m any) error {
 	err := c.ClientStream.SendMsg(m)
-	c.postMessageSend(err)
+	if c.postMessageSend != nil {
+		c.postMessageSend(m, err)
+	}
 
 	return err
 }
 
-func (c *callBackClientStream) RecvMsg(m interface{}) error {
+func (c *callBackClientStream) RecvMsg(m any) error {
 	err := c.ClientStream.RecvMsg(m)
-	c.postMessageReceive(err)
+	if c.postMessageReceive != nil {
+		c.postMessageReceive(m, err)
+	}
 
 	return err
 }
 
 var _ grpc.ClientStream = &callBackClientStream{}
+
+// requestSavingClientStream is a grpc.ClientStream that saves the initial request sent to the server.
+type requestSavingClientStream struct {
+	grpc.ClientStream
+
+	initialRequest  atomic.Pointer[proto.Message]
+	saveRequestOnce sync.Once
+}
+
+func (c *requestSavingClientStream) SendMsg(m any) error {
+	c.saveRequestOnce.Do(func() {
+		message, ok := m.(proto.Message)
+		if !ok {
+			return
+		}
+
+		c.initialRequest.Store(&message)
+	})
+
+	return c.ClientStream.SendMsg(m)
+}
+
+// InitialRequest returns the initial request sent by the client on the stream.
+func (c *requestSavingClientStream) InitialRequest() *proto.Message {
+	return c.initialRequest.Load()
+}
+
+var _ grpc.ClientStream = &requestSavingClientStream{}
+
+// requestSavingServerStream is a grpc.ServerStream that saves the initial request sent by the client.
+type requestSavingServerStream struct {
+	grpc.ServerStream
+
+	initialRequest  atomic.Pointer[proto.Message]
+	saveRequestOnce sync.Once
+}
+
+func (s *requestSavingServerStream) RecvMsg(m any) error {
+	s.saveRequestOnce.Do(func() {
+		message, ok := m.(proto.Message)
+		if !ok {
+			return
+		}
+
+		s.initialRequest.Store(&message)
+	})
+
+	return s.ServerStream.RecvMsg(m)
+}
+
+// InitialRequest returns the initial request sent by the client on the stream.
+func (s *requestSavingServerStream) InitialRequest() *proto.Message {
+	return s.initialRequest.Load()
+}
+
+var _ grpc.ServerStream = &requestSavingServerStream{}
+
+// callBackServerStream is a grpc.ServerStream that calls a function after SendMsg and RecvMsg.
+type callBackServerStream struct {
+	grpc.ServerStream
+
+	postMessageSend    func(message any, err error)
+	postMessageReceive func(message any, err error)
+}
+
+func (c *callBackServerStream) SendMsg(m any) error {
+	err := c.ServerStream.SendMsg(m)
+
+	if c.postMessageSend != nil {
+		c.postMessageSend(m, err)
+	}
+
+	return err
+}
+
+func (c *callBackServerStream) RecvMsg(m any) error {
+	err := c.ServerStream.RecvMsg(m)
+
+	if c.postMessageReceive != nil {
+		c.postMessageReceive(m, err)
+	}
+
+	return err
+}
+
+var _ grpc.ServerStream = &callBackServerStream{}
 
 // probablyInternalGRPCError checks if a gRPC status likely represents an error that comes from
 // the go-grpc library.
@@ -86,4 +185,32 @@ func splitMethodName(fullMethod string) (string, string) {
 		return fullMethod[:i], fullMethod[i+1:]
 	}
 	return "unknown", "unknown"
+}
+
+// findNonUTF8StringFields returns a list of field names that contain invalid UTF-8 strings
+// in the given proto message.
+//
+// Example: ["author", "attachments[1].key_value_attachment.data["key2"]`]
+func findNonUTF8StringFields(m proto.Message) ([]string, error) {
+	if m == nil {
+		return nil, nil
+	}
+
+	var fields []string
+	err := protorange.Range(m.ProtoReflect(), func(p protopath.Values) error {
+		last := p.Index(-1)
+		s, ok := last.Value.Interface().(string)
+		if ok && !utf8.ValidString(s) {
+			fieldName := p.Path[1:].String()
+			fields = append(fields, strings.TrimPrefix(fieldName, "."))
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, errors.Wrap(err, "iterating over proto message")
+	}
+
+	return fields, nil
 }

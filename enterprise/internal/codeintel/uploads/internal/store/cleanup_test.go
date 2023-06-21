@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestHardDeleteUploadsByIDs(t *testing.T) {
@@ -574,24 +575,24 @@ func TestExpireFailedRecords(t *testing.T) {
 
 	insertIndexes(t, db,
 		// young failures (none removed)
-		uploadsshared.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(1), FinishedAt: timePtr(now.Add(-time.Minute * 10)), State: "failed"},
-		uploadsshared.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2), FinishedAt: timePtr(now.Add(-time.Minute * 20)), State: "failed"},
-		uploadsshared.Index{ID: 3, RepositoryID: 50, Commit: makeCommit(3), FinishedAt: timePtr(now.Add(-time.Minute * 20)), State: "failed"},
+		uploadsshared.Index{ID: 1, RepositoryID: 50, Commit: makeCommit(1), FinishedAt: pointers.Ptr(now.Add(-time.Minute * 10)), State: "failed"},
+		uploadsshared.Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2), FinishedAt: pointers.Ptr(now.Add(-time.Minute * 20)), State: "failed"},
+		uploadsshared.Index{ID: 3, RepositoryID: 50, Commit: makeCommit(3), FinishedAt: pointers.Ptr(now.Add(-time.Minute * 20)), State: "failed"},
 
 		// failures prior to a success (both removed)
-		uploadsshared.Index{ID: 4, RepositoryID: 50, Commit: makeCommit(4), FinishedAt: timePtr(now.Add(-time.Hour * 10)), Root: "foo", State: "completed"},
-		uploadsshared.Index{ID: 5, RepositoryID: 50, Commit: makeCommit(5), FinishedAt: timePtr(now.Add(-time.Hour * 12)), Root: "foo", State: "failed"},
-		uploadsshared.Index{ID: 6, RepositoryID: 50, Commit: makeCommit(6), FinishedAt: timePtr(now.Add(-time.Hour * 14)), Root: "foo", State: "failed"},
+		uploadsshared.Index{ID: 4, RepositoryID: 50, Commit: makeCommit(4), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 10)), Root: "foo", State: "completed"},
+		uploadsshared.Index{ID: 5, RepositoryID: 50, Commit: makeCommit(5), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 12)), Root: "foo", State: "failed"},
+		uploadsshared.Index{ID: 6, RepositoryID: 50, Commit: makeCommit(6), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 14)), Root: "foo", State: "failed"},
 
 		// old failures (one is left for debugging)
-		uploadsshared.Index{ID: 7, RepositoryID: 51, Commit: makeCommit(7), FinishedAt: timePtr(now.Add(-time.Hour * 3)), State: "failed"},
-		uploadsshared.Index{ID: 8, RepositoryID: 51, Commit: makeCommit(8), FinishedAt: timePtr(now.Add(-time.Hour * 4)), State: "failed"},
-		uploadsshared.Index{ID: 9, RepositoryID: 51, Commit: makeCommit(9), FinishedAt: timePtr(now.Add(-time.Hour * 5)), State: "failed"},
+		uploadsshared.Index{ID: 7, RepositoryID: 51, Commit: makeCommit(7), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 3)), State: "failed"},
+		uploadsshared.Index{ID: 8, RepositoryID: 51, Commit: makeCommit(8), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 4)), State: "failed"},
+		uploadsshared.Index{ID: 9, RepositoryID: 51, Commit: makeCommit(9), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 5)), State: "failed"},
 
 		// failures prior to queued uploads (one removed; queued does not reset failures)
 		uploadsshared.Index{ID: 10, RepositoryID: 52, Commit: makeCommit(10), Root: "foo", State: "queued"},
-		uploadsshared.Index{ID: 11, RepositoryID: 52, Commit: makeCommit(11), FinishedAt: timePtr(now.Add(-time.Hour * 12)), Root: "foo", State: "failed"},
-		uploadsshared.Index{ID: 12, RepositoryID: 52, Commit: makeCommit(12), FinishedAt: timePtr(now.Add(-time.Hour * 14)), Root: "foo", State: "failed"},
+		uploadsshared.Index{ID: 11, RepositoryID: 52, Commit: makeCommit(11), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 12)), Root: "foo", State: "failed"},
+		uploadsshared.Index{ID: 12, RepositoryID: 52, Commit: makeCommit(12), FinishedAt: pointers.Ptr(now.Add(-time.Hour * 14)), Root: "foo", State: "failed"},
 	)
 
 	if _, _, err := store.ExpireFailedRecords(ctx, 100, time.Hour, now); err != nil {
@@ -617,10 +618,6 @@ func TestExpireFailedRecords(t *testing.T) {
 //
 //
 //
-
-func timePtr(t time.Time) *time.Time {
-	return &t
-}
 
 func getIndexStates(db database.DB, ids ...int) (map[int]string, error) {
 	if len(ids) == 0 {

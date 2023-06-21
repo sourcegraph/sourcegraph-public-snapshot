@@ -1,0 +1,64 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("//cmd/server:macro.bzl", "container_dependencies", "dependencies_tars")
+load("//dev:oci_defs.bzl", "image_repository")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+
+DEPS = [
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-archive-index",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-git-index",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-sourcegraph-indexserver",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-webserver",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-merge-index",
+]
+
+container_dependencies(DEPS)
+
+pkg_tar(
+    name = "tar_scip-ctags",
+    srcs = ["//docker-images/syntax-highlighter:scip-ctags"],
+    package_dir = "/usr/local/bin",
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_search_indexer_base",
+    cmd = [
+        "/sbin/tini",
+        "--",
+        "zoekt-sourcegraph-indexserver",
+    ],
+    env = {
+        "DATA_DIR": "/data/index",
+        "SRC_FRONTEND_INTERNAL": "http://sourcegraph-frontend-internal",
+    },
+    tars = [
+        ":tar_scip-ctags",
+    ] + dependencies_tars(DEPS),
+    user = "sourcegraph",
+    workdir = "/home/sourcegraph",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["zoekt-indexserver:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("search-indexer"),
+)

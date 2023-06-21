@@ -4,7 +4,7 @@ import { mdiAccount } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
-import { logger } from '@sourcegraph/common'
+import { logger, pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
@@ -22,11 +22,16 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
     repoID: string
     revision?: string
     filePath: string
-}> = ({ repoID, revision, filePath }) => {
+    enableOwnershipPanel: boolean
+}> = ({ repoID, revision, filePath, enableOwnershipPanel }) => {
     const navigate = useNavigate()
 
     const openOwnershipPanel = useCallback(() => {
         navigate({ hash: '#tab=ownership' })
+    }, [navigate])
+
+    const openHistoryPanel = useCallback(() => {
+        navigate({ hash: '#tab=history' })
     }, [navigate])
 
     const { data, error, loading } = useQuery<FetchOwnersAndHistoryResult, FetchOwnersAndHistoryVariables>(
@@ -36,6 +41,7 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                 repo: repoID,
                 revision: revision ?? '',
                 currentPath: filePath,
+                includeOwn: enableOwnershipPanel,
             },
         }
     )
@@ -66,16 +72,28 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
 
     const history = data?.node?.commit?.ancestors?.nodes?.[0]
     const ownership = data.node.commit?.blob?.ownership
+    const contributorsCount = data.node.commit?.blob?.contributors?.totalCount ?? 0
 
     return (
         <div className={styles.wrapper}>
             {history && (
-                <GitCommitNode
-                    node={history}
-                    extraCompact={true}
-                    hideExpandCommitMessageBody={true}
-                    className={styles.history}
-                />
+                <div className={styles.historyPanel}>
+                    <GitCommitNode
+                        node={history}
+                        extraCompact={true}
+                        hideExpandCommitMessageBody={true}
+                        className={styles.history}
+                    />
+                    <Button
+                        variant="link"
+                        size="sm"
+                        display="inline"
+                        className="pt-0 pb-0 border-0"
+                        onClick={openHistoryPanel}
+                    >
+                        Show history
+                    </Button>
+                </div>
             )}
             {ownership && (
                 <Tooltip content="Show ownership details" placement="left">
@@ -115,8 +133,14 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                                     )}
                                 </div>
                             ))}
-                            {ownership.totalCount > 2 && (
+                            {ownership.totalCount > 2 ? (
                                 <div className={styles.ownMore}>+{ownership.totalCount - 2} more</div>
+                            ) : (
+                                contributorsCount > 0 && (
+                                    <div className={styles.ownMore}>
+                                        +{contributorsCount} {pluralize('contributor', contributorsCount)}
+                                    </div>
+                                )
                             )}
                         </div>
                     </Button>

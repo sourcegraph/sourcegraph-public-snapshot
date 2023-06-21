@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "bitbucketcloud",
@@ -26,10 +27,9 @@ go_library(
         "//internal/oauthutil",
         "//internal/ratelimit",
         "//internal/timeutil",
-        "//internal/trace/ot",
+        "//internal/trace",
         "//lib/errors",
         "//schema",
-        "@com_github_opentracing_contrib_go_stdlib//nethttp",
         "@org_golang_x_oauth2//:oauth2",
     ],
 )

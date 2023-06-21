@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "window",
@@ -33,6 +34,7 @@ go_test(
     embed = [":window"],
     deps = [
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//assert",

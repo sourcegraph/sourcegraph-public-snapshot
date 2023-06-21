@@ -1,30 +1,23 @@
 # <picture title="Cody"><img class="theme-dark-only" src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-white.png" width="200"><img class="theme-light-only" src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-black.png" width="200"><div style="display:none">Cody</div></picture>
 
-<span class="badge badge-beta">Beta</span>
-
-Cody is an AI code assistant that writes code and answers questions for you by reading your entire codebase and the code graph.
+<span class="badge badge-beta">Beta</span> Cody is an AI code assistant that writes code and answers questions for you by reading your entire codebase and the code graph.
 
 Cody uses a combination of Sourcegraph's code graph and Large Language Models (LLMs) to eliminate toil and keep human devs in flow. You can think of Cody as your coding assistant who has read through all the code in open source, all the questions on StackOverflow, and your own entire codebase, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge.
 
 ## Get Cody
 
-- **Sourcegraph Enterprise customers:** Contact your Sourcegraph technical advisor or [request enterprise access](https://about.sourcegraph.com/cody#cody-for-work) to use Cody on your existing Sourcegraph instance.
-- **Everyone:** Cody for open source code is available to all users with a Sourcegraph.com account. If you don't yet have a Sourcegraph.com account, you can [create one for free](https://sourcegraph.com/sign-up).
+- **Cody enterprise:** Contact your Sourcegraph technical advisor or [request enterprise access](https://about.sourcegraph.com/cody#cody-for-work) to use Cody on your existing Sourcegraph instance or try Cody with your team.
+- **Cody app:** Download the app to try Cody with the code you have locally for free. [Learn more.](../app/index.md)
 
-There are currently two ways to experience Cody:
-
-- In Sourcegraph itself
-- In your editor
+Cody is also available as an editor extension that can be connected to a Sourcegraph enterprise instance, the Cody app, or Sourcegraph.com (for open source code only):
   - [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
   - Jetbrains extension (coming soon)
 
-Cody is available as a [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and in the Sourcegraph web interface.
-
-<div class="cta-group">
-<a class="btn btn-primary" href="quickstart">★ Cody quickstart</a>
-<a class="btn" href="explanations/use_cases">Cody use cases</a>
-<a class="btn" href="faq">FAQ</a>
-<a class="btn" href="https://discord.com/servers/sourcegraph-969688426372825169">Join our Discord</a>
+<div class="getting-started">
+  <a class="btn btn-primary text-center" href="quickstart">★ Cody quickstart</a>
+  <a class="btn text-center" href="explanations/use_cases">Cody use cases</a>
+  <a class="btn text-center" href="faq">FAQ</a>
+  <a class="btn text-center" href="https://discord.com/servers/sourcegraph-969688426372825169">Join our Discord</a>
 </div>
 
 ## Features
@@ -86,6 +79,8 @@ See [Cody troubleshooting guide](troubleshooting.md).
 ## Explanations
 
 - [Enabling Cody for Sourcegraph Enterprise customers](explanations/enabling_cody_enterprise.md)
+- [Enabling Cody for the Cody app](../app/index.md)
 - [Enabling Cody for open source Sourcegraph.com users](explanations/enabling_cody.md)
 - [Installing the Cody VS Code extension](explanations/installing_vs_code.md)
 - [Configuring code graph context](explanations/code_graph_context.md)
+- [Sourcegraph Cody Gateway](explanations/cody_gateway.md)

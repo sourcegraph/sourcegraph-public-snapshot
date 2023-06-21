@@ -14,11 +14,11 @@ const (
 	SCIPUpload       = "scip.upload"
 	SCIPUploadExists = "scip.upload.exists"
 
-	SearchStream      = "search.stream"
-	ComputeStream     = "compute.stream"
-	GitBlameStream    = "git.blame.stream"
-	CompletionsStream = "completions.stream"
-	CodeCompletions   = "completions.code"
+	SearchStream          = "search.stream"
+	ComputeStream         = "compute.stream"
+	GitBlameStream        = "git.blame.stream"
+	ChatCompletionsStream = "completions.stream"
+	CodeCompletions       = "completions.code"
 
 	SrcCli             = "src-cli"
 	SrcCliVersionCache = "src-cli.version-cache"
@@ -86,7 +86,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/src-cli/versions/{rest:.*}").Methods("GET", "POST").Name(SrcCliVersionCache)
 	base.Path("/src-cli/{rest:.*}").Methods("GET").Name(SrcCli)
 	base.Path("/insights/export/{id}").Methods("GET").Name(CodeInsightsDataExport)
-	base.Path("/completions/stream").Methods("POST").Name(CompletionsStream)
+	base.Path("/completions/stream").Methods("POST").Name(ChatCompletionsStream)
 	base.Path("/completions/code").Methods("POST").Name(CodeCompletions)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").

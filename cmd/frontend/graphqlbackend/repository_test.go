@@ -3,12 +3,9 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"sort"
 	"testing"
-	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	"github.com/graph-gophers/graphql-go"
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,20 +13,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/rbac"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
-
-	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 )
 
 const exampleCommitSHA1 = "1234567890123456789012345678901234567890"
@@ -51,10 +43,9 @@ func TestRepository_Commit(t *testing.T) {
 	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
-	RunTests(t, []*Test{
-		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Query: `
+	RunTest(t, &Test{
+		Schema: mustParseGraphQLSchema(t, db),
+		Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {
 						commit(rev: "abc") {
@@ -63,7 +54,7 @@ func TestRepository_Commit(t *testing.T) {
 					}
 				}
 			`,
-			ExpectedResult: `
+		ExpectedResult: `
 				{
 					"repository": {
 						"commit": {
@@ -72,7 +63,61 @@ func TestRepository_Commit(t *testing.T) {
 					}
 				}
 			`,
-		},
+	})
+}
+
+func TestRepository_Changelist(t *testing.T) {
+	repo := &types.Repo{ID: 2, Name: "github.com/gorilla/mux"}
+
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		assert.Equal(t, api.RepoID(2), repo.ID)
+		return exampleCommitSHA1, nil
+	}
+
+	repos := database.NewMockRepoStore()
+	repos.GetFunc.SetDefaultReturn(repo, nil)
+	repos.GetByNameFunc.SetDefaultReturn(repo, nil)
+
+	repoCommitsChangelists := database.NewMockRepoCommitsChangelistsStore()
+	repoCommitsChangelists.GetRepoCommitChangelistFunc.SetDefaultReturn(&types.RepoCommit{
+		ID:                   1,
+		RepoID:               2,
+		CommitSHA:            dbutil.CommitBytea(exampleCommitSHA1),
+		PerforceChangelistID: 123,
+	}, nil)
+
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+	db.RepoCommitsChangelistsFunc.SetDefaultReturn(repoCommitsChangelists)
+
+	RunTest(t, &Test{
+		Schema: mustParseGraphQLSchema(t, db),
+		Query: `
+				{
+					repository(name: "github.com/gorilla/mux") {
+						changelist(cid: "123") {
+							cid
+							canonicalURL
+							commit {
+								oid
+							}
+						}
+					}
+				}
+			`,
+		ExpectedResult: fmt.Sprintf(`
+				{
+					"repository": {
+						"changelist": {
+							"cid": "123",
+							"canonicalURL": "/github.com/gorilla/mux/-/changelist/123",
+"commit": {
+	"oid": "%s"
+}
+						}
+					}
+				}
+			`, exampleCommitSHA1),
 	})
 }
 
@@ -233,190 +278,4 @@ func TestRepository_DefaultBranch(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestRepository_RepoMetadata(t *testing.T) {
-	ctx := context.Background()
-
-	flags := map[string]bool{"repository-metadata": true}
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(flags, flags, flags))
-
-	logger := logtest.Scoped(t)
-	db := database.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(logger, t)))
-
-	users := database.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
-	db.UsersFunc.SetDefaultReturn(users)
-
-	permissions := database.NewMockPermissionStore()
-	permissions.GetPermissionForUserFunc.SetDefaultReturn(&types.Permission{
-		ID:        1,
-		Namespace: rtypes.RepoMetadataNamespace,
-		Action:    rtypes.RepoMetadataWriteAction,
-		CreatedAt: time.Now(),
-	}, nil)
-	db.PermissionsFunc.SetDefaultReturn(permissions)
-
-	err := db.Repos().Create(ctx, &types.Repo{
-		Name: "testrepo",
-	})
-	require.NoError(t, err)
-	repo, err := db.Repos().GetByName(ctx, "testrepo")
-	require.NoError(t, err)
-
-	schema := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs())
-	gqlID := MarshalRepositoryID(repo.ID)
-
-	strPtr := func(s string) *string { return &s }
-
-	t.Run("add", func(t *testing.T) {
-		_, err = schema.AddRepoMetadata(ctx, struct {
-			Repo  graphql.ID
-			Key   string
-			Value *string
-		}{
-			Repo:  gqlID,
-			Key:   "key1",
-			Value: strPtr("val1"),
-		})
-		require.NoError(t, err)
-
-		_, err = schema.AddRepoMetadata(ctx, struct {
-			Repo  graphql.ID
-			Key   string
-			Value *string
-		}{
-			Repo:  gqlID,
-			Key:   "tag1",
-			Value: nil,
-		})
-		require.NoError(t, err)
-
-		repoResolver, err := schema.repositoryByID(ctx, gqlID)
-		require.NoError(t, err)
-
-		kvps, err := repoResolver.Metadata(ctx)
-		require.NoError(t, err)
-		sort.Slice(kvps, func(i, j int) bool {
-			return kvps[i].key < kvps[j].key
-		})
-		require.Equal(t, []KeyValuePair{{
-			key:   "key1",
-			value: strPtr("val1"),
-		}, {
-			key:   "tag1",
-			value: nil,
-		}}, kvps)
-	})
-
-	t.Run("update", func(t *testing.T) {
-		_, err = schema.UpdateRepoMetadata(ctx, struct {
-			Repo  graphql.ID
-			Key   string
-			Value *string
-		}{
-			Repo:  gqlID,
-			Key:   "key1",
-			Value: strPtr("val2"),
-		})
-		require.NoError(t, err)
-
-		_, err = schema.UpdateRepoMetadata(ctx, struct {
-			Repo  graphql.ID
-			Key   string
-			Value *string
-		}{
-			Repo:  gqlID,
-			Key:   "tag1",
-			Value: strPtr("val3"),
-		})
-		require.NoError(t, err)
-
-		repoResolver, err := schema.repositoryByID(ctx, gqlID)
-		require.NoError(t, err)
-
-		kvps, err := repoResolver.Metadata(ctx)
-		require.NoError(t, err)
-		sort.Slice(kvps, func(i, j int) bool {
-			return kvps[i].key < kvps[j].key
-		})
-		require.Equal(t, []KeyValuePair{{
-			key:   "key1",
-			value: strPtr("val2"),
-		}, {
-			key:   "tag1",
-			value: strPtr("val3"),
-		}}, kvps)
-	})
-
-	t.Run("delete", func(t *testing.T) {
-		_, err = schema.DeleteRepoMetadata(ctx, struct {
-			Repo graphql.ID
-			Key  string
-		}{
-			Repo: gqlID,
-			Key:  "key1",
-		})
-		require.NoError(t, err)
-
-		_, err = schema.DeleteRepoMetadata(ctx, struct {
-			Repo graphql.ID
-			Key  string
-		}{
-			Repo: gqlID,
-			Key:  "tag1",
-		})
-		require.NoError(t, err)
-
-		repoResolver, err := schema.repositoryByID(ctx, gqlID)
-		require.NoError(t, err)
-
-		kvps, err := repoResolver.Metadata(ctx)
-		require.NoError(t, err)
-		sort.Slice(kvps, func(i, j int) bool {
-			return kvps[i].key < kvps[j].key
-		})
-		require.Empty(t, kvps)
-	})
-
-	t.Run("handles rbac", func(t *testing.T) {
-		permissions.GetPermissionForUserFunc.SetDefaultReturn(nil, nil)
-
-		// add
-		_, err = schema.AddRepoMetadata(ctx, struct {
-			Repo  graphql.ID
-			Key   string
-			Value *string
-		}{
-			Repo:  gqlID,
-			Key:   "key1",
-			Value: strPtr("val1"),
-		})
-		require.Error(t, err)
-		require.Equal(t, err, &rbac.ErrNotAuthorized{Permission: string(rbac.RepoMetadataWritePermission)})
-
-		// update
-		_, err = schema.UpdateRepoMetadata(ctx, struct {
-			Repo  graphql.ID
-			Key   string
-			Value *string
-		}{
-			Repo:  gqlID,
-			Key:   "key1",
-			Value: strPtr("val2"),
-		})
-		require.Error(t, err)
-		require.Equal(t, err, &rbac.ErrNotAuthorized{Permission: string(rbac.RepoMetadataWritePermission)})
-
-		// delete
-		_, err = schema.DeleteRepoMetadata(ctx, struct {
-			Repo graphql.ID
-			Key  string
-		}{
-			Repo: gqlID,
-			Key:  "key1",
-		})
-		require.Error(t, err)
-		require.Equal(t, err, &rbac.ErrNotAuthorized{Permission: string(rbac.RepoMetadataWritePermission)})
-	})
 }

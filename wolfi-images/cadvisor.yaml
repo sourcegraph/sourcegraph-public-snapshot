@@ -7,4 +7,6 @@ contents:
     - mailcap
 
     ## cadvisor dependencies
-    - cadvisor@sourcegraph
+    - cadvisor
+
+# MANUAL REBUILD: Wed Jun 14 15:27:52 BST 2023

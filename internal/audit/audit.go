@@ -3,12 +3,14 @@ package audit
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -26,7 +28,12 @@ func Log(ctx context.Context, logger log.Logger, record Record) {
 	}
 
 	client := requestclient.FromContext(ctx)
+
 	auditId := uuid.New().String()
+	if record.auditIDGenerator != nil {
+		auditId = record.auditIDGenerator()
+	}
+
 	var fields []log.Field
 
 	fields = append(fields, log.Object("audit",
@@ -35,10 +42,11 @@ func Log(ctx context.Context, logger log.Logger, record Record) {
 		log.Object("actor",
 			log.String("actorUID", actorId(act)),
 			log.String("ip", ip(client)),
+			log.String("userAgent", userAgent(client)),
 			log.String("X-Forwarded-For", forwardedFor(client)))))
 	fields = append(fields, record.Fields...)
 
-	loggerFunc := getLoggerFuncWithSeverity(logger, siteConfig)
+	loggerFunc := getLoggerFuncWithSeverity(logger)
 	// message string looks like: #{record.Action} (sampling immunity token: #{auditId})
 	loggerFunc(fmt.Sprintf("%s (sampling immunity token: %s)", record.Action, auditId), fields...)
 }
@@ -60,6 +68,13 @@ func ip(client *requestclient.Client) string {
 	return client.IP
 }
 
+func userAgent(client *requestclient.Client) string {
+	if client == nil {
+		return "unknown"
+	}
+	return client.UserAgent
+}
+
 func forwardedFor(client *requestclient.Client) string {
 	if client == nil {
 		return "unknown"
@@ -74,6 +89,10 @@ type Record struct {
 	Action string
 	// Fields hold any additional context relevant to the Action
 	Fields []log.Field
+
+	// auditIDGenerator can be provided in tests to generate a stable audit
+	// log ID.
+	auditIDGenerator func() string
 }
 
 type AuditLogSetting = int
@@ -86,6 +105,7 @@ const (
 
 // IsEnabled returns the value of the respective setting from the site config (if set).
 // Otherwise, it returns the default value for the setting.
+// NOTE: This does not affect security_event logs, these are separately configured
 func IsEnabled(cfg schema.SiteConfiguration, setting AuditLogSetting) bool {
 	if auditCfg := getAuditCfg(cfg); auditCfg != nil {
 		switch setting {
@@ -101,22 +121,21 @@ func IsEnabled(cfg schema.SiteConfiguration, setting AuditLogSetting) bool {
 	return false
 }
 
-// getLoggerFuncWithSeverity returns a specific logger function (logger.Info, logger.Warn, etc.), a the severity is configurable.
-func getLoggerFuncWithSeverity(logger log.Logger, cfg schema.SiteConfiguration) func(string, ...log.Field) {
-	if auditCfg := getAuditCfg(cfg); auditCfg != nil {
-		switch auditCfg.SeverityLevel {
-		case "DEBUG":
-			return logger.Debug
-		case "INFO":
-			return logger.Info
-		case "WARN":
-			return logger.Warn
-		case "ERROR":
-			return logger.Error
-		}
+// getLoggerFuncWithSeverity returns a specific logger function (logger.Info, logger.Warn, etc.) based on the overall audit log configuration
+func getLoggerFuncWithSeverity(logger log.Logger) func(string, ...log.Field) {
+	lvl := log.Level(strings.ToLower(env.LogLevel))
+	switch lvl {
+	case log.LevelDebug:
+		return logger.Debug
+	case log.LevelInfo:
+		return logger.Info
+	case log.LevelWarn:
+		return logger.Warn
+	case log.LevelError:
+		return logger.Error
+	default:
+		return logger.Warn // match default log level
 	}
-	// default to INFO
-	return logger.Info
 }
 
 func getAuditCfg(cfg schema.SiteConfiguration) *schema.AuditLog {

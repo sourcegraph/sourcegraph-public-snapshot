@@ -333,6 +333,11 @@ describe('getCompletionItems()', () => {
                 label: 'has.owner(...)',
             },
             {
+                // eslint-disable-next-line no-template-curly-in-string
+                insertText: 'has.contributor(${1}) ',
+                label: 'has.contributor(...)',
+            },
+            {
                 insertText: '^connect\\.go$ ',
                 label: 'connect.go',
             },
@@ -355,7 +360,7 @@ describe('getCompletionItems()', () => {
                     {}
                 )
             )?.suggestions.map(({ filterText }) => filterText)
-        ).toStrictEqual(['has.content(...)', 'has.owner(...)', '^jsonrpc'])
+        ).toStrictEqual(['has.content(...)', 'has.owner(...)', 'has.contributor(...)', '^jsonrpc'])
     })
 
     test('includes file path in insertText when completing filter value', async () => {
@@ -379,6 +384,8 @@ describe('getCompletionItems()', () => {
             'has.content(${1:TODO}) ',
             // eslint-disable-next-line no-template-curly-in-string
             'has.owner(${1}) ',
+            // eslint-disable-next-line no-template-curly-in-string
+            'has.contributor(${1}) ',
             '^some/path/main\\.go$ ',
         ])
     })

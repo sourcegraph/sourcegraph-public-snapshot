@@ -4,18 +4,17 @@ import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiThumbUp, mdiThumbDown, mdi
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon, Label, Alert, useSessionStorage, Link, Text } from '@sourcegraph/wildcard'
+import { Button, Icon, Alert, useSessionStorage, Link, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../../batches/utils'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { eventLogger } from '../../tracking/eventLogger'
+import { DOTCOM_URL } from '../../tracking/util'
 
 import {
     CreateAction,
@@ -68,9 +67,6 @@ export interface SearchResultsInfoBarProps
     setSidebarCollapsed: (collapsed: boolean) => void
 
     isSourcegraphDotCom: boolean
-
-    isRankingEnabled: boolean
-    setRankingEnabled: (enabled: boolean) => void
 }
 
 /**
@@ -139,10 +135,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         props.onShowMobileFiltersChanged?.(newShowFilters)
     }
 
-    // Show/hide ranking toggle
-    const [rankingEnabled] = useFeatureFlag('search-ranking')
-
     const location = useLocation()
+    const dotcomHost = DOTCOM_URL.href
+    const isPrivateInstance = window.location.host !== dotcomHost
     const refFromCodySearch = new URLSearchParams(location.search).get('ref') === 'cody-search'
     const [codySearchInputString] = useSessionStorage<string>('cody-search-input', '')
     const codySearchInput: { input?: string; translatedQuery?: string } = JSON.parse(codySearchInputString || '{}')
@@ -155,8 +150,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
         eventLogger.log(
             'web:codySearch:feedbackSubmitted',
-            { ...codySearchInput, positive },
-            { ...codySearchInput, positive }
+            !isPrivateInstance ? { ...codySearchInput, positive } : null,
+            !isPrivateInstance ? { ...codySearchInput, positive } : null
         )
         setCodyFeedback(positive)
     }
@@ -215,17 +210,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
                 <div className={styles.expander} />
 
-                {rankingEnabled && (
-                    <Label className={styles.toggle}>
-                        Intelligent ranking{' '}
-                        <Toggle
-                            value={props.isRankingEnabled}
-                            onToggle={() => props.setRankingEnabled(!props.isRankingEnabled)}
-                            title="Enable Ranking"
-                            className="mr-2"
-                        />
-                    </Label>
-                )}
                 <ul className="nav align-items-center">
                     <SearchActionsMenu
                         authenticatedUser={props.authenticatedUser}

@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
 load("@rules_buf//buf:defs.bzl", "buf_lint_test")
@@ -9,7 +10,10 @@ proto_library(
     srcs = ["gitserver.proto"],
     strip_import_prefix = "/internal",  # keep
     visibility = ["//visibility:private"],
-    deps = ["@com_google_protobuf//:timestamp_proto"],
+    deps = [
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
 )
 
 go_proto_library(
@@ -30,7 +34,10 @@ go_library(
     visibility = [
         "//cmd/gitserver/server:__pkg__",
         "//cmd/gitserver/shared:__pkg__",
+        "//internal/api:__pkg__",
+        "//internal/extsvc/gitolite:__pkg__",
         "//internal/gitserver:__pkg__",
+        "//internal/gitserver/gitdomain:__pkg__",
         "//internal/gitserver/integration_tests:__pkg__",
         "//internal/gitserver/protocol:__pkg__",
     ],

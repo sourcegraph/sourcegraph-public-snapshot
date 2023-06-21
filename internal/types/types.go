@@ -84,6 +84,15 @@ type Repo struct {
 	KeyValuePairs map[string]*string `json:",omitempty"`
 }
 
+type GitHubAppDomain string
+
+func (s GitHubAppDomain) ToGraphQL() string { return strings.ToUpper(string(s)) }
+
+const (
+	ReposGitHubAppDomain   GitHubAppDomain = "repos"
+	BatchesGitHubAppDomain GitHubAppDomain = "batches"
+)
+
 // RepoCommit is a record of a repo and a corresponding commit.
 type RepoCommit struct {
 	ID                   int64
@@ -496,6 +505,12 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	return fs
 }
 
+// RepoIDName combines a repo name and ID into a single struct
+type RepoIDName struct {
+	ID   api.RepoID
+	Name api.RepoName
+}
+
 // MinimalRepo represents a source code repository name, its ID and number of stars.
 type MinimalRepo struct {
 	ID    api.RepoID
@@ -571,6 +586,8 @@ type GitserverRepo struct {
 	CloningProgress string
 	// The last error that occurred or empty if the last action was successful
 	LastError string
+	// the output of the most recent repo sync job
+	LastSyncOutput string
 	// The last time fetch was called.
 	LastFetched time.Time
 	// The last time a fetch updated the repository.
@@ -1019,6 +1036,37 @@ type CodyAggregatedEvent struct {
 	InvalidMonth        int32
 	InvalidWeek         int32
 	InvalidDay          int32
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler.
+// RepoMetadataAggregatedStats represents the total number of repo metadata,
+// number of repositories with any metadata, total and unique number of
+// events for repo metadata usage related events over the current day, week, month.
+type RepoMetadataAggregatedStats struct {
+	Summary *RepoMetadataAggregatedSummary
+	Daily   *RepoMetadataAggregatedEvents
+	Weekly  *RepoMetadataAggregatedEvents
+	Monthly *RepoMetadataAggregatedEvents
+}
+
+type RepoMetadataAggregatedSummary struct {
+	IsEnabled              bool
+	RepoMetadataCount      *int32
+	ReposWithMetadataCount *int32
+}
+
+type RepoMetadataAggregatedEvents struct {
+	StartTime          time.Time
+	CreateRepoMetadata *EventStats
+	UpdateRepoMetadata *EventStats
+	DeleteRepoMetadata *EventStats
+	SearchFilterUsage  *EventStats
+}
+
+type EventStats struct {
+	UsersCount  *int32
+	EventsCount *int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -1784,9 +1832,6 @@ type NotebooksUsageStatistics struct {
 }
 
 type OwnershipUsageStatistics struct {
-	// Whether the `search-ownership` feature flag is on anywhere on the instance.
-	FeatureFlagOn *bool `json:"feature_flag_on,omitempty"`
-
 	// Statistics about ownership data in repositories
 	ReposCount *OwnershipUsageReposCounts `json:"repos_count,omitempty"`
 
@@ -1799,6 +1844,11 @@ type OwnershipUsageStatistics struct {
 
 	// Opening ownership panel.
 	OwnershipPanelOpened *OwnershipUsageStatisticsActiveUsers `json:"ownership_panel_opened,omitempty"`
+
+	// AssignedOwnersCount is the total number of assigned owners. For instance
+	// if an owner is assigned to a single file - that counts as one,
+	// for the whole repo - also counts as one.
+	AssignedOwnersCount *int32 `json:"assigned_owners_count"`
 }
 
 type OwnershipUsageReposCounts struct {

@@ -1,48 +1,67 @@
 # Indexed ranking
 
-This document describes the current strategies used in Sourcegraph to rank results.
+This document describes the current strategies used in Sourcegraph to rank results. Currently, ranking only
+applies to indexed (Zoekt-based) search. When a search is unindexed, for example when searching at an old
+revision, the results are not ranked.
 
 > Note: this is an area of active research and is subject to change.
 
-## Streaming note
+## Streaming-based search
 
-We are streaming based internally. However, this does not mean we can't do ranking. We have buffers in several layers which collect results and based on heuristics send out the buffered results in a ranked order. Additionally when creating indexes we lay out files and repositories such that we search more important files and repositories first. This means when streaming we receive likely more important results first.
+Zoekt takes a streaming approach to executing searches. This makes ranking results more challenging, as the search
+doesn't visit the full set of matching documents before returning results. As a compromise, Zoekt performs an initial
+non-streamed search step, then ranks and returns those candidates before streaming the rest of the results.
 
-When searching in general there are limits you hit before you inspect the full corpus of code. These limits are usually time or result based. As such searching more important code first is a normal strategy employed such that the candidate documents are more likely to be relevant.
+Specifically, each Zoekt replica:
+1. Collects candidate matches until a certain time limit (default of 500ms)
+2. Ranks and streams back the ranked matches
+3. Then switches to streaming execution, where matching results are immediately returned
 
-## Repository Ranking
+Frontend waits until it has received at least one response from every replica, then merges and ranks the results
+before returning them. After this initial ranked batch, frontend switches to immediately streaming out results.
 
-We sort results bucketed by repositories. We then sort those buckets based on repository priority. So any ranking based on file contents or query only happens within those buckets.
-
-The [repository priority](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+stars+reporank&patternType=regexp) is the number of stars a repository has received. Additionally an admin can adjust the priority of a repository via [configuration](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+repoRankFromConfig&patternType=regexp).
-
-This has the downside of a poor result in a highly ranked repository will appear before a good result in a poorly ranked repository. The upside is normally it does the right thing and leads to more deterministic ordering in results.
+Because the Zoekt limit is time-based, it's possible that executing the same search twice can result in different
+ranked results. To mitigate this issue, you can increase the time limit through the site config `experimentalFeatures.ranking.flushWallTimeMS`.
+Larger values give a more stable ranking, but searches can take longer to return an initial result.
 
 ## Result Ranking
 
-Zoekt [ranks](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/zoekt%24+func+rank&patternType=literal) documents before storing them in the index. It uses this rank to ensure more important documents are searched first. The current heuristic signals in order of importance:
+There are two main components to a search result's rank: the strength of the query's match with the file, and static signals
+representing the file's importance.
 
-- down rank generated code :: This code is usually the least interesting in results.
-- down rank vendored code :: Developers are normally looking for code written by their organisation.
-- down rank test code :: Developers normally prefer results in non-test code over test code.
-- up rank files with lots of symbols :: These files are usually edited a lot.
-- up rank small files :: if you have similiar symbol levels, prefer the shorter file.
-- up rank short names :: The closer to the project root the likely more important you are.
-- up rank branch count :: if the same document appears on multiple branches its likely more important.
+Zoekt creates a [match score for a query](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/zoekt%24+matchScore&patternType=literal) based on a few heuristics. In order of importance:
 
-This ranking is used to decide the order we search the documents, so is most important when hitting limits. However, the order of documents is used as a signal when ranking so is used to distingiush similar looking results in different files. IE a match for the symbol `MyClass` for the query `MyClass` will be ranked higher in normal code vs test code.
+- It matches a symbol, such as an exact match on the name of a class.
+- The match is at the start or end of a symbol. For example if you search for `Indexed`, then a class called `IndexedRepo` will score more highly than one named `NonIndexedRepo`.
+- It partially matches a symbol. Symbols are a sign of something important, so any overlap is better than none.
+- It matches a full word. For example, if you search `rank`, then `result rank` will score more highly than `ranked list`.
+- It partially matches a word. For example, if you search `rank`, then `result rank` will score more highly than `ranked list`.
+- The number of query components that match the file content (in the case of OR queries).
 
-Zoekt creates a [score for a match](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/zoekt%24+matchScore&patternType=literal) based on a few heuristics. In order of importance:
+In terms of static file signals, Zoekt uses the repository priority and file order (described in the next section).
 
-- Is your match a symbol. eg exactly matching the name of a class.
-- Is your match at the start or end of a symbol. eg you search `Foo` is better than `Bar` for a class called `FooBarBaz`.
-- Is your match partially in a symbol. Symbols are a sign of something important, so any overlap is better than none.
-- Word match on any text. eg `ranking` is better than `rank` for the text `search result ranking`.
-- Partial word match. eg `rank` is better than `ank` for the text `search result ranking`.
+In addition, if code intel ranks are being calculated from [SCIP data](./../../../code_navigation/explanations/precise_code_navigation.md), then Zoekt incorporates these
+as an important file signal. A file's rank is based on the number inbound references from any other file in the available code graph, representing how widely-used
+and important the file is to the codebase. This is inspired by PageRank in web search, which considers a website to be more authoritative if it has a large number
+of inbound links from other authoritative sites. See [this guide](./precise-ranking.md) on how to enable the background job to produce these ranks.
 
-These are the main inputs for deciding the rank of a match. There is some minor signals based on the file rank (described at the start of the section), the number of matches in a file, etc. These are used more as tiebreaking, where the above ranking is close.
+## Ordering files within the index
+
+When creating indexes, we lay out the files such that we search more important files and repositories first. This means when streaming we're more likely to encounter important candidates first, leading to a better set of ranked results.
+
+Zoekt indexes are partitioned by repository. The search proceeds through each repository in order of their priority.
+The [repository priority](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+stars+reporank&patternType=regexp) is the number of stars a repository has received. Admins can manually adjust the priority of a repository through a [site configuration option](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+repoRankFromConfig&patternType=regexp).
+
+Within each repository, files are ordered in terms of importance:
+- Down rank generated code. This code is usually the least interesting in results.
+- Down rank vendored code. Developers are normally looking for code written by their organization.
+- Down rank test code. Developers normally prefer results in non-test code over test code.
+- Up rank files with lots of symbols. These files are usually edited a lot.
+- Up rank small files. If you have similar symbol levels, prefer the shorter file.
+- Up rank short names. The closer to the project root the likely more important you are.
+- Up rank branch count. if the same document appears on multiple branches its likely more important.
 
 ## References
 
 - [RFC 359](https://docs.google.com/document/d/1EiD_dKkogqBNAbKN3BbanII4lQwROI7a0aGaZ7i-0AU/edit#heading=h.trqab8y0kufp): Search Result Ranking
-- Zoekt Design :: [Ranking](https://github.com/sourcegraph/zoekt/blob/master/doc/design.md#ranking)
+- [Zoekt design reference](https://github.com/sourcegraph/zoekt/blob/master/doc/design.md#ranking)

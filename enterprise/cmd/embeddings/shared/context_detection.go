@@ -1,85 +1,51 @@
 package shared
 
 import (
-	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type getContextDetectionEmbeddingIndexFn func(ctx context.Context) (*embeddings.ContextDetectionEmbeddingIndex, error)
-
-const MIN_NO_CONTEXT_SIMILARITY_DIFF = float32(0.02)
-
-var CONTEXT_MESSAGES_REGEXPS = []*lazyregexp.Regexp{
-	lazyregexp.New(`(what|where|how) (are|do|does|is)`),
-	lazyregexp.New(`in (the|my) (code|codebase|repo|repository)`),
-	lazyregexp.New(`(what|which) (directory|file|folder|path)(s?)`),
-}
-
 var NO_CONTEXT_MESSAGES_REGEXPS = []*lazyregexp.Regexp{
+	// Common greetings
+	lazyregexp.New(`^(hello|hey|hi|what['’]s up|how's it going)( Cody)?[!\.\?]?$`),
+
+	// Clear reference to previous message
 	lazyregexp.New(`(previous|above)\s+(message|code|text)`),
 	lazyregexp.New(
-		`(translate|convert|change|for|make|refactor|rewrite|ignore|explain|fix|try|show)\s+(that|this|above|previous|it|again)`,
+		`(translate|convert|change|for|make|refactor|rewrite|ignore|describe|explain|fix|try|show)\s+(that|this|above|previous|it|again)`,
 	),
+	lazyregexp.New(`i don['’]t understand`),
+	lazyregexp.New(`what you just said`),
+	lazyregexp.New(`(explain|describe).*in more detail`),
+
+	// Correcting previous message
 	lazyregexp.New(
 		`(this|that).*?\s+(is|seems|looks)\s+(wrong|incorrect|bad|good)`,
 	),
-	lazyregexp.New(`^(yes|no|correct|wrong|nope|yep|now|cool)(\s|.|,)`),
+	lazyregexp.New(
+		`(this|that).*?\s+(does not|doesn't work)`,
+	),
+	lazyregexp.New(`(is not|isn['’]t) (correct|right)`),
+	lazyregexp.New(`i don['’]t think that['’]s (correct|right)`),
+	lazyregexp.New(`(does not|doesn['’]t) (look|seem) (correct|right)`),
+	lazyregexp.New(`are you (sure|certain)`),
+	lazyregexp.New(`you're (incorrect|not right|wrong)`),
+
+	// Clearly moving on to new topic
+	lazyregexp.New(`^(yes|no|correct|wrong|nope|yep|now|cool)(\s|.|,|!)`),
+
 	// User provided their own code context in the form of a Markdown code block.
 	lazyregexp.New("```"),
 }
 
-func isContextRequiredForChatQuery(
-	ctx context.Context,
-	getQueryEmbedding getQueryEmbeddingFn,
-	getContextDetectionEmbeddingIndex getContextDetectionEmbeddingIndexFn,
-	query string,
-) (bool, error) {
+func isContextRequiredForChatQuery(query string) bool {
 	queryTrimmed := strings.TrimSpace(query)
 	queryLower := strings.ToLower(queryTrimmed)
 	for _, regexp := range NO_CONTEXT_MESSAGES_REGEXPS {
 		if regexp.MatchString(queryLower) {
-			return false, nil
+			return false
 		}
 	}
-
-	for _, regexp := range CONTEXT_MESSAGES_REGEXPS {
-		if regexp.MatchString(queryLower) {
-			return true, nil
-		}
-	}
-
-	isSimilarToNoContextMessages, err := isQuerySimilarToNoContextMessages(ctx, getQueryEmbedding, getContextDetectionEmbeddingIndex, queryTrimmed)
-	if err != nil {
-		return false, err
-	}
-	// If the query is similar to messages that require context, then we can assume context is required for the query.
-	return !isSimilarToNoContextMessages, nil
-}
-
-func isQuerySimilarToNoContextMessages(
-	ctx context.Context,
-	getQueryEmbedding getQueryEmbeddingFn,
-	getContextDetectionEmbeddingIndex getContextDetectionEmbeddingIndexFn,
-	query string,
-) (bool, error) {
-	contextDetectionEmbeddingIndex, err := getContextDetectionEmbeddingIndex(ctx)
-	if err != nil {
-		return false, errors.Wrap(err, "getting context detection embedding index")
-	}
-
-	queryEmbedding, err := getQueryEmbedding(ctx, query)
-	if err != nil {
-		return false, errors.Wrap(err, "getting query embedding")
-	}
-
-	messagesWithContextSimilarity := embeddings.DotFloat32(contextDetectionEmbeddingIndex.MessagesWithAdditionalContextMeanEmbedding, queryEmbedding)
-	messagesWithoutContextSimilarity := embeddings.DotFloat32(contextDetectionEmbeddingIndex.MessagesWithoutAdditionalContextMeanEmbedding, queryEmbedding)
-
-	// We have to be really sure that the query is similar to no context messages, so we include the `MIN_NO_CONTEXT_SIMILARITY_DIFF` threshold.
-	isSimilarToNoContextMessages := (messagesWithoutContextSimilarity - messagesWithContextSimilarity) >= MIN_NO_CONTEXT_SIMILARITY_DIFF
-	return isSimilarToNoContextMessages, nil
+	return true
 }

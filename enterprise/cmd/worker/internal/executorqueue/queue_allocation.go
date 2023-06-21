@@ -3,6 +3,7 @@ package executorqueue
 import (
 	"github.com/inconshreveable/log15"
 
+	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -11,20 +12,17 @@ type QueueAllocation struct {
 	PercentageGCP float64
 }
 
-var (
-	validQueueNames         = []string{"batches", "codeintel"}
-	validCloudProviderNames = []string{"aws", "gcp"}
-)
+var validCloudProviderNames = []string{"aws", "gcp"}
 
 func normalizeAllocations(m map[string]map[string]float64, awsConfigured, gcpConfigured bool) (map[string]QueueAllocation, error) {
 	for queueName := range m {
-		if !contains(validQueueNames, queueName) {
+		if !contains(executortypes.ValidQueueNames, queueName) {
 			return nil, errors.Errorf("invalid queue '%s'", queueName)
 		}
 	}
 
-	allocations := make(map[string]QueueAllocation, len(validQueueNames))
-	for _, queueName := range validQueueNames {
+	allocations := make(map[string]QueueAllocation, len(executortypes.ValidQueueNames))
+	for _, queueName := range executortypes.ValidQueueNames {
 		queueAllocation, err := normalizeQueueAllocation(queueName, m[queueName], awsConfigured, gcpConfigured)
 		if err != nil {
 			return nil, err

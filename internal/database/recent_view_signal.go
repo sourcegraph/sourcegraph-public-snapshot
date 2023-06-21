@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/prometheus/client_golang/prometheus"
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -30,9 +32,18 @@ type RecentViewSignalStore interface {
 }
 
 type ListRecentViewSignalOpts struct {
+	// ViewerUserID indicates the user whos views are fetched.
+	// If unset - all users are considered.
 	ViewerUserID int
-	RepoID       api.RepoID
-	Path         string
+	// RepoID if not set - will result in fetching results from multiple repos.
+	RepoID api.RepoID
+	// Path for which the views should be fetched. View counts are aggregated
+	// up the file tree. Unset value - empty string - indicates repo root.
+	Path string
+	// IncludeAllPaths when true - results will not be limited based on value of `Path`.
+	IncludeAllPaths bool
+	// MinThreshold is a lower bound of views entry per path per user to be considered.
+	MinThreshold int
 	LimitOffset  *LimitOffset
 }
 
@@ -184,7 +195,7 @@ const listRecentViewSignalsFmtstr = `
 	-- Optional WHERE clauses
 	WHERE %s
 	-- Order, limit
-	ORDER BY o.id
+	ORDER BY 3 DESC
 	%s
 `
 
@@ -200,20 +211,20 @@ func (s *recentViewSignalStore) List(ctx context.Context, opts ListRecentViewSig
 }
 
 func createListQuery(opts ListRecentViewSignalOpts) *sqlf.Query {
-	joinClause := &sqlf.Query{}
-	if opts.RepoID != 0 || opts.Path != "" {
-		joinClause = sqlf.Sprintf("INNER JOIN repo_paths AS p ON p.id = o.viewed_file_path_id")
-	}
+	joinClause := sqlf.Sprintf("INNER JOIN repo_paths AS p ON p.id = o.viewed_file_path_id")
 	whereClause := sqlf.Sprintf("TRUE")
 	wherePredicates := make([]*sqlf.Query, 0)
 	if opts.RepoID != 0 {
 		wherePredicates = append(wherePredicates, sqlf.Sprintf("p.repo_id = %s", opts.RepoID))
 	}
-	if opts.Path != "" {
+	if !opts.IncludeAllPaths {
 		wherePredicates = append(wherePredicates, sqlf.Sprintf("p.absolute_path = %s", opts.Path))
 	}
 	if opts.ViewerUserID != 0 {
 		wherePredicates = append(wherePredicates, sqlf.Sprintf("o.viewer_id = %s", opts.ViewerUserID))
+	}
+	if opts.MinThreshold > 0 {
+		wherePredicates = append(wherePredicates, sqlf.Sprintf("o.views_count > %s", opts.MinThreshold))
 	}
 	if len(wherePredicates) > 0 {
 		whereClause = sqlf.Sprintf("%s", sqlf.Join(wherePredicates, "AND"))
@@ -242,6 +253,17 @@ func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, ev
 	// Iterating over each event only once and gathering data for both
 	// `repoNameToMetadata` and `userToCountByPath` at the same time.
 	db := NewDBWith(s.Logger, s)
+	// Getting own signal config to find out if there are any excluded repos.
+	// TODO(own): remove magic "recent-views" and use
+	// "/enterprise/internal/own/types" when this file is moved to enterprise package
+	configurations, err := db.OwnSignalConfigurations().LoadConfigurations(ctx, LoadSignalConfigurationArgs{Name: "recent-views"})
+	if err != nil {
+		return errors.Wrap(err, "error during fetching own signals configuration")
+	}
+	var excludes RepoExclusions
+	if len(configurations) > 0 {
+		excludes = regexifyPatterns(configurations[0].ExcludedRepoPatterns)
+	}
 	for _, event := range events {
 		// Checking if the event has a repo name and a path. If it is not the case, we
 		// cannot proceed with given event and skip it.
@@ -249,6 +271,9 @@ func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, ev
 		err := json.Unmarshal(event.PublicArgument, &r)
 		if err != nil {
 			eventUnmarshalErrorCounter.Inc()
+			continue
+		}
+		if excludes.ShouldExclude(r.RepoName) {
 			continue
 		}
 		// Incrementing the count for a user and path in a "compute if absent" way.
@@ -329,4 +354,23 @@ func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, ev
 		}
 	}
 	return nil
+}
+
+type RepoExclusions []*lazyregexp.Regexp
+
+func (re RepoExclusions) ShouldExclude(repoName string) bool {
+	for _, exclusion := range re {
+		if exclusion.MatchString(repoName) {
+			return true
+		}
+	}
+	return false
+}
+
+// regexifyPatterns will convert postgres patterns to regex patterns. For example github.com/% -> github.com/.*
+func regexifyPatterns(patterns []string) (exclusions RepoExclusions) {
+	for _, pattern := range patterns {
+		exclusions = append(exclusions, lazyregexp.New(strings.ReplaceAll(pattern, "%", ".*")))
+	}
+	return
 }

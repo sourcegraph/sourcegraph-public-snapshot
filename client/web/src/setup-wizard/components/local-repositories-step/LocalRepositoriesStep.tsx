@@ -189,7 +189,7 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
             {initialState && (
                 <Alert variant="secondary" className="mt-3 mb-0">
                     <Text className="mb-0 text-muted">
-                        Pick a path to see a list of local repositories that you want to have in the Sourcegraph App
+                        Pick a path to see a list of local repositories that you want to have in the Cody App
                     </Text>
                 </Alert>
             )}
@@ -269,7 +269,7 @@ const BuiltInRepositories: FC<BuiltInRepositoriesProps> = props => {
             <hr />
             <H4 className="mt-3 mb-1">Built-in repositories</H4>
             <Text size="small" className="text-muted">
-                You're running the Sourcegraph app from your terminal. We found the repositories below in your path.
+                You're running the Cody app from your terminal. We found the repositories below in your path.
             </Text>
             <ul className={styles.list}>
                 {foundRepositories.map(repository => (

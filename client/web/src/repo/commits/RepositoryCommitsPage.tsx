@@ -44,7 +44,7 @@ export const gitCommitFragment = gql`
         oid
         abbreviatedOID
         perforceChangelist {
-            ...PerforceChangelistFields
+            ...PerforceChangelistFieldsWithoutCommit
         }
         message
         subject
@@ -59,7 +59,7 @@ export const gitCommitFragment = gql`
             oid
             abbreviatedOID
             perforceChangelist {
-                ...PerforceChangelistFields
+                ...PerforceChangelistFieldsWithoutCommit
             }
             url
         }
@@ -73,8 +73,9 @@ export const gitCommitFragment = gql`
         }
     }
 
-    fragment PerforceChangelistFields on PerforceChangelist {
+    fragment PerforceChangelistFieldsWithoutCommit on PerforceChangelist {
         cid
+        canonicalURL
     }
 
     fragment SignatureFields on Signature {
@@ -231,7 +232,7 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
                     <Heading as="h2" styleAs="h1">
                         {filePath ? (
                             <>
-                                View commits inside <Code>{basename(filePath)}</Code>
+                                View {pluralize(getRefType(sourceType), 0)} inside <Code>{basename(filePath)}</Code>
                             </>
                         ) : (
                             <>

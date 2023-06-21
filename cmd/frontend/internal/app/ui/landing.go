@@ -5,7 +5,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -15,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -41,15 +40,9 @@ func serveRepoLanding(db database.DB) func(http.ResponseWriter, *http.Request) e
 }
 
 func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
-	span, ctx := ot.StartSpanFromContext(r.Context(), "serveDefLanding") //nolint:staticcheck // OT is deprecated
+	tr, ctx := trace.New(r.Context(), "serveDefLanding", "")
+	defer tr.FinishWithErr(&err)
 	r = r.WithContext(ctx)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
 
 	legacyDefLandingCounter.Inc()
 

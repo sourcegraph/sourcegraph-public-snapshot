@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
@@ -28,25 +27,22 @@ func TestInsertPathCountInputs(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
-
-	t1 := time.Now().Add(-time.Minute * 10)
-	t2 := time.Now().Add(-time.Minute * 20)
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
 
 	// Insert and export uploads
 	insertUploads(t, db,
 		uploadsshared.Upload{ID: 42, RepositoryID: 50},
 		uploadsshared.Upload{ID: 43, RepositoryID: 51},
 		uploadsshared.Upload{ID: 90, RepositoryID: 52},
-		uploadsshared.Upload{ID: 91, RepositoryID: 53, FinishedAt: &t1}, // younger
-		uploadsshared.Upload{ID: 92, RepositoryID: 53, FinishedAt: &t2}, // older
+		uploadsshared.Upload{ID: 91, RepositoryID: 53}, // older   (by ID order)
+		uploadsshared.Upload{ID: 92, RepositoryID: 53}, // younger (by ID order)
 		uploadsshared.Upload{ID: 93, RepositoryID: 54, Root: "lib/", Indexer: "test"},
 		uploadsshared.Upload{ID: 94, RepositoryID: 54, Root: "lib/", Indexer: "test"},
 	)
 	if _, err := db.ExecContext(ctx, `
 		WITH v AS (SELECT unnest('{42, 43, 90, 91, 92, 93, 94}'::integer[]))
-		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key)
-		SELECT id + 100, id, $1 FROM v AS v(id)
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key, upload_key)
+		SELECT id + 100, id, $1, (SELECT md5(u.repository_id::text || ':' || u.root) FROM lsif_uploads u WHERE u.id = v.id) FROM v AS v(id)
 	`,
 		mockRankingGraphKey,
 	); err != nil {
@@ -58,25 +54,25 @@ func TestInsertPathCountInputs(t *testing.T) {
 	mockDefinitions <- shared.RankingDefinitions{
 		UploadID:         42,
 		ExportedUploadID: 142,
-		SymbolName:       "foo",
+		SymbolChecksum:   hash("foo"),
 		DocumentPath:     "foo.go",
 	}
 	mockDefinitions <- shared.RankingDefinitions{
 		UploadID:         42,
 		ExportedUploadID: 142,
-		SymbolName:       "bar",
+		SymbolChecksum:   hash("bar"),
 		DocumentPath:     "bar.go",
 	}
 	mockDefinitions <- shared.RankingDefinitions{
 		UploadID:         43,
 		ExportedUploadID: 143,
-		SymbolName:       "baz",
+		SymbolChecksum:   hash("baz"),
 		DocumentPath:     "baz.go",
 	}
 	mockDefinitions <- shared.RankingDefinitions{
 		UploadID:         43,
 		ExportedUploadID: 143,
-		SymbolName:       "bonk",
+		SymbolChecksum:   hash("bonk"),
 		DocumentPath:     "bonk.go",
 	}
 	close(mockDefinitions)
@@ -97,9 +93,9 @@ func TestInsertPathCountInputs(t *testing.T) {
 	//
 	// Basic test case
 
-	mockReferences := make(chan string, 2)
-	mockReferences <- "foo"
-	mockReferences <- "bar"
+	mockReferences := make(chan [16]byte, 2)
+	mockReferences <- hash("foo")
+	mockReferences <- hash("bar")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 190, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
@@ -110,26 +106,26 @@ func TestInsertPathCountInputs(t *testing.T) {
 	}
 
 	// Same ID split over two batches
-	mockReferences = make(chan string, 1)
-	mockReferences <- "baz"
+	mockReferences = make(chan [16]byte, 1)
+	mockReferences <- hash("baz")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 190, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
-	mockReferences = make(chan string, 1)
-	mockReferences <- "bonk"
+	// Duplicate of 92 (below) - should not be processed as it's older
+	mockReferences = make(chan [16]byte, 4)
+	mockReferences <- hash("foo")
+	mockReferences <- hash("bar")
+	mockReferences <- hash("baz")
+	mockReferences <- hash("bonk")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 191, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
-	// duplicate of 91 (should not be processed as it's older)
-	mockReferences = make(chan string, 4)
-	mockReferences <- "foo"
-	mockReferences <- "bar"
-	mockReferences <- "baz"
-	mockReferences <- "bonk"
+	mockReferences = make(chan [16]byte, 1)
+	mockReferences <- hash("bonk")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 192, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
@@ -143,9 +139,9 @@ func TestInsertPathCountInputs(t *testing.T) {
 	//
 	// Incremental insertion test case
 
-	mockReferences = make(chan string, 2)
-	mockReferences <- "foo"
-	mockReferences <- "bar"
+	mockReferences = make(chan [16]byte, 2)
+	mockReferences <- hash("foo")
+	mockReferences <- hash("bar")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 193, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
@@ -159,11 +155,11 @@ func TestInsertPathCountInputs(t *testing.T) {
 	//
 	// No-op test case
 
-	mockReferences = make(chan string, 4)
-	mockReferences <- "foo"
-	mockReferences <- "bar"
-	mockReferences <- "baz"
-	mockReferences <- "bonk"
+	mockReferences = make(chan [16]byte, 4)
+	mockReferences <- hash("foo")
+	mockReferences <- hash("bar")
+	mockReferences <- hash("baz")
+	mockReferences <- hash("bonk")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 194, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
@@ -204,14 +200,14 @@ func TestInsertInitialPathCounts(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
 
 	// Insert and export upload
 	// N.B. This creates repository 50 implicitly
 	insertUploads(t, db, uploadsshared.Upload{ID: 4})
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key)
-		VALUES (104, 4, $1)
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key, upload_key)
+		VALUES (104, 4, $1, md5('key-4'))
 	`,
 		mockRankingGraphKey,
 	); err != nil {
@@ -228,11 +224,11 @@ func TestInsertInitialPathCounts(t *testing.T) {
 		t.Fatalf("failed to insert metadata: %s", err)
 	}
 
-	mockPathNames := make(chan string, 3)
-	mockPathNames <- "foo.go"
-	mockPathNames <- "bar.go"
-	mockPathNames <- "baz.go"
-	close(mockPathNames)
+	mockPathNames := []string{
+		"foo.go",
+		"bar.go",
+		"baz.go",
+	}
 	if err := store.InsertInitialPathRanks(ctx, 104, mockPathNames, 2, mockRankingGraphKey); err != nil {
 		t.Fatalf("unexpected error inserting initial path counts: %s", err)
 	}
@@ -256,13 +252,13 @@ func TestInsertInitialPathCounts(t *testing.T) {
 	}
 }
 
-func TestVacuumStaleGraphs(t *testing.T) {
+func TestVacuumStaleProcessedReferences(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
 
 	// Insert and export uploads
 	insertUploads(t, db,
@@ -272,34 +268,162 @@ func TestVacuumStaleGraphs(t *testing.T) {
 	)
 	if _, err := db.ExecContext(ctx, `
 		WITH v AS (SELECT unnest('{1, 2, 3}'::integer[]))
-		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key)
-		SELECT id + 100, id, $1 FROM v AS v(id)
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key, upload_key)
+		SELECT id + 100, id, $1, md5('key-' || id::text) FROM v AS v(id)
 	`,
 		mockRankingGraphKey,
 	); err != nil {
 		t.Fatalf("failed to insert exported upload: %s", err)
 	}
 
-	mockReferences := make(chan string, 2)
-	mockReferences <- "foo"
-	mockReferences <- "bar"
+	if _, err := db.ExecContext(ctx, `
+		WITH v AS (SELECT unnest('{1, 2, 3}'::integer[]))
+		INSERT INTO codeintel_ranking_references (graph_key, symbol_names, symbol_checksums, exported_upload_id)
+		SELECT $1, '{}', '{}', id FROM codeintel_ranking_exports
+	`,
+		mockRankingGraphKey,
+	); err != nil {
+		t.Fatalf("failed to insert references: %s", err)
+	}
+
+	for _, graphKey := range []string{
+		key,
+		rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "456"),
+		rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "789"),
+	} {
+		if _, err := db.ExecContext(ctx, `
+			INSERT INTO codeintel_ranking_references_processed (graph_key, codeintel_ranking_reference_id)
+			SELECT $1, id FROM codeintel_ranking_references
+		`, graphKey); err != nil {
+			t.Fatalf("failed to insert ranking processed reference records: %s", err)
+		}
+	}
+
+	if numRecords, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, "SELECT COUNT(*) FROM codeintel_ranking_references_processed")); err != nil {
+		t.Fatalf("unexpected error counting records: %s", err)
+	} else if numRecords != 9 {
+		t.Fatalf("unexpected number of records. want=%d have=%d", 9, numRecords)
+	}
+
+	if _, err := store.VacuumStaleProcessedReferences(ctx, key, 1000); err != nil {
+		t.Fatalf("unexpected error vacuuming processed reference records: %s", err)
+	}
+
+	if numRecords, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, "SELECT COUNT(*) FROM codeintel_ranking_references_processed")); err != nil {
+		t.Fatalf("unexpected error counting records: %s", err)
+	} else if numRecords != 3 {
+		t.Fatalf("unexpected number of records. want=%d have=%d", 3, numRecords)
+	}
+}
+
+func TestVacuumStaleProcessedPaths(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
+
+	// Insert and export uploads
+	insertUploads(t, db,
+		uploadsshared.Upload{ID: 1},
+		uploadsshared.Upload{ID: 2},
+		uploadsshared.Upload{ID: 3},
+	)
+	if _, err := db.ExecContext(ctx, `
+		WITH v AS (SELECT unnest('{1, 2, 3}'::integer[]))
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key, upload_key)
+		SELECT id + 100, id, $1, md5('key-' || id::text) FROM v AS v(id)
+	`,
+		mockRankingGraphKey,
+	); err != nil {
+		t.Fatalf("failed to insert exported upload: %s", err)
+	}
+
+	if _, err := db.ExecContext(ctx, `
+		WITH v AS (SELECT unnest('{1, 2, 3}'::integer[]))
+		INSERT INTO codeintel_initial_path_ranks (graph_key, document_paths, exported_upload_id)
+		SELECT $1, '{}', id FROM codeintel_ranking_exports
+	`,
+		mockRankingGraphKey,
+	); err != nil {
+		t.Fatalf("failed to insert path ranks: %s", err)
+	}
+
+	for _, graphKey := range []string{
+		key,
+		rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "456"),
+		rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "789"),
+	} {
+		if _, err := db.ExecContext(ctx, `
+			INSERT INTO codeintel_initial_path_ranks_processed (graph_key, codeintel_initial_path_ranks_id)
+			SELECT $1, id FROM codeintel_initial_path_ranks
+		`, graphKey); err != nil {
+			t.Fatalf("failed to insert ranking processed reference records: %s", err)
+		}
+	}
+
+	if numRecords, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, "SELECT COUNT(*) FROM codeintel_initial_path_ranks_processed")); err != nil {
+		t.Fatalf("unexpected error counting records: %s", err)
+	} else if numRecords != 9 {
+		t.Fatalf("unexpected number of records. want=%d have=%d", 9, numRecords)
+	}
+
+	if _, err := store.VacuumStaleProcessedPaths(ctx, key, 1000); err != nil {
+		t.Fatalf("unexpected error vacuuming processed path records: %s", err)
+	}
+
+	if numRecords, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, "SELECT COUNT(*) FROM codeintel_initial_path_ranks_processed")); err != nil {
+		t.Fatalf("unexpected error counting records: %s", err)
+	} else if numRecords != 3 {
+		t.Fatalf("unexpected number of records. want=%d have=%d", 3, numRecords)
+	}
+}
+
+func TestVacuumStaleGraphs(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
+
+	// Insert and export uploads
+	insertUploads(t, db,
+		uploadsshared.Upload{ID: 1},
+		uploadsshared.Upload{ID: 2},
+		uploadsshared.Upload{ID: 3},
+	)
+	if _, err := db.ExecContext(ctx, `
+		WITH v AS (SELECT unnest('{1, 2, 3}'::integer[]))
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key, upload_key)
+		SELECT id + 100, id, $1, md5('key-' || id::text) FROM v AS v(id)
+	`,
+		mockRankingGraphKey,
+	); err != nil {
+		t.Fatalf("failed to insert exported upload: %s", err)
+	}
+
+	mockReferences := make(chan [16]byte, 2)
+	mockReferences <- hash("foo")
+	mockReferences <- hash("bar")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 101, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
-	mockReferences = make(chan string, 3)
-	mockReferences <- "foo"
-	mockReferences <- "bar"
-	mockReferences <- "baz"
+	mockReferences = make(chan [16]byte, 3)
+	mockReferences <- hash("foo")
+	mockReferences <- hash("bar")
+	mockReferences <- hash("baz")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 102, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
-	mockReferences = make(chan string, 2)
-	mockReferences <- "bar"
-	mockReferences <- "baz"
+	mockReferences = make(chan [16]byte, 2)
+	mockReferences <- hash("bar")
+	mockReferences <- hash("baz")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 103, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
@@ -307,8 +431,8 @@ func TestVacuumStaleGraphs(t *testing.T) {
 
 	for _, graphKey := range []string{
 		key,
-		rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456),
-		rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 789),
+		rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "456"),
+		rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "789"),
 	} {
 		if _, err := db.ExecContext(ctx, `
 			INSERT INTO codeintel_ranking_references_processed (graph_key, codeintel_ranking_reference_id)
@@ -317,8 +441,8 @@ func TestVacuumStaleGraphs(t *testing.T) {
 			t.Fatalf("failed to insert ranking references processed: %s", err)
 		}
 		if _, err := db.ExecContext(ctx, `
-			INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
-			SELECT 50, '', 100, $1 FROM generate_series(1, 30)
+			INSERT INTO codeintel_ranking_path_counts_inputs (definition_id, count, graph_key)
+			SELECT v, 100, $1 FROM generate_series(1, 30) AS v
 		`, graphKey); err != nil {
 			t.Fatalf("failed to insert ranking path count inputs: %s", err)
 		}
@@ -340,7 +464,7 @@ func TestVacuumStaleGraphs(t *testing.T) {
 	assertCounts(3 * 30)
 
 	// remove records associated with other ranking keys
-	if _, err := store.VacuumStaleGraphs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456), 50); err != nil {
+	if _, err := store.VacuumStaleGraphs(ctx, rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "456"), 50); err != nil {
 		t.Fatalf("unexpected error vacuuming stale graphs: %s", err)
 	}
 
@@ -365,10 +489,13 @@ func getPathCountsInputs(
 ) (_ []pathCountsInput, err error) {
 	query := sqlf.Sprintf(`
 		SELECT repository_id, document_path, SUM(count)
-		FROM codeintel_ranking_path_counts_inputs
-		WHERE graph_key LIKE %s || '%%'
-		GROUP BY repository_id, document_path
-		ORDER BY repository_id, document_path
+		FROM codeintel_ranking_path_counts_inputs pci
+		JOIN codeintel_ranking_definitions rd ON rd.id = pci.definition_id
+		JOIN codeintel_ranking_exports eu ON eu.id = rd.exported_upload_id
+		JOIN lsif_uploads u ON u.id = eu.upload_id
+		WHERE pci.graph_key LIKE %s || '%%'
+		GROUP BY u.repository_id, rd.document_path
+		ORDER BY u.repository_id, rd.document_path
 	`, graphKey)
 	rows, err := db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {

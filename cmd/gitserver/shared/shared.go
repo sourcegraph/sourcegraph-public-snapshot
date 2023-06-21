@@ -21,6 +21,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -146,8 +147,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		},
 		Hostname:                externalAddress(),
 		DB:                      db,
-		CloneQueue:              server.NewCloneQueue(list.New()),
+		CloneQueue:              server.NewCloneQueue(observationCtx, list.New()),
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
+		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 	}
 
 	configurationWatcher := conf.DefaultClient()
@@ -155,8 +157,10 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	var additionalServerOptions []grpc.ServerOption
 
 	for method, scopedLogger := range map[string]log.Logger{
-		proto.GitserverService_Exec_FullMethodName:    logger.Scoped("exec.accesslog", "exec endpoint access log"),
-		proto.GitserverService_Archive_FullMethodName: logger.Scoped("archive.accesslog", "archive endpoint access log"),
+		proto.GitserverService_Exec_FullMethodName:      logger.Scoped("exec.accesslog", "exec endpoint access log"),
+		proto.GitserverService_Archive_FullMethodName:   logger.Scoped("archive.accesslog", "archive endpoint access log"),
+		proto.GitserverService_P4Exec_FullMethodName:    logger.Scoped("p4exec.accesslog", "p4-exec endpoint access log"),
+		proto.GitserverService_GetObject_FullMethodName: logger.Scoped("get-object.accesslog", "get-object endpoint access log"),
 	} {
 		streamInterceptor := accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)
 		unaryInterceptor := accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)

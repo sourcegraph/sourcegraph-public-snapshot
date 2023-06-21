@@ -108,7 +108,12 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                 </DismissibleAlert>
             )}
             <Notices alertClassName={styles.alert} location="top" />
-            <VerifyEmailNotices authenticatedUser={authenticatedUser} alertClassName={styles.alert} />
+
+            {/* The link in the notice doesn't work in the Sourcegraph app since it's rendered by Markdown,
+            so don't show it there for now. */}
+            {!isSourcegraphApp && (
+                <VerifyEmailNotices authenticatedUser={authenticatedUser} alertClassName={styles.alert} />
+            )}
         </div>
     )
 }

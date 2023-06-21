@@ -2,8 +2,10 @@ package graphql
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking"
+	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -30,12 +32,20 @@ func NewRootResolver(
 }
 
 // 🚨 SECURITY: Only site admins may view ranking job summaries.
-func (r *rootResolver) RankingSummary(ctx context.Context) (_ []resolverstubs.RankingSummaryResolver, err error) {
+func (r *rootResolver) RankingSummary(ctx context.Context) (_ resolverstubs.GlobalRankingSummaryResolver, err error) {
 	ctx, _, endObservation := r.operations.rankingSummary.With(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
+	}
+
+	graphKey := rankingshared.GraphKey()
+	var derivativeGraphKey *string
+	if key, ok, err := r.rankingSvc.DerivativeGraphKey(ctx); err != nil {
+		return nil, err
+	} else if ok {
+		derivativeGraphKey = &key
 	}
 
 	summaries, err := r.rankingSvc.Summaries(ctx)
@@ -50,7 +60,79 @@ func (r *rootResolver) RankingSummary(ctx context.Context) (_ []resolverstubs.Ra
 		})
 	}
 
-	return resolvers, nil
+	var nextJobStartsAt *time.Time
+	if t, ok, err := r.rankingSvc.NextJobStartsAt(ctx); err != nil {
+		return nil, err
+	} else if ok {
+		nextJobStartsAt = &t
+	}
+
+	counts, err := r.rankingSvc.CoverageCounts(ctx, graphKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &globalRankingSummaryResolver{
+		derivativeGraphKey: derivativeGraphKey,
+		resolvers:          resolvers,
+		nextJobStartsAt:    nextJobStartsAt,
+		counts:             counts,
+	}, nil
+}
+
+// 🚨 SECURITY: Only site admins may modify ranking graph keys.
+func (r *rootResolver) BumpDerivativeGraphKey(ctx context.Context) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.bumpDerivativeGraphKey.With(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	return resolverstubs.Empty, r.rankingSvc.BumpDerivativeGraphKey(ctx)
+}
+
+// 🚨 SECURITY: Only site admins may modify ranking progress records.
+func (r *rootResolver) DeleteRankingProgress(ctx context.Context, args *resolverstubs.DeleteRankingProgressArgs) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.deleteRankingProgress.With(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	return resolverstubs.Empty, r.rankingSvc.DeleteRankingProgress(ctx, args.GraphKey)
+}
+
+type globalRankingSummaryResolver struct {
+	derivativeGraphKey *string
+	resolvers          []resolverstubs.RankingSummaryResolver
+	nextJobStartsAt    *time.Time
+	counts             shared.CoverageCounts
+}
+
+func (r *globalRankingSummaryResolver) DerivativeGraphKey() *string {
+	return r.derivativeGraphKey
+}
+
+func (r *globalRankingSummaryResolver) RankingSummary() []resolverstubs.RankingSummaryResolver {
+	return r.resolvers
+}
+
+func (r *globalRankingSummaryResolver) NextJobStartsAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.nextJobStartsAt)
+}
+
+func (r *globalRankingSummaryResolver) NumExportedIndexes() int32 {
+	return int32(r.counts.NumExportedIndexes)
+}
+
+func (r *globalRankingSummaryResolver) NumTargetIndexes() int32 {
+	return int32(r.counts.NumTargetIndexes)
+}
+
+func (r *globalRankingSummaryResolver) NumRepositoriesWithoutCurrentRanks() int32 {
+	return int32(r.counts.NumRepositoriesWithoutCurrentRanks)
 }
 
 type rankingSummaryResolver struct {
@@ -59,6 +141,10 @@ type rankingSummaryResolver struct {
 
 func (r *rankingSummaryResolver) GraphKey() string {
 	return r.summary.GraphKey
+}
+
+func (r *rankingSummaryResolver) VisibleToZoekt() bool {
+	return r.summary.VisibleToZoekt
 }
 
 func (r *rankingSummaryResolver) PathMapperProgress() resolverstubs.RankingSummaryProgressResolver {

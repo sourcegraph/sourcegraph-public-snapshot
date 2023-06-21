@@ -28,3 +28,15 @@ export const UPDATE_SIGNAL_CONFIGURATIONS = gql`
         }
     }
 `
+
+export const GET_INSTANCE_OWN_STATS = gql`
+    query GetInstanceOwnStats {
+        instanceOwnershipStats {
+            totalFiles
+            totalCodeownedFiles
+            totalOwnedFiles
+            totalAssignedOwnershipFiles
+            updatedAt
+        }
+    }
+`

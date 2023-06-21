@@ -6,6 +6,8 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -14,55 +16,77 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewSelectOwnersJob(child job.Job, features *search.Features) job.Job {
+func NewSelectOwnersJob(child job.Job) job.Job {
 	return &selectOwnersJob{
-		child:    child,
-		features: features,
+		child: child,
 	}
 }
 
 type selectOwnersJob struct {
 	child job.Job
-
-	features *search.Features
 }
 
 func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	if s.features == nil || !s.features.CodeOwnershipSearch {
-		return nil, &featureFlagError{predicate: "select:file.owners"}
-	}
-
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer finish(alert, err)
 
 	var (
 		mu                    sync.Mutex
 		hasResultWithNoOwners bool
-		errs                  error
+		maxAlerter            search.MaxAlerter
+		bagMu                 sync.Mutex // TODO(#52553): Make bag thread-safe
 	)
 
 	dedup := result.NewDeduper()
-	var maxAlerter search.MaxAlerter
 
 	rules := NewRulesCache(clients.Gitserver, clients.DB)
+	bag := own.EmptyBag()
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		var ok bool
-		event.Results, ok, err = getCodeOwnersFromMatches(ctx, &rules, event.Results)
+		matches, ok, err := getCodeOwnersFromMatches(ctx, &rules, event.Results)
 		if err != nil {
-			mu.Lock()
-			errs = errors.Append(errs, err)
-			mu.Unlock()
+			maxAlerter.Add(search.AlertForOwnershipSearchError())
 		}
 		mu.Lock()
 		if ok {
 			hasResultWithNoOwners = true
 		}
-		results := event.Results[:0]
-		for _, m := range event.Results {
-			if !dedup.Seen(m) {
-				dedup.Add(m)
-				results = append(results, m)
+		func() {
+			bagMu.Lock()
+			defer bagMu.Unlock()
+			for _, m := range matches {
+				for _, r := range m.references {
+					bag.Add(r)
+				}
+			}
+			bag.Resolve(ctx, database.NewEnterpriseDB(clients.DB))
+		}()
+		var results result.Matches
+		for _, m := range matches {
+		nextReference:
+			for _, r := range m.references {
+				ro, found := bag.FindResolved(r)
+				if !found {
+					guess := r.ResolutionGuess()
+					// No text references found to make a guess, something is wrong.
+					if guess == nil {
+						maxAlerter.Add(search.AlertForOwnershipSearchError())
+						continue nextReference
+					}
+					ro = guess
+				}
+				if ro != nil {
+					om := &result.OwnerMatch{
+						ResolvedOwner: ownerToResult(ro),
+						InputRev:      m.fileMatch.InputRev,
+						Repo:          m.fileMatch.Repo,
+						CommitID:      m.fileMatch.CommitID,
+					}
+					if !dedup.Seen(om) {
+						dedup.Add(om)
+						results = append(results, om)
+					}
+				}
 			}
 		}
 		event.Results = results
@@ -71,16 +95,13 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	})
 
 	alert, err = s.child.Run(ctx, clients, filteredStream)
-	if err != nil {
-		errs = errors.Append(errs, err)
-	}
 	maxAlerter.Add(alert)
 
 	if hasResultWithNoOwners {
 		maxAlerter.Add(search.AlertForUnownedResult())
 	}
 
-	return maxAlerter.Alert, errs
+	return maxAlerter.Alert, err
 }
 
 func (s *selectOwnersJob) Name() string {
@@ -99,14 +120,19 @@ func (s *selectOwnersJob) MapChildren(fn job.MapFunc) job.Job {
 	return &cp
 }
 
+type ownerFileMatch struct {
+	fileMatch  *result.FileMatch
+	references []own.Reference
+}
+
 func getCodeOwnersFromMatches(
 	ctx context.Context,
 	rules *RulesCache,
 	matches []result.Match,
-) ([]result.Match, bool, error) {
+) ([]ownerFileMatch, bool, error) {
 	var (
 		errs                  error
-		ownerMatches          []result.Match
+		ownerMatches          []ownerFileMatch
 		hasResultWithNoOwners bool
 	)
 
@@ -122,26 +148,22 @@ func getCodeOwnersFromMatches(
 		}
 		rule := rs.Match(mm.File.Path)
 		// No match.
-		if rule == nil || len(rule.GetOwner()) == 0 {
+		if rule.Empty() {
 			hasResultWithNoOwners = true
 			continue
 		}
-
-		resolvedOwners, err := rules.ownService.ResolveOwnersWithType(ctx, rule.GetOwner())
-		if err != nil {
-			errs = errors.Append(errs, err)
-			continue
-		}
-
-		for _, o := range resolvedOwners {
-			ownerMatch := &result.OwnerMatch{
-				ResolvedOwner: ownerToResult(o),
-				InputRev:      mm.InputRev,
-				Repo:          mm.Repo,
-				CommitID:      mm.CommitID,
+		refs := rule.References()
+		for i := range refs {
+			refs[i].RepoContext = &own.RepoContext{
+				Name:         mm.Repo.Name,
+				CodeHostKind: rs.codeowners.GetCodeHostType(),
 			}
-			ownerMatches = append(ownerMatches, ownerMatch)
 		}
+
+		ownerMatches = append(ownerMatches, ownerFileMatch{
+			fileMatch:  mm,
+			references: refs,
+		})
 	}
 	return ownerMatches, hasResultWithNoOwners, errs
 }

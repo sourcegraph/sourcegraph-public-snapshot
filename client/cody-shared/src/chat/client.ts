@@ -39,6 +39,7 @@ export interface Client {
         recipeId: RecipeID,
         options?: {
             prefilledOptions?: PrefilledOptions
+            humanChatInput?: string
         }
     ) => Promise<void>
     reset: () => void
@@ -66,9 +67,9 @@ export async function createClient({
         )
     }
 
-    const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId) : null
+    const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, true) : null
 
-    const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null)
+    const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null)
 
     const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient)
 
@@ -105,6 +106,7 @@ export async function createClient({
             intentDetector,
             codebaseContext,
             responseMultiplexer: new BotResponseMultiplexer(),
+            firstInteraction: transcript.isEmpty,
         })
         if (!interaction) {
             return
@@ -114,10 +116,11 @@ export async function createClient({
 
         sendTranscript()
 
-        const prompt = await transcript.toPrompt(getPreamble(config.codebase))
+        const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(getPreamble(config.codebase))
+        transcript.setUsedContextFilesForLastInteraction(contextFiles)
+
         const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
         let rawText = ''
-
         chatClient.chat(prompt, {
             onChange(_rawText) {
                 rawText = _rawText
@@ -136,9 +139,7 @@ export async function createClient({
             },
             onError(error) {
                 // Display error message as assistant response
-                transcript.addErrorAsAssistantResponse(
-                    `<div class="cody-chat-error"><span>Request failed: </span>${error}</div>`
-                )
+                transcript.addErrorAsAssistantResponse(error)
                 isMessageInProgress = false
                 sendTranscript()
                 console.error(`Completion request failed: ${error}`)

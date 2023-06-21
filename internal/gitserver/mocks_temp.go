@@ -136,6 +136,9 @@ type MockClient struct {
 	// P4ExecFunc is an instance of a mock function object controlling the
 	// behavior of the method P4Exec.
 	P4ExecFunc *ClientP4ExecFunc
+	// P4GetChangelistFunc is an instance of a mock function object
+	// controlling the behavior of the method P4GetChangelist.
+	P4GetChangelistFunc *ClientP4GetChangelistFunc
 	// ReadDirFunc is an instance of a mock function object controlling the
 	// behavior of the method ReadDir.
 	ReadDirFunc *ClientReadDirFunc
@@ -258,7 +261,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		CreateCommitFromPatchFunc: &ClientCreateCommitFromPatchFunc{
-			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest) (r0 string, r1 error) {
+			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest) (r0 *protocol.CreateCommitFromPatchResponse, r1 error) {
 				return
 			},
 		},
@@ -369,6 +372,11 @@ func NewMockClient() *MockClient {
 		},
 		P4ExecFunc: &ClientP4ExecFunc{
 			defaultHook: func(context.Context, string, string, string, ...string) (r0 io.ReadCloser, r1 http.Header, r2 error) {
+				return
+			},
+		},
+		P4GetChangelistFunc: &ClientP4GetChangelistFunc{
+			defaultHook: func(context.Context, string, PerforceCredentials) (r0 *protocol.PerforceChangelist, r1 error) {
 				return
 			},
 		},
@@ -525,7 +533,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		CreateCommitFromPatchFunc: &ClientCreateCommitFromPatchFunc{
-			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error) {
+			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
 				panic("unexpected invocation of MockClient.CreateCommitFromPatch")
 			},
 		},
@@ -637,6 +645,11 @@ func NewStrictMockClient() *MockClient {
 		P4ExecFunc: &ClientP4ExecFunc{
 			defaultHook: func(context.Context, string, string, string, ...string) (io.ReadCloser, http.Header, error) {
 				panic("unexpected invocation of MockClient.P4Exec")
+			},
+		},
+		P4GetChangelistFunc: &ClientP4GetChangelistFunc{
+			defaultHook: func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error) {
+				panic("unexpected invocation of MockClient.P4GetChangelist")
 			},
 		},
 		ReadDirFunc: &ClientReadDirFunc{
@@ -831,6 +844,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		P4ExecFunc: &ClientP4ExecFunc{
 			defaultHook: i.P4Exec,
+		},
+		P4GetChangelistFunc: &ClientP4GetChangelistFunc{
+			defaultHook: i.P4GetChangelist,
 		},
 		ReadDirFunc: &ClientReadDirFunc{
 			defaultHook: i.ReadDir,
@@ -2440,15 +2456,15 @@ func (c ClientContributorCountFuncCall) Results() []interface{} {
 // CreateCommitFromPatch method of the parent MockClient instance is
 // invoked.
 type ClientCreateCommitFromPatchFunc struct {
-	defaultHook func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
-	hooks       []func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
+	defaultHook func(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error)
+	hooks       []func(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error)
 	history     []ClientCreateCommitFromPatchFuncCall
 	mutex       sync.Mutex
 }
 
 // CreateCommitFromPatch delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockClient) CreateCommitFromPatch(v0 context.Context, v1 protocol.CreateCommitFromPatchRequest) (string, error) {
+func (m *MockClient) CreateCommitFromPatch(v0 context.Context, v1 protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
 	r0, r1 := m.CreateCommitFromPatchFunc.nextHook()(v0, v1)
 	m.CreateCommitFromPatchFunc.appendCall(ClientCreateCommitFromPatchFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -2457,7 +2473,7 @@ func (m *MockClient) CreateCommitFromPatch(v0 context.Context, v1 protocol.Creat
 // SetDefaultHook sets function that is called when the
 // CreateCommitFromPatch method of the parent MockClient instance is invoked
 // and the hook queue is empty.
-func (f *ClientCreateCommitFromPatchFunc) SetDefaultHook(hook func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)) {
+func (f *ClientCreateCommitFromPatchFunc) SetDefaultHook(hook func(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error)) {
 	f.defaultHook = hook
 }
 
@@ -2465,7 +2481,7 @@ func (f *ClientCreateCommitFromPatchFunc) SetDefaultHook(hook func(context.Conte
 // CreateCommitFromPatch method of the parent MockClient instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *ClientCreateCommitFromPatchFunc) PushHook(hook func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)) {
+func (f *ClientCreateCommitFromPatchFunc) PushHook(hook func(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2473,20 +2489,20 @@ func (f *ClientCreateCommitFromPatchFunc) PushHook(hook func(context.Context, pr
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientCreateCommitFromPatchFunc) SetDefaultReturn(r0 string, r1 error) {
-	f.SetDefaultHook(func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error) {
+func (f *ClientCreateCommitFromPatchFunc) SetDefaultReturn(r0 *protocol.CreateCommitFromPatchResponse, r1 error) {
+	f.SetDefaultHook(func(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientCreateCommitFromPatchFunc) PushReturn(r0 string, r1 error) {
-	f.PushHook(func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error) {
+func (f *ClientCreateCommitFromPatchFunc) PushReturn(r0 *protocol.CreateCommitFromPatchResponse, r1 error) {
+	f.PushHook(func(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientCreateCommitFromPatchFunc) nextHook() func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error) {
+func (f *ClientCreateCommitFromPatchFunc) nextHook() func(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2527,7 +2543,7 @@ type ClientCreateCommitFromPatchFuncCall struct {
 	Arg1 protocol.CreateCommitFromPatchRequest
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 string
+	Result0 *protocol.CreateCommitFromPatchResponse
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -5058,6 +5074,117 @@ func (c ClientP4ExecFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientP4ExecFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// ClientP4GetChangelistFunc describes the behavior when the P4GetChangelist
+// method of the parent MockClient instance is invoked.
+type ClientP4GetChangelistFunc struct {
+	defaultHook func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error)
+	hooks       []func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error)
+	history     []ClientP4GetChangelistFuncCall
+	mutex       sync.Mutex
+}
+
+// P4GetChangelist delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockClient) P4GetChangelist(v0 context.Context, v1 string, v2 PerforceCredentials) (*protocol.PerforceChangelist, error) {
+	r0, r1 := m.P4GetChangelistFunc.nextHook()(v0, v1, v2)
+	m.P4GetChangelistFunc.appendCall(ClientP4GetChangelistFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the P4GetChangelist
+// method of the parent MockClient instance is invoked and the hook queue is
+// empty.
+func (f *ClientP4GetChangelistFunc) SetDefaultHook(hook func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// P4GetChangelist method of the parent MockClient instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ClientP4GetChangelistFunc) PushHook(hook func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientP4GetChangelistFunc) SetDefaultReturn(r0 *protocol.PerforceChangelist, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientP4GetChangelistFunc) PushReturn(r0 *protocol.PerforceChangelist, r1 error) {
+	f.PushHook(func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error) {
+		return r0, r1
+	})
+}
+
+func (f *ClientP4GetChangelistFunc) nextHook() func(context.Context, string, PerforceCredentials) (*protocol.PerforceChangelist, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientP4GetChangelistFunc) appendCall(r0 ClientP4GetChangelistFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientP4GetChangelistFuncCall objects
+// describing the invocations of this function.
+func (f *ClientP4GetChangelistFunc) History() []ClientP4GetChangelistFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientP4GetChangelistFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientP4GetChangelistFuncCall is an object that describes an invocation
+// of method P4GetChangelist on an instance of MockClient.
+type ClientP4GetChangelistFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 PerforceCredentials
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *protocol.PerforceChangelist
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientP4GetChangelistFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientP4GetChangelistFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ClientReadDirFunc describes the behavior when the ReadDir method of the

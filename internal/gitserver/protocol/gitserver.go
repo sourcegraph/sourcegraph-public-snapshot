@@ -2,10 +2,11 @@ package protocol
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -275,11 +276,26 @@ type BatchLogRequest struct {
 	Format string `json:"format"`
 }
 
-func (req BatchLogRequest) LogFields() []log.Field {
-	return []log.Field{
-		log.Int("numRepoCommits", len(req.RepoCommits)),
-		log.String("format", req.Format),
+func (bl *BatchLogRequest) ToProto() *proto.BatchLogRequest {
+	repoCommits := make([]*proto.RepoCommit, 0, len(bl.RepoCommits))
+	for _, rc := range bl.RepoCommits {
+		repoCommits = append(repoCommits, rc.ToProto())
 	}
+	return &proto.BatchLogRequest{
+		RepoCommits: repoCommits,
+		Format:      bl.Format,
+	}
+}
+
+func (bl *BatchLogRequest) FromProto(p *proto.BatchLogRequest) {
+	repoCommits := make([]api.RepoCommit, 0, len(p.GetRepoCommits()))
+	for _, protoRc := range p.GetRepoCommits() {
+		var rc api.RepoCommit
+		rc.FromProto(protoRc)
+		repoCommits = append(repoCommits, rc)
+	}
+	bl.RepoCommits = repoCommits
+	bl.Format = p.GetFormat()
 }
 
 func (req BatchLogRequest) SpanAttributes() []attribute.KeyValue {
@@ -293,12 +309,62 @@ type BatchLogResponse struct {
 	Results []BatchLogResult `json:"results"`
 }
 
+func (bl *BatchLogResponse) ToProto() *proto.BatchLogResponse {
+	results := make([]*proto.BatchLogResult, 0, len(bl.Results))
+	for _, r := range bl.Results {
+		results = append(results, r.ToProto())
+	}
+	return &proto.BatchLogResponse{
+		Results: results,
+	}
+}
+
+func (bl *BatchLogResponse) FromProto(p *proto.BatchLogResponse) {
+	results := make([]BatchLogResult, 0, len(p.GetResults()))
+	for _, protoR := range p.GetResults() {
+		var r BatchLogResult
+		r.FromProto(protoR)
+		results = append(results, r)
+	}
+	*bl = BatchLogResponse{
+		Results: results,
+	}
+}
+
 // BatchLogResult associates a repository and commit pair from the input of a BatchLog
 // request with the result of the associated git log command.
 type BatchLogResult struct {
 	RepoCommit    api.RepoCommit `json:"repoCommit"`
 	CommandOutput string         `json:"output"`
 	CommandError  string         `json:"error,omitempty"`
+}
+
+func (bl *BatchLogResult) ToProto() *proto.BatchLogResult {
+	result := &proto.BatchLogResult{
+		RepoCommit:    bl.RepoCommit.ToProto(),
+		CommandOutput: bl.CommandOutput,
+	}
+
+	var cmdErr string
+
+	if bl.CommandError != "" {
+		cmdErr = bl.CommandError
+		result.CommandError = &cmdErr
+	}
+
+	return result
+
+}
+
+func (bl *BatchLogResult) FromProto(p *proto.BatchLogResult) {
+	var rc api.RepoCommit
+	rc.FromProto(p.GetRepoCommit())
+
+	*bl = BatchLogResult{
+		RepoCommit:    rc,
+		CommandOutput: p.GetCommandOutput(),
+		CommandError:  p.GetCommandError(),
+	}
 }
 
 // P4ExecRequest is a request to execute a p4 command with given arguments.
@@ -313,6 +379,24 @@ type P4ExecRequest struct {
 	Args     []string `json:"args"`
 }
 
+func (r *P4ExecRequest) ToProto() *proto.P4ExecRequest {
+	return &proto.P4ExecRequest{
+		P4Port:   r.P4Port,
+		P4User:   r.P4User,
+		P4Passwd: r.P4Passwd,
+		Args:     r.Args,
+	}
+}
+
+func (r *P4ExecRequest) FromProto(p *proto.P4ExecRequest) {
+	*r = P4ExecRequest{
+		P4Port:   p.GetP4Port(),
+		P4User:   p.GetP4User(),
+		P4Passwd: p.GetP4Passwd(),
+		Args:     p.GetArgs(),
+	}
+}
+
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
 	Repo  api.RepoName  `json:"repo"`  // identifying URL for repo
@@ -324,6 +408,22 @@ type RepoUpdateRequest struct {
 	CloneFromShard string `json:"cloneFromShard"`
 }
 
+func (r *RepoUpdateRequest) ToProto() *proto.RepoUpdateRequest {
+	return &proto.RepoUpdateRequest{
+		Repo:           string(r.Repo),
+		Since:          durationpb.New(r.Since),
+		CloneFromShard: r.CloneFromShard,
+	}
+}
+
+func (r *RepoUpdateRequest) FromProto(p *proto.RepoUpdateRequest) {
+	*r = RepoUpdateRequest{
+		Repo:           api.RepoName(p.GetRepo()),
+		Since:          p.GetSince().AsDuration(),
+		CloneFromShard: p.GetCloneFromShard(),
+	}
+}
+
 // RepoUpdateResponse returns meta information of the repo enqueued for update.
 type RepoUpdateResponse struct {
 	LastFetched *time.Time `json:",omitempty"`
@@ -331,6 +431,46 @@ type RepoUpdateResponse struct {
 
 	// Error is an error reported by the update operation, and not a network protocol error.
 	Error string `json:",omitempty"`
+}
+
+func (r *RepoUpdateResponse) ToProto() *proto.RepoUpdateResponse {
+	var lastFetched, lastChanged *timestamppb.Timestamp
+	if r.LastFetched != nil {
+		lastFetched = timestamppb.New(*r.LastFetched)
+	}
+
+	if r.LastChanged != nil {
+		lastChanged = timestamppb.New(*r.LastChanged)
+	}
+
+	return &proto.RepoUpdateResponse{
+		LastFetched: timestamppb.New(lastFetched.AsTime()),
+		LastChanged: timestamppb.New(lastChanged.AsTime()),
+		Error:       r.Error,
+	}
+}
+
+func (r *RepoUpdateResponse) FromProto(p *proto.RepoUpdateResponse) {
+	var lastFetched, lastChanged time.Time
+	if p.GetLastFetched() != nil {
+		lf := p.GetLastFetched().AsTime()
+		lastFetched = lf
+	} else {
+		lastFetched = time.Time{}
+	}
+
+	if p.GetLastChanged() != nil {
+		lc := p.GetLastChanged().AsTime()
+		lastChanged = lc
+	} else {
+		lastChanged = time.Time{}
+	}
+
+	*r = RepoUpdateResponse{
+		LastFetched: &lastFetched,
+		LastChanged: &lastChanged,
+		Error:       p.GetError(),
+	}
 }
 
 // RepoCloneRequest is a request to clone a repository asynchronously.
@@ -341,6 +481,18 @@ type RepoCloneRequest struct {
 // RepoCloneResponse returns an error if the repo clone request failed.
 type RepoCloneResponse struct {
 	Error string `json:",omitempty"`
+}
+
+func (r *RepoCloneResponse) ToProto() *proto.RepoCloneResponse {
+	return &proto.RepoCloneResponse{
+		Error: r.Error,
+	}
+}
+
+func (r *RepoCloneResponse) FromProto(p *proto.RepoCloneResponse) {
+	*r = RepoCloneResponse{
+		Error: p.GetError(),
+	}
 }
 
 type NotFoundPayload struct {
@@ -363,6 +515,22 @@ type IsRepoCloneableResponse struct {
 	Reason    string // if not cloneable, the reason why not
 }
 
+func (i *IsRepoCloneableResponse) ToProto() *proto.IsRepoCloneableResponse {
+	return &proto.IsRepoCloneableResponse{
+		Cloneable: i.Cloneable,
+		Cloned:    i.Cloned,
+		Reason:    i.Reason,
+	}
+}
+
+func (i *IsRepoCloneableResponse) FromProto(p *proto.IsRepoCloneableResponse) {
+	*i = IsRepoCloneableResponse{
+		Cloneable: p.GetCloneable(),
+		Cloned:    p.GetCloned(),
+		Reason:    p.GetReason(),
+	}
+}
+
 // RepoDeleteRequest is a request to delete a repository clone on gitserver
 type RepoDeleteRequest struct {
 	// Repo is the repository to delete.
@@ -380,6 +548,23 @@ type ReposStats struct {
 	GitDirBytes int64
 }
 
+func (rs *ReposStats) FromProto(x *proto.ReposStatsResponse) {
+	protoGitDirBytes := x.GetGitDirBytes()
+	protoUpdatedAt := x.GetUpdatedAt().AsTime()
+
+	*rs = ReposStats{
+		UpdatedAt:   protoUpdatedAt,
+		GitDirBytes: int64(protoGitDirBytes),
+	}
+}
+
+func (rs *ReposStats) ToProto() *proto.ReposStatsResponse {
+	return &proto.ReposStatsResponse{
+		GitDirBytes: uint64(rs.GitDirBytes),
+		UpdatedAt:   timestamppb.New(rs.UpdatedAt),
+	}
+}
+
 // RepoCloneProgressRequest is a request for information about the clone progress of multiple
 // repositories on gitserver.
 type RepoCloneProgressRequest struct {
@@ -393,10 +578,54 @@ type RepoCloneProgress struct {
 	Cloned          bool   // whether the repository has been cloned successfully
 }
 
+func (r *RepoCloneProgress) ToProto() *proto.RepoCloneProgress {
+	return &proto.RepoCloneProgress{
+		CloneInProgress: r.CloneInProgress,
+		CloneProgress:   r.CloneProgress,
+		Cloned:          r.Cloned,
+	}
+}
+
+func (r *RepoCloneProgress) FromProto(p *proto.RepoCloneProgress) {
+	*r = RepoCloneProgress{
+		CloneInProgress: p.GetCloneInProgress(),
+		CloneProgress:   p.GetCloneProgress(),
+		Cloned:          p.GetCloned(),
+	}
+}
+
 // RepoCloneProgressResponse is the response to a repository clone progress request
 // for multiple repositories at the same time.
 type RepoCloneProgressResponse struct {
 	Results map[api.RepoName]*RepoCloneProgress
+}
+
+func (r *RepoCloneProgressResponse) ToProto() *proto.RepoCloneProgressResponse {
+	results := make(map[string]*proto.RepoCloneProgress, len(r.Results))
+	for k, v := range r.Results {
+		results[string(k)] = &proto.RepoCloneProgress{
+			CloneInProgress: v.CloneInProgress,
+			CloneProgress:   v.CloneProgress,
+			Cloned:          v.Cloned,
+		}
+	}
+	return &proto.RepoCloneProgressResponse{
+		Results: results,
+	}
+}
+
+func (r *RepoCloneProgressResponse) FromProto(p *proto.RepoCloneProgressResponse) {
+	results := make(map[api.RepoName]*RepoCloneProgress, len(p.GetResults()))
+	for k, v := range p.GetResults() {
+		results[api.RepoName(k)] = &RepoCloneProgress{
+			CloneInProgress: v.GetCloneInProgress(),
+			CloneProgress:   v.GetCloneProgress(),
+			Cloned:          v.GetCloned(),
+		}
+	}
+	*r = RepoCloneProgressResponse{
+		Results: results,
+	}
 }
 
 // CreateCommitFromPatchRequest is the request information needed for creating
@@ -420,16 +649,83 @@ type CreateCommitFromPatchRequest struct {
 	// GitApplyArgs are the arguments that will be passed to `git apply` along
 	// with `--cached`.
 	GitApplyArgs []string
+	// If specified, the changes will be pushed to this ref as opposed to TargetRef.
+	PushRef *string
+}
+
+func (c *CreateCommitFromPatchRequest) ToProto() *proto.CreateCommitFromPatchBinaryRequest {
+	cc := &proto.CreateCommitFromPatchBinaryRequest{
+		Repo:         string(c.Repo),
+		BaseCommit:   string(c.BaseCommit),
+		Patch:        c.Patch,
+		TargetRef:    c.TargetRef,
+		UniqueRef:    c.UniqueRef,
+		CommitInfo:   c.CommitInfo.ToProto(),
+		GitApplyArgs: c.GitApplyArgs,
+		PushRef:      c.PushRef,
+	}
+
+	if c.Push != nil {
+		cc.Push = c.Push.ToProto()
+	}
+
+	return cc
+}
+
+func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchBinaryRequest) {
+	gp := p.GetPush()
+	var pushConfig *PushConfig
+	if gp != nil {
+		pushConfig = &PushConfig{}
+		pushConfig.FromProto(gp)
+	}
+
+	*c = CreateCommitFromPatchRequest{
+		Repo:         api.RepoName(p.GetRepo()),
+		BaseCommit:   api.CommitID(p.GetBaseCommit()),
+		Patch:        p.GetPatch(),
+		TargetRef:    p.GetTargetRef(),
+		UniqueRef:    p.GetUniqueRef(),
+		CommitInfo:   PatchCommitInfoFromProto(p.GetCommitInfo()),
+		Push:         pushConfig,
+		GitApplyArgs: p.GetGitApplyArgs(),
+	}
+
+	if p != nil {
+		c.PushRef = p.PushRef
+	}
 }
 
 // PatchCommitInfo will be used for commit information when creating a commit from a patch
 type PatchCommitInfo struct {
-	Message        string
+	Messages       []string
 	AuthorName     string
 	AuthorEmail    string
 	CommitterName  string
 	CommitterEmail string
 	Date           time.Time
+}
+
+func (p *PatchCommitInfo) ToProto() *proto.PatchCommitInfo {
+	return &proto.PatchCommitInfo{
+		Messages:       p.Messages,
+		AuthorName:     p.AuthorName,
+		AuthorEmail:    p.AuthorEmail,
+		CommitterName:  p.CommitterName,
+		CommitterEmail: p.CommitterEmail,
+		Date:           timestamppb.New(p.Date),
+	}
+}
+
+func PatchCommitInfoFromProto(p *proto.PatchCommitInfo) PatchCommitInfo {
+	return PatchCommitInfo{
+		Messages:       p.GetMessages(),
+		AuthorName:     p.GetAuthorName(),
+		AuthorEmail:    p.GetAuthorEmail(),
+		CommitterName:  p.GetCommitterName(),
+		CommitterEmail: p.GetCommitterEmail(),
+		Date:           p.GetDate().AsTime(),
+	}
 }
 
 // PushConfig provides the configuration required to push one or more commits to
@@ -450,6 +746,31 @@ type PushConfig struct {
 	Passphrase string
 }
 
+func (p *PushConfig) ToProto() *proto.PushConfig {
+	if p == nil {
+		return nil
+	}
+
+	return &proto.PushConfig{
+		RemoteUrl:  p.RemoteURL,
+		PrivateKey: p.PrivateKey,
+		Passphrase: p.Passphrase,
+	}
+}
+
+func (pc *PushConfig) FromProto(p *proto.PushConfig) {
+	*pc = PushConfig{
+		RemoteURL:  p.GetRemoteUrl(),
+		PrivateKey: p.GetPrivateKey(),
+		Passphrase: p.GetPassphrase(),
+	}
+}
+
+type GerritConfig struct {
+	ChangeID     string
+	PushMagicRef string
+}
+
 // CreateCommitFromPatchResponse is the response type returned after creating
 // a commit from a patch
 type CreateCommitFromPatchResponse struct {
@@ -458,6 +779,37 @@ type CreateCommitFromPatchResponse struct {
 
 	// Error is populated only on error
 	Error *CreateCommitFromPatchError
+
+	// ChangelistId is the numeric ID of the changelist that is shelved for the patch.
+	// only supplied for Perforce code hosts.
+	// it's a string because it's optional, but usng a scalar pointer is not allowed in protobuf
+	// so blank string means not provided
+	ChangelistId string
+}
+
+func (r *CreateCommitFromPatchResponse) ToProto() *proto.CreateCommitFromPatchBinaryResponse {
+	var err *proto.CreateCommitFromPatchError
+	if r.Error != nil {
+		err = r.Error.ToProto()
+	} else {
+		err = nil
+	}
+	return &proto.CreateCommitFromPatchBinaryResponse{
+		Rev:          r.Rev,
+		Error:        err,
+		ChangelistId: r.ChangelistId,
+	}
+}
+
+func (r *CreateCommitFromPatchResponse) FromProto(p *proto.CreateCommitFromPatchBinaryResponse) {
+	if p.GetError() == nil {
+		r.Error = nil
+	} else {
+		r.Error = &CreateCommitFromPatchError{}
+		r.Error.FromProto(p.GetError())
+	}
+	r.Rev = p.GetRev()
+	r.ChangelistId = p.ChangelistId
 }
 
 // SetError adds the supplied error related details to e.
@@ -486,6 +838,24 @@ type CreateCommitFromPatchError struct {
 	CombinedOutput string
 }
 
+func (e *CreateCommitFromPatchError) ToProto() *proto.CreateCommitFromPatchError {
+	return &proto.CreateCommitFromPatchError{
+		RepositoryName: e.RepositoryName,
+		InternalError:  e.InternalError,
+		Command:        e.Command,
+		CombinedOutput: e.CombinedOutput,
+	}
+}
+
+func (e *CreateCommitFromPatchError) FromProto(p *proto.CreateCommitFromPatchError) {
+	*e = CreateCommitFromPatchError{
+		RepositoryName: p.GetRepositoryName(),
+		InternalError:  p.GetInternalError(),
+		Command:        p.GetCommand(),
+		CombinedOutput: p.GetCombinedOutput(),
+	}
+}
+
 // Error returns a detailed error conforming to the error interface
 func (e *CreateCommitFromPatchError) Error() string {
 	return e.InternalError
@@ -496,6 +866,71 @@ type GetObjectRequest struct {
 	ObjectName string
 }
 
+func (r *GetObjectRequest) ToProto() *proto.GetObjectRequest {
+	return &proto.GetObjectRequest{
+		Repo:       string(r.Repo),
+		ObjectName: r.ObjectName,
+	}
+}
+
+func (r *GetObjectRequest) FromProto(p *proto.GetObjectRequest) {
+	*r = GetObjectRequest{
+		Repo:       api.RepoName(p.GetRepo()),
+		ObjectName: p.GetObjectName(),
+	}
+}
+
 type GetObjectResponse struct {
 	Object gitdomain.GitObject
+}
+
+func (r *GetObjectResponse) ToProto() *proto.GetObjectResponse {
+	return &proto.GetObjectResponse{
+		Object: r.Object.ToProto(),
+	}
+}
+
+func (r *GetObjectResponse) FromProto(p *proto.GetObjectResponse) {
+	obj := p.GetObject()
+
+	var gitObj gitdomain.GitObject
+	gitObj.FromProto(obj)
+	*r = GetObjectResponse{
+		Object: gitObj,
+	}
+
+}
+
+type PerforceChangelist struct {
+	ID           string
+	CreationDate time.Time
+	State        PerforceChangelistState
+	Author       string
+	Title        string
+	Message      string
+}
+
+type PerforceChangelistState string
+
+const (
+	PerforceChangelistStateSubmitted PerforceChangelistState = "submitted"
+	PerforceChangelistStatePending   PerforceChangelistState = "pending"
+	PerforceChangelistStateShelved   PerforceChangelistState = "shelved"
+	// Perforce doesn't actually return a state for closed changelists, so this is one we use to indicate the changelist is closed.
+	PerforceChangelistStateClosed PerforceChangelistState = "closed"
+)
+
+func ParsePerforceChangelistState(state string) (PerforceChangelistState, error) {
+	switch strings.ToLower(strings.TrimSpace(state)) {
+	case "submitted":
+		return PerforceChangelistStateSubmitted, nil
+	case "pending":
+		return PerforceChangelistStatePending, nil
+	case "shelved":
+		return PerforceChangelistStateShelved, nil
+	case "closed":
+		return PerforceChangelistStateClosed, nil
+	default:
+		return "", errors.Newf("invalid Perforce changelist state: %s", state)
+	}
 }

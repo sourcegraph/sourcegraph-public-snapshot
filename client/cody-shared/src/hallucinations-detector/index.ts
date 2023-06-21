@@ -17,7 +17,8 @@ interface HighlightTokensResult {
 
 export async function highlightTokens(
     text: string,
-    filesExist: (filePaths: string[]) => Promise<{ [filePath: string]: boolean }>
+    filesExist: (filePaths: string[]) => Promise<{ [filePath: string]: boolean }>,
+    workspaceRootPath?: string
 ): Promise<HighlightTokensResult> {
     const markdownTokens = parseMarkdown(text)
     const tokens = await detectTokens(markdownTokens, filesExist)
@@ -29,7 +30,7 @@ export async function highlightTokens(
                 case 'codespan':
                     return token.raw
                 default:
-                    return highlightLine(token.raw, tokens)
+                    return highlightLine(token.raw, tokens, workspaceRootPath)
             }
         })
         .join('')
@@ -65,7 +66,7 @@ async function detectTokens(
     const filePathsExist = await filesExist([...Object.keys(filePathToFullMatch)])
     const highlightedTokens: HighlightedToken[] = []
     for (const [filePath, fullMatches] of Object.entries(filePathToFullMatch)) {
-        const exists = filePathsExist[filePath.endsWith('/') ? filePath.slice(0, -1) : filePath]
+        const exists = filePathsExist[filePath]
         for (const fullMatch of fullMatches) {
             highlightedTokens.push({
                 type: 'file',
@@ -78,17 +79,32 @@ async function detectTokens(
     return highlightedTokens
 }
 
-function highlightLine(line: string, tokens: HighlightedToken[]): string {
+function highlightLine(line: string, tokens: HighlightedToken[], workspaceRootPath?: string): string {
     let highlightedLine = line
     for (const token of tokens) {
-        highlightedLine = highlightedLine.replaceAll(token.outerValue, getHighlightedTokenHTML(token))
+        highlightedLine = highlightedLine.replaceAll(
+            token.outerValue,
+            getHighlightedTokenHTML(token, workspaceRootPath)
+        )
     }
     return highlightedLine
 }
 
-function getHighlightedTokenHTML(token: HighlightedToken): string {
+function getHighlightedTokenHTML(token: HighlightedToken, workspaceRootPath?: string): string {
+    let filePath = token.outerValue.trim()
+    // Create workspace relative links for existing files (excluding directories)
+    if (!token.isHallucinated && workspaceRootPath && filePath.includes('.')) {
+        // Need to decode the file path because it's encoded in the markdown
+        filePath = decodeURIComponent(filePath.replace(/["'`]/g, ''))
+        const fileUri = `vscode://file${workspaceRootPath}/${filePath}`
+        const uri = new URL(fileUri).href
+        filePath = `<a href="${uri}">${filePath}</a>`
+    }
     const isHallucinatedClassName = token.isHallucinated ? 'hallucinated' : 'not-hallucinated'
-    return ` <span class="token-${token.type} token-${isHallucinatedClassName}">${token.outerValue.trim()}</span> `
+    const title = token.isHallucinated
+        ? 'Hallucination detected: file does not exist'
+        : 'No hallucination detected: file exists'
+    return ` <span class="token-${token.type} token-${isHallucinatedClassName}" title="${title}">${filePath}</span> `
 }
 
 export function findFilePaths(line: string): { fullMatch: string; pathMatch: string }[] {
@@ -147,6 +163,18 @@ function isFilePathLike(fullMatch: string, pathMatch: string): boolean {
         // Probably a URL.
         return false
     }
-    // TODO: we can do further validation here.
+
+    // check for API endpoints
+    const apiRegex = new RegExp('\\/:[\\w-]+', 'g')
+    if (apiRegex.test(fullMatch) || parts[0].startsWith('/api')) {
+        return false
+    }
+
+    if (parts[0].startsWith('git') || parts[0].includes('refs')) {
+        return false
+    }
+
+    // TODO: // Check if the path contains any invalid characters
+
     return true
 }

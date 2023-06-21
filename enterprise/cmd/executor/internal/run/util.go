@@ -18,6 +18,7 @@ import (
 	apiworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
+	executorutil "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/util"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -63,6 +64,7 @@ func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOpt
 	return apiworker.Options{
 		VMPrefix:      c.VMPrefix,
 		QueueName:     c.QueueName,
+		QueueNames:    c.QueueNames,
 		WorkerOptions: workerOptions(c),
 		RunnerOptions: runner.Options{
 			DockerOptions:      dockerOptions(c),
@@ -84,12 +86,13 @@ func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOpt
 }
 
 func workerOptions(c *config.Config) workerutil.WorkerOptions {
+	queueStr := executorutil.FormatQueueNamesForMetrics(c.QueueName, c.QueueNames)
 	return workerutil.WorkerOptions{
-		Name:                 fmt.Sprintf("executor_%s_worker", c.QueueName),
+		Name:                 fmt.Sprintf("executor_%s_worker", queueStr),
 		NumHandlers:          c.MaximumNumJobs,
 		Interval:             c.QueuePollInterval,
 		HeartbeatInterval:    5 * time.Second,
-		Metrics:              makeWorkerMetrics(c.QueueName),
+		Metrics:              makeWorkerMetrics(queueStr),
 		NumTotalJobs:         c.NumTotalJobs,
 		MaxActiveTime:        c.MaxActiveTime,
 		WorkerHostname:       c.WorkerHostname,
@@ -137,6 +140,7 @@ func queueOptions(c *config.Config, telemetryOptions queue.TelemetryOptions) que
 	return queue.Options{
 		ExecutorName:      c.WorkerHostname,
 		QueueName:         c.QueueName,
+		QueueNames:        c.QueueNames,
 		BaseClientOptions: baseClientOptions(c, "/.executors/queue"),
 		TelemetryOptions:  telemetryOptions,
 		ResourceOptions: queue.ResourceOptions{
@@ -205,6 +209,11 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 		Enabled:    config.IsKubernetes(),
 		ConfigPath: c.KubernetesConfigPath,
 		ContainerOptions: command.KubernetesContainerOptions{
+			CloneOptions: command.KubernetesCloneOptions{
+				ExecutorName:   c.WorkerHostname,
+				EndpointURL:    c.FrontendURL,
+				GitServicePath: "/.executors/git",
+			},
 			NodeName:     c.KubernetesNodeName,
 			NodeSelector: nodeSelector,
 			RequiredNodeAffinity: command.KubernetesNodeAffinity{
@@ -224,6 +233,14 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 				RunAsUser:  runAsUser,
 				RunAsGroup: runAsGroup,
 				FSGroup:    fsGroup,
+			},
+			SingleJobPod: c.KubernetesSingleJobPod,
+			StepImage:    c.KubernetesSingleJobStepImage,
+			JobVolume: command.KubernetesJobVolume{
+				Type:    command.KubernetesVolumeType(c.KubernetesJobVolumeType),
+				Size:    resource.MustParse(c.KubernetesJobVolumeSize),
+				Volumes: c.KubernetesAdditionalJobVolumes,
+				Mounts:  c.KubernetesAdditionalJobVolumeMounts,
 			},
 		},
 	}

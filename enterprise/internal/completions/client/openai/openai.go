@@ -4,34 +4,33 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const ProviderName = "openai"
-
-func NewClient(cli httpcli.Doer, accessToken string, model string) types.CompletionsClient {
+func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
 	return &openAIChatCompletionStreamClient{
 		cli:         cli,
 		accessToken: accessToken,
-		model:       model,
+		endpoint:    endpoint,
 	}
 }
-
-const apiURL = "https://api.openai.com/v1/chat/completions"
 
 type openAIChatCompletionStreamClient struct {
 	cli         httpcli.Doer
 	accessToken string
-	model       string
+	endpoint    string
 }
 
-func (c *openAIChatCompletionStreamClient) Complete(ctx context.Context, requestParams types.CompletionRequestParameters) (*types.CompletionResponse, error) {
+func (c *openAIChatCompletionStreamClient) Complete(
+	ctx context.Context,
+	feature types.CompletionsFeature,
+	requestParams types.CompletionRequestParameters,
+) (*types.CompletionResponse, error) {
 	resp, err := c.makeRequest(ctx, requestParams, false)
 	if err != nil {
 		return nil, err
@@ -56,6 +55,7 @@ func (c *openAIChatCompletionStreamClient) Complete(ctx context.Context, request
 
 func (c *openAIChatCompletionStreamClient) Stream(
 	ctx context.Context,
+	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
@@ -109,7 +109,7 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 
 	// TODO(sqs): make CompletionRequestParameters non-anthropic-specific
 	payload := openAIChatCompletionsRequestParameters{
-		Model:       c.model,
+		Model:       requestParams.Model,
 		Temperature: requestParams.Temperature,
 		TopP:        requestParams.TopP,
 		// TODO(sqs): map requestParams.TopK to openai
@@ -144,7 +144,7 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", c.endpoint, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}
@@ -158,9 +158,7 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		defer resp.Body.Close()
-		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		return nil, errors.Errorf("OpenAI API failed with status %d: %s", resp.StatusCode, string(respBody))
+		return nil, types.NewErrStatusNotOK("OpenAI", resp)
 	}
 
 	return resp, nil

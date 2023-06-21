@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "runner",
@@ -15,12 +16,15 @@ go_library(
     deps = [
         "//enterprise/cmd/executor/internal/config",
         "//enterprise/cmd/executor/internal/util",
+        "//enterprise/cmd/executor/internal/worker/cmdlogger",
         "//enterprise/cmd/executor/internal/worker/command",
+        "//enterprise/cmd/executor/internal/worker/files",
         "//enterprise/internal/executor/types",
         "//internal/lazyregexp",
         "//internal/observation",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
+        "@io_k8s_api//batch/v1:batch",
     ],
 )
 
@@ -36,7 +40,9 @@ go_test(
     ],
     embed = [":runner"],
     deps = [
+        "//enterprise/cmd/executor/internal/worker/cmdlogger",
         "//enterprise/cmd/executor/internal/worker/command",
+        "//enterprise/cmd/executor/internal/worker/files",
         "//enterprise/internal/executor/types",
         "//internal/executor",
         "//internal/observation",

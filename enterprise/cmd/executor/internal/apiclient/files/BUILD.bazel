@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "files",
@@ -10,7 +11,7 @@ go_library(
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
     deps = [
         "//enterprise/cmd/executor/internal/apiclient",
-        "//enterprise/cmd/executor/internal/worker/workspace",
+        "//enterprise/cmd/executor/internal/worker/files",
         "//enterprise/internal/executor/types",
         "//internal/metrics",
         "//internal/observation",

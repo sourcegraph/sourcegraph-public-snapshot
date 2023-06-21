@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { mdiCog, mdiGlasses, mdiInformationOutline, mdiPencil } from '@mdi/js'
+import { mdiCog, mdiFileOutline, mdiGlasses, mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { formatISO, subYears } from 'date-fns'
 import { capitalize, escapeRegExp } from 'lodash'
@@ -13,7 +13,7 @@ import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
+import { RepositoryType, SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
@@ -210,7 +210,7 @@ const ExtraInfoSection: React.FC<{
     className?: string
     hasWritePermissions?: boolean
 }> = ({ repo, className, hasWritePermissions }) => {
-    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
+    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
 
     const metadataItems = useMemo(() => repo.metadata.map(({ key, value }) => ({ key, value })) || [], [repo.metadata])
     const queryState = useNavbarQueryState(state => state.queryState)
@@ -218,7 +218,7 @@ const ExtraInfoSection: React.FC<{
     return (
         <Card className={className}>
             <ExtraInfoSectionItem>
-                <ExtraInfoSectionItemHeader title="Description" tooltip="Synced from the code host." />
+                <ExtraInfoSectionItemHeader title="Description" tooltip="Synchronized from the code host" />
                 {repo.description && <Text>{repo.description}</Text>}
             </ExtraInfoSectionItem>
             {enableRepositoryMetadata && (
@@ -280,6 +280,8 @@ interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps
 export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = props => {
     const { filePath, tree, repo, revision, isPackage } = props
 
+    const isRoot = filePath === ''
+
     const readmeEntry = useMemo(() => {
         for (const entry of tree.entries) {
             const name = entry.name.toLocaleLowerCase()
@@ -303,29 +305,30 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         return () => subscription.unsubscribe()
     }, [repo.name, revision, filePath])
 
-    const [recentContributorsComputed] = useFeatureFlag('own-background-index-repo-recent-contributors', false)
-    const [recentViewsComputed] = useFeatureFlag('own-background-index-repo-recent-views', false)
-
-    const ownSignalsEnabled = recentContributorsComputed || recentViewsComputed
+    const [enableOwnershipPanels] = useFeatureFlag('enable-ownership-panels', true)
     const hasRepoMetaWritePermissions = canWriteRepoMetadata(props.authenticatedUser)
 
     return (
         <>
-            <section className={classNames('container mb-3 px-0', styles.section)}>
-                {readmeEntry && (
-                    <ReadmePreviewCard
-                        entry={readmeEntry}
-                        repoName={repo.name}
-                        revision={revision}
-                        className={styles.files}
-                    />
-                )}
-                <ExtraInfoSection
-                    repo={repo}
-                    className={classNames(styles.contributors, 'p-3')}
-                    hasWritePermissions={hasRepoMetaWritePermissions}
-                />
-            </section>
+            {(readmeEntry || isRoot) && (
+                <section className={classNames('container mb-3 px-0', styles.section)}>
+                    {readmeEntry && (
+                        <ReadmePreviewCard
+                            entry={readmeEntry}
+                            repoName={repo.name}
+                            revision={revision}
+                            className={styles.files}
+                        />
+                    )}
+                    {isRoot && (
+                        <ExtraInfoSection
+                            repo={repo}
+                            className={styles.extraInfo}
+                            hasWritePermissions={hasRepoMetaWritePermissions}
+                        />
+                    )}
+                </section>
+            )}
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
                 <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} filePath={filePath} />
 
@@ -340,13 +343,13 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
                 {!isPackage && (
                     <div className={styles.contributors}>
-                        {ownSignalsEnabled && (
+                        {enableOwnershipPanels && (
                             <Card>
-                                <CardHeader className={panelStyles.cardColHeaderWrapper}>Ownership</CardHeader>
+                                <CardHeader className={panelStyles.cardColHeaderWrapper}>Own</CardHeader>
                                 <Ownership {...props} />
                             </Card>
                         )}
-                        <Card className={ownSignalsEnabled ? 'mt-3' : undefined}>
+                        <Card className={enableOwnershipPanels ? 'mt-3' : undefined}>
                             <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
                             <Contributors {...props} />
                         </Card>
@@ -414,6 +417,7 @@ const CONTRIBUTORS_QUERY = gql`
 `
 
 interface ContributorsProps extends TreePageContentProps {}
+
 const Contributors: React.FC<ContributorsProps> = ({ repo, filePath }) => {
     const spec: QuerySpec = {
         revisionRange: '',
@@ -535,6 +539,7 @@ const OWNERS_QUERY = gql`
 `
 
 interface OwnershipProps extends TreePageContentProps {}
+
 const Ownership: React.FC<OwnershipProps> = ({ repo, filePath }) => {
     const { data, error, loading } = useQuery<TreePageOwnershipResult, TreePageOwnershipVariables>(OWNERS_QUERY, {
         variables: {
@@ -551,62 +556,72 @@ const Ownership: React.FC<OwnershipProps> = ({ repo, filePath }) => {
         node?.commit?.path?.ownership?.__typename === 'OwnershipConnection'
             ? node.commit.path.ownership
             : null
-
     return (
-        <ConnectionContainer>
-            {error && <ConnectionError errors={[error.message]} />}
-            {connection && connection.nodes.length > 0 && (
-                <ConnectionList
-                    className={classNames('test-filtered-contributors-connection', styles.table)}
-                    as="table"
-                >
-                    <tbody>
-                        {connection.nodes.map((node: TreePageOwnershipNodeFields) => (
-                            <OwnerNode
-                                key={
-                                    node.owner.__typename === 'Person'
-                                        ? node.owner.email
-                                        : node.owner.__typename === 'Team'
-                                        ? node.owner.name
-                                        : null
-                                }
-                                node={node}
-                            />
-                        ))}
-                    </tbody>
-                </ConnectionList>
-            )}
-            {loading && (
-                <div className={contributorsStyles.filteredConnectionLoading}>
-                    <ConnectionLoading />
-                </div>
-            )}
-            <SummaryContainer className={styles.tableSummary}>
-                {connection && (
-                    <>
-                        <ConnectionSummary
-                            compact={true}
-                            connection={connection}
-                            first={COUNT}
-                            noun="owner"
-                            pluralNoun="owners"
-                            hasNextPage={connection.pageInfo.hasNextPage}
-                        />
-                        {/* TODO(#51792): Show more button should lead
-                         * to the ownership tab with detailed view for each owner.
-                         */}
-                    </>
+        <div>
+            <ConnectionContainer>
+                {error && <ConnectionError errors={[error.message]} />}
+                {connection && connection.nodes.length > 0 && (
+                    <ConnectionList
+                        className={classNames('test-filtered-contributors-connection', styles.table)}
+                        as="table"
+                    >
+                        <tbody>
+                            {connection.nodes.map((node: TreePageOwnershipNodeFields) => (
+                                <OwnerNode
+                                    key={
+                                        node.owner.__typename === 'Person'
+                                            ? node.owner.email
+                                            : node.owner.__typename === 'Team'
+                                            ? node.owner.name
+                                            : null
+                                    }
+                                    node={node}
+                                />
+                            ))}
+                        </tbody>
+                    </ConnectionList>
                 )}
-            </SummaryContainer>
-        </ConnectionContainer>
+                {loading && (
+                    <div className={contributorsStyles.filteredConnectionLoading}>
+                        <ConnectionLoading />
+                    </div>
+                )}
+                <SummaryContainer className={styles.tableSummary}>
+                    {connection && (
+                        <>
+                            <ConnectionSummary
+                                compact={true}
+                                connection={connection}
+                                first={COUNT}
+                                noun="owner"
+                                pluralNoun="owners"
+                                hasNextPage={connection.pageInfo.hasNextPage}
+                            />
+                            <small>
+                                <Link
+                                    to={`${repo.url}/-/own?${filePath ? 'path=' + encodeURIComponent(filePath) : ''}`}
+                                >
+                                    Show more
+                                </Link>
+                            </small>
+                        </>
+                    )}
+                </SummaryContainer>
+            </ConnectionContainer>
+        </div>
     )
 }
 
 interface OwnerNodeProps {
     node: TreePageOwnershipNodeFields
 }
+
 const OwnerNode: React.FC<OwnerNodeProps> = ({ node }) => {
     const owner = node?.owner
+    const primaryReason =
+        node.reasons.find(reason => reason.__typename === 'AssignedOwner') ||
+        node.reasons.find(reason => reason.__typename === 'RecentContributorOwnershipSignal') ||
+        node.reasons[0]
     return (
         <tr className={classNames('list-group-item', contributorsStyles.repositoryContributorNode)}>
             <td className={contributorsStyles.person}>
@@ -629,28 +644,25 @@ const OwnerNode: React.FC<OwnerNodeProps> = ({ node }) => {
                 )}
             </td>
             <td className={contributorsStyles.commits}>
-                {node.reasons.map(reason =>
-                    reason?.__typename === 'RecentContributorOwnershipSignal' ? (
-                        <Badge
-                            key={reason.title}
-                            tooltip={reason.description}
-                            className={styles.badge}
-                            variant="secondary"
-                        >
-                            <Icon aria-label={reason.title} svgPath={mdiPencil} />
-                        </Badge>
-                    ) : reason?.__typename === 'RecentViewOwnershipSignal' ? (
-                        <Badge
-                            key={reason.title}
-                            tooltip={reason.description}
-                            className={styles.badge}
-                            variant="secondary"
-                        >
-                            <Icon aria-label={reason.title} svgPath={mdiGlasses} />
-                        </Badge>
-                    ) : (
-                        <></>
-                    )
+                {primaryReason?.__typename === 'AssignedOwner' && (
+                    <Badge tooltip="Owner assigned through sourcegraph" className={styles.badge} variant="merged">
+                        owner
+                    </Badge>
+                )}
+                {primaryReason?.__typename === 'RecentContributorOwnershipSignal' && (
+                    <Badge tooltip={primaryReason.description} className={styles.badge} variant="secondary">
+                        <Icon aria-label={primaryReason.title} svgPath={mdiFileOutline} /> changes
+                    </Badge>
+                )}
+                {primaryReason?.__typename === 'RecentViewOwnershipSignal' && (
+                    <Badge tooltip={primaryReason.description} className={styles.badge} variant="secondary">
+                        <Icon aria-label={primaryReason.title} svgPath={mdiGlasses} /> views
+                    </Badge>
+                )}
+                {node.reasons.length > 1 && (
+                    <Badge tooltip="Multiple ownership inference signals" className={styles.badge} variant="secondary">
+                        +{node.reasons.length - 1}
+                    </Badge>
                 )}
             </td>
         </tr>
@@ -668,6 +680,7 @@ interface RepositoryContributorNodeProps extends QuerySpec {
     repoName: string
     sourceType: string
 }
+
 const RepositoryContributorNode: React.FC<RepositoryContributorNodeProps> = ({
     node,
     repoName,
@@ -739,6 +752,7 @@ const COMMITS_QUERY = gql`
 `
 
 interface CommitsProps extends TreePageContentProps {}
+
 const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => {
     const after: string = useMemo(() => formatISO(subYears(Date.now(), 1)), [])
     const { data, error, loading } = useQuery<TreeCommitsResult, TreeCommitsVariables>(COMMITS_QUERY, {
@@ -754,11 +768,17 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
     const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
     const connection = node?.commit?.ancestors
 
-    let commitsUrl = tree.url
+    const revisionType =
+        window.context.experimentalFeatures.perforceChangelistMapping === 'enabled' &&
+        node?.sourceType === RepositoryType.PERFORCE_DEPOT
+            ? '/-/changelists'
+            : '/-/commits'
+
+    let revisionURL = tree.url
     if (tree.url.includes('/-/tree')) {
-        commitsUrl = commitsUrl.replace('/-/tree', '/-/commits')
+        revisionURL = revisionURL.replace('/-/tree', revisionType)
     } else {
-        commitsUrl = commitsUrl + '/-/commits'
+        revisionURL = revisionURL + revisionType
     }
 
     return (
@@ -801,7 +821,7 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
                             </span>
                         </small>
                         <small>
-                            <Link to={commitsUrl}>Show {connection.pageInfo.hasNextPage ? 'more' : 'all'}</Link>
+                            <Link to={revisionURL}>Show {connection.pageInfo.hasNextPage ? 'more' : 'all'}</Link>
                         </small>
                     </>
                 )}

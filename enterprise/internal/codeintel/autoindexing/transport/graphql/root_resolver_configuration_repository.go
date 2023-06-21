@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
@@ -97,14 +98,14 @@ func (r *indexConfigurationResolver) Configuration(ctx context.Context) (_ *stri
 		return nil, nil
 	}
 
-	return resolverstubs.NonZeroPtr(string(configuration.Data)), nil
+	return pointers.NonZeroPtr(string(configuration.Data)), nil
 }
 
 func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) (_ resolverstubs.InferredConfigurationResolver, err error) {
 	defer r.errTracer.Collect(&err, attribute.String("indexConfigResolver.field", "inferredConfiguration"))
 
 	var limitErr error
-	configuration, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, r.repositoryID, "", "", true)
+	result, err := r.autoindexSvc.InferIndexConfiguration(ctx, r.repositoryID, "", "", true)
 	if err != nil {
 		if errors.As(err, &inference.LimitError{}) {
 			limitErr = err
@@ -112,11 +113,8 @@ func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) 
 			return nil, err
 		}
 	}
-	if configuration == nil {
-		return nil, nil
-	}
 
-	marshaled, err := config.MarshalJSON(*configuration)
+	marshaled, err := config.MarshalJSON(config.IndexConfiguration{IndexJobs: result.IndexJobs})
 	if err != nil {
 		return nil, err
 	}

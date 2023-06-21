@@ -155,36 +155,64 @@ func TestProductSubscriptions_Update(t *testing.T) {
 		})
 	})
 
-	t.Run("llmProxyAccess", func(t *testing.T) {
+	t.Run("codyGatewayAccess", func(t *testing.T) {
 		t.Run("set non-null values", func(t *testing.T) {
 			err := subscriptions.Update(ctx, sub0, dbSubscriptionUpdate{
-				llmProxyAccess: &graphqlbackend.UpdateLLMProxyAccessInput{
-					Enabled:                  pointify(true),
-					RateLimit:                pointify(int32(12)),
-					RateLimitIntervalSeconds: pointify(int32(time.Hour.Seconds())),
+				codyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{
+					Enabled:                                 pointify(true),
+					ChatCompletionsRateLimit:                pointify(graphqlbackend.BigInt(12)),
+					ChatCompletionsRateLimitIntervalSeconds: pointify(int32(time.Hour.Seconds())),
+					ChatCompletionsAllowedModels:            pointify([]string{"claude-v1"}),
+					CodeCompletionsRateLimit:                pointify(graphqlbackend.BigInt(13)),
+					CodeCompletionsRateLimitIntervalSeconds: pointify(int32(2 * time.Hour.Seconds())),
+					CodeCompletionsAllowedModels:            pointify([]string{"claude-v2"}),
+					EmbeddingsRateLimit:                     pointify(graphqlbackend.BigInt(14)),
+					EmbeddingsRateLimitIntervalSeconds:      pointify(int32(3 * time.Hour.Seconds())),
+					EmbeddingsAllowedModels:                 pointify([]string{"claude-v3"}),
 				},
 			})
 			require.NoError(t, err)
 			got, err := subscriptions.GetByID(ctx, sub0)
 			require.NoError(t, err)
-			autogold.Expect(dbLLMProxyAccess{
-				Enabled: true, RateLimit: valast.Addr(int32(12)).(*int32),
-				RateIntervalSeconds: valast.Addr(int32(3600)).(*int32),
-			}).Equal(t, got.LLMProxyAccess)
+			autogold.Expect(dbCodyGatewayAccess{
+				Enabled: true,
+				ChatRateLimit: dbRateLimit{
+					RateLimit:           valast.Addr(int64(12)).(*int64),
+					RateIntervalSeconds: valast.Addr(int32(3600)).(*int32),
+					AllowedModels:       []string{"claude-v1"},
+				},
+				CodeRateLimit: dbRateLimit{
+					RateLimit:           valast.Addr(int64(13)).(*int64),
+					RateIntervalSeconds: valast.Addr(int32(2 * 3600)).(*int32),
+					AllowedModels:       []string{"claude-v2"},
+				},
+				EmbeddingsRateLimit: dbRateLimit{
+					RateLimit:           valast.Addr(int64(14)).(*int64),
+					RateIntervalSeconds: valast.Addr(int32(3 * 3600)).(*int32),
+					AllowedModels:       []string{"claude-v3"},
+				},
+			}).Equal(t, got.CodyGatewayAccess)
 		})
 
 		t.Run("set to zero/null values", func(t *testing.T) {
 			err := subscriptions.Update(ctx, sub0, dbSubscriptionUpdate{
-				llmProxyAccess: &graphqlbackend.UpdateLLMProxyAccessInput{
-					Enabled:                  pointify(false),
-					RateLimit:                pointify(int32(0)),
-					RateLimitIntervalSeconds: pointify(int32(0)),
+				codyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{
+					Enabled:                                 pointify(false),
+					ChatCompletionsRateLimit:                pointify(graphqlbackend.BigInt(0)),
+					ChatCompletionsRateLimitIntervalSeconds: pointify(int32(0)),
+					ChatCompletionsAllowedModels:            pointify([]string{}),
+					CodeCompletionsRateLimit:                pointify(graphqlbackend.BigInt(0)),
+					CodeCompletionsRateLimitIntervalSeconds: pointify(int32(0)),
+					CodeCompletionsAllowedModels:            pointify([]string{}),
+					EmbeddingsRateLimit:                     pointify(graphqlbackend.BigInt(0)),
+					EmbeddingsRateLimitIntervalSeconds:      pointify(int32(0)),
+					EmbeddingsAllowedModels:                 pointify([]string{}),
 				},
 			})
 			require.NoError(t, err)
 			got, err := subscriptions.GetByID(ctx, sub0)
 			require.NoError(t, err)
-			autogold.Expect(dbLLMProxyAccess{}).Equal(t, got.LLMProxyAccess)
+			autogold.Expect(dbCodyGatewayAccess{}).Equal(t, got.CodyGatewayAccess)
 		})
 	})
 }

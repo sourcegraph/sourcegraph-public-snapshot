@@ -4,15 +4,18 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -21,14 +24,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/rbac"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -97,11 +99,39 @@ func (r *RepositoryResolver) EmbeddingExists(ctx context.Context) (bool, error) 
 	return r.db.Repos().RepoEmbeddingExists(ctx, r.IDInt32())
 }
 
+func (r *RepositoryResolver) EmbeddingJobs(ctx context.Context, args ListRepoEmbeddingJobsArgs) (*graphqlutil.ConnectionResolver[RepoEmbeddingJobResolver], error) {
+	// Ensure that we only return jobs for this repository.
+	gqlID := r.ID()
+	args.Repo = &gqlID
+
+	return EnterpriseResolvers.embeddingsResolver.RepoEmbeddingJobs(ctx, args)
+}
+
 func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
+
+func MarshalRepositoryIDs(ids []api.RepoID) []graphql.ID {
+	res := make([]graphql.ID, len(ids))
+	for i, id := range ids {
+		res[i] = MarshalRepositoryID(id)
+	}
+	return res
+}
 
 func UnmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	err = relay.UnmarshalSpec(id, &repo)
 	return
+}
+
+func UnmarshalRepositoryIDs(ids []graphql.ID) ([]api.RepoID, error) {
+	repoIDs := make([]api.RepoID, len(ids))
+	for i, id := range ids {
+		repoID, err := UnmarshalRepositoryID(id)
+		if err != nil {
+			return nil, err
+		}
+		repoIDs[i] = repoID
+	}
+	return repoIDs, nil
 }
 
 // repo makes sure the repo is hydrated before returning it.
@@ -211,10 +241,10 @@ type RepositoryCommitArgs struct {
 	InputRevspec *string
 }
 
-func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (*GitCommitResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "repository.commit") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
-	span.SetTag("commit", args.Rev)
+func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (_ *GitCommitResolver, err error) {
+	tr, ctx := trace.New(ctx, "RepositoryResolver", "Commit",
+		attribute.String("commit", args.Rev))
+	defer tr.FinishWithErr(&err)
 
 	repo, err := r.repo(ctx)
 	if err != nil {
@@ -232,9 +262,60 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 	return r.CommitFromID(ctx, args, commitID)
 }
 
-func (r *RepositoryResolver) FirstEverCommit(ctx context.Context) (*GitCommitResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "repository.firstEverCommit") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+type RepositoryChangelistArgs struct {
+	CID string
+}
+
+func (r *RepositoryResolver) Changelist(ctx context.Context, args *RepositoryChangelistArgs) (_ *PerforceChangelistResolver, err error) {
+	tr, ctx := trace.New(ctx, "RepositoryResolver", "Changelist",
+		attribute.String("changelist", args.CID))
+	defer tr.FinishWithErr(&err)
+
+	cid, err := strconv.ParseInt(args.CID, 10, 64)
+	if err != nil {
+		// NOTE: From the UI, the user may visit a URL like:
+		// https://sourcegraph.com/github.com/sourcegraph/sourcegraph@e28429f899870db6f6cbf0fc2bf98de6e947b213/-/blob/README.md
+		//
+		// Or they may visit a URL like:
+		//
+		// https://sourcegraph.com/perforce.sgdev.test/test-depot@998765/-/blob/README.md
+		//
+		// To make things easier, we request both the `commit($revision)` and the `changelist($cid)`
+		// nodes on the `repository`.
+		//
+		// If the revision in the URL is a changelist ID then the commit node will be null (the
+		// commit will not resolve).
+		//
+		// But if the revision in the URL is a commit SHA, then the changelist node will be null.
+		// Which means we will be inadvertenly trying to parse a commit SHA into a int each time a
+		// commit is viewed. We don't want to return an error in these cases.
+		r.logger.Debug("failed to parse args.CID into int", log.String("args.CID", args.CID), log.Error(err))
+		return nil, nil
+	}
+
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rc, err := r.db.RepoCommitsChangelists().GetRepoCommitChangelist(ctx, repo.ID, cid)
+	if err != nil {
+		if errors.HasType(err, &perforce.ChangelistNotFoundError{}) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return newPerforceChangelistResolver(
+		r,
+		fmt.Sprintf("%d", rc.PerforceChangelistID),
+		string(rc.CommitSHA),
+	), nil
+}
+
+func (r *RepositoryResolver) FirstEverCommit(ctx context.Context) (_ *GitCommitResolver, err error) {
+	tr, ctx := trace.New(ctx, "RepositoryResolver", "FirstEverCommit")
+	defer tr.FinishWithErr(&err)
 
 	repo, err := r.repo(ctx)
 	if err != nil {
@@ -583,7 +664,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		CommitInfo: protocol.PatchCommitInfo{
 			AuthorName:  info.AuthorName,
 			AuthorEmail: info.AuthorEmail,
-			Message:     info.Message,
+			Messages:    []string{info.Message},
 			Date:        info.Date,
 		},
 	})
@@ -644,114 +725,6 @@ func makePhabClientForOrigin(ctx context.Context, logger log.Logger, db database
 	}
 
 	return nil, errors.Errorf("no phabricator was configured for: %s", origin)
-}
-
-type KeyValuePair struct {
-	key   string
-	value *string
-}
-
-func (k KeyValuePair) Key() string {
-	return k.key
-}
-
-func (k KeyValuePair) Value() *string {
-	return k.value
-}
-
-// Deprecated: Use AddRepoMetadata instead.
-func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
-	Repo  graphql.ID
-	Key   string
-	Value *string
-},
-) (*EmptyResponse, error) {
-	return r.AddRepoMetadata(ctx, args)
-}
-
-func (r *schemaResolver) AddRepoMetadata(ctx context.Context, args struct {
-	Repo  graphql.ID
-	Key   string
-	Value *string
-},
-) (*EmptyResponse, error) {
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
-	}
-
-	repoID, err := UnmarshalRepositoryID(args.Repo)
-	if err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	return &EmptyResponse{}, r.db.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
-}
-
-// Deprecated: Use UpdateRepoMetadata instead.
-func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct {
-	Repo  graphql.ID
-	Key   string
-	Value *string
-},
-) (*EmptyResponse, error) {
-	return r.UpdateRepoMetadata(ctx, args)
-}
-
-func (r *schemaResolver) UpdateRepoMetadata(ctx context.Context, args struct {
-	Repo  graphql.ID
-	Key   string
-	Value *string
-},
-) (*EmptyResponse, error) {
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
-	}
-
-	repoID, err := UnmarshalRepositoryID(args.Repo)
-	if err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	_, err = r.db.RepoKVPs().Update(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
-	return &EmptyResponse{}, err
-}
-
-// Deprecated: Use DeleteRepoMetadata instead.
-func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct {
-	Repo graphql.ID
-	Key  string
-},
-) (*EmptyResponse, error) {
-	return r.DeleteRepoMetadata(ctx, args)
-}
-
-func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
-	Repo graphql.ID
-	Key  string
-},
-) (*EmptyResponse, error) {
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
-	}
-
-	repoID, err := UnmarshalRepositoryID(args.Repo)
-	if err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	return &EmptyResponse{}, r.db.RepoKVPs().Delete(ctx, repoID, args.Key)
 }
 
 func (r *RepositoryResolver) IngestedCodeowners(ctx context.Context) (CodeownersIngestedFileResolver, error) {

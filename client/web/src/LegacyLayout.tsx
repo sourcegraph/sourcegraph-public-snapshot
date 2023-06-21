@@ -10,7 +10,6 @@ import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackPrompt, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
-import { useHistoryStack } from './app/useHistoryStack'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
 import { RouteError } from './components/ErrorBoundary'
@@ -67,7 +66,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
     const isCodySearchPage = routeMatch === EnterprisePageRoutes.CodySearch
     const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
-    const isCodyStandalonePage = location.pathname === PageRoutes.CodyStandalone
 
     // Since the access token callback page is rendered in a nested route, we can't use
     // `route.handle.isFullPage` to determine whether to render the header. Instead, we check
@@ -81,8 +79,8 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const [wasAppSetupFinished] = useLocalStorage('app.setup.finished', false)
 
     const { fuzzyFinder } = useExperimentalFeatures(features => ({
-        // enable fuzzy finder by default unless it's explicitly disabled in settings
-        fuzzyFinder: features.fuzzyFinder ?? true,
+        // enable fuzzy finder by default unless it's explicitly disabled in settings, or it's the Cody app
+        fuzzyFinder: features.fuzzyFinder ?? !props.isSourcegraphApp,
     }))
     const isSetupWizardPage = location.pathname.startsWith(PageRoutes.SetupWizard)
 
@@ -131,8 +129,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
 
     useScrollToLocationHash(location)
 
-    const historyStack = useHistoryStack()
-
     // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
     // const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
     // useEffect(() => setTosAccepted(!props.authenticatedUser || props.authenticatedUser.tosAccepted), [
@@ -179,7 +175,13 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     // and it's not already a setup page, NOTE: that we allow rendering AppAuthCallbackPage
     // because this page is part of setup experience, and we should not interrupt
     // rendering of this page even if setup hasn't been finished yet
-    if (props.isSourcegraphApp && !wasAppSetupFinished && !isAppSetupPage && !isAppAuthCallbackPage) {
+    if (
+        props.isSourcegraphApp &&
+        !wasAppSetupFinished &&
+        !isAppSetupPage &&
+        !isAppAuthCallbackPage &&
+        !isAuthTokenCallbackPage
+    ) {
         return <Navigate to={EnterprisePageRoutes.AppSetup} replace={true} />
     }
 
@@ -221,18 +223,19 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            {!isCodyStandalonePage && (
-                <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphApp={props.isSourcegraphApp} />
-            )}
+            <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphApp={props.isSourcegraphApp} />
             {!isSiteInit &&
                 !isSignInOrUp &&
                 !props.isSourcegraphDotCom &&
                 !disableFeedbackSurvey &&
-                !isCodyStandalonePage && <SurveyToast authenticatedUser={props.authenticatedUser} />}
+                !props.isSourcegraphApp && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {props.isSourcegraphDotCom && props.authenticatedUser && (
-                <CodySurveyToast authenticatedUser={props.authenticatedUser} />
+                <CodySurveyToast
+                    authenticatedUser={props.authenticatedUser}
+                    telemetryService={props.telemetryService}
+                />
             )}
-            {!isSiteInit && !isSignInOrUp && !isCodyStandalonePage && (
+            {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
                     showSearchBox={
@@ -247,7 +250,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
                     showFeedbackModal={showFeedbackModal}
-                    historyStack={historyStack}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}

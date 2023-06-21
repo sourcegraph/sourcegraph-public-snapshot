@@ -6,15 +6,22 @@ import type {
     ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared/src/configuration'
 
+import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
 import { SecretStorage, getAccessToken } from './services/SecretStorageProvider'
+
+interface ConfigGetter {
+    get<T>(section: typeof CONFIG_KEY[ConfigKeys], defaultValue?: T): T
+}
 
 /**
  * All configuration values, with some sanitization performed.
  */
-export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'get'>): Configuration {
+export function getConfiguration(config: ConfigGetter): Configuration {
+    const isTesting = process.env.CODY_TESTING === 'true'
+
     let debugRegex: RegExp | null = null
     try {
-        const debugPattern: string | null = config.get<string | null>('cody.debug.filter', null)
+        const debugPattern: string | null = config.get<string | null>(CONFIG_KEY.debugFilter, null)
         if (debugPattern) {
             if (debugPattern === '*') {
                 debugRegex = new RegExp('.*')
@@ -27,18 +34,42 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
         debugRegex = new RegExp('.*')
     }
 
+    let completionsAdvancedProvider = config.get<'anthropic' | 'unstable-codegen'>(
+        CONFIG_KEY.completionsAdvancedProvider,
+        'anthropic'
+    )
+    if (
+        completionsAdvancedProvider !== 'anthropic' &&
+        completionsAdvancedProvider !== 'unstable-codegen' &&
+        completionsAdvancedProvider !== 'unstable-huggingface'
+    ) {
+        completionsAdvancedProvider = 'anthropic'
+        void vscode.window.showInformationMessage(
+            `Unrecognized ${CONFIG_KEY.completionsAdvancedProvider}, defaulting to 'anthropic'`
+        )
+    }
+
     return {
-        serverEndpoint: sanitizeServerEndpoint(config.get('cody.serverEndpoint', '')),
-        codebase: sanitizeCodebase(config.get('cody.codebase')),
-        debugEnable: config.get<boolean>('cody.debug.enable', false),
-        debugVerbose: config.get<boolean>('cody.debug.verbose', false),
+        serverEndpoint: sanitizeServerEndpoint(config.get(CONFIG_KEY.serverEndpoint, '')),
+        codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
+        customHeaders: config.get<object>(CONFIG_KEY.customHeaders, {}) as Record<string, string>,
+        useContext: config.get<ConfigurationUseContext>(CONFIG_KEY.useContext) || 'embeddings',
+        debugEnable: config.get<boolean>(CONFIG_KEY.debugEnable, false),
+        debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
-        useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
-        experimentalSuggest: config.get('cody.experimental.suggestions', false),
-        experimentalChatPredictions: config.get('cody.experimental.chatPredictions', false),
-        experimentalInline: config.get('cody.experimental.inline', false),
-        experimentalGuardrails: config.get('cody.experimental.guardrails', false),
-        customHeaders: config.get<object>('cody.customHeaders', {}) as Record<string, string>,
+        experimentalSuggest: config.get(CONFIG_KEY.experimentalSuggestions, isTesting),
+        experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
+        experimentalInline: config.get(CONFIG_KEY.experimentalInline, isTesting),
+        experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
+        experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
+        completionsAdvancedProvider,
+        completionsAdvancedServerEndpoint: config.get<string | null>(
+            CONFIG_KEY.completionsAdvancedServerEndpoint,
+            null
+        ),
+        completionsAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.completionsAdvancedAccessToken, null),
+        completionsAdvancedCache: config.get(CONFIG_KEY.completionsAdvancedCache, true),
+        completionsAdvancedEmbeddings: config.get(CONFIG_KEY.completionsAdvancedEmbeddings, true),
     }
 }
 

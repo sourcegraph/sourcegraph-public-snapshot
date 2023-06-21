@@ -10,12 +10,14 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/require"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
@@ -258,7 +260,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 		},
 		{
 			name:     "User name search with pagination",
-			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser, PaginationArgs: &PaginationArgs{First: intPtr(1)}},
+			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser, PaginationArgs: &PaginationArgs{First: pointers.Ptr(1)}},
 			wantJobs: jobs[2:3],
 		},
 		{
@@ -762,7 +764,7 @@ func TestPermissionSyncJobs_Pagination(t *testing.T) {
 		},
 		{
 			name:           "First",
-			paginationArgs: PaginationArgs{Ascending: true, First: intPtr(5)},
+			paginationArgs: PaginationArgs{Ascending: true, First: pointers.Ptr(5)},
 			wantJobs:       jobs[:5],
 		},
 		{

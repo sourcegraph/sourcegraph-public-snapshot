@@ -69,6 +69,8 @@ on:
 
 A Sourcegraph search query that matches a set of repositories (and branches). Each matched repository branch is added to the list of repositories that the batch change will be run on.
 
+Your search query should answer the question "where do I want to run this batch change?". Search result matches for things like commits, symbols, or file owners will be ignored.
+
 See "[Code search](../../code_search/index.md)" for more information on Sourcegraph search queries.
 
 ### Examples
@@ -162,7 +164,7 @@ steps:
 The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>steps.run</code> can include <a href="batch_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
+<span class="badge badge-feature">Templating</span> <code>steps.run</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
 ## `steps.container`
@@ -177,10 +179,10 @@ It is executed using `docker` on the machine on which the [Sourcegraph CLI (`src
 
 Environment variables to set in the environment when running this command.
 
-These may be defined either as an [object](#environment-object) or (in Sourcegraph 3.23 and later) as an [array](#environment-array).
+These may be defined either as an [object](#environment-object) or as an [array](#environment-array).
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> The value for each entry in <code>steps.env</code> can include <a href="batch_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
+<span class="badge badge-feature">Templating</span> <code>steps.env</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
 ### Environment object
@@ -198,8 +200,6 @@ steps:
 ```
 
 ### Environment array
-
-<span class="badge badge-note">Sourcegraph 3.23+</span>
 
 In this case, `steps.env` is an array. Each array item is either:
 
@@ -234,14 +234,12 @@ For instance, if `USER` is set to `adam`, this would append `Hello world! from a
 
 ## `steps.files`
 
-<span class="badge badge-note">Sourcegraph 3.22+</span>
-
 Files to create on the host machine and mount into the container when running `steps.run`.
 
 `steps.files` is an object, where the key is the name of the file _inside the container_ and the value is the content of the file.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> The value for each entry in <code>steps.files</code> can include <a href="batch_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
+<span class="badge badge-feature">Templating</span> <code>steps.files</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
 ### Examples
@@ -274,8 +272,6 @@ steps:
 ```
 
 ## `steps.outputs`
-
-<span class="badge badge-note">Sourcegraph 3.24+</span>
 
 Output variables that are set after the [`steps.run`](#steps-run) command has been executed. These variables are available in the global `outputs` namespace as `outputs.<name>` <a href="batch_spec_templating">template variables</a> in the `run`, `env`, and `outputs` properties of subsequent steps, and the [`changesetTemplate`](#changesettemplate). Two steps with the same output variable name will overwrite the previous contents.
 
@@ -349,8 +345,6 @@ The format of the corresponding [`steps.outputs.<name>.value`](#outputs-value). 
 Possible values: `text`, `yaml`, `json`. Default is `text`.
 
 ## `steps.if`
-
-<span class="badge badge-note">Sourcegraph 3.28+</span>with Sourcegraph CLI 3.28 and later.
 
 Condition to check before executing the step. If the value of the `if:` attribute is `true` (boolean) or `"true"` (string) then the step is executed in the given repository (or workspace, in case [workspaces](#workspaces) are used). Otherwise the step is skipped.
 
@@ -555,7 +549,7 @@ changesetTemplate:
 The title of the changeset on the code host.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="batch_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
 ## `changesetTemplate.body`
@@ -563,7 +557,7 @@ The title of the changeset on the code host.
 The body (description) of the changeset on the code host. If the code supports Markdown you can use it here.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>changesetTemplate.body</code> can include <a href="batch_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.body</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
 ## `changesetTemplate.branch`
@@ -584,7 +578,7 @@ changesetTemplate:
 ```
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>changesetTemplate.branch</code> can include <a href="batch_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.branch</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
 ## `changesetTemplate.commit`
@@ -596,7 +590,7 @@ The Git commit to create with the changes.
 The Git commit message.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>changesetTemplate.commit.message</code> can include <a href="batch_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.commit.message</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
 ##[`changesetTemplate.commit.author`
@@ -604,7 +598,7 @@ The Git commit message.
 The `name` and `email` of the Git commit author.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>changesetTemplate.commit.author</code> can include <a href="batch_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.commit.author</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
 ### Examples
@@ -737,10 +731,6 @@ changesetTemplate:
 
 ## `transformChanges`
 
-<aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> <code>transformChanges</code> is an experimental feature in Sourcegraph 3.23 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.23. It's a <b>preview</b> of functionality we're currently exploring to make managing large changes in large repositories easier. If you have any feedback, please let us know!
-</aside>
-
 A description of how to transform the changes (diffs) produced in each repository before turning them into separate changeset specs by inserting them into the [`changesetTemplate`](#changesettemplate).
 
 This allows the creation of multiple changeset specs (and thus changesets) in a single repository.
@@ -799,10 +789,6 @@ The branch that should be used for this additional changeset. This **overwrites 
 Optional: the file diffs matching the given directory will only be grouped in a repository with that name, as configured on your Sourcegraph instance.
 
 ## `workspaces`
-
-<aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> <code>workspaces</code> is an experimental feature in Sourcegraph 3.25 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.25. It's a <b>preview</b> of functionality we're currently exploring to make managing large changes in large repositories easier. If you have any feedback, please let us know!
-</aside>
 
 The optional `workspaces` property allows users to define where projects are located in repositories and cause the [`steps`](#steps) to be executed for each project, instead of once per repository. That allows easier creation of multiple changesets in large repositories.
 

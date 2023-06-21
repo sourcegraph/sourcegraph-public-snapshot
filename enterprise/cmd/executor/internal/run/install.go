@@ -9,11 +9,11 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/coreos/go-iptables/iptables"
 	"github.com/sourcegraph/log"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/internal/download"
@@ -37,8 +37,8 @@ func InstallCNI(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, c
 	return installCNIPlugins(cliCtx)
 }
 
-func InstallSrc(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
-	return installSrc(cliCtx, runner, logger, config)
+func InstallSrc(cliCtx *cli.Context, _ util.CmdRunner, logger log.Logger, config *config.Config) error {
+	return installSrc(cliCtx, logger, config)
 }
 
 func InstallIPTablesRules(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
@@ -53,7 +53,7 @@ func InstallIPTablesRules(cliCtx *cli.Context, runner util.CmdRunner, logger log
 		logger.Info("Recreating iptables entries for CNI_ADMIN chain")
 	}
 
-	return setupIPTables(&util.RealCmdRunner{}, recreateChain)
+	return SetupIPTables(&util.RealCmdRunner{}, recreateChain)
 }
 
 func InstallAll(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
@@ -68,12 +68,12 @@ func InstallAll(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, c
 	}
 
 	logger.Info("Running executor install src-cli")
-	if err := installSrc(cliCtx, runner, logger, config); err != nil {
+	if err := installSrc(cliCtx, logger, config); err != nil {
 		return err
 	}
 
 	logger.Info("Running executor install iptables-rules")
-	if err := setupIPTables(runner, false); err != nil {
+	if err := SetupIPTables(runner, false); err != nil {
 		return err
 	}
 
@@ -179,84 +179,6 @@ func ensureSandboxImage(ctx context.Context, runner util.CmdRunner, logger log.L
 	return nil
 }
 
-func setupIPTables(runner util.CmdRunner, recreateChain bool) error {
-	found, err := util.ExistsPath(runner, "iptables")
-	if err != nil {
-		return errors.Wrap(err, "failed to look up iptables")
-	}
-	if !found {
-		return errors.Newf("iptables not found, is it installed?")
-	}
-
-	// TODO: Use config.CNISubnetCIDR below instead of hard coded CIDRs.
-
-	ipt, err := iptables.NewWithProtocol(iptables.ProtocolIPv4)
-	if err != nil {
-		return err
-	}
-
-	if recreateChain {
-		if err = ipt.DeleteChain("filter", "CNI-ADMIN"); err != nil {
-			return err
-		}
-	}
-
-	// Ensure the chain exists.
-	if ok, err := ipt.ChainExists("filter", "CNI-ADMIN"); err != nil {
-		return err
-	} else if !ok {
-		if err = ipt.NewChain("filter", "CNI-ADMIN"); err != nil {
-			return err
-		}
-	}
-
-	// Explicitly allow DNS traffic (currently, the DNS server lives in the private
-	// networks for GCP and AWS. Ideally we'd want to use an internet-only DNS server
-	// to prevent leaking any network details).
-	if err = ipt.AppendUnique("filter", "CNI-ADMIN", "-p", "udp", "--dport", "53", "-j", "ACCEPT"); err != nil {
-		return err
-	}
-
-	// Disallow any host-VM network traffic from the guests, except connections made
-	// FROM the host (to ssh into the guest).
-	if err = ipt.AppendUnique("filter", "INPUT", "-d", "10.61.0.0/16", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", "ACCEPT"); err != nil {
-		return err
-	}
-	if err = ipt.AppendUnique("filter", "INPUT", "-s", "10.61.0.0/16", "-j", "DROP"); err != nil {
-		return err
-	}
-
-	// Disallow any inter-VM traffic.
-	// But allow to reach the gateway for internet access.
-	if err = ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.1/32", "-d", "10.61.0.0/16", "-j", "ACCEPT"); err != nil {
-		return err
-	}
-	if err = ipt.AppendUnique("filter", "CNI-ADMIN", "-d", "10.61.0.0/16", "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", "ACCEPT"); err != nil {
-		return err
-	}
-	if err = ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "10.61.0.0/16", "-j", "DROP"); err != nil {
-		return err
-	}
-
-	// Disallow local networks access.
-	if err = ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "10.0.0.0/8", "-p", "tcp", "-j", "DROP"); err != nil {
-		return err
-	}
-	if err = ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "192.168.0.0/16", "-p", "tcp", "-j", "DROP"); err != nil {
-		return err
-	}
-	if err = ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "172.16.0.0/12", "-p", "tcp", "-j", "DROP"); err != nil {
-		return err
-	}
-	// Disallow link-local traffic, too. This usually contains cloud provider
-	// resources that we don't want to expose.
-	if err = ipt.AppendUnique("filter", "CNI-ADMIN", "-s", "10.61.0.0/16", "-d", "169.254.0.0/16", "-j", "DROP"); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func installIgnite(cliCtx *cli.Context) error {
 	binDir := cliCtx.Path("bin-dir")
 	if binDir == "" {
@@ -292,23 +214,33 @@ func installCNIPlugins(cliCtx *cli.Context) error {
 	return nil
 }
 
-func installSrc(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
+func installSrc(cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
 	binDir := cliCtx.Path("bin-dir")
 	if binDir == "" {
 		binDir = "/usr/local/bin"
 	}
 
-	telemetryOptions := newQueueTelemetryOptions(cliCtx.Context, runner, config.UseFirecracker, logger)
-	copts := queueOptions(config, telemetryOptions)
+	copts := queueOptions(
+		config,
+		// We don't need telemetry here as we only use the client to talk to the Sourcegraph
+		// instance to see what src-cli version it recommends. This saves a few exec calls
+		// and confusing error messages.
+		queue.TelemetryOptions{},
+	)
 	client, err := apiclient.NewBaseClient(logger, copts.BaseClientOptions)
 	if err != nil {
 		return err
 	}
-	srcVersion, err := util.LatestSrcCLIVersion(cliCtx.Context, client, copts.BaseClientOptions.EndpointOptions)
-	if err != nil {
-		logger.Warn("Failed to fetch latest src version", log.Error(err))
-		srcVersion = srccli.MinimumVersion
+	srcVersion := srccli.MinimumVersion
+	if copts.BaseClientOptions.EndpointOptions.URL != "" {
+		srcVersion, err = util.LatestSrcCLIVersion(cliCtx.Context, client, copts.BaseClientOptions.EndpointOptions)
+		if err != nil {
+			logger.Warn("Failed to fetch latest src version, falling back to minimum version required by this executor", log.Error(err))
+		}
+	} else {
+		logger.Warn("Sourcegraph instance endpoint not configured, using minimum src-cli version instead of recommended version")
 	}
+
 	return download.ArchivedExecutable(cliCtx.Context, fmt.Sprintf("https://github.com/sourcegraph/src-cli/releases/download/%s/src-cli_%s_%s_%s.tar.gz", srcVersion, srcVersion, runtime.GOOS, runtime.GOARCH), path.Join(binDir, "src"), "src")
 }
 

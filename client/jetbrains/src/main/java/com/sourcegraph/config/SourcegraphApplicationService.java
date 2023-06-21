@@ -4,111 +4,160 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
+import com.sourcegraph.find.Search;
+import java.util.Optional;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @State(
     name = "ApplicationConfig",
     storages = {@Storage("sourcegraph.xml")})
-public class SourcegraphApplicationService implements PersistentStateComponent<SourcegraphApplicationService> {
-    @Nullable
-    public String instanceType;
-    @Nullable
-    public String url;
-    @Nullable
-    public String accessToken;
-    @Nullable
-    public String customRequestHeaders;
-    @Nullable
-    public String defaultBranch;
-    @Nullable
-    public String remoteUrlReplacements;
-    @Nullable
-    public String anonymousUserId;
-    public boolean isInstallEventLogged;
-    public boolean isUrlNotificationDismissed;
-    @Nullable
-    public Boolean authenticationFailedLastTime;
-    @Nullable
-    public String lastUpdateNotificationPluginVersion; // The version of the plugin that last notified the user about an update
+public class SourcegraphApplicationService
+    implements PersistentStateComponent<SourcegraphApplicationService>, SourcegraphService {
+  @Nullable public String instanceType;
+  @Nullable public String url;
 
-    @NotNull
-    public static SourcegraphApplicationService getInstance() {
-        return ApplicationManager.getApplication()
-            .getService(SourcegraphApplicationService.class);
-    }
+  @Nullable
+  @Deprecated(since = "3.0.0-alpha.2", forRemoval = true)
+  public String accessToken; // kept for backwards compatibility
 
-    @Nullable
-    public String getInstanceType() {
-        return instanceType;
-    }
+  @Nullable public String dotComAccessToken;
+  @Nullable public String enterpriseAccessToken;
+  @Nullable public String customRequestHeaders;
+  @Nullable public String defaultBranch;
+  @Nullable public String remoteUrlReplacements;
+  @Nullable public String anonymousUserId;
+  public boolean isInstallEventLogged;
+  public boolean isUrlNotificationDismissed;
+  @Nullable public Boolean areCodyCompletionsEnabled;
+  public boolean isAccessTokenNotificationDismissed;
+  @Nullable public Boolean authenticationFailedLastTime;
 
-    @Nullable
-    public String getSourcegraphUrl() {
-        return url;
-    }
+  @Nullable
+  public String
+      lastUpdateNotificationPluginVersion; // The version of the plugin that last notified the user
 
-    @Nullable
-    public String getAccessToken() {
-        return accessToken;
-    }
+  // about an update
 
-    @Nullable
-    public String getCustomRequestHeaders() {
-        return customRequestHeaders;
-    }
+  @NotNull
+  public static SourcegraphApplicationService getInstance() {
+    return ApplicationManager.getApplication().getService(SourcegraphApplicationService.class);
+  }
 
-    @Nullable
-    public String getDefaultBranchName() {
-        return defaultBranch;
-    }
+  @Nullable
+  public String getInstanceType() {
+    return instanceType;
+  }
 
-    @Nullable
-    public String getRemoteUrlReplacements() {
-        return remoteUrlReplacements;
-    }
+  @Nullable
+  public String getSourcegraphUrl() {
+    return url;
+  }
 
+  @Nullable
+  public String getDotComAccessToken() {
+    return dotComAccessToken;
+  }
 
-    @Nullable
-    public String getAnonymousUserId() {
-        return anonymousUserId;
-    }
+  @Nullable
+  public String getCustomRequestHeaders() {
+    return customRequestHeaders;
+  }
 
-    public boolean isInstallEventLogged() {
-        return isInstallEventLogged;
-    }
+  @Nullable
+  public String getDefaultBranchName() {
+    return defaultBranch;
+  }
 
-    public boolean isUrlNotificationDismissed() {
-        return isUrlNotificationDismissed;
-    }
+  @Nullable
+  public String getRemoteUrlReplacements() {
 
-    @Nullable
-    public Boolean getAuthenticationFailedLastTime() {
-        return authenticationFailedLastTime;
-    }
+    return remoteUrlReplacements;
+  }
 
-    @Nullable
-    public String getLastUpdateNotificationPluginVersion() {
-        return lastUpdateNotificationPluginVersion;
-    }
+  @Override
+  @Nullable
+  public Search getLastSearch() {
+    // TODO
+    return null;
+  }
 
-    @Nullable
-    @Override
-    public SourcegraphApplicationService getState() {
-        return this;
-    }
+  @Override
+  @Nullable
+  public String getEnterpriseAccessToken() {
+    // configuring enterpriseAccessToken overrides the deprecated accessToken field
+    String configuredEnterpriseAccessToken =
+        StringUtils.isEmpty(enterpriseAccessToken) ? accessToken : enterpriseAccessToken;
+    // defaulting to SRC_ACCESS_TOKEN env if nothing else was configured
+    return configuredEnterpriseAccessToken == null
+        ? System.getenv("SRC_ACCESS_TOKEN")
+        : configuredEnterpriseAccessToken;
+  }
 
-    @Override
-    public void loadState(@NotNull SourcegraphApplicationService settings) {
-        this.instanceType = settings.instanceType;
-        this.url = settings.url;
-        this.accessToken = settings.accessToken;
-        this.customRequestHeaders = settings.customRequestHeaders;
-        this.defaultBranch = settings.defaultBranch;
-        this.remoteUrlReplacements = settings.remoteUrlReplacements;
-        this.anonymousUserId = settings.anonymousUserId;
-        this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
-        this.authenticationFailedLastTime = settings.authenticationFailedLastTime;
-        this.lastUpdateNotificationPluginVersion = settings.lastUpdateNotificationPluginVersion;
-    }
+  @Override
+  public boolean areChatPredictionsEnabled() {
+    // TODO
+    return false;
+  }
+
+  @Override
+  public String getCodebase() {
+    // TODO
+    return null;
+  }
+
+  @Nullable
+  public String getAnonymousUserId() {
+    return anonymousUserId;
+  }
+
+  public boolean isInstallEventLogged() {
+    return isInstallEventLogged;
+  }
+
+  public boolean isUrlNotificationDismissed() {
+    return isUrlNotificationDismissed;
+  }
+
+  public boolean areCodyCompletionsEnabled() {
+    return Optional.ofNullable(areCodyCompletionsEnabled).orElse(false);
+  }
+
+  public boolean isAccessTokenNotificationDismissed() {
+    return isAccessTokenNotificationDismissed;
+  }
+
+  @Nullable
+  public Boolean getAuthenticationFailedLastTime() {
+    return authenticationFailedLastTime;
+  }
+
+  @Nullable
+  public String getLastUpdateNotificationPluginVersion() {
+    return lastUpdateNotificationPluginVersion;
+  }
+
+  @Nullable
+  public SourcegraphApplicationService getState() {
+    return this;
+  }
+
+  @Override
+  public void loadState(@NotNull SourcegraphApplicationService settings) {
+    this.instanceType = settings.instanceType;
+    this.url = settings.url;
+    this.accessToken = settings.accessToken;
+    this.dotComAccessToken = settings.dotComAccessToken;
+    this.enterpriseAccessToken = settings.enterpriseAccessToken;
+    this.customRequestHeaders = settings.customRequestHeaders;
+    this.defaultBranch = settings.defaultBranch;
+    this.remoteUrlReplacements = settings.remoteUrlReplacements;
+    this.anonymousUserId = settings.anonymousUserId;
+    this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
+    this.areCodyCompletionsEnabled = settings.areCodyCompletionsEnabled;
+    this.isAccessTokenNotificationDismissed = settings.isAccessTokenNotificationDismissed;
+    this.authenticationFailedLastTime = settings.authenticationFailedLastTime;
+    this.lastUpdateNotificationPluginVersion = settings.lastUpdateNotificationPluginVersion;
+  }
 }

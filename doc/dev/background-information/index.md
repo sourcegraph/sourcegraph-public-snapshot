@@ -15,13 +15,18 @@
 ## [Sourcegraph App](app/index.md)
 
 - [Notes about code signing the Sourcegraph App](./app/codesigning.md)
+- [Building App on Windows](./app/windows.md)
 
 ## Development
 
 - [`sg` - the Sourcegraph developer tool](./sg/index.md)
   - [Full `sg` reference](./sg/reference.md)
-- [Using Bazel](./bazel.md)
-  - [Bazel and client code](./bazel_web.md)
+- [Using Bazel](./bazel/index.md)
+  - [Bazel and Go code](./bazel/go.md)
+  - [Bazel and client code](./bazel/web.md)
+  - [Bazel and container images](./bazel/containers.md)
+  - [Bazel FAQ](./bazel/faq.md)
+  - [Writing a server integration test](./bazel/server_integration_tests.md)
 - [Developing the web clients](web/index.md)
   - [Developing the web app](web/web_app.md)
   - [Developing the code host integrations](web/code_host_integrations.md)
@@ -82,6 +87,10 @@
 - [Renovate dependency updates](renovate.md)
 - [Honeycomb](honeycomb.md)
 - [Using PostgreSQL](postgresql.md)
+
+## Wolfi
+
+- [Wolfi Overview](wolfi/index.md)
 
 ## Other
 

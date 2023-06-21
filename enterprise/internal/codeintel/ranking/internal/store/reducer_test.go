@@ -29,13 +29,13 @@ func TestInsertPathRanks(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
 
 	// Insert and export upload
 	insertUploads(t, db, uploadsshared.Upload{ID: 4})
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key)
-		VALUES (104, 4, $1)
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key, upload_key)
+		VALUES (104, 4, $1, md5('key-4'))
 	`,
 		mockRankingGraphKey,
 	); err != nil {
@@ -47,19 +47,19 @@ func TestInsertPathRanks(t *testing.T) {
 	mockDefinitions <- shared.RankingDefinitions{
 		UploadID:         4,
 		ExportedUploadID: 104,
-		SymbolName:       "foo",
+		SymbolChecksum:   hash("foo"),
 		DocumentPath:     "foo.go",
 	}
 	mockDefinitions <- shared.RankingDefinitions{
 		UploadID:         4,
 		ExportedUploadID: 104,
-		SymbolName:       "bar",
+		SymbolChecksum:   hash("bar"),
 		DocumentPath:     "bar.go",
 	}
 	mockDefinitions <- shared.RankingDefinitions{
 		UploadID:         4,
 		ExportedUploadID: 104,
-		SymbolName:       "foo",
+		SymbolChecksum:   hash("foo"),
 		DocumentPath:     "foo.go",
 	}
 	close(mockDefinitions)
@@ -68,10 +68,10 @@ func TestInsertPathRanks(t *testing.T) {
 	}
 
 	// Insert references
-	mockReferences := make(chan string, 3)
-	mockReferences <- "foo"
-	mockReferences <- "bar"
-	mockReferences <- "baz"
+	mockReferences := make(chan [16]byte, 3)
+	mockReferences <- hash("foo")
+	mockReferences <- hash("bar")
+	mockReferences <- hash("baz")
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 104, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
@@ -103,17 +103,33 @@ func TestInsertPathRanks(t *testing.T) {
 	}
 
 	// Finally! Test InsertPathRanks
-	numPathRanksInserted, numInputsProcessed, err := store.InsertPathRanks(ctx, key, 10)
-	if err != nil {
+	if _, numInputsProcessed, err := store.InsertPathRanks(ctx, key, 10); err != nil {
 		t.Fatalf("unexpected error inserting path ranks: %s", err)
-	}
-
-	if numPathRanksInserted != 2 {
-		t.Errorf("unexpected number of path ranks inserted. want=%d have=%d", 2, numPathRanksInserted)
-	}
-
-	if numInputsProcessed != 1 {
+	} else if numInputsProcessed != 1 {
 		t.Errorf("unexpected number of inputs processed. want=%d have=%d", 1, numInputsProcessed)
+	}
+
+	// Need to run this again prior to checking document ranks as we have to close out
+	// the progress record by processing *no* records after the last batch.
+
+	if _, numInputsProcessed, err := store.InsertPathRanks(ctx, key, 10); err != nil {
+		t.Fatalf("unexpected error inserting path ranks: %s", err)
+	} else if numInputsProcessed != 0 {
+		t.Fatalf("expected no more work to be available")
+	}
+
+	// Check actual ranks
+	ranks, _, err := store.GetDocumentRanks(ctx, api.RepoName("n-50"))
+	if err != nil {
+		t.Fatalf("unexpected error getting document ranks")
+	}
+
+	expectedRanks := map[string]float64{
+		"foo.go": 2,
+		"bar.go": 1,
+	}
+	if diff := cmp.Diff(expectedRanks, ranks); diff != "" {
+		t.Errorf("unexpected ranks (-want +got):\n%s", diff)
 	}
 }
 
@@ -128,10 +144,10 @@ func TestVacuumStaleRanks(t *testing.T) {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
 
-	key1 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
-	key2 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 234)
-	key3 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 345)
-	key4 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456)
+	key1 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
+	key2 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "234")
+	key3 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "345")
+	key4 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "456")
 
 	// Insert metadata to rank progress by completion date
 	if _, err := db.ExecContext(ctx, `

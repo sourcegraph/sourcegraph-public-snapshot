@@ -1,0 +1,42 @@
+.zero-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1.5rem auto;
+
+    --light-part: var(--gray-03);
+    --middle-part: var(--gray-04);
+    --dark-part: var(--gray-05);
+
+    :global(.theme-dark) & {
+        --light-part: var(--gray-06);
+        --middle-part: var(--gray-07);
+        --dark-part: var(--gray-08);
+    }
+
+    &-text {
+        color: var(--text-muted);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-size: 1.25rem;
+    }
+}
+
+.no-repo-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1.5rem auto;
+    color: var(--text-muted);
+    min-height: 10rem;
+    justify-content: center;
+
+    &-icon {
+        flex-shrink: 0;
+
+        --icon-inline-size: 2rem;
+    }
+}

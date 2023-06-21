@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	repobg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -41,8 +42,25 @@ type repoEmbeddingJobsConnectionStore struct {
 	args            graphqlbackend.ListRepoEmbeddingJobsArgs
 }
 
+func withRepoID(o *repobg.ListOpts, id graphql.ID) error {
+	var repoID api.RepoID
+	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
+		return err
+	}
+	o.Repo = &repoID
+	return nil
+}
+
 func (s *repoEmbeddingJobsConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := s.store.CountRepoEmbeddingJobs(ctx)
+	opts := repobg.ListOpts{Query: s.args.Query, State: s.args.State}
+	if s.args.Repo != nil {
+		err := withRepoID(&opts, *s.args.Repo)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	count, err := s.store.CountRepoEmbeddingJobs(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -51,13 +69,25 @@ func (s *repoEmbeddingJobsConnectionStore) ComputeTotal(ctx context.Context) (*i
 }
 
 func (s *repoEmbeddingJobsConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.RepoEmbeddingJobResolver, error) {
-	jobs, err := s.store.ListRepoEmbeddingJobs(ctx, args)
+	opts := repobg.ListOpts{PaginationArgs: args, Query: s.args.Query, State: s.args.State}
+	if s.args.Repo != nil {
+		err := withRepoID(&opts, *s.args.Repo)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	jobs, err := s.store.ListRepoEmbeddingJobs(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 	resolvers := make([]graphqlbackend.RepoEmbeddingJobResolver, 0, len(jobs))
 	for _, job := range jobs {
-		resolvers = append(resolvers, &repoEmbeddingJobResolver{db: s.db, gitserverClient: s.gitserverClient, job: job})
+		resolvers = append(resolvers, &repoEmbeddingJobResolver{
+			db:              s.db,
+			gitserverClient: s.gitserverClient,
+			job:             job,
+		})
 	}
 	return resolvers, nil
 }
@@ -149,6 +179,15 @@ func (r *repoEmbeddingJobResolver) Cancel() bool {
 	return r.job.Cancel
 }
 
+func (r *repoEmbeddingJobResolver) Stats(ctx context.Context) (graphqlbackend.RepoEmbeddingJobStatsResolver, error) {
+	store := repobg.NewRepoEmbeddingJobsStore(r.db)
+	stats, err := store.GetRepoEmbeddingJobStats(ctx, r.job.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &repoEmbeddingJobStatsResolver{stats}, nil
+}
+
 func (r *repoEmbeddingJobResolver) compute(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	r.once.Do(func() {
 		repo, err := r.db.Repos().Get(ctx, r.job.RepoID)
@@ -188,4 +227,27 @@ func marshalRepoEmbeddingJobID(id int) graphql.ID {
 func unmarshalRepoEmbeddingJobID(id graphql.ID) (jobID int, err error) {
 	err = relay.UnmarshalSpec(id, &jobID)
 	return
+}
+
+type repoEmbeddingJobStatsResolver struct {
+	stats repobg.EmbedRepoStats
+}
+
+func (r *repoEmbeddingJobStatsResolver) FilesScheduled() int32 {
+	return int32(r.stats.CodeIndexStats.FilesScheduled + r.stats.TextIndexStats.FilesScheduled)
+}
+
+func (r *repoEmbeddingJobStatsResolver) FilesEmbedded() int32 {
+	return int32(r.stats.CodeIndexStats.FilesEmbedded + r.stats.TextIndexStats.FilesEmbedded)
+}
+
+func (r *repoEmbeddingJobStatsResolver) FilesSkipped() int32 {
+	skipped := 0
+	for _, count := range r.stats.CodeIndexStats.FilesSkipped {
+		skipped += count
+	}
+	for _, count := range r.stats.TextIndexStats.FilesSkipped {
+		skipped += count
+	}
+	return int32(skipped)
 }

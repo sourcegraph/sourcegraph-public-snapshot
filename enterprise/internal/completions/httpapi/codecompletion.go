@@ -7,35 +7,44 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-var allowedClientSpecifiedModels = map[string]struct{}{
-	// TODO(eseliger): This list should probably be configurable.
-	"claude-instant-v1.0": {},
-}
-
 // NewCodeCompletionsHandler is an http handler which sends back code completion results
-func NewCodeCompletionsHandler(_ log.Logger, db database.DB) http.Handler {
-	rl := NewRateLimiter(db, redispool.Store, RateLimitScopeCodeCompletion)
-	return newCompletionsHandler(rl, "codeCompletions", func(requestParams types.CompletionRequestParameters, c *schema.Completions) string {
-		var model string
-		if _, isAllowed := allowedClientSpecifiedModels[requestParams.Model]; isAllowed {
-			model = requestParams.Model
-		} else {
-			model = c.CompletionModel
-		}
+func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
+	logger = logger.Scoped("code", "code completions handler")
 
-		return model
+	rl := NewRateLimiter(db, redispool.Store, types.CompletionsFeatureCode)
+	return newCompletionsHandler(rl, "code", func(requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) string {
+		// No user defined models for now.
+		// TODO(eseliger): Look into reviving this, but it was unused so far.
+		return c.CompletionModel
 	}, func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
-		completion, err := cc.Complete(ctx, requestParams)
+		completion, err := cc.Complete(ctx, types.CompletionsFeatureCode, requestParams)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			logFields := []log.Field{log.Error(err)}
+
+			// Propagate the upstream headers to the client if available.
+			if errNotOK, ok := types.IsErrStatusNotOK(err); ok {
+				errNotOK.WriteHeader(w)
+				if tc := errNotOK.SourceTraceContext; tc != nil {
+					logFields = append(logFields,
+						log.String("sourceTraceContext.traceID", tc.TraceID),
+						log.String("sourceTraceContext.spanID", tc.SpanID))
+				}
+			} else {
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+			_, _ = w.Write([]byte(err.Error()))
+
+			trace.Logger(ctx, logger).Error("error on completion", logFields...)
 			return
 		}
+
 		completionBytes, err := json.Marshal(completion)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

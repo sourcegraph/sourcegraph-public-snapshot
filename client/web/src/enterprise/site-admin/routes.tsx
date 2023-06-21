@@ -5,7 +5,9 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { otherSiteAdminRoutes, UsersManagement } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { BatchSpecsPageProps } from '../batches/BatchSpecsPage'
+import { CodeIntelConfigurationPolicyPage } from '../codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
+import { OwnAnalyticsPage } from '../own/admin-ui/OwnAnalyticsPage'
 import { SiteAdminRolesPageProps } from '../rbac/SiteAdminRolesPage'
 
 import { RoleAssignmentModalProps } from './UserManagement/components/RoleAssignmentModal'
@@ -30,9 +32,9 @@ const SiteAdminProductSubscriptionsPage = lazyComponent(
     () => import('./dotcom/productSubscriptions/SiteAdminProductSubscriptionsPage'),
     'SiteAdminProductSubscriptionsPage'
 )
-const SiteAdminProductLicensesPage = lazyComponent(
-    () => import('./dotcom/productSubscriptions/SiteAdminProductLicensesPage'),
-    'SiteAdminProductLicensesPage'
+const SiteAdminLicenseKeyLookupPage = lazyComponent(
+    () => import('./dotcom/productSubscriptions/SiteAdminLicenseKeyLookupPage'),
+    'SiteAdminLicenseKeyLookupPage'
 )
 const SiteAdminAuthenticationProvidersPage = lazyComponent(
     () => import('./SiteAdminAuthenticationProvidersPage'),
@@ -42,10 +44,15 @@ const SiteAdminExternalAccountsPage = lazyComponent(
     () => import('./SiteAdminExternalAccountsPage'),
     'SiteAdminExternalAccountsPage'
 )
-const BatchChangesSiteConfigSettingsArea = lazyComponent(
-    () => import('../batches/settings/BatchChangesSiteConfigSettingsArea'),
-    'BatchChangesSiteConfigSettingsArea'
+const BatchChangesSiteConfigSettingsPage = lazyComponent(
+    () => import('../batches/settings/BatchChangesSiteConfigSettingsPage'),
+    'BatchChangesSiteConfigSettingsPage'
 )
+const BatchChangesCreateGitHubAppPage = lazyComponent(
+    () => import('../batches/settings/BatchChangesCreateGitHubAppPage'),
+    'BatchChangesCreateGitHubAppPage'
+)
+const GitHubAppPage = lazyComponent(() => import('../../components/gitHubApps/GitHubAppPage'), 'GitHubAppPage')
 const BatchSpecsPage = lazyComponent<BatchSpecsPageProps, 'BatchSpecsPage'>(
     () => import('../batches/BatchSpecsPage'),
     'BatchSpecsPage'
@@ -74,6 +81,12 @@ const CodeInsightsJobsPage = lazyComponent(() => import('../insights/admin-ui/Co
 const OwnStatusPage = lazyComponent(() => import('../own/admin-ui/OwnStatusPage'), 'OwnStatusPage')
 
 const SiteAdminCodyPage = lazyComponent(() => import('./cody/SiteAdminCodyPage'), 'SiteAdminCodyPage')
+const CodyConfigurationPage = lazyComponent(
+    () => import('../cody/configuration/pages/CodyConfigurationPage'),
+    'CodyConfigurationPage'
+)
+
+const codyIsEnabled = (): boolean => Boolean(window.context?.codyEnabled && window.context?.embeddingsEnabled)
 
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
     [
@@ -115,7 +128,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
         {
             path: '/dotcom/product/licenses',
-            render: () => <SiteAdminProductLicensesPage />,
+            render: () => <SiteAdminLicenseKeyLookupPage />,
             condition: () => SHOW_BUSINESS_FEATURES,
         },
         {
@@ -128,7 +141,22 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
         {
             path: '/batch-changes',
-            render: () => <BatchChangesSiteConfigSettingsArea />,
+            render: () => <BatchChangesSiteConfigSettingsPage />,
+            condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+        },
+        {
+            path: '/batch-changes/github-apps/new',
+            render: () => <BatchChangesCreateGitHubAppPage />,
+            condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+        },
+        {
+            path: '/batch-changes/github-apps/:appID',
+            render: props => (
+                <GitHubAppPage
+                    headerParentBreadcrumb={{ to: '/site-admin/batch-changes', text: 'Batch Changes settings' }}
+                    telemetryService={props.telemetryService}
+                />
+            ),
             condition: ({ batchChangesEnabled }) => batchChangesEnabled,
         },
         {
@@ -184,15 +212,41 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
 
         // Cody configuration
         {
+            exact: true,
             path: '/cody',
-            render: props => <SiteAdminCodyPage {...props} />,
-            condition: () => Boolean(window.context?.embeddingsEnabled),
+            render: () => <Navigate to="/site-admin/embeddings" />,
+            condition: codyIsEnabled,
         },
+        {
+            exact: true,
+            path: '/embeddings',
+            render: props => <SiteAdminCodyPage {...props} />,
+            condition: codyIsEnabled,
+        },
+        {
+            exact: true,
+            path: '/embeddings/configuration',
+            render: props => <CodyConfigurationPage {...props} />,
+            condition: codyIsEnabled,
+        },
+        {
+            path: '/embeddings/configuration/:id',
+            render: props => <CodeIntelConfigurationPolicyPage {...props} domain="embeddings" />,
+            condition: codyIsEnabled,
+        },
+
         // rbac-related routes
         {
             path: '/roles',
             exact: true,
             render: props => <SiteAdminRolesPage {...props} />,
+        },
+
+        // Own analytics
+        {
+            exact: true,
+            path: '/analytics/own',
+            render: () => <OwnAnalyticsPage />,
         },
     ] as readonly (SiteAdminAreaRoute | undefined)[]
 ).filter(Boolean) as readonly SiteAdminAreaRoute[]

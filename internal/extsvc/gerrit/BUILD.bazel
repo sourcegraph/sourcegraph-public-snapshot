@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "gerrit",
@@ -37,5 +38,6 @@ go_test(
         "//internal/lazyregexp",
         "//internal/testutil",
         "@com_github_dnaeon_go_vcr//cassette",
+        "@com_github_stretchr_testify//assert",
     ],
 )

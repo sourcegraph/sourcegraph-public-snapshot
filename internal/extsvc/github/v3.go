@@ -177,6 +177,22 @@ func (c *V3Client) post(ctx context.Context, requestURI string, payload, result 
 	return c.request(ctx, req, result)
 }
 
+func (c *V3Client) patch(ctx context.Context, requestURI string, payload, result any) (*httpResponseState, error) {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling payload")
+	}
+
+	req, err := http.NewRequest("PATCH", requestURI, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	return c.request(ctx, req, result)
+}
+
 func (c *V3Client) delete(ctx context.Context, requestURI string) (*httpResponseState, error) {
 	req, err := http.NewRequest("DELETE", requestURI, bytes.NewReader(make([]byte, 0)))
 	if err != nil {
@@ -795,6 +811,55 @@ func (c *V3Client) Fork(ctx context.Context, owner, repo string, org *string, fo
 	}
 
 	return convertRestRepo(restRepo), nil
+}
+
+// DeleteBranch deletes the given branch from the given repository.
+func (c *V3Client) DeleteBranch(ctx context.Context, owner, repo, branch string) error {
+	if _, err := c.delete(ctx, "repos/"+owner+"/"+repo+"/git/refs/heads/"+branch); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetRef gets the contents of a single commit reference in a repository. The ref should
+// be supplied in a fully qualified format, such as `refs/heads/branch` or
+// `refs/tags/tag`.
+func (c *V3Client) GetRef(ctx context.Context, owner, repo, ref string) (*restCommitRef, error) {
+	var commit restCommitRef
+	if _, err := c.get(ctx, "repos/"+owner+"/"+repo+"/commits/"+ref, &commit); err != nil {
+		return nil, err
+	}
+	return &commit, nil
+}
+
+// CreateCommit creates a commit in the given repository based on a tree object.
+func (c *V3Client) CreateCommit(ctx context.Context, owner, repo, message, tree string, parents []string, author, committer *restAuthorCommiter) (*RestCommit, error) {
+	payload := struct {
+		Message   string              `json:"message"`
+		Tree      string              `json:"tree"`
+		Parents   []string            `json:"parents"`
+		Author    *restAuthorCommiter `json:"author,omitempty"`
+		Committer *restAuthorCommiter `json:"committer,omitempty"`
+	}{Message: message, Tree: tree, Parents: parents, Author: author, Committer: committer}
+
+	var commit RestCommit
+	if _, err := c.post(ctx, "repos/"+owner+"/"+repo+"/git/commits", payload, &commit); err != nil {
+		return nil, err
+	}
+	return &commit, nil
+}
+
+// UpdateRef updates the ref of a branch to point to the given commit. The ref should be
+// supplied in a fully qualified format, such as `refs/heads/branch` or `refs/tags/tag`.
+func (c *V3Client) UpdateRef(ctx context.Context, owner, repo, ref, commit string) (*restUpdatedRef, error) {
+	var updatedRef restUpdatedRef
+	if _, err := c.patch(ctx, "repos/"+owner+"/"+repo+"/git/"+ref, struct {
+		SHA   string `json:"sha"`
+		Force bool   `json:"force"`
+	}{SHA: commit, Force: true}, &updatedRef); err != nil {
+		return nil, err
+	}
+	return &updatedRef, nil
 }
 
 // GetAppInstallation gets information of a GitHub App installation.

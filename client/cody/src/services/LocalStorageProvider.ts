@@ -43,12 +43,13 @@ export class LocalStorage {
                                   ([humanMessage, assistantMessageAndContextFiles]) => ({
                                       humanMessage,
                                       assistantMessage: assistantMessageAndContextFiles,
-                                      context: assistantMessageAndContextFiles.contextFiles
+                                      fullContext: assistantMessageAndContextFiles.contextFiles
                                           ? assistantMessageAndContextFiles.contextFiles.map(fileName => ({
                                                 speaker: 'assistant',
                                                 fileName,
                                             }))
                                           : [],
+                                      usedContextFiles: [],
                                       // Timestamp not recoverable so we use the group timestamp
                                       timestamp: id,
                                   })
@@ -70,6 +71,18 @@ export class LocalStorage {
         }
     }
 
+    public async deleteChatHistory(chatID: string): Promise<void> {
+        const userHistory = this.getChatHistory()
+        if (userHistory) {
+            try {
+                delete userHistory.chat[chatID]
+                await this.storage.update(this.KEY_LOCAL_HISTORY, { ...userHistory })
+            } catch (error) {
+                console.error(error)
+            }
+        }
+    }
+
     public async removeChatHistory(): Promise<void> {
         try {
             await this.storage.update(this.KEY_LOCAL_HISTORY, null)
@@ -83,16 +96,19 @@ export class LocalStorage {
         return anonUserID
     }
 
-    public async setAnonymousUserID(): Promise<void> {
+    public async setAnonymousUserID(): Promise<string | null> {
+        let status: string | null = null
         let anonUserID = this.storage.get(this.ANONYMOUS_USER_ID_KEY)
         if (!anonUserID) {
             anonUserID = uuid.v4()
+            status = 'installed'
         }
         try {
             await this.storage.update(this.ANONYMOUS_USER_ID_KEY, anonUserID)
         } catch (error) {
             console.error(error)
         }
+        return status
     }
 
     public get(key: string): string | null {

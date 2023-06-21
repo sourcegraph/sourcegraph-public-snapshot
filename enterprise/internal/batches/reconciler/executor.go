@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/log"
 
 	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
@@ -19,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -183,6 +181,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 	// Create a commit and push it
 	// Figure out which authenticator we should use to modify the changeset.
 	css, err := e.changesetSource(ctx)
+
 	if err != nil {
 		return afterDone, err
 	}
@@ -201,9 +200,8 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 	if err != nil {
 		return afterDone, err
 	}
-	opts := buildCommitOpts(e.targetRepo, e.spec, pushConf)
-
-	err = e.pushCommit(ctx, opts)
+	opts := css.BuildCommitOpts(e.targetRepo, e.ch, e.spec, pushConf)
+	resp, err := e.pushCommit(ctx, opts)
 	var pce pushCommitError
 	if errors.As(err, &pce) {
 		if acss, ok := css.(sources.ArchivableChangesetSource); ok {
@@ -214,6 +212,16 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 				return afterDone, errCannotPushToArchivedRepo
 			}
 		}
+	}
+
+	// update the changeset's external_id column if a changelist id is returned
+	// because that's going to make it back to the UI so that the user can see the changelist id and take action on it
+	if resp != nil && resp.ChangelistId != "" {
+		e.ch.ExternalID = resp.ChangelistId
+	}
+
+	if err = e.runAfterCommit(ctx, css, resp, remoteRepo, opts); err != nil {
+		return afterDone, errors.Wrap(err, "running after commit routine")
 	}
 
 	if triggerUpdateWebhook && err == nil {
@@ -579,7 +587,7 @@ func (e *executor) decorateChangesetBody(ctx context.Context) (string, error) {
 }
 
 func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
-	css, err := sourcer.ForChangeset(ctx, s, ch)
+	css, err := sourcer.ForChangeset(ctx, s, ch, sources.AuthenticationStrategyUserCredential)
 	if err != nil {
 		switch err {
 		case sources.ErrMissingCredentials:
@@ -612,21 +620,69 @@ func (e pushCommitError) Error() string {
 		e.RepositoryName, e.InternalError, e.Command, strings.TrimSpace(e.CombinedOutput))
 }
 
-func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) error {
-	_, err := e.client.CreateCommitFromPatch(ctx, opts)
+func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
+	res, err := e.client.CreateCommitFromPatch(ctx, opts)
 	if err != nil {
 		var e *protocol.CreateCommitFromPatchError
 		if errors.As(err, &e) {
 			// Make "patch does not apply" errors a fatal error. Retrying the changeset
 			// rollout won't help here and just causes noise.
 			if strings.Contains(e.CombinedOutput, "patch does not apply") {
-				return errcode.MakeNonRetryable(pushCommitError{e})
+				return nil, errcode.MakeNonRetryable(pushCommitError{e})
 			}
-			return pushCommitError{e}
+			return nil, pushCommitError{e}
 		}
-		return err
+		return nil, err
 	}
 
+	return res, nil
+}
+
+func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSource, resp *protocol.CreateCommitFromPatchResponse, remoteRepo *types.Repo, opts protocol.CreateCommitFromPatchRequest) (err error) {
+	// If we're pushing to a GitHub code host, we should check if a GitHub App is
+	// configured for Batch Changes to sign commits on this code host with.
+	if _, ok := css.(*sources.GitHubSource); ok {
+		// Attempt to get a ChangesetSource authenticated with a GitHub App.
+		css, err = e.sourcer.ForChangeset(ctx, e.tx, e.ch, sources.AuthenticationStrategyGitHubApp)
+		if err != nil {
+			switch err {
+			case sources.ErrNoGitHubAppConfigured:
+				// If we didn't find any GitHub Apps configured for this code host, it's a
+				// noop; commit signing is not set up for this code host.
+				break
+			default:
+				// We shouldn't block on this error, but we should still log it.
+				log15.Error("Failed to get GitHub App authenticated ChangesetSource", "err", err)
+			}
+		} else {
+			// We found a GitHub App configured for Batch Changes; we should try to use it
+			// to sign the commit.
+			gcss, ok := css.(*sources.GitHubSource)
+			if !ok {
+				return errors.Wrap(err, "got non-GitHubSource for ChangesetSource when using GitHub App authentication strategy")
+			}
+			// Find the revision from the response from CreateCommitFromPatch.
+			if resp == nil {
+				return errors.New("no response from CreateCommitFromPatch")
+			}
+			rev := resp.Rev
+			// We use the existing commit as the basis for the new commit, duplicating it
+			// over the REST API in order to produce a signed version of it to replace the
+			// original one with.
+			newCommit, err := gcss.DuplicateCommit(ctx, opts, remoteRepo, rev)
+			if err != nil {
+				return errors.Wrap(err, "failed to duplicate commit")
+			}
+			if newCommit.Verification.Verified {
+				err = e.tx.UpdateChangesetCommitVerification(ctx, e.ch, newCommit)
+				if err != nil {
+					return errors.Wrap(err, "failed to update changeset with commit verification")
+				}
+			} else {
+				log15.Warn("Commit created with GitHub App was not signed", "changeset", e.ch.ID, "commit", newCommit.SHA)
+			}
+		}
+	}
 	return nil
 }
 
@@ -668,39 +724,6 @@ func handleArchivedRepo(
 
 func (e *executor) enqueueWebhook(ctx context.Context, store *store.Store, eventType string) {
 	webhooks.EnqueueChangeset(ctx, e.logger, store, eventType, bgql.MarshalChangesetID(e.ch.ID))
-}
-
-func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
-	// IMPORTANT: We add a trailing newline here, otherwise `git apply`
-	// will fail with "corrupt patch at line <N>" where N is the last line.
-	patch := append([]byte{}, spec.Diff...)
-	patch = append(patch, []byte("\n")...)
-	opts := protocol.CreateCommitFromPatchRequest{
-		Repo:       repo.Name,
-		BaseCommit: api.CommitID(spec.BaseRev),
-		Patch:      patch,
-		TargetRef:  spec.HeadRef,
-
-		// CAUTION: `UniqueRef` means that we'll push to a generated branch if it
-		// already exists.
-		// So when we retry publishing a changeset, this will overwrite what we
-		// pushed before.
-		UniqueRef: false,
-
-		CommitInfo: protocol.PatchCommitInfo{
-			Message:     spec.CommitMessage,
-			AuthorName:  spec.CommitAuthorName,
-			AuthorEmail: spec.CommitAuthorEmail,
-			Date:        spec.CreatedAt,
-		},
-		// We use unified diffs, not git diffs, which means they're missing the
-		// `a/` and `b/` filename prefixes. `-p0` tells `git apply` to not
-		// expect and strip prefixes.
-		GitApplyArgs: []string{"-p0"},
-		Push:         pushOpts,
-	}
-
-	return opts
 }
 
 type getBatchChanger interface {

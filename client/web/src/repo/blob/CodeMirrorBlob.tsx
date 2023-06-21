@@ -10,6 +10,7 @@ import { EditorView } from '@codemirror/view'
 import { isEqual } from 'lodash'
 import { createPath, NavigateFunction, useLocation, useNavigate, Location } from 'react-router-dom'
 
+import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
 import {
     addLineRangeQueryParameter,
     formatSearchParameters,
@@ -26,8 +27,9 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import { useEditorStore } from '../../cody/stores/editor'
-import { useIsCodyEnabled } from '../../cody/useIsCodyEnabled'
+import { CodeMirrorEditor } from '../../cody/components/CodeMirrorEditor'
+import { isCodyEnabled } from '../../cody/isCodyEnabled'
+import { useCodySidebar } from '../../cody/sidebar/Provider'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { BlameHunkData } from '../blame/useBlameHunks'
@@ -108,7 +110,7 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     /** External URLs for the file */
     externalURLs?: ExternalLinkFields[]
 
-    snapshotData?: { offset: number; data: string }[] | null
+    snapshotData?: { offset: number; data: string; additional: string[] | null }[] | null
 }
 
 const staticExtensions: Extension = [
@@ -273,7 +275,10 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         [customHistoryAction]
     )
 
-    const codyEnabled = useIsCodyEnabled()
+    // Added fallback to take care of ReferencesPanel/Simple storybook
+    const { setEditorScope } = useCodySidebar()
+
+    const editorRef = useRef<EditorView | null>(null)
 
     const extensions = useMemo(
         () => [
@@ -289,9 +294,21 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
-            scipSnapshot(blobInfo.snapshotData),
+            scipSnapshot(blobInfo.content, blobInfo.snapshotData),
             codeFoldingExtension(),
-            codyEnabled.editorRecipes ? codyWidgetExtension() : [],
+            isCodyEnabled()
+                ? codyWidgetExtension(
+                      editorRef.current
+                          ? new CodeMirrorEditor({
+                                view: editorRef.current,
+                                repo: props.blobInfo.repoName,
+                                revision: props.blobInfo.revision,
+                                filename: props.blobInfo.filePath,
+                                content: props.blobInfo.content,
+                            })
+                          : undefined
+                  )
+                : [],
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
@@ -321,10 +338,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController]
+        [onSelection, blobInfo, extensionsController, isCodyEnabled, editorRef.current]
     )
-
-    const editorRef = useRef<EditorView | null>(null)
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
@@ -439,19 +454,27 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     // like Cody to know what file and range a user is looking at.
     useEffect(() => {
         const view = editorRef.current
-        useEditorStore.setState({
-            editor: view
-                ? {
-                      view,
-                      repo: props.blobInfo.repoName,
-                      revision: props.blobInfo.revision,
-                      filename: props.blobInfo.filePath,
-                      content: props.blobInfo.content,
-                  }
-                : null,
-        })
-        return () => useEditorStore.setState({ editor: null })
-    }, [props.blobInfo.content, props.blobInfo.filePath, props.blobInfo.repoName, props.blobInfo.revision])
+        setEditorScope(
+            new CodeMirrorEditor(
+                view
+                    ? {
+                          view,
+                          repo: props.blobInfo.repoName,
+                          revision: props.blobInfo.revision,
+                          filename: props.blobInfo.filePath,
+                          content: props.blobInfo.content,
+                      }
+                    : undefined
+            )
+        )
+        return () => setEditorScope(new NoopEditor())
+    }, [
+        props.blobInfo.content,
+        props.blobInfo.filePath,
+        props.blobInfo.repoName,
+        props.blobInfo.revision,
+        setEditorScope,
+    ])
 
     return (
         <>

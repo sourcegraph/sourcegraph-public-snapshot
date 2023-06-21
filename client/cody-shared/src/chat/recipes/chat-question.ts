@@ -27,10 +27,12 @@ export class ChatQuestion implements Recipe {
                 this.getContextMessages(
                     truncatedText,
                     context.editor,
+                    context.firstInteraction,
                     context.intentDetector,
                     context.codebaseContext,
                     context.editor.getActiveTextEditorSelection() || null
-                )
+                ),
+                []
             )
         )
     }
@@ -38,18 +40,15 @@ export class ChatQuestion implements Recipe {
     private async getContextMessages(
         text: string,
         editor: Editor,
+        firstInteraction: boolean,
         intentDetector: IntentDetector,
         codebaseContext: CodebaseContext,
         selection: ActiveTextEditorSelection | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
 
-        // Add selected text as context when available
-        if (selection?.selectedText) {
-            contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
-        }
+        const isCodebaseContextRequired = firstInteraction || (await intentDetector.isCodebaseContextRequired(text))
 
-        const isCodebaseContextRequired = await intentDetector.isCodebaseContextRequired(text)
         this.debug('ChatQuestion:getContextMessages', 'isCodebaseContextRequired', isCodebaseContextRequired)
         if (isCodebaseContextRequired) {
             const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
@@ -63,6 +62,11 @@ export class ChatQuestion implements Recipe {
         this.debug('ChatQuestion:getContextMessages', 'isEditorContextRequired', isEditorContextRequired)
         if (isCodebaseContextRequired || isEditorContextRequired) {
             contextMessages.push(...ChatQuestion.getEditorContext(editor))
+        }
+
+        // Add selected text as context when available
+        if (selection?.selectedText) {
+            contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
         }
 
         return contextMessages

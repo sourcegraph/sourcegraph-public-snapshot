@@ -1,7 +1,6 @@
 package updatecheck
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,9 +19,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -37,17 +36,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newPingResponse("5.0.4")
+	latestReleaseDockerServerImageBuild = newPingResponse("5.0.6")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newPingResponse("5.0.4")
+	latestReleaseKubernetesBuild = newPingResponse("5.0.6")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.0.4")
+	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.0.6")
 
 	// latestReleaseApp is only used by sourcegraph.com to tell existing Sourcegraph
 	// App instances what the latest version is. The version here _must_ be available for download/released
@@ -247,6 +246,7 @@ type pingRequest struct {
 	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Sourcegraph App
 	HasCodyEnabled                bool            `json:"hasCodyEnabled,omitempty"`
 	CodyUsage                     json.RawMessage `json:"codyUsage,omitempty"`
+	RepoMetadataUsage             json.RawMessage `json:"repoMetadataUsage,omitempty"`
 }
 
 type dependencyVersions struct {
@@ -373,6 +373,7 @@ type pingPayload struct {
 	Timestamp                     string          `json:"timestamp"`
 	HasCodyEnabled                string          `json:"has_cody_enabled"`
 	CodyUsage                     json.RawMessage `json:"cody_usage"`
+	RepoMetadataUsage             json.RawMessage `json:"repo_metadata_usage"`
 }
 
 func logPing(logger log.Logger, r *http.Request, pr *pingRequest, hasUpdate bool) {
@@ -473,8 +474,9 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		EverFindRefs:                  strconv.FormatBool(pr.EverFindRefs),
 		ActiveToday:                   strconv.FormatBool(pr.ActiveToday),
 		Timestamp:                     now.UTC().Format(time.RFC3339),
-		HasCodyEnabled:                strconv.FormatBool(codyFeatureFlag()),
+		HasCodyEnabled:                strconv.FormatBool(conf.CodyEnabled()),
 		CodyUsage:                     codyUsage,
+		RepoMetadataUsage:             pr.RepoMetadataUsage,
 	})
 }
 
@@ -767,17 +769,6 @@ func reserializeCodyUsage(payload json.RawMessage) (json.RawMessage, error) {
 	}
 
 	return json.Marshal(singlePeriodUsage)
-}
-
-func codyFeatureFlag() bool {
-	ctx := context.Background()
-	flags := featureflag.FromContext(ctx)
-	codyExperimental, err := flags.GetBool("cody-experimental")
-	if !err {
-		return false
-	}
-
-	return codyExperimental
 }
 
 var (

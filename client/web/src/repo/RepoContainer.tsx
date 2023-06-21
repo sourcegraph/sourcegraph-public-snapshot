@@ -32,10 +32,9 @@ import { Button, Icon, Link, Panel, useObservable } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
+import { RepoContainerEditor } from '../cody/components/RepoContainerEditor'
 import { CodySidebar } from '../cody/sidebar'
-import { useChatStore } from '../cody/stores/chat'
-import { useCodySidebarStore } from '../cody/stores/sidebar'
-import { useIsCodyEnabled } from '../cody/useIsCodyEnabled'
+import { useCodySidebar } from '../cody/sidebar/Provider'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
@@ -155,7 +154,22 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         location.pathname + location.search + location.hash
     )
 
-    const codyEnabled = useIsCodyEnabled()
+    const {
+        sidebarSize: codySidebarSize,
+        isSidebarOpen: isCodySidebarOpen,
+        setIsSidebarOpen: setIsCodySidebarOpen,
+        setSidebarSize: setCodySidebarSize,
+        scope,
+        setEditorScope,
+    } = useCodySidebar()
+
+    useEffect(() => {
+        const activeEditor = scope.editor.getActiveTextEditor()
+
+        if (activeEditor?.repoName !== repoName) {
+            setEditorScope(new RepoContainerEditor(repoName))
+        }
+    }, [scope.editor, repoName, setEditorScope])
 
     const resolvedRevisionOrError = useObservable(
         useMemo(
@@ -193,13 +207,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     )
 
     const focusCodyShortcut = useKeyboardShortcut('focusCody')
-    const {
-        isOpen: isCodySidebarOpen,
-        setIsOpen: setIsCodySidebarOpen,
-        onResize: onCodySidebarResize,
-    } = useCodySidebarStore()
-    // TODO: This hook call is used to initialize the chat store with the right repo name.
-    useChatStore({ codebase: repoName, setIsCodySidebarOpen })
 
     /**
      * A long time ago, we fetched `repo` in a separate GraphQL query.
@@ -351,16 +358,15 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     return (
         <>
-            {codyEnabled.sidebar &&
-                focusCodyShortcut?.keybindings.map((keybinding, index) => (
-                    <Shortcut
-                        key={index}
-                        {...keybinding}
-                        onMatch={() => {
-                            setIsCodySidebarOpen(true)
-                        }}
-                    />
-                ))}
+            {focusCodyShortcut?.keybindings.map((keybinding, index) => (
+                <Shortcut
+                    key={index}
+                    {...keybinding}
+                    onMatch={() => {
+                        setIsCodySidebarOpen(true)
+                    }}
+                />
+            ))}
             <div className={classNames('w-100 d-flex flex-row')}>
                 <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
                     <RepoHeader
@@ -375,28 +381,26 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                         telemetryService={props.telemetryService}
                     />
 
-                    {codyEnabled.sidebar ? (
-                        <RepoHeaderContributionPortal
-                            position="right"
-                            priority={1}
-                            id="cody"
-                            {...repoHeaderContributionsLifecycleProps}
-                        >
-                            {() =>
-                                !isCodySidebarOpen ? (
-                                    <AskCodyButton
-                                        onClick={() => {
-                                            props.telemetryService.log(EventName.CODY_SIDEBAR_CHAT_OPENED, {
-                                                repo,
-                                                path: filePath,
-                                            })
-                                            setIsCodySidebarOpen(true)
-                                        }}
-                                    />
-                                ) : null
-                            }
-                        </RepoHeaderContributionPortal>
-                    ) : null}
+                    <RepoHeaderContributionPortal
+                        position="right"
+                        priority={1}
+                        id="cody"
+                        {...repoHeaderContributionsLifecycleProps}
+                    >
+                        {() =>
+                            !isCodySidebarOpen ? (
+                                <AskCodyButton
+                                    onClick={() => {
+                                        props.telemetryService.log(EventName.CODY_SIDEBAR_CHAT_OPENED, {
+                                            repo,
+                                            path: filePath,
+                                        })
+                                        setIsCodySidebarOpen(true)
+                                    }}
+                                />
+                            ) : null
+                        }
+                    </RepoHeaderContributionPortal>
 
                     <RepoHeaderContributionPortal
                         position="right"
@@ -491,16 +495,16 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     </Suspense>
                 </div>
 
-                {codyEnabled.sidebar && isCodySidebarOpen && (
+                {isCodySidebarOpen && (
                     <Panel
                         className="cody-sidebar-panel"
                         position="right"
                         ariaLabel="Cody sidebar"
                         maxSize={CODY_SIDEBAR_SIZES.max}
                         minSize={CODY_SIDEBAR_SIZES.min}
-                        defaultSize={CODY_SIDEBAR_SIZES.default}
+                        defaultSize={codySidebarSize || CODY_SIDEBAR_SIZES.default}
                         storageKey="size-cache-cody-sidebar"
-                        onResize={onCodySidebarResize}
+                        onResize={setCodySidebarSize}
                     >
                         <CodySidebar onClose={() => setIsCodySidebarOpen(false)} />
                     </Panel>

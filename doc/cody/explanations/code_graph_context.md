@@ -14,27 +14,17 @@ Embeddings for relevant code files must be enabled for each repository that you'
 
 ### Configuring embeddings
 
-> NOTE: Enterprise Cloud customers should reach out to their Sourcegraph representative to enable embeddings. 
-> See [Enabling Cody Enterprise](./enabling_cody_enterprise.md#cody-on-sourcegraph-cloud)
+> NOTE: Enterprise Cloud customers should reach out to their Sourcegraph representative to enable embeddings.
+> See [Enabling Cody Enterprise: Cody on Sourcegraph Cloud](./enabling_cody_enterprise.md#cody-on-sourcegraph-cloud)
 
-1. Go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance
-1. Add the following to configure OpenAI embeddings:
-    ```json
-    {
-      // [...]
-      "embeddings": {
-        "enabled": true,
-        "url": "https://api.openai.com/v1/embeddings",
-        "accessToken": "<token>",
-        "model": "text-embedding-ada-002",
-        "dimensions": 1536,
-        "excludedFilePathPatterns": []
-      }
-    }
-    ```
-1. Navigate to **Site admin > Cody** (`/site-admin/cody`) and schedule repositories for embedding.
+Embeddings are automatically enabled and configured once [Cody is enabled](../quickstart.md).
+After enabling Cody, navigate to **Site admin > Cody** (`/site-admin/cody`) and schedule repositories for embedding.
 
-> NOTE: By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice). 
+> NOTE: By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice).
+
+<span class="virtual-br"></span>
+
+> NOTE: You can also [use third-party embeddings provider directly](#using-a-third-party-embeddings-provider-directly) for embeddings.
 
 ### Excluding files from embeddings
 
@@ -79,8 +69,7 @@ To target an S3 bucket you've already provisioned, set the following environment
 
 > NOTE: You don't need to set the `EMBEDDINGS_UPLOAD_AWS_ACCESS_KEY_ID` environment variable when using `EMBEDDINGS_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS=true` because role credentials will be automatically resolved. 
 
-
-### Using GCS
+#### Using GCS
 
 To target a GCS bucket you've already provisioned, set the following environment variables. Authentication is done through a service account key, supplied as either a path to a volume-mounted file, or the contents read in as an environment variable payload.
 
@@ -98,4 +87,89 @@ If you would like to allow your Sourcegraph instance to control the creation and
 
 ### Environment variables for the `embeddings` service
 
-- `EMBEDDINGS_REPO_INDEX_CACHE_SIZE`: Number of repository embedding indexes to cache in memory (the default cache size is 5). Increasing the cache size will improve the search performance but require more memory resources.
+- `EMBEDDINGS_CACHE_SIZE`: The maximum size of the in-memory cache (in bytes) that holds the embeddings for commonly-searched repos. If embeddings for a repo are larger than this size, the repo will not be held in the cache and must be re-fetched for each embeddings search. Defaults to `6442450944` (6 GiB).
+
+### Incremental embeddings
+
+Incremental embeddings allow you to update the embeddings for a repository without having to re-embed the entire
+repository. With incremental embeddings, outdated embeddings of deleted and modified files are removed and new
+embeddings of the modified and added files are added to the repository's embeddings. This speeds up updates, reduces the
+data sent to the embedding provider and saves costs.
+
+Incremental embeddings are enabled by default. You can disable incremental embeddings by setting
+the `incremental` property in the embeddings configuration to `false`.
+
+```json
+{
+  // [...]
+  "embeddings": {
+    // [...]
+    "incremental": false
+  }
+}
+```
+
+### Adjust the minimum time interval between automatically scheduled embeddings
+
+If you configure a repository for automated embeddings, the repository will be scheduled for embedding with every new
+commit. By default, there is a 24-hour time interval that must pass between two embeddings. For example, if a repository
+is scheduled for embedding at 10:00 AM and a new commit happens at 11:00 AM, the next embedding will be scheduled
+earliest for 10:00 AM the next day.
+
+You can configure the minimum time interval by setting the minimumInterval property in the embeddings configuration.
+Supported time units are h (hours), m ( minutes), and s (seconds).
+
+```json
+{
+  // [...]
+  "embeddings": {
+    // [...]
+    "minimumInterval": "24h"
+  }
+}
+```
+
+### Using a third-party embeddings provider directly
+
+Instead of [Sourcegraph Cody Gateway](./cody_gateway.md), you can configure Sourcegraph to use a third-party provider directly for embeddings. Currently, this can only be OpenAI embeddings.
+
+You must create your own key with OpenAI [here](https://beta.openai.com/account/api-keys). Once you have the key, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
+
+```jsonc
+{
+  "cody.enabled": true,
+  "embeddings": {
+    "provider": "openai",
+    "accessToken": "<token>",
+    "excludedFilePathPatterns": []
+  }
+}
+```
+
+### Disabling embeddings
+
+Embeddings can currently be disabled, even with Cody enabled, using the following site configuration:
+
+```jsonc
+{
+  "embeddings": { "enabled": false }
+}
+```
+
+### Configuring the global policy match limit
+
+By default, a global policy, that means an embeddings policy without a pattern, is applied to up to 5000 repositories. 
+The repositories matching the policy are first sorted by star count (descending) and id (descending) and then the first 5000 repositories are selected.
+You can configure the limit by setting the `policyRepositoryMatchLimit` property in the embeddings configuration.
+
+A negative value disables the limit and all repositories are selected.
+
+```json
+{
+  // [...]
+  "embeddings": {
+    // [...]
+    "policyRepositoryMatchLimit": 5000
+  }
+}
+```

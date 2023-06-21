@@ -125,11 +125,6 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "codyRestrictUsersFeatureFlag": {
-          "description": "Restrict Cody to only be enabled for users that have a feature flag labeled \"cody-experimental\" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag.",
-          "type": "boolean",
-          "default": false
-        },
         "rateLimitAnonymous": {
           "description": "Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.",
           "type": "integer",
@@ -183,7 +178,8 @@
               "type": "boolean",
               "default": false
             }
-          }
+          },
+          "deprecationMessage": "Deprecated in favor of internal debug logging."
         },
         "structuralSearch": {
           "description": "Enables structural search.",
@@ -196,6 +192,12 @@
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
+        },
+        "perforceChangelistMapping": {
+          "description": "Allow mapping of Perforce changelists to their commit SHAs in the DB",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
         },
         "goPackages": {
           "description": "Allow adding Go package host connections",
@@ -448,7 +450,7 @@
               "group": "Search"
             },
             "documentRanksWeight": {
-              "description": "Controls the impact of document ranks on the final ranking when the 'search-ranking' feature is enabled. This is intended for internal testing purposes only, it's not recommended for users to change this.",
+              "description": "Controls the impact of document ranks on the final ranking. This is intended for internal testing purposes only, it's not recommended for users to change this.",
               "type": "number",
               "default": 4500,
               "group": "Search",
@@ -457,7 +459,7 @@
               }
             },
             "flushWallTimeMS": {
-              "description": "Controls the amount of time that Zoekt shards collect and rank results when the 'search-ranking' feature is enabled. Larger values give a more stable ranking, but searches can take longer to return an initial result.",
+              "description": "Controls the amount of time that Zoekt shards collect and rank results. Larger values give a more stable ranking, but searches can take longer to return an initial result.",
               "type": "integer",
               "default": 500,
               "group": "Search"
@@ -520,6 +522,12 @@
           "!go": {
             "pointer": true
           }
+        },
+        "batchChanges.enablePerforce": {
+          "description": "When enabled, batch changes will be executable on Perforce depots.",
+          "type": "boolean",
+          "group": "BatchChanges",
+          "default": false
         }
       },
       "examples": [
@@ -565,6 +573,12 @@
       "!go": {
         "pointer": true
       },
+      "group": "BatchChanges",
+      "default": false
+    },
+    "batchChanges.autoDeleteBranch": {
+      "description": "Automatically delete branches created for Batch Changes changesets when the changeset is merged or closed, for supported code hosts. Overrides any setting on the repository on the code host itself.",
+      "type": "boolean",
       "group": "BatchChanges",
       "default": false
     },
@@ -689,6 +703,15 @@
       },
       "group": "Code intelligence",
       "default": false
+    },
+    "codeIntelRanking.documentReferenceCountsCronExpression": {
+      "description": "A cron expression indicating when to run the document reference counts graph reduction job.",
+      "type": "string",
+      "!go": {
+        "pointer": true
+      },
+      "group": "Code intelligence",
+      "default": "@weekly"
     },
     "codeIntelRanking.documentReferenceCountsGraphKey": {
       "description": "An arbitrary identifier used to group calculated rankings from SCIP data (including the SCIP export).",
@@ -841,7 +864,7 @@
       "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",
       "type": "object",
-      "required": ["engine", "languages"],
+      "required": ["engine", "languages", "symbols"],
       "properties": {
         "engine": {
           "title": "SyntaxHighlightingEngine",
@@ -893,6 +916,22 @@
                     "type": "string"
                   }
                 }
+              }
+            }
+          }
+        },
+        "symbols": {
+          "title": "SymbolConfiguration",
+          "description": "Configure symbol generation",
+          "type": "object",
+          "required": ["engine"],
+          "properties": {
+            "engine": {
+              "description": "Manually specify overrides for symbol generation engine per language",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "enum": ["universal-ctags", "scip-ctags", "off"]
               }
             }
           }
@@ -1422,10 +1461,10 @@
               "default": false
             },
             "severityLevel": {
-              "description": "Severity logging level for the audit log.",
+              "deprecationMessage": "No effect, audit logs are always set to SRC_LOG_LEVEL",
+              "description": "DEPRECATED: No effect, audit logs are always set to SRC_LOG_LEVEL",
               "type": "string",
-              "enum": ["DEBUG", "INFO", "WARN", "ERROR"],
-              "default": "INFO"
+              "enum": ["DEBUG", "INFO", "WARN", "ERROR"]
             }
           },
           "required": ["internalTraffic", "graphQL", "gitserverAccess"],
@@ -1433,8 +1472,25 @@
             {
               "internalTraffic": false,
               "graphQL": false,
-              "gitserverAccess": false,
-              "severityLevel": "INFO"
+              "gitserverAccess": false
+            }
+          ]
+        },
+        "securityEventLog": {
+          "description": "EXPERIMENTAL: Configuration for security event logging",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "location": {
+              "description": "Where to output the security event log [none, auditlog, database, all] where auditlog is the default logging to stdout with the specified audit log format",
+              "type": "string",
+              "enum": ["none", "auditlog", "database", "all"],
+              "default": "auditlog"
+            }
+          },
+          "examples": [
+            {
+              "location": "auditlog"
             }
           ]
         }
@@ -1859,6 +1915,11 @@
           "type": "string",
           "group": "Sourcegraph.com"
         },
+        "slackLicenseAnomallyWebhook": {
+          "description": "Slack webhook for when there is an anomaly detected with license key usage.",
+          "type": "string",
+          "group": "Sourcegraph.com"
+        },
         "srcCliVersionCache": {
           "description": "Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.",
           "type": "object",
@@ -1913,21 +1974,21 @@
             }
           }
         },
-        "llmProxy": {
-          "description": "Configuration related to the LLM Proxy service management. This should only be used on sourcegraph.com.",
+        "codyGateway": {
+          "description": "Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.",
           "type": "object",
           "group": "Sourcegraph.com",
           "properties": {
             "bigQueryGoogleProjectID": {
-              "description": "The project ID to pull BigQuery LLM Proxy related events from.",
+              "description": "The project ID to pull BigQuery Cody Gatewayrelated events from.",
               "type": "string"
             },
             "bigQueryDataset": {
-              "description": "The dataset to pull BigQuery LLM Proxy related events from.",
+              "description": "The dataset to pull BigQuery Cody Gateway related events from.",
               "type": "string"
             },
             "bigQueryTable": {
-              "description": "The table in the dataset to pull BigQuery LLM Proxy related events from.",
+              "description": "The table in the dataset to pull BigQuery Cody Gateway related events from.",
               "type": "string"
             }
           }
@@ -2131,9 +2192,10 @@
       },
       "examples": [
         {
-          "enabled": true,
-          "emailDomains": ["example.com"],
-          "message": "Please explain why you need access in your request."
+          "enabled": true
+        },
+        {
+          "enabled": false
         }
       ]
     },
@@ -2275,31 +2337,61 @@
         }
       ]
     },
+    "cody.enabled": {
+      "description": "Enable or disable Cody instance-wide. When Cody is disabled, all Cody endpoints and GraphQL queries will return errors, Cody will not show up in the site-admin sidebar, and Cody in the global navbar will only show a call-to-action for site-admins to enable Cody.",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      },
+      "group": "Cody"
+    },
+    "cody.restrictUsersFeatureFlag": {
+      "description": "Restrict Cody to only be enabled for users that have a feature flag labeled \"cody\" set to true. You must create a feature flag with this ID after enabling this setting: https://docs.sourcegraph.com/dev/how-to/use_feature_flags#create-a-feature-flag. This setting only has an effect if cody.enabled is true.",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      },
+      "group": "Cody"
+    },
     "embeddings": {
       "description": "Configuration for embeddings service.",
       "type": "object",
-      "required": ["enabled", "dimensions", "model", "accessToken", "url"],
       "properties": {
         "enabled": {
           "description": "Toggles whether embedding service is enabled.",
           "type": "boolean",
-          "default": false
+          "!go": {
+            "pointer": true
+          },
+          "default": true
         },
         "dimensions": {
-          "description": "The dimensionality of the embedding vectors.",
+          "description": "The dimensionality of the embedding vectors. Required field if not using the sourcegraph provider.",
           "type": "integer",
           "minimum": 0
         },
         "model": {
-          "description": "The model used for embedding.",
+          "description": "The model used for embedding. A default model will be used for each provider, if not set.",
           "type": "string"
         },
         "accessToken": {
-          "description": "The access token used to authenticate with the external embedding API service.",
+          "description": "The access token used to authenticate with the external embedding API service. For provider sourcegraph, this is optional.",
           "type": "string"
         },
+        "provider": {
+          "type": "string",
+          "description": "The provider to use for generating embeddings. Defaults to sourcegraph.",
+          "enum": ["openai", "sourcegraph"]
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "The endpoint under which to reach the provider. Sensible default will be used for each provider.",
+          "format": "uri"
+        },
         "url": {
-          "description": "The url to the external embedding API service.",
+          "description": "The url to the external embedding API service. Deprecated, use endpoint instead.",
           "type": "string",
           "format": "uri"
         },
@@ -2308,7 +2400,20 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "default": [
+            ".*ignore",
+            ".gitattributes",
+            ".mailmap",
+            "*.csv",
+            "*.svg",
+            "*.xml",
+            "__fixtures__/",
+            "node_modules/",
+            "testdata/",
+            "mocks/",
+            "vendor/"
+          ]
         },
         "maxCodeEmbeddingsPerRepo": {
           "description": "The maximum number of embeddings for code files to generate per repo",
@@ -2319,6 +2424,27 @@
           "description": "The maximum number of embeddings for text files to generate per repo",
           "type": "integer",
           "minimum": 0
+        },
+        "incremental": {
+          "description": "Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.",
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          },
+          "default": true
+        },
+        "minimumInterval": {
+          "description": "The time to wait between runs. Valid time units are \"s\", \"m\", \"h\". Example values: \"30s\", \"5m\", \"1h\".",
+          "type": "string",
+          "default": "24h"
+        },
+        "policyRepositoryMatchLimit": {
+          "description": "The maximum number of repositories that can be matched by a global embeddings policy",
+          "type": "integer",
+          "!go": {
+            "pointer": true
+          },
+          "default": "5000"
         }
       },
       "examples": [
@@ -2335,38 +2461,44 @@
     "completions": {
       "description": "Configuration for the completions service.",
       "type": "object",
-      "required": ["enabled", "model", "accessToken", "provider"],
       "properties": {
         "enabled": {
-          "description": "Toggles whether completions are enabled.",
+          "description": "DEPRECATED. Use cody.enabled instead to turn Cody on/off.",
           "type": "boolean",
-          "default": false
+          "!go": {
+            "pointer": true
+          },
+          "default": true
         },
         "model": {
           "description": "DEPRECATED. Use chatModel instead.",
           "type": "string"
         },
+        "fastChatModel": {
+          "description": "The model used for fast chat completions.",
+          "type": "string"
+        },
         "chatModel": {
-          "description": "The model used for chat completions.",
+          "description": "The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.",
           "type": "string"
         },
         "completionModel": {
-          "description": "The model used for code completion.",
+          "description": "The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.",
           "type": "string"
         },
         "accessToken": {
-          "description": "The access token used to authenticate with the external completions provider.",
+          "description": "The access token used to authenticate with the external completions provider. If using the default provider 'sourcegraph', and if 'licenseKey' is set, a default access token is generated.",
           "type": "string"
         },
         "provider": {
           "type": "string",
-          "description": "The external completions provider.",
+          "description": "The external completions provider. Defaults to 'sourcegraph'.",
           "default": "anthropic",
-          "enum": ["anthropic", "openai", "llmproxy"]
+          "enum": ["anthropic", "openai", "sourcegraph"]
         },
         "endpoint": {
           "type": "string",
-          "description": "The endpoint under which to reach the provider. Currently only used for provider types \"llmproxy\" and \"anthropic\". The default values are \"https://completions.sourcegraph.com\" and \"https://api.anthropic.com/v1/complete\" for LLM proxy and Anthropic, respectively."
+          "description": "The endpoint under which to reach the provider. Currently only used for provider types \"sourcegraph\", \"openai\" and \"anthropic\". The default values are \"https://cody-gateway.sourcegraph.com\", \"https://api.openai.com/v1/chat/completions\", and \"https://api.anthropic.com/v1/complete\" for Sourcegraph, OpenAI, and Anthropic, respectively."
         },
         "perUserDailyLimit": {
           "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",

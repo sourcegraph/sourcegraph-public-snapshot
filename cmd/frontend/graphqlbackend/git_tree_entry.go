@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -25,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -50,8 +51,8 @@ type GitTreeEntryResolver struct {
 }
 
 type GitTreeEntryResolverOpts struct {
-	commit *GitCommitResolver
-	stat   fs.FileInfo
+	Commit *GitCommitResolver
+	Stat   fs.FileInfo
 }
 
 type GitTreeContentPageArgs struct {
@@ -62,8 +63,8 @@ type GitTreeContentPageArgs struct {
 func NewGitTreeEntryResolver(db database.DB, gitserverClient gitserver.Client, opts GitTreeEntryResolverOpts) *GitTreeEntryResolver {
 	return &GitTreeEntryResolver{
 		db:              db,
-		commit:          opts.commit,
-		stat:            opts.stat,
+		commit:          opts.Commit,
+		stat:            opts.Stat,
 		gitserverClient: gitserverClient,
 	}
 }
@@ -196,11 +197,11 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 }
 
 func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
-	span, ctx := ot.StartSpanFromContext(ctx, "treeentry.URL") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+	tr, ctx := trace.New(ctx, "GitTreeEntryResolver", "url")
+	defer tr.Finish()
 
 	if submodule := r.Submodule(); submodule != nil {
-		span.SetTag("Submodule", "true")
+		tr.SetAttributes(attribute.Bool("submodule", true))
 		submoduleURL := submodule.URL()
 		if strings.HasPrefix(submoduleURL, "../") {
 			submoduleURL = path.Join(r.Repository().Name(), submoduleURL)
@@ -218,6 +219,38 @@ func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
 func (r *GitTreeEntryResolver) CanonicalURL() string {
 	canonicalUrl := r.commit.canonicalRepoRevURL()
 	return r.urlPath(canonicalUrl).String()
+}
+
+func (r *GitTreeEntryResolver) ChangelistURL(ctx context.Context) (*string, error) {
+	repo := r.Repository()
+	source, err := repo.SourceType(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if *source != PerforceDepotSourceType {
+		return nil, nil
+	}
+
+	cl, err := r.commit.PerforceChangelist(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// This is an oddity. We have checked above that this repository is a perforce depot. Then this
+	// commit of this blob must also have a changelist ID associated with it.
+	//
+	// If we ever hit this check, this is a bug and the error should be propagated out.
+	if cl == nil {
+		return nil, errors.Newf(
+			"failed to retrieve changelist from commit %q in repo %q",
+			string(r.commit.OID()),
+			string(repo.RepoName()),
+		)
+	}
+
+	u := r.urlPath(cl.cidURL()).String()
+	return &u, nil
 }
 
 func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
@@ -260,9 +293,9 @@ func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 	return nil
 }
 
-func cloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (string, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "cloneURLToRepoName") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+func cloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (_ string, err error) {
+	tr, ctx := trace.New(ctx, "gitTreeEntry", "cloneURLToRepoName")
+	defer tr.FinishWithErr(&err)
 
 	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, db, cloneURL)
 	if err != nil {
@@ -386,6 +419,17 @@ func (r *GitTreeEntryResolver) Ownership(ctx context.Context, args ListOwnership
 		return EnterpriseResolvers.ownResolver.GitTreeOwnership(ctx, r, args)
 	}
 	return nil, nil
+}
+
+type OwnershipStatsArgs struct {
+	Reasons *[]OwnershipReasonType
+}
+
+func (r *GitTreeEntryResolver) OwnershipStats(ctx context.Context) (OwnershipStatsResolver, error) {
+	if _, ok := r.ToGitTree(); !ok {
+		return nil, nil
+	}
+	return EnterpriseResolvers.ownResolver.GitTreeOwnershipStats(ctx, r)
 }
 
 func (r *GitTreeEntryResolver) parent(ctx context.Context) (*GitTreeEntryResolver, error) {

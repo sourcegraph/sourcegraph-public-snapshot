@@ -393,11 +393,11 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                     <li>
                         Sourcegraph Own usage data
                         <ul>
-                            <li>Whether the search-ownership feature flag is turned on.</li>
                             <li>
                                 Number and ratio of repositories for which ownership data is available via CODEOWNERS
                                 file or the API.
                             </li>
+                            <li>Total count of assigned owners.</li>
                             <li>Aggregate monthly weekly and daily active users for the following activities:</li>
                             <ul>
                                 <li>Narrowing search results by owner using file:has.owner() predicate.</li>
@@ -407,6 +407,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         </ul>
                     </li>
                     <li>Histogram of cloned repository sizes</li>
+                    <li>Aggregate daily, weekly, monthly repository metadata usage statistics</li>
                 </ul>
                 {updatesDisabled && <Text>All telemetry is disabled.</Text>}
             </Container>

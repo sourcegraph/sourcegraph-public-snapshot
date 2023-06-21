@@ -1,14 +1,17 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "client",
     srcs = [
         "client.go",
         "mocks_temp.go",
+        "telemetry.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/client",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//cmd/frontend/envvar",
         "//internal/actor",
         "//internal/conf",
         "//internal/database",
@@ -22,6 +25,7 @@ go_library(
         "//internal/search/query",
         "//internal/search/searchcontexts",
         "//internal/search/streaming",
+        "//internal/settings",
         "//internal/trace",
         "//lib/errors",
         "//schema",

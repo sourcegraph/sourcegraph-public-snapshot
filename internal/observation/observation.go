@@ -33,6 +33,7 @@ const (
 	EmitForTraces
 	EmitForHoney
 	EmitForSentry
+	EmitForAllExceptLogs = EmitForMetrics | EmitForSentry | EmitForTraces | EmitForHoney
 
 	EmitForDefault = EmitForMetrics | EmitForLogs | EmitForTraces | EmitForHoney
 )
@@ -83,7 +84,7 @@ type Operation struct {
 }
 
 // TraceLogger is returned from With and can be used to add timestamped key and
-// value pairs into a related opentracing span. It has an embedded Logger that can be used
+// value pairs into a related span. It has an embedded Logger that can be used
 // directly to log messages in the context of a trace.
 type TraceLogger interface {
 	// AddEvent logs an event with name and fields on the trace.
@@ -285,15 +286,13 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 		elapsedMs := since.Milliseconds()
 		defaultFinishFields := []attribute.KeyValue{attribute.Float64("count", count), attribute.Float64("elapsed", elapsed)}
 		finishAttrs := mergeAttrs(defaultFinishFields, finishArgs.Attrs)
-
-		attrs := mergeAttrs(defaultFinishFields, finishAttrs)
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
 
 		if multi := new(ErrCollector); err != nil && errors.As(*err, &multi) {
 			if multi.errs == nil {
 				err = nil
 			}
-			attrs = append(attrs, multi.extraAttrs...)
+			finishAttrs = append(finishAttrs, multi.extraAttrs...)
 		}
 
 		var (
@@ -312,7 +311,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 
 		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
 
-		op.finishTrace(traceErr, tr, attrs)
+		op.finishTrace(traceErr, tr, finishAttrs)
 	}
 }
 
@@ -383,7 +382,7 @@ func (op *Operation) finishTrace(err *error, tr *trace.Trace, attrs []attribute.
 		tr.SetError(*err)
 	}
 
-	tr.AddEvent("done", attrs...)
+	tr.SetAttributes(attrs...)
 	tr.Finish()
 }
 

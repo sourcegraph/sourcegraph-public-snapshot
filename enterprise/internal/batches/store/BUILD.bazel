@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "store",
@@ -30,8 +31,10 @@ go_library(
         "//enterprise/internal/batches/search",
         "//enterprise/internal/batches/sources/azuredevops",
         "//enterprise/internal/batches/sources/bitbucketcloud",
+        "//enterprise/internal/batches/sources/gerrit",
         "//enterprise/internal/batches/store/author",
         "//enterprise/internal/batches/types",
+        "//enterprise/internal/github_apps/store",
         "//internal/actor",
         "//internal/api",
         "//internal/database",
@@ -39,15 +42,18 @@ go_library(
         "//internal/database/batch",
         "//internal/database/dbutil",
         "//internal/encryption",
+        "//internal/encryption/keyring",
         "//internal/executor",
         "//internal/extsvc",
         "//internal/extsvc/auth",
         "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
+        "//internal/extsvc/gerrit",
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",
         "//internal/featureflag",
+        "//internal/gitserver/protocol",
         "//internal/metrics",
         "//internal/observation",
         "//internal/timeutil",
@@ -121,6 +127,7 @@ go_test(
         "//lib/batches/execution",
         "//lib/batches/overridable",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_keegancsmith_sqlf//:sqlf",

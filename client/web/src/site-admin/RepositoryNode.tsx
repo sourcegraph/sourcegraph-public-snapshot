@@ -9,6 +9,8 @@ import {
     mdiInformation,
     mdiRefresh,
     mdiSecurity,
+    mdiVectorPolyline,
+    mdiListStatus,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
@@ -21,6 +23,7 @@ import {
     Button,
     H4,
     Icon,
+    Link,
     LinkOrSpan,
     LoadingSpinner,
     Menu,
@@ -72,6 +75,9 @@ const parseRepositoryStatus = (repo: SiteAdminRepositoryFields): string => {
 
 const repoClonedAndHealthy = (repo: SiteAdminRepositoryFields): boolean =>
     repo.mirrorInfo.cloned && !repo.mirrorInfo.lastError && !repo.mirrorInfo.cloneInProgress
+
+const repoCloned = (repo: SiteAdminRepositoryFields): boolean =>
+    repo.mirrorInfo.cloned && !repo.mirrorInfo.cloneInProgress
 
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
@@ -130,6 +136,14 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
 
                     <div className="d-flex align-items-center col justify-content-start px-0 px-md-2 mt-2 mt-md-0">
                         <RepositoryStatusBadge status={parseRepositoryStatus(node)} />
+                        {node.embeddingExists && (
+                            <Link
+                                className="d-flex ml-2"
+                                to={`/site-admin/embeddings?query=${encodeURIComponent(node.name)}`}
+                            >
+                                <RepositoryStatusBadge status="embeddings" />
+                            </Link>
+                        )}
                         {node.mirrorInfo.cloneInProgress && <LoadingSpinner className="ml-2" />}
                         {node.mirrorInfo.lastError && (
                             <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
@@ -204,6 +218,15 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 </MenuItem>
                                 <MenuItem
                                     as={Button}
+                                    disabled={!repoCloned(node)}
+                                    onSelect={() => navigate(`/${node.name}/-/settings/mirror`)}
+                                    className="p-2"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiListStatus} className="mr-1" />
+                                    Last sync log
+                                </MenuItem>
+                                <MenuItem
+                                    as={Button}
                                     disabled={!repoClonedAndHealthy(node)}
                                     onSelect={() => navigate(`/${node.name}/-/code-graph`)}
                                     className="p-2"
@@ -211,6 +234,29 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     <Icon aria-hidden={true} svgPath={mdiBrain} className="mr-1" />
                                     Code graph data
                                 </MenuItem>
+
+                                <MenuItem
+                                    as={Button}
+                                    disabled={!repoClonedAndHealthy(node)}
+                                    onSelect={() => navigate(`/${node.name}/-/embeddings/configuration`)}
+                                    className="p-2"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiVectorPolyline} className="mr-1" />
+                                    Embeddings policies
+                                </MenuItem>
+
+                                <MenuItem
+                                    as={Button}
+                                    disabled={!repoClonedAndHealthy(node)}
+                                    onSelect={() =>
+                                        navigate(`/site-admin/embeddings?query=${encodeURIComponent(node.name)}`)
+                                    }
+                                    className="p-2"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiVectorPolyline} className="mr-1" />
+                                    Embeddings jobs
+                                </MenuItem>
+
                                 <MenuItem
                                     as={Button}
                                     disabled={!repoClonedAndHealthy(node)}

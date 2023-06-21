@@ -17,6 +17,7 @@ go_library(
         "//enterprise/internal/rockskip",
         "//internal/conf",
         "//internal/conf/conftypes",
+        "//internal/ctags_config",
         "//internal/database",
         "//internal/database/connections/live",
         "//internal/debugserver",

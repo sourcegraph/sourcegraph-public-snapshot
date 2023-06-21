@@ -259,6 +259,11 @@ type SnapshotData {
     The formatted SCIP symbol string.
     """
     data: String!
+
+    """
+    Any additional lines of snapshot output such as relationships, documentation etc.
+    """
+    additional: [String!]
 }
 
 """

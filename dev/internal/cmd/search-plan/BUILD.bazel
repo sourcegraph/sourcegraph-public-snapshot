@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "search-plan_lib",
@@ -6,6 +7,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/internal/cmd/search-plan",
     visibility = ["//visibility:private"],
     deps = [
+        "//cmd/frontend/envvar",
         "//internal/conf",
         "//internal/search",
         "//internal/search/client",
@@ -13,7 +15,7 @@ go_library(
         "//internal/search/job/jobutil",
         "//internal/search/job/printer",
         "//lib/errors",
-        "//schema",
+        "//lib/pointers",
         "@com_github_sourcegraph_log//:log",
     ],
 )

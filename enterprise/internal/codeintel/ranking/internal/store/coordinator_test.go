@@ -31,9 +31,9 @@ func TestCoordinateAndSummaries(t *testing.T) {
 	now3 := now2.Add(time.Hour * 5)
 	now4 := now2.Add(time.Hour * 7)
 
-	key1 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
-	key2 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 234)
-	key3 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 345)
+	key1 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
+	key2 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "234")
+	key3 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "345")
 
 	//
 	// Insert data
@@ -77,16 +77,19 @@ func TestCoordinateAndSummaries(t *testing.T) {
 	expectedSummaries := []shared.Summary{
 		{
 			GraphKey:                key3,
+			VisibleToZoekt:          false,
 			PathMapperProgress:      shared.Progress{StartedAt: now4},
 			ReferenceMapperProgress: shared.Progress{StartedAt: now4},
 		},
 		{
 			GraphKey:                key2,
+			VisibleToZoekt:          false,
 			PathMapperProgress:      shared.Progress{StartedAt: now3},
 			ReferenceMapperProgress: shared.Progress{StartedAt: now3},
 		},
 		{
 			GraphKey:                key1,
+			VisibleToZoekt:          true,
 			PathMapperProgress:      shared.Progress{StartedAt: now1, CompletedAt: &now2},
 			ReferenceMapperProgress: shared.Progress{StartedAt: now1, CompletedAt: &now2},
 			ReducerProgress:         &shared.Progress{StartedAt: now2, CompletedAt: &now3},

@@ -1,5 +1,7 @@
 import { ComponentMeta, ComponentStoryObj } from '@storybook/react'
 
+import { defaultAuthStatus } from '../src/chat/protocol'
+
 import { App } from './App'
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
 import { VSCodeWrapper } from './utils/VSCodeApi'
@@ -45,12 +47,16 @@ const dummyVSCodeAPI: VSCodeWrapper = {
             config: {
                 debugEnable: true,
                 serverEndpoint: 'https://example.com',
+                appName: 'VS Code',
+                appScheme: 'vscode',
             },
             authStatus: {
-                showInvalidAccessTokenError: false,
+                ...defaultAuthStatus,
                 authenticated: true,
-                hasVerifiedEmail: false,
+                hasVerifiedEmail: true,
                 requiresVerifiedEmail: false,
+                siteHasCodyEnabled: true,
+                siteVersion: '5.1.0',
             },
         })
         return () => {}
