@@ -261,7 +261,7 @@ export function useLocalExternalServices(): LocalCodeHostResult {
             await addLocalRepositories({ variables: { paths } })
             await apolloClient.refetchQueries({ include: ['GetLocalCodeHosts'] })
         },
-        [deleteLocalCodeHost]
+        [addLocalRepositories, apolloClient]
     )
 
     const deleteService = useCallback(
@@ -269,17 +269,19 @@ export function useLocalExternalServices(): LocalCodeHostResult {
             await deleteLocalCodeHost({ variables: { id: service.id } })
             await apolloClient.refetchQueries({ include: ['GetLocalCodeHosts'] })
         },
-        [deleteLocalCodeHost]
+        [deleteLocalCodeHost, apolloClient]
     )
 
-    const services = useMemo(() => {
-        return (
-            data?.localExternalServices ??
-            previousData?.localExternalServices ??
-            // FIXME: Determine folder/single repo on the server
-            EMPTY_CODEHOST_LIST
-        ).map(service => ({ ...service, isFolder: service.repositories.length !== 1 }))
-    }, [data, previousData])
+    const services = useMemo(
+        () =>
+            (
+                data?.localExternalServices ??
+                previousData?.localExternalServices ??
+                // FIXME: Determine folder/single repo on the server
+                EMPTY_CODEHOST_LIST
+            ).map(service => ({ ...service, isFolder: service.repositories.length !== 1 })),
+        [data, previousData]
+    )
 
     return {
         loading,
