@@ -225,7 +225,7 @@ func (s *store) ClaimAutoUpgrade(ctx context.Context, from, to string) (claimed 
 			return err
 		}
 
-		query := sqlf.Sprintf(claimAutoUpgradeQuery, from, to, hostname.Get(), s.clock.Now(), to)
+		query := sqlf.Sprintf(claimAutoUpgradeQuery, from, to, hostname.Get(), s.clock.Now(), heartbeatStaleInterval, to)
 		if claimed, _, err = basestore.ScanFirstBool(tx.Query(ctx, query)); err != nil {
 			return err
 		}
@@ -235,6 +235,8 @@ func (s *store) ClaimAutoUpgrade(ctx context.Context, from, to string) (claimed 
 
 	return claimed, err
 }
+
+const heartbeatStaleInterval = time.Second * 30
 
 const claimAutoUpgradeQuery = `
 WITH claim_attempt AS (
@@ -256,7 +258,7 @@ WITH claim_attempt AS (
 				finished_at IS NULL
 				AND (
 					last_heartbeat_at IS NULL
-					OR last_heartbeat_at >= %s::timestamptz - INTERVAL '15 SECONDS'
+					OR last_heartbeat_at >= %s::timestamptz - %s::interval
 				)
 			)
 			-- or that succeeded to the expected version

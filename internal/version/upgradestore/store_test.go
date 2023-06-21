@@ -418,7 +418,7 @@ func TestClaimAutoUpgrade(t *testing.T) {
 
 		// then test that we can claim if 15s have elapsed
 		{
-			clock.Advance(time.Second * 6)
+			clock.Advance(time.Second * 21)
 
 			claimed, err = store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
 			if err != nil {
