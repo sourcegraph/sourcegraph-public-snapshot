@@ -2,13 +2,9 @@ package ci
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -58,27 +54,6 @@ func WolfiBaseImagesOperations(changedFiles []string, tag string, packagesChange
 	ops.Append(allBaseImagesBuilt(buildStepKeys))
 
 	return ops, len(buildStepKeys)
-}
-
-// WolfiImagesOperations builds the specified docker images, or all images if none are provided
-func WolfiImagesOperations(buildImages []string, version string, tag string, baseImagesChanged bool) *operations.Set {
-	// If buildImages is not specified, rebuild all images
-	// TODO: Maintain a list of Wolfi-based images?
-	if len(buildImages) == 0 {
-		buildImages = images.SourcegraphDockerImages
-	}
-
-	wolfiImageBuildOps := operations.NewNamedSet("Wolfi image builds")
-
-	for _, dockerImage := range buildImages {
-		// Don't upload sourcemaps
-		// wolfiImageBuildOps.Append(buildCandidateDockerImage(dockerImage, version, tag, false))
-		wolfiImageBuildOps.Append(
-			buildCandidateWolfiDockerImage(dockerImage, version, tag, false, baseImagesChanged),
-		)
-	}
-
-	return wolfiImageBuildOps
 }
 
 // Dependency tree between steps:
@@ -145,93 +120,6 @@ func allBaseImagesBuilt(baseImageKeys []string) func(*bk.Pipeline) {
 			bk.DependsOn(baseImageKeys...),
 			bk.Key("buildAllBaseImages"),
 		)
-	}
-}
-
-// Build a candidate Wolfi docker image
-func buildCandidateWolfiDockerImage(app, version, tag string, uploadSourcemaps bool, hasDependency bool) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		image := strings.ReplaceAll(app, "/", "-")
-		localImage := "sourcegraph/wolfi-" + image + ":" + version
-
-		cmds := []bk.StepOpt{
-			bk.Key(candidateImageStepKey(app)),
-			bk.Cmd(fmt.Sprintf(`echo "Building Wolfi %s image..."`, app)),
-			bk.Env("DOCKER_BUILDKIT", "1"),
-			bk.Env("DOCKER_BAZEL", "true"),
-			bk.Env("IMAGE", localImage),
-			bk.Env("VERSION", version),
-			bk.Agent("queue", "bazel"),
-		}
-
-		if hasDependency {
-			cmds = append(cmds, bk.DependsOn("buildAllBaseImages"))
-		}
-
-		// Add Sentry environment variables if we are building off main branch
-		// to enable building the webapp with source maps enabled
-		if uploadSourcemaps {
-			cmds = append(cmds,
-				bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
-				bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),
-				bk.Env("SENTRY_PROJECT", "sourcegraph-dot-com"),
-			)
-		}
-
-		// Allow all build scripts to emit info annotations
-		buildAnnotationOptions := bk.AnnotatedCmdOpts{
-			Annotations: &bk.AnnotationOpts{
-				Type:         bk.AnnotationTypeInfo,
-				IncludeNames: true,
-			},
-		}
-
-		if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
-			// Building Docker image located under $REPO_ROOT/docker-images/
-			cmds = append(cmds,
-				bk.Cmd("ls -lah "+filepath.Join("docker-images", app, "build-wolfi.sh")),
-				bk.Cmd(filepath.Join("docker-images", app, "build-wolfi.sh")))
-		} else {
-			// Building Docker images located under $REPO_ROOT/cmd/
-			cmdDir := func() string {
-				folder := app
-				if app == "blobstore2" {
-					// experiment: cmd/blobstore is a Go rewrite of docker-images/blobstore. While
-					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get publishe
-					// under the same name.
-					// https://github.com/sourcegraph/sourcegraph/issues/45594
-					// TODO(blobstore): remove this when making Go blobstore the default
-					folder = "blobstore"
-				}
-				// If /enterprise/cmd/... does not exist, build just /cmd/... instead.
-				if _, err := os.Stat(filepath.Join("enterprise/cmd", folder)); err != nil {
-					return "cmd/" + folder
-				}
-				return "enterprise/cmd/" + folder
-			}()
-			preBuildScript := cmdDir + "/pre-build.sh"
-			if _, err := os.Stat(preBuildScript); err == nil {
-				// Allow all
-				cmds = append(cmds, bk.AnnotatedCmd(preBuildScript, buildAnnotationOptions))
-			}
-			cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build-wolfi.sh", buildAnnotationOptions))
-		}
-
-		// Add "wolfi" to image name so we don't overwrite Alpine dev images
-		wolfiApp := fmt.Sprintf("wolfi-%s", app)
-		devImage := images.DevRegistryImage(wolfiApp, tag)
-		cmds = append(cmds,
-			// Retag the local image for dev registry
-			bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
-			// Publish tagged image
-			bk.Cmd(fmt.Sprintf("docker push %s || exit 10", devImage)),
-			// Retry in case of flakes when pushing
-			bk.AutomaticRetryStatus(3, 10),
-			// Retry in case of flakes when pushing
-			bk.AutomaticRetryStatus(3, 222),
-		)
-
-		pipeline.AddStep(fmt.Sprintf(":octopus: :docker: :construction: Build Wolfi-based %s", app), cmds...)
 	}
 }
 
