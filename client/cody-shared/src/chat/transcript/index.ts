@@ -174,7 +174,7 @@ export class Transcript {
         }
 
         const preambleTokensUsage = preamble.reduce((acc, message) => acc + estimateTokensUsage(message), 0)
-        let truncatedMessages = truncatePrompt(messages, max_prompt_length - preambleTokensUsage)
+        let truncatedMessages = truncatePrompt(messages, maxPromptLength - preambleTokensUsage)
 
         // Return what context fits in the window
         const contextFiles: ContextFile[] = []
@@ -265,7 +265,6 @@ function truncatePrompt(messages: Message[], maxTokens: number): Message[] {
             newPromptMessages.push(botMessage, humanMessage)
             availablePromptTokensBudget -= combinedTokensUsage
         } else {
-            console.error('token budget exceeded')
             break
         }
     }

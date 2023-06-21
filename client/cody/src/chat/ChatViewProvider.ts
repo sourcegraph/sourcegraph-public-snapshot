@@ -507,7 +507,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.codebaseContext.getCodebase()),
-                    this.max_prompt_limit
+                    this.maxPromptLimit
                 )
                 this.transcript.setUsedContextFilesForLastInteraction(contextFiles)
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
@@ -540,7 +540,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
             getPreamble(this.codebaseContext.getCodebase()),
-            this.max_prompt_limit
+            this.maxPromptLimit
         )
         transcript.setUsedContextFilesForLastInteraction(contextFiles)
 
