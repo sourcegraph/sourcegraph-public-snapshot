@@ -154,13 +154,16 @@ func computeReviewState(c *btypes.Changeset, history []changesetStatesAtTime) (b
 
 	newestDataPoint := history[len(history)-1]
 
-	// GitHub only stores the ReviewState in events, we can't look at the
-	// Changeset.
+	// GitHub only stores the ReviewDecision in PullRequest metadata, not
 	if c.ExternalServiceType == extsvc.TypeGitHub {
-		if c.Metadata.(*github.PullRequest).ReviewDecision != "APPROVED" {
+		switch c.Metadata.(*github.PullRequest).ReviewDecision {
+		case "REVIEW_REQUIRED":
 			return btypes.ChangesetReviewStatePending, nil
-		} else {
+		case "APPROVED":
 			return btypes.ChangesetReviewStateApproved, nil
+		case "CHANGES_REQUESTED":
+			return btypes.ChangesetReviewStateChangesRequested, nil
+
 		}
 	}
 
@@ -601,17 +604,22 @@ func computeSingleChangesetExternalState(c *btypes.Changeset) (s btypes.Changese
 }
 
 // computeSingleChangesetReviewState computes the review state of a Changeset.
-// GitHub doesn't keep the review state on a changeset, so a GitHub Changeset
-// will always return ChangesetReviewStatePending.
-//
 // This method should NOT be called directly. Use computeReviewState instead.
 func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetReviewState, err error) {
 	states := map[btypes.ChangesetReviewState]bool{}
 
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
-		// For GitHub we need to use `ChangesetEvents.ReviewState`.
-		return btypes.ChangesetReviewStatePending, nil
+		// For GitHub we need to use `ChangesetEvents.ReviewDecision`.
+		switch c.Metadata.(*github.PullRequest).ReviewDecision {
+		case "REVIEW_REQUIRED":
+			return btypes.ChangesetReviewStatePending, nil
+		case "APPROVED":
+			return btypes.ChangesetReviewStateApproved, nil
+		case "CHANGES_REQUESTED":
+			return btypes.ChangesetReviewStateChangesRequested, nil
+
+		}
 
 	case *bitbucketserver.PullRequest:
 		for _, r := range m.Reviewers {
