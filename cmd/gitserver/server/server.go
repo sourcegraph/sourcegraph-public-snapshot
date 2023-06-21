@@ -430,7 +430,6 @@ func (s *Server) Handler() http.Handler {
 	s.locker = &RepositoryLocker{}
 	s.repoUpdateLocks = make(map[api.RepoName]*locks)
 
-	s.RecordingCommandFactory = wrexec.NewRecordingCommandFactory(nil, 0)
 	conf.Watch(func() {
 		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
 		// to determine whether a command should be recorded or not.
