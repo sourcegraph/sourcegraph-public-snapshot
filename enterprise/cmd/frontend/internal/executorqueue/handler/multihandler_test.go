@@ -19,6 +19,7 @@ import (
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -27,6 +28,7 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	dbworkerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type dequeueEvent struct {
@@ -471,7 +473,10 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			},
 		},
 	}
+
 	realSelect := handler.DoSelectQueueForDequeueing
+	mockSiteConfig()
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			rcache.SetupForTest(t)
@@ -505,7 +510,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 						mh.BatchesQueueHandler.RecordTransformer = test.batchesTransformerFunc
 					}
 					// mock random queue picking to return the expected queue name
-					handler.DoSelectQueueForDequeueing = func(candidateQueues []string) (string, error) {
+					handler.DoSelectQueueForDequeueing = func(candidateQueues []string, config *schema.DequeueCacheConfig) (string, error) {
 						return event.queueName, nil
 					}
 					evaluateEvent(test.body, event.expectedStatusCode, event.expectedResponseBody, t, router)
@@ -887,20 +892,41 @@ func evaluateEvent(
 // that it shouldn't ever form an issue. If failures keep occurring something is actually broken.
 func TestMultiHandler_SelectQueueForDequeueing(t *testing.T) {
 	tests := []struct {
-		name            string
-		candidateQueues []string
-		amountOfruns    int
-		expectedErr     error
+		name               string
+		candidateQueues    []string
+		dequeueCacheConfig schema.DequeueCacheConfig
+		amountOfruns       int
+		expectedErr        error
 	}{
 		{
 			name:            "acceptable deviation",
 			candidateQueues: []string{"batches", "codeintel"},
-			amountOfruns:    5000,
+			dequeueCacheConfig: schema.DequeueCacheConfig{
+				Batches: &schema.Batches{
+					Limit:  50,
+					Weight: 4,
+				},
+				Codeintel: &schema.Codeintel{
+					Limit:  250,
+					Weight: 1,
+				},
+			},
+			amountOfruns: 5000,
 		},
 	}
+
+	mockSiteConfig()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := &handler.MultiHandler{}
+			m := handler.NewMultiHandler(
+				nil,
+				nil,
+				nil,
+				handler.QueueHandler[uploadsshared.Index]{Name: "codeintel"},
+				handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Name: "batches"},
+			)
+
 			selectCounts := make(map[string]int, len(tt.candidateQueues))
 			for _, q := range tt.candidateQueues {
 				selectCounts[q] = 0
@@ -917,12 +943,22 @@ func TestMultiHandler_SelectQueueForDequeueing(t *testing.T) {
 			// calculate the sum of the candidate queue weights
 			var totalWeight int
 			for _, q := range tt.candidateQueues {
-				totalWeight += executortypes.DequeuePropertiesPerQueue[q].Weight
+				switch q {
+				case "batches":
+					totalWeight += tt.dequeueCacheConfig.Batches.Weight
+				case "codeintel":
+					totalWeight += tt.dequeueCacheConfig.Codeintel.Weight
+				}
 			}
 			// then calculate how many times each queue is expected to be chosen
 			expectedSelectCounts := make(map[string]float64, len(tt.candidateQueues))
 			for _, q := range tt.candidateQueues {
-				expectedSelectCounts[q] = math.Round((float64(executortypes.DequeuePropertiesPerQueue[q].Weight) / float64(totalWeight)) * float64(tt.amountOfruns))
+				switch q {
+				case "batches":
+					expectedSelectCounts[q] = float64(tt.dequeueCacheConfig.Batches.Weight) / float64(totalWeight) * float64(tt.amountOfruns)
+				case "codeintel":
+					expectedSelectCounts[q] = float64(tt.dequeueCacheConfig.Codeintel.Weight) / float64(totalWeight) * float64(tt.amountOfruns)
+				}
 			}
 			for key := range selectCounts {
 				// allow a 10% deviation of the expected count of selects per queue
@@ -956,8 +992,8 @@ func TestMultiHandler_DiscardQueuesAtLimit(t *testing.T) {
 			queues: []string{"batches", "codeintel"},
 			mockCacheEntries: map[string]int{
 				// both have dequeued their limit
-				"batches":   executortypes.DequeuePropertiesPerQueue["batches"].Limit,
-				"codeintel": executortypes.DequeuePropertiesPerQueue["codeintel"].Limit,
+				"batches":   50,
+				"codeintel": 250,
 			},
 			expectedQueues: nil,
 		},
@@ -966,16 +1002,22 @@ func TestMultiHandler_DiscardQueuesAtLimit(t *testing.T) {
 			queues: []string{"batches", "codeintel"},
 			mockCacheEntries: map[string]int{
 				// batches has dequeued its limit, codeintel 5 times
-				"batches":   executortypes.DequeuePropertiesPerQueue["batches"].Limit,
+				"batches":   50,
 				"codeintel": 5,
 			},
 			expectedQueues: []string{"codeintel"},
 		},
 	}
 
-	m := &handler.MultiHandler{
-		DequeueCache: rcache.New(executortypes.DequeueCachePrefix),
-	}
+	mockSiteConfig()
+
+	m := handler.NewMultiHandler(
+		nil,
+		nil,
+		nil,
+		handler.QueueHandler[uploadsshared.Index]{Name: "codeintel"},
+		handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Name: "batches"},
+	)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -996,6 +1038,24 @@ func TestMultiHandler_DiscardQueuesAtLimit(t *testing.T) {
 			assert.Equalf(t, tt.expectedQueues, queues, "DiscardQueuesAtLimit(%v)", tt.queues)
 		})
 	}
+}
+
+func mockSiteConfig() {
+	client := conf.DefaultClient()
+	client.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		ExecutorsMultiqueue: &schema.ExecutorsMultiqueue{
+			DequeueCacheConfig: &schema.DequeueCacheConfig{
+				Batches: &schema.Batches{
+					Limit:  50,
+					Weight: 4,
+				},
+				Codeintel: &schema.Codeintel{
+					Limit:  250,
+					Weight: 1,
+				},
+			},
+		},
+	}})
 }
 
 func TestMultiHandler_FilterNonEmptyQueues(t *testing.T) {

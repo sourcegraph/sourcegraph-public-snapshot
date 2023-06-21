@@ -15,14 +15,14 @@ type dequeueProperties struct {
 	Weight int
 }
 
-var DequeuePropertiesPerQueue = map[string]dequeueProperties{
-	// TODO: this is entirely arbitrary for dev purposes
-	"batches": {
-		Limit:  50,
-		Weight: 4,
-	},
-	"codeintel": {
-		Limit:  250,
-		Weight: 1,
-	},
-}
+//var DequeuePropertiesPerQueue = map[string]dequeueProperties{
+//	// TODO: this is entirely arbitrary for dev purposes
+//	"batches": {
+//		Limit:  50,
+//		Weight: 4,
+//	},
+//	"codeintel": {
+//		Limit:  250,
+//		Weight: 1,
+//	},
+//}
