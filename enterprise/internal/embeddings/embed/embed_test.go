@@ -104,6 +104,18 @@ func TestEmbedRepo(t *testing.T) {
 		}
 	}
 
+	newMisbehavingReadLister := func(frl FileReadLister, brokenFile string) FileReadLister {
+		return listReader{
+			FileReader: funcReader(func(_ context.Context, fileName string) ([]byte, error) {
+				if fileName == brokenFile {
+					return nil, errors.New("error")
+				}
+				return frl.Read(context.Background(), fileName)
+			}),
+			FileLister: funcLister(frl.List),
+		}
+	}
+
 	excludedGlobPatterns := GetDefaultExcludedFilePathPatterns()
 
 	opts := EmbedRepoOpts{
@@ -265,13 +277,24 @@ func TestEmbedRepo(t *testing.T) {
 		_, _, _, err := EmbedRepo(ctx, misbehavingClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
 		require.ErrorContains(t, err, "expected embeddings for batch to have length")
 
-		misbehavingClient = &misbehavingEmbeddingsClient{client, 32} // too few dimensions
+		misbehavingClient = &misbehavingEmbeddingsClient{client, 1} // too few dimensions
 		_, _, _, err = EmbedRepo(ctx, misbehavingClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
 		require.ErrorContains(t, err, "expected embeddings for batch to have length")
 
 		misbehavingClient = &misbehavingEmbeddingsClient{client, 0} // empty return
 		_, _, _, err = EmbedRepo(ctx, misbehavingClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
 		require.ErrorContains(t, err, "expected embeddings for batch to have length")
+	})
+
+	t.Run("broken file", func(t *testing.T) {
+		// a.go and c.java will be embedded, broken.py will be skipped
+		fileNames := []string{"a.go", "c.java", "broken.py"}
+		rl := newReadLister(fileNames...)
+		misbehavingRl := newMisbehavingReadLister(rl, "broken.py")
+		index, _, stats, err := EmbedRepo(ctx, client, contextService, misbehavingRl, mockRepoPathRanks, opts, logger, noopReport)
+		require.NoError(t, err)
+		require.Equal(t, 1, (*stats).CodeIndexStats.FilesSkipped[SkipReasonReadError])
+		require.Equal(t, 5, len(index.CodeIndex.RowMetadata))
 	})
 }
 
@@ -304,6 +327,12 @@ func (c *mockEmbeddingsClient) GetEmbeddingsWithRetries(_ context.Context, texts
 		return nil, err
 	}
 	return make([]float32, len(texts)*dimensions), nil
+}
+
+type funcLister func(ctx context.Context) ([]FileEntry, error)
+
+func (f funcLister) List(ctx context.Context) ([]FileEntry, error) {
+	return f(ctx)
 }
 
 type funcReader func(ctx context.Context, fileName string) ([]byte, error)
