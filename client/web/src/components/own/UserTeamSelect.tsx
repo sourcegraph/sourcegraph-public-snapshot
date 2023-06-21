@@ -4,8 +4,8 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 
-import { TeamAvatar } from '@sourcegraph/shared/out/src/components/TeamAvatar'
-import { UserAvatar } from '@sourcegraph/shared/out/src/components/UserAvatar'
+import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
+import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import {
     Button,
     Combobox,
@@ -21,7 +21,7 @@ import {
     PopoverTrigger,
     Strategy,
     usePopoverContext,
-} from '@sourcegraph/wildcard/out/src'
+} from '@sourcegraph/wildcard'
 
 import { ParentTeamSelectSearchFields, UserSelectSearchFields } from '../../graphql-operations'
 import { useUserSelectSearch } from '../../site-admin/user-select/backend'

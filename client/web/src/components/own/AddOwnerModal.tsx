@@ -4,10 +4,9 @@ import { ApolloError } from '@apollo/client/errors'
 import { noop } from 'lodash'
 import { useNavigate } from 'react-router-dom'
 
-import { useMutation } from '@sourcegraph/http-client/out/src'
-import { Button, ErrorAlert, Form, H3, Label, Modal } from '@sourcegraph/wildcard/out/src'
+import { useMutation } from '@sourcegraph/http-client'
+import { Button, ErrorAlert, Form, H3, Label, Modal } from '@sourcegraph/wildcard'
 
-import { ASSIGN_OWNER, ASSIGN_TEAM } from '../../enterprise/own/graphqlQueries'
 import {
     AssignOwnerResult,
     AssignOwnerVariables,
@@ -17,6 +16,7 @@ import {
 } from '../../graphql-operations'
 import { LoaderButton } from '../LoaderButton'
 
+import { ASSIGN_OWNER, ASSIGN_TEAM } from './graphqlQueries'
 import { UserTeamSelect } from './UserTeamSelect'
 
 export interface AddOwnerModalProps {
