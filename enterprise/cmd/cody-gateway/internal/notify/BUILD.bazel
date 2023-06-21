@@ -10,9 +10,14 @@ go_library(
         "//internal/codygateway",
         "//internal/redislock",
         "//internal/redispool",
+        "//internal/trace",
+        "//lib/errors",
         "@com_github_gomodule_redigo//redis",
         "@com_github_slack_go_slack//:slack",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_trace//:trace",
     ],
 )
 
