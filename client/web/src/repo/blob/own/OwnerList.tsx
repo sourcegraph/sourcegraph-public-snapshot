@@ -92,6 +92,7 @@ interface OwnerListProps {
     makeOwnerError?: Error
     repoID: string
     filePath: string
+    refetch: any
 }
 
 export const OwnerList: FC<OwnerListProps> = ({
@@ -101,6 +102,7 @@ export const OwnerList: FC<OwnerListProps> = ({
     makeOwnerError,
     repoID,
     filePath,
+    refetch,
 }) => {
     const [removeOwnerError, setRemoveOwnerError] = useState<Error | undefined>(undefined)
     const [openAddOwnerModal, setOpenAddOwnerModal] = useState<boolean>(false)
@@ -173,6 +175,8 @@ export const OwnerList: FC<OwnerListProps> = ({
                                         filePath={filePath}
                                         reasons={ownership.reasons}
                                         setRemoveOwnerError={setRemoveOwnerError}
+                                        isDirectory={isDirectory}
+                                        refetch={refetch}
                                     />
                                 </Fragment>
                             ))}
@@ -219,6 +223,8 @@ export const OwnerList: FC<OwnerListProps> = ({
                                             repoID={repoID}
                                             filePath={filePath}
                                             setRemoveOwnerError={setRemoveOwnerError}
+                                            isDirectory={isDirectory}
+                                            refetch={refetch}
                                         />
                                     </Fragment>
                                 )
