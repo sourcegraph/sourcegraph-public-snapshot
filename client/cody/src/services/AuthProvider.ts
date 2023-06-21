@@ -22,7 +22,6 @@ import { AuthMenu, LoginStepInputBox, TokenInputBox } from './CodyMenus'
 import { LocalStorage } from './LocalStorageProvider'
 import { SecretStorage } from './SecretStorageProvider'
 
-// TODO (bee) log events
 export class AuthProvider {
     private endpointHistory: string[] = []
 
@@ -96,7 +95,7 @@ export class AuthProvider {
                     isLoggedIn = (await this.auth(selectedEndpoint, input?.token || null))?.isLoggedIn || false
                 }
                 if (isLoggedIn) {
-                    void vscode.window.showInformationMessage(`You are signed in to ${selectedEndpoint}`)
+                    void vscode.window.showInformationMessage(`Signed in to ${selectedEndpoint}`)
                     debug('AuthProvider:signinMenu', mode, selectedEndpoint)
                     return
                 }
@@ -200,7 +199,7 @@ export class AuthProvider {
         const authState = await this.auth(endpoint, token, customHeaders)
         if (authState?.isLoggedIn) {
             const actionButtonLabel = 'Get Started'
-            const successMessage = isApp ? 'Connected to Cody App' : 'Signed in to Sourcegraph.com'
+            const successMessage = isApp ? 'Connected to Cody App' : `Signed in to ${endpoint}`
             const action = await vscode.window.showInformationMessage(successMessage, actionButtonLabel)
             if (action === actionButtonLabel) {
                 await vscode.commands.executeCommand('cody.chat.focus')

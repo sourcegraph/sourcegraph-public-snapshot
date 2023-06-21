@@ -464,7 +464,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.transcript.addInteraction(interaction)
 
         if (showTab) {
-            await vscode.commands.executeCommand('cody.chat.focus')
             this.showTab('chat')
         }
 

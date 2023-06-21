@@ -21,7 +21,7 @@ export const Settings: React.FunctionComponent<React.PropsWithChildren<SettingsP
                 {endpoint && <p>Signed in to {isLocalApp(endpoint) ? 'Cody App' : endpoint}</p>}
                 {version && <p>Cody v{version}</p>}
                 <VSCodeButton className="logout-button" type="button" onClick={onLogout}>
-                    Signout
+                    Sign Out
                 </VSCodeButton>
             </div>
         </div>

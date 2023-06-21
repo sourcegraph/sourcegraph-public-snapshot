@@ -72,19 +72,16 @@ export const AuthMenuOptions = {
         title: 'Other Sign in Options',
         placeholder: 'Select a sign in option',
         ignoreFocusOut: true,
-        icon: '$(sign-in)',
     },
     signout: {
         title: 'Sign Out',
         placeHolder: 'Select instance to sign out',
         ignoreFocusOut: true,
-        icon: '$(sign-out)',
     },
     switch: {
         title: 'Switch Account',
         placeHolder: 'Press Esc to cancel',
         ignoreFocusOut: true,
-        icon: '$(sign-in)',
     },
 }
 
@@ -102,7 +99,7 @@ export const LoginMenuOptionItems = [
     {
         id: 'enterprise',
         label: 'Sign in to a Sourcegraph Enterprise Instance',
-        description: 'Instance must be at v5.1 or higher',
+        description: 'Instance must be v5.1 or higher',
         totalSteps: 1,
     },
 ]

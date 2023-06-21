@@ -92,7 +92,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     const SigninWithoutApp: React.FunctionComponent = () => (
         <div className={styles.sectionsContainer}>
             {/* Sourcegraph Enterprise */}
-            <section className={classNames(styles.section, styles.codyGradient)}>
+            <section className={classNames(styles.section, styles.greyGradient)}>
                 <h2 className={styles.sectionHeader}>Sourcegraph Enterprise</h2>
                 <p className={styles.openMessage}>
                     Sign in by entering an access token created through your user settings on Sourcegraph.
@@ -102,7 +102,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                 </VSCodeButton>
             </section>
             {/* Sourcegraph DotCom */}
-            <section className={classNames(styles.section, styles.codyGradient)}>
+            <section className={classNames(styles.section, styles.greyGradient)}>
                 <h2 className={styles.sectionHeader}>Sourcegraph.com</h2>
                 <p className={styles.openMessage}>
                     Cody for open source code is available to all users with a Sourcegraph.com account.
@@ -133,11 +133,10 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             {isAppConnectEnabled ? <SigninWithApp /> : <SigninWithoutApp />}
             <footer className={styles.footer}>
                 <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('signin')}>
-                    <i className="codicon codicon-sign-in" slot="start" />
-                    Other Signin Options
+                    Other Sign In Options…
                 </VSCodeButton>
                 <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('support')}>
-                    <i className="codicon codicon-feedback" slot="start" /> Feedback & Support
+                    Feedback & Support
                 </VSCodeButton>
             </footer>
         </div>
@@ -150,7 +149,7 @@ const APP_MESSAGES = {
     connectApp: 'Cody App detected. All that’s left is to do is connect VS Code with Cody App.',
     appNotRunning: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
     comingSoon:
-        'We’re working on bringing Cody App to your platform. In the meantime, you can try Cody with open source repositories by signning in to Sourcegraph.com.',
+        'We’re working on bringing Cody App to your platform. In the meantime, you can try Cody with open source repositories by signing in to Sourcegraph.com.',
 }
 
 const ERROR_MESSAGES = {
