@@ -15,11 +15,11 @@ import (
 
 // gitRepoSyncer is a syncer for Git repositories.
 type gitRepoSyncer struct {
-	RecordingCommandFactory *wrexec.RecordingCommandFactory
+	recordingCommandFactory *wrexec.RecordingCommandFactory
 }
 
 func NewGitRepoSyncer(r *wrexec.RecordingCommandFactory) *gitRepoSyncer {
-	return &gitRepoSyncer{RecordingCommandFactory: r}
+	return &gitRepoSyncer{recordingCommandFactory: r}
 }
 
 func (s *gitRepoSyncer) Type() string {
@@ -74,7 +74,7 @@ func (s *gitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tm
 func (s *gitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, revspec string) ([]byte, error) {
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
-	if output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, log.NoOp(), cmd), configRemoteOpts, nil); err != nil {
+	if output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, log.NoOp(), cmd), configRemoteOpts, nil); err != nil {
 		return nil, &common.GitCommandError{Err: err, Output: newURLRedactor(remoteURL).redact(string(output))}
 	}
 	return nil, nil

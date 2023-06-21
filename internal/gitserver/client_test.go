@@ -522,7 +522,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 					return "", errors.Errorf("no remote for %s", test.name)
 				},
 				GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-					return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCOmmandFactory()), nil
+					return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 				},
 			}
 
@@ -1072,7 +1072,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 			return remote, nil
 		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-			return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCOmmandFactory()), nil
+			return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		DB:       db,
 		Perforce: perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),
@@ -1574,7 +1574,7 @@ func TestGitserverClient_RepoClone(t *testing.T) {
 			return "https://" + string(name) + ".git", nil
 		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-			return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCOmmandFactory()), nil
+			return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		DB:         db,
 		CloneQueue: server.NewCloneQueue(observation.TestContextTB(t), list.New()),

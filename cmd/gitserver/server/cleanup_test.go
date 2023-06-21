@@ -435,7 +435,7 @@ func TestCleanupExpired(t *testing.T) {
 		ReposDir:         root,
 		GetRemoteURLFunc: getRemoteURL,
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCOmmandFactory()), nil
+			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		DB: database.NewMockDB(),
 	}
@@ -524,7 +524,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 				return remote, nil
 			},
 			GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-				return NewGitRepoSyncer(wrexec.NewNoOpRecordingCOmmandFactory()), nil
+				return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 			},
 			DB:                mockDB,
 			skipCloneForTests: true,
