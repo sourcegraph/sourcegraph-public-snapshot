@@ -73,7 +73,7 @@ export const test = base
                 // electron process so we can run the hidden command instead.
                 if (await page.isVisible('[aria-label="User Settings"]')) {
                     await page.getByRole('button', { name: 'User Settings' }).click()
-                    await sidebar.getByRole('button', { name: 'Signout' }).click()
+                    await sidebar.getByRole('button', { name: 'Sign Out' }).click()
                     await page.getByRole('combobox', { name: 'input' }).press('Enter')
                 }
 
