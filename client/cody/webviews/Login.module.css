@@ -1,4 +1,8 @@
 .container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
     padding: 1.25rem;
     color: var(--vscode-editor-foreground);
 }
@@ -9,14 +13,31 @@
     margin-bottom: 1.25rem;
 }
 
+.sections-container {
+    flex: 1;
+}
+
 .section {
-    margin-bottom: 1.25rem;
+    border: 0.1em solid;
+    border-image-slice: 1;
+    border-width: 0.1em;
+
+    margin-bottom: var(--spacing);
+    padding: var(--spacing);
+}
+
+.cody-gradient {
+    border-image-source: linear-gradient(to bottom, #b200f8, #ff5543, #00cbec);
+}
+
+.grey-gradient {
+    border-color: grey;
 }
 
 .section-header {
     font-weight: 600;
     color: var(--vscode-editor-foreground);
-    font-size: calc(1.15*var(--vscode-editor-font-size));
+    font-size: calc(1.15 * var(--vscode-editor-font-size));
     margin: 0 0 0.65rem 0;
 }
 
@@ -32,6 +53,7 @@
 
 .button {
     justify-content: center;
+    padding: 0.25rem;
 }
 
 .error {
@@ -43,4 +65,12 @@
 
 .terms {
     font-size: 90%;
+}
+
+.footer {
+    display: flex;
+    flex-direction: column;
+
+    width: 100%;
+    gap: 1rem;
 }
