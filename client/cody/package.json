@@ -124,11 +124,11 @@
             }
           },
           {
-            "id": "completions",
+            "id": "autocomplete",
             "title": "Code Autocomplete (Beta)",
             "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.\n[Enable in Settings](command:cody.walkthrough.enableCodeAutocomplete)",
             "media": {
-              "markdown": "walkthroughs/completions.md"
+              "markdown": "walkthroughs/autocomplete.md"
             }
           },
           {
