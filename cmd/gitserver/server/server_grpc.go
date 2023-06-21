@@ -251,7 +251,11 @@ func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService
 	// Make sure credentials are valid before heavier operation
 	err := p4testWithTrust(ss.Context(), req.P4Port, req.P4User, req.P4Passwd)
 	if err != nil {
-		return status.Error(codes.InvalidArgument, fmt.Sprint(err))
+		if ctxErr := ss.Context().Err(); ctxErr != nil {
+			return status.FromContextError(ctxErr).Err()
+		}
+
+		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	w := streamio.NewWriter(func(p []byte) error {
@@ -266,7 +270,15 @@ func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService
 
 func (gs *GRPCServer) doP4Exec(ctx context.Context, logger log.Logger, req *protocol.P4ExecRequest, userAgent string, w io.Writer) error {
 	execStatus := gs.Server.p4Exec(ctx, logger, req, userAgent, w)
-	return execStatus.Err
+	if execStatus.Err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return status.FromContextError(ctxErr).Err()
+		}
+
+		return execStatus.Err
+	}
+
+	return nil
 }
 
 func (gs *GRPCServer) ListGitolite(ctx context.Context, req *proto.ListGitoliteRequest) (*proto.ListGitoliteResponse, error) {

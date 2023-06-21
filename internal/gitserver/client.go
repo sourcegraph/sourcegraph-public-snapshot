@@ -899,9 +899,15 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 
 		r := streamio.NewReader(func() ([]byte, error) {
 			msg, err := stream.Recv()
-			if status.Code(err) == codes.Canceled {
-				return nil, context.Canceled
-			} else if err != nil {
+			if err != nil {
+				if status.Code(err) == codes.Canceled {
+					return nil, context.Canceled
+				}
+
+				if status.Code(err) == codes.DeadlineExceeded {
+					return nil, context.DeadlineExceeded
+				}
+
 				return nil, err
 			}
 			return msg.GetData(), nil
