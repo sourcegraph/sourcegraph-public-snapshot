@@ -18,11 +18,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { LocalRepository } from '../../../../graphql-operations'
-import {
-    callFilePicker,
-    useLocalExternalServices,
-    LocalCodeHost,
-} from '../../../../setup-wizard/components'
+import { callFilePicker, useLocalExternalServices, LocalCodeHost } from '../../../../setup-wizard/components'
 import { NoReposAddedState } from '../../components'
 
 import styles from './LocalRepositoriesTab.module.scss'
@@ -60,7 +56,7 @@ export const LocalRepositoriesWidget: FC<LocalRepositoriesWidgetProps> = props =
     const { services, loading, loaded, error, addRepositories, deleteService } = useLocalExternalServices()
 
     useLayoutEffect(() => {
-        onRepositoriesChange(services)
+        onRepositoriesChange(services.flatMap(service => service.repositories))
     }, [services, onRepositoriesChange])
 
     return (
