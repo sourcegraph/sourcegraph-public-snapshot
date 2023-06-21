@@ -19,11 +19,16 @@ const CURRENT_VERSION = '5.1'
  * After every release, this will be set back to `false`. Chromatic will also verify
  * changes to this variable via visual regression testing.
  */
-const SHOW_CHANGELOG = false
+const SHOW_CHANGELOG = true
 
-export const BatchChangesChangelogAlert: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({
-    className,
-}) => {
+interface BatchChangesChangelogAlertProps {
+    className?: string
+    viewerIsAdmin: boolean
+}
+
+export const BatchChangesChangelogAlert: React.FunctionComponent<
+    React.PropsWithChildren<BatchChangesChangelogAlertProps>
+> = ({ className, viewerIsAdmin }) => {
     // IMPORTANT!! If you add an entry, make sure to set SHOW_CHANGELOG to true!
     if (!SHOW_CHANGELOG) {
         return null
@@ -38,14 +43,33 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<React.PropsWith
                     <H4 as={H3}>Batch Changes updates in version {CURRENT_VERSION}</H4>
                     <ul className="mb-0 pl-3">
                         <li>
+                            Batch Changes can now sign commits created on GitHub{' '}
                             <Link
                                 to="/help/admin/executors/deploy_executors#using-private-registries"
                                 rel="noopener"
                                 target="_blank"
                             >
-                                Using private container registries
-                            </Link>{' '}
-                            is now supported in server-side batch changes.
+                                via GitHub Apps
+                            </Link>
+                            .{' '}
+                            {viewerIsAdmin ? (
+                                <>
+                                    {' '}
+                                    Site admins can{' '}
+                                    <Link to="/site-admin/batch-changes" target="_blank">
+                                        configure a GitHub App integration
+                                    </Link>{' '}
+                                    to enable this feature.
+                                </>
+                            ) : (
+                                <>
+                                    GitHub App integrations can be configured by site admins and viewed from{' '}
+                                    <Link to="/user/settings/batch-changes" target="_blank">
+                                        your user settings
+                                    </Link>
+                                    .
+                                </>
+                            )}
                         </li>
                     </ul>
                 </CardBody>
