@@ -8,7 +8,7 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
-import { AddOwnerModal } from '../../../enterprise/own/AddOwnerModal'
+import { AddOwnerModal } from '../../../components/own/AddOwnerModal'
 import { OwnerFields, OwnershipConnectionFields, SearchPatternType } from '../../../graphql-operations'
 
 import { FileOwnershipEntry } from './FileOwnershipEntry'
