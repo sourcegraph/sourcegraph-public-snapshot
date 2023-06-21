@@ -125,8 +125,8 @@
           },
           {
             "id": "completions",
-            "title": "Code Completions (Experimental)",
-            "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.\n[Enable in Settings](command:cody.walkthrough.enableCodeCompletions)",
+            "title": "Code Autocomplete (Beta)",
+            "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.\n[Enable in Settings](command:cody.walkthrough.enableCodeAutocomplete)",
             "media": {
               "markdown": "walkthroughs/completions.md"
             }
@@ -362,7 +362,7 @@
         "title": "Show Inline Assist"
       },
       {
-        "command": "cody.walkthrough.enableCodeCompletions",
+        "command": "cody.walkthrough.enableCodeAutocomplete",
         "category": "Cody Walkthrough",
         "title": "Enable Code Completions"
       },
@@ -564,7 +564,7 @@
         },
         {
           "command": "cody.manual-completions",
-          "when": "config.cody.experimental.suggestions"
+          "when": "config.cody.autocomplete"
         },
         {
           "command": "cody.guardrails.debug",
@@ -591,7 +591,7 @@
           "when": "false"
         },
         {
-          "command": "cody.walkthrough.enableCodeCompletions",
+          "command": "cody.walkthrough.enableCodeAutocomplete",
           "when": "false"
         },
         {
@@ -779,9 +779,14 @@
           ]
         },
         "cody.experimental.suggestions": {
+          "type": "boolean",
+          "default": false,
+          "deprecationMessage": "Use `cody.autocomplete` instead"
+        },
+        "cody.autocomplete":{
           "order": 5,
           "type": "boolean",
-          "markdownDescription": "Enables experimental Cody completions in your editor.",
+          "markdownDescription": "Enables inline code suggestions in your editor.",
           "default": false
         },
         "cody.experimental.chatPredictions": {

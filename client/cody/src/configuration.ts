@@ -57,7 +57,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         debugEnable: config.get<boolean>(CONFIG_KEY.debugEnable, false),
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
-        experimentalSuggest: config.get(CONFIG_KEY.experimentalSuggestions, isTesting),
+        autocomplete: config.get(CONFIG_KEY.autocomplete, isTesting),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         experimentalInline: config.get(CONFIG_KEY.experimentalInline, isTesting),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
@@ -98,4 +98,42 @@ export const getFullConfig = async (secretStorage: SecretStorage): Promise<Confi
     const config = getConfiguration(vscode.workspace.getConfiguration())
     const accessToken = (await getAccessToken(secretStorage)) || null
     return { ...config, accessToken }
+}
+
+// We run this callback on extension startup
+export async function migrateConfiguration(): Promise<void> {
+    await migrateDeprecatedConfigOption(CONFIG_KEY.experimentalSuggestions, CONFIG_KEY.autocomplete)
+    // await migrateDeprecatedConfigOption(CONFIG_KEY.completionsAdvancedProvider, CONFIG_KEY.debugFilter)
+}
+
+async function migrateDeprecatedConfigOption(
+    oldKey: typeof CONFIG_KEY[ConfigKeys],
+    newKey: typeof CONFIG_KEY[ConfigKeys]
+): Promise<void> {
+    const config = vscode.workspace.getConfiguration()
+    const value = config.get(oldKey)
+    const inspect = config.inspect(oldKey)
+
+    if (value === undefined || inspect === undefined) {
+        return
+    }
+
+    const scope =
+        inspect.workspaceFolderValue !== undefined
+            ? vscode.ConfigurationTarget.WorkspaceFolder
+            : inspect?.workspaceValue !== undefined
+            ? vscode.ConfigurationTarget.Workspace
+            : vscode.ConfigurationTarget.Global
+
+    console.log('found the setting in scope', scope, value)
+
+    await config.update(newKey, value, scope)
+    await config.update(oldKey, undefined, scope)
+
+    // // Set the new setting value for the current scope
+    // workspace.getConfiguration().update(newSettingName, oldSettingValue, getScope())
+
+    // // Remove the old setting for all possible scopes
+    // workspace.getConfiguration().update(oldSettingName, undefined)
+    // workspace.getConfiguration(undefined).update(oldSettingName, undefined)
 }

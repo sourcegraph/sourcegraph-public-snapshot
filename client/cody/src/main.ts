@@ -17,7 +17,7 @@ import { createProviderConfig as createAnthropicProviderConfig } from './complet
 import { ProviderConfig } from './completions/providers/provider'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './completions/providers/unstable-codegen'
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './completions/providers/unstable-huggingface'
-import { getConfiguration, getFullConfig } from './configuration'
+import { getConfiguration, getFullConfig, migrateConfiguration } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger, eventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
@@ -43,6 +43,8 @@ const CODY_FEEDBACK_URL =
  * Start the extension, watching all relevant configuration and secrets for changes.
  */
 export async function start(context: vscode.ExtensionContext): Promise<vscode.Disposable> {
+    await migrateConfiguration()
+
     const secretStorage =
         process.env.CODY_TESTING === 'true' ? new InMemorySecretStorage() : new VSCodeSecretStorage(context.secrets)
     const localStorage = new LocalStorage(context.globalState)
@@ -220,11 +222,11 @@ const register = async (
                 openToSide: true,
             })
         }),
-        vscode.commands.registerCommand('cody.walkthrough.enableCodeCompletions', async () => {
-            await workspaceConfig.update('cody.experimental.suggestions', true, vscode.ConfigurationTarget.Global)
+        vscode.commands.registerCommand('cody.walkthrough.enableCodeAutocomplete', async () => {
+            await workspaceConfig.update('cody.autocomplete', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openSettings', {
-                query: 'cody.experimental.suggestions',
+                query: 'cody.autocomplete',
                 openToSide: true,
             })
         }),
@@ -297,7 +299,7 @@ const register = async (
     )
 
     let completionsProvider: vscode.Disposable | null = null
-    if (initialConfig.experimentalSuggest) {
+    if (initialConfig.autocomplete) {
         completionsProvider = createCompletionsProvider(
             config,
             webviewErrorMessenger,
@@ -316,13 +318,10 @@ const register = async (
     disposables.push(disposeCompletions)
 
     vscode.workspace.onDidChangeConfiguration(event => {
-        if (
-            event.affectsConfiguration('cody.experimental.suggestions') ||
-            event.affectsConfiguration('cody.completions')
-        ) {
+        if (event.affectsConfiguration('cody.autocomplete') || event.affectsConfiguration('cody.completions')) {
             const config = getConfiguration(vscode.workspace.getConfiguration())
 
-            if (!config.experimentalSuggest) {
+            if (!config.autocomplete) {
                 completionsProvider?.dispose()
                 completionsProvider = null
                 return
