@@ -208,12 +208,20 @@ type RecordingTime struct {
 
 type SearchAggregationMode string
 
+type CaptureGroupMode string
+
 const (
 	REPO_AGGREGATION_MODE          SearchAggregationMode = "REPO"
 	PATH_AGGREGATION_MODE          SearchAggregationMode = "PATH"
 	AUTHOR_AGGREGATION_MODE        SearchAggregationMode = "AUTHOR"
 	CAPTURE_GROUP_AGGREGATION_MODE SearchAggregationMode = "CAPTURE_GROUP"
 	REPO_METADATA_AGGREGATION_MODE SearchAggregationMode = "REPO_METADATA"
+)
+
+const (
+	FileContent CaptureGroupMode = "CONTENT"
+	RepoName    CaptureGroupMode = "REPO_NAME"
+	FilePath    CaptureGroupMode = "FILE_PATH"
 )
 
 var SearchAggregationModes = []SearchAggregationMode{REPO_AGGREGATION_MODE, PATH_AGGREGATION_MODE, AUTHOR_AGGREGATION_MODE, CAPTURE_GROUP_AGGREGATION_MODE, REPO_METADATA_AGGREGATION_MODE}

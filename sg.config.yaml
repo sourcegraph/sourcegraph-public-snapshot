@@ -1044,7 +1044,6 @@ commandsets:
       - gitserver-1
       - searcher
       - caddy
-      - symbols
       - docsite
       - syntax-highlighter
       - github-proxy
@@ -1272,7 +1271,6 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - symbols
       - caddy
       - docsite
       - syntax-highlighter

@@ -142,7 +142,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 		cappedAggregator.Add(amr.Key.Group, int32(amr.Count))
 	}
 
-	countingFunc, err := aggregation.GetCountFuncForMode(r.searchQuery, r.patternType, aggregationMode)
+	countingFunc, err := aggregation.GetCountFuncForMode(r.searchQuery, r.patternType, aggregationMode, types.FileContent)
 	if err != nil {
 		r.getLogger().Debug("no aggregation counting function for mode", log.String("mode", string(aggregationMode)), log.Error(err))
 		return &searchAggregationResultResolver{
@@ -176,7 +176,7 @@ func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphql
 		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(failureReason, aggregationMode)}, nil
 	}
 
-	results := buildResults(cappedAggregator, int(args.Limit), aggregationMode, r.searchQuery, r.patternType)
+	results := BuildResults(cappedAggregator, int(args.Limit), aggregationMode, r.searchQuery, r.patternType)
 
 	return &searchAggregationResultResolver{resolver: &searchAggregationModeResultResolver{
 		searchQuery:  r.searchQuery,
@@ -280,7 +280,7 @@ func (r *AggregationGroup) Query() (*string, error) {
 	return r.query, nil
 }
 
-func buildResults(aggregator aggregation.LimitedAggregator, limit int, mode types.SearchAggregationMode, originalQuery string, patternType string) aggregationResults {
+func BuildResults(aggregator aggregation.LimitedAggregator, limit int, mode types.SearchAggregationMode, originalQuery string, patternType string) aggregationResults {
 	sorted := aggregator.SortAggregate()
 	groups := make([]graphqlbackend.AggregationGroup, 0, limit)
 	otherResults := aggregator.OtherCounts().ResultCount

@@ -2,6 +2,7 @@ package aggregation
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	sApi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
@@ -88,12 +90,24 @@ func countAuthor(r result.Match, _ *sTypes.Repo) (map[MatchKey]int, error) {
 	return nil, nil
 }
 
-func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
-	pattern, err := getCasedPattern(querystring)
-	if err != nil {
-		return nil, errors.Wrap(err, "getCasedPattern")
+func extractRelevantString(querystring string, captureMode types.CaptureGroupMode) (string, error) {
+	switch captureMode {
+	case types.FileContent:
+		return getCasedPattern(querystring)
+	case types.RepoName:
+		return getRepoPattern(querystring)
+	case types.FilePath:
+		return getFilePathPattern(querystring)
 	}
-	regex, err := regexp.Compile(pattern.String())
+	return "", errors.New("invalid mode")
+}
+
+func countCaptureGroupsFunc(querystring string, captureMode types.CaptureGroupMode) (AggregationCountFunc, error) {
+	ptn, err := extractRelevantString(querystring, captureMode)
+	if err != nil {
+		return nil, err
+	}
+	regex, err := regexp.Compile(ptn)
 	if err != nil {
 		return nil, errors.Wrap(err, "Could not compile regexp")
 	}
@@ -168,7 +182,7 @@ func countRepoMetadata(r result.Match, repo *sTypes.Repo) (map[MatchKey]int, err
 	return matches, nil
 }
 
-func GetCountFuncForMode(query, patternType string, mode types.SearchAggregationMode) (AggregationCountFunc, error) {
+func GetCountFuncForMode(query, patternType string, mode types.SearchAggregationMode, captureMode types.CaptureGroupMode) (AggregationCountFunc, error) {
 	modeCountTypes := map[types.SearchAggregationMode]AggregationCountFunc{
 		types.REPO_AGGREGATION_MODE:          countRepo,
 		types.PATH_AGGREGATION_MODE:          countPath,
@@ -177,7 +191,7 @@ func GetCountFuncForMode(query, patternType string, mode types.SearchAggregation
 	}
 
 	if mode == types.CAPTURE_GROUP_AGGREGATION_MODE {
-		captureGroupsCount, err := countCaptureGroupsFunc(query)
+		captureGroupsCount, err := countCaptureGroupsFunc(query, captureMode)
 		if err != nil {
 			return nil, err
 		}
@@ -296,22 +310,22 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 
 // Pulls the pattern out of the querystring
 // If the query contains a case:no field, we need to wrap the pattern in some additional regex.
-func getCasedPattern(querystring string) (MatchPattern, error) {
+func getCasedPattern(querystring string) (string, error) {
 	query, err := querybuilder.ParseQuery(querystring, "regexp")
 	if err != nil {
-		return nil, errors.Wrap(err, "ParseQuery")
+		return "", errors.Wrap(err, "ParseQuery")
 	}
 	q := query.ToQ()
 
 	if len(query) != 1 {
 		// Not sure when we would run into this; calling it out to help during testing.
-		return nil, errors.New("Pipeline generated plan with multiple steps.")
+		return "", errors.New("Pipeline generated plan with multiple steps.")
 	}
 	basic := query[0]
 
 	pattern, err := extractPattern(&basic)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	patternValue := pattern.Value
 	if !q.IsCaseSensitive() {
@@ -319,7 +333,40 @@ func getCasedPattern(querystring string) (MatchPattern, error) {
 	}
 	casedPattern, err := toRegexpPattern(patternValue)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return casedPattern, nil
+	return casedPattern.String(), nil
+}
+
+func getRepoPattern(querystring string) (string, error) {
+	query, err := querybuilder.ParseQuery(querystring, "regexp")
+	if err != nil {
+		return "", errors.Wrap(err, "ParseQuery")
+	}
+	q := query.ToQ()
+	repos, _ := q.Repositories()
+
+	if len(repos) == 0 {
+		return "", errors.New("Pipeline generated plan without repo filter.")
+	}
+
+	ptn := repos[0]
+	fmt.Println(ptn.Repo)
+	return ptn.Repo, nil
+}
+
+func getFilePathPattern(querystring string) (string, error) {
+	query, err := querybuilder.ParseQuery(querystring, "regexp")
+	if err != nil {
+		return "", errors.Wrap(err, "ParseQuery")
+	}
+	q := query.ToQ()
+	var filepath string
+	searchquery.VisitField(q, searchquery.FieldFile, func(value string, negated bool, annotation searchquery.Annotation) {
+		if !negated {
+			filepath = value
+		}
+	})
+
+	return filepath, nil
 }

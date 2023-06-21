@@ -27,5 +27,18 @@
     "trackingIssues": false,
     "calendar": false,
     "slack": false
+  },
+  "in_progress": {
+    "captainGitHubUsername": "unknwon",
+    "captainSlackUsername": "joe",
+    "releases": [
+      {
+        "version": "5.1.0",
+        "previous": "5.0.6"
+      }
+    ],
+    "srcCliVersion": "5.1.0",
+    "googleExecutorVersion": "5.1.0",
+    "awsExecutorVersion": "5.1.0"
   }
 }

@@ -7,14 +7,16 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/aggregation"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,7 +24,8 @@ type CaptureGroupExecutor struct {
 	previewExecutor
 	computeSearch func(ctx context.Context, query string) ([]GroupedResults, error)
 
-	logger log.Logger
+	logger     log.Logger
+	postgresDB database.DB
 }
 
 func NewCaptureGroupExecutor(postgres database.DB, clock func() time.Time) *CaptureGroupExecutor {
@@ -35,6 +38,7 @@ func NewCaptureGroupExecutor(postgres database.DB, clock func() time.Time) *Capt
 		},
 		computeSearch: streamCompute,
 		logger:        log.Scoped("CaptureGroupExecutor", ""),
+		postgresDB:    postgres,
 	}
 }
 
@@ -51,6 +55,56 @@ func streamCompute(ctx context.Context, query string) ([]GroupedResults, error) 
 		return nil, errors.Errorf("compute streaming search: alerts: %v", streamResults.Alerts)
 	}
 	return computeTabulationResultToGroupedResults(streamResults), nil
+}
+
+func (c *CaptureGroupExecutor) searchWithAggregator(ctx context.Context, query, repo, revision string) ([]*aggregation.Aggregate, error) {
+	searchTimelimit := 60
+
+	// If a search includes a timeout it reports as completing succesfully with the timeout is hit
+	// This includes a timeout in the search that is a second longer than the context we will cancel as a fail safe
+	modified, err := querybuilder.SingleRepoQuery(querybuilder.BasicQuery(query), repo, revision, querybuilder.CodeInsightsQueryDefaults(false))
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println(fmt.Sprintf("query: %v", modified.String()))
+
+	aggregationBufferSize := 100000000
+	cappedAggregator := aggregation.NewLimitedAggregator(aggregationBufferSize)
+	var tabulationErrors []error
+	tabulationFunc := func(amr *aggregation.AggregationMatchResult, err error) {
+		if err != nil {
+			// r.getLogger().Debug("unable to aggregate results", log.Error(err))
+			tabulationErrors = append(tabulationErrors, err)
+			return
+		}
+		cappedAggregator.Add(amr.Key.Group, int32(amr.Count))
+	}
+
+	patternType := "regexp"
+
+	countingFunc, err := aggregation.GetCountFuncForMode(query, patternType, types.CAPTURE_GROUP_AGGREGATION_MODE, types.FilePath)
+	if err != nil {
+		// r.getLogger().Debug("no aggregation counting function for mode", log.String("mode", string(aggregationMode)), log.Error(err))
+		return nil, err
+	}
+
+	requestContext, cancelReqContext := context.WithTimeout(ctx, time.Second*time.Duration(searchTimelimit))
+	defer cancelReqContext()
+	searchClient := streaming.NewInsightsSearchClient(c.postgresDB, jobutil.NewUnimplementedEnterpriseJobs())
+	searchResultsAggregator := aggregation.NewSearchResultsAggregatorWithContext(requestContext, tabulationFunc, countingFunc, c.postgresDB, types.CAPTURE_GROUP_AGGREGATION_MODE)
+
+	_, err = searchClient.Search(requestContext, string(modified), &patternType, searchResultsAggregator)
+	if err != nil || requestContext.Err() != nil {
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(requestContext.Err(), context.DeadlineExceeded) {
+			return nil, err
+		} else {
+			return nil, err
+		}
+	}
+
+	return cappedAggregator.SortAggregate(), nil
+
 }
 
 func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, repositories []string, interval timeseries.TimeInterval) ([]GeneratedTimeSeries, error) {
@@ -96,24 +150,39 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				continue
 			}
 
-			modifiedQuery, err := querybuilder.SingleRepoQuery(querybuilder.BasicQuery(query), repository, string(commits[0].ID), querybuilder.CodeInsightsQueryDefaults(false))
+			// modifiedQuery, err := querybuilder.SingleRepoQuery(querybuilder.BasicQuery(query), repository, string(commits[0].ID), querybuilder.CodeInsightsQueryDefaults(false))
+			// if err != nil {
+			// 	return nil, errors.Wrap(err, "query validation")
+			// }
+			//
+			// c.logger.Debug("executing query", log.String("query", modifiedQuery.String()))
+			// grouped, err := c.computeSearch(ctx, modifiedQuery.String())
+			// if err != nil {
+			// 	errorMsg := "failed to execute capture group search for repository:" + repository
+			// 	if execution.Revision != "" {
+			// 		errorMsg += " commit:" + execution.Revision
+			// 	}
+			// 	return nil, errors.Wrap(err, errorMsg)
+			// }
+			//
+			// sort.Slice(grouped, func(i, j int) bool {
+			// 	return grouped[i].Value < grouped[j].Value
+			// })
+
+			aggResults, err := c.searchWithAggregator(ctx, query, repository, string(commits[0].ID))
 			if err != nil {
-				return nil, errors.Wrap(err, "query validation")
+				return nil, err
 			}
 
-			c.logger.Debug("executing query", log.String("query", modifiedQuery.String()))
-			grouped, err := c.computeSearch(ctx, modifiedQuery.String())
-			if err != nil {
-				errorMsg := "failed to execute capture group search for repository:" + repository
-				if execution.Revision != "" {
-					errorMsg += " commit:" + execution.Revision
-				}
-				return nil, errors.Wrap(err, errorMsg)
+			var grouped []GroupedResults
+			for _, aggregate := range aggResults {
+				grouped = append(grouped, GroupedResults{
+					Value: aggregate.Label,
+					Count: int(aggregate.Count),
+				})
 			}
 
-			sort.Slice(grouped, func(i, j int) bool {
-				return grouped[i].Value < grouped[j].Value
-			})
+			fmt.Println(fmt.Sprintf("got results: %v", grouped))
 
 			for _, timeGroupElement := range grouped {
 				value := timeGroupElement.Value
