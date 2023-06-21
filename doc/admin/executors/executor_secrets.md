@@ -9,10 +9,6 @@
   }
 </style>
 
-<aside class="beta">
-<span class="badge badge-beta">Beta</span> Executors are in beta and might change in the future.
-</aside>
-
 Executor secrets can be used to define additional values to be used in Sourcegraph executors.
 
 Secret values are currently only available in server-side batch changes. Use [`step.env`](../../batch_changes/references/batch_spec_yaml_reference.md#steps-env) to reference configured secrets in executions.
