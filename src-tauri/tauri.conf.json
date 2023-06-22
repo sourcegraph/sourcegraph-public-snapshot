@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
     "beforeBuildCommand": "bash ./src-tauri/compose-assets.sh",
-    "devPath": "http://localhost:3080/sign-in?secret=foobar&returnTo=/",
+    "devPath": "http://localhost:3080/sign-in?s=foobar&returnTo=/",
     "distDir": "./assets",
     "withGlobalTauri": true
   },
@@ -17,7 +17,9 @@
         "confirm": true
       },
       "fs": {
-        "scope": ["$APPDATA/postgresql/data"],
+        "scope": [
+          "$APPDATA/postgresql/data"
+        ],
         "removeDir": true
       },
       "shell": {
@@ -26,7 +28,12 @@
           {
             "name": "../.bin/sourcegraph-backend",
             "sidecar": true,
-            "args": ["--cacheDir", "$APPCONFIG", "--configDir", "$APPLOCALDATA"]
+            "args": [
+              "--cacheDir",
+              "$APPCONFIG",
+              "--configDir",
+              "$APPLOCALDATA"
+            ]
           }
         ],
         "open": "^(vscode:|https?:)|com.sourcegraph.cody/.*.log$"
@@ -48,8 +55,16 @@
       "deb": {
         "depends": []
       },
-      "externalBin": ["../.bin/sourcegraph-backend"],
-      "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+      "externalBin": [
+        "../.bin/sourcegraph-backend"
+      ],
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ],
       "identifier": "com.sourcegraph.cody",
       "longDescription": "",
       "macOS": {

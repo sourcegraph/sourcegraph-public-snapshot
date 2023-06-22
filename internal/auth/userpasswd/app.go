@@ -82,7 +82,7 @@ func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) error {
-		secret := r.URL.Query().Get("secret")
+		secret := r.URL.Query().Get("s")
 		if secret == "" {
 			return handler(w, r)
 		}
@@ -177,7 +177,7 @@ func appSignInURL() string {
 	}
 	u.Path = "/sign-in"
 	query := u.Query()
-	query.Set("secret", secret)
+	query.Set("s", secret)
 	u.RawQuery = query.Encode()
 	return u.String()
 }
