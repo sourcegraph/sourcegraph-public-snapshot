@@ -2524,13 +2524,25 @@
           "description": "The model used for fast chat completions.",
           "type": "string"
         },
+        "fastChatModelMaxTokens": {
+          "description": "The maximum number of tokens to use as client when talking to fastChatModel. If not set, clients need to set their own limit.",
+          "type": "integer"
+        },
         "chatModel": {
           "description": "The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.",
           "type": "string"
         },
+        "chatModelMaxTokens": {
+          "description": "The maximum number of tokens to use as client when talking to chatModel. If not set, clients need to set their own limit.",
+          "type": "integer"
+        },
         "completionModel": {
           "description": "The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.",
           "type": "string"
+        },
+        "completionModelMaxTokens": {
+          "description": "The maximum number of tokens to use as client when talking to completionModel. If not set, clients need to set their own limit.",
+          "type": "integer"
         },
         "accessToken": {
           "description": "The access token used to authenticate with the external completions provider. If using the default provider 'sourcegraph', and if 'licenseKey' is set, a default access token is generated.",
@@ -2560,7 +2572,6 @@
       "examples": [
         {
           "enabled": true,
-          "model": "code-completion",
           "chatModel": "chat",
           "completionModel": "code-completion",
           "accessToken": "abc123",
