@@ -580,27 +580,27 @@ type codyLLMConfigurationResolver struct {
 }
 
 func (c *codyLLMConfigurationResolver) ChatModel() string { return c.config.ChatModel }
-func (c *codyLLMConfigurationResolver) ChatModelMaxPromptTokens() *int32 {
-	if c.config.ChatModelMaxPromptTokens != 0 {
-		max := int32(c.config.ChatModelMaxPromptTokens)
+func (c *codyLLMConfigurationResolver) ChatModelMaxTokens() *int32 {
+	if c.config.ChatModelMaxTokens != 0 {
+		max := int32(c.config.ChatModelMaxTokens)
 		return &max
 	}
 	return nil
 }
 
 func (c *codyLLMConfigurationResolver) FastChatModel() string { return c.config.FastChatModel }
-func (c *codyLLMConfigurationResolver) FastChatModelMaxPromptTokens() *int32 {
-	if c.config.FastChatModelMaxPromptTokens != 0 {
-		max := int32(c.config.FastChatModelMaxPromptTokens)
+func (c *codyLLMConfigurationResolver) FastChatModelMaxTokens() *int32 {
+	if c.config.FastChatModelMaxTokens != 0 {
+		max := int32(c.config.FastChatModelMaxTokens)
 		return &max
 	}
 	return nil
 }
 
 func (c *codyLLMConfigurationResolver) CompletionModel() string { return c.config.FastChatModel }
-func (c *codyLLMConfigurationResolver) CompletionModelMaxPromptTokens() *int32 {
-	if c.config.CompletionModelMaxPromptTokens != 0 {
-		max := int32(c.config.CompletionModelMaxPromptTokens)
+func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
+	if c.config.CompletionModelMaxTokens != 0 {
+		max := int32(c.config.CompletionModelMaxTokens)
 		return &max
 	}
 	return nil

@@ -7133,7 +7133,7 @@ type CodyLLMConfiguration {
     """
     Maximum number of tokens client should use when talking to the chatModel.
     """
-    chatModelMaxPromptTokens: Int
+    chatModelMaxTokens: Int
     """
     Name of the model being used for fast chat.
     """
@@ -7141,7 +7141,7 @@ type CodyLLMConfiguration {
     """
     Maximum number of tokens client should use when talking to the fastChatModel.
     """
-    fastChatModelMaxPromptTokens: Int
+    fastChatModelMaxTokens: Int
     """
     Name of the model being used for code completions.
     """
@@ -7149,7 +7149,7 @@ type CodyLLMConfiguration {
     """
     Maximum number of tokens client should use when talking to the completionModel.
     """
-    completionModelMaxPromptTokens: Int
+    completionModelMaxTokens: Int
 }
 
 """

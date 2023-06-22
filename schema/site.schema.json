@@ -2478,7 +2478,7 @@
           "description": "The model used for fast chat completions.",
           "type": "string"
         },
-        "fastChatModelMaxPromptTokens": {
+        "fastChatModelMaxTokens": {
           "description": "The maximum number of tokens to use as client when talking to fastChatModel. If not set, clients need to set their own limit.",
           "type": "integer"
         },
@@ -2486,7 +2486,7 @@
           "description": "The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.",
           "type": "string"
         },
-        "chatModelMaxPromptTokens": {
+        "chatModelMaxTokens": {
           "description": "The maximum number of tokens to use as client when talking to chatModel. If not set, clients need to set their own limit.",
           "type": "integer"
         },
@@ -2494,7 +2494,7 @@
           "description": "The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.",
           "type": "string"
         },
-        "completionModelMaxPromptTokens": {
+        "completionModelMaxTokens": {
           "description": "The maximum number of tokens to use as client when talking to completionModel. If not set, clients need to set their own limit.",
           "type": "integer"
         },
