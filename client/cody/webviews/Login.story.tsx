@@ -48,7 +48,7 @@ export default meta
 export const Simple: ComponentStoryObj<typeof Login> = {
     render: () => (
         <div style={{ background: 'rgb(28, 33, 40)' }}>
-            <Login authStatus={validAuthStatus} isAppInstalled={false} vscodeAPI={vscodeAPI} />
+            <Login authStatus={validAuthStatus} isAppInstalled={false} vscodeAPI={vscodeAPI} setEndpoint={() => {}} />
         </div>
     ),
 }
@@ -56,7 +56,12 @@ export const Simple: ComponentStoryObj<typeof Login> = {
 export const InvalidLogin: ComponentStoryObj<typeof Login> = {
     render: () => (
         <div style={{ background: 'rgb(28, 33, 40)' }}>
-            <Login authStatus={invalidAccessTokenAuthStatus} isAppInstalled={false} vscodeAPI={vscodeAPI} />
+            <Login
+                authStatus={invalidAccessTokenAuthStatus}
+                isAppInstalled={false}
+                vscodeAPI={vscodeAPI}
+                setEndpoint={() => {}}
+            />
         </div>
     ),
 }
@@ -64,7 +69,12 @@ export const InvalidLogin: ComponentStoryObj<typeof Login> = {
 export const UnverifiedEmailLogin: ComponentStoryObj<typeof Login> = {
     render: () => (
         <div style={{ background: 'rgb(28, 33, 40)' }}>
-            <Login authStatus={requiresVerifiedEmailAuthStatus} isAppInstalled={false} vscodeAPI={vscodeAPI} />
+            <Login
+                authStatus={requiresVerifiedEmailAuthStatus}
+                isAppInstalled={false}
+                vscodeAPI={vscodeAPI}
+                setEndpoint={() => {}}
+            />
         </div>
     ),
 }
@@ -72,7 +82,7 @@ export const UnverifiedEmailLogin: ComponentStoryObj<typeof Login> = {
 export const LoginWithAppInstalled: ComponentStoryObj<typeof Login> = {
     render: () => (
         <div style={{ background: 'rgb(28, 33, 40)' }}>
-            <Login authStatus={validAuthStatus} isAppInstalled={true} vscodeAPI={vscodeAPI} />
+            <Login authStatus={validAuthStatus} isAppInstalled={true} vscodeAPI={vscodeAPI} setEndpoint={() => {}} />
         </div>
     ),
 }
