@@ -86,15 +86,6 @@
         "resizable": true,
         "width": 1024,
         "height": 768
-      },
-      {
-        "fullscreen": false,
-        "height": 600,
-        "resizable": false,
-        "decorations": false,
-        "width": 800,
-        "url": "splashscreen.html",
-        "label": "splashscreen"
       }
     ]
   }

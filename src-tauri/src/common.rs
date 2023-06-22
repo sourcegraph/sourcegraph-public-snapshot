@@ -12,11 +12,6 @@ pub fn show_window(app: &AppHandle, label: &str) {
     window.set_focus().unwrap()
 }
 
-pub fn close_window(app: &AppHandle, label: &str) {
-    let window = app.get_window(label).unwrap();
-    window.close().unwrap()
-}
-
 /// Extracts the path from a URL that starts with the scheme followed by `://`.
 ///
 /// # Examples
