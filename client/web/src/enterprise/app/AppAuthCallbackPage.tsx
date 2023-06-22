@@ -16,7 +16,7 @@ import { eventLogger } from '../../tracking/eventLogger'
  */
 function safelyRedirectToDestination(destination: string | null): void {
     // A safe destination must be a relative URL
-    if (destination && destination.startsWith('/')) {
+    if (destination?.startsWith('/')) {
         location.href = destination
     } else {
         location.href = '/'
