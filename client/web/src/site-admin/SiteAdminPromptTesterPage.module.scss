@@ -1,4 +1,4 @@
-.promptVersion {
+.prompt-version {
     display: grid;
     grid-gap: 0.5rem;
     grid-template-columns: 1em auto 9em 6em 6em 7em;
@@ -10,20 +10,22 @@
     }
 }
 
-.variationCountContainer {
+.variation-count-container {
     display: flex;
     grid-gap: 0.5rem;
     align-items: center;
 }
-.variationCountInput {
+
+.variation-count-input {
     width: 5em;
     margin-bottom: 0.5rem;
 }
 
-.runButton {
+.run-button {
     margin: 1rem;
 }
-.resultRow {
+
+.result-row {
     display: grid;
     gap: 1em;
     grid-template-columns: 1em repeat(auto-fit, minmax(10px, 1fr));
