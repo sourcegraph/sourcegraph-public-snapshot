@@ -1,5 +1,6 @@
 import { FC } from 'react'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
 import { Alert, BarChart, Card, ErrorAlert, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
@@ -71,14 +72,13 @@ const OwnAnalyticsPanel: FC = () => {
             fill: 'var(--info-3)',
             tooltip: `Owned files: ${totalOwnedFiles}/${totalFiles}`,
         },
-        // TODO decide whether we remove or keep all files
-        {
-            name: 'All files',
-            count: 100,
-            fill: 'var(--text-muted)',
-            tooltip: 'Total number of files',
-        },
     ]
+
+    const lastUpdatedAt = data.instanceOwnershipStats.updatedAt ? (
+        <>
+            Last generated: <Timestamp date={data.instanceOwnershipStats.updatedAt} />
+        </>
+    ) : undefined
 
     return (
         <>
@@ -114,8 +114,8 @@ const OwnAnalyticsPanel: FC = () => {
                         )}
                     </Card>
                     <Text className="font-italic text-center mt-2">
-                        {/* TODO(#52826): Provide more precise information about how stale data is, and how often it refreshes. */}
-                        Data is generated periodically from CODEOWNERS files and repository contents.
+                        Data is generated periodically from CODEOWNERS files and repository contents.{' '}
+                        {lastUpdatedAt && lastUpdatedAt}
                     </Text>
                 </>
             )}
