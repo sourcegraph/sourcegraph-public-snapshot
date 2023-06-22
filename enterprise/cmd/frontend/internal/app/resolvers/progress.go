@@ -48,7 +48,7 @@ func (r *embeddingsSetupProgressResolver) getStatus(ctx context.Context) {
 	})
 }
 
-func (r *embeddingsSetupProgressResolver) PercentComplete(ctx context.Context) (int32, error) {
+func (r *embeddingsSetupProgressResolver) OverallPercentComplete(ctx context.Context) (int32, error) {
 	r.getStatus(ctx)
 	if r.err != nil {
 		return 0, r.err

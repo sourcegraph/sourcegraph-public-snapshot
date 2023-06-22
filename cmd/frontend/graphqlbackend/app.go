@@ -27,7 +27,7 @@ type AppResolver interface {
 }
 
 type EmbeddingsSetupProgressResolver interface {
-	PercentComplete(ctx context.Context) (int32, error)
+	OverallPercentComplete(ctx context.Context) (int32, error)
 	CurrentRepository(ctx context.Context) *string
 	CurrentRepositoryFilesProcessed(ctx context.Context) *int32
 	CurrentRepositoryTotalFilesToProcess(ctx context.Context) *int32
