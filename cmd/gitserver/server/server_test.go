@@ -185,7 +185,8 @@ func TestExecRequest(t *testing.T) {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
-		DB: db,
+		DB:                      db,
+		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 	}
 	h := s.Handler()
 
@@ -1732,6 +1733,7 @@ func TestHandleBatchLog(t *testing.T) {
 				ObservationCtx:          observation.TestContextTB(t),
 				GlobalBatchLogSemaphore: semaphore.NewWeighted(8),
 				DB:                      database.NewMockDB(),
+				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 			}
 			h := server.Handler()
 
