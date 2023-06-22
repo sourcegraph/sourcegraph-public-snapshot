@@ -19,6 +19,7 @@ import { OwnershipBadge } from './OwnershipBadge'
 import { RemoveOwnerButton } from './RemoveOwnerButton'
 
 import containerStyles from './OwnerList.module.scss'
+import {useNavigate} from "react-router-dom";
 
 interface Props {
     owner: OwnerFields

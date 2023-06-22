@@ -86,7 +86,6 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
                 filePath={filePath}
                 refetch={refetch}
                 makeOwnerError={makeOwnerError}
-                refetch={refetch}
             />
         )
     }
