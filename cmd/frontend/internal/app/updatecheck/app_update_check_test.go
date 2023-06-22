@@ -64,21 +64,21 @@ func TestReadAppClientVersion(t *testing.T) {
 			Valid:   true,
 			Target:  "Darwin",
 			Arch:    "x86_64-amd64",
-			Version: "1.8.9",
+			Version: "1.8.9+debug",
 		},
 		{
 			Name:    "empty target is invalid",
 			Valid:   false,
 			Target:  "",
 			Arch:    "x86_64-amd64",
-			Version: "1.8.9",
+			Version: "1.8.9+insiders.FFAA",
 		},
 		{
 			Name:    "empty arch is invalid",
 			Valid:   false,
 			Target:  "Toaster",
 			Arch:    "",
-			Version: "1.8.9",
+			Version: "1.8.9+1234.cc11bbaa",
 		},
 		{
 			Name:    "empty version is invalid",
@@ -97,9 +97,9 @@ func TestReadAppClientVersion(t *testing.T) {
 			var v = url.Values{}
 			v.Add("target", tc.Target)
 			v.Add("arch", tc.Arch)
-			v.Add("current_version", tc.Version)
 
-			reqURL.RawQuery = v.Encode()
+			// we concat the version here since Tauri does not URL encode the version correctly
+			reqURL.RawQuery = v.Encode() + "&current_version=" + tc.Version
 
 			appVersion := readClientAppVersion(reqURL)
 			validationErr := appVersion.validate()
@@ -115,7 +115,7 @@ func TestReadAppClientVersion(t *testing.T) {
 func TestAppUpdateCheckHandler(t *testing.T) {
 	var resolver = StaticManifestResolver{
 		manifest: AppUpdateManifest{
-			Version: "2023.5.8",
+			Version: "3023.5.8", // set the year part of the version FAR ahead so that there is always a version to update to
 			Notes:   "This is a test",
 			PubDate: time.Date(2023, time.May, 8, 12, 0, 0, 0, &time.Location{}),
 			Platforms: map[string]AppLocation{
@@ -128,16 +128,10 @@ func TestAppUpdateCheckHandler(t *testing.T) {
 	}
 
 	t.Run("with static manifest resolver, and exact version", func(t *testing.T) {
-		var v = url.Values{}
-		v.Add("target", "unknown-linux-gnu")
-		v.Add("arch", "x86_64")
-		v.Add("current_version", "2023.5.8")
-		reqURL, err := url.Parse("http://localhost")
+		req, err := clientVersionRequest(t, "unknown-linux-gnu", "x86_64", resolver.manifest.Version+"+1234.DEADBEEF")
 		if err != nil {
-			t.Fatalf("failed to parse test server url: %v", err)
+			t.Fatalf("failed to create client version request: %v", err)
 		}
-		reqURL.RawQuery = v.Encode()
-		req := httptest.NewRequest("GET", reqURL.String(), nil)
 		w := httptest.NewRecorder()
 
 		checker := NewAppUpdateChecker(logtest.NoOp(t), &resolver)
@@ -151,20 +145,15 @@ func TestAppUpdateCheckHandler(t *testing.T) {
 	t.Run("with static manifest resolver, and older version", func(t *testing.T) {
 		var clientVersion = AppVersion{
 			Target:  "unknown-linux-gnu",
-			Version: "2000.3.4",
+			Version: "2000.3.4+old.1234",
 			Arch:    "x86_64",
 		}
 
-		var v = url.Values{}
-		v.Add("target", clientVersion.Target)
-		v.Add("arch", clientVersion.Arch)
-		v.Add("current_version", clientVersion.Version)
-		reqURL, err := url.Parse("http://localhost")
+		req, err := clientVersionRequest(t, clientVersion.Target, clientVersion.Arch, clientVersion.Version)
 		if err != nil {
-			t.Fatalf("failed to parse test server url: %v", err)
+			t.Fatalf("failed to create client version request: %v", err)
 		}
-		reqURL.RawQuery = v.Encode()
-		req := httptest.NewRequest("GET", reqURL.String(), nil)
+
 		w := httptest.NewRecorder()
 
 		checker := NewAppUpdateChecker(logtest.Scoped(t), &resolver)
@@ -194,6 +183,21 @@ func TestAppUpdateCheckHandler(t *testing.T) {
 			t.Errorf("signature mismatch. Got %q wanted %q", updateResp.Signature, platform.Signature)
 		} else if updateResp.URL != platform.URL {
 			t.Errorf("URL mismatch. Got %q wanted %q", updateResp.URL, platform.URL)
+		}
+	})
+	t.Run("client on '2023.06.13' gets told there is no update", func(t *testing.T) {
+		req, err := clientVersionRequest(t, "unknown-linux-gnu", "x86_64", noUpdateVersion+"+1234.stuff")
+		if err != nil {
+			t.Fatalf("failed to create client version request: %v", err)
+		}
+		w := httptest.NewRecorder()
+
+		checker := NewAppUpdateChecker(logtest.NoOp(t), &resolver)
+		checker.Handler().ServeHTTP(w, req)
+
+		resp := w.Result()
+		if resp.StatusCode != http.StatusNoContent {
+			t.Errorf("expected HTTP Status %d for client on version %s (who should not receive updates) but got %d", http.StatusNoContent, noUpdateVersion, resp.StatusCode)
 		}
 	})
 }
@@ -240,4 +244,18 @@ func TestGCSResolver(t *testing.T) {
 		}
 	}
 
+}
+
+func clientVersionRequest(t *testing.T, target, arch, version string) (*http.Request, error) {
+	t.Helper()
+	var v = url.Values{}
+	v.Add("target", target)
+	v.Add("arch", arch)
+	reqURL, err := url.Parse("http://localhost")
+	if err != nil {
+		return nil, err
+	}
+	// we concat the version here since Tauri does not URL encode the version correctly
+	reqURL.RawQuery = v.Encode() + "&current_version=" + version
+	return httptest.NewRequest("GET", reqURL.String(), nil), nil
 }
