@@ -176,6 +176,12 @@ const register = async (
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             commentController.delete(thread)
         }),
+        vscode.commands.registerCommand('cody.inline.new', () =>
+            vscode.commands.executeCommand('workbench.action.addComment')
+        ),
+        vscode.commands.registerCommand('cody.inline.submit', () =>
+            vscode.commands.executeCommand('workbench.action.submitComment')
+        ),
         // Tests
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (args: any[]) => {

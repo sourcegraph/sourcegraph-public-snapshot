@@ -376,7 +376,7 @@
       },
       {
         "command": "cody.comment.add",
-        "title": "Ask Cody",
+        "title": "Ask Cody (Ctrl+Shift+Enter)",
         "category": "Cody Inline Assist",
         "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentIsEmpty"
@@ -396,6 +396,19 @@
         "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(sync~spin)"
+      },
+      {
+        "command": "cody.inline.new",
+        "title": "Start a new Inline Chat session (Ctrl+Shift+C)",
+        "category": "Cody Inline Assist",
+        "when": "cody.activated && cody.inline-assist.enabled",
+        "enablement": "!commentIsEmpty"
+      },
+      {
+        "command": "cody.inline.submit",
+        "title": "Submit (Ctrl+Shift+Enter)",
+        "category": "Cody Inline Assist",
+        "when": "cody.activated && cody.inline-assist.enabled"
       },
       {
         "command": "cody.guardrails.debug",
@@ -483,6 +496,16 @@
         "key": "ctrl+shift+t",
         "mac": "shift+cmd+t",
         "when": "cody.activated && editorTextFocus && !editorReadonly"
+      },
+      {
+        "command": "cody.inline.new",
+        "key": "ctrl+shift+c",
+        "when": "cody.activated && editorTextFocus && !editorReadonly"
+      },
+      {
+        "command": "cody.inline.submit",
+        "key": "ctrl+shift+enter",
+        "when": "cody.activated"
       }
     ],
     "submenus": [

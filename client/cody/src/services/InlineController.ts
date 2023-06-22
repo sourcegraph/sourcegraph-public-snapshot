@@ -194,10 +194,9 @@ export class InlineController {
         }
         const lens = await this.makeCodeLenses(comment.id, this.extensionPath, thread)
         lens.updateState(CodyTaskState.asking, thread.range)
-        lens.decorator.setState(CodyTaskState.asking, thread.range)
-        await lens.decorator.decorate(thread.range)
         this.codeLenses.set(comment.id, lens)
         this.currentTaskId = comment.id
+        void vscode.commands.executeCommand('workbench.action.collapseAllComments')
     }
     /**
      * Reset the selection range once replacement started by fixup has been completed
@@ -213,14 +212,15 @@ export class InlineController {
         const status = error ? CodyTaskState.error : CodyTaskState.fixed
         const lens = this.codeLenses.get(this.currentTaskId)
         lens?.updateState(status, range)
-        lens?.decorator.setState(status, range)
-        await lens?.decorator.decorate(range)
         if (this.thread) {
             this.thread.range = range
             this.thread.state = error ? 1 : 0
         }
         this.currentTaskId = ''
-        logEvent('CodyVSCodeExtension:inline-assist:error')
+        logEvent('CodyVSCodeExtension:inline-assist:stopFixup')
+        if (!error) {
+            await vscode.commands.executeCommand('workbench.action.collapseAllComments')
+        }
     }
     /**
      * Get current selected lines from the comment thread.
