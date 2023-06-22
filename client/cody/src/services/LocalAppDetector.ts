@@ -90,12 +90,13 @@ export class LocalAppDetector implements vscode.Disposable {
         if (!this.tokenFsPath || this.localEnv.hasAppJson) {
             return
         }
-        debug('LocalAppDetector:fetchToken', 'initializing')
-        const data = await vscode.workspace.fs.readFile(this.tokenFsPath).then(data => data.toString())
-        const json = JSON.parse(data) as AppJson
+        const appJson = await loadAppJson()
+        if (!appJson) {
+          return
+        }
         const token = json.token
         // Once the token is found, we can stop watching the files
-        if (token.length) {
+        if (token && token.length) {
             debug('LocalAppDetector:fetchToken', 'found')
             this.localEnv.hasAppJson = true
             this.tokenFsPath = null
