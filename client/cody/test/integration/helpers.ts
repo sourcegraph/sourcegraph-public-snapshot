@@ -26,16 +26,16 @@ export async function beforeIntegrationTest(): Promise<void> {
     // Configure extension.
     const config = vscode.workspace.getConfiguration()
     await config.update('cody.serverEndpoint', mockServer.SERVER_URL)
-    await ensureExecuteCommand('cody.set-access-token', [mockServer.VALID_TOKEN])
+    await ensureExecuteCommand('cody.test.token', [mockServer.VALID_TOKEN])
 }
 
 /**
  * Teardown (`afterEach`) function for integration tests that use {@link beforeIntegrationTest}.
  */
 export async function afterIntegrationTest(): Promise<void> {
-    await ensureExecuteCommand('cody.delete-access-token')
     await ensureExecuteCommand('cody.interactive.clear')
-    await ensureExecuteCommand('cody.clear-chat-history')
+    await ensureExecuteCommand('cody.history.clear')
+    await ensureExecuteCommand('cody.test.token', null)
 }
 
 // executeCommand specifies ...any[] https://code.visualstudio.com/api/references/vscode-api#commands

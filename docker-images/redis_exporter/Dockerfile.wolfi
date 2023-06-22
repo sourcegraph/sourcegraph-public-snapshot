@@ -1,7 +1,0 @@
-# hadolint ignore=DL3007
-FROM us.gcr.io/sourcegraph-dev/wolfi-redis-exporter-base:latest
-
-USER sourcegraph
-EXPOSE 9121
-
-ENTRYPOINT [ "/usr/local/bin/redis_exporter" ]

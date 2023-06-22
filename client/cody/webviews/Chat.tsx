@@ -49,9 +49,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     suggestions,
     setSuggestions,
 }) => {
+    const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
+
     const abortMessageInProgress = useCallback(() => {
+        abortMessageInProgressInternal()
         vscodeAPI.postMessage({ command: 'abort' })
-    }, [vscodeAPI])
+        setAbortMessageInProgress(() => () => undefined)
+    }, [abortMessageInProgressInternal, vscodeAPI])
 
     const onSubmit = useCallback(
         (text: string, submitType: 'user' | 'suggestion') => {

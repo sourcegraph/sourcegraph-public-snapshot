@@ -13,6 +13,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/slack-go/slack"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
@@ -106,7 +107,9 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		dotcomURL.String(),
 		config.ActorRateLimitNotify.Thresholds,
 		config.ActorRateLimitNotify.SlackWebhookURL,
-		slack.PostWebhookContext,
+		func(ctx context.Context, url string, msg *slack.WebhookMessage) error {
+			return slack.PostWebhookCustomHTTPContext(ctx, url, otelhttp.DefaultClient, msg)
+		},
 	)
 
 	// Set up our handler chain, which is run from the bottom up. Application handlers

@@ -1,14 +1,15 @@
-import * as React from 'react'
+import { FC, Fragment, MouseEventHandler, useCallback, useState } from 'react'
 
-import { mdiClose } from '@mdi/js'
+import { mdiClose, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, Text } from '@sourcegraph/wildcard'
+import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
-import { SearchPatternType, OwnerFields, OwnershipConnectionFields } from '../../../graphql-operations'
+import { AddOwnerModal } from '../../../components/own/AddOwnerModal'
+import { OwnerFields, OwnershipConnectionFields, SearchPatternType } from '../../../graphql-operations'
 
 import { FileOwnershipEntry } from './FileOwnershipEntry'
 
@@ -18,10 +19,10 @@ interface OwnExplanationProps {
     owners?: OwnerFields[]
 }
 
-const OwnExplanation: React.FunctionComponent<OwnExplanationProps> = ({ owners }) => {
+const OwnExplanation: FC<OwnExplanationProps> = ({ owners }) => {
     const [dismissed, setDismissed] = useTemporarySetting('own.panelExplanationHidden')
 
-    const onDismiss = React.useCallback(() => {
+    const onDismiss = useCallback(() => {
         setDismissed(true)
     }, [setDismissed])
 
@@ -91,17 +92,27 @@ interface OwnerListProps {
     makeOwnerError?: Error
     repoID: string
     filePath: string
+    refetch: any
 }
 
-export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
+export const OwnerList: FC<OwnerListProps> = ({
     data,
     isDirectory = false,
     makeOwnerButton,
     makeOwnerError,
     repoID,
     filePath,
+    refetch,
 }) => {
-    const [removeOwnerError, setRemoveOwnerError] = React.useState<Error | undefined>(undefined)
+    const [removeOwnerError, setRemoveOwnerError] = useState<Error | undefined>(undefined)
+    const [openAddOwnerModal, setOpenAddOwnerModal] = useState<boolean>(false)
+    const onClickAdd = useCallback<MouseEventHandler>(event => {
+        event.preventDefault()
+        setOpenAddOwnerModal(true)
+    }, [])
+    const closeModal = useCallback(() => {
+        setOpenAddOwnerModal(false)
+    }, [])
 
     if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
@@ -119,6 +130,23 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                         <ErrorAlert error={removeOwnerError} prefix="Error promoting an owner" className="mt-2" />
                     </div>
                 )}
+                {totalCount === 0 ? (
+                    <NoOwnershipAlert isDirectory={isDirectory} />
+                ) : (
+                    <PageHeader
+                        path={[{ text: 'Owners' }]}
+                        className="mb-3"
+                        actions={
+                            <Button aria-label="Add an owner" variant="success" onClick={onClickAdd}>
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add owner
+                            </Button>
+                        }
+                    >
+                        <PageHeader.Heading className={styles.heading} as="h4">
+                            Owners
+                        </PageHeader.Heading>
+                    </PageHeader>
+                )}
                 <table className={styles.table}>
                     <thead>
                         <tr className="sr-only">
@@ -129,15 +157,6 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <th colSpan={3}>
-                                {totalCount === 0 ? (
-                                    <NoOwnershipAlert isDirectory={isDirectory} />
-                                ) : (
-                                    <H4 className="mb-3">Owners</H4>
-                                )}
-                            </th>
-                        </tr>
                         {nodes
                             .filter(ownership =>
                                 ownership.reasons.some(
@@ -148,7 +167,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                             )
                             .map((ownership, index) => (
                                 // This list is not expected to change, so it's safe to use the index as a key.
-                                <React.Fragment key={index}>
+                                <Fragment key={index}>
                                     {index > 0 && <tr className={styles.bordered} />}
                                     <FileOwnershipEntry
                                         owner={ownership.owner}
@@ -156,8 +175,10 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                         filePath={filePath}
                                         reasons={ownership.reasons}
                                         setRemoveOwnerError={setRemoveOwnerError}
+                                        isDirectory={isDirectory}
+                                        refetch={refetch}
                                     />
-                                </React.Fragment>
+                                </Fragment>
                             ))}
                         {
                             /* Visually separate two sets with a horizontal rule (like subsequent owners are)
@@ -193,7 +214,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                         : undefined
 
                                 return (
-                                    <React.Fragment key={index}>
+                                    <Fragment key={index}>
                                         {index > 0 && <tr className={styles.bordered} />}
                                         <FileOwnershipEntry
                                             owner={ownership.owner}
@@ -202,12 +223,15 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
                                             repoID={repoID}
                                             filePath={filePath}
                                             setRemoveOwnerError={setRemoveOwnerError}
+                                            isDirectory={isDirectory}
+                                            refetch={refetch}
                                         />
-                                    </React.Fragment>
+                                    </Fragment>
                                 )
                             })}
                     </tbody>
                 </table>
+                {openAddOwnerModal && <AddOwnerModal repoID={repoID} path={filePath} onCancel={closeModal} />}
             </div>
         )
     }
@@ -220,7 +244,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
     )
 }
 
-const NoOwnershipAlert: React.FunctionComponent<{ isDirectory?: boolean }> = ({ isDirectory }) => (
+const NoOwnershipAlert: FC<{ isDirectory?: boolean }> = ({ isDirectory }) => (
     <Alert variant="info">
         {isDirectory ? 'No ownership data for this path.' : 'No ownership data for this file.'}
     </Alert>

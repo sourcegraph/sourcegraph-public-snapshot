@@ -157,8 +157,8 @@ func (a *Actor) Limiter(
 		// Only update rate limit TTL if the actor has been updated recently.
 		UpdateRateLimitTTL: a.LastUpdated != nil && time.Since(*a.LastUpdated) < 5*time.Minute,
 		NowFunc:            time.Now,
-		RateLimitAlerter: func(usagePercentage float32, ttl time.Duration) {
-			rateLimitNotifier(a.ID, codygateway.ActorSource(a.Source.Name()), feature, usagePercentage, ttl)
+		RateLimitAlerter: func(ctx context.Context, usageRatio float32, ttl time.Duration) {
+			rateLimitNotifier(ctx, a.ID, codygateway.ActorSource(a.Source.Name()), feature, usageRatio, ttl)
 		},
 	}
 

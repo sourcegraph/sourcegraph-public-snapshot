@@ -111,10 +111,8 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
         return val === defaultStateFilterValue ? null : val
     }
 
-    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useRepoEmbeddingJobsConnection(
-        query,
-        getStateFilterValue(filterValues)
-    )
+    const { loading, hasNextPage, fetchMore, refetchAll, refetchFirst, connection, error } =
+        useRepoEmbeddingJobsConnection(query, getStateFilterValue(filterValues))
 
     const [scheduleRepoEmbeddingJobs, { loading: repoEmbeddingJobsLoading, error: repoEmbeddingJobsError }] =
         useScheduleRepoEmbeddingJobs()
@@ -122,9 +120,9 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     const onSubmit = useCallback(
         async (repoNames: string[]) => {
             await scheduleRepoEmbeddingJobs({ variables: { repoNames } })
-            refetchAll()
+            refetchFirst()
         },
-        [refetchAll, scheduleRepoEmbeddingJobs]
+        [refetchFirst, scheduleRepoEmbeddingJobs]
     )
 
     const form = useForm<RepoEmbeddingJobsFormValues>({

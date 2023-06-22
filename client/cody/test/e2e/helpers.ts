@@ -71,9 +71,10 @@ export const test = base
                 // Ensure we're logged out
                 // TODO(philipp-spiess): Find a way to access the extension host via the injected
                 // electron process so we can run the hidden command instead.
-                if (await page.isVisible('[aria-label="Settings"]')) {
-                    await page.click('[aria-label="Settings"]')
-                    await sidebar.getByRole('button', { name: 'Logout' }).click()
+                if (await page.isVisible('[aria-label="User Settings"]')) {
+                    await page.getByRole('button', { name: 'User Settings' }).click()
+                    await sidebar.getByRole('button', { name: 'Sign Out' }).click()
+                    await page.getByRole('combobox', { name: 'input' }).press('Enter')
                 }
 
                 await use(page)
