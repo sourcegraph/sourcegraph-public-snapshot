@@ -33,6 +33,9 @@ func Init(logger log.Logger) CleanupFunc {
 	// TODO(sqs) TODO(single-binary): see the env.HackClearEnvironCache docstring, we should be able to remove this
 	// eventually.
 	env.HackClearEnvironCache()
+	// We set this value low since we don't have to manage the free space on app client that aggressively
+	// TODO(burmudar): warn the user that they're low on space
+	setDefaultEnv(logger, "SRC_REPOS_DESIRED_PERCENT_FREE", "99")
 
 	// INDEXED_SEARCH_SERVERS is empty (but defined) so that indexed search is disabled.
 	setDefaultEnv(logger, "INDEXED_SEARCH_SERVERS", "")
