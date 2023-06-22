@@ -25,6 +25,21 @@ type EmbeddingsSetupProgress {
     The overall percentage of setting up embeddings with 0 meaning no progress not started and 100 means the job is complete.
     """
     percentComplete: Int!
+
+    """
+    The repository that is currently being processed
+    """
+    currentRepository: String
+
+    """
+    The number of files processed for the current repository
+    """
+    currentRepositoryFilesProcessed: Int
+
+    """
+    The total number of files to process for the current repository
+    """
+    currentRepositoryTotalFilesToProcess: Int
 }
 
 """

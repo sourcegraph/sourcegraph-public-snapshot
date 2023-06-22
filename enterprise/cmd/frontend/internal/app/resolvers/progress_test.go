@@ -4,12 +4,14 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestGetProgress(t *testing.T) {
 	testCases := []struct {
-		status   repo.EmbedRepoStats
-		expected float64
+		status                           repo.EmbedRepoStats
+		expectedProcessed, expectedTotal *int32
+		expectedProgress                 float64
 	}{
 		{
 			repo.EmbedRepoStats{
@@ -24,6 +26,8 @@ func TestGetProgress(t *testing.T) {
 					FilesSkipped:   map[string]int{"small": 1, "large": 2},
 				},
 			},
+			pointers.Ptr(int32(5 + 2 + 3 + 5 + 1 + 2)),
+			pointers.Ptr(int32(10 + 10)),
 			0.9,
 		},
 		{
@@ -37,14 +41,16 @@ func TestGetProgress(t *testing.T) {
 					FilesEmbedded:  10,
 				},
 			},
+			pointers.Ptr(int32(10 + 10)),
+			pointers.Ptr(int32(10 + 10)),
 			1.0,
 		},
 	}
 
 	for _, tc := range testCases {
-		progress := getProgress(tc.status)
-		if progress != tc.expected {
-			t.Errorf("Expected progress %f but got %f", tc.expected, progress)
+		processed, total, progress := getProgress(tc.status)
+		if *processed != *tc.expectedProcessed || *total != *tc.expectedTotal || progress != tc.expectedProgress {
+			t.Errorf("Expected processed %d, total %d and progress %f but got %d, %d and %f", *tc.expectedProcessed, *tc.expectedTotal, tc.expectedProgress, *processed, *total, progress)
 		}
 	}
 }
