@@ -30,7 +30,7 @@ func Init(
 		enterpriseServices.EnterpriseSearchJobs,
 	)
 	contextClient := codycontext.NewCodyContextClient(
-		observationCtx.Logger,
+		observationCtx,
 		edb.NewEnterpriseDB(db),
 		embeddingsClient,
 		searchClient,
