@@ -94,6 +94,7 @@ go_test(
         "//internal/httpcli",
         "//internal/observation",
         "//internal/types",
+        "//internal/wrexec",
         "//lib/errors",
         "//schema",
         "@com_github_google_go_cmp//cmp",
