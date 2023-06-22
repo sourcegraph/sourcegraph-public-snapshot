@@ -188,7 +188,7 @@ Sourcegraph can be configured to sign commits pushed to GitHub using a GitHub Ap
 
 At present, only GitHub code hosts (both Cloud and Enterprise) are supported, and only GitHub App signing is supported. Support for other code hosts and signing methods may be added in the future.
 
-GitHub Apps are also the recommended way to [sync repositories on GitHub](../external_service/github#using-a-github-app). However, it is necessary to create a separate GitHub App for Batch Changes commit signing even if you already have an App connected for the same code host for repository syncing because the Apps require different permissions. Fortunately, the process for creating each type of GitHub App is almost identical.
+GitHub Apps are also the recommended way to [sync repositories on GitHub](../external_service/github.md#using-a-github-app). However, it is necessary to create a separate GitHub App for Batch Changes commit signing even if you already have an App connected for the same code host for repository syncing because the Apps require different permissions. Fortunately, the process for creating each type of GitHub App is almost identical.
 
 <!-- NOTE: The instructions in the following sections closely mirror those in doc/admin/external_service/github.md. When making changes here, be sure to consider if those changes should also be made over there! -->
 
