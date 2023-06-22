@@ -21,6 +21,7 @@ type embeddingsSetupProgressResolver struct {
 	currentProcessed *int32
 	currentTotal     *int32
 	overallProgress  int32
+	oneRepoCompleted bool
 	err              error
 }
 
@@ -77,6 +78,13 @@ func (r *embeddingsSetupProgressResolver) CurrentRepositoryTotalFilesToProcess(c
 	}
 	return r.currentTotal
 }
+func (r *embeddingsSetupProgressResolver) OneRepositoryReady(ctx context.Context) bool {
+	r.getStatus(ctx)
+	if r.err != nil {
+		return false
+	}
+	return r.oneRepoCompleted
+}
 
 func getAllRepos(ctx context.Context, db database.DB, repoNames []string) ([]types.MinimalRepo, error) {
 	opts := database.ReposListOptions{}
@@ -118,6 +126,7 @@ func (r *embeddingsSetupProgressResolver) getProgressForRepo(ctx context.Context
 		}
 		switch job.State {
 		case "completed":
+			r.oneRepoCompleted = true
 			return 1, nil
 		case "processing":
 			r.currentRepo = pointers.Ptr(string(current.Name))

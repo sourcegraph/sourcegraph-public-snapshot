@@ -31,6 +31,7 @@ type EmbeddingsSetupProgressResolver interface {
 	CurrentRepository(ctx context.Context) *string
 	CurrentRepositoryFilesProcessed(ctx context.Context) *int32
 	CurrentRepositoryTotalFilesToProcess(ctx context.Context) *int32
+	OneRepositoryReady(ctx context.Context) bool
 }
 
 type LocalDirectoryResolver interface {
