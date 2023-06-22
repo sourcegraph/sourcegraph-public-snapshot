@@ -116,13 +116,11 @@ export const OwnerList: FC<OwnerListProps> = ({
         setOpenAddOwnerModal(false)
     }, [])
 
-    const addOwnerButton = (): JSX.Element | undefined => {
-        return showAddOwnerButton ? (
+    const addOwnerButton = (): JSX.Element | undefined => showAddOwnerButton ? (
             <Button aria-label="Add an owner" variant="success" onClick={onClickAdd}>
                 <Icon aria-hidden={true} svgPath={mdiPlus} /> Add owner
             </Button>
         ) : undefined
-    }
     if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
