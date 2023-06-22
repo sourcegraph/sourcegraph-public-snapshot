@@ -970,7 +970,7 @@ func TestMultiHandler_SelectQueueForDequeueing(t *testing.T) {
 	}
 }
 
-func TestMultiHandler_FilterForEligibleQueues(t *testing.T) {
+func TestMultiHandler_SelectEligibleQueues(t *testing.T) {
 	tests := []struct {
 		name             string
 		queues           []string
@@ -1031,11 +1031,11 @@ func TestMultiHandler_FilterForEligibleQueues(t *testing.T) {
 				}
 			}
 
-			queues, err := m.FilterForEligibleQueues(tt.queues)
+			queues, err := m.SelectEligibleQueues(tt.queues)
 			if err != nil {
 				t.Fatalf("unexpected error while discarding queues: %s", err)
 			}
-			assert.Equalf(t, tt.expectedQueues, queues, "FilterForEligibleQueues(%v)", tt.queues)
+			assert.Equalf(t, tt.expectedQueues, queues, "SelectEligibleQueues(%v)", tt.queues)
 		})
 	}
 }
@@ -1058,7 +1058,7 @@ func mockSiteConfig() {
 	}})
 }
 
-func TestMultiHandler_FilterNonEmptyQueues(t *testing.T) {
+func TestMultiHandler_SelectNonEmptyQueues(t *testing.T) {
 	tests := []struct {
 		name           string
 		queueNames     []string
@@ -1105,11 +1105,11 @@ func TestMultiHandler_FilterNonEmptyQueues(t *testing.T) {
 
 			tt.mockFunc(codeIntelMockStore, batchesMockStore)
 
-			got, err := m.FilterNonEmptyQueues(ctx, tt.queueNames)
+			got, err := m.SelectNonEmptyQueues(ctx, tt.queueNames)
 			if err != nil {
 				t.Fatalf("unexpected error while filtering non empty queues: %s", err)
 			}
-			assert.Equalf(t, tt.expectedQueues, got, "FilterNonEmptyQueues(%v)", tt.queueNames)
+			assert.Equalf(t, tt.expectedQueues, got, "SelectNonEmptyQueues(%v)", tt.queueNames)
 		})
 	}
 }

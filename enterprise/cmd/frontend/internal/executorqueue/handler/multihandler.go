@@ -118,7 +118,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	}
 
 	// discard empty queues
-	nonEmptyQueues, err := m.FilterNonEmptyQueues(ctx, req.Queues)
+	nonEmptyQueues, err := m.SelectNonEmptyQueues(ctx, req.Queues)
 	if err != nil {
 		return executortypes.Job{}, false, err
 	}
@@ -132,7 +132,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 		selectedQueue = nonEmptyQueues[0]
 	} else {
 		// multiple populated queues, discard queues at dequeue limit
-		candidateQueues, err := m.FilterForEligibleQueues(nonEmptyQueues)
+		candidateQueues, err := m.SelectEligibleQueues(nonEmptyQueues)
 		if err != nil {
 			return executortypes.Job{}, false, err
 		}
@@ -259,9 +259,9 @@ var DoSelectQueueForDequeueing = func(candidateQueues []string, config *schema.D
 	return chooser.Pick(), nil
 }
 
-// FilterForEligibleQueues returns a list of queues that have not yet reached the limit of dequeues in the
+// SelectEligibleQueues returns a list of queues that have not yet reached the limit of dequeues in the
 // current time window.
-func (m *MultiHandler) FilterForEligibleQueues(queues []string) ([]string, error) {
+func (m *MultiHandler) SelectEligibleQueues(queues []string) ([]string, error) {
 	var candidateQueues []string
 	for _, queue := range queues {
 		dequeues, err := m.DequeueCache.GetHashAll(queue)
@@ -286,9 +286,9 @@ func (m *MultiHandler) FilterForEligibleQueues(queues []string) ([]string, error
 	return candidateQueues, nil
 }
 
-// FilterNonEmptyQueues gets the queue size from the store of each provided queue name and returns
+// SelectNonEmptyQueues gets the queue size from the store of each provided queue name and returns
 // only those names that have at least one job queued.
-func (m *MultiHandler) FilterNonEmptyQueues(ctx context.Context, queueNames []string) ([]string, error) {
+func (m *MultiHandler) SelectNonEmptyQueues(ctx context.Context, queueNames []string) ([]string, error) {
 	var nonEmptyQueues []string
 	for _, queue := range queueNames {
 		var err error
