@@ -319,7 +319,7 @@ function toInlineCompletionItems(logId: string, completions: Completion[]): vsco
         completion =>
             new vscode.InlineCompletionItem(completion.content, undefined, {
                 title: 'Completion accepted',
-                command: 'cody.completions.inline.accepted',
+                command: 'cody.autocomplete.inline.accepted',
                 arguments: [{ codyLogId: logId, codyLines: completion.content.split('\n').length }],
             })
     )

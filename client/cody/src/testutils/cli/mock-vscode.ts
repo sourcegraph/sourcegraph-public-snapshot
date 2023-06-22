@@ -22,7 +22,7 @@ const vscodeMock = {
                     switch (key) {
                         case 'cody.debug.filter':
                             return '.*'
-                        case 'cody.experimental.suggestions':
+                        case 'cody.autocomplete.enabled':
                             return true
                         case 'cody.serverEndpoint':
                             return 'https://sourcegraph.sourcegraph.com'
