@@ -148,7 +148,13 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 </div>
             )}
-            <div className={classNames(styles.contentPadding, textarea ? undefined : styles.content)}>
+            <div
+                className={classNames(
+                    styles.contentPadding,
+                    textarea ? undefined : styles.content,
+                    inProgress && styles.rowInProgress
+                )}
+            >
                 {message.displayText ? (
                     textarea ?? (
                         <CodeBlocks

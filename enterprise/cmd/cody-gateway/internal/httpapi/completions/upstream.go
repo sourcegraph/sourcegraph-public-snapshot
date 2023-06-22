@@ -26,14 +26,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type bodyTransformer[T any] func(*T)
+type bodyTransformer[T UpstreamRequest] func(*T)
 type requestTransformer func(*http.Request)
-type requestMetadataRetriever[T any] func(T) (promptCharacterCount int, model string, additionalMetadata map[string]any)
-type responseParser[T any] func(T, io.Reader) (completionCharacterCount int)
+type requestValidator[T UpstreamRequest] func(T) error
+type requestMetadataRetriever[T UpstreamRequest] func(T) (promptCharacterCount int, model string, additionalMetadata map[string]any)
+type responseParser[T UpstreamRequest] func(T, io.Reader) (completionCharacterCount int)
 
 // upstreamHandlerMethods declares a set of methods that are used throughout the
 // lifecycle of a request to an upstream API. All methods are required.
-type upstreamHandlerMethods[ReqT any] struct {
+type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
 	// transformBody can be used to modify the request body before it is sent
 	// upstream. To manipulate the HTTP request, use transformRequest.
 	transformBody bodyTransformer[ReqT]
@@ -46,9 +47,13 @@ type upstreamHandlerMethods[ReqT any] struct {
 	// parseResponse should extract details from the response we get back from
 	// upstream for tracking purposes.
 	parseResponse responseParser[ReqT]
+	// validateRequest can be used to validate the HTTP request before it is sent upstream. Returning a non-nil error will stop further processing and return a 400 HTTP error code
+	validateRequest requestValidator[ReqT]
 }
 
-func makeUpstreamHandler[ReqT any](
+type UpstreamRequest interface{}
+
+func makeUpstreamHandler[ReqT UpstreamRequest](
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
@@ -119,6 +124,11 @@ func makeUpstreamHandler[ReqT any](
 			var body ReqT
 			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 				response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "failed to parse request body"))
+				return
+			}
+
+			if err := methods.validateRequest(body); err != nil {
+				response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "invalid request"))
 				return
 			}
 

@@ -110,7 +110,7 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     /** External URLs for the file */
     externalURLs?: ExternalLinkFields[]
 
-    snapshotData?: { offset: number; data: string }[] | null
+    snapshotData?: { offset: number; data: string; additional: string[] | null }[] | null
 }
 
 const staticExtensions: Extension = [
@@ -294,7 +294,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
-            scipSnapshot(blobInfo.snapshotData),
+            scipSnapshot(blobInfo.content, blobInfo.snapshotData),
             codeFoldingExtension(),
             isCodyEnabled()
                 ? codyWidgetExtension(

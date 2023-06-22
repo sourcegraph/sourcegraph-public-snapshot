@@ -18,11 +18,10 @@ export interface DashboardsViewProps extends TelemetryProps {
      * version of merged settings (all insights)
      */
     dashboardId?: string
-    isSourcegraphApp: boolean
 }
 
 export const DashboardsView: FC<DashboardsViewProps> = props => {
-    const { dashboardId, telemetryService, isSourcegraphApp } = props
+    const { dashboardId, telemetryService } = props
 
     const { dashboards } = useInsightDashboards()
 
@@ -52,7 +51,6 @@ export const DashboardsView: FC<DashboardsViewProps> = props => {
                 currentDashboard={currentDashboard}
                 dashboards={dashboards}
                 telemetryService={telemetryService}
-                isSourcegraphApp={isSourcegraphApp}
             />
         </>
     )

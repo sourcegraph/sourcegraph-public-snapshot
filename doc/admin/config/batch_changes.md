@@ -165,16 +165,17 @@ When enabled, Batch Changes will override any setting on the repository on the c
 
 Not every code host supports this in the same way; some code host APIs expose a property on the changeset which can be toggled to enable this behavior, while others require a separate API call to delete the branch after the changeset is merged/closed.
 
-For those that support a changeset property, Batch Changes will automatically set the property to match the site config setting. The property will be updated whenever the changeset is updated, so that the settings stay in sync.
+For those that support a changeset property, Batch Changes will automatically set the property to match the site config setting. The property will be updated whenever the changeset is updated, so that the settings stay in sync. Using a changeset property has the added benefit that the branch will be deleted even if the changeset is merged/closed on the code host itself, rather than through Sourcegraph.
 
 For those that require a separate API call, Batch Changes will only be able to delete the branch if the changeset is merged/closed _using Sourcegraph_. If the changeset is merged/closed on the code host itself, Batch Changes will not be able to delete the branch.
 
 Refer to the table below to see the levels with which each code host is supported:
 
-Code Host | Changeset property or separate API call? | Support on merge | Support on close
---------- | --------- | :-: | :-:
-Azure DevOps | Changeset property | ✓ | ✗
-Bitbucket Cloud | Changeset property | ✓ | ✓
-Bitbucket Server | API call | ✓ | ✓
-GitHub | API call | ✓ | ✓
-GitLab | Changeset property | ✓ | ✓
+Code Host | Changeset property or separate API call? | Support on merge | Support on close | Note
+--------- | --------- | :-: | :-: | ----
+Azure DevOps | Changeset property | ✓ | ✗ |
+Bitbucket Cloud | Changeset property | ✓ | ✓ |
+Bitbucket Server | API call | ✓ | ✓ |
+GitHub | API call | ✓ | ✓ |
+GitLab | Changeset property | ✓ | ✓ |
+Gerrit | API call | ✗ | ✓ | Requires ["delete own changes" permission](https://gerrit-review.googlesource.com/Documentation/access-control.html#category_delete_own_changes) at minimum

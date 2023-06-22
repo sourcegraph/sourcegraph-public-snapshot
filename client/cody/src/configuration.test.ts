@@ -1,5 +1,6 @@
 import type * as vscode from 'vscode'
 
+import { DOTCOM_URL } from './chat/protocol'
 import { getConfiguration } from './configuration'
 
 describe('getConfiguration', () => {
@@ -8,7 +9,7 @@ describe('getConfiguration', () => {
             get: <T>(_key: string, defaultValue?: T): typeof defaultValue | undefined => defaultValue,
         }
         expect(getConfiguration(config)).toEqual({
-            serverEndpoint: '',
+            serverEndpoint: DOTCOM_URL.href,
             codebase: '',
             useContext: 'embeddings',
             experimentalSuggest: false,
@@ -22,6 +23,7 @@ describe('getConfiguration', () => {
             debugFilter: null,
             completionsAdvancedProvider: 'anthropic',
             completionsAdvancedServerEndpoint: null,
+            completionsAdvancedAccessToken: null,
             completionsAdvancedCache: true,
             completionsAdvancedEmbeddings: true,
         })
@@ -62,6 +64,8 @@ describe('getConfiguration', () => {
                         return 'unstable-codegen'
                     case 'cody.completions.advanced.serverEndpoint':
                         return 'https://example.com/llm'
+                    case 'cody.completions.advanced.accessToken':
+                        return 'foobar'
                     case 'cody.completions.advanced.cache':
                         return false
                     case 'cody.completions.advanced.embeddings':
@@ -89,6 +93,7 @@ describe('getConfiguration', () => {
             debugFilter: /.*/,
             completionsAdvancedProvider: 'unstable-codegen',
             completionsAdvancedServerEndpoint: 'https://example.com/llm',
+            completionsAdvancedAccessToken: 'foobar',
             completionsAdvancedCache: false,
             completionsAdvancedEmbeddings: false,
         })

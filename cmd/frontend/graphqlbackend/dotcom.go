@@ -162,6 +162,7 @@ type CodyGatewayUsersByAccessTokenArgs struct {
 type CodyGatewayUser interface {
 	Username() string
 	CodyGatewayAccess() CodyGatewayAccess
+	ID() graphql.ID
 }
 
 type CodyGatewayAccess interface {

@@ -365,7 +365,7 @@ export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService, isSour
             <Container className="mb-3">
                 {isSourcegraphApp ? (
                     <Text className="mb-1">
-                        We're making regular improvements to the Sourcegraph app.
+                        We're making regular improvements to the Cody app.
                         <br /> For information on how to upgrade to the latest version, see{' '}
                         <Link to="/help/app#upgrading" target="_blank" rel="noopener">
                             our docs

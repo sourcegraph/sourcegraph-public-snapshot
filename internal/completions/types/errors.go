@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -16,7 +18,13 @@ import (
 // Callers of CompletionsClient should check for this error with AsErrStatusNotOK
 // and handle it appropriately, typically with (*ErrStatusNotOK).WriteResponse.
 type ErrStatusNotOK struct {
-	Source     string
+	// Source indicates the completions client this error came from.
+	Source string
+	// SourceTraceContext is a trace span associated with the request that failed.
+	// This is useful because the source may sample all traces, whereas Sourcegraph
+	// might not.
+	SourceTraceContext *log.TraceContext
+
 	statusCode int
 	// responseBody is a truncated copy of the response body, read on a best-effort basis.
 	responseBody   string
@@ -39,12 +47,23 @@ func NewErrStatusNotOK(source string, resp *http.Response) error {
 		return nil
 	}
 
+	// Try to extrace trace IDs from the source.
+	var tc *log.TraceContext
+	if resp != nil && resp.Header != nil {
+		tc = &log.TraceContext{
+			TraceID: resp.Header.Get("X-Trace"),
+			SpanID:  resp.Header.Get("X-Trace-Span"),
+		}
+	}
+
 	// Do a partial read of what we've got.
 	defer resp.Body.Close()
 	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
 
 	return &ErrStatusNotOK{
-		Source:         source,
+		Source:             source,
+		SourceTraceContext: tc,
+
 		statusCode:     resp.StatusCode,
 		responseBody:   string(respBody),
 		responseHeader: resp.Header,

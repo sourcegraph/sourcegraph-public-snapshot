@@ -23,6 +23,10 @@
       interfaces:
         - Client
       prefix: Gerrit
+    - path: github.com/sourcegraph/sourcegraph/internal/gitserver
+      interfaces:
+        - Client
+      prefix: Gitserver
 - filename: cmd/frontend/internal/httpapi/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/httpcli
   interfaces:

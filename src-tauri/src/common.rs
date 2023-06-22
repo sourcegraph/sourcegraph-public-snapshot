@@ -49,12 +49,11 @@ pub fn show_logs(app: &AppHandle) {
 
 pub fn prompt_to_clear_all_data(app: &AppHandle) {
     let window = app.get_window("main").unwrap();
-    let path_resolver = app.path_resolver();
     let app_clone = app.clone(); // Clone the app for use in the closure
 
     confirm(
         Some(&window),
-        "Sourcegraph",
+        "Cody",
         "This will remove all data.\nAre you sure?",
         move |answer| {
             if answer {

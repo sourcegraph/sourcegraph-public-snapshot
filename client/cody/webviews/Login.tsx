@@ -1,12 +1,9 @@
 import { useCallback, useState } from 'react'
 
-import { TextFieldType } from '@vscode/webview-ui-toolkit/dist/text-field'
-import { VSCodeTextField, VSCodeButton } from '@vscode/webview-ui-toolkit/react'
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
+import classNames from 'classnames'
 
-import { renderCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
-import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
-
-import { AuthStatus } from '../src/chat/protocol'
+import { AuthStatus, DOTCOM_CALLBACK_URL, DOTCOM_URL } from '../src/chat/protocol'
 
 import { ConnectApp } from './ConnectApp'
 import { VSCodeWrapper } from './utils/VSCodeApi'
@@ -15,91 +12,23 @@ import styles from './Login.module.css'
 
 interface LoginProps {
     authStatus?: AuthStatus
-    onLogin: (token: string, endpoint: string) => void
     serverEndpoint?: string
     isAppInstalled: boolean
+    isAppRunning?: boolean
     vscodeAPI: VSCodeWrapper
     callbackScheme?: string
+    appOS?: string
+    appArch?: string
+    isAppConnectEnabled?: boolean
 }
 
-export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
-    authStatus,
-    onLogin,
-    serverEndpoint,
-    isAppInstalled,
-    vscodeAPI,
-    callbackScheme,
-}) => {
-    const [token, setToken] = useState<string>('')
-    const [endpoint, setEndpoint] = useState(serverEndpoint)
-    const authUri = new URL('https://sourcegraph.com/user/settings/tokens/new/callback')
-    authUri.searchParams.append('requestFrom', callbackScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY')
-
-    const onSubmit = useCallback<React.FormEventHandler>(
-        event => {
-            event.preventDefault()
-            if (endpoint) {
-                onLogin(token, endpoint)
-            }
-        },
-        [endpoint, onLogin, token]
-    )
-
-    return (
-        <div className={styles.container}>
-            {authStatus && <ErrorContainer authStatus={authStatus} />}
-            <section className={styles.section}>
-                <h2 className={styles.sectionHeader}>Enterprise User</h2>
-                <form className={styles.wrapper} onSubmit={onSubmit}>
-                    <VSCodeTextField
-                        id="endpoint"
-                        value={endpoint || ''}
-                        className={styles.input}
-                        placeholder="https://example.sourcegraph.com"
-                        onChange={e => setEndpoint((e.target as HTMLInputElement).value)}
-                        onInput={e => setEndpoint((e.target as HTMLInputElement).value)}
-                    >
-                        Sourcegraph Instance URL
-                    </VSCodeTextField>
-                    <VSCodeTextField
-                        id="accessToken"
-                        value={token}
-                        className={styles.input}
-                        type={TextFieldType.password}
-                        onChange={e => setToken((e.target as HTMLInputElement).value)}
-                        onInput={e => setToken((e.target as HTMLInputElement).value)}
-                    >
-                        Access Token (
-                        <a href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token">docs</a>)
-                    </VSCodeTextField>
-                    <VSCodeButton className={styles.button} type="submit">
-                        Sign In
-                    </VSCodeButton>
-                </form>
-            </section>
-            <div className={styles.divider} />
-            <section className={styles.section}>
-                <h2 className={styles.sectionHeader}>Everyone Else</h2>
-                <p className={styles.openMessage}>
-                    Cody for open source code is available to all users with a Sourcegraph.com account
-                </p>
-                <a href={authUri.href}>
-                    <VSCodeButton
-                        className={styles.button}
-                        type="button"
-                        onClick={() => setEndpoint('https://sourcegraph.com')}
-                    >
-                        Continue with Sourcegraph.com
-                    </VSCodeButton>
-                </a>
-                {isAppInstalled && <ConnectApp vscodeAPI={vscodeAPI} />}
-            </section>
-            <div
-                className={styles.terms}
-                dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(CODY_TERMS_MARKDOWN) }}
-            />
-        </div>
-    )
+const APP_MESSAGES = {
+    getStarted: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
+    download: 'Download and run the Cody desktop app to configure your local code graph.',
+    connectApp: 'Cody App detected. All that’s left is to do is connect VS Code with Cody App.',
+    appNotRunning: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
+    comingSoon:
+        'We’re working on bringing Cody App to your platform. In the meantime, you can try Cody with open source repositories by signing in to Sourcegraph.com.',
 }
 
 const ERROR_MESSAGES = {
@@ -110,7 +39,129 @@ const ERROR_MESSAGES = {
     EMAIL_NOT_VERIFIED: 'Email not verified. Please add a verified email to your Sourcegraph.com account.',
 }
 
-const ErrorContainer: React.FunctionComponent<{ authStatus: AuthStatus }> = ({ authStatus }) => {
+export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
+    authStatus,
+    serverEndpoint,
+    isAppInstalled,
+    isAppRunning,
+    vscodeAPI,
+    callbackScheme,
+    appOS,
+    appArch,
+    isAppConnectEnabled,
+}) => {
+    const [endpoint, setEndpoint] = useState(serverEndpoint || DOTCOM_URL.href)
+
+    const isOSSupported = appOS === 'darwin' && appArch === 'arm64'
+
+    const loginWithDotCom = useCallback(() => {
+        const callbackUri = new URL(DOTCOM_CALLBACK_URL.href)
+        callbackUri.searchParams.append('requestFrom', callbackScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY')
+        setEndpoint(DOTCOM_URL.href)
+        vscodeAPI.postMessage({ command: 'links', value: callbackUri.href })
+    }, [callbackScheme, vscodeAPI])
+
+    const onFooterButtonClick = useCallback(
+        (title: 'signin' | 'support') => {
+            vscodeAPI.postMessage({ command: 'auth', type: title })
+        },
+        [vscodeAPI]
+    )
+
+    const title = isAppInstalled ? (isAppRunning ? 'Connect with Cody App' : 'Cody App Not Running') : 'Get Started'
+
+    const SigninWithApp: React.FunctionComponent = () => (
+        <div className={styles.sectionsContainer}>
+            <section className={classNames(styles.section, isOSSupported ? styles.codyGradient : null)}>
+                <h2 className={styles.sectionHeader}>{isAppInstalled ? title : 'Get Started'}</h2>
+                <p className={styles.openMessage}>
+                    {!isAppInstalled
+                        ? APP_MESSAGES.getStarted
+                        : !isAppRunning
+                        ? APP_MESSAGES.appNotRunning
+                        : APP_MESSAGES.connectApp}
+                </p>
+                {!isAppInstalled && <small className={styles.openMessage}>APP_MESSAGES.download</small>}
+                <ConnectApp
+                    isAppInstalled={isAppInstalled}
+                    vscodeAPI={vscodeAPI}
+                    isOSSupported={isOSSupported}
+                    appOS={appOS}
+                    appArch={appArch}
+                    callbackScheme={callbackScheme}
+                />
+                {!isOSSupported && (
+                    <small>
+                        Sorry, {appOS} {appArch} is not yet supported.
+                    </small>
+                )}
+            </section>
+            {!isOSSupported && (
+                <section className={classNames(styles.section, styles.codyGradient)}>
+                    <h2 className={styles.sectionHeader}>Cody App for {appOS} coming soon</h2>
+                    <p className={styles.openMessage}>{APP_MESSAGES.comingSoon}</p>
+                    <VSCodeButton className={styles.button} type="button" onClick={() => loginWithDotCom()}>
+                        Signin with Sourcegraph.com
+                    </VSCodeButton>
+                </section>
+            )}
+        </div>
+    )
+
+    const SigninWithoutApp: React.FunctionComponent = () => (
+        <div className={styles.sectionsContainer}>
+            {/* Sourcegraph Enterprise */}
+            <section className={classNames(styles.section, styles.greyGradient)}>
+                <h2 className={styles.sectionHeader}>Sourcegraph Enterprise</h2>
+                <p className={styles.openMessage}>
+                    Sign in by entering an access token created through your user settings on Sourcegraph.
+                </p>
+                <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('signin')}>
+                    Continue with Access Token
+                </VSCodeButton>
+            </section>
+            {/* Sourcegraph DotCom */}
+            <section className={classNames(styles.section, styles.greyGradient)}>
+                <h2 className={styles.sectionHeader}>Sourcegraph.com</h2>
+                <p className={styles.openMessage}>
+                    Cody for open source code is available to all users with a Sourcegraph.com account.
+                </p>
+                <VSCodeButton className={styles.button} type="button" onClick={() => loginWithDotCom()}>
+                    Continue with Sourcegraph.com
+                </VSCodeButton>
+            </section>
+            {/* Cody App */}
+            <section className={classNames(styles.section, styles.codyGradient)}>
+                <h2 className={styles.sectionHeader}>Cody App</h2>
+                <p className={styles.openMessage}>{APP_MESSAGES.getStarted}</p>
+                <ConnectApp
+                    isAppInstalled={isAppInstalled}
+                    vscodeAPI={vscodeAPI}
+                    isOSSupported={isOSSupported}
+                    appOS={appOS || ''}
+                    appArch={appArch || ''}
+                />
+            </section>
+        </div>
+    )
+
+    return (
+        <div className={styles.container}>
+            {authStatus && <ErrorContainer authStatus={authStatus} endpoint={endpoint} />}
+            {isAppConnectEnabled ? <SigninWithApp /> : <SigninWithoutApp />}
+            <footer className={styles.footer}>
+                <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('signin')}>
+                    Other Sign In Options…
+                </VSCodeButton>
+                <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('support')}>
+                    Feedback & Support
+                </VSCodeButton>
+            </footer>
+        </div>
+    )
+}
+
+const ErrorContainer: React.FunctionComponent<{ authStatus: AuthStatus; endpoint: string }> = ({ authStatus }) => {
     const {
         authenticated,
         siteHasCodyEnabled,

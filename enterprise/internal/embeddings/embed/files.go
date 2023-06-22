@@ -26,19 +26,13 @@ var TextFileExtensions = map[string]struct{}{
 	"txt":      {},
 }
 
-var defaultExcludedFilePathPatterns = []string{
+var DefaultExcludedFilePathPatterns = []string{
 	".*ignore", // Files like .gitignore, .eslintignore
 	".gitattributes",
 	".mailmap",
 	"*.csv",
-	"*.sql",
 	"*.svg",
-	"*.json",
-	"*.jsonc",
-	"*.jsonl",
 	"*.xml",
-	"*.yml",
-	"*.yaml",
 	"__fixtures__/",
 	"node_modules/",
 	"testdata/",
@@ -47,7 +41,7 @@ var defaultExcludedFilePathPatterns = []string{
 }
 
 func GetDefaultExcludedFilePathPatterns() []*paths.GlobPattern {
-	return CompileGlobPatterns(defaultExcludedFilePathPatterns)
+	return CompileGlobPatterns(DefaultExcludedFilePathPatterns)
 }
 
 func CompileGlobPatterns(patterns []string) []*paths.GlobPattern {

@@ -1,5 +1,6 @@
 import { Meta, Story } from '@storybook/react'
 
+import { AuthenticatedUser } from '../../../auth'
 import { WebStory } from '../../../components/WebStory'
 import { SourcegraphContext } from '../../../jscontext'
 
@@ -31,8 +32,24 @@ const context: Pick<SourcegraphContext, 'authProviders'> = {
 }
 
 export const SourcegraphDotCom: Story = () => (
-    <WebStory>{() => <CodyMarketingPage context={context} isSourcegraphDotCom={true} />}</WebStory>
+    <WebStory>
+        {() => <CodyMarketingPage context={context} isSourcegraphDotCom={true} authenticatedUser={null} />}
+    </WebStory>
 )
 export const Enterprise: Story = () => (
-    <WebStory>{() => <CodyMarketingPage context={context} isSourcegraphDotCom={false} />}</WebStory>
+    <WebStory>
+        {() => <CodyMarketingPage context={context} isSourcegraphDotCom={false} authenticatedUser={null} />}
+    </WebStory>
+)
+
+export const EnterpriseSiteAdmin: Story = () => (
+    <WebStory>
+        {() => (
+            <CodyMarketingPage
+                context={context}
+                isSourcegraphDotCom={false}
+                authenticatedUser={{ siteAdmin: true } as AuthenticatedUser}
+            />
+        )}
+    </WebStory>
 )

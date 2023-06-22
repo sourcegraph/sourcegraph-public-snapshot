@@ -147,21 +147,19 @@ func (e *ChangesetEvent) Clone() *ChangesetEvent {
 // Returns an empty string if not a review event or the author has been deleted.
 func (e *ChangesetEvent) ReviewAuthor() string {
 	switch meta := e.Metadata.(type) {
+
 	case *github.PullRequestReview:
 		return meta.Author.Login
-
 	case *github.ReviewDismissedEvent:
 		return meta.Review.Author.Login
 
 	case *bitbucketserver.Activity:
 		return meta.User.Name
-
 	case *bitbucketserver.ParticipantStatusEvent:
 		return meta.User.Name
 
 	case *gitlab.ReviewApprovedEvent:
 		return meta.Author.Username
-
 	case *gitlab.ReviewUnapprovedEvent:
 		return meta.Author.Username
 
@@ -170,18 +168,15 @@ func (e *ChangesetEvent) ReviewAuthor() string {
 	// for each author and isn't surfaced in the UI, we can use the UUID.
 	case *bitbucketcloud.Participant:
 		return meta.User.UUID
-
 	case *bitbucketcloud.PullRequestApprovedEvent:
 		return meta.Approval.User.UUID
-
 	case *bitbucketcloud.PullRequestUnapprovedEvent:
 		return meta.Approval.User.UUID
-
 	case *bitbucketcloud.PullRequestChangesRequestCreatedEvent:
 		return meta.ChangesRequest.User.UUID
-
 	case *bitbucketcloud.PullRequestChangesRequestRemovedEvent:
 		return meta.ChangesRequest.User.UUID
+
 	case *azuredevops.PullRequestApprovedEvent:
 		if len(meta.PullRequest.Reviewers) == 0 {
 			return meta.PullRequest.CreatedBy.UniqueName
@@ -857,55 +852,42 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) error {
 	case *bitbucketcloud.Participant:
 		o := o.Metadata.(*bitbucketcloud.Participant)
 		*e = *o
-
 	case *bitbucketcloud.PullRequestStatus:
 		o := o.Metadata.(*bitbucketcloud.PullRequestStatus)
 		*e = *o
-
 	case *bitbucketcloud.PullRequestApprovedEvent:
 		o := o.Metadata.(*bitbucketcloud.PullRequestApprovedEvent)
 		*e = *o
-
 	case *bitbucketcloud.PullRequestChangesRequestCreatedEvent:
 		o := o.Metadata.(*bitbucketcloud.PullRequestChangesRequestCreatedEvent)
 		*e = *o
-
 	case *bitbucketcloud.PullRequestChangesRequestRemovedEvent:
 		o := o.Metadata.(*bitbucketcloud.PullRequestChangesRequestRemovedEvent)
 		*e = *o
-
 	case *bitbucketcloud.PullRequestCommentCreatedEvent:
 		o := o.Metadata.(*bitbucketcloud.PullRequestCommentCreatedEvent)
 		*e = *o
-
 	case *bitbucketcloud.PullRequestCommentDeletedEvent:
 		o := o.Metadata.(*bitbucketcloud.PullRequestCommentDeletedEvent)
 		*e = *o
-
 	case *bitbucketcloud.PullRequestCommentUpdatedEvent:
 		o := o.Metadata.(*bitbucketcloud.PullRequestCommentUpdatedEvent)
 		*e = *o
-
 	case *bitbucketcloud.PullRequestFulfilledEvent:
 		o := o.Metadata.(*bitbucketcloud.PullRequestFulfilledEvent)
 		*e = *o
-
 	case *bitbucketcloud.PullRequestRejectedEvent:
 		o := o.Metadata.(*bitbucketcloud.PullRequestRejectedEvent)
 		*e = *o
-
 	case *bitbucketcloud.PullRequestUnapprovedEvent:
 		o := o.Metadata.(*bitbucketcloud.PullRequestUnapprovedEvent)
 		*e = *o
-
 	case *bitbucketcloud.PullRequestUpdatedEvent:
 		o := o.Metadata.(*bitbucketcloud.PullRequestUpdatedEvent)
 		*e = *o
-
 	case *bitbucketcloud.RepoCommitStatusCreatedEvent:
 		o := o.Metadata.(*bitbucketcloud.RepoCommitStatusCreatedEvent)
 		*e = *o
-
 	case *bitbucketcloud.RepoCommitStatusUpdatedEvent:
 		o := o.Metadata.(*bitbucketcloud.RepoCommitStatusUpdatedEvent)
 		*e = *o
@@ -913,27 +895,21 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) error {
 	case *azuredevops.PullRequestUpdatedEvent:
 		o := o.Metadata.(*azuredevops.PullRequestUpdatedEvent)
 		*e = *o
-
 	case *azuredevops.PullRequestMergedEvent:
 		o := o.Metadata.(*azuredevops.PullRequestMergedEvent)
 		*e = *o
-
 	case *azuredevops.PullRequestApprovedEvent:
 		o := o.Metadata.(*azuredevops.PullRequestApprovedEvent)
 		*e = *o
-
 	case *azuredevops.PullRequestApprovedWithSuggestionsEvent:
 		o := o.Metadata.(*azuredevops.PullRequestApprovedWithSuggestionsEvent)
 		*e = *o
-
 	case *azuredevops.PullRequestWaitingForAuthorEvent:
 		o := o.Metadata.(*azuredevops.PullRequestWaitingForAuthorEvent)
 		*e = *o
-
 	case *azuredevops.PullRequestRejectedEvent:
 		o := o.Metadata.(*azuredevops.PullRequestRejectedEvent)
 		*e = *o
-
 	default:
 		return errors.Errorf("unknown changeset event metadata %T", e)
 	}

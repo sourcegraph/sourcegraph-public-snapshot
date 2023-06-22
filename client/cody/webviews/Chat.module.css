@@ -35,14 +35,14 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
     color: var(--code-foreground);
 }
 
-.transcript-item ul,
-.transcript-item ol {
-    padding-left: 1rem;
+.transcript-item ul:not(.transcript-action *),
+.transcript-item ol:not(.transcript-action *) {
+    padding-left: 2rem;
 }
 
 .transcript-action {
-    background: var(--button-secondary-background);
-    color: var(--button-secondary-foreground);
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
     font-size: var(--vscode-editor-font-size);
 }
 
@@ -108,8 +108,25 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
 }
 
 .suggestion-button {
-    border-radius: 1rem;
-    font-size: 0.7rem;
+    all: unset;
+    cursor: pointer;
+    font-size: 90%;
+    padding: 3px 6px;
+    border-radius: 5px;
+    background: var(--button-icon-background);
+    border-radius: var(--button-icon-corner-radius);
+    color: var(--foreground);
+}
+
+.suggestion-button:hover {
+    background: var(--button-icon-hover-background);
+    outline: 1px dotted var(--contrast-active-border);
+    outline-offset: -1px;
+}
+
+.suggestion-button .codicon {
+    vertical-align: middle;
+    margin-right: 3px;
 }
 
 .submit-button-disabled {

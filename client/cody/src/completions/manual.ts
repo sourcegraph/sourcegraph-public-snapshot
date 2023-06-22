@@ -90,7 +90,7 @@ export class ManualCompletionService {
 
         const contextChars = this.tokToChar(this.promptTokens) - emptyPromptLength
 
-        const similarCode = await getContext({
+        const { context: similarCode } = await getContext({
             currentEditor,
             prefix,
             suffix,

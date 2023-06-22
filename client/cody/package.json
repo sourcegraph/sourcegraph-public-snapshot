@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI by Sourcegraph",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -291,19 +291,20 @@
         "title": "Codebase Context Search"
       },
       {
-        "command": "cody.set-access-token",
+        "command": "cody.test.token",
         "category": "Cody",
         "title": "Set Access Token"
       },
       {
-        "command": "cody.delete-access-token",
+        "command": "cody.auth.signout",
         "category": "Cody",
-        "title": "Sign out"
+        "title": "Sign out...",
+        "icon": "$(sign-out)"
       },
       {
-        "command": "cody.clear-chat-history",
+        "command": "cody.auth.signin",
         "category": "Cody",
-        "title": "Clear chat history"
+        "title": "Switch Account..."
       },
       {
         "command": "cody.manual-completions",
@@ -311,9 +312,16 @@
         "title": "Open Completions Panel"
       },
       {
-        "command": "cody.settings",
+        "command": "cody.settings.user",
         "category": "Cody",
-        "title": "Settings",
+        "title": "User Settings",
+        "group": "Cody",
+        "icon": "$(account)"
+      },
+      {
+        "command": "cody.settings.extension",
+        "category": "Cody",
+        "title": "Extension Settings",
         "group": "Cody",
         "icon": "$(gear)"
       },
@@ -487,7 +495,7 @@
       "commandPalette": [
         {
           "command": "cody.recipe.explain-code",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.context-search",
@@ -495,27 +503,27 @@
         },
         {
           "command": "cody.recipe.optimize-code",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.explain-code-high-level",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.file-touch",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.generate-unit-test",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.generate-docstring",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.translate-to-language",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.git-history",
@@ -523,10 +531,10 @@
         },
         {
           "command": "cody.recipe.fixup",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
-          "command": "cody.set-access-token",
+          "command": "cody.test.token",
           "when": "false"
         },
         {
@@ -560,6 +568,10 @@
         },
         {
           "command": "cody.fixup.diff",
+          "when": "false"
+        },
+        {
+          "command": "cody.fixup.open",
           "when": "false"
         },
         {
@@ -665,17 +677,37 @@
         {
           "command": "cody.feedback",
           "when": "view == cody.chat",
-          "group": "navigation@3"
-        },
-        {
-          "command": "cody.settings",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@4"
+          "group": "7_cody@0"
         },
         {
           "command": "cody.welcome",
           "when": "view == cody.chat",
-          "group": "navigation@5"
+          "group": "7_cody@0"
+        },
+        {
+          "command": "cody.auth.signout",
+          "when": "view == cody.chat && cody.activated",
+          "group": "9_cody@2"
+        },
+        {
+          "command": "cody.auth.signin",
+          "when": "view == cody.chat && cody.activated",
+          "group": "9_cody@0"
+        },
+        {
+          "command": "cody.settings.user",
+          "when": "view == cody.chat && cody.activated && cody.test.inProgress",
+          "group": "navigation@3"
+        },
+        {
+          "command": "cody.settings.extension",
+          "when": "view == cody.chat",
+          "group": "8_cody@1"
+        },
+        {
+          "command": "cody.settings.user",
+          "when": "view == cody.chat && cody.activated",
+          "group": "8_cody@0"
         },
         {
           "command": "cody.fixup.apply-all",
@@ -741,9 +773,9 @@
         "cody.serverEndpoint": {
           "order": 1,
           "type": "string",
-          "default": "https://sourcegraph.com",
-          "example": "https://example.sourcegraph.com",
-          "description": "URL to the Sourcegraph instance."
+          "format": "uri",
+          "description": "URL to the Sourcegraph instance.",
+          "examples": "https://example.sourcegraph.com"
         },
         "cody.codebase": {
           "order": 2,
@@ -827,11 +859,15 @@
         "cody.completions.advanced.provider": {
           "type": "string",
           "default": "anthropic",
-          "markdownDescription": "Overwrite the provider used for generating code completions. Only supported values at the moment are `anthropic` (default) or `unstable-codegen`."
+          "markdownDescription": "Overwrite the provider used for generating code completions. Only supported values at the moment are `anthropic` (default), `unstable-codegen`, or `unstable-huggingface`."
         },
         "cody.completions.advanced.serverEndpoint": {
           "type": "string",
-          "markdownDescription": "Overwrite the server endpoint used for generating code completions. This is only supported with the `unstable-codegen` provider right now."
+          "markdownDescription": "Overwrite the server endpoint used for generating code completions. This is only supported with the `unstable-codegen` or `unstable-huggingface` provider."
+        },
+        "cody.completions.advanced.accessToken": {
+          "type": "string",
+          "markdownDescription": "Overwrite the access token used for generating code completions. This is only supported with the `unstable-huggingface` provider."
         },
         "cody.completions.advanced.cache": {
           "order": 99,

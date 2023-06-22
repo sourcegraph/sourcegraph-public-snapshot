@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
@@ -110,4 +111,46 @@ func (fi FakeFileInfo) IsDir() bool {
 
 func (fi FakeFileInfo) Sys() interface{} {
 	return nil
+}
+
+func TestGetExcludedFilePathPatterns(t *testing.T) {
+	// nil embeddingsConfig. This shouldn't happen, but just in case
+	var embeddingsConfig *conftypes.EmbeddingsConfig
+	result := getExcludedFilePathPatterns(embeddingsConfig)
+	if len(result) != len(embed.DefaultExcludedFilePathPatterns) {
+		t.Fatalf("Expected %d items, got %d", len(embed.DefaultExcludedFilePathPatterns), len(result))
+	}
+
+	// Empty embeddingsConfig
+	embeddingsConfig = &conftypes.EmbeddingsConfig{}
+	result = getExcludedFilePathPatterns(embeddingsConfig)
+	if len(result) != len(embed.DefaultExcludedFilePathPatterns) {
+		t.Fatalf("Expected %d items, got %d", len(embed.DefaultExcludedFilePathPatterns), len(result))
+	}
+
+	// Non-empty embeddingsConfig
+	embeddingsConfig = &conftypes.EmbeddingsConfig{
+		ExcludedFilePathPatterns: []string{
+			"*.foo",
+			"*.bar",
+		},
+	}
+	result = getExcludedFilePathPatterns(embeddingsConfig)
+	if len(result) != 2 {
+		t.Fatalf("Expected 2 items, got %d", len(result))
+	}
+
+	if result[0].Match("test.foo") == false {
+		t.Fatalf("Expected true, got false")
+	}
+	if result[0].Match("test.bar") == true {
+		t.Fatalf("Expected false, got true")
+	}
+
+	if result[1].Match("test.bar") == false {
+		t.Fatalf("Expected true, got false")
+	}
+	if result[1].Match("test.foo") == true {
+		t.Fatalf("Expected false, got true")
+	}
 }

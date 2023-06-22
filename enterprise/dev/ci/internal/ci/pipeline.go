@@ -107,7 +107,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		updateBaseImages := c.Diff.Has(changed.WolfiBaseImages) || updatePackages
 
 		var numUpdatedPackages int
-		var numUpdatedBaseImages int
 
 		if updatePackages {
 			var packageOps *operations.Set
@@ -116,59 +115,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 		if updateBaseImages {
 			var baseImageOps *operations.Set
-			baseImageOps, numUpdatedBaseImages = WolfiBaseImagesOperations(
+			baseImageOps, _ = WolfiBaseImagesOperations(
 				c.ChangedFiles[changed.WolfiBaseImages], // TODO: If packages have changed need to update all base images. Requires a list of all base images
 				c.Version,
 				(numUpdatedPackages > 0),
 			)
 			ops.Merge(baseImageOps)
 		}
-		// Always rebuild Wolfi images
-		// Rebuild all images seems reasonable. We need a list somewhere! Maybe we can just use the standard image list though? But not all are wolfi-ified
-		ops.Merge(
-			// TODO: Just hardcode specific images initially
-			WolfiImagesOperations([]string{
-				"batcheshelper",
-				"blobstore",
-				"bundled-executor",
-				"cadvisor",
-				// "codeinsights-db",
-				// "codeintel-db",
-				"embeddings",
-				"executor",
-				"executor-kubernetes",
-				"frontend",
-				"github-proxy",
-				"gitserver",
-				"indexed-searcher",
-				"jaeger-agent",
-				"jaeger-all-in-one",
-				"cody-gateway",
-				"loadtest",
-				"migrator",
-				"node-exporter",
-				"opentelemetry-collector",
-				// "postgres-12-alpine",
-				"postgres_exporter",
-				"precise-code-intel-worker",
-				"prometheus",
-				"prometheus-gcp",
-				"redis-cache",
-				"redis-store",
-				"redis_exporter",
-				"repo-updater",
-				"search-indexer",
-				"searcher",
-				"server",
-				"sg",
-				"symbols",
-				"syntax-highlighter",
-				"worker",
-			}, c.Version,
-				c.candidateImageTag(),
-				(numUpdatedBaseImages > 0),
-			),
-		)
 
 	case runtype.PullRequest:
 		// First, we set up core test operations that apply both to PRs and to other run

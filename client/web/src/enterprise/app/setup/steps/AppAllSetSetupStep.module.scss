@@ -1,37 +1,12 @@
-@import 'wildcard/src/global-styles/breakpoints';
-
 .root {
     display: flex;
     flex-direction: column;
     padding: 4.5rem 3.5rem 0;
     width: 100%;
     overflow: hidden;
-
-    // Tablet and "mobile" (small) layout
-    @media (--md-breakpoint-down) {
-        .content {
-            grid-template-areas:
-                'description description'
-                'actions actions';
-
-            margin-bottom: 2.5rem;
-        }
-
-        .image {
-            margin: auto -5rem 0;
-        }
-    }
-}
-
-.content {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: 3rem;
-    grid-template-areas: 'description actions';
 }
 
 .description {
-    grid-area: description;
     display: flex;
     flex-direction: column;
     margin-bottom: 2rem;
@@ -41,30 +16,25 @@
         color: var(--white);
     }
 
+    &-content {
+        display: flex;
+        gap: 1.5rem;
+    }
+
     &-text {
+        flex-basis: 50%;
+        flex-grow: 0;
         color: #dedede;
         font-size: 1.25rem;
-
-        &--small {
-            font-size: 1rem;
-        }
     }
 
     &-button {
+        flex-basis: 50%;
         align-self: flex-start;
-        margin-top: 1rem;
-    }
-}
-
-.actions {
-    grid-area: actions;
-
-    &-button {
-        margin-top: 1rem;
     }
 }
 
 .image {
-    max-width: calc(100% + 10rem);
-    margin: auto -5rem 0;
+    max-width: calc(100% + 14rem);
+    margin: auto -7rem 0;
 }

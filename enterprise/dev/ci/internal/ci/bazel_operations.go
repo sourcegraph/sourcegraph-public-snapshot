@@ -296,12 +296,6 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 					}
 					return "enterprise/cmd/" + folder
 				}()
-				// TODO(JH) we don't need this anymore.
-				// preBuildScript := cmdDir + "/pre-build.sh"
-				// if _, err := os.Stat(preBuildScript); err == nil {
-				// 	// Allow all
-				// 	cmds = append(cmds, bk.AnnotatedCmd(preBuildScript, buildAnnotationOptions))
-				// }
 				buildScriptPath := filepath.Join(cmdDir, "build.sh")
 				_, err := os.Stat(filepath.Join(cmdDir, "build-bazel.sh"))
 				if err == nil {
@@ -399,12 +393,6 @@ func bazelBuildCandidateDockerImage(app string, version string, tag string, rt r
 				}
 				return "enterprise/cmd/" + folder
 			}()
-			// TODO(JH) we don't need this anymore.
-			// preBuildScript := cmdDir + "/pre-build.sh"
-			// if _, err := os.Stat(preBuildScript); err == nil {
-			// 	// Allow all
-			// 	cmds = append(cmds, bk.AnnotatedCmd(preBuildScript, buildAnnotationOptions))
-			// }
 			buildScriptPath := filepath.Join(cmdDir, "build.sh")
 			_, err := os.Stat(filepath.Join(cmdDir, "build-bazel.sh"))
 			if err == nil {

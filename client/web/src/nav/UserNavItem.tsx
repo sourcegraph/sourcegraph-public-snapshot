@@ -149,7 +149,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                 </MenuLink>
                             )}
                             {isSourcegraphApp && <AppUserConnectDotComAccount />}
-                            {!isSourcegraphDotCom && (
+                            {!isSourcegraphDotCom && !isSourcegraphApp && (
                                 <MenuLink as={Link} to="/teams">
                                     Teams
                                 </MenuLink>

@@ -6,7 +6,9 @@ import type {
     ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared/src/configuration'
 
+import { DOTCOM_URL } from './chat/protocol'
 import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
+import { LocalStorage } from './services/LocalStorageProvider'
 import { SecretStorage, getAccessToken } from './services/SecretStorageProvider'
 
 interface ConfigGetter {
@@ -38,7 +40,11 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         CONFIG_KEY.completionsAdvancedProvider,
         'anthropic'
     )
-    if (completionsAdvancedProvider !== 'anthropic' && completionsAdvancedProvider !== 'unstable-codegen') {
+    if (
+        completionsAdvancedProvider !== 'anthropic' &&
+        completionsAdvancedProvider !== 'unstable-codegen' &&
+        completionsAdvancedProvider !== 'unstable-huggingface'
+    ) {
         completionsAdvancedProvider = 'anthropic'
         void vscode.window.showInformationMessage(
             `Unrecognized ${CONFIG_KEY.completionsAdvancedProvider}, defaulting to 'anthropic'`
@@ -63,6 +69,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
             CONFIG_KEY.completionsAdvancedServerEndpoint,
             null
         ),
+        completionsAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.completionsAdvancedAccessToken, null),
         completionsAdvancedCache: config.get(CONFIG_KEY.completionsAdvancedCache, true),
         completionsAdvancedEmbeddings: config.get(CONFIG_KEY.completionsAdvancedEmbeddings, true),
     }
@@ -78,6 +85,9 @@ function sanitizeCodebase(codebase: string | undefined): string {
 }
 
 function sanitizeServerEndpoint(serverEndpoint: string): string {
+    if (!serverEndpoint) {
+        return DOTCOM_URL.href
+    }
     const trailingSlashRegexp = /\/$/
     return serverEndpoint.trim().replace(trailingSlashRegexp, '')
 }
@@ -89,8 +99,13 @@ export async function updateConfiguration(configKey: string, configValue: string
     await codyConfiguration.update(configKey, configValue, vscode.ConfigurationTarget.Global)
 }
 
-export const getFullConfig = async (secretStorage: SecretStorage): Promise<ConfigurationWithAccessToken> => {
+export const getFullConfig = async (
+    secretStorage: SecretStorage,
+    localStorage?: LocalStorage
+): Promise<ConfigurationWithAccessToken> => {
     const config = getConfiguration(vscode.workspace.getConfiguration())
+    // Migrate endpoints to local storage
+    config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
     const accessToken = (await getAccessToken(secretStorage)) || null
     return { ...config, accessToken }
 }

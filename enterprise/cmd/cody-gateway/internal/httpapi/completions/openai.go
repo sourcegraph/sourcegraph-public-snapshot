@@ -101,6 +101,9 @@ func NewOpenAIHandler(
 				}
 				return len(finalCompletion)
 			},
+			validateRequest: func(_ openaiRequest) error {
+				return nil
+			},
 		},
 	)
 }

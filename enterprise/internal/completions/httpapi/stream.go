@@ -43,7 +43,16 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 			})
 		if err != nil {
 			l := trace.Logger(ctx, logger)
-			l.Error("error while streaming completions", log.Error(err))
+
+			logFields := []log.Field{log.Error(err)}
+			if errNotOK, ok := types.IsErrStatusNotOK(err); ok {
+				if tc := errNotOK.SourceTraceContext; tc != nil {
+					logFields = append(logFields,
+						log.String("sourceTraceContext.traceID", tc.TraceID),
+						log.String("sourceTraceContext.spanID", tc.SpanID))
+				}
+			}
+			l.Error("error while streaming completions", logFields...)
 
 			// Note that we do NOT attempt to forward the status code to the
 			// client here, since we are using streamhttp.Writer - see

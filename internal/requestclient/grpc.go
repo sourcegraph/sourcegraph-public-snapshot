@@ -26,6 +26,7 @@ func (Propagator) FromContext(ctx context.Context) metadata.MD {
 	return metadata.Pairs(
 		headerKeyClientIP, client.IP,
 		headerKeyForwardedFor, client.ForwardedFor,
+		headerKeyUserAgent, client.UserAgent,
 	)
 }
 

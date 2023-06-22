@@ -72,6 +72,7 @@ public class SettingsConfigurable implements Configurable {
     SourcegraphApplicationService aSettings = SourcegraphApplicationService.getInstance();
     SourcegraphProjectService pSettings = SourcegraphService.getInstance(project);
 
+    boolean oldCodyCompletionsEnabled = ConfigUtil.areCodyCompletionsEnabled();
     String oldUrl = ConfigUtil.getSourcegraphUrl(project);
     String oldDotComAccessToken = ConfigUtil.getDotComAccessToken(project);
     String oldEnterpriseAccessToken = ConfigUtil.getEnterpriseAccessToken(project);
@@ -79,15 +80,18 @@ public class SettingsConfigurable implements Configurable {
     String newDotComAccessToken = mySettingsComponent.getDotComAccessToken();
     String newEnterpriseAccessToken = mySettingsComponent.getEnterpriseAccessToken();
     String newCustomRequestHeaders = mySettingsComponent.getCustomRequestHeaders();
+    boolean newCodyCompletionsEnabled = mySettingsComponent.areCodyCompletionsEnabled();
     PluginSettingChangeContext context =
         new PluginSettingChangeContext(
             oldUrl,
             oldDotComAccessToken,
             oldEnterpriseAccessToken,
+            oldCodyCompletionsEnabled,
             newUrl,
             newDotComAccessToken,
             newEnterpriseAccessToken,
-            newCustomRequestHeaders);
+            newCustomRequestHeaders,
+            newCodyCompletionsEnabled);
 
     publisher.beforeAction(context);
 
@@ -127,7 +131,7 @@ public class SettingsConfigurable implements Configurable {
       aSettings.remoteUrlReplacements = mySettingsComponent.getRemoteUrlReplacements();
     }
     aSettings.isUrlNotificationDismissed = mySettingsComponent.isUrlNotificationDismissed();
-    aSettings.areCodyCompletionsEnabled = mySettingsComponent.areCodyCompletionsEnabled();
+    aSettings.areCodyCompletionsEnabled = newCodyCompletionsEnabled;
 
     publisher.afterAction(context);
   }

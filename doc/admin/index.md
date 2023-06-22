@@ -13,8 +13,8 @@ Administration is usually handled by site administrators are the admins responsi
 - [PostgreSQL configuration](config/postgres-conf.md)
 - [Using external services (PostgreSQL, Redis, S3/GCS)](external_services/index.md)
 - <span class="badge badge-experimental">Experimental</span> [Validation](validation.md)
-- <span class="badge badge-beta">Beta</span> [Executors](executors/index.md)
-- <span class="badge badge-beta">Beta</span> [Deploy executors](executors/deploy_executors.md)
+- [Executors](executors/index.md)
+- [Deploy executors](executors/deploy_executors.md)
 
 ## [Upgrade Sourcegraph](updates/index.md)
 
@@ -72,4 +72,3 @@ For deployment configuration, please refer to the relevant [installation guide](
 - [Usage statistics](usage_statistics.md)
 - [User feedback surveys](user_surveys.md)
 - [Audit logs](audit_log.md)
-- [Sourcegraph Enterprise Free Plan FAQ](free-tier.md)

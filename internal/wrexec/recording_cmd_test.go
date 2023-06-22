@@ -204,6 +204,30 @@ func TestRecordingCmd(t *testing.T) {
 			t.Error("got no output for command")
 		}
 	})
+	t.Run("no recording with nil predicate", func(t *testing.T) {
+		cmd := osexec.Command("echo", "hello-world")
+		var nilRecord func(ctx context.Context, c *osexec.Cmd) bool = nil
+		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), nilRecord, store, cmd)
+
+		sizeBefore := listSize(t, store)
+		out, err := rcmd.Output()
+		if err != nil {
+			t.Fatalf("failed to execute recorded command: %v", err)
+		}
+
+		sizeAfter := listSize(t, store)
+		// Our predicate, noRecord, always returns false, which means nothing will get recorded yet our command will
+		// still execute
+		// So the list should be the same size before and after
+		if sizeBefore != sizeAfter {
+			t.Errorf("no recorded should be added to the FIFOList for noRecord predicate")
+		}
+
+		// Our command should've executed, so we should have some output
+		if len(out) == 0 {
+			t.Error("got no output for command")
+		}
+	})
 	t.Run("two concurrent commands have seperate recordings", func(t *testing.T) {
 		f1 := createTmpFile(t, "foobar")
 		f2 := createTmpFile(t, "fubar")

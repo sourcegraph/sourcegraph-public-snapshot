@@ -24,7 +24,7 @@ export interface RepositoryOwnAreaPageProps extends Pick<BreadcrumbSetters, 'use
 }
 const EDIT_PAGE_BREADCRUMB = { key: 'edit-own', element: 'Upload CODEOWNERS' }
 
-export const RepositoryOwnEditPage: React.FunctionComponent<RepositoryOwnAreaPageProps> = ({
+export const RepositoryOwnEditPage: React.FunctionComponent<Omit<RepositoryOwnAreaPageProps, 'telemetryService'>> = ({
     useBreadcrumb,
     repo,
     authenticatedUser,
