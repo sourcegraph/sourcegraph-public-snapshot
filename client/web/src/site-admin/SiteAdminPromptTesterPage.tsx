@@ -4,6 +4,7 @@ import { mdiPlus } from '@mdi/js'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { PromptVersion } from '@sourcegraph/shared/src/util/prompt-tester'
 import {
     Button,
     Container,
@@ -19,7 +20,6 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { PromptVersion } from '../../../shared/src/util/prompt-tester'
 import { CompletionRequest, getCodyCompletionOneShot } from '../cody/search/api'
 import { PageTitle } from '../components/PageTitle'
 
