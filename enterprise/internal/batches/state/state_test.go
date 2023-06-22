@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
 	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 
@@ -551,9 +552,9 @@ func TestComputeReviewState(t *testing.T) {
 			name:      "github - changeset newer than events",
 			changeset: githubChangeset(daysAgo(0), "OPEN"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), reviewState: btypes.ChangesetReviewStateApproved},
+				{t: daysAgo(10), reviewState: btypes.ChangesetReviewStatePending},
 			},
-			want: btypes.ChangesetReviewStateApproved,
+			want: btypes.ChangesetReviewStatePending,
 		},
 		{
 			name:      "bitbucketserver - no events",
