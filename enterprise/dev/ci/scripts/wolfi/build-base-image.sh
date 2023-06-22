@@ -63,16 +63,8 @@ apko build --debug "${name}.yaml" \
 # Tag image and upload to GCP Artifact Registry
 docker load <"$tarball"
 
-# Push to internal dev repo
 docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
 docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
-# TODO(will): Limit to main branch when Wolfi CI is running on main
+# Temporary convenience during initial development, as this doesn't scale to multiple branches!
 docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
 docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
-
-# Push to dockerhub
-# TODO(will): Limit to main branch when Wolfi CI is running on main
-docker tag "$image_name" "sourcegraph/wolfi-${name}-base:$tag"
-docker push "sourcegraph/wolfi-${name}-base:$tag"
-docker tag "$image_name" "sourcegraph/wolfi-${name}-base:latest"
-docker push "sourcegraph/wolfi-${name}-base:latest"
