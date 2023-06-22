@@ -1,10 +1,8 @@
-import * as vscode from 'vscode'
+import { CodebaseContext } from '../codebase-context'
 
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-
+import { History, TextEditor } from '.'
 import { getContextFromEmbeddings } from './context-embeddings'
 import { getContextFromCurrentEditor } from './context-local'
-import { History } from './history'
 
 /**
  * Keep property names in sync with the `EmbeddingsSearchResult` type.
@@ -15,7 +13,7 @@ export interface ReferenceSnippet {
 }
 
 interface GetContextOptions {
-    currentEditor: vscode.TextEditor
+    currentEditor: TextEditor
     history: History
     prefix: string
     suffix: string
@@ -38,7 +36,7 @@ export async function getContext(options: GetContextOptions): Promise<{
      * The embeddings context is sync to retrieve to keep the completions latency minimal. If it's
      * not available in cache yet, we'll retrieve it in the background and cache it for future use.
      */
-    const embeddingsMatches = isEmbeddingsContextEnabled ? getContextFromEmbeddings(options) : []
+    const embeddingsMatches = isEmbeddingsContextEnabled ? await getContextFromEmbeddings(options) : []
     const localMatches = await getContextFromCurrentEditor(options)
 
     /**

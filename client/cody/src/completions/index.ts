@@ -1,26 +1,28 @@
 import path from 'path'
 
 import { LRUCache } from 'lru-cache'
-import * as vscode from 'vscode'
+import vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { Completion } from '@sourcegraph/cody-shared/src/completions'
+import { CompletionsCache } from '@sourcegraph/cody-shared/src/completions/cache'
+import { getContext } from '@sourcegraph/cody-shared/src/completions/context'
+import * as CompletionLogger from '@sourcegraph/cody-shared/src/completions/logger'
+import { detectMultilineMode } from '@sourcegraph/cody-shared/src/completions/multiline'
+import { postProcess } from '@sourcegraph/cody-shared/src/completions/post-process'
+import { Provider, ProviderConfig } from '@sourcegraph/cody-shared/src/completions/providers/provider'
+import { SNIPPET_WINDOW_SIZE, isAbortError } from '@sourcegraph/cody-shared/src/completions/utils'
 
 import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
-import { CompletionsCache } from './cache'
-import { getContext } from './context'
 import { getCurrentDocContext } from './document'
-import { History } from './history'
-import * as CompletionLogger from './logger'
-import { detectMultilineMode } from './multiline'
-import { postProcess } from './post-process'
-import { Provider, ProviderConfig } from './providers/provider'
-import { SNIPPET_WINDOW_SIZE, isAbortError } from './utils'
+import { VSCodeHistory } from './history'
+import { textEditor } from './text_editor'
 
 interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
-    history: History
+    history: VSCodeHistory
     statusBar: CodyStatusBar
     codebaseContext: CodebaseContext
     responsePercentage?: number
@@ -41,7 +43,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     })
 
     private providerConfig: ProviderConfig
-    private history: History
+    private history: VSCodeHistory
     private statusBar: CodyStatusBar
     private codebaseContext: CodebaseContext
     private responsePercentage: number
@@ -169,7 +171,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
 
         const { context: similarCode, logSummary: contextSummary } = await getContext({
-            currentEditor,
+            currentEditor: textEditor,
             prefix,
             suffix,
             history: this.history,
@@ -216,7 +218,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
 
         if (
-            (multilineMode = detectMultilineMode(prefix, prevNonEmptyLine, sameLinePrefix, sameLineSuffix, languageId))
+            (multilineMode = detectMultilineMode(
+                textEditor,
+                prefix,
+                prevNonEmptyLine,
+                sameLinePrefix,
+                sameLineSuffix,
+                languageId
+            ))
         ) {
             timeout = 200
             completers.push(
@@ -281,6 +290,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         // Post process
         const processedCompletions = completions.map(completion =>
             postProcess({
+                textEditor,
                 prefix,
                 suffix,
                 multiline: multilineMode !== null,
@@ -306,12 +316,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         CompletionLogger.noResponse(logId)
         return []
     }
-}
-
-export interface Completion {
-    prefix: string
-    content: string
-    stopReason?: string
 }
 
 function toInlineCompletionItems(logId: string, completions: Completion[]): vscode.InlineCompletionItem[] {

@@ -1,9 +1,8 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
-import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
-import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
-
 import { Completion } from '..'
+import { Message } from '../../sourcegraph-api'
+import { SourcegraphNodeCompletionsClient } from '../../sourcegraph-api/completions/nodeClient'
 import { messagesToText } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'

@@ -1,6 +1,6 @@
 import { LRUCache } from 'lru-cache'
 
-import { logEvent } from '../event-logger'
+// import { logEvent } from '../event-logger'
 
 interface CompletionEvent {
     params: {
@@ -36,7 +36,7 @@ const displayedCompletions = new LRUCache<string, CompletionEvent>({
 })
 
 export function logCompletionEvent(name: string, params?: unknown): void {
-    logEvent(`CodyVSCodeExtension:completion:${name}`, params, params)
+    // logEvent(`CodyVSCodeExtension:completion:${name}`, params, params)
 }
 
 export function start(params: CompletionEvent['params']): string {

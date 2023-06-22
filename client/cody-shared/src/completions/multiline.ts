@@ -1,6 +1,7 @@
-import * as vscode from 'vscode'
+import { TextEditor } from '.'
 
 export function detectMultilineMode(
+    textEditor: TextEditor,
     prefix: string,
     prevNonEmptyLine: string,
     sameLinePrefix: string,
@@ -18,7 +19,7 @@ export function detectMultilineMode(
         prefix.trim().at(prefix.trim().length - config.blockStart.length) === config.blockStart &&
         // Only trigger multiline suggestions when the new current line is
         // indented
-        indentation(prevNonEmptyLine) < indentation(sameLinePrefix)
+        indentation(textEditor, prevNonEmptyLine) < indentation(textEditor, sameLinePrefix)
     ) {
         return 'block'
     }
@@ -26,6 +27,7 @@ export function detectMultilineMode(
 }
 
 export function truncateMultilineCompletion(
+    textEditor: TextEditor,
     completion: string,
     hasOddIndentation: boolean,
     prefix: string,
@@ -45,11 +47,11 @@ export function truncateMultilineCompletion(
     // spaces or tabs)
     const prefixLastNewline = prefix.lastIndexOf('\n')
     const prefixIndentationWithFirstCompletionLine = prefix.slice(prefixLastNewline + 1) + completion[0]
-    const startIndent = indentation(prefixIndentationWithFirstCompletionLine)
+    const startIndent = indentation(textEditor, prefixIndentationWithFirstCompletionLine)
 
     // Normalize responses that start with a newline followed by the exact
     // indentation of the first line.
-    if (lines.length > 1 && lines[0] === '' && indentation(lines[1]) === startIndent) {
+    if (lines.length > 1 && lines[0] === '' && indentation(textEditor, lines[1]) === startIndent) {
         lines.shift()
         lines[0] = lines[0].trimStart()
     }
@@ -60,7 +62,7 @@ export function truncateMultilineCompletion(
     // We can skip the first line as it was already corrected above
     if (hasOddIndentation) {
         for (let i = 1; i < lines.length; i++) {
-            if (indentation(lines[i]) >= startIndent) {
+            if (indentation(textEditor, lines[i]) >= startIndent) {
                 lines[i] = lines[i].replace(/^(\t)* /, '$1')
             }
         }
@@ -68,7 +70,7 @@ export function truncateMultilineCompletion(
 
     // Only include a closing line (e.g. `}`) if the block is empty yet. We
     // detect this by looking at the indentation of the next non-empty line.
-    const includeClosingLine = indentation(nextNonEmptyLine) < startIndent
+    const includeClosingLine = indentation(textEditor, nextNonEmptyLine) < startIndent
 
     let cutOffIndex = lines.length
     for (let i = 0; i < lines.length; i++) {
@@ -78,7 +80,7 @@ export function truncateMultilineCompletion(
             continue
         }
 
-        if (indentation(line) < startIndent) {
+        if (indentation(textEditor, line) < startIndent) {
             // When we find the first block below the start indentation, only
             // include it if it is an end block
             if (includeClosingLine && config.blockEnd && line.trim().startsWith(config.blockEnd)) {
@@ -99,11 +101,8 @@ export function truncateMultilineCompletion(
  * Since Cody can sometimes respond in a mix of tab and spaces, this function
  * normalizes the whitespace first using the currently enabled tabSize option.
  */
-function indentation(line: string): number {
-    const tabSize = vscode.window.activeTextEditor
-        ? // tabSize is always resolved to a number when accessing the property
-          (vscode.window.activeTextEditor.options.tabSize as number)
-        : 2
+function indentation(textEditor: TextEditor, line: string): number {
+    const tabSize = textEditor.getTabSize()
 
     const regex = line.match(/^[\t ]*/)
     if (regex) {

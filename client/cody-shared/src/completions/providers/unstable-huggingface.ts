@@ -1,5 +1,5 @@
 import { Completion } from '..'
-import { logger } from '../../log'
+// import { logger } from '../../log'
 import { isAbortError } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
@@ -37,11 +37,11 @@ export class UnstableHuggingFaceProvider extends Provider {
             },
         }
 
-        const log = logger.startCompletion({
-            request,
-            provider: PROVIDER_IDENTIFIER,
-            serverEndpoint: this.serverEndpoint,
-        })
+        // const log = logger.startCompletion({
+        //     request,
+        //     provider: PROVIDER_IDENTIFIER,
+        //     serverEndpoint: this.serverEndpoint,
+        // })
 
         const response = await fetch(this.serverEndpoint, {
             method: 'POST',
@@ -61,7 +61,7 @@ export class UnstableHuggingFaceProvider extends Provider {
             }
 
             const completions: string[] = data.map(c => c.generated_text.replace(STOP_WORD, ''))
-            log?.onComplete(completions)
+            // log?.onComplete(completions)
 
             return completions.map(content => ({
                 prefix: this.prefix,
@@ -69,7 +69,7 @@ export class UnstableHuggingFaceProvider extends Provider {
             }))
         } catch (error) {
             if (!isAbortError(error)) {
-                log?.onError(error)
+                // log?.onError(error)
             }
 
             throw error

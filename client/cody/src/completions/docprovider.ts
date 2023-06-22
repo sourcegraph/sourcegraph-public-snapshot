@@ -1,6 +1,6 @@
-import * as vscode from 'vscode'
+import vscode from 'vscode'
 
-import { Completion } from '.'
+import { Completion } from '@sourcegraph/cody-shared/src/completions'
 
 // FIXME: When OpenAI's logit_bias uses a more precise type than 'object',
 // specify JSON-able objects as { [prop: string]: JSONSerialiable | undefined }

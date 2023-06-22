@@ -1,16 +1,22 @@
-import * as vscode from 'vscode'
+import vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { Completion } from '@sourcegraph/cody-shared/src/completions'
+import { ReferenceSnippet, getContext } from '@sourcegraph/cody-shared/src/completions/context'
+import { logCompletionEvent } from '@sourcegraph/cody-shared/src/completions/logger'
+import {
+    batchCompletions,
+    sliceUntilFirstNLinesOfSuffixMatch,
+    SNIPPET_WINDOW_SIZE,
+    messagesToText,
+} from '@sourcegraph/cody-shared/src/completions/utils'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { Completion } from '.'
-import { ReferenceSnippet, getContext } from './context'
 import { CompletionsDocumentProvider } from './docprovider'
 import { getCurrentDocContext } from './document'
-import { History } from './history'
-import { logCompletionEvent } from './logger'
-import { batchCompletions, sliceUntilFirstNLinesOfSuffixMatch, SNIPPET_WINDOW_SIZE, messagesToText } from './utils'
+import { VSCodeHistory } from './history'
+import { textEditor } from './text_editor'
 
 const LOG_MANUAL = { type: 'manual' }
 
@@ -24,7 +30,7 @@ export class ManualCompletionService {
         private webviewErrorMessenger: (error: string) => Promise<void>,
         private completionsClient: SourcegraphNodeCompletionsClient,
         private documentProvider: CompletionsDocumentProvider,
-        private history: History,
+        private history: VSCodeHistory,
         private codebaseContext: CodebaseContext,
         private contextWindowTokens = 2048, // 8001
         private charsPerToken = 4,
@@ -91,7 +97,7 @@ export class ManualCompletionService {
         const contextChars = this.tokToChar(this.promptTokens) - emptyPromptLength
 
         const { context: similarCode } = await getContext({
-            currentEditor,
+            currentEditor: textEditor,
             prefix,
             suffix,
             history: this.history,

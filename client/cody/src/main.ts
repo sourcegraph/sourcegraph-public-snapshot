@@ -2,6 +2,11 @@ import * as vscode from 'vscode'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import * as CompletionsLogger from '@sourcegraph/cody-shared/src/completions/logger'
+import { createProviderConfig as createAnthropicProviderConfig } from '@sourcegraph/cody-shared/src/completions/providers/anthropic'
+import { ProviderConfig } from '@sourcegraph/cody-shared/src/completions/providers/provider'
+import { createProviderConfig as createUnstableCodeGenProviderConfig } from '@sourcegraph/cody-shared/src/completions/providers/unstable-codegen'
+import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from '@sourcegraph/cody-shared/src/completions/providers/unstable-huggingface'
 import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
@@ -9,13 +14,8 @@ import { ChatViewProvider } from './chat/ChatViewProvider'
 import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
-import { History } from './completions/history'
-import * as CompletionsLogger from './completions/logger'
+import { VSCodeHistory } from './completions/history'
 import { ManualCompletionService } from './completions/manual'
-import { createProviderConfig as createAnthropicProviderConfig } from './completions/providers/anthropic'
-import { ProviderConfig } from './completions/providers/provider'
-import { createProviderConfig as createUnstableCodeGenProviderConfig } from './completions/providers/unstable-codegen'
-import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './completions/providers/unstable-huggingface'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger, eventLogger } from './event-logger'
@@ -361,7 +361,7 @@ function createCompletionsProvider(
     const documentProvider = new CompletionsDocumentProvider()
     disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', documentProvider))
 
-    const history = new History()
+    const history = new VSCodeHistory()
     const manualCompletionService = new ManualCompletionService(
         webviewErrorMessenger,
         completionsClient,

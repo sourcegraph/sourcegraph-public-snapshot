@@ -1,9 +1,5 @@
 lockfileVersion: '6.0'
 
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
-
 overrides:
   browserify-zlib: 0.2.0
   '@types/webpack': '5'
@@ -1478,12 +1474,30 @@ importers:
 
   client/cody-shared:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.4.2
+        version: 0.4.3
       '@sourcegraph/common':
         specifier: workspace:*
         version: link:../common
       '@sourcegraph/http-client':
         specifier: workspace:*
         version: link:../http-client
+      lru-cache:
+        specifier: ^9.1.1
+        version: 9.1.1
+      openai:
+        specifier: ^3.2.1
+        version: 3.2.1
+      wink-eng-lite-web-model:
+        specifier: ^1.5.0
+        version: 1.5.0(wink-nlp@1.13.1)
+      wink-nlp:
+        specifier: ^1.13.1
+        version: 1.13.1
+      wink-nlp-utils:
+        specifier: ^2.1.0
+        version: 2.1.0
       xml2js:
         specifier: ^0.6.0
         version: 0.6.0
@@ -34198,3 +34212,7 @@ packages:
     name: tether
     version: 0.6.5
     dev: true
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false

@@ -1,17 +1,15 @@
 import path from 'path'
 
-import * as vscode from 'vscode'
-
+import { History, TextEditor, LightTextDocument } from '.'
 import { JaccardMatch, bestJaccardMatch } from './bestJaccardMatch'
 import type { ReferenceSnippet } from './context'
-import { History } from './history'
 
 interface JaccardMatchWithFilename extends JaccardMatch {
     fileName: string
 }
 
 interface Options {
-    currentEditor: vscode.TextEditor
+    currentEditor: TextEditor
     history: History
     prefix: string
     jaccardDistanceWindowSize: number
@@ -33,7 +31,7 @@ export async function getContextFromCurrentEditor(options: Options): Promise<Ref
         matches.push({
             // Use relative path to remove redundant information from the prompts and
             // keep in sync with embeddings search resutls which use relatve to repo root paths.
-            fileName: path.normalize(vscode.workspace.asRelativePath(uri.fsPath)),
+            fileName: path.normalize((await currentEditor.getDocumentRelativePath(uri))!),
             ...match,
         })
     }
@@ -44,7 +42,7 @@ export async function getContextFromCurrentEditor(options: Options): Promise<Ref
 }
 
 interface FileContents {
-    uri: vscode.Uri
+    uri: string
     contents: string
 }
 
@@ -57,16 +55,16 @@ interface FileContents {
  * For every file, we will load up to 10.000 lines to avoid OOMing when working with very large
  * files.
  */
-async function getRelevantFiles(currentEditor: vscode.TextEditor, history: History): Promise<FileContents[]> {
+async function getRelevantFiles(currentEditor: TextEditor, history: History): Promise<FileContents[]> {
     const files: FileContents[] = []
 
-    const curLang = currentEditor.document.languageId
+    const curLang = currentEditor.getCurrentDocument()!.languageId
     if (!curLang) {
         return []
     }
 
-    function addDocument(document: vscode.TextDocument): void {
-        if (document.uri === currentEditor.document.uri) {
+    async function addDocument(document: LightTextDocument): Promise<void> {
+        if (document.uri === currentEditor.getCurrentDocument()!.uri) {
             // omit current file
             return
         }
@@ -77,33 +75,30 @@ async function getRelevantFiles(currentEditor: vscode.TextEditor, history: Histo
         }
 
         // TODO(philipp-spiess): Find out if we have a better approach to truncate very large files.
-        const endLine = Math.min(document.lineCount, 10_000)
-        const range = new vscode.Range(0, 0, endLine, 0)
-
         files.push({
             uri: document.uri,
-            contents: document.getText(range),
+            contents: (await currentEditor.getDocumentTextTruncated(document.uri))!,
         })
     }
 
-    const documents = vscode.workspace.textDocuments
-    for (const document of documents) {
-        if (document.fileName.endsWith('.git')) {
+    for (const document of currentEditor.getOpenDocuments()) {
+        if (document.uri.endsWith('.git')) {
             // The VS Code API returns fils with the .git suffix for every open file
             continue
         }
-        addDocument(document)
+        await addDocument(document)
     }
 
     await Promise.all(
-        history.lastN(10, curLang, [currentEditor.document.uri, ...files.map(f => f.uri)]).map(async item => {
-            try {
-                const document = await vscode.workspace.openTextDocument(item.document.uri)
-                addDocument(document)
-            } catch (error) {
-                console.error(error)
-            }
-        })
+        history
+            .lastN(10, curLang, [currentEditor.getCurrentDocument()!.uri, ...files.map(f => f.uri)])
+            .map(async item => {
+                try {
+                    await addDocument(item)
+                } catch (error) {
+                    console.error(error)
+                }
+            })
     )
     return files
 }

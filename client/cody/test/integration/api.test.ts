@@ -2,7 +2,7 @@ import * as assert from 'assert'
 
 import * as vscode from 'vscode'
 
-import { History } from '../../src/completions/history'
+import { VSCodeHistory } from '../../src/completions/history'
 
 suite('API tests', () => {
     test('Cody registers some commands', async () => {
@@ -12,7 +12,7 @@ suite('API tests', () => {
     })
 
     test('History', () => {
-        const h = new History(() => null)
+        const h = new VSCodeHistory(() => null)
         h.addItem({
             document: {
                 uri: vscode.Uri.file('foo.ts'),

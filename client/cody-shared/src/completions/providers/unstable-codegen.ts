@@ -1,5 +1,5 @@
 import { Completion } from '..'
-import { logger } from '../../log'
+// import { logger } from '../../log'
 import { ReferenceSnippet } from '../context'
 import { isAbortError } from '../utils'
 
@@ -36,11 +36,11 @@ export class UnstableCodeGenProvider extends Provider {
             completion_type: 'automatic',
         }
 
-        const log = logger.startCompletion({
-            params,
-            provider: PROVIDER_IDENTIFIER,
-            serverEndpoint: this.serverEndpoint,
-        })
+        // const log = logger.startCompletion({
+        //     params,
+        //     provider: PROVIDER_IDENTIFIER,
+        //     serverEndpoint: this.serverEndpoint,
+        // })
         const response = await fetch(this.serverEndpoint, {
             method: 'POST',
             body: JSON.stringify(params),
@@ -54,7 +54,7 @@ export class UnstableCodeGenProvider extends Provider {
             const data = (await response.json()) as { completions: { completion: string }[] }
 
             const completions: string[] = data.completions.map(c => c.completion)
-            log?.onComplete(completions)
+            // log?.onComplete(completions)
 
             return completions.map(content => ({
                 prefix: this.prefix,
@@ -62,7 +62,7 @@ export class UnstableCodeGenProvider extends Provider {
             }))
         } catch (error) {
             if (!isAbortError(error)) {
-                log?.onError(error)
+                // log?.onError(error)
             }
 
             throw error
@@ -70,6 +70,7 @@ export class UnstableCodeGenProvider extends Provider {
     }
 }
 
+// TODO(auguste): Abstract
 // Handles some inconsistencies between the VS Code language ID and the model's
 // required language identifier.
 function mapVSCodeLanguageIdToModelId(languageId: string): string {

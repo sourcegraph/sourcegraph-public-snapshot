@@ -1,4 +1,6 @@
-import * as vscode from 'vscode'
+import vscode from 'vscode'
+
+import { CurrentDocumentContext } from '@sourcegraph/cody-shared/src/completions'
 
 /**
  * Get the current document context based on the cursor position in the current document.
@@ -21,13 +23,7 @@ export function getCurrentDocContext(
     position: vscode.Position,
     maxPrefixLength: number,
     maxSuffixLength: number
-): {
-    prefix: string
-    suffix: string
-    prevLine: string
-    prevNonEmptyLine: string
-    nextNonEmptyLine: string
-} | null {
+): CurrentDocumentContext | null {
     const offset = document.offsetAt(position)
 
     const prefixLines = document.getText(new vscode.Range(new vscode.Position(0, 0), position)).split('\n')

@@ -1,15 +1,17 @@
-import { Completion } from '.'
+import { Completion, TextEditor } from '.'
 import { truncateMultilineCompletion } from './multiline'
 
 const BAD_COMPLETION_START = /^(\p{Emoji_Presentation}|\u{200B}|\+ |- |. )+(\s)+/u
 
 export function postProcess({
+    textEditor,
     prefix,
     suffix,
     languageId,
     multiline,
     completion,
 }: {
+    textEditor: TextEditor
     prefix: string
     suffix: string
     languageId: string
@@ -55,7 +57,14 @@ export function postProcess({
     }
 
     if (multiline) {
-        content = truncateMultilineCompletion(content, hasOddIndentation, prefix, nextNonEmptyLine, languageId)
+        content = truncateMultilineCompletion(
+            textEditor,
+            content,
+            hasOddIndentation,
+            prefix,
+            nextNonEmptyLine,
+            languageId
+        )
     } else if (content.includes('\n')) {
         content = content.slice(0, content.indexOf('\n'))
     }

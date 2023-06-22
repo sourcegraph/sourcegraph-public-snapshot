@@ -2,15 +2,15 @@ import path from 'path'
 
 import { differenceInMinutes } from 'date-fns'
 import { LRUCache } from 'lru-cache'
-import * as vscode from 'vscode'
 
-import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { CodebaseContext } from '../codebase-context'
 
+import { TextEditor } from '.'
 import type { ReferenceSnippet } from './context'
 import { logCompletionEvent } from './logger'
 
 interface Options {
-    currentEditor: vscode.TextEditor
+    currentEditor: TextEditor
     prefix: string
     suffix: string
     codebaseContext: CodebaseContext
@@ -25,10 +25,12 @@ const embeddingsPerFile = new LRUCache<string, EmbeddingsForFile>({
     max: 10,
 })
 
-export function getContextFromEmbeddings(options: Options): ReferenceSnippet[] {
+export async function getContextFromEmbeddings(options: Options): Promise<ReferenceSnippet[]> {
     const { currentEditor, codebaseContext, prefix, suffix } = options
 
-    const currentFilePath = path.normalize(currentEditor.document.fileName)
+    const currentFilePath = path.normalize(
+        (await currentEditor.getDocumentRelativePath(currentEditor.getCurrentDocument()!.uri))!
+    )
     const embeddingsForCurrentFile = embeddingsPerFile.get(currentFilePath)
 
     /**

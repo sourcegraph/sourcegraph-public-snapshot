@@ -1,14 +1,12 @@
 import * as vscode from 'vscode'
 
-export interface HistoryItem {
-    document: Pick<vscode.TextDocument, 'uri' | 'languageId'>
-}
+import { History, LightTextDocument } from '@sourcegraph/cody-shared/src/completions'
 
-export class History implements vscode.Disposable {
+export class VSCodeHistory implements vscode.Disposable, History {
     private window = 50
 
     // tracks history in chronological order (latest at the end of the array)
-    private history: HistoryItem[]
+    private history: LightTextDocument[]
 
     private subscriptions: vscode.Disposable[] = []
 
@@ -19,7 +17,8 @@ export class History implements vscode.Disposable {
                     return
                 }
                 this.addItem({
-                    document: event.document,
+                    uri: event.document.uri.toString(),
+                    languageId: event.document.languageId,
                 })
             })
     ) {
@@ -36,13 +35,12 @@ export class History implements vscode.Disposable {
         vscode.Disposable.from(...this.subscriptions).dispose()
     }
 
-    public addItem(newItem: HistoryItem): void {
-        if (newItem.document.uri.scheme === 'codegen') {
+    public addItem(newItem: LightTextDocument): void {
+        const uri = vscode.Uri.parse(newItem.uri)
+        if (uri.scheme === 'codegen') {
             return
         }
-        const foundIndex = this.history.findIndex(
-            item => item.document.uri.toString() === newItem.document.uri.toString()
-        )
+        const foundIndex = this.history.findIndex(item => item.uri === newItem.uri)
         if (foundIndex >= 0) {
             this.history = [...this.history.slice(0, foundIndex), ...this.history.slice(foundIndex + 1)]
         }
@@ -55,18 +53,18 @@ export class History implements vscode.Disposable {
     /**
      * Returns the last n items of history in reverse chronological order (latest item at the front)
      */
-    public lastN(n: number, languageId?: string, ignoreUris?: vscode.Uri[]): HistoryItem[] {
-        const ret: HistoryItem[] = []
+    public lastN(n: number, languageId?: string, ignoreUris?: string[]): LightTextDocument[] {
+        const ret: LightTextDocument[] = []
         const ignoreSet = new Set(ignoreUris || [])
         for (let i = this.history.length - 1; i >= 0; i--) {
             const item = this.history[i]
             if (ret.length > n) {
                 break
             }
-            if (ignoreSet.has(item.document.uri)) {
+            if (ignoreSet.has(item.uri)) {
                 continue
             }
-            if (languageId && languageId !== item.document.languageId) {
+            if (languageId && languageId !== item.languageId) {
                 continue
             }
             ret.push(item)

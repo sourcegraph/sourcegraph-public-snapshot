@@ -10,7 +10,7 @@ import { URI } from 'vscode-uri'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { CodyCompletionItemProvider } from '../../completions'
-import { History } from '../../completions/history'
+import { VSCodeHistory } from '../../completions/history'
 import { createProviderConfig } from '../../completions/providers/anthropic'
 import { getFullConfig } from '../../configuration'
 import { logger } from '../../log'
@@ -38,7 +38,7 @@ async function initCompletionsProvider(): Promise<CodyCompletionItemProvider> {
         throw new Error('`cody.experimental.suggestions` is not true!')
     }
 
-    const history = new History()
+    const history = new VSCodeHistory()
 
     const providerConfig = createProviderConfig({
         completionsClient,
